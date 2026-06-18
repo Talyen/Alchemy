@@ -3,6 +3,7 @@ import { migrateSaveTopLevelV4 } from "./migrate-save-top-level";
 import { migrateSaveTopLevelV5 } from "./migrate-save-top-level-v5";
 import type { RawSaveData } from "./types";
 import { normalizePositiveInteger } from "./types";
+import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
 
 // Maps old fixed-resolution strings (v0 save format) to the canonical aspect-ratio values
 // used in v1+. Only runs after schema migration so the field is already at its new name.
@@ -192,5 +193,23 @@ export function migrateV5ToV6(parsed: RawSaveData): RawSaveData {
   return {
     ...next,
     saveSchemaVersion: 6,
+  };
+}
+
+export function migrateV6ToV7(parsed: RawSaveData): RawSaveData {
+  return {
+    ...parsed,
+    craftingCurrencies:
+      parsed.craftingCurrencies !== undefined ? parsed.craftingCurrencies : { ...EMPTY_CRAFTING_CURRENCIES },
+    saveSchemaVersion: 7,
+  };
+}
+
+export function migrateV7ToV8(parsed: RawSaveData): RawSaveData {
+  return {
+    ...parsed,
+    craftingCurrencyBoardPositions:
+      parsed.craftingCurrencyBoardPositions !== undefined ? parsed.craftingCurrencyBoardPositions : {},
+    saveSchemaVersion: 8,
   };
 }

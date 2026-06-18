@@ -56,6 +56,8 @@ describe("save migration contract", () => {
       "gearInventory",
       "gearLoadouts",
       "gearBoardPositions",
+      "craftingCurrencies",
+      "craftingCurrencyBoardPositions",
       "lastSavedAt",
       "masterVolume",
       "materialInventory",

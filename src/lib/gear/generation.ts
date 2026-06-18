@@ -1,4 +1,4 @@
-import { GEAR_AFFIX_COUNT, GEAR_REWARD_RARITY_CHANCE } from "@/lib/game-constants";
+import { GEAR_AFFIX_COUNT, GEAR_AFFIX_COUNT_MIN_WEIGHT, GEAR_REWARD_RARITY_CHANCE } from "@/lib/game-constants";
 import { createInstanceId } from "@/lib/utils";
 import { affixMatchesAffinity, rollAffixValue } from "./affixes";
 import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
@@ -47,8 +47,8 @@ export function rollGearRewardRarity(rng: () => number = Math.random, astralChan
 
 export function rollAffixCount(rarity: GearRarity, rng: () => number = Math.random): number {
   const range = GEAR_AFFIX_COUNT[rarity];
-  const span = range.max - range.min + 1;
-  return range.min + Math.floor(rng() * span);
+  if (range.max <= range.min) return range.min;
+  return rng() < GEAR_AFFIX_COUNT_MIN_WEIGHT ? range.min : range.max;
 }
 
 function rollAffixes(definition: GearDefinition, count: number, rng: () => number = Math.random): GearAffixRoll[] {

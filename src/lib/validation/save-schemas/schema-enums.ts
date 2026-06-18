@@ -8,6 +8,7 @@ import {
   type CompanionId,
   type DifficultyId,
 } from "@/lib/game-data";
+import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies, type CraftingCurrencyId } from "@/lib/gear/crafting";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { deduplicateStrings } from "./validation-utils";
 
@@ -65,6 +66,13 @@ export const LabyrinthNodeStateSchema = z.enum(["hidden", "visible", "current", 
 export const AspectRatioOptionSchema = z.enum(["auto", "16:9", "16:10", "21:9"]);
 export const DisplayModeSchema = z.enum(["windowed", "borderless-fullscreen", "fullscreen"]);
 export const UiScaleSchema = z.enum(["90", "100", "110", "120"]);
+
+export const CRAFTING_CURRENCY_ZERO_INVENTORY = { ...EMPTY_CRAFTING_CURRENCIES };
+
+export const CraftingCurrencyInventorySchema = z
+  .record(z.string(), z.unknown())
+  .catch(CRAFTING_CURRENCY_ZERO_INVENTORY)
+  .transform((inventory) => normalizeCraftingCurrencies(inventory) as Record<CraftingCurrencyId, number>);
 
 export const MaterialInventorySchema = z.object(createMaterialInventoryShape()).catch(MATERIAL_ZERO_INVENTORY);
 

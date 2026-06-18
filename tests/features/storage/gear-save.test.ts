@@ -1,5 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
 import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations";
+import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { createEmptyGearLoadouts, equipGear, type GearInstance } from "@/lib/gear";
+
+afterEach(() => {
+  useGearStore.getState().reset();
+});
 
 describe("gear save normalization", () => {
   it("defaults old saves to an empty inventory and empty class loadouts", () => {
@@ -94,6 +101,66 @@ describe("gear save normalization", () => {
     expect(save.gearBoardPositions).toEqual({});
   });
 
+  it("defaults migrated crafting currencies to an empty record", () => {
+    const save = normalizeSaveData({ saveSchemaVersion: 6 });
+    expect(save.craftingCurrencies).toEqual({
+      "discordant-dice": 0,
+      "sprig-of-growth": 0,
+      voidstone: 0,
+      "ascension-seal": 0,
+      "severance-maw": 0,
+      "smiths-whetstone": 0,
+    });
+  });
+
+  it("defaults crafting currency board positions to an empty record", () => {
+    const save = normalizeSaveData({ saveSchemaVersion: 7 });
+    expect(save.craftingCurrencyBoardPositions).toEqual({});
+  });
+
+  it("preserves valid crafting currency board positions and prunes zero-count currencies", () => {
+    const save = normalizeSaveData({
+      saveSchemaVersion: 8,
+      craftingCurrencies: {
+        "discordant-dice": 2,
+        "sprig-of-growth": 0,
+        voidstone: 1,
+        "ascension-seal": 0,
+        "severance-maw": 0,
+        "smiths-whetstone": 0,
+      },
+      craftingCurrencyBoardPositions: {
+        "discordant-dice": { col: 2, row: 1 },
+        "sprig-of-growth": { col: 3, row: 1 },
+        voidstone: { col: 0, row: 0 },
+      },
+    });
+
+    expect(save.craftingCurrencyBoardPositions).toEqual({
+      "discordant-dice": { col: 2, row: 1 },
+    });
+  });
+
+  it("preserves valid crafting currencies while normalizing missing or invalid values", () => {
+    const save = normalizeSaveData({
+      saveSchemaVersion: 7,
+      craftingCurrencies: {
+        "discordant-dice": 3,
+        "sprig-of-growth": -1,
+        voidstone: 2.5,
+      },
+    });
+
+    expect(save.craftingCurrencies).toEqual({
+      "discordant-dice": 3,
+      "sprig-of-growth": 0,
+      voidstone: 2,
+      "ascension-seal": 0,
+      "severance-maw": 0,
+      "smiths-whetstone": 0,
+    });
+  });
+
   it("prunes board positions for items no longer in inventory", () => {
     const save = normalizeSaveData({
       saveSchemaVersion: 5,
@@ -127,5 +194,52 @@ describe("gear save normalization", () => {
     });
     expect(save.discoveredTrinketIds).toEqual(["bone-charm"]);
     expect(save.activeRun?.runTrinkets).toEqual(["bone-charm"]);
+  });
+
+  it("round-trips gear store state through buildAlchemySaveDataFromStores and normalizeSaveData", () => {
+    const body: GearInstance = {
+      instanceId: "body-1",
+      definitionId: "leather-armor-basic",
+      affixes: [{ id: "flat-physical", value: 2 }],
+    };
+    const ring: GearInstance = { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] };
+    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "body", body, [body, ring]);
+    const boardPositions = {
+      [ring.instanceId]: { col: 2, row: 1 },
+    };
+    const craftingCurrencies = {
+      "discordant-dice": 2,
+      "sprig-of-growth": 0,
+      voidstone: 1,
+      "ascension-seal": 0,
+      "severance-maw": 0,
+      "smiths-whetstone": 0,
+    };
+    const currencyBoardPositions = {
+      "discordant-dice": { col: 1, row: 1 },
+      voidstone: { col: 3, row: 1 },
+    };
+
+    useGearStore.getState().initialize(
+      [body, ring],
+      loadouts,
+      boardPositions,
+      craftingCurrencies,
+      {},
+      currencyBoardPositions,
+    );
+
+    const save = buildAlchemySaveDataFromStores(null);
+    const normalized = normalizeSaveData(save);
+
+    expect(normalized.gearInventory).toEqual([body, ring]);
+    expect(normalized.gearLoadouts.knight.body).toBe("body-1");
+    expect(normalized.gearLoadouts.knight["left-ring"]).toBeNull();
+    expect(normalized.gearBoardPositions).toEqual(boardPositions);
+    expect(normalized.craftingCurrencies).toEqual(craftingCurrencies);
+    expect(normalized.craftingCurrencyBoardPositions).toEqual({
+      "discordant-dice": { col: 1, row: 1 },
+      voidstone: { col: 3, row: 1 },
+    });
   });
 });

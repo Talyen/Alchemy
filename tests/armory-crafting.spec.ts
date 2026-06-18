@@ -1,0 +1,181 @@
+import { expect } from "@playwright/test";
+import {
+  activateCurrency,
+  applyCurrencyToGear,
+  bodyGear,
+  confirmSalvage,
+  createEmptyGearLoadouts,
+  currencyLocator,
+  enterSalvageMode,
+  expectSalvageDialog,
+  gearItemLocator,
+  openArmory,
+  salvageInventoryItem,
+} from "./e2e/armory";
+import { startBattleWithDeck } from "./e2e/battle-setup";
+import { makeCard } from "./e2e/cards";
+import { test } from "./fixtures/e2e";
+import { BattlePage } from "./pages/battle-page";
+import { MenuPage } from "./pages/menu-page";
+import { seedRandom } from "./e2e/rng";
+import { critical, prepush } from "./playwright-tags";
+
+const affixedHelm = {
+  instanceId: "gear-helm",
+  definitionId: "leather-helm-basic" as const,
+  affixes: [{ id: "max-health" as const, value: 7 }],
+};
+
+const emptyCraftingCurrencies = {
+  "discordant-dice": 0,
+  "sprig-of-growth": 0,
+  voidstone: 0,
+  "ascension-seal": 0,
+  "severance-maw": 0,
+  "smiths-whetstone": 0,
+};
+
+test.describe("Armory crafting", critical, () => {
+  test("salvages gear and grants crafting materials", prepush, async ({ page }) => {
+    await seedRandom(page, 0);
+    const sword = {
+      instanceId: "gear-sword",
+      definitionId: "shortsword-basic" as const,
+      affixes: [{ id: "flat-physical" as const, value: 1 }],
+    };
+
+    await openArmory(page, {
+      inventory: [sword],
+      craftingCurrencies: { ...emptyCraftingCurrencies },
+    });
+
+    await salvageInventoryItem(page, "Shortsword");
+    await expectSalvageDialog(page);
+    await confirmSalvage(page);
+
+    await expect(gearItemLocator(page, "Shortsword")).toHaveCount(0);
+    await expect(currencyLocator(page, "discordant-dice")).toBeVisible();
+    await expect
+      .poll(async () => Number(await currencyLocator(page, "discordant-dice").innerText()))
+      .toBeGreaterThan(0);
+  });
+
+  test("stays in salvage mode after confirming a salvage", async ({ page }) => {
+    await seedRandom(page, 0);
+    const ringA = { instanceId: "ring-a", definitionId: "ruby-ring-basic" as const, affixes: [] };
+    const ringB = { instanceId: "ring-b", definitionId: "ruby-ring-basic" as const, affixes: [] };
+
+    await openArmory(page, {
+      inventory: [ringA, ringB],
+      craftingCurrencies: { ...emptyCraftingCurrencies },
+    });
+
+    await enterSalvageMode(page);
+    await page.getByLabel("Salvage Ruby Ring", { exact: true }).first().click();
+    await expectSalvageDialog(page);
+    await confirmSalvage(page);
+
+    await expect(page.getByRole("button", { name: "Cancel salvage" })).toBeVisible();
+    await expect(gearItemLocator(page, "Ruby Ring")).toHaveCount(1);
+  });
+
+  test("applies voidstone and removes affixes", prepush, async ({ page }) => {
+    await openArmory(page, {
+      inventory: [affixedHelm],
+      craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
+    });
+
+    await activateCurrency(page, "voidstone");
+    await applyCurrencyToGear(page, "Leather Helm", "Voidstone");
+
+    await expect(page.getByTestId("armory-crafting-cursor")).toHaveCount(0);
+    await expect(currencyLocator(page, "voidstone")).toHaveCount(0);
+
+    const helm = gearItemLocator(page, "Leather Helm");
+    await helm.hover();
+    await expect(page.getByText("Enduring")).toHaveCount(0);
+    await expect(page.getByText("Salvage for Basic crafting currency")).toBeVisible();
+  });
+
+  test("upgrades basic gear to astral with ascension seal", async ({ page }) => {
+    await openArmory(page, {
+      inventory: [affixedHelm],
+      craftingCurrencies: { ...emptyCraftingCurrencies, "ascension-seal": 1 },
+    });
+
+    await activateCurrency(page, "ascension-seal");
+    await applyCurrencyToGear(page, "Leather Helm", "Ascension Seal");
+
+    await expect(gearItemLocator(page, "Astral Leather Helm")).toBeVisible();
+    await expect(gearItemLocator(page, "Leather Helm")).toHaveCount(0);
+  });
+
+  test("cancels currency targeting with Escape", async ({ page }) => {
+    await openArmory(page, {
+      inventory: [affixedHelm],
+      craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
+    });
+
+    await activateCurrency(page, "voidstone");
+    await expect(page.getByRole("button", { name: /Apply Voidstone to Leather Helm/ })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("button", { name: /Apply Voidstone/ })).toHaveCount(0);
+  });
+
+  test("rejects invalid voidstone target without consuming currency", async ({ page }) => {
+    await openArmory(page, {
+      inventory: [bodyGear],
+      craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
+    });
+
+    await activateCurrency(page, "voidstone");
+    await gearItemLocator(page, "Leather Armor").click();
+    await expect(currencyLocator(page, "voidstone")).toContainText("1");
+    await expect(page.getByRole("button", { name: /Apply Voidstone/ })).toBeVisible();
+  });
+
+  test("shows affix epithets in gear tooltips", async ({ page }) => {
+    await openArmory(page, { inventory: [affixedHelm] });
+
+    await gearItemLocator(page, "Leather Helm").hover();
+    await expect(page.getByText("Enduring")).toBeVisible();
+    await expect(page.getByText("Increases Health by 7")).toBeVisible();
+  });
+
+  test("affix physical damage increases battle damage", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight["main-hand"] = "gear-sword";
+
+    const menu = new MenuPage(page);
+    await menu.gotoWithUnlockedMeta({
+      gearInventory: [
+        {
+          instanceId: "gear-sword",
+          definitionId: "shortsword-basic",
+          affixes: [{ id: "flat-physical", value: 1 }],
+        },
+      ],
+      gearLoadouts: loadouts,
+    });
+
+    const physicalCard = makeCard({
+      id: "test-slash",
+      title: "Test Slash",
+      cost: 0,
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+
+    await startBattleWithDeck(page, Array.from({ length: 6 }, () => physicalCard));
+
+    const battle = new BattlePage(page);
+    const enemyHpBefore = await battle.enemyHealth();
+    await battle.playCardNamed("Test Slash");
+
+    await expect(async () => {
+      expect(await battle.enemyHealth()).toBe(enemyHpBefore - 6);
+    }).toPass({ timeout: 5000 });
+  });
+});

@@ -4,7 +4,6 @@
 import { Skull, Sparkles } from "lucide-react";
 
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
-import { NO_FOCUS_RING } from "@/lib/ui/focus";
 import { cn } from "@/lib/utils";
 
 import { keywordIcons } from "../../config";
@@ -30,7 +29,7 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
     <div className="status-chip-pop group/status relative flex items-center justify-center">
       <button
         type="button"
-        className={cn("relative flex h-7 w-7 items-center justify-center", NO_FOCUS_RING)}
+        className="relative flex h-7 w-7 items-center justify-center"
         aria-label={`${definition.label} ${chip.value}`}
       >
         <Icon className={cn("h-[1.67cqh] w-[1.67cqh]", definition.colorClass)} />
@@ -53,11 +52,7 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
 function HasteStatusIcon({ value }: { value: number }) {
   return (
     <div className="status-chip-pop group/status relative flex items-center justify-center">
-      <button
-        type="button"
-        className={cn("relative flex h-7 w-7 items-center justify-center", NO_FOCUS_RING)}
-        aria-label={`Haste ${value}`}
-      >
+      <button type="button" className="relative flex h-7 w-7 items-center justify-center" aria-label={`Haste ${value}`}>
         <Sparkles className="h-[1.67cqh] w-[1.67cqh] text-fuchsia-300" />
       </button>
       <TooltipPanel className="pointer-events-none opacity-0 group-hover/status:opacity-100">
@@ -80,7 +75,6 @@ export function DeathsDoorStatusIcon() {
         type="button"
         className={cn(
           "relative flex h-7 w-7 items-center justify-center rounded-full bg-red-950/70 text-red-200 ring-1 ring-red-400/60",
-          NO_FOCUS_RING,
         )}
         aria-label="Death's Door"
       >

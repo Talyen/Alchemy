@@ -13,7 +13,10 @@ export function GearItemTitle({ instance, className }: Props) {
   if (gradient) {
     return (
       <span
-        className={cn("boss-title-shine bg-clip-text text-transparent [background-size:300%_300%]", className)}
+        className={cn(
+          "boss-title-shine whitespace-nowrap bg-clip-text text-transparent [background-size:300%_300%]",
+          className,
+        )}
         style={{ backgroundImage: gradient }}
       >
         {title}
@@ -21,5 +24,5 @@ export function GearItemTitle({ instance, className }: Props) {
     );
   }
 
-  return <span className={className}>{title}</span>;
+  return <span className={cn("whitespace-nowrap text-stone-100", className)}>{title}</span>;
 }

@@ -3,7 +3,13 @@
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import type { CompanionId, CharacterId, DifficultyId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
-import type { GearInstance, GearLoadouts, GearBoardPositions } from "@/lib/gear";
+import type {
+  GearInstance,
+  GearLoadouts,
+  GearBoardPositions,
+  CraftingCurrencyId,
+  CraftingCurrencyBoardPositions,
+} from "@/lib/gear";
 import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
 
 export type SaveData = {
@@ -20,6 +26,8 @@ export type SaveData = {
   gearInventory: GearInstance[];
   gearLoadouts: GearLoadouts;
   gearBoardPositions: GearBoardPositions;
+  craftingCurrencyBoardPositions: CraftingCurrencyBoardPositions;
+  craftingCurrencies: Record<CraftingCurrencyId, number>;
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
   musicVolume: number;

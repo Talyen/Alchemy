@@ -519,7 +519,14 @@ export default function App() {
         });
         useGearStore
           .getState()
-          .initialize(result.data.gearInventory, result.data.gearLoadouts, result.data.gearBoardPositions);
+          .initialize(
+            result.data.gearInventory,
+            result.data.gearLoadouts,
+            result.data.gearBoardPositions,
+            result.data.craftingCurrencies,
+            {},
+            result.data.craftingCurrencyBoardPositions,
+          );
         restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
         setBootstrapResult(result);
       }

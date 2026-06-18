@@ -16,11 +16,13 @@ import {
   CHARACTER_IDS,
   deduplicatedStringArraySchema,
   MATERIAL_ZERO_INVENTORY,
+  CRAFTING_CURRENCY_ZERO_INVENTORY,
   createTierRecordSchema,
   AspectRatioOptionSchema,
   CompletedDifficultiesSchema,
   DisplayModeSchema,
   MaterialInventorySchema,
+  CraftingCurrencyInventorySchema,
   TalentXPSchema,
   UiScaleSchema,
   UnlockedTalentsSchema,
@@ -35,7 +37,8 @@ import {
   type GearBoardPositions,
   type GearLoadouts,
 } from "@/lib/gear/types";
-import { sanitizeGearBoardPositions } from "@/lib/gear/inventory-layout";
+import { sanitizeGearBoardPositions, sanitizeCurrencyBoardPositions } from "@/lib/gear/inventory-layout";
+import type { CraftingCurrencyBoardPositions } from "@/lib/gear/crafting";
 
 const GearInventorySchema = GearInstanceArraySchema;
 const GearLoadoutSchema = z
@@ -53,6 +56,17 @@ const GearBoardPositionsSchema = z
   )
   .catch({})
   .transform((positions) => positions as GearBoardPositions);
+
+const CraftingCurrencyBoardPositionsSchema = z
+  .record(
+    z.string(),
+    z.object({
+      col: z.number().int().nonnegative(),
+      row: z.number().int().nonnegative(),
+    }),
+  )
+  .catch({})
+  .transform((positions) => positions as CraftingCurrencyBoardPositions);
 
 const GearLoadoutsSchema = z
   .object(
@@ -85,6 +99,11 @@ export const SaveDataSchema = z.preprocess(
       gearInventory: caught(GearInventorySchema, [], "gearInventory"),
       gearLoadouts: caught(GearLoadoutsSchema, emptyGearLoadouts, "gearLoadouts"),
       gearBoardPositions: caught(GearBoardPositionsSchema, {}, "gearBoardPositions"),
+      craftingCurrencyBoardPositions: caught(
+        CraftingCurrencyBoardPositionsSchema,
+        {},
+        "craftingCurrencyBoardPositions",
+      ),
       talentXP: TalentXPSchema,
       unlockedTalents: UnlockedTalentsSchema,
       // .catch() fallbacks must match defaults.ts — both come from game-constants.ts.
@@ -101,6 +120,11 @@ export const SaveDataSchema = z.preprocess(
       autoEndTurn: caught(z.boolean(), true, "autoEndTurn"),
       activeRun: caught(ActiveRunDataSchema.nullable(), null, "activeRun"),
       materialInventory: caught(MaterialInventorySchema, MATERIAL_ZERO_INVENTORY, "materialInventory"),
+      craftingCurrencies: caught(
+        CraftingCurrencyInventorySchema,
+        CRAFTING_CURRENCY_ZERO_INVENTORY,
+        "craftingCurrencies",
+      ),
       constructedBuildings: caught(
         createTierRecordSchema(buildings, { smithy: "blacksmiths-forge" }),
         createEmptyTierRecord(buildings),
@@ -133,5 +157,9 @@ export const SaveDataSchema = z.preprocess(
       ...save,
       gearLoadouts: pruneOrphanGearLoadouts(save.gearInventory, save.gearLoadouts),
       gearBoardPositions: sanitizeGearBoardPositions(save.gearBoardPositions, save.gearInventory),
+      craftingCurrencyBoardPositions: sanitizeCurrencyBoardPositions(
+        save.craftingCurrencyBoardPositions,
+        save.craftingCurrencies,
+      ),
     })),
 );

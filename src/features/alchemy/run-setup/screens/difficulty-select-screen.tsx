@@ -4,7 +4,6 @@ import { Fragment, useState } from "react";
 import { Swords } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { NO_FOCUS_RING } from "@/lib/ui/focus";
 import {
   characters,
   characterArt,
@@ -97,7 +96,6 @@ function DifficultyCard({
           onClick={() => onSelect(difficultyId)}
           className={cn(
             "relative flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pb-6 pt-5 text-center transition-all disabled:cursor-default",
-            NO_FOCUS_RING,
             locked && "grayscale border-muted/40",
             isSelected && "ring-2 ring-primary",
           )}

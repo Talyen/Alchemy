@@ -1,7 +1,16 @@
-import { getGearInstanceTooltipLines, type GearDefinition, type GearInstance } from "@/lib/gear";
+import {
+  gearInstanceRarity,
+  getGearAffixTooltipEntries,
+  getGearInstanceTooltipLines,
+  type GearDefinition,
+  type GearInstance,
+} from "@/lib/gear";
 import { GearItemTitle } from "../../../shared/ui/gear-item-title";
 import { renderColoredKeywords } from "../../../shared/ui/card-description-ui";
-import { TooltipBody, TooltipHeader } from "../../../shared/ui/tooltip-panel";
+import { TooltipBody, TooltipHeader, TooltipSubheader } from "../../../shared/ui/tooltip-panel";
+
+/** Grows to fit single-line titles and affix text; viewport cap prevents horizontal overflow. */
+export const ARMORY_TOOLTIP_WIDTH = "w-max max-w-[calc(100vw-3rem)]";
 
 export function GearTooltipContent({
   definition,
@@ -10,20 +19,42 @@ export function GearTooltipContent({
   definition: GearDefinition;
   instance?: GearInstance | undefined;
 }) {
-  const lines = instance
+  const rarity = instance ? gearInstanceRarity(instance) : (definition.rarity ?? "basic");
+  const affixEntries =
+    instance && instance.affixes.length > 0 ? getGearAffixTooltipEntries(instance.affixes, rarity) : [];
+  const bodyLines = instance
     ? getGearInstanceTooltipLines(instance)
     : definition.descriptionLines.map((text, index) => ({ key: `definition-${index}`, text }));
 
   return (
-    <div>
-      <TooltipHeader>{instance ? <GearItemTitle instance={instance} /> : definition.title}</TooltipHeader>
-      <TooltipBody>
-        {lines.map((line) => (
-          <p key={line.key} className="text-sm text-muted-foreground">
-            {renderColoredKeywords(line.text)}
-          </p>
-        ))}
-      </TooltipBody>
+    <div className="w-max">
+      <TooltipHeader>
+        {instance ? (
+          <GearItemTitle instance={instance} />
+        ) : (
+          <span className="whitespace-nowrap">{definition.title}</span>
+        )}
+      </TooltipHeader>
+      {affixEntries.length > 0 ? (
+        <div className="mt-1 space-y-2">
+          {affixEntries.map((entry) => (
+            <div key={entry.key}>
+              <TooltipSubheader>{entry.name}</TooltipSubheader>
+              <p className="whitespace-nowrap pl-3 text-sm leading-6 text-muted-foreground">
+                {renderColoredKeywords(entry.text)}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <TooltipBody>
+          {bodyLines.map((entry) => (
+            <p key={entry.key} className="whitespace-nowrap">
+              {renderColoredKeywords(entry.text)}
+            </p>
+          ))}
+        </TooltipBody>
+      )}
     </div>
   );
 }

@@ -1,19 +1,19 @@
-import { getGearAffixDescriptionLines } from "./affixes";
+import { getGearAffixTooltipEntries } from "./affixes";
 import { gearDefinitions, gearInstanceRarity } from "./definitions";
-import { formatSalvageValue } from "./operations";
+
 import type { GearInstance } from "./types";
 
 export function getGearInstanceDescriptionLines(instance: GearInstance): string[] {
   return getGearInstanceTooltipLines(instance).map((entry) => entry.text);
 }
 
-export function getGearInstanceTooltipLines(instance: GearInstance): { key: string; text: string }[] {
+export function getGearInstanceTooltipEntries(instance: GearInstance): { key: string; name?: string; text: string }[] {
   const definition = gearDefinitions[instance.definitionId];
   const rarity = gearInstanceRarity(instance);
-  const affixLines = getGearAffixDescriptionLines(instance.affixes, rarity);
+  const affixEntries = getGearAffixTooltipEntries(instance.affixes, rarity);
 
-  if (affixLines.length > 0) {
-    return affixLines;
+  if (affixEntries.length > 0) {
+    return affixEntries;
   }
 
   if (definition?.descriptionLines.length) {
@@ -21,8 +21,13 @@ export function getGearInstanceTooltipLines(instance: GearInstance): { key: stri
   }
 
   if (definition) {
-    return [{ key: "salvage", text: formatSalvageValue(definition.salvageValue) }];
+    const text = rarity === "basic" ? "Salvage for Basic crafting currency" : "Salvage for Astral crafting currency";
+    return [{ key: "salvage", text }];
   }
 
   return [];
+}
+
+export function getGearInstanceTooltipLines(instance: GearInstance): { key: string; text: string }[] {
+  return getGearInstanceTooltipEntries(instance).map(({ key, text }) => ({ key, text }));
 }

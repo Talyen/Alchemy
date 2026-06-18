@@ -118,7 +118,7 @@ describe("save migration guard", () => {
 
   it("migrates v5 saves and scales up astral gear affix values", () => {
     const migrated = normalizeSaveData(legacySchemaV5Save());
-    expect(migrated.saveSchemaVersion).toBe(6);
+    expect(migrated.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
 
     // gearInventory check
     const item = migrated.gearInventory.find((g) => g.instanceId === "gear-1");

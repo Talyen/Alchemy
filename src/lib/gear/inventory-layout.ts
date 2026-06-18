@@ -1,4 +1,6 @@
 import { gearDefinitions } from "./definitions";
+import type { CraftingCurrencyBoardPositions, CraftingCurrencyId } from "./crafting";
+import { CRAFTING_CURRENCY_IDS } from "./crafting";
 import type { GearBoardPositions, GearDefinition, GearInstance, GearSlot } from "./types";
 
 export type GearFootprint = { w: number; h: number };
@@ -214,10 +216,33 @@ export function packInventoryWithPositions<T extends { definitionId: string; ins
   items: T[],
   cols: number,
   savedPositions: Record<string, { col: number; row: number }>,
+  reservedItems: readonly T[] = [],
+  blockedCells: readonly { col: number; row: number; w: number; h: number }[] = [],
 ): PackedInventory<T> {
   const packedItems: PackedInventoryItem<T>[] = [];
   const occupancy: boolean[][] = [];
   let occupiedRows = 0;
+  const visibleIds = new Set(items.map((item) => item.instanceId));
+
+  for (const cell of blockedCells) {
+    if (cell.col < 1 || cell.row < 1 || cell.col + cell.w - 1 > cols) continue;
+    markPlaced(occupancy, cell.col - 1, cell.row - 1, { w: cell.w, h: cell.h }, cols);
+    occupiedRows = Math.max(occupiedRows, cell.row - 1 + cell.h);
+  }
+
+  for (const item of reservedItems) {
+    if (visibleIds.has(item.instanceId)) continue;
+    const definition = gearDefinitions[item.definitionId as keyof typeof gearDefinitions];
+    if (!definition) continue;
+    const footprint = GEAR_FOOTPRINT[definition.compatibleSlots[0]!];
+    const saved = savedPositions[item.instanceId];
+    if (!saved || saved.col < 1 || saved.row < 1 || saved.col + footprint.w - 1 > cols) continue;
+    const colIdx = saved.col - 1;
+    const rowIdx = saved.row - 1;
+    if (!canPlace(occupancy, colIdx, rowIdx, footprint, cols)) continue;
+    markPlaced(occupancy, colIdx, rowIdx, footprint, cols);
+    occupiedRows = Math.max(occupiedRows, rowIdx + footprint.h);
+  }
 
   const remainingItems: T[] = [];
 
@@ -263,6 +288,98 @@ export function packInventoryWithPositions<T extends { definitionId: string; ins
   }
 
   return { items: packedItems, occupiedRows };
+}
+
+export function resolveInventoryReturnPlacement<T extends { instanceId: string }>(
+  items: PackedInventoryItem<T>[],
+  instanceId: string,
+  footprint: GearFootprint,
+  preferred: InventoryPlacement | undefined,
+  cols: number,
+): InventoryPlacement {
+  if (preferred && !inventoryPlacementCollides(items, instanceId, preferred, footprint, cols)) {
+    return preferred;
+  }
+  return findFirstInventoryPlacement(items, instanceId, footprint, cols);
+}
+
+export type PackedCurrencyItem = {
+  currencyId: CraftingCurrencyId;
+  col: number;
+  row: number;
+  w: 1;
+  h: 1;
+};
+
+const CURRENCY_FOOTPRINT: GearFootprint = { w: 1, h: 1 };
+
+export function sanitizeCurrencyBoardPositions(
+  boardPositions: CraftingCurrencyBoardPositions,
+  currencies: Record<CraftingCurrencyId, number>,
+): CraftingCurrencyBoardPositions {
+  const next: CraftingCurrencyBoardPositions = {};
+  for (const id of CRAFTING_CURRENCY_IDS) {
+    if ((currencies[id] ?? 0) <= 0) continue;
+    const position = boardPositions[id];
+    if (!position) continue;
+    if (position.col < 1 || position.row < 1 || position.col > INVENTORY_COLS) continue;
+    next[id] = position;
+  }
+  return next;
+}
+
+export function packCurrencyWithPositions(
+  currencyIds: CraftingCurrencyId[],
+  cols: number,
+  savedPositions: CraftingCurrencyBoardPositions,
+  gearObstacles: PackedInventoryItem[],
+): PackedCurrencyItem[] {
+  const packedItems: PackedCurrencyItem[] = [];
+  const occupancy: boolean[][] = [];
+  let occupiedRows = 0;
+
+  for (const { col, row, w, h } of gearObstacles) {
+    markPlaced(occupancy, col - 1, row - 1, { w, h }, cols);
+    occupiedRows = Math.max(occupiedRows, row - 1 + h);
+  }
+
+  const remainingIds: CraftingCurrencyId[] = [];
+
+  for (const currencyId of currencyIds) {
+    const saved = savedPositions[currencyId];
+    if (saved && saved.col >= 1 && saved.row >= 1 && saved.col <= cols) {
+      const colIdx = saved.col - 1;
+      const rowIdx = saved.row - 1;
+      if (canPlace(occupancy, colIdx, rowIdx, CURRENCY_FOOTPRINT, cols)) {
+        markPlaced(occupancy, colIdx, rowIdx, CURRENCY_FOOTPRINT, cols);
+        packedItems.push({ currencyId, col: saved.col, row: saved.row, w: 1, h: 1 });
+        occupiedRows = Math.max(occupiedRows, rowIdx + 1);
+        continue;
+      }
+    }
+    remainingIds.push(currencyId);
+  }
+
+  for (const currencyId of remainingIds) {
+    const position = findPlacement(occupancy, CURRENCY_FOOTPRINT, cols);
+    packedItems.push({ currencyId, ...position, w: 1, h: 1 });
+    markPlaced(occupancy, position.col - 1, position.row - 1, CURRENCY_FOOTPRINT, cols);
+    occupiedRows = Math.max(occupiedRows, position.row - 1 + 1);
+  }
+
+  return packedItems;
+}
+
+export function currencyObstaclesForBoard(
+  packedCurrencies: PackedCurrencyItem[],
+): PackedInventoryItem<{ instanceId: string }>[] {
+  return packedCurrencies.map(({ currencyId, col, row, w, h }) => ({
+    item: { instanceId: currencyId },
+    col,
+    row,
+    w,
+    h,
+  }));
 }
 
 export function sanitizeGearBoardPositions(

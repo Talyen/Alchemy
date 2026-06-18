@@ -6,7 +6,6 @@ import type { LabyrinthMap, LabyrinthModifierKind, LabyrinthNodeType } from "@/l
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-generation";
 import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
 import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
-import { NO_FOCUS_RING } from "@/lib/ui/focus";
 import { cn } from "@/lib/utils";
 
 import { LABYRINTH_NODE_META } from "@/features/alchemy/shared/config";
@@ -65,7 +64,6 @@ export function LabyrinthNodeButton({ row, col, node, labyrinthMap, onNodeClick,
         onClick={() => onNodeClick(row, col)}
         className={cn(
           "relative flex aspect-square h-full w-full items-center justify-center rounded-full border-2 text-xs transition-[transform,border-color] duration-150",
-          NO_FOCUS_RING,
           meta.className,
           isCurrent && "border-amber-400",
           isCurrent && node.type !== "entrance" && "shadow-labyrinth-current-glow",

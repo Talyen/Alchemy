@@ -1,6 +1,5 @@
-import { materialLabels, MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
-import { emptyInventory } from "@/lib/homestead/inventory";
 import { normalizeAffixRolls, resolveAffixEffects } from "./affixes";
+import { rollSalvageYield } from "./crafting";
 import { gearDefinitions, gearInstanceRarity } from "./definitions";
 import { mergeGearEffectManifests } from "./gear-effect-manifest";
 import {
@@ -98,17 +97,38 @@ export function unequipGear(loadouts: GearLoadouts, characterId: GearCharacterId
   return { ...loadouts, [characterId]: { ...loadouts[characterId], [slot]: null } };
 }
 
-export function canSalvageGear(loadouts: GearLoadouts, instanceId: string): boolean {
-  return !Object.values(loadouts).some((loadout) => Object.values(loadout).includes(instanceId));
+export function canSalvageGear(inventory: GearInstance[], instanceId: string): boolean {
+  return inventory.some((item) => item.instanceId === instanceId);
 }
 
-export function salvageGear(inventory: GearInstance[], loadouts: GearLoadouts, instanceId: string) {
-  if (!canSalvageGear(loadouts, instanceId)) return null;
+function removeGearFromLoadouts(loadouts: GearLoadouts, instanceId: string): GearLoadouts {
+  const next: GearLoadouts = { ...loadouts };
+  for (const characterId of GEAR_CHARACTER_IDS) {
+    const loadout = loadouts[characterId];
+    const nextLoadout = { ...loadout };
+    for (const slot of GEAR_SLOTS) {
+      if (nextLoadout[slot] === instanceId) {
+        nextLoadout[slot] = null;
+      }
+    }
+    next[characterId] = nextLoadout;
+  }
+  return next;
+}
+
+export function salvageGear(
+  inventory: GearInstance[],
+  loadouts: GearLoadouts,
+  instanceId: string,
+  rng: () => number = Math.random,
+) {
+  if (!canSalvageGear(inventory, instanceId)) return null;
   const instance = inventory.find((item) => item.instanceId === instanceId);
   if (!instance) return null;
   return {
     inventory: inventory.filter((item) => item.instanceId !== instanceId),
-    materials: gearDefinitions[instance.definitionId]?.salvageValue ?? emptyInventory(),
+    loadouts: removeGearFromLoadouts(loadouts, instanceId),
+    yieldedCurrencies: rollSalvageYield(gearInstanceRarity(instance), rng),
   };
 }
 
@@ -218,17 +238,4 @@ export function computeGearManifest(
     },
     { ...defaultGearEffects },
   );
-}
-
-function formatSalvageMaterials(materials: MaterialInventory): string {
-  const parts = MATERIAL_IDS.flatMap((id) => {
-    const amount = materials[id];
-    return amount > 0 ? [`${amount} ${materialLabels[id]}`] : [];
-  });
-  return parts.join(", ");
-}
-
-export function formatSalvageValue(materials: MaterialInventory): string {
-  const materialsText = formatSalvageMaterials(materials);
-  return materialsText.length > 0 ? `Salvage for ${materialsText}` : "Salvage";
 }

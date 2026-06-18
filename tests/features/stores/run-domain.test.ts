@@ -9,6 +9,7 @@ import {
   flushSaveAfterRunEnd,
   restoreRun,
   syncBattleToRun,
+  syncRunMaxHealthFromGearMutation,
   syncRunToBattleStart,
   teardownRun,
 } from "@/features/alchemy/shared/stores/run-transitions";
@@ -21,6 +22,7 @@ import { flattenRunSessionForScreens } from "@/features/alchemy/shared/stores/ru
 import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
+import { createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 
 vi.mock("@/features/alchemy/shared/storage/flush-save", () => ({
   flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
@@ -176,6 +178,37 @@ describe("initialize", () => {
     };
     restoreRun(activeRun, {}, {});
     expect(getNavigationStoreView().screen).toBe("shop");
+  });
+});
+
+describe("gear max health sync", () => {
+  const maxHealthHelm: GearInstance = {
+    instanceId: "max-health-helm",
+    definitionId: "leather-helm-basic",
+    affixes: [{ id: "max-health", value: 7 }],
+  };
+
+  it("applies max-health deltas when equipped gear inventory mutates", () => {
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight.helm = maxHealthHelm.instanceId;
+    setRunProgress({ characterId: "knight", runMaxHealth: 37, runPlayerHealth: 37, initialized: true });
+
+    syncRunMaxHealthFromGearMutation("knight", [maxHealthHelm], loadouts, [{ ...maxHealthHelm, affixes: [] }], loadouts);
+
+    expect(getRunProgressStoreView().runMaxHealth).toBe(30);
+    expect(getRunProgressStoreView().runPlayerHealth).toBe(30);
+  });
+
+  it("applies max-health deltas when equipped gear is removed", () => {
+    const loadoutsBefore = createEmptyGearLoadouts();
+    loadoutsBefore.knight.helm = maxHealthHelm.instanceId;
+    const loadoutsAfter = createEmptyGearLoadouts();
+    setRunProgress({ characterId: "knight", runMaxHealth: 37, runPlayerHealth: 35, initialized: true });
+
+    syncRunMaxHealthFromGearMutation("knight", [maxHealthHelm], loadoutsBefore, [], loadoutsAfter);
+
+    expect(getRunProgressStoreView().runMaxHealth).toBe(30);
+    expect(getRunProgressStoreView().runPlayerHealth).toBe(30);
   });
 });
 

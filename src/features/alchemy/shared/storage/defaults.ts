@@ -15,7 +15,9 @@ import {
 } from "@/lib/game-constants";
 import type { SaveData } from "./types";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
-import { createEmptyGearLoadouts } from "@/lib/gear/types";
+import { createEmptyGearLoadouts, EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
+
+const defaultCraftingCurrencies = { ...EMPTY_CRAFTING_CURRENCIES };
 
 export const defaultSaveData: SaveData = {
   saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
@@ -30,6 +32,8 @@ export const defaultSaveData: SaveData = {
   gearInventory: [],
   gearLoadouts: createEmptyGearLoadouts(),
   gearBoardPositions: {},
+  craftingCurrencyBoardPositions: {},
+  craftingCurrencies: { ...defaultCraftingCurrencies },
   talentXP: {},
   unlockedTalents: {},
   musicVolume: DEFAULT_MUSIC_VOLUME_PCT,

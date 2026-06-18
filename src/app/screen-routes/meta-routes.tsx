@@ -19,7 +19,11 @@ import type { ScreenRouteContext } from "./types";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { generateDevRandomGearInstance } from "@/lib/gear";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
-import { resolveActiveRunForSave, syncRunMaxHealthFromGear } from "@/features/alchemy/shared/stores/run-transitions";
+import {
+  resolveActiveRunForSave,
+  syncRunMaxHealthFromGear,
+  syncRunMaxHealthFromGearMutation,
+} from "@/features/alchemy/shared/stores/run-transitions";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils/dev-mode";
 import type { CharacterId } from "@/lib/game-data";
 import type { GearInstance, GearSlot, InventoryPlacement } from "@/lib/gear";
@@ -55,17 +59,30 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "onOpe
       unequip: s.unequip,
       salvage: s.salvage,
       addInstance: s.addInstance,
+      craftingCurrencies: s.craftingCurrencies,
+      applyCurrency: s.applyCurrency,
     })),
   );
   const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
   const hasActiveBattle = useRunDomainStore((s) => s.battle.hasActiveBattle);
   const hasActiveRun = useRunDomainStore((s) => s.session.hasActiveRun);
   const activeRunCharacterId = useRunDomainStore((s) => s.progress.characterId);
-  const addMaterials = useHomesteadStore((s) => s.addMaterials);
 
   function syncGearMaxHealthIfActiveRun(characterId: CharacterId, loadoutsBefore: typeof gear.loadouts) {
     if (!hasActiveRun || hasActiveBattle || characterId !== activeRunCharacterId) return;
     syncRunMaxHealthFromGear(characterId, gear.inventory, loadoutsBefore, useGearStore.getState().loadouts);
+  }
+
+  function syncGearMutationMaxHealthIfActiveRun(inventoryBefore: GearInstance[], loadoutsBefore: typeof gear.loadouts) {
+    if (!hasActiveRun || hasActiveBattle) return;
+    const gearAfter = useGearStore.getState();
+    syncRunMaxHealthFromGearMutation(
+      activeRunCharacterId,
+      inventoryBefore,
+      loadoutsBefore,
+      gearAfter.inventory,
+      gearAfter.loadouts,
+    );
   }
 
   function handleEquip(
@@ -89,15 +106,30 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "onOpe
     <ArmoryScreen
       inventory={gear.inventory}
       loadouts={gear.loadouts}
+      craftingCurrencies={gear.craftingCurrencies}
+      onApplyCurrency={(currencyId, instanceId) => {
+        if (hasActiveBattle) return false;
+        const inventoryBefore = gear.inventory;
+        const loadoutsBefore = gear.loadouts;
+        const ok = gear.applyCurrency(currencyId, instanceId);
+        if (ok) {
+          syncGearMutationMaxHealthIfActiveRun(inventoryBefore, loadoutsBefore);
+          void flushAlchemySaveNow(resolveActiveRunForSave(hasActiveRun, returnToRunScreen ?? undefined));
+        }
+        return ok;
+      }}
       finishedRunCharacters={finishedRunCharacters}
       browseOnly={hasActiveBattle}
       onOpenMenu={onOpenBattleMenu}
       onEquip={handleEquip}
       onUnequip={handleUnequip}
       onSalvage={(instanceId) => {
+        if (hasActiveBattle) return;
+        const inventoryBefore = gear.inventory;
+        const loadoutsBefore = gear.loadouts;
         const result = gear.salvage(instanceId);
         if (!result) return;
-        addMaterials(result.materials);
+        syncGearMutationMaxHealthIfActiveRun(inventoryBefore, loadoutsBefore);
         void flushAlchemySaveNow(resolveActiveRunForSave(hasActiveRun, returnToRunScreen ?? undefined));
       }}
       {...(isAlchemyDevBuild()

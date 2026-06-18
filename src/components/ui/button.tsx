@@ -14,7 +14,6 @@ import {
   BUTTON_HOVER_TRANSITION,
   BUTTON_PRESS_OUTLINE,
 } from "@/lib/ui/button-hover";
-import { NO_FOCUS_RING } from "@/lib/ui/focus";
 import { cn } from "@/lib/utils";
 
 const primaryVariantClasses = cn(
@@ -25,7 +24,6 @@ const primaryVariantClasses = cn(
 const buttonVariants = cva(
   cn(
     "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold disabled:pointer-events-none disabled:opacity-50",
-    NO_FOCUS_RING,
     BUTTON_HOVER_TRANSITION,
   ),
   {

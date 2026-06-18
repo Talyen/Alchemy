@@ -206,16 +206,6 @@
 }
 
 @layer components {
-  #vr-stage :focus,
-  #vr-stage :focus-visible {
-    outline: none;
-  }
-
-  #vr-stage :focus-visible {
-    --tw-ring-shadow: 0 0 #0000;
-    --tw-ring-offset-shadow: 0 0 #0000;
-  }
-
   .alchemy-shell {
     background: rgb(12, 10, 7);
     border-color: rgba(255, 253, 245, 0.08);

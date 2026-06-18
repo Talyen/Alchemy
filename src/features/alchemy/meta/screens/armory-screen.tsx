@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import {
@@ -10,9 +10,11 @@ import {
   Shield,
   Sparkles,
   Swords,
+  Trash2,
   WandSparkles,
   type LucideIcon,
 } from "lucide-react";
+import { playUISound } from "@/lib/audio";
 import {
   characters,
   getRequiredPreviousCharacter,
@@ -22,13 +24,15 @@ import {
   type KeywordId,
 } from "@/lib/game-data";
 import {
-  canOccupyVacatedInventoryPlacement,
-  formatSalvageValue,
-  footprintForInstance,
+  canApplyCraftingCurrency,
+  EMPTY_CRAFTING_CURRENCIES,
   gearDefinitions,
-  getGearInstanceTitle,
+  getCraftingCurrencyDefinition,
   INVENTORY_COLS,
   packInventoryWithPositions,
+  packCurrencyWithPositions,
+  currencyObstaclesForBoard,
+  type CraftingCurrencyId,
   type GearInstance,
   type GearLoadouts,
   type GearSlot,
@@ -36,9 +40,19 @@ import {
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader, TabBar } from "../../shared/ui/shared-ui";
+import { GearItemTitle } from "../../shared/ui/gear-item-title";
+import { useGearStore } from "../../shared/stores/gear-store";
 import { CharacterAndEquipmentPanel, InventoryPanel } from "./armory/armory-panels";
-import { DOUBLE_CLICK_FLYOVER_MS, MAGNET_RELEASE_EASE_MS, useArmoryGearDrag } from "./armory/use-armory-gear-drag";
+import { resolveEquipSwap } from "./armory/resolve-equip-swap";
+import {
+  DOUBLE_CLICK_FLYOVER_MS,
+  MAGNET_RELEASE_EASE_MS,
+  useArmoryGearDrag,
+  type GearDragVisual,
+} from "./armory/use-armory-gear-drag";
 import { useArmoryInventoryPositions } from "./armory/use-armory-inventory-positions";
+import { useArmoryCurrencyPositions } from "./armory/use-armory-currency-positions";
+import { useArmoryCurrencyDrag, type CurrencyDragVisual } from "./armory/use-armory-currency-drag";
 import "./armory/armory-screen.css";
 
 const CHARACTER_ICONS: Record<CharacterId, LucideIcon> = {
@@ -63,6 +77,15 @@ const CHARACTER_KEYWORDS: Record<CharacterId, KeywordId> = {
   wildcard: "wish",
 };
 
+const CURRENCY_CURSOR_STYLES: Record<CraftingCurrencyId, { className: string }> = {
+  "discordant-dice": { className: "border-violet-300/70 bg-violet-950" },
+  "sprig-of-growth": { className: "border-emerald-300/70 bg-emerald-950" },
+  voidstone: { className: "border-slate-300/70 bg-slate-950" },
+  "ascension-seal": { className: "border-amber-300/70 bg-amber-950" },
+  "severance-maw": { className: "border-red-300/70 bg-red-950" },
+  "smiths-whetstone": { className: "border-stone-300/70 bg-stone-950" },
+};
+
 type Props = {
   inventory: GearInstance[];
   loadouts: GearLoadouts;
@@ -78,6 +101,8 @@ type Props = {
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onSalvage: (instanceId: string) => void;
   onSpawnDevGear?: () => void;
+  craftingCurrencies?: Record<CraftingCurrencyId, number>;
+  onApplyCurrency?: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
 };
 
 export function ArmoryScreen({
@@ -90,11 +115,32 @@ export function ArmoryScreen({
   onUnequip,
   onSalvage,
   onSpawnDevGear,
+  craftingCurrencies = EMPTY_CRAFTING_CURRENCIES,
+  onApplyCurrency = () => false,
 }: Props) {
   const [characterId, setCharacterId] = useState<CharacterId>("knight");
   const inventoryBoardRef = useRef<HTMLDivElement>(null);
   const [salvageTarget, setSalvageTarget] = useState<GearInstance | null>(null);
+  const [salvageMode, setSalvageMode] = useState(false);
+  const [activeCurrencyId, setActiveCurrencyId] = useState<CraftingCurrencyId | null>(null);
+  const [cursorPoint, setCursorPoint] = useState<{ x: number; y: number } | null>(null);
   const { savedPositions, handleMoveItem } = useArmoryInventoryPositions(inventory);
+  const {
+    savedPositions: savedCurrencyPositions,
+    activeCurrencyIds,
+    handleMoveCurrency,
+  } = useArmoryCurrencyPositions(craftingCurrencies);
+  const equippedReturnPositions = useGearStore((state) => state.equippedReturnPositions);
+
+  const currencyBlockers = useMemo(
+    () =>
+      activeCurrencyIds.flatMap((id) => {
+        const position = savedCurrencyPositions[id];
+        if (!position) return [];
+        return [{ col: position.col, row: position.row, w: 1, h: 1 }];
+      }),
+    [activeCurrencyIds, savedCurrencyPositions],
+  );
 
   const inventoryById = useMemo(() => new Map(inventory.map((item) => [item.instanceId, item])), [inventory]);
   const equippedInstanceIds = useMemo(
@@ -110,10 +156,31 @@ export function ArmoryScreen({
   const requiredCharacterId = getRequiredPreviousCharacter(characterId);
   const locked = !isCharacterUnlocked(characterId, finishedRunCharacters);
   const editable = !browseOnly && !locked;
-  const packedInventory = useMemo(
-    () => packInventoryWithPositions(availableInventory, INVENTORY_COLS, savedPositions),
-    [availableInventory, savedPositions],
+  const packedInventory = useMemo(() => {
+    const reservedEquipped = inventory.filter((item) => equippedInstanceIds.has(item.instanceId));
+    return packInventoryWithPositions(
+      availableInventory,
+      INVENTORY_COLS,
+      savedPositions,
+      reservedEquipped,
+      currencyBlockers,
+    );
+  }, [availableInventory, currencyBlockers, equippedInstanceIds, inventory, savedPositions]);
+
+  const packedCurrencies = useMemo(
+    () => packCurrencyWithPositions(activeCurrencyIds, INVENTORY_COLS, savedCurrencyPositions, packedInventory.items),
+    [activeCurrencyIds, packedInventory.items, savedCurrencyPositions],
   );
+
+  const boardObstacles = useMemo(
+    () => [...packedInventory.items, ...currencyObstaclesForBoard(packedCurrencies)],
+    [packedCurrencies, packedInventory.items],
+  );
+
+  const occupiedRows = useMemo(() => {
+    const currencyRows = packedCurrencies.reduce((max, item) => Math.max(max, item.row), 0);
+    return Math.max(packedInventory.occupiedRows, currencyRows);
+  }, [packedCurrencies, packedInventory.occupiedRows]);
 
   const handleEquipWithSwap = useCallback(
     (
@@ -128,27 +195,14 @@ export function ArmoryScreen({
         return;
       }
 
-      const displacedId = loadouts[targetCharacterId]?.[slot];
-      if (!displacedId || displacedId === instance.instanceId) {
-        onEquip(targetCharacterId, slot, instance, { vacatedPlacement, swapDisplaced: false });
-        return;
-      }
-
-      const displaced = inventoryById.get(displacedId);
-      const incomingFootprint = footprintForInstance(instance);
-      const displacedFootprint = displaced ? footprintForInstance(displaced) : null;
-      const canSwap =
-        !!displaced &&
-        !!incomingFootprint &&
-        !!displacedFootprint &&
-        canOccupyVacatedInventoryPlacement(
-          packedInventory.items,
-          instance.instanceId,
-          incomingFootprint,
-          displacedFootprint,
-          vacatedPlacement,
-          INVENTORY_COLS,
-        );
+      const { canSwap } = resolveEquipSwap({
+        loadout: loadouts[targetCharacterId],
+        slot,
+        instance,
+        vacatedPlacement,
+        inventoryById,
+        packedItems: packedInventory.items,
+      });
 
       onEquip(targetCharacterId, slot, instance, {
         vacatedPlacement,
@@ -161,6 +215,7 @@ export function ArmoryScreen({
   const {
     draggedGear,
     dragVisual,
+    secondaryDragVisual,
     isAnimating,
     isDraggingActive,
     beginGearPointer,
@@ -168,19 +223,143 @@ export function ArmoryScreen({
     finishGearPointer,
     handleGearDoubleClick,
     clearDragState,
+    clearSecondaryDragState,
   } = useArmoryGearDrag({
     characterId,
     editable,
     loadout,
+    inventoryById,
     packedInventory,
     inventoryBoardRef,
+    boardPositions: savedPositions,
+    equippedReturnPositions,
+    boardObstacles,
     onEquip: handleEquipWithSwap,
     onUnequip,
     onMoveItem: handleMoveItem,
   });
 
-  const salvageDefinition = salvageTarget ? gearDefinitions[salvageTarget.definitionId] : undefined;
+  const {
+    draggedCurrencyId,
+    dragVisual: currencyDragVisual,
+    isAnimating: isCurrencyAnimating,
+    isDraggingActive: isCurrencyDraggingActive,
+    beginCurrencyPointer,
+    moveCurrencyPointer,
+    finishCurrencyPointer,
+    clearDragState: clearCurrencyDragState,
+  } = useArmoryCurrencyDrag({
+    editable,
+    boardObstacles,
+    occupiedRows,
+    inventoryBoardRef,
+    onMoveCurrency: handleMoveCurrency,
+  });
+
   const dragDefinition = dragVisual ? gearDefinitions[dragVisual.instance.definitionId] : undefined;
+  const secondaryDragDefinition = secondaryDragVisual
+    ? gearDefinitions[secondaryDragVisual.instance.definitionId]
+    : undefined;
+  const activeCurrency = activeCurrencyId ? getCraftingCurrencyDefinition(activeCurrencyId) : null;
+
+  const clearTargeting = useCallback(() => {
+    setSalvageMode(false);
+    setActiveCurrencyId(null);
+    setCursorPoint(null);
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!salvageMode && !activeCurrencyId) return;
+    if (salvageTarget) return;
+
+    function isTargetingElement(target: EventTarget | null): boolean {
+      if (!(target instanceof HTMLElement)) return false;
+      return (
+        !!target.closest('[data-testid="armory-inventory-item"]') ||
+        !!target.closest('[data-testid="armory-equipment-slot"]') ||
+        !!target.closest('[data-testid="armory-crafting-currency"]') ||
+        !!target.closest(".armory-salvage-tile") ||
+        !!target.closest("button")
+      );
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      clearTargeting();
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    function handleClick(event: MouseEvent) {
+      if (isTargetingElement(event.target)) return;
+      clearTargeting();
+    }
+
+    function handleContextMenu(event: MouseEvent) {
+      if (event.target instanceof HTMLElement && event.target.closest('[data-testid="armory-crafting-currency"]')) {
+        return;
+      }
+      event.preventDefault();
+      clearTargeting();
+    }
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    document.addEventListener("click", handleClick);
+    document.addEventListener("contextmenu", handleContextMenu);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown, true);
+      document.removeEventListener("click", handleClick);
+      document.removeEventListener("contextmenu", handleContextMenu);
+    };
+  }, [activeCurrencyId, clearTargeting, salvageMode, salvageTarget]);
+
+  useEffect(() => {
+    if (editable) return;
+    clearTargeting();
+    setSalvageTarget(null);
+  }, [clearTargeting, editable]);
+
+  useEffect(() => {
+    if (!activeCurrencyId) return;
+    if ((craftingCurrencies[activeCurrencyId] ?? 0) <= 0) {
+      setActiveCurrencyId(null);
+    }
+  }, [activeCurrencyId, craftingCurrencies]);
+
+  useEffect(() => {
+    if (!salvageTarget) return;
+    if (!inventoryById.has(salvageTarget.instanceId)) {
+      setSalvageTarget(null);
+    }
+  }, [inventoryById, salvageTarget]);
+
+  function handleSelectCurrency(currencyId: CraftingCurrencyId) {
+    if (!editable || (craftingCurrencies[currencyId] ?? 0) <= 0) return;
+    setSalvageMode(false);
+    setActiveCurrencyId((current) => (current === currencyId ? null : currencyId));
+    playUISound("toggleOn");
+  }
+
+  function handleApplyCurrency(instance: GearInstance) {
+    if (!editable) return;
+    if (!activeCurrencyId) return;
+    if (!canApplyCraftingCurrency(activeCurrencyId, instance)) {
+      playUISound("error");
+      return;
+    }
+    const ok = onApplyCurrency(activeCurrencyId, instance.instanceId);
+    if (!ok) {
+      playUISound("error");
+      return;
+    }
+    playUISound("talentUnlock");
+    if ((craftingCurrencies[activeCurrencyId] ?? 0) <= 1) {
+      setActiveCurrencyId(null);
+    }
+  }
 
   return (
     <PageLayout>
@@ -224,7 +403,13 @@ export function ArmoryScreen({
           </div>
         </div>
         <div className="armory-workspace mt-2 min-w-0 flex-1">
-          <div className="armory-workspace-grid">
+          <div
+            className="armory-workspace-grid"
+            onPointerMove={(event) => {
+              if (salvageMode || activeCurrencyId) setCursorPoint({ x: event.clientX, y: event.clientY });
+            }}
+            onPointerLeave={() => setCursorPoint(null)}
+          >
             <CharacterAndEquipmentPanel
               characterId={characterId}
               locked={locked}
@@ -233,42 +418,69 @@ export function ArmoryScreen({
               editable={editable}
               requiredCharacterId={requiredCharacterId}
               draggedGear={draggedGear}
+              secondaryDragInstanceId={secondaryDragVisual?.instance.instanceId ?? null}
               isDraggingActive={isDraggingActive}
+              salvageMode={salvageMode}
+              activeCurrencyId={activeCurrencyId}
               onGearPointerStart={beginGearPointer}
               onGearPointerMove={moveGearPointer}
               onGearPointerEnd={finishGearPointer}
               onGearDoubleClick={handleGearDoubleClick}
+              onSalvage={setSalvageTarget}
+              onApplyCurrency={handleApplyCurrency}
             />
             <InventoryPanel
               packedItems={packedInventory.items}
-              occupiedRows={packedInventory.occupiedRows}
-              loadouts={loadouts}
+              packedCurrencies={packedCurrencies}
+              occupiedRows={occupiedRows}
               editable={editable}
-              browseOnly={browseOnly}
               draggedInstanceId={draggedGear?.instanceId ?? null}
-              isDraggingActive={isDraggingActive}
-              isAnimating={isAnimating}
+              draggedCurrencyId={draggedCurrencyId}
+              secondaryDragInstanceId={secondaryDragVisual?.instance.instanceId ?? null}
+              isDraggingActive={isDraggingActive || isCurrencyDraggingActive}
+              isAnimating={isAnimating || isCurrencyAnimating}
               boardRef={inventoryBoardRef}
+              salvageMode={salvageMode}
+              activeCurrencyId={activeCurrencyId}
               onSalvage={setSalvageTarget}
-              onSalvageModeChange={(active) => {
-                if (!active) setSalvageTarget(null);
+              hasSalvageableGear={editable && inventory.length > 0}
+              onToggleSalvageMode={() => {
+                setActiveCurrencyId(null);
+                setSalvageMode((active) => !active);
               }}
+              onSelectCurrency={handleSelectCurrency}
               {...(onSpawnDevGear ? { onSpawnDevGear } : {})}
               onGearPointerStart={beginGearPointer}
               onGearPointerMove={moveGearPointer}
               onGearPointerEnd={finishGearPointer}
               onGearDoubleClick={handleGearDoubleClick}
+              onCurrencyPointerStart={beginCurrencyPointer}
+              onCurrencyPointerMove={moveCurrencyPointer}
+              onCurrencyPointerEnd={finishCurrencyPointer}
+              craftingCurrencies={craftingCurrencies}
+              onApplyCurrency={handleApplyCurrency}
             />
           </div>
         </div>
-        {salvageTarget && salvageDefinition ? (
+        {salvageTarget ? (
           <ConfirmationDialog
-            title="Salvage Gear?"
-            description={`Permanently salvage ${getGearInstanceTitle(salvageTarget)}. ${formatSalvageValue(salvageDefinition.salvageValue)}.`}
+            title={
+              <>
+                Salvage <GearItemTitle instance={salvageTarget} />?
+              </>
+            }
+            description="Salvaging items yields crafting materials"
             confirmLabel="Salvage"
-            dimBackground={true}
+            icon={Sparkles}
+            // Intentional: do not darken the background behind this modal as per design preference
+            dimBackground={false}
+            dismissOnBackdrop={false}
             onCancel={() => setSalvageTarget(null)}
             onConfirm={() => {
+              if (!editable) {
+                setSalvageTarget(null);
+                return;
+              }
               // Intentional: do not exit salvage mode here — players often salvage multiple items in one session.
               // Salvage mode ends only via the Salvage Gear toggle, Escape, or outside click (see InventoryPanel).
               onSalvage(salvageTarget.instanceId);
@@ -276,65 +488,163 @@ export function ArmoryScreen({
             }}
           />
         ) : null}
-        {dragVisual && dragDefinition
+        {currencyDragVisual ? (
+          <CurrencyDragVisualPortal
+            visual={currencyDragVisual}
+            art={getCraftingCurrencyDefinition(currencyDragVisual.currencyId).art}
+            onComplete={clearCurrencyDragState}
+          />
+        ) : null}
+        {dragVisual && dragDefinition ? (
+          <GearDragVisualPortal visual={dragVisual} art={dragDefinition.art} onComplete={clearDragState} />
+        ) : null}
+        {secondaryDragVisual && secondaryDragDefinition ? (
+          <GearDragVisualPortal
+            visual={secondaryDragVisual}
+            art={secondaryDragDefinition.art}
+            testId="armory-gear-swap-visual"
+            onComplete={clearSecondaryDragState}
+          />
+        ) : null}
+        {salvageMode && cursorPoint
           ? createPortal(
-              <motion.div
-                data-testid="armory-gear-drag-visual"
-                className="pointer-events-none fixed z-[120] overflow-hidden rounded-xl"
-                initial={
-                  dragVisual.flyover
-                    ? {
-                        x: 0,
-                        y: 0,
-                        width: dragVisual.source.width,
-                        height: dragVisual.source.height,
-                        boxShadow: "0 0px 0px 0px rgba(0,0,0,0)",
-                      }
-                    : {
-                        boxShadow: "0 0px 0px 0px rgba(0,0,0,0)",
-                      }
-                }
-                style={{
-                  left: dragVisual.source.left,
-                  top: dragVisual.source.top,
-                  width: dragVisual.source.width,
-                  height: dragVisual.source.height,
-                  willChange: "transform,width,height",
-                }}
-                animate={{
-                  x: dragVisual.rect.left - dragVisual.source.left,
-                  y: dragVisual.rect.top - dragVisual.source.top,
-                  width: dragVisual.rect.width,
-                  height: dragVisual.rect.height,
-                  scale: 1,
-                  rotate: 0,
-                  boxShadow:
-                    dragVisual.settling || dragVisual.flyover
-                      ? "0 0px 0px 0px rgba(0,0,0,0)"
-                      : "0 25px 50px -12px rgba(0,0,0,0.5)",
-                }}
-                transition={{
-                  boxShadow: { duration: 1, ease: "easeOut" },
-                  default: dragVisual.flyover
-                    ? { duration: DOUBLE_CLICK_FLYOVER_MS / 1000, ease: [0.22, 1, 0.36, 1] }
-                    : dragVisual.releasing
-                      ? { duration: MAGNET_RELEASE_EASE_MS / 1000, ease: [0.22, 1, 0.36, 1] }
-                      : dragVisual.settling
-                        ? { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 }
-                        : { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 },
-                }}
-                onAnimationComplete={() => {
-                  if (dragVisual.settling || dragVisual.flyover) {
-                    clearDragState();
-                  }
-                }}
+              <Trash2
+                className="pointer-events-none fixed z-[130] h-6 w-6 -translate-x-1/2 -translate-y-1/2 text-red-300 drop-shadow-[0_2px_5px_rgba(0,0,0,0.9)]"
+                style={{ left: cursorPoint.x, top: cursorPoint.y }}
+              />,
+              document.body,
+            )
+          : null}
+        {activeCurrency && activeCurrencyId && cursorPoint
+          ? createPortal(
+              <div
+                data-testid="armory-crafting-cursor"
+                aria-label={activeCurrency.displayName}
+                className={cn(
+                  "pointer-events-none fixed z-[130] h-8 w-8 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded border shadow-[0_0_10px_rgba(0,0,0,0.85)]",
+                  CURRENCY_CURSOR_STYLES[activeCurrencyId].className,
+                )}
+                style={{ left: cursorPoint.x, top: cursorPoint.y }}
               >
-                <img src={dragDefinition.art} alt="" className="h-full w-full object-cover" />
-              </motion.div>,
+                <img src={activeCurrency.art} alt="" className="h-full w-full object-cover" />
+              </div>,
               document.body,
             )
           : null}
       </div>
     </PageLayout>
+  );
+}
+
+function CurrencyDragVisualPortal({
+  visual,
+  art,
+  onComplete,
+}: {
+  visual: CurrencyDragVisual;
+  art: string;
+  onComplete: () => void;
+}) {
+  return createPortal(
+    <motion.div
+      data-testid="armory-currency-drag-visual"
+      className="pointer-events-none fixed z-[120] overflow-hidden rounded-xl"
+      initial={{ boxShadow: "0 0px 0px 0px rgba(0,0,0,0)" }}
+      style={{
+        left: visual.source.left,
+        top: visual.source.top,
+        width: visual.source.width,
+        height: visual.source.height,
+        willChange: "transform,width,height",
+      }}
+      animate={{
+        x: visual.rect.left - visual.source.left,
+        y: visual.rect.top - visual.source.top,
+        width: visual.rect.width,
+        height: visual.rect.height,
+        boxShadow: visual.settling ? "0 0px 0px 0px rgba(0,0,0,0)" : "0 25px 50px -12px rgba(0,0,0,0.5)",
+      }}
+      transition={{
+        boxShadow: { duration: 1, ease: "easeOut" },
+        default: visual.releasing
+          ? { duration: MAGNET_RELEASE_EASE_MS / 1000, ease: [0.22, 1, 0.36, 1] }
+          : visual.settling
+            ? { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 }
+            : { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 },
+      }}
+      onAnimationComplete={() => {
+        if (visual.settling) onComplete();
+      }}
+    >
+      <img src={art} alt="" className="h-full w-full object-cover" />
+    </motion.div>,
+    document.body,
+  );
+}
+
+function GearDragVisualPortal({
+  visual,
+  art,
+  testId = "armory-gear-drag-visual",
+  onComplete,
+}: {
+  visual: GearDragVisual;
+  art: string;
+  testId?: string;
+  onComplete: () => void;
+}) {
+  return createPortal(
+    <motion.div
+      data-testid={testId}
+      className="pointer-events-none fixed z-[120] overflow-hidden rounded-xl"
+      initial={
+        visual.flyover
+          ? {
+              x: 0,
+              y: 0,
+              width: visual.source.width,
+              height: visual.source.height,
+              boxShadow: "0 0px 0px 0px rgba(0,0,0,0)",
+            }
+          : {
+              boxShadow: "0 0px 0px 0px rgba(0,0,0,0)",
+            }
+      }
+      style={{
+        left: visual.source.left,
+        top: visual.source.top,
+        width: visual.source.width,
+        height: visual.source.height,
+        willChange: "transform,width,height",
+      }}
+      animate={{
+        x: visual.rect.left - visual.source.left,
+        y: visual.rect.top - visual.source.top,
+        width: visual.rect.width,
+        height: visual.rect.height,
+        scale: 1,
+        rotate: 0,
+        boxShadow:
+          visual.settling || visual.flyover ? "0 0px 0px 0px rgba(0,0,0,0)" : "0 25px 50px -12px rgba(0,0,0,0.5)",
+      }}
+      transition={{
+        boxShadow: { duration: 1, ease: "easeOut" },
+        default: visual.flyover
+          ? { duration: DOUBLE_CLICK_FLYOVER_MS / 1000, ease: [0.22, 1, 0.36, 1] }
+          : visual.releasing
+            ? { duration: MAGNET_RELEASE_EASE_MS / 1000, ease: [0.22, 1, 0.36, 1] }
+            : visual.settling
+              ? { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 }
+              : { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 },
+      }}
+      onAnimationComplete={() => {
+        if (visual.settling || visual.flyover) {
+          onComplete();
+        }
+      }}
+    >
+      <img src={art} alt="" className="h-full w-full object-cover" />
+    </motion.div>,
+    document.body,
   );
 }

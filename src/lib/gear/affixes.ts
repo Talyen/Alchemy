@@ -1,5 +1,6 @@
 import type { GearAffixId } from "./affix-ids";
 import { LEGACY_GEAR_AFFIX_IDS } from "./affix-ids";
+import { gearAffixNameParts } from "./affix-name-parts";
 import { gearAffixCatalog, type GearAffixDefinition } from "./affix-catalog";
 import type { GearEffectManifest } from "./gear-effect-manifest";
 import { defaultGearEffects } from "./gear-effect-manifest";
@@ -85,15 +86,33 @@ export function rollAffixValue(def: GearAffixDefinition, rarity: GearRarity, rng
   return range.min + Math.floor(rng() * span);
 }
 
-export function getGearAffixDescriptionLines(
+export function getGearAffixDisplayName(affixId: GearAffixId): string {
+  const parts = gearAffixNameParts[affixId];
+  return parts?.prefix ?? parts?.suffix ?? affixId;
+}
+
+export function getGearAffixTooltipEntries(
   affixes: readonly GearAffixRoll[],
   _rarity?: GearRarity,
-): { key: string; text: string }[] {
+): { key: string; name: string; text: string }[] {
   return affixes.flatMap((roll, index) => {
     const def = gearAffixCatalog[roll.id];
     if (!def) return [];
-    return [{ key: `${roll.id}-${index}`, text: formatAffixDescription(def, roll) }];
+    return [
+      {
+        key: `${roll.id}-${index}`,
+        name: getGearAffixDisplayName(roll.id),
+        text: formatAffixDescription(def, roll),
+      },
+    ];
   });
+}
+
+export function getGearAffixDescriptionLines(
+  affixes: readonly GearAffixRoll[],
+  rarity?: GearRarity,
+): { key: string; text: string }[] {
+  return getGearAffixTooltipEntries(affixes, rarity).map(({ key, text }) => ({ key, text }));
 }
 
 export function affixMatchesAffinity(def: GearAffixDefinition, affinityKeywords: readonly string[]): boolean {

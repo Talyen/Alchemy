@@ -151,8 +151,19 @@ export function syncRunMaxHealthFromGear(
   loadoutsBefore: GearLoadouts,
   loadoutsAfter: GearLoadouts,
 ): void {
-  const oldBonus = computeGearManifest(characterId, inventory, loadoutsBefore).maxHealth;
-  const newBonus = computeGearManifest(characterId, inventory, loadoutsAfter).maxHealth;
+  syncRunMaxHealthFromGearMutation(characterId, inventory, loadoutsBefore, inventory, loadoutsAfter);
+}
+
+/** Apply gear max-health bonus delta after armory gear inventory/loadout mutations during an active run. */
+export function syncRunMaxHealthFromGearMutation(
+  characterId: CharacterId,
+  inventoryBefore: GearInstance[],
+  loadoutsBefore: GearLoadouts,
+  inventoryAfter: GearInstance[],
+  loadoutsAfter: GearLoadouts,
+): void {
+  const oldBonus = computeGearManifest(characterId, inventoryBefore, loadoutsBefore).maxHealth;
+  const newBonus = computeGearManifest(characterId, inventoryAfter, loadoutsAfter).maxHealth;
   const delta = newBonus - oldBonus;
   if (delta === 0) return;
 

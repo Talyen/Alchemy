@@ -5,6 +5,7 @@ import {
   getRawSaveSchemaVersion,
   isUnsupportedFutureSaveData,
 } from "@/features/alchemy/shared/storage/migrations";
+import { normalizePositiveInteger } from "@/lib/validation/migration/types";
 import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 
 describe("getRawSaveSchemaVersion", () => {
@@ -92,7 +93,7 @@ describe("normalizeAspectRatio", () => {
   });
 
   it("falls back for undefined", () => {
-    const result = normalizeSaveData({ });
+    const result = normalizeSaveData({});
     expect(result.selectedAspectRatio).toBe("auto");
   });
 });
@@ -157,23 +158,19 @@ describe("normalizeBoundedNumber", () => {
 
 describe("normalizePositiveInteger", () => {
   it("passes through positive integers", () => {
-    const result = normalizeSaveData({ contentVersion: 42 });
-    expect(result.contentVersion).toBe(42);
+    expect(normalizePositiveInteger(42, 10)).toBe(42);
   });
 
   it("passes through zero", () => {
-    const result = normalizeSaveData({ contentVersion: 0 });
-    expect(result.contentVersion).toBe(0);
+    expect(normalizePositiveInteger(0, 10)).toBe(0);
   });
 
   it("falls back for negative values", () => {
-    const result = normalizeSaveData({ contentVersion: -5 });
-    expect(result.contentVersion).toBeGreaterThan(0);
+    expect(normalizePositiveInteger(-5, 10)).toBe(10);
   });
 
   it("falls back for floats", () => {
-    const result = normalizeSaveData({ contentVersion: 3.14 });
-    expect(result.contentVersion).toBeGreaterThan(0);
+    expect(normalizePositiveInteger(3.14, 10)).toBe(10);
   });
 });
 
@@ -227,10 +224,10 @@ describe("normalizeCompletedDifficulties", () => {
         rogue: [],
         wizard: [],
         ranger: [],
-      alchemist: [],
-      warlock: [],
-      druid: [],
-      wildcard: [],
+        alchemist: [],
+        warlock: [],
+        druid: [],
+        wildcard: [],
       },
     });
     expect(result.completedDifficulties.knight).toEqual(["difficulty-1"]);
@@ -306,10 +303,10 @@ describe("normalizeSaveData", () => {
         rogue: [],
         wizard: [],
         ranger: [],
-      alchemist: [],
-      warlock: [],
-      druid: [],
-      wildcard: [],
+        alchemist: [],
+        warlock: [],
+        druid: [],
+        wildcard: [],
       },
     };
     const result = normalizeSaveData(save);

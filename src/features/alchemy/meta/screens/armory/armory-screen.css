@@ -48,3 +48,22 @@
     grid-template-columns: 3fr 2fr;
   }
 }
+
+@keyframes craft-flash {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 20px 4px rgba(245, 158, 11, 0.8);
+    background-color: rgba(255, 253, 245, 0.75);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.08);
+    box-shadow: 0 0 0px 0px rgba(245, 158, 11, 0);
+    background-color: rgba(255, 253, 245, 0);
+  }
+}
+
+.craft-flash-overlay {
+  animation: craft-flash 0.55s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}

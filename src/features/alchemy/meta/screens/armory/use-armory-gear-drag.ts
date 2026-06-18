@@ -6,17 +6,20 @@ import {
   gearDefinitions,
   INVENTORY_COLS,
   INVENTORY_VISIBLE_ROWS,
-  findFirstInventoryPlacement,
   findNearestInventoryPlacement,
   inventoryPlacementRect,
   isGearCompatibleWithSlot,
   type GearInstance,
   type GearLoadout,
   type GearSlot,
+  resolveInventoryReturnPlacement,
+  type GearBoardPositions,
   type InventoryPlacement,
   type PackedInventory,
+  type PackedInventoryItem,
 } from "@/lib/gear";
 import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
+import { resolveEquipSwap } from "./resolve-equip-swap";
 
 export type GearDragOrigin =
   | { kind: "inventory"; placement: { col: number; row: number } }
@@ -41,8 +44,8 @@ const MAGNET_RELEASE_HYSTERESIS_PX = 18;
 export const DOUBLE_CLICK_FLYOVER_MS = 280;
 export const MAGNET_RELEASE_EASE_MS = 140;
 
-type DragPoint = { x: number; y: number };
-type DragRect = { left: number; top: number; width: number; height: number };
+export type DragPoint = { x: number; y: number };
+export type DragRect = { left: number; top: number; width: number; height: number };
 export type DragDestination =
   | { kind: "equipment"; slot: GearSlot; rect: DragRect }
   | { kind: "inventory"; placement: InventoryPlacement; rect: DragRect };
@@ -70,8 +73,12 @@ type UseArmoryGearDragOptions = {
   characterId: CharacterId;
   editable: boolean;
   loadout: GearLoadout;
+  inventoryById: Map<string, GearInstance>;
   packedInventory: PackedInventory;
   inventoryBoardRef: RefObject<HTMLDivElement | null>;
+  boardPositions: GearBoardPositions;
+  equippedReturnPositions: GearBoardPositions;
+  boardObstacles: PackedInventoryItem<{ instanceId: string }>[];
   onEquip: (
     characterId: CharacterId,
     slot: GearSlot,
@@ -86,20 +93,26 @@ export function useArmoryGearDrag({
   characterId,
   editable,
   loadout,
+  inventoryById,
   packedInventory,
   inventoryBoardRef,
+  boardPositions,
+  equippedReturnPositions,
+  boardObstacles,
   onEquip,
   onUnequip,
   onMoveItem,
 }: UseArmoryGearDragOptions) {
   const [draggedGear, setDraggedGear] = useState<GearInstance | null>(null);
   const [dragVisual, setDragVisual] = useState<GearDragVisual | null>(null);
+  const [secondaryDragVisual, setSecondaryDragVisual] = useState<GearDragVisual | null>(null);
   const pendingDragRef = useRef<PendingGearDrag | null>(null);
   const activeDragRef = useRef<GearDragVisual | null>(null);
   const pendingFlyoverCommitRef = useRef<(() => void) | null>(null);
   const cleanupTimerRef = useRef<number | null>(null);
+  const secondaryCleanupTimerRef = useRef<number | null>(null);
 
-  const isAnimating = !!dragVisual?.settling || !!dragVisual?.flyover;
+  const isAnimating = !!dragVisual?.settling || !!dragVisual?.flyover || !!secondaryDragVisual?.flyover;
   const isDraggingActive =
     !!draggedGear && (!dragVisual || (!dragVisual.settling && !dragVisual.flyover && !dragVisual.releasing));
 
@@ -115,8 +128,65 @@ export function useArmoryGearDrag({
   useEffect(
     () => () => {
       if (cleanupTimerRef.current !== null) window.clearTimeout(cleanupTimerRef.current);
+      if (secondaryCleanupTimerRef.current !== null) window.clearTimeout(secondaryCleanupTimerRef.current);
     },
     [],
+  );
+
+  const clearSecondaryDragState = useCallback(() => {
+    if (secondaryCleanupTimerRef.current !== null) {
+      window.clearTimeout(secondaryCleanupTimerRef.current);
+      secondaryCleanupTimerRef.current = null;
+    }
+    setSecondaryDragVisual(null);
+  }, []);
+
+  const launchSecondarySwapAnimation = useCallback(
+    (displaced: GearInstance, source: DragRect, vacatedPlacement: InventoryPlacement) => {
+      const board = inventoryBoardRef.current;
+      if (!board) return;
+      const metrics = readInventoryBoardMetrics(board);
+      const footprint = footprintForInstance(displaced);
+      if (!metrics || !footprint) return;
+      const { cellSize, gap, boardRect, scrollTop } = metrics;
+      const localRect = inventoryPlacementRect(vacatedPlacement, footprint, { cellSize, gap });
+      const destinationRect: DragRect = {
+        left: boardRect.left + localRect.left,
+        top: boardRect.top + localRect.top - scrollTop,
+        width: localRect.width,
+        height: localRect.height,
+      };
+      setSecondaryDragVisual({
+        instance: displaced,
+        source,
+        rect: destinationRect,
+        origin: { kind: "inventory", placement: vacatedPlacement },
+        destination: { kind: "inventory", placement: vacatedPlacement, rect: destinationRect },
+        flyover: true,
+      });
+      if (secondaryCleanupTimerRef.current !== null) window.clearTimeout(secondaryCleanupTimerRef.current);
+      secondaryCleanupTimerRef.current = window.setTimeout(() => {
+        clearSecondaryDragState();
+      }, DOUBLE_CLICK_FLYOVER_MS);
+    },
+    [clearSecondaryDragState, inventoryBoardRef],
+  );
+
+  const maybeLaunchSwapAnimation = useCallback(
+    (instance: GearInstance, slot: GearSlot, slotRect: DragRect, vacatedPlacement: InventoryPlacement) => {
+      const { displaced } = resolveEquipSwap({
+        loadout,
+        slot,
+        instance,
+        vacatedPlacement,
+        inventoryById,
+        packedItems: packedInventory.items,
+      });
+      if (displaced) {
+        launchSecondarySwapAnimation(displaced, slotRect, vacatedPlacement);
+      }
+    },
+    [inventoryById, launchSecondarySwapAnimation, loadout, packedInventory.items],
   );
 
   const getInventoryDestination = useCallback(
@@ -129,7 +199,7 @@ export function useArmoryGearDrag({
       const { cellSize, gap, boardRect, scrollTop } = metrics;
       const renderedRows = Math.max(INVENTORY_VISIBLE_ROWS, packedInventory.occupiedRows + footprint.h);
       const placement = findNearestInventoryPlacement(
-        packedInventory.items,
+        boardObstacles,
         instance.instanceId,
         footprint,
         { cellSize, gap, cols: INVENTORY_COLS, rows: renderedRows },
@@ -163,7 +233,7 @@ export function useArmoryGearDrag({
         },
       };
     },
-    [inventoryBoardRef, packedInventory],
+    [inventoryBoardRef, packedInventory.occupiedRows, boardObstacles],
   );
 
   const getDragDestination = useCallback(
@@ -352,6 +422,9 @@ export function useArmoryGearDrag({
 
       if (destination.kind === "equipment") {
         const vacatedPlacement = pending.origin.kind === "inventory" ? pending.origin.placement : undefined;
+        if (vacatedPlacement) {
+          maybeLaunchSwapAnimation(visual.instance, destination.slot, destination.rect, vacatedPlacement);
+        }
         onEquip(characterId, destination.slot, visual.instance, vacatedPlacement ? { vacatedPlacement } : undefined);
       } else {
         onMoveItem(visual.instance.instanceId, destination.placement.col, destination.placement.row);
@@ -363,7 +436,7 @@ export function useArmoryGearDrag({
       playUISound("gearMove");
       clearDragAfterAnimation();
     },
-    [characterId, updateActiveDrag, onEquip, onUnequip, onMoveItem, clearDragAfterAnimation],
+    [characterId, updateActiveDrag, onEquip, onUnequip, onMoveItem, clearDragAfterAnimation, maybeLaunchSwapAnimation],
   );
 
   const animateGearTransfer = useCallback(
@@ -399,16 +472,13 @@ export function useArmoryGearDrag({
           `[data-testid='armory-equipment-slot'][data-slot='${slot}']`,
         );
         if (!slotElement) return;
-        animateGearTransfer(
-          instance,
-          origin,
-          source,
-          { kind: "equipment", slot, rect: slotElement.getBoundingClientRect() },
-          () =>
-            onEquip(characterId, slot, instance, {
-              vacatedPlacement: origin.placement,
-            }),
-        );
+        const slotRect = slotElement.getBoundingClientRect();
+        animateGearTransfer(instance, origin, source, { kind: "equipment", slot, rect: slotRect }, () => {
+          maybeLaunchSwapAnimation(instance, slot, slotRect, origin.placement);
+          onEquip(characterId, slot, instance, {
+            vacatedPlacement: origin.placement,
+          });
+        });
         return;
       }
 
@@ -418,10 +488,12 @@ export function useArmoryGearDrag({
       const footprint = footprintForInstance(instance);
       if (!metrics || !footprint) return;
       const { cellSize, gap, boardRect, scrollTop } = metrics;
-      const placement = findFirstInventoryPlacement(
-        packedInventory.items,
+      const preferred = boardPositions[instance.instanceId] ?? equippedReturnPositions[instance.instanceId];
+      const placement = resolveInventoryReturnPlacement(
+        boardObstacles,
         instance.instanceId,
         footprint,
+        preferred,
         INVENTORY_COLS,
       );
       const localRect = inventoryPlacementRect(placement, footprint, { cellSize, gap });
@@ -445,17 +517,22 @@ export function useArmoryGearDrag({
       characterId,
       loadout,
       packedInventory.items,
+      boardObstacles,
       inventoryBoardRef,
       animateGearTransfer,
       onEquip,
       onUnequip,
       onMoveItem,
+      maybeLaunchSwapAnimation,
+      boardPositions,
+      equippedReturnPositions,
     ],
   );
 
   return {
     draggedGear,
     dragVisual,
+    secondaryDragVisual,
     isAnimating,
     isDraggingActive,
     beginGearPointer,
@@ -463,5 +540,6 @@ export function useArmoryGearDrag({
     finishGearPointer,
     handleGearDoubleClick,
     clearDragState,
+    clearSecondaryDragState,
   };
 }

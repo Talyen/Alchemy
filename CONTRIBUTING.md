@@ -32,7 +32,7 @@ First-time Playwright: `npx playwright install chromium`.
 | Save / persistence | `storage/`, `save-schemas/`, `active-run.ts` | `npm test -- tests/features/storage` + `tests/save-persistence.spec.ts` + `npm run test:e2e:prepush` |
 | Battle / cards | `src/lib/battle/`, `src/lib/game-data/` | `npm test -- tests/lib/battle` + `tests/lib/game-data/descriptions-match-effects.test.ts` |
 | Routing / destinations | `src/lib/routing/` | `npm test -- tests/lib/routing/destination-availability.test.ts` |
-| Gear | `src/lib/gear/` | `npm test -- tests/lib/gear tests/features/stores/gear-store.test.ts` |
+| Gear | `src/lib/gear/`, Armory screens | `npm test -- tests/lib/gear tests/features/stores/gear-store.test.ts tests/features/stores/gear-crafting.test.ts tests/features/screens/armory-screen.test.tsx tests/features/screens/armory-resolve-equip-swap.test.ts tests/features/storage/gear-save.test.ts` + `npm run test:e2e -- tests/armory-crafting.spec.ts tests/gear-flow.spec.ts` |
 | Integration-style unit tests | `run-domain.test.ts`, `storage.test.ts`, `reward-flow*.test.ts`, `shell/*-hook.test.ts` | `npm test -- tests/features/stores/run-domain.test.ts tests/features/storage tests/features/navigation/reward-flow tests/features/shell` |
 | Battle E2E helpers | `tests/pages/battle-page.ts`, `tests/helpers.ts` (`enableFastMode`) | `npm run test:e2e:prepush` (animation canary) + `npm run test:e2e:main-gate` before pushing to `main` |
 | UI flows | `screens/`, controllers | Relevant `tests/*.spec.ts` + `npm run test:e2e:prepush` |
@@ -40,7 +40,7 @@ First-time Playwright: `npx playwright install chromium`.
 
 ## E2E helpers
 
-Layout: bootstrap helpers in [`tests/e2e/`](tests/e2e/) (`battle-setup.ts`, `navigation.ts`, `errors.ts`), re-exported from [`tests/helpers.ts`](tests/helpers.ts); page objects in [`tests/pages/`](tests/pages/); Playwright fixtures in [`tests/fixtures/e2e.ts`](tests/fixtures/e2e.ts).
+Layout: bootstrap helpers in [`tests/e2e/`](tests/e2e/) (`battle-setup.ts`, `armory.ts`, `navigation.ts`, `errors.ts`), re-exported from [`tests/helpers.ts`](tests/helpers.ts); page objects in [`tests/pages/`](tests/pages/); Playwright fixtures in [`tests/fixtures/e2e.ts`](tests/fixtures/e2e.ts).
 
 ### When to use which test import
 

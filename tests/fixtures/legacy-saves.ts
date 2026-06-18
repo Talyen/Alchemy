@@ -418,6 +418,28 @@ export function legacySchemaV5Save() {
   };
 }
 
+function legacySchemaV6Save() {
+  return {
+    ...legacySchemaV5Save(),
+    saveSchemaVersion: 6,
+  };
+}
+
+function legacySchemaV7Save() {
+  return {
+    ...legacySchemaV6Save(),
+    saveSchemaVersion: 7,
+    craftingCurrencies: {
+      "discordant-dice": 1,
+      "sprig-of-growth": 0,
+      voidstone: 0,
+      "ascension-seal": 0,
+      "severance-maw": 0,
+      "smiths-whetstone": 0,
+    },
+  };
+}
+
 export const LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () => Record<string, unknown>> = {
   0: legacyCampaignRunSave,
   1: legacySchemaV1Save,
@@ -425,6 +447,8 @@ export const LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () => Record
   3: legacySchemaV3Save,
   4: shippedBaselineSave,
   5: legacySchemaV5Save,
+  6: legacySchemaV6Save,
+  7: legacySchemaV7Save,
 };
 
 export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, unknown>> = {

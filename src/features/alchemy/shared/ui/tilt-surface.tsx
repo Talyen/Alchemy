@@ -13,7 +13,6 @@ import {
 } from "react";
 
 import { cn } from "@/lib/utils";
-import { NO_FOCUS_RING } from "@/lib/ui/focus";
 
 import { staticCardTransform } from "../config/layout";
 import { clearTiltElement, clearTiltFromEvent, DEFAULT_TILT_STRENGTH, setTiltFromEvent } from "../utils";
@@ -141,7 +140,6 @@ export function TiltSurface({
         data-tilt-strength={String(tiltStrength)}
         className={cn(
           "tilt-surface",
-          NO_FOCUS_RING,
           selected && "ring-2 ring-primary ring-offset-4 ring-offset-background",
           disabled && "cursor-default grayscale",
           dragging && "opacity-0",

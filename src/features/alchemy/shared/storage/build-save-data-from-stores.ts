@@ -27,6 +27,8 @@ export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null):
     gearInventory: gear.inventory,
     gearLoadouts: gear.loadouts,
     gearBoardPositions: gear.boardPositions,
+    craftingCurrencyBoardPositions: gear.currencyBoardPositions,
+    craftingCurrencies: gear.craftingCurrencies,
     talentXP: run.talentXP,
     unlockedTalents: run.unlockedTalents,
     musicVolume: app.musicVol,

@@ -12,7 +12,7 @@ function instance(
 }
 
 describe("getGearInstanceTitle", () => {
-  it("returns the base display name when an item has no affixes", () => {
+  it("returns the base display name for basic items", () => {
     expect(
       getGearInstanceTitle(
         instance({
@@ -23,68 +23,29 @@ describe("getGearInstanceTitle", () => {
     ).toBe("Leather Helm");
   });
 
-  it("returns a deterministic title for the same instance", () => {
-    const gear = instance({
-      instanceId: "sword-a",
-      definitionId: "longsword-basic",
-      affixes: [
-        { id: "flat-burn", value: 2 },
-        { id: "gold-on-kill", value: 1 },
-        { id: "leech-potency", value: 10 },
-      ],
-    });
-
-    const first = getGearInstanceTitle(gear);
-    const second = getGearInstanceTitle(gear);
-    expect(first).toBe(second);
-    expect(first).toContain("Longsword");
+  it("prefixes astral items with Astral", () => {
+    expect(
+      getGearInstanceTitle(
+        instance({
+          instanceId: "helm-astral",
+          definitionId: "leather-helm-astral",
+        }),
+      ),
+    ).toBe("Astral Leather Helm");
   });
 
-  it("can change the picked affix epithets when the instance id changes", () => {
-    const affixes = [
-      { id: "flat-burn", value: 2 },
-      { id: "gold-on-kill", value: 1 },
-    ];
-    const left = getGearInstanceTitle(
-      instance({ instanceId: "item-left", definitionId: "longsword-basic", affixes }),
-    );
-    const right = getGearInstanceTitle(
-      instance({ instanceId: "item-right", definitionId: "longsword-basic", affixes }),
-    );
-
-    expect(left).toContain("Longsword");
-    expect(right).toContain("Longsword");
-  });
-
-  it("uses prefix-only, suffix-only, and combined templates", () => {
+  it("ignores affix rolls when naming items", () => {
     expect(
       getGearInstanceTitle(
         instance({
-          instanceId: "prefix-only",
+          instanceId: "sword-a",
           definitionId: "longsword-basic",
-          affixes: [{ id: "leech-potency", value: 10 }],
+          affixes: [
+            { id: "flat-burn", value: 2 },
+            { id: "gold-on-kill", value: 1 },
+          ],
         }),
       ),
-    ).toBe("Leeching Longsword");
-
-    expect(
-      getGearInstanceTitle(
-        instance({
-          instanceId: "suffix-only",
-          definitionId: "longsword-basic",
-          affixes: [{ id: "gold-on-kill", value: 1 }],
-        }),
-      ),
-    ).toBe("Longsword of Greed");
-
-    expect(
-      getGearInstanceTitle(
-        instance({
-          instanceId: "both-parts",
-          definitionId: "longsword-basic",
-          affixes: [{ id: "flat-burn", value: 1 }],
-        }),
-      ),
-    ).toBe("Blazing Longsword of Embers");
+    ).toBe("Longsword");
   });
 });

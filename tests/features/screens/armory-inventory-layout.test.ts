@@ -9,6 +9,7 @@ import {
   inventoryPlacementRect,
   packInventory,
   packInventoryWithPositions,
+  packCurrencyWithPositions,
   type GearFootprint,
 } from "@/lib/gear";
 
@@ -85,6 +86,21 @@ describe("packInventory", () => {
     ]);
   });
 
+  it("reserves equipped item cells so visible inventory does not auto-pack into them", () => {
+    const equipped = { instanceId: "equipped", definitionId: "leather-helm-basic" };
+    const visible = { instanceId: "visible", definitionId: "leather-belt-basic" };
+    const result = packInventoryWithPositions(
+      [visible],
+      4,
+      {
+        equipped: { col: 1, row: 1 },
+        visible: { col: 3, row: 1 },
+      },
+      [equipped],
+    );
+    expect(result.items).toEqual([{ item: visible, col: 3, row: 1, w: 2, h: 1 }]);
+  });
+
   it("repacks items when saved positions collide", () => {
     const items = [
       { instanceId: "item1", definitionId: "leather-helm-basic" },
@@ -98,6 +114,24 @@ describe("packInventory", () => {
     expect(result.items[0]).toMatchObject({ item: items[0], col: 1, row: 1 });
     expect(result.items[1]?.col).toBeGreaterThan(0);
     expect(result.items[1]?.item).toBe(items[1]);
+  });
+
+  it("keeps saved crafting currency cells and respects gear occupancy", () => {
+    const gear = [{ item: { instanceId: "helm", definitionId: "leather-helm-basic" }, col: 1, row: 1, w: 2, h: 2 }];
+    const result = packCurrencyWithPositions(
+      ["voidstone", "discordant-dice"],
+      7,
+      {
+        voidstone: { col: 4, row: 1 },
+        "discordant-dice": { col: 1, row: 1 },
+      },
+      gear,
+    );
+
+    expect(result).toEqual([
+      { currencyId: "voidstone", col: 4, row: 1, w: 1, h: 1 },
+      { currencyId: "discordant-dice", col: 3, row: 1, w: 1, h: 1 },
+    ]);
   });
 
   it("finds the nearest collision-free position using the full footprint", () => {

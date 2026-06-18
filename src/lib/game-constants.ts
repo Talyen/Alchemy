@@ -142,6 +142,8 @@ export const GEAR_AFFIX_COUNT = {
   basic: { min: 1, max: 2 },
   astral: { min: 3, max: 4 },
 } as const;
+/** Chance to roll the minimum affix count (vs max) when a rarity has a range. */
+export const GEAR_AFFIX_COUNT_MIN_WEIGHT = 0.8;
 export const MYSTERY_CARD_CHOICES = 3;
 export const MIXED_POTION_CARD_ID = "mixed-potion";
 export const POTION_CARD_ID_SUFFIX = "-potion";

@@ -7,8 +7,10 @@ import {
   defaultGearEffects,
   effectsForInstance,
   equipGear,
-  formatSalvageValue,
   gearDefinitions,
+  getGearAffixDisplayName,
+  getGearAffixTooltipEntries,
+  getGearInstanceTooltipEntries,
   isGearCompatibleWithSlot,
   isTwoHanded,
   legacyFlatPhysicalModifiersToAffixRolls,
@@ -117,10 +119,14 @@ describe("gear domain", () => {
     );
   });
 
-  it("rolls basic and astral affix counts in range", () => {
+  it("rolls basic and astral affix counts with 80/20 min vs max weighting", () => {
     expect(rollAffixCount("basic", () => 0)).toBe(1);
+    expect(rollAffixCount("basic", () => 0.79)).toBe(1);
+    expect(rollAffixCount("basic", () => 0.8)).toBe(2);
     expect(rollAffixCount("basic", () => 0.99)).toBe(2);
     expect(rollAffixCount("astral", () => 0)).toBe(3);
+    expect(rollAffixCount("astral", () => 0.79)).toBe(3);
+    expect(rollAffixCount("astral", () => 0.8)).toBe(4);
     expect(rollAffixCount("astral", () => 0.99)).toBe(4);
   });
 
@@ -205,24 +211,30 @@ describe("gear domain", () => {
     expect(loadouts.knight["left-ring"]).toBeNull();
   });
 
-  it("formats salvage values for display", () => {
-    expect(formatSalvageValue({ wood: 0, iron: 1, herbs: 0, food: 0, crystal: 0 })).toBe("Salvage for 1 Iron");
-  });
-
-  it("only salvages unequipped gear for its configured materials", () => {
+  it("salvages equipped gear for crafting currencies and clears loadouts", () => {
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-ring", ring, [ring]);
-    expect(salvageGear([ring], loadouts, ring.instanceId)).toBeNull();
-    const unequipped = unequipGear(loadouts, "knight", "left-ring");
-    expect(salvageGear([ring], unequipped, ring.instanceId)).toEqual({
-      inventory: [],
-      materials: { wood: 0, iron: 1, herbs: 0, food: 0, crystal: 0 },
+    const result = salvageGear([ring], loadouts, ring.instanceId, () => 0);
+    expect(result?.inventory).toEqual([]);
+    expect(result?.loadouts.knight["left-ring"]).toBeNull();
+    expect(result?.yieldedCurrencies).toEqual({
+      "discordant-dice": 1,
+      "sprig-of-growth": 1,
+      voidstone: 1,
+      "ascension-seal": 0,
+      "severance-maw": 0,
+      "smiths-whetstone": 0,
     });
   });
 
-  it("reports salvage eligibility via canSalvageGear", () => {
+  it("reports equipped gear as salvage eligible", () => {
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-ring", ring, [ring]);
-    expect(canSalvageGear(loadouts, ring.instanceId)).toBe(false);
-    expect(canSalvageGear(unequipGear(loadouts, "knight", "left-ring"), ring.instanceId)).toBe(true);
+    expect(canSalvageGear([ring], ring.instanceId)).toBe(true);
+    expect(unequipGear(loadouts, "knight", "left-ring").knight["left-ring"]).toBeNull();
+  });
+
+  it("does not report nonexistent gear as salvage eligible", () => {
+    expect(canSalvageGear([ring], "missing-ring")).toBe(false);
+    expect(salvageGear([ring], createEmptyGearLoadouts(), "missing-ring")).toBeNull();
   });
 
   it("normalizes partial loadouts and exclusive references", () => {
@@ -279,5 +291,30 @@ describe("gear domain", () => {
     });
     expect(basic?.definitionId).toBe("double-axe-basic");
     expect(astral?.definitionId).toBe("double-axe-astral");
+  });
+
+  it("uses affix epithets for tooltip display names", () => {
+    expect(getGearAffixDisplayName("flat-physical")).toBe("Ironbound");
+    expect(getGearAffixDisplayName("gold-on-kill")).toBe("Greed");
+  });
+
+  it("builds structured affix tooltip entries with names", () => {
+    const entries = getGearAffixTooltipEntries([{ id: "flat-physical", value: 2 }]);
+    expect(entries).toEqual([
+      {
+        key: "flat-physical-0",
+        name: "Ironbound",
+        text: "Increases Physical damage by 2",
+      },
+    ]);
+  });
+
+  it("includes affix names in gear instance tooltip entries", () => {
+    const entries = getGearInstanceTooltipEntries({
+      instanceId: "helm-1",
+      definitionId: "leather-helm-basic",
+      affixes: [{ id: "flat-physical", value: 1 }],
+    });
+    expect(entries[0]?.name).toBe("Ironbound");
   });
 });

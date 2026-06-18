@@ -1,37 +1,12 @@
 # Alchemy — Code quality audits
 
-Agent prompts for **code quality** — simplification, hardening, and readability. Copy a section into your agent with target paths or a diff attached. For domain wiring (cards, saves, screens, gear), use [WORKFLOWS.md](./docs/WORKFLOWS.md) and [CONTRIBUTING.md](./CONTRIBUTING.md) instead.
+Agent prompts for **code quality and UI/UX** — simplification, hardening, readability, and interaction/layout review. Copy a section into your agent with target paths or a diff attached. For domain wiring (cards, saves, screens, gear), use [WORKFLOWS.md](./docs/WORKFLOWS.md) and [CONTRIBUTING.md](./CONTRIBUTING.md) instead.
 
 **Docs:** [AGENTS.md](./AGENTS.md) (rules) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks & tests)
 
 **Verification tiers:** narrow area tests from [CONTRIBUTING — What to run when you change](./CONTRIBUTING.md#what-to-run-when-you-change) · **Default gate:** `npm run lint:ci && npm test` · **Pre-push parity:** `npm run check:push` · **Save/ship:** `npm run check:ship`
 
----
-
-## How to use
-
-- **Attach context:** target paths, diff, or "audit entire module X"
-- **Mode:** `audit-only` (report findings, do not fix) or `fix in scope` (implement safe fixes within attached paths)
-- **Scope:** prefer `audit-only` for broad module reviews; `fix in scope` for targeted refactors
-- **Ordering:** run Simplicity + Over-engineering together for refactors; run Behavior hardening after functional fixes
-- **Output format:** numbered findings with severity (`blocker` / `warning` / `nit`), file path, and one-line fix; skip praise
-- **Dirty worktree:** scope edits to attached paths; do not run repo-wide formatters (see [AGENTS.md — Working safely](./AGENTS.md#working-safely))
-
-Each audit below uses: **Goal** · **Check** · **Docs** · **When done**
-
----
-
-## Audit index
-
-| When you want to… | Audit |
-|-------------------|-------|
-| Cut LOC, dead code, duplication | [Simplicity & LOC reduction](#simplicity--loc-reduction-audit) |
-| Remove unnecessary abstraction | [Over-engineering](#over-engineering-audit) |
-| Improve naming and flow | [Readability & clarity](#readability--clarity-audit) |
-| Fix unsafe typing | [Type safety](#type-safety-audit) |
-| Verify layer boundaries | [Architecture compliance](#architecture-compliance-audit) |
-| Strengthen edge cases and invariants | [Behavior hardening](#behavior-hardening-audit) |
-| Improve test signal-to-noise | [Test quality](#test-quality-audit) |
+Each audit uses: **Goal** · **Check** · **Docs** · **When done**
 
 ---
 
@@ -161,3 +136,36 @@ Each audit below uses: **Goal** · **Check** · **Docs** · **When done**
 **Docs:** [CONTRIBUTING — E2E helpers](./CONTRIBUTING.md#e2e-helpers)
 
 **When done:** relevant `npm test` paths + `npm run test:e2e:prepush` if battle/page helpers changed
+
+---
+
+## UI interaction & feedback audit
+
+**Goal:** Find bugs desktop players feel but types miss — broken clicks, drag ghosts, stuck modes, missing feedback. **Desktop keyboard + mouse only** — hover tooltips and cursor feedback are fine.
+
+**Check:**
+
+- Pointer/drag: every `setPointerCapture` has matching release on up, cancel, and unmount; cursor/body styles restore on exit; no ghost clicks after drag
+- One clear interaction mode at a time — drag, modal, targeting, scroll should not fight each other
+- Hover tooltips: show/hide cleanly (no stuck tooltip after drag/mode change); do not block clicks on underlying controls
+- Feedback: clicks/buttons give visible response; destructive actions need confirm + working cancel/backdrop dismiss
+- Keyboard: focusable controls have names; Escape cancels overlays where users expect it
+- After changes: note a 30s manual repro; ask the user if visual behavior is unclear
+
+**When done:** relevant screen/unit tests + `npm run lint:ci`
+
+---
+
+## Layout & visual containment audit
+
+**Goal:** Find clipping, overflow, and mis-scaled UI from structure/CSS — not pixel-perfect polish.
+
+**Check:**
+
+- Walk ancestors of popovers/tooltips/drag visuals for `overflow-hidden`, `transform`, and scroll containers that clip floats
+- Flex/grid scroll areas need `min-h-0` / `min-w-0` on the scrolling child
+- Floats stay on-screen (flip/clamp/portal) and do not block clicks on underlying controls unintentionally
+- In-stage UI (`#vr-stage`): prefer `cqh`/`cqw` over `vw`/`vh` so scaled layouts stay consistent
+- Check narrow + wide desktop viewports when layout changed; ask the user if clipping is uncertain
+
+**When done:** `tests/features/ui/` or relevant `tests/*.spec.ts` if placement/layout logic changed; `npm run lint:ci`
