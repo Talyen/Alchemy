@@ -31,6 +31,8 @@ import {
   CRAFTING_CURRENCY_IDS,
   INVENTORY_COLS,
   GEAR_CHARACTER_IDS,
+  resolveMoveWithSwap,
+  packMixedBoard,
 } from "@/lib/gear";
 
 const LEGACY_ARMORY_POSITIONS_KEY = "alchemy-armory-positions";
@@ -47,6 +49,42 @@ function readLegacyBoardPositions(): GearBoardPositions {
   } catch {
     return {};
   }
+}
+
+type BoardEntry =
+  | { id: string; kind: "gear"; item: GearInstance; saved?: { col: number; row: number } }
+  | { id: string; kind: "currency"; item: CraftingCurrencyId; saved?: { col: number; row: number } };
+
+function buildBoardItemsForCharacter(state: GearStore, characterId: CharacterId): BoardEntry[] {
+  const equippedInstanceIds = new Set(Object.values(state.loadouts[characterId] ?? {}).filter(Boolean) as string[]);
+  const availableInventory = (state.inventories[characterId] ?? []).filter(
+    (item) => !equippedInstanceIds.has(item.instanceId),
+  );
+  const activeCurrencies = CRAFTING_CURRENCY_IDS.filter((id) => (state.craftingCurrencies[id] ?? 0) > 0);
+  const gearPositions = state.boardPositionsByCharacter[characterId] ?? {};
+  const currencyPositions = state.currencyBoardPositionsByCharacter[characterId] ?? {};
+
+  const entries: BoardEntry[] = [];
+
+  for (const item of availableInventory) {
+    const saved = gearPositions[item.instanceId];
+    if (saved) {
+      entries.push({ id: item.instanceId, kind: "gear", item, saved });
+    } else {
+      entries.push({ id: item.instanceId, kind: "gear", item });
+    }
+  }
+
+  for (const currencyId of activeCurrencies) {
+    const saved = currencyPositions[currencyId];
+    if (saved) {
+      entries.push({ id: currencyId, kind: "currency", item: currencyId, saved });
+    } else {
+      entries.push({ id: currencyId, kind: "currency", item: currencyId });
+    }
+  }
+
+  return entries;
 }
 
 function resolveMoveItemAndSwap(
@@ -66,143 +104,51 @@ function resolveMoveItemAndSwap(
     ...(state.currencyBoardPositionsByCharacter[characterId] ?? {}),
   };
 
-  const equippedInstanceIds = new Set(Object.values(state.loadouts[characterId] ?? {}).filter(Boolean) as string[]);
-  const availableInventory = (state.inventories[characterId] ?? []).filter(
-    (item) => !equippedInstanceIds.has(item.instanceId),
-  );
-  const activeCurrencies = CRAFTING_CURRENCY_IDS.filter((id) => (state.craftingCurrencies[id] ?? 0) > 0);
+  const entries = buildBoardItemsForCharacter(state, characterId);
 
-  const getFootprint = (id: string): { w: number; h: number } | null => {
-    const gearItem = availableInventory.find((item) => item.instanceId === id);
-    if (gearItem) {
-      return footprintForInstance(gearItem);
-    }
-    if (activeCurrencies.includes(id as CraftingCurrencyId)) {
-      return { w: 1, h: 1 };
-    }
-    return null;
-  };
-
-  const movingFootprint = getFootprint(movingId);
-  if (!movingFootprint) {
-    return { nextGearPositions, nextCurrencyPositions };
-  }
-
-  type BoardItem = {
+  type DragBoardItem = {
     id: string;
     kind: "gear" | "currency";
-    w: number;
-    h: number;
-    origCol: number;
-    origRow: number;
-    col: number;
-    row: number;
+    footprint: { w: number; h: number };
+    position: { col: number; row: number };
   };
-
-  const boardItems: BoardItem[] = [];
-
-  for (const item of availableInventory) {
-    const fp = footprintForInstance(item);
-    if (!fp) continue;
-    const pos = nextGearPositions[item.instanceId] || { col: 1, row: 1 };
-    boardItems.push({
-      id: item.instanceId,
-      kind: "gear",
-      w: fp.w,
-      h: fp.h,
-      origCol: pos.col,
-      origRow: pos.row,
-      col: pos.col,
-      row: pos.row,
-    });
+  const boardItems: DragBoardItem[] = [];
+  for (const entry of entries) {
+    if (entry.kind === "gear") {
+      const fp = footprintForInstance(entry.item);
+      if (!fp) continue;
+      boardItems.push({ id: entry.id, kind: "gear", footprint: fp, position: entry.saved ?? { col: 1, row: 1 } });
+    } else {
+      boardItems.push({
+        id: entry.id,
+        kind: "currency",
+        footprint: { w: 1, h: 1 },
+        position: entry.saved ?? { col: 1, row: 1 },
+      });
+    }
   }
 
-  for (const currencyId of activeCurrencies) {
-    const pos = nextCurrencyPositions[currencyId] || { col: 1, row: 1 };
-    boardItems.push({
-      id: currencyId,
-      kind: "currency",
-      w: 1,
-      h: 1,
-      origCol: pos.col,
-      origRow: pos.row,
-      col: pos.col,
-      row: pos.row,
-    });
-  }
-
-  const movingItem = boardItems.find((x) => x.id === movingId);
-  if (!movingItem) {
+  if (!boardItems.some((item) => item.id === movingId)) {
     return { nextGearPositions, nextCurrencyPositions };
   }
 
-  movingItem.col = targetCol;
-  movingItem.row = targetRow;
-
-  const overlaps = (
-    p1: { col: number; row: number; w: number; h: number },
-    p2: { col: number; row: number; w: number; h: number },
-  ) => {
-    return !(p1.col + p1.w <= p2.col || p2.col + p2.w <= p1.col || p1.row + p1.h <= p2.row || p2.row + p2.h <= p1.row);
-  };
-
-  const displacedItems: BoardItem[] = [];
-  const fixedItems: BoardItem[] = [];
+  const { positions, unchanged } = resolveMoveWithSwap(
+    boardItems,
+    movingId,
+    { col: targetCol, row: targetRow },
+    INVENTORY_COLS,
+  );
+  if (unchanged) return { nextGearPositions, nextCurrencyPositions };
 
   for (const item of boardItems) {
-    if (item.id === movingId) continue;
-    if (overlaps(movingItem, item)) {
-      displacedItems.push(item);
-    } else {
-      fixedItems.push(item);
-    }
-  }
-
-  displacedItems.sort((a, b) => b.w * b.h - a.w * a.h);
-
-  const placedItems: BoardItem[] = [movingItem, ...fixedItems];
-
-  const isPositionOccupied = (col: number, row: number, w: number, h: number) => {
-    if (col < 1 || col + w - 1 > INVENTORY_COLS || row < 1) return true;
-    return placedItems.some((placed) => overlaps({ col, row, w, h }, placed));
-  };
-
-  for (const item of displacedItems) {
-    let bestCol = 1;
-    let bestRow = 1;
-    let minDistanceSq = Number.POSITIVE_INFINITY;
-
-    for (let r = 1; r <= 40; r++) {
-      for (let c = 1; c <= INVENTORY_COLS - item.w + 1; c++) {
-        if (!isPositionOccupied(c, r, item.w, item.h)) {
-          const origCenterX = item.origCol + (item.w - 1) / 2;
-          const origCenterY = item.origRow + (item.h - 1) / 2;
-          const candCenterX = c + (item.w - 1) / 2;
-          const candCenterY = r + (item.h - 1) / 2;
-          const distSq = (origCenterX - candCenterX) ** 2 + (origCenterY - candCenterY) ** 2;
-
-          if (distSq < minDistanceSq) {
-            minDistanceSq = distSq;
-            bestCol = c;
-            bestRow = r;
-          }
-        }
-      }
-    }
-
-    item.col = bestCol;
-    item.row = bestRow;
-    placedItems.push(item);
-  }
-
-  for (const item of placedItems) {
+    const next = positions.get(item.id);
+    if (!next) continue;
     if (item.kind === "gear") {
-      nextGearPositions[item.id] = { col: item.col, row: item.row };
+      nextGearPositions[item.id] = next;
     } else {
-      nextCurrencyPositions[item.id as CraftingCurrencyId] = { col: item.col, row: item.row };
+      nextCurrencyPositions[item.id as CraftingCurrencyId] = next;
     }
   }
-
   return { nextGearPositions, nextCurrencyPositions };
 }
 
@@ -470,99 +416,49 @@ export const useGearStore = create<GearStore>((set, get) => ({
           (item) => !equippedInstanceIds.has(item.instanceId),
         );
         const activeCurrencies = CRAFTING_CURRENCY_IDS.filter((id) => (state.craftingCurrencies[id] ?? 0) > 0);
-
         const gearPositions = { ...(nextBoardPositionsByCharacter[characterId] ?? {}) };
         const currencyPositions = { ...(nextCurrencyPositionsByCharacter[characterId] ?? {}) };
 
-        const occupancy: boolean[][] = [];
-        const ensureRows = (rows: number) => {
-          while (occupancy.length < rows) {
-            occupancy.push(Array(INVENTORY_COLS).fill(false));
-          }
-        };
-        const canPlace = (col: number, row: number, w: number, h: number) => {
-          if (col < 1 || col + w - 1 > INVENTORY_COLS || row < 1) return false;
-          ensureRows(row + h - 1);
-          for (let y = row - 1; y < row - 1 + h; y++) {
-            for (let x = col - 1; x < col - 1 + w; x++) {
-              if (occupancy[y]?.[x]) return false;
-            }
-          }
-          return true;
-        };
-        const markPlaced = (col: number, row: number, w: number, h: number) => {
-          ensureRows(row + h - 1);
-          for (let y = row - 1; y < row - 1 + h; y++) {
-            for (let x = col - 1; x < col - 1 + w; x++) {
-              occupancy[y]![x] = true;
-            }
-          }
-        };
+        type MixedItem =
+          | { id: string; kind: "gear"; item: GearInstance; saved: { col: number; row: number } | undefined }
+          | { id: string; kind: "currency"; item: CraftingCurrencyId; saved: { col: number; row: number } | undefined };
+        const mixed: MixedItem[] = [];
 
-        const toPlaceGear: GearInstance[] = [];
         for (const item of availableInventory) {
           const fp = footprintForInstance(item);
           if (!fp) continue;
-          const pos = gearPositions[item.instanceId];
-          if (pos && canPlace(pos.col, pos.row, fp.w, fp.h)) {
-            markPlaced(pos.col, pos.row, fp.w, fp.h);
-          } else {
-            toPlaceGear.push(item);
-          }
+          mixed.push({ id: item.instanceId, kind: "gear", item, saved: gearPositions[item.instanceId] });
         }
-
-        const toPlaceCurrencies: CraftingCurrencyId[] = [];
         for (const currencyId of activeCurrencies) {
-          const pos = currencyPositions[currencyId];
-          if (pos && canPlace(pos.col, pos.row, 1, 1)) {
-            markPlaced(pos.col, pos.row, 1, 1);
+          mixed.push({ id: currencyId, kind: "currency", item: currencyId, saved: currencyPositions[currencyId] });
+        }
+
+        const packed = packMixedBoard<"gear" | "currency", MixedItem>(
+          mixed,
+          INVENTORY_COLS,
+          (entry: MixedItem) => (entry.kind === "gear" ? footprintForInstance(entry.item)! : { w: 1, h: 1 }),
+          (entry: MixedItem) => entry.saved,
+        );
+
+        const nextGearForChar: GearBoardPositions = {};
+        const nextCurrencyForChar: CraftingCurrencyBoardPositions = {};
+        const prevGearKeys = Object.keys(gearPositions).sort();
+        const nextGearKeys: string[] = [];
+        for (const { item, col, row } of packed) {
+          if (item.kind === "gear") {
+            nextGearForChar[item.item.instanceId] = { col, row };
+            nextGearKeys.push(item.item.instanceId);
           } else {
-            toPlaceCurrencies.push(currencyId);
+            nextCurrencyForChar[item.item] = { col, row };
           }
         }
+        if (nextGearKeys.join("|") !== prevGearKeys.join("|")) changed = true;
+        const prevCurrencyKeys = Object.keys(currencyPositions).sort();
+        const nextCurrencyKeys = Object.keys(nextCurrencyForChar).sort();
+        if (nextCurrencyKeys.join("|") !== prevCurrencyKeys.join("|")) changed = true;
 
-        const findFirstAvailable = (w: number, h: number) => {
-          for (let r = 1; ; r++) {
-            for (let c = 1; c <= INVENTORY_COLS - w + 1; c++) {
-              if (canPlace(c, r, w, h)) {
-                return { col: c, row: r };
-              }
-            }
-          }
-        };
-
-        for (const item of toPlaceGear) {
-          const fp = footprintForInstance(item);
-          if (!fp) continue;
-          const pos = findFirstAvailable(fp.w, fp.h);
-          markPlaced(pos.col, pos.row, fp.w, fp.h);
-          gearPositions[item.instanceId] = pos;
-          changed = true;
-        }
-
-        for (const currencyId of toPlaceCurrencies) {
-          const pos = findFirstAvailable(1, 1);
-          markPlaced(pos.col, pos.row, 1, 1);
-          currencyPositions[currencyId] = pos;
-          changed = true;
-        }
-
-        const gearIds = new Set(availableInventory.map((item) => item.instanceId));
-        for (const id of Object.keys(gearPositions)) {
-          if (!gearIds.has(id)) {
-            delete gearPositions[id];
-            changed = true;
-          }
-        }
-        for (const id of Object.keys(currencyPositions)) {
-          if (!activeCurrencies.includes(id as CraftingCurrencyId)) {
-            delete currencyPositions[id as CraftingCurrencyId];
-            changed = true;
-          }
-        }
-
-        nextBoardPositionsByCharacter[characterId] = gearPositions;
-        nextCurrencyPositionsByCharacter[characterId] = currencyPositions;
+        nextBoardPositionsByCharacter[characterId] = nextGearForChar;
+        nextCurrencyPositionsByCharacter[characterId] = nextCurrencyForChar;
       }
 
       if (

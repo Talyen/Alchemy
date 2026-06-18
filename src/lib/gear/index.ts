@@ -2,6 +2,7 @@ export * from "./types";
 export * from "./definitions";
 export * from "./operations";
 export * from "./inventory-layout";
+export * from "./grid-packing";
 export * from "./affix-ids";
 export * from "./affixes";
 export * from "./base-items";
