@@ -2,7 +2,7 @@
 
 **Alchemy** is a fantasy roguelite deckbuilder: pick a **Character**, fight turn-based battles with cards (**Mana**, **Statuses**, **Block**, companions), earn rewards, and travel to **Destinations** (combat, **Campfire**, shops, **Mystery**, **Corruption**). Between runs, the **Homestead** and **Talent** trees provide permanent progression.
 
-> **Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [RELEASE.md](./docs/RELEASE.md) (Steam shipping) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks and tests) · [PROMPTS.md](./PROMPTS.md) (code-quality audits) · [README.md](./README.md) (human setup)
+> **Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [ARMORY.md](./docs/ARMORY.md) (gear data model, board packing, drag FSM) · [RELEASE.md](./docs/RELEASE.md) (Steam shipping) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks and tests) · [PROMPTS.md](./PROMPTS.md) (code-quality audits) · [README.md](./README.md) (human setup)
 
 ## Where to look
 
@@ -10,6 +10,7 @@
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | Adding content (card, enemy, screen) | [WORKFLOWS task index](./docs/WORKFLOWS.md#task-index)                                                                                          | Targeted tests from [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) |
 | Touching run state or stores         | [ARCHITECTURE](./docs/ARCHITECTURE.md)                                                                                                          | `tests/features/stores/` and related integration tests                            |
+| Touching the Armory (gear, currencies, board) | [ARMORY](./docs/ARMORY.md)                                                                                                            | `tests/lib/gear/`, `tests/features/screens/armory*`, `tests/architecture/gear-*`     |
 | Changing battle or card effects      | [REFERENCE battle rules](./docs/REFERENCE.md#battle-implementation-rules), [BATTLE_HANDLERS.md](./src/lib/game-data/effects/BATTLE_HANDLERS.md) | `tests/lib/battle` and `descriptions-match-effects`                               |
 | Changing UI or motion                | [WORKFLOWS stagger guidance](./docs/WORKFLOWS.md#staggered-screen-enter-motion); stuck on interaction/layout UX → [PROMPTS UI audits](./PROMPTS.md#ui-interaction--feedback-audit) | Targeted UI tests and `npm run lint:ci`                                           |
 | Changing saves or releases           | [WORKFLOWS persistence guidance](./docs/WORKFLOWS.md#change-persisted-save-data), [RELEASE](./docs/RELEASE.md)                                  | Ship checks from [CONTRIBUTING](./CONTRIBUTING.md)                                |
