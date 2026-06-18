@@ -5,7 +5,6 @@ import { DamageTypeSchema, EnemyStatusIdSchema } from "./shared-schemas";
 
 export const damageEffectDefinition = {
   kind: "damage",
-  dispatchRoute: "damage",
   schema: z.object({
     kind: z.literal("damage"),
     damageType: DamageTypeSchema,
@@ -19,7 +18,6 @@ export const damageEffectDefinition = {
 
 export const selfDamageEffectDefinition = {
   kind: "self-damage",
-  dispatchRoute: "utility",
   schema: z.object({
     kind: z.literal("self-damage"),
     damageType: EnemyStatusIdSchema,
@@ -29,7 +27,6 @@ export const selfDamageEffectDefinition = {
 
 export const randomDamageEffectDefinition = {
   kind: "random-damage",
-  dispatchRoute: "random-damage",
   schema: z.object({
     kind: z.literal("random-damage"),
     minAmount: z.number().finite(),
@@ -39,7 +36,6 @@ export const randomDamageEffectDefinition = {
 
 export const removeEnemyArmorEffectDefinition = {
   kind: "remove-enemy-armor",
-  dispatchRoute: "utility",
   schema: z.object({
     kind: z.literal("remove-enemy-armor"),
     amount: z.number().finite(),

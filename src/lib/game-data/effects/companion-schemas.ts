@@ -5,7 +5,6 @@ import { CompanionIdSchema } from "./shared-schemas";
 
 export const summonCompanionEffectDefinition = {
   kind: "summon-companion",
-  dispatchRoute: "utility",
   schema: z.object({
     kind: z.literal("summon-companion"),
     companionId: CompanionIdSchema,
@@ -14,7 +13,6 @@ export const summonCompanionEffectDefinition = {
 
 export const buffCompanionEffectDefinition = {
   kind: "buff-companion",
-  dispatchRoute: "utility",
   schema: z.object({
     kind: z.literal("buff-companion"),
     amount: z.number().finite(),

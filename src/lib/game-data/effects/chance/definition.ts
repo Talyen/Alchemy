@@ -1,11 +1,9 @@
-// Battle handler: @/lib/battle/effect-handlers/chance/apply.ts
+// Battle handler: routed recursively in @/lib/battle/effect-handlers/dispatch.ts.
 import { z } from "zod";
 import type { BattleCardEffect } from "../../types";
-import type { EffectDispatchRoute } from "../dispatch-routes";
 
 export const chanceEffectDefinition = {
   kind: "chance" as const,
-  dispatchRoute: "chance" as const satisfies EffectDispatchRoute,
 };
 
 export function createChanceEffectSchema(getEffectSchema: () => z.ZodType<BattleCardEffect>) {

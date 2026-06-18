@@ -187,23 +187,17 @@ export function setPlayerStatus(state: BattleState, status: PlayerStatusId, valu
   return { ...state, playerStatuses: { ...state.playerStatuses, [status]: value } };
 }
 
-export function adjustEnemyStatusDelta(state: Pick<BattleState, "difficultyModifiers">, delta: number): number {
-  void state;
-  return delta;
-}
-
 export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta: number): BattleState {
   const traitAdjustedDelta =
     status === "stun" && state.currentEnemy.traits.some((trait) => trait.id === "braced")
       ? Math.round(delta / 2)
       : delta;
-  const adjustedDelta = adjustEnemyStatusDelta(state, traitAdjustedDelta);
   let nextState = {
     ...state,
-    enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + adjustedDelta },
+    enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + traitAdjustedDelta },
   };
 
-  if (status === "poison" && adjustedDelta > 0 && nextState.gearEffects.poisonArmorShredChance > 0) {
+  if (status === "poison" && traitAdjustedDelta > 0 && nextState.gearEffects.poisonArmorShredChance > 0) {
     if (nextState.rng() * 100 < nextState.gearEffects.poisonArmorShredChance) {
       nextState = reduceEnemyArmor(nextState, 1);
     }

@@ -4,7 +4,6 @@ import type { EffectKindDefinition } from "./definition";
 
 export const restoreManaEffectDefinition = {
   kind: "restore-mana",
-  dispatchRoute: "mana",
   schema: z.object({
     kind: z.literal("restore-mana"),
     amount: z.number().finite(),
@@ -13,7 +12,6 @@ export const restoreManaEffectDefinition = {
 
 export const loseManaEffectDefinition = {
   kind: "lose-mana",
-  dispatchRoute: "mana",
   schema: z.object({
     kind: z.literal("lose-mana"),
     amount: z.number().finite(),
@@ -22,7 +20,6 @@ export const loseManaEffectDefinition = {
 
 export const gainMaxManaEffectDefinition = {
   kind: "gain-max-mana",
-  dispatchRoute: "mana",
   schema: z.object({
     kind: z.literal("gain-max-mana"),
     amount: z.number().finite(),
@@ -31,7 +28,6 @@ export const gainMaxManaEffectDefinition = {
 
 export const loseMaxManaEffectDefinition = {
   kind: "lose-max-mana",
-  dispatchRoute: "mana",
   schema: z.object({
     kind: z.literal("lose-max-mana"),
     amount: z.number().finite(),
@@ -40,7 +36,6 @@ export const loseMaxManaEffectDefinition = {
 
 export const healEffectDefinition = {
   kind: "heal",
-  dispatchRoute: "heal",
   schema: z.object({
     kind: z.literal("heal"),
     amount: z.number().finite(),
@@ -49,7 +44,6 @@ export const healEffectDefinition = {
 
 export const loseHealthEffectDefinition = {
   kind: "lose-health",
-  dispatchRoute: "utility",
   schema: z.object({
     kind: z.literal("lose-health"),
     amount: z.number().finite(),

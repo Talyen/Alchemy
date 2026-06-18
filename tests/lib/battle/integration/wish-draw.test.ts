@@ -191,7 +191,7 @@ describe("wish combat effects", () => {
 describe("drawCards", () => {
   it("draws the requested number of cards", () => {
     const deck = [makeCard({ id: "a" }), makeCard({ id: "b" }), makeCard({ id: "c" })];
-    const result = drawCards(deck, [], [], 2);
+    const result = drawCards(deck, [], [], 2, 0, Math.random);
     expect(result.hand).toHaveLength(2);
     expect(result.deck).toHaveLength(1);
   });
@@ -207,13 +207,15 @@ describe("drawCards", () => {
         .fill(null)
         .map((_, i) => makeCard({ id: `h${i}` })),
       10,
+      0,
+      Math.random,
     );
     expect(result.hand).toHaveLength(MAX_HAND_SIZE);
   });
 
   it("reshuffles discard into deck when deck is empty", () => {
     const discard = [makeCard({ id: "a" }), makeCard({ id: "b" })];
-    const result = drawCards([], discard, [], 2);
+    const result = drawCards([], discard, [], 2, 0, Math.random);
     expect(result.hand).toHaveLength(2);
     expect(result.discard).toHaveLength(0);
   });
@@ -222,14 +224,14 @@ describe("drawCards", () => {
 describe("shuffleCards", () => {
   it("returns all cards in a shuffled order", () => {
     const cards = [makeCard({ id: "a" }), makeCard({ id: "b" }), makeCard({ id: "c" })];
-    const result = shuffleCards(cards);
+    const result = shuffleCards(cards, Math.random);
     expect(result).toHaveLength(3);
     expect(result).toEqual(expect.arrayContaining(cards));
   });
 
   it("does not mutate the original array", () => {
     const cards = [makeCard({ id: "a" }), makeCard({ id: "b" })];
-    const result = shuffleCards(cards);
+    const result = shuffleCards(cards, Math.random);
     expect(cards).toHaveLength(2);
     expect(result).not.toBe(cards);
   });

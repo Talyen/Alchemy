@@ -23,9 +23,6 @@ import {
 } from "./mana-health-schemas";
 import { summonCompanionEffectDefinition, buffCompanionEffectDefinition } from "./companion-schemas";
 import { gainGoldEffectDefinition, wishEffectDefinition, drawCardsEffectDefinition } from "./utility-schemas";
-import { chanceEffectDefinition } from "./chance/definition";
-import type { EffectDispatchRoute } from "./dispatch-routes";
-import type { BattleCardEffectKind } from "./kinds";
 
 /** Registry entries with Zod schemas (all kinds except chance, which is lazy). */
 export const TEMPLATE_EFFECT_DEFINITIONS = [
@@ -51,9 +48,3 @@ export const TEMPLATE_EFFECT_DEFINITIONS = [
   cleansePlayerStatusToDamageEffectDefinition,
   randomDamageEffectDefinition,
 ] as const;
-
-/** Dispatch metadata for every kind, including chance. */
-export const ALL_EFFECT_REGISTRY_ENTRIES: readonly {
-  kind: BattleCardEffectKind;
-  dispatchRoute: EffectDispatchRoute;
-}[] = [...TEMPLATE_EFFECT_DEFINITIONS, chanceEffectDefinition];

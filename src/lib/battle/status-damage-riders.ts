@@ -6,7 +6,6 @@ import type { BattleCardEffect, DamageType } from "@/lib/game-data";
 import {
   addEnemyStatus,
   addGold,
-  adjustEnemyStatusDelta,
   applyPlayerHealing,
   clampHealth,
   reduceEnemyArmor,
@@ -281,10 +280,8 @@ type DamageStatusHandler = (ctx: DamageStatusContext) => BattleState;
 const DAMAGE_STATUS_HANDLERS: Partial<Record<DamageType, DamageStatusHandler>> = {
   burn: ({ state, actualDamage }) => applyBurnStatusRider(state, actualDamage),
   poison: ({ state, actualDamage, combatTexts }) => applyPoisonStatusRider(state, actualDamage, combatTexts),
-  bleed: ({ state, effect, actualDamage, combatTexts }) => {
-    const statusDamage = adjustEnemyStatusDelta(state, actualDamage);
-    return applyBleedStatusRider(state, effect, actualDamage, statusDamage, combatTexts);
-  },
+  bleed: ({ state, effect, actualDamage, combatTexts }) =>
+    applyBleedStatusRider(state, effect, actualDamage, actualDamage, combatTexts),
   stun: ({ state, actualDamage, combatTexts }) => applyStunStatusRider(state, actualDamage, combatTexts),
   freeze: ({ state, actualDamage, combatTexts }) => applyFreezeStatusRider(state, actualDamage, combatTexts),
   physical: ({ state, actualDamage, combatTexts }) => applyPhysicalStatusRider(state, actualDamage, combatTexts),

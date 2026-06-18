@@ -1,5 +1,5 @@
 // Status-related card effect apply handlers.
-import { addEnemyStatus, adjustEnemyStatusDelta, setEnemyStatus } from "../types";
+import { addEnemyStatus, setEnemyStatus } from "../types";
 import { mergeCombatText, applyHealingWithCombatText } from "../combat-text";
 import type { BattleState } from "../types";
 import type { EffectHandler } from "./handler-types";
@@ -63,7 +63,7 @@ export const applyMultiplyEnemyStatusEffect: EffectHandler = (state, _card, effe
   if (effect.kind !== "multiply-enemy-status") return state;
   const current = state.enemyStatuses[effect.status];
   if (current <= 0) return state;
-  const added = adjustEnemyStatusDelta(state, current * (effect.factor - 1));
+  const added = current * (effect.factor - 1);
   mergeCombatText(combatTexts, {
     target: "enemy",
     kind: "multiply",

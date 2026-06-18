@@ -5,7 +5,6 @@ import { EnemyStatusIdSchema, DamageTypeSchema } from "./shared-schemas";
 
 export const playerStatusEffectDefinition = {
   kind: "player-status",
-  dispatchRoute: "player-status",
   schema: z.object({
     kind: z.literal("player-status"),
     status: z.enum(["block", "armor", "forge", "haste", "phoenixFeather"]),
@@ -16,7 +15,6 @@ export const playerStatusEffectDefinition = {
 
 export const enemyStatusEffectDefinition = {
   kind: "enemy-status",
-  dispatchRoute: "enemy-status",
   schema: z.object({
     kind: z.literal("enemy-status"),
     status: EnemyStatusIdSchema,
@@ -26,7 +24,6 @@ export const enemyStatusEffectDefinition = {
 
 export const removeHarmfulStatusEffectDefinition = {
   kind: "remove-harmful-status",
-  dispatchRoute: "utility",
   schema: z.object({
     kind: z.literal("remove-harmful-status"),
     amount: z.number().finite(),
@@ -35,7 +32,6 @@ export const removeHarmfulStatusEffectDefinition = {
 
 export const removePlayerStatusEffectDefinition = {
   kind: "remove-player-status",
-  dispatchRoute: "utility",
   schema: z.object({
     kind: z.literal("remove-player-status"),
     status: EnemyStatusIdSchema,
@@ -44,7 +40,6 @@ export const removePlayerStatusEffectDefinition = {
 
 export const multiplyEnemyStatusEffectDefinition = {
   kind: "multiply-enemy-status",
-  dispatchRoute: "utility",
   schema: z.object({
     kind: z.literal("multiply-enemy-status"),
     status: EnemyStatusIdSchema,
@@ -54,7 +49,6 @@ export const multiplyEnemyStatusEffectDefinition = {
 
 export const cleansePlayerStatusToDamageEffectDefinition = {
   kind: "cleanse-player-status-to-damage",
-  dispatchRoute: "cleanse-player-status-to-damage",
   schema: z.object({
     kind: z.literal("cleanse-player-status-to-damage"),
     status: z.literal("burn"),

@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  ALL_EFFECT_REGISTRY_ENTRIES,
   BATTLE_CARD_EFFECT_KINDS,
   BattleCardEffectSchema,
-  getEffectDispatchRoute,
   REGISTERED_EFFECT_KINDS,
   TEMPLATE_EFFECT_DEFINITIONS,
 } from "@/lib/game-data";
@@ -11,25 +9,24 @@ import {
 describe("effect dispatch registry", () => {
   it("registers every canonical effect kind", () => {
     expect(REGISTERED_EFFECT_KINDS).toEqual(BATTLE_CARD_EFFECT_KINDS);
-    expect(ALL_EFFECT_REGISTRY_ENTRIES).toHaveLength(BATTLE_CARD_EFFECT_KINDS.length);
-    for (const kind of BATTLE_CARD_EFFECT_KINDS) {
-      expect(getEffectDispatchRoute(kind)).toBeDefined();
-    }
-    expect(getEffectDispatchRoute("not-a-real-kind" as "damage")).toBeUndefined();
   });
 
-  it("routes mana and utility kinds consistently", () => {
-    expect(getEffectDispatchRoute("restore-mana")).toBe("mana");
-    expect(getEffectDispatchRoute("gain-gold")).toBe("utility");
-    expect(getEffectDispatchRoute("enemy-status")).toBe("enemy-status");
-  });
-
-  it("keeps template definition modules aligned with registry routes", () => {
+  it("template definitions cover all non-chance kinds", () => {
     expect(TEMPLATE_EFFECT_DEFINITIONS).toHaveLength(21);
-    for (const def of TEMPLATE_EFFECT_DEFINITIONS) {
-      expect(getEffectDispatchRoute(def.kind)).toBe(def.dispatchRoute);
+    const templateKinds = new Set(TEMPLATE_EFFECT_DEFINITIONS.map((def) => def.kind));
+    for (const kind of BATTLE_CARD_EFFECT_KINDS) {
+      if (kind === "chance") {
+        expect(templateKinds.has(kind)).toBe(false);
+      } else {
+        expect(templateKinds.has(kind)).toBe(true);
+      }
     }
-    expect(getEffectDispatchRoute("chance")).toBe("chance");
+  });
+
+  it("every template definition carries a Zod schema", () => {
+    for (const def of TEMPLATE_EFFECT_DEFINITIONS) {
+      expect(def.schema).toBeDefined();
+    }
   });
 
   it("parses representative effect schemas via BattleCardEffectSchema", () => {

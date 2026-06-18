@@ -2,6 +2,10 @@
  * Deck draw and shuffle helpers.
  * Depends on: ../utils, ../game-constants, @/lib/game-data.
  * Depended on by: ./battle-setup, ./card-play, ./wish, ./talent-effects.
+ *
+ * Callers must supply an explicit `rng` (production: `state.rng`; tests: any seeded
+ * function). The previous `= Math.random` default was a footgun — AGENTS.md forbids
+ * `Math.random()` in the battle engine, and the eslint rule only catches call expressions.
  */
 import type { BattleCard } from "@/lib/game-data";
 import { shuffle } from "../utils";
@@ -10,7 +14,7 @@ import { MAX_HAND_SIZE } from "../game-constants";
 function refillDeck(
   deck: BattleCard[],
   discard: BattleCard[],
-  rng: () => number = Math.random,
+  rng: () => number,
 ): { deck: BattleCard[]; discard: BattleCard[] } | null {
   if (deck.length > 0) return { deck, discard };
   if (discard.length === 0) return null;
@@ -23,8 +27,8 @@ export function drawCards(
   discard: BattleCard[],
   hand: BattleCard[],
   amount: number,
-  nextCardUid = 0,
-  rng: () => number = Math.random,
+  nextCardUid: number,
+  rng: () => number,
 ) {
   let nextDeck = [...deck];
   let nextDiscard = [...discard];
@@ -46,6 +50,6 @@ export function drawCards(
   return { deck: nextDeck, discard: nextDiscard, hand: nextHand, nextCardUid: uid };
 }
 
-export function shuffleCards(cards: BattleCard[], rng: () => number = Math.random) {
+export function shuffleCards(cards: BattleCard[], rng: () => number) {
   return shuffle(cards, rng);
 }
