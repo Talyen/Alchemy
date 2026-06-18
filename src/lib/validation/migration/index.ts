@@ -11,6 +11,7 @@ import {
   migrateV6ToV7,
   migrateV7ToV8,
   migrateV8ToV9,
+  migrateV9ToV10,
   normalizeLegacyAspectRatio,
 } from "./steps";
 import type { RawSaveData } from "./types";
@@ -72,6 +73,10 @@ export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
   if (version < 9) {
     current = migrateV8ToV9(current);
     version = 9;
+  }
+  if (version < 10) {
+    current = migrateV9ToV10(current);
+    version = 10;
   }
   if (getRawContentVersion(current) < CURRENT_CONTENT_VERSION) {
     current = migrateContentV2(current);

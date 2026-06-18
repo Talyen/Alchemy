@@ -450,6 +450,13 @@ function legacySchemaV8Save() {
   };
 }
 
+function legacySchemaV9Save() {
+  return {
+    ...legacySchemaV8Save(),
+    saveSchemaVersion: 9,
+  };
+}
+
 export const LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () => Record<string, unknown>> = {
   0: legacyCampaignRunSave,
   1: legacySchemaV1Save,
@@ -460,6 +467,7 @@ export const LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () => Record
   6: legacySchemaV6Save,
   7: legacySchemaV7Save,
   8: legacySchemaV8Save,
+  9: legacySchemaV9Save,
 };
 
 export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, unknown>> = {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   canApplyCraftingCurrency,
   currencyObstaclesForBoard,
@@ -31,6 +31,7 @@ import { useArmoryCurrencyPositions } from "./armory/use-armory-currency-positio
 import { useArmoryCurrencyDrag } from "./armory/use-armory-currency-drag";
 import { ArmoryCharacterTabs } from "./armory/armory-character-tabs";
 import { ArmoryCurrencyCursor } from "./armory/armory-currency-targeting";
+import { armoryTargetingReducer, initialArmoryTargetingState } from "./armory/armory-targeting-state";
 import { GearDragVisualPortal } from "./armory/armory-drag-portal";
 import { CurrencyDragVisualPortal } from "./armory/armory-currency-drag-portal";
 import "./armory/armory-screen.css";
@@ -69,10 +70,8 @@ export function ArmoryScreen({
 }: Props) {
   const [characterId, setCharacterId] = useState<CharacterId>("knight");
   const inventoryBoardRef = useRef<HTMLDivElement>(null);
-  const [salvageTarget, setSalvageTarget] = useState<GearInstance | null>(null);
-  const [salvageMode, setSalvageMode] = useState(false);
-  const [activeCurrencyId, setActiveCurrencyId] = useState<CraftingCurrencyId | null>(null);
-  const [cursorPoint, setCursorPoint] = useState<{ x: number; y: number } | null>(null);
+  const [targeting, dispatchTargeting] = useReducer(armoryTargetingReducer, initialArmoryTargetingState);
+  const { salvageTarget, salvageMode, activeCurrencyId, cursorPoint } = targeting;
   const characterInventory = useMemo(() => inventories[characterId] ?? [], [inventories, characterId]);
   const { savedPositions, handleMoveItem } = useArmoryInventoryPositions(characterId, characterInventory);
   const {
@@ -212,9 +211,7 @@ export function ArmoryScreen({
     : undefined;
 
   const clearTargeting = useCallback(() => {
-    setSalvageMode(false);
-    setActiveCurrencyId(null);
-    setCursorPoint(null);
+    dispatchTargeting({ type: "CLEAR_TARGETING" });
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
@@ -280,30 +277,22 @@ export function ArmoryScreen({
 
   const handleSelectCharacter = useCallback((id: CharacterId) => {
     setCharacterId(id);
-    setSalvageMode(false);
-    setActiveCurrencyId(null);
-    setCursorPoint(null);
-    setSalvageTarget(null);
+    dispatchTargeting({ type: "SELECT_CHARACTER" });
   }, []);
 
   useEffect(() => {
-    if (!editable) {
-      setSalvageMode(false); // eslint-disable-line react-hooks/set-state-in-effect
-      setActiveCurrencyId(null);
-      setCursorPoint(null);
-      setSalvageTarget(null);
-    }
+    if (!editable) dispatchTargeting({ type: "EDITABLE_LOST" });
   }, [editable]);
 
   useEffect(() => {
     if (activeCurrencyId && (craftingCurrencies[activeCurrencyId] ?? 0) <= 0) {
-      setActiveCurrencyId(null); // eslint-disable-line react-hooks/set-state-in-effect
+      dispatchTargeting({ type: "CURRENCY_DEPLETED" });
     }
   }, [activeCurrencyId, craftingCurrencies]);
 
   useEffect(() => {
     if (salvageTarget && !inventoryById.has(salvageTarget.instanceId)) {
-      setSalvageTarget(null); // eslint-disable-line react-hooks/set-state-in-effect
+      dispatchTargeting({ type: "SALVAGE_TARGET_GONE" });
     }
   }, [salvageTarget, inventoryById]);
 
@@ -323,10 +312,13 @@ export function ArmoryScreen({
 
   function handleSelectCurrency(currencyId: CraftingCurrencyId) {
     if (!editable || (craftingCurrencies[currencyId] ?? 0) <= 0) return;
-    setSalvageMode(false);
-    setActiveCurrencyId((current) => (current === currencyId ? null : currencyId));
+    dispatchTargeting({ type: "TOGGLE_CURRENCY", currencyId });
     playUISound("toggleOn");
   }
+
+  const startSalvageTarget = useCallback((target: GearInstance) => {
+    dispatchTargeting({ type: "START_SALVAGE_TARGET", target });
+  }, []);
 
   function handleApplyCurrency(instance: GearInstance) {
     if (!editable) return;
@@ -342,7 +334,7 @@ export function ArmoryScreen({
     }
     playUISound("talentUnlock");
     if ((craftingCurrencies[activeCurrencyId] ?? 0) <= 1) {
-      setActiveCurrencyId(null);
+      dispatchTargeting({ type: "DESELECT_CURRENCY" });
     }
   }
 
@@ -376,9 +368,11 @@ export function ArmoryScreen({
           <div
             className="armory-workspace-grid"
             onPointerMove={(event) => {
-              if (activeCurrencyId) setCursorPoint({ x: event.clientX, y: event.clientY });
+              if (activeCurrencyId) {
+                dispatchTargeting({ type: "SET_CURSOR", point: { x: event.clientX, y: event.clientY } });
+              }
             }}
-            onPointerLeave={() => setCursorPoint(null)}
+            onPointerLeave={() => dispatchTargeting({ type: "SET_CURSOR", point: null })}
           >
             <CharacterAndEquipmentPanel
               characterId={characterId}
@@ -396,7 +390,7 @@ export function ArmoryScreen({
               onGearPointerMove={moveGearPointer}
               onGearPointerEnd={finishGearPointer}
               onGearDoubleClick={handleGearDoubleClick}
-              onSalvage={setSalvageTarget}
+              onSalvage={startSalvageTarget}
               onApplyCurrency={handleApplyCurrency}
               onAbortGearDrag={abortGearDragIfDragging}
             />
@@ -412,14 +406,11 @@ export function ArmoryScreen({
               boardRef={inventoryBoardRef}
               salvageMode={salvageMode}
               activeCurrencyId={activeCurrencyId}
-              onSalvage={setSalvageTarget}
+              onSalvage={startSalvageTarget}
               hasSalvageableGear={
                 editable && (characterInventory.length > 0 || Object.values(loadouts[characterId]).some(Boolean))
               }
-              onToggleSalvageMode={() => {
-                setActiveCurrencyId(null);
-                setSalvageMode((active) => !active);
-              }}
+              onToggleSalvageMode={() => dispatchTargeting({ type: "TOGGLE_SALVAGE_MODE" })}
               onSelectCurrency={handleSelectCurrency}
               {...(onSpawnDevGear ? { onSpawnDevGear: () => onSpawnDevGear(characterId) } : {})}
               onGearPointerStart={beginGearPointer}
@@ -447,14 +438,14 @@ export function ArmoryScreen({
             icon={Sparkles}
             dimBackground={false}
             dismissOnBackdrop={false}
-            onCancel={() => setSalvageTarget(null)}
+            onCancel={() => dispatchTargeting({ type: "CLEAR_SALVAGE_TARGET" })}
             onConfirm={() => {
               if (!editable) {
-                setSalvageTarget(null);
+                dispatchTargeting({ type: "CLEAR_SALVAGE_TARGET" });
                 return;
               }
               onSalvage(salvageTarget.instanceId);
-              setSalvageTarget(null);
+              dispatchTargeting({ type: "CLEAR_SALVAGE_TARGET" });
             }}
           />
         ) : null}

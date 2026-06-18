@@ -35,22 +35,6 @@ import {
   packMixedBoard,
 } from "@/lib/gear";
 
-const LEGACY_ARMORY_POSITIONS_KEY = "alchemy-armory-positions";
-
-function readLegacyBoardPositions(): GearBoardPositions {
-  if (typeof localStorage === "undefined") return {};
-  try {
-    const stored = localStorage.getItem(LEGACY_ARMORY_POSITIONS_KEY);
-    if (!stored) return {};
-    localStorage.removeItem(LEGACY_ARMORY_POSITIONS_KEY);
-    const parsed: unknown = JSON.parse(stored);
-    if (!parsed || typeof parsed !== "object") return {};
-    return parsed as GearBoardPositions;
-  } catch {
-    return {};
-  }
-}
-
 type BoardEntry =
   | { id: string; kind: "gear"; item: GearInstance; saved?: { col: number; row: number } }
   | { id: string; kind: "currency"; item: CraftingCurrencyId; saved?: { col: number; row: number } };
@@ -264,12 +248,6 @@ export const useGearStore = create<GearStore>((set, get) => ({
     equippedReturnPositions = {},
     currencyBoardPositionsByCharacter = createEmptyCurrencyBoardPositionsByCharacter(),
   ) => {
-    const legacy = Object.keys(boardPositionsByCharacter.knight ?? {}).length === 0 ? readLegacyBoardPositions() : {};
-    const knightBoard = { ...legacy, ...(boardPositionsByCharacter.knight ?? {}) };
-    const mergedBoardPositionsByCharacter = {
-      ...boardPositionsByCharacter,
-      knight: knightBoard,
-    };
     const flatInventory = flattenGearInventories(inventories);
     const inventoryIds = new Set(flatInventory.map((item) => item.instanceId));
     const nextReturn: GearBoardPositions = {};
@@ -280,7 +258,7 @@ export const useGearStore = create<GearStore>((set, get) => ({
     set({
       inventories,
       loadouts,
-      boardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(mergedBoardPositionsByCharacter, inventories),
+      boardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(boardPositionsByCharacter, inventories),
       equippedReturnPositions: nextReturn,
       craftingCurrencies: normalizedCurrencies,
       currencyBoardPositionsByCharacter: sanitizeCurrencyBoardPositionsByCharacter(
