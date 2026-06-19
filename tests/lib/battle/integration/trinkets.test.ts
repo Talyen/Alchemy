@@ -327,7 +327,7 @@ describe("Boon — Polar Pendant (freeze lasts 1 turn longer)", () => {
     const state = makeState({ mana: 10, enemyHealth: 30, trinketEffects: manifest });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
-    expect(result.enemyFreezeSkipTurns).toBe(2); // 1 base + 1 extension
+    expect(result.enemyCC.freezeSkipTurns).toBe(2); // 1 base + 1 extension
   });
 
   it("without pendant, freeze skip turns is 1", () => {
@@ -335,7 +335,7 @@ describe("Boon — Polar Pendant (freeze lasts 1 turn longer)", () => {
     const state = makeState({ mana: 10, enemyHealth: 30 });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
-    expect(result.enemyFreezeSkipTurns).toBe(1);
+    expect(result.enemyCC.freezeSkipTurns).toBe(1);
   });
 
   it("does not trigger freeze when threshold not met", () => {
@@ -344,7 +344,7 @@ describe("Boon — Polar Pendant (freeze lasts 1 turn longer)", () => {
     const state = makeState({ mana: 10, enemyHealth: 30, trinketEffects: manifest });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
-    expect(result.enemyFreezeSkipTurns).toBe(0);
+    expect(result.enemyCC.freezeSkipTurns).toBe(0);
   });
 });
 

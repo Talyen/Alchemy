@@ -143,6 +143,10 @@ export default tseslint.config(
           selector: 'CallExpression[callee.object.name="Math"][callee.property.name="random"]',
           message: "Use state.rng or getBattleRng(state) instead of Math.random() in battle engine code.",
         },
+        {
+          selector: 'MemberExpression[object.name="Math"][property.name="random"]',
+          message: "Use unsafeNonSeededRng from ./rng for placeholder RNG instead of Math.random references.",
+        },
       ],
     },
   },

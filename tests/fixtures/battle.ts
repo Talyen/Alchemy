@@ -8,12 +8,22 @@ export { makeTestCard } from "./cards";
 export { seededRng } from "./rng";
 
 export function makeTestBattleState(overrides: Partial<BattleState> = {}): BattleState {
-  return {
-    ...defaultBattleState(),
+  const base = defaultBattleState();
+  const merged = {
+    ...base,
     mana: 4,
     maxMana: 4,
     rng: seededRng(42),
+  };
+  return {
+    ...merged,
     ...overrides,
+    playerCC: overrides.playerCC
+      ? { ...merged.playerCC, ...overrides.playerCC }
+      : merged.playerCC,
+    enemyCC: overrides.enemyCC
+      ? { ...merged.enemyCC, ...overrides.enemyCC }
+      : merged.enemyCC,
   };
 }
 
@@ -39,6 +49,12 @@ export function patchBattleState(patch: Partial<BattleState> = {}): BattleState 
     enemyMitigation: patch.enemyMitigation
       ? { ...base.enemyMitigation, ...patch.enemyMitigation }
       : base.enemyMitigation,
+    playerCC: patch.playerCC
+      ? { ...base.playerCC, ...patch.playerCC }
+      : base.playerCC,
+    enemyCC: patch.enemyCC
+      ? { ...base.enemyCC, ...patch.enemyCC }
+      : base.enemyCC,
   };
 }
 

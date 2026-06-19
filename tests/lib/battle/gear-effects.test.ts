@@ -30,16 +30,16 @@ describe("gear-effects", () => {
 
   it("applies frozen enemy damage bonus multiplier", () => {
     const state = patchBattleState({
-      enemyFreezeSkipTurns: 1,
+      enemyCC: { freezeSkipTurns: 1 },
       gearEffects: { ...defaultGearEffects, frozenEnemyDamageBonusPercent: 50 },
     });
     expect(gearFrozenDamageMultiplier(state)).toBe(1.5);
-    expect(gearFrozenDamageMultiplier(patchBattleState({ enemyFreezeSkipTurns: 0 }))).toBe(1);
+    expect(gearFrozenDamageMultiplier(patchBattleState({ enemyCC: { freezeSkipTurns: 0 } }))).toBe(1);
   });
 
   it("includes frozen multiplier in gear proc physical damage", () => {
     const state = patchBattleState({
-      enemyFreezeSkipTurns: 1,
+      enemyCC: { freezeSkipTurns: 1 },
       gearEffects: { ...defaultGearEffects, frozenEnemyDamageBonusPercent: 100 },
     });
     expect(applyGearProcPhysicalDamage(state, 10)).toBe(20);

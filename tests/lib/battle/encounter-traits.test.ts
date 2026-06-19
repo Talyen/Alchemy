@@ -51,7 +51,7 @@ describe("encounter trait enemy actions", () => {
     const state = createTestBattleState({
       currentEnemy,
       enemyAttackEffects: currentEnemy.attackEffects,
-      enemyStunSkipTurns: 1,
+      enemyCC: { stunSkipTurns: 1 },
     });
     const result = endPlayerTurn(state);
     expect(result.state.enemyMitigation.forge).toBe(0);
@@ -141,7 +141,7 @@ describe("encounter trait enemy actions", () => {
         enemyAttackEffects: [],
         enemyHealth: 10,
         enemyMaxHealth: 20,
-        enemyFreezeSkipTurns,
+        enemyCC: { stunSkipTurns: 0, freezeSkipTurns: enemyFreezeSkipTurns, cooldown: 0 },
         talentEffects: { ...base.talentEffects, ...talentOverrides },
       }),
     ).state;

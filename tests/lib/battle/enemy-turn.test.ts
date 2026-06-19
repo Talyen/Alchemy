@@ -84,27 +84,27 @@ describe("endPlayerTurn — haste branch", () => {
 
 describe("endPlayerTurn — CC skip branch", () => {
   it("skips attack when enemy is stunned", () => {
-    const state = battleState({ enemyStunSkipTurns: 1 });
+    const state = battleState({ enemyCC: { stunSkipTurns: 1 } });
     const result = endPlayerTurn(state);
     expect(result.enemyPerformedAttack).toBe(false);
   });
 
   it("skips attack when enemy is frozen", () => {
-    const state = battleState({ enemyFreezeSkipTurns: 1 });
+    const state = battleState({ enemyCC: { freezeSkipTurns: 1 } });
     const result = endPlayerTurn(state);
     expect(result.enemyPerformedAttack).toBe(false);
   });
 
   it("reduces skip turn counters", () => {
-    const state = battleState({ enemyStunSkipTurns: 2, enemyFreezeSkipTurns: 1 });
+    const state = battleState({ enemyCC: { stunSkipTurns: 2, freezeSkipTurns: 1 } });
     const result = endPlayerTurn(state);
-    expect(result.state.enemyStunSkipTurns).toBe(1);
-    expect(result.state.enemyFreezeSkipTurns).toBe(0);
+    expect(result.state.enemyCC.stunSkipTurns).toBe(1);
+    expect(result.state.enemyCC.freezeSkipTurns).toBe(0);
   });
 
   it("still ticks enemy DoTs during CC skip", () => {
     const state = battleState({
-      enemyStunSkipTurns: 1,
+      enemyCC: { stunSkipTurns: 1 },
       enemyStatuses: { ...emptyStatuses, burn: 10 },
       enemyHealth: 50,
     });
@@ -114,7 +114,7 @@ describe("endPlayerTurn — CC skip branch", () => {
 
   it("still applies enemy traits during CC skip", () => {
     const state = battleState({
-      enemyStunSkipTurns: 1,
+      enemyCC: { stunSkipTurns: 1 },
       currentEnemy: baseEnemy("rusting-carapace"),
     });
     state.currentEnemy.traits = [{ id: "rusting-carapace", title: "Rusting Carapace", description: "" }];
@@ -338,6 +338,6 @@ describe("endPlayerTurn — Death's Door", () => {
     const result = endPlayerTurn(state);
     // Grace recovery: stun skip suppressed, player gets a turn
     expect(result.state.turnPhase).toBe("player");
-    expect(result.state.playerStunSkipTurns).toBe(0);
+    expect(result.state.playerCC.stunSkipTurns).toBe(0);
   });
 });

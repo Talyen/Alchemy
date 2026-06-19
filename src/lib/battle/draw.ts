@@ -8,6 +8,7 @@
  * `Math.random()` in the battle engine, and the eslint rule only catches call expressions.
  */
 import type { BattleCard } from "@/lib/game-data";
+import type { BattleState } from "./types";
 import { shuffle } from "../utils";
 import { MAX_HAND_SIZE } from "../game-constants";
 
@@ -48,6 +49,11 @@ export function drawCards(
   }
 
   return { deck: nextDeck, discard: nextDiscard, hand: nextHand, nextCardUid: uid };
+}
+
+/** Convenience wrapper that pulls state.deck/discard/hand/rng from BattleState. */
+export function drawFromState(state: BattleState, amount: number) {
+  return drawCards(state.deck, state.discard, state.hand, amount, state.nextCardUid, state.rng);
 }
 
 export function shuffleCards(cards: BattleCard[], rng: () => number) {

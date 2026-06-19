@@ -96,7 +96,7 @@ describe("dealDamageToEnemy — physical vs stunned/frozen multipliers", () => {
     });
     const state = makeState({
       mana: 10, enemyHealth: 50,
-      enemyStunSkipTurns: 1,
+      enemyCC: { stunSkipTurns: 1 },
       talentEffects,
     });
     const noMultiplier = applyCardEffects(staleState, card, texts.slice(0, 0));
@@ -117,7 +117,7 @@ describe("dealDamageToEnemy — physical vs stunned/frozen multipliers", () => {
     });
     const state = makeState({
       mana: 10, enemyHealth: 50,
-      enemyStunSkipTurns: 1,
+      enemyCC: { stunSkipTurns: 1 },
       talentEffects,
     });
     const noTrait = applyCardEffects(staleState, card, texts.slice(0, 0));
@@ -257,7 +257,7 @@ describe("applyDamageStatuses — stun talent effects chain", () => {
     // stun status applied = 17, threshold: > 30*0.5 = 15 → 17 > 15 → triggers stun
     // stun trigger fires: draw 2, free card flag, block+4, forge+2, strip armor, mana+1
     expect(result.enemyHealth).toBe(13);
-    expect(result.enemyStunSkipTurns).toBeGreaterThan(0);
+    expect(result.enemyCC.stunSkipTurns).toBeGreaterThan(0);
     expect(result.playerStatuses.block).toBe(4);
     // forge added by stun talent trigger
     expect(result.playerStatuses.forge).toBeGreaterThanOrEqual(1);
@@ -276,11 +276,11 @@ describe("applyDamageStatuses — stun on cooldown enemy", () => {
     const state = makeState({
       mana: 10, enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCCCooldown: 1,
+      enemyCC: { cooldown: 1 },
     });
     const result = applyCardEffects(state, card, texts);
     // stun 20 > 15 threshold, but cooldown active → immunity clears stun status
-    expect(result.enemyStunSkipTurns).toBe(0);
+    expect(result.enemyCC.stunSkipTurns).toBe(0);
     expect(result.enemyStatuses.stun).toBe(0); // immunity clears it
   });
 });
@@ -295,7 +295,7 @@ describe("applyDamageStatuses — freeze threshold boundary", () => {
     });
     const result = applyCardEffects(state, card, texts);
     // freeze = 15, health = 30, threshold = 0.5 → 15 >= 15 → triggers
-    expect(result.enemyFreezeSkipTurns).toBeGreaterThan(0);
+    expect(result.enemyCC.freezeSkipTurns).toBeGreaterThan(0);
   });
 
   it("freeze threshold is checked against post-damage health (which is lower)", () => {
@@ -306,7 +306,7 @@ describe("applyDamageStatuses — freeze threshold boundary", () => {
     });
     const result = applyCardEffects(state, card, texts);
     // freeze damage 6 → health 24, freeze=6, threshold=24*0.5=12 → 6 < 12 → no trigger
-    expect(result.enemyFreezeSkipTurns).toBe(0);
+    expect(result.enemyCC.freezeSkipTurns).toBe(0);
   });
 });
 
@@ -317,11 +317,11 @@ describe("applyDamageStatuses — freeze cooldown skip", () => {
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10, enemyHealth: 30, enemyMaxHealth: 30,
-      enemyCCCooldown: 2,
+      enemyCC: { cooldown: 2 },
     });
     const result = applyCardEffects(state, card, texts);
     // 25 >= 15 threshold, but cooldown active → no new freeze
-    expect(result.enemyFreezeSkipTurns).toBe(0);
+    expect(result.enemyCC.freezeSkipTurns).toBe(0);
   });
 });
 

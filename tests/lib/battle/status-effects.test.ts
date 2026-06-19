@@ -15,7 +15,7 @@ describe("getEnemyDamageMultiplier", () => {
 
   it("returns TRAIT_DAMAGE_WEAKNESS when stunDoubleDamage is active and enemy is stunned", () => {
     const state = createTestBattleState({
-      enemyStunSkipTurns: 1,
+      enemyCC: { stunSkipTurns: 1 },
       talentEffects: { ...createTestBattleState().talentEffects, stunDoubleDamage: true },
     });
     const result = getEnemyDamageMultiplier(state, "physical");
@@ -24,7 +24,7 @@ describe("getEnemyDamageMultiplier", () => {
 
   it("returns TRAIT_DAMAGE_WEAKNESS when freezeDoubleDamage is active and enemy is frozen", () => {
     const state = createTestBattleState({
-      enemyFreezeSkipTurns: 1,
+      enemyCC: { freezeSkipTurns: 1 },
       talentEffects: { ...createTestBattleState().talentEffects, freezeDoubleDamage: true },
     });
     const result = getEnemyDamageMultiplier(state, "physical");
@@ -33,8 +33,7 @@ describe("getEnemyDamageMultiplier", () => {
 
   it("returns 4x when both stun and freeze double damage are active", () => {
     const state = createTestBattleState({
-      enemyStunSkipTurns: 1,
-      enemyFreezeSkipTurns: 1,
+      enemyCC: { stunSkipTurns: 1, freezeSkipTurns: 1 },
       talentEffects: {
         ...createTestBattleState().talentEffects,
         stunDoubleDamage: true,
@@ -47,8 +46,7 @@ describe("getEnemyDamageMultiplier", () => {
 
   it("trait weakness takes priority over stun/freeze multipliers", () => {
     const state = createTestBattleState({
-      enemyStunSkipTurns: 1,
-      enemyFreezeSkipTurns: 1,
+      enemyCC: { stunSkipTurns: 1, freezeSkipTurns: 1 },
       talentEffects: {
         ...createTestBattleState().talentEffects,
         stunDoubleDamage: true,

@@ -135,7 +135,7 @@ export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number
     return resolveHasteTurn(nextState);
   }
 
-  if (state.enemyStunSkipTurns + state.enemyFreezeSkipTurns > 0) {
+  if (state.enemyCC.stunSkipTurns + state.enemyCC.freezeSkipTurns > 0) {
     return resolveSkippedEnemyTurn(nextState, options);
   }
 

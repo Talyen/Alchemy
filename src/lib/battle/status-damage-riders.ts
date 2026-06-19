@@ -202,7 +202,7 @@ export function tryTriggerEnemyFreeze(
   const immuneClear = applyEnemyCcImmunityClear({
     nextState,
     stat: "freeze",
-    ccCooldown: preHitState.enemyCCCooldown,
+    ccCooldown: preHitState.enemyCC.cooldown,
   });
   if (immuneClear) return immuneClear;
 

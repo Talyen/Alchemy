@@ -2,6 +2,7 @@
 // Depends on game-constants and battle types. Used by status-ticks and status-effects.
 import { BATTLE_CONFIG, HALF_DIVISOR, PERCENT_DENOMINATOR, POISON_DECAY_PERCENT } from "../game-constants";
 import { mergeCombatText } from "./combat-text";
+import { unsafeNonSeededRng } from "./rng";
 import type { BattleState, CombatTextEvent } from "./types";
 
 const CONSTANTS = {
@@ -43,7 +44,7 @@ export function rollPercent(chance: number, rng: () => number) {
 
 /** Extracts rng from battle state, falling back to Math.random if absent. */
 export function getBattleRng(state: { rng?: () => number }): () => number {
-  return state.rng ?? Math.random;
+  return state.rng ?? unsafeNonSeededRng;
 }
 
 export type ArmorDecayTarget = "player" | "enemy";

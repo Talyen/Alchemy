@@ -105,7 +105,7 @@ export function resolveStunTrigger(state: BattleState, combatTexts?: CombatTextE
   const immuneClear = applyEnemyCcImmunityClear({
     nextState: state,
     stat: "stun",
-    ccCooldown: state.enemyCCCooldown,
+    ccCooldown: state.enemyCC.cooldown,
   });
   if (immuneClear) return immuneClear;
 

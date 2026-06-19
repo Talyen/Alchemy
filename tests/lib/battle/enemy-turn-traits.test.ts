@@ -51,7 +51,7 @@ describe("processEnemyRegeneration", () => {
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyRegeneration: 3,
-      enemyFreezeSkipTurns: 0,
+      enemyCC: { freezeSkipTurns: 0 },
     });
     const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
     const result = processEnemyRegeneration(state, texts);
@@ -64,7 +64,7 @@ describe("processEnemyRegeneration", () => {
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyRegeneration: 3,
-      enemyFreezeSkipTurns: 1,
+      enemyCC: { freezeSkipTurns: 1 },
       talentEffects: {
         ...createTestBattleState().talentEffects,
         freezeBlocksRegen: true,
@@ -153,7 +153,7 @@ describe("processEnemyTraits", () => {
   it("skips scaling traits when freeze prevents enemy scaling", () => {
     const state = createTestBattleState({
       currentEnemy: forgeGolem,
-      enemyFreezeSkipTurns: 1,
+      enemyCC: { freezeSkipTurns: 1 },
       enemyMitigation: { ...createTestBattleState().enemyMitigation, forge: 0 },
       talentEffects: { ...createTestBattleState().talentEffects, freezePreventsEnemyScaling: true },
     });

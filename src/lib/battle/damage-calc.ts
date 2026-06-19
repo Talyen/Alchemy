@@ -91,10 +91,10 @@ function applyPhysicalScaling(state: BattleState, rawAmount: number): number {
 
 function applyPhysicalCCAndStatusMultipliers(state: BattleState, amount: number): number {
   let nextAmount = amount;
-  if (state.enemyStunSkipTurns > 0 && state.talentEffects.physicalDoubledVsStunned) {
+  if (state.enemyCC.stunSkipTurns > 0 && state.talentEffects.physicalDoubledVsStunned) {
     nextAmount *= DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
   }
-  if (state.enemyFreezeSkipTurns > 0 && state.talentEffects.physicalDoubledVsFrozen) {
+  if (state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.physicalDoubledVsFrozen) {
     nextAmount *= DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
   }
   if (

@@ -34,8 +34,8 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
     // 12 >= 10 (threshold), so stun triggers immediately.
     // Stun should clear to 0, enemyCCCooldown should set, and enemyStunSkipTurns should increase.
     expect(result.enemyStatuses.stun).toBe(0);
-    expect(result.enemyStunSkipTurns).toBe(1);
-    expect(result.enemyCCCooldown).toBe(2);
+    expect(result.enemyCC.stunSkipTurns).toBe(1);
+    expect(result.enemyCC.cooldown).toBe(2);
     expect(texts).toContainEqual({
       target: "enemy",
       kind: "notice",
@@ -64,7 +64,7 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
     
     // 11 >= 10, stun triggers immediately. Stun stack cleared to 0.
     expect(result.enemyStatuses.stun).toBe(0);
-    expect(result.enemyStunSkipTurns).toBe(1);
+    expect(result.enemyCC.stunSkipTurns).toBe(1);
     expect(texts).toContainEqual({
       target: "enemy",
       kind: "notice",
@@ -94,7 +94,7 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
     
     // 6 * 2 = 12 >= 10, freeze triggers immediately. Freeze stack cleared to 0.
     expect(result.enemyStatuses.freeze).toBe(0);
-    expect(result.enemyFreezeSkipTurns).toBe(1);
+    expect(result.enemyCC.freezeSkipTurns).toBe(1);
     expect(texts).toContainEqual({
       target: "enemy",
       kind: "notice",

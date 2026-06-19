@@ -23,10 +23,10 @@ describe("endPlayerTurn", () => {
 
   it("skips enemy turn when enemyStunSkipTurns > 0", () => {
     const state = makeState({
-      enemyStunSkipTurns: 1,
+      enemyCC: { stunSkipTurns: 1 },
     });
     const result = endPlayerTurn(state);
-    expect(result.state.enemyStunSkipTurns).toBe(0);
+    expect(result.state.enemyCC.stunSkipTurns).toBe(0);
     expect(result.state.playerHealth).toBe(30); // no damage taken
     expect(result.combatTexts).not.toContainEqual({ target: "enemy", kind: "status", stat: "stun", amount: 0 });
   });
@@ -68,7 +68,7 @@ describe("endPlayerTurn", () => {
     expect(result.state.turnPhase).toBe("enemy");
     expect(result.state.hand).toEqual([]);
     expect(result.state.mana).toBe(2);
-    expect(result.state.playerStunSkipTurns).toBe(0);
+    expect(result.state.playerCC.stunSkipTurns).toBe(0);
     expect(result.state.playerStatuses.stun).toBe(0);
   });
 
@@ -91,8 +91,8 @@ describe("endPlayerTurn", () => {
     const state = makeState({
       playerHealth: 2,
       playerStatuses: { ...defaultBattleState().playerStatuses, burn: 3 },
-      playerStunSkipTurns: 1,
-      enemyStunSkipTurns: 1,
+      playerCC: { stunSkipTurns: 1 },
+      enemyCC: { stunSkipTurns: 1 },
       hand: [makeCard({ id: "h1" })],
       mana: 2,
     });
@@ -103,7 +103,7 @@ describe("endPlayerTurn", () => {
     expect(result.state.deathsDoorActive).toBe(true);
     expect(result.state.turnPhase).toBe("player");
     expect(result.playerTurnSkipped).toBe(false);
-    expect(result.state.playerStunSkipTurns).toBe(0);
+    expect(result.state.playerCC.stunSkipTurns).toBe(0);
   });
 
   it("kills the player at the next enemy turn end if Death's Door was not healed", () => {
@@ -383,7 +383,7 @@ describe("enemy traits via endPlayerTurn", () => {
   it("glacial-shell does NOT add freeze bonus when frozen and player has freezePreventsEnemyScaling talent", () => {
     const state = makeState({
       enemyAttackEffects: [],
-      enemyFreezeSkipTurns: 1,
+      enemyCC: { freezeSkipTurns: 1 },
       talentEffects: {
         ...defaultTalentEffects,
         freezePreventsEnemyScaling: true,
@@ -734,7 +734,7 @@ describe("endPlayerTurn — enemy DoT kill during CC skip", () => {
       enemyHealth: 4,
       enemyMaxHealth: 30,
       enemyStatuses: { burn: 0, poison: 0, bleed: 6, freeze: 0, stun: 0 },
-      enemyStunSkipTurns: 1,
+      enemyCC: { stunSkipTurns: 1 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
     });
     const result = endPlayerTurn(state);
@@ -766,15 +766,14 @@ describe("endPlayerTurn — player killed by DoT after Death's Door consumed", (
 describe("endPlayerTurn — stun and freeze both active", () => {
   it("enemy with both stun and freeze skip turns uses CC skip once", () => {
     const state = makeState({
-      enemyStunSkipTurns: 2,
-      enemyFreezeSkipTurns: 1,
+      enemyCC: { stunSkipTurns: 2, freezeSkipTurns: 1 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
     });
     const result = endPlayerTurn(state);
     // both > 0, enters CC skip path
     // reduceSkipTurns reduces both by 1
-    expect(result.state.enemyStunSkipTurns).toBe(1);
-    expect(result.state.enemyFreezeSkipTurns).toBe(0);
+    expect(result.state.enemyCC.stunSkipTurns).toBe(1);
+    expect(result.state.enemyCC.freezeSkipTurns).toBe(0);
     expect(result.state.playerHealth).toBe(30);
     expect(result.enemyPerformedAttack).toBe(false);
   });

@@ -100,7 +100,7 @@ describe("tickEnemyStatuses", () => {
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
     expect(next.playerHealth).toBe(12);
-    expect(next.playerStunSkipTurns).toBe(1);
+    expect(next.playerCC.stunSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 8 });
   });
 
@@ -385,7 +385,7 @@ describe("tickPlayerStatuses", () => {
     // Stun threshold: 30 * 0.5 = 15, stun is 20 > 15, so triggers.
     expect(next.playerHealth).toBe(30); // no damage from stun
     expect(next.playerStatuses.stun).toBe(0);
-    expect(next.playerStunSkipTurns).toBe(1);
+    expect(next.playerCC.stunSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "stun", text: "Stunned" });
   });
 
@@ -401,7 +401,7 @@ describe("tickPlayerStatuses", () => {
       },
     });
     const next = tickPlayerStatuses(state, makeTexts());
-    expect(next.playerStunSkipTurns).toBe(0);
+    expect(next.playerCC.stunSkipTurns).toBe(0);
     expect(next.playerStatuses.stun).toBe(14);
   });
 
@@ -415,7 +415,7 @@ describe("tickPlayerStatuses", () => {
     const next = tickPlayerStatuses(state, texts);
     expect(next.playerHealth).toBe(30);
     expect(next.playerStatuses.stun).toBe(5); // unchanged, below threshold
-    expect(next.playerStunSkipTurns).toBe(0);
+    expect(next.playerCC.stunSkipTurns).toBe(0);
   });
 
   it("clears freeze and triggers turn skip when threshold exceeded", () => {
@@ -429,7 +429,7 @@ describe("tickPlayerStatuses", () => {
     // Freeze threshold: 30 * 0.5 = 15, freeze is 30 >= 15, so triggers.
     expect(next.playerHealth).toBe(30); // no damage from freeze
     expect(next.playerStatuses.freeze).toBe(0);
-    expect(next.playerFreezeSkipTurns).toBe(1);
+    expect(next.playerCC.freezeSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "freeze", text: "Frozen" });
   });
 
@@ -441,7 +441,7 @@ describe("tickPlayerStatuses", () => {
       trinketEffects: { ...patchBattleState().trinketEffects, freezeDurationExtension: 2 },
     });
     const next = tickPlayerStatuses(state, makeTexts());
-    expect(next.playerFreezeSkipTurns).toBe(1);
+    expect(next.playerCC.freezeSkipTurns).toBe(1);
   });
 
   it("CC immunity suppresses second stun trigger within cooldown", () => {
@@ -453,14 +453,14 @@ describe("tickPlayerStatuses", () => {
     });
     const texts = makeTexts();
     const afterFirst = tickPlayerStatuses(state, texts);
-    expect(afterFirst.playerStunSkipTurns).toBe(1);
-    expect(afterFirst.playerCCCooldown).toBe(2);
+    expect(afterFirst.playerCC.stunSkipTurns).toBe(1);
+    expect(afterFirst.playerCC.cooldown).toBe(2);
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "stun", text: "Stunned" });
 
     // Second trigger: cooldown active, stun cleared silently, no extra skip.
     const texts2 = makeTexts();
     const afterSecond = tickPlayerStatuses(afterFirst, texts2);
-    expect(afterSecond.playerStunSkipTurns).toBe(1); // unchanged
+    expect(afterSecond.playerCC.stunSkipTurns).toBe(1); // unchanged
     expect(afterSecond.playerStatuses.stun).toBe(0);
     expect(texts2).not.toContainEqual({ target: "player", kind: "notice", stat: "stun", text: "Stunned" });
   });
@@ -474,18 +474,18 @@ describe("tickPlayerStatuses", () => {
     });
     const texts = makeTexts();
     const afterTrigger = tickPlayerStatuses(state, texts);
-    expect(afterTrigger.playerCCCooldown).toBe(2);
+    expect(afterTrigger.playerCC.cooldown).toBe(2);
 
     // Simulate two turn advances by manually decrementing cooldown to 0.
     const cooledDown = {
       ...afterTrigger,
-      playerCCCooldown: 0,
+      playerCC: { ...afterTrigger.playerCC, cooldown: 0 },
       playerStatuses: { ...afterTrigger.playerStatuses, stun: 20 },
     };
     const texts3 = makeTexts();
     const afterReTrigger = tickPlayerStatuses(cooledDown, texts3);
-    expect(afterReTrigger.playerStunSkipTurns).toBe(2); // triggered again
-    expect(afterReTrigger.playerCCCooldown).toBe(2); // refreshed
+    expect(afterReTrigger.playerCC.stunSkipTurns).toBe(2); // triggered again
+    expect(afterReTrigger.playerCC.cooldown).toBe(2); // refreshed
   });
 
   it("skips ticks when all statuses are 0", () => {

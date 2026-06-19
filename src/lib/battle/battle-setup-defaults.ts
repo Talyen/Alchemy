@@ -14,6 +14,7 @@ import {
 } from "./types";
 import { defaultTrinketEffects } from "../trinkets";
 import { defaultGearEffects } from "@/lib/gear";
+import { unsafeNonSeededRng } from "./rng";
 
 export const defaultTalentEffects: TalentEffectManifest = createEmptyTalentManifest();
 
@@ -96,12 +97,8 @@ export function defaultBattleState(): BattleState {
     pendingBleedLeechHealing: 0,
     pendingEnemyBleedLeechHealing: 0,
     enemyPhysicalDamageBonus: 0,
-    enemyStunSkipTurns: 0,
-    enemyFreezeSkipTurns: 0,
-    playerStunSkipTurns: 0,
-    playerFreezeSkipTurns: 0,
-    playerCCCooldown: 0,
-    enemyCCCooldown: 0,
+    playerCC: { stunSkipTurns: 0, freezeSkipTurns: 0, cooldown: 0 },
+    enemyCC: { stunSkipTurns: 0, freezeSkipTurns: 0, cooldown: 0 },
     wishOptions: null,
     wishQueue: [],
     activeCompanion: null,
@@ -115,7 +112,7 @@ export function defaultBattleState(): BattleState {
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,
     difficultyModifiers: [],
-    rng: Math.random,
+    rng: unsafeNonSeededRng,
     pendingMaterials: emptyInventory(),
   };
 }

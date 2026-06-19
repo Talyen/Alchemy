@@ -39,6 +39,14 @@ export type EnemyMitigation = {
 
 export const EMPTY_ENEMY_MITIGATION: EnemyMitigation = { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 };
 
+// Per-side CC state: skip-turn counters and immunity cooldown, grouped to prevent
+// update-site drift (was 6 top-level fields before the regroup).
+export type CcState = {
+  stunSkipTurns: number;
+  freezeSkipTurns: number;
+  cooldown: number;
+};
+
 // Pre-computed bonuses from boons acquired during the run. Follows the same
 // pattern as TalentEffectManifest — computed once at battle start, immutable for
 // the duration of the battle.
@@ -92,6 +100,66 @@ export type CombatFlags = {
   divineAegisTriggered: boolean;
 };
 
+// Subset of CombatFlags consumed by card play — companion actions must not consume these.
+export type FirstTimeFlagKey =
+  | "firstPhysicalCardFreeUsed"
+  | "firstHolyCardFreeUsed"
+  | "firstBurnCardDoubledUsed"
+  | "firstArmorCardDoubledUsed"
+  | "firstPoisonCardFreeUsed"
+  | "firstBleedCardFreeUsed"
+  | "firstHolyDamageBonusUsed"
+  | "firstBurnTrinketDoubledUsed"
+  | "firstLeechCardDoubledUsed"
+  | "firstPotionFreeUsed"
+  | "nextCardCostReduction"
+  | "resonantChimeUsedThisTurn"
+  | "runicQuillUsedThisTurn";
+
+const FIRST_TIME_FLAG_USED_VALUES: { [K in FirstTimeFlagKey]: CombatFlags[K] } = {
+  firstPhysicalCardFreeUsed: true,
+  firstHolyCardFreeUsed: true,
+  firstBurnCardDoubledUsed: true,
+  firstArmorCardDoubledUsed: true,
+  firstPoisonCardFreeUsed: true,
+  firstBleedCardFreeUsed: true,
+  firstHolyDamageBonusUsed: true,
+  firstBurnTrinketDoubledUsed: true,
+  firstLeechCardDoubledUsed: true,
+  firstPotionFreeUsed: true,
+  nextCardCostReduction: 0,
+  resonantChimeUsedThisTurn: true,
+  runicQuillUsedThisTurn: true,
+};
+
+/**
+ * Snapshot first-time-per-combat flags before a non-card action (e.g., companion attack),
+ * set them to their "used" sentinel values, run the mutate callback, then restore.
+ */
+export function withPreservedFlags(state: BattleState, mutate: (s: BattleState) => BattleState): BattleState {
+  const saved: Partial<Pick<CombatFlags, FirstTimeFlagKey>> = {
+    firstPhysicalCardFreeUsed: state.flags.firstPhysicalCardFreeUsed,
+    firstHolyCardFreeUsed: state.flags.firstHolyCardFreeUsed,
+    firstBurnCardDoubledUsed: state.flags.firstBurnCardDoubledUsed,
+    firstArmorCardDoubledUsed: state.flags.firstArmorCardDoubledUsed,
+    firstPoisonCardFreeUsed: state.flags.firstPoisonCardFreeUsed,
+    firstBleedCardFreeUsed: state.flags.firstBleedCardFreeUsed,
+    firstHolyDamageBonusUsed: state.flags.firstHolyDamageBonusUsed,
+    firstBurnTrinketDoubledUsed: state.flags.firstBurnTrinketDoubledUsed,
+    firstLeechCardDoubledUsed: state.flags.firstLeechCardDoubledUsed,
+    firstPotionFreeUsed: state.flags.firstPotionFreeUsed,
+    nextCardCostReduction: state.flags.nextCardCostReduction,
+    resonantChimeUsedThisTurn: state.flags.resonantChimeUsedThisTurn,
+    runicQuillUsedThisTurn: state.flags.runicQuillUsedThisTurn,
+  };
+  const blockedState: BattleState = {
+    ...state,
+    flags: { ...state.flags, ...FIRST_TIME_FLAG_USED_VALUES },
+  };
+  const result = mutate(blockedState);
+  return { ...result, flags: { ...result.flags, ...saved } };
+}
+
 // The full snapshot of a battle at one point in time. Every mutation returns a new
 // BattleState (immutable), enabling the controller to diff states for animation.
 export type BattleState = {
@@ -121,12 +189,8 @@ export type BattleState = {
   pendingBleedLeechHealing: number; // bleed leech queued here on damage, paid out in tickBleed — prevents double-dipping if enemy dies before bleed ticks
   pendingEnemyBleedLeechHealing: number;
   enemyPhysicalDamageBonus: number;
-  enemyStunSkipTurns: number; // turns skipped from stun triggers
-  enemyFreezeSkipTurns: number; // turns skipped from freeze triggers
-  playerStunSkipTurns: number; // player turns skipped from stun
-  playerFreezeSkipTurns: number; // player turns skipped from freeze
-  playerCCCooldown: number; // turns of CC immunity after being stunned or frozen
-  enemyCCCooldown: number; // turns of CC immunity for the enemy after being stunned or frozen
+  playerCC: CcState;
+  enemyCC: CcState;
   wishOptions: BattleCard[] | null; // non-null = Wish selection is active
   wishQueue: BattleCard[][]; // additional Wish selections waiting behind the active modal
   activeCompanion: CompanionDefinition | null; // persistent ally effect for this battle only

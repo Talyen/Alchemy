@@ -21,7 +21,7 @@ describe("resolvePlayerCrowdControlTrigger", () => {
       thresholdFraction: STUN_THRESHOLD_FRACTION,
       combatTexts: texts,
     });
-    expect(result.playerStunSkipTurns).toBe(0);
+    expect(result.playerCC.stunSkipTurns).toBe(0);
     expect(result.playerStatuses.stun).toBe(5);
   });
 
@@ -38,15 +38,15 @@ describe("resolvePlayerCrowdControlTrigger", () => {
       thresholdFraction: STUN_THRESHOLD_FRACTION,
       combatTexts: texts,
     });
-    expect(result.playerStunSkipTurns).toBe(BATTLE_CONFIG.BASE_CC_DURATION);
+    expect(result.playerCC.stunSkipTurns).toBe(BATTLE_CONFIG.BASE_CC_DURATION);
     expect(result.playerStatuses.stun).toBe(0);
-    expect(result.playerCCCooldown).toBe(BATTLE_CONFIG.CC_IMMUNITY_DURATION);
+    expect(result.playerCC.cooldown).toBe(BATTLE_CONFIG.CC_IMMUNITY_DURATION);
   });
 
   it("clears freeze silently during player CC immunity", () => {
     const state = createTestBattleState({
       playerStatuses: { ...createTestBattleState().playerStatuses, freeze: 20 },
-      playerCCCooldown: 2,
+      playerCC: { cooldown: 2 },
     });
     const result = resolvePlayerCrowdControlTrigger({
       state,
@@ -56,23 +56,23 @@ describe("resolvePlayerCrowdControlTrigger", () => {
       combatTexts: [],
     });
     expect(result.playerStatuses.freeze).toBe(0);
-    expect(result.playerFreezeSkipTurns).toBe(0);
+    expect(result.playerCC.freezeSkipTurns).toBe(0);
   });
 });
 
 describe("enemy CC helpers", () => {
   it("applyEnemyCcImmunityClear zeros freeze on pre-hit cooldown", () => {
-    const preHit = createTestBattleState({ enemyCCCooldown: 2 });
+    const preHit = createTestBattleState({ enemyCC: { cooldown: 2 } });
     const afterStacks = createTestBattleState({
       enemyStatuses: { ...preHit.enemyStatuses, freeze: 20 },
     });
     const cleared = applyEnemyCcImmunityClear({
       nextState: afterStacks,
       stat: "freeze",
-      ccCooldown: preHit.enemyCCCooldown,
+      ccCooldown: preHit.enemyCC.cooldown,
     });
     expect(cleared?.enemyStatuses.freeze).toBe(0);
-    expect(cleared?.enemyFreezeSkipTurns).toBe(0);
+    expect(cleared?.enemyCC.freezeSkipTurns).toBe(0);
   });
 
   it("assignEnemyCrowdControlSkip increments enemy stun skip", () => {
@@ -85,7 +85,7 @@ describe("enemy CC helpers", () => {
       skipDuration: BATTLE_CONFIG.BASE_CC_DURATION,
       combatTexts: [],
     });
-    expect(result.enemyStunSkipTurns).toBe(BATTLE_CONFIG.BASE_CC_DURATION);
+    expect(result.enemyCC.stunSkipTurns).toBe(BATTLE_CONFIG.BASE_CC_DURATION);
     expect(result.enemyStatuses.stun).toBe(0);
   });
 
@@ -99,7 +99,7 @@ describe("enemy CC helpers", () => {
       skipDuration: BATTLE_CONFIG.BASE_CC_DURATION,
       combatTexts: [],
     });
-    expect(result.enemyFreezeSkipTurns).toBe(BATTLE_CONFIG.BASE_CC_DURATION);
+    expect(result.enemyCC.freezeSkipTurns).toBe(BATTLE_CONFIG.BASE_CC_DURATION);
     expect(result.enemyStatuses.freeze).toBe(0);
   });
 });

@@ -30,7 +30,9 @@ import type { EffectHandler } from "./handler-types";
 
 type RegisteredEffectKind = Exclude<BattleCardEffectKind, "chance">;
 
-export const EFFECT_APPLY_BY_KIND: Record<RegisteredEffectKind, EffectHandler> = {
+// `satisfies Record<...>` ensures ALL registered kinds have a handler at build time.
+// The effect-handlers-registry.test.ts provides a runtime belt-and-suspenders check.
+export const EFFECT_APPLY_BY_KIND = {
   damage: applyDamageEffect,
   "player-status": applyPlayerStatusEffectHandler,
   "enemy-status": applyEnemyStatusEffect,
@@ -52,7 +54,7 @@ export const EFFECT_APPLY_BY_KIND: Record<RegisteredEffectKind, EffectHandler> =
   "multiply-enemy-status": applyMultiplyEnemyStatusEffect,
   "cleanse-player-status-to-damage": applyCleansePlayerStatusToDamageEffect,
   "random-damage": applyRandomDamageEffect,
-};
+} satisfies Record<RegisteredEffectKind, EffectHandler>;
 
 export function hasEffectApplyHandler(kind: BattleCardEffectKind): kind is RegisteredEffectKind {
   return kind !== "chance" && kind in EFFECT_APPLY_BY_KIND;

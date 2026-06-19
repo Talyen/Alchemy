@@ -11,7 +11,7 @@ export { applyPlayerDamageStatuses, applyPlayerStatusEffect, removeHarmfulPlayer
 
 /** Trait weakness/resistance — first matching trait wins. */
 export function getEnemyDamageMultiplier(
-  state: Pick<BattleState, "currentEnemy" | "enemyStunSkipTurns" | "enemyFreezeSkipTurns" | "talentEffects">,
+  state: Pick<BattleState, "currentEnemy" | "enemyCC" | "talentEffects">,
   damageType: string,
 ): number {
   const traitIds = state.currentEnemy.traits.map((t) => t.id);
@@ -19,7 +19,7 @@ export function getEnemyDamageMultiplier(
     if (traitIds.includes(rule.traitId) && damageType === rule.damageType) return rule.multiplier;
   }
   let multiplier = 1;
-  if (state.enemyStunSkipTurns > 0 && state.talentEffects.stunDoubleDamage) multiplier *= TRAIT_DAMAGE_WEAKNESS;
-  if (state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezeDoubleDamage) multiplier *= TRAIT_DAMAGE_WEAKNESS;
+  if (state.enemyCC.stunSkipTurns > 0 && state.talentEffects.stunDoubleDamage) multiplier *= TRAIT_DAMAGE_WEAKNESS;
+  if (state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.freezeDoubleDamage) multiplier *= TRAIT_DAMAGE_WEAKNESS;
   return multiplier;
 }

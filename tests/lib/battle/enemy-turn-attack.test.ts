@@ -181,7 +181,7 @@ describe("processEnemyAttack", () => {
       playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
       enemyHealth: 20,
       enemyMaxHealth: 30,
-      enemyFreezeSkipTurns: 1,
+      enemyCC: { freezeSkipTurns: 1 },
       talentEffects: { ...createTestBattleState().talentEffects, freezeBlocksRegen: true },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }],
     });

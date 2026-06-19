@@ -60,7 +60,7 @@ export function applyGearKillRewards(
 }
 
 export function gearFrozenDamageMultiplier(state: BattleState): number {
-  if (state.enemyFreezeSkipTurns <= 0 || state.gearEffects.frozenEnemyDamageBonusPercent <= 0) return 1;
+  if (state.enemyCC.freezeSkipTurns <= 0 || state.gearEffects.frozenEnemyDamageBonusPercent <= 0) return 1;
   return 1 + state.gearEffects.frozenEnemyDamageBonusPercent / PERCENT_DENOMINATOR;
 }
 

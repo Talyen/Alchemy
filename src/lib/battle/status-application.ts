@@ -6,7 +6,7 @@
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import { mergeCombatText } from "./combat-text";
-import type { BattleState, CombatTextEvent } from "./types";
+import { addPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 import { scaleFreezeBuildUp } from "./status-helpers";
 
 const CONSTANTS = {
@@ -59,13 +59,7 @@ function applyHarmfulStatusFromAttack(
     amount,
     status === "freeze" && state.talentEffects.receiveHalfFreezeBuildUp,
   );
-  const nextState = {
-    ...state,
-    playerStatuses: {
-      ...state.playerStatuses,
-      [status]: state.playerStatuses[status] + adjustedAmount,
-    },
-  };
+  const nextState = addPlayerStatus(state, status, adjustedAmount);
   mergeCombatText(combatTexts, {
     target: CONSTANTS.TARGETS.PLAYER,
     kind: CONSTANTS.COMBAT_TEXT_KINDS.DAMAGE,
@@ -87,13 +81,7 @@ function applyBeneficialStatusFromAttack(
     stat: status,
     amount,
   });
-  return {
-    ...state,
-    playerStatuses: {
-      ...state.playerStatuses,
-      [status]: state.playerStatuses[status] + amount,
-    },
-  };
+  return addPlayerStatus(state, status, amount);
 }
 
 export function applyPlayerStatusFromAttack(

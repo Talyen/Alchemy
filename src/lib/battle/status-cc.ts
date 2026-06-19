@@ -20,16 +20,6 @@ const CONSTANTS = {
   COMBAT_TEXT_KINDS: {
     NOTICE: "notice" as const,
   },
-  SKIP_FIELDS: {
-    stun: {
-      player: "playerStunSkipTurns" as const,
-      enemy: "enemyStunSkipTurns" as const,
-    },
-    freeze: {
-      player: "playerFreezeSkipTurns" as const,
-      enemy: "enemyFreezeSkipTurns" as const,
-    },
-  },
 } as const;
 
 type CcStat = typeof CONSTANTS.STATUS_NAMES.STUN | typeof CONSTANTS.STATUS_NAMES.FREEZE;
@@ -58,7 +48,7 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
   if (state.playerHealth <= 0 || stackValue < state.playerMaxHealth * thresholdFraction) {
     return state;
   }
-  if (state.playerCCCooldown > 0) {
+  if (state.playerCC.cooldown > 0) {
     return clearPlayerCcStack(state, stat);
   }
   mergeCombatText(combatTexts, {
@@ -67,11 +57,15 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
     stat,
     text: stat === CONSTANTS.STATUS_NAMES.STUN ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
   });
-  const skipField = CONSTANTS.SKIP_FIELDS[stat].player;
   let nextState: BattleState = {
     ...clearPlayerCcStack(state, stat),
-    [skipField]: state[skipField] + BATTLE_CONFIG.BASE_CC_DURATION,
-    playerCCCooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION,
+    playerCC: {
+      ...state.playerCC,
+      ...(stat === CONSTANTS.STATUS_NAMES.STUN
+        ? { stunSkipTurns: state.playerCC.stunSkipTurns + BATTLE_CONFIG.BASE_CC_DURATION }
+        : { freezeSkipTurns: state.playerCC.freezeSkipTurns + BATTLE_CONFIG.BASE_CC_DURATION }),
+      cooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION,
+    },
   };
 
   if (state.gearEffects.armorOnStunOrFreeze > 0) {
@@ -112,11 +106,15 @@ export type EnemyCcTriggerInput = {
 /** Assigns enemy skip turns, cooldown, and notice after threshold was met. */
 export function assignEnemyCrowdControlSkip(input: EnemyCcTriggerInput): BattleState {
   const { nextState, stat, skipDuration, combatTexts, postTrigger } = input;
-  const skipField = CONSTANTS.SKIP_FIELDS[stat].enemy;
   let result: BattleState = {
     ...clearEnemyCcStack(nextState, stat),
-    [skipField]: nextState[skipField] + skipDuration,
-    enemyCCCooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION,
+    enemyCC: {
+      ...nextState.enemyCC,
+      ...(stat === CONSTANTS.STATUS_NAMES.STUN
+        ? { stunSkipTurns: nextState.enemyCC.stunSkipTurns + skipDuration }
+        : { freezeSkipTurns: nextState.enemyCC.freezeSkipTurns + skipDuration }),
+      cooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION,
+    },
   };
   mergeCombatText(combatTexts, {
     target: CONSTANTS.TARGETS.ENEMY,

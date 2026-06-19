@@ -21,7 +21,7 @@ function computeDeathsDoorGraceRemaining(state: BattleState): number {
 }
 
 export function isFreezeActiveForAspect(state: BattleState, aspect: FreezeAspect): boolean {
-  if (state.enemyFreezeSkipTurns <= 0) return false;
+  if (state.enemyCC.freezeSkipTurns <= 0) return false;
   if (aspect === "regen") return state.talentEffects.freezeBlocksRegen;
   return state.talentEffects.freezePreventsEnemyScaling;
 }
@@ -34,8 +34,8 @@ function resetPlayerTurnState(state: BattleState): BattleState {
   return {
     ...state,
     turn: state.turn + 1,
-    playerCCCooldown: Math.max(0, state.playerCCCooldown - 1),
-    enemyCCCooldown: Math.max(0, state.enemyCCCooldown - 1),
+    playerCC: { ...state.playerCC, cooldown: Math.max(0, state.playerCC.cooldown - 1) },
+    enemyCC: { ...state.enemyCC, cooldown: Math.max(0, state.enemyCC.cooldown - 1) },
     playerStatuses: { ...state.playerStatuses, block: decayHalvedStatus(state.playerStatuses.block ?? 0) },
     cardsPlayedThisTurn: 0,
     flags: {
@@ -52,8 +52,11 @@ function handleCCSkipTurn(state: BattleState): BattleState {
   return {
     ...nextState,
     turnPhase: "enemy",
-    playerStunSkipTurns: Math.max(0, state.playerStunSkipTurns - 1),
-    playerFreezeSkipTurns: Math.max(0, state.playerFreezeSkipTurns - 1),
+    playerCC: {
+      ...nextState.playerCC,
+      stunSkipTurns: Math.max(0, state.playerCC.stunSkipTurns - 1),
+      freezeSkipTurns: Math.max(0, state.playerCC.freezeSkipTurns - 1),
+    },
   };
 }
 
@@ -71,8 +74,11 @@ function performDrawAndResetPhase(state: BattleState, deathsDoorNeedsRecoveryTur
     discard: nextDraw.discard,
     nextCardUid: nextDraw.nextCardUid,
     mana: nextState.maxMana + wellspringBonus,
-    playerStunSkipTurns: deathsDoorNeedsRecoveryTurn ? 0 : nextState.playerStunSkipTurns,
-    playerFreezeSkipTurns: deathsDoorNeedsRecoveryTurn ? 0 : nextState.playerFreezeSkipTurns,
+    playerCC: {
+      ...nextState.playerCC,
+      stunSkipTurns: deathsDoorNeedsRecoveryTurn ? 0 : nextState.playerCC.stunSkipTurns,
+      freezeSkipTurns: deathsDoorNeedsRecoveryTurn ? 0 : nextState.playerCC.freezeSkipTurns,
+    },
   };
 }
 
@@ -87,7 +93,7 @@ export function advanceToPlayerTurn(state: BattleState, combatTexts: CombatTextE
     };
   }
 
-  if (!deathsDoorNeedsRecoveryTurn && state.playerStunSkipTurns + state.playerFreezeSkipTurns > 0) {
+  if (!deathsDoorNeedsRecoveryTurn && state.playerCC.stunSkipTurns + state.playerCC.freezeSkipTurns > 0) {
     return handleCCSkipTurn(nextState);
   }
 
@@ -134,8 +140,11 @@ export function checkHealthThresholds(
 export function reduceSkipTurns(state: BattleState): BattleState {
   return {
     ...state,
-    enemyStunSkipTurns: Math.max(0, state.enemyStunSkipTurns - 1),
-    enemyFreezeSkipTurns: Math.max(0, state.enemyFreezeSkipTurns - 1),
+    enemyCC: {
+      ...state.enemyCC,
+      stunSkipTurns: Math.max(0, state.enemyCC.stunSkipTurns - 1),
+      freezeSkipTurns: Math.max(0, state.enemyCC.freezeSkipTurns - 1),
+    },
   };
 }
 

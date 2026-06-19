@@ -5,7 +5,7 @@
  */
 import { applyCardEffects } from "./apply-effects";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
-import { type BattleState, type CombatTextEvent, applyPlayerHealing } from "./types";
+import { type BattleState, type CombatTextEvent, applyPlayerHealing, withPreservedFlags } from "./types";
 import { HALF_DIVISOR } from "../game-constants";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
@@ -61,78 +61,38 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     state.gearEffects,
     state.companionDamageBuff,
     companionBondLevel,
-    state.enemyFreezeSkipTurns,
+    state.enemyCC.freezeSkipTurns,
     state.maxMana,
     state.playerStatuses.forge,
   );
 
-  // Snapshot flags before companion effects and restore them after — companion actions
-  // are not player card plays and should not consume or benefit from per-turn/per-combat
-  // one-shot bonuses (first-burn-double, first-free-card, etc.).
-  const originalCardPlayFlags = {
-    firstPhysicalCardFreeUsed: state.flags.firstPhysicalCardFreeUsed,
-    firstHolyCardFreeUsed: state.flags.firstHolyCardFreeUsed,
-    firstBurnCardDoubledUsed: state.flags.firstBurnCardDoubledUsed,
-    firstArmorCardDoubledUsed: state.flags.firstArmorCardDoubledUsed,
-    firstPoisonCardFreeUsed: state.flags.firstPoisonCardFreeUsed,
-    firstBleedCardFreeUsed: state.flags.firstBleedCardFreeUsed,
-    firstHolyDamageBonusUsed: state.flags.firstHolyDamageBonusUsed,
-    firstBurnTrinketDoubledUsed: state.flags.firstBurnTrinketDoubledUsed,
-    firstLeechCardDoubledUsed: state.flags.firstLeechCardDoubledUsed,
-    firstPotionFreeUsed: state.flags.firstPotionFreeUsed,
-    nextCardCostReduction: state.flags.nextCardCostReduction,
-    resonantChimeUsedThisTurn: state.flags.resonantChimeUsedThisTurn,
-    runicQuillUsedThisTurn: state.flags.runicQuillUsedThisTurn,
-  };
+  // Companion actions are not player card plays and should not consume or benefit
+  // from per-turn/per-combat one-shot bonuses. withPreservedFlags snapshots the
+  // first-time-per-combat flags, sets them to "used" values, runs the effects,
+  // then restores the originals — without the manual scope-guard boilerplate.
+  return withPreservedFlags(state, (s) => {
+    const afterEffects = processEncounterTraitCardAction(
+      applyCardEffects(s, companionCard, combatTexts),
+      companionCard,
+      combatTexts,
+    );
 
-  const tempState: BattleState = {
-    ...state,
-    flags: {
-      ...state.flags,
-      firstPhysicalCardFreeUsed: true,
-      firstHolyCardFreeUsed: true,
-      firstBurnCardDoubledUsed: true,
-      firstArmorCardDoubledUsed: true,
-      firstPoisonCardFreeUsed: true,
-      firstBleedCardFreeUsed: true,
-      firstHolyDamageBonusUsed: true,
-      firstBurnTrinketDoubledUsed: true,
-      firstLeechCardDoubledUsed: true,
-      firstPotionFreeUsed: true,
-      nextCardCostReduction: 0,
-      resonantChimeUsedThisTurn: true,
-      runicQuillUsedThisTurn: true,
-    },
-  };
-
-  const result = processEncounterTraitCardAction(
-    applyCardEffects(tempState, companionCard, combatTexts),
-    companionCard,
-    combatTexts,
-  );
-
-  let finalState = {
-    ...result,
-    flags: {
-      ...result.flags,
-      ...originalCardPlayFlags,
-    },
-  };
-
-  if (state.gearEffects.healOnCompanionAttack > 0) {
-    const hasDamageEffect = companionCard.effects.some((e) => e.kind === "damage");
-    if (hasDamageEffect) {
-      const prevState = finalState;
-      finalState = applyPlayerHealing(finalState, state.gearEffects.healOnCompanionAttack);
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "heal",
-        stat: "health",
-        amount: state.gearEffects.healOnCompanionAttack,
-      });
-      emitOverhealBlockText(prevState, finalState, combatTexts);
+    if (state.gearEffects.healOnCompanionAttack > 0) {
+      const hasDamageEffect = companionCard.effects.some((e) => e.kind === "damage");
+      if (hasDamageEffect) {
+        const prevState = afterEffects;
+        const healedState = applyPlayerHealing(afterEffects, state.gearEffects.healOnCompanionAttack);
+        mergeCombatText(combatTexts, {
+          target: "player",
+          kind: "heal",
+          stat: "health",
+          amount: state.gearEffects.healOnCompanionAttack,
+        });
+        emitOverhealBlockText(prevState, healedState, combatTexts);
+        return healedState;
+      }
     }
-  }
 
-  return finalState;
+    return afterEffects;
+  });
 }

@@ -5,7 +5,7 @@
  */
 import { getOfferableCardPool, selectRewardCards } from "@/lib/game-data";
 import type { BattleCard } from "@/lib/game-data";
-import { drawCards } from "./draw";
+import { drawFromState } from "./draw";
 import { addGold, applyPlayerHealing, clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect, getEnemyDamageMultiplier } from "./status-effects";
@@ -134,14 +134,7 @@ function applyWishDrawTriggers(state: BattleState): BattleState {
   const nextState = state;
   const drawCount = (nextState.talentEffects.wishDrawsCard ? 1 : 0) + nextState.gearEffects.drawOnWish;
   if (drawCount <= 0) return nextState;
-  const draw = drawCards(
-    nextState.deck,
-    nextState.discard,
-    nextState.hand,
-    drawCount,
-    nextState.nextCardUid,
-    nextState.rng,
-  );
+  const draw = drawFromState(nextState, drawCount);
   return {
     ...nextState,
     deck: draw.deck,

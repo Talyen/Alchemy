@@ -3,21 +3,14 @@
  * Depends on: ./draw, ./combat-text, ./types, ../game-constants.
  * Depended on by: ./status-stun-resolve, ./status-damage-riders.
  */
-import { drawCards } from "./draw";
+import { drawFromState } from "./draw";
 import { mergeCombatText } from "./combat-text";
 import { addPlayerStatus, setFlag, stripEnemyArmor, type BattleState, type CombatTextEvent } from "./types";
 import { FREE_CARD_SENTINEL } from "../game-constants";
 
 export function applyStunDrawTalent(state: BattleState): BattleState {
   if (state.talentEffects.drawOnStun <= 0) return state;
-  const draw = drawCards(
-    state.deck,
-    state.discard,
-    state.hand,
-    state.talentEffects.drawOnStun,
-    state.nextCardUid,
-    state.rng,
-  );
+  const draw = drawFromState(state, state.talentEffects.drawOnStun);
   return {
     ...state,
     deck: draw.deck,

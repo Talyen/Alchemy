@@ -95,14 +95,14 @@ describe("applyDamageStatuses", () => {
       ...base,
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyStunSkipTurns: 0,
+      enemyCC: { stunSkipTurns: 0 },
       enemyStatuses: { ...base.enemyStatuses, stun: 15 },
     };
     const effect = { kind: "damage" as const, damageType: "stun" as const, amount: 5 };
     const texts = makeTexts();
     const result = applyDamageStatuses(state, effect, 5, texts);
     expect(result.enemyStatuses.stun).toBe(0);
-    expect(result.enemyStunSkipTurns).toBe(1);
+    expect(result.enemyCC.stunSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
   });
 
@@ -123,7 +123,7 @@ describe("applyDamageStatuses", () => {
     const texts = makeTexts();
     const result = applyDamageStatuses(state, effect, 10, texts);
     expect(result.enemyStatuses.freeze).toBe(0);
-    expect(result.enemyFreezeSkipTurns).toBe(1);
+    expect(result.enemyCC.freezeSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" });
   });
 
@@ -136,7 +136,7 @@ describe("applyDamageStatuses", () => {
     });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
     const result = applyDamageStatuses(state, effect, 10, []);
-    expect(result.enemyFreezeSkipTurns).toBe(3);
+    expect(result.enemyCC.freezeSkipTurns).toBe(3);
   });
 
   it("freeze triggers frozenHeartDamage on skip", () => {
@@ -157,19 +157,19 @@ describe("applyDamageStatuses", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCCCooldown: 0,
+      enemyCC: { cooldown: 0 },
       enemyStatuses: { ...createTestBattleState().enemyStatuses, freeze: 15 },
     });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
     const texts = makeTexts();
     const result = applyDamageStatuses(state, effect, 10, texts);
-    expect(result.enemyFreezeSkipTurns).toBe(1);
-    expect(result.enemyCCCooldown).toBe(2);
+    expect(result.enemyCC.freezeSkipTurns).toBe(1);
+    expect(result.enemyCC.cooldown).toBe(2);
 
     // Second trigger with cooldown: clear freeze but no extra skip.
-    const state2 = { ...result, enemyCCCooldown: 1, enemyStatuses: { ...result.enemyStatuses, freeze: 15 } };
+    const state2 = { ...result, enemyCC: { ...result.enemyCC, cooldown: 1 }, enemyStatuses: { ...result.enemyStatuses, freeze: 15 } };
     const result2 = applyDamageStatuses(state2, effect, 10, []);
-    expect(result2.enemyFreezeSkipTurns).toBe(1); // unchanged
+    expect(result2.enemyCC.freezeSkipTurns).toBe(1); // unchanged
     expect(result2.enemyStatuses.freeze).toBe(0);
   });
 
@@ -192,7 +192,7 @@ describe("applyDamageStatuses", () => {
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
     const result = applyDamageStatuses(state, effect, 10, []);
     expect(result.enemyStatuses.freeze).toBe(0); // cleared on trigger
-    expect(result.enemyFreezeSkipTurns).toBeGreaterThanOrEqual(1); // freeze triggers
+    expect(result.enemyCC.freezeSkipTurns).toBeGreaterThanOrEqual(1); // freeze triggers
   });
 });
 
@@ -216,7 +216,7 @@ describe("zero-duration status edge cases", () => {
     const effect = { kind: "damage" as const, damageType: "stun" as const, amount: 0 };
     const result = applyDamageStatuses(state, effect, 0, []);
     expect(result.enemyStatuses.stun).toBe(5);
-    expect(result.enemyStunSkipTurns).toBe(0);
+    expect(result.enemyCC.stunSkipTurns).toBe(0);
   });
 
   it("applying 0 freeze to enemy leaves freeze unchanged", () => {
@@ -228,7 +228,7 @@ describe("zero-duration status edge cases", () => {
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 0 };
     const result = applyDamageStatuses(state, effect, 0, []);
     expect(result.enemyStatuses.freeze).toBe(5);
-    expect(result.enemyFreezeSkipTurns).toBe(0);
+    expect(result.enemyCC.freezeSkipTurns).toBe(0);
   });
 
   it("applying 0 poison leaves poison stack unchanged", () => {
@@ -252,7 +252,7 @@ describe("applyPoisonTalentRiders", () => {
     });
     const texts = makeTexts();
     const result = applyPoisonTalentRiders(state, 4, texts);
-    expect(result.enemyStunSkipTurns).toBeGreaterThan(0);
+    expect(result.enemyCC.stunSkipTurns).toBeGreaterThan(0);
   });
 
   it("leeches health when poisonLeechChance procs", () => {
@@ -306,7 +306,7 @@ describe("applyDamageStatuses � physical riders", () => {
     });
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 4 };
     const result = applyDamageStatuses(state, effect, 4, []);
-    expect(result.enemyStunSkipTurns).toBeGreaterThan(0);
+    expect(result.enemyCC.stunSkipTurns).toBeGreaterThan(0);
   });
 });
 
@@ -321,6 +321,6 @@ describe("applyDamageStatuses � freeze threshold uses pre-hit health", () => {
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 6 };
     const result = applyDamageStatuses(state, effect, 6, []);
     expect(result.enemyStatuses.freeze).toBe(6);
-    expect(result.enemyFreezeSkipTurns).toBe(0);
+    expect(result.enemyCC.freezeSkipTurns).toBe(0);
   });
 });

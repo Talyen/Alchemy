@@ -3,7 +3,7 @@
  * Depends on: ./draw, ./apply-effects, ./combat-text, ../game-constants, @/lib/game-data, ./types.
  * Depended on by: ./cost, features/alchemy controllers.
  */
-import { drawCards } from "./draw";
+import { drawFromState } from "./draw";
 import { applyCardEffects } from "./apply-effects";
 import { mergeCombatText } from "./combat-text";
 import { POTION_CARD_ID_SUFFIX } from "../game-constants";
@@ -236,14 +236,7 @@ function handlePostPlayCardDestination(
     let nextState = { ...state, exhausted: [...state.exhausted, card] };
     if (triggerConsumeRiders) {
       if (state.trinketEffects.runicQuillDrawOnConsume > 0 && !state.flags.runicQuillUsedThisTurn) {
-        const draw = drawCards(
-          nextState.deck,
-          nextState.discard,
-          nextState.hand,
-          state.trinketEffects.runicQuillDrawOnConsume,
-          nextState.nextCardUid,
-          nextState.rng,
-        );
+        const draw = drawFromState(nextState, state.trinketEffects.runicQuillDrawOnConsume);
         nextState = {
           ...nextState,
           deck: draw.deck,

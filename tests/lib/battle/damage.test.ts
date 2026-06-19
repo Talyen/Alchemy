@@ -361,7 +361,7 @@ describe("computeBaseDamage — physical vs statuses", () => {
   it("amplifies physical damage against stunned enemies", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
-      enemyStunSkipTurns: 1,
+      enemyCC: { stunSkipTurns: 1 },
       talentEffects: { physicalDoubledVsStunned: true },
     });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
@@ -379,7 +379,7 @@ describe("computeBaseDamage — physical vs statuses", () => {
   it("amplifies physical damage against frozen enemies", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
-      enemyFreezeSkipTurns: 1,
+      enemyCC: { freezeSkipTurns: 1 },
       talentEffects: { physicalDoubledVsFrozen: true },
     });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
@@ -522,7 +522,7 @@ describe("applyForgeStunRider", () => {
       card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
       texts,
     );
-    expect(result.enemyStunSkipTurns).toBeGreaterThan(0);
+    expect(result.enemyCC.stunSkipTurns).toBeGreaterThan(0);
   });
 
   it("does not stun when forge is below threshold", () => {
@@ -538,7 +538,7 @@ describe("applyForgeStunRider", () => {
       card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
       texts,
     );
-    expect(result.enemyStunSkipTurns).toBe(0);
+    expect(result.enemyCC.stunSkipTurns).toBe(0);
   });
 });
 

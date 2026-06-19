@@ -59,14 +59,14 @@ describe("advanceToPlayerTurn", () => {
   it("CC skip: no draw when stun skip active", () => {
     const state = createTestBattleState({
       turnPhase: "enemy",
-      playerStunSkipTurns: 1,
+      playerCC: { stunSkipTurns: 1 },
       deck: [makeCard("d1"), makeCard("d2")],
       hand: [],
     });
     const result = advanceToPlayerTurn(state);
     expect(result.turnPhase).toBe("enemy");
     expect(result.hand).toHaveLength(0);
-    expect(result.playerStunSkipTurns).toBe(0);
+    expect(result.playerCC.stunSkipTurns).toBe(0);
   });
 
   it("Death's Door recovery suppresses CC skip", () => {
@@ -76,8 +76,8 @@ describe("advanceToPlayerTurn", () => {
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: 1,
       deathsDoorGraceTurnsRemaining: 1,
-      playerStunSkipTurns: 2,
-      playerFreezeSkipTurns: 1,
+      playerCC: { stunSkipTurns: 2 },
+      playerCC: { freezeSkipTurns: 1 },
       deck: [makeCard("d1"), makeCard("d2"), makeCard("d3"), makeCard("d4")],
       hand: [],
       turn: 1,
@@ -85,8 +85,8 @@ describe("advanceToPlayerTurn", () => {
     });
     const result = advanceToPlayerTurn(state);
     expect(result.turnPhase).toBe("player");
-    expect(result.playerStunSkipTurns).toBe(0);
-    expect(result.playerFreezeSkipTurns).toBe(0);
+    expect(result.playerCC.stunSkipTurns).toBe(0);
+    expect(result.playerCC.freezeSkipTurns).toBe(0);
   });
 
   it("heals from gear healthPerTurn and emits combat text", () => {
@@ -108,13 +108,13 @@ describe("advanceToPlayerTurn", () => {
 
 describe("isFreezeActiveForAspect", () => {
   it("returns false when enemy has no freeze skip", () => {
-    const state = createTestBattleState({ enemyFreezeSkipTurns: 0 });
+    const state = createTestBattleState({ enemyCC: { freezeSkipTurns: 0 } });
     expect(isFreezeActiveForAspect(state, "regen")).toBe(false);
   });
 
   it("respects freezeBlocksRegen for regen aspect", () => {
     const state = createTestBattleState({
-      enemyFreezeSkipTurns: 1,
+      enemyCC: { freezeSkipTurns: 1 },
       talentEffects: { ...defaultTalentEffects, freezeBlocksRegen: true },
     });
     expect(isFreezeActiveForAspect(state, "regen")).toBe(true);
@@ -123,7 +123,7 @@ describe("isFreezeActiveForAspect", () => {
 
   it("respects freezePreventsEnemyScaling for scaling aspect", () => {
     const state = createTestBattleState({
-      enemyFreezeSkipTurns: 1,
+      enemyCC: { freezeSkipTurns: 1 },
       talentEffects: { ...defaultTalentEffects, freezePreventsEnemyScaling: true },
     });
     expect(isFreezeActiveForAspect(state, "scaling")).toBe(true);

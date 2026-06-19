@@ -15,3 +15,4 @@ export { processCompanionTurnStart } from "./companion";
 export { endPlayerTurn } from "./enemy-turn";
 export { getBattleStartPlayerHealth } from "./start-health";
 export * from "./cost";
+export { unsafeNonSeededRng } from "./rng";

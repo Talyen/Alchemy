@@ -111,7 +111,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
     stat: CONSTANTS.STATUS_NAMES.POISON,
     amount: finalDamage,
   });
-  const isFrozenPreserved = state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezePreventsPoisonDecay;
+  const isFrozenPreserved = state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.freezePreventsPoisonDecay;
   let nextPoison = state.enemyStatuses.poison;
   if (!isFrozenPreserved) {
     if (rollPercent(state.talentEffects.poisonGainChance, state.rng)) {
