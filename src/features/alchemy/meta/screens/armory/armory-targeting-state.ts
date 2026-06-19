@@ -1,12 +1,20 @@
 import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
+import type { CharacterId } from "@/lib/game-data";
 
 export type ArmoryCursorPoint = { x: number; y: number };
+
+export type TransferMenuState = {
+  instanceId: string;
+  sourceCharacterId: CharacterId;
+  anchor: { x: number; y: number };
+} | null;
 
 export type ArmoryTargetingState = {
   salvageMode: boolean;
   salvageTarget: GearInstance | null;
   activeCurrencyId: CraftingCurrencyId | null;
   cursorPoint: ArmoryCursorPoint | null;
+  transferMenu: TransferMenuState;
 };
 
 export const initialArmoryTargetingState: ArmoryTargetingState = {
@@ -14,6 +22,7 @@ export const initialArmoryTargetingState: ArmoryTargetingState = {
   salvageTarget: null,
   activeCurrencyId: null,
   cursorPoint: null,
+  transferMenu: null,
 };
 
 export type ArmoryTargetingAction =
@@ -29,7 +38,9 @@ export type ArmoryTargetingAction =
   | { type: "SET_CURSOR"; point: ArmoryCursorPoint | null }
   | { type: "CLEAR_TARGETING" }
   | { type: "EDITABLE_LOST" }
-  | { type: "SELECT_CHARACTER" };
+  | { type: "SELECT_CHARACTER" }
+  | { type: "OPEN_TRANSFER_MENU"; instanceId: string; sourceCharacterId: CharacterId; anchor: { x: number; y: number } }
+  | { type: "CLOSE_TRANSFER_MENU" };
 
 export function armoryTargetingReducer(
   state: ArmoryTargetingState,
@@ -89,5 +100,17 @@ export function armoryTargetingReducer(
       return { ...state, salvageMode: false, activeCurrencyId: null, cursorPoint: null, salvageTarget: null };
     case "SELECT_CHARACTER":
       return { ...state, salvageMode: false, activeCurrencyId: null, cursorPoint: null, salvageTarget: null };
+    case "OPEN_TRANSFER_MENU":
+      return {
+        ...state,
+        transferMenu: {
+          instanceId: action.instanceId,
+          sourceCharacterId: action.sourceCharacterId,
+          anchor: action.anchor,
+        },
+      };
+    case "CLOSE_TRANSFER_MENU":
+      if (state.transferMenu === null) return state;
+      return { ...state, transferMenu: null };
   }
 }

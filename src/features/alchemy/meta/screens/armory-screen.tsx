@@ -3,6 +3,7 @@ import {
   canApplyCraftingCurrency,
   currencyObstaclesForBoard,
   EMPTY_CRAFTING_CURRENCIES,
+  findGearInventoryOwner,
   gearDefinitions,
   getCraftingCurrencyDefinition,
   INVENTORY_COLS,
@@ -17,7 +18,7 @@ import {
   type PackedCurrencyItem,
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
-import { getRequiredPreviousCharacter, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
+import { characters, getRequiredPreviousCharacter, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
 import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader } from "../../shared/ui/shared-ui";
 import { GearItemTitle } from "../../shared/ui/gear-item-title";
@@ -320,6 +321,24 @@ export function ArmoryScreen({
     dispatchTargeting({ type: "START_SALVAGE_TARGET", target });
   }, []);
 
+  const handleOpenTransferMenu = useCallback(
+    (instance: GearInstance, anchor: { x: number; y: number }) => {
+      const owner = findGearInventoryOwner(useGearStore.getState().inventories, instance.instanceId);
+      if (!owner) return;
+      const recipients = (Object.keys(characters) as CharacterId[])
+        .filter((id) => id !== owner)
+        .filter((id) => isCharacterUnlocked(id, finishedRunCharacters));
+      if (recipients.length === 0) return;
+      dispatchTargeting({
+        type: "OPEN_TRANSFER_MENU",
+        instanceId: instance.instanceId,
+        sourceCharacterId: owner,
+        anchor,
+      });
+    },
+    [finishedRunCharacters],
+  );
+
   function handleApplyCurrency(instance: GearInstance) {
     if (!editable) return;
     if (!activeCurrencyId) return;
@@ -393,6 +412,7 @@ export function ArmoryScreen({
               onSalvage={startSalvageTarget}
               onApplyCurrency={handleApplyCurrency}
               onAbortGearDrag={abortGearDragIfDragging}
+              onTransferRequest={handleOpenTransferMenu}
             />
             <InventoryPanel
               packedItems={packedInventory.items}
@@ -423,6 +443,7 @@ export function ArmoryScreen({
               craftingCurrencies={craftingCurrencies}
               onApplyCurrency={handleApplyCurrency}
               onAbortGearDrag={abortGearDragIfDragging}
+              onTransferRequest={handleOpenTransferMenu}
             />
           </div>
         </div>

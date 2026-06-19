@@ -33,6 +33,7 @@ export const SlotButton = memo(function SlotButton({
   onSalvage,
   onApplyCurrency,
   onAbortGearDrag,
+  onTransferRequest,
 }: {
   slot: GearSlot;
   instance: GearInstance | undefined;
@@ -51,6 +52,7 @@ export const SlotButton = memo(function SlotButton({
   onSalvage: () => void;
   onApplyCurrency: () => void;
   onAbortGearDrag: (instanceId: string) => void;
+  onTransferRequest?: ((instance: GearInstance, anchor: { x: number; y: number }) => void) | undefined;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -153,6 +155,11 @@ export const SlotButton = memo(function SlotButton({
           event.stopPropagation();
           onApplyCurrency();
         }
+      }}
+      onContextMenu={(event) => {
+        if (!editable || !instance || salvageMode || activeCurrencyId) return;
+        event.preventDefault();
+        onTransferRequest?.(instance, { x: event.clientX, y: event.clientY });
       }}
       data-testid="armory-equipment-slot"
       data-slot={slot}

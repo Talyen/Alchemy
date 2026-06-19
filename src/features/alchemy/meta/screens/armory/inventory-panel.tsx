@@ -43,6 +43,7 @@ export const InventoryPanel = memo(function InventoryPanel({
   craftingCurrencies,
   onApplyCurrency,
   onAbortGearDrag,
+  onTransferRequest,
 }: {
   packedItems: PackedInventoryItem<GearInstance>[];
   packedCurrencies: PackedCurrencyItem[];
@@ -70,6 +71,7 @@ export const InventoryPanel = memo(function InventoryPanel({
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   onApplyCurrency: (instance: GearInstance) => void;
   onAbortGearDrag: (instanceId: string) => void;
+  onTransferRequest?: (instance: GearInstance, anchor: { x: number; y: number }) => void | undefined;
 }) {
   const dragRef = useRef<{ pointerId: number; startY: number; startScrollTop: number; moved: boolean } | null>(null);
   const suppressClickRef = useRef(false);
@@ -246,6 +248,7 @@ export const InventoryPanel = memo(function InventoryPanel({
                 onGearPointerEnd={onGearPointerEnd}
                 onGearDoubleClick={onGearDoubleClick}
                 onAbortGearDrag={onAbortGearDrag}
+                onTransferRequest={onTransferRequest}
               />
             ))}
             {packedCurrencies.map((placement) => (

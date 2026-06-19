@@ -37,6 +37,7 @@ export const InventoryGearTile = memo(function InventoryGearTile({
   onGearPointerEnd,
   onGearDoubleClick,
   onAbortGearDrag,
+  onTransferRequest,
 }: {
   instance: GearInstance;
   placement: { col: number; row: number; w: number; h: number };
@@ -57,6 +58,7 @@ export const InventoryGearTile = memo(function InventoryGearTile({
   onGearPointerEnd: GearPointerEnd;
   onGearDoubleClick: (instance: GearInstance, origin: GearDragOrigin, rect: DOMRect) => void;
   onAbortGearDrag: (instanceId: string) => void;
+  onTransferRequest?: ((instance: GearInstance, anchor: { x: number; y: number }) => void) | undefined;
 }) {
   const [tooltipSequence, setTooltipSequence] = useState<number | null>(null);
   const tileRef = useRef<HTMLDivElement>(null);
@@ -216,6 +218,11 @@ export const InventoryGearTile = memo(function InventoryGearTile({
           { kind: "inventory", placement: { col: placement.col, row: placement.row } },
           event.currentTarget.getBoundingClientRect(),
         );
+      }}
+      onContextMenu={(event) => {
+        if (!editable || targetingMode || interactionSuppressed) return;
+        event.preventDefault();
+        onTransferRequest?.(instance, { x: event.clientX, y: event.clientY });
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

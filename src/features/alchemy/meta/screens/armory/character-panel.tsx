@@ -28,6 +28,7 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
   onSalvage,
   onApplyCurrency,
   onAbortGearDrag,
+  onTransferRequest,
 }: {
   characterId: CharacterId;
   locked: boolean;
@@ -47,6 +48,7 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
   onAbortGearDrag: (instanceId: string) => void;
+  onTransferRequest?: ((instance: GearInstance, anchor: { x: number; y: number }) => void) | undefined;
 }) {
   const { onHoverStart, shimmerActive, shimmerToken } = useInteractiveCard("armory", characterId);
 
@@ -104,6 +106,7 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
                   onGearPointerEnd={onGearPointerEnd}
                   onGearDoubleClick={onGearDoubleClick}
                   onAbortGearDrag={onAbortGearDrag}
+                  onTransferRequest={onTransferRequest}
                   onSalvage={() =>
                     instanceId && inventoryById.get(instanceId) && onSalvage(inventoryById.get(instanceId)!)
                   }

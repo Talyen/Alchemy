@@ -25,6 +25,7 @@ describe("armoryTargetingReducer", () => {
       salvageTarget: null,
       activeCurrencyId: null,
       cursorPoint: null,
+      transferMenu: null,
     });
   });
 
@@ -181,6 +182,36 @@ describe("armoryTargetingReducer", () => {
         activeCurrencyId: null,
         cursorPoint: null,
       });
+    });
+  });
+
+  describe("transfer menu", () => {
+    it("OPEN_TRANSFER_MENU stores the instanceId, sourceCharacterId, and anchor point", () => {
+      const next = armoryTargetingReducer(initialArmoryTargetingState, {
+        type: "OPEN_TRANSFER_MENU",
+        instanceId: "helm-1",
+        sourceCharacterId: "knight",
+        anchor: { x: 100, y: 200 },
+      });
+      expect(next.transferMenu).toEqual({
+        instanceId: "helm-1",
+        sourceCharacterId: "knight",
+        anchor: { x: 100, y: 200 },
+      });
+    });
+
+    it("CLOSE_TRANSFER_MENU is a no-op when the menu is already closed", () => {
+      const next = armoryTargetingReducer(initialArmoryTargetingState, { type: "CLOSE_TRANSFER_MENU" });
+      expect(next).toBe(initialArmoryTargetingState);
+    });
+
+    it("CLOSE_TRANSFER_MENU clears the transfer menu state", () => {
+      const withMenu = {
+        ...initialArmoryTargetingState,
+        transferMenu: { instanceId: "helm-1", sourceCharacterId: "knight", anchor: { x: 100, y: 200 } },
+      };
+      const next = armoryTargetingReducer(withMenu, { type: "CLOSE_TRANSFER_MENU" });
+      expect(next.transferMenu).toBeNull();
     });
   });
 });
