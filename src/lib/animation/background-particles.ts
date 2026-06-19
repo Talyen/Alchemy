@@ -1,6 +1,6 @@
 // Canvas particle system for ember/dust background effects behind game screens.
 // Depends on React refs for canvas mount. Used by BackgroundParticles React wrapper.
-import type { MutableRefObject } from "react";
+import type { RefObject } from "react";
 
 export type ParticleVariant = "embers" | "dust" | "hand_glow";
 
@@ -117,7 +117,7 @@ function renderParticle(ctx: CanvasRenderingContext2D, p: BackgroundParticle): v
 }
 
 export function startBackgroundParticles(
-  canvasRef: MutableRefObject<HTMLCanvasElement | null>,
+  canvasRef: RefObject<HTMLCanvasElement | null>,
   variant: ParticleVariant,
   colors?: readonly string[],
   alphaMultiplier?: number,

@@ -20,6 +20,7 @@ function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<Homes
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- I constrains tier structure across all items
 function applyItemTiers<I extends { id: string; tiers: { effects?: Partial<HomesteadEffectManifest> }[] }>(
   base: HomesteadEffectManifest,
   items: I[],

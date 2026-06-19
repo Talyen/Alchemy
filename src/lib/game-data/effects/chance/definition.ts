@@ -9,7 +9,7 @@ export const chanceEffectDefinition = {
 export function createChanceEffectSchema(getEffectSchema: () => z.ZodType<BattleCardEffect>) {
   return z.object({
     kind: z.literal("chance"),
-    probability: z.number().finite(),
+    probability: z.number(),
     successEffects: z.array(z.lazy(getEffectSchema)),
     failureEffects: z.array(z.lazy(getEffectSchema)),
   });

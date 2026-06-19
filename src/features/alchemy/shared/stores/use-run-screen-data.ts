@@ -40,7 +40,7 @@ const SCREEN_FIELDS: Record<Screen, (keyof RunScreenData)[]> = {
 type State = ReturnType<typeof useRunDomainStore.getState>;
 
 const FIELD_GETTERS: { [K in keyof RunScreenData]: (state: State) => RunScreenData[K] } = {
-  phase: (state) => getRunPhase(state.navigation.screen, state.battle.hasActiveBattle) as RunScreenData["phase"],
+  phase: (state) => getRunPhase(state.navigation.screen, state.battle.hasActiveBattle),
   runPlayerHealth: (state) => state.progress.runPlayerHealth,
   runMaxHealth: (state) => state.progress.runMaxHealth,
   runGold: (state) => state.progress.runGold,

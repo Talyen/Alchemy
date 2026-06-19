@@ -51,7 +51,7 @@ export function useBattleController({
   run: RunStateController;
   talents: TalentStateController;
   autoEndTurn: boolean;
-  homesteadEffectsRef: React.MutableRefObject<HomesteadEffectManifest>;
+  homesteadEffectsRef: React.RefObject<HomesteadEffectManifest>;
   screen: Screen;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   onBattleVictory?: () => void;

@@ -42,7 +42,7 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
         runScreenOverrideRef.current ?? undefined,
       );
 
-      saveAlchemySaveData(buildAlchemySaveDataFromStores(activeRun));
+      void saveAlchemySaveData(buildAlchemySaveDataFromStores(activeRun));
     };
 
     const triggerSave = () => {

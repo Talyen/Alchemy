@@ -23,7 +23,7 @@ export const platform = {
   // Lets the desktop shell close the native app while browser builds simply do
   // nothing because pages cannot reliably close themselves.
   quit() {
-    window.alchemyDesktop?.quit();
+    void window.alchemyDesktop?.quit();
   },
 
   // Steamworks API integration with safe fallbacks for web/DRM-free
@@ -38,7 +38,7 @@ export const platform = {
             this.playerName = name;
             this.isInitialized = true;
             platform.cloud.isAvailable = true;
-            console.log(`Steam initialized. Player: ${name}`);
+            console.warn(`Steam initialized. Player: ${name}`);
           }
         } catch (err) {
           console.warn("Failed to retrieve Steam player name:", err);

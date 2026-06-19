@@ -190,10 +190,10 @@ export type TurnOrchestrationDeps = {
   getTurnResolutionStore: () => TurnResolutionStore;
   getDrawSequenceDeps: () => HandDrawSequenceDeps;
   logBattleError: (context: string, err: unknown) => void;
-  companionScheduledRef: React.MutableRefObject<boolean>;
-  battleTimerGroupRef: React.MutableRefObject<import("@/lib/animation/game-timer").TimerGroup>;
-  resolvedAsHasteOrStunRef: React.MutableRefObject<boolean>;
-  cardPlayInProgressRef: React.MutableRefObject<boolean>;
+  companionScheduledRef: React.RefObject<boolean>;
+  battleTimerGroupRef: React.RefObject<import("@/lib/animation/game-timer").TimerGroup>;
+  resolvedAsHasteOrStunRef: React.RefObject<boolean>;
+  cardPlayInProgressRef: React.RefObject<boolean>;
   resetHandTransferUi: () => void;
   scheduleCompanionFollowUp: (resultState: BattleState, session: number) => void;
   onResolveEndTurn: (currentState: BattleState, session: number) => void;
@@ -273,7 +273,15 @@ function resolveNormalEnemyTurnOrchestration(
 ) {
   resolveNormalEnemyTurn(result, companionResult, session, {
     store: deps.getTurnResolutionStore(),
-    executeEnemyPhase: executeEnemyPhaseFn,
+    executeEnemyPhase: (resultState, currentState, combatTexts, session, playerTurnSkipped, enemyPerformedAttack) =>
+      void executeEnemyPhaseFn(
+        resultState,
+        currentState,
+        combatTexts,
+        session,
+        playerTurnSkipped,
+        enemyPerformedAttack,
+      ),
     onVictory: () => deps.handleVictoryDefeat("victory"),
     checkBattleEnd: deps.checkBattleEnd,
   });
@@ -397,7 +405,7 @@ export function createBattleEndTurnUi(contextOrGetter: BattleControllerContext |
       return;
     context.clearBattleTimeoutsKeepCompanion();
     const session = context.battleSessionRef.current;
-    void animateEndTurnThenResolve(currentState, session).catch((err) =>
+    void animateEndTurnThenResolve(currentState, session).catch((err: unknown) =>
       context.logBattleError("resolve end turn animation sequence", err),
     );
   }

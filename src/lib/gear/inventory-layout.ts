@@ -210,7 +210,7 @@ export function getInventoryFootprint(definition: GearDefinition, selectedSlot: 
 }
 
 export function footprintForInstance(instance: { definitionId: string }): GearFootprint | null {
-  const definition = gearDefinitions[instance.definitionId as keyof typeof gearDefinitions];
+  const definition = gearDefinitions[instance.definitionId];
   if (!definition) return null;
   return GEAR_FOOTPRINT[definition.compatibleSlots[0]!];
 }
@@ -258,7 +258,7 @@ export function packInventoryWithPositions<T extends { definitionId: string; ins
 
   for (const item of reservedItems) {
     if (visibleIds.has(item.instanceId)) continue;
-    const definition = gearDefinitions[item.definitionId as keyof typeof gearDefinitions];
+    const definition = gearDefinitions[item.definitionId];
     if (!definition) continue;
     const footprint = GEAR_FOOTPRINT[definition.compatibleSlots[0]!];
     const saved = savedPositions[item.instanceId];
@@ -271,7 +271,7 @@ export function packInventoryWithPositions<T extends { definitionId: string; ins
   const remainingItems: T[] = [];
 
   for (const item of items) {
-    const definition = gearDefinitions[item.definitionId as keyof typeof gearDefinitions];
+    const definition = gearDefinitions[item.definitionId];
     if (!definition) {
       remainingItems.push(item);
       continue;
@@ -296,7 +296,7 @@ export function packInventoryWithPositions<T extends { definitionId: string; ins
   }
 
   for (const item of remainingItems) {
-    const definition = gearDefinitions[item.definitionId as keyof typeof gearDefinitions];
+    const definition = gearDefinitions[item.definitionId];
     const footprint = definition ? GEAR_FOOTPRINT[definition.compatibleSlots[0]!] : { w: 1, h: 1 };
 
     if (footprint.w < 1 || footprint.h < 1 || footprint.w > cols) {
@@ -341,7 +341,7 @@ function sanitizeCurrencyBoardPositions(
 ): CraftingCurrencyBoardPositions {
   const next: CraftingCurrencyBoardPositions = {};
   for (const id of CRAFTING_CURRENCY_IDS) {
-    if ((currencies[id] ?? 0) <= 0) continue;
+    if (currencies[id] <= 0) continue;
     const position = boardPositions[id];
     if (!position) continue;
     if (position.col < 1 || position.row < 1 || position.col > INVENTORY_COLS) continue;
@@ -436,10 +436,7 @@ export function sanitizeGearBoardPositionsByCharacter(
 ): GearBoardPositionsByCharacter {
   const next = createEmptyGearBoardPositionsByCharacter();
   for (const characterId of GEAR_CHARACTER_IDS) {
-    next[characterId] = sanitizeGearBoardPositions(
-      boardPositionsByCharacter[characterId] ?? {},
-      inventories[characterId] ?? [],
-    );
+    next[characterId] = sanitizeGearBoardPositions(boardPositionsByCharacter[characterId], inventories[characterId]);
   }
   return next;
 }
@@ -450,7 +447,7 @@ export function sanitizeCurrencyBoardPositionsByCharacter(
 ): CraftingCurrencyBoardPositionsByCharacter {
   const next = createEmptyCurrencyBoardPositionsByCharacter();
   for (const characterId of GEAR_CHARACTER_IDS) {
-    next[characterId] = sanitizeCurrencyBoardPositions(boardPositionsByCharacter[characterId] ?? {}, currencies);
+    next[characterId] = sanitizeCurrencyBoardPositions(boardPositionsByCharacter[characterId], currencies);
   }
   return next;
 }

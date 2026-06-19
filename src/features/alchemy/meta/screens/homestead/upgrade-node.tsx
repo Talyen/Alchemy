@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { MATERIAL_IDS, materialLabels, type HomesteadFarm, type MaterialInventory } from "@/lib/homestead/types";
+import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
 import { canAfford } from "@/lib/homestead/inventory";
 import { Button } from "@/components/ui/button";
 import { DetailPopup } from "../../../shared/ui/card-popup";
@@ -38,7 +38,7 @@ export function HomesteadUpgradeNode({
   const detailTooltip = useMemo(() => {
     if (hoveredItemId !== item.data.id) return null;
     const nodes: ReactNode[] = [];
-    const farm = item.kind === "farm" ? (item.data as HomesteadFarm) : null;
+    const farm = item.kind === "farm" ? item.data : null;
     const currentTier = item.data.tiers[displayTierIndex];
 
     if (farm) {

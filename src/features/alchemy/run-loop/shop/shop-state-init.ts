@@ -109,6 +109,7 @@ function hydrateRefreshableFields(data: RefreshablePersistedFields): Refreshable
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- TPersisted constrains the persisted data shape
 function hydrateRefreshableShopState<
   TState extends RefreshableShopFields,
   TPersisted extends RefreshablePersistedFields,

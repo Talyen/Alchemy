@@ -1,5 +1,5 @@
 // Shop and alchemist purchase controller for pricing, refreshes, removals, and potion mixing.
-import { useRef, type MutableRefObject } from "react";
+import { useRef, type RefObject } from "react";
 import { getOfferableCardPool, getStandardPotionPool, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { appendUnique } from "@/lib/utils";
@@ -62,7 +62,7 @@ export function useShopController({
 }: {
   run: RunStateController;
   talents: TalentStateController;
-  homesteadEffectsRef: MutableRefObject<HomesteadEffectManifest>;
+  homesteadEffectsRef: RefObject<HomesteadEffectManifest>;
 }) {
   const { shopState, alchemistState, trinketShopState, equipmentShopState } = useRunSessionShopSlice();
 

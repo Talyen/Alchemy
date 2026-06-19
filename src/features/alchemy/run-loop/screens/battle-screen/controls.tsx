@@ -1,7 +1,7 @@
 // Bottom-row battle resource controls and dev shortcut.
 // Depends on battle resource widgets, hand rendering, and the shared Button primitive.
 // Used only by BattleScreen to keep control layout separate from actor layout.
-import type { MutableRefObject } from "react";
+import type { RefObject } from "react";
 import { Coins } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ function BattleControls({
 }: {
   battleState: BattleScreenState;
   actions: BattleActionsProps;
-  discardPileRef: MutableRefObject<HTMLDivElement | null>;
+  discardPileRef: RefObject<HTMLDivElement | null>;
 }) {
   const { onEndTurn, onSkipCombatDevMode, cardTransferInProgress, isDevMode } = actions;
 

@@ -33,8 +33,8 @@ export function AppScreenChromeProvider({
   returnToRunScreen: Screen | null;
   children: ReactNode;
 }) {
-  const heroArt = characterArt[run.characterId] ?? characterArt.knight;
-  const playerName = characters[run.characterId]?.name ?? "Knight";
+  const heroArt = characterArt[run.characterId];
+  const playerName = characters[run.characterId].name;
   const hasUnspentTalentsBadge = hasUnspentTalents(run.talentXP, run.unlockedTalents);
 
   const materialInventory = useHomesteadStore((s) => s.materialInventory);

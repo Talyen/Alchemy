@@ -4,7 +4,7 @@ import type { GearDefinition, GearInstance } from "./types";
 
 function resolveBaseDisplayName(definition: GearDefinition): string {
   const baseItem = gearBaseItems[definition.baseItemId];
-  return baseItem?.displayName ?? definition.title;
+  return baseItem.displayName ?? definition.title;
 }
 
 export function getGearInstanceTitle(instance: GearInstance): string {

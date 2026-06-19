@@ -371,7 +371,7 @@ export function useArmoryGearDrag({
         source: fsm.dragVisual.source,
         rect: fsm.dragVisual.rect,
         origin: fsm.dragVisual.origin,
-        destination: fsm.dragVisual.destination as DragDestination | null,
+        destination: fsm.dragVisual.destination,
         settling: fsm.dragVisual.settling,
         releasing: fsm.dragVisual.releasing,
         flyover: fsm.dragVisual.flyover,

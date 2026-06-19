@@ -2,7 +2,6 @@
 // Every SaveData field has a safe default here so null-coalescing elsewhere is optional.
 // Volume/brightness defaults are imported from game-constants.ts — save-schemas.ts uses the same
 // constants for its .catch() fallbacks, guaranteeing both sources agree.
-import type { CompanionId } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
@@ -53,7 +52,7 @@ export const defaultSaveData: SaveData = {
   constructedBuildings: createEmptyTierRecord(buildings),
   plantedFarms: createEmptyTierRecord(farmPlots),
   completedResearch: createEmptyTierRecord(researchUpgrades),
-  bondedCompanions: createEmptyTierRecord(companionTierItems) as Record<CompanionId, number>,
+  bondedCompanions: createEmptyTierRecord(companionTierItems),
   completedDifficulties: {
     knight: [],
     rogue: [],

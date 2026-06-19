@@ -10,7 +10,7 @@ function migrateCombatFlagsV4(flags: RawSaveData): RawSaveData {
 }
 
 /** v3→v4 battle snapshot renames (frozen). */
-export function migrateBattleStateV4(battleState: unknown): RawSaveData | unknown {
+export function migrateBattleStateV4(battleState: unknown): unknown {
   if (!battleState || typeof battleState !== "object") return battleState;
   const state = battleState as RawSaveData;
   const next: RawSaveData = { ...state };

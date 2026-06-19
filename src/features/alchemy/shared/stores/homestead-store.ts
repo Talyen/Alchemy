@@ -65,7 +65,7 @@ export const useHomesteadStore = create<HomesteadStore>()(
     constructedBuildings: createEmptyTierRecord(buildings),
     plantedFarms: createEmptyTierRecord(farmPlots),
     completedResearch: createEmptyTierRecord(researchUpgrades),
-    bondedCompanions: createEmptyTierRecord(companionTierItems) as Record<CompanionId, number>,
+    bondedCompanions: createEmptyTierRecord(companionTierItems),
     effects: { ...defaultHomesteadEffects },
 
     addMaterials: (materials) =>

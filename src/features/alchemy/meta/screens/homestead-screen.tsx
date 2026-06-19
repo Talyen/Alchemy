@@ -57,10 +57,10 @@ export function HomesteadScreen({
   function handleAction(item: GoalItem) {
     const success =
       item.kind === "building"
-        ? onConstructBuilding(item.data.id as BuildingId)
+        ? onConstructBuilding(item.data.id)
         : item.kind === "farm"
-          ? onPlantFarm(item.data.id as FarmId)
-          : onCompleteResearch(item.data.id as ResearchId);
+          ? onPlantFarm(item.data.id)
+          : onCompleteResearch(item.data.id);
     if (success) playUISound("talentUnlock");
   }
 

@@ -258,13 +258,8 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
     try {
       if (effect.kind === "damage") {
         nextState = processEnemyDamageEffect(nextState, effect, combatTexts);
-      } else if (effect.kind === "player-status") {
-        nextState = applyPlayerStatusFromAttack(nextState, effect, combatTexts);
       } else {
-        const errMsg = `Unknown enemy attack effect kind: ${(effect as { kind: string }).kind}`;
-        console.warn("[Enemy Turn]", errMsg);
-        logError(errMsg, "battle", { state: nextState });
-        if (import.meta.env.DEV) throw new Error(errMsg);
+        nextState = applyPlayerStatusFromAttack(nextState, effect, combatTexts);
       }
     } catch (err) {
       logError(`Enemy attack effect failed: ${(err as Error).message}`, "battle", { effect });

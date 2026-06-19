@@ -31,7 +31,7 @@ export function parseActiveRun(activeRun: unknown): ActiveRunData | null {
 
   return {
     ...data,
-    contentSystemType: data.contentSystemType as ActiveRunData["contentSystemType"],
+    contentSystemType: data.contentSystemType,
     runDeck: (data.runDeck as unknown as BattleCard[]).map(hydrateCard),
     wildwoodDraft: data.wildwoodDraft
       ? {

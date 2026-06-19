@@ -52,7 +52,7 @@ function buildCompanionCard(
 
 export function processCompanionTurnStart(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (!state.activeCompanion || state.enemyHealth <= 0) return state;
-  const companionBondLevel = state.talentEffects.companionBondLevels[state.activeCompanion.id] ?? 0;
+  const companionBondLevel = state.talentEffects.companionBondLevels[state.activeCompanion.id];
 
   const companionCard = buildCompanionCard(
     state.activeCompanion,

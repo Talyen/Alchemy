@@ -167,7 +167,7 @@ function chooseCardToPlay(state: BattleState, policy: BalancePlayPolicy): { card
         bestDamage = damage;
       }
     }
-    return best ?? null;
+    return best;
   }
 
   if (policy === "defensive-random" && state.playerHealth <= state.playerMaxHealth / 2) {

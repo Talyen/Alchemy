@@ -45,11 +45,9 @@ function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "p
         side === "player" ? "left-0" : "right-0",
       )}
       // Lane offset is per floating entry — static utilities can't encode the runtime stack index.
-      style={
-        {
-          top: `${entry.lane * 56}px`,
-        } as Record<string, string>
-      }
+      style={{
+        top: `${entry.lane * 56}px`,
+      }}
       initial={{ y: 0, opacity: 1, filter: "blur(0px)", scale: 1 }}
       animate={{
         y: -120,

@@ -148,7 +148,7 @@ export function useArmoryController(): ArmoryController {
       if (hasActiveBattle) return false;
       const inventoryBefore = flattenGearInventories(gear.inventories);
       const loadoutsBefore = gear.loadouts;
-      const ok = gear.applyCurrency(currencyId as Parameters<typeof gear.applyCurrency>[0], instanceId);
+      const ok = gear.applyCurrency(currencyId, instanceId);
       if (ok) {
         if (hasActiveRun) {
           syncRunMaxHealthFromGearMutation(

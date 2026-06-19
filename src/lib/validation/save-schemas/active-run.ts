@@ -43,8 +43,8 @@ const ActiveCombatDataSchema = z
       battleState: {
         ...defaults,
         ...saved,
-        trinketEffects: { ...defaults.trinketEffects, ...(saved.trinketEffects ?? {}) },
-        gearEffects: { ...defaults.gearEffects, ...(saved.gearEffects ?? {}) },
+        trinketEffects: { ...defaults.trinketEffects, ...saved.trinketEffects },
+        gearEffects: { ...defaults.gearEffects, ...saved.gearEffects },
         flags: { ...defaults.flags, ...saved.flags },
         currentEnemy: {
           ...saved.currentEnemy,
@@ -52,7 +52,7 @@ const ActiveCombatDataSchema = z
             Array.isArray(saved.currentEnemy.traits) ? saved.currentEnemy.traits : [],
           ),
         },
-      } as BattleState,
+      },
     };
   })
   .nullable()

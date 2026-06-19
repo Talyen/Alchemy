@@ -41,7 +41,7 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
   const hasLegacyDeck =
     runDeckArr.length === LEGACY_STARTER_DECK_IDS.length &&
     runDeckArr.every((card) => legacySet.has(card.id as (typeof LEGACY_STARTER_DECK_IDS)[number]));
-  const characterId = typeof data.characterId === "string" ? (data.characterId as string) : "";
+  const characterId = typeof data.characterId === "string" ? data.characterId : "";
   const preserveEmptyWildwoodDraft = contentSystemType === "wildwood" && Boolean(data.wildwoodDraft);
   const runDeck =
     (!preserveEmptyWildwoodDraft && runDeckArr.length === 0) || (isUnstarted && hasLegacyDeck)

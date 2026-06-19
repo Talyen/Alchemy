@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
-import type { CharacterId } from "@/lib/game-data";
 import { CharacterSelectScreen, DifficultySelectScreen, DraftDeckScreen } from "@/features/alchemy/shared/screens";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
@@ -13,8 +12,8 @@ function DifficultySelectScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
       selectedDifficulty: s.progress.selectedDifficulty,
     })),
   );
-  const characterId = (pendingCharacterId ?? "knight") as CharacterId;
-  const completedDifficulties = useAppStore((s) => s.completedDifficulties[characterId] ?? []);
+  const characterId = pendingCharacterId ?? "knight";
+  const completedDifficulties = useAppStore((s) => s.completedDifficulties[characterId]);
 
   return (
     <DifficultySelectScreen

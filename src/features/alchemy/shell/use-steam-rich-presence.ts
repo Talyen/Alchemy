@@ -7,6 +7,6 @@ import type { Screen } from "@/features/alchemy/shared/types";
 
 export function useSteamRichPresence(screen: Screen, runPhase: RunPhase, characterId: CharacterId) {
   useEffect(() => {
-    platform.steam.setRichPresence("steam_display", getSteamRichPresenceLabel(screen, runPhase, characterId));
+    void platform.steam.setRichPresence("steam_display", getSteamRichPresenceLabel(screen, runPhase, characterId));
   }, [screen, runPhase, characterId]);
 }

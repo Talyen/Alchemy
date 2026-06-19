@@ -44,7 +44,7 @@ export function createBattleCardPlay(contextOrGetter: BattleControllerContext | 
     errorContext: string,
   ) {
     void handleDrawSequence(oldHand, newState, onCommitState, session)
-      .catch((err) => getContext().logBattleError(`handle ${errorContext} draw sequence`, err))
+      .catch((err: unknown) => getContext().logBattleError(`handle ${errorContext} draw sequence`, err))
       .finally(() => getContext().finishDrawSequence(session, newState));
   }
 

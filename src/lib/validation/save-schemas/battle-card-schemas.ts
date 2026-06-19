@@ -1,7 +1,6 @@
 // Zod schemas for persisted battle cards; effect shapes live in @/lib/game-data/effects.
 import { z } from "zod";
 import { BattleCardEffectSchema } from "@/lib/game-data";
-import type { BattleCardEffect } from "@/lib/game-data";
 import { pushValidationError } from "./validation-utils";
 
 function parseSavedEffectList(values: unknown[]) {
@@ -79,7 +78,7 @@ export const BattleCardSchema = z
       baseTitle: saved.baseTitle,
       corruptedValuePositions:
         corruptedValuePositions && corruptedValuePositions.length > 0 ? corruptedValuePositions : undefined,
-      effects: savedEffects.effects as BattleCardEffect[],
+      effects: savedEffects.effects,
       effectsFullyValid: savedEffects.fullyValid,
       descriptionLinesFullyValid: savedDescriptionLines !== null,
     };

@@ -39,7 +39,7 @@ export function resumeAudioContext() {
   if (!audioState.context) return;
 
   if (audioState.context.state === "suspended") {
-    audioState.context.resume().then(() => {
+    void audioState.context.resume().then(() => {
       audioState.audioUnlocked = true;
     });
   } else if (audioState.context.state === "running") {
@@ -93,7 +93,7 @@ export async function loadSoundBuffer(name: string): Promise<AudioBuffer | null>
 // Warms selected sounds without forcing callers to await cache completion.
 export function preloadSounds(names: string[]) {
   names.forEach((name) => {
-    loadSoundBuffer(name);
+    void loadSoundBuffer(name);
   });
 }
 

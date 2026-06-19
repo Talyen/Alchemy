@@ -18,7 +18,7 @@ import {
 import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "../use-armory-gear-drag";
 
 function dismissWhenFocusLeaves(event: FocusEvent<HTMLDivElement>, dismiss: () => void) {
-  if (!event.currentTarget.contains(event.relatedTarget as Node | null)) dismiss();
+  if (!event.currentTarget.contains(event.relatedTarget)) dismiss();
 }
 
 export const SlotButton = memo(function SlotButton({

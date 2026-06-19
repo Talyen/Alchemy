@@ -21,7 +21,7 @@ const DISPLAY_CONFIG = {
 export function useAppDisplayEffects({ displayMode, uiScale, brightness, stageRef }: AppDisplayEffectsOptions) {
   "use no memo";
   useEffect(() => {
-    platform.setDisplayMode(displayMode);
+    void platform.setDisplayMode(displayMode);
   }, [displayMode]);
 
   useLayoutEffect(() => {

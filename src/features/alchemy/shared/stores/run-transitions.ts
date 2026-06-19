@@ -38,7 +38,7 @@ export function restoreRun(
   store.initializeActiveBattle(activeRun?.activeCombat?.battleState ?? null);
 
   if (activeRun?.currentScreen) {
-    store.setScreen(activeRun.currentScreen as Screen);
+    store.setScreen(activeRun.currentScreen);
   }
 
   if (!activeRun) {

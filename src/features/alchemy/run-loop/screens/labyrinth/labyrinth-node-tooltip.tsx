@@ -1,5 +1,4 @@
 // Hover tooltip for a labyrinth map node, including modifier breakdown.
-import type { CSSProperties } from "react";
 
 import type { LabyrinthModifierKind, LabyrinthNodeType } from "@/lib/content-systems/types";
 import { NODE_TYPE_LABELS, NODE_TYPE_TOOLTIPS } from "@/lib/content-systems/labyrinth/data";
@@ -53,7 +52,7 @@ export function LabyrinthNodeTooltip({ type, modifiers, rewardModifiers }: Props
       flip={flip}
       width="w-[23.7cqh]"
       className="z-50 rounded-shell-tooltip"
-      style={dx !== 0 ? ({ marginLeft: dx } as CSSProperties) : undefined}
+      style={dx !== 0 ? { marginLeft: dx } : undefined}
     >
       <TooltipHeader>{NODE_TYPE_LABELS[type]}</TooltipHeader>
       <TooltipBody>

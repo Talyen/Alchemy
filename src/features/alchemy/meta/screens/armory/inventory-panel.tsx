@@ -46,7 +46,7 @@ export const InventoryPanel = memo(function InventoryPanel({
   onAbortGearDrag,
   onTransferRequest,
 }: {
-  packedItems: PackedInventoryItem<GearInstance>[];
+  packedItems: PackedInventoryItem[];
   packedCurrencies: PackedCurrencyItem[];
   occupiedRows: number;
   editable: boolean;
@@ -72,7 +72,7 @@ export const InventoryPanel = memo(function InventoryPanel({
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   onApplyCurrency: (instance: GearInstance) => void;
   onAbortGearDrag: (instanceId: string) => void;
-  onTransferRequest?: (instance: GearInstance, anchor: { x: number; y: number }) => void | undefined;
+  onTransferRequest?: (instance: GearInstance, anchor: { x: number; y: number }) => void;
 }) {
   const renderedRows = Math.max(INVENTORY_VISIBLE_ROWS, occupiedRows);
   const canScroll = renderedRows > INVENTORY_VISIBLE_ROWS;

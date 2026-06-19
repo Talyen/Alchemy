@@ -19,7 +19,7 @@ function migrateCombatFlags(flags: RawSaveData): RawSaveData {
 }
 
 /** Renames legacy battle snapshot fields. Idempotent for already-migrated saves. */
-export function migrateBattleState(battleState: unknown): RawSaveData | unknown {
+export function migrateBattleState(battleState: unknown): unknown {
   if (!battleState || typeof battleState !== "object") return battleState;
   const state = battleState as RawSaveData;
   const next: RawSaveData = { ...state };

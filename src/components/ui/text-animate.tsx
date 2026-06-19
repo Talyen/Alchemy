@@ -54,6 +54,7 @@ export function TextAnimate({
     container: {
       ...containerVariants,
       show: {
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread -- Variants type includes call signature but we spread the object form
         ...containerVariants.show,
         transition: {
           delayChildren: delay,

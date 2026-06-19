@@ -28,10 +28,10 @@ export function collectKeywordsFromBattleEffect(effect: BattleCardEffect): Keywo
       break;
     }
     case "player-status":
-      if (effect.status !== "haste") keywords.push(effect.status as KeywordId);
+      if (effect.status !== "haste") keywords.push(effect.status);
       break;
     case "enemy-status":
-      keywords.push(effect.status as KeywordId);
+      keywords.push(effect.status);
       break;
     case "heal":
       keywords.push("health");
@@ -63,13 +63,13 @@ export function collectKeywordsFromBattleEffect(effect: BattleCardEffect): Keywo
       keywords.push("armor");
       break;
     case "multiply-enemy-status":
-      keywords.push(effect.status as KeywordId);
+      keywords.push(effect.status);
       break;
     case "remove-player-status":
-      keywords.push(effect.status as KeywordId);
+      keywords.push(effect.status);
       break;
     case "self-damage":
-      keywords.push(effect.damageType as KeywordId);
+      keywords.push(effect.damageType);
       break;
     default: {
       const _exhaustive: never = effect;

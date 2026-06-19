@@ -76,13 +76,11 @@ export function createEmptyGearInventories(): GearInventories {
 }
 
 export function createEmptyGearBoardPositionsByCharacter(): GearBoardPositionsByCharacter {
-  return Object.fromEntries(
-    GEAR_CHARACTER_IDS.map((id) => [id, {} as GearBoardPositions]),
-  ) as GearBoardPositionsByCharacter;
+  return Object.fromEntries(GEAR_CHARACTER_IDS.map((id) => [id, {}])) as GearBoardPositionsByCharacter;
 }
 
 export function flattenGearInventories(inventories: GearInventories): GearInventory {
-  return GEAR_CHARACTER_IDS.flatMap((id) => inventories[id] ?? []);
+  return GEAR_CHARACTER_IDS.flatMap((id) => inventories[id]);
 }
 
 export function findGearEquippedCharacter(loadouts: GearLoadouts, instanceId: string): GearCharacterId | null {
@@ -96,7 +94,7 @@ export function findGearEquippedCharacter(loadouts: GearLoadouts, instanceId: st
 
 export function findGearInventoryOwner(inventories: GearInventories, instanceId: string): GearCharacterId | null {
   for (const characterId of GEAR_CHARACTER_IDS) {
-    if ((inventories[characterId] ?? []).some((item) => item.instanceId === instanceId)) {
+    if (inventories[characterId].some((item) => item.instanceId === instanceId)) {
       return characterId;
     }
   }

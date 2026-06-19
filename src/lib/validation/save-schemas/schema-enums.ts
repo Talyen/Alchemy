@@ -8,7 +8,7 @@ import {
   type CompanionId,
   type DifficultyId,
 } from "@/lib/game-data";
-import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies, type CraftingCurrencyId } from "@/lib/gear/crafting";
+import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies } from "@/lib/gear/crafting";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { deduplicateStrings } from "./validation-utils";
 
@@ -72,7 +72,7 @@ export const CRAFTING_CURRENCY_ZERO_INVENTORY = { ...EMPTY_CRAFTING_CURRENCIES }
 export const CraftingCurrencyInventorySchema = z
   .record(z.string(), z.unknown())
   .catch(CRAFTING_CURRENCY_ZERO_INVENTORY)
-  .transform((inventory) => normalizeCraftingCurrencies(inventory) as Record<CraftingCurrencyId, number>);
+  .transform((inventory) => normalizeCraftingCurrencies(inventory));
 
 export const MaterialInventorySchema = z.object(createMaterialInventoryShape()).catch(MATERIAL_ZERO_INVENTORY);
 
@@ -149,6 +149,6 @@ export function createTierRecordSchema<T extends string>(
         const maxTier = items.find((item) => item.id === id)?.tiers.length ?? 0;
         result[id] = Math.min(maxTier, Math.max(0, data[id] ?? 0));
       }
-      return result as Record<T, number>;
+      return result;
     });
 }

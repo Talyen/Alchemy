@@ -303,7 +303,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
         origin: getOrigin(item),
         destination,
         flyover: true,
-      } as BoardDragVisual<TId, TOrigin>;
+      };
       activeDragRef.current = visual;
       setActiveId(getItemId(item));
       setDragVisual(visual);

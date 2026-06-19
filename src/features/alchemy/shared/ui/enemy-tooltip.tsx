@@ -5,7 +5,6 @@ import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifiers";
 import { cn } from "@/lib/utils";
-import type { CSSProperties } from "react";
 
 import { formatEnemyAttackLines } from "../utils";
 import { DescriptionLines } from "./card-description-ui";
@@ -57,12 +56,10 @@ export function EnemyTooltip({
             : "absolute left-[calc(100%+1.11cqh)] top-0 bottom-auto right-auto"),
         className,
       )}
-      style={
-        {
-          ...(isSide ? { transform: "none" } : {}),
-          ...(dx !== 0 ? { marginLeft: dx } : {}),
-        } as CSSProperties
-      }
+      style={{
+        ...(isSide ? { transform: "none" } : {}),
+        ...(dx !== 0 ? { marginLeft: dx } : {}),
+      }}
     >
       <TooltipHeader>{discovered ? entry.title : "Undiscovered"}</TooltipHeader>
       <TooltipBody>

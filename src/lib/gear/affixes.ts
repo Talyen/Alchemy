@@ -29,7 +29,6 @@ export function resolveAffixEffects(affixes: readonly GearAffixRoll[], _rarity?:
   const effects = { ...defaultGearEffects };
   for (const roll of affixes) {
     const def = gearAffixCatalog[roll.id];
-    if (!def) continue;
     effects[def.effectKey] += roll.value;
   }
   return effects;
@@ -88,7 +87,7 @@ export function rollAffixValue(def: GearAffixDefinition, rarity: GearRarity, rng
 
 export function getGearAffixDisplayName(affixId: GearAffixId): string {
   const parts = gearAffixNameParts[affixId];
-  return parts?.prefix ?? parts?.suffix ?? affixId;
+  return parts.prefix ?? parts.suffix ?? affixId;
 }
 
 export function getGearAffixTooltipEntries(
@@ -97,7 +96,6 @@ export function getGearAffixTooltipEntries(
 ): { key: string; name: string; text: string }[] {
   return affixes.flatMap((roll, index) => {
     const def = gearAffixCatalog[roll.id];
-    if (!def) return [];
     return [
       {
         key: `${roll.id}-${index}`,

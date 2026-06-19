@@ -4,6 +4,6 @@ import type { BattleCardEffect } from "../types";
 
 export type EffectKindDefinition<K extends BattleCardEffect["kind"] = BattleCardEffect["kind"]> = {
   kind: K;
-  /** Runtime-validated; use ZodTypeAny so optional fields align with exactOptionalPropertyTypes. */
-  schema: z.ZodTypeAny;
+  /** Runtime-validated; use ZodType so optional fields align with exactOptionalPropertyTypes. */
+  schema: z.ZodType;
 };

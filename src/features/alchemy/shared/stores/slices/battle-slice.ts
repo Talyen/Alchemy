@@ -37,10 +37,7 @@ export function defineBattleActions(set: ImmerSet<RunDomainDataState>): BattleAc
   return {
     setSyncedBattleState: (action) =>
       set((state) => {
-        state.battle.battleState =
-          typeof action === "function"
-            ? (action as (prev: BattleState) => BattleState)(state.battle.battleState)
-            : action;
+        state.battle.battleState = typeof action === "function" ? action(state.battle.battleState) : action;
         state.battle.displayOverrides = {};
       }),
 

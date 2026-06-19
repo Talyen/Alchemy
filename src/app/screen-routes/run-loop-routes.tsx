@@ -215,12 +215,13 @@ function EquipmentShopScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
 
 function MysteryScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("mystery");
+  const { handleMysteryContinue } = run;
 
   useEffect(() => {
     if (!r.mysteryEvent) {
-      run.handleMysteryContinue();
+      handleMysteryContinue();
     }
-  }, [r.mysteryEvent, run.handleMysteryContinue]);
+  }, [r.mysteryEvent, handleMysteryContinue]);
 
   if (!r.mysteryEvent) {
     return null;

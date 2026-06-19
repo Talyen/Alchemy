@@ -1,6 +1,6 @@
 // Battle presentation screen for actors, hand fan, piles, ghosts, wish choices, and menu entry.
 // Driven by useBattleController; focused child modules own the layout slices.
-import { useMemo, type MouseEvent, type MutableRefObject } from "react";
+import { useMemo, type MouseEvent, type RefObject } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardTransfer } from "../../../shared/types";
 import { CardGhostOverlay } from "../../../shared/ui/card-ghost-overlay";
@@ -27,12 +27,12 @@ type BattleScreenProps = {
   playerName: string;
   aspectMode: "standard" | "narrow" | "ultrawide";
   stagePixelRatio: number;
-  handCardRefs: MutableRefObject<Record<string, HTMLButtonElement | null>>;
-  drawPileRef: MutableRefObject<HTMLDivElement | null>;
-  discardPileRef: MutableRefObject<HTMLDivElement | null>;
-  battleSceneRef: MutableRefObject<HTMLDivElement | null>;
-  playerPanelRef: MutableRefObject<HTMLDivElement | null>;
-  enemyPanelRef: MutableRefObject<HTMLDivElement | null>;
+  handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
+  drawPileRef: RefObject<HTMLDivElement | null>;
+  discardPileRef: RefObject<HTMLDivElement | null>;
+  battleSceneRef: RefObject<HTMLDivElement | null>;
+  playerPanelRef: RefObject<HTMLDivElement | null>;
+  enemyPanelRef: RefObject<HTMLDivElement | null>;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   onOpenMenu: (rect?: DOMRect) => void;
   onWishChoice: (card: BattleCard | null) => void;

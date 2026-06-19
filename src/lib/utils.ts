@@ -34,7 +34,8 @@ export function shuffle<T>(items: readonly T[], rng: () => number = Math.random)
   const shuffled = [...items];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(rng() * (index + 1));
-    [shuffled[index]!, shuffled[swapIndex]!] = [shuffled[swapIndex]!, shuffled[index]!];
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- array index access returns T | undefined, need non-null for tuple assignment
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex]!, shuffled[index]!];
   }
   return shuffled;
 }
@@ -63,8 +64,8 @@ export function appendUnique<T>(items: readonly T[], item: T): T[] {
 }
 
 export function createInstanceId(): string {
-  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
-  if (globalThis.crypto?.getRandomValues) {
+  if (globalThis.crypto.randomUUID) return globalThis.crypto.randomUUID();
+  if (globalThis.crypto.getRandomValues) {
     const bytes = new Uint8Array(16);
     globalThis.crypto.getRandomValues(bytes);
     return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");

@@ -10,7 +10,6 @@ export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
 
   for (const roll of instance.affixes) {
     const affix = gearAffixCatalog[roll.id];
-    if (!affix) continue;
     keywordIds.add(affix.keywordId);
     if (affix.secondaryKeywordId) keywordIds.add(affix.secondaryKeywordId);
   }
@@ -19,12 +18,13 @@ export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
 }
 
 export function getGearInstanceShineColors(instance: GearInstance): readonly string[] {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- noUncheckedIndexedAccess makes Record lookups possibly undefined
   if (gearDefinitions[instance.definitionId]?.rarity !== "astral") return [];
 
   const colors: string[] = [];
   for (const keywordId of getGearInstanceKeywordIds(instance)) {
-    const shineColors = keywordDefinitions[keywordId]?.shineColors;
-    if (shineColors) colors.push(...shineColors);
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- noUncheckedIndexedAccess
+    colors.push(...keywordDefinitions[keywordId]!.shineColors);
   }
 
   return colors.length > 0 ? colors : [...ASTRAL_SHINE_FALLBACK];
@@ -38,11 +38,11 @@ export function getGearInstanceShineGradient(instance: GearInstance): string | n
 
 function getGearAffixShineColors(affix: { keywordId: KeywordId; secondaryKeywordId?: KeywordId }): readonly string[] {
   const colors: string[] = [];
-  const shineColors = keywordDefinitions[affix.keywordId]?.shineColors;
-  if (shineColors) colors.push(...shineColors);
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- noUncheckedIndexedAccess
+  colors.push(...keywordDefinitions[affix.keywordId]!.shineColors);
   if (affix.secondaryKeywordId) {
-    const secondaryColors = keywordDefinitions[affix.secondaryKeywordId]?.shineColors;
-    if (secondaryColors) colors.push(...secondaryColors);
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- noUncheckedIndexedAccess
+    colors.push(...keywordDefinitions[affix.secondaryKeywordId]!.shineColors);
   }
   return colors.length > 0 ? colors : [...ASTRAL_SHINE_FALLBACK];
 }

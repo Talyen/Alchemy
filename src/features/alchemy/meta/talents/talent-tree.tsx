@@ -68,7 +68,7 @@ function TalentNodeTooltip({ talent }: { talent: TalentDefinition }) {
       width="w-60"
       visible
       className="z-50"
-      style={dx !== 0 ? ({ marginLeft: dx } as CSSProperties) : undefined}
+      style={dx !== 0 ? { marginLeft: dx } : undefined}
     >
       <div className="font-display text-base font-bold text-amber-100/75">{talent.name ?? "Talent"}</div>
       <TooltipBody className="max-w-[240px]">
@@ -240,7 +240,7 @@ export function TalentTree({
                 isChoice={choiceIds.has(talent.id)}
                 isUnlocking={isUnlocking}
                 isSettling={isSettling}
-                onUnlock={handleUnlock}
+                onUnlock={() => void handleUnlock(talent.id)}
               />
             </div>
           );

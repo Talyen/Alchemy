@@ -6,7 +6,7 @@ import { getCommitsSinceTag, latestVersionTag } from "./lib/git-release.mjs";
 import { buildChangelogUnreleased, replaceChangelogUnreleased } from "./lib/patch-notes-core.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const changelogPath = join(root, "CHANGELOG.md");
+
 
 function normalizeNewlines(text) {
   return text.replace(/\r\n/gu, "\n");

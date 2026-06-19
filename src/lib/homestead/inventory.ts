@@ -9,19 +9,19 @@ export function emptyInventory(): MaterialInventory {
 export function addInventory(a: MaterialInventory, b: MaterialInventory): MaterialInventory {
   const result = { ...a };
   for (const mat of MATERIAL_IDS) {
-    result[mat] = (result[mat] ?? 0) + (b[mat] ?? 0);
+    result[mat] = result[mat] + b[mat];
   }
   return result;
 }
 
 export function canAfford(inventory: MaterialInventory, cost: MaterialInventory): boolean {
-  return MATERIAL_IDS.every((mat) => (inventory[mat] ?? 0) >= (cost[mat] ?? 0));
+  return MATERIAL_IDS.every((mat) => inventory[mat] >= cost[mat]);
 }
 
 export function subtractInventory(inventory: MaterialInventory, cost: MaterialInventory): MaterialInventory {
   const result = { ...inventory };
   for (const mat of MATERIAL_IDS) {
-    result[mat] = Math.max(0, (result[mat] ?? 0) - (cost[mat] ?? 0));
+    result[mat] = Math.max(0, result[mat] - cost[mat]);
   }
   return result;
 }

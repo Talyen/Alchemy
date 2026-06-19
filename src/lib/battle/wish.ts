@@ -61,7 +61,7 @@ export function buildWishOptions(state: BattleState, card: BattleCard): BattleCa
   }
 
   // Concatenate draw pile, hand, discard, and consumed cards to represent the player's full deck
-  const fullDeck = [...(state.deck || []), ...(state.hand || []), ...(state.discard || []), ...(state.exhausted || [])];
+  const fullDeck = [...state.deck, ...state.hand, ...state.discard, ...state.exhausted];
   const selected = selectRewardCards(fullDeck, candidates, baseCount, [], state.rng);
 
   if (state.talentEffects.wishCardsUpgraded) {

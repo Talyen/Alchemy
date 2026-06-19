@@ -70,7 +70,7 @@ function applyCostDiscount(cost: number, reduction: number): number {
 function checkTrinketFreePotion(state: CardCostState, card: BattleCard): boolean {
   return (
     !state.flags.firstPotionFreeUsed &&
-    !!state.trinketEffects.mortarPestleFreeFirstPotion &&
+    state.trinketEffects.mortarPestleFreeFirstPotion &&
     card.id.endsWith(POTION_CARD_ID_SUFFIX)
   );
 }

@@ -95,7 +95,7 @@ export function WishOverlay({ battleState, actions }: { battleState: BattleScree
             size="lg"
             disabled={!wishSelectedCard}
             onClick={() => {
-              onWishChoice(wishSelectedCard!);
+              onWishChoice(wishSelectedCard);
               setWishSelectedCard(null);
             }}
           >

@@ -28,13 +28,13 @@ export function selectRewardCards(
   for (const keyword of seedKeywords) {
     freq[keyword] = (freq[keyword] || 0) + 1;
   }
-  for (const card of deck || []) {
+  for (const card of deck) {
     for (const kw of getCardKeywords(card)) {
       freq[kw] = (freq[kw] || 0) + 1;
     }
   }
 
-  const deckIds = new Set((deck || []).map((c) => c.id));
+  const deckIds = new Set(deck.map((c) => c.id));
 
   const scored = shuffledCandidates.map((card) => {
     let score = 0;

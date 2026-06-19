@@ -15,7 +15,6 @@ import {
   type GearLoadouts,
   type GearSlot,
   type InventoryPlacement,
-  type PackedCurrencyItem,
   CRAFTING_CURRENCY_IDS,
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
@@ -61,7 +60,7 @@ type Props = {
 export function ArmoryScreen({
   inventories,
   loadouts,
-  finishedRunCharacters = [],
+  finishedRunCharacters,
   browseOnly,
   onOpenMenu,
   onEquip,
@@ -143,7 +142,7 @@ export function ArmoryScreen({
   );
 
   const boardObstacles = useMemo(
-    () => [...packedInventory.items, ...currencyObstaclesForBoard(packedCurrencies as PackedCurrencyItem[])],
+    () => [...packedInventory.items, ...currencyObstaclesForBoard(packedCurrencies)],
     [packedCurrencies, packedInventory.items],
   );
 

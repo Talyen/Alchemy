@@ -34,7 +34,7 @@ const saveSessionState = new SaveSessionState();
 
 // Keeps storage failures readable without crashing gameplay when browsers block persistence.
 function logStorageFailure(message: string, error?: unknown) {
-  logError(message, "storage", error ? { error: String(error) } : undefined);
+  logError(message, "storage", error ? { error: String(error) } : undefined); // eslint-disable-line @typescript-eslint/no-base-to-string
 }
 
 function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: SaveData): string[] {
@@ -150,7 +150,7 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
       warnings.push(`Field "${ve.path}" was corrupt: ${ve.message}`);
     }
     if (warnings.length > 0) {
-      console.info("Save data was normalized during load", warnings);
+      console.warn("Save data was normalized during load", warnings);
     }
     return { data, status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" } };
   } catch (error) {

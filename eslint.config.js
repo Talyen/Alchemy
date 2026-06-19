@@ -79,6 +79,16 @@ export default tseslint.config(
     },
   },
 
+  // Route files and context files intentionally colocate hooks with screen
+  // components — fast-refresh hot-replacement works correctly within each
+  // domain route module.
+  {
+    files: ["src/app/screen-routes/*-routes.tsx", "src/app/app-screen-chrome-context.tsx"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
+
   // React Compiler rules
   {
     plugins: {

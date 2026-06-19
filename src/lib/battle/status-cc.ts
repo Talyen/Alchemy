@@ -91,7 +91,7 @@ export type EnemyCcImmunityInput = {
 
 /** If enemy CC immunity is active, clear the stack on nextState without skipping. */
 export function applyEnemyCcImmunityClear(input: EnemyCcImmunityInput): BattleState | null {
-  if (input.ccCooldown == null || input.ccCooldown <= 0) return null;
+  if (input.ccCooldown <= 0) return null;
   return clearEnemyCcStack(input.nextState, input.stat);
 }
 

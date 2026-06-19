@@ -126,7 +126,7 @@ export const useAppStore = create<AppStore>()((set) => ({
     })),
 
   clearSavedAppState: () => {
-    clearAlchemySaveData();
+    void clearAlchemySaveData();
     set({
       selectedAspectRatio: defaultSaveData.selectedAspectRatio,
       displayMode: defaultSaveData.displayMode,

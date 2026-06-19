@@ -31,9 +31,7 @@ export type CraftingCurrencyBoardPositions = Partial<Record<CraftingCurrencyId, 
 export type CraftingCurrencyBoardPositionsByCharacter = Record<GearCharacterId, CraftingCurrencyBoardPositions>;
 
 export function createEmptyCurrencyBoardPositionsByCharacter(): CraftingCurrencyBoardPositionsByCharacter {
-  return Object.fromEntries(
-    GEAR_CHARACTER_IDS.map((id) => [id, {} as CraftingCurrencyBoardPositions]),
-  ) as CraftingCurrencyBoardPositionsByCharacter;
+  return Object.fromEntries(GEAR_CHARACTER_IDS.map((id) => [id, {}])) as CraftingCurrencyBoardPositionsByCharacter;
 }
 
 export type CraftingCurrencyDefinition = {
@@ -163,7 +161,7 @@ function addRandomAffix(item: GearInstance, rng: () => number): GearInstance {
 }
 
 function affixMaxValue(roll: GearAffixRoll, rarity: GearRarity): number {
-  return gearAffixCatalog[roll.id]?.roll[rarity].max ?? roll.value;
+  return gearAffixCatalog[roll.id].roll[rarity].max;
 }
 
 function hasUpgradeableAffix(item: GearInstance): boolean {
@@ -173,7 +171,6 @@ function hasUpgradeableAffix(item: GearInstance): boolean {
 
 function upgradeAffixValueToAstral(roll: GearAffixRoll): GearAffixRoll {
   const def = gearAffixCatalog[roll.id];
-  if (!def) return roll;
   const basic = def.roll.basic;
   const astral = def.roll.astral;
   const basicSpan = Math.max(1, basic.max - basic.min);

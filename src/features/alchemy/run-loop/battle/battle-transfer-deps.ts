@@ -47,7 +47,9 @@ export function createBattleTransferDeps(contextOrGetter: BattleControllerContex
       };
       unregisterCancel = context.transferCancelRegistryRef.current.register(() => finish(false));
       context.setCardTransfers([{ ...transfer, id }]);
-      delay(Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs).then(() => finish(true));
+      void delay(Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs).then(() =>
+        finish(true),
+      );
     });
   }
 

@@ -68,7 +68,7 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
     art: mixedPotion,
     cost: MIXED_POTION_COST,
     consume: true,
-    effects: effects as BattleCard["effects"],
+    effects: effects,
   };
 }
 

@@ -1,5 +1,5 @@
 // Prop contracts shared by the focused battle screen view modules.
-import type { MouseEvent, MutableRefObject } from "react";
+import type { MouseEvent, RefObject } from "react";
 
 import type { BattleState } from "@/lib/battle";
 import type { DisplayOverrides } from "../../../shared/stores/run-domain-types";
@@ -60,12 +60,12 @@ export type BattleFeedbackProps = {
 };
 
 export type BattleRefsProps = {
-  handCardRefs: MutableRefObject<Record<string, HTMLButtonElement | null>>;
-  drawPileRef: MutableRefObject<HTMLDivElement | null>;
-  discardPileRef: MutableRefObject<HTMLDivElement | null>;
-  battleSceneRef: MutableRefObject<HTMLDivElement | null>;
-  playerPanelRef: MutableRefObject<HTMLDivElement | null>;
-  enemyPanelRef: MutableRefObject<HTMLDivElement | null>;
+  handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
+  drawPileRef: RefObject<HTMLDivElement | null>;
+  discardPileRef: RefObject<HTMLDivElement | null>;
+  battleSceneRef: RefObject<HTMLDivElement | null>;
+  playerPanelRef: RefObject<HTMLDivElement | null>;
+  enemyPanelRef: RefObject<HTMLDivElement | null>;
 };
 
 export type BattleActionsProps = {

@@ -22,7 +22,7 @@ export function resolveEquipSwap({
   instance: GearInstance;
   vacatedPlacement: InventoryPlacement;
   inventoryById: Map<string, GearInstance>;
-  packedItems: PackedInventoryItem<GearInstance>[];
+  packedItems: PackedInventoryItem[];
 }): { canSwap: boolean; displaced: GearInstance | null } {
   const displacedId = loadout[slot];
   if (!displacedId || displacedId === instance.instanceId) {

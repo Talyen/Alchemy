@@ -121,7 +121,7 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
 
     for (const entry of nextEntries) {
       const entryDelay = entry.lane * combatTextLaneDelayMs;
-      delay(entryDelay)
+      void delay(entryDelay)
         .then(() => {
           if (!shouldShowFloatingCombatText(sequence)) return;
           set((s) => ({ floatingCombatTexts: [...s.floatingCombatTexts, entry] }));

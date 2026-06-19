@@ -17,12 +17,7 @@ export function BackgroundParticles({
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (mql.matches) return;
 
-    const stop = startBackgroundParticles(
-      canvasRef as React.MutableRefObject<HTMLCanvasElement | null>,
-      variant,
-      colors,
-      alphaMultiplier,
-    );
+    const stop = startBackgroundParticles(canvasRef, variant, colors, alphaMultiplier);
 
     return () => stop();
   }, [variant, colors, alphaMultiplier]);

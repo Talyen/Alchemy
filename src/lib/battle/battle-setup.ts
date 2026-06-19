@@ -14,7 +14,7 @@ import {
 import { BASE_PLAYER_MANA, CARDS_PER_TURN, MAX_PLAYER_HEALTH } from "../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
 import { defaultGearEffects } from "@/lib/gear";
-import { EMPTY_ENEMY_MITIGATION, type BattleState, type TurnPhase } from "./types";
+import { EMPTY_ENEMY_MITIGATION, type BattleState } from "./types";
 import { computeTrinketManifest } from "../trinkets";
 import { drawCards, shuffleCards } from "./draw";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
@@ -103,7 +103,7 @@ function buildInitialBattleState(
     mana: setup.mana,
     maxMana: setup.mana,
     gold: setup.gold,
-    turnPhase: "player" as TurnPhase,
+    turnPhase: "player",
     playerHealth: setup.playerHealth,
     playerMaxHealth: setup.playerMaxHealth,
     enemyHealth: setup.enemyHealth,
@@ -153,6 +153,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     rng: optionsRng,
   } = options;
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for required field
   if (!battleEnemy) {
     throw new Error("createBattleState requires currentEnemy; use defaultBattleState for inactive placeholder state.");
   }
@@ -184,7 +185,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     deck,
     hand,
     discard,
-    mana: BASE_PLAYER_MANA + manaBonus + (battleTalents.startMana ?? 0),
+    mana: BASE_PLAYER_MANA + manaBonus + battleTalents.startMana,
     gold: battleGold,
     playerHealth: startingHealth,
     playerMaxHealth: finalMaxHealth,

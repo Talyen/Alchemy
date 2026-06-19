@@ -76,7 +76,7 @@ function AppMainContent({
   });
   const nav = useReturnToRunNavigation({ run, renderedScreen });
 
-  const heroArt = characterArt[run.characterId] ?? characterArt.knight;
+  const heroArt = characterArt[run.characterId];
 
   useScreenAssetPreloadEffects({
     heroArt,
@@ -88,7 +88,7 @@ function AppMainContent({
         ? run.rewardState.choices.map((choice) => ({
             art: gearDefinitions[choice.definitionId]?.art ?? "",
           }))
-        : run.rewardState.choices.map((choice) => ({ art: choice.art ?? "" })),
+        : run.rewardState.choices.map((choice) => ({ art: choice.art })),
     shopCards: run.shopCards,
     alchemistPotions: run.alchemistPotions,
     mysteryEvent: run.mysteryEvent,
@@ -218,7 +218,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 
   function handleMarkDifficultyCompleted(characterId: CharacterId, difficultyId: DifficultyId) {
     const prev = appStore.getState().completedDifficulties;
-    const current = prev[characterId] ?? [];
+    const current = prev[characterId];
     if (current.includes(difficultyId)) return;
     appStore.getState().setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
   }
@@ -273,7 +273,7 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    bootstrapAlchemySaveState().then((result) => {
+    void bootstrapAlchemySaveState().then((result) => {
       if (!cancelled) {
         applySaveDataToStores(result.data);
         setBootstrapResult(result);

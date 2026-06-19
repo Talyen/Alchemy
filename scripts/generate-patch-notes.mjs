@@ -6,7 +6,6 @@ import { buildPatchNotesMarkdown, extractChangelogSection, parseChangelogCommits
 import { computeSyncedChangelog, readChangelog } from "./sync-changelog.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 const releaseVersion = process.env.RELEASE_VERSION?.replace(/^v/, "");
 const isRelease = Boolean(releaseVersion);
 const version = isRelease ? releaseVersion : "Unreleased";

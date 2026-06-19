@@ -20,7 +20,7 @@ export function BattleActors({
   feedback: BattleFeedbackProps;
   refs: BattleRefsProps;
 }) {
-  const { battleState, heroArt, playerName, aspectMode = "standard" } = view;
+  const { battleState, heroArt, playerName, aspectMode } = view;
   const { shimmerState, maybeTriggerShimmer: onHoverShimmer } = hover;
   const {
     playerStatusChips,

@@ -723,13 +723,12 @@ export function hydrateCard(savedCard: BattleCard): BattleCard {
   const effects =
     Array.isArray(savedCard.effects) &&
     (savedCard as unknown as { effectsFullyValid?: boolean }).effectsFullyValid !== false
-      ? (savedCard.effects.map((e) => (e && typeof e === "object" ? { ...e } : e)) as BattleCard["effects"])
+      ? (savedCard.effects.map((e) => (typeof e === "object" ? { ...e } : e)) as BattleCard["effects"])
       : libraryCard.effects.map((e) => ({ ...e }));
 
   const corruptedValuePositions = Array.isArray(savedCard.corruptedValuePositions)
     ? savedCard.corruptedValuePositions.filter(
         (p) =>
-          p &&
           typeof p === "object" &&
           Number.isInteger(p.lineIndex) &&
           Number.isInteger(p.matchIndex) &&

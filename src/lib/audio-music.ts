@@ -30,7 +30,7 @@ let musicTransitionToken = 0;
 // Play wrapper handling browser autoplay blocking policies.
 function playElement(el: HTMLAudioElement) {
   el.play().catch(() => {
-    console.debug("Music playback blocked until user interaction");
+    console.warn("Music playback blocked until user interaction");
   });
 }
 

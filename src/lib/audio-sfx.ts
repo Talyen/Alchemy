@@ -103,7 +103,7 @@ function playBuffer(
   }
 
   // Fall back to async fetching and decoding. Checks playToken to prevent playing if stopped in the meantime.
-  loadSoundBuffer(name).then((buffer) => {
+  void loadSoundBuffer(name).then((buffer) => {
     if (playToken !== sfxStopToken) return;
     if (buffer) playDecodedBuffer(buffer, volume, delay, trackForCleanup);
   });

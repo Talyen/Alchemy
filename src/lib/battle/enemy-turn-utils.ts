@@ -14,10 +14,10 @@ type FreezeAspect = "regen" | "scaling";
 function computeDeathsDoorGraceRemaining(state: BattleState): number {
   if (state.deathsDoorGraceTurnsRemaining !== null) return state.deathsDoorGraceTurnsRemaining;
   if (state.deathsDoorTriggeredTurn !== null) {
-    const graceTurns = 1 + Math.max(0, state.talentEffects.deathsDoorExtension ?? 0);
+    const graceTurns = 1 + Math.max(0, state.talentEffects.deathsDoorExtension);
     return graceTurns - (state.turn - state.deathsDoorTriggeredTurn);
   }
-  return 1 + Math.max(0, state.talentEffects.deathsDoorExtension ?? 0);
+  return 1 + Math.max(0, state.talentEffects.deathsDoorExtension);
 }
 
 export function isFreezeActiveForAspect(state: BattleState, aspect: FreezeAspect): boolean {
@@ -36,7 +36,7 @@ function resetPlayerTurnState(state: BattleState): BattleState {
     turn: state.turn + 1,
     playerCC: { ...state.playerCC, cooldown: Math.max(0, state.playerCC.cooldown - 1) },
     enemyCC: { ...state.enemyCC, cooldown: Math.max(0, state.enemyCC.cooldown - 1) },
-    playerStatuses: { ...state.playerStatuses, block: decayHalvedStatus(state.playerStatuses.block ?? 0) },
+    playerStatuses: { ...state.playerStatuses, block: decayHalvedStatus(state.playerStatuses.block) },
     cardsPlayedThisTurn: 0,
     flags: {
       ...state.flags,

@@ -81,7 +81,7 @@ export function normalizeLegacyAspectRatio(parsed: RawSaveData): RawSaveData {
   if (typeof parsed.selectedResolution !== "string") return parsed;
   const selectedAspectRatio =
     LEGACY_RESOLUTION_TO_ASPECT_RATIO[parsed.selectedResolution as keyof typeof LEGACY_RESOLUTION_TO_ASPECT_RATIO];
-  return selectedAspectRatio ? { ...parsed, selectedAspectRatio } : parsed;
+  return { ...parsed, selectedAspectRatio };
 }
 
 // V0 saves predate schema-version tracking; they lack gameBuildVersion and contentVersion.
@@ -254,6 +254,7 @@ export function migrateV8ToV9(parsed: RawSaveData): RawSaveData {
   const currencyBoardPositionsByCharacter = createEmptyCurrencyBoardPositionsByCharacter();
 
   for (const item of legacyInventory) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- item is unknown runtime data from raw save
     if (!item || typeof item !== "object" || typeof item.instanceId !== "string") continue;
     const owner = findGearEquippedCharacter(loadouts, item.instanceId) ?? "knight";
     gearInventories[owner].push(item);
@@ -286,8 +287,9 @@ export function migrateV8ToV9(parsed: RawSaveData): RawSaveData {
 export const LEGACY_ARMORY_POSITIONS_STORAGE_KEY = "alchemy-armory-positions";
 
 function getStorage(): Storage | null {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime environment check
   if (typeof localStorage !== "undefined") return localStorage;
-  if (typeof window !== "undefined" && window.localStorage) return window.localStorage;
+  if (window.localStorage) return window.localStorage;
   return null;
 }
 

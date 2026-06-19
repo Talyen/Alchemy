@@ -49,7 +49,7 @@ export function useInitialLoadReady({
       if (!cancelled) setReady(true);
     }
 
-    waitForStartupAssets();
+    void waitForStartupAssets();
     return () => {
       cancelled = true;
     };

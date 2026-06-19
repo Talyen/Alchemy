@@ -12,7 +12,7 @@ import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
 function DraftedCardItem({ card, index }: { card: BattleCard; index: number }) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
-    "drafted-" + index,
+    "drafted-" + String(index),
     card.id,
   );
 
@@ -43,7 +43,7 @@ function ChoiceCardItem({
   onClick: () => void;
 }) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
-    "draft-choice-" + index,
+    "draft-choice-" + String(index),
     card.id,
   );
 
@@ -99,8 +99,8 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
         <ScreenHeader title={isComplete ? "Draft Complete" : "Draft a Deck"} />
         <p className="mt-3 text-base text-muted-foreground">
           {isComplete
-            ? "You drafted " + drafted.length + " cards. Ready to begin your run."
-            : "Pick 1 of 3 cards \u2014 " + (round + 1) + "/" + DRAFT_ROUNDS + " selected"}
+            ? "You drafted " + String(drafted.length) + " cards. Ready to begin your run."
+            : "Pick 1 of 3 cards \u2014 " + String(round + 1) + "/" + String(DRAFT_ROUNDS) + " selected"}
         </p>
 
         {isComplete ? (
@@ -109,7 +109,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
             className="mx-auto mt-8 grid max-w-fit grid-cols-3 justify-items-center gap-6"
           >
             {drafted.map((card, index) => (
-              <StaggerItem key={"drafted-" + index + "-" + card.id} index={index}>
+              <StaggerItem key={"drafted-" + String(index) + "-" + card.id} index={index}>
                 <DraftedCardItem card={card} index={index} />
               </StaggerItem>
             ))}
@@ -117,7 +117,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
         ) : (
           <StaggerGroup swapKey={round} className="mt-8 flex flex-wrap items-start justify-center gap-6">
             {choices.map((card, index) => (
-              <StaggerItem key={"draft-choice-" + index + "-" + card.id} index={index}>
+              <StaggerItem key={"draft-choice-" + String(index) + "-" + card.id} index={index}>
                 <ChoiceCardItem
                   card={card}
                   index={index}

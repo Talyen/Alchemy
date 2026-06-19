@@ -69,7 +69,7 @@ function getCompanionLine(card: Pick<BattleCard, "effects">, context: CardDescri
   const companionId = getSummonedCompanionId(card);
   if (!companionId) return null;
   const companion = companionLibrary[companionId];
-  const turnEffect = companion?.turnStartEffects[0];
+  const turnEffect = companion.turnStartEffects[0];
   if (!turnEffect) return null;
 
   return formatCompanionTurnStartLine(turnEffect, {

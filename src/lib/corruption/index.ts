@@ -47,7 +47,7 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
       });
       if (effectIndex < 0) return;
       usedEffectIndexes.add(effectIndex);
-      targets.push({ lineIndex, matchIndex: match.index ?? 0, value, effectIndex });
+      targets.push({ lineIndex, matchIndex: match.index, value, effectIndex });
     });
   });
 

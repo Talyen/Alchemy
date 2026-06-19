@@ -25,11 +25,6 @@ export function preloadImage(src: string) {
     }
 
     function decodeLoadedImage() {
-      if (!image.decode) {
-        resolveOnce();
-        return;
-      }
-
       image
         .decode()
         .then(resolveOnce)
@@ -88,10 +83,7 @@ function schedulePreloadBatch(callback: () => void) {
     requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
   };
 
-  if (scheduler.requestIdleCallback) {
-    scheduler.requestIdleCallback(callback, { timeout: IMAGE_PRELOAD_IDLE_TIMEOUT });
-    return;
-  }
+  scheduler.requestIdleCallback(callback, { timeout: IMAGE_PRELOAD_IDLE_TIMEOUT });
 
   globalThis.setTimeout(callback, 0);
 }

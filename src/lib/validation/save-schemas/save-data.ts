@@ -133,7 +133,7 @@ export const SaveDataSchema = z.preprocess(
       selectedAspectRatio: caught(AspectRatioOptionSchema, "auto", "selectedAspectRatio"),
       displayMode: caught(DisplayModeSchema, "borderless-fullscreen", "displayMode"),
       uiScale: caught(UiScaleSchema, "100", "uiScale"),
-      brightness: caught(z.number().finite(), DEFAULT_BRIGHTNESS_PCT, "brightness").transform((v) =>
+      brightness: caught(z.number(), DEFAULT_BRIGHTNESS_PCT, "brightness").transform((v) =>
         Math.max(50, Math.min(150, v)),
       ),
       discoveredCardIds: deduplicatedStringArraySchema("discoveredCardIds"),
@@ -154,13 +154,13 @@ export const SaveDataSchema = z.preprocess(
       talentXP: TalentXPSchema,
       unlockedTalents: UnlockedTalentsSchema,
       // .catch() fallbacks must match defaults.ts — both come from game-constants.ts.
-      musicVolume: caught(z.number().finite(), DEFAULT_MUSIC_VOLUME_PCT, "musicVolume").transform((v) =>
+      musicVolume: caught(z.number(), DEFAULT_MUSIC_VOLUME_PCT, "musicVolume").transform((v) =>
         Math.max(0, Math.min(100, v)),
       ),
-      sfxVolume: caught(z.number().finite(), DEFAULT_SFX_VOLUME_PCT, "sfxVolume").transform((v) =>
+      sfxVolume: caught(z.number(), DEFAULT_SFX_VOLUME_PCT, "sfxVolume").transform((v) =>
         Math.max(0, Math.min(100, v)),
       ),
-      masterVolume: caught(z.number().finite(), DEFAULT_MASTER_VOLUME_PCT, "masterVolume").transform((v) =>
+      masterVolume: caught(z.number(), DEFAULT_MASTER_VOLUME_PCT, "masterVolume").transform((v) =>
         Math.max(0, Math.min(100, v)),
       ),
       muteInBackground: caught(z.boolean(), true, "muteInBackground"),

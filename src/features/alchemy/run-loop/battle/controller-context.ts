@@ -1,5 +1,5 @@
 // Unified context/controller interface for battle UI side-effects, state integration, and orchestration.
-import type { MutableRefObject, RefObject } from "react";
+import type { RefObject } from "react";
 import type { BattleState } from "@/lib/battle";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { BattleCard } from "@/lib/game-data";
@@ -16,7 +16,7 @@ export interface BattleControllerContext {
   run: RunStateController;
   talents: TalentStateController;
   autoEndTurn: boolean;
-  homesteadEffectsRef: MutableRefObject<HomesteadEffectManifest>;
+  homesteadEffectsRef: RefObject<HomesteadEffectManifest>;
   onBattleVictory?: (() => void) | undefined;
   onBattleDefeat?: (() => void) | undefined;
   measureElementRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
@@ -24,21 +24,21 @@ export interface BattleControllerContext {
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
 
   // Refs representing elements and transition timings
-  handCardRefs: MutableRefObject<Record<string, HTMLButtonElement | null>>;
+  handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
   drawPileRef: RefObject<HTMLDivElement | null>;
   discardPileRef: RefObject<HTMLDivElement | null>;
   battleSceneRef: RefObject<HTMLDivElement | null>;
   playerPanelRef: RefObject<HTMLDivElement | null>;
   enemyPanelRef: RefObject<HTMLDivElement | null>;
 
-  cardPlayInProgressRef: MutableRefObject<boolean>;
-  companionScheduledRef: MutableRefObject<boolean>;
-  battleTimerGroupRef: MutableRefObject<TimerGroup>;
-  battleSessionRef: MutableRefObject<number>;
-  victoryDefeatHandledRef: MutableRefObject<boolean>;
-  transferCancelRegistryRef: MutableRefObject<TransferCancelRegistry>;
-  transferIdCounterRef: MutableRefObject<number>;
-  resolvedAsHasteOrStunRef: MutableRefObject<boolean>;
+  cardPlayInProgressRef: RefObject<boolean>;
+  companionScheduledRef: RefObject<boolean>;
+  battleTimerGroupRef: RefObject<TimerGroup>;
+  battleSessionRef: RefObject<number>;
+  victoryDefeatHandledRef: RefObject<boolean>;
+  transferCancelRegistryRef: RefObject<TransferCancelRegistry>;
+  transferIdCounterRef: RefObject<number>;
+  resolvedAsHasteOrStunRef: RefObject<boolean>;
 
   // Zustand State / Actions
   battleState: BattleState;
