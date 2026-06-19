@@ -160,4 +160,38 @@ test.describe("Gear equip", () => {
     await expect(tooltip).toBeVisible();
     await expect(tooltip.getByText("Leather Armor")).toBeVisible();
   });
+
+  test("auto-swaps off-hand quiver when equipping a non-ranged main-hand via drag", async ({ page }) => {
+    const longbow: GearInstance = { instanceId: "bow-1", definitionId: "longbow-basic", affixes: [] };
+    const quiver: GearInstance = { instanceId: "quiver-1", definitionId: "quiver-basic", affixes: [] };
+    const longsword: GearInstance = { instanceId: "sword-1", definitionId: "longsword-basic", affixes: [] };
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight["main-hand"] = "bow-1";
+    loadouts.knight["off-hand"] = "quiver-1";
+
+    await openArmory(page, { inventory: [longbow, quiver, longsword], loadouts });
+
+    const mainHandSlot = page.locator('[data-testid="armory-equipment-slot"][data-slot="main-hand"]');
+    const offHandSlot = page.locator('[data-testid="armory-equipment-slot"][data-slot="off-hand"]');
+    const swordItem = gearItemLocator(page, "Longsword");
+
+    // Verify the starting state: bow + quiver
+    await expect(mainHandSlot.locator("img")).toHaveCount(2);
+    await expect(offHandSlot.locator("img")).toHaveCount(2);
+
+    // Drag the longsword onto the main-hand slot
+    await page.mouse.move(100, 100);
+    const source = await swordItem.boundingBox();
+    const target = await mainHandSlot.boundingBox();
+    expect(source).not.toBeNull();
+    expect(target).not.toBeNull();
+    await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(target!.x + target!.width / 2, target!.y + target!.height / 2, { steps: 8 });
+    await page.mouse.up();
+
+    // After auto-swap: longsword equipped, quiver removed from off-hand
+    await expect(mainHandSlot.locator("img")).toHaveCount(2);
+    await expect(offHandSlot.getByTestId("armory-slot-background")).toBeVisible();
+  });
 });
