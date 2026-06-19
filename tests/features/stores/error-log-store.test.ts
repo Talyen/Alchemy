@@ -12,7 +12,7 @@ describe("useErrorLogStore", () => {
   });
 
   it("pushError appends an unreviewed entry with a unique id", () => {
-    useErrorLogStore.getState().pushError({ message: "boom", source: "runtime" });
+    useErrorLogStore.getState().pushError({ message: "boom", source: "storage" });
     const errors = useErrorLogStore.getState().errors;
     expect(errors).toHaveLength(1);
     expect(errors[0]?.message).toBe("boom");
@@ -22,7 +22,7 @@ describe("useErrorLogStore", () => {
 
   it("caps stored errors at 100 entries", () => {
     for (let index = 0; index < 101; index += 1) {
-      useErrorLogStore.getState().pushError({ message: `err-${index}`, source: "runtime" });
+      useErrorLogStore.getState().pushError({ message: `err-${index}`, source: "storage" });
     }
     const errors = useErrorLogStore.getState().errors;
     expect(errors).toHaveLength(100);
@@ -31,8 +31,8 @@ describe("useErrorLogStore", () => {
   });
 
   it("markReviewed flips only the matching entry", () => {
-    useErrorLogStore.getState().pushError({ message: "one", source: "runtime" });
-    useErrorLogStore.getState().pushError({ message: "two", source: "runtime" });
+    useErrorLogStore.getState().pushError({ message: "one", source: "storage" });
+    useErrorLogStore.getState().pushError({ message: "two", source: "storage" });
     const firstId = useErrorLogStore.getState().errors[0]!.id;
     useErrorLogStore.getState().markReviewed(firstId);
     const errors = useErrorLogStore.getState().errors;
@@ -41,14 +41,14 @@ describe("useErrorLogStore", () => {
   });
 
   it("clearErrors empties state and localStorage", () => {
-    useErrorLogStore.getState().pushError({ message: "boom", source: "runtime" });
+    useErrorLogStore.getState().pushError({ message: "boom", source: "storage" });
     useErrorLogStore.getState().clearErrors();
     expect(useErrorLogStore.getState().errors).toEqual([]);
     expect(localStorage.getItem(STORAGE_KEY)).toBe("[]");
   });
 
   it("persists errors to localStorage", () => {
-    useErrorLogStore.getState().pushError({ message: "persisted", source: "runtime" });
+    useErrorLogStore.getState().pushError({ message: "persisted", source: "storage" });
     const raw = localStorage.getItem(STORAGE_KEY);
     expect(raw).toContain("persisted");
     const parsed = JSON.parse(raw ?? "[]") as { message: string }[];

@@ -1,4 +1,5 @@
 import { expect } from "@playwright/test";
+import type { GearInstance } from "@/lib/gear/types";
 import {
   bodyGear,
   createEmptyGearLoadouts,
@@ -37,7 +38,7 @@ test.describe("Gear equip", () => {
     const helmA = { instanceId: "helm-a", definitionId: "leather-helm-basic" as const, affixes: [] };
     const helmB = { instanceId: "helm-b", definitionId: "leather-helm-basic" as const, affixes: [] };
     const loadouts = createEmptyGearLoadouts();
-    loadouts.knight.helm = "helm-b";
+    loadouts.knight = { ...loadouts.knight, helm: "helm-b" };
 
     await openArmory(page, {
       inventory: [helmA, helmB],
@@ -166,8 +167,7 @@ test.describe("Gear equip", () => {
     const quiver: GearInstance = { instanceId: "quiver-1", definitionId: "quiver-basic", affixes: [] };
     const longsword: GearInstance = { instanceId: "sword-1", definitionId: "longsword-basic", affixes: [] };
     const loadouts = createEmptyGearLoadouts();
-    loadouts.knight["main-hand"] = "bow-1";
-    loadouts.knight["off-hand"] = "quiver-1";
+    loadouts.knight = { ...loadouts.knight, "main-hand": "bow-1", "off-hand": "quiver-1" };
 
     await openArmory(page, { inventory: [longbow, quiver, longsword], loadouts });
 

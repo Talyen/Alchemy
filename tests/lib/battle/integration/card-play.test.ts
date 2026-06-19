@@ -3,6 +3,7 @@ import { makeState, makeCard } from "./helpers";
 import { defaultTalentEffects } from "@/lib/battle";
 import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeTrinketManifest, defaultTrinketEffects } from "@/lib/trinkets";
+import { defaultCombatFlags, defaultPlayerStatusValues } from "../../../fixtures/default-battle-state";
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
 
@@ -182,22 +183,9 @@ describe("playBattleCardResolved — nextCardCostReduction", () => {
     const state = makeState({
       mana: 4,
       hand: [card],
-      flags: {
-        firstPhysicalCardFreeUsed: false,
-        firstHolyCardFreeUsed: false,
-        firstBurnCardDoubledUsed: false,
-        firstArmorCardDoubledUsed: false,
-        firstPoisonCardFreeUsed: false,
-        firstBleedCardFreeUsed: false,
+      flags: defaultCombatFlags({
         nextCardCostReduction: 2,
-        goldOnFirstPoisonThisCombat: false,
-        firstHolyDamageBonusUsed: false,
-        firstBurnTrinketDoubledUsed: false,
-        firstHarmfulStatusPrevented: false,
-        firstPotionFreeUsed: false,
-        resonantChimeUsedThisTurn: false,
-        runicQuillUsedThisTurn: false,
-      },
+      }),
     });
     const result = playBattleCardResolved(state, "slash", 0);
     // cost 3 - 2 reduction = 1 → mana 4→3
@@ -341,7 +329,7 @@ describe("canPlayCard — remove-harmful-status", () => {
     const state = makeState({
       mana: 4,
       hand: [card],
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 2, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ poison: 2 }),
     });
     expect(canPlayCard(state, card, 0)).toBe(true);
   });

@@ -6,7 +6,7 @@ import {
 } from "@/lib/validation/migration/steps";
 
 const mockStorage: Record<string, string> = {};
-const globalWithWindow = globalThis as typeof globalThis & { window?: Record<string, unknown> };
+const globalWithWindow = globalThis as unknown as { window?: object };
 
 function setupLocalStorage() {
   globalWithWindow.window = {

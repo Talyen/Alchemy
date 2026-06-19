@@ -3,12 +3,13 @@ import { addForgeToPlayer, applyStunForgeTalent } from "@/lib/battle/status-forg
 import { applyPlayerStatusEffect } from "@/lib/battle/status-player";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
+import { defaultEnemyMitigation } from "../../fixtures/default-battle-state";
 
 function makeTexts(): CombatTextEvent[] {
   return [];
 }
 
-describe("applyPlayerStatusEffect — forge integration", () => {
+describe("applyPlayerStatusEffect ï¿½ forge integration", () => {
   it("applies forge burn burst when forge crosses threshold", () => {
     const state = createTestBattleState({
       playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 },
@@ -36,7 +37,7 @@ describe("applyPlayerStatusEffect — forge integration", () => {
   it("strips enemy armor when forge crosses forgeStripArmorThreshold", () => {
     const state = createTestBattleState({
       playerStatuses: { ...createTestBattleState().playerStatuses, forge: 5 },
-      enemyMitigation: { armor: 4, forge: 0, freezeBonus: 0 },
+      enemyMitigation: defaultEnemyMitigation({ armor: 4 }),
       talentEffects: { ...createTestBattleState().talentEffects, forgeStripArmorThreshold: 6 },
     });
     const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };

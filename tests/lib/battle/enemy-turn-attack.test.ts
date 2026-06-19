@@ -3,6 +3,7 @@ import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { BATTLE_CONFIG } from "@/lib/game-constants";
 import { createTestBattleState } from "./test-state";
+import { defaultCcState } from "../../fixtures/default-battle-state";
 
 function makeTexts(): CombatTextEvent[] {
   return [];
@@ -181,7 +182,7 @@ describe("processEnemyAttack", () => {
       playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
       enemyHealth: 20,
       enemyMaxHealth: 30,
-      enemyCC: { freezeSkipTurns: 1 },
+      enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       talentEffects: { ...createTestBattleState().talentEffects, freezeBlocksRegen: true },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }],
     });

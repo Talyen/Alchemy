@@ -4,6 +4,7 @@ import { makeState, makeCard } from "./helpers";
 vi.spyOn(Math, "random").mockReturnValue(0.99);
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
 import { type CombatTextEvent } from "@/lib/battle/types";
+import { defaultPlayerStatusValues } from "../../../fixtures/default-battle-state";
 
 describe("applyCardEffects — perManaCrystal scaling", () => {
   it("perManaCrystal with 0 amount yields 0 block", () => {
@@ -131,7 +132,7 @@ describe("applyCardEffects — self-damage with zero amount", () => {
   it("self-damage with 0 amount does nothing", () => {
     const state = makeState({
       playerHealth: 20,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues(),
     });
     const card = makeCard({ effects: [{ kind: "self-damage", damageType: "burn", amount: 0 }] });
     const texts: CombatTextEvent[] = [];

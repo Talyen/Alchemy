@@ -28,7 +28,7 @@ test.describe("Gear flow", () => {
     void runtimeErrors;
 
     const loadouts = createEmptyGearLoadouts();
-    loadouts.knight.body = "gear-1";
+    loadouts.knight = { ...loadouts.knight, body: "gear-1" };
 
     const menu = new MenuPage(page);
     await menu.gotoWithUnlockedMeta({
@@ -102,7 +102,7 @@ test.describe("Gear flow", () => {
     const helmA = { instanceId: "helm-a", definitionId: "leather-helm-basic" as const, affixes: [] };
     const helmB = { instanceId: "helm-b", definitionId: "leather-helm-basic" as const, affixes: [] };
     const loadouts = createEmptyGearLoadouts();
-    loadouts.knight.helm = "helm-b";
+    loadouts.knight = { ...loadouts.knight, helm: "helm-b" };
 
     await openArmory(page, {
       inventory: [helmA, helmB],

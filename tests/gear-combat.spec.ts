@@ -12,7 +12,7 @@ test.describe("Gear combat", () => {
     void runtimeErrors;
 
     const loadouts = createEmptyGearLoadouts();
-    loadouts.knight.body = "gear-1";
+    loadouts.knight = { ...loadouts.knight, body: "gear-1" };
 
     const menu = new MenuPage(page);
     await menu.gotoWithUnlockedMeta({

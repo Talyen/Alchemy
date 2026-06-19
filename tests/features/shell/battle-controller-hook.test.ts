@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
-import { createEmptyTalentManifest } from "@/lib/game-data";
+import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
@@ -38,7 +38,7 @@ function renderBattleController(screen: Screen = ROUTE_SCREENS.BATTLE) {
         run: makeRunController(),
         talents: makeTalentController(),
         autoEndTurn: false,
-        homesteadEffectsRef: { current: createEmptyTalentManifest() },
+        homesteadEffectsRef: { current: defaultHomesteadEffects },
         screen: currentScreen,
         setHoveredCardId: vi.fn(),
       }),

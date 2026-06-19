@@ -37,7 +37,7 @@ describe("getAudioContext", () => {
     const ctx = getAudioContext();
     expect(ctx).toBe(mockCtx);
     expect(mockCtx.createGain).toHaveBeenCalledOnce();
-    expect(mockCtx.createGain().connect).toHaveBeenCalledWith("dest");
+    expect(mockCtx.createGain()!.connect).toHaveBeenCalledWith("dest");
   });
 
   it("returns existing AudioContext on subsequent calls", () => {
@@ -61,7 +61,7 @@ describe("resumeAudioContext", () => {
   it("resumes suspended context", async () => {
     const resume = vi.fn(() => Promise.resolve());
     const mockCtx = { state: "suspended", resume } as unknown as Partial<AudioContext>;
-    audioState.context = mockCtx;
+    audioState.context = mockCtx as AudioContext;
     audioState.audioUnlocked = false;
     resumeAudioContext();
     expect(resume).toHaveBeenCalledOnce();
@@ -72,7 +72,7 @@ describe("resumeAudioContext", () => {
   it("does not resume running context", () => {
     const resume = vi.fn(() => Promise.resolve());
     const mockCtx = { state: "running", resume } as unknown as Partial<AudioContext>;
-    audioState.context = mockCtx;
+    audioState.context = mockCtx as AudioContext;
     resumeAudioContext();
     expect(resume).not.toHaveBeenCalled();
   });

@@ -109,6 +109,14 @@ describe("initialize", () => {
       labyrinthPendingNode: null,
       activeCombat: null,
       runTalentXP: {},
+      lastOfferedDestinations: [],
+      destinationRoundsSinceOffered: {},
+      wildwoodDraft: null,
+      runMaterialsEarned: {},
+      shopState: null,
+      alchemistState: null,
+      trinketShopState: null,
+      equipmentShopState: null,
       currentScreen: null,
       destinationChoices: [],
       pendingReward: null,
@@ -140,6 +148,14 @@ describe("initialize", () => {
       labyrinthPendingNode: null,
       activeCombat: null,
       runTalentXP: {},
+      lastOfferedDestinations: [],
+      destinationRoundsSinceOffered: {},
+      wildwoodDraft: null,
+      runMaterialsEarned: {},
+      shopState: null,
+      alchemistState: null,
+      trinketShopState: null,
+      equipmentShopState: null,
       currentScreen: null,
       destinationChoices: [],
       pendingReward: null,
@@ -179,6 +195,14 @@ describe("initialize", () => {
       labyrinthPendingNode: null,
       activeCombat: null,
       runTalentXP: {},
+      lastOfferedDestinations: [],
+      destinationRoundsSinceOffered: {},
+      wildwoodDraft: null,
+      runMaterialsEarned: {},
+      shopState: null,
+      alchemistState: null,
+      trinketShopState: null,
+      equipmentShopState: null,
       currentScreen: "shop",
       destinationChoices: [],
       pendingReward: null,
@@ -642,7 +666,7 @@ describe("session facade API", () => {
       runMaxHealth: 24,
       contentSystemType: "campaign",
     });
-    getRunSessionStoreView().setRewardState((prev) => ({ ...prev, destinations: ["campfire", "shop"] }));
+    getRunSessionStoreView().setRewardState((prev) => ({ ...prev, destinations: ["Campfire", "Merchant's Shop"] }));
     const fromStores = snapshotRun(ROUTE_SCREENS.DESTINATION);
     const explicit = createActiveRunSnapshot({
       characterId: "knight",
@@ -726,13 +750,13 @@ describe("session facade API", () => {
   it("restores wildwood gear rewards from recovery-phase draft when pendingReward is absent", () => {
     const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
     const activeRun = {
-      ...snapshotRun(ROUTE_SCREENS.LABYRINTH),
+      ...snapshotRun(ROUTE_SCREENS.LABYRINTH_MAP),
       pendingReward: null,
       wildwoodDraft: {
         version: 3 as const,
         phase: "recovery" as const,
         draftChoices: [],
-        remainingBossIds: ["iron-bear"] as const,
+        remainingBossIds: ["iron-bear"],
         previousBossId: null,
         currentBossId: null,
         currentCombatTraitIds: [],

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { emitOverhealBlockText, mergeCombatText, shouldShowCombatText } from "@/lib/battle/combat-text";
 import type { CombatTextEvent } from "@/lib/battle/types";
+import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 
 function makeTexts(): CombatTextEvent[] {
   return [];
@@ -57,7 +58,7 @@ describe("mergeCombatText", () => {
 
 describe("emitOverhealBlockText", () => {
   it("emits block combat text when overheal increases block", () => {
-    const base = { block: 2, armor: 0, forge: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0, haste: 0 };
+    const base = defaultPlayerStatusValues({ block: 2 });
     const before = { playerStatuses: base };
     const after = { playerStatuses: { ...base, block: 7 } };
     const texts = makeTexts();
@@ -66,7 +67,7 @@ describe("emitOverhealBlockText", () => {
   });
 
   it("no-ops when block did not increase", () => {
-    const statuses = { block: 4, armor: 0, forge: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0, haste: 0 };
+    const statuses = defaultPlayerStatusValues({ block: 4 });
     const texts = makeTexts();
     emitOverhealBlockText({ playerStatuses: statuses }, { playerStatuses: statuses }, texts);
     expect(texts).toEqual([]);

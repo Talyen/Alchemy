@@ -35,6 +35,10 @@ function makeSource(
     pendingReward: null,
     wildwoodDraft: null,
     runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+    shopState: null,
+    alchemistState: null,
+    trinketShopState: null,
+    equipmentShopState: null,
     ...overrides,
   };
 }

@@ -72,7 +72,7 @@ describe("migrateSaveDataToCurrent", () => {
   it("sets gameBuildVersion from fallback when missing", () => {
     const result = migrateSaveDataToCurrent({ saveSchemaVersion: 0 });
     expect(typeof result.gameBuildVersion).toBe("string");
-    expect(result.gameBuildVersion.length).toBeGreaterThan(0);
+    expect((result as { gameBuildVersion: string }).gameBuildVersion.length).toBeGreaterThan(0);
   });
 
   it("preserves existing gameBuildVersion", () => {

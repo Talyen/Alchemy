@@ -5,7 +5,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { defaultTalentEffects } from "@/lib/battle";
 import { createTestBattleState } from "./test-state";
 import type { BestiaryEntry } from "@/lib/game-data";
-import { defaultCcState } from "../../fixtures/default-battle-state";
+import { defaultCcState, defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
   return {
@@ -33,17 +33,7 @@ function baseEnemy(enemyId: string): BestiaryEntry {
 }
 
 const emptyStatuses: EnemyStatusValues = { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 };
-const emptyPlayerStatuses: PlayerStatusValues = {
-  block: 0,
-  armor: 0,
-  forge: 0,
-  haste: 0,
-  burn: 0,
-  poison: 0,
-  bleed: 0,
-  freeze: 0,
-  stun: 0,
-};
+const emptyPlayerStatuses = defaultPlayerStatusValues();
 
 function battleState(overrides: Partial<BattleState> = {}): BattleState {
   return createTestBattleState({

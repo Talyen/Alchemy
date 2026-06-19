@@ -10,6 +10,7 @@ import {
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import type { BattleCard, BestiaryEntry } from "@/lib/game-data";
 import { createTestBattleState } from "./test-state";
+import { defaultCcState } from "../../fixtures/default-battle-state";
 
 function enemyWith(...ids: (keyof typeof ENCOUNTER_TRAITS)[]): BestiaryEntry {
   return {
@@ -57,7 +58,7 @@ describe("encounter trait enemy actions", () => {
     const state = createTestBattleState({
       currentEnemy,
       enemyAttackEffects: currentEnemy.attackEffects,
-      enemyCC: { stunSkipTurns: 1 },
+      enemyCC: defaultCcState({ stunSkipTurns: 1 }),
     });
     const result = endPlayerTurn(state);
     expect(result.state.enemyMitigation.forge).toBe(0);

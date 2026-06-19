@@ -2,9 +2,7 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { legacyCampaignRunSave } from "../fixtures/legacy-saves";
 
-const globalWithWindow = globalThis as typeof globalThis & {
-  window?: Window & { alchemyDesktop?: Window["alchemyDesktop"] };
-};
+const globalWithWindow = globalThis as unknown as { window?: object };
 
 describe("storage io desktop backup", () => {
   beforeEach(() => {

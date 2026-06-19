@@ -96,7 +96,7 @@ describe("endPlayerTurn", () => {
     const state = makeState({
       playerHealth: 2,
       playerStatuses: defaultPlayerStatusValues({ burn: 3 }),
-      playerCC: { stunSkipTurns: 1 },
+      playerCC: defaultCcState({ stunSkipTurns: 1 }),
       enemyCC: defaultCcState({ stunSkipTurns: 1 }),
       hand: [makeCard({ id: "h1" })],
       mana: 2,

@@ -147,7 +147,7 @@ test.describe("Armory crafting", critical, () => {
     void runtimeErrors;
 
     const loadouts = createEmptyGearLoadouts();
-    loadouts.knight["main-hand"] = "gear-sword";
+    loadouts.knight = { ...loadouts.knight, "main-hand": "gear-sword" };
 
     const menu = new MenuPage(page);
     await menu.gotoWithUnlockedMeta({

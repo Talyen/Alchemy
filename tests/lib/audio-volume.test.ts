@@ -90,7 +90,7 @@ describe("setMusicVolume", () => {
     audioState.currentMusic = el as HTMLAudioElement;
     audioState.masterVolume = 0.5;
     audioState.musicVolume = 0.5;
-    audioState.currentMusic = el;
+    audioState.currentMusic = el as HTMLAudioElement;
     setMusicVolume(0.5);
     expect(el.volume).toBe(0.5 * 0.5 * MUSIC_MASTER_GAIN);
   });

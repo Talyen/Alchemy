@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import type { SaveData } from "@/features/alchemy/shared/storage/types";
+import type { GearBoardPositionsByCharacter, CraftingCurrencyBoardPositionsByCharacter } from "@/lib/gear";
 
 vi.mock("@/features/alchemy/shared/storage", () => ({
   clearAlchemySaveData: vi.fn(),
@@ -49,6 +50,12 @@ const makeSave = (overrides: Partial<SaveData> = {}): SaveData => ({
   discoveredCardIds: ["card-1"],
   encounteredEnemyIds: ["enemy-1"],
   discoveredTrinketIds: ["boon-1"],
+  gearInventories: {} as import("@/lib/gear").GearInventories,
+  gearLoadouts: {} as import("@/lib/gear").GearLoadouts,
+  gearBoardPositionsByCharacter: {} as import("@/lib/gear").GearBoardPositionsByCharacter,
+  craftingCurrencyBoardPositionsByCharacter: {} as import("@/lib/gear").CraftingCurrencyBoardPositionsByCharacter,
+  craftingCurrencies: {},
+  finishedRunCharacters: [],
   talentXP: {},
   unlockedTalents: {},
   activeRun: null,

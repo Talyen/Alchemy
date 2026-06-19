@@ -44,6 +44,8 @@ describe("useRunNavigation", () => {
         onLabyrinthFailNode: vi.fn(),
         onInitShop: vi.fn(),
         onInitAlchemist: vi.fn(),
+        onInitTrinketShop: vi.fn(),
+        onInitEquipmentShop: vi.fn(),
         onMarkDifficultyCompleted: vi.fn(),
       }),
     );
