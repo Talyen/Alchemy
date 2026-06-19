@@ -20,17 +20,17 @@ import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { flattenGearInventories } from "@/lib/gear";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 
-function MenuScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function MenuScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const { hasUnspentTalents, hasAffordableHomestead } = useAppScreenChrome();
   const isArmoryLocked = useGearStore((s) => flattenGearInventories(s.inventories).length === 0);
   return (
     <MenuScreen
-      onPlay={() => a.navigation.goToScreen("game-mode-select")}
-      onCollection={() => a.navigation.goToScreen("collection")}
-      onOptions={() => a.navigation.goToOptions()}
-      onHomestead={() => a.navigation.goToScreen("homestead")}
-      onTalents={() => a.navigation.goToScreen("talents")}
-      onArmory={() => a.navigation.goToScreen("armory")}
+      onPlay={() => run.goToScreen("game-mode-select")}
+      onCollection={() => run.goToScreen("collection")}
+      onOptions={() => run.goToScreen("options")}
+      onHomestead={() => run.goToScreen("homestead")}
+      onTalents={() => run.goToScreen("talents")}
+      onArmory={() => run.goToScreen("armory")}
       {...(platform.canQuit ? { onQuit: platform.quit } : {})}
       logoSrc={menuLogo}
       logoSrcVariants={menuLogoVariants}
@@ -61,17 +61,17 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "onOpe
   );
 }
 
-function GameModeSelectScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function GameModeSelectScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const hasActiveRun = useRunDomainStore((s) => s.session.hasActiveRun);
   const activeContentSystemType = useRunDomainStore((s) => s.progress.contentSystemType);
   return (
     <GameModeSelectScreen
       hasActiveRun={hasActiveRun}
       activeContentSystemType={activeContentSystemType}
-      onSelectCampaign={a.runStart.beginCampaign}
-      onSelectLabyrinth={a.runStart.beginLabyrinth}
-      onSelectWildwood={a.runStart.beginWildwood}
-      onBack={() => a.navigation.goToScreen("menu")}
+      onSelectCampaign={run.beginCampaign}
+      onSelectLabyrinth={run.beginLabyrinth}
+      onSelectWildwood={run.beginWildwood}
+      onBack={() => run.goToScreen("menu")}
     />
   );
 }
@@ -134,10 +134,7 @@ function HomesteadScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "on
   );
 }
 
-function TalentsScreenRoute({
-  actions: a,
-  onOpenBattleMenu,
-}: Pick<ScreenRouteContext, "actions" | "onOpenBattleMenu">) {
+function TalentsScreenRoute({ run, onOpenBattleMenu }: Pick<ScreenRouteContext, "run" | "onOpenBattleMenu">) {
   const { talentXP, unlockedTalents } = useRunDomainStore(
     useShallow((s) => ({
       talentXP: s.progress.talentXP,
@@ -150,20 +147,18 @@ function TalentsScreenRoute({
       talentXP={talentXP}
       unlockedTalents={unlockedTalents}
       onOpenMenu={onOpenBattleMenu}
-      onUnlockTalent={a.meta.unlockTalent}
-      onResetTalents={a.meta.resetUnlockedTalents}
+      onUnlockTalent={run.unlockTalent}
+      onResetTalents={run.resetUnlockedTalents}
     />
   );
 }
 
 export const metaScreenRoutes: Partial<Record<import("@/lib/routing").Screen, (ctx: ScreenRouteContext) => ReactNode>> =
   {
-    menu: ({ actions: a }) => <MenuScreenRoute actions={a} />,
-    "game-mode-select": ({ actions: a }) => <GameModeSelectScreenRoute actions={a} />,
+    menu: ({ run }) => <MenuScreenRoute run={run} />,
+    "game-mode-select": ({ run }) => <GameModeSelectScreenRoute run={run} />,
     collection: ({ onOpenBattleMenu }) => <CollectionScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
     homestead: ({ onOpenBattleMenu }) => <HomesteadScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
-    talents: ({ actions: a, onOpenBattleMenu }) => (
-      <TalentsScreenRoute actions={a} onOpenBattleMenu={onOpenBattleMenu} />
-    ),
+    talents: ({ run, onOpenBattleMenu }) => <TalentsScreenRoute run={run} onOpenBattleMenu={onOpenBattleMenu} />,
     armory: ({ onOpenBattleMenu }) => <ArmoryScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
   };

@@ -6,7 +6,7 @@ import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ScreenRouteContext } from "./types";
 
-function DifficultySelectScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function DifficultySelectScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const { pendingCharacterId, selectedDifficulty } = useRunDomainStore(
     useShallow((s) => ({
       pendingCharacterId: s.session.pendingCharacterId,
@@ -21,13 +21,13 @@ function DifficultySelectScreenRoute({ actions: a }: Pick<ScreenRouteContext, "a
       characterId={characterId}
       selectedDifficulty={selectedDifficulty}
       completedDifficulties={completedDifficulties}
-      onSelect={a.runStart.handleDifficultySelect}
-      onBack={a.runStart.handleBackFromDifficultySelect}
+      onSelect={run.handleDifficultySelect}
+      onBack={run.handleBackFromDifficultySelect}
     />
   );
 }
 
-function DraftDeckScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function DraftDeckScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const draft = useRunDomainStore(
     useShallow((s) => ({
       contentSystemType: s.progress.contentSystemType,
@@ -38,12 +38,12 @@ function DraftDeckScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions"
   const isWildwoodDraft = draft.contentSystemType === "wildwood" && draft.wildwoodDraft?.phase === "draft";
   return (
     <DraftDeckScreen
-      onComplete={a.runStart.handleDraftComplete}
+      onComplete={run.handleDraftComplete}
       {...(isWildwoodDraft
         ? {
             draftedCards: draft.runDeck,
             draftChoices: draft.wildwoodDraft?.draftChoices ?? [],
-            onPick: a.runStart.handleDraftPick,
+            onPick: run.handleDraftPick,
           }
         : {})}
     />
@@ -53,12 +53,9 @@ function DraftDeckScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions"
 export const runSetupScreenRoutes: Partial<
   Record<import("@/lib/routing").Screen, (ctx: ScreenRouteContext) => ReactNode>
 > = {
-  "character-select": ({ actions: a }) => (
-    <CharacterSelectScreen
-      onConfirm={a.runStart.handleCharacterSelect}
-      onBack={() => a.navigation.goToScreen("game-mode-select")}
-    />
+  "character-select": ({ run }) => (
+    <CharacterSelectScreen onConfirm={run.handleCharacterSelect} onBack={() => run.goToScreen("game-mode-select")} />
   ),
-  "draft-deck": ({ actions: a }) => <DraftDeckScreenRoute actions={a} />,
-  "difficulty-select": ({ actions: a }) => <DifficultySelectScreenRoute actions={a} />,
+  "draft-deck": ({ run }) => <DraftDeckScreenRoute run={run} />,
+  "difficulty-select": ({ run }) => <DifficultySelectScreenRoute run={run} />,
 };

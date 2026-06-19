@@ -3,26 +3,26 @@ import { GameOverScreen, RunVictoryScreen } from "@/features/alchemy/shared/scre
 import { useRunScreenData } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ScreenRouteContext } from "./types";
 
-function GameOverScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function GameOverScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("game-over");
   return (
     <GameOverScreen
       runEndTalentXP={r.runEndTalentXP}
       talentXP={r.talentXP}
       runEndMaterials={r.runEndMaterials}
-      onContinue={a.runFlow.continueFromRunEnd}
+      onContinue={run.continueFromRunEnd}
     />
   );
 }
 
-function RunVictoryScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function RunVictoryScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("run-victory");
   return (
     <RunVictoryScreen
       runEndTalentXP={r.runEndTalentXP}
       talentXP={r.talentXP}
       runEndMaterials={r.runEndMaterials}
-      onContinue={a.runFlow.continueFromRunEnd}
+      onContinue={run.continueFromRunEnd}
     />
   );
 }
@@ -30,6 +30,6 @@ function RunVictoryScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions
 export const runEndScreenRoutes: Partial<
   Record<import("@/lib/routing").Screen, (ctx: ScreenRouteContext) => ReactNode>
 > = {
-  "game-over": ({ actions: a }) => <GameOverScreenRoute actions={a} />,
-  "run-victory": ({ actions: a }) => <RunVictoryScreenRoute actions={a} />,
+  "game-over": ({ run }) => <GameOverScreenRoute run={run} />,
+  "run-victory": ({ run }) => <RunVictoryScreenRoute run={run} />,
 };

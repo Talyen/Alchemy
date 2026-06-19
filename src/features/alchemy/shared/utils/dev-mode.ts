@@ -1,4 +1,11 @@
 // Dev-build and startup-gate helpers — Vite dev server or Playwright loading bypass only.
+import { useCallback } from "react";
+import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
+import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
+import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
+import type { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
+
 export function isAlchemyDevBuild(): boolean {
   return import.meta.env.DEV;
 }
@@ -6,4 +13,25 @@ export function isAlchemyDevBuild(): boolean {
 export function shouldSkipStartupLoadingGate(): boolean {
   if (typeof localStorage === "undefined") return false;
   return localStorage.getItem("alchemy-skip-loading-screen") === "true";
+}
+
+export function useDevShortcuts(run: ReturnType<typeof useAlchemyRunController>) {
+  const clearSaveData = useCallback(() => {
+    clearAllPersistentGameData();
+    run.resetRunState();
+  }, [run]);
+
+  const unlockAllDevMode = useCallback(() => {
+    if (!isAlchemyDevBuild()) return;
+    useAppStore.getState().setDiscoveredCardIds(cardLibrary.map((card) => card.id));
+    useAppStore.getState().setEncounteredEnemyIds(enemyBestiary.map((enemy) => enemy.id));
+    useAppStore.getState().setDiscoveredTrinketIds(trinketLibrary.map((boon) => boon.id));
+    useAppStore
+      .getState()
+      .setFinishedRunCharacters(["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
+    run.unlockAllTalents();
+    useHomesteadStore.getState().setMaterials({ wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
+  }, [run]);
+
+  return { clearSaveData, unlockAllDevMode };
 }

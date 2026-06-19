@@ -20,10 +20,10 @@ import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-
 import type { ScreenRouteContext } from "./types";
 
 function BattleScreenRoute({
-  actions: a,
+  run,
   battleBindings,
   onOpenBattleMenu,
-}: Pick<ScreenRouteContext, "actions" | "battleBindings" | "onOpenBattleMenu">) {
+}: Pick<ScreenRouteContext, "run" | "battleBindings" | "onOpenBattleMenu">) {
   const { heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
   const {
     battleScreenData,
@@ -52,12 +52,12 @@ function BattleScreenRoute({
       battleSceneRef={battleSceneRef}
       playerPanelRef={playerPanelRef}
       enemyPanelRef={enemyPanelRef}
-      onCardClick={a.battle.handleCardClick}
+      onCardClick={run.handleCardClick}
       onOpenMenu={onOpenBattleMenu}
-      onWishChoice={a.battle.handleWishChoice}
-      onRemoveCardGhost={a.battle.removeCardGhost}
-      onSkipCombatDevMode={a.battle.skipCombatDevMode}
-      onEndTurn={a.battle.handleEndTurn}
+      onWishChoice={run.handleWishChoice}
+      onRemoveCardGhost={run.removeCardGhost}
+      onSkipCombatDevMode={run.skipCombatDevMode}
+      onEndTurn={run.handleEndTurn}
       cardTransfers={cardTransfers}
       hiddenHandCardKeys={hiddenHandCardKeys}
       cardTransferInProgress={cardTransferInProgress}
@@ -68,79 +68,76 @@ function BattleScreenRoute({
 
 import { useRunScreenData } from "@/features/alchemy/shared/stores/run-session-facade";
 
-function LabyrinthMapScreenRoute({
-  actions: a,
-  onOpenBattleMenu,
-}: Pick<ScreenRouteContext, "actions" | "onOpenBattleMenu">) {
+function LabyrinthMapScreenRoute({ run, onOpenBattleMenu }: Pick<ScreenRouteContext, "run" | "onOpenBattleMenu">) {
   const r = useRunScreenData("labyrinth-map");
   return (
     <LabyrinthMapScreen
       labyrinthMap={r.labyrinthMap}
-      onNodeClick={a.runFlow.handleLabyrinthNodeEnter}
+      onNodeClick={run.handleLabyrinthNodeEnter}
       onOpenMenu={onOpenBattleMenu}
     />
   );
 }
 
-function RewardsScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function RewardsScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("rewards");
   const isWildwood = useRunDomainStore((s) => s.progress.contentSystemType === "wildwood");
   return (
     <RewardsScreen
       rewardState={r.rewardState}
-      onAddReward={a.runFlow.finishRewards}
-      onSkip={a.runFlow.finishRewards}
-      onSelectReward={a.runFlow.selectRewardChoice}
+      onAddReward={run.finishRewards}
+      onSkip={run.finishRewards}
+      onSelectReward={run.selectRewardChoice}
       allowTrinketSkip={isWildwood}
     />
   );
 }
 
-function WildwoodRecoveryScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function WildwoodRecoveryScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("wildwood-recovery");
   return (
     <WildwoodRecoveryScreen
       playerHealth={r.runPlayerHealth}
       maxHealth={r.runMaxHealth}
-      onComplete={a.runFlow.handleWildwoodRecoveryComplete}
+      onComplete={run.handleWildwoodRecoveryComplete}
     />
   );
 }
 
-function WildwoodRemovalScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function WildwoodRemovalScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("wildwood-removal");
   return (
     <WildwoodRemovalScreen
       runDeck={r.runDeck}
-      onRemove={a.runFlow.handleWildwoodRemoveCard}
-      onSkip={a.runFlow.handleWildwoodSkipRemoval}
+      onRemove={run.handleWildwoodRemoveCard}
+      onSkip={run.handleWildwoodSkipRemoval}
     />
   );
 }
 
-function DestinationScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function DestinationScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("destination");
   return (
     <DestinationScreen
       rewardState={r.rewardState}
-      onChoose={a.runFlow.handleDestinationChoice}
-      onPrepare={a.runFlow.prepareDestinationScreen}
+      onChoose={run.handleDestinationChoice}
+      onPrepare={run.prepareDestinationScreen}
     />
   );
 }
 
-function CampfireScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function CampfireScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("campfire");
   return (
     <CampfireScreen
       playerHealth={r.runPlayerHealth}
       maxHealth={r.runMaxHealth}
-      onContinue={a.runFlow.handleCampfireContinue}
+      onContinue={run.handleCampfireContinue}
     />
   );
 }
 
-function ShopScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function ShopScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("shop");
   return (
     <MerchantShopScreen
@@ -150,18 +147,18 @@ function ShopScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
       refreshesLeft={r.shopState.refreshesLeft}
       removeUsed={r.shopState.removeUsed}
       purchasedSlotKeys={r.shopState.purchasedSlotKeys}
-      getCardPrice={a.runFlow.getMerchantCardBuyPrice}
-      removePrice={a.runFlow.getRemoveCardPrice()}
-      refreshPrice={a.runFlow.getShopRefreshPrice(r.shopState.refreshesLeft)}
-      onBuyCard={a.runFlow.handleShopBuyCard}
-      onRemoveCard={a.runFlow.handleShopRemoveCard}
-      onRefresh={a.runFlow.handleShopRefresh}
-      onContinue={a.runFlow.handleShopContinue}
+      getCardPrice={run.getMerchantCardBuyPrice}
+      removePrice={run.getRemoveCardPrice()}
+      refreshPrice={run.getShopRefreshPrice(r.shopState.refreshesLeft)}
+      onBuyCard={run.handleShopBuyCard}
+      onRemoveCard={run.handleShopRemoveCard}
+      onRefresh={run.handleShopRefresh}
+      onContinue={run.handleShopContinue}
     />
   );
 }
 
-function AlchemistScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function AlchemistScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("alchemist");
   return (
     <AlchemistShopScreen
@@ -171,18 +168,18 @@ function AlchemistScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions"
       refreshesLeft={r.alchemistState.refreshesLeft}
       mixUsed={r.alchemistState.mixUsed}
       purchasedSlotKeys={r.alchemistState.purchasedSlotKeys}
-      getPotionPrice={a.runFlow.getAlchemistPotionBuyPrice}
-      mixPrice={a.runFlow.getMixPotionPrice()}
-      refreshPrice={a.runFlow.getAlchemistRefreshPrice(r.alchemistState.refreshesLeft)}
-      onBuyCard={a.runFlow.handleAlchemistBuyCard}
-      onRefresh={a.runFlow.handleAlchemistRefresh}
-      onMixPotions={a.runFlow.handleAlchemistMixPotions}
-      onContinue={a.runFlow.handleAlchemistContinue}
+      getPotionPrice={run.getAlchemistPotionBuyPrice}
+      mixPrice={run.getMixPotionPrice()}
+      refreshPrice={run.getAlchemistRefreshPrice(r.alchemistState.refreshesLeft)}
+      onBuyCard={run.handleAlchemistBuyCard}
+      onRefresh={run.handleAlchemistRefresh}
+      onMixPotions={run.handleAlchemistMixPotions}
+      onContinue={run.handleAlchemistContinue}
     />
   );
 }
 
-function TrinketShopScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function TrinketShopScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("trinket-shop");
   return (
     <TrinketShopScreen
@@ -190,16 +187,16 @@ function TrinketShopScreenRoute({ actions: a }: Pick<ScreenRouteContext, "action
       trinkets={r.trinketShopState.trinkets}
       refreshesLeft={r.trinketShopState.refreshesLeft}
       purchasedSlotKeys={r.trinketShopState.purchasedSlotKeys}
-      getTrinketPrice={a.runFlow.getTrinketBuyPrice}
-      refreshPrice={a.runFlow.getTrinketRefreshPrice(r.trinketShopState.refreshesLeft)}
-      onBuyTrinket={a.runFlow.handleTrinketShopBuy}
-      onRefresh={a.runFlow.handleTrinketShopRefresh}
-      onContinue={a.runFlow.handleTrinketShopContinue}
+      getTrinketPrice={run.getTrinketBuyPrice}
+      refreshPrice={run.getTrinketRefreshPrice(r.trinketShopState.refreshesLeft)}
+      onBuyTrinket={run.handleTrinketShopBuy}
+      onRefresh={run.handleTrinketShopRefresh}
+      onContinue={run.handleTrinketShopContinue}
     />
   );
 }
 
-function EquipmentShopScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function EquipmentShopScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("equipment-shop");
   return (
     <EquipmentShopScreen
@@ -207,23 +204,23 @@ function EquipmentShopScreenRoute({ actions: a }: Pick<ScreenRouteContext, "acti
       gear={r.equipmentShopState.gear}
       refreshesLeft={r.equipmentShopState.refreshesLeft}
       purchasedSlotKeys={r.equipmentShopState.purchasedSlotKeys}
-      getGearPrice={a.runFlow.getGearBuyPrice}
-      refreshPrice={a.runFlow.getEquipmentRefreshPrice(r.equipmentShopState.refreshesLeft)}
-      onBuyGear={a.runFlow.handleEquipmentShopBuy}
-      onRefresh={a.runFlow.handleEquipmentShopRefresh}
-      onContinue={a.runFlow.handleEquipmentShopContinue}
+      getGearPrice={run.getGearBuyPrice}
+      refreshPrice={run.getEquipmentRefreshPrice(r.equipmentShopState.refreshesLeft)}
+      onBuyGear={run.handleEquipmentShopBuy}
+      onRefresh={run.handleEquipmentShopRefresh}
+      onContinue={run.handleEquipmentShopContinue}
     />
   );
 }
 
-function MysteryScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function MysteryScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("mystery");
 
   useEffect(() => {
     if (!r.mysteryEvent) {
-      a.runFlow.handleMysteryContinue();
+      run.handleMysteryContinue();
     }
-  }, [r.mysteryEvent, a.runFlow]);
+  }, [r.mysteryEvent, run.handleMysteryContinue]);
 
   if (!r.mysteryEvent) {
     return null;
@@ -234,24 +231,24 @@ function MysteryScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">)
       event={r.mysteryEvent}
       runDeck={r.runDeck}
       mysteryCardChoices={r.mysteryCardChoices}
-      onChoose={a.runFlow.handleMysteryChoice}
-      onChooseCard={a.runFlow.handleMysteryChooseCard}
-      onRemoveCard={a.runFlow.handleMysteryRemoveCard}
-      onContinue={a.runFlow.handleMysteryContinue}
+      onChoose={run.handleMysteryChoice}
+      onChooseCard={run.handleMysteryChooseCard}
+      onRemoveCard={run.handleMysteryRemoveCard}
+      onContinue={run.handleMysteryContinue}
       findCard={(id) => cardLibrary.find((c) => c.id === id)}
       findTrinket={(id) => trinketLibrary.find((t) => t.id === id)}
     />
   );
 }
 
-function CorruptionScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+function CorruptionScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("corruption");
   return (
     <CorruptionScreen
       runDeck={r.runDeck}
       result={r.corruptionResult}
-      onCorrupt={a.runFlow.handleCorruptCard}
-      onExit={a.runFlow.handleCorruptionExit}
+      onCorrupt={run.handleCorruptCard}
+      onExit={run.handleCorruptionExit}
     />
   );
 }
@@ -259,21 +256,21 @@ function CorruptionScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions
 export const runLoopScreenRoutes: Partial<
   Record<import("@/lib/routing").Screen, (ctx: ScreenRouteContext) => ReactNode>
 > = {
-  battle: ({ actions: a, battleBindings, onOpenBattleMenu }) => (
-    <BattleScreenRoute actions={a} battleBindings={battleBindings} onOpenBattleMenu={onOpenBattleMenu} />
+  battle: ({ run, battleBindings, onOpenBattleMenu }) => (
+    <BattleScreenRoute run={run} battleBindings={battleBindings} onOpenBattleMenu={onOpenBattleMenu} />
   ),
-  "labyrinth-map": ({ actions: a, onOpenBattleMenu }) => (
-    <LabyrinthMapScreenRoute actions={a} onOpenBattleMenu={onOpenBattleMenu} />
+  "labyrinth-map": ({ run, onOpenBattleMenu }) => (
+    <LabyrinthMapScreenRoute run={run} onOpenBattleMenu={onOpenBattleMenu} />
   ),
-  rewards: ({ actions: a }) => <RewardsScreenRoute actions={a} />,
-  "wildwood-recovery": ({ actions: a }) => <WildwoodRecoveryScreenRoute actions={a} />,
-  "wildwood-removal": ({ actions: a }) => <WildwoodRemovalScreenRoute actions={a} />,
-  destination: ({ actions: a }) => <DestinationScreenRoute actions={a} />,
-  campfire: ({ actions: a }) => <CampfireScreenRoute actions={a} />,
-  shop: ({ actions: a }) => <ShopScreenRoute actions={a} />,
-  alchemist: ({ actions: a }) => <AlchemistScreenRoute actions={a} />,
-  "trinket-shop": ({ actions: a }) => <TrinketShopScreenRoute actions={a} />,
-  "equipment-shop": ({ actions: a }) => <EquipmentShopScreenRoute actions={a} />,
-  mystery: ({ actions: a }) => <MysteryScreenRoute actions={a} />,
-  corruption: ({ actions: a }) => <CorruptionScreenRoute actions={a} />,
+  rewards: ({ run }) => <RewardsScreenRoute run={run} />,
+  "wildwood-recovery": ({ run }) => <WildwoodRecoveryScreenRoute run={run} />,
+  "wildwood-removal": ({ run }) => <WildwoodRemovalScreenRoute run={run} />,
+  destination: ({ run }) => <DestinationScreenRoute run={run} />,
+  campfire: ({ run }) => <CampfireScreenRoute run={run} />,
+  shop: ({ run }) => <ShopScreenRoute run={run} />,
+  alchemist: ({ run }) => <AlchemistScreenRoute run={run} />,
+  "trinket-shop": ({ run }) => <TrinketShopScreenRoute run={run} />,
+  "equipment-shop": ({ run }) => <EquipmentShopScreenRoute run={run} />,
+  mystery: ({ run }) => <MysteryScreenRoute run={run} />,
+  corruption: ({ run }) => <CorruptionScreenRoute run={run} />,
 };
