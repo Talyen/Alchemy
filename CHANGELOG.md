@@ -6,6 +6,12 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Features
 
+- feat(ci): commit 7 - enable strict test config and wire typecheck:all into lint:ci
+  - tsconfig.test.json: noUnusedLocals: true, noUnusedParameters: true
+  - package.json lint:ci: npm run typecheck -> npm run typecheck:all
+  - Fix 47 unused-import errors from noUnusedLocals activation
+  - Remove unused defaultBattleState re-export (knip fix)
+  - Fix integration/trinkets: restore defaultTalentEffects import
 - feat(armory): improve drag visuals, salvage sfx, equip-ux, and fix bow+shield bugs
   Salvage: thicker red border (matching valid-green ring-2), mine-2.ogg
   sound on confirm. Tooltip no longer re-appears briefly after double-click
@@ -266,6 +272,111 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(tests): commits 3-6 - resolve remaining 25 errors across 12 files
+  Battle mocks (G4): cast partial mocks as BattleControllerContext/TurnOrchestrationDeps
+  BattleState mock (G5): add 6 missing fields to battle-feedback test state
+  Architecture casts (G8): widen gear-ranged-tags with GearBaseItemDefinition &
+    save-migration-guard with Record<string, T> casts
+  RewardState (G7): cast trinket reward via unknown to avoid CardRewardState spread
+  Generic mismatches (G9): fix DifficultyModifier shape, mapState prev type
+  Script .d.ts fixes: gear types, GearEffectManifest path
+  Labyrinth handlers: cast as any for private LabyrinthNodeHandlers type
+- fix(tests): commit 2 - update .d.ts for script module signatures
+  - writeSteamBuildVdfs: root, env -> { appPath, depotPath, buildDir }
+  - computeSyncedChangelog: existingContent, rootDir? -> string
+  - Mirror changes across wildcard and specific module declarations
+- fix(tests): commit 1 - quick wins resolving ~18 errors across 10 files
+  G1/G2/G6/G10/G12 quick fixes:
+  - active-run-data: as cast for remainingBossIds (WildwoodBossId union)
+  - run-domain: same as cast for remainingBossIds
+  - run-victory-handlers: version 2 -> 3 as const
+  - reward-flow: replace invalid 'collector' modifier with 'generous';
+    use proper EncounterRewardTraitId[] type for modifier arrays;
+    cast trinket reward state to TrinketRewardState
+  - playable-hand: uid string -> number; update key expectations
+  - hand-card-layout: add 2nd param to scheduleTimeout callbacks;
+    use ! assertion for closure-assigned callbacks
+  - armory-inventory-layout: add definitionId/affixes to missed item
+  - app-store: add lastSavedAt: 0 to makeSave literal
+  - pending-reward-persistence: add full MaterialInventory values
+  - mystery-flow: add BattleCard type to callback params
+  - destination-flow: cast Destination to shop union
+- fix(tests): resolve remaining Phase D type errors (batch 2)
+  - armory-targeting-state: add transferMenu null to dirty state objects
+  - armory-inventory-layout: add definitionId/affixes to gear item mocks
+  - armory-screen: fix partial GearLoadout using cast pattern
+  - active-run-data: remove as const from remainingBossIds
+  - balance-report: cast anomaly values as number, add thresholds to return type
+  - run-domain: add MaterialId values to runMaterialsEarned
+  - app-store: add full crafting currency IDs to craftingCurrencies
+  - collection-items: add collectionTab arg to getCollectionFillerCount
+  - e2e/save-injection: type labyrinth grid with node union
+  - battle unit tests: fix cost/damage/draw/gear-effects type narrowing
+  - gear-new-affixes: add as const to damageType
+  - status-application: index PlayerStatusValues with keyof
+  - battle-setup: fix computeTalentEffects arg shape
+  - status-stun-resolve: add as const to effect kinds
+  - apply-effects-utility: add as const to companionId
+  - effects-registry: widen set type for templateKinds
+  - modifiers: fix REWARD_MODIFIER_KINDS type cast
+  - map-state: type labyrinth rows as LabyrinthNode | null
+- fix(tests): resolve systematic test type errors (Phase A+B+C)
+  Phase A — default-battle-state fixture helpers:
+  - combat-text, enemy-turn, apply-effects, card-play, encounter-traits,
+    enemy-turn-attack, enemy-turn-utils, end-player-turn, status-forge
+  - Replace raw object literals with defaultPlayerStatusValues, defaultCcState,
+    defaultEnemyMitigation, defaultCombatFlags
+  
+  Phase B — globalWithWindow test helper:
+  - Cast globalThis as unknown as { window?: object } in storage test files
+  - Eliminates TS2352/TS2322/TS2790 for window mock assignments
+  
+  Phase C — spec-specific mock fixes:
+  - error-log-store: ErrorSource 'runtime' -> 'storage'
+  - active-run-data/hydrate/run-domain: add missing ActiveRunData fields
+    (shopState, alchemistState, trinketShopState, equipmentShopState, etc.)
+  - gear-equip/gear-combat/gear-flow/armory-crafting: GearLoadout null init
+  - audio-buffer-cache/audio-volume: AudioContext/HTMLAudioElement typing
+  - app-store: add missing SaveData fields (gearInventories, etc.)
+  - run-flow-handler-deps/run-navigation-hook: add onInitTrinketShop/EquipmentShop
+  - alchemy-run-controller/battle-controller-hook: defaultHomesteadEffects
+  - storage/migrations: cast result.gameBuildVersion from unknown
+- fix(tests): resolve 369 type errors across Phase 3-4 fixes
+  - Fix partial-object leftovers in enemy-turn, status-ticks, damage-riders, feedback
+  - Fix domain type mismatches in reward-flow, run-domain, error-log-store
+  - Fix armory/gear type issues (ranged-tags, targeting, inventory-layout)
+  - Fix module declarations for .mjs imports (scripts/global.d.ts)
+  - Fix window type assertions across storage tests
+  - Fix E2E spec types (gear-equip, save-injection, gear-flow)
+  - Fix electron-environment.d.ts for page.alchemyDesktop access
+  - Fix electron-helpers.ts Platform type (remove 'mas')
+  - Fix default-battle-state.ts fixture types (phoenixFeather, EnemyStatusValues, TrinketManifest)
+  - Clean up .ts.ts/.corrected.ts file debris from subagent processing
+- fix(tests): resolve partial-object type errors in battle test files
+  - Create default-battle-state.ts fixtures for PlayerStatusValues,
+    EnemyStatusValues, CcState, CombatFlags, TrinketManifest, EnemyMitigation
+  - Apply fixtures across ~20 battle test files (status-ticks, damage,
+    end-player-turn, status-player, status-stun-resolve, trinket-effects, etc.)
+  - Fix TS2353 object key errors (battle traits, turn-resolution-ui)
+  - Fix TS2352 loose cast errors (storage, audio test files)
+  - Fix card literal as const patterns (wish.test.ts, draw.test.ts)
+  - Fix window.alchemyDesktop type in environment.d.ts
+  - Fix DifficultyId and tooltip type mismatches
+  - Disable noUnusedLocals/noUnusedParameters in test tsconfig
+  - Delete tsconfig.scripts.json (no .mjs/.cjs support)
+  - Clean up leftover .corrected.ts files and fix knip ignores
+- fix(tests): resolve 87 type errors in test and page-object files
+  - Fix TS2729 class field init order in 9 page-object files (move fields to constructor)
+  - Fix TS6133 unused imports (homestead-page)
+  - Fix TS2352 loose type casts (add as unknown intermediate)
+  - Fix TS2353 object key mismatches (gear-test, battle traits)
+  - Fix TS7053/2339 indexed access and property errors (companions, difficulties)
+  - Fix TS2554/2304 missing rng args and type imports (gear tests)
+  - Fix TS18046 unknown type assertions (normalize tests)
+  - Add environment.d.ts with Window.alchemyDesktop declaration for test env
+  - Add default-battle-state.ts fixture for partial-object pattern
+  - Add modules.d.ts stubs for .mjs script imports
+  - Disable noUncheckedIndexedAccess and exactOptionalPropertyTypes in test tsconfig
 - fix(armory): allow auto-swap when equipping non-ranged main-hand with quiver off-hand
   Relax isGearCompatibleWithLoadoutSlot so that equipping a non-ranged
   main-hand while a quiver is in the off-hand succeeds. resolveHandConflicts
@@ -439,6 +550,29 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(armory): simplify board movement architecture
+- refactor(lint): fix ESLint warnings across 99 files
+  - Remove 42 unnecessary type assertions
+  
+  - Remove 67 deprecated usages (zod finite(), ZodTypeAny, MutableRefObject)
+  
+  - Remove 91 unnecessary nullish coalescing/optional chaining
+  
+  - Add void prefix to 12 floating promises, fix restrict-plus-operands
+  
+  - Suppress react-refresh in route files, fix no-console, unused vars
+  
+  - Misc: no-misused-promises, use-unknown-catch, no-base-to-string, etc.
+  
+  185 remain: noUncheckedIndexedAccess false positives (106), LabyrinthModifierKind deprecation (40)
+- refactor(armory): reduce complexity and consolidate lib/gear
+  - Phase 0: Remove dead armory-salvage-confirm, unused reducer actions
+  - Phase 1: Centralize geometry/point/test-id constants into dedicated files
+  - Phase 2: Remove Math.random defaults from lib/gear public functions
+  - Phase 3: Merge grid-packing.ts into inventory-layout.ts (1 canonical
+    packer family), consolidate legacy ID tables and duplicate helpers
+  - Phase 4: Extract use-inventory-scroll-drag hook from inventory-panel
+  - Add edit-precision step to AGENTS.md operating procedure
 - refactor(armory): consolidate drag state and remove dead code
   - Refactor use-armory-gear-drag with cleaner FSM and flyweight board packing
   - Remove use-armory-currency-positions and use-armory-inventory-positions
@@ -914,6 +1048,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Tests
 
+- test(e2e): stabilize critical run flow specs
 - test(armory): add 7 e2e tests for right-click gear transfer and auto-swap
   New tests/gear-transfer.spec.ts (6 tests): sends gear to another
   class via right-click menu, sends equipped gear unequipped, excludes
@@ -984,6 +1119,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Docs
 
+- docs(agents): fix broken cross-references, add missing section links, reconcile policies
 - docs(agents): update AGENTS.md with quick commands, conventions, and escalation policy
 - docs(armory): add docs/ARMORY.md and cross-link from AGENTS + ARCHITECTURE
   Add a dedicated docs/ARMORY.md covering the Armory subsystem:
@@ -1015,10 +1151,26 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore(code-quality): tighten lint, TS strictness, knip, and prettier configs
+  - Fix knip default-mode gate (delete dead code, remove stale suppressions)
+  - Eliminate 57 ny warnings; bump no-explicit-any to error
+  - Add .prettierignore; widen format scope to {src,tests,scripts,desktop}
+  - Enable noImplicitOverride, noImplicitReturns, noUncheckedIndexedAccess
+  - Remove deprecated ignoreDeprecations + baseUrl
+  - Enable strictTypeChecked ESLint for src/ with tuned overrides
+  - Add eqeqeq, consistent-type-imports, no-console rules
 - chore: add scaffold-test utility for mirroring source to test paths
 - chore: sync CHANGELOG.md with recent commits
 - chore: verify vercel git webhook after reconnect
 - chore: checkpoint draw discard experiment
+
+### Style
+
+- style(armory): clean up gear tooltip layout and purchasable item styling
+  - Compact tooltip descriptions by removing redundant gradient wrapper
+  - Adjust purchasable gear/trinket item text and layout spacing
+  - Update armory-styling test to match new tooltip DOM structure
+  - Sync CHANGELOG.md with previous commit entry
 
 ### Other
 
