@@ -32,6 +32,7 @@ import { useArmoryCurrencyPositions } from "./armory/use-armory-currency-positio
 import { useArmoryCurrencyDrag } from "./armory/use-armory-currency-drag";
 import { ArmoryCharacterTabs } from "./armory/armory-character-tabs";
 import { ArmoryCurrencyCursor } from "./armory/armory-currency-targeting";
+import { ArmoryTransferMenu } from "./armory/armory-transfer-menu";
 import { armoryTargetingReducer, initialArmoryTargetingState } from "./armory/armory-targeting-state";
 import { GearDragVisualPortal } from "./armory/armory-drag-portal";
 import { CurrencyDragVisualPortal } from "./armory/armory-currency-drag-portal";
@@ -54,6 +55,7 @@ type Props = {
   onSpawnDevGear?: (characterId: CharacterId) => void;
   craftingCurrencies?: Record<CraftingCurrencyId, number>;
   onApplyCurrency?: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
+  onTransferGear?: (instanceId: string, targetCharacterId: CharacterId) => boolean;
 };
 
 export function ArmoryScreen({
@@ -66,13 +68,14 @@ export function ArmoryScreen({
   onUnequip,
   onSalvage,
   onSpawnDevGear,
+  onTransferGear = () => false,
   craftingCurrencies = EMPTY_CRAFTING_CURRENCIES,
   onApplyCurrency = () => false,
 }: Props) {
   const [characterId, setCharacterId] = useState<CharacterId>("knight");
   const inventoryBoardRef = useRef<HTMLDivElement>(null);
   const [targeting, dispatchTargeting] = useReducer(armoryTargetingReducer, initialArmoryTargetingState);
-  const { salvageTarget, salvageMode, activeCurrencyId, cursorPoint } = targeting;
+  const { salvageTarget, salvageMode, activeCurrencyId, cursorPoint, transferMenu } = targeting;
   const characterInventory = useMemo(() => inventories[characterId] ?? [], [inventories, characterId]);
   const { savedPositions, handleMoveItem } = useArmoryInventoryPositions(characterId, characterInventory);
   const {
@@ -490,6 +493,14 @@ export function ArmoryScreen({
           />
         ) : null}
         <ArmoryCurrencyCursor activeCurrencyId={activeCurrencyId} cursorPoint={cursorPoint} />
+        {transferMenu ? (
+          <ArmoryTransferMenu
+            transferMenu={transferMenu}
+            finishedRunCharacters={finishedRunCharacters}
+            onTransferGear={onTransferGear}
+            onClose={() => dispatchTargeting({ type: "CLOSE_TRANSFER_MENU" })}
+          />
+        ) : null}
       </div>
     </PageLayout>
   );
