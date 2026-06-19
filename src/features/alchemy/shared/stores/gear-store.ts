@@ -37,10 +37,32 @@ import {
 } from "@/lib/gear";
 
 type BoardEntry =
-  | { id: string; kind: "gear"; item: GearInstance; saved?: { col: number; row: number } }
-  | { id: string; kind: "currency"; item: CraftingCurrencyId; saved?: { col: number; row: number } };
+  | {
+      id: string;
+      kind: "gear";
+      item: GearInstance;
+      footprint: { w: number; h: number };
+      saved?: { col: number; row: number };
+    }
+  | {
+      id: CraftingCurrencyId;
+      kind: "currency";
+      item: CraftingCurrencyId;
+      footprint: { w: 1; h: 1 };
+      saved?: { col: number; row: number };
+    };
 
-function buildBoardItemsForCharacter(state: GearStore, characterId: CharacterId): BoardEntry[] {
+type BoardItemRef = { kind: "gear"; id: string } | { kind: "currency"; id: CraftingCurrencyId };
+
+type BoardSourceState = {
+  inventories: GearInventories;
+  loadouts: GearLoadouts;
+  craftingCurrencies: Record<CraftingCurrencyId, number>;
+  boardPositionsByCharacter: GearBoardPositionsByCharacter;
+  currencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
+};
+
+function buildBoardEntriesForCharacter(state: BoardSourceState, characterId: CharacterId): BoardEntry[] {
   const equippedInstanceIds = new Set(Object.values(state.loadouts[characterId] ?? {}).filter(Boolean) as string[]);
   const availableInventory = (state.inventories[characterId] ?? []).filter(
     (item) => !equippedInstanceIds.has(item.instanceId),
@@ -52,20 +74,22 @@ function buildBoardItemsForCharacter(state: GearStore, characterId: CharacterId)
   const entries: BoardEntry[] = [];
 
   for (const item of availableInventory) {
+    const footprint = footprintForInstance(item);
+    if (!footprint) continue;
     const saved = gearPositions[item.instanceId];
     if (saved) {
-      entries.push({ id: item.instanceId, kind: "gear", item, saved });
+      entries.push({ id: item.instanceId, kind: "gear", item, footprint, saved });
     } else {
-      entries.push({ id: item.instanceId, kind: "gear", item });
+      entries.push({ id: item.instanceId, kind: "gear", item, footprint });
     }
   }
 
   for (const currencyId of activeCurrencies) {
     const saved = currencyPositions[currencyId];
     if (saved) {
-      entries.push({ id: currencyId, kind: "currency", item: currencyId, saved });
+      entries.push({ id: currencyId, kind: "currency", item: currencyId, footprint: { w: 1, h: 1 }, saved });
     } else {
-      entries.push({ id: currencyId, kind: "currency", item: currencyId });
+      entries.push({ id: currencyId, kind: "currency", item: currencyId, footprint: { w: 1, h: 1 } });
     }
   }
 
@@ -74,7 +98,7 @@ function buildBoardItemsForCharacter(state: GearStore, characterId: CharacterId)
 
 function resolveMoveItemAndSwap(
   characterId: CharacterId,
-  movingId: string,
+  movingItem: BoardItemRef,
   targetCol: number,
   targetRow: number,
   state: GearStore,
@@ -89,37 +113,20 @@ function resolveMoveItemAndSwap(
     ...(state.currencyBoardPositionsByCharacter[characterId] ?? {}),
   };
 
-  const entries = buildBoardItemsForCharacter(state, characterId);
+  const boardItems = buildBoardEntriesForCharacter(state, characterId).map((entry) => ({
+    id: entry.id,
+    kind: entry.kind,
+    footprint: entry.footprint,
+    position: entry.saved ?? { col: 1, row: 1 },
+  }));
 
-  type DragBoardItem = {
-    id: string;
-    kind: "gear" | "currency";
-    footprint: { w: number; h: number };
-    position: { col: number; row: number };
-  };
-  const boardItems: DragBoardItem[] = [];
-  for (const entry of entries) {
-    if (entry.kind === "gear") {
-      const fp = footprintForInstance(entry.item);
-      if (!fp) continue;
-      boardItems.push({ id: entry.id, kind: "gear", footprint: fp, position: entry.saved ?? { col: 1, row: 1 } });
-    } else {
-      boardItems.push({
-        id: entry.id,
-        kind: "currency",
-        footprint: { w: 1, h: 1 },
-        position: entry.saved ?? { col: 1, row: 1 },
-      });
-    }
-  }
-
-  if (!boardItems.some((item) => item.id === movingId)) {
+  if (!boardItems.some((item) => item.id === movingItem.id && item.kind === movingItem.kind)) {
     return { nextGearPositions, nextCurrencyPositions };
   }
 
   const { positions, unchanged } = resolveMoveWithSwap(
     boardItems,
-    movingId,
+    movingItem.id,
     { col: targetCol, row: targetRow },
     INVENTORY_COLS,
   );
@@ -135,6 +142,33 @@ function resolveMoveItemAndSwap(
     }
   }
   return { nextGearPositions, nextCurrencyPositions };
+}
+
+function moveBoardItemForState(
+  state: GearStore,
+  characterId: CharacterId,
+  item: BoardItemRef,
+  col: number,
+  row: number,
+) {
+  const { nextGearPositions, nextCurrencyPositions } = resolveMoveItemAndSwap(characterId, item, col, row, state);
+  const nextState = {
+    boardPositionsByCharacter: {
+      ...state.boardPositionsByCharacter,
+      [characterId]: nextGearPositions,
+    },
+    currencyBoardPositionsByCharacter: {
+      ...state.currencyBoardPositionsByCharacter,
+      [characterId]: nextCurrencyPositions,
+    },
+  };
+  return {
+    ...nextState,
+    ...syncBoardPositionsForState({
+      ...state,
+      ...nextState,
+    }),
+  };
 }
 
 type GearStore = {
@@ -161,13 +195,7 @@ type GearStore = {
     options?: { vacatedPlacement?: { col: number; row: number }; swapDisplaced?: boolean },
   ) => void;
   unequip: (characterId: CharacterId, slot: GearSlot) => void;
-  setBoardPosition: (characterId: CharacterId, instanceId: string, col: number, row: number) => void;
-  setCurrencyBoardPosition: (
-    characterId: CharacterId,
-    currencyId: CraftingCurrencyId,
-    col: number,
-    row: number,
-  ) => void;
+  moveBoardItem: (characterId: CharacterId, item: BoardItemRef, col: number, row: number) => void;
   syncBoardPositions: () => void;
   salvage: (
     instanceId: string,
@@ -255,33 +283,22 @@ function syncBoardPositionsForState(state: {
   const nextCurrencyPositionsByCharacter = { ...state.currencyBoardPositionsByCharacter };
 
   for (const characterId of GEAR_CHARACTER_IDS) {
-    const equippedInstanceIds = new Set(Object.values(state.loadouts[characterId] ?? {}).filter(Boolean) as string[]);
-    const availableInventory = (state.inventories[characterId] ?? []).filter(
-      (item) => !equippedInstanceIds.has(item.instanceId),
-    );
-    const activeCurrencies = CRAFTING_CURRENCY_IDS.filter((id) => (state.craftingCurrencies[id] ?? 0) > 0);
     const gearPositions = { ...(nextBoardPositionsByCharacter[characterId] ?? {}) };
     const currencyPositions = { ...(nextCurrencyPositionsByCharacter[characterId] ?? {}) };
+    const mixed = buildBoardEntriesForCharacter(
+      {
+        ...state,
+        boardPositionsByCharacter: nextBoardPositionsByCharacter,
+        currencyBoardPositionsByCharacter: nextCurrencyPositionsByCharacter,
+      },
+      characterId,
+    );
 
-    type MixedItem =
-      | { id: string; kind: "gear"; item: GearInstance; saved: { col: number; row: number } | undefined }
-      | { id: string; kind: "currency"; item: CraftingCurrencyId; saved: { col: number; row: number } | undefined };
-    const mixed: MixedItem[] = [];
-
-    for (const item of availableInventory) {
-      const fp = footprintForInstance(item);
-      if (!fp) continue;
-      mixed.push({ id: item.instanceId, kind: "gear", item, saved: gearPositions[item.instanceId] });
-    }
-    for (const currencyId of activeCurrencies) {
-      mixed.push({ id: currencyId, kind: "currency", item: currencyId, saved: currencyPositions[currencyId] });
-    }
-
-    const packed = packMixedBoard<"gear" | "currency", MixedItem>(
+    const packed = packMixedBoard<"gear" | "currency", BoardEntry>(
       mixed,
       INVENTORY_COLS,
-      (entry: MixedItem) => (entry.kind === "gear" ? footprintForInstance(entry.item)! : { w: 1, h: 1 }),
-      (entry: MixedItem) => entry.saved,
+      (entry) => entry.footprint,
+      (entry) => entry.saved,
     );
 
     const nextGearForChar: GearBoardPositions = { ...gearPositions };
@@ -527,60 +544,8 @@ export const useGearStore = create<GearStore>((set, get) => ({
         }),
       };
     }),
-  setBoardPosition: (characterId, instanceId, col, row) =>
-    set((state) => {
-      const { nextGearPositions, nextCurrencyPositions } = resolveMoveItemAndSwap(
-        characterId,
-        instanceId,
-        col,
-        row,
-        state,
-      );
-      const nextState = {
-        boardPositionsByCharacter: {
-          ...state.boardPositionsByCharacter,
-          [characterId]: nextGearPositions,
-        },
-        currencyBoardPositionsByCharacter: {
-          ...state.currencyBoardPositionsByCharacter,
-          [characterId]: nextCurrencyPositions,
-        },
-      };
-      return {
-        ...nextState,
-        ...syncBoardPositionsForState({
-          ...state,
-          ...nextState,
-        }),
-      };
-    }),
-  setCurrencyBoardPosition: (characterId, currencyId, col, row) =>
-    set((state) => {
-      const { nextGearPositions, nextCurrencyPositions } = resolveMoveItemAndSwap(
-        characterId,
-        currencyId,
-        col,
-        row,
-        state,
-      );
-      const nextState = {
-        boardPositionsByCharacter: {
-          ...state.boardPositionsByCharacter,
-          [characterId]: nextGearPositions,
-        },
-        currencyBoardPositionsByCharacter: {
-          ...state.currencyBoardPositionsByCharacter,
-          [characterId]: nextCurrencyPositions,
-        },
-      };
-      return {
-        ...nextState,
-        ...syncBoardPositionsForState({
-          ...state,
-          ...nextState,
-        }),
-      };
-    }),
+  moveBoardItem: (characterId, item, col, row) =>
+    set((state) => moveBoardItemForState(state, characterId, item, col, row)),
   syncBoardPositions: () =>
     set((state) => {
       return syncBoardPositionsForState(state);

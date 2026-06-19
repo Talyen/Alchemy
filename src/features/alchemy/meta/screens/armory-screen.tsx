@@ -1,21 +1,17 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   canApplyCraftingCurrency,
-  currencyObstaclesForBoard,
   EMPTY_CRAFTING_CURRENCIES,
   findGearInventoryOwner,
   gearDefinitions,
   getCraftingCurrencyDefinition,
-  INVENTORY_COLS,
-  packInventoryWithPositions,
-  packCurrencyWithPositions,
+  buildArmoryBoardView,
   type CraftingCurrencyId,
   type GearInstance,
   type GearInventories,
   type GearLoadouts,
   type GearSlot,
   type InventoryPlacement,
-  CRAFTING_CURRENCY_IDS,
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { characters, getRequiredPreviousCharacter, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
@@ -77,79 +73,41 @@ export function ArmoryScreen({
   const { salvageTarget, salvageMode, activeCurrencyId, cursorPoint, transferMenu } = targeting;
   const characterInventory = useMemo(() => inventories[characterId] ?? [], [inventories, characterId]);
   const savedPositions = useGearStore((state) => state.boardPositionsByCharacter[characterId] ?? {});
-  const setBoardPosition = useGearStore((state) => state.setBoardPosition);
+  const moveBoardItem = useGearStore((state) => state.moveBoardItem);
   const handleMoveItem = useCallback(
     (instanceId: string, col: number, row: number) => {
-      setBoardPosition(characterId, instanceId, col, row);
+      moveBoardItem(characterId, { kind: "gear", id: instanceId }, col, row);
     },
-    [characterId, setBoardPosition],
+    [characterId, moveBoardItem],
   );
 
   const savedCurrencyPositions = useGearStore((state) => state.currencyBoardPositionsByCharacter[characterId] ?? {});
-  const setCurrencyBoardPosition = useGearStore((state) => state.setCurrencyBoardPosition);
   const handleMoveCurrency = useCallback(
     (currencyId: CraftingCurrencyId, col: number, row: number) => {
-      setCurrencyBoardPosition(characterId, currencyId, col, row);
+      moveBoardItem(characterId, { kind: "currency", id: currencyId }, col, row);
     },
-    [characterId, setCurrencyBoardPosition],
-  );
-
-  const activeCurrencyIds = useMemo(
-    () => CRAFTING_CURRENCY_IDS.filter((id) => (craftingCurrencies[id] ?? 0) > 0),
-    [craftingCurrencies],
-  );
-
-  const currencyBlockers = useMemo(
-    () =>
-      activeCurrencyIds.flatMap((id) => {
-        const position = savedCurrencyPositions[id];
-        if (!position) return [];
-        return [{ col: position.col, row: position.row, w: 1, h: 1 }];
-      }),
-    [activeCurrencyIds, savedCurrencyPositions],
+    [characterId, moveBoardItem],
   );
 
   const inventoryById = useMemo(
     () => new Map(characterInventory.map((item) => [item.instanceId, item])),
     [characterInventory],
   );
-  const equippedInstanceIds = useMemo(
-    () => new Set(Object.values(loadouts[characterId]).filter(Boolean)),
-    [loadouts, characterId],
-  );
-  const availableInventory = useMemo(
-    () => characterInventory.filter((item) => !equippedInstanceIds.has(item.instanceId)),
-    [characterInventory, equippedInstanceIds],
-  );
   const loadout = loadouts[characterId];
   const requiredCharacterId = getRequiredPreviousCharacter(characterId);
   const locked = !isCharacterUnlocked(characterId, finishedRunCharacters);
   const editable = !browseOnly && !locked;
-  const packedInventory = useMemo(() => {
-    const reservedEquipped = characterInventory.filter((item) => equippedInstanceIds.has(item.instanceId));
-    return packInventoryWithPositions(
-      availableInventory,
-      INVENTORY_COLS,
-      savedPositions,
-      reservedEquipped,
-      currencyBlockers,
-    );
-  }, [availableInventory, characterInventory, currencyBlockers, equippedInstanceIds, savedPositions]);
-
-  const packedCurrencies = useMemo(
-    () => packCurrencyWithPositions(activeCurrencyIds, INVENTORY_COLS, savedCurrencyPositions, packedInventory.items),
-    [activeCurrencyIds, packedInventory.items, savedCurrencyPositions],
+  const boardView = useMemo(
+    () =>
+      buildArmoryBoardView({
+        inventory: characterInventory,
+        loadout,
+        gearPositions: savedPositions,
+        currencyPositions: savedCurrencyPositions,
+        craftingCurrencies,
+      }),
+    [characterInventory, craftingCurrencies, loadout, savedCurrencyPositions, savedPositions],
   );
-
-  const boardObstacles = useMemo(
-    () => [...packedInventory.items, ...currencyObstaclesForBoard(packedCurrencies)],
-    [packedCurrencies, packedInventory.items],
-  );
-
-  const occupiedRows = useMemo(() => {
-    const currencyRows = packedCurrencies.reduce((max, item) => Math.max(max, item.row), 0);
-    return Math.max(packedInventory.occupiedRows, currencyRows);
-  }, [packedCurrencies, packedInventory.occupiedRows]);
 
   const handleEquipWithSwap = useCallback(
     (
@@ -170,7 +128,7 @@ export function ArmoryScreen({
         instance,
         vacatedPlacement,
         inventoryById,
-        packedItems: packedInventory.items,
+        packedItems: boardView.packedInventory.items,
       });
 
       onEquip(targetCharacterId, slot, instance, {
@@ -178,7 +136,7 @@ export function ArmoryScreen({
         swapDisplaced: canSwap,
       });
     },
-    [inventoryById, loadouts, onEquip, packedInventory.items],
+    [boardView.packedInventory.items, inventoryById, loadouts, onEquip],
   );
 
   const {
@@ -198,10 +156,9 @@ export function ArmoryScreen({
     editable,
     loadout,
     inventoryById,
-    packedInventory,
+    packedInventory: boardView.packedInventory,
     inventoryBoardRef,
-    // boardPositions and equippedReturnPositions no longer passed (unequip uses findFirstInventoryPlacement)
-    boardObstacles,
+    boardObstacles: boardView.boardObstacles,
     onEquip: handleEquipWithSwap,
     onUnequip,
     onMoveItem: handleMoveItem,
@@ -217,7 +174,7 @@ export function ArmoryScreen({
     clearDragState: clearCurrencyDragState,
   } = useArmoryCurrencyDrag({
     editable,
-    occupiedRows,
+    occupiedRows: boardView.occupiedRows,
     inventoryBoardRef,
     onMoveCurrency: handleMoveCurrency,
   });
@@ -428,9 +385,9 @@ export function ArmoryScreen({
               onTransferRequest={handleOpenTransferMenu}
             />
             <InventoryPanel
-              packedItems={packedInventory.items}
-              packedCurrencies={packedCurrencies}
-              occupiedRows={occupiedRows}
+              packedItems={boardView.packedInventory.items}
+              packedCurrencies={boardView.packedCurrencies}
+              occupiedRows={boardView.occupiedRows}
               editable={editable}
               draggedInstanceId={draggedGear?.instanceId ?? null}
               draggedCurrencyId={draggedCurrencyId}

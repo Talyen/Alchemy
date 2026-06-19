@@ -15,6 +15,7 @@ import {
   type GearDefinition,
   type GearInventories,
   type GearInstance,
+  type GearLoadout,
   type GearSlot,
 } from "./types";
 
@@ -400,6 +401,61 @@ export function currencyObstaclesForBoard(
     w,
     h,
   }));
+}
+
+export type ArmoryBoardView = {
+  activeCurrencyIds: CraftingCurrencyId[];
+  availableInventory: GearInstance[];
+  packedInventory: PackedInventory;
+  packedCurrencies: PackedCurrencyItem[];
+  boardObstacles: PackedInventoryItem<{ instanceId: string }>[];
+  occupiedRows: number;
+};
+
+export function buildArmoryBoardView({
+  inventory,
+  loadout,
+  gearPositions,
+  currencyPositions,
+  craftingCurrencies,
+  cols = INVENTORY_COLS,
+}: {
+  inventory: GearInstance[];
+  loadout: GearLoadout;
+  gearPositions: GearBoardPositions;
+  currencyPositions: CraftingCurrencyBoardPositions;
+  craftingCurrencies: Record<CraftingCurrencyId, number>;
+  cols?: number;
+}): ArmoryBoardView {
+  const equippedInstanceIds = new Set(Object.values(loadout).filter(Boolean));
+  const availableInventory = inventory.filter((item) => !equippedInstanceIds.has(item.instanceId));
+  const reservedEquipped = inventory.filter((item) => equippedInstanceIds.has(item.instanceId));
+  const activeCurrencyIds = CRAFTING_CURRENCY_IDS.filter((id) => craftingCurrencies[id] > 0);
+  const currencyBlockers = activeCurrencyIds.flatMap((id) => {
+    const position = currencyPositions[id];
+    if (!position) return [];
+    return [{ col: position.col, row: position.row, w: 1, h: 1 }];
+  });
+
+  const packedInventory = packInventoryWithPositions(
+    availableInventory,
+    cols,
+    gearPositions,
+    reservedEquipped,
+    currencyBlockers,
+  );
+  const packedCurrencies = packCurrencyWithPositions(activeCurrencyIds, cols, currencyPositions, packedInventory.items);
+  const boardObstacles = [...packedInventory.items, ...currencyObstaclesForBoard(packedCurrencies)];
+  const currencyRows = packedCurrencies.reduce((max, item) => Math.max(max, item.row), 0);
+
+  return {
+    activeCurrencyIds,
+    availableInventory,
+    packedInventory,
+    packedCurrencies,
+    boardObstacles,
+    occupiedRows: Math.max(packedInventory.occupiedRows, currencyRows),
+  };
 }
 
 export {

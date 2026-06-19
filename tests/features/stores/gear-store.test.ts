@@ -151,7 +151,7 @@ describe("gear-store", () => {
       voidstone: { col: 4, row: 2 },
     });
 
-    useGearStore.getState().setCurrencyBoardPosition("knight", "voidstone", 6, 3);
+    useGearStore.getState().moveBoardItem("knight", { kind: "currency", id: "voidstone" }, 6, 3);
     expect(useGearStore.getState().currencyBoardPositionsByCharacter.knight).toEqual({
       voidstone: { col: 6, row: 3 },
     });
@@ -242,7 +242,7 @@ describe("gear-store", () => {
       }),
     );
 
-    useGearStore.getState().setBoardPosition("knight", "item-a", 3, 1);
+    useGearStore.getState().moveBoardItem("knight", { kind: "gear", id: "item-a" }, 3, 1);
 
     expect(useGearStore.getState().boardPositionsByCharacter.knight["item-a"]).toEqual({ col: 3, row: 1 });
     expect(useGearStore.getState().boardPositionsByCharacter.knight["item-b"]).toEqual({ col: 2, row: 1 });
