@@ -439,6 +439,12 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(armory): consolidate drag state and remove dead code
+  - Refactor use-armory-gear-drag with cleaner FSM and flyweight board packing
+  - Remove use-armory-currency-positions and use-armory-inventory-positions
+  - Update gear-store for unified drag state management
+  - Add gear-shine visual support to gear operations
+  - Add tests: armory-styling, use-armory-gear-drag, use-board-drag
 - refactor(app): simplify App.tsx architecture — remove actions proxy, context, inline logic
   - Replace 63-entry actions proxy with direct run controller prop, flattening
     all a.runFlow.* / a.battle.* references across 41 route call sites

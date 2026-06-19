@@ -33,7 +33,7 @@ export function PurchasableTrinketItem({
       <div className="flex flex-col items-center gap-3 rounded-shell-card border border-border/30 bg-card/30 p-4 text-center opacity-50">
         <TiltSurface
           as="div"
-          className={cn(cardSurfaceClass, collectionTileWidthClass, "group")}
+          className={cn(cardSurfaceClass, collectionTileWidthClass, "group", "aspect-[6/7]")}
           shimmerActive={false}
           shimmerToken={undefined}
           selected={false}
@@ -42,7 +42,7 @@ export function PurchasableTrinketItem({
           <img
             src={trinket.art || undefined}
             alt={trinket.title}
-            className="block w-full rounded-shell-hero aspect-square"
+            className="absolute inset-0 h-full w-full object-cover rounded-shell-hero"
           />
         </TiltSurface>
         <p className="text-sm font-semibold text-amber-100/75">{trinket.title}</p>
@@ -65,7 +65,7 @@ export function PurchasableTrinketItem({
         ) : null}
         <TiltSurface
           as="div"
-          className={cn(cardSurfaceClass, collectionTileWidthClass, "group")}
+          className={cn(cardSurfaceClass, collectionTileWidthClass, "group", "aspect-[6/7]")}
           shimmerActive={shimmerActive}
           shimmerToken={shimmerToken}
           selected={false}
@@ -74,7 +74,7 @@ export function PurchasableTrinketItem({
           <img
             src={trinket.art || undefined}
             alt={trinket.title}
-            className="block w-full rounded-shell-hero aspect-square"
+            className="absolute inset-0 h-full w-full object-cover rounded-shell-hero"
           />
         </TiltSurface>
       </div>

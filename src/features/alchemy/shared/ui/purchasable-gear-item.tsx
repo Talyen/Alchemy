@@ -41,13 +41,13 @@ export function PurchasableGearItem({
       <div className="flex flex-col items-center gap-3 rounded-shell-card border border-border/30 bg-card/30 p-4 text-center opacity-50">
         <TiltSurface
           as="div"
-          className={cn(cardSurfaceClass, collectionTileWidthClass, "group")}
+          className={cn(cardSurfaceClass, collectionTileWidthClass, "group", "aspect-[6/7]")}
           shimmerActive={false}
           shimmerToken={undefined}
           selected={false}
           ariaLabel={title}
         >
-          <img src={art} alt={title} className="block w-full rounded-shell-hero aspect-square" />
+          <img src={art} alt={title} className="absolute inset-0 h-full w-full object-cover rounded-shell-hero" />
         </TiltSurface>
         <GearItemTitle instance={instance} className="text-sm font-semibold text-amber-100/75" />
         <span className="text-xs font-semibold text-muted-foreground">Purchased</span>
@@ -69,13 +69,13 @@ export function PurchasableGearItem({
         ) : null}
         <TiltSurface
           as="div"
-          className={cn(cardSurfaceClass, collectionTileWidthClass, "group")}
+          className={cn(cardSurfaceClass, collectionTileWidthClass, "group", "aspect-[6/7]")}
           shimmerActive={shimmerActive}
           shimmerToken={shimmerToken}
           selected={false}
           ariaLabel={title}
         >
-          <img src={art} alt={title} className="block w-full rounded-shell-hero aspect-square" />
+          <img src={art} alt={title} className="absolute inset-0 h-full w-full object-cover rounded-shell-hero" />
         </TiltSurface>
       </div>
       <GearItemTitle instance={instance} className="text-sm font-semibold text-foreground" />

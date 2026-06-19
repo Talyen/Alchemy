@@ -203,9 +203,9 @@ describe("Armory Styling TDD", () => {
     const def = gearDefinitions["dagger-astral"];
     const { container } = render(<GearTooltipContent definition={def} instance={maxAstralGear} />);
 
-    // Expect 3 shine elements (1 for item title, 1 for affix subheader, 1 for affix text)
+    // Expect 2 shine elements (1 for item title, 1 for affix subheader)
     const elements = container.querySelectorAll(".boss-title-shine");
-    expect(elements.length).toBe(3);
+    expect(elements.length).toBe(2);
 
     let hasGradient = false;
     elements.forEach((el) => {
