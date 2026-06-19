@@ -15,24 +15,26 @@ declare module "*/patch-notes-core.mjs" {
 
 declare module "*/steam-vdf.mjs" {
   export function substituteSteamVdf(template: string, values: Record<string, string>): string;
-  export function writeSteamBuildVdfs(root: string, version: string): void;
+  export function writeSteamBuildVdfs(
+    root: string,
+    env: { STEAM_APP_ID: string; STEAM_DEPOT_ID: string; [key: string]: string },
+  ): { appPath: string; depotPath: string; buildDir: string };
 }
 
 declare module "*/sync-changelog.mjs" {
   export function syncChangelog(root: { root: string }): string;
-  export function computeSyncedChangelog(root: { root: string }): {
-    unreleased: { type: string; scope: string; description: string }[];
-  };
+  export function computeSyncedChangelog(existingContent: string, rootDir?: string): string;
 }
 
 declare module "../../scripts/lib/steam-vdf.mjs" {
   export function substituteSteamVdf(template: string, values: Record<string, string>): string;
-  export function writeSteamBuildVdfs(root: string, version: string): void;
+  export function writeSteamBuildVdfs(
+    root: string,
+    env: { STEAM_APP_ID: string; STEAM_DEPOT_ID: string; [key: string]: string },
+  ): { appPath: string; depotPath: string; buildDir: string };
 }
 
 declare module "../../scripts/sync-changelog.mjs" {
   export function syncChangelog(root: { root: string }): string;
-  export function computeSyncedChangelog(root: { root: string }): {
-    unreleased: { type: string; scope: string; description: string }[];
-  };
+  export function computeSyncedChangelog(existingContent: string, rootDir?: string): string;
 }
