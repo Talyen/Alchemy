@@ -6,6 +6,97 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Features
 
+- feat(armory): add ArmoryTransferMenu primitive for right-click gear transfer
+  New armory-transfer-menu.tsx component renders a portaled context menu
+  at the right-click anchor point with one 'Send to [ClassName]' button
+  per unlocked, non-source character. Escape key and backdrop click close
+  the menu. Viewport-edge clamping prevents overflow.
+  
+  Wire into armory-screen.tsx and meta-routes.tsx: the onTransferGear
+  prop is passed from the controller through the route wrapper to the
+  screen, which renders the menu when transferMenu state is non-null.
+- feat(armory): wire right-click transfer menu through screen panels into gear tiles
+- feat(armory): add transferToInventory store action and onTransferGear controller callback
+  Add the missing transferToInventory(instanceId, targetCharacterId)
+  action to useGearStore. Moves the gear instance between character
+  inventories, clears all loadout references, transfers the board
+  position, and sanitizes orphan positions.
+  
+  Add onTransferGear to the ArmoryController facade hook with HP-sync
+  and save-flush side effects matching the existing onSalvage/onEquip
+  patterns.
+  
+  4 new unit tests cover: basic transfer with board position, unknown
+  instance rejection, same-target rejection, and unequip-then-transfer.
+- feat(armory): enforce ranged-weapon + quiver off-hand pairing
+  Wire the rangedWeapon/quiver contract from base-items into the equip
+  pipeline:
+  
+  - Add isRangedWeapon and isQuiver helpers in operations.ts.
+  - Add isGearCompatibleWithLoadoutSlot(definition, slot, characterLoadout,
+    inventory): extends the basic slot check with contextual rules —
+    a quiver off-hand requires a ranged main-hand already equipped,
+    and a non-ranged main-hand is rejected when a quiver is in the
+    off-hand.
+  - equipGear now uses isGearCompatibleWithLoadoutSlot to refuse
+    invalid combinations; the loadout is left unchanged.
+  - resolveHandConflicts clears the off-hand quiver when a non-ranged
+    main-hand is equipped so the UI can orchestrate the swap.
+  - Propagate rangedWeapon and quiver from GearBaseItemDefinition to
+    GearDefinition in definitions.ts.
+  - Update useArmoryGearDrag and SlotButton to use the stricter
+    compatibility check so the green 'compatible' ring is only shown
+    for valid pairs.
+  
+  Add 9 unit tests in tests/lib/gear/gear.test.ts covering: ranged
+  flag, quiver flag, one-handed ranged weapons, quiver rejected
+  without ranged main-hand, quiver accepted with bow and crossbow,
+  non-ranged main-hand rejected with quiver, resolveHandConflicts
+  swap behavior, and buckler unaffected.
+- feat(armory): tag base items as ranged weapons or quivers
+  Add two optional fields to GearBaseItemDefinition:
+  - rangedWeapon: true for longbow, shortbow, recurve-bow, crossbow.
+  - quiver: true for the quiver base item.
+  
+  Reclassify the crossbow as a one-handed weapon (requiresTwoHands:
+  false) so it can be paired with a quiver off-hand, matching the
+  existing one-handed bow + quiver pattern. The other ranged weapons
+  were already one-handed.
+  
+  Add tests/architecture/gear-ranged-tags.test.ts to lock the
+  contract: every main-hand base item has an explicit rangedWeapon
+  value, only the 4 known ranged weapons are tagged true, and only
+  the quiver base item is tagged quiver: true.
+  
+  Add tests/helpers/gear-test.ts with a knightInventories(...items)
+  helper for unit tests that need a single-character inventory map.
+  
+  The combat effects and equip compatibility rules for the quiver +
+  ranged-main-hand pair land in a follow-up commit.
+- feat(armory): reducer for targeting state, effect-key guard, and migration v10
+  Three orthogonal cleanups for the Armory subsystem:
+  
+  - Replace the 3 // eslint-disable react-hooks/set-state-in-effect
+    disables in armory-screen.tsx with a useReducer over a dedicated
+    armoryTargetingState (armory/armory-targeting-state.ts). The 4 useState
+    hooks (salvageMode, salvageTarget, activeCurrencyId, cursorPoint)
+    collapse to a single reducer with 13 typed actions and identity-stable
+    no-op returns. The 3 'clear stale state when external conditions
+    change' effects now dispatch a single action. 21 reducer unit tests
+    lock the behavior.
+  
+  - Add tests/architecture/gear-affix-effect-keys.test.ts to assert
+    every gearAffixCatalog entry's effectKey is in GEAR_EFFECT_KEYS, that
+    every key in GEAR_EFFECT_KEYS is referenced by at least one affix,
+    and that the keys are unique. Catches silent zero-roll typos in
+    future affix additions.
+  
+  - Move the localStorage[alchemy-armory-positions] shim out of
+    gear-store.ts into a new migrateV9ToV10 step. Bump
+    CURRENT_SAVE_SCHEMA_VERSION to 10. Add a v9 fixture to
+    LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION. The shim now lives in the
+    canonical migration pipeline and is exercised by 8 dedicated
+    architecture tests. The store no longer touches localStorage.
 - feat(armory): simplify state, fix equipped tooltips, and remove click animations
 - feat(armory): per-character gear inventories, destination pity, and UI polish
   - Migrate saves to per-character gear inventories and board positions (schema v9)
@@ -153,6 +244,13 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(armory): allow auto-swap when equipping non-ranged main-hand with quiver off-hand
+  Relax isGearCompatibleWithLoadoutSlot so that equipping a non-ranged
+  main-hand while a quiver is in the off-hand succeeds. resolveHandConflicts
+  already clears the off-hand quiver in this case. The user no longer needs
+  to manually unequip the quiver before equipping a non-ranged main-hand.
+  
+  Flip the unit test from 'rejects' to 'allows and clears the off-hand'.
 - fix: ship armory gear system and harden save migrations
   Add grid armory with save-backed board positions, gear rewards, and affixes.
   Persist pending rewards and boon-to-trinket schema v5 migrations.
@@ -319,6 +417,127 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(armory): extract useArmoryController facade and split screen + panels
+  Phase 3 cleanup of the Armory subsystem:
+  
+  - New useArmoryController() facade hook reads useGearStore directly,
+    wraps mutations (equip, unequip, salvage, applyCurrency, dev spawn)
+    with the HP-sync + save-flush side effects that previously lived as
+    four closures in meta-routes.tsx. The ArmoryScreenRoute wrapper
+    drops from ~95 lines to ~20 lines.
+  
+  - Split armory-screen.tsx (694 -> 459 lines) into:
+    * armory-character-tabs.tsx (the locked/unlocked character tab strip)
+    * armory-currency-targeting.tsx (the follow-cursor targeting visual)
+    * armory-salvage-confirm.tsx (the ConfirmationDialog wrapper)
+    * armory-drag-portal.tsx (the gear drag animation portal)
+    * armory-currency-drag-portal.tsx (the currency drag animation portal)
+  
+  - Split armory-panels.tsx (1018 -> barrel) into:
+    * character-panel.tsx (CharacterAndEquipmentPanel)
+    * inventory-panel.tsx (InventoryPanel)
+    * parts/grid-styles.ts (SLOT_LABELS, EQUIP_SLOT_PLACEMENT, layout
+      style helpers)
+    * parts/slot-button.tsx (SlotButton)
+    * parts/inventory-tile.tsx (InventoryGearTile)
+    * parts/currency-tile.tsx (CraftingCurrencyTile)
+  
+  All 29 armory-screen integration tests pass; 478 feature tests pass
+  across the broader suite; tsc and eslint are clean.
+- refactor(armory): extract shared board-drag math and dedupe gear/currency drag
+  The currency drag hook (use-armory-currency-drag) and the gear drag
+  hook (use-armory-gear-drag) each carried their own copy of three
+  duplicated pieces of pointer-drag logic:
+  
+  - a placeInventoryTileFromMetrics helper that read board metrics,
+    called findNearestInventoryPlacement, and computed a screen-space
+    rect for the destination cell;
+  - an inline distance-to / same-destination / magnet-hysteresis block
+    that decided whether to stick with the previous destination or
+    switch to a new candidate;
+  - the magnet constants (MAGNET_SWITCH_MARGIN_PX,
+    MAGNET_RELEASE_HYSTERESIS_PX, INVENTORY_SNAP_RADIUS_CELLS).
+  
+  Extract the shared math into armory/board-drag-math.ts as pure
+  helpers, parameterized on the destination type so the gear hook's
+  equipment-slot discriminated union flows through. 12 new tests cover
+  the rect center, distance, identity equality, and hysteresis
+  behavior. The currency and gear drag hooks now both delegate the
+  shared logic; the gear hook still owns its equipment-slot destination
+  detection, secondary swap animation, and double-click flyover.
+  
+  Net change in the two drag hooks: -112 lines; -29 in the
+  gear hook's updateActiveDrag block, -58 in useBoardDrag's
+  getInventoryDestination and updateActiveDrag.
+- refactor(armory): extract useBoardDrag FSM and route currency drag through it
+  The currency drag hook duplicated the gear drag hook's pointer FSM,
+  magnet snap, hysteresis, double-click activation distance, and
+  animation timers. Extract a single parameterized FSM in
+  armory/use-board-drag.ts that owns the shared logic and the magnet
+  constants (MAGNET_SWITCH_MARGIN_PX, MAGNET_RELEASE_HYSTERESIS_PX,
+  INVENTORY_SNAP_RADIUS_CELLS, DOUBLE_CLICK_FLYOVER_MS,
+  MAGNET_RELEASE_EASE_MS, DRAG_POINTER_ACTIVATE_DISTANCE_PX).
+  
+  use-armory-currency-drag.ts becomes a thin wrapper that delegates
+  begin/move/finish and the inventory destination resolution to
+  useBoardDrag. The gear drag hook is left as a follow-up; its
+  equipment-slot destination detection, secondary swap animation, and
+  double-click flyover can compose on top of useBoardDrag via the
+  resolveExternalDestination hook without changing the Armory screen.
+  All 28 armory-screen integration tests still pass.
+- refactor(armory): unify grid packing into a single tested module
+  The Armory had three near-identical implementations of grid packing:
+  - inventory-layout.ts (canPlace/markPlaced/findPlacement/packInventory)
+  - gear-store.ts resolveMoveItemAndSwap (inlined overlap detection and
+    displaced-item re-placement)
+  - gear-store.ts syncBoardPositions (inlined occupancy grid, canPlace,
+    markPlaced, findFirstAvailable)
+  
+  Extract a single pure module in src/lib/gear/grid-packing.ts that owns
+  canPlace, markPlaced, findFirstAvailable, overlaps, packInventoryGrid,
+  packInventoryGridPreserving, packCurrencyGridWithGearObstacles,
+  packMixedBoard, and resolveMoveWithSwap. The store's two grid-packing
+  implementations now delegate to these primitives, removing the local
+  BoardItem type, the inlined overlaps() function, and the duplicated
+  occupancy/cell bookkeeping. 18 new tests cover packing, preservation,
+  displaced re-placement, and edge cases.
+- refactor(navigation): unify transitions, type-exhaustive route registry, and SCREEN_PHASE table
+  Six independent cleanups in the run-navigation layer. No player-facing
+  behavior change; all 2747 navigation/battle/shop tests pass.
+  
+  - Consolidate the three TimerGroups in the run shell (navTimer in
+    useScreenNavigation, rewardTransitionTimer in useRunNavigation, and the
+    standalone screen-transition.ts helper) into a single useScreenTransitions
+    primitive that owns one TimerGroup and exposes navigateTo, transition,
+    commitPendingTransition, and cancelPending. The transition function unifies
+    immediate, delayed, and deferred-commit paths; the explicit clearAll() calls
+    are no longer needed because the new primitive auto-clears before scheduling.
+  
+  - Add a single SCREEN_PHASE: Record<Screen, RunPhase> table to
+    lib/routing/run-screen-router.ts and drop the three META_SCREENS /
+    RUN_LOOP_SCREENS / RUN_END_SCREENS arrays and their Sets. The static
+    lookup replaces the runtime Set.has() calls and makes adding a new Screen
+    a compile error until it is classified.
+  
+  - Make the screen-routes registry type-exhaustive. Each phase file declares
+    a Record<PhaseKey, ScreenRoute> via 'as const satisfies', and the merged
+    SCREEN_ROUTES spread is type-checked with a PhaseKeys vs Screen
+    bidirectional equality. The runtime for-loop that threw on missing
+    handlers is gone; TypeScript now enforces the same contract at build time.
+  
+  - Replace the 70-line switch in useRunScreenData with a typed FIELD_GETTERS
+    lookup keyed by the existing screenFields table. Adding a new screen
+    field becomes one entry in the getter table rather than another case
+    branch. Public behavior and screen-data shapes are unchanged.
+  
+  - Delete getDestinationWeight from run-loop/navigation/destination-flow.ts.
+    The function was deprecated in favor of computeDestinationWeight with
+    DestinationWeightContext and had no remaining callers in src/ or tests/.
+  
+  - Update affected tests (run-flow-handler-deps helper, run-victory-handlers,
+    run-navigation-hook, use-screen-navigation, screen-transition) to match
+    the new transition primitive's API and the run-flow-handlers dep shape
+    (drop setScreen and rewardTransitionTimer, add transition).
 - refactor(battle): drop Math.random defaults, remove dispatch route metadata, and refresh stale doc
   Phase 0 of the battle engine refactor. Five small cleanups that remove
   footguns and dead abstractions without changing public behavior; all 1055
@@ -627,6 +846,37 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Tests
 
+- test(armory): add 7 e2e tests for right-click gear transfer and auto-swap
+  New tests/gear-transfer.spec.ts (6 tests): sends gear to another
+  class via right-click menu, sends equipped gear unequipped, excludes
+  the source character, includes all unlocked characters, closes on
+  Escape, closes on backdrop click.
+  
+  Add auto-swap test to tests/gear-equip.spec.ts: equipping a
+  non-ranged main-hand via drag while a quiver is in the off-hand
+  automatically clears the off-hand via resolveHandConflicts.
+  
+  All 28 e2e tests pass across 4 gear specs.
+- test(armory): land 3 e2e specs covering combat, equip, and layout
+  - tests/gear-combat.spec.ts (2 tests): equipped gear increases
+    physical damage in battle; Armory editing is disabled while a
+    battle is active (browseOnly banner is shown).
+  - tests/gear-equip.spec.ts (6 tests): full inventory visible + drag
+    equip + character switch; swap equipped gear via drag onto
+    occupied slot; cursor-following during drag (no magnet snap);
+    double-click equip and unequip; gear footprint preserved during
+    preview snap; equipped items show tooltips on hover.
+    The 2 'Send to Rogue' right-click transfer tests from the
+    original drop were dropped because that feature was never
+    implemented; the tests assumed a menuitem that does not exist.
+  - tests/gear-layout.spec.ts (13 tests): armory opens from menu;
+    salvage confirmation; equipment and inventory tiles share the
+    same scale at 4 viewports; inventory scrolls only when
+    occupied rows exceed the visible area; full board containment
+    at 4 viewports; character art is 10% larger than the battle
+    art panel.
+  
+  All 21 e2e tests pass against the current codebase.
 - test(e2e): align run-end and mystery specs with Continue flow
   Update defeat/victory assertions for the new Continue button, add a discoveries
   helper for the run-end summary, and harden mystery picker handling.
@@ -666,6 +916,31 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Docs
 
+- docs(armory): add docs/ARMORY.md and cross-link from AGENTS + ARCHITECTURE
+  Add a dedicated docs/ARMORY.md covering the Armory subsystem:
+  
+  - File-by-file layout for src/features/alchemy/meta/screens/armory/.
+  - Data model (GearSlot, GearRarity, GearAffixRoll, GearDefinition,
+    GearInstance, GearLoadout, board positions, crafting currencies).
+  - State flow diagram (lib/gear -> gear-store -> useArmoryController ->
+    armory-screen -> battle snapshot).
+  - Read and write paths, including the useArmoryController facade and
+    its HP-sync + save-flush side effects.
+  - Board-packing rules (7x8 board, GEAR_FOOTPRINT, the grid-packing
+    module's pure primitives).
+  - Battle integration: how computeGearManifest produces the 64-key
+    GearEffectManifest and freezes it in BattleState.gearEffects.
+  - Drag FSM: useBoardDrag, the gear/currency wrappers, and the magnet
+    constants.
+  - Persistence: the 5 saved fields, the v0->v10 migration pipeline,
+    and the v9->v10 localStorage shim that previously lived in
+    gear-store.ts.
+  - Tests map for the pure lib, store, screen, math helpers, reducer,
+    architecture guards, and E2E specs.
+  
+  Cross-link from:
+  - AGENTS.md docs list and 'Where to look' table.
+  - docs/ARCHITECTURE.md Permanent Gear section.
 - docs: update AGENTS.md rule to push directly to main
 - docs: add PROMPTS.md with LLM code review guidance templates
 
