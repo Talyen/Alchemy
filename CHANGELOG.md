@@ -1151,6 +1151,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore(changelog): sync unreleased
 - chore(code-quality): tighten lint, TS strictness, knip, and prettier configs
   - Fix knip default-mode gate (delete dead code, remove stale suppressions)
   - Eliminate 57 ny warnings; bump no-explicit-any to error
@@ -1166,6 +1167,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Style
 
+- style: apply prettier formatting
 - style(armory): clean up gear tooltip layout and purchasable item styling
   - Compact tooltip descriptions by removing redundant gradient wrapper
   - Adjust purchasable gear/trinket item text and layout spacing
