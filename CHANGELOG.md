@@ -1048,6 +1048,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Tests
 
+- test: fix prepush unit failures
 - test(e2e): stabilize critical run flow specs
 - test(armory): add 7 e2e tests for right-click gear transfer and auto-swap
   New tests/gear-transfer.spec.ts (6 tests): sends gear to another
