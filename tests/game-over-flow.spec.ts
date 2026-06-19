@@ -1,10 +1,5 @@
 import { expect } from "@playwright/test";
-import {
-  assertDefeatFromEndRun,
-  makeCard,
-  startAtDestination,
-  startBattleWithDeck,
-} from "./helpers";
+import { assertDefeatFromEndRun, makeCard, startAtDestination, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
 import { critical } from "./playwright-tags";

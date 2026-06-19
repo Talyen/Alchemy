@@ -7,7 +7,6 @@ import { buildChangelogUnreleased, replaceChangelogUnreleased } from "./lib/patc
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-
 function normalizeNewlines(text) {
   return text.replace(/\r\n/gu, "\n");
 }
