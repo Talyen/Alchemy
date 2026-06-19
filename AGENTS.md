@@ -2,7 +2,23 @@
 
 **Alchemy** is a fantasy roguelite deckbuilder: pick a **Character**, fight turn-based battles with cards (**Mana**, **Statuses**, **Block**, companions), earn rewards, and travel to **Destinations** (combat, **Campfire**, shops, **Mystery**, **Corruption**). Between runs, the **Homestead** and **Talent** trees provide permanent progression.
 
+> **When in doubt, ask.** A short clarifying question is cheaper than an undo.
+
 > **Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [ARMORY.md](./docs/ARMORY.md) (gear data model, board packing, drag FSM) · [RELEASE.md](./docs/RELEASE.md) (Steam shipping) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks and tests) · [PROMPTS.md](./PROMPTS.md) (code-quality audits) · [README.md](./README.md) (human setup)
+
+## Quick commands
+
+- `npm run typecheck` — TypeScript only
+- `npm run lint:ci` — format, ESLint, knip, TypeScript
+- `npm test -- <glob>` — focused Vitest run (e.g. `npm test -- tests/lib/battle`)
+- `npm run test:e2e:prepush` — 9-test `@prepush` E2E subset
+- `npm run test:e2e:prepush:full` — broader `@critical` E2E subset
+- `npm run test:e2e:main-gate` — full E2E suite (CI `e2e-full` equivalent)
+- `npm run check:push` — local pre-push gate
+- `npm run check:ship` — ship/save/desktop unit and build validation
+- `npm run check:ship:full` — release gate
+
+For the change-to-test mapping, see [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-run-when-you-change).
 
 ## Where to look
 
@@ -16,6 +32,71 @@
 | Changing saves or releases           | [WORKFLOWS persistence guidance](./docs/WORKFLOWS.md#change-persisted-save-data), [RELEASE](./docs/RELEASE.md)                                  | Ship checks from [CONTRIBUTING](./CONTRIBUTING.md)                                |
 | Stuck after three attempts           | Relevant audit in [PROMPTS.md](./PROMPTS.md) — code quality or [UI interaction/layout](./PROMPTS.md#ui-interaction--feedback-audit) (or [WORKFLOWS](./docs/WORKFLOWS.md) for domain wiring) | Ask the user after the audit                                                      |
 
+## Hard NO's
+
+A scannable list of the most common ways to break the repo or violate policy. Restated in the body sections below — stop early here if you see one of these.
+
+- No `git reset`, `git checkout --`, `git restore`, `git clean`, `git rebase`, or `git merge`. Ask before `git stash`.
+- No commits, pushes, tags, releases, stashes, PRs, version bumps, dependency changes, or asset regeneration unless the user explicitly asks.
+- No hand-edits to `CHANGELOG.md`, `release-notes/`, `package-lock.json`, or `src/lib/validation/metadata.generated.ts`.
+- No dev QA controls in E2E specs — no Skip Combat, Unlock All, Error Log, `skipCombatToVictory()`, or their labels. Use `winViaCombat()` or `playCardNamed()`.
+- No `React.lazy()` for route screens. No `React.FC`. No `Math.random()` in battle code (use `state.rng`). No `Math.floor()` in battle (use `Math.round()`).
+- No template literals in `className` (use `cn()`). No code comments unless the user asks.
+- No reads or prints of `.env`, `secrets/**`, or auth tokens. Ask the user if credentials are required.
+- No destructive or hard-to-reverse actions (deletions, schema migrations, force operations, public releases) without confirming on the **first** attempt, not the third.
+
+## Branch and commit policy
+
+- Trunk-based. All agents commit directly to `main` — no PRs, no feature branches.
+- Commit messages feed the changelog. Header required: `type(scope): imperative summary` or `type: summary`.
+- Player-facing types: `feat`, `fix`, `balance`, `perf` — appear in patch notes.
+- Dev-only types: `refactor`, `test`, `chore`, `ci`, `build`, `docs`, `style` — `CHANGELOG.md` only.
+- Body is optional; multi-area work uses `-` bullets. Patch-note generation extracts sentences from bodies on large commits.
+- `CHANGELOG.md` ## [Unreleased] is auto-synced by the pre-push hook. Preview player notes via `npm run generate:patch-notes` → `release-notes/UNRELEASED.md` (gitignored).
+- Tag / release flow: [RELEASE.md](./docs/RELEASE.md).
+
+## Environment
+
+- Windows / PowerShell 5.1. Chain dependent commands with `; if ($?) { ... }`, not plain `;`.
+- Node + npm versions are pinned in `package.json` — do not hand-edit. `npm ci --dry-run` verifies the lockfile.
+- Playwright Chromium is pinned via `tests/`. First-time setup: `npx playwright install chromium`.
+- Working directory is the repo root. Do not `cd` inside commands — use the `workdir` parameter.
+- Startup bypass: `localStorage["alchemy-skip-loading-screen"]`. Boot validation runs through `validate-startup.ts`.
+
+## Testing policy (summary)
+
+- **Unit:** Vitest, path-mirrored under `tests/`. Focused runs via `npm test -- <glob>`.
+- **E2E:** Playwright. Page objects in `tests/pages/`, helpers in `tests/e2e/`, fixtures in `tests/fixtures/e2e.ts`.
+- **Combat specs:** prefer the `fastBattle` + `runtimeErrors` fixtures from `tests/fixtures/e2e`. Animation canaries must use raw `@playwright/test` and never `enableFastMode` — ESLint enforces this in those files.
+- **Gate tiers:** `@prepush` (9) → `@critical` (~40) → `main-gate` (full). See [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-run-when-you-change) for the full mapping.
+- **Determinism:** tests must not depend on dev QA bypasses. Combat specs use `winViaCombat()` or `playCardNamed()`.
+
+## Subagent and parallel work
+
+- Use the `explore` subagent for open-ended codebase search. Keep its scope tight: tell it exactly what to find, what to skip, and what to return.
+- Use the `general` subagent for multi-step tasks that are clearly independent of the active edit.
+- Do not delegate: editing files, running mutating commands, committing, or pushing. The main session owns all writes.
+- When parallelizing reads, batch them in a single tool-call message rather than serial calls.
+- Subagents must respect the same Hard NO's, import boundaries, and test gates. Pass the relevant doc links in the subagent prompt.
+- If a subagent's output disagrees with `eslint.config.js`, `package.json`, or an owner doc, the main session resolves the conflict — do not let a subagent "fix" it.
+
+## Working safely
+
+- Inspect `git status` before editing. Preserve unrelated changes; never alter another agent's in-progress files.
+- Scope edits and verification to the task. In a dirty worktree, avoid repo-wide formatters or fix commands that could rewrite unrelated files.
+- Prefer `Edit` over `Write` for existing files. Never `Write` a new file unless the task requires it.
+- Reference code with the `file_path:line_number` pattern so the user can jump to source.
+- When a mistake is realized mid-task, edit the file back rather than invoking destructive git operations.
+- If credentials or sensitive values are needed, ask the user — do not read `.env` or print secrets.
+
+## Verification
+
+Full change-to-test mapping and the main-gate procedure live in [CONTRIBUTING.md](./CONTRIBUTING.md#before-you-push). In short:
+
+1. While iterating, run the narrow test command for the changed area plus `npm run typecheck` (included in `npm run lint:ci`).
+2. Before a requested push, run `npm run check:push`. The pre-push hook runs the prepush gate automatically on push to `main`.
+3. Before an explicitly requested release, run `npm run check:ship:full`.
+
 ## Sources of truth
 
 - `eslint.config.js` is authoritative for import boundaries and lint-enforced coding rules.
@@ -23,42 +104,6 @@
 - [ARCHITECTURE.md](./docs/ARCHITECTURE.md) owns run-state design; [WORKFLOWS.md](./docs/WORKFLOWS.md) owns implementation checklists; [RELEASE.md](./docs/RELEASE.md) owns release procedure.
 - Keep this file focused on durable agent policy. When a documented contract changes, update its owning document instead of copying implementation details here.
 - If this file and an owner doc disagree, stop and ask unless `eslint.config.js` or `package.json` clearly resolves the conflict.
-
-## Working safely
-
-- Inspect `git status` before editing. Preserve unrelated changes and never alter another agent's in-progress files.
-- Scope edits and verification to the task. In a dirty worktree, avoid repository-wide formatters or fix commands that could rewrite unrelated files.
-- Never run `git reset`, `git checkout --`, `git restore`, `git clean`, `git rebase`, or `git merge`. Ask before `git stash`.
-- Do not commit, push, tag, release, stash, create a PR, bump versions, change dependencies, or regenerate assets unless the user explicitly requests it.
-- When publishing is requested without a branch or PR workflow, commit and push directly to `main` using a [Conventional Commit](https://www.conventionalcommits.org/) message.
-- Never hand-edit `CHANGELOG.md` or `release-notes/` — the pre-push hook runs `sync:changelog` and auto-commits when needed; patch notes are generated from the changelog.
-- Never hand-edit `package-lock.json`; let npm update it only as part of an explicitly requested dependency change.
-- In PowerShell, chain dependent commands with `; if ($?) { ... }`; do not use plain `;` when a later command depends on an earlier command succeeding.
-
-## Commit messages and changelog
-
-All agents push directly to `main` (no PRs). Commit messages are the changelog source — hooks and scripts handle the rest.
-
-- **Header (required):** `type(scope): imperative summary` or `type: summary`
-- **Player-facing types:** `feat`, `fix`, `balance`, `perf` — included in patch notes
-- **Dev-only types:** `refactor`, `test`, `chore`, `ci`, `build`, `docs`, `style` — in `CHANGELOG.md` only
-- **Body (optional):** prose paragraphs or `-` bullets for multi-area work; patch-note generation extracts sentences from bodies on large commits
-- **Do not edit** `CHANGELOG.md` or `release-notes/` manually
-- **No pre-release changelog steps** — `git push origin main` syncs `CHANGELOG.md` via lefthook pre-push
-- **Preview player notes:** `npm run generate:patch-notes` → `release-notes/UNRELEASED.md` (gitignored)
-
-See [RELEASE.md](./docs/RELEASE.md) for version tagging and Steam shipping.
-
-## Verification ladder
-
-1. During development, run the narrow tests listed for the changed area in [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-run-when-you-change). After editing `.ts` or `.tsx`, run `npm run typecheck` (or `npm run lint:ci`, which includes it).
-2. Add `npm run lint:ci`, broader tests, or a build when the change's blast radius warrants them.
-3. Use `npm run check:push` as the normal comprehensive check before a requested push.
-4. Before a requested push to `main`, run the main-gate checks from [CONTRIBUTING.md](./CONTRIBUTING.md#before-you-push) or report exactly which checks were skipped and why.
-5. Use `npm run check:ship` for ship/save/desktop unit and build validation.
-6. Run `npm run check:ship:full` before an explicitly requested release.
-
-Tests commonly mirror source paths (`tests/lib/battle/foo.test.ts` for `src/lib/battle/foo.ts`), but integration, architecture, and workflow tests intentionally span modules. Follow the change-to-test mapping rather than assuming one-to-one coverage.
 
 ## Architectural invariants
 
@@ -99,11 +144,16 @@ Only `@/*` maps to `src/*` in `tsconfig.json`; use on-disk paths under `src/feat
 - Do not edit generated outputs directly. `src/lib/validation/metadata.generated.ts` comes from `npm run sync:version`; optimized assets come from the asset scripts documented in [WORKFLOWS](./docs/WORKFLOWS.md#assets).
 - When raw assets or asset scripts change, follow [WORKFLOWS asset guidance](./docs/WORKFLOWS.md#assets) so generated outputs stay in sync.
 - Never edit dependency, build, coverage, or report output directories: `node_modules/`, `dist/`, `.vite/`, `release-desktop/`, `coverage/`, and `reports/`.
-- Treat `Raw Assets/`, `Music/`, `src/assets/optimized/`, `game-constants.ts`, `cards.ts`, `keywords.ts`, `assets.ts`, and `vite.config.ts` as read-on-demand; avoid repeated broad reads.
+- Don't re-read large generated, binary, or asset-bundled files you've already seen in this session. Treat `Raw Assets/`, `Music/`, `src/assets/optimized/`, `game-constants.ts`, `cards.ts`, `keywords.ts`, `assets.ts`, `vite.config.ts`, and anything under `src/lib/validation/metadata.generated.ts` as read-on-demand: read once if needed, then reference by path. The same applies to `node_modules/`, `dist/`, `.vite/`, `release-desktop/`, `coverage/`, and `reports/`.
 
 ## Debugging
 
 - DEV-only QA controls (Skip Combat, Unlock All, Error Log) are not available in production, and E2E specs must not target them. Use `winViaCombat()` or `playCardNamed()`.
-- The startup bypass is `localStorage["alchemy-skip-loading-screen"]`; boot validation runs through `validate-startup.ts`.
 - Battle warnings use the `[Enemy Turn]` prefix.
-- After three failed attempts with the same approach, run the relevant audit in [PROMPTS.md](./PROMPTS.md) — code quality or [UI interaction/layout](./PROMPTS.md#ui-interaction--feedback-audit) (or [WORKFLOWS](./docs/WORKFLOWS.md) for domain wiring), then ask the user rather than continuing speculative changes.
+- After three failed attempts with the same approach, see the [Escalation policy](#escalation-policy) below.
+
+## Escalation policy
+
+- For destructive or hard-to-reverse actions (deletions, schema migrations, dependency changes, public releases, force operations), confirm with the user before the **first** attempt.
+- For non-destructive work, after three failed attempts with the same approach, run the relevant audit in [PROMPTS.md](./PROMPTS.md) — code quality or [UI interaction/layout](./PROMPTS.md#ui-interaction--feedback-audit) (or [WORKFLOWS](./docs/WORKFLOWS.md) for domain wiring), then ask the user rather than continuing speculative changes.
+- When this file disagrees with an owner doc, stop and ask unless `eslint.config.js` or `package.json` clearly resolves the conflict.
