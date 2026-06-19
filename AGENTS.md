@@ -6,7 +6,7 @@ This file is for AI coding agents and the people guiding them. Humans should sta
 
 > **When in doubt, ask.** A short clarifying question is cheaper than an undo.
 
-> **Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [ARMORY.md](./docs/ARMORY.md) (gear data model, board packing, drag FSM) · [RELEASE.md](./docs/RELEASE.md) (Steam shipping) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks and tests) · [PROMPTS.md](./PROMPTS.md) (code-quality audits) · [README.md](./README.md) (human setup)
+> **Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [ARMORY.md](./docs/ARMORY.md) (gear data model, board packing, drag FSM) · [RELEASE.md](./docs/RELEASE.md) (Steam shipping) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks and tests) · [PROMPTS.md](./PROMPTS.md) (code-quality audits) · [MIGRATIONS.md](./src/features/alchemy/shared/storage/MIGRATIONS.md) (save schema migration) · [README.md](./README.md) (human setup)
 
 ## Contents
 
@@ -16,6 +16,7 @@ This file is for AI coding agents and the people guiding them. Humans should sta
 - [Quick commands](#quick-commands)
 - [Where to look](#where-to-look)
 - [Branch and commit policy](#branch-and-commit-policy)
+- [Commit messages and changelog](#commit-messages-and-changelog)
 - [Testing policy](#testing-policy)
 - [Subagent and parallel work](#subagent-and-parallel-work)
 - [Working safely](#working-safely)
@@ -49,7 +50,7 @@ A scannable list of the most common ways to break the repo or violate policy. Th
 
 ## Operating procedure
 
-The five-step loop for any non-trivial task. Small fixes and obvious typos may skip steps 2–3.
+The six-step loop for any non-trivial task. Small fixes and obvious typos may skip steps 2–3.
 
 1. **Orient.** Find your row in [Where to look](#where-to-look). Skim the linked doc(s) before touching code — most rules and gotchas live there, not in this file.
 2. **Plan.** If the change spans more than three files, alters a store, or touches persistence, state the plan in 1–3 sentences before editing. Use the `question` tool when intent is ambiguous; do not guess.
@@ -64,7 +65,7 @@ Never disable a lint rule, delete a test, or weaken a type to make something pas
 
 - `npm run typecheck` — TypeScript only
 - `npm run lint` — ESLint only
-- `npm run lint:ci` — format, ESLint, knip, TypeScript
+- `npm run lint:ci` — format, TypeScript, ESLint, dead code
 - `npm run deadcode` — knip (default)
 - `npm run deadcode:strict` — knip (strict, includes entry exports)
 - `npm test -- <glob>` — focused Vitest run (e.g. `npm test -- tests/lib/battle`)
@@ -74,6 +75,7 @@ Never disable a lint rule, delete a test, or weaken a type to make something pas
 - `npm run check:push` — local pre-push gate
 - `npm run check:ship` — ship/save/desktop unit and build validation
 - `npm run check:ship:full` — release gate
+- `npm run balance:sim` — balance simulation report
 
 For the change-to-test mapping, see [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-run-when-you-change).
 
@@ -86,18 +88,27 @@ For the change-to-test mapping, see [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-
 | Touching the Armory (gear, currencies, board) | [ARMORY](./docs/ARMORY.md)                                                                                                                                                         | `tests/lib/gear/`, `tests/features/screens/armory*`, `tests/architecture/gear-*`  |
 | Changing battle or card effects               | [REFERENCE battle rules](./docs/REFERENCE.md#battle-implementation-rules), [BATTLE_HANDLERS.md](./src/lib/game-data/effects/BATTLE_HANDLERS.md)                                    | `tests/lib/battle` and `descriptions-match-effects`                               |
 | Changing UI or motion                         | [WORKFLOWS stagger guidance](./docs/WORKFLOWS.md#staggered-screen-enter-motion); stuck on interaction/layout UX → [PROMPTS UI audits](./PROMPTS.md#ui-interaction--feedback-audit) | Targeted UI tests and `npm run lint:ci`                                           |
-| Changing saves or releases                    | [WORKFLOWS persistence guidance](./docs/WORKFLOWS.md#change-persisted-save-data), [RELEASE.md](./docs/RELEASE.md)                                                                  | Ship checks from [CONTRIBUTING](./CONTRIBUTING.md)                                |
+| Changing saves or releases                    | [WORKFLOWS persistence guidance](./docs/WORKFLOWS.md#change-persisted-save-data), [MIGRATIONS.md](./src/features/alchemy/shared/storage/MIGRATIONS.md), [RELEASE.md](./docs/RELEASE.md)                                                                  | Ship checks from [CONTRIBUTING](./CONTRIBUTING.md)                                |
+| Tuning numbers or balance                     | `game-constants.ts`, `npm run balance:sim`                                                                                                                                          | Targeted tests from [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) |
+| Desktop / Steam / Electron                    | [RELEASE.md](./docs/RELEASE.md), `desktop/` directory                                                                                                                                | `npm run test:ship:desktop` and `npm run check:ship:full`                         |
 | Stuck after three attempts                    | Run the relevant audit in [PROMPTS.md](./PROMPTS.md), then follow the [Escalation policy](#escalation-policy) above                                                                | Ask the user after the audit                                                      |
 
 ## Branch and commit policy
 
-- Trunk-based. All agents commit directly to `main` — no PRs, no feature branches.
-- Commit-message format, examples, and the changelog flow live in [CONTRIBUTING.md](./CONTRIBUTING.md#changelog-and-patch-notes). Read that before writing the first commit on a task.
-- Type → audience mapping (governs whether a commit appears in player-facing patch notes):
-  - **Player-facing** (patch notes): `feat`, `fix`, `balance`, `perf`.
-  - **Dev-only** (`CHANGELOG.md` only): `refactor`, `test`, `chore`, `ci`, `build`, `docs`, `style`.
-- `CHANGELOG.md` ## [Unreleased] is auto-synced by the pre-push hook. Preview player notes via `npm run generate:patch-notes` → `release-notes/UNRELEASED.md` (gitignored).
+- Trunk-based. When the user explicitly asks for a commit, commit directly to `main` — no PRs, no feature branches.
+- Commit-message format, examples, and type → audience mapping: see [Commit messages and changelog](#commit-messages-and-changelog). Read that before writing the first commit on a task.
 - Tag / release flow: [RELEASE.md](./docs/RELEASE.md).
+
+## Commit messages and changelog
+
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) with a `type` and optional `scope`: `type(scope): description`.
+
+Type → audience mapping (governs whether a commit appears in player-facing patch notes):
+
+- **Player-facing** (patch notes): `feat`, `fix`, `balance`, `perf`.
+- **Dev-only** (`CHANGELOG.md` only): `refactor`, `test`, `chore`, `ci`, `build`, `docs`, `style`.
+
+No body or footer is required. The pre-push hook syncs `CHANGELOG.md` ## [Unreleased] from git history since the latest `v*` tag. Preview notes: `npm run generate:patch-notes`.
 
 ## Testing policy
 
@@ -130,7 +141,7 @@ For the change-to-test mapping, see [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-
 Full change-to-test mapping and the main-gate procedure live in [CONTRIBUTING.md](./CONTRIBUTING.md#before-you-push). In short:
 
 1. While iterating, run the narrow test command for the changed area plus `npm run typecheck` (included in `npm run lint:ci`).
-2. Before a requested push, run `npm run check:push`. The pre-push hook runs the prepush gate automatically on push to `main`.
+2. Before a requested push, run `npm run check:push`. The pre-push hook runs a 6-stage piped sequence (changelog sync, ci dry-run, lint:ci, unit tests, build:ship, prepush E2E) automatically on push to `main` — see [CONTRIBUTING.md](./CONTRIBUTING.md#before-you-push) for details.
 3. Before an explicitly requested release, run `npm run check:ship:full`.
 
 ## Sources of truth
@@ -148,9 +159,7 @@ Full change-to-test mapping and the main-gate procedure live in [CONTRIBUTING.md
 - **Content:** card `descriptionLines` must match effects. Run-earned materials flow through `awardMaterialsDuringRun()`.
 - **Persistence:** update schemas, migrations or normalization, defaults, hydration/snapshots, and legacy fixtures together as applicable.
 - **Routes:** route screens are statically imported through `screen-routes/`; do not use `React.lazy()`. Game art is eagerly loaded at boot.
-- **Imports:** use the established barrels for game data, battle, validation, shared screens, shared utilities, and shared storage. Validation schemas remain imported from `@/lib/validation`. The full import-boundary rules are enforced by `eslint.config.js` — if this summary disagrees with it, `eslint.config.js` wins.
-
-Only `@/*` maps to `src/*` in `tsconfig.json`; use on-disk paths under `src/features/alchemy/`.
+- **Imports:** use the established barrels for game data, battle, validation, shared screens, shared utilities, and shared storage. Validation schemas remain imported from `@/lib/validation`. The full import-boundary rules are enforced by `eslint.config.js` — if this summary disagrees with it, `eslint.config.js` wins. Only `@/*` maps to `src/*` in `tsconfig.json`; use on-disk paths under `src/features/alchemy/`.
 
 ## UI conventions
 
@@ -194,6 +203,5 @@ Only `@/*` maps to `src/*` in `tsconfig.json`; use on-disk paths under `src/feat
 
 ## Debugging
 
-- DEV-only QA controls (Skip Combat, Unlock All, Error Log) are not available in production, and E2E specs must not target them. Use `winViaCombat()` or `playCardNamed()`.
 - Battle warnings use the `[Enemy Turn]` prefix.
 - After three failed attempts with the same approach, follow the [Escalation policy](#escalation-policy) above.
