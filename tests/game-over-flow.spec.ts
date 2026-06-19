@@ -2,7 +2,6 @@ import { expect } from "@playwright/test";
 import {
   assertDefeatFromEndRun,
   makeCard,
-  makeHighDamageCard,
   startAtDestination,
   startBattleWithDeck,
 } from "./helpers";
@@ -38,20 +37,22 @@ test.describe("Death's Door", critical, () => {
     const LIFE_SAVING_BREAD = {
       id: "bread",
       title: "Bread",
-      descriptionLines: ["Gain 30 Health", "Consume"],
+      descriptionLines: ["Gain 30 Health", "Deal massive Burn damage", "Consume"],
       art: "placeholder",
-      cost: 1,
+      cost: 0,
       consume: true,
-      effects: [{ kind: "heal", amount: 30 }],
+      effects: [
+        { kind: "heal", amount: 30 },
+        { kind: "damage", damageType: "burn", amount: 500 },
+      ],
     };
-    const finisher = makeHighDamageCard();
 
     await startAtDestination(
       page,
       {
         runPlayerHealth: 1,
         runMaxHealth: 30,
-        runDeck: [LIFE_SAVING_BREAD, LIFE_SAVING_BREAD, finisher, finisher, finisher, finisher],
+        runDeck: Array.from({ length: 6 }, () => ({ ...LIFE_SAVING_BREAD })),
       },
       { forceDestination: "Normal Combat" },
     );
@@ -72,7 +73,6 @@ test.describe("Death's Door", critical, () => {
     await battle.playCardNamed("Bread");
 
     await expect.poll(() => battle.playerHealth()).toBeGreaterThan(0);
-    await battle.playCardNamed("Boss Killer");
     await expect(battle.victoryHeading).toBeVisible({ timeout: 5000 });
   });
 });

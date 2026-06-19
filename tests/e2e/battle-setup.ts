@@ -22,16 +22,22 @@ export async function startAtDestination(
   overrides: Record<string, unknown> = {},
   options: { forceDestination?: DestinationName } = {},
 ) {
-  if (options.forceDestination) await forceNextDestinationChoice(page, options.forceDestination);
   await injectSaveState(page, {
     runGold: 50,
     runPlayerHealth: 30,
     runMaxHealth: 30,
     runDeck: STARTING_DECK,
     ...overrides,
+    ...(options.forceDestination
+      ? { currentScreen: "destination", destinationChoices: [options.forceDestination] }
+      : {}),
   });
   await page.goto("/");
-  await resumeCampaignRun(page);
+  if (options.forceDestination) {
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
+  } else {
+    await resumeCampaignRun(page);
+  }
   await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
   if (options.forceDestination) {
     await expect(page.getByRole("button", { name: options.forceDestination })).toBeVisible({ timeout: 3000 });
