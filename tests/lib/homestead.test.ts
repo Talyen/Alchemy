@@ -1,16 +1,10 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import {
-  MATERIAL_IDS, materialLabels, materialIcons,
-} from "@/lib/homestead/types";
+import { MATERIAL_IDS, materialLabels, materialIcons } from "@/lib/homestead/types";
 import { emptyInventory, addInventory, canAfford, subtractInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { buildings, farmPlots, researchUpgrades, visibleFarmPlots } from "@/lib/homestead/data";
 import { computeHomesteadEffects, mergeIntoManifest } from "@/lib/homestead/effects";
-import {
-  applyEndOfRunHomesteadBonuses,
-  applyMaterialFindBonus,
-  getEnemyMaterialLoot,
-} from "@/lib/homestead/loot";
+import { applyEndOfRunHomesteadBonuses, applyMaterialFindBonus, getEnemyMaterialLoot } from "@/lib/homestead/loot";
 import { createEmptyTalentManifest } from "@/lib/game-data";
 
 // ─── types ──────────────────────────────────────────────────────
@@ -225,7 +219,11 @@ describe("computeHomesteadEffects", () => {
   });
 
   it("combines multiple tiered upgrades", () => {
-    const effects = computeHomesteadEffects({ "blacksmiths-forge": 2, "companion-sanctuary": 1, "alchemy-lab": 3 }, {}, {});
+    const effects = computeHomesteadEffects(
+      { "blacksmiths-forge": 2, "companion-sanctuary": 1, "alchemy-lab": 3 },
+      {},
+      {},
+    );
     expect(effects.flatPhysicalDamage).toBe(2);
     expect(effects.forgeToBurn).toBe(true);
     expect(effects.companionDamage).toBe(1);
@@ -293,7 +291,14 @@ describe("computeHomesteadEffects", () => {
 });
 
 describe("mergeIntoManifest", () => {
-  const makeTalentManifest = () => ({ ...createEmptyTalentManifest(), flatPhysicalDamage: 3, startGold: 10, startBlock: 2, campfireHealBonus: 0.1, physicalCritChance: 5 });
+  const makeTalentManifest = () => ({
+    ...createEmptyTalentManifest(),
+    flatPhysicalDamage: 3,
+    startGold: 10,
+    startBlock: 2,
+    campfireHealBonus: 0.1,
+    physicalCritChance: 5,
+  });
 
   const makeHomesteadEffects = () => ({
     ...defaultHomesteadEffects,
@@ -447,11 +452,7 @@ describe("applyEndOfRunHomesteadBonuses", () => {
 
   it("does not add flat herbs when only herbFindBonus is set", () => {
     const base = { wood: 0, iron: 0, herbs: 10, food: 0, crystal: 0 };
-    const result = applyEndOfRunHomesteadBonuses(
-      base,
-      { ...defaultHomesteadEffects, herbFindBonus: 0.1 },
-      5,
-    );
+    const result = applyEndOfRunHomesteadBonuses(base, { ...defaultHomesteadEffects, herbFindBonus: 0.1 }, 5);
     expect(result.herbs).toBe(11);
   });
 });
@@ -485,4 +486,3 @@ describe("homestead content integrity", () => {
     }
   });
 });
-

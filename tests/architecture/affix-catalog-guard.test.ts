@@ -28,10 +28,7 @@ describe("affix catalog guard", () => {
     for (const id of GEAR_AFFIX_IDS) {
       const parts = gearAffixNameParts[id];
       expect(parts, `missing name parts for ${id}`).toBeDefined();
-      expect(
-        Boolean(parts.prefix || parts.suffix),
-        `affix ${id} needs a prefix or suffix for item naming`,
-      ).toBe(true);
+      expect(Boolean(parts.prefix || parts.suffix), `affix ${id} needs a prefix or suffix for item naming`).toBe(true);
     }
   });
 });

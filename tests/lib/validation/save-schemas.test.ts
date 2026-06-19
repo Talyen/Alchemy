@@ -253,7 +253,6 @@ describe("ActiveRunDataSchema", () => {
     }
   });
 
-
   it("merges partial legacy gearEffects with defaults on mid-combat hydrate", () => {
     const defaults = defaultBattleState();
     const legacyGearEffects = {
@@ -296,14 +295,63 @@ describe("ActiveRunDataSchema", () => {
 
   it("replaces legacy starter deck for unstarted run", () => {
     const legacyDeck = [
-      { id: "slash", title: "Slash", descriptionLines: [], art: "", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] },
-      { id: "bash", title: "Bash", descriptionLines: [], art: "", cost: 2, effects: [{ kind: "damage", damageType: "physical", amount: 10 }] },
-      { id: "block", title: "Block", descriptionLines: [], art: "", cost: 1, effects: [{ kind: "player-status", status: "block", amount: 8 }] },
-      { id: "anvil", title: "Anvil", descriptionLines: [], art: "", cost: 2, effects: [{ kind: "damage", damageType: "physical", amount: 8 }] },
-      { id: "plate-mail", title: "Plate Mail", descriptionLines: [], art: "", cost: 1, effects: [{ kind: "player-status", status: "armor", amount: 5 }] },
+      {
+        id: "slash",
+        title: "Slash",
+        descriptionLines: [],
+        art: "",
+        cost: 1,
+        effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+      },
+      {
+        id: "bash",
+        title: "Bash",
+        descriptionLines: [],
+        art: "",
+        cost: 2,
+        effects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+      },
+      {
+        id: "block",
+        title: "Block",
+        descriptionLines: [],
+        art: "",
+        cost: 1,
+        effects: [{ kind: "player-status", status: "block", amount: 8 }],
+      },
+      {
+        id: "anvil",
+        title: "Anvil",
+        descriptionLines: [],
+        art: "",
+        cost: 2,
+        effects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+      },
+      {
+        id: "plate-mail",
+        title: "Plate Mail",
+        descriptionLines: [],
+        art: "",
+        cost: 1,
+        effects: [{ kind: "player-status", status: "armor", amount: 5 }],
+      },
       { id: "apple", title: "Apple", descriptionLines: [], art: "", cost: 1, effects: [{ kind: "heal", amount: 5 }] },
-      { id: "meteor", title: "Meteor", descriptionLines: [], art: "", cost: 3, effects: [{ kind: "damage", damageType: "physical", amount: 15 }] },
-      { id: "blessed-aegis", title: "Blessed Aegis", descriptionLines: [], art: "", cost: 2, effects: [{ kind: "player-status", status: "block", amount: 12 }] },
+      {
+        id: "meteor",
+        title: "Meteor",
+        descriptionLines: [],
+        art: "",
+        cost: 3,
+        effects: [{ kind: "damage", damageType: "physical", amount: 15 }],
+      },
+      {
+        id: "blessed-aegis",
+        title: "Blessed Aegis",
+        descriptionLines: [],
+        art: "",
+        cost: 2,
+        effects: [{ kind: "player-status", status: "block", amount: 12 }],
+      },
     ];
     const result = ActiveRunDataSchema.safeParse({
       characterId: "knight",

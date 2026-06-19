@@ -38,7 +38,7 @@ function upgradeWishCard(card: BattleCard): BattleCard {
       (effect as { amount: number }).amount = nextValue;
     }
     nextCard.descriptionLines[target.lineIndex] = replaceNumberAt(
-      nextCard.descriptionLines[target.lineIndex],
+      nextCard.descriptionLines[target.lineIndex]!,
       target.matchIndex,
       nextValue,
     );
@@ -151,7 +151,7 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
   const nextWishOptions = Array.from({ length: wishCount }, () => buildWishOptions(state, card));
   let nextState: BattleState = state.wishOptions
     ? { ...state, wishQueue: [...state.wishQueue, ...nextWishOptions] }
-    : { ...state, wishOptions: nextWishOptions[0], wishQueue: [...state.wishQueue, ...nextWishOptions.slice(1)] };
+    : { ...state, wishOptions: nextWishOptions[0]!, wishQueue: [...state.wishQueue, ...nextWishOptions.slice(1)] };
 
   for (let i = 0; i < wishCount; i += 1) {
     nextState = applyWishGoldTriggers(nextState, combatTexts);

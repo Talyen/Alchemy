@@ -1,9 +1,8 @@
 import { hydrateCard } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
 import { createInitialBattleFields, type DisplayOverrides } from "../run-domain-types";
-import { defineFieldSetter } from "./_field-setter";
-
-type ImmerSet = (fn: (state: any) => void) => void;
+import { defineFieldSetter, type ImmerSet } from "./_field-setter";
+import type { RunDomainDataState } from "../run-domain-types";
 
 function hydrateBattleState(battleState: BattleState): BattleState {
   return {
@@ -26,7 +25,7 @@ export type BattleActions = {
   initializeActiveBattle: (battleState: BattleState | null) => void;
 };
 
-export function defineBattleActions(set: ImmerSet): BattleActions & { resetBattle: () => void } {
+export function defineBattleActions(set: ImmerSet<RunDomainDataState>): BattleActions & { resetBattle: () => void } {
   type BattleStateFields = {
     battleState: BattleState;
     displayOverrides: DisplayOverrides;
@@ -37,7 +36,7 @@ export function defineBattleActions(set: ImmerSet): BattleActions & { resetBattl
 
   return {
     setSyncedBattleState: (action) =>
-      set((state: any) => {
+      set((state) => {
         state.battle.battleState =
           typeof action === "function"
             ? (action as (prev: BattleState) => BattleState)(state.battle.battleState)
@@ -47,7 +46,7 @@ export function defineBattleActions(set: ImmerSet): BattleActions & { resetBattl
 
     setDisplayOverrides: setField("displayOverrides"),
     clearDisplayOverrides: () =>
-      set((state: any) => {
+      set((state) => {
         state.battle.displayOverrides = {};
       }),
 
@@ -55,7 +54,7 @@ export function defineBattleActions(set: ImmerSet): BattleActions & { resetBattl
     setHasActiveBattle: setField("hasActiveBattle"),
 
     initializeActiveBattle: (battleState) =>
-      set((state: any) => {
+      set((state) => {
         if (battleState) {
           const hydrated = hydrateBattleState(battleState);
           state.battle.battleState = hydrated;
@@ -68,7 +67,7 @@ export function defineBattleActions(set: ImmerSet): BattleActions & { resetBattl
       }),
 
     resetBattle: () =>
-      set((state: any) => {
+      set((state) => {
         state.battle = createInitialBattleFields();
       }),
   };

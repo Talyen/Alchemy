@@ -3,9 +3,7 @@ import { gearBaseItemList } from "@/lib/gear/base-items";
 
 describe("ranged weapon tagging", () => {
   it("every main-hand base item has an explicit rangedWeapon value", () => {
-    const mainHandItems = gearBaseItemList.filter((item) =>
-      item.compatibleSlots.includes("main-hand"),
-    );
+    const mainHandItems = gearBaseItemList.filter((item) => item.compatibleSlots.includes("main-hand"));
     const untagged = mainHandItems.filter((item) => item.rangedWeapon === undefined);
     expect(untagged, untagged.map((i) => i.id).join(", ")).toEqual([]);
   });

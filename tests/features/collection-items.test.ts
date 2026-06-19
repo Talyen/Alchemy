@@ -1,13 +1,19 @@
 import { describe, expect, it } from "vitest";
 
-import { getCollectionFillerCount, getCollectionPageItems, getCollectionTotalPages } from "@/features/alchemy/shared/ui/collection-items";
+import {
+  getCollectionFillerCount,
+  getCollectionPageItems,
+  getCollectionTotalPages,
+} from "@/features/alchemy/shared/ui/collection-items";
 import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
 import { cardLibrary, enemyBestiary } from "@/lib/game-data";
 
 describe("collection item helpers", () => {
   it("calculates total pages from the active tab library", () => {
     expect(getCollectionTotalPages("cards")).toBe(Math.max(1, Math.ceil(cardLibrary.length / COLLECTION_PAGE_SIZE)));
-    expect(getCollectionTotalPages("bestiary")).toBe(Math.max(1, Math.ceil(enemyBestiary.length / COLLECTION_PAGE_SIZE)));
+    expect(getCollectionTotalPages("bestiary")).toBe(
+      Math.max(1, Math.ceil(enemyBestiary.length / COLLECTION_PAGE_SIZE)),
+    );
   });
 
   it("returns hidden card copy when a card has not been discovered", () => {

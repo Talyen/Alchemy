@@ -1,5 +1,11 @@
 import { expect } from "@playwright/test";
-import { assertDefeatFromEndRun, makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck } from "./helpers";
+import {
+  assertDefeatFromEndRun,
+  makeCard,
+  makeHighDamageCard,
+  startAtDestination,
+  startBattleWithDeck,
+} from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
 import { critical } from "./playwright-tags";
@@ -9,7 +15,10 @@ test.describe("Game Over via End Run", critical, () => {
     test.setTimeout(60_000);
     void fastBattle;
 
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+    );
     await assertDefeatFromEndRun(page, { returnToMenu: true });
   });
 
@@ -26,14 +35,26 @@ test.describe("Death's Door", critical, () => {
   test("fire and heal saves player", async ({ page, fastBattle }) => {
     void fastBattle;
 
-    const LIFE_SAVING_BREAD = { id: "bread", title: "Bread", descriptionLines: ["Gain 30 Health", "Consume"], art: "placeholder", cost: 1, consume: true, effects: [{ kind: "heal", amount: 30 }] };
+    const LIFE_SAVING_BREAD = {
+      id: "bread",
+      title: "Bread",
+      descriptionLines: ["Gain 30 Health", "Consume"],
+      art: "placeholder",
+      cost: 1,
+      consume: true,
+      effects: [{ kind: "heal", amount: 30 }],
+    };
     const finisher = makeHighDamageCard();
 
-    await startAtDestination(page, {
-      runPlayerHealth: 1,
-      runMaxHealth: 30,
-      runDeck: [LIFE_SAVING_BREAD, LIFE_SAVING_BREAD, finisher, finisher, finisher, finisher],
-    }, { forceDestination: "Normal Combat" });
+    await startAtDestination(
+      page,
+      {
+        runPlayerHealth: 1,
+        runMaxHealth: 30,
+        runDeck: [LIFE_SAVING_BREAD, LIFE_SAVING_BREAD, finisher, finisher, finisher, finisher],
+      },
+      { forceDestination: "Normal Combat" },
+    );
 
     const combatBtn = page.getByRole("button", { name: /Combat/ }).first();
     await expect(combatBtn).toBeVisible({ timeout: 5000 });

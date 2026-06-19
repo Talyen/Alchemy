@@ -46,12 +46,14 @@ function getMainWindow() {
 }
 
 function setRendererFullscreen(mainWindow, enabled) {
-  return mainWindow.webContents.executeJavaScript(
-    enabled
-      ? "document.fullscreenElement || document.documentElement.requestFullscreen?.()"
-      : "document.fullscreenElement ? document.exitFullscreen?.() : undefined",
-    true,
-  ).catch(() => undefined);
+  return mainWindow.webContents
+    .executeJavaScript(
+      enabled
+        ? "document.fullscreenElement || document.documentElement.requestFullscreen?.()"
+        : "document.fullscreenElement ? document.exitFullscreen?.() : undefined",
+      true,
+    )
+    .catch(() => undefined);
 }
 
 function applyDisplayMode(mainWindow, mode) {

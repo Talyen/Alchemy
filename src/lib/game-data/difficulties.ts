@@ -105,7 +105,7 @@ export const DIFFICULTY_ORDER: DifficultyId[] = ["difficulty-1", "difficulty-2",
 export function isDifficultyUnlocked(difficultyId: DifficultyId, completedDifficulties: DifficultyId[]): boolean {
   const idx = DIFFICULTY_ORDER.indexOf(difficultyId);
   if (idx === 0) return true;
-  const prevDifficulty = DIFFICULTY_ORDER[idx - 1];
+  const prevDifficulty = DIFFICULTY_ORDER[idx - 1]!;
   return completedDifficulties.includes(prevDifficulty);
 }
 

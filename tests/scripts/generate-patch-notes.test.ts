@@ -156,13 +156,7 @@ describe("generate-patch-notes", () => {
   });
 
   it("extracts versioned changelog sections with release dates", () => {
-    const content = [
-      "## [0.1.0] (2026-06-11)",
-      "",
-      "### Features",
-      "",
-      "- Initial release",
-    ].join("\n");
+    const content = ["## [0.1.0] (2026-06-11)", "", "### Features", "", "- Initial release"].join("\n");
     expect(extractChangelogSection(content, "## [0.1.0]")).toContain("Initial release");
   });
 });

@@ -249,9 +249,11 @@ test.describe("Gear flow", () => {
     await board.hover();
     await page.mouse.wheel(0, 500);
 
-    await expect.poll(async () => {
-      return await board.evaluate((element) => element.scrollTop);
-    }).toBeGreaterThan(0);
+    await expect
+      .poll(async () => {
+        return await board.evaluate((element) => element.scrollTop);
+      })
+      .toBeGreaterThan(0);
   });
 
   test("does not scroll when all occupied rows fit", async ({ page }) => {

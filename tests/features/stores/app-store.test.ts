@@ -144,7 +144,7 @@ describe("initialize", () => {
           druid: [],
           wildcard: [],
         },
-      })
+      }),
     );
     expect(useAppStore.getState().completedDifficulties.knight).toEqual(["difficulty-1"]);
   });

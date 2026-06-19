@@ -1,11 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
-import {
-  getBattleStoreView,
-  getNavigationStoreView,
-  resetRunBattleSlice,
-} from "../../helpers/run-domain-store-test";
+import { getBattleStoreView, getNavigationStoreView, resetRunBattleSlice } from "../../helpers/run-domain-store-test";
 
 function freshStore() {
   useBattlePresentationStore.setState(useBattlePresentationStore.getInitialState());
@@ -67,9 +63,9 @@ describe("battle-presentation-store", () => {
     getBattleStoreView().setHasActiveBattle(true);
     getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
 
-    useBattlePresentationStore.getState().showCombatTexts([
-      { target: "enemy", kind: "damage", stat: "health", amount: 5 },
-    ]);
+    useBattlePresentationStore
+      .getState()
+      .showCombatTexts([{ target: "enemy", kind: "damage", stat: "health", amount: 5 }]);
     useBattlePresentationStore.getState().clearFloatingCombatTexts();
     await vi.advanceTimersByTimeAsync(4000);
     expect(useBattlePresentationStore.getState().floatingCombatTexts).toEqual([]);
@@ -81,9 +77,9 @@ describe("battle-presentation-store", () => {
     getBattleStoreView().setHasActiveBattle(true);
     getNavigationStoreView().setScreen(ROUTE_SCREENS.COLLECTION);
 
-    useBattlePresentationStore.getState().showCombatTexts([
-      { target: "enemy", kind: "damage", stat: "health", amount: 5 },
-    ]);
+    useBattlePresentationStore
+      .getState()
+      .showCombatTexts([{ target: "enemy", kind: "damage", stat: "health", amount: 5 }]);
     await vi.advanceTimersByTimeAsync(0);
     expect(useBattlePresentationStore.getState().floatingCombatTexts).toEqual([]);
     vi.useRealTimers();

@@ -33,7 +33,13 @@ describe("crafting currency logic", () => {
       true,
     );
     expect(
-      canApplyCraftingCurrency("sprig-of-growth", createBasicItem([{ id: "flat-physical", value: 1 }, { id: "flat-stun", value: 1 }])),
+      canApplyCraftingCurrency(
+        "sprig-of-growth",
+        createBasicItem([
+          { id: "flat-physical", value: 1 },
+          { id: "flat-stun", value: 1 },
+        ]),
+      ),
     ).toBe(false);
     expect(canApplyCraftingCurrency("voidstone", createBasicItem())).toBe(true);
     expect(canApplyCraftingCurrency("voidstone", createBasicItem([]))).toBe(false);
@@ -82,7 +88,11 @@ describe("crafting currency logic", () => {
   });
 
   it("adds a random affix without exceeding rarity capacity", () => {
-    const updated = applyCraftingCurrency("sprig-of-growth", createBasicItem([{ id: "flat-physical", value: 1 }]), () => 0);
+    const updated = applyCraftingCurrency(
+      "sprig-of-growth",
+      createBasicItem([{ id: "flat-physical", value: 1 }]),
+      () => 0,
+    );
     expect(updated.affixes).toHaveLength(2);
     expect(updated.affixes[0].id).toBe("flat-physical");
     expect(updated.affixes[1].id).toBeDefined();

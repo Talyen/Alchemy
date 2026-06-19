@@ -13,9 +13,7 @@ describe("ConfirmationDialog", () => {
     const user = userEvent.setup();
     const onCancel = vi.fn();
 
-    render(
-      <ConfirmationDialog title="Delete item?" confirmLabel="Delete" onConfirm={vi.fn()} onCancel={onCancel} />,
-    );
+    render(<ConfirmationDialog title="Delete item?" confirmLabel="Delete" onConfirm={vi.fn()} onCancel={onCancel} />);
 
     await user.keyboard("{Escape}");
 
@@ -45,9 +43,7 @@ describe("ConfirmationDialog", () => {
     const user = userEvent.setup();
     const onConfirm = vi.fn();
 
-    render(
-      <ConfirmationDialog title="Delete item?" confirmLabel="Delete" onConfirm={onConfirm} onCancel={vi.fn()} />,
-    );
+    render(<ConfirmationDialog title="Delete item?" confirmLabel="Delete" onConfirm={onConfirm} onCancel={vi.fn()} />);
 
     await user.click(screen.getByRole("button", { name: "Delete" }));
 

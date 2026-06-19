@@ -31,7 +31,7 @@ export function HomesteadUpgradeNode({
   const isTier0 = currentLevel === 0;
   const isCompleted = currentLevel >= maxTiers;
   const displayTierIndex = isCompleted ? maxTiers - 1 : Math.max(0, currentLevel - 1);
-  const itemCost = item.data.tiers[isCompleted ? maxTiers - 1 : Math.min(currentLevel, maxTiers - 1)].cost;
+  const itemCost = item.data.tiers[isCompleted ? maxTiers - 1 : Math.min(currentLevel, maxTiers - 1)]!.cost;
   const itemAffordable = !isCompleted && canAfford(materialInventory, itemCost);
   const costItems = MATERIAL_IDS.filter((m) => (itemCost[m] ?? 0) > 0);
 

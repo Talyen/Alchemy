@@ -4,7 +4,9 @@ import { SAVE_KEY } from "@/lib/game-constants";
 import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 
 const mockStorage: Record<string, string> = {};
-const globalWithWindow = globalThis as typeof globalThis & { window?: Window & { alchemyDesktop?: Window["alchemyDesktop"] } };
+const globalWithWindow = globalThis as typeof globalThis & {
+  window?: Window & { alchemyDesktop?: Window["alchemyDesktop"] };
+};
 
 function setupWebWindow() {
   globalWithWindow.window = {

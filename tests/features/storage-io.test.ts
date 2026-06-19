@@ -163,9 +163,8 @@ describe("storage io", () => {
       } as unknown as Storage,
     };
 
-    const { loadAlchemySaveState, saveAlchemySaveData, clearAlchemySaveData } = await import(
-      "@/features/alchemy/shared/storage/io"
-    );
+    const { loadAlchemySaveState, saveAlchemySaveData, clearAlchemySaveData } =
+      await import("@/features/alchemy/shared/storage/io");
 
     expect((await loadAlchemySaveState()).data).toEqual(defaultSaveData);
     await expect(saveAlchemySaveData(defaultSaveData)).resolves.not.toThrow();

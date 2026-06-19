@@ -131,7 +131,7 @@ export function addCraftingCurrencies(
 }
 
 export function getCraftingCurrencyDefinition(id: CraftingCurrencyId): CraftingCurrencyDefinition {
-  return CRAFTING_CURRENCY_LIST.find((currency) => currency.id === id) ?? CRAFTING_CURRENCY_LIST[0];
+  return CRAFTING_CURRENCY_LIST.find((currency) => currency.id === id) ?? CRAFTING_CURRENCY_LIST[0]!;
 }
 
 function rollDistinctAffixes(item: GearInstance, count: number, rng: () => number): GearAffixRoll[] {
@@ -143,7 +143,7 @@ function rollDistinctAffixes(item: GearInstance, count: number, rng: () => numbe
   while (affixes.length < count && remaining.length > 0) {
     const index = Math.floor(rng() * remaining.length);
     const [chosen] = remaining.splice(index, 1);
-    affixes.push({ id: chosen.id, value: rollAffixValue(chosen, rarity, rng) });
+    affixes.push({ id: chosen!.id, value: rollAffixValue(chosen!, rarity, rng) });
   }
   return affixes;
 }

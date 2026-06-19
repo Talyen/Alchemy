@@ -60,10 +60,7 @@ export async function startBattleWithDeck(
   await destination.enterCombat("Normal Combat");
 }
 
-export async function startCampaignBattle(
-  page: Page,
-  character: "Knight" | "Ranger" | "Rogue" | "Wizard" = "Knight",
-) {
+export async function startCampaignBattle(page: Page, character: "Knight" | "Ranger" | "Rogue" | "Wizard" = "Knight") {
   await seedRandom(page, 42);
   const menu = new MenuPage(page);
   await menu.goto();

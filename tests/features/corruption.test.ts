@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { corruptCard, corruptDeckCard, getEditableCorruptionTargets, isSpecialCorruptionCard } from "@/features/alchemy/run-loop/corruption";
+import {
+  corruptCard,
+  corruptDeckCard,
+  getEditableCorruptionTargets,
+  isSpecialCorruptionCard,
+} from "@/features/alchemy/run-loop/corruption";
 import { getCardDisplayTitle } from "@/features/alchemy/shared/ui/card-description-ui";
 import type { BattleCard } from "@/lib/game-data";
 
@@ -94,7 +99,12 @@ describe("card corruption", () => {
   it("replaces only the selected deck slot", () => {
     mockRandomSequence([0.9, 0, 0.9]);
     const slash = makeCard();
-    const stab = makeCard({ id: "stab", title: "Stab", descriptionLines: ["Deal 4 Physical damage"], effects: [{ kind: "damage", damageType: "physical", amount: 4 }] });
+    const stab = makeCard({
+      id: "stab",
+      title: "Stab",
+      descriptionLines: ["Deal 4 Physical damage"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+    });
 
     const result = corruptDeckCard([slash, stab], 1, [slash, stab]);
 

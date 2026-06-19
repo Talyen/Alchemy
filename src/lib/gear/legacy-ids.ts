@@ -1,5 +1,3 @@
-import type { GearAffixId } from "./affix-ids";
-
 export const LEGACY_GEAR_AFFIX_IDS = [
   "flat-physical-1",
   "flat-stun-1",
@@ -10,17 +8,6 @@ export const LEGACY_GEAR_AFFIX_IDS = [
   "flat-freeze-1",
   "flat-nature-1",
 ] as const;
-
-export const LEGACY_AFFIX_MAP: Record<(typeof LEGACY_GEAR_AFFIX_IDS)[number], GearAffixId> = {
-  "flat-physical-1": "flat-physical",
-  "flat-stun-1": "flat-stun",
-  "flat-holy-1": "flat-holy",
-  "flat-burn-1": "flat-burn",
-  "flat-poison-1": "flat-poison",
-  "flat-bleed-1": "flat-bleed",
-  "flat-freeze-1": "flat-freeze",
-  "flat-nature-1": "flat-nature",
-};
 
 export const LEGACY_GEAR_DEFINITION_IDS: Record<string, string> = {
   "leather-hood-basic": "leather-helm-basic",

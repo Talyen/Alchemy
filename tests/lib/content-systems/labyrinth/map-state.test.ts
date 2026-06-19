@@ -17,10 +17,7 @@ function makeNode(
   return { type, state, connections, modifiers: [], rewardModifiers: [] };
 }
 
-function makeMap(
-  grid: (LabyrinthNode | null)[][],
-  currentNode: { row: number; col: number },
-): LabyrinthMap {
+function makeMap(grid: (LabyrinthNode | null)[][], currentNode: { row: number; col: number }): LabyrinthMap {
   return { grid, rows: grid.length, cols: grid[0]?.length ?? 0, currentNode };
 }
 

@@ -6,11 +6,66 @@ import prettierConfig from "eslint-config-prettier";
 import reactCompiler from "eslint-plugin-react-compiler";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", ".vite", "Raw Assets", "scratch", "playwright-report", "test-results"] },
+  { ignores: ["dist", "node_modules", ".vite", "Raw Assets", "scratch", "playwright-report", "test-results", "coverage", "release-desktop", "reports", ".knip-output.json"] },
 
   // Base recommended configs
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
+
+  // Type-aware rules — src only (slower but catches real bugs)
+  {
+    files: ["src/**"],
+    languageOptions: {
+      parserOptions: {
+        projectService: {
+          allowDefaultProject: ["*.config.*"],
+        },
+      },
+    },
+  },
+  ...tseslint.configs.strictTypeChecked.map((config) => ({
+    ...config,
+    files: ["src/**"],
+  })),
+
+  // Tune strictTypeChecked overrides — disable noisy rules that conflict with intentional patterns
+  {
+    files: ["src/**"],
+    rules: {
+      "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-confusing-void-expression": "off",
+      "@typescript-eslint/restrict-template-expressions": "off",
+      "@typescript-eslint/no-unnecessary-condition": "warn",
+      "@typescript-eslint/no-deprecated": "warn",
+      "@typescript-eslint/no-unnecessary-type-assertion": "warn",
+      "@typescript-eslint/no-unnecessary-type-parameters": "warn",
+      "@typescript-eslint/no-redundant-type-constituents": "warn",
+      "@typescript-eslint/no-unnecessary-type-arguments": "warn",
+      "@typescript-eslint/no-invalid-void-type": "warn",
+      "@typescript-eslint/no-misused-spread": "warn",
+      "@typescript-eslint/no-base-to-string": "warn",
+      "@typescript-eslint/no-floating-promises": "warn",
+      "@typescript-eslint/no-dynamic-delete": "warn",
+      "@typescript-eslint/restrict-plus-operands": "warn",
+      "@typescript-eslint/no-unsafe-return": "warn",
+      "@typescript-eslint/no-unsafe-argument": "warn",
+      "@typescript-eslint/no-unsafe-member-access": "warn",
+      "@typescript-eslint/no-duplicate-type-constituents": "warn",
+      "@typescript-eslint/use-unknown-in-catch-callback-variable": "warn",
+      "@typescript-eslint/no-misused-promises": "warn",
+      "@typescript-eslint/unbound-method": "warn",
+      "@typescript-eslint/no-useless-default-assignment": "warn",
+      "@typescript-eslint/no-unsafe-assignment": "warn",
+      "@typescript-eslint/no-unnecessary-type-conversion": "warn",
+      "no-console": ["warn", { allow: ["warn", "error"] }],
+    },
+  },
+
+  // Tests and non-src files — disable type-aware rules (they parse fine without project info)
+  {
+    files: ["tests/**", "scripts/**", "desktop/**", "*.config.*"],
+    ...tseslint.configs.disableTypeChecked,
+  },
 
   // React hooks + refresh
   {
@@ -35,6 +90,14 @@ export default tseslint.config(
   },
 
   prettierConfig,
+
+  // Global style rules (no types needed)
+  {
+    rules: {
+      "eqeqeq": ["error", "always", { null: "ignore" }],
+      "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports", fixStyle: "inline-type-imports", disallowTypeAnnotations: false }],
+    },
+  },
 
   // ── Convention enforcement rules ──────────────────────────────────────────
 
@@ -322,7 +385,7 @@ export default tseslint.config(
   {
     files: ["src/**/*.{ts,tsx}"],
     rules: {
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "error",
     },
   },
 

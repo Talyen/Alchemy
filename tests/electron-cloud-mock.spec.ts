@@ -27,8 +27,9 @@ test.describe("Electron cloud mock", desktop, () => {
 
           const readLocal = await desktop.loadSave();
           const readCloud = await desktop.steamCloudRead?.();
-          (window as unknown as { __cloudMergeProbe: { local: string | null; cloud: string | null } }).__cloudMergeProbe =
-            { local: readLocal, cloud: readCloud ?? null };
+          (
+            window as unknown as { __cloudMergeProbe: { local: string | null; cloud: string | null } }
+          ).__cloudMergeProbe = { local: readLocal, cloud: readCloud ?? null };
 
           if (originalCloudRead) {
             desktop.steamCloudRead = originalCloudRead;
@@ -37,7 +38,9 @@ test.describe("Electron cloud mock", desktop, () => {
         { localPayload, cloudPayload },
       );
 
-      const probe = await window.evaluate(() => (window as unknown as { __cloudMergeProbe: { local: string; cloud: string } }).__cloudMergeProbe);
+      const probe = await window.evaluate(
+        () => (window as unknown as { __cloudMergeProbe: { local: string; cloud: string } }).__cloudMergeProbe,
+      );
       expect(probe.local).toBe(localPayload);
       expect(probe.cloud).toBe(cloudPayload);
       expect(errors).toEqual([]);

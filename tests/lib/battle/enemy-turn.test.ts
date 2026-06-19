@@ -185,12 +185,7 @@ describe("endPlayerTurn — tick order", () => {
       enemyHealth: 50,
       enemyStatuses: { ...emptyStatuses, burn: 10 },
       playerHealth: 30,
-      deck: [
-        makeCard({ id: "d1" }),
-        makeCard({ id: "d2" }),
-        makeCard({ id: "d3" }),
-        makeCard({ id: "d4" }),
-      ],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
     });
     const result = endPlayerTurn(state);
     expect(result.enemyTurnStartState?.enemyHealth).toBe(40);
@@ -203,12 +198,7 @@ describe("endPlayerTurn — tick order", () => {
       enemyHealth: 8,
       enemyStatuses: { ...emptyStatuses, burn: 10 },
       playerHealth: 30,
-      deck: [
-        makeCard({ id: "d1" }),
-        makeCard({ id: "d2" }),
-        makeCard({ id: "d3" }),
-        makeCard({ id: "d4" }),
-      ],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
     });
     const result = endPlayerTurn(state);
     expect(result.enemyPerformedAttack).toBe(false);
@@ -220,12 +210,7 @@ describe("endPlayerTurn — tick order", () => {
       playerHealth: 30,
       playerStatuses: { ...emptyPlayerStatuses, burn: 5 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
-      deck: [
-        makeCard({ id: "d1" }),
-        makeCard({ id: "d2" }),
-        makeCard({ id: "d3" }),
-        makeCard({ id: "d4" }),
-      ],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
     });
     const result = endPlayerTurn(state);
     expect(result.afterAttackState?.playerHealth).toBe(20);

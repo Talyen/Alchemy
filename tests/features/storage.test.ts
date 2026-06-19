@@ -24,9 +24,22 @@ const parseActiveRunSchema = (val: unknown) => ActiveRunDataSchema.nullable().ca
 
 describe("ActiveRunDataSchema", () => {
   it("preserves corrupted cards in active runs", () => {
-    const result = parseActiveRun(makeMinimalActiveRunInput({
-      runDeck: [{ id: "slash", title: "Slash", descriptionLines: ["Deal 8 Physical damage"], art: "", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 8 }], corrupted: true, corruptedValuePositions: [{ lineIndex: 0, matchIndex: 5 }] }],
-    }));
+    const result = parseActiveRun(
+      makeMinimalActiveRunInput({
+        runDeck: [
+          {
+            id: "slash",
+            title: "Slash",
+            descriptionLines: ["Deal 8 Physical damage"],
+            art: "",
+            cost: 1,
+            effects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+            corrupted: true,
+            corruptedValuePositions: [{ lineIndex: 0, matchIndex: 5 }],
+          },
+        ],
+      }),
+    );
 
     expect(result?.runDeck[0].corrupted).toBe(true);
     expect(result?.runDeck[0].descriptionLines).toEqual(["Deal 8 Physical damage"]);
@@ -36,9 +49,20 @@ describe("ActiveRunDataSchema", () => {
   });
 
   it("refreshes known saved card art without changing saved gameplay fields", () => {
-    const result = parseActiveRun(makeMinimalActiveRunInput({
-      runDeck: [{ id: "block", title: "Block", descriptionLines: ["Gain 9 Block"], art: "stale-build-url.webp", cost: 2, effects: [{ kind: "player-status", status: "block", amount: 9 }] }],
-    }));
+    const result = parseActiveRun(
+      makeMinimalActiveRunInput({
+        runDeck: [
+          {
+            id: "block",
+            title: "Block",
+            descriptionLines: ["Gain 9 Block"],
+            art: "stale-build-url.webp",
+            cost: 2,
+            effects: [{ kind: "player-status", status: "block", amount: 9 }],
+          },
+        ],
+      }),
+    );
 
     expect(result?.runDeck[0]).toMatchObject({
       id: "block",
@@ -51,18 +75,22 @@ describe("ActiveRunDataSchema", () => {
   });
 
   it("does not let saved card data override library-owned fields", () => {
-    const result = parseActiveRun(makeMinimalActiveRunInput({
-      runDeck: [{
-        id: "slash",
-        uid: 7,
-        title: "Malicious Slash",
-        descriptionLines: ["Deal 8 Physical damage"],
-        art: "stale-build-url.webp",
-        cost: 1,
-        effects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-        hackedField: true,
-      }],
-    }));
+    const result = parseActiveRun(
+      makeMinimalActiveRunInput({
+        runDeck: [
+          {
+            id: "slash",
+            uid: 7,
+            title: "Malicious Slash",
+            descriptionLines: ["Deal 8 Physical damage"],
+            art: "stale-build-url.webp",
+            cost: 1,
+            effects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+            hackedField: true,
+          },
+        ],
+      }),
+    );
 
     const card = result?.runDeck[0];
     expect(card?.title).toBe(cardLibrary.find((c) => c.id === "slash")?.title);
@@ -72,18 +100,22 @@ describe("ActiveRunDataSchema", () => {
   });
 
   it("drops malformed saved card mutation fields", () => {
-    const result = parseActiveRun(makeMinimalActiveRunInput({
-      runDeck: [{
-        id: "bash",
-        title: "Bash",
-        descriptionLines: ["bad", 42],
-        art: "stale-build-url.webp",
-        cost: Number.NaN,
-        effects: [null],
-        corrupted: true,
-        corruptedValuePositions: [{ lineIndex: 0, matchIndex: 3 }, null, { lineIndex: -1, matchIndex: 2 }],
-      } as never],
-    }));
+    const result = parseActiveRun(
+      makeMinimalActiveRunInput({
+        runDeck: [
+          {
+            id: "bash",
+            title: "Bash",
+            descriptionLines: ["bad", 42],
+            art: "stale-build-url.webp",
+            cost: Number.NaN,
+            effects: [null],
+            corrupted: true,
+            corruptedValuePositions: [{ lineIndex: 0, matchIndex: 3 }, null, { lineIndex: -1, matchIndex: 2 }],
+          } as never,
+        ],
+      }),
+    );
 
     const libraryCard = cardLibrary.find((card) => card.id === "bash");
     expect(result?.runDeck[0].descriptionLines).toEqual(libraryCard?.descriptionLines);
@@ -97,58 +129,70 @@ describe("ActiveRunDataSchema", () => {
   });
 
   it("falls back to library effects when a known card has malformed saved effects", () => {
-    const result = parseActiveRun(makeMinimalActiveRunInput({
-      runDeck: [{
-        id: "slash",
-        title: "Slash",
-        descriptionLines: ["Deal broken damage"],
-        art: "stale-build-url.webp",
-        cost: 1,
-        effects: [
-          { kind: "damage", damageType: "physical", amount: "bad" },
-          { kind: "summon-companion", companionId: "missing" },
-          { kind: "unknown", amount: 99 },
+    const result = parseActiveRun(
+      makeMinimalActiveRunInput({
+        runDeck: [
+          {
+            id: "slash",
+            title: "Slash",
+            descriptionLines: ["Deal broken damage"],
+            art: "stale-build-url.webp",
+            cost: 1,
+            effects: [
+              { kind: "damage", damageType: "physical", amount: "bad" },
+              { kind: "summon-companion", companionId: "missing" },
+              { kind: "unknown", amount: 99 },
+            ],
+          },
         ],
-      }],
-    }));
+      }),
+    );
 
     const libraryCard = cardLibrary.find((card) => card.id === "slash");
     expect(result?.runDeck[0].effects).toEqual(libraryCard?.effects);
   });
 
   it("falls back to library effects when a known card has mixed valid and invalid saved effects", () => {
-    const result = parseActiveRun(makeMinimalActiveRunInput({
-      runDeck: [{
-        id: "fireball",
-        title: "Fireball",
-        descriptionLines: ["Deal 10 Burn damage", "Gain 3 Gold"],
-        art: "stale-build-url.webp",
-        cost: 2,
-        effects: [
-          { kind: "damage", damageType: "burn", amount: 10 },
-          { kind: "gain-gold", amount: "bad" },
+    const result = parseActiveRun(
+      makeMinimalActiveRunInput({
+        runDeck: [
+          {
+            id: "fireball",
+            title: "Fireball",
+            descriptionLines: ["Deal 10 Burn damage", "Gain 3 Gold"],
+            art: "stale-build-url.webp",
+            cost: 2,
+            effects: [
+              { kind: "damage", damageType: "burn", amount: 10 },
+              { kind: "gain-gold", amount: "bad" },
+            ],
+          },
         ],
-      }],
-    }));
+      }),
+    );
 
     const libraryCard = cardLibrary.find((card) => card.id === "fireball");
     expect(result?.runDeck[0].effects).toEqual(libraryCard?.effects);
   });
 
   it("keeps only valid saved effects for unknown cards", () => {
-    const result = parseActiveRun(makeMinimalActiveRunInput({
-      runDeck: [{
-        id: "custom-card",
-        title: "Custom Card",
-        descriptionLines: ["Custom"],
-        art: "custom.webp",
-        cost: 1,
-        effects: [
-          { kind: "heal", amount: 4 },
-          { kind: "damage", damageType: "physical", amount: "bad" },
+    const result = parseActiveRun(
+      makeMinimalActiveRunInput({
+        runDeck: [
+          {
+            id: "custom-card",
+            title: "Custom Card",
+            descriptionLines: ["Custom"],
+            art: "custom.webp",
+            cost: 1,
+            effects: [
+              { kind: "heal", amount: 4 },
+              { kind: "damage", damageType: "physical", amount: "bad" },
+            ],
+          },
         ],
-      }],
-    }));
+      }),
+    );
 
     expect(result?.runDeck[0].effects).toEqual([{ kind: "heal", amount: 4 }]);
   });
@@ -206,7 +250,9 @@ describe("ActiveRunDataSchema", () => {
     expect(parseActiveRunSchema(makeMinimalActiveRunInput({ runMaxHealth: 0 }))?.runMaxHealth).toBe(30);
     expect(parseActiveRunSchema(makeMinimalActiveRunInput({ roomsEncountered: -1 }))?.roomsEncountered).toBe(0);
     expect(parseActiveRunSchema(makeMinimalActiveRunInput({ currentAct: 999 }))?.currentAct).toBe(1);
-    expect(parseActiveRunSchema(makeMinimalActiveRunInput({ destinationIndexInAct: 1.5 }))?.destinationIndexInAct).toBe(0);
+    expect(parseActiveRunSchema(makeMinimalActiveRunInput({ destinationIndexInAct: 1.5 }))?.destinationIndexInAct).toBe(
+      0,
+    );
   });
 
   it("defaults contentSystemType to campaign when missing", () => {
@@ -256,8 +302,14 @@ describe("ActiveRunDataSchema", () => {
 
     // Fractional currentNode is recovered by Zod catch() — row 0.5 becomes 0, col 4 stays 4,
     // pointing to a valid entrance node, so the map passes validation.
-    expect(parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: mismatchedRows }))?.contentSystemType).toBe("campaign");
-    expect(parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: invalidConnection }))?.contentSystemType).toBe("campaign");
+    expect(
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: mismatchedRows }))
+        ?.contentSystemType,
+    ).toBe("campaign");
+    expect(
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: invalidConnection }))
+        ?.contentSystemType,
+    ).toBe("campaign");
   });
 
   it("recovers from labyrinth maps with impossible current or endpoint state to campaign", () => {
@@ -275,10 +327,22 @@ describe("ActiveRunDataSchema", () => {
     const boss = missingBoss.grid.flat().find((node) => node?.type === "boss");
     boss!.type = "combat";
 
-    expect(parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: multipleCurrent }))?.contentSystemType).toBe("campaign");
-    expect(parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: mismatchedCurrent }))?.contentSystemType).toBe("campaign");
-    expect(parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: missingEntrance }))?.contentSystemType).toBe("campaign");
-    expect(parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: missingBoss }))?.contentSystemType).toBe("campaign");
+    expect(
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: multipleCurrent }))
+        ?.contentSystemType,
+    ).toBe("campaign");
+    expect(
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: mismatchedCurrent }))
+        ?.contentSystemType,
+    ).toBe("campaign");
+    expect(
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: missingEntrance }))
+        ?.contentSystemType,
+    ).toBe("campaign");
+    expect(
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: missingBoss }))
+        ?.contentSystemType,
+    ).toBe("campaign");
   });
 
   it("drops labyrinth map state for campaign runs", () => {
@@ -519,7 +583,12 @@ describe("SaveDataSchema", () => {
     expect(result.uiScale).toBe("110");
     expect(result.discoveredCardIds).toEqual(["slash", "block", "future-card"]);
     expect(result.talentXP).toMatchObject({ physical: 18, block: 7 });
-    expect(result.activeRun).toMatchObject({ characterId: "knight", runGold: 42, roomsEncountered: 3, contentSystemType: "campaign" });
+    expect(result.activeRun).toMatchObject({
+      characterId: "knight",
+      runGold: 42,
+      roomsEncountered: 3,
+      contentSystemType: "campaign",
+    });
     expect(result.activeRun?.runDeck[0].art).toBe(cardLibrary.find((card) => card.id === "slash")?.art);
     expect(result.materialInventory).toEqual({ wood: 4, iron: 2, herbs: 0, food: 0, crystal: 0 });
     expect(result.constructedBuildings["blacksmiths-forge"]).toBe(1);
@@ -667,7 +736,16 @@ describe("SaveDataSchema", () => {
       displayMode: "fullscreen",
       activeRun: {
         characterId: "wizard",
-        runDeck: [{ id: "fireball", title: "Fireball", descriptionLines: ["Deal 8 Burn damage"], art: "", cost: 2, effects: [{ kind: "damage", damageType: "burn", amount: 8 }] }],
+        runDeck: [
+          {
+            id: "fireball",
+            title: "Fireball",
+            descriptionLines: ["Deal 8 Burn damage"],
+            art: "",
+            cost: 2,
+            effects: [{ kind: "damage", damageType: "burn", amount: 8 }],
+          },
+        ],
         runGold: 27,
         runPlayerHealth: 18,
         runMaxHealth: 30,

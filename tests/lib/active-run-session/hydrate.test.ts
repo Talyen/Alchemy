@@ -62,11 +62,7 @@ describe("hydrateActiveRunSession", () => {
     hydrateActiveRunSession(activeRun, {}, {}, targets);
 
     expect(screenStore.setHasActiveRun).toHaveBeenCalledWith(true);
-    expect(screenStore.applyDestinationChoices).toHaveBeenCalledWith([
-      "Campfire",
-      "Mystery",
-      "Merchant's Shop",
-    ]);
+    expect(screenStore.applyDestinationChoices).toHaveBeenCalledWith(["Campfire", "Mystery", "Merchant's Shop"]);
   });
 
   it("skips destination choices when currentScreen is not destination", () => {

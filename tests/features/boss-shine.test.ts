@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { getBossById, getBossShineColors, getBossShineGradient, SHINE_PALETTES } from "@/features/alchemy/shared/config";
+import {
+  getBossById,
+  getBossShineColors,
+  getBossShineGradient,
+  SHINE_PALETTES,
+} from "@/features/alchemy/shared/config";
 import { keywordDefinitions, type BestiaryEntry } from "@/lib/game-data";
 
 function makeBoss(overrides: Partial<BestiaryEntry> = {}): BestiaryEntry {

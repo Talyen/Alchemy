@@ -109,93 +109,116 @@ describe("createDestinationRewardState", () => {
 
 describe("computeVictoryRewardState", () => {
   it("creates a gear boss reward for boss enemies", () => {
-    const result = computeVictoryRewardState({
-      characterId: "knight",
-      selectedDifficulty: null,
-      unlockedTalents: {},
-      runDeck: [],
-      runTrinkets: [],
-      contentSystemType: "campaign",
-      activeLabyrinthRewardModifiers: [],
-      battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
-      gold: 15,
-      eliteBonus: 0,
-      generousBonus: 0,
-      bossBonus: 10,
-      materials: emptyInventory(),
-      destinations: [],
-    }, () => 0.99);
+    const result = computeVictoryRewardState(
+      {
+        characterId: "knight",
+        selectedDifficulty: null,
+        unlockedTalents: {},
+        runDeck: [],
+        runTrinkets: [],
+        contentSystemType: "campaign",
+        activeLabyrinthRewardModifiers: [],
+        battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
+        gold: 15,
+        eliteBonus: 0,
+        generousBonus: 0,
+        bossBonus: 10,
+        materials: emptyInventory(),
+        destinations: [],
+      },
+      () => 0.99,
+    );
     expect(result.rewardType).toBe("gear");
     expect(result.gold).toBe(25);
   });
 
   it("creates combat reward state for normal enemies", () => {
-    const result = computeVictoryRewardState({
-      characterId: "knight",
-      selectedDifficulty: null,
-      unlockedTalents: {},
-      runDeck: [],
-      runTrinkets: [],
-      contentSystemType: "campaign",
-      activeLabyrinthRewardModifiers: [],
-      battleState: baseBattleState({ currentEnemy: { id: "goblin", enemyType: "normal" } }),
-      gold: 15,
-      eliteBonus: 0,
-      generousBonus: 0,
-      bossBonus: 0,
-      materials: emptyInventory(),
-      destinations: ["Normal Combat", "Campfire"],
-    }, () => 0.99);
+    const result = computeVictoryRewardState(
+      {
+        characterId: "knight",
+        selectedDifficulty: null,
+        unlockedTalents: {},
+        runDeck: [],
+        runTrinkets: [],
+        contentSystemType: "campaign",
+        activeLabyrinthRewardModifiers: [],
+        battleState: baseBattleState({ currentEnemy: { id: "goblin", enemyType: "normal" } }),
+        gold: 15,
+        eliteBonus: 0,
+        generousBonus: 0,
+        bossBonus: 0,
+        materials: emptyInventory(),
+        destinations: ["Normal Combat", "Campfire"],
+      },
+      () => 0.99,
+    );
     expect(result.rewardType).toBe("card");
     expect(result.destinations).toEqual(["Normal Combat", "Campfire"]);
     expect(result.gold).toBe(15);
   });
 
   it("always awards card rewards for normal enemies", () => {
-    const result = computeVictoryRewardState({
-      characterId: "knight",
-      selectedDifficulty: null,
-      unlockedTalents: {},
-      runDeck: [],
-      runTrinkets: [],
-      contentSystemType: "labyrinth",
-      activeLabyrinthRewardModifiers: [],
-      battleState: baseBattleState({ currentEnemy: { id: "goblin", enemyType: "normal" } }),
-      gold: 15,
-      eliteBonus: 0,
-      generousBonus: 0,
-      bossBonus: 0,
-      materials: emptyInventory(),
-      destinations: ["Normal Combat"],
-    }, () => 0.99);
+    const result = computeVictoryRewardState(
+      {
+        characterId: "knight",
+        selectedDifficulty: null,
+        unlockedTalents: {},
+        runDeck: [],
+        runTrinkets: [],
+        contentSystemType: "labyrinth",
+        activeLabyrinthRewardModifiers: [],
+        battleState: baseBattleState({ currentEnemy: { id: "goblin", enemyType: "normal" } }),
+        gold: 15,
+        eliteBonus: 0,
+        generousBonus: 0,
+        bossBonus: 0,
+        materials: emptyInventory(),
+        destinations: ["Normal Combat"],
+      },
+      () => 0.99,
+    );
     expect(result.rewardType).toBe("card");
   });
 
   it("always awards trinket rewards for elite enemies", () => {
-    const result = computeVictoryRewardState({
-      characterId: "knight",
-      selectedDifficulty: null,
-      unlockedTalents: {},
-      runDeck: [],
-      runTrinkets: [],
-      contentSystemType: "campaign",
-      activeLabyrinthRewardModifiers: [],
-      battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
-      gold: 15,
-      eliteBonus: 4,
-      generousBonus: 0,
-      bossBonus: 0,
-      materials: emptyInventory(),
-      destinations: ["Normal Combat"],
-    }, () => 0.01);
+    const result = computeVictoryRewardState(
+      {
+        characterId: "knight",
+        selectedDifficulty: null,
+        unlockedTalents: {},
+        runDeck: [],
+        runTrinkets: [],
+        contentSystemType: "campaign",
+        activeLabyrinthRewardModifiers: [],
+        battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
+        gold: 15,
+        eliteBonus: 4,
+        generousBonus: 0,
+        bossBonus: 0,
+        materials: emptyInventory(),
+        destinations: ["Normal Combat"],
+      },
+      () => 0.01,
+    );
     expect(result.rewardType).toBe("trinket");
   });
 
   it("always awards gear rewards for boss enemies", () => {
     const input = {
-      characterId: "knight" as const, selectedDifficulty: null, unlockedTalents: {}, runDeck: [], runTrinkets: [], contentSystemType: "campaign" as const,
-      activeLabyrinthRewardModifiers: [], battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
-      gold: 15, eliteBonus: 0, generousBonus: 0, bossBonus: 7, materials: emptyInventory(), destinations: [],
+      characterId: "knight" as const,
+      selectedDifficulty: null,
+      unlockedTalents: {},
+      runDeck: [],
+      runTrinkets: [],
+      contentSystemType: "campaign" as const,
+      activeLabyrinthRewardModifiers: [],
+      battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
+      gold: 15,
+      eliteBonus: 0,
+      generousBonus: 0,
+      bossBonus: 7,
+      materials: emptyInventory(),
+      destinations: [],
     };
     const gearReward = computeVictoryRewardState(input, () => 0.99);
     expect(gearReward.rewardType).toBe("gear");
@@ -206,10 +229,7 @@ describe("computeVictoryRewardState", () => {
 
 describe("computeVictoryRewards", () => {
   it("awards no gold or materials for Wildwood Draft victories", () => {
-    const result = computeVictoryRewards(
-      baseInput({ contentSystemType: "wildwood", runGold: 7 }),
-      () => 0.25,
-    );
+    const result = computeVictoryRewards(baseInput({ contentSystemType: "wildwood", runGold: 7 }), () => 0.25);
 
     expect(result.newGold).toBe(7);
     expect(result.goldEarned).toBe(0);
@@ -229,85 +249,133 @@ describe("computeVictoryRewards", () => {
   });
 
   it("applies elite gold bonus for elite enemies", () => {
-    const result = computeVictoryRewards(baseInput({
-      battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
-    }), () => 0.99);
+    const result = computeVictoryRewards(
+      baseInput({
+        battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
+      }),
+      () => 0.99,
+    );
     expect(result.eliteBonus).toBe(4);
     expect(result.goldEarned).toBe(19);
   });
 
   it("doubles gold reward when enemy has gold-trove trait", () => {
-    const normal = computeVictoryRewards(baseInput({
-      battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
-    }));
-    const mimic = computeVictoryRewards(baseInput({
-      battleState: baseBattleState({
-        currentEnemy: {
-          id: "mimic",
-          title: "Mimic",
-          subtitle: "Elite",
-          descriptionLines: [],
-          art: "",
-          enemyType: "elite",
-          traits: [{ id: "gold-trove", title: "Gold Trove", description: "Drops Double Gold on Defeat" }],
-          attackEffects: [{ kind: "damage", damageType: "physical", amount: 7 }],
-        },
+    const normal = computeVictoryRewards(
+      baseInput({
+        battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
       }),
-    }));
+    );
+    const mimic = computeVictoryRewards(
+      baseInput({
+        battleState: baseBattleState({
+          currentEnemy: {
+            id: "mimic",
+            title: "Mimic",
+            subtitle: "Elite",
+            descriptionLines: [],
+            art: "",
+            enemyType: "elite",
+            traits: [{ id: "gold-trove", title: "Gold Trove", description: "Drops Double Gold on Defeat" }],
+            attackEffects: [{ kind: "damage", damageType: "physical", amount: 7 }],
+          },
+        }),
+      }),
+    );
     expect(mimic.goldEarned).toBeGreaterThan(normal.goldEarned);
     expect(mimic.eliteBonus).toBeGreaterThan(normal.eliteBonus);
     expect(mimic.goldEarned).toBeCloseTo(normal.goldEarned * 2, -1);
   });
 
   it("applies boss gold bonus and a boss reward for boss enemies", () => {
-    const result = computeVictoryRewards(baseInput({
-      battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
-    }));
+    const result = computeVictoryRewards(
+      baseInput({
+        battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
+      }),
+    );
     expect(result.bossBonus).toBe(7);
     expect(result.goldEarned).toBe(22);
     expect(result.rewardState.rewardType).toBe("gear");
   });
 
   it("applies generous labyrinth modifier gold bonus", () => {
-    const result = computeVictoryRewards(baseInput({
-      contentSystemType: "labyrinth",
-      activeLabyrinthRewardModifiers: ["generous"],
-    }));
+    const result = computeVictoryRewards(
+      baseInput({
+        contentSystemType: "labyrinth",
+        activeLabyrinthRewardModifiers: ["generous"],
+      }),
+    );
     expect(result.generousBonus).toBe(7);
     expect(result.goldEarned).toBe(22);
   });
 
   it("applies labyrinth scavenger reward modifier to materials", () => {
-    const result = computeVictoryRewards(baseInput({
-      contentSystemType: "labyrinth",
-      activeLabyrinthRewardModifiers: ["scavenger"],
-    }));
+    const result = computeVictoryRewards(
+      baseInput({
+        contentSystemType: "labyrinth",
+        activeLabyrinthRewardModifiers: ["scavenger"],
+      }),
+    );
     expect(result.materials.wood).toBeGreaterThanOrEqual(1);
   });
 
   it("awards trinket rewards for elite combat victories", () => {
-    const result = computeVictoryRewards(baseInput({
-      contentSystemType: "labyrinth",
-      battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
-    }), () => 0.99);
+    const result = computeVictoryRewards(
+      baseInput({
+        contentSystemType: "labyrinth",
+        battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
+      }),
+      () => 0.99,
+    );
     expect(result.rewardState.rewardType).toBe("trinket");
   });
 
   it("applies companion gold find when talent is active and companion present", () => {
-    const withoutTalent = computeVictoryRewards(baseInput({
-      battleState: baseBattleState({ activeCompanion: { id: "wolf", title: "Wolf", health: 5, maxHealth: 5, shield: 0, statuses: [], damage: 3, damageType: "physical", abilities: [] } }),
-    }), () => 0.01);
-    const withTalent = computeVictoryRewards(baseInput({
-      unlockedTalents: { companion: ["companion-gold-find"] },
-      battleState: baseBattleState({ activeCompanion: { id: "wolf", title: "Wolf", health: 5, maxHealth: 5, shield: 0, statuses: [], damage: 3, damageType: "physical", abilities: [] } }),
-    }), () => 0.01);
+    const withoutTalent = computeVictoryRewards(
+      baseInput({
+        battleState: baseBattleState({
+          activeCompanion: {
+            id: "wolf",
+            title: "Wolf",
+            health: 5,
+            maxHealth: 5,
+            shield: 0,
+            statuses: [],
+            damage: 3,
+            damageType: "physical",
+            abilities: [],
+          },
+        }),
+      }),
+      () => 0.01,
+    );
+    const withTalent = computeVictoryRewards(
+      baseInput({
+        unlockedTalents: { companion: ["companion-gold-find"] },
+        battleState: baseBattleState({
+          activeCompanion: {
+            id: "wolf",
+            title: "Wolf",
+            health: 5,
+            maxHealth: 5,
+            shield: 0,
+            statuses: [],
+            damage: 3,
+            damageType: "physical",
+            abilities: [],
+          },
+        }),
+      }),
+      () => 0.01,
+    );
     expect(withTalent.goldEarned).toBeGreaterThan(withoutTalent.goldEarned);
   });
 
   it("applies max health talent", () => {
-    const result = computeVictoryRewards(baseInput({
-      unlockedTalents: { health: ["health-max-per-combat"] },
-    }));
+    const result = computeVictoryRewards(
+      baseInput({
+        unlockedTalents: { health: ["health-max-per-combat"] },
+      }),
+    );
     expect(result.maxHealthDelta).toBe(1);
   });
 
@@ -375,10 +443,13 @@ describe("commitVictoryRewards", () => {
   it("adds pending crystal materials to homestead", () => {
     const addHomesteadMaterials = vi.fn();
     const materials = { ...emptyInventory(), crystal: 2 };
-    commitVictoryRewards(victoryResult(), commitDeps({
-      battleState: baseBattleState({ pendingMaterials: materials }),
-      addHomesteadMaterials,
-    }));
+    commitVictoryRewards(
+      victoryResult(),
+      commitDeps({
+        battleState: baseBattleState({ pendingMaterials: materials }),
+        addHomesteadMaterials,
+      }),
+    );
     expect(addHomesteadMaterials).toHaveBeenCalledWith(materials);
   });
 
@@ -388,11 +459,14 @@ describe("commitVictoryRewards", () => {
       currentEnemy: { id: "boss", enemyType: "boss" },
       pendingMaterials: emptyInventory(),
     });
-    commitVictoryRewards(victoryResult(), commitDeps({
-      battleState,
-      contentSystemType: "labyrinth",
-      setRewardState,
-    }));
+    commitVictoryRewards(
+      victoryResult(),
+      commitDeps({
+        battleState,
+        contentSystemType: "labyrinth",
+        setRewardState,
+      }),
+    );
     expect(setRewardState).toHaveBeenCalledWith(
       expect.objectContaining({
         lastVictoryEnemyType: "boss",

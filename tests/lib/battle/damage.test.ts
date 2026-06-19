@@ -800,7 +800,6 @@ describe("dealDamageToEnemy — boonSiphon siphoning", () => {
   });
 });
 
-
 describe("dealDamageToEnemy — edge cases", () => {
   it("does not decrease health below 0", () => {
     const state = patchBattleState({ enemyHealth: 3 });
@@ -816,7 +815,10 @@ describe("dealDamageToEnemy — edge cases", () => {
   });
 
   it("handles zero damage gracefully", () => {
-    const state = patchBattleState({ enemyHealth: 30, enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 } });
+    const state = patchBattleState({
+      enemyHealth: 30,
+      enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
+    });
     const card = makeCard({ effects: [makeEffect("physical", 0)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(

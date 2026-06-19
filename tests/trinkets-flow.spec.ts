@@ -8,9 +8,13 @@ test.describe("Trinket Effects in Battle", () => {
     void fastBattle;
     void runtimeErrors;
 
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()), {
-      runTrinkets: ["tattered-pages"],
-    });
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+      {
+        runTrinkets: ["tattered-pages"],
+      },
+    );
     const battle = new BattlePage(page);
 
     expect(await battle.handCount()).toBeGreaterThan(0);
@@ -43,10 +47,14 @@ test.describe("Trinket Effects in Battle", () => {
 
     await startBattleWithDeck(
       page,
-      Array.from({ length: 6 }, () => makeCard({
-        id: "test-holy", title: "Holy Strike",
-        cost: 0, effects: [{ kind: "damage", damageType: "holy", amount: 5 }],
-      })),
+      Array.from({ length: 6 }, () =>
+        makeCard({
+          id: "test-holy",
+          title: "Holy Strike",
+          cost: 0,
+          effects: [{ kind: "damage", damageType: "holy", amount: 5 }],
+        }),
+      ),
       { runTrinkets: ["brass-censer"] },
     );
     const battle = new BattlePage(page);

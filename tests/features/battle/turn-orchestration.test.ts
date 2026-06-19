@@ -16,7 +16,7 @@ function makeDeps() {
   return {
     getStore,
     isCurrentBattleSession: () => true,
-    runIfSessionActive: <T,>(_session: number, action: () => T) => action(),
+    runIfSessionActive: <T>(_session: number, action: () => T) => action(),
     checkBattleEnd: vi.fn(() => false),
     handleVictoryDefeat: vi.fn(),
     getTurnResolutionStore: vi.fn(),

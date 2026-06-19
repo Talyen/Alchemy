@@ -102,7 +102,10 @@ describe("playBattleCardResolved", () => {
       effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
     });
     const state = makeState({
-      hand: [card, makeTestCard({ id: "second", cost: 2, effects: [{ kind: "damage", damageType: "physical", amount: 1 }] })],
+      hand: [
+        card,
+        makeTestCard({ id: "second", cost: 2, effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
+      ],
       flags: {
         ...makeState().flags,
         firstPhysicalCardFreeUsed: false,

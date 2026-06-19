@@ -1,11 +1,5 @@
 import { expect } from "@playwright/test";
-import {
-  bodyGear,
-  gearItemLocator,
-  openArmory,
-  expectSalvageDialog,
-  salvageInventoryItem,
-} from "./e2e/armory";
+import { bodyGear, gearItemLocator, openArmory, expectSalvageDialog, salvageInventoryItem } from "./e2e/armory";
 import { startBattleWithDeck } from "./e2e/battle-setup";
 import { makeCard } from "./e2e/cards";
 import { test } from "./fixtures/e2e";

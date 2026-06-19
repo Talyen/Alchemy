@@ -13,7 +13,9 @@ test.describe("Boss Fight Flow", critical, () => {
     await page.goto("/");
     await resumeGameMode(page, "campaign");
 
-    await expect(page.getByRole("heading", { name: /The (Forge Golem|Frostwarden|Blight Treant|Iron Bear)/ })).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByRole("heading", { name: /The (Forge Golem|Frostwarden|Blight Treant|Iron Bear)/ }),
+    ).toBeVisible({ timeout: 5000 });
     const bossBtn = page.getByRole("button", { name: "Boss Combat" });
     await expect(bossBtn).toBeVisible({ timeout: 3000 });
 
@@ -26,7 +28,9 @@ test.describe("Boss Fight Flow", critical, () => {
 
     const destination = new DestinationPage(page);
     await destination.expectVisible();
-    const destinationBtns = page.locator("button").filter({ hasText: /Combat|Campfire|Merchant|Alchemist|Mystery|Corruption/ });
+    const destinationBtns = page
+      .locator("button")
+      .filter({ hasText: /Combat|Campfire|Merchant|Alchemist|Mystery|Corruption/ });
     await expect(destinationBtns.first()).toBeVisible({ timeout: 3000 });
     expect(await destinationBtns.count()).toBeGreaterThanOrEqual(1);
   });

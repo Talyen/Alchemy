@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createBattleState } from "@/lib/battle";
-import { getPlayerStatusChips, getEnemyStatusChips, getCombatTextColorClass, getCombatTextIcon } from "@/features/alchemy/shared/utils/battle";
+import {
+  getPlayerStatusChips,
+  getEnemyStatusChips,
+  getCombatTextColorClass,
+  getCombatTextIcon,
+} from "@/features/alchemy/shared/utils/battle";
 import { keywordIcons } from "@/features/alchemy/shared/config";
 import { enemyBestiary, type BattleCard } from "@/lib/game-data";
 
@@ -100,15 +105,21 @@ describe("getEnemyStatusChips", () => {
 
 describe("getCombatTextColorClass", () => {
   it("returns red for health damage", () => {
-    expect(getCombatTextColorClass({ target: "player", kind: "damage", stat: "health", amount: 5 })).toBe("text-red-400");
+    expect(getCombatTextColorClass({ target: "player", kind: "damage", stat: "health", amount: 5 })).toBe(
+      "text-red-400",
+    );
   });
 
   it("returns type color for damage by type", () => {
-    expect(getCombatTextColorClass({ target: "enemy", kind: "damage", stat: "burn", amount: 5 })).toBe("text-orange-400");
+    expect(getCombatTextColorClass({ target: "enemy", kind: "damage", stat: "burn", amount: 5 })).toBe(
+      "text-orange-400",
+    );
   });
 
   it("returns green for heals", () => {
-    expect(getCombatTextColorClass({ target: "player", kind: "heal", stat: "health", amount: 5 })).toBe("text-green-400");
+    expect(getCombatTextColorClass({ target: "player", kind: "heal", stat: "health", amount: 5 })).toBe(
+      "text-green-400",
+    );
   });
 });
 

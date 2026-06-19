@@ -221,7 +221,7 @@ export function TalentTree({
           if (!pos) return null;
           const isUnlocking = unlockingTalentId === talent.id;
           const isSettling = settlingTalentId === talent.id;
-          const accentColor = getKeywordShineColors(talent.keywordId)[0];
+          const accentColor = getKeywordShineColors(talent.keywordId)[0]!;
 
           return (
             <div

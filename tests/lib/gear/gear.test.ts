@@ -63,19 +63,31 @@ describe("gear domain", () => {
   it("returns unchanged loadouts for unknown definition or incompatible slot", () => {
     const loadouts = createEmptyGearLoadouts();
     expect(
-      equipGear(loadouts, "knight", "body", {
-        instanceId: "x",
-        definitionId: "not-a-gear-id",
-        affixes: [],
-      }, []),
+      equipGear(
+        loadouts,
+        "knight",
+        "body",
+        {
+          instanceId: "x",
+          definitionId: "not-a-gear-id",
+          affixes: [],
+        },
+        [],
+      ),
     ).toBe(loadouts);
 
     expect(
-      equipGear(loadouts, "knight", "helm", {
-        instanceId: "body-1",
-        definitionId: "leather-armor-basic",
-        affixes: [],
-      }, []),
+      equipGear(
+        loadouts,
+        "knight",
+        "helm",
+        {
+          instanceId: "body-1",
+          definitionId: "leather-armor-basic",
+          affixes: [],
+        },
+        [],
+      ),
     ).toBe(loadouts);
   });
 
@@ -117,9 +129,9 @@ describe("gear domain", () => {
       { id: "flat-physical", value: 1 },
       { id: "flat-physical", value: 1 },
     ]);
-    expect(resolveAffixEffects(legacyFlatPhysicalModifiersToAffixRolls([{ kind: "flatPhysicalDamage", value: 2 }]), "basic")).toEqual(
-      manifestWithPhysical(2),
-    );
+    expect(
+      resolveAffixEffects(legacyFlatPhysicalModifiersToAffixRolls([{ kind: "flatPhysicalDamage", value: 2 }]), "basic"),
+    ).toEqual(manifestWithPhysical(2));
   });
 
   it("rolls basic and astral affix counts with 80/20 min vs max weighting", () => {
@@ -362,12 +374,10 @@ describe("gear domain", () => {
     it("accepts equipping a quiver off-hand when a bow main-hand is equipped", () => {
       const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", longbow, [longbow]);
       expect(
-        isGearCompatibleWithLoadoutSlot(
-          gearDefinitions["quiver-basic"],
-          "off-hand",
-          loadouts.knight,
-          [longbow, quiver],
-        ),
+        isGearCompatibleWithLoadoutSlot(gearDefinitions["quiver-basic"], "off-hand", loadouts.knight, [
+          longbow,
+          quiver,
+        ]),
       ).toBe(true);
       const result = equipGear(loadouts, "knight", "off-hand", quiver, [longbow, quiver]);
       expect(result.knight["main-hand"]).toBe(longbow.instanceId);
@@ -386,12 +396,7 @@ describe("gear domain", () => {
       loadouts.knight["off-hand"] = quiver.instanceId;
       const inventory = [quiver, longsword];
       expect(
-        isGearCompatibleWithLoadoutSlot(
-          gearDefinitions["longsword-basic"],
-          "main-hand",
-          loadouts.knight,
-          inventory,
-        ),
+        isGearCompatibleWithLoadoutSlot(gearDefinitions["longsword-basic"], "main-hand", loadouts.knight, inventory),
       ).toBe(true);
       const result = equipGear(loadouts, "knight", "main-hand", longsword, inventory);
       expect(result.knight["main-hand"]).toBe(longsword.instanceId);
@@ -406,11 +411,7 @@ describe("gear domain", () => {
         ...withQuiver,
         knight: { ...withQuiver.knight, "off-hand": null },
       };
-      const swapped = equipGear(withQuiverRemoved, "knight", "main-hand", longsword, [
-        longbow,
-        quiver,
-        longsword,
-      ]);
+      const swapped = equipGear(withQuiverRemoved, "knight", "main-hand", longsword, [longbow, quiver, longsword]);
       expect(swapped.knight["main-hand"]).toBe(longsword.instanceId);
       expect(swapped.knight["off-hand"]).toBeNull();
     });

@@ -167,7 +167,11 @@ describe("applyDamageStatuses", () => {
     expect(result.enemyCC.cooldown).toBe(2);
 
     // Second trigger with cooldown: clear freeze but no extra skip.
-    const state2 = { ...result, enemyCC: { ...result.enemyCC, cooldown: 1 }, enemyStatuses: { ...result.enemyStatuses, freeze: 15 } };
+    const state2 = {
+      ...result,
+      enemyCC: { ...result.enemyCC, cooldown: 1 },
+      enemyStatuses: { ...result.enemyStatuses, freeze: 15 },
+    };
     const result2 = applyDamageStatuses(state2, effect, 10, []);
     expect(result2.enemyCC.freezeSkipTurns).toBe(1); // unchanged
     expect(result2.enemyStatuses.freeze).toBe(0);

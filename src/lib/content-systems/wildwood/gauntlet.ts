@@ -88,10 +88,10 @@ export function drawWildwoodBoss(
   if (bag.length === 0) {
     bag = createWildwoodBossBag(rng);
     if (previousBossId && bag[0] === previousBossId && bag.length > 1) {
-      [bag[0], bag[1]] = [bag[1], bag[0]];
+      [bag[0], bag[1]] = [bag[1]!, bag[0]!];
     }
   }
-  const [bossId, ...rest] = bag;
+  const [bossId = WILDWOOD_BOSS_IDS[0]!, ...rest] = bag;
   return { bossId, remainingBossIds: rest };
 }
 

@@ -9,10 +9,7 @@ import {
   useRunSessionShopSlice,
 } from "@/features/alchemy/shared/stores/run-session-model";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import {
-  getBattleStoreView,
-  getRunSessionStoreView,
-} from "../../helpers/run-domain-store-test";
+import { getBattleStoreView, getRunSessionStoreView } from "../../helpers/run-domain-store-test";
 
 beforeEach(() => {
   resetTransientRunUi();

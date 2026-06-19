@@ -13,7 +13,7 @@ function joinAttackTypes(types: string[]): string {
 
 function formatStatusAttackTypes(attackEffects: Extract<EnemyAttackEffect, { kind: "player-status" }>[]) {
   if (attackEffects.length === 1) {
-    const e = attackEffects[0];
+    const e = attackEffects[0]!;
     return `Deals ${e.amount} ${capitalizeWord(e.status)} damage`;
   }
   const statusWithAmounts = attackEffects.map((e) => `${e.amount} ${capitalizeWord(e.status)}`);
@@ -31,9 +31,9 @@ export function formatEnemyAttackLines(attackEffects: EnemyAttackEffect[]): stri
 
   const damageEffects = attackEffects.filter((e) => e.kind === "damage");
   const statusEffects = attackEffects.filter((e) => e.kind === "player-status");
-  if (damageEffects.length === 1 && statusEffects.length === 1 && !damageEffects[0].lifesteal) {
+  if (damageEffects.length === 1 && statusEffects.length === 1 && !damageEffects[0]!.lifesteal) {
     return [
-      `Deals ${joinAttackTypes([`${damageEffects[0].amount} ${capitalizeWord(damageEffects[0].damageType)}`, `${statusEffects[0].amount} ${capitalizeWord(statusEffects[0].status)}`])}`,
+      `Deals ${joinAttackTypes([`${damageEffects[0]!.amount} ${capitalizeWord(damageEffects[0]!.damageType)}`, `${statusEffects[0]!.amount} ${capitalizeWord(statusEffects[0]!.status)}`])}`,
     ];
   }
 

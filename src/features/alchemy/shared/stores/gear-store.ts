@@ -447,7 +447,7 @@ export const useGearStore = create<GearStore>((set, get) => ({
         };
         const currentOwnerPositions = { ...(nextPositionsByCharacter[currentOwner] ?? {}) };
         if (currentOwnerPositions[instance.instanceId]) {
-          characterPositions[instance.instanceId] = currentOwnerPositions[instance.instanceId];
+          characterPositions[instance.instanceId] = currentOwnerPositions[instance.instanceId]!;
           delete currentOwnerPositions[instance.instanceId];
           nextPositionsByCharacter[currentOwner] = currentOwnerPositions;
         }

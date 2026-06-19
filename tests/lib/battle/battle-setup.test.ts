@@ -3,12 +3,7 @@ import { defaultGearEffects } from "@/lib/gear";
 import { createBattleState } from "@/lib/battle/battle-setup";
 import { enemyBestiary, computeTalentEffects } from "@/lib/game-data";
 import type { BattleCard, BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
-import {
-  BASE_PLAYER_MANA,
-  BOSS_HEALTH_MULTIPLIER,
-  ELITE_HP_MULTIPLIER,
-  MAX_PLAYER_HEALTH,
-} from "@/lib/game-constants";
+import { BASE_PLAYER_MANA, BOSS_HEALTH_MULTIPLIER, ELITE_HP_MULTIPLIER, MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { defaultTrinketEffects } from "@/lib/trinkets";
 import { makeTestCard, seededRng } from "./test-state";
 

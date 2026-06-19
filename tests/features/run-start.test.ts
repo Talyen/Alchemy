@@ -68,8 +68,22 @@ describe("createRunStartSnapshot", () => {
 
   it("uses draftedDeck for wildcard campaign snapshot", () => {
     const draftedCards: BattleCard[] = [
-      { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 4 }] },
-      { id: "block", title: "Block", descriptionLines: [""], art: "", cost: 1, effects: [{ kind: "player-status", status: "block", amount: 6 }] },
+      {
+        id: "slash",
+        title: "Slash",
+        descriptionLines: [""],
+        art: "",
+        cost: 1,
+        effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+      },
+      {
+        id: "block",
+        title: "Block",
+        descriptionLines: [""],
+        art: "",
+        cost: 1,
+        effects: [{ kind: "player-status", status: "block", amount: 6 }],
+      },
     ];
     const result = createRunStartSnapshot({
       characterId: "wildcard",

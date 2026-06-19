@@ -68,38 +68,44 @@ describe("parseActiveRun", () => {
   });
 
   it("uses class starting deck when runDeck matches legacy starter deck IDs", () => {
-    const result = parseActiveRun(makeRunCandidate({
-      characterId: "ranger",
-      runDeck: [
-        { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] },
-        { id: "bash", title: "Bash", descriptionLines: [""], art: "", cost: 1, effects: [] },
-        { id: "block", title: "Block", descriptionLines: [""], art: "", cost: 1, effects: [] },
-        { id: "anvil", title: "Anvil", descriptionLines: [""], art: "", cost: 1, effects: [] },
-        { id: "plate-mail", title: "Plate Mail", descriptionLines: [""], art: "", cost: 1, effects: [] },
-        { id: "apple", title: "Apple", descriptionLines: [""], art: "", cost: 1, effects: [] },
-        { id: "meteor", title: "Meteor", descriptionLines: [""], art: "", cost: 1, effects: [] },
-        { id: "blessed-aegis", title: "Blessed Aegis", descriptionLines: [""], art: "", cost: 1, effects: [] },
-      ],
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-    }));
+    const result = parseActiveRun(
+      makeRunCandidate({
+        characterId: "ranger",
+        runDeck: [
+          { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] },
+          { id: "bash", title: "Bash", descriptionLines: [""], art: "", cost: 1, effects: [] },
+          { id: "block", title: "Block", descriptionLines: [""], art: "", cost: 1, effects: [] },
+          { id: "anvil", title: "Anvil", descriptionLines: [""], art: "", cost: 1, effects: [] },
+          { id: "plate-mail", title: "Plate Mail", descriptionLines: [""], art: "", cost: 1, effects: [] },
+          { id: "apple", title: "Apple", descriptionLines: [""], art: "", cost: 1, effects: [] },
+          { id: "meteor", title: "Meteor", descriptionLines: [""], art: "", cost: 1, effects: [] },
+          { id: "blessed-aegis", title: "Blessed Aegis", descriptionLines: [""], art: "", cost: 1, effects: [] },
+        ],
+        roomsEncountered: 0,
+        currentAct: 1,
+        destinationIndexInAct: 0,
+        completedDestinations: [],
+      }),
+    );
     expect(result).not.toBeNull();
     expect(result!.runDeck.length).toBe(7); // ranger default
   });
 
   it("hydrates saved cards with library data", () => {
-    const result = parseActiveRun(makeRunCandidate({
-      runDeck: [{
-        id: "slash",
-        uid: 42,
-        cost: 2,
-        consume: true,
-        corrupted: true,
-        baseTitle: "Corrupted Slash",
-      }],
-    }));
+    const result = parseActiveRun(
+      makeRunCandidate({
+        runDeck: [
+          {
+            id: "slash",
+            uid: 42,
+            cost: 2,
+            consume: true,
+            corrupted: true,
+            baseTitle: "Corrupted Slash",
+          },
+        ],
+      }),
+    );
     expect(result).not.toBeNull();
     const card = result!.runDeck[0];
     expect(card.id).toBe("slash");
@@ -109,13 +115,15 @@ describe("parseActiveRun", () => {
   });
 
   it("uses class deck when runDeck is empty and run is unstarted", () => {
-    const result = parseActiveRun(makeRunCandidate({
-      runDeck: [],
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-    }));
+    const result = parseActiveRun(
+      makeRunCandidate({
+        runDeck: [],
+        roomsEncountered: 0,
+        currentAct: 1,
+        destinationIndexInAct: 0,
+        completedDestinations: [],
+      }),
+    );
     expect(result).not.toBeNull();
     expect(result!.runDeck.length).toBe(7); // knight default
   });
@@ -140,11 +148,13 @@ describe("parseActiveRun", () => {
       selectedRewardId: null,
     };
 
-    const result = parseActiveRun(makeRunCandidate({
-      contentSystemType: "wildwood",
-      selectedDifficulty: null,
-      wildwoodDraft,
-    }));
+    const result = parseActiveRun(
+      makeRunCandidate({
+        contentSystemType: "wildwood",
+        selectedDifficulty: null,
+        wildwoodDraft,
+      }),
+    );
 
     expect(result?.contentSystemType).toBe("wildwood");
     expect(result?.wildwoodDraft).toMatchObject({ phase: "draft", remainingBossIds: ["forge-golem", "iron-bear"] });
@@ -258,9 +268,14 @@ describe("parseActiveRun with labyrinth map", () => {
   }
 
   it("parses a valid labyrinth map", () => {
-    const result = parseActiveRun(makeLabyrinthRun({
-      rows: 1, cols: 2, currentNode: { row: 0, col: 0 }, grid: valid1x2Grid,
-    }));
+    const result = parseActiveRun(
+      makeLabyrinthRun({
+        rows: 1,
+        cols: 2,
+        currentNode: { row: 0, col: 0 },
+        grid: valid1x2Grid,
+      }),
+    );
     expect(result).not.toBeNull();
     expect(result!.labyrinthMap).not.toBeNull();
     expect(result!.labyrinthMap!.rows).toBe(1);
@@ -268,85 +283,131 @@ describe("parseActiveRun with labyrinth map", () => {
   });
 
   it("sets labyrinthMap to null when grid dimension mismatches rows", () => {
-    const result = parseActiveRun(makeLabyrinthRun({
-      rows: 2, cols: 2, currentNode: { row: 0, col: 0 }, grid: valid1x2Grid,
-    }));
+    const result = parseActiveRun(
+      makeLabyrinthRun({
+        rows: 2,
+        cols: 2,
+        currentNode: { row: 0, col: 0 },
+        grid: valid1x2Grid,
+      }),
+    );
     expect(result).not.toBeNull();
     expect(result!.labyrinthMap).toBeNull();
   });
 
   it("sets labyrinthMap to null when map has no entrance", () => {
-    const result = parseActiveRun(makeLabyrinthRun({
-      rows: 1, cols: 2, currentNode: { row: 0, col: 0 }, grid: [
-        [
-          { type: "combat", state: "current", connections: [{ row: 0, col: 1 }], modifiers: [], rewardModifiers: [] },
-          { type: "boss", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] },
+    const result = parseActiveRun(
+      makeLabyrinthRun({
+        rows: 1,
+        cols: 2,
+        currentNode: { row: 0, col: 0 },
+        grid: [
+          [
+            { type: "combat", state: "current", connections: [{ row: 0, col: 1 }], modifiers: [], rewardModifiers: [] },
+            { type: "boss", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] },
+          ],
         ],
-      ],
-    }));
+      }),
+    );
     expect(result).not.toBeNull();
     expect(result!.labyrinthMap).toBeNull();
   });
 
   it("sets labyrinthMap to null when currentNode is out of bounds", () => {
-    const result = parseActiveRun(makeLabyrinthRun({
-      rows: 1, cols: 2, currentNode: { row: 99, col: 0 }, grid: valid1x2Grid,
-    }));
+    const result = parseActiveRun(
+      makeLabyrinthRun({
+        rows: 1,
+        cols: 2,
+        currentNode: { row: 99, col: 0 },
+        grid: valid1x2Grid,
+      }),
+    );
     expect(result).not.toBeNull();
     expect(result!.labyrinthMap).toBeNull();
   });
 
   it("sets labyrinthMap to null when a node has 0 connections", () => {
-    const result = parseActiveRun(makeLabyrinthRun({
-      rows: 1, cols: 2, currentNode: { row: 0, col: 0 }, grid: [
-        [
-          { type: "entrance", state: "current", connections: [], modifiers: [], rewardModifiers: [] },
-          { type: "boss", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] },
+    const result = parseActiveRun(
+      makeLabyrinthRun({
+        rows: 1,
+        cols: 2,
+        currentNode: { row: 0, col: 0 },
+        grid: [
+          [
+            { type: "entrance", state: "current", connections: [], modifiers: [], rewardModifiers: [] },
+            { type: "boss", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] },
+          ],
         ],
-      ],
-    }));
+      }),
+    );
     expect(result).not.toBeNull();
     expect(result!.labyrinthMap).toBeNull();
   });
 
   it("sets labyrinthMap to null when connections are non-adjacent (dr=2)", () => {
-    const result = parseActiveRun(makeLabyrinthRun({
-      rows: 3, cols: 1, currentNode: { row: 0, col: 0 }, grid: [
-        [{ type: "entrance", state: "current", connections: [{ row: 2, col: 0 }], modifiers: [], rewardModifiers: [] }],
-        [{ type: "combat", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] }],
-        [{ type: "boss", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] }],
-      ],
-    }));
+    const result = parseActiveRun(
+      makeLabyrinthRun({
+        rows: 3,
+        cols: 1,
+        currentNode: { row: 0, col: 0 },
+        grid: [
+          [
+            {
+              type: "entrance",
+              state: "current",
+              connections: [{ row: 2, col: 0 }],
+              modifiers: [],
+              rewardModifiers: [],
+            },
+          ],
+          [{ type: "combat", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] }],
+          [{ type: "boss", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] }],
+        ],
+      }),
+    );
     // entrance(0,0)→boss(2,0) is non-adjacent (dr=2)
     expect(result).not.toBeNull();
     expect(result!.labyrinthMap).toBeNull();
   });
 
   it("filters unknown labyrinth modifier kinds", () => {
-    const result = parseActiveRun(makeLabyrinthRun({
-      rows: 1, cols: 2, currentNode: { row: 0, col: 0 }, grid: [
-        [
-          { type: "entrance", state: "current", connections: [{ row: 0, col: 1 }], modifiers: ["unknown-mod"], rewardModifiers: [] },
-          { type: "boss", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] },
+    const result = parseActiveRun(
+      makeLabyrinthRun({
+        rows: 1,
+        cols: 2,
+        currentNode: { row: 0, col: 0 },
+        grid: [
+          [
+            {
+              type: "entrance",
+              state: "current",
+              connections: [{ row: 0, col: 1 }],
+              modifiers: ["unknown-mod"],
+              rewardModifiers: [],
+            },
+            { type: "boss", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] },
+          ],
         ],
-      ],
-    }));
+      }),
+    );
     expect(result).not.toBeNull();
     expect(result!.labyrinthMap).not.toBeNull();
     expect(result!.labyrinthMap!.grid[0][0]!.modifiers).toEqual([]);
   });
 
   it("normalizes labyrinth combat pending node and modifiers", () => {
-    const result = parseActiveRun(makeRunCandidate({
-      contentSystemType: "labyrinth",
-      labyrinthMap: { rows: 1, cols: 2, currentNode: { row: 0, col: 0 }, grid: valid1x2Grid },
-      labyrinthPendingNode: { row: 0, col: 1 },
-      activeCombat: {
-        battleState: defaultBattleState(),
-        activeLabyrinthModifiers: ["tempered", "unknown"],
-        activeLabyrinthRewardModifiers: ["generous"],
-      },
-    }));
+    const result = parseActiveRun(
+      makeRunCandidate({
+        contentSystemType: "labyrinth",
+        labyrinthMap: { rows: 1, cols: 2, currentNode: { row: 0, col: 0 }, grid: valid1x2Grid },
+        labyrinthPendingNode: { row: 0, col: 1 },
+        activeCombat: {
+          battleState: defaultBattleState(),
+          activeLabyrinthModifiers: ["tempered", "unknown"],
+          activeLabyrinthRewardModifiers: ["generous"],
+        },
+      }),
+    );
 
     expect(result!.labyrinthPendingNode).toEqual({ row: 0, col: 1 });
     expect(result!.activeCombat?.activeLabyrinthModifiers).toEqual(["tempered"]);

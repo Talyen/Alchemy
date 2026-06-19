@@ -43,7 +43,9 @@ describe("useMysteryFlow", () => {
       });
     });
 
-    expect(getRunProgressStoreView().runPlayerHealth).toBe(Math.min(getRunProgressStoreView().runMaxHealth, healthBefore + 5));
+    expect(getRunProgressStoreView().runPlayerHealth).toBe(
+      Math.min(getRunProgressStoreView().runMaxHealth, healthBefore + 5),
+    );
   });
 
   it("handleMysteryChoice stops when chooseCard requires follow-up UI", () => {

@@ -5,9 +5,25 @@ import type { KeywordId } from "@/lib/game-data";
 import { MATERIAL_IDS } from "@/lib/homestead/types";
 
 const validKeywords: KeywordId[] = [
-  "physical", "stun", "block", "forge", "armor", "health", "burn", "gold",
-  "holy", "wish", "consume", "poison", "bleed", "leech", "freeze", "mana",
-  "nature", "companion", "archery",
+  "physical",
+  "stun",
+  "block",
+  "forge",
+  "armor",
+  "health",
+  "burn",
+  "gold",
+  "holy",
+  "wish",
+  "consume",
+  "poison",
+  "bleed",
+  "leech",
+  "freeze",
+  "mana",
+  "nature",
+  "companion",
+  "archery",
 ];
 
 describe("mysteryPool", () => {
@@ -129,8 +145,8 @@ describe("mysteryPool", () => {
 
   it("each event has at least one non-none effect across all choices", () => {
     for (const event of mysteryPool) {
-      const hasRealEffect = event.choices.some((choice) =>
-        choice.effects.length > 0 && choice.effects.some((e) => e.kind !== "none")
+      const hasRealEffect = event.choices.some(
+        (choice) => choice.effects.length > 0 && choice.effects.some((e) => e.kind !== "none"),
       );
       expect(hasRealEffect, `Event "${event.id}" has only 'none' effects`).toBe(true);
     }

@@ -72,8 +72,8 @@ export const baseHomesteadSave: HomesteadSaveFixture = {
     "wheat-field": 0,
     "herb-garden": 0,
     "chicken-coop": 0,
-    "pasture": 0,
-    "orchard": 0,
+    pasture: 0,
+    orchard: 0,
     "crystal-garden": 0,
   },
   completedResearch: {

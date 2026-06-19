@@ -10,14 +10,14 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
       ...defaultTalentEffects,
       burnStunChance: 100, // 100% chance for burn damage to add stun
     };
-    
+
     // Enemy health: 20. Stun threshold: 20 * 0.5 = 10.
     // Burn card dealing 12 damage.
     const card = makeCard({
       id: "fireball",
       effects: [{ kind: "damage", damageType: "burn", amount: 12 }],
     });
-    
+
     const state = makeState({
       mana: 10,
       enemyHealth: 20,
@@ -26,10 +26,10 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
       hand: [card],
       rng: () => 0.5,
     });
-    
+
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
-    
+
     // The hit deals 12 damage, raising stun by 12.
     // 12 >= 10 (threshold), so stun triggers immediately.
     // Stun should clear to 0, enemyCCCooldown should set, and enemyStunSkipTurns should increase.
@@ -51,17 +51,17 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
       id: "apply-stun",
       effects: [{ kind: "enemy-status", status: "stun", amount: 11 }],
     });
-    
+
     const state = makeState({
       mana: 10,
       enemyHealth: 20,
       enemyMaxHealth: 20,
       hand: [card],
     });
-    
+
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
-    
+
     // 11 >= 10, stun triggers immediately. Stun stack cleared to 0.
     expect(result.enemyStatuses.stun).toBe(0);
     expect(result.enemyCC.stunSkipTurns).toBe(1);
@@ -80,7 +80,7 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
       id: "double-freeze",
       effects: [{ kind: "multiply-enemy-status", status: "freeze", factor: 2 }],
     });
-    
+
     const state = makeState({
       mana: 10,
       enemyHealth: 20,
@@ -88,10 +88,10 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
       enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 6, stun: 0 },
       hand: [card],
     });
-    
+
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
-    
+
     // 6 * 2 = 12 >= 10, freeze triggers immediately. Freeze stack cleared to 0.
     expect(result.enemyStatuses.freeze).toBe(0);
     expect(result.enemyCC.freezeSkipTurns).toBe(1);

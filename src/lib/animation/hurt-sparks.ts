@@ -68,7 +68,7 @@ export function createHurtSparks(
       vy: Math.sin(outwardAngle) * speed,
       alpha: 1,
       size: 1.5 + Math.random() * 2.5,
-      color: colors[Math.floor(Math.random() * colors.length)] ?? colors[0],
+      color: colors[Math.floor(Math.random() * colors.length)] ?? colors[0]!,
     });
   }
 

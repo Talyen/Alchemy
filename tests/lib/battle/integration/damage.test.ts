@@ -64,7 +64,9 @@ describe("dealDamageToEnemy — first-damage-doubled flags", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "holy", amount: 4 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
-      mana: 10, enemyHealth: 50, gold: 0,
+      mana: 10,
+      enemyHealth: 50,
+      gold: 0,
       enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       trinketEffects: manifest,
     });
@@ -92,10 +94,13 @@ describe("dealDamageToEnemy — physical vs stunned/frozen multipliers", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
     const texts: CombatTextEvent[] = [];
     const staleState = makeState({
-      mana: 10, enemyHealth: 50, talentEffects,
+      mana: 10,
+      enemyHealth: 50,
+      talentEffects,
     });
     const state = makeState({
-      mana: 10, enemyHealth: 50,
+      mana: 10,
+      enemyHealth: 50,
       enemyCC: { stunSkipTurns: 1 },
       talentEffects,
     });
@@ -113,10 +118,13 @@ describe("dealDamageToEnemy — physical vs stunned/frozen multipliers", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "stun", amount: 8 }] });
     const texts: CombatTextEvent[] = [];
     const staleState = makeState({
-      mana: 10, enemyHealth: 50, talentEffects,
+      mana: 10,
+      enemyHealth: 50,
+      talentEffects,
     });
     const state = makeState({
-      mana: 10, enemyHealth: 50,
+      mana: 10,
+      enemyHealth: 50,
       enemyCC: { stunSkipTurns: 1 },
       talentEffects,
     });
@@ -135,7 +143,8 @@ describe("dealDamageToEnemy — forge bonus eligibility", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
-      mana: 10, enemyHealth: 50,
+      mana: 10,
+      enemyHealth: 50,
       playerStatuses: { block: 0, armor: 0, forge: 3, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     });
     const result = applyCardEffects(state, card, texts);
@@ -147,7 +156,8 @@ describe("dealDamageToEnemy — forge bonus eligibility", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
-      mana: 10, enemyHealth: 50,
+      mana: 10,
+      enemyHealth: 50,
       playerStatuses: { block: 0, armor: 0, forge: 3, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     });
     const result = applyCardEffects(state, card, texts);
@@ -158,7 +168,8 @@ describe("dealDamageToEnemy — forge bonus eligibility", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
-      mana: 10, enemyHealth: 50,
+      mana: 10,
+      enemyHealth: 50,
       playerStatuses: { block: 0, armor: 0, forge: 3, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       talentEffects: { ...defaultTalentEffects, forgeToBurn: true },
     });
@@ -172,7 +183,8 @@ describe("dealDamageToEnemy — armor decay and holy riders", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
-      mana: 10, enemyHealth: 50,
+      mana: 10,
+      enemyHealth: 50,
       enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
     });
     const result = applyCardEffects(state, card, texts);
@@ -185,7 +197,8 @@ describe("dealDamageToEnemy — armor decay and holy riders", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
-      mana: 10, enemyHealth: 50,
+      mana: 10,
+      enemyHealth: 50,
       enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
     });
     const result = applyCardEffects(state, card, texts);
@@ -198,7 +211,10 @@ describe("dealDamageToEnemy — armor decay and holy riders", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "holy", amount: 10 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
-      mana: 10, enemyHealth: 50, gold: 0, playerHealth: 20,
+      mana: 10,
+      enemyHealth: 50,
+      gold: 0,
+      playerHealth: 20,
       enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       talentEffects,
     });
@@ -274,7 +290,8 @@ describe("applyDamageStatuses — stun on cooldown enemy", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "stun", amount: 20 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
-      mana: 10, enemyHealth: 30,
+      mana: 10,
+      enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: { cooldown: 1 },
     });
@@ -291,7 +308,9 @@ describe("applyDamageStatuses — freeze threshold boundary", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 15 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
-      mana: 10, enemyHealth: 30, enemyMaxHealth: 30,
+      mana: 10,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
     });
     const result = applyCardEffects(state, card, texts);
     // freeze = 15, health = 30, threshold = 0.5 → 15 >= 15 → triggers
@@ -302,7 +321,9 @@ describe("applyDamageStatuses — freeze threshold boundary", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 6 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
-      mana: 10, enemyHealth: 30, enemyMaxHealth: 30,
+      mana: 10,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
     });
     const result = applyCardEffects(state, card, texts);
     // freeze damage 6 → health 24, freeze=6, threshold=24*0.5=12 → 6 < 12 → no trigger
@@ -316,7 +337,9 @@ describe("applyDamageStatuses — freeze cooldown skip", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 25 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
-      mana: 10, enemyHealth: 30, enemyMaxHealth: 30,
+      mana: 10,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
       enemyCC: { cooldown: 2 },
     });
     const result = applyCardEffects(state, card, texts);
@@ -364,7 +387,8 @@ describe("applyDamageStatuses — poison talent riders", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "poison", amount: 6 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
-      mana: 10, enemyHealth: 50,
+      mana: 10,
+      enemyHealth: 50,
       talentEffects,
       enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
     });
@@ -378,7 +402,10 @@ describe("applyDamageStatuses — poison talent riders", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "poison", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
-      mana: 10, enemyHealth: 30, enemyMaxHealth: 30, playerHealth: 20,
+      mana: 10,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      playerHealth: 20,
       talentEffects,
     });
     const result = applyCardEffects(state, card, texts);
@@ -395,9 +422,11 @@ describe("applyDamageStatuses — forge threshold bursts", () => {
       playerStatuses: { block: 0, armor: 0, forge: 2, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       talentEffects: {
         ...defaultTalentEffects,
-        forgeBurnThreshold: 3, forgeBurnDamage: 5,
+        forgeBurnThreshold: 3,
+        forgeBurnDamage: 5,
         forgeStripArmorThreshold: 4,
-        forgeBlockThreshold: 5, forgeBlockAmount: 3,
+        forgeBlockThreshold: 5,
+        forgeBlockAmount: 3,
       },
       enemyMitigation: { armor: 2, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
     });

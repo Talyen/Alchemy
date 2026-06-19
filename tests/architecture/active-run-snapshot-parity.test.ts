@@ -23,9 +23,7 @@ describe("active run snapshot parity", () => {
   it("serializes every ActiveRunData field in createActiveRunSnapshot", () => {
     for (const key of typeKeys) {
       const hasField =
-        snapshotSource.includes(`${key}:`) ||
-        snapshotSource.includes(`${key},`) ||
-        snapshotSource.includes(`${key} =`);
+        snapshotSource.includes(`${key}:`) || snapshotSource.includes(`${key},`) || snapshotSource.includes(`${key} =`);
       expect(hasField).toBe(true);
     }
   });

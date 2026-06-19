@@ -48,7 +48,7 @@ function tryUpgradeTierItem(
   if (!item || currentLevel >= item.tiers.length) {
     return { ok: false, inventory, nextLevel: currentLevel };
   }
-  const tier = item.tiers[currentLevel];
+  const tier = item.tiers[currentLevel]!;
   if (!canAfford(inventory, tier.cost)) {
     return { ok: false, inventory, nextLevel: currentLevel };
   }
@@ -137,7 +137,7 @@ export const useHomesteadStore = create<HomesteadStore>()(
       set((s) => {
         const currentLevel = s.bondedCompanions[id] ?? 0;
         if (currentLevel >= COMPANION_MAX_TIER) return;
-        const cost = COMPANION_BOND_TIERS[currentLevel];
+        const cost = COMPANION_BOND_TIERS[currentLevel]!;
         if (!canAfford(s.materialInventory, cost)) return;
         succeeded = true;
         s.materialInventory = subtractInventory(s.materialInventory, cost);

@@ -9,7 +9,10 @@ import { injectSaveState, makeCard, makeHighDamageCard, SAVE_KEY } from "./helpe
 async function pickDraftCard(page: import("@playwright/test").Page) {
   const confirm = page.getByRole("button", { name: "Select Card" });
   await expect(async () => {
-    await page.getByRole("button", { name: /^Select (?!Card$).+/ }).first().click({ force: true });
+    await page
+      .getByRole("button", { name: /^Select (?!Card$).+/ })
+      .first()
+      .click({ force: true });
     await expect(confirm).toBeEnabled();
   }).toPass();
   await confirm.click();
@@ -100,7 +103,10 @@ test.describe("Wildwood Draft", () => {
     await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 5000 });
     await expect
       .poll(() =>
-        page.evaluate((saveKey) => JSON.parse(localStorage.getItem(saveKey) ?? "{}").activeRun?.runPlayerHealth, SAVE_KEY),
+        page.evaluate(
+          (saveKey) => JSON.parse(localStorage.getItem(saveKey) ?? "{}").activeRun?.runPlayerHealth,
+          SAVE_KEY,
+        ),
       )
       .toBe(16);
     await page.getByRole("button", { name: "Skip" }).click();

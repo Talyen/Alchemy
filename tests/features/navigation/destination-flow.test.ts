@@ -45,12 +45,22 @@ const FULL_POOL = [
 
 describe("getRunAvailableDestinations", () => {
   it("returns only Boss Combat at last index in act", () => {
-    const result = getRunAvailableDestinations({ destinationIndexInAct: 7, currentHealth: 30, currentGold: 100, maxHealth: 30 });
+    const result = getRunAvailableDestinations({
+      destinationIndexInAct: 7,
+      currentHealth: 30,
+      currentGold: 100,
+      maxHealth: 30,
+    });
     expect(result).toEqual([DESTINATIONS.BOSS_COMBAT]);
   });
 
   it("returns filtered destinations for non-last positions", () => {
-    const result = getRunAvailableDestinations({ destinationIndexInAct: 2, currentHealth: 30, currentGold: 100, maxHealth: 30 });
+    const result = getRunAvailableDestinations({
+      destinationIndexInAct: 2,
+      currentHealth: 30,
+      currentGold: 100,
+      maxHealth: 30,
+    });
     expect(result).toContain(DESTINATIONS.NORMAL_COMBAT);
     expect(result).toContain(DESTINATIONS.CORRUPTION);
     expect(result).not.toContain(DESTINATIONS.BOSS_COMBAT);
@@ -161,8 +171,7 @@ describe("sampleDestinationChoices", () => {
   it("guarantees exactly one combat when the previous screen offered none", () => {
     const result = sampleDestinationChoices([...FULL_POOL], createEmptyDestinationOfferState(), () => 0.99);
     const combatCount = result.choices.filter(
-      (destination) =>
-        destination === DESTINATIONS.NORMAL_COMBAT || destination === DESTINATIONS.ELITE_COMBAT,
+      (destination) => destination === DESTINATIONS.NORMAL_COMBAT || destination === DESTINATIONS.ELITE_COMBAT,
     ).length;
     expect(combatCount).toBe(1);
   });
@@ -184,8 +193,7 @@ describe("sampleDestinationChoices", () => {
         rng,
       );
       const combatCount = result.choices.filter(
-        (destination) =>
-          destination === DESTINATIONS.NORMAL_COMBAT || destination === DESTINATIONS.ELITE_COMBAT,
+        (destination) => destination === DESTINATIONS.NORMAL_COMBAT || destination === DESTINATIONS.ELITE_COMBAT,
       ).length;
       if (combatCount === 0) {
         sawZeroCombats = true;

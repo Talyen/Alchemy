@@ -239,7 +239,7 @@ describe("gear-store", () => {
         [itemA.instanceId]: { col: 1, row: 1 },
         [itemB.instanceId]: { col: 3, row: 1 },
         [itemC.instanceId]: { col: 5, row: 5 },
-      })
+      }),
     );
 
     useGearStore.getState().setBoardPosition("knight", "item-a", 3, 1);
@@ -257,7 +257,9 @@ describe("gear-store", () => {
       const helm: GearInstance = { instanceId: "helm-a", definitionId: "leather-helm-basic", affixes: [] };
       const inventories = createEmptyGearInventories();
       inventories.knight = [helm];
-      useGearStore.getState().initialize(inventories, createEmptyGearLoadouts(), knightBoards({ [helm.instanceId]: { col: 3, row: 2 } }));
+      useGearStore
+        .getState()
+        .initialize(inventories, createEmptyGearLoadouts(), knightBoards({ [helm.instanceId]: { col: 3, row: 2 } }));
 
       expect(useGearStore.getState().transferToInventory(helm.instanceId, "rogue")).toBe(true);
 

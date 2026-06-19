@@ -39,33 +39,36 @@ test.describe("Save Error Paths", critical, () => {
     test(scenario.name, async ({ page }) => {
       const errors = scenario.expectNoRuntimeErrors === false ? null : failOnRuntimeErrors(page);
 
-      await page.addInitScript((data) => {
-        switch (data.kind) {
-          case "corrupt":
-            localStorage.setItem(data.saveKey, "not-valid-json{{{");
-            break;
-          case "missing":
-            localStorage.removeItem(data.saveKey);
-            break;
-          case "nullActiveRun":
-            localStorage.setItem(
-              data.saveKey,
-              JSON.stringify({
-                materialInventory: {},
-                activeRun: null,
-                discoveredCardIds: [],
-                encounteredEnemyIds: [],
-                discoveredTrinketIds: [],
-                talentXP: {},
-                unlockedTalents: {},
-              }),
-            );
-            break;
-          case "empty":
-            localStorage.setItem(data.saveKey, JSON.stringify({}));
-            break;
-        }
-      }, { saveKey: SAVE_KEY, kind: scenario.kind });
+      await page.addInitScript(
+        (data) => {
+          switch (data.kind) {
+            case "corrupt":
+              localStorage.setItem(data.saveKey, "not-valid-json{{{");
+              break;
+            case "missing":
+              localStorage.removeItem(data.saveKey);
+              break;
+            case "nullActiveRun":
+              localStorage.setItem(
+                data.saveKey,
+                JSON.stringify({
+                  materialInventory: {},
+                  activeRun: null,
+                  discoveredCardIds: [],
+                  encounteredEnemyIds: [],
+                  discoveredTrinketIds: [],
+                  talentXP: {},
+                  unlockedTalents: {},
+                }),
+              );
+              break;
+            case "empty":
+              localStorage.setItem(data.saveKey, JSON.stringify({}));
+              break;
+          }
+        },
+        { saveKey: SAVE_KEY, kind: scenario.kind },
+      );
 
       await page.goto("/");
       const menu = new MenuPage(page);

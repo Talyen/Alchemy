@@ -244,20 +244,58 @@ describe("Armory Styling TDD", () => {
     board.appendChild(targetCell);
 
     vi.spyOn(board, "getBoundingClientRect").mockReturnValue({
-      left: 0, top: 0, width: 400, height: 400, right: 400, bottom: 400, x: 0, y: 0, toJSON: () => ({}),
+      left: 0,
+      top: 0,
+      width: 400,
+      height: 400,
+      right: 400,
+      bottom: 400,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
     } as DOMRect);
     vi.spyOn(metricCell, "getBoundingClientRect").mockReturnValue({
-      left: 0, top: 0, width: 48, height: 48, right: 48, bottom: 48, x: 0, y: 0, toJSON: () => ({}),
+      left: 0,
+      top: 0,
+      width: 48,
+      height: 48,
+      right: 48,
+      bottom: 48,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
     } as DOMRect);
     vi.spyOn(metricStride, "getBoundingClientRect").mockReturnValue({
-      left: 52, top: 0, width: 48, height: 48, right: 100, bottom: 48, x: 52, y: 0, toJSON: () => ({}),
+      left: 52,
+      top: 0,
+      width: 48,
+      height: 48,
+      right: 100,
+      bottom: 48,
+      x: 52,
+      y: 0,
+      toJSON: () => ({}),
     } as DOMRect);
     vi.spyOn(targetCell, "getBoundingClientRect").mockReturnValue({
-      left: 8, top: 12, width: 48, height: 48, right: 56, bottom: 60, x: 8, y: 12, toJSON: () => ({}),
+      left: 8,
+      top: 12,
+      width: 48,
+      height: 48,
+      right: 56,
+      bottom: 60,
+      x: 8,
+      y: 12,
+      toJSON: () => ({}),
     } as DOMRect);
     vi.spyOn(window, "getComputedStyle").mockReturnValue({
-      paddingLeft: "0px", paddingTop: "0px", paddingRight: "0px", paddingBottom: "0px",
-      borderLeftWidth: "0px", borderTopWidth: "0px", borderRightWidth: "0px", borderBottomWidth: "0px",
+      paddingLeft: "0px",
+      paddingTop: "0px",
+      paddingRight: "0px",
+      paddingBottom: "0px",
+      borderLeftWidth: "0px",
+      borderTopWidth: "0px",
+      borderRightWidth: "0px",
+      borderBottomWidth: "0px",
     } as any);
 
     const footprint = { w: 1, h: 1 };
@@ -279,17 +317,47 @@ describe("Armory Styling TDD", () => {
     board.appendChild(metricStride);
 
     vi.spyOn(board, "getBoundingClientRect").mockReturnValue({
-      left: 0, top: 0, width: 400, height: 400, right: 400, bottom: 400, x: 0, y: 0, toJSON: () => ({}),
+      left: 0,
+      top: 0,
+      width: 400,
+      height: 400,
+      right: 400,
+      bottom: 400,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
     } as DOMRect);
     vi.spyOn(metricCell, "getBoundingClientRect").mockReturnValue({
-      left: 0, top: 0, width: 48, height: 48, right: 48, bottom: 48, x: 0, y: 0, toJSON: () => ({}),
+      left: 0,
+      top: 0,
+      width: 48,
+      height: 48,
+      right: 48,
+      bottom: 48,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
     } as DOMRect);
     vi.spyOn(metricStride, "getBoundingClientRect").mockReturnValue({
-      left: 52, top: 0, width: 48, height: 48, right: 100, bottom: 48, x: 52, y: 0, toJSON: () => ({}),
+      left: 52,
+      top: 0,
+      width: 48,
+      height: 48,
+      right: 100,
+      bottom: 48,
+      x: 52,
+      y: 0,
+      toJSON: () => ({}),
     } as DOMRect);
     vi.spyOn(window, "getComputedStyle").mockReturnValue({
-      paddingLeft: "0px", paddingTop: "0px", paddingRight: "0px", paddingBottom: "0px",
-      borderLeftWidth: "0px", borderTopWidth: "0px", borderRightWidth: "0px", borderBottomWidth: "0px",
+      paddingLeft: "0px",
+      paddingTop: "0px",
+      paddingRight: "0px",
+      paddingBottom: "0px",
+      borderLeftWidth: "0px",
+      borderTopWidth: "0px",
+      borderRightWidth: "0px",
+      borderBottomWidth: "0px",
     } as any);
 
     const footprint = { w: 1, h: 1 };

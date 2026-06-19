@@ -64,11 +64,18 @@ describe("difficultyConfigs data integrity", () => {
 
   it("all modifier kinds are valid", () => {
     const validKinds = new Set([
-      "enemy-starting-armor", "enemy-gains-forge-each-turn",
-      "increase-enemy-physical-damage", "increase-enemy-damage",
-      "increase-enemy-status", "enemy-attacks-gain-leech",
-      "start-block", "start-max-mana", "gold-multiplier", "start-companion",
-      "enemy-health-multiplier", "enemy-damage-multiplier",
+      "enemy-starting-armor",
+      "enemy-gains-forge-each-turn",
+      "increase-enemy-physical-damage",
+      "increase-enemy-damage",
+      "increase-enemy-status",
+      "enemy-attacks-gain-leech",
+      "start-block",
+      "start-max-mana",
+      "gold-multiplier",
+      "start-companion",
+      "enemy-health-multiplier",
+      "enemy-damage-multiplier",
     ]);
     for (const char of ALL_CHARACTERS) {
       for (const diff of difficultyConfigs[char].difficulties) {
@@ -145,7 +152,10 @@ describe("getDifficultyModifiers", () => {
   });
 
   it("returns empty array for unknown difficulty ID", () => {
-    const mods = getDifficultyModifiers("knight", "difficulty-999" as unknown as Parameters<typeof getDifficultyModifiers>[1]);
+    const mods = getDifficultyModifiers(
+      "knight",
+      "difficulty-999" as unknown as Parameters<typeof getDifficultyModifiers>[1],
+    );
     expect(mods).toEqual([]);
   });
 });

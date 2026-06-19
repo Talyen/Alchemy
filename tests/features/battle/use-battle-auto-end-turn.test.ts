@@ -17,7 +17,11 @@ describe("useBattleAutoEndTurn", () => {
 
   it("schedules end turn when no card is playable", () => {
     const onEndTurn = vi.fn();
-    const expensive = makeTestCard({ id: "meteor", cost: 9, effects: [{ kind: "damage", damageType: "burn", amount: 20 }] });
+    const expensive = makeTestCard({
+      id: "meteor",
+      cost: 9,
+      effects: [{ kind: "damage", damageType: "burn", amount: 20 }],
+    });
     const battleState = createTestBattleState({
       hand: [{ ...expensive, uid: 1 }],
       mana: 1,
@@ -43,7 +47,11 @@ describe("useBattleAutoEndTurn", () => {
 
   it("does not schedule end turn when a card is playable", () => {
     const onEndTurn = vi.fn();
-    const slash = makeTestCard({ id: "slash", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    const slash = makeTestCard({
+      id: "slash",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
     const battleState = createTestBattleState({
       hand: [{ ...slash, uid: 2 }],
       mana: 3,

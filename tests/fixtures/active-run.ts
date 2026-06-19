@@ -22,15 +22,17 @@ export function makeMinimalActiveRunInput(overrides: Record<string, unknown> = {
 export function makeRunCandidate(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     characterId: "knight",
-    runDeck: [{
-      id: "slash",
-      title: "Slash",
-      descriptionLines: [""],
-      art: "",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
-      uid: 1,
-    }],
+    runDeck: [
+      {
+        id: "slash",
+        title: "Slash",
+        descriptionLines: [""],
+        art: "",
+        cost: 1,
+        effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+        uid: 1,
+      },
+    ],
     runGold: 10,
     runPlayerHealth: 25,
     runMaxHealth: 30,

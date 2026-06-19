@@ -102,10 +102,7 @@ describe("migrateV9ToV10", () => {
   });
 
   it("preserves existing knight positions when merging legacy positions", () => {
-    setStoredValue(
-      LEGACY_ARMORY_POSITIONS_STORAGE_KEY,
-      JSON.stringify({ "helm-1": { col: 1, row: 1 } }),
-    );
+    setStoredValue(LEGACY_ARMORY_POSITIONS_STORAGE_KEY, JSON.stringify({ "helm-1": { col: 1, row: 1 } }));
 
     const result = migrateV9ToV10({
       saveSchemaVersion: 9,
@@ -121,10 +118,7 @@ describe("migrateV9ToV10", () => {
   });
 
   it("creates a gearBoardPositionsByCharacter object when one is absent", () => {
-    setStoredValue(
-      LEGACY_ARMORY_POSITIONS_STORAGE_KEY,
-      JSON.stringify({ "helm-1": { col: 1, row: 1 } }),
-    );
+    setStoredValue(LEGACY_ARMORY_POSITIONS_STORAGE_KEY, JSON.stringify({ "helm-1": { col: 1, row: 1 } }));
 
     const result = migrateV9ToV10({ saveSchemaVersion: 9 });
 

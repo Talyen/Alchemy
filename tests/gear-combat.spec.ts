@@ -1,9 +1,5 @@
 import { expect } from "@playwright/test";
-import {
-  bodyGear,
-  createEmptyGearLoadouts,
-  gearItemLocator,
-} from "./e2e/armory";
+import { bodyGear, createEmptyGearLoadouts, gearItemLocator } from "./e2e/armory";
 import { startBattleWithDeck } from "./e2e/battle-setup";
 import { makeCard } from "./e2e/cards";
 import { BattlePage } from "./pages/battle-page";

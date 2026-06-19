@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  routeDestinationChoice,
-} from "@/features/alchemy/run-loop/run/run-destination-handlers";
+import { routeDestinationChoice } from "@/features/alchemy/run-loop/run/run-destination-handlers";
 import { DESTINATIONS, type Destination } from "@/features/alchemy/shared/types";
 import { makeDestinationRouteHandlers } from "../../helpers/destination-route-handlers";
 

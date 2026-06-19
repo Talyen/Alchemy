@@ -1,6 +1,12 @@
 // Combat behavior tests for shared encounter traits.
 import { describe, expect, it } from "vitest";
-import { addEnemyStatus, endPlayerTurn, playBattleCardResolved, tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle";
+import {
+  addEnemyStatus,
+  endPlayerTurn,
+  playBattleCardResolved,
+  tickEnemyStatuses,
+  tickPlayerStatuses,
+} from "@/lib/battle";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import type { BattleCard, BestiaryEntry } from "@/lib/game-data";
 import { createTestBattleState } from "./test-state";

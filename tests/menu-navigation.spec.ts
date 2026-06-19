@@ -99,10 +99,17 @@ test.describe("Character Select", critical, () => {
 });
 
 test.describe("Navigation", () => {
-  test("in-battle menu allows navigation to collection, options, and talents", async ({ page, fastBattle, runtimeErrors }) => {
+  test("in-battle menu allows navigation to collection, options, and talents", async ({
+    page,
+    fastBattle,
+    runtimeErrors,
+  }) => {
     void fastBattle;
     void runtimeErrors;
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+    );
     const battle = new BattlePage(page);
 
     await battle.menuBtn.click();

@@ -1,11 +1,11 @@
-import { mkdir, readdir } from 'node:fs/promises';
-import path from 'node:path';
-import sharp from 'sharp';
+import { mkdir, readdir } from "node:fs/promises";
+import path from "node:path";
+import sharp from "sharp";
 
 const artTargets = [
   {
-    directory: path.resolve('public/assets/card-art'),
-    outputExtension: '.webp',
+    directory: path.resolve("public/assets/card-art"),
+    outputExtension: ".webp",
     webp: {
       alphaQuality: 100,
       effort: 6,
@@ -14,8 +14,8 @@ const artTargets = [
     },
   },
   {
-    directory: path.resolve('public/assets/templates/frames'),
-    outputExtension: '.webp',
+    directory: path.resolve("public/assets/templates/frames"),
+    outputExtension: ".webp",
     webp: {
       alphaQuality: 100,
       effort: 6,
@@ -24,8 +24,8 @@ const artTargets = [
     },
   },
   {
-    directory: path.resolve('public/assets/characters'),
-    outputExtension: '.webp',
+    directory: path.resolve("public/assets/characters"),
+    outputExtension: ".webp",
     webp: {
       alphaQuality: 100,
       effort: 6,
@@ -37,7 +37,7 @@ const artTargets = [
 
 async function optimizeDirectory(target) {
   const entries = await readdir(target.directory, { withFileTypes: true });
-  const pngFiles = entries.filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.png'));
+  const pngFiles = entries.filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".png"));
 
   await mkdir(target.directory, { recursive: true });
 

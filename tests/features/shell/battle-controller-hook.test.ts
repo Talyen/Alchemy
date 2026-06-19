@@ -67,9 +67,9 @@ describe("useBattleController", () => {
 
     const { rerender } = renderBattleController(ROUTE_SCREENS.BATTLE);
 
-    useBattlePresentationStore.getState().showCombatTexts([
-      { target: "enemy", kind: "damage", stat: "health", amount: 5 },
-    ]);
+    useBattlePresentationStore
+      .getState()
+      .showCombatTexts([{ target: "enemy", kind: "damage", stat: "health", amount: 5 }]);
     await vi.advanceTimersByTimeAsync(0);
     expect(useBattlePresentationStore.getState().floatingCombatTexts).toHaveLength(1);
 

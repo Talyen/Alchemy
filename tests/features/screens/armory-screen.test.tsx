@@ -3,7 +3,12 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ArmoryScreen } from "@/features/alchemy/meta/screens/armory-screen";
-import { createEmptyGearLoadouts, createEmptyGearInventories, createEmptyGearBoardPositionsByCharacter, CRAFTING_CURRENCY_LIST } from "@/lib/gear";
+import {
+  createEmptyGearLoadouts,
+  createEmptyGearInventories,
+  createEmptyGearBoardPositionsByCharacter,
+  CRAFTING_CURRENCY_LIST,
+} from "@/lib/gear";
 import type { GearInstance } from "@/lib/gear";
 import type { CharacterId } from "@/lib/game-data";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
@@ -563,11 +568,10 @@ describe("ArmoryScreen", () => {
       "gear-helm": { col: 1, row: 1 },
       "stale-item-id": { col: 3, row: 3 },
     };
-    useGearStore.getState().initialize(
-      mockInventories(),
-      createEmptyGearLoadouts(),
-      { ...createEmptyGearBoardPositionsByCharacter(), knight: initialPositions },
-    );
+    useGearStore.getState().initialize(mockInventories(), createEmptyGearLoadouts(), {
+      ...createEmptyGearBoardPositionsByCharacter(),
+      knight: initialPositions,
+    });
 
     render(
       <ArmoryScreen

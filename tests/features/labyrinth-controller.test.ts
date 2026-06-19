@@ -28,8 +28,13 @@ describe("canEnterLabyrinthNode", () => {
 
   it("rejects visible nodes that are not connected to the current node", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
-    const unconnected = map.grid.flatMap((row, rowIndex) => row.map((node, colIndex) => ({ node, row: rowIndex, col: colIndex })))
-      .find(({ node, row, col }) => node?.state === "visible" && !map.grid[0][START_COL]!.connections.some((connection) => connection.row === row && connection.col === col));
+    const unconnected = map.grid
+      .flatMap((row, rowIndex) => row.map((node, colIndex) => ({ node, row: rowIndex, col: colIndex })))
+      .find(
+        ({ node, row, col }) =>
+          node?.state === "visible" &&
+          !map.grid[0][START_COL]!.connections.some((connection) => connection.row === row && connection.col === col),
+      );
     expect(unconnected).toBeDefined();
     expect(canEnterLabyrinthNode(map, unconnected!.row, unconnected!.col)).toBe(false);
   });

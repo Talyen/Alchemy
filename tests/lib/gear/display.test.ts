@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  getGearInstanceDescriptionLines,
-  getGearInstanceTooltipEntries,
-  type GearInstance,
-} from "@/lib/gear";
+import { getGearInstanceDescriptionLines, getGearInstanceTooltipEntries, type GearInstance } from "@/lib/gear";
 
 describe("gear display", () => {
   const affixedHelm: GearInstance = {

@@ -8,7 +8,10 @@ function makeTexts(): CombatTextEvent[] {
 }
 describe("resolveStunTrigger", () => {
   it("does nothing when stun is below threshold", () => {
-    const state = createTestBattleState({ enemyHealth: 30, enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 5 } });
+    const state = createTestBattleState({
+      enemyHealth: 30,
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 5 },
+    });
     const result = resolveStunTrigger(state);
     expect(result).toBe(state);
   });
@@ -157,7 +160,11 @@ describe("resolveStunTrigger", () => {
     expect(result.enemyCC.cooldown).toBe(2);
 
     // Second trigger with cooldown active: clears stun but no extra skip.
-    const state2 = { ...result, enemyCC: { ...result.enemyCC, cooldown: 1 }, enemyStatuses: { ...result.enemyStatuses, stun: 20 } };
+    const state2 = {
+      ...result,
+      enemyCC: { ...result.enemyCC, cooldown: 1 },
+      enemyStatuses: { ...result.enemyStatuses, stun: 20 },
+    };
     const result2 = resolveStunTrigger(state2);
     expect(result2.enemyCC.stunSkipTurns).toBe(1); // unchanged
     expect(result2.enemyStatuses.stun).toBe(0);

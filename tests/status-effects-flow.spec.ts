@@ -38,7 +38,10 @@ test.describe("Damage-over-Time Status Effects", critical, () => {
       void runtimeErrors;
 
       const title = statusCase.damageType.charAt(0).toUpperCase() + statusCase.damageType.slice(1);
-      await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeStatusCard(statusCase.damageType, statusCase.amount)));
+      await startBattleWithDeck(
+        page,
+        Array.from({ length: 6 }, () => makeStatusCard(statusCase.damageType, statusCase.amount)),
+      );
       const battle = new BattlePage(page);
 
       await battle.playCardNamed(title);
@@ -67,7 +70,10 @@ test.describe("Crowd Control Status Effects", critical, () => {
       void runtimeErrors;
 
       const title = statusCase.damageType.charAt(0).toUpperCase() + statusCase.damageType.slice(1);
-      await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeStatusCard(statusCase.damageType, statusCase.amount)));
+      await startBattleWithDeck(
+        page,
+        Array.from({ length: 6 }, () => makeStatusCard(statusCase.damageType, statusCase.amount)),
+      );
       const battle = new BattlePage(page);
 
       const playerHpBefore = await battle.playerHealth();

@@ -18,12 +18,8 @@ export function makeTestBattleState(overrides: Partial<BattleState> = {}): Battl
   return {
     ...merged,
     ...overrides,
-    playerCC: overrides.playerCC
-      ? { ...merged.playerCC, ...overrides.playerCC }
-      : merged.playerCC,
-    enemyCC: overrides.enemyCC
-      ? { ...merged.enemyCC, ...overrides.enemyCC }
-      : merged.enemyCC,
+    playerCC: overrides.playerCC ? { ...merged.playerCC, ...overrides.playerCC } : merged.playerCC,
+    enemyCC: overrides.enemyCC ? { ...merged.enemyCC, ...overrides.enemyCC } : merged.enemyCC,
   };
 }
 
@@ -33,28 +29,16 @@ export function patchBattleState(patch: Partial<BattleState> = {}): BattleState 
   return {
     ...base,
     ...patch,
-    playerStatuses: patch.playerStatuses
-      ? { ...base.playerStatuses, ...patch.playerStatuses }
-      : base.playerStatuses,
-    enemyStatuses: patch.enemyStatuses
-      ? { ...base.enemyStatuses, ...patch.enemyStatuses }
-      : base.enemyStatuses,
-    trinketEffects: patch.trinketEffects
-      ? { ...base.trinketEffects, ...patch.trinketEffects }
-      : base.trinketEffects,
-    talentEffects: patch.talentEffects
-      ? { ...base.talentEffects, ...patch.talentEffects }
-      : base.talentEffects,
+    playerStatuses: patch.playerStatuses ? { ...base.playerStatuses, ...patch.playerStatuses } : base.playerStatuses,
+    enemyStatuses: patch.enemyStatuses ? { ...base.enemyStatuses, ...patch.enemyStatuses } : base.enemyStatuses,
+    trinketEffects: patch.trinketEffects ? { ...base.trinketEffects, ...patch.trinketEffects } : base.trinketEffects,
+    talentEffects: patch.talentEffects ? { ...base.talentEffects, ...patch.talentEffects } : base.talentEffects,
     flags: patch.flags ? { ...base.flags, ...patch.flags } : base.flags,
     enemyMitigation: patch.enemyMitigation
       ? { ...base.enemyMitigation, ...patch.enemyMitigation }
       : base.enemyMitigation,
-    playerCC: patch.playerCC
-      ? { ...base.playerCC, ...patch.playerCC }
-      : base.playerCC,
-    enemyCC: patch.enemyCC
-      ? { ...base.enemyCC, ...patch.enemyCC }
-      : base.enemyCC,
+    playerCC: patch.playerCC ? { ...base.playerCC, ...patch.playerCC } : base.playerCC,
+    enemyCC: patch.enemyCC ? { ...base.enemyCC, ...patch.enemyCC } : base.enemyCC,
   };
 }
 

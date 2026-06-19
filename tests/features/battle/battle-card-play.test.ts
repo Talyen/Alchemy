@@ -76,7 +76,11 @@ beforeEach(() => {
 
 describe("createBattleCardPlay", () => {
   it("plays a legal card and syncs battle state", () => {
-    const slash = makeTestCard({ id: "slash", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] });
+    const slash = makeTestCard({
+      id: "slash",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+    });
     const state = createTestBattleState({
       hand: [{ ...slash, uid: 1 }],
       mana: 3,
@@ -96,7 +100,11 @@ describe("createBattleCardPlay", () => {
   });
 
   it("rejects plays when mana is insufficient", () => {
-    const expensive = makeTestCard({ id: "meteor", cost: 5, effects: [{ kind: "damage", damageType: "burn", amount: 20 }] });
+    const expensive = makeTestCard({
+      id: "meteor",
+      cost: 5,
+      effects: [{ kind: "damage", damageType: "burn", amount: 20 }],
+    });
     const state = createTestBattleState({
       hand: [{ ...expensive, uid: 2 }],
       mana: 1,
@@ -114,7 +122,11 @@ describe("createBattleCardPlay", () => {
   });
 
   it("rejects plays when the player is defeated", () => {
-    const slash = makeTestCard({ id: "slash", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] });
+    const slash = makeTestCard({
+      id: "slash",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+    });
     const state = createTestBattleState({
       hand: [{ ...slash, uid: 3 }],
       mana: 3,
@@ -132,7 +144,11 @@ describe("createBattleCardPlay", () => {
   });
 
   it("plays a revealed card while another draw transfer is still in progress", () => {
-    const slash = makeTestCard({ id: "slash", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] });
+    const slash = makeTestCard({
+      id: "slash",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+    });
     const state = createTestBattleState({
       hand: [{ ...slash, uid: 5 }],
       mana: 3,
@@ -150,7 +166,11 @@ describe("createBattleCardPlay", () => {
   });
 
   it("rejects plays for cards still animating into the hand", () => {
-    const slash = makeTestCard({ id: "slash", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] });
+    const slash = makeTestCard({
+      id: "slash",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+    });
     const state = createTestBattleState({
       hand: [{ ...slash, uid: 6 }],
       mana: 3,
@@ -171,7 +191,11 @@ describe("createBattleCardPlay", () => {
   });
 
   it("plays cards after enemy is defeated during victory grace", () => {
-    const slash = makeTestCard({ id: "slash", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] });
+    const slash = makeTestCard({
+      id: "slash",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+    });
     const state = createTestBattleState({
       hand: [{ ...slash, uid: 4 }],
       mana: 3,

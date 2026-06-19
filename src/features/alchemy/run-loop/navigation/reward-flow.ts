@@ -122,7 +122,7 @@ export function getRandomPotionCard(rng: () => number = Math.random): BattleCard
   if (process.env.NODE_ENV !== "production" && potionCards.length === 0) {
     console.error("[reward-flow] getRandomPotionCard: no potion cards found in getStandardPotionPool()");
   }
-  return potionCards[index];
+  return potionCards[index]!;
 }
 
 export function getCompanionCardChoices(rng: () => number = Math.random): BattleCard[] {

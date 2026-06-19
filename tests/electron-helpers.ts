@@ -30,9 +30,7 @@ function getElectronExecutablePath(): string {
 
   const electronRoot = path.join(projectRoot, "node_modules", "electron");
   const pathFile = path.join(electronRoot, "path.txt");
-  const relativePath = fs.existsSync(pathFile)
-    ? fs.readFileSync(pathFile, "utf8").trim()
-    : platformExecutableName();
+  const relativePath = fs.existsSync(pathFile) ? fs.readFileSync(pathFile, "utf8").trim() : platformExecutableName();
 
   const overrideDist = process.env.ELECTRON_OVERRIDE_DIST_PATH;
   const executablePath = overrideDist

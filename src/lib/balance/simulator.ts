@@ -158,7 +158,7 @@ function chooseCardToPlay(state: BattleState, policy: BalancePlayPolicy): { card
   if (playable.length === 0) return null;
 
   if (policy === "greedy-damage") {
-    let best = playable[0];
+    let best = playable[0]!;
     let bestDamage = getImmediateDamage(best.card);
     for (let i = 1; i < playable.length; i += 1) {
       const damage = getImmediateDamage(playable[i]!.card);

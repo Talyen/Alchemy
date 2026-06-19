@@ -256,5 +256,3 @@ describe("combat number accuracy", () => {
     // is tested in the companion bleed test above.
   });
 });
-
-

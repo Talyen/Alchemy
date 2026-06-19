@@ -1,5 +1,5 @@
 import type { GearAffixId } from "./affix-ids";
-import { LEGACY_GEAR_AFFIX_IDS } from "./legacy-ids";
+import { type LEGACY_GEAR_AFFIX_IDS } from "./legacy-ids";
 import { gearAffixNameParts } from "./affix-name-parts";
 import { gearAffixCatalog, type GearAffixDefinition } from "./affix-catalog";
 import type { GearEffectManifest } from "./gear-effect-manifest";

@@ -132,12 +132,7 @@ describe("applyMixToDeck", () => {
   });
 
   it("appends the mixed potion at the end", () => {
-    const deck = [
-      makePotion({ id: "a" }),
-      makePotion({ id: "b" }),
-      makePotion({ id: "c" }),
-      makePotion({ id: "d" }),
-    ];
+    const deck = [makePotion({ id: "a" }), makePotion({ id: "b" }), makePotion({ id: "c" }), makePotion({ id: "d" })];
     const result = applyMixToDeck(deck, 0, 1, mixed);
 
     expect(result[result.length - 1].id).toBe(mixed.id);

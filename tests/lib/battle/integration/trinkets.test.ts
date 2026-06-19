@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { makeState, makeCard } from "./helpers";
-import { applyCardEffects, createBattleState, defaultTalentEffects, endPlayerTurn, processCompanionTurnStart } from "@/lib/battle";
+import {
+  applyCardEffects,
+  createBattleState,
+  defaultTalentEffects,
+  endPlayerTurn,
+  processCompanionTurnStart,
+} from "@/lib/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { type CombatTextEvent } from "@/lib/battle/types";
 import { companionLibrary, enemyBestiary } from "@/lib/game-data";
@@ -35,7 +41,14 @@ describe("Boon — Tattered Pages (extra draw at battle start)", () => {
   it("deals 5 cards in opening hand instead of 4", () => {
     const deck = [makeCard(), makeCard(), makeCard(), makeCard(), makeCard(), makeCard(), makeCard()];
     const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
-    const state = createBattleState({ runDeck: deck, currentEnemy: skeleton, playerHealth: 30, talentEffects: defaultTalentEffects, maxHealth: 30, trinketIds: ["tattered-pages"] });
+    const state = createBattleState({
+      runDeck: deck,
+      currentEnemy: skeleton,
+      playerHealth: 30,
+      talentEffects: defaultTalentEffects,
+      maxHealth: 30,
+      trinketIds: ["tattered-pages"],
+    });
     expect(state.hand).toHaveLength(5);
   });
 });
@@ -470,12 +483,18 @@ describe("Resonant Chime boon", () => {
       cardsPlayedThisTurn: 2,
       trinketEffects: manifest,
       flags: {
-        firstPhysicalCardFreeUsed: false, firstHolyCardFreeUsed: false,
-        firstBurnCardDoubledUsed: false, firstArmorCardDoubledUsed: false,
-        firstPoisonCardFreeUsed: false, firstBleedCardFreeUsed: false,
-        nextCardCostReduction: 0, goldOnFirstPoisonThisCombat: false,
-        firstHolyDamageBonusUsed: false, firstBurnTrinketDoubledUsed: false,
-        firstHarmfulStatusPrevented: false, firstPotionFreeUsed: false,
+        firstPhysicalCardFreeUsed: false,
+        firstHolyCardFreeUsed: false,
+        firstBurnCardDoubledUsed: false,
+        firstArmorCardDoubledUsed: false,
+        firstPoisonCardFreeUsed: false,
+        firstBleedCardFreeUsed: false,
+        nextCardCostReduction: 0,
+        goldOnFirstPoisonThisCombat: false,
+        firstHolyDamageBonusUsed: false,
+        firstBurnTrinketDoubledUsed: false,
+        firstHarmfulStatusPrevented: false,
+        firstPotionFreeUsed: false,
         resonantChimeUsedThisTurn: false,
       },
     });
@@ -496,12 +515,18 @@ describe("Resonant Chime boon", () => {
       cardsPlayedThisTurn: 2,
       trinketEffects: manifest,
       flags: {
-        firstPhysicalCardFreeUsed: false, firstHolyCardFreeUsed: false,
-        firstBurnCardDoubledUsed: false, firstArmorCardDoubledUsed: false,
-        firstPoisonCardFreeUsed: false, firstBleedCardFreeUsed: false,
-        nextCardCostReduction: 0, goldOnFirstPoisonThisCombat: false,
-        firstHolyDamageBonusUsed: false, firstBurnTrinketDoubledUsed: false,
-        firstHarmfulStatusPrevented: false, firstPotionFreeUsed: false,
+        firstPhysicalCardFreeUsed: false,
+        firstHolyCardFreeUsed: false,
+        firstBurnCardDoubledUsed: false,
+        firstArmorCardDoubledUsed: false,
+        firstPoisonCardFreeUsed: false,
+        firstBleedCardFreeUsed: false,
+        nextCardCostReduction: 0,
+        goldOnFirstPoisonThisCombat: false,
+        firstHolyDamageBonusUsed: false,
+        firstBurnTrinketDoubledUsed: false,
+        firstHarmfulStatusPrevented: false,
+        firstPotionFreeUsed: false,
         resonantChimeUsedThisTurn: false,
       },
     });
@@ -513,4 +538,3 @@ describe("Resonant Chime boon", () => {
     expect(second.state.mana).toBe(first.state.mana);
   });
 });
-

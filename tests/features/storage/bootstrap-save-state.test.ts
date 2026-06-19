@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 
-const globalWithWindow = globalThis as typeof globalThis & { window?: Window & { alchemyDesktop?: Window["alchemyDesktop"] } };
+const globalWithWindow = globalThis as typeof globalThis & {
+  window?: Window & { alchemyDesktop?: Window["alchemyDesktop"] };
+};
 
 describe("bootstrapAlchemySaveState", () => {
   beforeEach(() => {

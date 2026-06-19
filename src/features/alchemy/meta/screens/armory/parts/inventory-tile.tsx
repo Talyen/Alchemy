@@ -88,6 +88,7 @@ export const InventoryGearTile = memo(function InventoryGearTile({
       const timer = setTimeout(() => setFlash(false), 550);
       return () => clearTimeout(timer);
     }
+    return;
   }, [instance]);
 
   const prevDragActiveRef = useRef(hasActiveDrag);
@@ -101,6 +102,7 @@ export const InventoryGearTile = memo(function InventoryGearTile({
       const timer = setTimeout(() => setDragCooldown(false), 1000);
       return () => clearTimeout(timer);
     }
+    return;
   }, [hasActiveDrag]);
 
   const openTooltip = useCallback(() => {

@@ -49,7 +49,7 @@ test.describe("Companion Battle Behavior", () => {
     await battle.endTurn();
     await expect(battle.companionPanel).toBeVisible({ timeout: 3000 });
 
-    if (await battle.handCount() > 0) {
+    if ((await battle.handCount()) > 0) {
       await battle.playFirstCard();
     }
     await battle.endTurn();

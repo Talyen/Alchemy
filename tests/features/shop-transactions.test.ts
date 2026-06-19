@@ -14,7 +14,14 @@ import { playGoldSpend } from "@/lib/audio";
 import { resampleItems } from "@/features/alchemy/shared/utils";
 
 function makeCard(id: string): BattleCard {
-  return { id, title: id, descriptionLines: [""], art: "", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 1 }] };
+  return {
+    id,
+    title: id,
+    descriptionLines: [""],
+    art: "",
+    cost: 1,
+    effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
+  };
 }
 
 beforeEach(() => {

@@ -6,14 +6,18 @@
 // instead of reading from the compendium will be flagged here and deleted.
 
 import { describe, expect, it } from "vitest";
-import { cardLibrary, companionLibrary, enemyBestiary, expectedCompanionTurnLine, trinketLibrary } from "@/lib/game-data";
+import {
+  cardLibrary,
+  companionLibrary,
+  enemyBestiary,
+  expectedCompanionTurnLine,
+  trinketLibrary,
+} from "@/lib/game-data";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 
 function flattenEffects(effects: BattleCardEffect[]): BattleCardEffect[] {
   return effects.flatMap((e) =>
-    e.kind === "chance"
-      ? [...flattenEffects(e.successEffects), ...flattenEffects(e.failureEffects)]
-      : [e],
+    e.kind === "chance" ? [...flattenEffects(e.successEffects), ...flattenEffects(e.failureEffects)] : [e],
   );
 }
 
@@ -55,7 +59,10 @@ function countLinesStartingWith(lines: string[], prefix: string): number {
 /** Count lines that look like a healing effect — "Heal N", "Restore N Health", "Gain N Health" */
 function countHealLines(lines: string[]): number {
   return lines.filter(
-    (l) => l.startsWith("Heal ") || (l.startsWith("Restore ") && l.includes("Health")) || (l.startsWith("Gain ") && l.includes("Health")),
+    (l) =>
+      l.startsWith("Heal ") ||
+      (l.startsWith("Restore ") && l.includes("Health")) ||
+      (l.startsWith("Gain ") && l.includes("Health")),
   ).length;
 }
 
@@ -84,7 +91,9 @@ function expectNumericParity(card: BattleCard): void {
   const restoreManaEffects = effects.filter(
     (e): e is Extract<BattleCardEffect, { kind: "restore-mana" }> => e.kind === "restore-mana",
   );
-  const goldEffects = effects.filter((e): e is Extract<BattleCardEffect, { kind: "gain-gold" }> => e.kind === "gain-gold");
+  const goldEffects = effects.filter(
+    (e): e is Extract<BattleCardEffect, { kind: "gain-gold" }> => e.kind === "gain-gold",
+  );
   const wishEffects = effects.filter((e): e is Extract<BattleCardEffect, { kind: "wish" }> => e.kind === "wish");
   const removeHarmfulEffects = effects.filter(
     (e): e is Extract<BattleCardEffect, { kind: "remove-harmful-status" }> => e.kind === "remove-harmful-status",
@@ -175,10 +184,7 @@ describe("card descriptions vs effects", () => {
       const { effects, descriptionLines } = card;
 
       const dealLines = descriptionLines.filter(
-        (l) =>
-          l.startsWith("Deal ") &&
-          !l.includes("equal to") &&
-          !l.toLowerCase().includes("random"),
+        (l) => l.startsWith("Deal ") && !l.includes("equal to") && !l.toLowerCase().includes("random"),
       ).length;
       const damageEffects = countByKind(effects, "damage") + countByKind(effects, "random-damage");
 
@@ -186,13 +192,14 @@ describe("card descriptions vs effects", () => {
       const healEffects = countByKind(effects, "heal");
 
       const restoreLinesCount = countLinesStartingWith(descriptionLines, "Restore ");
-      const restoreHealthLines = descriptionLines.filter((l) => l.startsWith("Restore ") && l.includes("Health")).length;
+      const restoreHealthLines = descriptionLines.filter(
+        (l) => l.startsWith("Restore ") && l.includes("Health"),
+      ).length;
       const restoreManaLines = restoreLinesCount - restoreHealthLines;
       const restoreManaEffects = countByKind(effects, "restore-mana");
 
       const goldEffectLines =
-        descriptionLines.filter((l) => (l.startsWith("Gain ") || l.startsWith("Steal ")) && l.includes("Gold"))
-          .length +
+        descriptionLines.filter((l) => (l.startsWith("Gain ") || l.startsWith("Steal ")) && l.includes("Gold")).length +
         descriptionLines.filter((l) => l.includes(" or Gain ") && l.includes("Gold")).length;
       const goldEffects = countByKind(effects, "gain-gold");
 
@@ -204,14 +211,10 @@ describe("card descriptions vs effects", () => {
       ).length;
       const removeEffects = countByKind(effects, "remove-harmful-status");
 
-      const loseManaLines = descriptionLines.filter(
-        (l) => l.startsWith("Lose ") && l.includes("Mana Crystal"),
-      ).length;
+      const loseManaLines = descriptionLines.filter((l) => l.startsWith("Lose ") && l.includes("Mana Crystal")).length;
       const loseManaEffects = countByKind(effects, "lose-max-mana");
 
-      const loseHealthLines = descriptionLines.filter(
-        (l) => l.startsWith("Lose ") && l.includes("Health"),
-      ).length;
+      const loseHealthLines = descriptionLines.filter((l) => l.startsWith("Lose ") && l.includes("Health")).length;
       const loseHealthEffects = countByKind(effects, "lose-health");
 
       const gainMaxManaLines = descriptionLines.filter((l) => l.includes("Maximum Mana")).length;
@@ -250,17 +253,13 @@ describe("card descriptions vs effects", () => {
           e.kind === "player-status" && e.status === "block" && "perManaCrystal" in e && !!e.perManaCrystal,
       ).length;
 
-      const gainArmorLines = descriptionLines.filter(
-        (l) => l.startsWith("Gain ") && l.includes(" Armor"),
-      ).length;
+      const gainArmorLines = descriptionLines.filter((l) => l.startsWith("Gain ") && l.includes(" Armor")).length;
       const gainArmorEffects = effects.filter(
         (e): e is Extract<BattleCardEffect, { kind: "player-status"; status: "armor" }> =>
           e.kind === "player-status" && e.status === "armor",
       ).length;
 
-      const gainForgeLines = descriptionLines.filter(
-        (l) => l.startsWith("Gain ") && l.includes(" Forge"),
-      ).length;
+      const gainForgeLines = descriptionLines.filter((l) => l.startsWith("Gain ") && l.includes(" Forge")).length;
       const gainForgeEffects = effects.filter(
         (e): e is Extract<BattleCardEffect, { kind: "player-status"; status: "forge" }> =>
           e.kind === "player-status" && e.status === "forge",
@@ -360,25 +359,30 @@ describe("card descriptions vs effects", () => {
       const { descriptionLines, effects } = card;
 
       if (card.tags?.includes("archery")) {
-        expect(descriptionLines.some((l) => l === "Archery"),
-          `${card.id} has archery tag but no 'Archery' line`).toBe(true);
+        expect(
+          descriptionLines.some((l) => l === "Archery"),
+          `${card.id} has archery tag but no 'Archery' line`,
+        ).toBe(true);
       }
 
       if (descriptionLines.some((l) => l === "Archery")) {
-        expect(card.tags?.includes("archery"),
-          `${card.id} has 'Archery' line but no archery tag`).toBe(true);
+        expect(card.tags?.includes("archery"), `${card.id} has 'Archery' line but no archery tag`).toBe(true);
       }
 
       if (hasLifesteal(effects)) {
-        expect(descriptionLines.some((l) => l === "Leech"),
-          `${card.id} has lifesteal but no 'Leech' line`).toBe(true);
+        expect(
+          descriptionLines.some((l) => l === "Leech"),
+          `${card.id} has lifesteal but no 'Leech' line`,
+        ).toBe(true);
       }
 
       if ("consume" in card && card.consume === true) {
         const hasConsume = descriptionLines.some((l) => l === "Consume");
-        const hasCompanion = hasKind(card.effects, "summon-companion") && descriptionLines.some((l) => l === "Companion");
-        expect(hasConsume || hasCompanion,
-          `${card.id} has consume:true but no 'Consume' or 'Companion' line`).toBe(true);
+        const hasCompanion =
+          hasKind(card.effects, "summon-companion") && descriptionLines.some((l) => l === "Companion");
+        expect(hasConsume || hasCompanion, `${card.id} has consume:true but no 'Consume' or 'Companion' line`).toBe(
+          true,
+        );
       }
 
       if (hasKind(effects, "summon-companion")) {
@@ -386,33 +390,45 @@ describe("card descriptions vs effects", () => {
       }
 
       if (hasKind(effects, "lose-max-mana")) {
-        expect(descriptionLines.some((l) => l.includes("Mana Crystal")),
-          `${card.id} has lose-max-mana but no 'Mana Crystal' line`).toBe(true);
+        expect(
+          descriptionLines.some((l) => l.includes("Mana Crystal")),
+          `${card.id} has lose-max-mana but no 'Mana Crystal' line`,
+        ).toBe(true);
       }
 
       if (hasKind(effects, "lose-health")) {
-        expect(descriptionLines.some((l) => l.startsWith("Lose ") && l.includes("Health")),
-          `${card.id} has lose-health but no 'Lose ... Health' line`).toBe(true);
+        expect(
+          descriptionLines.some((l) => l.startsWith("Lose ") && l.includes("Health")),
+          `${card.id} has lose-health but no 'Lose ... Health' line`,
+        ).toBe(true);
       }
 
       if (hasKind(effects, "draw-cards")) {
-        expect(descriptionLines.some((l) => l.startsWith("Draw ")),
-          `${card.id} has draw-cards but no 'Draw' line`).toBe(true);
+        expect(
+          descriptionLines.some((l) => l.startsWith("Draw ")),
+          `${card.id} has draw-cards but no 'Draw' line`,
+        ).toBe(true);
       }
 
       if (hasKind(effects, "remove-enemy-armor")) {
-        expect(descriptionLines.some((l) => l.startsWith("Strip ")),
-          `${card.id} has remove-enemy-armor but no 'Strip' line`).toBe(true);
+        expect(
+          descriptionLines.some((l) => l.startsWith("Strip ")),
+          `${card.id} has remove-enemy-armor but no 'Strip' line`,
+        ).toBe(true);
       }
 
       if (hasKind(effects, "multiply-enemy-status")) {
-        expect(descriptionLines.some((l) => l.startsWith("Double ")),
-          `${card.id} has multiply-enemy-status but no 'Double' line`).toBe(true);
+        expect(
+          descriptionLines.some((l) => l.startsWith("Double ")),
+          `${card.id} has multiply-enemy-status but no 'Double' line`,
+        ).toBe(true);
       }
 
       if (hasKind(effects, "remove-player-status")) {
-        expect(descriptionLines.some((l) => l.startsWith("Cleanse ")),
-          `${card.id} has remove-player-status but no 'Cleanse' line`).toBe(true);
+        expect(
+          descriptionLines.some((l) => l.startsWith("Cleanse ")),
+          `${card.id} has remove-player-status but no 'Cleanse' line`,
+        ).toBe(true);
       }
 
       if (hasKind(effects, "buff-companion")) {
@@ -420,8 +436,10 @@ describe("card descriptions vs effects", () => {
       }
 
       if (hasKind(effects, "self-damage")) {
-        expect(descriptionLines.some((l) => l.includes("yourself") || l.startsWith("Receive ")),
-          `${card.id} has self-damage but no matching description`).toBe(true);
+        expect(
+          descriptionLines.some((l) => l.includes("yourself") || l.startsWith("Receive ")),
+          `${card.id} has self-damage but no matching description`,
+        ).toBe(true);
       }
     }
   });
@@ -430,23 +448,20 @@ describe("card descriptions vs effects", () => {
 // ─────────────────────────── Enemies ───────────────────────────
 
 describe("enemy descriptions vs attack effects", () => {
-  it.each(enemyBestiary.map((e) => [e.id, e.title] as const))(
-    "%s — attack effects have valid kinds",
-    (_id, title) => {
-      const enemy = enemyBestiary.find((e) => e.title === title)!;
-      for (const effect of enemy.attackEffects) {
-        expect(["damage", "player-status"]).toContain(effect.kind);
-        if (effect.kind === "damage") {
-          expect(typeof effect.amount).toBe("number");
-          expect(effect.amount).toBeGreaterThan(0);
-        }
-        if (effect.kind === "player-status") {
-          expect(typeof effect.amount).toBe("number");
-          expect(effect.amount).toBeGreaterThan(0);
-        }
+  it.each(enemyBestiary.map((e) => [e.id, e.title] as const))("%s — attack effects have valid kinds", (_id, title) => {
+    const enemy = enemyBestiary.find((e) => e.title === title)!;
+    for (const effect of enemy.attackEffects) {
+      expect(["damage", "player-status"]).toContain(effect.kind);
+      if (effect.kind === "damage") {
+        expect(typeof effect.amount).toBe("number");
+        expect(effect.amount).toBeGreaterThan(0);
       }
-    },
-  );
+      if (effect.kind === "player-status") {
+        expect(typeof effect.amount).toBe("number");
+        expect(effect.amount).toBeGreaterThan(0);
+      }
+    }
+  });
 
   it("no enemy references a trait ID not in its trait list", () => {
     const usedTraitIds = new Set(enemyBestiary.flatMap((e) => e.traits.map((t) => t.id)));
@@ -502,10 +517,7 @@ describe("enemy descriptions vs attack effects", () => {
 // ─────────────────────────── Boons ───────────────────────────
 
 describe("boon descriptions vs manifest effects", () => {
-  const knownBoonMap: Record<
-    string,
-    { description: string; check: (desc: string) => void }
-  > = {
+  const knownBoonMap: Record<string, { description: string; check: (desc: string) => void }> = {
     "brass-censer": {
       description: "first Holy damage each combat is doubled",
       check: (desc) => expect(desc).toContain("holy"),

@@ -70,7 +70,7 @@ function applyLeechTrinketSiphonRider(state: BattleState): BattleState {
     if (mit.armor > 0) pool.push({ key: "armor", status: "armor" });
     if (mit.block > 0) pool.push({ key: "block", status: "block" });
     if (pool.length > 0) {
-      const steal = pool[Math.trunc(getBattleRng(state)() * pool.length)];
+      const steal = pool[Math.trunc(getBattleRng(state)() * pool.length)]!;
       const nextState = {
         ...state,
         enemyMitigation: { ...mit, [steal.key]: Math.max(0, mit[steal.key] - 1) },

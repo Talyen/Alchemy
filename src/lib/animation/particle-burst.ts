@@ -32,7 +32,7 @@ function sampleParticles(
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
-      const a = data[i + 3];
+      const a = data[i + 3]!;
       if (a < 128) continue;
 
       particles.push({

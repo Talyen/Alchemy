@@ -9,7 +9,10 @@ test.describe("Talents in Battle", () => {
 
     await injectTalentUnlocks(page, { block: ["block-start"] });
     const SLASH = makeCard();
-    await startBattleWithDeck(page, Array.from({ length: 8 }, () => SLASH));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 8 }, () => SLASH),
+    );
 
     await expect(page.getByRole("button", { name: "Block 10" })).toBeVisible({ timeout: 3000 });
   });
@@ -19,7 +22,10 @@ test.describe("Talents in Battle", () => {
 
     await injectTalentUnlocks(page, { physical: ["physical-brute-force"] });
     const SLASH = makeCard();
-    await startBattleWithDeck(page, Array.from({ length: 8 }, () => SLASH));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 8 }, () => SLASH),
+    );
     const battle = new BattlePage(page);
 
     await battle.playCardNamed("Slash");

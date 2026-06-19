@@ -23,9 +23,7 @@ describe("enemy turn trait coverage", () => {
   it("documents every active trait handler and passive-only allowlist entry", () => {
     const bestiaryTraitIds = enemyBestiary.flatMap((enemy) => enemy.traits.map((trait) => trait.id));
     const uncoveredTraits = collectUncoveredEnemyTraitIds(bestiaryTraitIds);
-    expect(uncoveredTraits, `Missing handler or PASSIVE_ONLY entry for: ${uncoveredTraits.join(", ")}`).toEqual(
-      [],
-    );
+    expect(uncoveredTraits, `Missing handler or PASSIVE_ONLY entry for: ${uncoveredTraits.join(", ")}`).toEqual([]);
   });
 
   it("documents every difficulty modifier kind with handler or passive-only entry", () => {
@@ -34,9 +32,7 @@ describe("enemy turn trait coverage", () => {
   });
 
   it("keeps handler and passive allowlists disjoint", () => {
-    const traitOverlap = ENEMY_TRAIT_TURN_START_HANDLER_IDS.filter((id) =>
-      PASSIVE_ONLY_ENEMY_TRAIT_IDS.includes(id),
-    );
+    const traitOverlap = ENEMY_TRAIT_TURN_START_HANDLER_IDS.filter((id) => PASSIVE_ONLY_ENEMY_TRAIT_IDS.includes(id));
     const modifierOverlap = DIFFICULTY_TURN_START_MODIFIER_KINDS.filter((kind) =>
       PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS.includes(kind),
     );

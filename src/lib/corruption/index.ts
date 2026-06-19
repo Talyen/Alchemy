@@ -86,7 +86,7 @@ function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delt
   const effect = nextCard.effects[target.effectIndex] as NumericEffect;
 
   nextCard.descriptionLines[target.lineIndex] = replaceNumberAt(
-    nextCard.descriptionLines[target.lineIndex],
+    nextCard.descriptionLines[target.lineIndex]!,
     target.matchIndex,
     nextValue,
   );
@@ -116,7 +116,7 @@ export function corruptCard(selectedCard: BattleCard, library: BattleCard[] = ca
     throw new Error("Selected card has no editable corruption target");
   }
 
-  const target = targets[Math.floor(Math.random() * targets.length)];
+  const target = targets[Math.floor(Math.random() * targets.length)]!;
   const delta: 1 | -1 = Math.random() < CORRUPTION_DELTA_CHANCE ? -1 : 1;
   return {
     originalCard: selectedCard,

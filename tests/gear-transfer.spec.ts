@@ -1,9 +1,5 @@
 import { expect } from "@playwright/test";
-import {
-  bodyGear,
-  gearItemLocator,
-  openArmory,
-} from "./e2e/armory";
+import { bodyGear, gearItemLocator, openArmory } from "./e2e/armory";
 import { test } from "./fixtures/e2e";
 
 test.describe("Gear transfer", () => {

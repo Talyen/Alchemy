@@ -28,8 +28,6 @@ describe("encounter trait catalog", () => {
   });
 
   it("drops unknown and category-incompatible persisted ids", () => {
-    expect(sanitizeEncounterTraitIds(["tempered", "removed-trait", "collector"], "combat")).toEqual([
-      "tempered",
-    ]);
+    expect(sanitizeEncounterTraitIds(["tempered", "removed-trait", "collector"], "combat")).toEqual(["tempered"]);
   });
 });

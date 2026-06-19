@@ -34,9 +34,14 @@ describe("normalizeActiveRunData", () => {
 
   it("replaces legacy starter deck with current starting deck for unstarted run", () => {
     const legacyDeck = [
-      { id: "slash" }, { id: "bash" }, { id: "block" },
-      { id: "anvil" }, { id: "plate-mail" }, { id: "apple" },
-      { id: "meteor" }, { id: "blessed-aegis" },
+      { id: "slash" },
+      { id: "bash" },
+      { id: "block" },
+      { id: "anvil" },
+      { id: "plate-mail" },
+      { id: "apple" },
+      { id: "meteor" },
+      { id: "blessed-aegis" },
     ];
     const input = { ...baseInput(), runDeck: legacyDeck };
     const result = normalizeActiveRunData(input);

@@ -16,13 +16,13 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false };
+  override state: State = { hasError: false };
 
   static getDerivedStateFromError(): State {
     return { hasError: true };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
+  override componentDidCatch(error: Error, info: ErrorInfo) {
     const label = this.props.label ?? undefined;
     logError(
       label ? `ErrorBoundary (${label}): ${error.message}` : `ErrorBoundary: ${error.message}`,
@@ -34,7 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
     this.props.onError?.(error, info);
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       return (
         <div className="flex h-screen items-center justify-center bg-background text-foreground">

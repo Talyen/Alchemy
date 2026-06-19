@@ -88,9 +88,9 @@ describe("applyMysteryEffect", () => {
   });
 
   it("throws for unknown effect kinds", () => {
-    expect(() =>
-      applyMysteryEffect({ kind: "unknown-kind" } as MysteryEffect, minimalContext()),
-    ).toThrow(/Unhandled mystery effect kind/);
+    expect(() => applyMysteryEffect({ kind: "unknown-kind" } as MysteryEffect, minimalContext())).toThrow(
+      /Unhandled mystery effect kind/,
+    );
   });
 
   it("chooseCard with archery tag offers only archery-tagged cards", () => {

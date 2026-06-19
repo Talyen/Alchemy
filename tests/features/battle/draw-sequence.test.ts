@@ -68,13 +68,7 @@ describe("runHandDrawSequence", () => {
       },
     });
 
-    const result = await runHandDrawSequence(
-      oldHand,
-      { ...defaultBattleState(), hand: newHand },
-      applyState,
-      3,
-      deps,
-    );
+    const result = await runHandDrawSequence(oldHand, { ...defaultBattleState(), hand: newHand }, applyState, 3, deps);
 
     expect(result).toBe(true);
     expect(applyState).toHaveBeenCalledOnce();

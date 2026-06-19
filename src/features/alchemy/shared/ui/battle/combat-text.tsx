@@ -65,7 +65,7 @@ function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "p
       }}
       exit={{ opacity: 0, transition: { duration: 0.1 } }}
     >
-      {createElement(icon, { className: "h-[2.78cqh] w-[2.78cqh]" })}
+      {createElement(icon!, { className: "h-[2.78cqh] w-[2.78cqh]" })}
       <span>{entry.displayText}</span>
     </motion.div>
   );

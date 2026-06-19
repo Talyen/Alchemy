@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createGearInstance } from "@/lib/gear";
 import { gearDefinitions } from "@/lib/gear/definitions";
-import {
-  restorePendingReward,
-  serializePendingReward,
-} from "@/lib/active-run-session/pending-reward-persistence";
+import { restorePendingReward, serializePendingReward } from "@/lib/active-run-session/pending-reward-persistence";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 
 describe("pending reward persistence", () => {

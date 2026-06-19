@@ -18,14 +18,14 @@ export function getCurrentEnemy(enemyType?: EnemyType, encounteredEnemyIds: read
     : enemyBestiary.filter((e) => e.id !== "skeleton");
   const available = pool.length > 0 ? pool : enemyBestiary.filter((e) => e.id !== "skeleton");
   const preferred = withoutEncountered(available, encounteredEnemyIds);
-  return pickRandom(preferred.length > 0 ? preferred : available) ?? enemyBestiary[0];
+  return pickRandom(preferred.length > 0 ? preferred : available) ?? enemyBestiary[0]!;
 }
 
 // Returns a random boss enemy from the full boss pool. Any boss can appear in any act.
 export function getBossEnemy(encounteredEnemyIds: readonly string[] = []): BestiaryEntry {
   const pool = enemyBestiary.filter((e) => e.enemyType === "boss");
   const preferred = withoutEncountered(pool, encounteredEnemyIds);
-  return pickRandom(preferred.length > 0 ? preferred : pool) ?? enemyBestiary[0];
+  return pickRandom(preferred.length > 0 ? preferred : pool) ?? enemyBestiary[0]!;
 }
 
 // Returns a boss by its enemy ID (used by Wildwood boss selection).

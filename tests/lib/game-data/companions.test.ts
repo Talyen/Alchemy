@@ -74,10 +74,7 @@ describe("companionLibrary data integrity", () => {
     const damageTotals = Object.values(companionLibrary)
       .filter((c) => c.turnStartEffects[0]?.kind === "damage")
       .map((c) => c.turnStartEffects.reduce((sum, e) => sum + (e.kind === "damage" ? e.amount : 0), 0));
-    const phoenixDamage = phoenix.turnStartEffects.reduce(
-      (sum, e) => sum + (e.kind === "damage" ? e.amount : 0),
-      0,
-    );
+    const phoenixDamage = phoenix.turnStartEffects.reduce((sum, e) => sum + (e.kind === "damage" ? e.amount : 0), 0);
     expect(phoenixDamage).toBe(Math.max(...damageTotals));
   });
 });

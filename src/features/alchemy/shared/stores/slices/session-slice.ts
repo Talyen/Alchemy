@@ -9,10 +9,8 @@ import type {
   TrinketShopState,
   EquipmentShopState,
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
-import { defineFieldSetter } from "./_field-setter";
-import { createInitialSessionFields, type RunSessionFields } from "../run-domain-types";
-
-type ImmerSet = (fn: (state: any) => void) => void;
+import { defineFieldSetter, type ImmerSet } from "./_field-setter";
+import { createInitialSessionFields, type RunSessionFields, type RunDomainDataState } from "../run-domain-types";
 
 export type SessionActions = {
   setHasActiveRun: (active: boolean) => void;
@@ -43,7 +41,7 @@ export type SessionActions = {
   clearTransientSession: () => void;
 };
 
-export function defineSessionActions(set: ImmerSet): SessionActions {
+export function defineSessionActions(set: ImmerSet<RunDomainDataState>): SessionActions {
   const setField = defineFieldSetter<RunSessionFields>(set, "session");
 
   return {
@@ -66,13 +64,13 @@ export function defineSessionActions(set: ImmerSet): SessionActions {
     setEquipmentShopState: setField("equipmentShopState"),
     setMysteryEvent: setField("mysteryEvent"),
     setMysteryCardChoices: (choices) =>
-      set((state: any) => {
+      set((state) => {
         state.session.mysteryCardChoices =
           typeof choices === "function" ? choices(state.session.mysteryCardChoices) : choices;
       }),
 
     clearTransientSession: () =>
-      set((state: any) => {
+      set((state) => {
         state.session = { ...createInitialSessionFields(), pendingContentSystemType: "campaign" };
       }),
   };

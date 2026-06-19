@@ -19,7 +19,17 @@ async function fileIsFresh(sourcePath, outputPath) {
 async function main() {
   await mkdir(outputDir, { recursive: true });
 
-  const files = ["Menu 1.mp3", "Menu 2.mp3", "Menu 3.mp3", "Menu 4.mp3", "Battle 1.mp3", "Battle 2.mp3", "Battle 3.mp3", "Battle 4.mp3", "Battle 5.mp3"];
+  const files = [
+    "Menu 1.mp3",
+    "Menu 2.mp3",
+    "Menu 3.mp3",
+    "Menu 4.mp3",
+    "Battle 1.mp3",
+    "Battle 2.mp3",
+    "Battle 3.mp3",
+    "Battle 4.mp3",
+    "Battle 5.mp3",
+  ];
 
   const results = [];
   let failed = false;

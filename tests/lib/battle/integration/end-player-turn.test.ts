@@ -333,7 +333,9 @@ describe("enemy traits via endPlayerTurn", () => {
         descriptionLines: [""],
         art: "",
         enemyType: "boss",
-        traits: [{ id: "iron-hide", title: "Iron Hide", description: "Gains 1 Armor, 1 Forge, or applies 1 Burn each turn" }],
+        traits: [
+          { id: "iron-hide", title: "Iron Hide", description: "Gains 1 Armor, 1 Forge, or applies 1 Burn each turn" },
+        ],
         attackEffects: [],
       },
     });
@@ -344,21 +346,30 @@ describe("enemy traits via endPlayerTurn", () => {
     expect(result1.state.enemyMitigation.forge).toBe(0);
     expect(result1.state.playerHealth).toBe(30);
     expect(result1.combatTexts).toContainEqual({
-      target: "enemy", kind: "status", stat: "armor", amount: IRON_HIDE_ARMOR_PER_TURN,
+      target: "enemy",
+      kind: "status",
+      stat: "armor",
+      amount: IRON_HIDE_ARMOR_PER_TURN,
     });
 
     const state2 = endPlayerTurn(result1.state, { traitRoll: 0.5 });
     expect(state2.state.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN);
     expect(state2.state.playerHealth).toBe(30);
     expect(state2.combatTexts).toContainEqual({
-      target: "enemy", kind: "status", stat: "forge", amount: TRAIT_FORGE_PER_TURN,
+      target: "enemy",
+      kind: "status",
+      stat: "forge",
+      amount: TRAIT_FORGE_PER_TURN,
     });
 
     // Burn adds +1 to the bear's Burn damage (stacks each time chosen)
     const state3 = endPlayerTurn(state2.state, { traitRoll: 0.9 });
     expect(state3.state.enemyMitigation.burnBonus).toBe(1);
     expect(state3.combatTexts).toContainEqual({
-      target: "enemy", kind: "notice", stat: "burn", text: "+1 Burn Dmg",
+      target: "enemy",
+      kind: "notice",
+      stat: "burn",
+      text: "+1 Burn Dmg",
     });
   });
 
@@ -538,7 +549,15 @@ describe("endPlayerTurn — armorBreakBlock talent", () => {
       playerHealth: 25,
       playerMaxHealth: 30,
       playerStatuses: {
-        block: 0, armor: 1, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0,
+        block: 0,
+        armor: 1,
+        forge: 0,
+        haste: 0,
+        burn: 0,
+        poison: 0,
+        bleed: 0,
+        freeze: 0,
+        stun: 0,
       },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
       talentEffects: { ...defaultTalentEffects, armorBreakBlock: 3 },
@@ -548,7 +567,10 @@ describe("endPlayerTurn — armorBreakBlock talent", () => {
     // triggering armorBreakBlock = 3 block
     expect(result.state.playerStatuses.armor).toBe(0);
     expect(result.enemyResolutionCombatTexts).toContainEqual({
-      target: "player", kind: "status", stat: "block", amount: 3,
+      target: "player",
+      kind: "status",
+      stat: "block",
+      amount: 3,
     });
   });
 });
@@ -567,7 +589,10 @@ describe("endPlayerTurn — poison halves enemy regeneration", () => {
     // Poison ticks first (2 damage, 20→18, decays to 1), then regen halved (4→2, 18→20)
     expect(result.state.enemyHealth).toBe(20);
     expect(result.enemyResolutionCombatTexts).toContainEqual({
-      target: "enemy", kind: "heal", stat: "health", amount: 2,
+      target: "enemy",
+      kind: "heal",
+      stat: "health",
+      amount: 2,
     });
   });
 
@@ -583,7 +608,10 @@ describe("endPlayerTurn — poison halves enemy regeneration", () => {
     const result = endPlayerTurn(state);
     expect(result.state.enemyHealth).toBe(24);
     expect(result.enemyResolutionCombatTexts).toContainEqual({
-      target: "enemy", kind: "heal", stat: "health", amount: 4,
+      target: "enemy",
+      kind: "heal",
+      stat: "health",
+      amount: 4,
     });
   });
 });

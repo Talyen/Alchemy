@@ -45,11 +45,12 @@ const LEGEND_MODIFIERS: DifficultyModifier[] = [
   { kind: "enemy-damage-multiplier", amount: 1.6 },
 ];
 
-const TIERS: { label: string; preset: TalentPreset; depthOffset: number; difficultyModifiers: DifficultyModifier[] }[] = [
-  { label: "Early", preset: "early", depthOffset: 0, difficultyModifiers: [] },
-  { label: "Mid", preset: "mid", depthOffset: 8, difficultyModifiers: ADVENTURER_MODIFIERS },
-  { label: "Late", preset: "late", depthOffset: 16, difficultyModifiers: LEGEND_MODIFIERS },
-];
+const TIERS: { label: string; preset: TalentPreset; depthOffset: number; difficultyModifiers: DifficultyModifier[] }[] =
+  [
+    { label: "Early", preset: "early", depthOffset: 0, difficultyModifiers: [] },
+    { label: "Mid", preset: "mid", depthOffset: 8, difficultyModifiers: ADVENTURER_MODIFIERS },
+    { label: "Late", preset: "late", depthOffset: 16, difficultyModifiers: LEGEND_MODIFIERS },
+  ];
 
 // Lookup maps from internal ID to in-game display title.
 const ENEMY_TITLES: Record<string, string> = Object.fromEntries(enemyBestiary.map((e) => [e.id, e.title]));
@@ -229,7 +230,9 @@ function collectAnomalies(results: BalanceBatchResult[], tierLabel: string, thre
   return Object.values(byField).sort((a, b) => b.maxValue - a.maxValue);
 }
 
-function collectAllAnomalyMetrics(tieredResults: TieredResults): { field: string; early: number; mid: number; late: number }[] {
+function collectAllAnomalyMetrics(
+  tieredResults: TieredResults,
+): { field: string; early: number; mid: number; late: number }[] {
   const perTier = TIERS.map((tier, i) => {
     const byField: Record<string, number> = {};
     for (const batch of tieredResults[i].results) {
@@ -559,17 +562,26 @@ ${tableRows(mergedCards, deltaCell, cardTitle)}
 <h2>Anomalies</h2>
 <p class="meta">Values exceeding tier thresholds during simulated battles (Early ${ANOMALY_THRESHOLD_BY_PRESET.early} / Mid ${ANOMALY_THRESHOLD_BY_PRESET.mid} / Late ${ANOMALY_THRESHOLD_BY_PRESET.late}).</p>
 <div class="scroll"><table><thead><tr><th>Field</th><th>Max Value</th><th>Battles</th><th>Peak Scenario</th></tr></thead><tbody>
-${anomalies.length === 0 ? '<tr><td colspan="4">None detected</td></tr>' : anomalies.slice(0, 50).map((a) => {
-  const peak = a.peakScenario;
-  const scenario = peak ? `${peak.character} vs ${peak.enemy} (${peak.tier})${peak.peakStat ? ` · ${peak.peakStat}` : ""}` : "";
-  return `<tr><td>${a.field}</td><td class="neg">${a.maxValue}</td><td>${a.battles}</td><td>${scenario}</td></tr>`;
-}).join("\n")}
+${
+  anomalies.length === 0
+    ? '<tr><td colspan="4">None detected</td></tr>'
+    : anomalies
+        .slice(0, 50)
+        .map((a) => {
+          const peak = a.peakScenario;
+          const scenario = peak
+            ? `${peak.character} vs ${peak.enemy} (${peak.tier})${peak.peakStat ? ` · ${peak.peakStat}` : ""}`
+            : "";
+          return `<tr><td>${a.field}</td><td class="neg">${a.maxValue}</td><td>${a.battles}</td><td>${scenario}</td></tr>`;
+        })
+        .join("\n")
+}
 </tbody></table></div>
 
 <h2>All Anomaly Metrics</h2>
 <p class="meta">Maximum observed values per field across all tiers. Values over each tier threshold highlighted in red.</p>
 <div class="scroll"><table><thead><tr><th>Field</th>${TIERS.map((t) => `<th>${t.label}</th>`).join("")}</tr></thead><tbody>
-${allMetrics.map((m) => `<tr><td>${m.field}</td>${[m.early, m.mid, m.late].map((v, i) => `<td class="${v > m.thresholds[i] ? 'neg' : ''}">${v}</td>`).join("")}</tr>`).join("\n")}
+${allMetrics.map((m) => `<tr><td>${m.field}</td>${[m.early, m.mid, m.late].map((v, i) => `<td class="${v > m.thresholds[i] ? "neg" : ""}">${v}</td>`).join("")}</tr>`).join("\n")}
 </tbody></table></div>
 </body>
 </html>`;

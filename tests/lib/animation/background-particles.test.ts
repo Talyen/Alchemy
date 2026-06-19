@@ -119,9 +119,7 @@ describe("startBackgroundParticles", () => {
     });
 
     const customColors = ["rgba(255, 0, 0, X)"] as const;
-    expect(() =>
-      startBackgroundParticles(ref as never, "embers", customColors),
-    ).not.toThrow();
+    expect(() => startBackgroundParticles(ref as never, "embers", customColors)).not.toThrow();
 
     rafSpy.mockRestore();
   });
@@ -136,9 +134,7 @@ describe("startBackgroundParticles", () => {
       return 1;
     });
 
-    expect(() =>
-      startBackgroundParticles(ref as never, "embers", undefined, 0.5),
-    ).not.toThrow();
+    expect(() => startBackgroundParticles(ref as never, "embers", undefined, 0.5)).not.toThrow();
 
     rafSpy.mockRestore();
   });

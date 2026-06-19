@@ -167,14 +167,7 @@ describe("packInventory", () => {
     ];
 
     expect(
-      canOccupyVacatedInventoryPlacement(
-        items,
-        "incoming",
-        { w: 2, h: 2 },
-        { w: 2, h: 2 },
-        { col: 3, row: 2 },
-        7,
-      ),
+      canOccupyVacatedInventoryPlacement(items, "incoming", { w: 2, h: 2 }, { w: 2, h: 2 }, { col: 3, row: 2 }, 7),
     ).toBe(true);
   });
 
@@ -185,14 +178,7 @@ describe("packInventory", () => {
     ];
 
     expect(
-      canOccupyVacatedInventoryPlacement(
-        items,
-        "incoming",
-        { w: 2, h: 1 },
-        { w: 2, h: 2 },
-        { col: 1, row: 1 },
-        7,
-      ),
+      canOccupyVacatedInventoryPlacement(items, "incoming", { w: 2, h: 1 }, { w: 2, h: 2 }, { col: 1, row: 1 }, 7),
     ).toBe(false);
   });
 

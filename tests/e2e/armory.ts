@@ -40,10 +40,7 @@ export type OpenArmoryOptions = {
   craftingCurrencies?: Partial<Record<CraftingCurrencyId, number>>;
 };
 
-export async function openArmory(
-  page: Page,
-  options: GearInstance[] | OpenArmoryOptions = [bodyGear, helmGear],
-) {
+export async function openArmory(page: Page, options: GearInstance[] | OpenArmoryOptions = [bodyGear, helmGear]) {
   const resolved: OpenArmoryOptions = Array.isArray(options) ? { inventory: options } : options;
   const menu = new MenuPage(page);
   await menu.gotoWithUnlockedMeta({

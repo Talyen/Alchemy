@@ -269,14 +269,16 @@ describe("gear save normalization", () => {
     const currencyBoardPositionsByCharacter = createEmptyCurrencyBoardPositionsByCharacter();
     currencyBoardPositionsByCharacter.knight = currencyBoardPositions;
 
-    useGearStore.getState().initialize(
-      knightInventories(body, ring),
-      loadouts,
-      gearBoardPositionsByCharacter,
-      craftingCurrencies,
-      {},
-      currencyBoardPositionsByCharacter,
-    );
+    useGearStore
+      .getState()
+      .initialize(
+        knightInventories(body, ring),
+        loadouts,
+        gearBoardPositionsByCharacter,
+        craftingCurrencies,
+        {},
+        currencyBoardPositionsByCharacter,
+      );
 
     const save = buildAlchemySaveDataFromStores(null);
     const normalized = normalizeSaveData(save);

@@ -33,7 +33,10 @@ function makeMockAudioContext() {
 
 function lastCreatedSource(ctx: AudioContext) {
   const createBufferSource = ctx.createBufferSource as ReturnType<typeof vi.fn>;
-  return createBufferSource.mock.results.at(-1)?.value as { start: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn> };
+  return createBufferSource.mock.results.at(-1)?.value as {
+    start: ReturnType<typeof vi.fn>;
+    stop: ReturnType<typeof vi.fn>;
+  };
 }
 
 function expectLastSourceStarted() {

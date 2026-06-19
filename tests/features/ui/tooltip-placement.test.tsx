@@ -57,7 +57,17 @@ describe("useTooltipFlip", () => {
   });
 
   it("resets flip when the trigger changes", () => {
-    const rect = { top: 100, left: 50, right: 250, bottom: 200, width: 200, height: 100, x: 50, y: 100, toJSON: () => ({}) };
+    const rect = {
+      top: 100,
+      left: 50,
+      right: 250,
+      bottom: 200,
+      width: 200,
+      height: 100,
+      x: 50,
+      y: 100,
+      toJSON: () => ({}),
+    };
 
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(rect as DOMRect);
 
@@ -128,7 +138,17 @@ describe("useTooltipSidePlacement", () => {
   });
 
   it("resets placement when the trigger changes", () => {
-    const rect = { top: 100, left: 50, right: 250, bottom: 200, width: 200, height: 100, x: 50, y: 100, toJSON: () => ({}) };
+    const rect = {
+      top: 100,
+      left: 50,
+      right: 250,
+      bottom: 200,
+      width: 200,
+      height: 100,
+      x: 50,
+      y: 100,
+      toJSON: () => ({}),
+    };
 
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(rect as DOMRect);
 

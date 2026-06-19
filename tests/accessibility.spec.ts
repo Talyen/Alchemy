@@ -19,7 +19,10 @@ test.describe("Accessibility", critical, () => {
   test("battle cards have accessible play labels", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+    );
 
     const cards = page.locator('[aria-label^="Play "]');
     await expect(cards.first()).toBeVisible({ timeout: 5000 });
@@ -45,7 +48,10 @@ test.describe("Accessibility", critical, () => {
   test("inspect and select buttons have accessible labels in battle", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+    );
 
     const cards = page.locator('[aria-label^="Play "]');
     await expect(cards.first()).toBeVisible({ timeout: 5000 });

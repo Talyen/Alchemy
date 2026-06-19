@@ -27,6 +27,7 @@ export function CampfireScreen({
       const timeout = setTimeout(onContinue, CAMPFIRE_CONTINUE_DELAY);
       return () => clearTimeout(timeout);
     }
+    return;
   }, [done, onContinue]);
 
   useEffect(() => {

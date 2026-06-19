@@ -71,9 +71,7 @@ describe("sampleAnomalies", () => {
   it("ignores notice combat text", () => {
     const anomalies = createEmptyAnomalies();
     const state = createTestBattleState();
-    const texts: CombatTextEvent[] = [
-      { target: "enemy", kind: "notice", stat: "physical", text: "Immune" },
-    ];
+    const texts: CombatTextEvent[] = [{ target: "enemy", kind: "notice", stat: "physical", text: "Immune" }];
     sampleAnomalies(state, texts, anomalies);
     expect(anomalies.maxSingleHitDamageToEnemy).toBe(0);
     expect(anomalies.maxSingleHeal).toBe(0);

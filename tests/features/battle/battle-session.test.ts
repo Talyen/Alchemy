@@ -4,11 +4,7 @@ import { createTransferCancelRegistry } from "@/features/alchemy/run-loop/battle
 import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
 import { defaultBattleState } from "@/lib/battle";
 import { TimerGroup } from "@/lib/animation/game-timer";
-import {
-  getBattleStoreView,
-  getNavigationStoreView,
-  resetRunBattleSlice,
-} from "../../helpers/run-domain-store-test";
+import { getBattleStoreView, getNavigationStoreView, resetRunBattleSlice } from "../../helpers/run-domain-store-test";
 import { ROUTE_SCREENS } from "@/lib/routing";
 
 function makeSession() {
@@ -94,9 +90,9 @@ describe("createBattleSession", () => {
 
   it("resetBattleSession clears floating combat texts", async () => {
     vi.useFakeTimers();
-    useBattlePresentationStore.getState().showCombatTexts([
-      { target: "enemy", kind: "damage", stat: "health", amount: 5 },
-    ]);
+    useBattlePresentationStore
+      .getState()
+      .showCombatTexts([{ target: "enemy", kind: "damage", stat: "health", amount: 5 }]);
     await vi.advanceTimersByTimeAsync(0);
     expect(useBattlePresentationStore.getState().floatingCombatTexts).toHaveLength(1);
 

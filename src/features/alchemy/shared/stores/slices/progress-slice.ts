@@ -25,9 +25,8 @@ import {
 } from "@/features/alchemy/run-setup/run/run-state-init";
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { defineFieldSetter } from "./_field-setter";
-
-type ImmerSet = (fn: (state: any) => void) => void;
+import { defineFieldSetter, type ImmerSet } from "./_field-setter";
+import type { RunDomainDataState } from "../run-domain-types";
 
 export type ProgressActions = {
   setRunDeck: (action: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
@@ -90,7 +89,7 @@ export type ProgressActions = {
   hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void;
 };
 
-export function defineProgressActions(set: ImmerSet): ProgressActions {
+export function defineProgressActions(set: ImmerSet<RunDomainDataState>): ProgressActions {
   const setField = defineFieldSetter<RunStateFields>(set, "progress");
 
   return {
@@ -105,7 +104,7 @@ export function defineProgressActions(set: ImmerSet): ProgressActions {
     setLastOfferedDestinations: setField("lastOfferedDestinations"),
     setDestinationRoundsSinceOffered: setField("destinationRoundsSinceOffered"),
     setDestinationOfferState: (offerState) =>
-      set((state: any) => {
+      set((state) => {
         state.progress.lastOfferedDestinations = [...offerState.lastOfferedDestinations];
         state.progress.destinationRoundsSinceOffered = { ...offerState.roundsSinceOffered };
       }),
@@ -115,12 +114,12 @@ export function defineProgressActions(set: ImmerSet): ProgressActions {
     setContentSystemType: setField("contentSystemType"),
 
     setCharacter: (selectedId) =>
-      set((state: any) => {
+      set((state) => {
         state.progress.characterId = selectedId;
       }),
 
     resetProgress: () =>
-      set((state: any) => {
+      set((state) => {
         const characterId = state.progress.characterId;
         const talentXP = state.progress.talentXP;
         const unlockedTalents = state.progress.unlockedTalents;
@@ -133,13 +132,13 @@ export function defineProgressActions(set: ImmerSet): ProgressActions {
       }),
 
     addRunGold: (amount) =>
-      set((state: any) => {
+      set((state) => {
         const mult = getGoldMultiplier(state.progress.characterId, state.progress.selectedDifficulty);
         state.progress.runGold += Math.floor(amount * mult);
       }),
 
     unlockTalent: (keywordId, talentId) =>
-      set((state: any) => {
+      set((state) => {
         const result = tryUnlockTalent(keywordId, talentId, state.progress.talentXP, state.progress.unlockedTalents);
         if (result.unlockedTalents) {
           state.progress.unlockedTalents = result.unlockedTalents;
@@ -148,7 +147,7 @@ export function defineProgressActions(set: ImmerSet): ProgressActions {
 
     unlockAllTalents: import.meta.env.DEV
       ? () =>
-          set((state: any) => {
+          set((state) => {
             const next: UnlockedTalents = {};
             const xp: TalentXP = {};
             for (const talent of talentPool) {
@@ -164,17 +163,17 @@ export function defineProgressActions(set: ImmerSet): ProgressActions {
       : () => {},
 
     resetUnlockedTalents: () =>
-      set((state: any) => {
+      set((state) => {
         state.progress.unlockedTalents = {};
       }),
 
     resetRunXP: () =>
-      set((state: any) => {
+      set((state) => {
         state.progress.runTalentXP = {};
       }),
 
     clearPermanentData: () =>
-      set((state: any) => {
+      set((state) => {
         state.progress.talentXP = {};
         state.progress.runTalentXP = {};
         state.progress.unlockedTalents = {};
@@ -183,7 +182,7 @@ export function defineProgressActions(set: ImmerSet): ProgressActions {
     awardCardXP: (card) => {
       const keywords = filterKeywordsForTalentXP(getCardKeywords(card));
       if (keywords.length === 0) return;
-      set((state: any) => {
+      set((state) => {
         state.progress.runTalentXP = addTalentXP(state.progress.runTalentXP, keywords);
       });
     },
@@ -191,23 +190,23 @@ export function defineProgressActions(set: ImmerSet): ProgressActions {
     awardMysteryXP: (keywordId, amount) => {
       const keywords = filterKeywordsForTalentXP([keywordId]);
       if (keywords.length === 0) return;
-      set((state: any) => {
+      set((state) => {
         state.progress.runTalentXP = addTalentXP(state.progress.runTalentXP, keywords, amount);
       });
     },
 
     addRunMaterialsEarned: (materials) =>
-      set((state: any) => {
+      set((state) => {
         state.progress.runMaterialsEarned = addInventory(state.progress.runMaterialsEarned, materials);
       }),
 
     clearRunMaterialsEarned: () =>
-      set((state: any) => {
+      set((state) => {
         state.progress.runMaterialsEarned = emptyInventory();
       }),
 
     finalizeRunXP: () =>
-      set((state: any) => {
+      set((state) => {
         if (Object.keys(state.progress.runTalentXP).length === 0) {
           state.session.runEndTalentXP = {};
           return;
@@ -223,7 +222,7 @@ export function defineProgressActions(set: ImmerSet): ProgressActions {
       }),
 
     initialize: (activeRun, talentXP, unlockedTalents, fallbackCharacterId = "knight") =>
-      set((state: any) => {
+      set((state) => {
         Object.assign(
           state.progress,
           createInitialRunState(activeRun, fallbackCharacterId),
@@ -233,7 +232,7 @@ export function defineProgressActions(set: ImmerSet): ProgressActions {
       }),
 
     hydrateFromSnapshot: (snapshot) =>
-      set((state: any) => {
+      set((state) => {
         state.session.runEndTalentXP = {};
         Object.assign(state.progress, runFieldsFromSnapshot(snapshot), {
           runTalentXP: {},

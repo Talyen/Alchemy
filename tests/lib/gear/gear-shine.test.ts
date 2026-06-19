@@ -7,9 +7,7 @@ import {
 } from "@/lib/gear/gear-shine";
 import type { GearInstance } from "@/lib/gear/types";
 
-function instance(
-  overrides: Partial<GearInstance> & Pick<GearInstance, "instanceId" | "definitionId">,
-): GearInstance {
+function instance(overrides: Partial<GearInstance> & Pick<GearInstance, "instanceId" | "definitionId">): GearInstance {
   return {
     affixes: [],
     ...overrides,

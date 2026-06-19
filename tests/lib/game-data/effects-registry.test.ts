@@ -30,12 +30,8 @@ describe("effect dispatch registry", () => {
   });
 
   it("parses representative effect schemas via BattleCardEffectSchema", () => {
-    expect(
-      BattleCardEffectSchema.safeParse({ kind: "damage", damageType: "physical", amount: 3 }).success,
-    ).toBe(true);
-    expect(
-      BattleCardEffectSchema.safeParse({ kind: "enemy-status", status: "poison", amount: 2 }).success,
-    ).toBe(true);
+    expect(BattleCardEffectSchema.safeParse({ kind: "damage", damageType: "physical", amount: 3 }).success).toBe(true);
+    expect(BattleCardEffectSchema.safeParse({ kind: "enemy-status", status: "poison", amount: 2 }).success).toBe(true);
     expect(BattleCardEffectSchema.safeParse({ kind: "gain-gold", amount: 5 }).success).toBe(true);
     expect(
       BattleCardEffectSchema.safeParse({

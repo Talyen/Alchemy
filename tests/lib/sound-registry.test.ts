@@ -2,10 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { cardLibrary, enemyBestiary } from "@/lib/game-data";
-import {
-  cardSounds, enemyAttackSounds, battleEventSounds,
-  uiSounds, stingerSounds,
-} from "@/lib/sound-registry";
+import { cardSounds, enemyAttackSounds, battleEventSounds, uiSounds, stingerSounds } from "@/lib/sound-registry";
 
 const publicSoundsDir = path.resolve(process.cwd(), "public", "sounds");
 const optimizeSoundsScript = path.resolve(process.cwd(), "scripts", "optimize-sounds.mjs");
@@ -139,9 +136,7 @@ describe("sound asset files", () => {
 
   it("registered sounds are generated or explicitly preserved", () => {
     const script = readFileSync(optimizeSoundsScript, "utf8");
-    const generatedSounds = new Set(
-      Array.from(script.matchAll(/target:\s*"([^"]+\.ogg)"/g), (match) => match[1]),
-    );
+    const generatedSounds = new Set(Array.from(script.matchAll(/target:\s*"([^"]+\.ogg)"/g), (match) => match[1]));
 
     for (const sound of registeredSounds()) {
       const isGenerated = generatedSounds.has(sound);

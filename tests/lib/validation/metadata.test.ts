@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation/metadata";
+import {
+  CURRENT_CONTENT_VERSION,
+  CURRENT_GAME_BUILD_VERSION,
+  CURRENT_SAVE_SCHEMA_VERSION,
+} from "@/lib/validation/metadata";
 import { migrateSaveDataToCurrent } from "@/lib/validation/migration";
 import { legacyCampaignRunSave } from "../../fixtures/legacy-saves";
 

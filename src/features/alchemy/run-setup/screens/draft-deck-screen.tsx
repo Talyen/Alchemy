@@ -143,7 +143,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
               disabled={selectedIndex === null}
               onClick={() => {
                 if (selectedIndex === null) return;
-                handlePick(choices[selectedIndex]);
+                handlePick(choices[selectedIndex]!);
                 setSelectedIndex(null);
               }}
             >

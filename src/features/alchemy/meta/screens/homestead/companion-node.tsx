@@ -36,7 +36,7 @@ export function CompanionCardNode({
   const companionId = companionEffect?.companionId ?? null;
   const currentLevel = companionId ? (bondedCompanions[companionId] ?? 0) : 0;
   const isComplete = currentLevel >= COMPANION_MAX_TIER;
-  const bondCost = COMPANION_BOND_TIERS[Math.min(currentLevel, COMPANION_MAX_TIER - 1)];
+  const bondCost = COMPANION_BOND_TIERS[Math.min(currentLevel, COMPANION_MAX_TIER - 1)]!;
   const bondAffordable = discovered && !isComplete && canAfford(materialInventory, bondCost);
   const showButton = discovered && !isComplete;
 

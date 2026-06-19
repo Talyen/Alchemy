@@ -14,10 +14,7 @@ import {
   teardownRun,
 } from "@/features/alchemy/shared/stores/run-transitions";
 import { getCombinedRunGold, getCurrentRunPhase } from "../../helpers/run-session-assertions";
-import {
-  getRunSession,
-  snapshotRun,
-} from "@/features/alchemy/shared/stores/run-session-facade";
+import { getRunSession, snapshotRun } from "@/features/alchemy/shared/stores/run-session-facade";
 import { flattenRunSessionForScreens } from "@/features/alchemy/shared/stores/run-screen-data";
 import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
@@ -86,7 +83,17 @@ describe("initialize", () => {
   it("restores active run data", () => {
     const activeRun: ActiveRunData = {
       characterId: "rogue",
-      runDeck: [{ id: "stab", title: "Stab", descriptionLines: [""], art: "", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 4 }], uid: 1 }],
+      runDeck: [
+        {
+          id: "stab",
+          title: "Stab",
+          descriptionLines: [""],
+          art: "",
+          cost: 1,
+          effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+          uid: 1,
+        },
+      ],
       runGold: 50,
       runPlayerHealth: 25,
       runMaxHealth: 30,
@@ -193,7 +200,13 @@ describe("gear max health sync", () => {
     loadouts.knight.helm = maxHealthHelm.instanceId;
     setRunProgress({ characterId: "knight", runMaxHealth: 37, runPlayerHealth: 37, initialized: true });
 
-    syncRunMaxHealthFromGearMutation("knight", [maxHealthHelm], loadouts, [{ ...maxHealthHelm, affixes: [] }], loadouts);
+    syncRunMaxHealthFromGearMutation(
+      "knight",
+      [maxHealthHelm],
+      loadouts,
+      [{ ...maxHealthHelm, affixes: [] }],
+      loadouts,
+    );
 
     expect(getRunProgressStoreView().runMaxHealth).toBe(30);
     expect(getRunProgressStoreView().runPlayerHealth).toBe(30);
@@ -215,7 +228,11 @@ describe("gear max health sync", () => {
 describe("awardCardXP", () => {
   it("awards XP for card keywords to runTalentXP", () => {
     const card: BattleCard = {
-      id: "fireball", title: "Fireball", descriptionLines: [""], art: "", cost: 3,
+      id: "fireball",
+      title: "Fireball",
+      descriptionLines: [""],
+      art: "",
+      cost: 3,
       effects: [{ kind: "damage", damageType: "burn", amount: 8 }],
     };
     getRunProgressStoreView().awardCardXP(card);
@@ -225,7 +242,12 @@ describe("awardCardXP", () => {
 
   it("does nothing for card with no keywords", () => {
     const card: BattleCard = {
-      id: "blank", title: "Blank", descriptionLines: [""], art: "", cost: 0, effects: [],
+      id: "blank",
+      title: "Blank",
+      descriptionLines: [""],
+      art: "",
+      cost: 0,
+      effects: [],
     };
     getRunProgressStoreView().awardCardXP(card);
     expect(getRunProgressStoreView().runTalentXP).toEqual({});
@@ -234,11 +256,19 @@ describe("awardCardXP", () => {
 
   it("accumulates XP across multiple cards", () => {
     const burnCard: BattleCard = {
-      id: "fireball", title: "Fireball", descriptionLines: [""], art: "", cost: 3,
+      id: "fireball",
+      title: "Fireball",
+      descriptionLines: [""],
+      art: "",
+      cost: 3,
       effects: [{ kind: "damage", damageType: "burn", amount: 8 }],
     };
     const physCard: BattleCard = {
-      id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1,
+      id: "slash",
+      title: "Slash",
+      descriptionLines: [""],
+      art: "",
+      cost: 1,
       effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
     };
     getRunProgressStoreView().awardCardXP(burnCard);

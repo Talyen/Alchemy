@@ -20,7 +20,10 @@ test.describe("Battle Flow", critical, () => {
   test("normal combat can be won by playing cards and ending turns", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeHighDamageCard()));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeHighDamageCard()),
+    );
     const battle = new BattlePage(page);
     await battle.winViaCombat(3);
     await expect(battle.victoryHeading).toBeVisible();
@@ -29,7 +32,10 @@ test.describe("Battle Flow", critical, () => {
   test("playing a card consumes mana and applies effects", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+    );
     const battle = new BattlePage(page);
 
     const manaBefore = await battle.mana();
@@ -44,7 +50,10 @@ test.describe("Battle Flow", critical, () => {
   test("end turn triggers enemy phase and draws new cards", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+    );
     const battle = new BattlePage(page);
 
     const handBefore = await battle.handCount();
@@ -74,7 +83,14 @@ test.describe("Mana Mechanics", () => {
   test("restore-mana overflows beyond maxMana", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
-    await startBattleWithDeck(page, [MANA_BERRIES_CARD, MANA_BERRIES_CARD, MANA_BERRIES_CARD, MANA_BERRIES_CARD, MANA_BERRIES_CARD, MANA_BERRIES_CARD]);
+    await startBattleWithDeck(page, [
+      MANA_BERRIES_CARD,
+      MANA_BERRIES_CARD,
+      MANA_BERRIES_CARD,
+      MANA_BERRIES_CARD,
+      MANA_BERRIES_CARD,
+      MANA_BERRIES_CARD,
+    ]);
     const battle = new BattlePage(page);
 
     const maxMana = await battle.mana();
@@ -89,7 +105,10 @@ test.describe("Full Run Flow", () => {
   test("complete a victory run through destination choice", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+    );
     const battle = new BattlePage(page);
 
     await skipBattleAndClaimReward(page);
@@ -110,7 +129,23 @@ test.describe("Talents", () => {
     const menu = new MenuPage(page);
     await menu.openTalents();
 
-    const keywords = ["Physical", "Stun", "Block", "Forge", "Armor", "Health", "Burn", "Gold", "Holy", "Wish", "Poison", "Bleed", "Leech", "Freeze", "Mana"];
+    const keywords = [
+      "Physical",
+      "Stun",
+      "Block",
+      "Forge",
+      "Armor",
+      "Health",
+      "Burn",
+      "Gold",
+      "Holy",
+      "Wish",
+      "Poison",
+      "Bleed",
+      "Leech",
+      "Freeze",
+      "Mana",
+    ];
     for (const kw of keywords) {
       await expect(page.getByRole("button", { name: kw })).toBeVisible();
     }
@@ -130,10 +165,17 @@ test.describe("Talents", () => {
 });
 
 test.describe("Card Interactions", () => {
-  test("multiple copies of the same card in hand can be hovered and played independently", async ({ page, fastBattle, runtimeErrors }) => {
+  test("multiple copies of the same card in hand can be hovered and played independently", async ({
+    page,
+    fastBattle,
+    runtimeErrors,
+  }) => {
     void fastBattle;
     void runtimeErrors;
-    await startBattleWithDeck(page, Array.from({ length: 8 }, () => makeCard()));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 8 }, () => makeCard()),
+    );
     const battle = new BattlePage(page);
 
     const handBefore = await battle.handCount();

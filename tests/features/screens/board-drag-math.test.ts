@@ -77,17 +77,13 @@ describe("applyMagnetHysteresis", () => {
   });
 
   it("sticks with the previous destination when the free rect is closer to it than to the candidate", () => {
-    const result = applyMagnetHysteresis(
-      input(inv(2, 1, 200, 100), inv(1, 1, 100, 100), free(95, 95)),
-    );
+    const result = applyMagnetHysteresis(input(inv(2, 1, 200, 100), inv(1, 1, 100, 100), free(95, 95)));
     expect(result.destination).toEqual(inv(1, 1, 100, 100));
     expect(result.switched).toBe(true);
   });
 
   it("switches to the candidate when it is much closer than the previous destination", () => {
-    const result = applyMagnetHysteresis(
-      input(inv(1, 1, 100, 100), inv(2, 1, 200, 1000), free(95, 95)),
-    );
+    const result = applyMagnetHysteresis(input(inv(1, 1, 100, 100), inv(2, 1, 200, 1000), free(95, 95)));
     expect(result.destination).toEqual(inv(1, 1, 100, 100));
     expect(result.switched).toBe(false);
   });

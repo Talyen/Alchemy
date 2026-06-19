@@ -53,7 +53,10 @@ test.describe("Victory Rewards", critical, () => {
   test("victory reward requires confirmation before advancing to destinations", async ({ page, fastBattle }) => {
     void fastBattle;
 
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeHighDamageCard()));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeHighDamageCard()),
+    );
 
     const battle = new BattlePage(page);
     await battle.winViaCombat(3);

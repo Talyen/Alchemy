@@ -5,10 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RewardsScreen } from "@/features/alchemy/run-loop/screens/rewards-screen";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import type { BattleCard } from "@/lib/game-data";
-import {
-  getRunSessionStoreView,
-  resetRunSessionSlice,
-} from "../../helpers/run-domain-store-test";
+import { getRunSessionStoreView, resetRunSessionSlice } from "../../helpers/run-domain-store-test";
 
 const testCard: BattleCard = {
   id: "slash",

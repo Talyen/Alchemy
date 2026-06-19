@@ -52,21 +52,16 @@ describe("resolveHasteSkipTurn", () => {
     const state = defaultBattleState();
     const result = endPlayerTurn({ ...state, playerStatuses: { ...state.playerStatuses, haste: 1 } });
 
-    resolveHasteSkipTurn(
-      result,
-      state,
-      1,
-      {
-        store,
-        drawSequence: makeDrawDeps(),
-        onDrawComplete,
-        logDrawError: vi.fn(),
-        setResolvedAsHasteOrStun: vi.fn(),
-        clearHandTransferState: vi.fn(),
-        setCardPlayInProgress: vi.fn(),
-        runIfSessionActive: (_session, action) => action(),
-      },
-    );
+    resolveHasteSkipTurn(result, state, 1, {
+      store,
+      drawSequence: makeDrawDeps(),
+      onDrawComplete,
+      logDrawError: vi.fn(),
+      setResolvedAsHasteOrStun: vi.fn(),
+      clearHandTransferState: vi.fn(),
+      setCardPlayInProgress: vi.fn(),
+      runIfSessionActive: (_session, action) => action(),
+    });
 
     await vi.waitFor(() => {
       expect(runHandDrawSequence).toHaveBeenCalled();
@@ -88,17 +83,12 @@ describe("resolveNormalEnemyTurn", () => {
       state: { ...state, enemyHealth: 0, turnPhase: "enemy" as const },
     };
 
-    resolveNormalEnemyTurn(
-      deadResult,
-      { state, combatTexts: [] },
-      1,
-      {
-        store,
-        executeEnemyPhase: vi.fn(),
-        onVictory,
-        checkBattleEnd: () => false,
-      },
-    );
+    resolveNormalEnemyTurn(deadResult, { state, combatTexts: [] }, 1, {
+      store,
+      executeEnemyPhase: vi.fn(),
+      onVictory,
+      checkBattleEnd: () => false,
+    });
 
     expect(onVictory).toHaveBeenCalledOnce();
     expect(store.setSyncedBattleState).toHaveBeenCalled();

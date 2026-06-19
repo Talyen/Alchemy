@@ -42,9 +42,25 @@ describe("keywordDefinitions", () => {
 
   it("covers expected keywords", () => {
     const expected = [
-      "physical", "stun", "block", "forge", "armor", "health", "burn",
-      "gold", "holy", "wish", "consume", "poison", "bleed",
-      "leech", "freeze", "mana", "nature", "companion", "archery",
+      "physical",
+      "stun",
+      "block",
+      "forge",
+      "armor",
+      "health",
+      "burn",
+      "gold",
+      "holy",
+      "wish",
+      "consume",
+      "poison",
+      "bleed",
+      "leech",
+      "freeze",
+      "mana",
+      "nature",
+      "companion",
+      "archery",
     ];
     for (const id of expected) {
       expect(keywordDefinitions).toHaveProperty(id);

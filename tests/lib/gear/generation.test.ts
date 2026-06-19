@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
-import { generateDevRandomGearInstance, generateGearRewardChoices, gearDefinitions, rollGearRewardRarity } from "@/lib/gear";
+import {
+  generateDevRandomGearInstance,
+  generateGearRewardChoices,
+  gearDefinitions,
+  rollGearRewardRarity,
+} from "@/lib/gear";
 import { affixMatchesAffinity } from "@/lib/gear/affixes";
 import { buildEligibleAffixPool } from "@/lib/gear/generation";
 import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
@@ -48,12 +53,12 @@ describe("gear generation", () => {
   });
 
   it("rolls reward gear rarity with optional astral chance bonus", () => {
-    expect(Array.from({ length: 20 }, () => rollGearRewardRarity(() => 0.1)).every((rarity) => rarity === "basic")).toBe(
-      true,
-    );
-    expect(Array.from({ length: 20 }, () => rollGearRewardRarity(() => 0.9)).every((rarity) => rarity === "astral")).toBe(
-      true,
-    );
+    expect(
+      Array.from({ length: 20 }, () => rollGearRewardRarity(() => 0.1)).every((rarity) => rarity === "basic"),
+    ).toBe(true);
+    expect(
+      Array.from({ length: 20 }, () => rollGearRewardRarity(() => 0.9)).every((rarity) => rarity === "astral"),
+    ).toBe(true);
     expect(rollGearRewardRarity(() => 0.46, 0.03)).toBe("basic");
     expect(rollGearRewardRarity(() => 0.47, 0.03)).toBe("astral");
     expect(rollGearRewardRarity(() => 0.39, 0.1)).toBe("basic");

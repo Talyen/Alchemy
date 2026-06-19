@@ -33,7 +33,7 @@ function buildStatusChips(
   if (!statuses) return [];
   return order.reduce<StatusChip[]>((chips, id) => {
     const value = statuses[id];
-    if (value > 0) chips.push({ id, value });
+    if ((value ?? 0) > 0) chips.push({ id, value: value! });
     return chips;
   }, []);
 }

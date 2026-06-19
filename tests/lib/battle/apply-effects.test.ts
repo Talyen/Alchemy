@@ -252,7 +252,15 @@ describe("applyCardEffects — remove-player-status", () => {
     const manifest = computeTrinketManifest(["sin-eaters-lantern"]);
     const state = makeState({
       playerStatuses: {
-        block: 0, armor: 0, forge: 0, haste: 0, burn: 4, poison: 0, bleed: 0, freeze: 0, stun: 0,
+        block: 0,
+        armor: 0,
+        forge: 0,
+        haste: 0,
+        burn: 4,
+        poison: 0,
+        bleed: 0,
+        freeze: 0,
+        stun: 0,
       },
       playerHealth: 15,
       trinketEffects: manifest,

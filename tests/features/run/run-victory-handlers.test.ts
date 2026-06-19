@@ -138,9 +138,7 @@ describe("createRunFlowHandlers victory paths", () => {
     const navigateTo = vi.fn();
     const onLabyrinthFailNode = vi.fn();
     const transition = vi.fn();
-    const handlers = createRunFlowHandlers(
-      makeFlowHandlerDeps({ navigateTo, onLabyrinthFailNode, transition }),
-    );
+    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo, onLabyrinthFailNode, transition }));
     handlers.handleAbandonRun();
     expect(onLabyrinthFailNode).not.toHaveBeenCalled();
     expect(navigateTo).not.toHaveBeenCalledWith(CONSTANTS.SCREENS.LABYRINTH_MAP);

@@ -45,20 +45,14 @@ export function resetRunBattleSlice() {
   });
 }
 
-export function setRunProgress(
-  partial: Partial<ReturnType<typeof createInitialProgressFields>>,
-  replace = false,
-) {
+export function setRunProgress(partial: Partial<ReturnType<typeof createInitialProgressFields>>, replace = false) {
   useRunDomainStore.setState((s) => {
     if (replace) s.progress = { ...createInitialProgressFields(), ...partial };
     else Object.assign(s.progress, partial);
   });
 }
 
-export function setRunSession(
-  partial: Partial<ReturnType<typeof createInitialSessionFields>>,
-  replace = false,
-) {
+export function setRunSession(partial: Partial<ReturnType<typeof createInitialSessionFields>>, replace = false) {
   useRunDomainStore.setState((s) => {
     if (replace) s.session = { ...createInitialSessionFields(), ...partial };
     else Object.assign(s.session, partial);

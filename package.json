@@ -70,13 +70,14 @@
     "check:push": "npm run check && npm run test:e2e:prepush",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "typecheck:all": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit && tsc -p tsconfig.scripts.json --noEmit",
     "lint:ci": "npm run format:check && npm run typecheck && npm run lint && npm run deadcode",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "format": "prettier --write \"{src,tests,scripts,desktop}/**/*.{ts,tsx,css,mjs,cjs}\"",
     "ensure:electron": "node scripts/ensure-electron.mjs",
     "deadcode": "knip",
     "deadcode:strict": "knip --strict --include-entry-exports",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
+    "format:check": "prettier --check \"{src,tests,scripts,desktop}/**/*.{ts,tsx,css,mjs,cjs}\"",
     "prepare": "lefthook install",
     "release": "commit-and-tag-version",
     "release:minor": "commit-and-tag-version --release-as minor",
@@ -190,17 +191,8 @@
       "src/features/alchemy/meta/screens/armory/armory-panels.tsx": ["types"],
       "src/features/alchemy/meta/screens/armory/armory-targeting-state.ts": ["types"]
     },
-    "ignore": [
-      "src/features/alchemy/meta/screens/armory/armory-salvage-confirm.tsx",
-      "tests/helpers/gear-test.ts"
-    ],
-    "ignoreDependencies": [
-      "electron",
-      "react",
-      "react-dom",
-      "zustand",
-      "@radix-ui/react-switch"
-    ]
+    "ignore": [],
+    "ignoreDependencies": []
   },
   "build": {
     "appId": "com.alchemy.game",

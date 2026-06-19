@@ -13,7 +13,18 @@ describe("resolveEquipSwap", () => {
 
     expect(
       resolveEquipSwap({
-        loadout: { body: null, helm: null, boots: null, gloves: null, belt: null, "main-hand": null, "off-hand": null, "left-ring": null, "right-ring": null, amulet: null },
+        loadout: {
+          body: null,
+          helm: null,
+          boots: null,
+          gloves: null,
+          belt: null,
+          "main-hand": null,
+          "off-hand": null,
+          "left-ring": null,
+          "right-ring": null,
+          amulet: null,
+        },
         slot: "helm",
         instance: helmA,
         vacatedPlacement: { col: 3, row: 2 },

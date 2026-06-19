@@ -41,7 +41,10 @@ export class BattlePage {
   }
 
   async playCardNamed(name: string) {
-    await this.page.getByRole("button", { name: `Play ${name}` }).first().click();
+    await this.page
+      .getByRole("button", { name: `Play ${name}` })
+      .first()
+      .click();
   }
 
   async endTurn() {
@@ -100,5 +103,4 @@ export class BattlePage {
     }
     await expect(this.victoryHeading).toBeVisible({ timeout: 8000 });
   }
-
 }

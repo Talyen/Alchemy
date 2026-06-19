@@ -4,7 +4,11 @@ import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
 
 describe("balance simulator playability (canPlayCard contract)", () => {
   it("allows affordable cards on the player turn", () => {
-    const card = makeTestCard({ id: "strike", cost: 2, effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    const card = makeTestCard({
+      id: "strike",
+      cost: 2,
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
     const state = makeTestBattleState({ mana: 3, hand: [card], turnPhase: "player" });
     expect(canPlayCard(state, card, 0)).toBe(true);
   });

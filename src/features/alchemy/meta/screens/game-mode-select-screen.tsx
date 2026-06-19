@@ -59,6 +59,7 @@ export function GameModeSelectScreen({
       <StaggerGroup className="flex flex-wrap items-start justify-center gap-8">
         {GAME_MODE_IDS.map((modeId, index) => {
           const meta = gameModeMeta[modeId];
+          if (!meta) return null;
           const isLocked =
             (modeId === "labyrinth" && !finishedRunCharacters.includes("rogue")) ||
             (modeId === "wildwood" && !finishedRunCharacters.includes("ranger"));

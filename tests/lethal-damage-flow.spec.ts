@@ -8,10 +8,14 @@ test.describe("Lethal Battle Defeat", critical, () => {
   test("lethal damage after Death's Door grace expires shows defeat screen", async ({ page, fastBattle }) => {
     void fastBattle;
 
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()), {
-      runPlayerHealth: 1,
-      runMaxHealth: 30,
-    });
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+      {
+        runPlayerHealth: 1,
+        runMaxHealth: 30,
+      },
+    );
     const battle = new BattlePage(page);
 
     await battle.endTurn();

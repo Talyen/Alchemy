@@ -73,7 +73,17 @@ describe("defaultBattleState", () => {
 
   it("initializes all player statuses to 0", () => {
     const s = defaultBattleState();
-    const statusKeys: (keyof typeof s.playerStatuses)[] = ["block", "armor", "forge", "haste", "burn", "poison", "bleed", "freeze", "stun"];
+    const statusKeys: (keyof typeof s.playerStatuses)[] = [
+      "block",
+      "armor",
+      "forge",
+      "haste",
+      "burn",
+      "poison",
+      "bleed",
+      "freeze",
+      "stun",
+    ];
     for (const key of statusKeys) expect(s.playerStatuses[key]).toBe(0);
   });
 
@@ -118,7 +128,16 @@ describe("shuffleCards", () => {
   });
 
   it("does not mutate the original array", () => {
-    const cards = [{ id: "a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }];
+    const cards = [
+      {
+        id: "a",
+        title: "A",
+        descriptionLines: [""],
+        art: "",
+        cost: 1,
+        effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+      },
+    ];
     const original = [...cards];
     shuffleCards(cards, Math.random);
     expect(cards).toEqual(original);

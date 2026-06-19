@@ -1,0 +1,17 @@
+dist/
+.vite/
+node_modules/
+coverage/
+release-desktop/
+release/
+playwright-report/
+test-results/
+reports/
+Raw Assets/
+Music/
+scratch/
+src/assets/optimized/
+CHANGELOG.md
+release-notes/
+src/lib/validation/metadata.generated.ts
+package-lock.json

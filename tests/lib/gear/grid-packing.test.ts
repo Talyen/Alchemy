@@ -61,7 +61,12 @@ describe("packInventoryGridPreserving", () => {
       item1: { col: 3, row: 1 },
       item2: { col: 1, row: 3 },
     };
-    const packed = packInventoryGridPreserving(items, COLS, (item) => item.footprint, (item) => saved[item.id as keyof typeof saved]);
+    const packed = packInventoryGridPreserving(
+      items,
+      COLS,
+      (item) => item.footprint,
+      (item) => saved[item.id as keyof typeof saved],
+    );
     expect(packed).toEqual([
       { item: items[0], col: 3, row: 1, w: 2, h: 2 },
       { item: items[1], col: 1, row: 3, w: 2, h: 3 },
@@ -78,7 +83,12 @@ describe("packInventoryGridPreserving", () => {
       item1: { col: 1, row: 1 },
       item2: { col: 1, row: 1 },
     };
-    const packed = packInventoryGridPreserving(items, COLS, (item) => item.footprint, (item) => saved[item.id as keyof typeof saved]);
+    const packed = packInventoryGridPreserving(
+      items,
+      COLS,
+      (item) => item.footprint,
+      (item) => saved[item.id as keyof typeof saved],
+    );
     expect(packed[0]).toMatchObject({ item: items[0], col: 1, row: 1 });
     expect(packed[1]?.item).toBe(items[1]);
     expect(packed[1]?.col).toBe(3);
@@ -87,7 +97,12 @@ describe("packInventoryGridPreserving", () => {
   it("ignores saved positions that are out of bounds", () => {
     const items = [{ id: "a", footprint: { w: 2, h: 2 } }];
     const saved = { a: { col: 0, row: 1 } };
-    const packed = packInventoryGridPreserving(items, COLS, (item) => item.footprint, (item) => saved[item.id as keyof typeof saved]);
+    const packed = packInventoryGridPreserving(
+      items,
+      COLS,
+      (item) => item.footprint,
+      (item) => saved[item.id as keyof typeof saved],
+    );
     expect(packed[0]).toMatchObject({ item: items[0], col: 1, row: 1 });
   });
 });
@@ -99,12 +114,7 @@ describe("packCurrencyGridWithGearObstacles", () => {
       voidstone: { col: 4, row: 1 },
       "discordant-dice": { col: 1, row: 1 },
     };
-    const packed = packCurrencyGridWithGearObstacles(
-      ["voidstone", "discordant-dice"],
-      COLS,
-      saved,
-      gearObstacles,
-    );
+    const packed = packCurrencyGridWithGearObstacles(["voidstone", "discordant-dice"], COLS, saved, gearObstacles);
     expect(packed).toEqual([
       { id: "voidstone", col: 4, row: 1, w: 1, h: 1 },
       { id: "discordant-dice", col: 3, row: 1, w: 1, h: 1 },
@@ -122,9 +132,7 @@ describe("packCurrencyGridWithGearObstacles", () => {
 
 describe("resolveMoveWithSwap", () => {
   it("reports unchanged when the target equals the current position", () => {
-    const items: BoardItem[] = [
-      { id: "a", kind: "gear", footprint: { w: 2, h: 2 }, position: { col: 1, row: 1 } },
-    ];
+    const items: BoardItem[] = [{ id: "a", kind: "gear", footprint: { w: 2, h: 2 }, position: { col: 1, row: 1 } }];
     const { positions, unchanged } = resolveMoveWithSwap(items, "a", { col: 1, row: 1 }, COLS);
     expect(unchanged).toBe(true);
     expect(positions.get("a")).toEqual({ col: 1, row: 1 });
@@ -165,9 +173,7 @@ describe("resolveMoveWithSwap", () => {
   });
 
   it("returns the original positions when the moving id is not found", () => {
-    const items: BoardItem[] = [
-      { id: "a", kind: "gear", footprint: { w: 1, h: 1 }, position: { col: 1, row: 1 } },
-    ];
+    const items: BoardItem[] = [{ id: "a", kind: "gear", footprint: { w: 1, h: 1 }, position: { col: 1, row: 1 } }];
     const { positions, unchanged } = resolveMoveWithSwap(items, "missing", { col: 5, row: 5 }, COLS);
     expect(unchanged).toBe(true);
     expect(positions.get("a")).toEqual({ col: 1, row: 1 });

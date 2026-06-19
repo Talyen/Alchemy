@@ -168,7 +168,10 @@ test.describe("Armory crafting", critical, () => {
       effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
 
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => physicalCard));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => physicalCard),
+    );
 
     const battle = new BattlePage(page);
     const enemyHpBefore = await battle.enemyHealth();

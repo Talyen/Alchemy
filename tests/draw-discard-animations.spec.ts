@@ -8,7 +8,10 @@ test.describe("Draw/discard animation invariants (1920×1080)", () => {
     const errors = failOnRuntimeErrors(page);
     const ghostOverlays = page.locator(".card-ghost-overlay");
 
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+    );
     const battle = new BattlePage(page);
 
     await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
@@ -45,7 +48,10 @@ for (const { width, height, label } of ALT_RESOLUTIONS) {
     test("no errors and cards playable after draw", async ({ page }) => {
       const errors = failOnRuntimeErrors(page);
 
-      await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
+      await startBattleWithDeck(
+        page,
+        Array.from({ length: 6 }, () => makeCard()),
+      );
       const count = await page.locator('[aria-label^="Play "]').count();
       expect(count).toBeGreaterThan(0);
       expect(errors).toEqual([]);
@@ -58,7 +64,10 @@ test.describe("Draw/discard edge cases", () => {
     const errors = failOnRuntimeErrors(page);
 
     test.setTimeout(60_000);
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeHighDamageCard()));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeHighDamageCard()),
+    );
     const battle = new BattlePage(page);
 
     await battle.endTurn();

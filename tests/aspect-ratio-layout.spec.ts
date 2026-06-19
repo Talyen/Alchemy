@@ -3,11 +3,14 @@ import { enableFastMode, makeCard, SAVE_KEY, startBattleWithDeck } from "./helpe
 import { MenuPage } from "./pages/menu-page";
 
 async function setAspectRatio(page: import("@playwright/test").Page, aspectRatio: string) {
-  await page.addInitScript(({ saveKey, ar }) => {
-    const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-    save.selectedAspectRatio = ar;
-    localStorage.setItem(saveKey, JSON.stringify(save));
-  }, { saveKey: SAVE_KEY, ar: aspectRatio });
+  await page.addInitScript(
+    ({ saveKey, ar }) => {
+      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+      save.selectedAspectRatio = ar;
+      localStorage.setItem(saveKey, JSON.stringify(save));
+    },
+    { saveKey: SAVE_KEY, ar: aspectRatio },
+  );
 }
 
 async function assertNoOverflow(page: import("@playwright/test").Page, screenName: string) {
@@ -17,8 +20,14 @@ async function assertNoOverflow(page: import("@playwright/test").Page, screenNam
     vw: window.innerWidth,
     vh: window.innerHeight,
   }));
-  expect(layout.width, `${screenName}: scrollWidth ${layout.width} should be <= viewport width ${layout.vw}`).toBeLessThanOrEqual(layout.vw);
-  expect(layout.height, `${screenName}: scrollHeight ${layout.height} should be <= viewport height ${layout.vh}`).toBeLessThanOrEqual(layout.vh);
+  expect(
+    layout.width,
+    `${screenName}: scrollWidth ${layout.width} should be <= viewport width ${layout.vw}`,
+  ).toBeLessThanOrEqual(layout.vw);
+  expect(
+    layout.height,
+    `${screenName}: scrollHeight ${layout.height} should be <= viewport height ${layout.vh}`,
+  ).toBeLessThanOrEqual(layout.vh);
 }
 
 async function waitForHandEntryAnimations(page: import("@playwright/test").Page) {
@@ -67,7 +76,10 @@ for (const { width, height, label } of RESOLUTIONS) {
       await setAspectRatio(page, "16:9");
       await page.setViewportSize({ width, height });
       await enableFastMode(page);
-      await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
+      await startBattleWithDeck(
+        page,
+        Array.from({ length: 6 }, () => makeCard()),
+      );
 
       await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible();
       expect(await page.locator('[aria-label^="Play "]').count()).toBeGreaterThanOrEqual(1);
@@ -78,13 +90,16 @@ for (const { width, height, label } of RESOLUTIONS) {
         Math.max(
           0,
           ...[...document.querySelectorAll('[aria-label^="Play "]')].map((card) => {
-          const rect = card.getBoundingClientRect();
+            const rect = card.getBoundingClientRect();
             return Math.max(-rect.left, rect.right - window.innerWidth, -rect.top, rect.bottom - window.innerHeight, 0);
           }),
-        )
+        ),
       );
       const cardViewportTolerance = Math.max(CARD_VIEWPORT_TOLERANCE_PX, height * CARD_VIEWPORT_TOLERANCE_RATIO);
-      expect(maxCardOverflow, "Hand cards should stay within viewport aside from small rotated-edge drift").toBeLessThanOrEqual(cardViewportTolerance);
+      expect(
+        maxCardOverflow,
+        "Hand cards should stay within viewport aside from small rotated-edge drift",
+      ).toBeLessThanOrEqual(cardViewportTolerance);
     });
   });
 }

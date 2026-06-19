@@ -60,7 +60,7 @@ describe("useBoardDrag", () => {
     // 4. Assert active drag properties
     expect(result.current.activeId).toBe("item-1");
     expect(result.current.dragVisual).not.toBeNull();
-    
+
     const activeRect = result.current.dragVisual!.rect;
     // offset: x: 15 - 10 = 5, y: 25 - 20 = 5
     // at pointer (30, 40): left: 30 - 5 = 25, top: 40 - 5 = 35
@@ -116,7 +116,7 @@ describe("useBoardDrag", () => {
     expect(result.current.dragVisual?.settling).toBe(true);
     expect((result.current.dragVisual as any).releaseRect).toEqual({
       left: 30, // 35 - 5
-      top: 40,  // 45 - 5
+      top: 40, // 45 - 5
       width: 50,
       height: 50,
     });
@@ -132,9 +132,15 @@ describe("useBoardDrag", () => {
     board.appendChild(cell);
     board.appendChild(stride);
 
-    vi.spyOn(board, "getBoundingClientRect").mockReturnValue(mockDomRect({ left: 100, top: 100, width: 200, height: 200 }));
-    vi.spyOn(cell, "getBoundingClientRect").mockReturnValue(mockDomRect({ left: 100, top: 100, width: 40, height: 40 }));
-    vi.spyOn(stride, "getBoundingClientRect").mockReturnValue(mockDomRect({ left: 150, top: 100, width: 40, height: 40 }));
+    vi.spyOn(board, "getBoundingClientRect").mockReturnValue(
+      mockDomRect({ left: 100, top: 100, width: 200, height: 200 }),
+    );
+    vi.spyOn(cell, "getBoundingClientRect").mockReturnValue(
+      mockDomRect({ left: 100, top: 100, width: 40, height: 40 }),
+    );
+    vi.spyOn(stride, "getBoundingClientRect").mockReturnValue(
+      mockDomRect({ left: 150, top: 100, width: 40, height: 40 }),
+    );
 
     const inventoryBoardRef = { current: board };
 
@@ -151,7 +157,12 @@ describe("useBoardDrag", () => {
     );
 
     act(() => {
-      result.current.beginPointer({ id: "item-1" }, { left: 100, top: 100, width: 40, height: 40 }, { x: 120, y: 120 }, 1);
+      result.current.beginPointer(
+        { id: "item-1" },
+        { left: 100, top: 100, width: 40, height: 40 },
+        { x: 120, y: 120 },
+        1,
+      );
     });
 
     // Move to a position that falls within snap radius
@@ -170,7 +181,7 @@ describe("useBoardDrag", () => {
     expect(result.current.dragVisual?.settling).toBe(true);
     expect((result.current.dragVisual as any).releaseRect).toEqual({
       left: 105, // 125 - 20
-      top: 105,  // 125 - 20
+      top: 105, // 125 - 20
       width: 40,
       height: 40,
     });

@@ -2,9 +2,6 @@ import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject }
 
 export type PortaledTooltipAnchor = { centerX: number; top: number; bottom: number };
 
-export const ARMORY_TOOLTIP_CLASS =
-  "armory-inventory-tooltip pointer-events-none fixed bottom-auto top-auto z-[100] mb-0 mt-0 !shadow-none";
-
 const VR_STAGE_SELECTOR = '[data-testid="vr-stage"]';
 const DEFAULT_HORIZONTAL_INSET = 152;
 

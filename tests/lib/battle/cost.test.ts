@@ -7,23 +7,58 @@ import type { BattleState, CombatFlags } from "@/lib/battle/types";
 import type { BattleCard } from "@/lib/game-data";
 
 function makeState(flags: Partial<CombatFlags> = {}, talentOverrides: Record<string, unknown> = {}): BattleState {
-  return { ...defaultBattleState(), mana: 5, maxMana: 5, flags: { ...defaultBattleState().flags, ...flags }, talentEffects: { ...defaultTalentEffects, ...talentOverrides } };
+  return {
+    ...defaultBattleState(),
+    mana: 5,
+    maxMana: 5,
+    flags: { ...defaultBattleState().flags, ...flags },
+    talentEffects: { ...defaultTalentEffects, ...talentOverrides },
+  };
 }
 
 function physicalCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return { id: "test", title: "Test", descriptionLines: [""], art: "", cost: 2, effects: [{ kind: "damage", damageType: "physical", amount: 5 }], ...overrides };
+  return {
+    id: "test",
+    title: "Test",
+    descriptionLines: [""],
+    art: "",
+    cost: 2,
+    effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    ...overrides,
+  };
 }
 
 function holyCard(): BattleCard {
-  return { id: "holy", title: "Holy", descriptionLines: [""], art: "", cost: 2, effects: [{ kind: "damage", damageType: "holy", amount: 5 }] };
+  return {
+    id: "holy",
+    title: "Holy",
+    descriptionLines: [""],
+    art: "",
+    cost: 2,
+    effects: [{ kind: "damage", damageType: "holy", amount: 5 }],
+  };
 }
 
 function poisonCard(): BattleCard {
-  return { id: "poison", title: "Poison", descriptionLines: [""], art: "", cost: 2, effects: [{ kind: "damage", damageType: "poison", amount: 2 }] };
+  return {
+    id: "poison",
+    title: "Poison",
+    descriptionLines: [""],
+    art: "",
+    cost: 2,
+    effects: [{ kind: "damage", damageType: "poison", amount: 2 }],
+  };
 }
 
 function bleedCard(): BattleCard {
-  return { id: "bleed", title: "Bleed", descriptionLines: [""], art: "", cost: 2, effects: [{ kind: "damage", damageType: "bleed", amount: 2 }] };
+  return {
+    id: "bleed",
+    title: "Bleed",
+    descriptionLines: [""],
+    art: "",
+    cost: 2,
+    effects: [{ kind: "damage", damageType: "bleed", amount: 2 }],
+  };
 }
 
 describe("getEffectiveCost", () => {
@@ -74,12 +109,18 @@ describe("getEffectiveCost", () => {
   });
 
   it("honors nextCardCostReduction even when first-card-free is already used", () => {
-    const state = makeState({ firstPhysicalCardFreeUsed: true, nextCardCostReduction: 1 }, { firstPhysicalCardFree: true });
+    const state = makeState(
+      { firstPhysicalCardFreeUsed: true, nextCardCostReduction: 1 },
+      { firstPhysicalCardFree: true },
+    );
     expect(getEffectiveCost(state, physicalCard())).toBe(1);
   });
 
   it("stacks nextCardCostReduction with first-card-free (free wins)", () => {
-    const state = makeState({ firstPhysicalCardFreeUsed: false, nextCardCostReduction: 1 }, { firstPhysicalCardFree: true });
+    const state = makeState(
+      { firstPhysicalCardFreeUsed: false, nextCardCostReduction: 1 },
+      { firstPhysicalCardFree: true },
+    );
     expect(getEffectiveCost(state, physicalCard())).toBe(0);
   });
 });

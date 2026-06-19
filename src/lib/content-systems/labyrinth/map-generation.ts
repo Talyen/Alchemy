@@ -70,7 +70,7 @@ export function generateLabyrinthMap(rng: () => number = Math.random): Labyrinth
 
   graph.points.forEach((point) => {
     const type = determineNodeType(point, firstCombat, upperTypes, lowerTypes);
-    grid[point.row][point.col] = makeNode(type, rng, isStart(point) ? "current" : "visible");
+    grid[point.row]![point.col] = makeNode(type, rng, isStart(point) ? "current" : "visible");
   });
 
   for (const edge of graph.edges) {
@@ -81,7 +81,7 @@ export function generateLabyrinthMap(rng: () => number = Math.random): Labyrinth
     grid,
     rows: LABYRINTH_ROWS,
     cols: LABYRINTH_COLS,
-    currentNode: graph.points[0],
+    currentNode: graph.points[0]!,
   };
 }
 
@@ -113,7 +113,7 @@ function calculateNodeTypeCounts(
   let supportIndex = Math.floor(rng() * supportTypes.length);
 
   while (assigned < count) {
-    counts[supportTypes[supportIndex % supportTypes.length]] += 1;
+    counts[supportTypes[supportIndex % supportTypes.length]!] += 1;
     supportIndex += 1;
     assigned += 1;
   }

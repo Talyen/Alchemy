@@ -4,7 +4,9 @@ import { defaultBattleState } from "@/lib/battle";
 import { getStartingDeck } from "@/lib/game-data";
 import { createActiveRunSnapshot } from "@/lib/active-run-session";
 
-function makeSource(overrides: Partial<Parameters<typeof createActiveRunSnapshot>[0]> = {}): Parameters<typeof createActiveRunSnapshot>[0] {
+function makeSource(
+  overrides: Partial<Parameters<typeof createActiveRunSnapshot>[0]> = {},
+): Parameters<typeof createActiveRunSnapshot>[0] {
   return {
     characterId: "knight",
     runDeck: getStartingDeck("knight"),
@@ -40,9 +42,11 @@ function makeSource(overrides: Partial<Parameters<typeof createActiveRunSnapshot
 describe("createActiveRunSnapshot", () => {
   it("copies only persisted active-run fields", () => {
     const runDeck = getStartingDeck("knight");
-    const result = createActiveRunSnapshot(makeSource({
-      runDeck,
-    }));
+    const result = createActiveRunSnapshot(
+      makeSource({
+        runDeck,
+      }),
+    );
 
     expect(result).toEqual({
       characterId: "knight",
@@ -74,41 +78,45 @@ describe("createActiveRunSnapshot", () => {
 
   it("includes contentSystemType field defaulting to campaign", () => {
     const runDeck = getStartingDeck("knight");
-    const result = createActiveRunSnapshot(makeSource({
-      runDeck,
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      encounteredRunEnemyIds: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-    }));
+    const result = createActiveRunSnapshot(
+      makeSource({
+        runDeck,
+        runGold: 0,
+        runPlayerHealth: 30,
+        runMaxHealth: 30,
+        roomsEncountered: 0,
+        currentAct: 1,
+        destinationIndexInAct: 0,
+        completedDestinations: [],
+        runTrinkets: [],
+        encounteredRunEnemyIds: [],
+        selectedDifficulty: null,
+        contentSystemType: "campaign",
+        labyrinthMap: null,
+      }),
+    );
     expect(result.contentSystemType).toBe("campaign");
   });
 
   it("can set contentSystemType to labyrinth", () => {
     const runDeck = getStartingDeck("knight");
-    const result = createActiveRunSnapshot(makeSource({
-      runDeck,
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      encounteredRunEnemyIds: [],
-      selectedDifficulty: null,
-      contentSystemType: "labyrinth",
-      labyrinthMap: null,
-    }));
+    const result = createActiveRunSnapshot(
+      makeSource({
+        runDeck,
+        runGold: 0,
+        runPlayerHealth: 30,
+        runMaxHealth: 30,
+        roomsEncountered: 0,
+        currentAct: 1,
+        destinationIndexInAct: 0,
+        completedDestinations: [],
+        runTrinkets: [],
+        encounteredRunEnemyIds: [],
+        selectedDifficulty: null,
+        contentSystemType: "labyrinth",
+        labyrinthMap: null,
+      }),
+    );
     expect(result.contentSystemType).toBe("labyrinth");
   });
 
@@ -121,10 +129,12 @@ describe("createActiveRunSnapshot", () => {
 
   it("persists the current state during enemy phase instead of reverting to battle start", () => {
     const enemyPhaseState = { ...defaultBattleState(), turn: 2, turnPhase: "enemy" as const, hand: [] };
-    const result = createActiveRunSnapshot(makeSource({
-      hasActiveBattle: true,
-      battleState: enemyPhaseState,
-    }));
+    const result = createActiveRunSnapshot(
+      makeSource({
+        hasActiveBattle: true,
+        battleState: enemyPhaseState,
+      }),
+    );
 
     expect(result.activeCombat?.battleState).toBe(enemyPhaseState);
     expect(result.activeCombat!.battleState.turn).toBe(2);
@@ -132,13 +142,15 @@ describe("createActiveRunSnapshot", () => {
   });
 
   it("persists labyrinth pending node and modifiers during combat", () => {
-    const result = createActiveRunSnapshot(makeSource({
-      contentSystemType: "labyrinth",
-      hasActiveBattle: true,
-      labyrinthPendingNode: { row: 1, col: 2 },
-      activeLabyrinthModifiers: ["tempered"],
-      activeLabyrinthRewardModifiers: ["generous"],
-    }));
+    const result = createActiveRunSnapshot(
+      makeSource({
+        contentSystemType: "labyrinth",
+        hasActiveBattle: true,
+        labyrinthPendingNode: { row: 1, col: 2 },
+        activeLabyrinthModifiers: ["tempered"],
+        activeLabyrinthRewardModifiers: ["generous"],
+      }),
+    );
 
     expect(result.labyrinthPendingNode).toEqual({ row: 1, col: 2 });
     expect(result.activeCombat?.activeLabyrinthModifiers).toEqual(["tempered"]);
@@ -153,7 +165,13 @@ describe("createActiveRunSnapshot", () => {
   });
 
   it("skips active combat when player is defeated", () => {
-    const battleState = { ...defaultBattleState(), turn: 3, playerHealth: 0, deathsDoorUsed: true, deathsDoorActive: false };
+    const battleState = {
+      ...defaultBattleState(),
+      turn: 3,
+      playerHealth: 0,
+      deathsDoorUsed: true,
+      deathsDoorActive: false,
+    };
     const result = createActiveRunSnapshot(makeSource({ hasActiveBattle: true, battleState }));
 
     expect(result.activeCombat).toBeNull();
@@ -167,10 +185,12 @@ describe("createActiveRunSnapshot", () => {
   });
 
   it("persists destination resume fields", () => {
-    const result = createActiveRunSnapshot(makeSource({
-      currentScreen: "destination",
-      destinationChoices: ["Campfire", "Merchant's Shop"],
-    }));
+    const result = createActiveRunSnapshot(
+      makeSource({
+        currentScreen: "destination",
+        destinationChoices: ["Campfire", "Merchant's Shop"],
+      }),
+    );
 
     expect(result.currentScreen).toBe("destination");
     expect(result.destinationChoices).toEqual(["Campfire", "Merchant's Shop"]);

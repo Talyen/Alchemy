@@ -12,14 +12,14 @@ export function CardTransferOverlay({ transfer }: { transfer: CardTransfer }) {
     <motion.div
       data-flying-card
       className="pointer-events-none absolute z-wish-overlay"
-      initial={{ rotateY: transfer.rotateY[0] }}
+      initial={{ rotateY: transfer.rotateY[0]! }}
       style={{
         left: transfer.from.x,
         top: transfer.from.y,
         width: transfer.from.width,
         height: transfer.from.height,
         transformStyle: "preserve-3d",
-        rotateY: transfer.rotateY[0],
+        rotateY: transfer.rotateY[0]!,
       }}
       animate={{
         left: transfer.to.x,

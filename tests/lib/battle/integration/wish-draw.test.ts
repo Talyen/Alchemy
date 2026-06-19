@@ -279,5 +279,3 @@ describe("chooseWishCard — edge cases", () => {
     expect(thirdSkip.hand).toHaveLength(0);
   });
 });
-
-

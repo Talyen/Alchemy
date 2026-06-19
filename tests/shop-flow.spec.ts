@@ -44,8 +44,9 @@ test.describe("Merchant Shop", critical, () => {
       }).toPass({ timeout: 3000 });
 
       const cardNamesAfter = await shop.getInspectLabels();
-      const sameCards = cardNamesBefore.length === cardNamesAfter.length
-        && cardNamesBefore.every((name, i) => name === cardNamesAfter[i]);
+      const sameCards =
+        cardNamesBefore.length === cardNamesAfter.length &&
+        cardNamesBefore.every((name, i) => name === cardNamesAfter[i]);
       expect(sameCards).toBe(false);
     });
 

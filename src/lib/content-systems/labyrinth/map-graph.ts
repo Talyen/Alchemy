@@ -100,14 +100,14 @@ function addPath(
 ) {
   for (const point of path) addPoint(points, used, point);
   for (let index = 0; index < path.length - 1; index += 1) {
-    addEdge(edges, degree, path[index], path[index + 1]);
+    addEdge(edges, degree, path[index]!, path[index + 1]!);
   }
 }
 
 function canAddPath(path: readonly Point[], used: Set<string>, degree: Map<string, number>) {
   for (let index = 0; index < path.length - 1; index += 1) {
-    const from = path[index];
-    const to = path[index + 1];
+    const from = path[index]!;
+    const to = path[index + 1]!;
     const fromExisting = used.has(keyOf(from));
     const toExisting = used.has(keyOf(to));
     const fromDegree = degree.get(keyOf(from)) ?? 0;

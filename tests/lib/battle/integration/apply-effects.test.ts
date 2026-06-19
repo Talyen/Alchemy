@@ -114,7 +114,8 @@ describe("applyCardEffects — potion potency", () => {
 describe("applyCardEffects — overheal conversion to block", () => {
   it("healing above max health converts excess to block when talent is active", () => {
     const state = makeState({
-      playerHealth: 28, playerMaxHealth: 30,
+      playerHealth: 28,
+      playerMaxHealth: 30,
       talentEffects: { ...defaultTalentEffects, overhealToBlockRatio: 0.5 },
     });
     const card = makeCard({ effects: [{ kind: "heal", amount: 5 }] });
@@ -162,5 +163,3 @@ describe("applyCardEffects — all mana effects in one card", () => {
     expect(result.maxMana).toBe(5);
   });
 });
-
-

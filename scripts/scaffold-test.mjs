@@ -44,25 +44,30 @@ const needsJsdom =
   srcContent.includes("tsx") ||
   srcContent.includes("@testing-library");
 
-const moduleName = relativePath.split(sep).pop().replace(/\.(ts|tsx)$/, "");
-const srcImportPath = relativePath
-  .replace(/^src[/\\]/, "@/")
+const moduleName = relativePath
+  .split(sep)
+  .pop()
   .replace(/\.(ts|tsx)$/, "");
+const srcImportPath = relativePath.replace(/^src[/\\]/, "@/").replace(/\.(ts|tsx)$/, "");
 
 const fixtureImport = guessFixtureImport(relativePath);
 
 function guessFixtureImport(srcRel) {
   // Strip the src/ prefix so we match on the path under src/
   const subPath = srcRel.replace(/^src[/\\]/, "");
-  if (subPath.startsWith("lib" + sep + "battle")) return `import { makeTestBattleState, makeTestCard } from "../../fixtures/battle"`;
+  if (subPath.startsWith("lib" + sep + "battle"))
+    return `import { makeTestBattleState, makeTestCard } from "../../fixtures/battle"`;
   if (subPath.startsWith("lib" + sep + "game-data")) return `import { makeTestCard } from "../fixtures/battle"`;
-  if (subPath.startsWith("lib" + sep + "routing")) return `import { makeMinimalActiveRunInput } from "../fixtures/active-run"`;
+  if (subPath.startsWith("lib" + sep + "routing"))
+    return `import { makeMinimalActiveRunInput } from "../fixtures/active-run"`;
   if (subPath.startsWith("lib" + sep + "validation")) return `import { baseHomesteadSave } from "../fixtures/saves"`;
   if (subPath.startsWith("features")) return `import { makeMinimalActiveRunInput } from "../fixtures/active-run"`;
   return "";
 }
 
-const template = needsJsdom ? jsdomTemplate(moduleName, srcImportPath, fixtureImport) : unitTemplate(moduleName, srcImportPath, fixtureImport);
+const template = needsJsdom
+  ? jsdomTemplate(moduleName, srcImportPath, fixtureImport)
+  : unitTemplate(moduleName, srcImportPath, fixtureImport);
 
 mkdirSync(dirname(testPath), { recursive: true });
 writeFileSync(testPath, template, "utf-8");

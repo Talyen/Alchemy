@@ -1,10 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-  CURRENT_SAVE_SCHEMA_VERSION,
-  LAUNCH_SAVE_SCHEMA_VERSION,
-} from "@/lib/validation";
+import { CURRENT_SAVE_SCHEMA_VERSION, LAUNCH_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 
 const ROOT = join(import.meta.dirname, "../..");

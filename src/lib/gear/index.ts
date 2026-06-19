@@ -14,5 +14,4 @@ export * from "./item-names";
 export * from "./gear-shine";
 export * from "./crafting";
 export * from "./legacy-ids";
-export * from "./point";
 export * from "./constants";

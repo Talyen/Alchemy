@@ -3,10 +3,7 @@ import { injectHomestead, makeCard, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
 
-function boxesOverlapHorizontally(
-  a: { x: number; width: number },
-  b: { x: number; width: number },
-): boolean {
+function boxesOverlapHorizontally(a: { x: number; width: number }, b: { x: number; width: number }): boolean {
   const aRight = a.x + a.width;
   const bRight = b.x + b.width;
   return a.x < bRight && b.x < aRight;
@@ -17,7 +14,10 @@ test.describe("Keyboard Navigation", () => {
     void fastBattle;
     void runtimeErrors;
 
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+    );
     const battle = new BattlePage(page);
 
     // 1. Escape opens and closes the in-battle menu
@@ -72,7 +72,10 @@ test.describe("Keyboard Navigation", () => {
     void runtimeErrors;
 
     await injectHomestead(page, { finishedRunCharacters: [] });
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+    );
 
     await page.getByRole("button", { name: "Open battle menu" }).click();
     const menu = page.getByTestId("game-menu");

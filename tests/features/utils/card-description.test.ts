@@ -4,8 +4,13 @@ import { cardLibrary, type BattleCard } from "@/lib/game-data";
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
   return {
-    id: "test-card", title: "Test Card", descriptionLines: [], art: "", cost: 1,
-    effects: [], ...overrides,
+    id: "test-card",
+    title: "Test Card",
+    descriptionLines: [],
+    art: "",
+    cost: 1,
+    effects: [],
+    ...overrides,
   };
 }
 
@@ -251,9 +256,7 @@ describe("getEffectiveCardDescriptionLines", () => {
       effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 2 }],
     });
     expect(getEffectiveCardDescriptionLines(card)).toEqual(["Gain 2 Block per Mana Crystal"]);
-    expect(getEffectiveCardDescriptionLines(card, { potionPotency: 2 })).toEqual([
-      "Gain 2 Block per Mana Crystal",
-    ]);
+    expect(getEffectiveCardDescriptionLines(card, { potionPotency: 2 })).toEqual(["Gain 2 Block per Mana Crystal"]);
   });
 
   const perManaCrystalCards = cardLibrary.filter((card) =>

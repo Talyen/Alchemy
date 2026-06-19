@@ -2,11 +2,7 @@
 import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  buildPatchNotesMarkdown,
-  extractChangelogSection,
-  parseChangelogCommits,
-} from "./lib/patch-notes-core.mjs";
+import { buildPatchNotesMarkdown, extractChangelogSection, parseChangelogCommits } from "./lib/patch-notes-core.mjs";
 import { computeSyncedChangelog, readChangelog } from "./sync-changelog.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");

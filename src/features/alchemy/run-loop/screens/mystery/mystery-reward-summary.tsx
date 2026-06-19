@@ -163,8 +163,8 @@ export function MysteryRewardSummary({
           <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
             Found
             {totalGold > 0 ? <GoldPill amount={totalGold} /> : null}
-            {MATERIAL_IDS.filter((mat) => mats[mat] > 0).map((mat) => (
-              <MaterialPill key={mat} material={mat} amount={mats[mat]} />
+            {MATERIAL_IDS.filter((mat) => (mats[mat] ?? 0) > 0).map((mat) => (
+              <MaterialPill key={mat} material={mat} amount={mats[mat]!} />
             ))}
           </div>
         </StaggerItem>

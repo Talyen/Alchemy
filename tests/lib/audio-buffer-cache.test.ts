@@ -26,7 +26,14 @@ describe("getAudioContext", () => {
 
   it("creates AudioContext on first call", () => {
     const mockCtx = makeMockCtx();
-    vi.stubGlobal("AudioContext", class { constructor() { return mockCtx; } });
+    vi.stubGlobal(
+      "AudioContext",
+      class {
+        constructor() {
+          return mockCtx;
+        }
+      },
+    );
     const ctx = getAudioContext();
     expect(ctx).toBe(mockCtx);
     expect(mockCtx.createGain).toHaveBeenCalledOnce();
@@ -35,7 +42,14 @@ describe("getAudioContext", () => {
 
   it("returns existing AudioContext on subsequent calls", () => {
     const mockCtx = makeMockCtx();
-    vi.stubGlobal("AudioContext", class { constructor() { return mockCtx; } });
+    vi.stubGlobal(
+      "AudioContext",
+      class {
+        constructor() {
+          return mockCtx;
+        }
+      },
+    );
     const first = getAudioContext();
     const second = getAudioContext();
     expect(second).toBe(first);
@@ -67,10 +81,13 @@ describe("resumeAudioContext", () => {
 
 describe("loadSoundBuffer", () => {
   it("deduplicates concurrent loads of the same sound", async () => {
-    vi.stubGlobal("fetch", vi.fn(() => {
-      // Never resolve, so we can observe the loading-promise dedup
-      return new Promise<Response>(() => {});
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => {
+        // Never resolve, so we can observe the loading-promise dedup
+        return new Promise<Response>(() => {});
+      }),
+    );
     const p1 = loadSoundBuffer("dedup-concurrent.ogg");
     const p2 = loadSoundBuffer("dedup-concurrent.ogg");
     expect(p1).toBeInstanceOf(Promise);
@@ -78,7 +95,10 @@ describe("loadSoundBuffer", () => {
   });
 
   it("returns null on fetch failure", async () => {
-    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: false })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve({ ok: false })),
+    );
     const result = await loadSoundBuffer("missing.ogg");
     expect(result).toBeNull();
   });
@@ -92,9 +112,23 @@ describe("loadSoundBuffer", () => {
   });
 
   it("returns null on decode failure", async () => {
-    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: true, arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) })));
-    const mockCtx = { createGain: vi.fn(), destination: "dest", decodeAudioData: vi.fn(() => Promise.reject(new Error("decode failed"))) } as Partial<AudioContext>;
-    vi.stubGlobal("AudioContext", class { constructor() { return mockCtx; } });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve({ ok: true, arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) })),
+    );
+    const mockCtx = {
+      createGain: vi.fn(),
+      destination: "dest",
+      decodeAudioData: vi.fn(() => Promise.reject(new Error("decode failed"))),
+    } as Partial<AudioContext>;
+    vi.stubGlobal(
+      "AudioContext",
+      class {
+        constructor() {
+          return mockCtx;
+        }
+      },
+    );
     const result = await loadSoundBuffer("bad.ogg");
     expect(result).toBeNull();
   });
@@ -102,7 +136,10 @@ describe("loadSoundBuffer", () => {
 
 describe("preloadSounds", () => {
   it("kicks off loading for each name", () => {
-    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {}))); // never resolves
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise(() => {})),
+    ); // never resolves
     preloadSounds(["a.ogg", "b.ogg"]);
     // No assertion on result — just ensure no throw
   });
