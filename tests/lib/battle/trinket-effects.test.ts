@@ -1,16 +1,8 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { applyIronwoodBuckler, applyBoneCharmHeal, applyLuckyCloverGold } from "@/lib/battle/trinket-effects";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { patchBattleState } from "./test-state";
-import {
-  defaultPlayerStatusValues,
-  defaultEnemyStatusValues,
-  defaultEnemyMitigation,
-  defaultTalentEffects,
-  defaultTrinketManifest,
-  defaultCcState,
-  defaultCombatFlags,
-} from "../../fixtures/default-battle-state";
+import { defaultPlayerStatusValues, defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
 describe("applyIronwoodBuckler", () => {
   it("converts block to armor when block >= threshold", () => {

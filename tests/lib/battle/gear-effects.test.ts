@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import {
   applyGearDamageResistance,
   applyGearKillRewards,
@@ -9,15 +9,7 @@ import {
 } from "@/lib/battle/gear-effects";
 import { defaultGearEffects } from "@/lib/gear";
 import { patchBattleState } from "./test-state";
-import {
-  defaultPlayerStatusValues,
-  defaultEnemyStatusValues,
-  defaultEnemyMitigation,
-  defaultTalentEffects,
-  defaultTrinketManifest,
-  defaultCcState,
-  defaultCombatFlags,
-} from "../../fixtures/default-battle-state";
+import { defaultCcState } from "../../fixtures/default-battle-state";
 
 describe("gear-effects", () => {
   it("reduces incoming damage by gear resist percent", () => {

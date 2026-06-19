@@ -17,7 +17,6 @@ import {
   defaultCcState,
   defaultEnemyMitigation,
   defaultCombatFlags,
-  defaultTrinketManifest,
 } from "../../fixtures/default-battle-state";
 
 function makeState(): BattleState {

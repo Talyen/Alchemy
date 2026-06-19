@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { expect, it, beforeEach } from "vitest";
 import { applyMusicVolume } from "@/lib/audio-music";
 import { audioState } from "@/lib/audio-state";
 import { MUSIC_MASTER_GAIN } from "@/lib/game-constants";

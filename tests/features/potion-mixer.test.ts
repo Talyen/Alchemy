@@ -1,5 +1,5 @@
 // Unit tests for alchemist potion-combining logic.
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createMixedPotion, tryCreateMixedPotion, applyMixToDeck } from "@/lib/alchemist";
 import { ALCHEMIST_MIX_PRICE } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";

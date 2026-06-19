@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   applyLabyrinthRewardMaterialModifiers,
   computeVictoryGold,
@@ -16,7 +16,6 @@ import {
 import { getStandardPotionPool } from "@/lib/game-data";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { makeRewardRouteHandlers } from "../../helpers/destination-route-handlers";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 

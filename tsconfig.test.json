@@ -4,8 +4,8 @@
     "types": ["vitest/globals", "vite/client", "node"],
     "noUncheckedIndexedAccess": false,
     "exactOptionalPropertyTypes": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "include": ["tests"],
   "exclude": ["src/**"]

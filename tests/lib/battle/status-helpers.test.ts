@@ -1,16 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+﻿import { describe, expect, it, vi } from "vitest";
 import { decayHalvedStatus, rollPercent, decayArmorAfterDamage } from "@/lib/battle/status-helpers";
 import { BATTLE_CONFIG, PERCENT_DENOMINATOR } from "@/lib/game-constants";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
 import {
   defaultPlayerStatusValues,
-  defaultEnemyStatusValues,
   defaultEnemyMitigation,
   defaultTalentEffects,
-  defaultTrinketManifest,
-  defaultCcState,
-  defaultCombatFlags,
 } from "../../fixtures/default-battle-state";
 
 describe("decayHalvedStatus", () => {

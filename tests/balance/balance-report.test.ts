@@ -233,7 +233,7 @@ function collectAnomalies(results: BalanceBatchResult[], tierLabel: string, thre
 function collectAllAnomalyMetrics(
   tieredResults: TieredResults,
 ): { field: string; early: number; mid: number; late: number; thresholds: number[] }[] {
-  const perTier = TIERS.map((tier, i) => {
+  const perTier = TIERS.map((_tier, i) => {
     const byField: Record<string, number> = {};
     for (const batch of tieredResults[i].results) {
       for (const sim of batch.results) {

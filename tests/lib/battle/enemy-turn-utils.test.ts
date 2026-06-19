@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import {
   advanceToPlayerTurn,
   checkHealthThresholds,
@@ -10,14 +10,7 @@ import { CARDS_PER_TURN } from "@/lib/game-constants";
 import { defaultGearEffects } from "@/lib/gear";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
-import {
-  defaultPlayerStatusValues,
-  defaultEnemyStatusValues,
-  defaultEnemyMitigation,
-  defaultTrinketManifest,
-  defaultCcState,
-  defaultCombatFlags,
-} from "../../fixtures/default-battle-state";
+import { defaultPlayerStatusValues, defaultCcState } from "../../fixtures/default-battle-state";
 
 function makeCard(id: string) {
   return { id, title: id, descriptionLines: [""], art: "", cost: 1, effects: [] };

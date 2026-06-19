@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
-import type { BattleState, EnemyStatusValues, PlayerStatusValues } from "@/lib/battle/types";
+import type { BattleState, EnemyStatusValues } from "@/lib/battle/types";
 import type { BattleCard } from "@/lib/game-data";
 import { defaultTalentEffects } from "@/lib/battle";
 import { createTestBattleState } from "./test-state";
@@ -50,7 +50,7 @@ function battleState(overrides: Partial<BattleState> = {}): BattleState {
   });
 }
 
-describe("endPlayerTurn — haste branch", () => {
+describe("endPlayerTurn â€” haste branch", () => {
   it("skips enemy phase entirely when player has haste", () => {
     const state = battleState({ playerStatuses: { ...emptyPlayerStatuses, haste: 1 } });
     const result = endPlayerTurn(state);
@@ -73,7 +73,7 @@ describe("endPlayerTurn — haste branch", () => {
   });
 });
 
-describe("endPlayerTurn — CC skip branch", () => {
+describe("endPlayerTurn â€” CC skip branch", () => {
   it("skips attack when enemy is stunned", () => {
     const state = battleState({ enemyCC: defaultCcState({ stunSkipTurns: 1 }) });
     const result = endPlayerTurn(state);
@@ -114,7 +114,7 @@ describe("endPlayerTurn — CC skip branch", () => {
   });
 });
 
-describe("endPlayerTurn — standard branch", () => {
+describe("endPlayerTurn â€” standard branch", () => {
   it("executes enemy attack and deals damage", () => {
     const state = battleState({ playerHealth: 30 });
     const result = endPlayerTurn(state);
@@ -170,7 +170,7 @@ describe("endPlayerTurn — standard branch", () => {
   });
 });
 
-describe("endPlayerTurn — tick order", () => {
+describe("endPlayerTurn â€” tick order", () => {
   it("ticks enemy DoT before attack when enemy survives", () => {
     const state = battleState({
       enemyHealth: 50,
@@ -209,7 +209,7 @@ describe("endPlayerTurn — tick order", () => {
   });
 });
 
-describe("endPlayerTurn — Death's Door", () => {
+describe("endPlayerTurn â€” Death's Door", () => {
   it("gives grace recovery turn when player hits 0", () => {
     const state = battleState({
       playerHealth: 0,

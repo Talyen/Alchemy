@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
 import { DAMAGE_TYPES } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestBattleState, makeTestCard, patchBattleState, seededRng } from "../../fixtures/battle";
-import { defaultPlayerStatusValues, defaultEnemyStatusValues } from "../../fixtures/default-battle-state";
+import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 
 function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
   const enemyHealth = overrides.enemyHealth ?? 30;
@@ -15,7 +15,7 @@ function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
   });
 }
 
-describe("applyCardEffects — cleanse-player-status-to-damage (Exorcism)", () => {
+describe("applyCardEffects â€” cleanse-player-status-to-damage (Exorcism)", () => {
   it("clears player burn and deals holy damage equal to stacks removed", () => {
     const state = makeState({
       playerStatuses: defaultPlayerStatusValues({ burn: 4 }),
@@ -45,7 +45,7 @@ describe("applyCardEffects — cleanse-player-status-to-damage (Exorcism)", () =
   });
 });
 
-describe("applyCardEffects — equalToGoldPercent (Tithe)", () => {
+describe("applyCardEffects â€” equalToGoldPercent (Tithe)", () => {
   it("deals holy damage equal to 10% of battle gold", () => {
     const state = makeState({ gold: 47 });
     const card = makeTestCard({
@@ -59,7 +59,7 @@ describe("applyCardEffects — equalToGoldPercent (Tithe)", () => {
   });
 });
 
-describe("applyCardEffects — chance (Roulette)", () => {
+describe("applyCardEffects â€” chance (Roulette)", () => {
   it("damage branch deals 3 of a random type when roll succeeds", () => {
     const rng = seededRng(7);
     const branchRoll = rng();
@@ -114,7 +114,7 @@ describe("applyCardEffects — chance (Roulette)", () => {
   });
 });
 
-describe("applyCardEffects — random-damage (Gambler's Shot)", () => {
+describe("applyCardEffects â€” random-damage (Gambler's Shot)", () => {
   it("uses battle rng for deterministic damage type and amount in range", () => {
     const rng = seededRng(99);
     const firstRoll = rng();

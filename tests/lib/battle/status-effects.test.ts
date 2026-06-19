@@ -1,19 +1,11 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import {
   applyPlayerDamageStatuses,
   getEnemyDamageMultiplier,
   removeHarmfulPlayerStatuses,
 } from "@/lib/battle/status-effects";
 import { createTestBattleState } from "./test-state";
-import {
-  defaultPlayerStatusValues,
-  defaultEnemyStatusValues,
-  defaultEnemyMitigation,
-  defaultTalentEffects,
-  defaultTrinketManifest,
-  defaultCcState,
-  defaultCombatFlags,
-} from "../../fixtures/default-battle-state";
+import { defaultPlayerStatusValues, defaultTalentEffects, defaultCcState } from "../../fixtures/default-battle-state";
 
 describe("getEnemyDamageMultiplier", () => {
   it("returns 1 when no multipliers apply", () => {

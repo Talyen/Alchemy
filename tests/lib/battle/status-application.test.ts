@@ -1,14 +1,12 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { applyPlayerStatusFromAttack } from "@/lib/battle/status-application";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
 import {
   defaultPlayerStatusValues,
-  defaultEnemyStatusValues,
   defaultEnemyMitigation,
   defaultTalentEffects,
   defaultTrinketManifest,
-  defaultCcState,
   defaultCombatFlags,
 } from "../../fixtures/default-battle-state";
 

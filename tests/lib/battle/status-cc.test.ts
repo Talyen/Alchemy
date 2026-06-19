@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import {
   applyEnemyCcImmunityClear,
   assignEnemyCrowdControlSkip,
@@ -9,11 +9,7 @@ import { createTestBattleState } from "./test-state";
 import {
   defaultPlayerStatusValues,
   defaultEnemyStatusValues,
-  defaultEnemyMitigation,
-  defaultTalentEffects,
-  defaultTrinketManifest,
   defaultCcState,
-  defaultCombatFlags,
 } from "../../fixtures/default-battle-state";
 
 describe("resolvePlayerCrowdControlTrigger", () => {

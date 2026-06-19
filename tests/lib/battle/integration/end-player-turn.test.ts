@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { makeState, makeCard, defaultBattleState } from "./helpers";
+import { makeState, makeCard } from "./helpers";
 import { applyCardEffects, defaultTalentEffects, endPlayerTurn } from "@/lib/battle";
 import { isPlayerDefeated, type CombatTextEvent } from "@/lib/battle/types";
 import { IRON_HIDE_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN } from "@/lib/game-constants";

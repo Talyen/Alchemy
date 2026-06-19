@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import type { SaveData } from "@/features/alchemy/shared/storage/types";
-import type { GearBoardPositionsByCharacter, CraftingCurrencyBoardPositionsByCharacter } from "@/lib/gear";
 
 vi.mock("@/features/alchemy/shared/storage", () => ({
   clearAlchemySaveData: vi.fn(),

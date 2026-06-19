@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+﻿import { describe, expect, it, vi, afterEach } from "vitest";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import type { BattleCardEffect, BattleCard } from "@/lib/game-data";
@@ -8,7 +8,6 @@ import { patchBattleState } from "./test-state";
 import {
   defaultPlayerStatusValues,
   defaultEnemyStatusValues,
-  defaultEnemyMitigation,
   defaultTalentEffects,
   defaultTrinketManifest,
   defaultCcState,
@@ -44,7 +43,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("dealDamageToEnemy — basic physical damage", () => {
+describe("dealDamageToEnemy â€” basic physical damage", () => {
   it("deals base damage to enemy health", () => {
     const state = patchBattleState({ enemyHealth: 30 });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
@@ -112,7 +111,7 @@ describe("dealDamageToEnemy — basic physical damage", () => {
   });
 });
 
-describe("computeBaseDamage — forge bonus", () => {
+describe("computeBaseDamage â€” forge bonus", () => {
   it("adds forge bonus to physical damage", () => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ forge: 3 }) });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
@@ -177,7 +176,7 @@ describe("computeBaseDamage — forge bonus", () => {
   });
 });
 
-describe("computeBaseDamage — equalToBlock / equalToArmor", () => {
+describe("computeBaseDamage â€” equalToBlock / equalToArmor", () => {
   it("damage equals block plus forge when equalToBlock", () => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ block: 7 }) });
     const card = makeCard({ effects: [makeEffect("physical", 0, { equalToBlock: true })] });
@@ -205,7 +204,7 @@ describe("computeBaseDamage — equalToBlock / equalToArmor", () => {
   });
 });
 
-describe("computeBaseDamage — holy damage", () => {
+describe("computeBaseDamage â€” holy damage", () => {
   it("scales holy damage with gold when holyGoldPercent is active", () => {
     const state = patchBattleState({
       gold: 50,
@@ -255,7 +254,7 @@ describe("computeBaseDamage — holy damage", () => {
   });
 });
 
-describe("computeBaseDamage — bleed damage", () => {
+describe("computeBaseDamage â€” bleed damage", () => {
   it("applies bleed desperate multiplier when player below half health", () => {
     const state = patchBattleState({
       playerHealth: 10,
@@ -291,7 +290,7 @@ describe("computeBaseDamage — bleed damage", () => {
   });
 });
 
-describe("computeBaseDamage — archery tag", () => {
+describe("computeBaseDamage â€” archery tag", () => {
   it("adds flatArrowDamage to cards with the archery tag", () => {
     const state = patchBattleState({
       talentEffects: { ...defaultTalentEffects, flatArrowDamage: 3 },
@@ -311,7 +310,7 @@ describe("computeBaseDamage — archery tag", () => {
   });
 });
 
-describe("computeBaseDamage — stun damage", () => {
+describe("computeBaseDamage â€” stun damage", () => {
   it("adds flatStunDamage to stun damage type", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
@@ -330,7 +329,7 @@ describe("computeBaseDamage — stun damage", () => {
   });
 });
 
-describe("computeBaseDamage — physical vs statuses", () => {
+describe("computeBaseDamage â€” physical vs statuses", () => {
   it("adds poisonPhysicalBonus against poisoned enemies", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
@@ -692,7 +691,7 @@ describe("consumeForgeAfterDamage", () => {
   });
 });
 
-describe("dealDamageToEnemy — lifesteal", () => {
+describe("dealDamageToEnemy â€” lifesteal", () => {
   it("heals player when effect has lifesteal", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
@@ -712,7 +711,7 @@ describe("dealDamageToEnemy — lifesteal", () => {
   });
 });
 
-describe("dealDamageToEnemy — enemy armor", () => {
+describe("dealDamageToEnemy â€” enemy armor", () => {
   it("physical damage is reduced by enemy armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({ enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 } });
@@ -742,7 +741,7 @@ describe("dealDamageToEnemy — enemy armor", () => {
       card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
       texts,
     );
-    // Sundering removes 2 → armor 3, damage 10-3=7. Decay removes 1 → final armor 2.
+    // Sundering removes 2 â†’ armor 3, damage 10-3=7. Decay removes 1 â†’ final armor 2.
     expect(result.enemyHealth).toBe(23);
     expect(result.enemyMitigation.armor).toBe(2);
   });
@@ -763,7 +762,7 @@ describe("dealDamageToEnemy — enemy armor", () => {
   });
 });
 
-describe("dealDamageToEnemy — boonSiphon siphoning", () => {
+describe("dealDamageToEnemy â€” boonSiphon siphoning", () => {
   it("steals armor and gains armor for the player when armor is siphoned", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99); // bypass crit
     const state = patchBattleState({
@@ -809,7 +808,7 @@ describe("dealDamageToEnemy — boonSiphon siphoning", () => {
   });
 });
 
-describe("dealDamageToEnemy — edge cases", () => {
+describe("dealDamageToEnemy â€” edge cases", () => {
   it("does not decrease health below 0", () => {
     const state = patchBattleState({ enemyHealth: 3 });
     const card = makeCard({ effects: [makeEffect("physical", 100)] });
