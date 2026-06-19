@@ -74,11 +74,11 @@ describe("initializeEnemyState", () => {
     expect(physical?.kind === "damage" && physical.amount).toBe(9 + 2 + 1);
   });
 
-  it("increases matching player-status attack amounts", () => {
+  it("does not increase non-matching player-status attack amounts", () => {
     const mods: DifficultyModifier[] = [{ kind: "increase-enemy-status", status: "poison", amount: 2 }];
     const result = initializeEnemyState(forgeGolem, 1, mods);
     const stun = result.modifiedEffects.find((e) => e.kind === "player-status" && e.status === "stun");
-    expect(stun?.kind === "player-status" && stun.amount).toBe(3);
+    expect(stun?.kind === "player-status" && stun.amount).toBe(1);
   });
 
   it("adds lifesteal to all damage attacks when enemy-attacks-gain-leech is active", () => {

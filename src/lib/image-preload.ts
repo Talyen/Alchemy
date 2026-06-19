@@ -79,11 +79,14 @@ export function preloadImagesWhenIdle(srcs: string[]) {
 // Uses idle callbacks when available and falls back to a timer in browsers that
 // do not expose requestIdleCallback.
 function schedulePreloadBatch(callback: () => void) {
-  const scheduler = globalThis as typeof globalThis & {
+  const scheduler = globalThis as unknown as {
     requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
   };
 
-  scheduler.requestIdleCallback(callback, { timeout: IMAGE_PRELOAD_IDLE_TIMEOUT });
+  if (scheduler.requestIdleCallback) {
+    scheduler.requestIdleCallback(callback, { timeout: IMAGE_PRELOAD_IDLE_TIMEOUT });
+    return;
+  }
 
   globalThis.setTimeout(callback, 0);
 }

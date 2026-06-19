@@ -146,6 +146,7 @@ describe("armoryTargetingReducer", () => {
         salvageMode: false,
         salvageTarget: null,
         activeCurrencyId: null,
+        transferMenu: null,
         cursorPoint: null,
       });
     });
@@ -163,6 +164,7 @@ describe("armoryTargetingReducer", () => {
         salvageMode: false,
         salvageTarget: null,
         activeCurrencyId: null,
+        transferMenu: null,
         cursorPoint: null,
       });
     });

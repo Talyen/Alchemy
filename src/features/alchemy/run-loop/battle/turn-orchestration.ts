@@ -53,12 +53,14 @@ export function resolveHasteSkipTurn(
     deps.setResolvedAsHasteOrStun(false);
     throw err;
   }
-  void runHandDrawSequence(
-    companionState.hand,
-    result.state,
-    () => deps.store.setSyncedBattleState(result.state),
-    session,
-    deps.drawSequence,
+  void Promise.resolve(
+    runHandDrawSequence(
+      companionState.hand,
+      result.state,
+      () => deps.store.setSyncedBattleState(result.state),
+      session,
+      deps.drawSequence,
+    ),
   )
     .catch(deps.logDrawError)
     .finally(() => {

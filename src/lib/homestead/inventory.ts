@@ -1,6 +1,10 @@
 // Material inventory math: empty, add, canAfford, subtract. All functions handle
 // missing keys by treating them as 0. subtractInventory clamps to 0.
-import { MATERIAL_IDS, type MaterialInventory } from "./types";
+import { MATERIAL_IDS, type MaterialId, type MaterialInventory } from "./types";
+
+function materialAmount(inventory: MaterialInventory, materialId: MaterialId): number {
+  return (inventory as Partial<Record<MaterialId, number>>)[materialId] ?? 0;
+}
 
 export function emptyInventory(): MaterialInventory {
   return { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 };
@@ -9,19 +13,19 @@ export function emptyInventory(): MaterialInventory {
 export function addInventory(a: MaterialInventory, b: MaterialInventory): MaterialInventory {
   const result = { ...a };
   for (const mat of MATERIAL_IDS) {
-    result[mat] = result[mat] + b[mat];
+    result[mat] = materialAmount(result, mat) + materialAmount(b, mat);
   }
   return result;
 }
 
 export function canAfford(inventory: MaterialInventory, cost: MaterialInventory): boolean {
-  return MATERIAL_IDS.every((mat) => inventory[mat] >= cost[mat]);
+  return MATERIAL_IDS.every((mat) => materialAmount(inventory, mat) >= materialAmount(cost, mat));
 }
 
 export function subtractInventory(inventory: MaterialInventory, cost: MaterialInventory): MaterialInventory {
   const result = { ...inventory };
   for (const mat of MATERIAL_IDS) {
-    result[mat] = Math.max(0, result[mat] - cost[mat]);
+    result[mat] = Math.max(0, materialAmount(result, mat) - materialAmount(cost, mat));
   }
   return result;
 }

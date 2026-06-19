@@ -695,7 +695,7 @@ describe("session facade API", () => {
       runTalentXP: getRunProgressStoreView().runTalentXP,
       runMaterialsEarned: getRunProgressStoreView().runMaterialsEarned,
       currentScreen: ROUTE_SCREENS.DESTINATION,
-      destinationChoices: ["campfire", "shop"],
+      destinationChoices: ["Campfire", "Merchant's Shop"],
       pendingReward: null,
       shopState: null,
       alchemistState: null,

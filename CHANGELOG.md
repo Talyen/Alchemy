@@ -1152,6 +1152,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 ### Chores
 
 - chore(changelog): sync unreleased
+- chore(changelog): sync unreleased
 - chore(code-quality): tighten lint, TS strictness, knip, and prettier configs
   - Fix knip default-mode gate (delete dead code, remove stale suppressions)
   - Eliminate 57 ny warnings; bump no-explicit-any to error

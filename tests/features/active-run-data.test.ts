@@ -75,6 +75,10 @@ describe("createActiveRunSnapshot", () => {
       currentScreen: null,
       destinationChoices: [],
       pendingReward: null,
+      shopState: null,
+      alchemistState: null,
+      trinketShopState: null,
+      equipmentShopState: null,
       wildwoodDraft: null,
       runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
     });
