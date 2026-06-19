@@ -35,3 +35,23 @@ export function getGearInstanceShineGradient(instance: GearInstance): string | n
   if (colors.length === 0) return null;
   return `linear-gradient(60deg, ${colors.join(",")})`;
 }
+
+function getGearAffixShineColors(affix: { keywordId: KeywordId; secondaryKeywordId?: KeywordId }): readonly string[] {
+  const colors: string[] = [];
+  const shineColors = keywordDefinitions[affix.keywordId]?.shineColors;
+  if (shineColors) colors.push(...shineColors);
+  if (affix.secondaryKeywordId) {
+    const secondaryColors = keywordDefinitions[affix.secondaryKeywordId]?.shineColors;
+    if (secondaryColors) colors.push(...secondaryColors);
+  }
+  return colors.length > 0 ? colors : [...ASTRAL_SHINE_FALLBACK];
+}
+
+export function getGearAffixShineGradient(affix: {
+  keywordId: KeywordId;
+  secondaryKeywordId?: KeywordId;
+}): string | null {
+  const colors = getGearAffixShineColors(affix);
+  if (colors.length === 0) return null;
+  return `linear-gradient(60deg, ${colors.join(",")})`;
+}

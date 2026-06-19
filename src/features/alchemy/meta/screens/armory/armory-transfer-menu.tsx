@@ -17,22 +17,17 @@ export function ArmoryTransferMenu({
 }) {
   const menuRef = useRef<HTMLDivElement>(null);
 
-  if (!transferMenu) return null;
-  const { instanceId, sourceCharacterId, anchor } = transferMenu;
-
-  const recipients = (Object.keys(characters) as CharacterId[])
-    .filter((id) => id !== sourceCharacterId)
-    .filter((id) => isCharacterUnlocked(id, finishedRunCharacters));
-
   const handleClick = useCallback(
     (targetId: CharacterId) => {
-      onTransferGear(instanceId, targetId);
+      if (!transferMenu) return;
+      onTransferGear(transferMenu.instanceId, targetId);
       onClose();
     },
-    [instanceId, onClose, onTransferGear],
+    [transferMenu, onClose, onTransferGear],
   );
 
   useEffect(() => {
+    if (!transferMenu) return;
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         onClose();
@@ -53,7 +48,14 @@ export function ArmoryTransferMenu({
       window.removeEventListener("keydown", handleKeyDown, true);
       document.removeEventListener("click", handleClickOutside);
     };
-  }, [onClose]);
+  }, [transferMenu, onClose]);
+
+  if (!transferMenu) return null;
+  const { sourceCharacterId, anchor } = transferMenu;
+
+  const recipients = (Object.keys(characters) as CharacterId[])
+    .filter((id) => id !== sourceCharacterId)
+    .filter((id) => isCharacterUnlocked(id, finishedRunCharacters));
 
   let left = anchor.x;
   let top = anchor.y;
@@ -72,7 +74,7 @@ export function ArmoryTransferMenu({
       ref={menuRef}
       role="menu"
       className={cn(
-        "fixed z-[150] min-w-[10rem] overflow-hidden rounded-lg border border-border/60 bg-alchemy-900 shadow-[0_10px_40px_rgba(0,0,0,0.5)]",
+        "fixed z-[150] min-w-[10rem] overflow-hidden rounded-lg border border-border bg-card shadow-[0_10px_40px_rgba(0,0,0,0.5)]",
         "py-1",
       )}
       style={{ left, top }}
@@ -84,7 +86,7 @@ export function ArmoryTransferMenu({
           role="menuitem"
           className={cn(
             "flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors",
-            "text-stone-200 hover:bg-alchemy-700/50 hover:text-amber-100",
+            "text-stone-200 hover:bg-stone-800/80 hover:text-amber-100",
           )}
           onClick={() => handleClick(targetId)}
         >

@@ -13,8 +13,8 @@ export type DestinationName =
 export const DESTINATION_RANDOM_VALUES: Record<DestinationName, number> = {
   "Normal Combat": 0,
   "Elite Combat": 0.2,
-  "Merchant's Shop": 0.35,
-  "Alchemist's Shop": 0.5,
+  "Merchant's Shop": 0.1,
+  "Alchemist's Shop": 0.25,
   Mystery: 0.65,
   Corruption: 0.8,
   Campfire: 0.95,

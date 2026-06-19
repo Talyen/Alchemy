@@ -9,7 +9,12 @@ import { TooltipPanel } from "../../../../shared/ui/tooltip-panel";
 import { GearTooltipContent, ARMORY_TOOLTIP_WIDTH } from "../gear-tooltip-content";
 import { useArmoryPortaledTooltipPlacement } from "../armory-tooltip-placement";
 import { SLOT_LABELS } from "./grid-styles";
-import { SALVAGE_TARGET_RING, VALID_TARGET_RING, VALID_TARGET_SHADOW } from "../targeting-highlight";
+import {
+  SALVAGE_TARGET_RING,
+  SALVAGE_TARGET_SHADOW,
+  VALID_TARGET_RING,
+  VALID_TARGET_SHADOW,
+} from "../targeting-highlight";
 import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "../use-armory-gear-drag";
 
 function dismissWhenFocusLeaves(event: FocusEvent<HTMLDivElement>, dismiss: () => void) {
@@ -23,7 +28,7 @@ export const SlotButton = memo(function SlotButton({
   inventory,
   editable,
   draggedGear,
-  secondaryDragInstanceId = null,
+  secondaryDragInstanceIds = [],
   isDraggingActive,
   salvageMode,
   activeCurrencyId,
@@ -42,7 +47,7 @@ export const SlotButton = memo(function SlotButton({
   inventory: GearInstance[];
   editable: boolean;
   draggedGear: GearInstance | null | undefined;
-  secondaryDragInstanceId?: string | null;
+  secondaryDragInstanceIds?: string[];
   isDraggingActive: boolean;
   salvageMode: boolean;
   activeCurrencyId: CraftingCurrencyId | null;
@@ -93,15 +98,14 @@ export const SlotButton = memo(function SlotButton({
     setShowTooltip(false);
   };
 
+  const targetingMode = salvageMode || activeCurrencyId;
+
   return (
     <div
       ref={containerRef}
       className={cn(
         "relative h-full w-full overflow-hidden rounded-xl transition-[box-shadow] duration-150",
         salvageMode || activeCurrencyId ? "cursor-default" : "cursor-grab active:cursor-grabbing",
-        (isCompatible || (activeCurrencyId && instance && canCraft)) && VALID_TARGET_SHADOW,
-        salvageMode && instance && SALVAGE_TARGET_RING,
-        activeCurrencyId && instance && canCraft && VALID_TARGET_RING,
       )}
       aria-label={`${SLOT_LABELS[slot]} equipment slot`}
       data-salvageable={salvageMode && instance ? "true" : undefined}
@@ -175,12 +179,23 @@ export const SlotButton = memo(function SlotButton({
             className={cn(
               "absolute -inset-px z-10 h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover",
               instance !== undefined &&
-                (draggedGear?.instanceId === instance.instanceId || secondaryDragInstanceId === instance.instanceId) &&
+                (draggedGear?.instanceId === instance.instanceId ||
+                  secondaryDragInstanceIds.includes(instance.instanceId)) &&
                 "opacity-0",
             )}
           />
         ) : null}
       </div>
+      {(isCompatible || (targetingMode && instance)) && (
+        <div
+          className={cn(
+            "absolute inset-0 z-20 pointer-events-none rounded-xl transition-[box-shadow] duration-150",
+            isCompatible && VALID_TARGET_SHADOW,
+            activeCurrencyId && instance && canCraft && [VALID_TARGET_RING, VALID_TARGET_SHADOW],
+            salvageMode && instance && [SALVAGE_TARGET_RING, SALVAGE_TARGET_SHADOW],
+          )}
+        />
+      )}
       {showTooltip && definition && !isDraggingActive && !salvageMode
         ? createPortal(
             <TooltipPanel

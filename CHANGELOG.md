@@ -6,6 +6,28 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Features
 
+- feat(armory): improve drag visuals, salvage sfx, equip-ux, and fix bow+shield bugs
+  Salvage: thicker red border (matching valid-green ring-2), mine-2.ogg
+  sound on confirm. Tooltip no longer re-appears briefly after double-click
+  flyover (1s cooldown).
+  
+  Cursor: replaces OS cursor with
+  one during drag; portal tracks pointer
+  as a static div (no spring animation during active drag), eliminating
+  the visible art-shift/crop caused by motion resampling object-cover
+  during the spring. When settling or flying over, spring animation remains.
+  
+  Equip slots: background frame stays visible when item is dragged away
+  (only the item art hides). Double-click unequip now places items at the
+  first available top-left inventory cell rather than preferred positions.
+  
+  Bow+shield: equipping a ranged weapon now correctly clears non-quiver
+  off-hand items, and the store restores equipped-return positions for
+  all indirectly unequipped items (not just the target slot).
+  
+  Off-hand auto-pick: double-clicking a one-handed item with main-hand
+  filled and off-hand empty equips to off-hand. New canEquipInOffHand
+  helper on GearDefinition.
 - feat(armory): add ArmoryTransferMenu primitive for right-click gear transfer
   New armory-transfer-menu.tsx component renders a portaled context menu
   at the right-click anchor point with one 'Send to [ClassName]' button
@@ -417,6 +439,46 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(app): simplify App.tsx architecture — remove actions proxy, context, inline logic
+  - Replace 63-entry actions proxy with direct run controller prop, flattening
+    all a.runFlow.* / a.battle.* references across 41 route call sites
+  - Delete RunControllerContext (only had one consumer) — pass run as prop
+  - Move save bootstrap orchestration into applySaveDataToStores() in storage
+  - Extract 6 focused hooks from AppMainContent: game-menu state, keyboard
+    shortcuts, return-to-run navigation, screen particles, dev shortcuts,
+    and grouped useAppSettings selector
+  - Push chrome derivation (heroArt, playerName, hasUnspentTalents, hasAffordableHomestead)
+    into AppScreenChromeProvider — it now takes run as input
+  
+  App.tsx: 545 -> 283 lines (-48%). No behavior changes, 124 tests pass.
+- refactor: split run-domain-store into per-slice action files
+  Extract progress, session, navigation, and battle action impls into
+  
+  co-located slices/ files with factory functions and types.
+  
+  Eliminate duplicated RunProgressActions / RunSessionActions type
+  
+  tables from run-domain-types.ts. Derive view types from picker
+  
+  return types via ReturnType. Rename store-level actions to
+  
+  avoid collision (resetProgress / resetNavigation) while
+  
+  preserving reset as the view-facing alias.
+  
+  Delete four unused *Slice hooks. Add subscribeRunDomain to
+  
+  run-session-facade. Add run-domain-slice-dispatch test to
+  
+  lock in the action surface.
+- refactor(battle): consolidate CC state, add static guards, and reduce engine friction
+  - Group 6 top-level CC fields into playerCC/enemyCC CcState records
+  - Add withPreservedFlags() helper for companion first-time flag scope-guard
+  - Add drawFromState() convenience wrapper over drawCards
+  - Replace nested-spread in status-application.ts with addPlayerStatus()
+  - Add satisfies Record<> to EFFECT_APPLY_BY_KIND for build-time handler coverage
+  - Add unsafeNonSeededRng export and tighten eslint Math.random rule
+  - Add CcState deep-merge to test fixtures (makeTestBattleState/patchBattleState)
 - refactor(armory): extract useArmoryController facade and split screen + panels
   Phase 3 cleanup of the Armory subsystem:
   
@@ -916,6 +978,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Docs
 
+- docs(agents): update AGENTS.md with quick commands, conventions, and escalation policy
 - docs(armory): add docs/ARMORY.md and cross-link from AGENTS + ARCHITECTURE
   Add a dedicated docs/ARMORY.md covering the Armory subsystem:
   
@@ -946,6 +1009,8 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore: add scaffold-test utility for mirroring source to test paths
+- chore: sync CHANGELOG.md with recent commits
 - chore: verify vercel git webhook after reconnect
 - chore: checkpoint draw discard experiment
 

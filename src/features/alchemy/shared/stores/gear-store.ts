@@ -240,6 +240,88 @@ function currencyBoardPositionsByCharacterEqual(
   );
 }
 
+function syncBoardPositionsForState(state: {
+  inventories: GearInventories;
+  loadouts: GearLoadouts;
+  craftingCurrencies: Record<CraftingCurrencyId, number>;
+  boardPositionsByCharacter: GearBoardPositionsByCharacter;
+  currencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
+}): {
+  boardPositionsByCharacter: GearBoardPositionsByCharacter;
+  currencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
+} {
+  let changed = false;
+  const nextBoardPositionsByCharacter = { ...state.boardPositionsByCharacter };
+  const nextCurrencyPositionsByCharacter = { ...state.currencyBoardPositionsByCharacter };
+
+  for (const characterId of GEAR_CHARACTER_IDS) {
+    const equippedInstanceIds = new Set(Object.values(state.loadouts[characterId] ?? {}).filter(Boolean) as string[]);
+    const availableInventory = (state.inventories[characterId] ?? []).filter(
+      (item) => !equippedInstanceIds.has(item.instanceId),
+    );
+    const activeCurrencies = CRAFTING_CURRENCY_IDS.filter((id) => (state.craftingCurrencies[id] ?? 0) > 0);
+    const gearPositions = { ...(nextBoardPositionsByCharacter[characterId] ?? {}) };
+    const currencyPositions = { ...(nextCurrencyPositionsByCharacter[characterId] ?? {}) };
+
+    type MixedItem =
+      | { id: string; kind: "gear"; item: GearInstance; saved: { col: number; row: number } | undefined }
+      | { id: string; kind: "currency"; item: CraftingCurrencyId; saved: { col: number; row: number } | undefined };
+    const mixed: MixedItem[] = [];
+
+    for (const item of availableInventory) {
+      const fp = footprintForInstance(item);
+      if (!fp) continue;
+      mixed.push({ id: item.instanceId, kind: "gear", item, saved: gearPositions[item.instanceId] });
+    }
+    for (const currencyId of activeCurrencies) {
+      mixed.push({ id: currencyId, kind: "currency", item: currencyId, saved: currencyPositions[currencyId] });
+    }
+
+    const packed = packMixedBoard<"gear" | "currency", MixedItem>(
+      mixed,
+      INVENTORY_COLS,
+      (entry: MixedItem) => (entry.kind === "gear" ? footprintForInstance(entry.item)! : { w: 1, h: 1 }),
+      (entry: MixedItem) => entry.saved,
+    );
+
+    const nextGearForChar: GearBoardPositions = { ...gearPositions };
+    const nextCurrencyForChar: CraftingCurrencyBoardPositions = {};
+    const prevGearKeys = Object.keys(gearPositions).sort();
+    const nextGearKeys: string[] = [];
+    for (const { item, col, row } of packed) {
+      if (item.kind === "gear") {
+        nextGearForChar[item.item.instanceId] = { col, row };
+        nextGearKeys.push(item.item.instanceId);
+      } else {
+        nextCurrencyForChar[item.item] = { col, row };
+      }
+    }
+    if (nextGearKeys.join("|") !== prevGearKeys.join("|")) changed = true;
+    const prevCurrencyKeys = Object.keys(currencyPositions).sort();
+    const nextCurrencyKeys = Object.keys(nextCurrencyForChar).sort();
+    if (nextCurrencyKeys.join("|") !== prevCurrencyKeys.join("|")) changed = true;
+
+    nextBoardPositionsByCharacter[characterId] = nextGearForChar;
+    nextCurrencyPositionsByCharacter[characterId] = nextCurrencyForChar;
+  }
+
+  if (
+    !changed &&
+    boardPositionsByCharacterEqual(state.boardPositionsByCharacter, nextBoardPositionsByCharacter) &&
+    currencyBoardPositionsByCharacterEqual(state.currencyBoardPositionsByCharacter, nextCurrencyPositionsByCharacter)
+  ) {
+    return {
+      boardPositionsByCharacter: state.boardPositionsByCharacter,
+      currencyBoardPositionsByCharacter: state.currencyBoardPositionsByCharacter,
+    };
+  }
+
+  return {
+    boardPositionsByCharacter: nextBoardPositionsByCharacter,
+    currencyBoardPositionsByCharacter: nextCurrencyPositionsByCharacter,
+  };
+}
+
 export const useGearStore = create<GearStore>((set, get) => ({
   ...initialState,
   initialize: (
@@ -257,25 +339,44 @@ export const useGearStore = create<GearStore>((set, get) => ({
       if (inventoryIds.has(instanceId)) nextReturn[instanceId] = position;
     }
     const normalizedCurrencies = normalizeCraftingCurrencies(craftingCurrencies);
-    set({
-      inventories,
-      loadouts,
-      boardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(boardPositionsByCharacter, inventories),
-      equippedReturnPositions: nextReturn,
-      craftingCurrencies: normalizedCurrencies,
-      currencyBoardPositionsByCharacter: sanitizeCurrencyBoardPositionsByCharacter(
-        currencyBoardPositionsByCharacter,
-        normalizedCurrencies,
-      ),
+    set((state) => {
+      const nextState = {
+        inventories,
+        loadouts,
+        boardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(boardPositionsByCharacter, inventories),
+        equippedReturnPositions: nextReturn,
+        craftingCurrencies: normalizedCurrencies,
+        currencyBoardPositionsByCharacter: sanitizeCurrencyBoardPositionsByCharacter(
+          currencyBoardPositionsByCharacter,
+          normalizedCurrencies,
+        ),
+      };
+      return {
+        ...nextState,
+        ...syncBoardPositionsForState({
+          ...state,
+          ...nextState,
+        }),
+      };
     });
   },
   addInstance: (instance, characterId) =>
-    set((state) => ({
-      inventories: {
+    set((state) => {
+      const nextInventories = {
         ...state.inventories,
         [characterId]: [...(state.inventories[characterId] ?? []), instance],
-      },
-    })),
+      };
+      const nextState = {
+        inventories: nextInventories,
+      };
+      return {
+        ...nextState,
+        ...syncBoardPositionsForState({
+          ...state,
+          ...nextState,
+        }),
+      };
+    }),
   transferToInventory: (instanceId, targetCharacterId) => {
     const state = get();
     const owner = findGearInventoryOwner(state.inventories, instanceId);
@@ -312,11 +413,18 @@ export const useGearStore = create<GearStore>((set, get) => ({
     nextPositionsByCharacter[owner] = ownerPositions;
     nextPositionsByCharacter[targetCharacterId] = targetPositions;
 
-    set({
+    const nextState = {
       inventories: nextInventories,
       loadouts: nextLoadouts,
       boardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(nextPositionsByCharacter, nextInventories),
       equippedReturnPositions: nextReturn,
+    };
+    set({
+      ...nextState,
+      ...syncBoardPositionsForState({
+        ...state,
+        ...nextState,
+      }),
     });
     return true;
   },
@@ -377,11 +485,19 @@ export const useGearStore = create<GearStore>((set, get) => ({
 
       nextPositionsByCharacter[characterId] = characterPositions;
 
-      return {
+      const nextState = {
         inventories: nextInventories,
         loadouts: nextLoadouts,
         boardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(nextPositionsByCharacter, nextInventories),
         equippedReturnPositions: nextReturn,
+      };
+
+      return {
+        ...nextState,
+        ...syncBoardPositionsForState({
+          ...state,
+          ...nextState,
+        }),
       };
     }),
   unequip: (characterId, slot) =>
@@ -396,10 +512,17 @@ export const useGearStore = create<GearStore>((set, get) => ({
         delete nextReturn[instanceId];
       }
       nextPositionsByCharacter[characterId] = characterPositions;
-      return {
+      const nextState = {
         loadouts: nextLoadouts,
         boardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(nextPositionsByCharacter, state.inventories),
         equippedReturnPositions: nextReturn,
+      };
+      return {
+        ...nextState,
+        ...syncBoardPositionsForState({
+          ...state,
+          ...nextState,
+        }),
       };
     }),
   setBoardPosition: (characterId, instanceId, col, row) =>
@@ -411,7 +534,7 @@ export const useGearStore = create<GearStore>((set, get) => ({
         row,
         state,
       );
-      return {
+      const nextState = {
         boardPositionsByCharacter: {
           ...state.boardPositionsByCharacter,
           [characterId]: nextGearPositions,
@@ -420,6 +543,13 @@ export const useGearStore = create<GearStore>((set, get) => ({
           ...state.currencyBoardPositionsByCharacter,
           [characterId]: nextCurrencyPositions,
         },
+      };
+      return {
+        ...nextState,
+        ...syncBoardPositionsForState({
+          ...state,
+          ...nextState,
+        }),
       };
     }),
   setCurrencyBoardPosition: (characterId, currencyId, col, row) =>
@@ -431,7 +561,7 @@ export const useGearStore = create<GearStore>((set, get) => ({
         row,
         state,
       );
-      return {
+      const nextState = {
         boardPositionsByCharacter: {
           ...state.boardPositionsByCharacter,
           [characterId]: nextGearPositions,
@@ -441,81 +571,17 @@ export const useGearStore = create<GearStore>((set, get) => ({
           [characterId]: nextCurrencyPositions,
         },
       };
+      return {
+        ...nextState,
+        ...syncBoardPositionsForState({
+          ...state,
+          ...nextState,
+        }),
+      };
     }),
   syncBoardPositions: () =>
     set((state) => {
-      let changed = false;
-      const nextBoardPositionsByCharacter = { ...state.boardPositionsByCharacter };
-      const nextCurrencyPositionsByCharacter = { ...state.currencyBoardPositionsByCharacter };
-
-      for (const characterId of GEAR_CHARACTER_IDS) {
-        const equippedInstanceIds = new Set(
-          Object.values(state.loadouts[characterId] ?? {}).filter(Boolean) as string[],
-        );
-        const availableInventory = (state.inventories[characterId] ?? []).filter(
-          (item) => !equippedInstanceIds.has(item.instanceId),
-        );
-        const activeCurrencies = CRAFTING_CURRENCY_IDS.filter((id) => (state.craftingCurrencies[id] ?? 0) > 0);
-        const gearPositions = { ...(nextBoardPositionsByCharacter[characterId] ?? {}) };
-        const currencyPositions = { ...(nextCurrencyPositionsByCharacter[characterId] ?? {}) };
-
-        type MixedItem =
-          | { id: string; kind: "gear"; item: GearInstance; saved: { col: number; row: number } | undefined }
-          | { id: string; kind: "currency"; item: CraftingCurrencyId; saved: { col: number; row: number } | undefined };
-        const mixed: MixedItem[] = [];
-
-        for (const item of availableInventory) {
-          const fp = footprintForInstance(item);
-          if (!fp) continue;
-          mixed.push({ id: item.instanceId, kind: "gear", item, saved: gearPositions[item.instanceId] });
-        }
-        for (const currencyId of activeCurrencies) {
-          mixed.push({ id: currencyId, kind: "currency", item: currencyId, saved: currencyPositions[currencyId] });
-        }
-
-        const packed = packMixedBoard<"gear" | "currency", MixedItem>(
-          mixed,
-          INVENTORY_COLS,
-          (entry: MixedItem) => (entry.kind === "gear" ? footprintForInstance(entry.item)! : { w: 1, h: 1 }),
-          (entry: MixedItem) => entry.saved,
-        );
-
-        const nextGearForChar: GearBoardPositions = {};
-        const nextCurrencyForChar: CraftingCurrencyBoardPositions = {};
-        const prevGearKeys = Object.keys(gearPositions).sort();
-        const nextGearKeys: string[] = [];
-        for (const { item, col, row } of packed) {
-          if (item.kind === "gear") {
-            nextGearForChar[item.item.instanceId] = { col, row };
-            nextGearKeys.push(item.item.instanceId);
-          } else {
-            nextCurrencyForChar[item.item] = { col, row };
-          }
-        }
-        if (nextGearKeys.join("|") !== prevGearKeys.join("|")) changed = true;
-        const prevCurrencyKeys = Object.keys(currencyPositions).sort();
-        const nextCurrencyKeys = Object.keys(nextCurrencyForChar).sort();
-        if (nextCurrencyKeys.join("|") !== prevCurrencyKeys.join("|")) changed = true;
-
-        nextBoardPositionsByCharacter[characterId] = nextGearForChar;
-        nextCurrencyPositionsByCharacter[characterId] = nextCurrencyForChar;
-      }
-
-      if (
-        !changed &&
-        boardPositionsByCharacterEqual(state.boardPositionsByCharacter, nextBoardPositionsByCharacter) &&
-        currencyBoardPositionsByCharacterEqual(
-          state.currencyBoardPositionsByCharacter,
-          nextCurrencyPositionsByCharacter,
-        )
-      ) {
-        return state;
-      }
-
-      return {
-        boardPositionsByCharacter: nextBoardPositionsByCharacter,
-        currencyBoardPositionsByCharacter: nextCurrencyPositionsByCharacter,
-      };
+      return syncBoardPositionsForState(state);
     }),
   salvage: (instanceId, options) => {
     const state = get();
@@ -544,7 +610,7 @@ export const useGearStore = create<GearStore>((set, get) => ({
 
     const nextCurrencies = addCraftingCurrencies(state.craftingCurrencies, result.yieldedCurrencies);
 
-    set({
+    const nextState = {
       inventories: nextInventories,
       loadouts: result.loadouts,
       boardPositionsByCharacter: nextPositionsByCharacter,
@@ -554,6 +620,14 @@ export const useGearStore = create<GearStore>((set, get) => ({
         state.currencyBoardPositionsByCharacter,
         nextCurrencies,
       ),
+    };
+
+    set({
+      ...nextState,
+      ...syncBoardPositionsForState({
+        ...state,
+        ...nextState,
+      }),
     });
     return { inventories: nextInventories, yieldedCurrencies: result.yieldedCurrencies };
   },
@@ -577,31 +651,41 @@ export const useGearStore = create<GearStore>((set, get) => ({
       [currencyId]: (state.craftingCurrencies[currencyId] ?? 0) - 1,
     });
 
-    set({
+    const nextState = {
       inventories: nextInventories,
       craftingCurrencies: nextCurrencies,
       currencyBoardPositionsByCharacter: sanitizeCurrencyBoardPositionsByCharacter(
         state.currencyBoardPositionsByCharacter,
         nextCurrencies,
       ),
+    };
+
+    set({
+      ...nextState,
+      ...syncBoardPositionsForState({
+        ...state,
+        ...nextState,
+      }),
     });
     return true;
   },
   addCurrencies: (currencies) =>
     set((state) => {
       const nextCurrencies = addCraftingCurrencies(state.craftingCurrencies, currencies);
-      return {
+      const nextState = {
         craftingCurrencies: nextCurrencies,
         currencyBoardPositionsByCharacter: sanitizeCurrencyBoardPositionsByCharacter(
           state.currencyBoardPositionsByCharacter,
           nextCurrencies,
         ),
       };
+      return {
+        ...nextState,
+        ...syncBoardPositionsForState({
+          ...state,
+          ...nextState,
+        }),
+      };
     }),
   reset: () => set(initialState),
 }));
-
-/** Flattened gear inventory across all characters — for battle manifest and health sync. */
-export function readFlatGearInventory(): GearInstance[] {
-  return flattenGearInventories(useGearStore.getState().inventories);
-}

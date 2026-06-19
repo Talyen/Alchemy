@@ -23,7 +23,7 @@ export const InventoryPanel = memo(function InventoryPanel({
   editable,
   draggedInstanceId,
   draggedCurrencyId = null,
-  secondaryDragInstanceId = null,
+  secondaryDragInstanceIds = [] as string[],
   isDraggingActive,
   boardRef,
   salvageMode,
@@ -51,7 +51,7 @@ export const InventoryPanel = memo(function InventoryPanel({
   editable: boolean;
   draggedInstanceId: string | null;
   draggedCurrencyId?: CraftingCurrencyId | null;
-  secondaryDragInstanceId?: string | null;
+  secondaryDragInstanceIds?: string[];
   isDraggingActive: boolean;
   boardRef: RefObject<HTMLDivElement | null>;
   salvageMode: boolean;
@@ -215,6 +215,7 @@ export const InventoryPanel = memo(function InventoryPanel({
               return (
                 <div
                   key={index}
+                  data-armory-inventory-cell={`${cIdx + 1}-${rIdx + 1}`}
                   className="absolute bg-background/10 rounded-xl"
                   style={{
                     ...packedItemStyle({ col: cIdx + 1, row: rIdx + 1, w: 1, h: 1 }),
@@ -235,7 +236,7 @@ export const InventoryPanel = memo(function InventoryPanel({
                 salvageMode={salvageMode}
                 activeCurrencyId={activeCurrencyId}
                 dragging={draggedInstanceId === item.instanceId}
-                secondaryDragging={secondaryDragInstanceId === item.instanceId}
+                secondaryDragging={secondaryDragInstanceIds.includes(item.instanceId)}
                 interactionSuppressed={dragging || suppressingInteraction || isDraggingActive}
                 hasActiveDrag={isDraggingActive}
                 dragSequence={dragSequence}

@@ -1,7 +1,6 @@
 import { expect } from "@playwright/test";
 import {
   bodyGear,
-  createEmptyGearLoadouts,
   gearItemLocator,
   openArmory,
 } from "./e2e/armory";

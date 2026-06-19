@@ -179,8 +179,21 @@
       "src/features/alchemy/run-loop/navigation/destination-flow.ts": ["exports"],
       "src/lib/game-constants.ts": ["exports"],
       "src/lib/routing/destinations.ts": ["exports"],
-      "src/lib/routing/index.ts": ["exports"]
+      "src/lib/routing/index.ts": ["exports"],
+      "src/features/alchemy/meta/screens/armory/parts/grid-styles.ts": ["exports"],
+      "src/lib/game-data/effects/registry.ts": ["exports"],
+      "src/lib/gear/grid-packing.ts": ["exports"],
+      "src/lib/gear/inventory-layout.ts": ["exports"],
+      "src/lib/routing/run-screen-router.ts": ["exports"],
+      "src/lib/utils.ts": ["exports", "types"],
+      "src/app/screen-routes/index.tsx": ["types"],
+      "src/features/alchemy/meta/screens/armory/armory-panels.tsx": ["types"],
+      "src/features/alchemy/meta/screens/armory/armory-targeting-state.ts": ["types"]
     },
+    "ignore": [
+      "src/features/alchemy/meta/screens/armory/armory-salvage-confirm.tsx",
+      "tests/helpers/gear-test.ts"
+    ],
     "ignoreDependencies": [
       "electron",
       "react",

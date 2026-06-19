@@ -58,8 +58,13 @@ export function isGearCompatibleWithLoadoutSlot(
   const mainHandDef = resolveEquippedDefinitionAt(inventory, characterLoadout, "main-hand");
   const offHandDef = resolveEquippedDefinitionAt(inventory, characterLoadout, "off-hand");
 
-  if (slot === "off-hand" && isQuiver(definition)) {
-    return mainHandDef ? isRangedWeapon(mainHandDef) : false;
+  if (slot === "off-hand") {
+    if (isQuiver(definition)) {
+      return mainHandDef ? isRangedWeapon(mainHandDef) : false;
+    }
+    if (mainHandDef && isRangedWeapon(mainHandDef)) {
+      return false;
+    }
   }
   if (slot === "main-hand" && !isRangedWeapon(definition) && offHandDef && isQuiver(offHandDef)) {
     return true;

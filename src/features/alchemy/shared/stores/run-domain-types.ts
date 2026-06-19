@@ -1,7 +1,7 @@
 import type { BattleCard, CharacterId, TalentXP } from "@/lib/game-data";
 import { defaultBattleState, type BattleState, type PlayerStatusValues, type TurnPhase } from "@/lib/battle";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { createEmptyRewardState, type RewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { createEmptyRewardState, type RewardState } from "@/lib/active-run-session/reward-types";
 import type {
   ShopState,
   AlchemistState,

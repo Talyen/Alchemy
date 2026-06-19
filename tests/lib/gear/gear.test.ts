@@ -26,7 +26,6 @@ import {
   salvageGear,
   unequipGear,
   type GearInstance,
-  type GearLoadout,
   GEAR_DEFINITION_IDS,
   GEAR_SLOTS,
 } from "@/lib/gear";
@@ -426,6 +425,19 @@ describe("gear domain", () => {
           inventory,
         ),
       ).toBe(true);
+    });
+
+    it("rejects equipping a buckler or other non-quiver off-hand when a ranged weapon is equipped in main-hand", () => {
+      const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", longbow, [longbow]);
+      const inventory = [longbow, buckler];
+      expect(
+        isGearCompatibleWithLoadoutSlot(
+          gearDefinitions["leather-buckler-basic"],
+          "off-hand",
+          loadouts.knight,
+          inventory,
+        ),
+      ).toBe(false);
     });
   });
 });

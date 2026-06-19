@@ -14,6 +14,7 @@ export function GearDragVisualPortal({
   onComplete: () => void;
 }) {
   const isDrag = !visual.settling && !visual.releasing && !visual.flyover;
+  const startRect = visual.releaseRect ?? visual.source;
 
   return createPortal(
     isDrag ? (
@@ -27,7 +28,11 @@ export function GearDragVisualPortal({
           height: visual.rect.height,
         }}
       >
-        <img src={art} alt="" className="h-full w-full object-cover" />
+        <img
+          src={art}
+          alt=""
+          className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover"
+        />
       </div>
     ) : (
       <motion.div
@@ -36,19 +41,19 @@ export function GearDragVisualPortal({
         initial={{
           x: 0,
           y: 0,
-          width: visual.source.width,
-          height: visual.source.height,
+          width: startRect.width,
+          height: startRect.height,
         }}
         style={{
-          left: visual.source.left,
-          top: visual.source.top,
-          width: visual.source.width,
-          height: visual.source.height,
+          left: startRect.left,
+          top: startRect.top,
+          width: startRect.width,
+          height: startRect.height,
           willChange: "transform,width,height",
         }}
         animate={{
-          x: visual.rect.left - visual.source.left,
-          y: visual.rect.top - visual.source.top,
+          x: visual.rect.left - startRect.left,
+          y: visual.rect.top - startRect.top,
           width: visual.rect.width,
           height: visual.rect.height,
         }}
@@ -67,7 +72,11 @@ export function GearDragVisualPortal({
           }
         }}
       >
-        <img src={art} alt="" className="h-full w-full object-cover" />
+        <img
+          src={art}
+          alt=""
+          className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover"
+        />
       </motion.div>
     ),
     document.body,

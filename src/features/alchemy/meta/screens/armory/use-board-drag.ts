@@ -1,22 +1,26 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { playUISound } from "@/lib/audio";
-import { type InventoryPlacement, type PackedInventory } from "@/lib/gear";
+import { type InventoryPlacement } from "@/lib/gear";
 import { applyMagnetHysteresis, placeInventoryTileFromMetrics } from "./board-drag-math";
 
 export type DragPoint = { x: number; y: number };
 export type DragRect = { left: number; top: number; width: number; height: number };
 export type DragDestination =
   | { kind: "inventory"; placement: InventoryPlacement; rect: DragRect }
+  | { kind: "equipment"; slot: string; rect: DragRect }
   | { kind: "external"; rect: DragRect };
 
 export const INVENTORY_SNAP_RADIUS_CELLS = 0.28;
 export const MAGNET_SWITCH_MARGIN_PX = 14;
 export const MAGNET_RELEASE_HYSTERESIS_PX = 18;
-export const DOUBLE_CLICK_FLYOVER_MS = 280;
+const DOUBLE_CLICK_FLYOVER_MS = 280;
 export const MAGNET_RELEASE_EASE_MS = 140;
-export const DRAG_POINTER_ACTIVATE_DISTANCE_PX = 4;
+const DRAG_POINTER_ACTIVATE_DISTANCE_PX = 4;
 
-export type DragOrigin<T extends string = "inventory"> = { kind: T; placement: InventoryPlacement };
+export type DragOrigin =
+  | { kind: "inventory"; placement: InventoryPlacement }
+  | { kind: "equipment"; slot: string }
+  | { kind: "external" };
 
 export type BoardDragVisual<TId extends string, TOrigin extends DragOrigin> = {
   id: TId;
@@ -26,6 +30,8 @@ export type BoardDragVisual<TId extends string, TOrigin extends DragOrigin> = {
   destination: DragDestination | null;
   settling?: boolean;
   releasing?: boolean;
+  flyover?: boolean;
+  releaseRect?: DragRect | undefined;
 };
 
 type PendingBoardDrag<TId extends string, TOrigin extends DragOrigin> = {
@@ -37,10 +43,7 @@ type PendingBoardDrag<TId extends string, TOrigin extends DragOrigin> = {
   offset: DragPoint;
 };
 
-export type FootprintFn<TId extends string, TItem> = (
-  id: TId,
-  lookup: TItem | undefined,
-) => { w: number; h: number } | null;
+type FootprintFn<TId extends string, TItem> = (id: TId, lookup: TItem | undefined) => { w: number; h: number } | null;
 
 export type UseBoardDragOptions<TId extends string, TItem, TOrigin extends DragOrigin> = {
   itemLookup: TItem | undefined;
@@ -72,6 +75,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
   const pendingDragRef = useRef<PendingBoardDrag<TId, TOrigin> | null>(null);
   const activeDragRef = useRef<BoardDragVisual<TId, TOrigin> | null>(null);
   const cleanupTimerRef = useRef<number | null>(null);
+  const pendingCommitRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!activeId) return;
@@ -148,6 +152,8 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
     setActiveId(null);
     setDragVisual(null);
     activeDragRef.current = null;
+    pendingCommitRef.current?.();
+    pendingCommitRef.current = null;
   }, []);
 
   const clearDragAfterAnimation = useCallback(
@@ -165,10 +171,8 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       const pending = pendingDragRef.current;
       if (!pending || pending.pointerId !== pointerId) return;
       if (!activeDragRef.current) {
-        if (
-          Math.hypot(pointer.x - pending.pointerStart.x, pointer.y - pending.pointerStart.y) <
-          DRAG_POINTER_ACTIVATE_DISTANCE_PX
-        ) {
+        const dist = Math.hypot(pointer.x - pending.pointerStart.x, pointer.y - pending.pointerStart.y);
+        if (dist < DRAG_POINTER_ACTIVATE_DISTANCE_PX) {
           return;
         }
         playUISound("gearMove");
@@ -208,6 +212,8 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
         window.clearTimeout(cleanupTimerRef.current);
         cleanupTimerRef.current = null;
       }
+      pendingCommitRef.current?.();
+      pendingCommitRef.current = null;
       activeDragRef.current = null;
       setDragVisual(null);
       setActiveId(null);
@@ -238,8 +244,16 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       pendingDragRef.current = null;
       if (!visual || !pending) return;
 
+      const releaseRect = visual.rect;
+
       if (cancelled) {
-        const reverted = { ...visual, rect: visual.source, destination: null, settling: true };
+        const reverted = {
+          ...visual,
+          rect: visual.source,
+          destination: null,
+          settling: true,
+          releaseRect,
+        };
         activeDragRef.current = reverted;
         setDragVisual(reverted);
         if (onCancel) onCancel(pending.id);
@@ -250,7 +264,13 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       const destination = visual.destination;
       const unchanged = !destination;
       if (unchanged) {
-        const reverted = { ...visual, rect: visual.source, destination: null, settling: true };
+        const reverted = {
+          ...visual,
+          rect: visual.source,
+          destination: null,
+          settling: true,
+          releaseRect,
+        };
         activeDragRef.current = reverted;
         setDragVisual(reverted);
         clearDragAfterAnimation();
@@ -258,7 +278,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       }
 
       onCommit({ id: pending.id, origin: pending.origin, destination });
-      const settled = { ...visual, rect: destination.rect, settling: true };
+      const settled = { ...visual, rect: destination.rect, settling: true, releaseRect };
       activeDragRef.current = settled;
       setDragVisual(settled);
       playUISound("gearMove");
@@ -268,11 +288,17 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
   );
 
   const flyoverTo = useCallback(
-    (item: TItem, destination: DragDestination, commit: () => void, holdMs = DOUBLE_CLICK_FLYOVER_MS) => {
-      const source = { left: 0, top: 0, width: 0, height: 0 };
+    (
+      item: TItem,
+      destination: DragDestination,
+      commit: () => void,
+      source?: DragRect,
+      holdMs = DOUBLE_CLICK_FLYOVER_MS,
+    ) => {
+      const startSource = source ?? { left: 0, top: 0, width: 0, height: 0 };
       const visual: BoardDragVisual<TId, TOrigin> = {
         id: getItemId(item),
-        source,
+        source: startSource,
         rect: destination.rect,
         origin: getOrigin(item),
         destination,
@@ -282,7 +308,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       setActiveId(getItemId(item));
       setDragVisual(visual);
       playUISound("gearMove");
-      commit();
+      pendingCommitRef.current = commit;
       clearDragAfterAnimation(holdMs);
     },
     [clearDragAfterAnimation, getItemId, getOrigin],
@@ -301,5 +327,3 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
     getInventoryDestination,
   };
 }
-
-export type { PackedInventory };

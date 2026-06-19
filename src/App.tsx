@@ -3,12 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-import {
-  allGameArt,
-  characterArt,
-  type CharacterId,
-  type DifficultyId,
-} from "@/lib/game-data";
+import { allGameArt, characterArt, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import { useAppAudioEffects } from "@/app/use-app-audio-effects";
 import { useAppDisplayEffects } from "@/app/use-app-display-effects";
 import { useScreenAssetPreloadEffects } from "@/app/use-app-preload-effects";
@@ -211,7 +206,12 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const settings = useAppSettings();
   const vrStageRef = useRef<HTMLDivElement>(null);
   const initialLoadReady = useInitialLoadReady({ imageUrls: allGameArt });
-  useAppDisplayEffects({ displayMode: settings.displayMode, uiScale: settings.uiScale, brightness: settings.brightness, stageRef: vrStageRef });
+  useAppDisplayEffects({
+    displayMode: settings.displayMode,
+    uiScale: settings.uiScale,
+    brightness: settings.brightness,
+    stageRef: vrStageRef,
+  });
   useGlobalErrorHandlers();
 
   const homesteadEffects = useHomesteadStore((s) => s.effects);
@@ -223,9 +223,18 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
     appStore.getState().setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
   }
 
-  const { frameStyle, stageStyle, aspectMode, stagePixelRatio } = useVirtualResolution(settings.selectedAspectRatio, false);
+  const { frameStyle, stageStyle, aspectMode, stagePixelRatio } = useVirtualResolution(
+    settings.selectedAspectRatio,
+    false,
+  );
   const screen = useActiveRunScreenValue();
-  useAppAudioEffects({ masterVol: settings.masterVol, musicVol: settings.musicVol, sfxVol: settings.sfxVol, muteInBackground: settings.muteInBackground, screen });
+  useAppAudioEffects({
+    masterVol: settings.masterVol,
+    musicVol: settings.musicVol,
+    sfxVol: settings.sfxVol,
+    muteInBackground: settings.muteInBackground,
+    screen,
+  });
 
   const run = useAlchemyRunController({
     initialActiveRun: initialSave.activeRun,

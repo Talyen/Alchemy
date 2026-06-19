@@ -15,8 +15,6 @@ import {
   type DragRect,
 } from "./use-board-drag";
 
-export { INVENTORY_SNAP_RADIUS_CELLS, MAGNET_SWITCH_MARGIN_PX, MAGNET_RELEASE_HYSTERESIS_PX };
-
 export type InventoryPlacementResult = {
   placement: InventoryPlacement;
   rect: DragRect;
@@ -48,9 +46,31 @@ export function placeInventoryTileFromMetrics(
   if (!placement) return null;
   const localRect = inventoryPlacementRect(placement, footprint, { cellSize, gap });
   const freeCenter = { x: freeRect.left + freeRect.width / 2, y: freeRect.top + freeRect.height / 2 };
+
+  const cellEl = board.querySelector<HTMLElement>(`[data-armory-inventory-cell="${placement.col}-${placement.row}"]`);
+  let snapRect: DragRect;
+  if (cellEl) {
+    const cellDomRect = cellEl.getBoundingClientRect();
+    const tileWidth = cellSize * footprint.w + gap * (footprint.w - 1);
+    const tileHeight = cellSize * footprint.h + gap * (footprint.h - 1);
+    snapRect = {
+      left: cellDomRect.left,
+      top: cellDomRect.top,
+      width: tileWidth,
+      height: tileHeight,
+    };
+  } else {
+    snapRect = {
+      left: boardRect.left + localRect.left,
+      top: boardRect.top + localRect.top - scrollTop,
+      width: localRect.width,
+      height: localRect.height,
+    };
+  }
+
   const destinationCenter = {
-    x: boardRect.left + localRect.left + localRect.width / 2,
-    y: boardRect.top + localRect.top - scrollTop + localRect.height / 2,
+    x: snapRect.left + snapRect.width / 2,
+    y: snapRect.top + snapRect.height / 2,
   };
   if (
     requireProximity &&
@@ -59,15 +79,7 @@ export function placeInventoryTileFromMetrics(
   ) {
     return null;
   }
-  return {
-    placement,
-    rect: {
-      left: boardRect.left + localRect.left,
-      top: boardRect.top + localRect.top - scrollTop,
-      width: localRect.width,
-      height: localRect.height,
-    },
-  };
+  return { placement, rect: snapRect };
 }
 
 export type MagnetHysteresisInput<TDest> = {

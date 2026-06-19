@@ -5,6 +5,7 @@ export * from "./inventory-layout";
 export * from "./grid-packing";
 export * from "./affix-ids";
 export * from "./affixes";
+export * from "./affix-catalog";
 export * from "./base-items";
 export * from "./gear-effect-manifest";
 export * from "./generation";

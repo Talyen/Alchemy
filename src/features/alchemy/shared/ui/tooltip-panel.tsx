@@ -215,8 +215,23 @@ export function TooltipHeader({ children }: { children: ReactNode }) {
   return <p className="font-display text-lg font-bold text-foreground mb-1">{children}</p>;
 }
 
-export function TooltipSubheader({ children }: { children: ReactNode }) {
-  return <p className="mt-3 mb-1 text-xs font-semibold uppercase tracking-widest text-amber-100/80">{children}</p>;
+export function TooltipSubheader({
+  children,
+  className,
+  style,
+}: {
+  children: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <p
+      className={cn("mt-3 mb-1 text-xs font-semibold uppercase tracking-widest text-amber-100/80", className)}
+      style={style}
+    >
+      {children}
+    </p>
+  );
 }
 
 export function TooltipBody({ children, className }: { children: ReactNode; className?: string }) {

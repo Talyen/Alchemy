@@ -16,6 +16,7 @@ import {
   type GearSlot,
   type InventoryPlacement,
   type PackedCurrencyItem,
+  CRAFTING_CURRENCY_IDS,
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { characters, getRequiredPreviousCharacter, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
@@ -27,8 +28,7 @@ import { Sparkles } from "lucide-react";
 import { CharacterAndEquipmentPanel, InventoryPanel } from "./armory/armory-panels";
 import { resolveEquipSwap } from "./armory/resolve-equip-swap";
 import { useArmoryGearDrag } from "./armory/use-armory-gear-drag";
-import { useArmoryInventoryPositions } from "./armory/use-armory-inventory-positions";
-import { useArmoryCurrencyPositions } from "./armory/use-armory-currency-positions";
+
 import { useArmoryCurrencyDrag } from "./armory/use-armory-currency-drag";
 import { ArmoryCharacterTabs } from "./armory/armory-character-tabs";
 import { ArmoryCurrencyCursor } from "./armory/armory-currency-targeting";
@@ -77,12 +77,28 @@ export function ArmoryScreen({
   const [targeting, dispatchTargeting] = useReducer(armoryTargetingReducer, initialArmoryTargetingState);
   const { salvageTarget, salvageMode, activeCurrencyId, cursorPoint, transferMenu } = targeting;
   const characterInventory = useMemo(() => inventories[characterId] ?? [], [inventories, characterId]);
-  const { savedPositions, handleMoveItem } = useArmoryInventoryPositions(characterId, characterInventory);
-  const {
-    savedPositions: savedCurrencyPositions,
-    activeCurrencyIds,
-    handleMoveCurrency,
-  } = useArmoryCurrencyPositions(characterId, craftingCurrencies);
+  const savedPositions = useGearStore((state) => state.boardPositionsByCharacter[characterId] ?? {});
+  const setBoardPosition = useGearStore((state) => state.setBoardPosition);
+  const handleMoveItem = useCallback(
+    (instanceId: string, col: number, row: number) => {
+      setBoardPosition(characterId, instanceId, col, row);
+    },
+    [characterId, setBoardPosition],
+  );
+
+  const savedCurrencyPositions = useGearStore((state) => state.currencyBoardPositionsByCharacter[characterId] ?? {});
+  const setCurrencyBoardPosition = useGearStore((state) => state.setCurrencyBoardPosition);
+  const handleMoveCurrency = useCallback(
+    (currencyId: CraftingCurrencyId, col: number, row: number) => {
+      setCurrencyBoardPosition(characterId, currencyId, col, row);
+    },
+    [characterId, setCurrencyBoardPosition],
+  );
+
+  const activeCurrencyIds = useMemo(
+    () => CRAFTING_CURRENCY_IDS.filter((id) => (craftingCurrencies[id] ?? 0) > 0),
+    [craftingCurrencies],
+  );
 
   const currencyBlockers = useMemo(
     () =>
@@ -169,7 +185,7 @@ export function ArmoryScreen({
   const {
     draggedGear,
     dragVisual,
-    secondaryDragVisual,
+    secondaryDragVisuals,
     isDraggingActive,
     beginGearPointer,
     moveGearPointer,
@@ -208,9 +224,7 @@ export function ArmoryScreen({
   });
 
   const dragDefinition = dragVisual ? gearDefinitions[dragVisual.instance.definitionId] : undefined;
-  const secondaryDragDefinition = secondaryDragVisual
-    ? gearDefinitions[secondaryDragVisual.instance.definitionId]
-    : undefined;
+  const secondaryDragInstanceIds = secondaryDragVisuals.map((v) => v.instance.instanceId);
 
   const clearTargeting = useCallback(() => {
     dispatchTargeting({ type: "CLEAR_TARGETING" });
@@ -401,7 +415,7 @@ export function ArmoryScreen({
               editable={editable}
               requiredCharacterId={requiredCharacterId}
               draggedGear={draggedGear}
-              secondaryDragInstanceId={secondaryDragVisual?.instance.instanceId ?? null}
+              secondaryDragInstanceIds={secondaryDragInstanceIds}
               isDraggingActive={isDraggingActive}
               salvageMode={salvageMode}
               activeCurrencyId={activeCurrencyId}
@@ -421,7 +435,7 @@ export function ArmoryScreen({
               editable={editable}
               draggedInstanceId={draggedGear?.instanceId ?? null}
               draggedCurrencyId={draggedCurrencyId}
-              secondaryDragInstanceId={secondaryDragVisual?.instance.instanceId ?? null}
+              secondaryDragInstanceIds={secondaryDragInstanceIds}
               isDraggingActive={isDraggingActive || isCurrencyDraggingActive}
               boardRef={inventoryBoardRef}
               salvageMode={salvageMode}
@@ -482,14 +496,18 @@ export function ArmoryScreen({
         {dragVisual && dragDefinition ? (
           <GearDragVisualPortal visual={dragVisual} art={dragDefinition.art} onComplete={clearDragState} />
         ) : null}
-        {secondaryDragVisual && secondaryDragDefinition ? (
-          <GearDragVisualPortal
-            visual={secondaryDragVisual}
-            art={secondaryDragDefinition.art}
-            testId="armory-gear-swap-visual"
-            onComplete={clearSecondaryDragState}
-          />
-        ) : null}
+        {secondaryDragVisuals.map((visual) => {
+          const def = gearDefinitions[visual.instance.definitionId];
+          return def ? (
+            <GearDragVisualPortal
+              key={visual.instance.instanceId}
+              visual={visual}
+              art={def.art}
+              testId="armory-gear-swap-visual"
+              onComplete={clearSecondaryDragState}
+            />
+          ) : null;
+        })}
         <ArmoryCurrencyCursor activeCurrencyId={activeCurrencyId} cursorPoint={cursorPoint} />
         {transferMenu ? (
           <ArmoryTransferMenu

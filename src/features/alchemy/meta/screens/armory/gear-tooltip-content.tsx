@@ -4,6 +4,8 @@ import {
   getGearInstanceTooltipLines,
   type GearDefinition,
   type GearInstance,
+  gearAffixCatalog,
+  getGearAffixShineGradient,
 } from "@/lib/gear";
 import { GearItemTitle } from "../../../shared/ui/gear-item-title";
 import { renderColoredKeywords } from "../../../shared/ui/card-description-ui";
@@ -37,14 +39,39 @@ export function GearTooltipContent({
       </TooltipHeader>
       {affixEntries.length > 0 ? (
         <div className="mt-1 space-y-2">
-          {affixEntries.map((entry) => (
-            <div key={entry.key}>
-              <TooltipSubheader>{entry.name}</TooltipSubheader>
-              <p className="whitespace-nowrap pl-3 text-sm leading-6 text-muted-foreground">
-                {renderColoredKeywords(entry.text)}
-              </p>
-            </div>
-          ))}
+          {affixEntries.map((entry, index) => {
+            const roll = instance?.affixes[index];
+            const def = roll ? gearAffixCatalog[roll.id] : undefined;
+            const isMaxAstral = rarity === "astral" && def && roll && roll.value === def.roll.astral.max;
+            const gradient = isMaxAstral ? getGearAffixShineGradient(def) : null;
+
+            return (
+              <div key={entry.key}>
+                {gradient ? (
+                  <TooltipSubheader
+                    className="boss-title-shine bg-clip-text text-transparent [background-size:300%_300%]"
+                    style={{ backgroundImage: gradient }}
+                  >
+                    {entry.name}
+                  </TooltipSubheader>
+                ) : (
+                  <TooltipSubheader>{entry.name}</TooltipSubheader>
+                )}
+                {gradient ? (
+                  <p
+                    className="boss-title-shine bg-clip-text text-transparent [background-size:300%_300%] pl-3 text-sm leading-6"
+                    style={{ backgroundImage: gradient }}
+                  >
+                    {entry.text}
+                  </p>
+                ) : (
+                  <p className="whitespace-nowrap pl-3 text-sm leading-6 text-muted-foreground">
+                    {renderColoredKeywords(entry.text)}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <TooltipBody>

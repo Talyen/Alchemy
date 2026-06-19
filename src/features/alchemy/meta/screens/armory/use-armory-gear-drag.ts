@@ -18,8 +18,8 @@ import {
   type PackedInventoryItem,
 } from "@/lib/gear";
 import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
-import { applyMagnetHysteresis, placeInventoryTileFromMetrics } from "./board-drag-math";
 import { resolveEquipSwap } from "./resolve-equip-swap";
+import { useBoardDrag, type DragDestination, type DragRect, type DragPoint } from "./use-board-drag";
 
 export type GearDragOrigin =
   | { kind: "inventory"; placement: { col: number; row: number } }
@@ -37,33 +37,25 @@ export type GearPointerMove = (pointer: { x: number; y: number }, pointerId: num
 
 export type GearPointerEnd = (pointer: { x: number; y: number }, pointerId: number, cancelled?: boolean) => void;
 
-const EQUIPMENT_SNAP_INSET_RATIO = 0.3;
+export { MAGNET_RELEASE_EASE_MS } from "./use-board-drag";
 export const DOUBLE_CLICK_FLYOVER_MS = 280;
-export const MAGNET_RELEASE_EASE_MS = 140;
+const EQUIPMENT_SNAP_INSET_RATIO = 0.3;
 
-export type DragPoint = { x: number; y: number };
-export type DragRect = { left: number; top: number; width: number; height: number };
-export type DragDestination =
-  | { kind: "equipment"; slot: GearSlot; rect: DragRect }
-  | { kind: "inventory"; placement: InventoryPlacement; rect: DragRect };
 export type GearDragVisual = {
   instance: GearInstance;
   source: DragRect;
   rect: DragRect;
   origin: GearDragOrigin;
   destination: DragDestination | null;
-  settling?: boolean;
-  flyover?: boolean;
-  releasing?: boolean;
+  settling?: boolean | undefined;
+  flyover?: boolean | undefined;
+  releasing?: boolean | undefined;
+  releaseRect?: DragRect | undefined;
 };
 
-type PendingGearDrag = {
+type GearDragItem = {
   instance: GearInstance;
   origin: GearDragOrigin;
-  source: DragRect;
-  pointerId: number;
-  pointerStart: DragPoint;
-  offset: DragPoint;
 };
 
 type UseArmoryGearDragOptions = {
@@ -96,59 +88,50 @@ export function useArmoryGearDrag({
   onUnequip,
   onMoveItem,
 }: UseArmoryGearDragOptions) {
-  const [draggedGear, setDraggedGear] = useState<GearInstance | null>(null);
-  const [dragVisual, setDragVisual] = useState<GearDragVisual | null>(null);
-  const [secondaryDragVisual, setSecondaryDragVisual] = useState<GearDragVisual | null>(null);
-  const pendingDragRef = useRef<PendingGearDrag | null>(null);
-  const activeDragRef = useRef<GearDragVisual | null>(null);
-  const pendingFlyoverCommitRef = useRef<(() => void) | null>(null);
-  const cleanupTimerRef = useRef<number | null>(null);
+  const activeInstanceRef = useRef<GearInstance | null>(null);
+  const [activeInstance, setActiveInstance] = useState<GearInstance | null>(null);
+  const [secondaryDragVisuals, setSecondaryDragVisuals] = useState<GearDragVisual[]>([]);
   const secondaryCleanupTimerRef = useRef<number | null>(null);
-
-  const isAnimating = !!dragVisual?.settling || !!dragVisual?.flyover || !!secondaryDragVisual?.flyover;
-  const isDraggingActive =
-    !!draggedGear && (!dragVisual || (!dragVisual.settling && !dragVisual.flyover && !dragVisual.releasing));
-
-  useEffect(() => {
-    if (!draggedGear) return;
-    const previousCursor = document.body.style.cursor;
-    document.body.style.cursor = "none";
-    return () => {
-      document.body.style.cursor = previousCursor;
-    };
-  }, [draggedGear]);
 
   const clearSecondaryDragState = useCallback(() => {
     if (secondaryCleanupTimerRef.current !== null) {
       window.clearTimeout(secondaryCleanupTimerRef.current);
       secondaryCleanupTimerRef.current = null;
     }
-    setSecondaryDragVisual(null);
+    setSecondaryDragVisuals([]);
   }, []);
 
-  const launchSecondarySwapAnimation = useCallback(
-    (displaced: GearInstance, source: DragRect, vacatedPlacement: InventoryPlacement) => {
+  const launchSecondarySwapAnimations = useCallback(
+    (displacedItems: { instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }[]) => {
       const board = inventoryBoardRef.current;
-      if (!board) return;
+      if (!board || displacedItems.length === 0) return;
       const metrics = readInventoryBoardMetrics(board);
-      const footprint = footprintForInstance(displaced);
-      if (!metrics || !footprint) return;
+      if (!metrics) return;
       const { cellSize, gap, boardRect, scrollTop } = metrics;
-      const localRect = inventoryPlacementRect(vacatedPlacement, footprint, { cellSize, gap });
-      const destinationRect: DragRect = {
-        left: boardRect.left + localRect.left,
-        top: boardRect.top + localRect.top - scrollTop,
-        width: localRect.width,
-        height: localRect.height,
-      };
-      setSecondaryDragVisual({
-        instance: displaced,
-        source,
-        rect: destinationRect,
-        origin: { kind: "inventory", placement: vacatedPlacement },
-        destination: { kind: "inventory", placement: vacatedPlacement, rect: destinationRect },
-        flyover: true,
-      });
+
+      const visuals: GearDragVisual[] = [];
+      for (const { instance: displaced, source, vacatedPlacement } of displacedItems) {
+        const footprint = footprintForInstance(displaced);
+        if (!footprint) continue;
+        const localRect = inventoryPlacementRect(vacatedPlacement, footprint, { cellSize, gap });
+        const destinationRect: DragRect = {
+          left: boardRect.left + localRect.left,
+          top: boardRect.top + localRect.top - scrollTop,
+          width: localRect.width,
+          height: localRect.height,
+        };
+        visuals.push({
+          instance: displaced,
+          source,
+          rect: destinationRect,
+          origin: { kind: "inventory", placement: vacatedPlacement },
+          destination: { kind: "inventory", placement: vacatedPlacement, rect: destinationRect },
+          flyover: true,
+        });
+      }
+
+      if (visuals.length === 0) return;
+      setSecondaryDragVisuals(visuals);
       if (secondaryCleanupTimerRef.current !== null) window.clearTimeout(secondaryCleanupTimerRef.current);
       secondaryCleanupTimerRef.current = window.setTimeout(() => {
         clearSecondaryDragState();
@@ -157,7 +140,7 @@ export function useArmoryGearDrag({
     [clearSecondaryDragState, inventoryBoardRef],
   );
 
-  const maybeLaunchSwapAnimation = useCallback(
+  const maybeLaunchSwapAnimations = useCallback(
     (instance: GearInstance, slot: GearSlot, slotRect: DragRect, vacatedPlacement: InventoryPlacement) => {
       const { displaced } = resolveEquipSwap({
         loadout,
@@ -167,31 +150,43 @@ export function useArmoryGearDrag({
         inventoryById,
         packedItems: packedInventory.items,
       });
+      const toAnimate: { instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }[] = [];
       if (displaced) {
-        launchSecondarySwapAnimation(displaced, slotRect, vacatedPlacement);
+        toAnimate.push({ instance: displaced, source: slotRect, vacatedPlacement });
       }
+      const otherSlot: GearSlot | null = slot === "main-hand" ? "off-hand" : slot === "off-hand" ? "main-hand" : null;
+      if (otherSlot) {
+        const otherInstanceId = loadout[otherSlot];
+        if (otherInstanceId && otherInstanceId !== instance.instanceId && otherInstanceId !== displaced?.instanceId) {
+          const otherInstance = inventoryById.get(otherInstanceId);
+          const board = inventoryBoardRef.current;
+          if (otherInstance && board) {
+            const otherSlotEl = document.querySelector<HTMLElement>(
+              `[data-testid='armory-equipment-slot'][data-slot='${otherSlot}']`,
+            );
+            const otherSource: DragRect = otherSlotEl ? otherSlotEl.getBoundingClientRect() : slotRect;
+            toAnimate.push({ instance: otherInstance, source: otherSource, vacatedPlacement });
+          }
+        }
+      }
+      launchSecondarySwapAnimations(toAnimate);
     },
-    [inventoryById, launchSecondarySwapAnimation, loadout, packedInventory.items],
+    [inventoryById, inventoryBoardRef, launchSecondarySwapAnimations, loadout, packedInventory.items],
   );
 
-  const getInventoryDestination = useCallback(
-    (instance: GearInstance, freeRect: DragRect, requireProximity = true): DragDestination | null => {
-      const board = inventoryBoardRef.current;
-      if (!board) return null;
-      const footprint = footprintForInstance(instance);
-      if (!footprint) return null;
-      const result = placeInventoryTileFromMetrics(board, footprint, freeRect, null, {
-        requireProximity,
-        occupiedRows: packedInventory.occupiedRows,
-      });
-      if (!result) return null;
-      return { kind: "inventory", placement: result.placement, rect: result.rect };
+  const fsm = useBoardDrag<string, GearDragItem, GearDragOrigin>({
+    itemLookup: undefined,
+    getItemId: (item) => item.instance.instanceId,
+    getOrigin: (item) => item.origin,
+    getFootprint: (id) => {
+      const instance = activeInstanceRef.current || inventoryById.get(id);
+      return instance ? footprintForInstance(instance) : null;
     },
-    [inventoryBoardRef, packedInventory.occupiedRows],
-  );
-
-  const getDragDestination = useCallback(
-    (instance: GearInstance, freeRect: DragRect, pointer: DragPoint): DragDestination | null => {
+    inventoryBoardRef,
+    occupiedRows: packedInventory.occupiedRows,
+    resolveExternalDestination: (pointer) => {
+      const instance = activeInstanceRef.current;
+      if (!instance) return null;
       const definition = gearDefinitions[instance.definitionId];
       if (!definition) return null;
 
@@ -212,219 +207,72 @@ export function useArmoryGearDrag({
           return { kind: "equipment", slot, rect };
         }
       }
-
-      const board = inventoryBoardRef.current;
-      const boardRect = board?.getBoundingClientRect();
-      if (
-        boardRect &&
-        pointer.x >= boardRect.left &&
-        pointer.x <= boardRect.right &&
-        pointer.y >= boardRect.top &&
-        pointer.y <= boardRect.bottom
-      ) {
-        return getInventoryDestination(instance, freeRect, false);
-      }
       return null;
     },
-    [getInventoryDestination, inventoryBoardRef, inventoryById, loadout],
-  );
+    onCommit: ({ id, origin, destination }) => {
+      const instance = activeInstanceRef.current || inventoryById.get(id);
+      if (!instance) return;
+      if (destination.kind === "equipment") {
+        const slot = destination.slot as GearSlot;
+        const vacatedPlacement = origin.kind === "inventory" ? origin.placement : undefined;
+        if (vacatedPlacement) {
+          maybeLaunchSwapAnimations(instance, slot, destination.rect, vacatedPlacement);
+        }
+        onEquip(characterId, slot, instance, vacatedPlacement ? { vacatedPlacement } : undefined);
+      } else if (destination.kind === "inventory") {
+        const unchanged =
+          origin.kind === "inventory" &&
+          origin.placement.col === destination.placement.col &&
+          origin.placement.row === destination.placement.row;
+        if (!unchanged) {
+          onMoveItem(id, destination.placement.col, destination.placement.row);
+          if (origin.kind === "equipment") onUnequip(characterId, origin.slot);
+        }
+      }
+    },
+    onCancel: () => {
+      activeInstanceRef.current = null;
+      setActiveInstance(null);
+    },
+  });
 
-  const clearDragState = useCallback(() => {
-    if (cleanupTimerRef.current !== null) {
-      window.clearTimeout(cleanupTimerRef.current);
-      cleanupTimerRef.current = null;
-    }
-    pendingFlyoverCommitRef.current?.();
-    pendingFlyoverCommitRef.current = null;
-    setDraggedGear(null);
-    setDragVisual(null);
-    activeDragRef.current = null;
+  useEffect(() => {
+    return () => {
+      if (secondaryCleanupTimerRef.current !== null) {
+        window.clearTimeout(secondaryCleanupTimerRef.current);
+      }
+    };
   }, []);
 
-  const abortActiveDrag = useCallback(() => {
-    pendingDragRef.current = null;
-    pendingFlyoverCommitRef.current = null;
-    if (cleanupTimerRef.current !== null) {
-      window.clearTimeout(cleanupTimerRef.current);
-      cleanupTimerRef.current = null;
-    }
-    clearDragState();
-  }, [clearDragState]);
-
-  const abortGearDragIfDragging = useCallback(
-    (instanceId: string) => {
-      const pending = pendingDragRef.current;
-      const active = activeDragRef.current;
-      if (pending?.instance.instanceId === instanceId || active?.instance.instanceId === instanceId) {
-        abortActiveDrag();
-      }
-    },
-    [abortActiveDrag],
-  );
-
-  useEffect(
-    () => () => {
-      if (cleanupTimerRef.current !== null) window.clearTimeout(cleanupTimerRef.current);
-      if (secondaryCleanupTimerRef.current !== null) window.clearTimeout(secondaryCleanupTimerRef.current);
-      abortActiveDrag();
-    },
-    [abortActiveDrag],
-  );
-
-  const clearDragAfterAnimation = useCallback(
-    (delay = 1000) => {
-      if (cleanupTimerRef.current !== null) window.clearTimeout(cleanupTimerRef.current);
-      cleanupTimerRef.current = window.setTimeout(() => {
-        clearDragState();
-      }, delay);
-    },
-    [clearDragState],
-  );
-
-  const updateActiveDrag = useCallback(
-    (pointer: DragPoint, pointerId: number) => {
-      const pending = pendingDragRef.current;
-      if (!pending || pending.pointerId !== pointerId) return;
-      if (!activeDragRef.current) {
-        if (Math.hypot(pointer.x - pending.pointerStart.x, pointer.y - pending.pointerStart.y) < 4) return;
-        playUISound("gearMove");
-        setDraggedGear(pending.instance);
-      }
-      const freeRect = {
-        left: pointer.x - pending.offset.x,
-        top: pointer.y - pending.offset.y,
-        width: pending.source.width,
-        height: pending.source.height,
-      };
-      const candidate = getDragDestination(pending.instance, freeRect, pointer);
-      const previousDestination = activeDragRef.current?.destination ?? null;
-
-      const { destination } = applyMagnetHysteresis({
-        candidate,
-        previousDestination,
-        freeRect,
-      });
-
-      const visual = {
-        instance: pending.instance,
-        source: pending.source,
-        rect: freeRect,
-        origin: pending.origin,
-        destination,
-        releasing: false,
-      };
-      activeDragRef.current = visual;
-      setDragVisual(visual);
-    },
-    [getDragDestination],
-  );
-
+  const fsmBeginPointer = fsm.beginPointer;
   const beginGearPointer = useCallback(
     (instance: GearInstance, origin: GearDragOrigin, source: DragRect, pointer: DragPoint, pointerId: number) => {
-      if (!gearDefinitions[instance.definitionId]) return;
-      if (cleanupTimerRef.current !== null) {
-        window.clearTimeout(cleanupTimerRef.current);
-        cleanupTimerRef.current = null;
-      }
-      pendingFlyoverCommitRef.current?.();
-      pendingFlyoverCommitRef.current = null;
-      activeDragRef.current = null;
-      setDragVisual(null);
-      setDraggedGear(null);
-      pendingDragRef.current = {
-        instance,
-        origin,
-        source,
-        pointerId,
-        pointerStart: pointer,
-        offset: { x: pointer.x - source.left, y: pointer.y - source.top },
-      };
+      if (!editable || !gearDefinitions[instance.definitionId]) return;
+      activeInstanceRef.current = instance;
+      setActiveInstance(instance);
+      fsmBeginPointer({ instance, origin }, source, pointer, pointerId);
     },
-    [],
+    [editable, fsmBeginPointer, setActiveInstance],
   );
 
+  const fsmMovePointer = fsm.movePointer;
   const moveGearPointer = useCallback(
     (pointer: DragPoint, pointerId: number) => {
-      updateActiveDrag(pointer, pointerId);
+      fsmMovePointer(pointer, pointerId);
     },
-    [updateActiveDrag],
+    [fsmMovePointer],
   );
 
+  const fsmFinishPointer = fsm.finishPointer;
   const finishGearPointer = useCallback(
     (pointer: DragPoint, pointerId: number, cancelled = false) => {
-      if (!cancelled) updateActiveDrag(pointer, pointerId);
-      const visual = activeDragRef.current;
-      const pending = pendingDragRef.current;
-      pendingDragRef.current = null;
-      if (!visual || !pending) return;
-
-      if (cancelled) {
-        const reverted = { ...visual, rect: visual.source, destination: null, settling: true };
-        activeDragRef.current = reverted;
-        setDragVisual(reverted);
-        clearDragAfterAnimation();
-        return;
-      }
-
-      const destination = visual.destination;
-      const unchanged =
-        !destination ||
-        (pending.origin.kind === "equipment" &&
-          destination.kind === "equipment" &&
-          pending.origin.slot === destination.slot) ||
-        (pending.origin.kind === "inventory" &&
-          destination.kind === "inventory" &&
-          pending.origin.placement.col === destination.placement.col &&
-          pending.origin.placement.row === destination.placement.row);
-
-      if (unchanged) {
-        const reverted = { ...visual, rect: visual.source, destination: null, settling: true };
-        activeDragRef.current = reverted;
-        setDragVisual(reverted);
-        clearDragAfterAnimation();
-        return;
-      }
-
-      if (destination.kind === "equipment") {
-        const vacatedPlacement = pending.origin.kind === "inventory" ? pending.origin.placement : undefined;
-        if (vacatedPlacement) {
-          maybeLaunchSwapAnimation(visual.instance, destination.slot, destination.rect, vacatedPlacement);
-        }
-        onEquip(characterId, destination.slot, visual.instance, vacatedPlacement ? { vacatedPlacement } : undefined);
-      } else {
-        onMoveItem(visual.instance.instanceId, destination.placement.col, destination.placement.row);
-        if (pending.origin.kind === "equipment") onUnequip(characterId, pending.origin.slot);
-      }
-      const settled = { ...visual, rect: destination.rect, settling: true };
-      activeDragRef.current = settled;
-      setDragVisual(settled);
-      playUISound("gearMove");
-      clearDragAfterAnimation();
+      fsmFinishPointer(pointer, pointerId, cancelled);
     },
-    [characterId, updateActiveDrag, onEquip, onUnequip, onMoveItem, clearDragAfterAnimation, maybeLaunchSwapAnimation],
-  );
-
-  const animateGearTransfer = useCallback(
-    (
-      instance: GearInstance,
-      origin: GearDragOrigin,
-      source: DragRect,
-      destination: DragDestination,
-      commit: () => void,
-    ) => {
-      const visual = { instance, source, rect: destination.rect, origin, destination, flyover: true };
-      activeDragRef.current = visual;
-      setDraggedGear(instance);
-      setDragVisual(visual);
-      playUISound("gearMove");
-      pendingFlyoverCommitRef.current = commit;
-      clearDragAfterAnimation(DOUBLE_CLICK_FLYOVER_MS);
-    },
-    [clearDragAfterAnimation],
+    [fsmFinishPointer],
   );
 
   const handleGearDoubleClick = useCallback(
-    (instance: GearInstance, origin: GearDragOrigin, source: DragRect) => {
+    (instance: GearInstance, origin: GearDragOrigin, _source: DragRect) => {
       if (!editable) return;
       const definition = gearDefinitions[instance.definitionId];
       if (!definition) return;
@@ -433,11 +281,11 @@ export function useArmoryGearDrag({
         const compatibleSlots = definition.compatibleSlots;
         let slot = compatibleSlots.find((candidate) => !loadout[candidate]) ?? null;
         if (!slot) {
-          // Auto-pick off-hand for one-handed items when main-hand is filled and off-hand is empty
           if (
             !isTwoHanded(definition) &&
             !!loadout["main-hand"] &&
             !loadout["off-hand"] &&
+            compatibleSlots.includes("off-hand") &&
             canEquipInOffHand(definition)
           ) {
             slot = "off-hand";
@@ -454,12 +302,17 @@ export function useArmoryGearDrag({
         );
         if (!slotElement) return;
         const slotRect = slotElement.getBoundingClientRect();
-        animateGearTransfer(instance, origin, source, { kind: "equipment", slot, rect: slotRect }, () => {
-          maybeLaunchSwapAnimation(instance, slot, slotRect, origin.placement);
-          onEquip(characterId, slot, instance, {
-            vacatedPlacement: origin.placement,
-          });
-        });
+        activeInstanceRef.current = instance;
+        setActiveInstance(instance);
+        fsm.flyoverTo(
+          { instance, origin },
+          { kind: "equipment", slot, rect: slotRect },
+          () => {
+            maybeLaunchSwapAnimations(instance, slot, slotRect, origin.placement);
+            onEquip(characterId, slot, instance, { vacatedPlacement: origin.placement });
+          },
+          _source,
+        );
         return;
       }
 
@@ -481,10 +334,17 @@ export function useArmoryGearDrag({
           height: localRect.height,
         },
       };
-      animateGearTransfer(instance, origin, source, destination, () => {
-        onMoveItem(instance.instanceId, destination.placement.col, destination.placement.row);
-        onUnequip(characterId, origin.slot);
-      });
+      activeInstanceRef.current = instance;
+      setActiveInstance(instance);
+      fsm.flyoverTo(
+        { instance, origin },
+        destination,
+        () => {
+          onMoveItem(instance.instanceId, destination.placement.col, destination.placement.row);
+          onUnequip(characterId, origin.slot);
+        },
+        _source,
+      );
     },
     [
       editable,
@@ -492,27 +352,72 @@ export function useArmoryGearDrag({
       loadout,
       boardObstacles,
       inventoryBoardRef,
-      animateGearTransfer,
+      fsm,
       onEquip,
       onUnequip,
       onMoveItem,
-      maybeLaunchSwapAnimation,
+      maybeLaunchSwapAnimations,
+      setActiveInstance,
     ],
+  );
+
+  const draggedGear: GearInstance | null = fsm.dragVisual?.id
+    ? inventoryById.get(fsm.dragVisual.id) || activeInstance
+    : null;
+
+  const dragVisual: GearDragVisual | null = fsm.dragVisual
+    ? {
+        instance: inventoryById.get(fsm.dragVisual.id) || activeInstance!,
+        source: fsm.dragVisual.source,
+        rect: fsm.dragVisual.rect,
+        origin: fsm.dragVisual.origin,
+        destination: fsm.dragVisual.destination as DragDestination | null,
+        settling: fsm.dragVisual.settling,
+        releasing: fsm.dragVisual.releasing,
+        flyover: fsm.dragVisual.flyover,
+        releaseRect: fsm.dragVisual.releaseRect,
+      }
+    : null;
+
+  const fsmClearDragState = fsm.clearDragState;
+  const clearDragState = useCallback(() => {
+    activeInstanceRef.current = null;
+    setActiveInstance(null);
+    fsmClearDragState();
+  }, [fsmClearDragState]);
+
+  const activeIdRef = useRef<string | null>(null);
+  const dragVisualIdRef = useRef<string | null>(null);
+  const isFlyoverRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    activeIdRef.current = fsm.activeId;
+    dragVisualIdRef.current = fsm.dragVisual?.id ?? null;
+    isFlyoverRef.current = !!fsm.dragVisual?.flyover;
+  }, [fsm.activeId, fsm.dragVisual?.id, fsm.dragVisual?.flyover]);
+
+  const abortGearDragIfDragging = useCallback(
+    (instanceId: string) => {
+      if (isFlyoverRef.current) return;
+      if (activeIdRef.current === instanceId || dragVisualIdRef.current === instanceId) {
+        clearDragState();
+      }
+    },
+    [clearDragState],
   );
 
   return {
     draggedGear,
     dragVisual,
-    secondaryDragVisual,
-    isAnimating,
-    isDraggingActive,
+    secondaryDragVisuals,
+    isAnimating: fsm.isAnimating || secondaryDragVisuals.some((v) => v.flyover),
+    isDraggingActive: fsm.isDraggingActive,
     beginGearPointer,
     moveGearPointer,
     finishGearPointer,
     handleGearDoubleClick,
     clearDragState,
     clearSecondaryDragState,
-    abortActiveDrag,
     abortGearDragIfDragging,
   };
 }

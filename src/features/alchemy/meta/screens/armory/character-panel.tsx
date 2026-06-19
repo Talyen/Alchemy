@@ -17,7 +17,7 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
   editable,
   requiredCharacterId,
   draggedGear,
-  secondaryDragInstanceId = null,
+  secondaryDragInstanceIds = [],
   isDraggingActive,
   salvageMode,
   activeCurrencyId,
@@ -37,7 +37,7 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
   editable: boolean;
   requiredCharacterId: CharacterId | null;
   draggedGear?: GearInstance | null;
-  secondaryDragInstanceId?: string | null;
+  secondaryDragInstanceIds?: string[];
   isDraggingActive: boolean;
   salvageMode: boolean;
   activeCurrencyId: CraftingCurrencyId | null;
@@ -97,7 +97,7 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
                   inventory={Array.from(inventoryById.values())}
                   editable={editable}
                   draggedGear={draggedGear}
-                  secondaryDragInstanceId={secondaryDragInstanceId}
+                  secondaryDragInstanceIds={secondaryDragInstanceIds}
                   isDraggingActive={isDraggingActive}
                   salvageMode={salvageMode}
                   activeCurrencyId={activeCurrencyId}

@@ -15,7 +15,12 @@ import { TooltipPanel } from "../../../../shared/ui/tooltip-panel";
 import { GearTooltipContent, ARMORY_TOOLTIP_WIDTH } from "../gear-tooltip-content";
 import { useArmoryPortaledTooltipPlacement } from "../armory-tooltip-placement";
 import { packedItemStyle } from "./grid-styles";
-import { SALVAGE_TARGET_RING, VALID_TARGET_RING } from "../targeting-highlight";
+import {
+  SALVAGE_TARGET_RING,
+  SALVAGE_TARGET_SHADOW,
+  VALID_TARGET_RING,
+  VALID_TARGET_SHADOW,
+} from "../targeting-highlight";
 import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "../use-armory-gear-drag";
 
 export const InventoryGearTile = memo(function InventoryGearTile({
@@ -154,8 +159,6 @@ export const InventoryGearTile = memo(function InventoryGearTile({
         "armory-salvage-tile absolute z-10 min-h-0 min-w-0 overflow-hidden rounded-xl",
         targetingMode ? "cursor-default" : "cursor-grab active:cursor-grabbing bg-background/60",
         dragging || secondaryDragging ? "opacity-0" : "",
-        isSalvageTarget && SALVAGE_TARGET_RING,
-        activeCurrencyId && canCraft && VALID_TARGET_RING,
       )}
       style={packedItemStyle(placement)}
       role={editable && (isSalvageTarget || isCurrencyTarget) ? "button" : undefined}
@@ -246,6 +249,15 @@ export const InventoryGearTile = memo(function InventoryGearTile({
         alt=""
         className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover"
       />
+      {targetingMode && (
+        <div
+          className={cn(
+            "absolute inset-0 z-20 pointer-events-none rounded-xl transition-[box-shadow] duration-150",
+            isSalvageTarget && [SALVAGE_TARGET_RING, SALVAGE_TARGET_SHADOW],
+            activeCurrencyId && canCraft && [VALID_TARGET_RING, VALID_TARGET_SHADOW],
+          )}
+        />
+      )}
       {flash ? <div className="absolute inset-0 pointer-events-none rounded-xl craft-flash-overlay z-30" /> : null}
       {showTooltip
         ? createPortal(

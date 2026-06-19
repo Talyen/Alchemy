@@ -27,8 +27,9 @@
 }
 
 .armory-inventory-board {
-  width: calc(7 * var(--armory-cell-size) + 6 * var(--armory-board-gap));
-  height: calc(8 * var(--armory-cell-size) + 7 * var(--armory-board-gap));
+  width: calc(7 * var(--armory-cell-size) + 6 * var(--armory-board-gap) + 12px);
+  height: calc(8 * var(--armory-cell-size) + 7 * var(--armory-board-gap) + 12px);
+  padding: 6px;
   max-width: 100%;
   scrollbar-width: none;
 }

@@ -14,6 +14,7 @@ export type CurrencyDragVisual = {
   settling?: boolean | undefined;
   releasing?: boolean | undefined;
   flyover?: boolean | undefined;
+  releaseRect?: DragRect | undefined;
 };
 
 export type CurrencyPointerStart = (
@@ -110,6 +111,7 @@ export function useArmoryCurrencyDrag({
         settling: fsm.dragVisual.settling,
         releasing: fsm.dragVisual.releasing,
         flyover: false,
+        releaseRect: fsm.dragVisual.releaseRect,
       }
     : null;
 
