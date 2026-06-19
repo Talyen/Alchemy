@@ -4,7 +4,7 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 
 describe("getSteamRichPresenceLabel", () => {
   it("uses battle phase for active combat", () => {
-    expect(getSteamRichPresenceLabel(ROUTE_SCREENS.BATTLE, "battle", "mage")).toBe("Fighting as mage");
+    expect(getSteamRichPresenceLabel(ROUTE_SCREENS.BATTLE, "battle", "wizard")).toBe("Fighting as wizard");
   });
 
   it("labels run-end screens", () => {

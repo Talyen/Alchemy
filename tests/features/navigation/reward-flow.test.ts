@@ -202,7 +202,12 @@ describe("reward flow orchestration", () => {
       cost: 1,
       effects: [],
     };
-    const boonChoice: TrinketEntry = { id: "bone-charm", title: "Bone Charm", description: "Heal on kill", art: "" };
+    const boonChoice: TrinketEntry = {
+      id: "bone-charm",
+      title: "Bone Charm",
+      descriptionLines: ["Heal on kill"],
+      art: "",
+    };
 
     function stampedRewardState(
       overrides: Partial<ReturnType<typeof createEmptyRewardState>> = {},

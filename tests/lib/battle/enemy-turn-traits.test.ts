@@ -133,7 +133,7 @@ describe("processEnemyTraits", () => {
   it("applies enemy-gains-forge-each-turn difficulty modifier", () => {
     const state = createTestBattleState({
       currentEnemy: skeleton,
-      difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn", amount: 1 }],
+      difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn" }],
     });
     const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
     const result = processEnemyTraits(state, texts);
@@ -171,7 +171,7 @@ describe("processEnemyTraits", () => {
     const state = createTestBattleState({
       currentEnemy: forgeGolem,
       roomScalingMultiplier: 1,
-      difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn", amount: 1 }],
+      difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn" }],
       enemyMitigation: { ...createTestBattleState().enemyMitigation, forge: 0 },
     });
     const result = processEnemyTraits(state, [], { traitRoll: 0 });

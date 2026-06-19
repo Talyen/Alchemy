@@ -75,14 +75,14 @@ describe("initializeEnemyState", () => {
   });
 
   it("increases matching player-status attack amounts", () => {
-    const mods: DifficultyModifier[] = [{ kind: "increase-enemy-status", status: "stun", amount: 2 }];
+    const mods: DifficultyModifier[] = [{ kind: "increase-enemy-status", status: "poison", amount: 2 }];
     const result = initializeEnemyState(forgeGolem, 1, mods);
     const stun = result.modifiedEffects.find((e) => e.kind === "player-status" && e.status === "stun");
     expect(stun?.kind === "player-status" && stun.amount).toBe(3);
   });
 
   it("adds lifesteal to all damage attacks when enemy-attacks-gain-leech is active", () => {
-    const mods: DifficultyModifier[] = [{ kind: "enemy-attacks-gain-leech", amount: 1 }];
+    const mods: DifficultyModifier[] = [{ kind: "enemy-attacks-gain-leech" }];
     const result = initializeEnemyState(skeleton, 1, mods);
     for (const effect of result.modifiedEffects) {
       if (effect.kind === "damage") expect(effect.lifesteal).toBe(true);
@@ -92,7 +92,7 @@ describe("initializeEnemyState", () => {
   it("preserves existing lifesteal on scaled damage attacks", () => {
     const leechEnemy: BestiaryEntry = {
       ...skeleton,
-      attackEffects: [{ kind: "damage", damageType: "physical", amount: 6, lifesteal: true }],
+      attackEffects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 6, lifesteal: true }],
     };
     const result = initializeEnemyState(leechEnemy, 3, []);
     const physical = result.modifiedEffects[0];
@@ -115,7 +115,7 @@ describe("initializeEnemyState", () => {
     const mods: DifficultyModifier[] = [
       { kind: "start-block", amount: 4 },
       { kind: "start-max-mana", amount: 1 },
-      { kind: "start-companion", amount: 1 },
+      { kind: "start-companion" },
     ];
     const result = initializeEnemyState(skeleton, 1, mods);
     expect(result.startBlock).toBe(4);

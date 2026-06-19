@@ -11,6 +11,14 @@ import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { type CombatTextEvent } from "@/lib/battle/types";
 import { companionLibrary, enemyBestiary } from "@/lib/game-data";
 import { computeTrinketManifest } from "@/lib/trinkets";
+import {
+  defaultPlayerStatusValues,
+  defaultEnemyStatusValues,
+  defaultEnemyMitigation,
+  defaultTrinketManifest,
+  defaultCcState,
+  defaultCombatFlags,
+} from "../../../fixtures/default-battle-state";
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
 
@@ -60,7 +68,7 @@ describe("Boon — Sundering Charm (ignore 2 enemy armor)", () => {
     const state = makeState({
       mana: 10,
       enemyHealth: 30,
-      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
+      enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 }),
       trinketEffects: manifest,
       hand: [card],
     });
@@ -104,7 +112,7 @@ describe("Boon — Mortar and Pestle (first potion free)", () => {
       mana: 10,
       hand: [card],
       trinketEffects: manifest,
-      flags: {
+      flags: defaultCombatFlags({
         firstPhysicalCardFreeUsed: false,
         firstHolyCardFreeUsed: false,
         firstBurnCardDoubledUsed: false,
@@ -118,7 +126,7 @@ describe("Boon — Mortar and Pestle (first potion free)", () => {
         firstHarmfulStatusPrevented: false,
         firstPotionFreeUsed: true,
         resonantChimeUsedThisTurn: false,
-      },
+      }),
     });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.mana).toBe(8); // spent 2 mana
@@ -133,7 +141,7 @@ describe("Boon — Parasitic Bloom (10% chance to leech poison damage)", () => {
       mana: 4,
       maxMana: 4,
       playerHealth: 20,
-      enemyStatuses: { burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 },
+      enemyStatuses: defaultEnemyStatusValues({ burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 }),
       enemyAttackEffects: [],
       trinketEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
@@ -150,7 +158,7 @@ describe("Boon — Parasitic Bloom (10% chance to leech poison damage)", () => {
       mana: 4,
       maxMana: 4,
       playerHealth: 20,
-      enemyStatuses: { burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 },
+      enemyStatuses: defaultEnemyStatusValues({ burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 }),
       enemyAttackEffects: [],
       trinketEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
@@ -167,7 +175,17 @@ describe("Boon — Ironwood Buckler (6+ block → 1 armor)", () => {
       mana: 4,
       maxMana: 4,
       playerHealth: 30,
-      playerStatuses: { block: 8, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({
+        block: 8,
+        armor: 0,
+        forge: 0,
+        haste: 0,
+        burn: 0,
+        poison: 0,
+        bleed: 0,
+        freeze: 0,
+        stun: 0,
+      }),
       enemyAttackEffects: [],
       trinketEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
@@ -182,7 +200,17 @@ describe("Boon — Ironwood Buckler (6+ block → 1 armor)", () => {
       mana: 4,
       maxMana: 4,
       playerHealth: 30,
-      playerStatuses: { block: 5, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({
+        block: 5,
+        armor: 0,
+        forge: 0,
+        haste: 0,
+        burn: 0,
+        poison: 0,
+        bleed: 0,
+        freeze: 0,
+        stun: 0,
+      }),
       enemyAttackEffects: [],
       trinketEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
@@ -199,7 +227,17 @@ describe("Boon — Sin-Eater's Lantern (heal on harmful status removal)", () => 
     const state = makeState({
       mana: 10,
       playerHealth: 20,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 2, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({
+        block: 0,
+        armor: 0,
+        forge: 0,
+        haste: 0,
+        burn: 2,
+        poison: 0,
+        bleed: 0,
+        freeze: 0,
+        stun: 0,
+      }),
       trinketEffects: manifest,
     });
     const texts: CombatTextEvent[] = [];
@@ -250,7 +288,7 @@ describe("Boon — Bone Charm (heal on enemy defeat)", () => {
       playerHealth: 15,
       enemyHealth: 1,
       enemyMaxHealth: 1,
-      enemyStatuses: { burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 },
+      enemyStatuses: defaultEnemyStatusValues({ burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 }),
       enemyAttackEffects: [],
       trinketEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
@@ -396,8 +434,18 @@ describe("Boon — Thunderstone (6 nature damage on stun)", () => {
       mana: 10,
       enemyHealth: 3,
       enemyMaxHealth: 3,
-      enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
-      playerStatuses: { block: 0, armor: 0, forge: 4, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyMitigation: defaultEnemyMitigation({ armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 }),
+      playerStatuses: defaultPlayerStatusValues({
+        block: 0,
+        armor: 0,
+        forge: 4,
+        haste: 0,
+        burn: 0,
+        poison: 0,
+        bleed: 0,
+        freeze: 0,
+        stun: 0,
+      }),
       trinketEffects: manifest,
     });
     const texts: CombatTextEvent[] = [];
@@ -482,7 +530,7 @@ describe("Resonant Chime boon", () => {
       hand: [card],
       cardsPlayedThisTurn: 2,
       trinketEffects: manifest,
-      flags: {
+      flags: defaultCombatFlags({
         firstPhysicalCardFreeUsed: false,
         firstHolyCardFreeUsed: false,
         firstBurnCardDoubledUsed: false,
@@ -496,7 +544,7 @@ describe("Resonant Chime boon", () => {
         firstHarmfulStatusPrevented: false,
         firstPotionFreeUsed: false,
         resonantChimeUsedThisTurn: false,
-      },
+      }),
     });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.mana).toBe(6);
@@ -514,7 +562,7 @@ describe("Resonant Chime boon", () => {
       hand: [card1, card2],
       cardsPlayedThisTurn: 2,
       trinketEffects: manifest,
-      flags: {
+      flags: defaultCombatFlags({
         firstPhysicalCardFreeUsed: false,
         firstHolyCardFreeUsed: false,
         firstBurnCardDoubledUsed: false,
@@ -528,7 +576,7 @@ describe("Resonant Chime boon", () => {
         firstHarmfulStatusPrevented: false,
         firstPotionFreeUsed: false,
         resonantChimeUsedThisTurn: false,
-      },
+      }),
     });
     const first = playBattleCardResolved(state, card1.id, 0);
     expect(first.state.flags.resonantChimeUsedThisTurn).toBe(true);

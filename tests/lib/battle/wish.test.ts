@@ -12,7 +12,7 @@ describe("buildWishOptions", () => {
       descriptionLines: [""],
       art: "",
       cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+      effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 4 }],
     };
     const state = createTestBattleState();
     const options = buildWishOptions(state, card);
@@ -92,7 +92,6 @@ describe("applyWishEffect", () => {
     const texts: CombatTextEvent[] = [];
     const result = applyWishEffect(state, card, 2, texts);
     expect(result.gold).toBe(10);
-    // mergeCombatText deduplicates by (target, kind, stat), so gold events merge
     expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 10 }]);
   });
 
@@ -146,7 +145,7 @@ describe("applyWishEffect", () => {
       descriptionLines: [""],
       art: "",
       cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+      effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 4 }],
     };
     const state = createTestBattleState({
       deck: [card],
@@ -231,12 +230,12 @@ describe("new wish talents", () => {
     const stateForge = createTestBattleState({
       playerStatuses: { ...createTestBattleState().playerStatuses, forge: 0, armor: 0 },
       talentEffects: { ...createTestBattleState().talentEffects, wishTrinketChoice: true },
-      rng: () => 0.1, // < 0.5 -> forge
+      rng: () => 0.1,
     });
     const stateArmor = createTestBattleState({
       playerStatuses: { ...createTestBattleState().playerStatuses, forge: 0, armor: 0 },
       talentEffects: { ...createTestBattleState().talentEffects, wishTrinketChoice: true },
-      rng: () => 0.6, // >= 0.5 -> armor
+      rng: () => 0.6,
     });
 
     const resultForge = applyWishEffect(stateForge, card, 1, []);
@@ -251,13 +250,13 @@ describe("new wish talents", () => {
   it("wishBlockBelowHealthPct grants 6 block below 30% health threshold", () => {
     const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
     const stateBelow = createTestBattleState({
-      playerHealth: 8, // below 9 (30 max health is 30)
+      playerHealth: 8,
       playerMaxHealth: 30,
       playerStatuses: { ...createTestBattleState().playerStatuses, block: 0 },
       talentEffects: { ...createTestBattleState().talentEffects, wishBlockBelowHealthPct: 30 },
     });
     const stateAbove = createTestBattleState({
-      playerHealth: 15, // above 9
+      playerHealth: 15,
       playerMaxHealth: 30,
       playerStatuses: { ...createTestBattleState().playerStatuses, block: 0 },
       talentEffects: { ...createTestBattleState().talentEffects, wishBlockBelowHealthPct: 30 },
@@ -277,9 +276,7 @@ describe("new wish talents", () => {
     });
     const options = buildWishOptions(state, card);
 
-    // Verify that all cards returned by buildWishOptions with editable targets are indeed upgraded.
     options.forEach((o) => {
-      // Check that it has some upgraded values compared to a fresh instance
       const original = createTestBattleState().deck.find((d) => d.id === o.id);
       if (original) {
         o.effects.forEach((eff, idx) => {

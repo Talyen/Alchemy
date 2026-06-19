@@ -48,7 +48,7 @@ describe("resetActiveRunStores", () => {
     setRunProgress({ runGold: 99, roomsEncountered: 5 });
     setRunSession({
       hasActiveRun: true,
-      rewardState: { ...createEmptyRewardState(), goldReward: 10 },
+      rewardState: { ...createEmptyRewardState(), gold: 10 },
       mysteryEvent: { id: "test", title: "T", art: "", narrative: "", choices: [] },
     });
 

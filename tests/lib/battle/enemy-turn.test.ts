@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import type { BattleState, EnemyStatusValues, PlayerStatusValues } from "@/lib/battle/types";
 import type { BattleCard } from "@/lib/game-data";
@@ -27,7 +27,7 @@ function baseEnemy(enemyId: string): BestiaryEntry {
     art: "",
     enemyType: "normal",
     traits: [],
-    attackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    attackEffects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 5 }],
   };
 }
 
@@ -52,7 +52,7 @@ function battleState(overrides: Partial<BattleState> = {}): BattleState {
     playerStatuses: { ...emptyPlayerStatuses },
     mana: 4,
     maxMana: 4,
-    enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+    enemyAttackEffects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 10 }],
     currentEnemy: baseEnemy("test-enemy"),
     talentEffects: defaultTalentEffects,
     ...overrides,
@@ -209,7 +209,7 @@ describe("endPlayerTurn — tick order", () => {
     const state = battleState({
       playerHealth: 30,
       playerStatuses: { ...emptyPlayerStatuses, burn: 5 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+      enemyAttackEffects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 10 }],
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
     });
     const result = endPlayerTurn(state);
@@ -256,7 +256,6 @@ describe("endPlayerTurn — Death's Door", () => {
       turn: 1,
     });
     const result = endPlayerTurn(state);
-    // Burn ticks for 4 → health 0. Grace expired → deathsDoorActive false → player defeated
     expect(result.state.playerHealth).toBe(0);
     expect(result.state.deathsDoorActive).toBe(false);
     expect(result.state.playerStatuses.burn).toBe(2);
@@ -273,7 +272,6 @@ describe("endPlayerTurn — Death's Door", () => {
       turn: 1,
     });
     const result = endPlayerTurn(state);
-    // Poison ticks for 3 → health 0. Grace expired → deathsDoorActive false → player defeated
     expect(result.state.playerHealth).toBe(0);
     expect(result.state.deathsDoorActive).toBe(false);
   });
@@ -289,7 +287,6 @@ describe("endPlayerTurn — Death's Door", () => {
       turn: 1,
     });
     const result = endPlayerTurn(state);
-    // Bleed ticks for 5 → health 0. Grace expired → deathsDoorActive false → player defeated
     expect(result.state.playerHealth).toBe(0);
     expect(result.state.deathsDoorActive).toBe(false);
   });
@@ -299,11 +296,10 @@ describe("endPlayerTurn — Death's Door", () => {
       playerHealth: 3,
       deathsDoorUsed: true,
       deathsDoorActive: false,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+      enemyAttackEffects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 10 }],
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
     });
     const result = endPlayerTurn(state);
-    // deathsDoor already consumed, fatal damage → player defeated
     expect(result.state.playerHealth).toBe(0);
     expect(result.state.deathsDoorActive).toBe(false);
     expect(result.state.deathsDoorUsed).toBe(true);
@@ -321,7 +317,6 @@ describe("endPlayerTurn — Death's Door", () => {
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
     });
     const result = endPlayerTurn(state);
-    // Grace recovery: stun skip suppressed, player gets a turn
     expect(result.state.turnPhase).toBe("player");
     expect(result.state.playerCC.stunSkipTurns).toBe(0);
   });

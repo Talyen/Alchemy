@@ -23,7 +23,7 @@ describe("bootstrapAlchemySaveState", () => {
         getItem: () => null,
         setItem: () => undefined,
         removeItem: () => undefined,
-      } as Storage,
+      } as unknown as Storage,
       alchemyDesktop: {
         isDesktop: true,
         setDisplayMode: vi.fn(),
@@ -38,7 +38,7 @@ describe("bootstrapAlchemySaveState", () => {
         steamCloudWrite: vi.fn(),
         steamCloudDelete: vi.fn(),
       },
-    } as Window;
+    } as unknown as Window;
 
     const { bootstrapAlchemySaveState } = await import("@/features/alchemy/shared/storage/bootstrap-save-state");
     await bootstrapAlchemySaveState();

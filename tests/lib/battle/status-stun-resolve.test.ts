@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
+import { defaultEnemyMitigation, defaultCcState } from "../../fixtures/default-battle-state";
 
 function makeTexts(): CombatTextEvent[] {
   return [];
@@ -22,7 +23,7 @@ describe("resolveStunTrigger", () => {
       ...base,
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCC: { stunSkipTurns: 0 },
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: { ...base.enemyStatuses, stun: 20 },
     };
     const result = resolveStunTrigger(state);
@@ -34,7 +35,7 @@ describe("resolveStunTrigger", () => {
     const state = createTestBattleState({
       enemyHealth: 0,
       enemyMaxHealth: 30,
-      enemyCC: { stunSkipTurns: 0 },
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
     });
     const result = resolveStunTrigger(state);
@@ -45,7 +46,7 @@ describe("resolveStunTrigger", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCC: { stunSkipTurns: 0 },
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
       talentEffects: { ...createTestBattleState().talentEffects, stunDurationExtension: 2 },
     });
@@ -66,7 +67,7 @@ describe("resolveStunTrigger", () => {
       deck: [card, card, card],
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCC: { stunSkipTurns: 0 },
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
       talentEffects: { ...createTestBattleState().talentEffects, drawOnStun: 2 },
     });
@@ -79,7 +80,7 @@ describe("resolveStunTrigger", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCC: { stunSkipTurns: 0 },
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
       talentEffects: { ...createTestBattleState().talentEffects, nextCardFreeOnStun: true },
     });
@@ -91,7 +92,7 @@ describe("resolveStunTrigger", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCC: { stunSkipTurns: 0 },
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
       trinketEffects: { ...createTestBattleState().trinketEffects, thunderstoneDamageOnStun: 5 },
     });
@@ -105,7 +106,7 @@ describe("resolveStunTrigger", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCC: { stunSkipTurns: 0 },
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
       trinketEffects: { ...createTestBattleState().trinketEffects, thunderstoneDamageOnStun: 5 },
     });
@@ -117,7 +118,7 @@ describe("resolveStunTrigger", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCC: { stunSkipTurns: 0 },
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
       trinketEffects: {
         ...createTestBattleState().trinketEffects,
@@ -138,7 +139,7 @@ describe("resolveStunTrigger", () => {
       ...base,
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCC: { stunSkipTurns: 0 },
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: { ...base.enemyStatuses, stun: 10 },
       talentEffects: { ...base.talentEffects, stunThresholdReduction: 0.2 },
     };
@@ -174,7 +175,7 @@ describe("resolveStunTrigger", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCC: { stunSkipTurns: 0 },
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
       talentEffects: { ...createTestBattleState().talentEffects, blockOnStun: 3 },
     });
@@ -188,7 +189,7 @@ describe("resolveStunTrigger", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCC: { stunSkipTurns: 0 },
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
       talentEffects: { ...createTestBattleState().talentEffects, forgeOnStun: 2 },
     });
@@ -202,7 +203,7 @@ describe("resolveStunTrigger", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCC: { stunSkipTurns: 0 },
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 },
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
       talentEffects: {
@@ -223,7 +224,7 @@ describe("resolveStunTrigger", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCC: { stunSkipTurns: 0 },
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       playerStatuses: { ...createTestBattleState().playerStatuses, forge: 1 },
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
       talentEffects: {
@@ -242,8 +243,8 @@ describe("resolveStunTrigger", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
-      enemyCC: { stunSkipTurns: 0 },
+      enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, freezeBonus: 0 }),
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
       talentEffects: { ...createTestBattleState().talentEffects, stunStripArmor: true },
     });
@@ -255,8 +256,8 @@ describe("resolveStunTrigger", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0 },
-      enemyCC: { stunSkipTurns: 0 },
+      enemyMitigation: defaultEnemyMitigation({ armor: 0, forge: 0, freezeBonus: 0 }),
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
       talentEffects: { ...createTestBattleState().talentEffects, stunStripArmor: true },
     });
@@ -269,7 +270,7 @@ describe("resolveStunTrigger", () => {
       enemyHealth: 30,
       enemyMaxHealth: 30,
       mana: 2,
-      enemyCC: { stunSkipTurns: 0 },
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
       talentEffects: { ...createTestBattleState().talentEffects, manaOnStun: 1 },
     });

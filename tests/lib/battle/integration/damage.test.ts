@@ -3,6 +3,14 @@ import { makeState, makeCard } from "./helpers";
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
 import { type CombatTextEvent } from "@/lib/battle/types";
 import { computeTrinketManifest } from "@/lib/trinkets";
+import {
+  defaultPlayerStatusValues,
+  defaultEnemyStatusValues,
+  defaultEnemyMitigation,
+  defaultTrinketManifest,
+  defaultCcState,
+  defaultCombatFlags,
+} from "../../../fixtures/default-battle-state";
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
 
@@ -54,7 +62,12 @@ describe("dealDamageToEnemy — first-damage-doubled flags", () => {
 
     // second use with already-consumed flag does not set it again
     const texts2: CombatTextEvent[] = [];
-    const state2 = makeState({ mana: 10, enemyHealth: 50, talentEffects, flags: { ...result1.flags } });
+    const state2 = makeState({
+      mana: 10,
+      enemyHealth: 50,
+      talentEffects,
+      flags: defaultCombatFlags({ ...result1.flags }),
+    });
     const result2 = applyCardEffects(state2, card, texts2);
     expect(result2.flags.firstBurnCardDoubledUsed).toBe(true);
   });
@@ -67,7 +80,7 @@ describe("dealDamageToEnemy — first-damage-doubled flags", () => {
       mana: 10,
       enemyHealth: 50,
       gold: 0,
-      enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyStatuses: defaultEnemyStatusValues({ burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 }),
       trinketEffects: manifest,
     });
     const result = applyCardEffects(state, card, texts);
@@ -101,7 +114,7 @@ describe("dealDamageToEnemy — physical vs stunned/frozen multipliers", () => {
     const state = makeState({
       mana: 10,
       enemyHealth: 50,
-      enemyCC: { stunSkipTurns: 1 },
+      enemyCC: defaultCcState({ stunSkipTurns: 1 }),
       talentEffects,
     });
     const noMultiplier = applyCardEffects(staleState, card, texts.slice(0, 0));
@@ -125,7 +138,7 @@ describe("dealDamageToEnemy — physical vs stunned/frozen multipliers", () => {
     const state = makeState({
       mana: 10,
       enemyHealth: 50,
-      enemyCC: { stunSkipTurns: 1 },
+      enemyCC: defaultCcState({ stunSkipTurns: 1 }),
       talentEffects,
     });
     const noTrait = applyCardEffects(staleState, card, texts.slice(0, 0));
@@ -145,7 +158,17 @@ describe("dealDamageToEnemy — forge bonus eligibility", () => {
     const state = makeState({
       mana: 10,
       enemyHealth: 50,
-      playerStatuses: { block: 0, armor: 0, forge: 3, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({
+        block: 0,
+        armor: 0,
+        forge: 3,
+        haste: 0,
+        burn: 0,
+        poison: 0,
+        bleed: 0,
+        freeze: 0,
+        stun: 0,
+      }),
     });
     const result = applyCardEffects(state, card, texts);
     // forge contributed to physical damage → consumed by 1
@@ -158,7 +181,17 @@ describe("dealDamageToEnemy — forge bonus eligibility", () => {
     const state = makeState({
       mana: 10,
       enemyHealth: 50,
-      playerStatuses: { block: 0, armor: 0, forge: 3, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({
+        block: 0,
+        armor: 0,
+        forge: 3,
+        haste: 0,
+        burn: 0,
+        poison: 0,
+        bleed: 0,
+        freeze: 0,
+        stun: 0,
+      }),
     });
     const result = applyCardEffects(state, card, texts);
     expect(result.playerStatuses.forge).toBe(3);
@@ -170,7 +203,17 @@ describe("dealDamageToEnemy — forge bonus eligibility", () => {
     const state = makeState({
       mana: 10,
       enemyHealth: 50,
-      playerStatuses: { block: 0, armor: 0, forge: 3, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({
+        block: 0,
+        armor: 0,
+        forge: 3,
+        haste: 0,
+        burn: 0,
+        poison: 0,
+        bleed: 0,
+        freeze: 0,
+        stun: 0,
+      }),
       talentEffects: { ...defaultTalentEffects, forgeToBurn: true },
     });
     const result = applyCardEffects(state, card, texts);
@@ -185,7 +228,7 @@ describe("dealDamageToEnemy — armor decay and holy riders", () => {
     const state = makeState({
       mana: 10,
       enemyHealth: 50,
-      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
+      enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 }),
     });
     const result = applyCardEffects(state, card, texts);
     // enemy with armor takes less damage
@@ -199,7 +242,7 @@ describe("dealDamageToEnemy — armor decay and holy riders", () => {
     const state = makeState({
       mana: 10,
       enemyHealth: 50,
-      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
+      enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 }),
     });
     const result = applyCardEffects(state, card, texts);
     // burn ignores armor → armor still decays from hit but not from damage reduction
@@ -215,7 +258,7 @@ describe("dealDamageToEnemy — armor decay and holy riders", () => {
       enemyHealth: 50,
       gold: 0,
       playerHealth: 20,
-      enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyStatuses: defaultEnemyStatusValues({ burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 }),
       talentEffects,
     });
     const result = applyCardEffects(state, card, texts);
@@ -266,7 +309,7 @@ describe("applyDamageStatuses — stun talent effects chain", () => {
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" })],
       hand: [],
       talentEffects,
-      enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
+      enemyMitigation: defaultEnemyMitigation({ armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 }),
     });
     const result = applyCardEffects(state, card, texts);
     // stun 20 damage - 3 armor = 17 → health 13
@@ -293,7 +336,7 @@ describe("applyDamageStatuses — stun on cooldown enemy", () => {
       mana: 10,
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCC: { cooldown: 1 },
+      enemyCC: defaultCcState({ cooldown: 1 }),
     });
     const result = applyCardEffects(state, card, texts);
     // stun 20 > 15 threshold, but cooldown active → immunity clears stun status
@@ -340,7 +383,7 @@ describe("applyDamageStatuses — freeze cooldown skip", () => {
       mana: 10,
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyCC: { cooldown: 2 },
+      enemyCC: defaultCcState({ cooldown: 2 }),
     });
     const result = applyCardEffects(state, card, texts);
     // 25 >= 15 threshold, but cooldown active → no new freeze
@@ -390,7 +433,7 @@ describe("applyDamageStatuses — poison talent riders", () => {
       mana: 10,
       enemyHealth: 50,
       talentEffects,
-      enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
+      enemyMitigation: defaultEnemyMitigation({ armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 }),
     });
     const result = applyCardEffects(state, card, texts);
     // armor decays by 1 from hit, then poisonStripArmor strips 1 → armor 1
@@ -419,7 +462,17 @@ describe("applyDamageStatuses — forge threshold bursts", () => {
     const card = makeCard({ effects: [{ kind: "player-status", status: "forge", amount: 4 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
-      playerStatuses: { block: 0, armor: 0, forge: 2, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({
+        block: 0,
+        armor: 0,
+        forge: 2,
+        haste: 0,
+        burn: 0,
+        poison: 0,
+        bleed: 0,
+        freeze: 0,
+        stun: 0,
+      }),
       talentEffects: {
         ...defaultTalentEffects,
         forgeBurnThreshold: 3,
@@ -428,7 +481,7 @@ describe("applyDamageStatuses — forge threshold bursts", () => {
         forgeBlockThreshold: 5,
         forgeBlockAmount: 3,
       },
-      enemyMitigation: { armor: 2, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
+      enemyMitigation: defaultEnemyMitigation({ armor: 2, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 }),
     });
     const result = applyCardEffects(state, card, texts);
     // forge: 2+4 = 6 → crosses threshold 3 (burn burst), 4 (strip armor), 5 (block burst)

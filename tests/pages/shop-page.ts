@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { startAtDestination } from "../helpers";
 import { GameStage } from "./game-stage";
+import type { DestinationName } from "../e2e/types";
 
 export class ShopPage {
   private page: Page;
@@ -87,10 +88,7 @@ export class ShopPage {
     await expect(this.page.getByText("Added to Deck: Mixed Potion")).toBeVisible({ timeout: 3000 });
   }
 
-  async enterFromDestination(
-    gold: number,
-    destination: "Merchant's Shop" | "Alchemist's Shop" | "Trinket Shop" | "Equipment Shop",
-  ) {
+  async enterFromDestination(gold: number, destination: DestinationName) {
     await startAtDestination(this.page, { runGold: gold }, { forceDestination: destination });
     await this.page.getByRole("button", { name: destination }).click();
     await expect(this.page.getByRole("heading", { name: destination })).toBeVisible();

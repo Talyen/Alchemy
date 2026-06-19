@@ -53,6 +53,7 @@ describe("platform.storage", () => {
       quit: vi.fn(),
       loadSave,
       writeSave: vi.fn(),
+      backupSave: vi.fn(),
       clearSave: vi.fn(),
       steamGetName: vi.fn(),
       steamSetRichPresence: vi.fn(),

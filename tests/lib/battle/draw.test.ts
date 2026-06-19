@@ -135,7 +135,7 @@ describe("shuffleCards", () => {
         descriptionLines: [""],
         art: "",
         cost: 1,
-        effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+        effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 5 }],
       },
     ];
     const original = [...cards];
@@ -163,8 +163,6 @@ describe("shuffleCards", () => {
     expect(shuffleCards([card], Math.random)).toEqual([card]);
   });
 });
-
-// ─── drawCards edge cases ───
 
 describe("drawCards — edge cases", () => {
   function makeCard(id: string) {

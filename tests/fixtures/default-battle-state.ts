@@ -1,4 +1,14 @@
-import type { EnemyStatusValues, PlayerStatusValues, EnemyMitigation, TrinketManifest } from "@/lib/battle";
+import type {
+  PlayerStatusValues,
+  EnemyStatusValues,
+  EnemyMitigation,
+  TrinketManifest,
+  CcState,
+  CombatFlags,
+} from "@/lib/battle";
+import { defaultTalentEffects } from "@/lib/battle";
+
+export { defaultTalentEffects };
 
 export function defaultPlayerStatusValues(overrides?: Partial<PlayerStatusValues>): PlayerStatusValues {
   return {
@@ -31,10 +41,31 @@ export function defaultEnemyStatusValues(overrides?: Partial<EnemyStatusValues>)
 }
 
 export function defaultEnemyMitigation(overrides?: Partial<EnemyMitigation>): EnemyMitigation {
+  return { forge: 0, armor: 0, block: 0, burnBonus: 0, freezeBonus: 0, ...overrides };
+}
+
+export function defaultCcState(overrides?: Partial<CcState>): CcState {
+  return { stunSkipTurns: 0, freezeSkipTurns: 0, cooldown: 0, ...overrides };
+}
+
+export function defaultCombatFlags(overrides?: Partial<CombatFlags>): CombatFlags {
   return {
-    forge: 0,
-    armor: 0,
-    block: 0,
+    firstPhysicalCardFreeUsed: false,
+    firstHolyCardFreeUsed: false,
+    firstBurnCardDoubledUsed: false,
+    firstArmorCardDoubledUsed: false,
+    firstPoisonCardFreeUsed: false,
+    firstBleedCardFreeUsed: false,
+    nextCardCostReduction: 0,
+    goldOnFirstPoisonThisCombat: false,
+    firstHolyDamageBonusUsed: false,
+    firstBurnTrinketDoubledUsed: false,
+    firstHarmfulStatusPrevented: false,
+    firstPotionFreeUsed: false,
+    firstLeechCardDoubledUsed: false,
+    resonantChimeUsedThisTurn: false,
+    runicQuillUsedThisTurn: false,
+    divineAegisTriggered: false,
     ...overrides,
   };
 }
@@ -46,6 +77,27 @@ export function defaultTrinketManifest(overrides?: Partial<TrinketManifest>): Tr
     firstBurnDoubled: false,
     boneCharmHealOnKill: 0,
     forgeStunThreshold: 0,
+    forgeStunAmount: 0,
+    frozenHeartDamage: 0,
+    blockToArmorThreshold: 0,
+    blockToArmorAmount: 0,
+    runicQuillDrawOnConsume: 0,
+    sinEaterHealOnHarmfulStatusRemove: 0,
+    vanguardCrestForgeOnBlockAbsorb: 0,
+    parasiticBloomLeechChance: 0,
+    cutpurseGoldOnBleed: 0,
+    wishingWellGoldOnWish: 0,
+    plagueDoctorImmunity: false,
+    mortarPestleFreeFirstPotion: false,
+    sunderingArmorPiercing: 0,
+    resonantChimeCardsRequired: 0,
+    resonantChimeMana: 0,
+    smugglersMapGoldBonus: 0,
+    grovesFavorStartHeal: 0,
+    merchantsFavorDiscount: 0,
+    companionDamageBonus: 0,
+    freezeDurationExtension: 0,
+    thunderstoneDamageOnStun: 0,
     chippedAmuletStunOnBlock: 0,
     luckyCloverGoldChance: 0,
     hornAmuletCounterOnHeal: 0,

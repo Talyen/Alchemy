@@ -21,7 +21,7 @@ afterEach(() => {
 describe("getAudioContext", () => {
   function makeMockCtx() {
     const mockGain = { gain: { value: 0 }, connect: vi.fn() };
-    return { createGain: vi.fn(() => mockGain), destination: "dest" } as Partial<AudioContext>;
+    return { createGain: vi.fn(() => mockGain), destination: "dest" } as unknown as Partial<AudioContext>;
   }
 
   it("creates AudioContext on first call", () => {
@@ -60,19 +60,18 @@ describe("getAudioContext", () => {
 describe("resumeAudioContext", () => {
   it("resumes suspended context", async () => {
     const resume = vi.fn(() => Promise.resolve());
-    const mockCtx = { state: "suspended", resume } as Partial<AudioContext>;
+    const mockCtx = { state: "suspended", resume } as unknown as Partial<AudioContext>;
     audioState.context = mockCtx;
     audioState.audioUnlocked = false;
     resumeAudioContext();
     expect(resume).toHaveBeenCalledOnce();
-    // audioUnlocked should be set after the resume promise resolves
     await Promise.resolve();
     expect(audioState.audioUnlocked).toBe(true);
   });
 
   it("does not resume running context", () => {
     const resume = vi.fn(() => Promise.resolve());
-    const mockCtx = { state: "running", resume } as Partial<AudioContext>;
+    const mockCtx = { state: "running", resume } as unknown as Partial<AudioContext>;
     audioState.context = mockCtx;
     resumeAudioContext();
     expect(resume).not.toHaveBeenCalled();
@@ -84,7 +83,6 @@ describe("loadSoundBuffer", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => {
-        // Never resolve, so we can observe the loading-promise dedup
         return new Promise<Response>(() => {});
       }),
     );
@@ -120,7 +118,7 @@ describe("loadSoundBuffer", () => {
       createGain: vi.fn(),
       destination: "dest",
       decodeAudioData: vi.fn(() => Promise.reject(new Error("decode failed"))),
-    } as Partial<AudioContext>;
+    } as unknown as Partial<AudioContext>;
     vi.stubGlobal(
       "AudioContext",
       class {
@@ -139,8 +137,7 @@ describe("preloadSounds", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => new Promise(() => {})),
-    ); // never resolves
+    );
     preloadSounds(["a.ogg", "b.ogg"]);
-    // No assertion on result — just ensure no throw
   });
 });

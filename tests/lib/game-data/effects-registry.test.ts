@@ -35,7 +35,7 @@ describe("effect dispatch registry", () => {
     expect(BattleCardEffectSchema.safeParse({ kind: "gain-gold", amount: 5 }).success).toBe(true);
     expect(
       BattleCardEffectSchema.safeParse({
-        kind: "chance",
+        kind: "chance" as const,
         probability: 0.5,
         successEffects: [{ kind: "heal", amount: 1 }],
         failureEffects: [],

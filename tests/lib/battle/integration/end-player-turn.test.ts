@@ -5,6 +5,11 @@ import { isPlayerDefeated, type CombatTextEvent } from "@/lib/battle/types";
 import { IRON_HIDE_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN } from "@/lib/game-constants";
 import { companionLibrary, type DifficultyModifier } from "@/lib/game-data";
 import { computeTrinketManifest, defaultTrinketEffects } from "@/lib/trinkets";
+import {
+  defaultPlayerStatusValues,
+  defaultEnemyStatusValues,
+  defaultCcState,
+} from "../../../fixtures/default-battle-state";
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
 
@@ -23,7 +28,7 @@ describe("endPlayerTurn", () => {
 
   it("skips enemy turn when enemyStunSkipTurns > 0", () => {
     const state = makeState({
-      enemyCC: { stunSkipTurns: 1 },
+      enemyCC: defaultCcState({ stunSkipTurns: 1 }),
     });
     const result = endPlayerTurn(state);
     expect(result.state.enemyCC.stunSkipTurns).toBe(0);
@@ -34,7 +39,7 @@ describe("endPlayerTurn", () => {
   it("fully clears one remaining block at next player turn", () => {
     const state = makeState({
       enemyAttackEffects: [],
-      playerStatuses: { ...defaultBattleState().playerStatuses, block: 1 },
+      playerStatuses: defaultPlayerStatusValues({ block: 1 }),
       deck: [makeCard({ id: "d1" })],
     });
 
@@ -90,9 +95,9 @@ describe("endPlayerTurn", () => {
   it("Death's Door recovery turn is not skipped by pending player crowd control", () => {
     const state = makeState({
       playerHealth: 2,
-      playerStatuses: { ...defaultBattleState().playerStatuses, burn: 3 },
+      playerStatuses: defaultPlayerStatusValues({ burn: 3 }),
       playerCC: { stunSkipTurns: 1 },
-      enemyCC: { stunSkipTurns: 1 },
+      enemyCC: defaultCcState({ stunSkipTurns: 1 }),
       hand: [makeCard({ id: "h1" })],
       mana: 2,
     });
@@ -154,7 +159,7 @@ describe("endPlayerTurn", () => {
 
   it("gives the player an extra turn when haste is active", () => {
     const state = makeState({
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 1, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ haste: 1 }),
       hand: [makeCard({ id: "h1" }), makeCard({ id: "h2" })],
     });
     const result = endPlayerTurn(state);
@@ -168,7 +173,7 @@ describe("endPlayerTurn", () => {
     const state = makeState({
       playerHealth: 20,
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-      enemyStatuses: { burn: 0, poison: 0, bleed: 10, freeze: 0, stun: 0 },
+      enemyStatuses: defaultEnemyStatusValues({ bleed: 10 }),
       pendingBleedLeechHealing: 4,
     });
     const result = endPlayerTurn(state);
@@ -198,7 +203,7 @@ describe("endPlayerTurn", () => {
       enemyHealth: 6,
       enemyMaxHealth: 30,
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-      enemyStatuses: { burn: 0, poison: 0, bleed: 10, freeze: 0, stun: 0 },
+      enemyStatuses: defaultEnemyStatusValues({ bleed: 10 }),
       pendingBleedLeechHealing: 4,
     });
 
@@ -213,7 +218,7 @@ describe("endPlayerTurn", () => {
 
   it("ticks player Burn damage and halves the remaining Burn stack", () => {
     const state = makeState({
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 5, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ burn: 5 }),
       enemyAttackEffects: [],
     });
 
@@ -226,7 +231,7 @@ describe("endPlayerTurn", () => {
 
   it("prevents enemy Stun buildup while Block is active when the talent is unlocked", () => {
     const state = makeState({
-      playerStatuses: { block: 1, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ block: 1 }),
       talentEffects: { ...defaultTalentEffects, blockPreventsStun: true },
       enemyAttackEffects: [{ kind: "player-status", status: "stun", amount: 2 }],
     });
@@ -266,7 +271,7 @@ describe("endPlayerTurn", () => {
     ({ status, amount, expectedHealth, expectedStack }) => {
       const state = makeState({
         playerHealth: 30,
-        playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+        playerStatuses: defaultPlayerStatusValues({}),
         enemyAttackEffects: [{ kind: "player-status", status, amount } as const],
       });
       const result = endPlayerTurn(state);
@@ -394,7 +399,7 @@ describe("enemy traits via endPlayerTurn", () => {
   it("glacial-shell does NOT add freeze bonus when frozen and player has freezePreventsEnemyScaling talent", () => {
     const state = makeState({
       enemyAttackEffects: [],
-      enemyCC: { freezeSkipTurns: 1 },
+      enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       talentEffects: {
         ...defaultTalentEffects,
         freezePreventsEnemyScaling: true,
@@ -469,7 +474,7 @@ describe("health threshold talents via endPlayerTurn", () => {
 describe("enemy damage absorption via endPlayerTurn", () => {
   it("block absorbs physical damage", () => {
     const state = makeState({
-      playerStatuses: { block: 5, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ block: 5 }),
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
     });
     const result = endPlayerTurn(state);
@@ -480,7 +485,7 @@ describe("enemy damage absorption via endPlayerTurn", () => {
 
   it("armor reduces physical damage after block", () => {
     const state = makeState({
-      playerStatuses: { block: 3, armor: 4, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ block: 3, armor: 4 }),
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
     });
     const result = endPlayerTurn(state);
@@ -492,7 +497,7 @@ describe("enemy damage absorption via endPlayerTurn", () => {
   it("vanguard crest grants forge when block fully absorbs physical damage", () => {
     const manifest = computeTrinketManifest(["vanguards-crest"]);
     const state = makeState({
-      playerStatuses: { block: 10, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ block: 10 }),
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 6 }],
       trinketEffects: manifest,
     });
@@ -504,7 +509,7 @@ describe("enemy damage absorption via endPlayerTurn", () => {
 
   it("blockAbsorbPhysicalBonus makes block more effective against physical", () => {
     const state = makeState({
-      playerStatuses: { block: 10, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ block: 10 }),
       talentEffects: { ...defaultTalentEffects, blockAbsorbPhysicalBonus: 20 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 15 }],
     });
@@ -518,7 +523,7 @@ describe("enemy damage absorption via endPlayerTurn", () => {
     const state = makeState({
       playerHealth: 20,
       playerMaxHealth: 30,
-      playerStatuses: { block: 5, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ block: 5 }),
       talentEffects: { ...defaultTalentEffects, blockDepletedHeal: 2 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
     });
@@ -532,7 +537,7 @@ describe("enemy damage absorption via endPlayerTurn", () => {
     const state = makeState({
       playerHealth: 20,
       playerMaxHealth: 30,
-      playerStatuses: { block: 10, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ block: 10 }),
       talentEffects: { ...defaultTalentEffects, blockDepletedHeal: 2 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
@@ -548,17 +553,7 @@ describe("endPlayerTurn — armorBreakBlock talent", () => {
     const state = makeState({
       playerHealth: 25,
       playerMaxHealth: 30,
-      playerStatuses: {
-        block: 0,
-        armor: 1,
-        forge: 0,
-        haste: 0,
-        burn: 0,
-        poison: 0,
-        bleed: 0,
-        freeze: 0,
-        stun: 0,
-      },
+      playerStatuses: defaultPlayerStatusValues({ block: 0, armor: 1 }),
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
       talentEffects: { ...defaultTalentEffects, armorBreakBlock: 3 },
     });
@@ -581,7 +576,7 @@ describe("endPlayerTurn — poison halves enemy regeneration", () => {
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyRegeneration: 4,
-      enemyStatuses: { burn: 0, poison: 2, bleed: 0, freeze: 0, stun: 0 },
+      enemyStatuses: defaultEnemyStatusValues({ poison: 2 }),
       enemyAttackEffects: [],
       talentEffects: { ...defaultTalentEffects, poisonHalvesHealing: true },
     });
@@ -601,7 +596,7 @@ describe("endPlayerTurn — poison halves enemy regeneration", () => {
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyRegeneration: 4,
-      enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyStatuses: defaultEnemyStatusValues({}),
       enemyAttackEffects: [],
       talentEffects: { ...defaultTalentEffects, poisonHalvesHealing: true },
     });
@@ -624,7 +619,7 @@ describe("endPlayerTurn — haste + Death's Door overlap", () => {
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: 1,
       turn: 2,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 1, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ haste: 1 }),
     });
     const result = endPlayerTurn(state);
     // haste skip still runs finalizePlayerTurn → resolveDeathsDoorEndOfEnemyTurn
@@ -643,7 +638,7 @@ describe("endPlayerTurn — haste + Death's Door overlap", () => {
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: 2,
       turn: 2,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 1, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ haste: 1 }),
     });
     const result = endPlayerTurn(state);
     // turn=2, triggeredTurn=2, graceTurns=1, 2-2 < 1 → true, Death's Door stays active
@@ -657,7 +652,7 @@ describe("endPlayerTurn — multiple enemy attack effects", () => {
   it("applies damage then status from multi-effect enemy attack", () => {
     const state = makeState({
       playerHealth: 30,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({}),
       enemyAttackEffects: [
         { kind: "damage", damageType: "physical", amount: 6 },
         { kind: "player-status", status: "poison", amount: 3 },
@@ -672,7 +667,7 @@ describe("endPlayerTurn — multiple enemy attack effects", () => {
   it("applies two damage effects from one enemy attack", () => {
     const state = makeState({
       playerHealth: 30,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({}),
       enemyAttackEffects: [
         { kind: "damage", damageType: "physical", amount: 4 },
         { kind: "player-status", status: "poison", amount: 3 },
@@ -689,7 +684,7 @@ describe("endPlayerTurn — non-physical enemy damage", () => {
   it("holy damage ignores player armor (armor only reduces physical)", () => {
     const state = makeState({
       playerHealth: 30,
-      playerStatuses: { block: 0, armor: 5, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ armor: 5 }),
       enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 10 }],
     });
     const result = endPlayerTurn(state);
@@ -701,7 +696,7 @@ describe("endPlayerTurn — non-physical enemy damage", () => {
   it("burn enemy damage applies burn status rider and ticks same turn", () => {
     const state = makeState({
       playerHealth: 30,
-      playerStatuses: { block: 0, armor: 4, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ armor: 4 }),
       enemyAttackEffects: [{ kind: "damage", damageType: "burn", amount: 7 }],
     });
     const result = endPlayerTurn(state);
@@ -715,7 +710,7 @@ describe("endPlayerTurn — non-physical enemy damage", () => {
   it("sundering armor piercing boon only strips armor for physical/stun (not holy)", () => {
     const state = makeState({
       playerHealth: 30,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({}),
       enemyMitigation: { armor: 4, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 8 }],
       trinketEffects: { ...defaultTrinketEffects, sunderingArmorPiercing: 3 },
@@ -732,7 +727,7 @@ describe("endPlayerTurn — zero-damage enemy attack", () => {
   it("zero-damage physical attack is a no-op", () => {
     const state = makeState({
       playerHealth: 30,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({}),
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 0 }],
     });
     const result = endPlayerTurn(state);
@@ -746,7 +741,7 @@ describe("endPlayerTurn — enemy lifesteal", () => {
     const state = makeState({
       enemyHealth: 28,
       enemyMaxHealth: 30,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({}),
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 6, lifesteal: true }],
     });
     const result = endPlayerTurn(state);
@@ -761,8 +756,8 @@ describe("endPlayerTurn — enemy DoT kill during CC skip", () => {
     const state = makeState({
       enemyHealth: 4,
       enemyMaxHealth: 30,
-      enemyStatuses: { burn: 0, poison: 0, bleed: 6, freeze: 0, stun: 0 },
-      enemyCC: { stunSkipTurns: 1 },
+      enemyStatuses: defaultEnemyStatusValues({ bleed: 6 }),
+      enemyCC: defaultCcState({ stunSkipTurns: 1 }),
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
     });
     const result = endPlayerTurn(state);
@@ -778,7 +773,7 @@ describe("endPlayerTurn — player killed by DoT after Death's Door consumed", (
     const state = makeState({
       playerHealth: 2,
       playerMaxHealth: 30,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 4, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ burn: 4 }),
       deathsDoorUsed: true,
       deathsDoorActive: false,
       enemyAttackEffects: [],
@@ -794,7 +789,7 @@ describe("endPlayerTurn — player killed by DoT after Death's Door consumed", (
 describe("endPlayerTurn — stun and freeze both active", () => {
   it("enemy with both stun and freeze skip turns uses CC skip once", () => {
     const state = makeState({
-      enemyCC: { stunSkipTurns: 2, freezeSkipTurns: 1 },
+      enemyCC: defaultCcState({ stunSkipTurns: 2, freezeSkipTurns: 1 }),
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
     });
     const result = endPlayerTurn(state);
@@ -826,7 +821,7 @@ describe("endPlayerTurn — enemy forge bonus only applies to physical", () => {
   it("enemy forge does not boost non-physical attack damage", () => {
     const state = makeState({
       playerHealth: 30,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({}),
       enemyMitigation: { armor: 0, forge: 5, freezeBonus: 0, burnBonus: 0, block: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 8 }],
     });

@@ -1,6 +1,5 @@
-// Unit tests for compendium data — specifically the Iron Bear boss entry.
 import { describe, expect, it } from "vitest";
-import { enemyBestiary } from "@/lib/game-data";
+import { enemyBestiary, type EnemyAttackEffect } from "@/lib/game-data";
 
 describe("Iron Bear", () => {
   const ironBear = enemyBestiary.find((e) => e.id === "iron-bear")!;
@@ -25,11 +24,11 @@ describe("Iron Bear", () => {
 
   it("has attack dealing 3 physical and 1 burn damage", () => {
     expect(ironBear.attackEffects).toHaveLength(2);
-    const phys = ironBear.attackEffects[0];
+    const phys = ironBear.attackEffects[0] as EnemyAttackEffect & { kind: "damage" };
     expect(phys.kind).toBe("damage");
     expect(phys.damageType).toBe("physical");
     expect(phys.amount).toBe(3);
-    const burn = ironBear.attackEffects[1];
+    const burn = ironBear.attackEffects[1] as EnemyAttackEffect & { kind: "damage" };
     expect(burn.kind).toBe("damage");
     expect(burn.damageType).toBe("burn");
     expect(burn.amount).toBe(1);

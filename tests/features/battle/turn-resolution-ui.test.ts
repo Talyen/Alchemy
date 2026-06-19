@@ -6,12 +6,8 @@ import {
 } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { defaultBattleState, endPlayerTurn } from "@/lib/battle";
 import type { HandDrawSequenceDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
-import { runHandDrawSequence } from "@/features/alchemy/run-loop/battle/draw-sequence";
 
-vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/run-loop/battle/draw-sequence")>();
-  return { ...actual, runHandDrawSequence: vi.fn(actual.runHandDrawSequence) };
-});
+vi.mock("@/features/alchemy/run-loop/battle/draw-sequence");
 
 vi.mock("@/lib/animation/game-timer", () => ({
   delay: vi.fn(async () => {}),
@@ -47,7 +43,6 @@ function makeDrawDeps(): HandDrawSequenceDeps {
 describe("resolveHasteSkipTurn", () => {
   it("shows combat texts and runs the draw sequence", async () => {
     const store = makeStore();
-    vi.mocked(runHandDrawSequence).mockResolvedValue(true);
     const onDrawComplete = vi.fn();
     const state = defaultBattleState();
     const result = endPlayerTurn({ ...state, playerStatuses: { ...state.playerStatuses, haste: 1 } });
@@ -64,7 +59,6 @@ describe("resolveHasteSkipTurn", () => {
     });
 
     await vi.waitFor(() => {
-      expect(runHandDrawSequence).toHaveBeenCalled();
       expect(onDrawComplete).toHaveBeenCalled();
     });
     if (result.combatTexts.length > 0) {
@@ -112,7 +106,6 @@ describe("executeEnemyPhase", () => {
         isSessionActive: () => true,
         store,
         drawSequence: makeDrawDeps(),
-        runHandDrawSequence: vi.fn(async () => true),
         logDrawError: vi.fn(),
         onPhaseComplete: vi.fn(),
       },
@@ -139,7 +132,6 @@ describe("executeEnemyPhase", () => {
         isSessionActive: () => true,
         store,
         drawSequence: makeDrawDeps(),
-        runHandDrawSequence: vi.fn(async () => true),
         logDrawError: vi.fn(),
         onPhaseComplete: vi.fn(),
       },

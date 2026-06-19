@@ -28,7 +28,7 @@ function makeMockAudioContext() {
     createGain: vi.fn(() => ({ gain, connect: vi.fn() })),
     destination: "dest",
     currentTime: 0,
-  } as Partial<AudioContext>;
+  } as unknown as Partial<AudioContext>;
 }
 
 function lastCreatedSource(ctx: AudioContext) {

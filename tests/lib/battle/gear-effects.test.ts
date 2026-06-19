@@ -9,6 +9,15 @@ import {
 } from "@/lib/battle/gear-effects";
 import { defaultGearEffects } from "@/lib/gear";
 import { patchBattleState } from "./test-state";
+import {
+  defaultPlayerStatusValues,
+  defaultEnemyStatusValues,
+  defaultEnemyMitigation,
+  defaultTalentEffects,
+  defaultTrinketManifest,
+  defaultCcState,
+  defaultCombatFlags,
+} from "../../fixtures/default-battle-state";
 
 describe("gear-effects", () => {
   it("reduces incoming damage by gear resist percent", () => {
@@ -30,16 +39,16 @@ describe("gear-effects", () => {
 
   it("applies frozen enemy damage bonus multiplier", () => {
     const state = patchBattleState({
-      enemyCC: { freezeSkipTurns: 1 },
+      enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       gearEffects: { ...defaultGearEffects, frozenEnemyDamageBonusPercent: 50 },
     });
     expect(gearFrozenDamageMultiplier(state)).toBe(1.5);
-    expect(gearFrozenDamageMultiplier(patchBattleState({ enemyCC: { freezeSkipTurns: 0 } }))).toBe(1);
+    expect(gearFrozenDamageMultiplier(patchBattleState({ enemyCC: defaultCcState({ freezeSkipTurns: 0 }) }))).toBe(1);
   });
 
   it("includes frozen multiplier in gear proc physical damage", () => {
     const state = patchBattleState({
-      enemyCC: { freezeSkipTurns: 1 },
+      enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       gearEffects: { ...defaultGearEffects, frozenEnemyDamageBonusPercent: 100 },
     });
     expect(applyGearProcPhysicalDamage(state, 10)).toBe(20);

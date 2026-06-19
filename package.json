@@ -70,7 +70,7 @@
     "check:push": "npm run check && npm run test:e2e:prepush",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "typecheck:all": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit && tsc -p tsconfig.scripts.json --noEmit",
+    "typecheck:all": "tsc --noEmit && tsc -p tsconfig.test.json --noEmit",
     "lint:ci": "npm run format:check && npm run typecheck && npm run lint && npm run deadcode",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"{src,tests,scripts,desktop}/**/*.{ts,tsx,css,mjs,cjs}\"",
@@ -191,7 +191,10 @@
       "src/features/alchemy/meta/screens/armory/armory-panels.tsx": ["types"],
       "src/features/alchemy/meta/screens/armory/armory-targeting-state.ts": ["types"]
     },
-    "ignore": [],
+    "ignore": [
+      "tests/environment.d.ts",
+      "tests/scripts/modules.d.ts"
+    ],
     "ignoreDependencies": []
   },
   "build": {

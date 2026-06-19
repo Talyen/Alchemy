@@ -10,6 +10,14 @@ import { CARDS_PER_TURN } from "@/lib/game-constants";
 import { defaultGearEffects } from "@/lib/gear";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
+import {
+  defaultPlayerStatusValues,
+  defaultEnemyStatusValues,
+  defaultEnemyMitigation,
+  defaultTrinketManifest,
+  defaultCcState,
+  defaultCombatFlags,
+} from "../../fixtures/default-battle-state";
 
 function makeCard(id: string) {
   return { id, title: id, descriptionLines: [""], art: "", cost: 1, effects: [] };
@@ -35,7 +43,7 @@ describe("advanceToPlayerTurn", () => {
   it("halves player block via decayHalvedStatus", () => {
     const state = createTestBattleState({
       turnPhase: "enemy",
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 9 },
+      playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, block: 9 }),
       deck: [makeCard("d1")],
       rng: () => 0,
     });
@@ -59,7 +67,7 @@ describe("advanceToPlayerTurn", () => {
   it("CC skip: no draw when stun skip active", () => {
     const state = createTestBattleState({
       turnPhase: "enemy",
-      playerCC: { stunSkipTurns: 1 },
+      playerCC: defaultCcState({ stunSkipTurns: 1 }),
       deck: [makeCard("d1"), makeCard("d2")],
       hand: [],
     });
@@ -76,8 +84,8 @@ describe("advanceToPlayerTurn", () => {
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: 1,
       deathsDoorGraceTurnsRemaining: 1,
-      playerCC: { stunSkipTurns: 2 },
-      playerCC: { freezeSkipTurns: 1 },
+      playerCC: defaultCcState({ stunSkipTurns: 2 }),
+      playerCC: defaultCcState({ freezeSkipTurns: 1 }),
       deck: [makeCard("d1"), makeCard("d2"), makeCard("d3"), makeCard("d4")],
       hand: [],
       turn: 1,
@@ -108,13 +116,13 @@ describe("advanceToPlayerTurn", () => {
 
 describe("isFreezeActiveForAspect", () => {
   it("returns false when enemy has no freeze skip", () => {
-    const state = createTestBattleState({ enemyCC: { freezeSkipTurns: 0 } });
+    const state = createTestBattleState({ enemyCC: defaultCcState({ freezeSkipTurns: 0 }) });
     expect(isFreezeActiveForAspect(state, "regen")).toBe(false);
   });
 
   it("respects freezeBlocksRegen for regen aspect", () => {
     const state = createTestBattleState({
-      enemyCC: { freezeSkipTurns: 1 },
+      enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       talentEffects: { ...defaultTalentEffects, freezeBlocksRegen: true },
     });
     expect(isFreezeActiveForAspect(state, "regen")).toBe(true);
@@ -123,7 +131,7 @@ describe("isFreezeActiveForAspect", () => {
 
   it("respects freezePreventsEnemyScaling for scaling aspect", () => {
     const state = createTestBattleState({
-      enemyCC: { freezeSkipTurns: 1 },
+      enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       talentEffects: { ...defaultTalentEffects, freezePreventsEnemyScaling: true },
     });
     expect(isFreezeActiveForAspect(state, "scaling")).toBe(true);
