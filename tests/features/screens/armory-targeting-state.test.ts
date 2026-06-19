@@ -42,19 +42,6 @@ describe("armoryTargetingReducer", () => {
     });
   });
 
-  describe("DESELECT_SALVAGE_MODE", () => {
-    it("is a no-op when salvage mode is already off", () => {
-      const next = armoryTargetingReducer(initialArmoryTargetingState, { type: "DESELECT_SALVAGE_MODE" });
-      expect(next).toBe(initialArmoryTargetingState);
-    });
-
-    it("disables salvage mode when it is on", () => {
-      const on = { ...initialArmoryTargetingState, salvageMode: true };
-      const next = armoryTargetingReducer(on, { type: "DESELECT_SALVAGE_MODE" });
-      expect(next.salvageMode).toBe(false);
-    });
-  });
-
   describe("salvage target lifecycle", () => {
     it("START_SALVAGE_TARGET records the target", () => {
       const next = armoryTargetingReducer(initialArmoryTargetingState, { type: "START_SALVAGE_TARGET", target: helm });
@@ -83,13 +70,6 @@ describe("armoryTargetingReducer", () => {
   });
 
   describe("currency targeting", () => {
-    it("SELECT_CURRENCY sets the active currency and disables salvage mode", () => {
-      const on = { ...initialArmoryTargetingState, salvageMode: true };
-      const next = armoryTargetingReducer(on, { type: "SELECT_CURRENCY", currencyId: discordant });
-      expect(next.activeCurrencyId).toBe(discordant);
-      expect(next.salvageMode).toBe(false);
-    });
-
     it("TOGGLE_CURRENCY switches between two currencies", () => {
       const on = { ...initialArmoryTargetingState, activeCurrencyId: discordant };
       const next = armoryTargetingReducer(on, { type: "TOGGLE_CURRENCY", currencyId: voidstone });

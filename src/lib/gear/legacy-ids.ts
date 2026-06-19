@@ -1,0 +1,52 @@
+import type { GearAffixId } from "./affix-ids";
+
+export const LEGACY_GEAR_AFFIX_IDS = [
+  "flat-physical-1",
+  "flat-stun-1",
+  "flat-holy-1",
+  "flat-burn-1",
+  "flat-poison-1",
+  "flat-bleed-1",
+  "flat-freeze-1",
+  "flat-nature-1",
+] as const;
+
+export const LEGACY_AFFIX_MAP: Record<(typeof LEGACY_GEAR_AFFIX_IDS)[number], GearAffixId> = {
+  "flat-physical-1": "flat-physical",
+  "flat-stun-1": "flat-stun",
+  "flat-holy-1": "flat-holy",
+  "flat-burn-1": "flat-burn",
+  "flat-poison-1": "flat-poison",
+  "flat-bleed-1": "flat-bleed",
+  "flat-freeze-1": "flat-freeze",
+  "flat-nature-1": "flat-nature",
+};
+
+export const LEGACY_GEAR_DEFINITION_IDS: Record<string, string> = {
+  "leather-hood-basic": "leather-helm-basic",
+  "great-axe-basic": "double-axe-basic",
+  "great-axe-astral": "double-axe-astral",
+  "great-mace-basic": "maul-basic",
+  "great-mace-astral": "maul-astral",
+  "great-sword-basic": "greatsword-basic",
+  "great-sword-astral": "greatsword-astral",
+  "hand-axe-basic": "hatchet-basic",
+  "hand-axe-astral": "hatchet-astral",
+  "long-sword-basic": "longsword-basic",
+  "long-sword-astral": "longsword-astral",
+  "sword-basic": "longsword-basic",
+  "sword-astral": "longsword-astral",
+  "short-sword-basic": "shortsword-basic",
+  "short-sword-astral": "shortsword-astral",
+  "gladius-basic": "shortsword-basic",
+  "shortsword-basic": "shortsword-basic",
+  "shortsword-astral": "shortsword-astral",
+  "long-bow-basic": "longbow-basic",
+  "long-bow-astral": "longbow-astral",
+  "short-bow-basic": "shortbow-basic",
+  "short-bow-astral": "shortbow-astral",
+  "leather-shield-basic": "leather-buckler-basic",
+  "leather-shield-astral": "leather-buckler-astral",
+  "plate-shield-basic": "kite-shield-basic",
+  "plate-shield-astral": "kite-shield-astral",
+};

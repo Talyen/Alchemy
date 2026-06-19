@@ -16,6 +16,7 @@ import {
   type GearAffixRoll,
   type GearRarity,
 } from "./types";
+import { pickAtRandom } from "@/lib/utils";
 
 export type CraftingCurrencyId =
   | "discordant-dice"
@@ -133,11 +134,6 @@ export function getCraftingCurrencyDefinition(id: CraftingCurrencyId): CraftingC
   return CRAFTING_CURRENCY_LIST.find((currency) => currency.id === id) ?? CRAFTING_CURRENCY_LIST[0];
 }
 
-function pickAtRandom<T>(items: readonly T[], rng: () => number): T | undefined {
-  if (items.length === 0) return undefined;
-  return items[Math.floor(rng() * items.length)];
-}
-
 function rollDistinctAffixes(item: GearInstance, count: number, rng: () => number): GearAffixRoll[] {
   const def = gearDefinitions[item.definitionId];
   if (!def) return [];
@@ -214,7 +210,7 @@ export function canApplyCraftingCurrency(currencyId: CraftingCurrencyId, item: G
 export function applyCraftingCurrency(
   currencyId: CraftingCurrencyId,
   item: GearInstance,
-  rng: () => number = Math.random,
+  rng: () => number,
 ): GearInstance {
   if (!canApplyCraftingCurrency(currencyId, item)) return item;
 
@@ -258,10 +254,7 @@ export function applyCraftingCurrency(
   }
 }
 
-export function rollSalvageYield(
-  rarity: GearRarity,
-  rng: () => number = Math.random,
-): Record<CraftingCurrencyId, number> {
+export function rollSalvageYield(rarity: GearRarity, rng: () => number): Record<CraftingCurrencyId, number> {
   const yieldRecord = { ...EMPTY_CRAFTING_CURRENCIES };
 
   if (rarity === "basic") {

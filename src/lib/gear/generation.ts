@@ -1,5 +1,5 @@
 import { GEAR_AFFIX_COUNT, GEAR_AFFIX_COUNT_MIN_WEIGHT, GEAR_REWARD_RARITY_CHANCE } from "@/lib/game-constants";
-import { createInstanceId } from "@/lib/utils";
+import { createInstanceId, pickAtRandom } from "@/lib/utils";
 import { affixMatchesAffinity, rollAffixValue } from "./affixes";
 import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
 import { gearBaseItemList } from "./base-items";
@@ -41,17 +41,17 @@ function gearBasicRarityChance(astralChanceBonus = 0): number {
   return Math.max(0, Math.min(1, GEAR_REWARD_RARITY_CHANCE - astralChanceBonus));
 }
 
-export function rollGearRewardRarity(rng: () => number = Math.random, astralChanceBonus = 0): GearRarity {
+export function rollGearRewardRarity(rng: () => number, astralChanceBonus = 0): GearRarity {
   return rng() < gearBasicRarityChance(astralChanceBonus) ? "basic" : "astral";
 }
 
-export function rollAffixCount(rarity: GearRarity, rng: () => number = Math.random): number {
+export function rollAffixCount(rarity: GearRarity, rng: () => number): number {
   const range = GEAR_AFFIX_COUNT[rarity];
   if (range.max <= range.min) return range.min;
   return rng() < GEAR_AFFIX_COUNT_MIN_WEIGHT ? range.min : range.max;
 }
 
-function rollAffixes(definition: GearDefinition, count: number, rng: () => number = Math.random): GearAffixRoll[] {
+function rollAffixes(definition: GearDefinition, count: number, rng: () => number): GearAffixRoll[] {
   const pool = buildEligibleAffixPool(definition);
   const effectiveCount = Math.min(count, pool.length);
   const selected: GearAffixRoll[] = [];
@@ -75,12 +75,7 @@ export function createGearInstance(definition: GearDefinition, affixes: GearAffi
   };
 }
 
-function pickAtRandom<T>(items: readonly T[], rng: () => number): T | undefined {
-  if (items.length === 0) return undefined;
-  return items[Math.floor(rng() * items.length)];
-}
-
-export function generateDevRandomGearInstance(rng: () => number = Math.random): GearInstance {
+export function generateDevRandomGearInstance(rng: () => number): GearInstance {
   const baseItem = pickAtRandom(gearBaseItemList, rng);
   if (!baseItem) throw new Error("gearBaseItemList is empty");
   const rarity = pickAtRandom(baseItem.availableRarities, rng);
@@ -92,7 +87,7 @@ export function generateDevRandomGearInstance(rng: () => number = Math.random): 
   return createGearInstance(definition, affixes);
 }
 
-function generateGearInstance(rng: () => number = Math.random, astralChanceBonus = 0): GearInstance | null {
+function generateGearInstance(rng: () => number, astralChanceBonus = 0): GearInstance | null {
   const rarity = rollGearRewardRarity(rng, astralChanceBonus);
   const pool = getGearDefinitionsByRarity(rarity);
   if (pool.length === 0) return null;
@@ -115,11 +110,7 @@ function tryAddDistinctRoll(choices: GearInstance[], seenFullRolls: Set<string>,
   return true;
 }
 
-export function generateGearRewardChoices(
-  count: number,
-  rng: () => number = Math.random,
-  astralChanceBonus = 0,
-): GearInstance[] {
+export function generateGearRewardChoices(count: number, rng: () => number, astralChanceBonus = 0): GearInstance[] {
   const choices: GearInstance[] = [];
   const seenFullRolls = new Set<string>();
 

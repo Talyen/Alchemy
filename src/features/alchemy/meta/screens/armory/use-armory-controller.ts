@@ -169,7 +169,7 @@ export function useArmoryController(): ArmoryController {
   const onSpawnDevGear = useCallback<NonNullable<ArmoryController["onSpawnDevGear"]>>(
     (characterId) => {
       if (!isAlchemyDevBuild()) return;
-      gear.addInstance(generateDevRandomGearInstance(), characterId);
+      gear.addInstance(generateDevRandomGearInstance(Math.random), characterId);
       flush();
     },
     [flush, gear],

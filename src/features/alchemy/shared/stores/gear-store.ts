@@ -437,17 +437,14 @@ export const useGearStore = create<GearStore>((set, get) => ({
       const characterPositions = { ...(nextPositionsByCharacter[characterId] ?? {}) };
       const nextReturn = { ...state.equippedReturnPositions };
 
-      // Find current owner of the item in inventories
       const currentOwner = findGearInventoryOwner(state.inventories, instance.instanceId);
       let nextInventories = state.inventories;
       if (currentOwner && currentOwner !== characterId) {
-        // Remove from currentOwner's inventory, add to characterId's inventory
         nextInventories = {
           ...state.inventories,
           [currentOwner]: state.inventories[currentOwner].filter((item) => item.instanceId !== instance.instanceId),
           [characterId]: [...(state.inventories[characterId] ?? []), instance],
         };
-        // Move board position from currentOwner to characterId
         const currentOwnerPositions = { ...(nextPositionsByCharacter[currentOwner] ?? {}) };
         if (currentOwnerPositions[instance.instanceId]) {
           characterPositions[instance.instanceId] = currentOwnerPositions[instance.instanceId];
@@ -456,7 +453,6 @@ export const useGearStore = create<GearStore>((set, get) => ({
         }
       }
 
-      // Restore positions for any indirectly unequipped items (e.g., off-hand cleared by resolveHandConflicts)
       const originalLoadout = state.loadouts[characterId];
       const nextLoadout = nextLoadouts[characterId];
       if (originalLoadout && nextLoadout) {
@@ -589,7 +585,7 @@ export const useGearStore = create<GearStore>((set, get) => ({
     if (!owner) return null;
 
     const flatInventory = flattenGearInventories(state.inventories);
-    const result = salvageGear(flatInventory, state.loadouts, instanceId, options?.rng);
+    const result = salvageGear(flatInventory, state.loadouts, instanceId, options?.rng ?? Math.random);
     if (!result) return null;
 
     const nextPositionsByCharacter = { ...state.boardPositionsByCharacter };
@@ -641,7 +637,7 @@ export const useGearStore = create<GearStore>((set, get) => ({
     if ((state.craftingCurrencies[currencyId] ?? 0) < 1) return false;
     if (!canApplyCraftingCurrency(currencyId, item)) return false;
 
-    const updatedItem = applyCraftingCurrency(currencyId, item, options?.rng);
+    const updatedItem = applyCraftingCurrency(currencyId, item, options?.rng ?? Math.random);
     const nextInventories = {
       ...state.inventories,
       [owner]: state.inventories[owner].map((i) => (i.instanceId === instanceId ? updatedItem : i)),

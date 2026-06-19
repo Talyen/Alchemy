@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
+import { memo, type RefObject } from "react";
 import { Dices, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { CraftingCurrencyTile } from "./parts/currency-tile";
 import { InventoryGearTile } from "./parts/inventory-tile";
 import { packedItemStyle } from "./parts/grid-styles";
+import { useInventoryScrollDrag } from "./use-inventory-scroll-drag";
 import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "./use-armory-gear-drag";
 import type { CurrencyPointerEnd, CurrencyPointerMove, CurrencyPointerStart } from "./use-armory-currency-drag";
 
@@ -73,63 +74,19 @@ export const InventoryPanel = memo(function InventoryPanel({
   onAbortGearDrag: (instanceId: string) => void;
   onTransferRequest?: (instance: GearInstance, anchor: { x: number; y: number }) => void | undefined;
 }) {
-  const dragRef = useRef<{ pointerId: number; startY: number; startScrollTop: number; moved: boolean } | null>(null);
-  const suppressClickRef = useRef(false);
-  const [dragging, setDragging] = useState(false);
-  const [suppressingInteraction, setSuppressingInteraction] = useState(false);
-  const [dragSequence, setDragSequence] = useState(0);
   const renderedRows = Math.max(INVENTORY_VISIBLE_ROWS, occupiedRows);
   const canScroll = renderedRows > INVENTORY_VISIBLE_ROWS;
   const inventory = packedItems.map(({ item }) => item);
-
-  useEffect(() => {
-    if (!salvageMode) return;
-    suppressClickRef.current = false;
-    setSuppressingInteraction(false);
-  }, [salvageMode]);
-
-  function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!canScroll || salvageMode || activeCurrencyId || event.pointerType === "touch" || event.button !== 0) return;
-    dragRef.current = {
-      pointerId: event.pointerId,
-      startY: event.clientY,
-      startScrollTop: event.currentTarget.scrollTop,
-      moved: false,
-    };
-    setDragging(true);
-  }
-
-  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    const deltaY = event.clientY - drag.startY;
-    if (Math.abs(deltaY) > 4 && !drag.moved) {
-      if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.setPointerCapture(event.pointerId);
-      }
-      drag.moved = true;
-      suppressClickRef.current = true;
-      setSuppressingInteraction(true);
-      setDragSequence((current) => current + 1);
-    }
-    event.currentTarget.scrollTop = drag.startScrollTop - deltaY;
-  }
-
-  function finishDrag(event: ReactPointerEvent<HTMLDivElement>) {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-    dragRef.current = null;
-    setDragging(false);
-    if (drag.moved) {
-      window.setTimeout(() => {
-        suppressClickRef.current = false;
-        setSuppressingInteraction(false);
-      }, 150);
-    }
-  }
+  const {
+    suppressClickRef,
+    dragging,
+    suppressingInteraction,
+    dragSequence,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    handlePointerCancel,
+  } = useInventoryScrollDrag({ canScroll, salvageMode, activeCurrencyId });
 
   return (
     <section
@@ -187,8 +144,8 @@ export const InventoryPanel = memo(function InventoryPanel({
         )}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
-        onPointerUp={finishDrag}
-        onPointerCancel={finishDrag}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
       >
         <div
           className="relative"

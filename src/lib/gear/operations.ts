@@ -13,6 +13,7 @@ import {
   type GearLoadouts,
   type GearSlot,
 } from "./types";
+import { LEGACY_GEAR_DEFINITION_IDS } from "./legacy-ids";
 
 export function isGearCompatibleWithSlot(definition: GearDefinition, slot: GearSlot): boolean {
   return definition.compatibleSlots.includes(slot);
@@ -72,18 +73,6 @@ export function isGearCompatibleWithLoadoutSlot(
   return true;
 }
 
-function resolveEquippedDefinition(
-  inventory: GearInstance[],
-  loadout: GearLoadouts[GearCharacterId],
-  slot: GearSlot,
-): GearDefinition | undefined {
-  const instanceId = loadout[slot];
-  if (!instanceId) return undefined;
-  const instance = inventory.find((item) => item.instanceId === instanceId);
-  if (!instance) return undefined;
-  return gearDefinitions[instance.definitionId];
-}
-
 function resolveHandConflicts(
   characterLoadout: GearLoadouts[GearCharacterId],
   slot: GearSlot,
@@ -98,7 +87,7 @@ function resolveHandConflicts(
   }
 
   if (slot === "off-hand") {
-    const mainHandDefinition = resolveEquippedDefinition(inventory, next, "main-hand");
+    const mainHandDefinition = resolveEquippedDefinitionAt(inventory, next, "main-hand");
     if (mainHandDefinition && isTwoHanded(mainHandDefinition)) {
       next["main-hand"] = null;
     }
@@ -106,7 +95,7 @@ function resolveHandConflicts(
   }
 
   if (slot === "main-hand" && !isTwoHanded(definition)) {
-    const offHandDefinition = resolveEquippedDefinition(inventory, next, "off-hand");
+    const offHandDefinition = resolveEquippedDefinitionAt(inventory, next, "off-hand");
     if (offHandDefinition?.requiresTwoHands) {
       next["off-hand"] = null;
     } else if (offHandDefinition && isQuiver(offHandDefinition) && !isRangedWeapon(definition)) {
@@ -172,12 +161,7 @@ function removeGearFromLoadouts(loadouts: GearLoadouts, instanceId: string): Gea
   return next;
 }
 
-export function salvageGear(
-  inventory: GearInstance[],
-  loadouts: GearLoadouts,
-  instanceId: string,
-  rng: () => number = Math.random,
-) {
+export function salvageGear(inventory: GearInstance[], loadouts: GearLoadouts, instanceId: string, rng: () => number) {
   if (!canSalvageGear(inventory, instanceId)) return null;
   const instance = inventory.find((item) => item.instanceId === instanceId);
   if (!instance) return null;
@@ -187,35 +171,6 @@ export function salvageGear(
     yieldedCurrencies: rollSalvageYield(gearInstanceRarity(instance), rng),
   };
 }
-
-const LEGACY_GEAR_DEFINITION_IDS: Record<string, string> = {
-  "leather-hood-basic": "leather-helm-basic",
-  "great-axe-basic": "double-axe-basic",
-  "great-axe-astral": "double-axe-astral",
-  "great-mace-basic": "maul-basic",
-  "great-mace-astral": "maul-astral",
-  "great-sword-basic": "greatsword-basic",
-  "great-sword-astral": "greatsword-astral",
-  "hand-axe-basic": "hatchet-basic",
-  "hand-axe-astral": "hatchet-astral",
-  "long-sword-basic": "longsword-basic",
-  "long-sword-astral": "longsword-astral",
-  "sword-basic": "longsword-basic",
-  "sword-astral": "longsword-astral",
-  "short-sword-basic": "shortsword-basic",
-  "short-sword-astral": "shortsword-astral",
-  "gladius-basic": "shortsword-basic",
-  "shortsword-basic": "shortsword-basic",
-  "shortsword-astral": "shortsword-astral",
-  "long-bow-basic": "longbow-basic",
-  "long-bow-astral": "longbow-astral",
-  "short-bow-basic": "shortbow-basic",
-  "short-bow-astral": "shortbow-astral",
-  "leather-shield-basic": "leather-buckler-basic",
-  "leather-shield-astral": "leather-buckler-astral",
-  "plate-shield-basic": "kite-shield-basic",
-  "plate-shield-astral": "kite-shield-astral",
-};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

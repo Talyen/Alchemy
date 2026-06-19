@@ -27,11 +27,9 @@ export const initialArmoryTargetingState: ArmoryTargetingState = {
 
 export type ArmoryTargetingAction =
   | { type: "TOGGLE_SALVAGE_MODE" }
-  | { type: "DESELECT_SALVAGE_MODE" }
   | { type: "START_SALVAGE_TARGET"; target: GearInstance }
   | { type: "CLEAR_SALVAGE_TARGET" }
   | { type: "SALVAGE_TARGET_GONE" }
-  | { type: "SELECT_CURRENCY"; currencyId: CraftingCurrencyId }
   | { type: "DESELECT_CURRENCY" }
   | { type: "TOGGLE_CURRENCY"; currencyId: CraftingCurrencyId }
   | { type: "CURRENCY_DEPLETED" }
@@ -49,9 +47,6 @@ export function armoryTargetingReducer(
   switch (action.type) {
     case "TOGGLE_SALVAGE_MODE":
       return { ...state, salvageMode: !state.salvageMode, activeCurrencyId: null };
-    case "DESELECT_SALVAGE_MODE":
-      if (!state.salvageMode) return state;
-      return { ...state, salvageMode: false };
     case "START_SALVAGE_TARGET":
       return { ...state, salvageTarget: action.target };
     case "CLEAR_SALVAGE_TARGET":
@@ -60,8 +55,6 @@ export function armoryTargetingReducer(
     case "SALVAGE_TARGET_GONE":
       if (state.salvageTarget === null) return state;
       return { ...state, salvageTarget: null };
-    case "SELECT_CURRENCY":
-      return { ...state, activeCurrencyId: action.currencyId, salvageMode: false };
     case "DESELECT_CURRENCY":
       if (state.activeCurrencyId === null) return state;
       return { ...state, activeCurrencyId: null };

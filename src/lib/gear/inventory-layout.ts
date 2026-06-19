@@ -6,6 +6,7 @@ import {
   type CraftingCurrencyBoardPositionsByCharacter,
   type CraftingCurrencyId,
 } from "./crafting";
+import { GEAR_SWAP_MAX_SEARCH_ROWS, INVENTORY_COLS, INVENTORY_VISIBLE_ROWS } from "./constants";
 import {
   GEAR_CHARACTER_IDS,
   createEmptyGearBoardPositionsByCharacter,
@@ -18,9 +19,6 @@ import {
 } from "./types";
 
 export type GearFootprint = { w: number; h: number };
-
-export const INVENTORY_COLS = 7;
-export const INVENTORY_VISIBLE_ROWS = 8;
 
 export const GEAR_FOOTPRINT: Record<GearSlot, GearFootprint> = {
   helm: { w: 2, h: 2 },
@@ -57,6 +55,13 @@ export type InventoryGridMetrics = {
   rows: number;
 };
 
+export type BoardItem<TKind extends string = string> = {
+  id: string;
+  kind: TKind;
+  footprint: GearFootprint;
+  position: InventoryPlacement;
+};
+
 function ensureRows(occupancy: boolean[][], rows: number, cols: number): void {
   while (occupancy.length < rows) {
     occupancy.push(Array.from({ length: cols }, () => false));
@@ -64,11 +69,11 @@ function ensureRows(occupancy: boolean[][], rows: number, cols: number): void {
 }
 
 function canPlace(occupancy: boolean[][], col: number, row: number, footprint: GearFootprint, cols: number): boolean {
-  if (col + footprint.w > cols) return false;
-  ensureRows(occupancy, row + footprint.h, cols);
-  for (let y = row; y < row + footprint.h; y++) {
-    for (let x = col; x < col + footprint.w; x++) {
-      if (occupancy[y]![x]) return false;
+  if (col < 1 || row < 1 || col + footprint.w - 1 > cols) return false;
+  ensureRows(occupancy, row + footprint.h - 1, cols);
+  for (let y = row - 1; y < row - 1 + footprint.h; y++) {
+    for (let x = col - 1; x < col - 1 + footprint.w; x++) {
+      if (occupancy[y]?.[x]) return false;
     }
   }
   return true;
@@ -152,20 +157,27 @@ export function findFirstInventoryPlacement<T extends { instanceId: string }>(
 }
 
 function markPlaced(occupancy: boolean[][], col: number, row: number, footprint: GearFootprint, cols: number): void {
-  ensureRows(occupancy, row + footprint.h, cols);
-  for (let y = row; y < row + footprint.h; y++) {
-    for (let x = col; x < col + footprint.w; x++) {
-      occupancy[y]![x] = true;
+  ensureRows(occupancy, row + footprint.h - 1, cols);
+  for (let y = row - 1; y < row - 1 + footprint.h; y++) {
+    for (let x = col - 1; x < col - 1 + footprint.w; x++) {
+      if (occupancy[y]) occupancy[y]![x] = true;
     }
   }
 }
 
 function findPlacement(occupancy: boolean[][], footprint: GearFootprint, cols: number): { col: number; row: number } {
-  for (let row = 0; ; row++) {
-    for (let col = 0; col < cols; col++) {
-      if (canPlace(occupancy, col, row, footprint, cols)) return { col: col + 1, row: row + 1 };
+  for (let row = 1; ; row++) {
+    for (let col = 1; col <= cols - footprint.w + 1; col++) {
+      if (canPlace(occupancy, col, row, footprint, cols)) return { col, row };
     }
   }
+}
+
+function overlaps(
+  a: { col: number; row: number; w: number; h: number },
+  b: { col: number; row: number; w: number; h: number },
+): boolean {
+  return !(a.col + a.w <= b.col || b.col + b.w <= a.col || a.row + a.h <= b.row || b.row + b.h <= a.row);
 }
 
 export function packInventory<T>(
@@ -185,7 +197,7 @@ export function packInventory<T>(
 
     const position = findPlacement(occupancy, footprint, cols);
     packedItems.push({ item, ...position, ...footprint });
-    markPlaced(occupancy, position.col - 1, position.row - 1, footprint, cols);
+    markPlaced(occupancy, position.col, position.row, footprint, cols);
     occupiedRows = Math.max(occupiedRows, position.row - 1 + footprint.h);
   }
 
@@ -240,7 +252,7 @@ export function packInventoryWithPositions<T extends { definitionId: string; ins
 
   for (const cell of blockedCells) {
     if (cell.col < 1 || cell.row < 1 || cell.col + cell.w - 1 > cols) continue;
-    markPlaced(occupancy, cell.col - 1, cell.row - 1, { w: cell.w, h: cell.h }, cols);
+    markPlaced(occupancy, cell.col, cell.row, { w: cell.w, h: cell.h }, cols);
     occupiedRows = Math.max(occupiedRows, cell.row - 1 + cell.h);
   }
 
@@ -251,11 +263,9 @@ export function packInventoryWithPositions<T extends { definitionId: string; ins
     const footprint = GEAR_FOOTPRINT[definition.compatibleSlots[0]!];
     const saved = savedPositions[item.instanceId];
     if (!saved || saved.col < 1 || saved.row < 1 || saved.col + footprint.w - 1 > cols) continue;
-    const colIdx = saved.col - 1;
-    const rowIdx = saved.row - 1;
-    if (!canPlace(occupancy, colIdx, rowIdx, footprint, cols)) continue;
-    markPlaced(occupancy, colIdx, rowIdx, footprint, cols);
-    occupiedRows = Math.max(occupiedRows, rowIdx + footprint.h);
+    if (!canPlace(occupancy, saved.col, saved.row, footprint, cols)) continue;
+    markPlaced(occupancy, saved.col, saved.row, footprint, cols);
+    occupiedRows = Math.max(occupiedRows, saved.row - 1 + footprint.h);
   }
 
   const remainingItems: T[] = [];
@@ -269,10 +279,8 @@ export function packInventoryWithPositions<T extends { definitionId: string; ins
     const footprint = GEAR_FOOTPRINT[definition.compatibleSlots[0]!];
     const saved = savedPositions[item.instanceId];
     if (saved && saved.col >= 1 && saved.row >= 1 && saved.col + footprint.w - 1 <= cols) {
-      const colIdx = saved.col - 1;
-      const rowIdx = saved.row - 1;
-      if (canPlace(occupancy, colIdx, rowIdx, footprint, cols)) {
-        markPlaced(occupancy, colIdx, rowIdx, footprint, cols);
+      if (canPlace(occupancy, saved.col, saved.row, footprint, cols)) {
+        markPlaced(occupancy, saved.col, saved.row, footprint, cols);
         packedItems.push({
           item,
           col: saved.col,
@@ -280,7 +288,7 @@ export function packInventoryWithPositions<T extends { definitionId: string; ins
           w: footprint.w,
           h: footprint.h,
         });
-        occupiedRows = Math.max(occupiedRows, rowIdx + footprint.h);
+        occupiedRows = Math.max(occupiedRows, saved.row - 1 + footprint.h);
         continue;
       }
     }
@@ -297,7 +305,7 @@ export function packInventoryWithPositions<T extends { definitionId: string; ins
 
     const position = findPlacement(occupancy, footprint, cols);
     packedItems.push({ item, ...position, ...footprint });
-    markPlaced(occupancy, position.col - 1, position.row - 1, footprint, cols);
+    markPlaced(occupancy, position.col, position.row, footprint, cols);
     occupiedRows = Math.max(occupiedRows, position.row - 1 + footprint.h);
   }
 
@@ -353,7 +361,7 @@ export function packCurrencyWithPositions(
   let occupiedRows = 0;
 
   for (const { col, row, w, h } of gearObstacles) {
-    markPlaced(occupancy, col - 1, row - 1, { w, h }, cols);
+    markPlaced(occupancy, col, row, { w, h }, cols);
     occupiedRows = Math.max(occupiedRows, row - 1 + h);
   }
 
@@ -362,12 +370,10 @@ export function packCurrencyWithPositions(
   for (const currencyId of currencyIds) {
     const saved = savedPositions[currencyId];
     if (saved && saved.col >= 1 && saved.row >= 1 && saved.col <= cols) {
-      const colIdx = saved.col - 1;
-      const rowIdx = saved.row - 1;
-      if (canPlace(occupancy, colIdx, rowIdx, CURRENCY_FOOTPRINT, cols)) {
-        markPlaced(occupancy, colIdx, rowIdx, CURRENCY_FOOTPRINT, cols);
+      if (canPlace(occupancy, saved.col, saved.row, CURRENCY_FOOTPRINT, cols)) {
+        markPlaced(occupancy, saved.col, saved.row, CURRENCY_FOOTPRINT, cols);
         packedItems.push({ currencyId, col: saved.col, row: saved.row, w: 1, h: 1 });
-        occupiedRows = Math.max(occupiedRows, rowIdx + 1);
+        occupiedRows = Math.max(occupiedRows, saved.row);
         continue;
       }
     }
@@ -377,8 +383,8 @@ export function packCurrencyWithPositions(
   for (const currencyId of remainingIds) {
     const position = findPlacement(occupancy, CURRENCY_FOOTPRINT, cols);
     packedItems.push({ currencyId, ...position, w: 1, h: 1 });
-    markPlaced(occupancy, position.col - 1, position.row - 1, CURRENCY_FOOTPRINT, cols);
-    occupiedRows = Math.max(occupiedRows, position.row - 1 + 1);
+    markPlaced(occupancy, position.col, position.row, CURRENCY_FOOTPRINT, cols);
+    occupiedRows = Math.max(occupiedRows, position.row);
   }
 
   return packedItems;
@@ -395,6 +401,16 @@ export function currencyObstaclesForBoard(
     h,
   }));
 }
+
+export {
+  GEAR_SWAP_MAX_SEARCH_ROWS,
+  INVENTORY_COLS,
+  INVENTORY_VISIBLE_ROWS,
+  canPlace,
+  markPlaced,
+  findPlacement,
+  overlaps,
+};
 
 export function sanitizeGearBoardPositions(
   boardPositions: GearBoardPositions,
@@ -437,4 +453,72 @@ export function sanitizeCurrencyBoardPositionsByCharacter(
     next[characterId] = sanitizeCurrencyBoardPositions(boardPositionsByCharacter[characterId] ?? {}, currencies);
   }
   return next;
+}
+
+export function resolveMoveWithSwap<TKind extends string>(
+  items: BoardItem<TKind>[],
+  movingId: string,
+  target: InventoryPlacement,
+  cols: number,
+  options: { maxSearchRows?: number } = {},
+): { positions: Map<string, InventoryPlacement>; unchanged: boolean } {
+  const { maxSearchRows = GEAR_SWAP_MAX_SEARCH_ROWS } = options;
+  const positions = new Map<string, InventoryPlacement>();
+  for (const item of items) positions.set(item.id, item.position);
+
+  const moving = items.find((item) => item.id === movingId);
+  if (!moving) return { positions, unchanged: true };
+  if (moving.position.col === target.col && moving.position.row === target.row) {
+    return { positions, unchanged: true };
+  }
+
+  const targetRect = { col: target.col, row: target.row, w: moving.footprint.w, h: moving.footprint.h };
+  const others = items.filter((item) => item.id !== movingId);
+  const displaced: BoardItem<TKind>[] = [];
+  const fixed: BoardItem<TKind>[] = [];
+  for (const item of others) {
+    const itemRect = { col: item.position.col, row: item.position.row, w: item.footprint.w, h: item.footprint.h };
+    if (overlaps(targetRect, itemRect)) displaced.push(item);
+    else fixed.push(item);
+  }
+  displaced.sort((a, b) => b.footprint.w * b.footprint.h - a.footprint.w * a.footprint.h);
+
+  const placed: BoardItem<TKind>[] = [{ ...moving, position: target }, ...fixed];
+
+  const isOccupied = (col: number, row: number, w: number, h: number): boolean => {
+    if (col < 1 || col + w - 1 > cols || row < 1) return true;
+    return placed.some((p) =>
+      overlaps({ col: p.position.col, row: p.position.row, w: p.footprint.w, h: p.footprint.h }, { col, row, w, h }),
+    );
+  };
+
+  for (const item of displaced) {
+    let bestCol = 1;
+    let bestRow = 1;
+    let bestDistanceSq = Number.POSITIVE_INFINITY;
+    const origCenterX = item.position.col + (item.footprint.w - 1) / 2;
+    const origCenterY = item.position.row + (item.footprint.h - 1) / 2;
+
+    for (let r = 1; r <= maxSearchRows; r++) {
+      for (let c = 1; c <= cols - item.footprint.w + 1; c++) {
+        if (isOccupied(c, r, item.footprint.w, item.footprint.h)) continue;
+        const candCenterX = c + (item.footprint.w - 1) / 2;
+        const candCenterY = r + (item.footprint.h - 1) / 2;
+        const dx = origCenterX - candCenterX;
+        const dy = origCenterY - candCenterY;
+        const distSq = dx * dx + dy * dy;
+        if (distSq < bestDistanceSq) {
+          bestDistanceSq = distSq;
+          bestCol = c;
+          bestRow = r;
+        }
+      }
+    }
+
+    const next: BoardItem<TKind> = { ...item, position: { col: bestCol, row: bestRow } };
+    placed.push(next);
+  }
+
+  for (const item of placed) positions.set(item.id, item.position);
+  return { positions, unchanged: false };
 }
