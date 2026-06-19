@@ -131,6 +131,7 @@ export const uiSounds = {
   collectionPage: "page-turn.ogg",
   musicBoxMystery: "music-box-mystery.ogg",
   packOpen: "paper-move.ogg",
+  salvage: "mine-2.ogg",
 } as const;
 
 export type UISound = keyof typeof uiSounds;

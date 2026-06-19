@@ -1,4 +1,4 @@
-import { useCallback, useState, type RefObject } from "react";
+import { useCallback, type RefObject } from "react";
 import { getCraftingCurrencyDefinition, type CraftingCurrencyId, type InventoryPlacement } from "@/lib/gear";
 import { useBoardDrag, type DragDestination, type DragRect } from "./use-board-drag";
 
@@ -41,8 +41,6 @@ export function useArmoryCurrencyDrag({
   inventoryBoardRef,
   onMoveCurrency,
 }: UseArmoryCurrencyDragOptions) {
-  const [draggedCurrencyId, setDraggedCurrencyId] = useState<CraftingCurrencyId | null>(null);
-
   const fsm = useBoardDrag<CraftingCurrencyId, CurrencyItem, CurrencyDragOrigin>({
     itemLookup: undefined,
     getItemId: (item) => item.id,
@@ -63,6 +61,11 @@ export function useArmoryCurrencyDrag({
     },
   });
 
+  // Derive draggedCurrencyId from the FSM's dragVisual — only true once the drag actually
+  // activates (after pointer moves past activation distance), preventing the source tile from
+  // disappearing on initial click.
+  const draggedCurrencyId: CraftingCurrencyId | null = fsm.dragVisual?.id ?? null;
+
   const beginCurrencyPointer = useCallback(
     (
       currencyId: CraftingCurrencyId,
@@ -78,7 +81,6 @@ export function useArmoryCurrencyDrag({
         width: rect.width,
         height: rect.height,
       };
-      setDraggedCurrencyId(currencyId);
       fsm.beginPointer({ id: currencyId, origin }, source, pointer, pointerId);
     },
     [editable, fsm],
@@ -94,7 +96,6 @@ export function useArmoryCurrencyDrag({
   const finishCurrencyPointer = useCallback(
     (pointer: { x: number; y: number }, pointerId: number, cancelled = false) => {
       fsm.finishPointer(pointer, pointerId, cancelled);
-      setDraggedCurrencyId(null);
     },
     [fsm],
   );

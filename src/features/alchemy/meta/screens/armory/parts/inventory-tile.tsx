@@ -15,6 +15,7 @@ import { TooltipPanel } from "../../../../shared/ui/tooltip-panel";
 import { GearTooltipContent, ARMORY_TOOLTIP_WIDTH } from "../gear-tooltip-content";
 import { useArmoryPortaledTooltipPlacement } from "../armory-tooltip-placement";
 import { packedItemStyle } from "./grid-styles";
+import { SALVAGE_TARGET_RING, VALID_TARGET_RING } from "../targeting-highlight";
 import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "../use-armory-gear-drag";
 
 export const InventoryGearTile = memo(function InventoryGearTile({
@@ -84,6 +85,19 @@ export const InventoryGearTile = memo(function InventoryGearTile({
     }
   }, [instance]);
 
+  const prevDragActiveRef = useRef(hasActiveDrag);
+  const [dragCooldown, setDragCooldown] = useState(false);
+
+  useEffect(() => {
+    const prev = prevDragActiveRef.current;
+    prevDragActiveRef.current = hasActiveDrag;
+    if (prev && !hasActiveDrag) {
+      setDragCooldown(true);
+      const timer = setTimeout(() => setDragCooldown(false), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [hasActiveDrag]);
+
   const openTooltip = useCallback(() => {
     setTooltipSequence(dragSequence);
   }, [dragSequence]);
@@ -93,19 +107,19 @@ export const InventoryGearTile = memo(function InventoryGearTile({
   }, []);
 
   useEffect(() => {
-    if (!hasActiveDrag && tileRef.current?.matches(":hover")) {
-      if (!salvageMode && !activeCurrencyId && !shouldSuppressClick()) {
+    if (!hasActiveDrag && !dragCooldown && tileRef.current?.matches(":hover")) {
+      if (!salvageMode && !shouldSuppressClick()) {
         openTooltip();
       }
     } else {
       closeTooltip();
     }
-  }, [activeCurrencyId, closeTooltip, hasActiveDrag, openTooltip, salvageMode, shouldSuppressClick]);
+  }, [closeTooltip, dragCooldown, hasActiveDrag, openTooltip, salvageMode, shouldSuppressClick]);
 
   const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(tileRef, showTooltip);
 
   const handleMouseEnter = () => {
-    if (!salvageMode && !activeCurrencyId && !shouldSuppressClick()) {
+    if (!salvageMode && !shouldSuppressClick()) {
       playUISound("buttonHover");
       openTooltip();
     }
@@ -116,7 +130,7 @@ export const InventoryGearTile = memo(function InventoryGearTile({
   };
 
   const handleFocus = () => {
-    if (!salvageMode && !activeCurrencyId && !shouldSuppressClick()) openTooltip();
+    if (!salvageMode && !shouldSuppressClick()) openTooltip();
   };
 
   const handleBlur = () => {
@@ -139,13 +153,9 @@ export const InventoryGearTile = memo(function InventoryGearTile({
       className={cn(
         "armory-salvage-tile absolute z-10 min-h-0 min-w-0 overflow-hidden rounded-xl",
         targetingMode ? "cursor-default" : "cursor-grab active:cursor-grabbing bg-background/60",
-        dragging || secondaryDragging ? "opacity-0" : "transition-[transform] duration-150",
-        isSalvageTarget && "ring-inset ring-1 ring-red-400/25 hover:ring-red-300/60",
-        salvageMode && !canSalvage && "ring-inset ring-1 ring-red-400/10",
-        activeCurrencyId &&
-          canCraft &&
-          "ring-inset ring-2 ring-emerald-400/40 bg-emerald-950/10 hover:ring-emerald-400/80 hover:bg-emerald-950/20",
-        activeCurrencyId && !canCraft && "ring-inset ring-2 ring-red-500/30 bg-red-950/15 opacity-60",
+        dragging || secondaryDragging ? "opacity-0" : "",
+        isSalvageTarget && SALVAGE_TARGET_RING,
+        activeCurrencyId && canCraft && VALID_TARGET_RING,
       )}
       style={packedItemStyle(placement)}
       role={editable && (isSalvageTarget || isCurrencyTarget) ? "button" : undefined}

@@ -76,7 +76,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
   useEffect(() => {
     if (!activeId) return;
     const previousCursor = document.body.style.cursor;
-    document.body.style.cursor = "grabbing";
+    document.body.style.cursor = "none";
     return () => {
       document.body.style.cursor = previousCursor;
     };

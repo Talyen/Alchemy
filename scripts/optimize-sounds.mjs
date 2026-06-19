@@ -79,6 +79,9 @@ const sounds = [
     source: "Attacks and Combat/Sword Attacks Hits and Blocks/Sword Impact Hit 2.ogg",
     target: "sword-impact-hit-2.ogg",
   },
+
+  // ── Salvage ──
+  { source: "Chopping and Mining/mine 2.ogg", target: "mine-2.ogg" },
 ];
 
 async function fileIsFresh(sourcePath, outputPath) {

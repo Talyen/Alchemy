@@ -31,6 +31,7 @@ import {
   CRAFTING_CURRENCY_IDS,
   INVENTORY_COLS,
   GEAR_CHARACTER_IDS,
+  GEAR_SLOTS,
   resolveMoveWithSwap,
   packMixedBoard,
 } from "@/lib/gear";
@@ -344,6 +345,22 @@ export const useGearStore = create<GearStore>((set, get) => ({
           characterPositions[instance.instanceId] = currentOwnerPositions[instance.instanceId];
           delete currentOwnerPositions[instance.instanceId];
           nextPositionsByCharacter[currentOwner] = currentOwnerPositions;
+        }
+      }
+
+      // Restore positions for any indirectly unequipped items (e.g., off-hand cleared by resolveHandConflicts)
+      const originalLoadout = state.loadouts[characterId];
+      const nextLoadout = nextLoadouts[characterId];
+      if (originalLoadout && nextLoadout) {
+        for (const gearSlot of GEAR_SLOTS) {
+          const origInstanceId = originalLoadout[gearSlot];
+          const nextInstanceId = nextLoadout[gearSlot];
+          if (origInstanceId && !nextInstanceId && origInstanceId !== instance.instanceId) {
+            if (nextReturn[origInstanceId]) {
+              characterPositions[origInstanceId] = nextReturn[origInstanceId];
+              delete nextReturn[origInstanceId];
+            }
+          }
         }
       }
 

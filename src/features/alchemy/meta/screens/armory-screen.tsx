@@ -83,7 +83,6 @@ export function ArmoryScreen({
     activeCurrencyIds,
     handleMoveCurrency,
   } = useArmoryCurrencyPositions(characterId, craftingCurrencies);
-  const equippedReturnPositions = useGearStore((state) => state.equippedReturnPositions);
 
   const currencyBlockers = useMemo(
     () =>
@@ -186,8 +185,7 @@ export function ArmoryScreen({
     inventoryById,
     packedInventory,
     inventoryBoardRef,
-    boardPositions: savedPositions,
-    equippedReturnPositions,
+    // boardPositions and equippedReturnPositions no longer passed (unequip uses findFirstInventoryPlacement)
     boardObstacles,
     onEquip: handleEquipWithSwap,
     onUnequip,
@@ -317,7 +315,6 @@ export function ArmoryScreen({
   function handleSelectCurrency(currencyId: CraftingCurrencyId) {
     if (!editable || (craftingCurrencies[currencyId] ?? 0) <= 0) return;
     dispatchTargeting({ type: "TOGGLE_CURRENCY", currencyId });
-    playUISound("toggleOn");
   }
 
   const startSalvageTarget = useCallback((target: GearInstance) => {
@@ -367,7 +364,7 @@ export function ArmoryScreen({
         className={cn(
           "alchemy-shell my-auto flex w-full max-w-[96rem] flex-1 flex-col rounded-shell-screen p-7 pb-1",
           salvageMode && "armory-salvage-cursor",
-          draggedGear && "cursor-grabbing [&_*]:!cursor-grabbing",
+          draggedGear && "cursor-none [&_*]:!cursor-none",
         )}
       >
         <div className="relative flex min-h-10 w-full items-center justify-center px-12">
@@ -469,6 +466,7 @@ export function ArmoryScreen({
                 return;
               }
               onSalvage(salvageTarget.instanceId);
+              playUISound("salvage");
               dispatchTargeting({ type: "CLEAR_SALVAGE_TARGET" });
             }}
           />

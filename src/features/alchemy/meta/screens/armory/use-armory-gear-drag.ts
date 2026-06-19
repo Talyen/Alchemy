@@ -2,16 +2,17 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
 import { playUISound } from "@/lib/audio";
 import type { CharacterId } from "@/lib/game-data";
 import {
+  canEquipInOffHand,
+  findFirstInventoryPlacement,
   footprintForInstance,
   gearDefinitions,
   INVENTORY_COLS,
   inventoryPlacementRect,
   isGearCompatibleWithLoadoutSlot,
+  isTwoHanded,
   type GearInstance,
   type GearLoadout,
   type GearSlot,
-  resolveInventoryReturnPlacement,
-  type GearBoardPositions,
   type InventoryPlacement,
   type PackedInventory,
   type PackedInventoryItem,
@@ -72,8 +73,6 @@ type UseArmoryGearDragOptions = {
   inventoryById: Map<string, GearInstance>;
   packedInventory: PackedInventory;
   inventoryBoardRef: RefObject<HTMLDivElement | null>;
-  boardPositions: GearBoardPositions;
-  equippedReturnPositions: GearBoardPositions;
   boardObstacles: PackedInventoryItem<{ instanceId: string }>[];
   onEquip: (
     characterId: CharacterId,
@@ -92,8 +91,6 @@ export function useArmoryGearDrag({
   inventoryById,
   packedInventory,
   inventoryBoardRef,
-  boardPositions,
-  equippedReturnPositions,
   boardObstacles,
   onEquip,
   onUnequip,
@@ -115,7 +112,7 @@ export function useArmoryGearDrag({
   useEffect(() => {
     if (!draggedGear) return;
     const previousCursor = document.body.style.cursor;
-    document.body.style.cursor = "grabbing";
+    document.body.style.cursor = "none";
     return () => {
       document.body.style.cursor = previousCursor;
     };
@@ -434,8 +431,24 @@ export function useArmoryGearDrag({
 
       if (origin.kind === "inventory") {
         const compatibleSlots = definition.compatibleSlots;
-        const slot = compatibleSlots.find((candidate) => !loadout[candidate]) ?? compatibleSlots[0];
-        if (!slot) return;
+        let slot = compatibleSlots.find((candidate) => !loadout[candidate]) ?? null;
+        if (!slot) {
+          // Auto-pick off-hand for one-handed items when main-hand is filled and off-hand is empty
+          if (
+            !isTwoHanded(definition) &&
+            !!loadout["main-hand"] &&
+            !loadout["off-hand"] &&
+            canEquipInOffHand(definition)
+          ) {
+            slot = "off-hand";
+          } else {
+            slot = compatibleSlots[0] ?? null;
+          }
+        }
+        if (!slot) {
+          playUISound("error");
+          return;
+        }
         const slotElement = document.querySelector<HTMLElement>(
           `[data-testid='armory-equipment-slot'][data-slot='${slot}']`,
         );
@@ -456,14 +469,7 @@ export function useArmoryGearDrag({
       const footprint = footprintForInstance(instance);
       if (!metrics || !footprint) return;
       const { cellSize, gap, boardRect, scrollTop } = metrics;
-      const preferred = boardPositions[instance.instanceId] ?? equippedReturnPositions[instance.instanceId];
-      const placement = resolveInventoryReturnPlacement(
-        boardObstacles,
-        instance.instanceId,
-        footprint,
-        preferred,
-        INVENTORY_COLS,
-      );
+      const placement = findFirstInventoryPlacement(boardObstacles, instance.instanceId, footprint, INVENTORY_COLS);
       const localRect = inventoryPlacementRect(placement, footprint, { cellSize, gap });
       const destination: DragDestination = {
         kind: "inventory",
@@ -491,8 +497,6 @@ export function useArmoryGearDrag({
       onUnequip,
       onMoveItem,
       maybeLaunchSwapAnimation,
-      boardPositions,
-      equippedReturnPositions,
     ],
   );
 

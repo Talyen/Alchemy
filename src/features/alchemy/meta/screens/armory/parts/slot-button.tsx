@@ -9,6 +9,7 @@ import { TooltipPanel } from "../../../../shared/ui/tooltip-panel";
 import { GearTooltipContent, ARMORY_TOOLTIP_WIDTH } from "../gear-tooltip-content";
 import { useArmoryPortaledTooltipPlacement } from "../armory-tooltip-placement";
 import { SLOT_LABELS } from "./grid-styles";
+import { SALVAGE_TARGET_RING, VALID_TARGET_RING, VALID_TARGET_SHADOW } from "../targeting-highlight";
 import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "../use-armory-gear-drag";
 
 function dismissWhenFocusLeaves(event: FocusEvent<HTMLDivElement>, dismiss: () => void) {
@@ -85,7 +86,7 @@ export const SlotButton = memo(function SlotButton({
   const canCraft = activeCurrencyId && instance ? canApplyCraftingCurrency(activeCurrencyId, instance) : false;
   const handleMouseEnter = () => {
     if (instance) playUISound("buttonHover");
-    if (!salvageMode && !activeCurrencyId) setShowTooltip(true);
+    if (!salvageMode) setShowTooltip(true);
   };
 
   const handleMouseLeave = () => {
@@ -98,13 +99,9 @@ export const SlotButton = memo(function SlotButton({
       className={cn(
         "relative h-full w-full overflow-hidden rounded-xl transition-[box-shadow] duration-150",
         salvageMode || activeCurrencyId ? "cursor-default" : "cursor-grab active:cursor-grabbing",
-        isCompatible && "shadow-[0_0_0_1px_rgba(134,239,172,0.38),0_0_10px_rgba(34,197,94,0.16)]",
-        salvageMode && instance && "ring-inset ring-1 ring-red-400/25 hover:ring-red-300/60",
-        activeCurrencyId &&
-          instance &&
-          canCraft &&
-          "ring-inset ring-2 ring-emerald-400/40 bg-emerald-950/10 hover:ring-emerald-400/80 hover:bg-emerald-950/20",
-        activeCurrencyId && instance && !canCraft && "ring-inset ring-2 ring-red-500/30 bg-red-950/15 opacity-60",
+        (isCompatible || (activeCurrencyId && instance && canCraft)) && VALID_TARGET_SHADOW,
+        salvageMode && instance && SALVAGE_TARGET_RING,
+        activeCurrencyId && instance && canCraft && VALID_TARGET_RING,
       )}
       aria-label={`${SLOT_LABELS[slot]} equipment slot`}
       data-salvageable={salvageMode && instance ? "true" : undefined}
@@ -164,14 +161,7 @@ export const SlotButton = memo(function SlotButton({
       data-testid="armory-equipment-slot"
       data-slot={slot}
     >
-      <div
-        className={cn(
-          "relative h-full w-full overflow-hidden rounded-xl",
-          instance !== undefined &&
-            (draggedGear?.instanceId === instance.instanceId || secondaryDragInstanceId === instance.instanceId) &&
-            "opacity-0",
-        )}
-      >
+      <div className="relative h-full w-full overflow-hidden rounded-xl">
         <img
           src={gearSlotBackgroundArt[slot]}
           alt=""
@@ -182,11 +172,16 @@ export const SlotButton = memo(function SlotButton({
           <img
             src={definition.art}
             alt=""
-            className="absolute -inset-px z-10 h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover"
+            className={cn(
+              "absolute -inset-px z-10 h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover",
+              instance !== undefined &&
+                (draggedGear?.instanceId === instance.instanceId || secondaryDragInstanceId === instance.instanceId) &&
+                "opacity-0",
+            )}
           />
         ) : null}
       </div>
-      {showTooltip && definition && !isDraggingActive && !salvageMode && !activeCurrencyId
+      {showTooltip && definition && !isDraggingActive && !salvageMode
         ? createPortal(
             <TooltipPanel
               ref={tooltipRef}

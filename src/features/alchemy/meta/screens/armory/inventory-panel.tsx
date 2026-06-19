@@ -182,8 +182,7 @@ export const InventoryPanel = memo(function InventoryPanel({
         data-scrollable={canScroll ? "true" : "false"}
         className={cn(
           "armory-inventory-board relative mt-4 overflow-x-hidden overscroll-contain touch-pan-y select-none",
-          canScroll && !salvageMode && !activeCurrencyId ? "overflow-y-auto" : "overflow-y-hidden",
-          canScroll && !salvageMode && !activeCurrencyId && "cursor-grab",
+          canScroll ? "overflow-y-auto" : "overflow-y-hidden",
           dragging && "cursor-grabbing",
         )}
         onPointerDown={handlePointerDown}
@@ -258,7 +257,6 @@ export const InventoryPanel = memo(function InventoryPanel({
                 count={craftingCurrencies[placement.currencyId] ?? 0}
                 placement={placement}
                 editable={editable}
-                active={activeCurrencyId === placement.currencyId}
                 dragging={draggedCurrencyId === placement.currencyId}
                 interactionSuppressed={dragging || suppressingInteraction || isDraggingActive}
                 targetingMode={salvageMode || !!activeCurrencyId}

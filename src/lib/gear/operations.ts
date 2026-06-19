@@ -30,6 +30,11 @@ export function isQuiver(definition: GearDefinition): boolean {
   return definition.quiver === true;
 }
 
+export function canEquipInOffHand(definition: GearDefinition): boolean {
+  if (definition.requiresTwoHands) return false;
+  return definition.compatibleSlots.includes("off-hand") || definition.compatibleSlots.includes("main-hand");
+}
+
 function resolveEquippedDefinitionAt(
   inventory: GearInstance[],
   loadout: GearLoadouts[GearCharacterId],
@@ -100,6 +105,9 @@ function resolveHandConflicts(
     if (offHandDefinition?.requiresTwoHands) {
       next["off-hand"] = null;
     } else if (offHandDefinition && isQuiver(offHandDefinition) && !isRangedWeapon(definition)) {
+      next["off-hand"] = null;
+    } else if (offHandDefinition && isRangedWeapon(definition) && !isQuiver(offHandDefinition)) {
+      // Ranged weapon equipped to main-hand: off-hand must be a quiver, clear non-quiver off-hand items
       next["off-hand"] = null;
     }
   }

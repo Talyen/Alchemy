@@ -14,7 +14,6 @@ export const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
   count,
   placement,
   editable,
-  active,
   dragging,
   interactionSuppressed,
   targetingMode,
@@ -27,7 +26,6 @@ export const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
   count: number;
   placement: { col: number; row: number; w: 1; h: 1 };
   editable: boolean;
-  active: boolean;
   dragging: boolean;
   interactionSuppressed: boolean;
   targetingMode: boolean;
@@ -56,7 +54,7 @@ export const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
       className={cn(
         "absolute z-10 min-h-0 min-w-0 overflow-hidden rounded-xl",
         targetingMode ? "cursor-default" : "cursor-grab active:cursor-grabbing",
-        dragging ? "opacity-0" : "transition-[transform] duration-150",
+        dragging ? "opacity-0" : "",
         editable && !targetingMode && "cursor-grab active:cursor-grabbing",
       )}
       style={packedItemStyle(placement)}
@@ -113,9 +111,8 @@ export const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
     >
       <div
         className={cn(
-          "group relative h-full w-full overflow-hidden rounded-xl border border-border/60 bg-black transition-[box-shadow,transform]",
+          "group relative h-full w-full overflow-hidden rounded-xl border border-border/60 bg-black",
           "disabled:cursor-not-allowed disabled:opacity-40",
-          active && "shadow-[0_0_0_2px_rgba(251,191,36,0.75),0_0_18px_rgba(251,191,36,0.25)]",
         )}
       >
         <span className="absolute inset-0 bg-black" aria-hidden />
