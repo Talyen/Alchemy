@@ -23,9 +23,10 @@ import {
   useRunAdapter,
   useRunDomainStore,
   useTalentAdapter,
+  type RunProgressStore,
+  type RunSessionStore,
 } from "./run-domain-store";
 import { useHomesteadStore } from "./homestead-store";
-import type { RunProgressStore, RunSessionStore } from "./run-domain-types";
 import type { RunStateController, TalentStateController } from "./run-domain-store";
 import {
   applyRunDefeatTeardown,
@@ -62,7 +63,7 @@ export {
 };
 import { useRunScreenData } from "./use-run-screen-data";
 export { useRunAdapter, useTalentAdapter, useRunDomainStore, useRunScreenData };
-export type { RunStateController, TalentStateController };
+export type { RunStateController, TalentStateController, RunProgressStore, RunSessionStore };
 
 /** Imperative read of run progression fields (deck, gold, talents, initialized). */
 export function readActiveRunStore(): RunProgressStore {
@@ -159,6 +160,11 @@ export function setPendingContentSystemType(type: ContentSystemId) {
 
 export function setCompanionRewardCards(cards: BattleCard[] | null) {
   getRunDomainStore().setCompanionRewardCards(cards);
+}
+
+/** Subscribe to the run domain store for autosave or side effects. */
+export function subscribeRunDomain(listener: () => void): () => void {
+  return useRunDomainStore.subscribe(listener);
 }
 
 /** Current screen and setter (owned by run domain navigation slice). */

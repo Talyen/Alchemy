@@ -34,7 +34,7 @@ export function restoreRun(
   unlockedTalents: UnlockedTalents,
 ): void {
   const store = getRunDomainStore();
-  store.initializeProgress(activeRun, talentXP, unlockedTalents);
+  store.initialize(activeRun, talentXP, unlockedTalents);
   store.initializeActiveBattle(activeRun?.activeCombat?.battleState ?? null);
 
   if (activeRun?.currentScreen) {

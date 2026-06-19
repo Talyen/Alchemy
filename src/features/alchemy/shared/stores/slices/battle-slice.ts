@@ -1,0 +1,75 @@
+import { hydrateCard } from "@/lib/game-data";
+import type { BattleState } from "@/lib/battle";
+import { createInitialBattleFields, type DisplayOverrides } from "../run-domain-types";
+import { defineFieldSetter } from "./_field-setter";
+
+type ImmerSet = (fn: (state: any) => void) => void;
+
+function hydrateBattleState(battleState: BattleState): BattleState {
+  return {
+    ...battleState,
+    deck: battleState.deck.map(hydrateCard),
+    hand: battleState.hand.map(hydrateCard),
+    discard: battleState.discard.map(hydrateCard),
+    exhausted: battleState.exhausted.map(hydrateCard),
+    wishOptions: battleState.wishOptions ? battleState.wishOptions.map(hydrateCard) : null,
+    wishQueue: battleState.wishQueue ? battleState.wishQueue.map((list) => list.map(hydrateCard)) : [],
+  };
+}
+
+export type BattleActions = {
+  setSyncedBattleState: (action: BattleState | ((prev: BattleState) => BattleState)) => void;
+  setDisplayOverrides: (overrides: DisplayOverrides) => void;
+  clearDisplayOverrides: () => void;
+  setBattleStartState: (state: BattleState | null) => void;
+  setHasActiveBattle: (active: boolean | ((prev: boolean) => boolean)) => void;
+  initializeActiveBattle: (battleState: BattleState | null) => void;
+};
+
+export function defineBattleActions(set: ImmerSet): BattleActions & { resetBattle: () => void } {
+  type BattleStateFields = {
+    battleState: BattleState;
+    displayOverrides: DisplayOverrides;
+    battleStartState: BattleState | null;
+    hasActiveBattle: boolean;
+  };
+  const setField = defineFieldSetter<BattleStateFields>(set, "battle");
+
+  return {
+    setSyncedBattleState: (action) =>
+      set((state: any) => {
+        state.battle.battleState =
+          typeof action === "function"
+            ? (action as (prev: BattleState) => BattleState)(state.battle.battleState)
+            : action;
+        state.battle.displayOverrides = {};
+      }),
+
+    setDisplayOverrides: setField("displayOverrides"),
+    clearDisplayOverrides: () =>
+      set((state: any) => {
+        state.battle.displayOverrides = {};
+      }),
+
+    setBattleStartState: setField("battleStartState"),
+    setHasActiveBattle: setField("hasActiveBattle"),
+
+    initializeActiveBattle: (battleState) =>
+      set((state: any) => {
+        if (battleState) {
+          const hydrated = hydrateBattleState(battleState);
+          state.battle.battleState = hydrated;
+          state.battle.displayOverrides = {};
+          state.battle.battleStartState = hydrated;
+          state.battle.hasActiveBattle = true;
+        } else {
+          state.battle = createInitialBattleFields();
+        }
+      }),
+
+    resetBattle: () =>
+      set((state: any) => {
+        state.battle = createInitialBattleFields();
+      }),
+  };
+}

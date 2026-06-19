@@ -30,7 +30,7 @@ describe("active run snapshot parity", () => {
     }
   });
 
-  const progressViaInitialize = ["initializeProgress(activeRun"];
+  const progressViaInitialize = ["store.initialize(activeRun"];
   const restoreFieldSignals: Record<string, string[]> = {
     characterId: progressViaInitialize,
     runDeck: progressViaInitialize,
