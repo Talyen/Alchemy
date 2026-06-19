@@ -5,6 +5,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { defaultTalentEffects } from "@/lib/battle";
 import { createTestBattleState } from "./test-state";
 import type { BestiaryEntry } from "@/lib/game-data";
+import { defaultCcState } from "../../fixtures/default-battle-state";
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
   return {
@@ -84,19 +85,19 @@ describe("endPlayerTurn — haste branch", () => {
 
 describe("endPlayerTurn — CC skip branch", () => {
   it("skips attack when enemy is stunned", () => {
-    const state = battleState({ enemyCC: { stunSkipTurns: 1 } });
+    const state = battleState({ enemyCC: defaultCcState({ stunSkipTurns: 1 }) });
     const result = endPlayerTurn(state);
     expect(result.enemyPerformedAttack).toBe(false);
   });
 
   it("skips attack when enemy is frozen", () => {
-    const state = battleState({ enemyCC: { freezeSkipTurns: 1 } });
+    const state = battleState({ enemyCC: defaultCcState({ freezeSkipTurns: 1 }) });
     const result = endPlayerTurn(state);
     expect(result.enemyPerformedAttack).toBe(false);
   });
 
   it("reduces skip turn counters", () => {
-    const state = battleState({ enemyCC: { stunSkipTurns: 2, freezeSkipTurns: 1 } });
+    const state = battleState({ enemyCC: defaultCcState({ stunSkipTurns: 2, freezeSkipTurns: 1 }) });
     const result = endPlayerTurn(state);
     expect(result.state.enemyCC.stunSkipTurns).toBe(1);
     expect(result.state.enemyCC.freezeSkipTurns).toBe(0);
@@ -104,7 +105,7 @@ describe("endPlayerTurn — CC skip branch", () => {
 
   it("still ticks enemy DoTs during CC skip", () => {
     const state = battleState({
-      enemyCC: { stunSkipTurns: 1 },
+      enemyCC: defaultCcState({ stunSkipTurns: 1 }),
       enemyStatuses: { ...emptyStatuses, burn: 10 },
       enemyHealth: 50,
     });
@@ -114,7 +115,7 @@ describe("endPlayerTurn — CC skip branch", () => {
 
   it("still applies enemy traits during CC skip", () => {
     const state = battleState({
-      enemyCC: { stunSkipTurns: 1 },
+      enemyCC: defaultCcState({ stunSkipTurns: 1 }),
       currentEnemy: baseEnemy("rusting-carapace"),
     });
     state.currentEnemy.traits = [{ id: "rusting-carapace", title: "Rusting Carapace", description: "" }];

@@ -13,7 +13,6 @@ function platformExecutableName(): string {
     case "win32":
       return "electron.exe";
     case "darwin":
-    case "mas":
       return "Electron.app/Contents/MacOS/Electron";
     default:
       return "electron";

@@ -18,6 +18,7 @@ import {
   TRAIT_FREEZE_BONUS_PER_TURN,
 } from "@/lib/game-constants";
 import { createTestBattleState } from "./test-state";
+import { defaultCcState } from "../../fixtures/default-battle-state";
 
 describe("enemy turn trait coverage", () => {
   it("documents every active trait handler and passive-only allowlist entry", () => {
@@ -47,7 +48,7 @@ describe("processEnemyRegeneration", () => {
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyRegeneration: 3,
-      enemyCC: { freezeSkipTurns: 0 },
+      enemyCC: defaultCcState({ freezeSkipTurns: 0 }),
     });
     const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
     const result = processEnemyRegeneration(state, texts);
@@ -60,7 +61,7 @@ describe("processEnemyRegeneration", () => {
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyRegeneration: 3,
-      enemyCC: { freezeSkipTurns: 1 },
+      enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       talentEffects: {
         ...createTestBattleState().talentEffects,
         freezeBlocksRegen: true,
@@ -149,7 +150,7 @@ describe("processEnemyTraits", () => {
   it("skips scaling traits when freeze prevents enemy scaling", () => {
     const state = createTestBattleState({
       currentEnemy: forgeGolem,
-      enemyCC: { freezeSkipTurns: 1 },
+      enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       enemyMitigation: { ...createTestBattleState().enemyMitigation, forge: 0 },
       talentEffects: { ...createTestBattleState().talentEffects, freezePreventsEnemyScaling: true },
     });

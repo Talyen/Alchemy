@@ -11,6 +11,14 @@ import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { defaultTalentEffects } from "@/lib/battle";
 import { defaultTrinketEffects } from "@/lib/trinkets";
+import {
+  defaultPlayerStatusValues,
+  defaultEnemyStatusValues,
+  defaultCcState,
+  defaultEnemyMitigation,
+  defaultCombatFlags,
+  defaultTrinketManifest,
+} from "../../fixtures/default-battle-state";
 
 function makeState(): BattleState {
   return {
@@ -31,14 +39,14 @@ function makeState(): BattleState {
     enemyHealth: 30,
     enemyMaxHealth: 30,
     enemyAttackEffects: [],
-    enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0 },
+    enemyMitigation: defaultEnemyMitigation(),
     enemyRegeneration: 0,
     roomScalingMultiplier: 1,
-    playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-    enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+    playerStatuses: defaultPlayerStatusValues(),
+    enemyStatuses: defaultEnemyStatusValues(),
     pendingBleedLeechHealing: 0,
-    playerCC: { stunSkipTurns: 0, freezeSkipTurns: 0, cooldown: 0 },
-    enemyCC: { stunSkipTurns: 0, freezeSkipTurns: 0, cooldown: 0 },
+    playerCC: defaultCcState(),
+    enemyCC: defaultCcState(),
     wishOptions: null,
     wishQueue: [],
     activeCompanion: null,
@@ -54,21 +62,7 @@ function makeState(): BattleState {
     },
     talentEffects: defaultTalentEffects,
     trinketEffects: defaultTrinketEffects,
-    flags: {
-      firstPhysicalCardFreeUsed: false,
-      firstHolyCardFreeUsed: false,
-      firstBurnCardDoubledUsed: false,
-      firstArmorCardDoubledUsed: false,
-      firstPoisonCardFreeUsed: false,
-      firstBleedCardFreeUsed: false,
-      nextCardCostReduction: 0,
-      goldOnFirstPoisonThisCombat: false,
-      firstHolyDamageBonusUsed: false,
-      firstBurnTrinketDoubledUsed: false,
-      firstHarmfulStatusPrevented: false,
-      firstPotionFreeUsed: false,
-      resonantChimeUsedThisTurn: false,
-    },
+    flags: defaultCombatFlags(),
     discoveredCardIds: [],
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,

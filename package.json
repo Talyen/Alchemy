@@ -193,7 +193,8 @@
     },
     "ignore": [
       "tests/environment.d.ts",
-      "tests/scripts/modules.d.ts"
+      "tests/scripts/global.d.ts",
+      "tests/electron-environment.d.ts"
     ],
     "ignoreDependencies": []
   },

@@ -6,6 +6,7 @@ import type { CombatTextEvent } from "@/lib/battle/types";
 import { applyPlayerCombatDamage, isPlayerDefeated } from "@/lib/battle/types";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { blockDeck, makeTestBattleState, makeTestCard, statusDeck } from "../../fixtures/battle";
+import { defaultPlayerStatusValues, defaultEnemyStatusValues } from "../../fixtures/default-battle-state";
 
 function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
   return makeTestBattleState({ mana: 10, ...overrides });
@@ -73,7 +74,7 @@ describe("applyCardEffects", () => {
   it("self-damage triggers Death's Door instead of defeat on first fatal hit", () => {
     const state = makeState({
       playerHealth: 1,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues(),
     });
     const card = makeTestCard({ effects: [{ kind: "self-damage", damageType: "bleed", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
@@ -103,18 +104,7 @@ describe("applyPlayerCombatDamage — phoenixFeather", () => {
     const state = makeState({
       playerHealth: 5,
       playerMaxHealth: 30,
-      playerStatuses: {
-        block: 0,
-        armor: 0,
-        forge: 0,
-        haste: 0,
-        phoenixFeather: 1,
-        burn: 0,
-        poison: 0,
-        bleed: 0,
-        freeze: 0,
-        stun: 0,
-      },
+      playerStatuses: defaultPlayerStatusValues({ phoenixFeather: 1 }),
     });
     const result = applyPlayerCombatDamage(state, 20);
     expect(result.playerHealth).toBe(9);
@@ -167,7 +157,7 @@ describe("applyCardEffects — gain-gold", () => {
 describe("applyCardEffects — remove-harmful-status", () => {
   it("removes harmful status types with potion potency", () => {
     const state = makeState({
-      playerStatuses: { ...defaultBattleState().playerStatuses, burn: 5, poison: 3, bleed: 2 },
+      playerStatuses: defaultPlayerStatusValues({ burn: 5, poison: 3, bleed: 2 }),
     });
     state.talentEffects.potionPotency = 2;
     const card = makeTestCard({ id: "panacea-potion", effects: [{ kind: "remove-harmful-status", amount: 1 }] });
@@ -194,7 +184,7 @@ describe("applyCardEffects — lose-health", () => {
   it("damages player without applying a status rider", () => {
     const state = makeState({
       playerHealth: 20,
-      playerStatuses: { ...defaultBattleState().playerStatuses },
+      playerStatuses: defaultPlayerStatusValues(),
     });
     const card = makeTestCard({ effects: [{ kind: "lose-health", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
@@ -238,7 +228,7 @@ describe("applyCardEffects — draw-cards", () => {
 describe("applyCardEffects — multiply-enemy-status", () => {
   it("doubles the stack with factor 2", () => {
     const state = makeState({
-      enemyStatuses: { burn: 0, poison: 4, bleed: 0, freeze: 0, stun: 0 },
+      enemyStatuses: defaultEnemyStatusValues({ poison: 4 }),
     });
     const card = makeTestCard({ effects: [{ kind: "multiply-enemy-status", status: "poison", factor: 2 }] });
     const texts: CombatTextEvent[] = [];
@@ -251,17 +241,7 @@ describe("applyCardEffects — remove-player-status", () => {
   it("triggers Sin-Eater's Lantern heal on removal", () => {
     const manifest = computeTrinketManifest(["sin-eaters-lantern"]);
     const state = makeState({
-      playerStatuses: {
-        block: 0,
-        armor: 0,
-        forge: 0,
-        haste: 0,
-        burn: 4,
-        poison: 0,
-        bleed: 0,
-        freeze: 0,
-        stun: 0,
-      },
+      playerStatuses: defaultPlayerStatusValues({ burn: 4 }),
       playerHealth: 15,
       trinketEffects: manifest,
     });
@@ -286,7 +266,7 @@ describe("applyCardEffects — buff-companion", () => {
 describe("applyCardEffects — enemy-status (fixture)", () => {
   it("applies the full enemy status amount", () => {
     const state = makeState({
-      enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyStatuses: defaultEnemyStatusValues(),
     });
     const card = makeTestCard({
       effects: [{ kind: "enemy-status", status: "poison", amount: 4 }],

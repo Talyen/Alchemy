@@ -1,4 +1,5 @@
 // Deterministic battle setup helpers for Vitest (mirrors tests/helpers.ts card shapes).
+import type { BattleCard } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle/types";
 import { defaultBattleState } from "@/lib/battle";
 import { makeTestCard } from "./cards";

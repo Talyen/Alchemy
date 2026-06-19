@@ -3,6 +3,7 @@ import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
 import { DAMAGE_TYPES } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestBattleState, makeTestCard, patchBattleState, seededRng } from "../../fixtures/battle";
+import { defaultPlayerStatusValues, defaultEnemyStatusValues } from "../../fixtures/default-battle-state";
 
 function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
   const enemyHealth = overrides.enemyHealth ?? 30;
@@ -17,17 +18,7 @@ function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
 describe("applyCardEffects — cleanse-player-status-to-damage (Exorcism)", () => {
   it("clears player burn and deals holy damage equal to stacks removed", () => {
     const state = makeState({
-      playerStatuses: {
-        block: 0,
-        armor: 0,
-        forge: 0,
-        haste: 0,
-        burn: 4,
-        poison: 0,
-        bleed: 0,
-        freeze: 0,
-        stun: 0,
-      },
+      playerStatuses: defaultPlayerStatusValues({ burn: 4 }),
     });
     const card = makeTestCard({
       id: "exorcism",
@@ -150,7 +141,7 @@ describe("forge burn", () => {
     const card = makeTestCard({ effects: [{ kind: "player-status", status: "forge", amount: 1 }] });
     const texts: CombatTextEvent[] = [];
     const state = patchBattleState({
-      playerStatuses: { forge: 2 },
+      playerStatuses: defaultPlayerStatusValues({ forge: 2 }),
       talentEffects: { ...defaultTalentEffects, forgeBurnThreshold: 3, forgeBurnDamage: 6 },
     });
     const result = applyCardEffects(state, card, texts);

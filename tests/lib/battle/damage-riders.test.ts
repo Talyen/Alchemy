@@ -3,8 +3,12 @@ import { applyCardEffects } from "@/lib/battle/apply-effects";
 import { applyDamageRiders } from "@/lib/battle/damage-riders";
 import { defaultTalentEffects } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { defaultTrinketEffects } from "@/lib/trinkets";
 import { makeTestBattleState, makeTestCard, seededRng } from "../../fixtures/battle";
+import {
+  defaultPlayerStatusValues,
+  defaultEnemyStatusValues,
+  defaultTrinketManifest,
+} from "../../fixtures/default-battle-state";
 
 function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
   return makeTestBattleState(overrides);
@@ -15,7 +19,7 @@ describe("applyDamageRiders", () => {
     const state = makeState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      playerStatuses: { block: 0, armor: 0, forge: 3, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ forge: 3 }),
     });
     const card = makeTestCard();
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
@@ -30,8 +34,8 @@ describe("applyDamageRiders", () => {
     const state = makeState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      playerStatuses: { block: 0, armor: 0, forge: 8, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      trinketEffects: { ...defaultTrinketEffects, forgeStunThreshold: 5, forgeStunAmount: 3 },
+      playerStatuses: defaultPlayerStatusValues({ forge: 8 }),
+      trinketEffects: defaultTrinketManifest({ forgeStunThreshold: 5, forgeStunAmount: 3 }),
       rng: seededRng(99),
     });
     const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
@@ -119,7 +123,7 @@ describe("damage riders via applyCardEffects", () => {
     const state = makeState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      playerStatuses: { block: 0, armor: 6, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: defaultPlayerStatusValues({ armor: 6 }),
       talentEffects: { ...defaultTalentEffects, armorToPhysicalDamage: true },
       rng: seededRng(99),
       deck: [],
@@ -135,7 +139,7 @@ describe("damage riders via applyCardEffects", () => {
 
   it("applies the full multiplied status gain", () => {
     const state = makeState({
-      enemyStatuses: { burn: 0, poison: 4, bleed: 0, freeze: 0, stun: 0 },
+      enemyStatuses: defaultEnemyStatusValues({ poison: 4 }),
     });
     const card = makeTestCard({ effects: [{ kind: "multiply-enemy-status", status: "poison", factor: 2 }] });
     const texts: CombatTextEvent[] = [];

@@ -8,11 +8,6 @@ import {
   defaultTrinketManifest,
 } from "../../fixtures/default-battle-state";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import {
-  defaultPlayerStatusValues,
-  defaultEnemyStatusValues,
-  defaultTalentEffects,
-} from "../../fixtures/default-battle-state";
 import { patchBattleState } from "./test-state";
 
 function makeTexts(): CombatTextEvent[] {
@@ -143,7 +138,7 @@ describe("tickEnemyStatuses", () => {
       enemyHealth: 30,
       playerHealth: 20,
       enemyStatuses: defaultEnemyStatusValues({ poison: 8 }),
-      trinketEffects: { ...patchBattleState().trinketEffects, parasiticBloomLeechChance: 50 },
+      trinketEffects: defaultTrinketManifest({ parasiticBloomLeechChance: 50 }),
       rng: () => 0.01,
     });
     const texts = makeTexts();
@@ -446,7 +441,7 @@ describe("tickPlayerStatuses", () => {
       playerHealth: 30,
       playerMaxHealth: 30,
       playerStatuses: defaultPlayerStatusValues({ freeze: 30 }),
-      trinketEffects: { ...patchBattleState().trinketEffects, freezeDurationExtension: 2 },
+      trinketEffects: defaultTrinketManifest({ freezeDurationExtension: 2 }),
     });
     const next = tickPlayerStatuses(state, makeTexts());
     expect(next.playerCC.freezeSkipTurns).toBe(1);
@@ -487,8 +482,8 @@ describe("tickPlayerStatuses", () => {
     // Simulate two turn advances by manually decrementing cooldown to 0.
     const cooledDown = {
       ...afterTrigger,
-      playerCC: { ...afterTrigger.playerCC, cooldown: 0 },
-      playerStatuses: { ...afterTrigger.playerStatuses, stun: 20 },
+      playerCC: defaultCcState({ ...afterTrigger.playerCC, cooldown: 0 }),
+      playerStatuses: defaultPlayerStatusValues({ ...afterTrigger.playerStatuses, stun: 20 }),
     };
     const texts3 = makeTexts();
     const afterReTrigger = tickPlayerStatuses(cooledDown, texts3);
