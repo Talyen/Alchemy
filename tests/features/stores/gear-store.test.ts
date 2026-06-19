@@ -250,4 +250,49 @@ describe("gear-store", () => {
 
     useGearStore.getState().reset();
   });
+
+  describe("transferToInventory", () => {
+    it("transfers gear and moves its board position to the target character", () => {
+      useGearStore.getState().reset();
+      const helm: GearInstance = { instanceId: "helm-a", definitionId: "leather-helm-basic", affixes: [] };
+      const inventories = createEmptyGearInventories();
+      inventories.knight = [helm];
+      useGearStore.getState().initialize(inventories, createEmptyGearLoadouts(), knightBoards({ [helm.instanceId]: { col: 3, row: 2 } }));
+
+      expect(useGearStore.getState().transferToInventory(helm.instanceId, "rogue")).toBe(true);
+
+      expect(useGearStore.getState().inventories.knight).toEqual([]);
+      expect(useGearStore.getState().inventories.rogue).toEqual([helm]);
+      expect(useGearStore.getState().boardPositionsByCharacter.knight[helm.instanceId]).toBeUndefined();
+      expect(useGearStore.getState().boardPositionsByCharacter.rogue[helm.instanceId]).toEqual({ col: 3, row: 2 });
+      useGearStore.getState().reset();
+    });
+
+    it("returns false when the instance is unknown", () => {
+      useGearStore.getState().reset();
+      expect(useGearStore.getState().transferToInventory("missing-id", "rogue")).toBe(false);
+      useGearStore.getState().reset();
+    });
+
+    it("returns false when target is the same as the source", () => {
+      useGearStore.getState().reset();
+      const helm: GearInstance = { instanceId: "helm-a", definitionId: "leather-helm-basic", affixes: [] };
+      useGearStore.getState().addInstance(helm, "knight");
+      expect(useGearStore.getState().transferToInventory(helm.instanceId, "knight")).toBe(false);
+      useGearStore.getState().reset();
+    });
+
+    it("removes the instance from all loadouts when transferring", () => {
+      useGearStore.getState().reset();
+      const helm: GearInstance = { instanceId: "helm-a", definitionId: "leather-helm-basic", affixes: [] };
+      const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "helm", helm, [helm]);
+      useGearStore.getState().initialize(knightInventories(helm), loadouts);
+
+      expect(useGearStore.getState().loadouts.knight.helm).toBe(helm.instanceId);
+      expect(useGearStore.getState().transferToInventory(helm.instanceId, "rogue")).toBe(true);
+      expect(useGearStore.getState().loadouts.knight.helm).toBeNull();
+      expect(useGearStore.getState().equippedReturnPositions[helm.instanceId]).toBeUndefined();
+      useGearStore.getState().reset();
+    });
+  });
 });

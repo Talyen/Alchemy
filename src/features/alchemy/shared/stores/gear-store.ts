@@ -152,6 +152,7 @@ type GearStore = {
     currencyBoardPositionsByCharacter?: CraftingCurrencyBoardPositionsByCharacter,
   ) => void;
   addInstance: (instance: GearInstance, characterId: CharacterId) => void;
+  transferToInventory: (instanceId: string, targetCharacterId: CharacterId) => boolean;
   equip: (
     characterId: CharacterId,
     slot: GearSlot,
@@ -274,6 +275,50 @@ export const useGearStore = create<GearStore>((set, get) => ({
         [characterId]: [...(state.inventories[characterId] ?? []), instance],
       },
     })),
+  transferToInventory: (instanceId, targetCharacterId) => {
+    const state = get();
+    const owner = findGearInventoryOwner(state.inventories, instanceId);
+    if (!owner || owner === targetCharacterId) return false;
+
+    const instance = state.inventories[owner].find((item) => item.instanceId === instanceId);
+    if (!instance) return false;
+
+    const nextInventories = {
+      ...state.inventories,
+      [owner]: state.inventories[owner].filter((item) => item.instanceId !== instanceId),
+      [targetCharacterId]: [...(state.inventories[targetCharacterId] ?? []), instance],
+    };
+
+    const nextLoadouts: GearLoadouts = { ...state.loadouts };
+    for (const characterId of GEAR_CHARACTER_IDS) {
+      const nextLoadout = { ...nextLoadouts[characterId] };
+      for (const slot of Object.keys(nextLoadout) as GearSlot[]) {
+        if (nextLoadout[slot] === instanceId) nextLoadout[slot] = null;
+      }
+      nextLoadouts[characterId] = nextLoadout;
+    }
+
+    const nextPositionsByCharacter = { ...state.boardPositionsByCharacter };
+    const ownerPositions = { ...(nextPositionsByCharacter[owner] ?? {}) };
+    const targetPositions = { ...(nextPositionsByCharacter[targetCharacterId] ?? {}) };
+    const nextReturn = { ...state.equippedReturnPositions };
+    const transferPosition = ownerPositions[instanceId] ?? nextReturn[instanceId];
+    delete ownerPositions[instanceId];
+    delete nextReturn[instanceId];
+    if (transferPosition) {
+      targetPositions[instanceId] = transferPosition;
+    }
+    nextPositionsByCharacter[owner] = ownerPositions;
+    nextPositionsByCharacter[targetCharacterId] = targetPositions;
+
+    set({
+      inventories: nextInventories,
+      loadouts: nextLoadouts,
+      boardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(nextPositionsByCharacter, nextInventories),
+      equippedReturnPositions: nextReturn,
+    });
+    return true;
+  },
   equip: (characterId, slot, instance, options) =>
     set((state) => {
       const flatInventory = flattenGearInventories(state.inventories);

@@ -38,6 +38,7 @@ export type ArmoryController = {
   ) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onSalvage: (instanceId: string) => void;
+  onTransferGear: (instanceId: string, targetCharacterId: CharacterId) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
 };
@@ -54,6 +55,7 @@ export function useArmoryController(): ArmoryController {
       salvage: s.salvage,
       addInstance: s.addInstance,
       applyCurrency: s.applyCurrency,
+      transferToInventory: s.transferToInventory,
     })),
   );
   const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
@@ -120,6 +122,27 @@ export function useArmoryController(): ArmoryController {
     [activeRunCharacterId, flush, gear, hasActiveBattle, hasActiveRun],
   );
 
+  const onTransferGear = useCallback<ArmoryController["onTransferGear"]>(
+    (instanceId, targetCharacterId) => {
+      if (hasActiveBattle) return false;
+      const ok = gear.transferToInventory(instanceId, targetCharacterId);
+      if (ok && hasActiveRun) {
+        const inventoryAfter = flattenGearInventories(useGearStore.getState().inventories);
+        const loadoutsAfter = useGearStore.getState().loadouts;
+        syncRunMaxHealthFromGearMutation(
+          activeRunCharacterId,
+          flattenGearInventories(gear.inventories),
+          gear.loadouts,
+          inventoryAfter,
+          loadoutsAfter,
+        );
+        flush();
+      }
+      return ok;
+    },
+    [activeRunCharacterId, flush, gear, hasActiveBattle, hasActiveRun],
+  );
+
   const onApplyCurrency = useCallback<ArmoryController["onApplyCurrency"]>(
     (currencyId, instanceId) => {
       if (hasActiveBattle) return false;
@@ -162,6 +185,7 @@ export function useArmoryController(): ArmoryController {
     onEquip,
     onUnequip,
     onSalvage,
+    onTransferGear,
     onApplyCurrency,
   };
   if (isAlchemyDevBuild()) controller.onSpawnDevGear = onSpawnDevGear;
