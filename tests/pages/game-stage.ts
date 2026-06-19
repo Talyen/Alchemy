@@ -1,10 +1,13 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
-/** VR stage shell exposed by App (`data-testid="vr-stage"`). */
 export class GameStage {
-  constructor(private page: Page) {}
+  private page: Page;
+  readonly root: Locator;
 
-  readonly root = this.page.getByTestId("vr-stage");
+  constructor(page: Page) {
+    this.page = page;
+    this.root = this.page.getByTestId("vr-stage");
+  }
 
   async runPhase(): Promise<string | null> {
     return this.root.getAttribute("data-run-phase");

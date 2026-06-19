@@ -1,9 +1,13 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export class RewardPage {
-  constructor(private page: Page) {}
+  private page: Page;
+  readonly addRewardBtn: Locator;
 
-  readonly addRewardBtn = this.page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ });
+  constructor(page: Page) {
+    this.page = page;
+    this.addRewardBtn = this.page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ });
+  }
 
   async selectFirstReward() {
     await this.page.locator('[aria-label^="Select "]').first().click();

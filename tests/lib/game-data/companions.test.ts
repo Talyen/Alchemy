@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { companionLibrary } from "@/lib/game-data";
+import { companionLibrary, type CompanionId } from "@/lib/game-data";
 
 describe("companionLibrary data integrity", () => {
   it("has all expected companions", () => {
@@ -20,7 +20,7 @@ describe("companionLibrary data integrity", () => {
       "library-owl",
     ];
     for (const id of expectedIds) {
-      expect(companionLibrary[id]).toBeDefined();
+      expect(companionLibrary[id as CompanionId]).toBeDefined();
     }
   });
 

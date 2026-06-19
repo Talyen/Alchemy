@@ -7,7 +7,7 @@ import {
   getGoldMultiplier,
   getDifficultyXPMultiplier,
   type CharacterId,
-} from "@/lib/game-data/difficulties";
+} from "@/lib/game-data";
 
 const ALL_CHARACTERS: CharacterId[] = [
   "knight",

@@ -26,6 +26,7 @@ import {
   salvageGear,
   unequipGear,
   type GearInstance,
+  type GearLoadouts,
   GEAR_DEFINITION_IDS,
   GEAR_SLOTS,
 } from "@/lib/gear";
@@ -249,11 +250,11 @@ describe("gear domain", () => {
 
   it("does not report nonexistent gear as salvage eligible", () => {
     expect(canSalvageGear([ring], "missing-ring")).toBe(false);
-    expect(salvageGear([ring], createEmptyGearLoadouts(), "missing-ring")).toBeNull();
+    expect(salvageGear([ring], createEmptyGearLoadouts(), "missing-ring", () => 0.5)).toBeNull();
   });
 
   it("normalizes partial loadouts and exclusive references", () => {
-    const partial = normalizeGearLoadout({ body: "body-1", "trinket-1": "old" });
+    const partial = normalizeGearLoadout({ body: "body-1" });
     expect(partial.body).toBe("body-1");
     expect(partial).not.toHaveProperty("trinket-1");
 

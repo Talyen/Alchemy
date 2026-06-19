@@ -1,9 +1,13 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export class DestinationPage {
-  constructor(private page: Page) {}
+  private page: Page;
+  readonly heading: Locator;
 
-  readonly heading = this.page.getByRole("heading", { name: "Choose Destination" });
+  constructor(page: Page) {
+    this.page = page;
+    this.heading = this.page.getByRole("heading", { name: "Choose Destination" });
+  }
 
   async expectVisible(timeout = 5000) {
     await expect(this.heading).toBeVisible({ timeout });

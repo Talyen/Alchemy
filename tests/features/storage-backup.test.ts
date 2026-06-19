@@ -24,7 +24,7 @@ describe("storage io desktop backup", () => {
         getItem: () => null,
         setItem: () => undefined,
         removeItem: () => undefined,
-      } as Storage,
+      } as unknown as Storage,
       alchemyDesktop: {
         isDesktop: true,
         setDisplayMode: vi.fn(),
@@ -39,7 +39,7 @@ describe("storage io desktop backup", () => {
         steamCloudWrite: vi.fn(),
         steamCloudDelete: vi.fn(),
       },
-    } as Window;
+    } as unknown as Window;
 
     const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
     await loadAlchemySaveState();

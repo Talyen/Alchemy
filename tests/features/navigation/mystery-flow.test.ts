@@ -88,7 +88,7 @@ describe("applyMysteryEffect", () => {
   });
 
   it("throws for unknown effect kinds", () => {
-    expect(() => applyMysteryEffect({ kind: "unknown-kind" } as MysteryEffect, minimalContext())).toThrow(
+    expect(() => applyMysteryEffect({ kind: "unknown-kind" } as unknown as MysteryEffect, minimalContext())).toThrow(
       /Unhandled mystery effect kind/,
     );
   });

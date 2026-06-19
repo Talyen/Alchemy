@@ -99,12 +99,16 @@ describe("crafting currency logic", () => {
   });
 
   it("removes all affixes with Voidstone", () => {
-    const updated = applyCraftingCurrency("voidstone", createBasicItem([{ id: "flat-physical", value: 1 }]));
+    const updated = applyCraftingCurrency("voidstone", createBasicItem([{ id: "flat-physical", value: 1 }]), () => 0.5);
     expect(updated.affixes).toEqual([]);
   });
 
   it("upgrades basic gear and existing affix values to astral quality", () => {
-    const updated = applyCraftingCurrency("ascension-seal", createBasicItem([{ id: "flat-physical", value: 2 }]));
+    const updated = applyCraftingCurrency(
+      "ascension-seal",
+      createBasicItem([{ id: "flat-physical", value: 2 }]),
+      () => 0.5,
+    );
     expect(updated.definitionId).toBe("shortsword-astral");
     expect(updated.affixes).toEqual([{ id: "flat-physical", value: 4 }]);
   });

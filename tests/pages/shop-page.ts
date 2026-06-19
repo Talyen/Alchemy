@@ -1,25 +1,37 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { startAtDestination } from "../helpers";
 import { GameStage } from "./game-stage";
 
 export class ShopPage {
+  private page: Page;
   readonly stage: GameStage;
+  readonly heading: Locator;
+  readonly buyBtn: Locator;
+  readonly removeCardBtn: Locator;
+  readonly refreshBtn: Locator;
+  readonly mixBtn: Locator;
+  readonly combineBtn: Locator;
+  readonly continueBtn: Locator;
+  readonly goldText: Locator;
+  readonly purchasedText: Locator;
+  readonly cardGrid: Locator;
+  readonly inspectButtons: Locator;
 
-  constructor(private page: Page) {
+  constructor(page: Page) {
+    this.page = page;
     this.stage = new GameStage(page);
+    this.heading = this.page.getByRole("heading", { name: /(Merchant|Alchemist|Trinket|Equipment)/ });
+    this.buyBtn = this.page.getByRole("button", { name: /^Buy/ });
+    this.removeCardBtn = this.page.getByRole("button", { name: /Remove Card/ });
+    this.refreshBtn = this.page.getByRole("button", { name: /Refresh/ });
+    this.mixBtn = this.page.getByRole("button", { name: /Mix Potions/ });
+    this.combineBtn = this.page.getByRole("button", { name: "Combine" });
+    this.continueBtn = this.page.getByRole("button", { name: "Continue" });
+    this.goldText = this.page.getByText(/\d+ Gold/).first();
+    this.purchasedText = this.page.getByText("Purchased").first();
+    this.cardGrid = this.page.locator('[data-testid="card-selection-grid"]');
+    this.inspectButtons = this.page.locator('button[aria-label^="Inspect "]');
   }
-
-  readonly heading = this.page.getByRole("heading", { name: /(Merchant|Alchemist|Trinket|Equipment)/ });
-  readonly buyBtn = this.page.getByRole("button", { name: /^Buy/ });
-  readonly removeCardBtn = this.page.getByRole("button", { name: /Remove Card/ });
-  readonly refreshBtn = this.page.getByRole("button", { name: /Refresh/ });
-  readonly mixBtn = this.page.getByRole("button", { name: /Mix Potions/ });
-  readonly combineBtn = this.page.getByRole("button", { name: "Combine" });
-  readonly continueBtn = this.page.getByRole("button", { name: "Continue" });
-  readonly goldText = this.page.getByText(/\d+ Gold/).first();
-  readonly purchasedText = this.page.getByText("Purchased").first();
-  readonly cardGrid = this.page.locator('[data-testid="card-selection-grid"]');
-  readonly inspectButtons = this.page.locator('button[aria-label^="Inspect "]');
 
   async gold(): Promise<number> {
     const text = await this.goldText.textContent();

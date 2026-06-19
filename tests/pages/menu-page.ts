@@ -1,21 +1,27 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { openGameModeSelect, selectGameMode } from "../e2e/navigation";
 import { injectHomestead } from "../e2e/save-injection";
 import type { GameMode } from "../e2e/types";
 import { GameStage } from "./game-stage";
 
 export class MenuPage {
+  private page: Page;
   readonly stage: GameStage;
+  readonly playBtn: Locator;
+  readonly collectionBtn: Locator;
+  readonly optionsBtn: Locator;
+  readonly talentsBtn: Locator;
+  readonly homesteadBtn: Locator;
 
-  constructor(private page: Page) {
+  constructor(page: Page) {
+    this.page = page;
     this.stage = new GameStage(page);
+    this.playBtn = this.page.getByRole("button", { name: "Play", exact: true });
+    this.collectionBtn = this.page.getByRole("button", { name: "Collection" });
+    this.optionsBtn = this.page.getByRole("button", { name: "Options" });
+    this.talentsBtn = this.page.getByRole("button", { name: "Talents" });
+    this.homesteadBtn = this.page.getByRole("button", { name: "Homestead" });
   }
-
-  readonly playBtn = this.page.getByRole("button", { name: "Play", exact: true });
-  readonly collectionBtn = this.page.getByRole("button", { name: "Collection" });
-  readonly optionsBtn = this.page.getByRole("button", { name: "Options" });
-  readonly talentsBtn = this.page.getByRole("button", { name: "Talents" });
-  readonly homesteadBtn = this.page.getByRole("button", { name: "Homestead" });
 
   async goto() {
     await this.page.goto("/");
@@ -30,7 +36,6 @@ export class MenuPage {
     await expect(this.playBtn).toBeVisible({ timeout });
   }
 
-  /** Cold start without alchemy-skip-loading-screen; allow full asset preload (up to ~12s). */
   async expectMainMenuAfterColdStart() {
     await this.expectMainMenu(15_000);
   }
@@ -59,14 +64,12 @@ export class MenuPage {
     await openGameModeSelect(this.page);
   }
 
-  /** Play → mode picker → character select (no battle start). */
   async goToCharacterSelect(mode: GameMode = "campaign") {
     await this.goto();
     await selectGameMode(this.page, mode);
     await expect(this.page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible({ timeout: 5000 });
   }
 
-  /** Unlocked roster save → mode picker → character select. */
   async goToCharacterSelectUnlocked(
     mode: GameMode = "campaign",
     homesteadOverrides: Parameters<typeof injectHomestead>[1] = {},

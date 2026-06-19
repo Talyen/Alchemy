@@ -1,0 +1,1109 @@
+﻿src/lib/platform.ts(9,46): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window'.
+src/lib/platform.ts(10,17): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+src/lib/platform.ts(14,29): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+src/lib/platform.ts(15,27): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+src/lib/platform.ts(20,19): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+src/lib/platform.ts(26,12): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+src/lib/platform.ts(34,18): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+src/lib/platform.ts(36,37): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+src/lib/platform.ts(49,18): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+src/lib/platform.ts(50,23): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+src/lib/platform.ts(147,18): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+src/lib/platform.ts(149,31): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+src/lib/platform.ts(158,18): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+src/lib/platform.ts(160,31): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+src/lib/platform.ts(169,18): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+src/lib/platform.ts(171,31): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+tests/app/render-alchemy-screen-subscriptions.test.ts(13,109): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/app/render-alchemy-screen-subscriptions.test.ts(19,40): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/architecture/active-run-snapshot-parity.test.ts(15,3): error TS2322: Type '(string | undefined)[]' is not assignable to type 'string[]'.
+  Type 'string | undefined' is not assignable to type 'string'.
+    Type 'undefined' is not assignable to type 'string'.
+tests/architecture/active-run-snapshot-parity.test.ts(15,14): error TS18048: 'body' is possibly 'undefined'.
+tests/architecture/armory-legacy-migration.test.ts(12,3): error TS2322: Type '{ localStorage: Storage; }' is not assignable to type 'Window & typeof globalThis & { localStorage: Storage; }'.
+  Type '{ localStorage: Storage; }' is missing the following properties from type 'Window': clientInformation, closed, cookieStore, customElements, and 213 more.
+tests/architecture/gear-ranged-tags.test.ts(6,91): error TS2345: Argument of type '"main-hand"' is not assignable to parameter of type 'never'.
+tests/architecture/gear-ranged-tags.test.ts(7,58): error TS2339: Property 'rangedWeapon' does not exist on type '{ id: string; displayName: string; compatibleSlots: "main-hand"[]; requiresTwoHands: true; affinityKeywords: ("stun" | "bleed" | "physical")[]; availableRarities: ("basic" | "astral")[]; salvageByRarity: Record<...>; rangedWeapon: false; } | ... 33 more ... | { ...; }'.
+  Property 'rangedWeapon' does not exist on type '{ id: string; displayName: string; compatibleSlots: "off-hand"[]; requiresTwoHands: false; affinityKeywords: ("block" | "physical" | "armor")[]; availableRarities: ("basic" | "astral")[]; salvageByRarity: Record<...>; }'.
+tests/architecture/gear-ranged-tags.test.ts(12,59): error TS2339: Property 'rangedWeapon' does not exist on type '{ id: string; displayName: string; compatibleSlots: "main-hand"[]; requiresTwoHands: true; affinityKeywords: ("stun" | "bleed" | "physical")[]; availableRarities: ("basic" | "astral")[]; salvageByRarity: Record<...>; rangedWeapon: false; } | ... 33 more ... | { ...; }'.
+  Property 'rangedWeapon' does not exist on type '{ id: string; displayName: string; compatibleSlots: "off-hand"[]; requiresTwoHands: false; affinityKeywords: ("block" | "physical" | "armor")[]; availableRarities: ("basic" | "astral")[]; salvageByRarity: Record<...>; }'.
+tests/architecture/gear-ranged-tags.test.ts(19,20): error TS2339: Property 'quiver' does not exist on type '{ id: string; displayName: string; compatibleSlots: "main-hand"[]; requiresTwoHands: true; affinityKeywords: ("stun" | "bleed" | "physical")[]; availableRarities: ("basic" | "astral")[]; salvageByRarity: Record<...>; rangedWeapon: false; } | ... 33 more ... | { ...; }'.
+  Property 'quiver' does not exist on type '{ id: string; displayName: string; compatibleSlots: "main-hand"[]; requiresTwoHands: true; affinityKeywords: ("stun" | "bleed" | "physical")[]; availableRarities: ("basic" | "astral")[]; salvageByRarity: Record<...>; rangedWeapon: false; }'.
+tests/architecture/gear-ranged-tags.test.ts(23,60): error TS2339: Property 'quiver' does not exist on type '{ id: string; displayName: string; compatibleSlots: "main-hand"[]; requiresTwoHands: true; affinityKeywords: ("stun" | "bleed" | "physical")[]; availableRarities: ("basic" | "astral")[]; salvageByRarity: Record<...>; rangedWeapon: false; } | ... 33 more ... | { ...; }'.
+  Property 'quiver' does not exist on type '{ id: string; displayName: string; compatibleSlots: "main-hand"[]; requiresTwoHands: true; affinityKeywords: ("stun" | "bleed" | "physical")[]; availableRarities: ("basic" | "astral")[]; salvageByRarity: Record<...>; rangedWeapon: false; }'.
+tests/architecture/save-migration-guard.test.ts(65,40): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/architecture/save-migration-guard.test.ts(84,30): error TS2339: Property 'arrow' does not exist on type 'Partial<Record<KeywordId, number>>'.
+tests/architecture/save-migration-guard.test.ts(95,40): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/architecture/save-migration-guard.test.ts(143,32): error TS2339: Property 'gearChoices' does not exist on type '{ selectedId: string | null; gold: number; materials: MaterialInventory; destinations: string[]; selectedBossId: string | null; lastVictoryEnemyType: string | null; lastVictoryContentSystem: "campaign" | ... 2 more ... | null; rewardType: "card"; choiceIds: string[]; } | { ...; } | { ...; }'.
+  Property 'gearChoices' does not exist on type '{ selectedId: string | null; gold: number; materials: MaterialInventory; destinations: string[]; selectedBossId: string | null; lastVictoryEnemyType: string | null; lastVictoryContentSystem: "campaign" | ... 2 more ... | null; rewardType: "card"; choiceIds: string[]; }'.
+tests/armory-crafting.spec.ts(150,5): error TS18048: 'loadouts.knight' is possibly 'undefined'.
+tests/armory-crafting.spec.ts(150,5): error TS2322: Type '"gear-sword"' is not assignable to type 'null'.
+tests/aspect-ratio-layout.spec.ts(110,46): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/aspect-ratio-layout.spec.ts(112,47): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/balance/balance-report.test.ts(91,6): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/balance/balance-report.test.ts(91,19): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/balance/balance-report.test.ts(106,24): error TS2379: Argument of type '{ characterId: CharacterId; enemyId: string; depth: number; deck: BattleCard[] | undefined; talentPreset: TalentPreset; difficultyModifiers: DifficultyModifier[]; iterations: number; seed: number; maxTurns: number; policy: BalancePlayPolicy; }' is not assignable to parameter of type 'BalanceBatchConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Type '{ characterId: CharacterId; enemyId: string; depth: number; deck: BattleCard[] | undefined; talentPreset: TalentPreset; difficultyModifiers: DifficultyModifier[]; iterations: number; seed: number; maxTurns: number; policy: BalancePlayPolicy; }' is not assignable to type 'Omit<BattleSimulationConfig, "seed">' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'deck' are incompatible.
+      Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+        Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/balance/balance-report.test.ts(219,11): error TS2375: Type '{ character: string; enemy: string; tier: string; peakStat: string | undefined; }' is not assignable to type '{ character: string; enemy: string; tier: string; peakStat?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'peakStat' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+tests/balance/balance-report.test.ts(236,30): error TS6133: 'tier' is declared but its value is never read.
+tests/balance/balance-report.test.ts(238,25): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(242,54): error TS2345: Argument of type 'string | number' is not assignable to parameter of type 'number'.
+  Type 'string' is not assignable to type 'number'.
+tests/balance/balance-report.test.ts(253,12): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(254,10): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(255,11): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(333,8): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/balance/balance-report.test.ts(333,21): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/balance/balance-report.test.ts(344,8): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/balance/balance-report.test.ts(344,21): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/balance/balance-report.test.ts(355,58): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+tests/balance/balance-report.test.ts(358,11): error TS2322: Type 'CharacterId | undefined' is not assignable to type 'CharacterId'.
+  Type 'undefined' is not assignable to type 'CharacterId'.
+tests/balance/balance-report.test.ts(365,17): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(380,78): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+tests/balance/balance-report.test.ts(383,13): error TS2322: Type 'CharacterId | undefined' is not assignable to type 'CharacterId'.
+  Type 'undefined' is not assignable to type 'CharacterId'.
+tests/balance/balance-report.test.ts(390,19): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(428,16): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(429,14): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(430,15): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(440,16): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(441,14): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(442,15): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(448,12): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(451,16): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(452,14): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(453,15): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(459,12): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(462,16): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(463,14): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(464,15): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(584,108): error TS2532: Object is possibly 'undefined'.
+tests/balance/balance-report.test.ts(674,91): error TS2345: Argument of type '{ field: string; early: number; mid: number; late: number; }[]' is not assignable to parameter of type '{ field: string; early: number; mid: number; late: number; thresholds: number[]; }[]'.
+  Property 'thresholds' is missing in type '{ field: string; early: number; mid: number; late: number; }' but required in type '{ field: string; early: number; mid: number; late: number; thresholds: number[]; }'.
+tests/e2e/save-injection.ts(14,5): error TS2532: Object is possibly 'undefined'.
+tests/e2e/save-injection.ts(14,5): error TS2322: Type '{ type: string; modifiers: never[]; rewardModifiers: never[]; connections: { row: number; col: number; }[]; state: string; }' is not assignable to type 'null'.
+tests/e2e/save-injection.ts(23,3): error TS2532: Object is possibly 'undefined'.
+tests/e2e/save-injection.ts(23,3): error TS2322: Type '{ type: string; modifiers: never[]; rewardModifiers: never[]; connections: { row: number; col: number; }[]; state: string; }' is not assignable to type 'null'.
+tests/electron-cloud-mock.spec.ts(19,34): error TS2339: Property 'alchemyDesktop' does not exist on type 'Page'.
+tests/electron-display-mode.spec.ts(15,22): error TS2339: Property 'alchemyDesktop' does not exist on type 'Page'.
+tests/electron-display-mode.spec.ts(16,22): error TS2339: Property 'alchemyDesktop' does not exist on type 'Page'.
+tests/electron-helpers.ts(16,10): error TS2678: Type '"mas"' is not comparable to type 'Platform'.
+tests/electron-save-roundtrip.spec.ts(16,22): error TS2339: Property 'alchemyDesktop' does not exist on type 'Page'.
+tests/electron-save-roundtrip.spec.ts(17,23): error TS2339: Property 'alchemyDesktop' does not exist on type 'Page'.
+tests/electron-save-roundtrip.spec.ts(21,65): error TS2339: Property 'alchemyDesktop' does not exist on type 'Page'.
+tests/electron-smoke.spec.ts(15,60): error TS2339: Property 'alchemyDesktop' does not exist on type 'Page'.
+tests/features/active-run-data.test.ts(10,3): error TS2322: Type '{ characterId: CharacterId; runDeck: BattleCard[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; ... 24 more ...; equipmentShopState?: PersistedEquipmentShopState | null; }' is not assignable to type 'ActiveRunSnapshotSource'.
+  Property 'shopState' is optional in type '{ characterId: CharacterId; runDeck: BattleCard[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; currentAct: number; ... 23 more ...; equipmentShopState?: PersistedEquipmentShopState | null; }' but required in type 'ActiveRunSnapshotSource'.
+tests/features/active-run-data.test.ts(215,88): error TS2322: Type '{ version: 3; phase: "reward"; draftChoices: never[]; remainingBossIds: readonly ["iron-bear"]; previousBossId: "forge-golem"; currentBossId: "frostwarden"; currentCombatTraitIds: "tempered"[]; currentRewardTraitIds: "alchemist"[]; rewardType: "card"; rewardChoiceIds: string[]; rewardGearChoices: never[]; selectedRe...' is not assignable to type 'WildwoodDraftState'.
+  Types of property 'remainingBossIds' are incompatible.
+    The type 'readonly ["iron-bear"]' is 'readonly' and cannot be assigned to the mutable type '("forge-golem" | "frostwarden" | "blight-treant" | "iron-bear")[]'.
+tests/features/app/autosave-hook.test.ts(54,32): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/features/battle/battle-card-play.test.ts(92,54): error TS2345: Argument of type '{ screen: Screen; run?: RunStateController; talents: TalentStateController | { awardCardXP: Mock<Procedure>; }; ... 41 more ...; animateDiscardedHand?: (hand: BattleCard[], session: number) => Promise<void>; }' is not assignable to parameter of type 'BattleControllerContext | (() => BattleControllerContext)'.
+  Type '{ screen: Screen; run?: RunStateController; talents: TalentStateController | { awardCardXP: Mock<Procedure>; }; ... 41 more ...; animateDiscardedHand?: (hand: BattleCard[], session: number) => Promise<void>; }' is not assignable to type 'BattleControllerContext'.
+    Property 'run' is optional in type '{ screen: Screen; run?: { characterId: CharacterId; runDeck: BattleCard[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; ... 27 more ...; hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void; }; ... 42 more ...; animateDiscardedHand?: (hand: BattleCard[], session: num...' but required in type 'BattleControllerContext'.
+tests/features/battle/battle-card-play.test.ts(115,54): error TS2345: Argument of type '{ screen: Screen; run?: RunStateController; talents: TalentStateController | { awardCardXP: Mock<Procedure>; }; ... 41 more ...; animateDiscardedHand?: (hand: BattleCard[], session: number) => Promise<void>; }' is not assignable to parameter of type 'BattleControllerContext | (() => BattleControllerContext)'.
+  Type '{ screen: Screen; run?: RunStateController; talents: TalentStateController | { awardCardXP: Mock<Procedure>; }; ... 41 more ...; animateDiscardedHand?: (hand: BattleCard[], session: number) => Promise<void>; }' is not assignable to type 'BattleControllerContext'.
+    Property 'run' is optional in type '{ screen: Screen; run?: { characterId: CharacterId; runDeck: BattleCard[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; ... 27 more ...; hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void; }; ... 42 more ...; animateDiscardedHand?: (hand: BattleCard[], session: num...' but required in type 'BattleControllerContext'.
+tests/features/battle/battle-card-play.test.ts(139,54): error TS2345: Argument of type '{ screen: Screen; run?: RunStateController; talents: TalentStateController | { awardCardXP: Mock<Procedure>; }; ... 41 more ...; animateDiscardedHand?: (hand: BattleCard[], session: number) => Promise<void>; }' is not assignable to parameter of type 'BattleControllerContext | (() => BattleControllerContext)'.
+  Type '{ screen: Screen; run?: RunStateController; talents: TalentStateController | { awardCardXP: Mock<Procedure>; }; ... 41 more ...; animateDiscardedHand?: (hand: BattleCard[], session: number) => Promise<void>; }' is not assignable to type 'BattleControllerContext'.
+    Property 'run' is optional in type '{ screen: Screen; run?: { characterId: CharacterId; runDeck: BattleCard[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; ... 27 more ...; hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void; }; ... 42 more ...; animateDiscardedHand?: (hand: BattleCard[], session: num...' but required in type 'BattleControllerContext'.
+tests/features/battle/battle-card-play.test.ts(160,54): error TS2345: Argument of type '{ screen: Screen; run?: RunStateController; talents: TalentStateController | { awardCardXP: Mock<Procedure>; }; ... 41 more ...; animateDiscardedHand?: (hand: BattleCard[], session: number) => Promise<void>; }' is not assignable to parameter of type 'BattleControllerContext | (() => BattleControllerContext)'.
+  Type '{ screen: Screen; run?: RunStateController; talents: TalentStateController | { awardCardXP: Mock<Procedure>; }; ... 41 more ...; animateDiscardedHand?: (hand: BattleCard[], session: number) => Promise<void>; }' is not assignable to type 'BattleControllerContext'.
+    Property 'run' is optional in type '{ screen: Screen; run?: { characterId: CharacterId; runDeck: BattleCard[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; ... 27 more ...; hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void; }; ... 42 more ...; animateDiscardedHand?: (hand: BattleCard[], session: num...' but required in type 'BattleControllerContext'.
+tests/features/battle/battle-card-play.test.ts(185,54): error TS2345: Argument of type '{ screen: Screen; run?: RunStateController; talents: TalentStateController | { awardCardXP: Mock<Procedure>; }; ... 41 more ...; animateDiscardedHand?: (hand: BattleCard[], session: number) => Promise<void>; }' is not assignable to parameter of type 'BattleControllerContext | (() => BattleControllerContext)'.
+  Type '{ screen: Screen; run?: RunStateController; talents: TalentStateController | { awardCardXP: Mock<Procedure>; }; ... 41 more ...; animateDiscardedHand?: (hand: BattleCard[], session: number) => Promise<void>; }' is not assignable to type 'BattleControllerContext'.
+    Property 'run' is optional in type '{ screen: Screen; run?: { characterId: CharacterId; runDeck: BattleCard[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; ... 27 more ...; hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void; }; ... 42 more ...; animateDiscardedHand?: (hand: BattleCard[], session: num...' but required in type 'BattleControllerContext'.
+tests/features/battle/battle-card-play.test.ts(207,54): error TS2345: Argument of type '{ screen: Screen; run?: RunStateController; talents: TalentStateController | { awardCardXP: Mock<Procedure>; }; ... 41 more ...; animateDiscardedHand?: (hand: BattleCard[], session: number) => Promise<void>; }' is not assignable to parameter of type 'BattleControllerContext | (() => BattleControllerContext)'.
+  Type '{ screen: Screen; run?: RunStateController; talents: TalentStateController | { awardCardXP: Mock<Procedure>; }; ... 41 more ...; animateDiscardedHand?: (hand: BattleCard[], session: number) => Promise<void>; }' is not assignable to type 'BattleControllerContext'.
+    Property 'run' is optional in type '{ screen: Screen; run?: { characterId: CharacterId; runDeck: BattleCard[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; ... 27 more ...; hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void; }; ... 42 more ...; animateDiscardedHand?: (hand: BattleCard[], session: num...' but required in type 'BattleControllerContext'.
+tests/features/battle/battle-feedback.test.ts(34,5): error TS2739: Type '{ armor: number; forge: number; freezeBonus: number; }' is missing the following properties from type 'EnemyMitigation': burnBonus, block
+tests/features/battle/battle-feedback.test.ts(37,5): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/features/battle/battle-feedback.test.ts(57,5): error TS2739: Type '{ firstPhysicalCardFreeUsed: false; firstHolyCardFreeUsed: false; firstBurnCardDoubledUsed: false; firstArmorCardDoubledUsed: false; firstPoisonCardFreeUsed: false; firstBleedCardFreeUsed: false; ... 6 more ...; resonantChimeUsedThisTurn: false; }' is missing the following properties from type 'CombatFlags': firstLeechCardDoubledUsed, runicQuillUsedThisTurn, divineAegisTriggered
+tests/features/battle/battle-init.test.ts(29,29): error TS2345: Argument of type '{ run: { characterId: CharacterId; runDeck: BattleCard[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; currentAct: number; ... 26 more ...; hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void; }; ... 5 more ...; setCardTransferInProgress: Mock<...>; }' is not assignable to parameter of type 'BattleControllerContext | (() => BattleControllerContext)'.
+  Type '{ run: { characterId: CharacterId; runDeck: BattleCard[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; currentAct: number; ... 26 more ...; hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void; }; ... 5 more ...; setCardTransferInProgress: Mock<...>; }' is missing the following properties from type 'BattleControllerContext': screen, autoEndTurn, measureElementRect, measureVisualCardRect, and 32 more.
+tests/features/battle/battle-session.test.ts(21,39): error TS2345: Argument of type '{ battleSessionRef: { current: number; }; battleTimerGroupRef: { current: TimerGroup; }; transferCancelRegistryRef: { current: TransferCancelRegistry; }; ... 5 more ...; onBattleDefeat: Mock<...>; }' is not assignable to parameter of type 'BattleControllerContext | (() => BattleControllerContext)'.
+  Type '{ battleSessionRef: { current: number; }; battleTimerGroupRef: { current: TimerGroup; }; transferCancelRegistryRef: { current: TransferCancelRegistry; }; ... 5 more ...; onBattleDefeat: Mock<...>; }' is missing the following properties from type 'BattleControllerContext': screen, run, talents, autoEndTurn, and 32 more.
+tests/features/battle/hand-card-layout.test.ts(43,5): error TS2349: This expression is not callable.
+  Type 'never' has no call signatures.
+tests/features/battle/hand-card-layout.test.ts(60,5): error TS2349: This expression is not callable.
+  Type 'never' has no call signatures.
+tests/features/battle/playable-hand.test.ts(16,3): error TS2322: Type 'string' is not assignable to type 'number'.
+tests/features/battle/playable-hand.test.ts(23,3): error TS2322: Type 'string' is not assignable to type 'number'.
+tests/features/battle/playable-hand.test.ts(56,70): error TS2322: Type 'string' is not assignable to type 'number'.
+tests/features/battle/turn-orchestration.test.ts(41,33): error TS2345: Argument of type '{ getStore: Mock<() => { battleState: BattleState; setSyncedBattleState: Mock<Procedure>; showCombatTexts: Mock<Procedure>; shakeEnemy: Mock<...>; shakePlayer: Mock<...>; hurtEnemy: Mock<...>; hurtPlayer: Mock<...>; }>; ... 13 more ...; onResolveEndTurn: Mock<...>; }' is not assignable to parameter of type 'TurnOrchestrationDeps'.
+  The types returned by 'getStore(...)' are incompatible between these types.
+    Type '{ battleState: BattleState; setSyncedBattleState: Mock<Procedure>; showCombatTexts: Mock<Procedure>; shakeEnemy: Mock<Procedure>; shakePlayer: Mock<...>; hurtEnemy: Mock<...>; hurtPlayer: Mock<...>; }' is missing the following properties from type '{ cardGhosts: CardGhost[]; floatingCombatTexts: FloatingCombatText[]; enemyShaking: boolean; playerShaking: boolean; companionShaking: boolean; playerHurtFlashToken: number; ... 31 more ...; initializeActiveBattle: (battleState: BattleState | null) => void; }': cardGhosts, floatingCombatTexts, enemyShaking, playerShaking, and 27 more.
+tests/features/battle/turn-resolution-ui.test.ts(115,9): error TS2353: Object literal may only specify known properties, and 'runHandDrawSequence' does not exist in type '{ isSessionActive: (session: number) => boolean; store: TurnResolutionStore; drawSequence: HandDrawSequenceDeps; logDrawError: (err: unknown) => void; onPhaseComplete: (resultState: BattleState, session: number, playerTurnSkipped: boolean) => void; }'.
+tests/features/battle/turn-resolution-ui.test.ts(142,9): error TS2353: Object literal may only specify known properties, and 'runHandDrawSequence' does not exist in type '{ isSessionActive: (session: number) => boolean; store: TurnResolutionStore; drawSequence: HandDrawSequenceDeps; logDrawError: (err: unknown) => void; onPhaseComplete: (resultState: BattleState, session: number, playerTurnSkipped: boolean) => void; }'.
+tests/features/collection-items.test.ts(28,12): error TS18048: 'item' is possibly 'undefined'.
+tests/features/collection-items.test.ts(29,12): error TS18048: 'item' is possibly 'undefined'.
+tests/features/collection-items.test.ts(33,12): error TS2554: Expected 2 arguments, but got 1.
+tests/features/collection-items.test.ts(34,12): error TS2554: Expected 2 arguments, but got 1.
+tests/features/collection-items.test.ts(35,12): error TS2554: Expected 2 arguments, but got 1.
+tests/features/config.test.ts(28,60): error TS18048: 'remaining' is possibly 'undefined'.
+tests/features/config.test.ts(36,59): error TS18048: 'remaining' is possibly 'undefined'.
+tests/features/config.test.ts(65,47): error TS18048: 'remaining' is possibly 'undefined'.
+tests/features/corruption.test.ts(38,12): error TS2532: Object is possibly 'undefined'.
+tests/features/corruption.test.ts(112,12): error TS2532: Object is possibly 'undefined'.
+tests/features/labyrinth-controller-hook.test.ts(22,20): error TS2532: Object is possibly 'undefined'.
+tests/features/labyrinth-controller-hook.test.ts(26,42): error TS18048: 'target' is possibly 'undefined'.
+tests/features/labyrinth-controller-hook.test.ts(26,54): error TS18048: 'target' is possibly 'undefined'.
+tests/features/labyrinth-controller-hook.test.ts(26,66): error TS2345: Argument of type '{ onStartBattleWithModifiers: Mock<Procedure>; onStartBossBattleWithModifiers: Mock<Procedure>; onStartRest: Mock<Procedure>; onStartMystery: Mock<...>; onStartShop: Mock<...>; onStartAlchemist: Mock<...>; }' is not assignable to parameter of type 'LabyrinthNodeHandlers'.
+  Type '{ onStartBattleWithModifiers: Mock<Procedure>; onStartBossBattleWithModifiers: Mock<Procedure>; onStartRest: Mock<Procedure>; onStartMystery: Mock<...>; onStartShop: Mock<...>; onStartAlchemist: Mock<...>; }' is missing the following properties from type 'LabyrinthNodeHandlers': onStartTrinketShop, onStartEquipmentShop
+tests/features/labyrinth-controller-hook.test.ts(44,20): error TS2532: Object is possibly 'undefined'.
+tests/features/labyrinth-controller-hook.test.ts(47,32): error TS18048: 'target' is possibly 'undefined'.
+tests/features/labyrinth-controller-hook.test.ts(47,44): error TS18048: 'target' is possibly 'undefined'.
+tests/features/labyrinth-controller-hook.test.ts(47,56): error TS2345: Argument of type '{ onStartBattleWithModifiers: Mock<Procedure>; onStartBossBattleWithModifiers: Mock<Procedure>; onStartRest: Mock<Procedure>; onStartMystery: Mock<...>; onStartShop: Mock<...>; onStartAlchemist: Mock<...>; }' is not assignable to parameter of type 'LabyrinthNodeHandlers'.
+  Type '{ onStartBattleWithModifiers: Mock<Procedure>; onStartBossBattleWithModifiers: Mock<Procedure>; onStartRest: Mock<Procedure>; onStartMystery: Mock<...>; onStartShop: Mock<...>; onStartAlchemist: Mock<...>; }' is missing the following properties from type 'LabyrinthNodeHandlers': onStartTrinketShop, onStartEquipmentShop
+tests/features/labyrinth-controller-hook.test.ts(60,12): error TS2532: Object is possibly 'undefined'.
+tests/features/labyrinth-controller-hook.test.ts(60,55): error TS18048: 'target' is possibly 'undefined'.
+tests/features/labyrinth-controller-hook.test.ts(60,67): error TS18048: 'target' is possibly 'undefined'.
+tests/features/labyrinth-controller-hook.test.ts(73,12): error TS2532: Object is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(19,12): error TS2532: Object is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(25,20): error TS2532: Object is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(26,39): error TS18048: 'target' is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(26,51): error TS18048: 'target' is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(36,12): error TS2532: Object is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(44,20): error TS2532: Object is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(45,25): error TS18048: 'target' is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(45,37): error TS18048: 'target' is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(46,39): error TS18048: 'target' is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(46,51): error TS18048: 'target' is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(59,27): error TS18048: 'next' is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(59,37): error TS18048: 'next' is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(61,46): error TS18048: 'next' is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(61,61): error TS18048: 'next' is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(62,7): error TS2322: Type '{ row: number; col: number; } | undefined' is not assignable to type '{ row: number; col: number; }'.
+  Type 'undefined' is not assignable to type '{ row: number; col: number; }'.
+tests/features/labyrinth-controller.test.ts(70,19): error TS2532: Object is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(71,25): error TS18048: 'first' is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(71,36): error TS18048: 'first' is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(72,20): error TS2532: Object is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(72,29): error TS18048: 'first' is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(72,40): error TS18048: 'first' is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(78,12): error TS2532: Object is possibly 'undefined'.
+tests/features/labyrinth-controller.test.ts(81,12): error TS2532: Object is possibly 'undefined'.
+tests/features/navigation/destination-flow.test.ts(217,20): error TS2345: Argument of type 'Destination' is not assignable to parameter of type '"Merchant's Shop" | "Alchemist's Shop" | "Trinket Shop" | "Equipment Shop"'.
+  Type '"Normal Combat"' is not assignable to type '"Merchant's Shop" | "Alchemist's Shop" | "Trinket Shop" | "Equipment Shop"'.
+tests/features/navigation/mystery-flow.test.ts(36,62): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(40,69): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(45,59): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(46,25): error TS2532: Object is possibly 'undefined'.
+tests/features/navigation/mystery-flow.test.ts(50,61): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(51,27): error TS2532: Object is possibly 'undefined'.
+tests/features/navigation/mystery-flow.test.ts(55,58): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(59,57): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(60,25): error TS2532: Object is possibly 'undefined'.
+tests/features/navigation/mystery-flow.test.ts(64,76): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(68,64): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(72,74): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(76,55): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(80,79): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(84,61): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(91,37): error TS2352: Conversion of type '{ kind: "unknown-kind"; }' to type 'MysteryEffect' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ kind: "unknown-kind"; }' is not comparable to type '{ kind: "none"; }'.
+    Types of property 'kind' are incompatible.
+      Type '"unknown-kind"' is not comparable to type '"none"'.
+tests/features/navigation/mystery-flow.test.ts(91,80): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(98,64): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(101,21): error TS2532: Object is possibly 'undefined'.
+tests/features/navigation/mystery-flow.test.ts(113,50): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(114,23): error TS2532: Object is possibly 'undefined'.
+tests/features/navigation/mystery-flow.test.ts(115,25): error TS7006: Parameter 'card' implicitly has an 'any' type.
+tests/features/navigation/mystery-flow.test.ts(126,28): error TS2345: Argument of type 'BattleCard | undefined' is not assignable to parameter of type 'BattleCard'.
+  Type 'undefined' is not assignable to type 'BattleCard'.
+tests/features/navigation/mystery-flow.test.ts(131,66): error TS2379: Argument of type '{ runDeck: gameData.BattleCard[] | undefined; runMaxHealth: number; setRunDeck: Mock<Procedure>; setRunGold: Mock<Procedure>; setRunPlayerHealth: Mock<...>; ... 4 more ...; onAwardGold: Mock<...>; }' is not assignable to parameter of type 'MysteryEffectContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'runDeck' are incompatible.
+    Type 'BattleCard[] | undefined' is not assignable to type 'BattleCard[]'.
+      Type 'undefined' is not assignable to type 'BattleCard[]'.
+tests/features/navigation/mystery-flow.test.ts(134,23): error TS2532: Object is possibly 'undefined'.
+tests/features/navigation/mystery-flow.test.ts(136,29): error TS7006: Parameter 'card' implicitly has an 'any' type.
+tests/features/navigation/pending-reward-persistence.test.ts(9,41): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/features/navigation/pending-reward-persistence.test.ts(46,7): error TS2739: Type '{}' is missing the following properties from type 'MaterialInventory': wood, iron, herbs, food, crystal
+tests/features/navigation/reward-flow.test.ts(1,32): error TS6133: 'vi' is declared but its value is never read.
+tests/features/navigation/reward-flow.test.ts(137,64): error TS2322: Type '"collector"' is not assignable to type 'EncounterTraitId'.
+tests/features/navigation/reward-flow.test.ts(139,68): error TS2345: Argument of type 'EncounterTraitId[]' is not assignable to parameter of type '("companion" | "alchemist" | "generous" | "scavenger")[]'.
+  Type 'EncounterTraitId' is not assignable to type '"companion" | "alchemist" | "generous" | "scavenger"'.
+    Type '"tempered"' is not assignable to type '"companion" | "alchemist" | "generous" | "scavenger"'.
+tests/features/navigation/reward-flow.test.ts(140,67): error TS2345: Argument of type 'EncounterTraitId[]' is not assignable to parameter of type '("companion" | "alchemist" | "generous" | "scavenger")[]'.
+  Type 'EncounterTraitId' is not assignable to type '"companion" | "alchemist" | "generous" | "scavenger"'.
+    Type '"tempered"' is not assignable to type '"companion" | "alchemist" | "generous" | "scavenger"'.
+tests/features/navigation/reward-flow.test.ts(141,67): error TS2345: Argument of type 'EncounterTraitId[]' is not assignable to parameter of type '("companion" | "alchemist" | "generous" | "scavenger")[]'.
+  Type 'EncounterTraitId' is not assignable to type '"companion" | "alchemist" | "generous" | "scavenger"'.
+    Type '"tempered"' is not assignable to type '"companion" | "alchemist" | "generous" | "scavenger"'.
+tests/features/navigation/reward-flow.test.ts(165,41): error TS2345: Argument of type 'EncounterTraitId[]' is not assignable to parameter of type '("companion" | "alchemist" | "generous" | "scavenger")[]'.
+  Type 'EncounterTraitId' is not assignable to type '"companion" | "alchemist" | "generous" | "scavenger"'.
+    Type '"tempered"' is not assignable to type '"companion" | "alchemist" | "generous" | "scavenger"'.
+tests/features/navigation/reward-flow.test.ts(166,41): error TS2345: Argument of type 'EncounterTraitId[]' is not assignable to parameter of type '("companion" | "alchemist" | "generous" | "scavenger")[]'.
+  Type 'EncounterTraitId' is not assignable to type '"companion" | "alchemist" | "generous" | "scavenger"'.
+    Type '"tempered"' is not assignable to type '"companion" | "alchemist" | "generous" | "scavenger"'.
+tests/features/navigation/reward-flow.test.ts(205,79): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'TrinketEntry'.
+tests/features/navigation/reward-flow.test.ts(261,21): error TS2739: Type 'TrinketEntry' is missing the following properties from type 'BattleCard': cost, effects
+tests/features/navigation/reward-flow.test.ts(266,11): error TS2322: Type '"trinket"' is not assignable to type '"card"'.
+tests/features/navigation/run-navigation-helpers.test.ts(36,60): error TS2345: Argument of type '{ completedDifficulties: Record<string, DifficultyId[]>; initializeRunForDifficulty: (characterId: CharacterId, difficultyId: DifficultyId) => { freshDeck: BattleCard[]; totalStartGold: number; }; getDifficultyModifiers: ((characterId: CharacterId, difficultyId: DifficultyId) => DifficultyModifier[]) | Mock<...>; on...' is not assignable to parameter of type 'NoviceCampaignStartDeps'.
+  Types of property 'getDifficultyModifiers' are incompatible.
+    Type '((characterId: CharacterId, difficultyId: DifficultyId) => DifficultyModifier[]) | Mock<() => { id: string; title: string; description: string; }[]>' is not assignable to type '(characterId: CharacterId, difficultyId: DifficultyId) => DifficultyModifier[]'.
+      Type 'Mock<() => { id: string; title: string; description: string; }[]>' is not assignable to type '(characterId: CharacterId, difficultyId: DifficultyId) => DifficultyModifier[]'.
+        Type '{ id: string; title: string; description: string; }[]' is not assignable to type 'DifficultyModifier[]'.
+          Type '{ id: string; title: string; description: string; }' is not assignable to type 'DifficultyModifier'.
+tests/features/navigation/run-navigation-helpers.test.ts(50,60): error TS2345: Argument of type '{ completedDifficulties: Record<string, DifficultyId[]>; initializeRunForDifficulty: (characterId: CharacterId, difficultyId: DifficultyId) => { freshDeck: BattleCard[]; totalStartGold: number; }; getDifficultyModifiers: ((characterId: CharacterId, difficultyId: DifficultyId) => DifficultyModifier[]) | Mock<...>; on...' is not assignable to parameter of type 'NoviceCampaignStartDeps'.
+  Types of property 'getDifficultyModifiers' are incompatible.
+    Type '((characterId: CharacterId, difficultyId: DifficultyId) => DifficultyModifier[]) | Mock<() => { id: string; title: string; description: string; }[]>' is not assignable to type '(characterId: CharacterId, difficultyId: DifficultyId) => DifficultyModifier[]'.
+      Type 'Mock<() => { id: string; title: string; description: string; }[]>' is not assignable to type '(characterId: CharacterId, difficultyId: DifficultyId) => DifficultyModifier[]'.
+        Type '{ id: string; title: string; description: string; }[]' is not assignable to type 'DifficultyModifier[]'.
+          Type '{ id: string; title: string; description: string; }' is not assignable to type 'DifficultyModifier'.
+tests/features/potion-mixer.test.ts(2,32): error TS6133: 'vi' is declared but its value is never read.
+tests/features/potion-mixer.test.ts(114,12): error TS2532: Object is possibly 'undefined'.
+tests/features/potion-mixer.test.ts(115,12): error TS2532: Object is possibly 'undefined'.
+tests/features/potion-mixer.test.ts(123,12): error TS2532: Object is possibly 'undefined'.
+tests/features/potion-mixer.test.ts(124,12): error TS2532: Object is possibly 'undefined'.
+tests/features/potion-mixer.test.ts(138,12): error TS2532: Object is possibly 'undefined'.
+tests/features/run/deck-mutations.test.ts(35,25): error TS2532: Object is possibly 'undefined'.
+tests/features/run/deck-mutations.test.ts(38,25): error TS2532: Object is possibly 'undefined'.
+tests/features/run/deck-mutations.test.ts(48,27): error TS2532: Object is possibly 'undefined'.
+tests/features/run/deck-mutations.test.ts(59,25): error TS2532: Object is possibly 'undefined'.
+tests/features/run/deck-mutations.test.ts(62,25): error TS2532: Object is possibly 'undefined'.
+tests/features/run/run-reward-commit.test.ts(32,25): error TS2532: Object is possibly 'undefined'.
+tests/features/run/run-reward-commit.test.ts(34,25): error TS2532: Object is possibly 'undefined'.
+tests/features/run/run-reward-commit.test.ts(48,25): error TS2532: Object is possibly 'undefined'.
+tests/features/run/run-reward-commit.test.ts(50,25): error TS2532: Object is possibly 'undefined'.
+tests/features/run/run-reward-commit.test.ts(63,25): error TS2532: Object is possibly 'undefined'.
+tests/features/run/run-reward-commit.test.ts(65,25): error TS2532: Object is possibly 'undefined'.
+tests/features/run/run-victory-handlers.test.ts(174,9): error TS2322: Type '2' is not assignable to type '3'.
+tests/features/screens/armory-inventory-layout.test.ts(53,34): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/features/screens/armory-inventory-layout.test.ts(54,34): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/features/screens/armory-inventory-layout.test.ts(58,34): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/features/screens/armory-inventory-layout.test.ts(59,34): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/features/screens/armory-inventory-layout.test.ts(60,34): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/features/screens/armory-inventory-layout.test.ts(128,7): error TS2345: Argument of type '{ item: { instanceId: string; definitionId: string; }; col: number; row: number; w: number; h: number; }[]' is not assignable to parameter of type 'PackedInventoryItem<GearInstance>[]'.
+  Type '{ item: { instanceId: string; definitionId: string; }; col: number; row: number; w: number; h: number; }' is not assignable to type 'PackedInventoryItem<GearInstance>'.
+    Types of property 'item' are incompatible.
+      Property 'affixes' is missing in type '{ instanceId: string; definitionId: string; }' but required in type 'GearInstance'.
+tests/features/screens/armory-inventory-layout.test.ts(170,42): error TS2345: Argument of type '{ item: { instanceId: string; }; col: number; row: number; w: number; h: number; }[]' is not assignable to parameter of type 'PackedInventoryItem<GearInstance>[]'.
+  Type '{ item: { instanceId: string; }; col: number; row: number; w: number; h: number; }' is not assignable to type 'PackedInventoryItem<GearInstance>'.
+    Types of property 'item' are incompatible.
+      Type '{ instanceId: string; }' is missing the following properties from type 'GearInstance': definitionId, affixes
+tests/features/screens/armory-inventory-layout.test.ts(181,42): error TS2345: Argument of type '{ item: { instanceId: string; }; col: number; row: number; w: number; h: number; }[]' is not assignable to parameter of type 'PackedInventoryItem<GearInstance>[]'.
+  Type '{ item: { instanceId: string; }; col: number; row: number; w: number; h: number; }' is not assignable to type 'PackedInventoryItem<GearInstance>'.
+    Types of property 'item' are incompatible.
+      Type '{ instanceId: string; }' is missing the following properties from type 'GearInstance': definitionId, affixes
+tests/features/screens/armory-screen.test.tsx(743,9): error TS2322: Type '{ knight: { helm: string; }; wizard: GearLoadout; ranger: GearLoadout; rogue: GearLoadout; alchemist: GearLoadout; warlock: GearLoadout; druid: GearLoadout; wildcard: GearLoadout; }' is not assignable to type 'GearLoadouts'.
+  Types of property 'knight' are incompatible.
+    Type '{ helm: string; }' is missing the following properties from type 'GearLoadout': body, boots, gloves, belt, and 5 more.
+tests/features/screens/armory-styling.test.tsx(204,54): error TS2322: Type 'GearDefinition | undefined' is not assignable to type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/features/screens/armory-styling.test.tsx(227,54): error TS2322: Type 'GearDefinition | undefined' is not assignable to type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/features/screens/armory-targeting-state.test.ts(117,13): error TS2741: Property 'transferMenu' is missing in type '{ salvageMode: true; salvageTarget: GearInstance; activeCurrencyId: "discordant-dice"; cursorPoint: { x: number; y: number; }; }' but required in type 'ArmoryTargetingState'.
+tests/features/screens/armory-targeting-state.test.ts(136,13): error TS2741: Property 'transferMenu' is missing in type '{ salvageMode: true; salvageTarget: GearInstance; activeCurrencyId: "discordant-dice"; cursorPoint: { x: number; y: number; }; }' but required in type 'ArmoryTargetingState'.
+tests/features/screens/armory-targeting-state.test.ts(152,13): error TS2741: Property 'transferMenu' is missing in type '{ salvageMode: true; salvageTarget: GearInstance; activeCurrencyId: "discordant-dice"; cursorPoint: { x: number; y: number; }; }' but required in type 'ArmoryTargetingState'.
+tests/features/screens/armory-targeting-state.test.ts(193,43): error TS2345: Argument of type '{ transferMenu: { instanceId: string; sourceCharacterId: string; anchor: { x: number; y: number; }; }; salvageMode: boolean; salvageTarget: GearInstance | null; activeCurrencyId: CraftingCurrencyId | null; cursorPoint: ArmoryCursorPoint | null; }' is not assignable to parameter of type 'ArmoryTargetingState'.
+  The types of 'transferMenu.sourceCharacterId' are incompatible between these types.
+    Type 'string' is not assignable to type 'CharacterId'.
+tests/features/shell/alchemy-run-controller-hook.test.ts(56,9): error TS2739: Type 'TalentEffectManifest' is missing the following properties from type 'HomesteadEffectManifest': herbFindBonus, endRunFoodPerRoom, endRunHerbsPerRoom, endRunCrystalPerRoom, gearAstralChanceBonus
+tests/features/shell/battle-controller-hook.test.ts(41,32): error TS2739: Type 'TalentEffectManifest' is missing the following properties from type 'HomesteadEffectManifest': herbFindBonus, endRunFoodPerRoom, endRunHerbsPerRoom, endRunCrystalPerRoom, gearAstralChanceBonus
+tests/features/shell/run-navigation-hook.test.ts(35,24): error TS2345: Argument of type '{ screen: "battle"; navigateTo: Mock<(_screen: string, onCommit?: () => void) => void | undefined>; transition: Mock<Procedure>; cancelPending: Mock<Procedure>; ... 7 more ...; onMarkDifficultyCompleted: Mock<...>; }' is not assignable to parameter of type '{ screen: Screen; navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: (() => void) | undefined) => void; transition: (nextScreen: Screen, options?: ScreenTransitionOptions | undefined) => void; ... 10 more ...; onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void; }'.
+  Type '{ screen: "battle"; navigateTo: Mock<(_screen: string, onCommit?: (() => void) | undefined) => void | undefined>; transition: Mock<Procedure>; cancelPending: Mock<...>; ... 7 more ...; onMarkDifficultyCompleted: Mock<...>; }' is missing the following properties from type '{ screen: Screen; navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: (() => void) | undefined) => void; transition: (nextScreen: Screen, options?: ScreenTransitionOptions | undefined) => void; ... 10 more ...; onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void; }': onInitTrinketShop, onInitEquipmentShop
+tests/features/shop-controller.test.ts(42,29): error TS2322: Type 'BattleCard | undefined' is not assignable to type 'BattleCard | null'.
+  Type 'undefined' is not assignable to type 'BattleCard | null'.
+tests/features/shop-controller.test.ts(88,12): error TS2532: Object is possibly 'undefined'.
+tests/features/shop-controller.test.ts(119,42): error TS2345: Argument of type '(p: BattleCard[]) => (BattleCard | undefined)[]' is not assignable to parameter of type 'BattleCard[] | ((prev: BattleCard[]) => BattleCard[])'.
+  Type '(p: BattleCard[]) => (BattleCard | undefined)[]' is not assignable to type '(prev: BattleCard[]) => BattleCard[]'.
+    Type '(BattleCard | undefined)[]' is not assignable to type 'BattleCard[]'.
+      Type 'BattleCard | undefined' is not assignable to type 'BattleCard'.
+        Type 'undefined' is not assignable to type 'BattleCard'.
+tests/features/shop-transactions.test.ts(71,29): error TS2379: Argument of type '{ price: number; refreshesLeft: number; runGold: number; pool: BattleCard[]; currentItems: BattleCard[]; count: number; setRunGold: (fn: (g: number) => number) => void; setState: Mock<...> | ((fn: (prev: unknown) => unknown) => void); mapState: ((prev: { cards: BattleCard[]; }, items: BattleCard[]) => { ...; }) | ((...' is not assignable to parameter of type 'RefreshOfferingsInput<unknown>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'mapState' are incompatible.
+    Type '((prev: { cards: BattleCard[]; }, items: BattleCard[]) => { cards: BattleCard[]; }) | ((prev: unknown, newItems: BattleCard[]) => unknown)' is not assignable to type '(prev: unknown, newItems: BattleCard[]) => unknown'.
+      Type '(prev: { cards: BattleCard[]; }, items: BattleCard[]) => { cards: BattleCard[]; }' is not assignable to type '(prev: unknown, newItems: BattleCard[]) => unknown'.
+        Types of parameters 'prev' and 'prev' are incompatible.
+          Type 'unknown' is not assignable to type '{ cards: BattleCard[]; }'.
+tests/features/shop-transactions.test.ts(77,29): error TS2379: Argument of type '{ price: number; refreshesLeft: number; runGold: number; pool: BattleCard[]; currentItems: BattleCard[]; count: number; setRunGold: (fn: (g: number) => number) => void; setState: Mock<...> | ((fn: (prev: unknown) => unknown) => void); mapState: ((prev: { cards: BattleCard[]; }, items: BattleCard[]) => { ...; }) | ((...' is not assignable to parameter of type 'RefreshOfferingsInput<unknown>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'mapState' are incompatible.
+    Type '((prev: { cards: BattleCard[]; }, items: BattleCard[]) => { cards: BattleCard[]; }) | ((prev: unknown, newItems: BattleCard[]) => unknown)' is not assignable to type '(prev: unknown, newItems: BattleCard[]) => unknown'.
+      Type '(prev: { cards: BattleCard[]; }, items: BattleCard[]) => { cards: BattleCard[]; }' is not assignable to type '(prev: unknown, newItems: BattleCard[]) => unknown'.
+        Types of parameters 'prev' and 'prev' are incompatible.
+          Type 'unknown' is not assignable to type '{ cards: BattleCard[]; }'.
+tests/features/shop-transactions.test.ts(88,29): error TS2379: Argument of type '{ price: number; refreshesLeft: number; runGold: number; pool: BattleCard[]; currentItems: BattleCard[]; count: number; setRunGold: (fn: (g: number) => number) => void; setState: Mock<...> | ((fn: (prev: unknown) => unknown) => void); mapState: ((prev: { cards: BattleCard[]; }, items: BattleCard[]) => { ...; }) | ((...' is not assignable to parameter of type 'RefreshOfferingsInput<unknown>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'mapState' are incompatible.
+    Type '((prev: { cards: BattleCard[]; }, items: BattleCard[]) => { cards: BattleCard[]; }) | ((prev: unknown, newItems: BattleCard[]) => unknown)' is not assignable to type '(prev: unknown, newItems: BattleCard[]) => unknown'.
+      Type '(prev: { cards: BattleCard[]; }, items: BattleCard[]) => { cards: BattleCard[]; }' is not assignable to type '(prev: unknown, newItems: BattleCard[]) => unknown'.
+        Types of parameters 'prev' and 'prev' are incompatible.
+          Type 'unknown' is not assignable to type '{ cards: BattleCard[]; }'.
+tests/features/shop-transactions.test.ts(93,18): error TS2532: Object is possibly 'undefined'.
+tests/features/storage-backup.test.ts(6,47): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window'.
+tests/features/storage-backup.test.ts(22,5): error TS2375: Type 'Window' is not assignable to type 'Window & typeof globalThis & { alchemyDesktop?: any; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Type 'Window' is missing the following properties from type 'typeof globalThis': globalThis, eval, parseInt, parseFloat, and 777 more.
+tests/features/storage-backup.test.ts(22,31): error TS2352: Conversion of type '{ localStorage: Storage; alchemyDesktop: { isDesktop: boolean; setDisplayMode: Mock<Procedure>; quit: Mock<Procedure>; loadSave: Mock<Procedure>; ... 7 more ...; steamCloudDelete: Mock<...>; }; }' to type 'Window' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ localStorage: Storage; alchemyDesktop: { isDesktop: boolean; setDisplayMode: Mock<Procedure>; quit: Mock<Procedure>; loadSave: Mock<Procedure>; ... 7 more ...; steamCloudDelete: Mock<...>; }; }' is missing the following properties from type 'Window': clientInformation, closed, cookieStore, customElements, and 213 more.
+tests/features/storage-backup.test.ts(23,21): error TS2352: Conversion of type '{ getItem: () => null; setItem: () => undefined; removeItem: () => undefined; }' to type 'Storage' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ getItem: () => null; setItem: () => undefined; removeItem: () => undefined; }' is missing the following properties from type 'Storage': length, clear, key
+tests/features/storage-io-cloud-merge.test.ts(8,47): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window'.
+tests/features/storage-io-cloud-merge.test.ts(12,3): error TS2375: Type 'Window' is not assignable to type 'Window & typeof globalThis & { alchemyDesktop?: any; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Type 'Window' is missing the following properties from type 'typeof globalThis': globalThis, eval, parseInt, parseFloat, and 777 more.
+tests/features/storage-io.test.ts(13,3): error TS2322: Type '{ localStorage: Storage; }' is not assignable to type 'Window & typeof globalThis & Pick<Window, "localStorage">'.
+  Type '{ localStorage: Storage; }' is missing the following properties from type 'Window': clientInformation, closed, cookieStore, customElements, and 213 more.
+tests/features/storage-io.test.ts(138,32): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+tests/features/storage-io.test.ts(152,5): error TS2322: Type '{ localStorage: Storage; }' is not assignable to type 'Window & typeof globalThis & Pick<Window, "localStorage">'.
+  Type '{ localStorage: Storage; }' is missing the following properties from type 'Window': clientInformation, closed, cookieStore, customElements, and 213 more.
+tests/features/storage.test.ts(44,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage.test.ts(45,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage.test.ts(46,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage.test.ts(47,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage.test.ts(48,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage.test.ts(74,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage.test.ts(121,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage.test.ts(122,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage.test.ts(123,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage.test.ts(125,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage.test.ts(152,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage.test.ts(175,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage.test.ts(197,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage.test.ts(324,5): error TS2532: Object is possibly 'undefined'.
+tests/features/storage.test.ts(592,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage/active-run.test.ts(111,12): error TS18048: 'card' is possibly 'undefined'.
+tests/features/storage/active-run.test.ts(112,12): error TS18048: 'card' is possibly 'undefined'.
+tests/features/storage/active-run.test.ts(113,12): error TS18048: 'card' is possibly 'undefined'.
+tests/features/storage/active-run.test.ts(114,12): error TS18048: 'card' is possibly 'undefined'.
+tests/features/storage/active-run.test.ts(395,12): error TS2532: Object is possibly 'undefined'.
+tests/features/storage/bootstrap-save-state.test.ts(5,47): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window'.
+tests/features/storage/bootstrap-save-state.test.ts(21,5): error TS2375: Type 'Window' is not assignable to type 'Window & typeof globalThis & { alchemyDesktop?: any; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Type 'Window' is missing the following properties from type 'typeof globalThis': globalThis, eval, parseInt, parseFloat, and 777 more.
+tests/features/storage/bootstrap-save-state.test.ts(21,31): error TS2352: Conversion of type '{ localStorage: Storage; alchemyDesktop: { isDesktop: boolean; setDisplayMode: Mock<Procedure>; quit: Mock<Procedure>; loadSave: Mock<Procedure>; ... 7 more ...; steamCloudDelete: Mock<...>; }; }' to type 'Window' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ localStorage: Storage; alchemyDesktop: { isDesktop: boolean; setDisplayMode: Mock<Procedure>; quit: Mock<Procedure>; loadSave: Mock<Procedure>; ... 7 more ...; steamCloudDelete: Mock<...>; }; }' is missing the following properties from type 'Window': clientInformation, closed, cookieStore, customElements, and 213 more.
+tests/features/storage/bootstrap-save-state.test.ts(22,21): error TS2352: Conversion of type '{ getItem: () => null; setItem: () => undefined; removeItem: () => undefined; }' to type 'Storage' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ getItem: () => null; setItem: () => undefined; removeItem: () => undefined; }' is missing the following properties from type 'Storage': length, clear, key
+tests/features/storage/migrations.test.ts(75,12): error TS18046: 'result.gameBuildVersion' is of type 'unknown'.
+tests/features/stores/app-store.test.ts(36,68): error TS2322: Type '{ saveSchemaVersion: number; gameBuildVersion: string; contentVersion: number; selectedAspectRatio: AspectRatioOption; displayMode: DisplayMode; ... 25 more ...; lastSavedAt?: number; }' is not assignable to type 'SaveData'.
+  Property 'gearInventories' is optional in type '{ saveSchemaVersion: number; gameBuildVersion: string; contentVersion: number; selectedAspectRatio: AspectRatioOption; displayMode: DisplayMode; uiScale: UiScale; ... 24 more ...; lastSavedAt?: number; }' but required in type 'SaveData'.
+tests/features/stores/battle-presentation-store.test.ts(1,48): error TS6133: 'afterEach' is declared but its value is never read.
+tests/features/stores/error-log-store.test.ts(15,62): error TS2322: Type '"runtime"' is not assignable to type 'ErrorSource'.
+tests/features/stores/error-log-store.test.ts(25,72): error TS2322: Type '"runtime"' is not assignable to type 'ErrorSource'.
+tests/features/stores/error-log-store.test.ts(34,61): error TS2322: Type '"runtime"' is not assignable to type 'ErrorSource'.
+tests/features/stores/error-log-store.test.ts(35,61): error TS2322: Type '"runtime"' is not assignable to type 'ErrorSource'.
+tests/features/stores/error-log-store.test.ts(44,62): error TS2322: Type '"runtime"' is not assignable to type 'ErrorSource'.
+tests/features/stores/error-log-store.test.ts(51,67): error TS2322: Type '"runtime"' is not assignable to type 'ErrorSource'.
+tests/features/stores/reset.test.ts(51,51): error TS2353: Object literal may only specify known properties, and 'goldReward' does not exist in type 'CardRewardState'.
+tests/features/stores/run-domain.test.ts(84,11): error TS2740: Type '{ characterId: "rogue"; runDeck: { id: string; title: string; descriptionLines: string[]; art: string; cost: number; effects: { kind: "damage"; damageType: "physical"; amount: number; }[]; uid: number; }[]; ... 17 more ...; pendingReward: null; }' is missing the following properties from type 'ActiveRunData': lastOfferedDestinations, destinationRoundsSinceOffered, wildwoodDraft, runMaterialsEarned, and 4 more.
+tests/features/stores/run-domain.test.ts(125,11): error TS2740: Type '{ characterId: "rogue"; runDeck: never[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; currentAct: number; destinationIndexInAct: number; completedDestinations: string[]; ... 10 more ...; pendingReward: null; }' is missing the following properties from type 'ActiveRunData': lastOfferedDestinations, destinationRoundsSinceOffered, wildwoodDraft, runMaterialsEarned, and 4 more.
+tests/features/stores/run-domain.test.ts(164,11): error TS2740: Type '{ characterId: "knight"; runDeck: never[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; currentAct: number; destinationIndexInAct: number; completedDestinations: never[]; ... 10 more ...; pendingReward: null; }' is missing the following properties from type 'ActiveRunData': lastOfferedDestinations, destinationRoundsSinceOffered, wildwoodDraft, runMaterialsEarned, and 4 more.
+tests/features/stores/run-domain.test.ts(645,45): error TS2345: Argument of type '(prev: RewardState) => { destinations: ("shop" | "campfire")[]; selectedId: string | null; gold: number; materials: MaterialInventory; selectedBossId: string | null; lastVictoryEnemyType: string | null; lastVictoryContentSystem: ContentSystemId | null; rewardType: "card"; choices: BattleCard[]; } | { ...; } | { ...; }' is not assignable to parameter of type 'RewardState | ((prev: RewardState) => RewardState)'.
+  Type '(prev: RewardState) => { destinations: ("shop" | "campfire")[]; selectedId: string | null; gold: number; materials: MaterialInventory; selectedBossId: string | null; lastVictoryEnemyType: string | null; lastVictoryContentSystem: ContentSystemId | null; rewardType: "card"; choices: BattleCard[]; } | { ...; } | { ...; }' is not assignable to type '(prev: RewardState) => RewardState'.
+    Type '{ destinations: ("shop" | "campfire")[]; selectedId: string | null; gold: number; materials: MaterialInventory; selectedBossId: string | null; lastVictoryEnemyType: string | null; lastVictoryContentSystem: ContentSystemId | null; rewardType: "card"; choices: BattleCard[]; } | { ...; } | { ...; }' is not assignable to type 'RewardState'.
+      Type '{ destinations: ("shop" | "campfire")[]; selectedId: string | null; gold: number; materials: MaterialInventory; selectedBossId: string | null; lastVictoryEnemyType: string | null; lastVictoryContentSystem: ContentSystemId | null; rewardType: "card"; choices: BattleCard[]; }' is not assignable to type 'RewardState'.
+        Type '{ destinations: ("shop" | "campfire")[]; selectedId: string | null; gold: number; materials: MaterialInventory; selectedBossId: string | null; lastVictoryEnemyType: string | null; lastVictoryContentSystem: ContentSystemId | null; rewardType: "card"; choices: BattleCard[]; }' is not assignable to type 'CardRewardState'.
+          Type '{ destinations: ("shop" | "campfire")[]; selectedId: string | null; gold: number; materials: MaterialInventory; selectedBossId: string | null; lastVictoryEnemyType: string | null; lastVictoryContentSystem: ContentSystemId | null; rewardType: "card"; choices: BattleCard[]; }' is not assignable to type '{ destinations: Destination[]; }'.
+            Types of property 'destinations' are incompatible.
+              Type '("shop" | "campfire")[]' is not assignable to type 'Destination[]'.
+                Type '"shop" | "campfire"' is not assignable to type 'Destination'.
+                  Type '"shop"' is not assignable to type 'Destination'.
+tests/features/stores/run-domain.test.ts(729,36): error TS2339: Property 'LABYRINTH' does not exist on type '{ readonly MENU: "menu"; readonly GAME_MODE_SELECT: "game-mode-select"; readonly CHARACTER_SELECT: "character-select"; readonly DIFFICULTY_SELECT: "difficulty-select"; readonly DRAFT_DECK: "draft-deck"; ... 19 more ...; readonly WILDWOOD_REMOVAL: "wildwood-removal"; }'.
+tests/features/stores/run-domain.test.ts(748,16): error TS2345: Argument of type '{ pendingReward: null; wildwoodDraft: { version: 3; phase: "recovery"; draftChoices: never[]; remainingBossIds: readonly ["iron-bear"]; previousBossId: null; currentBossId: null; currentCombatTraitIds: never[]; ... 4 more ...; selectedRewardId: null; }; ... 25 more ...; equipmentShopState: PersistedEquipmentShopStat...' is not assignable to parameter of type 'ActiveRunData'.
+  The types of 'wildwoodDraft.remainingBossIds' are incompatible between these types.
+    The type 'readonly ["iron-bear"]' is 'readonly' and cannot be assigned to the mutable type '("forge-golem" | "frostwarden" | "blight-treant" | "iron-bear")[]'.
+tests/fixtures/battle.ts(45,43): error TS2304: Cannot find name 'BattleCard'.
+tests/fixtures/battle.ts(55,43): error TS2304: Cannot find name 'BattleCard'.
+tests/fixtures/battle.ts(69,4): error TS2304: Cannot find name 'BattleCard'.
+tests/gear-combat.spec.ts(15,5): error TS18048: 'loadouts.knight' is possibly 'undefined'.
+tests/gear-combat.spec.ts(15,5): error TS2322: Type '"gear-1"' is not assignable to type 'null'.
+tests/gear-equip.spec.ts(40,5): error TS18048: 'loadouts.knight' is possibly 'undefined'.
+tests/gear-equip.spec.ts(40,5): error TS2322: Type '"helm-b"' is not assignable to type 'null'.
+tests/gear-equip.spec.ts(165,20): error TS2304: Cannot find name 'GearInstance'.
+tests/gear-equip.spec.ts(166,19): error TS2304: Cannot find name 'GearInstance'.
+tests/gear-equip.spec.ts(167,22): error TS2304: Cannot find name 'GearInstance'.
+tests/gear-equip.spec.ts(169,5): error TS18048: 'loadouts.knight' is possibly 'undefined'.
+tests/gear-equip.spec.ts(169,5): error TS2322: Type '"bow-1"' is not assignable to type 'null'.
+tests/gear-equip.spec.ts(170,5): error TS18048: 'loadouts.knight' is possibly 'undefined'.
+tests/gear-equip.spec.ts(170,5): error TS2322: Type '"quiver-1"' is not assignable to type 'null'.
+tests/gear-flow.spec.ts(31,5): error TS18048: 'loadouts.knight' is possibly 'undefined'.
+tests/gear-flow.spec.ts(31,5): error TS2322: Type '"gear-1"' is not assignable to type 'null'.
+tests/gear-flow.spec.ts(105,5): error TS18048: 'loadouts.knight' is possibly 'undefined'.
+tests/gear-flow.spec.ts(105,5): error TS2322: Type '"helm-b"' is not assignable to type 'null'.
+tests/helpers/run-flow-handler-deps.ts(6,3): error TS2322: Type '{ run: RunStateController; talents: TalentStateController; activeLabyrinthRewardModifiers: LabyrinthModifierKind[]; ... 17 more ...; onWildwoodRewardComplete: () => void; }' is not assignable to type 'RunFlowHandlerDeps'.
+  Property 'onInitTrinketShop' is optional in type '{ run: { characterId: CharacterId; runDeck: BattleCard[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; currentAct: number; ... 26 more ...; hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void; }; ... 19 more ...; onWildwoodRewardComplete: () => void; }' but required in type 'RunFlowHandlerDeps'.
+tests/lib/active-run-session/hydrate.test.ts(34,47): error TS2345: Argument of type '{ characterId: "knight"; runDeck: never[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; currentAct: number; destinationIndexInAct: number; completedDestinations: never[]; ... 15 more ...; wildwoodDraft: null; }' is not assignable to parameter of type 'ActiveRunSnapshotSource'.
+  Type '{ characterId: "knight"; runDeck: never[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; currentAct: number; destinationIndexInAct: number; completedDestinations: never[]; ... 15 more ...; wildwoodDraft: null; }' is missing the following properties from type 'ActiveRunSnapshotSource': lastOfferedDestinations, destinationRoundsSinceOffered, shopState, alchemistState, and 2 more.
+tests/lib/active-run-session/hydrate.test.ts(69,47): error TS2345: Argument of type '{ characterId: "knight"; runDeck: never[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; currentAct: number; destinationIndexInAct: number; completedDestinations: never[]; ... 15 more ...; wildwoodDraft: null; }' is not assignable to parameter of type 'ActiveRunSnapshotSource'.
+  Type '{ characterId: "knight"; runDeck: never[]; runGold: number; runPlayerHealth: number; runMaxHealth: number; roomsEncountered: number; currentAct: number; destinationIndexInAct: number; completedDestinations: never[]; ... 15 more ...; wildwoodDraft: null; }' is missing the following properties from type 'ActiveRunSnapshotSource': lastOfferedDestinations, destinationRoundsSinceOffered, shopState, alchemistState, and 2 more.
+tests/lib/audio-buffer-cache.test.ts(24,12): error TS2352: Conversion of type '{ createGain: Mock<() => { gain: { value: number; }; connect: Mock<Procedure>; }>; destination: string; }' to type 'Partial<AudioContext>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'destination' are incompatible.
+    Type 'string' is not comparable to type 'AudioDestinationNode'.
+tests/lib/audio-buffer-cache.test.ts(40,12): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/lib/audio-buffer-cache.test.ts(64,5): error TS2322: Type 'Partial<AudioContext>' is not assignable to type 'AudioContext'.
+  Property 'baseLatency' is optional in type 'Partial<AudioContext>' but required in type 'AudioContext'.
+tests/lib/audio-buffer-cache.test.ts(76,5): error TS2322: Type 'Partial<AudioContext>' is not assignable to type 'AudioContext'.
+  Property 'baseLatency' is optional in type 'Partial<AudioContext>' but required in type 'AudioContext'.
+tests/lib/audio-buffer-cache.test.ts(119,21): error TS2352: Conversion of type '{ createGain: Mock<Procedure>; destination: string; decodeAudioData: Mock<() => Promise<never>>; }' to type 'Partial<AudioContext>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'destination' are incompatible.
+    Type 'string' is not comparable to type 'AudioDestinationNode'.
+tests/lib/audio-music.test.ts(1,10): error TS6133: 'describe' is declared but its value is never read.
+tests/lib/audio-sfx.test.ts(20,10): error TS2352: Conversion of type '{ createBufferSource: Mock<() => { buffer: null; connect: Mock<Procedure>; start: Mock<Procedure>; stop: Mock<Procedure>; onended: null; }>; createGain: Mock<...>; destination: string; currentTime: number; }' to type 'Partial<AudioContext>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'destination' are incompatible.
+    Type 'string' is not comparable to type 'AudioDestinationNode'.
+tests/lib/audio-volume.test.ts(93,5): error TS2375: Type 'Partial<HTMLAudioElement>' is not assignable to type 'HTMLAudioElement' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Property 'addEventListener' is optional in type 'Partial<HTMLAudioElement>' but required in type 'HTMLAudioElement'.
+tests/lib/battle/apply-effects-special.test.ts(20,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/apply-effects-special.test.ts(153,7): error TS2740: Type '{ forge: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/apply-effects-utility.test.ts(69,64): error TS2345: Argument of type '{ kind: "summon-companion"; companionId: string; }' is not assignable to parameter of type 'BattleCardEffect'.
+  Type '{ kind: "summon-companion"; companionId: string; }' is not assignable to type '{ kind: "summon-companion"; companionId: CompanionId; }'.
+    Types of property 'companionId' are incompatible.
+      Type 'string' is not assignable to type 'CompanionId'.
+tests/lib/battle/apply-effects.test.ts(76,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/apply-effects.test.ts(97,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/battle/apply-effects.test.ts(254,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/battle-enemy-setup.test.ts(78,74): error TS2322: Type '"stun"' is not assignable to type '"burn" | "bleed" | "poison" | "freeze"'.
+tests/lib/battle/battle-enemy-setup.test.ts(85,77): error TS2353: Object literal may only specify known properties, and 'amount' does not exist in type '{ kind: "enemy-attacks-gain-leech"; }'.
+tests/lib/battle/battle-enemy-setup.test.ts(99,12): error TS18048: 'physical' is possibly 'undefined'.
+tests/lib/battle/battle-enemy-setup.test.ts(99,42): error TS18048: 'physical' is possibly 'undefined'.
+tests/lib/battle/battle-enemy-setup.test.ts(99,51): error TS2339: Property 'lifesteal' does not exist on type '{ kind: "player-status"; status: PlayerStatusId; amount: number; } | { lifesteal?: boolean; amount: number; kind: "damage"; damageType: DamageType; }'.
+  Property 'lifesteal' does not exist on type '{ kind: "player-status"; status: PlayerStatusId; amount: number; }'.
+tests/lib/battle/battle-enemy-setup.test.ts(118,34): error TS2353: Object literal may only specify known properties, and 'amount' does not exist in type '{ kind: "start-companion"; }'.
+tests/lib/battle/battle-setup.test.ts(46,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/battle/battle-setup.test.ts(72,42): error TS2559: Type 'string[]' has no properties in common with type 'Partial<Record<KeywordId, string[]>>'.
+tests/lib/battle/battle-setup.test.ts(87,42): error TS2559: Type 'never[]' has no properties in common with type 'Partial<Record<KeywordId, string[]>>'.
+tests/lib/battle/block-decay.test.ts(16,12): error TS2322: Type 'BattleCard | undefined' is not assignable to type 'BattleCard'.
+  Type 'undefined' is not assignable to type 'BattleCard'.
+tests/lib/battle/burn-stun-resolve.test.ts(1,32): error TS6133: 'vi' is declared but its value is never read.
+tests/lib/battle/combat-text.test.ts(64,27): error TS2345: Argument of type '{ playerStatuses: { block: number; armor: number; forge: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; haste: number; }; }' is not assignable to parameter of type 'Pick<BattleState, "playerStatuses">'.
+  Types of property 'playerStatuses' are incompatible.
+    Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; haste: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/combat-text.test.ts(71,29): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; haste: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/cost.test.ts(108,36): error TS2379: Argument of type '{ effects: { kind: string; amount: number; }[]; id: string; uid?: number; title: string; descriptionLines: string[]; art: string; cost: number; consume?: boolean; corrupted?: boolean; corruptedValuePositions?: { lineIndex: number; matchIndex: number; }[]; baseTitle?: string; tags?: KeywordId[]; }' is not assignable to parameter of type 'BattleCard' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'effects' are incompatible.
+    Type '{ kind: string; amount: number; }[]' is not assignable to type 'BattleCardEffect[]'.
+      Type '{ kind: string; amount: number; }' is not assignable to type 'BattleCardEffect'.
+        Type '{ kind: string; amount: number; }' is not assignable to type '{ kind: "remove-enemy-armor"; amount: number; }'.
+          Types of property 'kind' are incompatible.
+            Type 'string' is not assignable to type '"remove-enemy-armor"'.
+tests/lib/battle/damage-riders.test.ts(18,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/damage-riders.test.ts(33,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/damage-riders.test.ts(122,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/damage.test.ts(24,48): error TS2339: Property 'damageType' does not exist on type 'BattleCardEffect'.
+tests/lib/battle/damage.test.ts(108,38): error TS2740: Type '{ forge: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/damage.test.ts(122,7): error TS2740: Type '{ forge: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/damage.test.ts(123,7): error TS2740: Type '{ forgeToBurn: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(139,7): error TS2740: Type '{ forge: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/damage.test.ts(140,7): error TS2740: Type '{ forgeToHoly: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(156,7): error TS2740: Type '{ forge: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/damage.test.ts(157,7): error TS2740: Type '{ forgeToBleed: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(173,38): error TS2740: Type '{ block: number; }' is missing the following properties from type 'PlayerStatusValues': stun, burn, bleed, poison, and 5 more.
+tests/lib/battle/damage.test.ts(186,38): error TS2740: Type '{ armor: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/damage.test.ts(203,7): error TS2740: Type '{ holyGoldPercent: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(218,7): error TS2740: Type '{ block: number; }' is missing the following properties from type 'PlayerStatusValues': stun, burn, bleed, poison, and 5 more.
+tests/lib/battle/damage.test.ts(219,7): error TS2740: Type '{ holyBlockPercent: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(234,7): error TS2739: Type '{ burn: number; }' is missing the following properties from type 'EnemyStatusValues': stun, bleed, poison, freeze
+tests/lib/battle/damage.test.ts(235,7): error TS2740: Type '{ holyVsBurnMultiplier: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(254,7): error TS2740: Type '{ bleedDesperateMultiplier: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(271,7): error TS2740: Type '{ bleedExecuteThreshold: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(288,7): error TS2740: Type '{ flatArrowDamage: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(309,7): error TS2740: Type '{ flatStunDamage: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(328,7): error TS2739: Type '{ poison: number; }' is missing the following properties from type 'EnemyStatusValues': stun, burn, bleed, freeze
+tests/lib/battle/damage.test.ts(329,7): error TS2740: Type '{ poisonPhysicalBonus: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(346,7): error TS2739: Type '{ bleed: number; }' is missing the following properties from type 'EnemyStatusValues': stun, burn, poison, freeze
+tests/lib/battle/damage.test.ts(347,7): error TS2740: Type '{ bleedPhysicalBonus: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(364,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/damage.test.ts(365,7): error TS2740: Type '{ physicalDoubledVsStunned: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(382,7): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/damage.test.ts(383,7): error TS2740: Type '{ physicalDoubledVsFrozen: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(401,38): error TS2740: Type '{ firstBurnCardDoubled: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(417,7): error TS2740: Type '{ firstBurnCardDoubled: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(418,7): error TS2740: Type '{ firstBurnCardDoubledUsed: true; }' is missing the following properties from type 'CombatFlags': firstPhysicalCardFreeUsed, firstHolyCardFreeUsed, firstArmorCardDoubledUsed, firstPoisonCardFreeUsed, and 11 more.
+tests/lib/battle/damage.test.ts(434,38): error TS2740: Type '{ firstBurnDoubled: true; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstHolyDamageDoubled, boneCharmHealOnKill, forgeStunThreshold, and 22 more.
+tests/lib/battle/damage.test.ts(448,38): error TS2740: Type '{ firstHolyDamageDoubled: true; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstBurnDoubled, boneCharmHealOnKill, forgeStunThreshold, and 22 more.
+tests/lib/battle/damage.test.ts(464,7): error TS2740: Type '{ physicalCritChance: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, firstPhysicalCardFree, physicalStunChance, and 161 more.
+tests/lib/battle/damage.test.ts(481,7): error TS2740: Type '{ physicalCritChance: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, firstPhysicalCardFree, physicalStunChance, and 161 more.
+tests/lib/battle/damage.test.ts(513,7): error TS2740: Type '{ forge: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/damage.test.ts(514,7): error TS2740: Type '{ forgeStunThreshold: number; forgeStunAmount: number; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstHolyDamageDoubled, firstBurnDoubled, boneCharmHealOnKill, and 21 more.
+tests/lib/battle/damage.test.ts(515,7): error TS2739: Type '{ stun: number; }' is missing the following properties from type 'EnemyStatusValues': burn, bleed, poison, freeze
+tests/lib/battle/damage.test.ts(530,7): error TS2740: Type '{ forge: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/damage.test.ts(531,7): error TS2740: Type '{ forgeStunThreshold: number; forgeStunAmount: number; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstHolyDamageDoubled, firstBurnDoubled, boneCharmHealOnKill, and 21 more.
+tests/lib/battle/damage.test.ts(549,7): error TS2740: Type '{ holyLifestealPercent: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(586,7): error TS2740: Type '{ holyBurnChance: number; holyLifestealPercent: number; holyGoldPercent: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 159 more.
+tests/lib/battle/damage.test.ts(602,38): error TS2740: Type '{ forge: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/damage.test.ts(615,38): error TS2740: Type '{ forge: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/damage.test.ts(629,7): error TS2740: Type '{ forge: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/damage.test.ts(630,7): error TS2740: Type '{ forgeToBurn: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(645,7): error TS2740: Type '{ forge: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/damage.test.ts(646,7): error TS2740: Type '{ forgeToHoly: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(660,38): error TS2740: Type '{ forge: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/damage.test.ts(673,38): error TS2740: Type '{ forge: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/damage.test.ts(692,7): error TS2740: Type '{ healMultiplier: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(726,7): error TS2740: Type '{ sunderingArmorPiercing: number; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstHolyDamageDoubled, firstBurnDoubled, boneCharmHealOnKill, and 22 more.
+tests/lib/battle/damage.test.ts(762,7): error TS2740: Type '{ trinketSiphonChance: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/damage.test.ts(785,7): error TS2740: Type '{ trinketSiphonChance: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/draw.test.ts(142,18): error TS2345: Argument of type '{ id: string; title: string; descriptionLines: string[]; art: string; cost: number; effects: { kind: string; damageType: string; amount: number; }[]; }[]' is not assignable to parameter of type 'BattleCard[]'.
+  Type '{ id: string; title: string; descriptionLines: string[]; art: string; cost: number; effects: { kind: string; damageType: string; amount: number; }[]; }' is not assignable to type 'BattleCard'.
+    Types of property 'effects' are incompatible.
+      Type '{ kind: string; damageType: string; amount: number; }[]' is not assignable to type 'BattleCardEffect[]'.
+        Type '{ kind: string; damageType: string; amount: number; }' is not assignable to type 'BattleCardEffect'.
+          Type '{ kind: string; damageType: string; amount: number; }' is not assignable to type '{ kind: "self-damage"; damageType: EnemyStatusId; amount: number; }'.
+            Types of property 'kind' are incompatible.
+              Type 'string' is not assignable to type '"self-damage"'.
+tests/lib/battle/draw.test.ts(196,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/battle/draw.test.ts(203,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/battle/draw.test.ts(234,34): error TS2345: Argument of type '(c: { uid: number; }) => number' is not assignable to parameter of type '(value: BattleCard, index: number, array: BattleCard[]) => number'.
+  Types of parameters 'c' and 'value' are incompatible.
+    Type 'BattleCard' is not assignable to type '{ uid: number; }'.
+      Property 'uid' is optional in type 'BattleCard' but required in type '{ uid: number; }'.
+tests/lib/battle/encounter-traits.test.ts(60,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/enemy-turn-attack.test.ts(184,7): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/enemy-turn-traits.test.ts(50,7): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/enemy-turn-traits.test.ts(63,7): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/enemy-turn-traits.test.ts(136,68): error TS2353: Object literal may only specify known properties, and 'amount' does not exist in type '{ kind: "enemy-gains-forge-each-turn"; }'.
+tests/lib/battle/enemy-turn-traits.test.ts(152,7): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/enemy-turn-traits.test.ts(174,68): error TS2353: Object literal may only specify known properties, and 'amount' does not exist in type '{ kind: "enemy-gains-forge-each-turn"; }'.
+tests/lib/battle/enemy-turn-utils.test.ts(62,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/enemy-turn-utils.test.ts(79,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/enemy-turn-utils.test.ts(80,7): error TS1117: An object literal cannot have multiple properties with the same name.
+tests/lib/battle/enemy-turn-utils.test.ts(80,7): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/enemy-turn-utils.test.ts(111,43): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/enemy-turn-utils.test.ts(117,7): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/enemy-turn-utils.test.ts(126,7): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/enemy-turn.test.ts(1,32): error TS6133: 'vi' is declared but its value is never read.
+tests/lib/battle/enemy-turn.test.ts(35,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/enemy-turn.test.ts(87,33): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/enemy-turn.test.ts(93,33): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/enemy-turn.test.ts(99,33): error TS2741: Property 'cooldown' is missing in type '{ stunSkipTurns: number; freezeSkipTurns: number; }' but required in type 'CcState'.
+tests/lib/battle/enemy-turn.test.ts(107,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/enemy-turn.test.ts(117,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/gear-effects.test.ts(33,7): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/gear-effects.test.ts(37,58): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/gear-effects.test.ts(42,7): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/gear-effects.test.ts(60,53): error TS2339: Property 'amount' does not exist on type 'CombatTextEvent'.
+  Property 'amount' does not exist on type 'NoticeCombatTextEvent'.
+tests/lib/battle/gear-new-affixes.test.ts(49,55): error TS2345: Argument of type '{ kind: "damage"; damageType: string; amount: number; }' is not assignable to parameter of type '{ kind: "damage"; damageType: DamageType; amount: number; lifesteal?: boolean; } & { kind: "damage"; }'.
+  Type '{ kind: "damage"; damageType: string; amount: number; }' is not assignable to type '{ kind: "damage"; damageType: DamageType; amount: number; lifesteal?: boolean; }'.
+    Types of property 'damageType' are incompatible.
+      Type 'string' is not assignable to type 'DamageType'.
+tests/lib/battle/gear-new-affixes.test.ts(155,55): error TS2345: Argument of type '{ kind: "damage"; damageType: string; amount: number; }' is not assignable to parameter of type '{ kind: "damage"; damageType: DamageType; amount: number; lifesteal?: boolean; } & { kind: "damage"; }'.
+  Type '{ kind: "damage"; damageType: string; amount: number; }' is not assignable to type '{ kind: "damage"; damageType: DamageType; amount: number; lifesteal?: boolean; }'.
+    Types of property 'damageType' are incompatible.
+      Type 'string' is not assignable to type 'DamageType'.
+tests/lib/battle/gear-stun-integration.test.ts(28,23): error TS2339: Property 'amount' does not exist on type 'CombatTextEvent'.
+  Property 'amount' does not exist on type 'NoticeCombatTextEvent'.
+tests/lib/battle/integration/apply-effects.test.ts(134,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/card-play.test.ts(124,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/battle/integration/card-play.test.ts(185,7): error TS2739: Type '{ firstPhysicalCardFreeUsed: false; firstHolyCardFreeUsed: false; firstBurnCardDoubledUsed: false; firstArmorCardDoubledUsed: false; firstPoisonCardFreeUsed: false; firstBleedCardFreeUsed: false; ... 7 more ...; runicQuillUsedThisTurn: false; }' is missing the following properties from type 'CombatFlags': firstLeechCardDoubledUsed, divineAegisTriggered
+tests/lib/battle/integration/card-play.test.ts(344,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/damage.test.ts(104,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/integration/damage.test.ts(128,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/integration/damage.test.ts(148,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/damage.test.ts(161,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/damage.test.ts(173,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/damage.test.ts(296,7): error TS2739: Type '{ cooldown: number; }' is missing the following properties from type 'CcState': stunSkipTurns, freezeSkipTurns
+tests/lib/battle/integration/damage.test.ts(343,7): error TS2739: Type '{ cooldown: number; }' is missing the following properties from type 'CcState': stunSkipTurns, freezeSkipTurns
+tests/lib/battle/integration/damage.test.ts(422,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(26,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/integration/end-player-turn.test.ts(94,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/integration/end-player-turn.test.ts(95,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/integration/end-player-turn.test.ts(157,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(216,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(229,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(269,9): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(397,7): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/integration/end-player-turn.test.ts(472,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(483,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(495,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(507,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(521,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(535,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(551,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(627,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(646,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(660,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(675,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(692,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(704,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(718,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(735,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(749,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(765,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/integration/end-player-turn.test.ts(781,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/end-player-turn.test.ts(797,7): error TS2741: Property 'cooldown' is missing in type '{ stunSkipTurns: number; freezeSkipTurns: number; }' but required in type 'CcState'.
+tests/lib/battle/integration/end-player-turn.test.ts(829,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/trinkets.test.ts(86,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/battle/integration/trinkets.test.ts(107,7): error TS2739: Type '{ firstPhysicalCardFreeUsed: false; firstHolyCardFreeUsed: false; firstBurnCardDoubledUsed: false; firstArmorCardDoubledUsed: false; firstPoisonCardFreeUsed: false; firstBleedCardFreeUsed: false; ... 6 more ...; resonantChimeUsedThisTurn: false; }' is missing the following properties from type 'CombatFlags': firstLeechCardDoubledUsed, runicQuillUsedThisTurn, divineAegisTriggered
+tests/lib/battle/integration/trinkets.test.ts(170,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/trinkets.test.ts(185,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/trinkets.test.ts(202,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/trinkets.test.ts(400,7): error TS2741: Property 'phoenixFeather' is missing in type '{ block: number; armor: number; forge: number; haste: number; burn: number; poison: number; bleed: number; freeze: number; stun: number; }' but required in type 'PlayerStatusValues'.
+tests/lib/battle/integration/trinkets.test.ts(485,7): error TS2739: Type '{ firstPhysicalCardFreeUsed: false; firstHolyCardFreeUsed: false; firstBurnCardDoubledUsed: false; firstArmorCardDoubledUsed: false; firstPoisonCardFreeUsed: false; firstBleedCardFreeUsed: false; ... 6 more ...; resonantChimeUsedThisTurn: false; }' is missing the following properties from type 'CombatFlags': firstLeechCardDoubledUsed, runicQuillUsedThisTurn, divineAegisTriggered
+tests/lib/battle/integration/trinkets.test.ts(517,7): error TS2739: Type '{ firstPhysicalCardFreeUsed: false; firstHolyCardFreeUsed: false; firstBurnCardDoubledUsed: false; firstArmorCardDoubledUsed: false; firstPoisonCardFreeUsed: false; firstBleedCardFreeUsed: false; ... 6 more ...; resonantChimeUsedThisTurn: false; }' is missing the following properties from type 'CombatFlags': firstLeechCardDoubledUsed, runicQuillUsedThisTurn, divineAegisTriggered
+tests/lib/battle/integration/wish-draw.test.ts(111,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/battle/integration/wish-draw.test.ts(124,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/battle/status-application.test.ts(48,45): error TS2739: Type '{ armor: number; forge: number; freezeBonus: number; }' is missing the following properties from type 'EnemyMitigation': burnBonus, block
+tests/lib/battle/status-application.test.ts(55,45): error TS2739: Type '{ armor: number; forge: number; freezeBonus: number; }' is missing the following properties from type 'EnemyMitigation': burnBonus, block
+tests/lib/battle/status-application.test.ts(78,14): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'PlayerStatusValues'.
+  No index signature with a parameter of type 'string' was found on type 'PlayerStatusValues'.
+tests/lib/battle/status-application.test.ts(97,14): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'PlayerStatusValues'.
+  No index signature with a parameter of type 'string' was found on type 'PlayerStatusValues'.
+tests/lib/battle/status-cc.test.ts(49,7): error TS2739: Type '{ cooldown: number; }' is missing the following properties from type 'CcState': stunSkipTurns, freezeSkipTurns
+tests/lib/battle/status-cc.test.ts(65,44): error TS2739: Type '{ cooldown: number; }' is missing the following properties from type 'CcState': stunSkipTurns, freezeSkipTurns
+tests/lib/battle/status-damage-riders.test.ts(19,7): error TS2739: Type '{ armor: number; forge: number; freezeBonus: number; }' is missing the following properties from type 'EnemyMitigation': burnBonus, block
+tests/lib/battle/status-damage-riders.test.ts(29,7): error TS2739: Type '{ armor: number; forge: number; freezeBonus: number; }' is missing the following properties from type 'EnemyMitigation': burnBonus, block
+tests/lib/battle/status-damage-riders.test.ts(103,40): error TS2345: Argument of type '{ enemyHealth: number; enemyMaxHealth: number; enemyCC: { stunSkipTurns: number; }; enemyStatuses: { stun: number; burn: number; bleed: number; poison: number; freeze: number; }; deck: BattleCard[]; ... 37 more ...; pendingMaterials: MaterialInventory; }' is not assignable to parameter of type 'BattleState'.
+  Types of property 'enemyCC' are incompatible.
+    Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-damage-riders.test.ts(160,7): error TS2739: Type '{ cooldown: number; }' is missing the following properties from type 'CcState': stunSkipTurns, freezeSkipTurns
+tests/lib/battle/status-damage-riders.test.ts(277,7): error TS2739: Type '{ armor: number; forge: number; freezeBonus: number; }' is missing the following properties from type 'EnemyMitigation': burnBonus, block
+tests/lib/battle/status-effects.test.ts(18,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-effects.test.ts(27,7): error TS2739: Type '{ freezeSkipTurns: number; }' is missing the following properties from type 'CcState': stunSkipTurns, cooldown
+tests/lib/battle/status-effects.test.ts(36,7): error TS2741: Property 'cooldown' is missing in type '{ stunSkipTurns: number; freezeSkipTurns: number; }' but required in type 'CcState'.
+tests/lib/battle/status-effects.test.ts(49,7): error TS2741: Property 'cooldown' is missing in type '{ stunSkipTurns: number; freezeSkipTurns: number; }' but required in type 'CcState'.
+tests/lib/battle/status-forge.test.ts(39,7): error TS2739: Type '{ armor: number; forge: number; freezeBonus: number; }' is missing the following properties from type 'EnemyMitigation': burnBonus, block
+tests/lib/battle/status-helpers.test.ts(60,45): error TS2739: Type '{ armor: number; forge: number; freezeBonus: number; }' is missing the following properties from type 'EnemyMitigation': burnBonus, block
+tests/lib/battle/status-helpers.test.ts(66,45): error TS2739: Type '{ armor: number; forge: number; freezeBonus: number; }' is missing the following properties from type 'EnemyMitigation': burnBonus, block
+tests/lib/battle/status-helpers.test.ts(72,45): error TS2739: Type '{ armor: number; forge: number; freezeBonus: number; }' is missing the following properties from type 'EnemyMitigation': burnBonus, block
+tests/lib/battle/status-helpers.test.ts(78,45): error TS2739: Type '{ armor: number; forge: number; freezeBonus: number; }' is missing the following properties from type 'EnemyMitigation': burnBonus, block
+tests/lib/battle/status-helpers.test.ts(84,45): error TS2739: Type '{ armor: number; forge: number; freezeBonus: number; }' is missing the following properties from type 'EnemyMitigation': burnBonus, block
+tests/lib/battle/status-player.test.ts(16,7): error TS2740: Type '{ burn: number; poison: number; bleed: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, freeze, forge, and 3 more.
+tests/lib/battle/status-player.test.ts(27,7): error TS2740: Type '{ burn: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, bleed, poison, and 5 more.
+tests/lib/battle/status-player.test.ts(36,7): error TS2740: Type '{ burn: number; poison: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, bleed, freeze, and 4 more.
+tests/lib/battle/status-player.test.ts(37,7): error TS2740: Type '{ sinEaterHealOnHarmfulStatusRemove: number; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstHolyDamageDoubled, firstBurnDoubled, boneCharmHealOnKill, and 22 more.
+tests/lib/battle/status-player.test.ts(49,7): error TS2740: Type '{ sinEaterHealOnHarmfulStatusRemove: number; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstHolyDamageDoubled, firstBurnDoubled, boneCharmHealOnKill, and 22 more.
+tests/lib/battle/status-player.test.ts(59,7): error TS2740: Type '{ burn: number; block: number; }' is missing the following properties from type 'PlayerStatusValues': stun, bleed, poison, freeze, and 4 more.
+tests/lib/battle/status-player.test.ts(60,7): error TS2740: Type '{ healOnStatusCleanse: number; overhealToBlockRatio: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 160 more.
+tests/lib/battle/status-player.test.ts(87,7): error TS2740: Type '{ armorDoubledBelowHalfHealth: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/status-player.test.ts(96,7): error TS2740: Type '{ firstArmorCardDoubled: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/status-player.test.ts(106,7): error TS2740: Type '{ firstArmorCardDoubled: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/status-player.test.ts(107,7): error TS2740: Type '{ firstArmorCardDoubledUsed: true; }' is missing the following properties from type 'CombatFlags': firstPhysicalCardFreeUsed, firstHolyCardFreeUsed, firstBurnCardDoubledUsed, firstPoisonCardFreeUsed, and 11 more.
+tests/lib/battle/status-player.test.ts(116,7): error TS2740: Type '{ armor: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/status-player.test.ts(117,7): error TS2740: Type '{ armorBlockThreshold: number; armorBlockAmount: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 160 more.
+tests/lib/battle/status-player.test.ts(129,7): error TS2740: Type '{ armor: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/status-player.test.ts(130,7): error TS2740: Type '{ armorBlockThreshold: number; armorBlockAmount: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 160 more.
+tests/lib/battle/status-player.test.ts(142,7): error TS2740: Type '{ burn: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, bleed, poison, and 5 more.
+tests/lib/battle/status-player.test.ts(150,7): error TS2740: Type '{ burn: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, bleed, poison, and 5 more.
+tests/lib/battle/status-stun-resolve.test.ts(28,39): error TS2345: Argument of type '{ enemyHealth: number; enemyMaxHealth: number; enemyCC: { stunSkipTurns: number; }; enemyStatuses: { stun: number; burn: number; bleed: number; poison: number; freeze: number; }; deck: BattleCard[]; ... 37 more ...; pendingMaterials: MaterialInventory; }' is not assignable to parameter of type 'BattleState'.
+  Types of property 'enemyCC' are incompatible.
+    Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(37,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(48,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(66,14): error TS2322: Type '{ id: string; title: string; descriptionLines: string[]; art: string; cost: number; effects: { kind: string; damageType: string; amount: number; }[]; }' is not assignable to type 'BattleCard'.
+  Types of property 'effects' are incompatible.
+    Type '{ kind: string; damageType: string; amount: number; }[]' is not assignable to type 'BattleCardEffect[]'.
+      Type '{ kind: string; damageType: string; amount: number; }' is not assignable to type 'BattleCardEffect'.
+        Type '{ kind: string; damageType: string; amount: number; }' is not assignable to type '{ kind: "self-damage"; damageType: EnemyStatusId; amount: number; }'.
+          Types of property 'kind' are incompatible.
+            Type 'string' is not assignable to type '"self-damage"'.
+tests/lib/battle/status-stun-resolve.test.ts(66,20): error TS2322: Type '{ id: string; title: string; descriptionLines: string[]; art: string; cost: number; effects: { kind: string; damageType: string; amount: number; }[]; }' is not assignable to type 'BattleCard'.
+  Types of property 'effects' are incompatible.
+    Type '{ kind: string; damageType: string; amount: number; }[]' is not assignable to type 'BattleCardEffect[]'.
+      Type '{ kind: string; damageType: string; amount: number; }' is not assignable to type 'BattleCardEffect'.
+        Type '{ kind: string; damageType: string; amount: number; }' is not assignable to type '{ kind: "self-damage"; damageType: EnemyStatusId; amount: number; }'.
+          Types of property 'kind' are incompatible.
+            Type 'string' is not assignable to type '"self-damage"'.
+tests/lib/battle/status-stun-resolve.test.ts(66,26): error TS2322: Type '{ id: string; title: string; descriptionLines: string[]; art: string; cost: number; effects: { kind: string; damageType: string; amount: number; }[]; }' is not assignable to type 'BattleCard'.
+  Types of property 'effects' are incompatible.
+    Type '{ kind: string; damageType: string; amount: number; }[]' is not assignable to type 'BattleCardEffect[]'.
+      Type '{ kind: string; damageType: string; amount: number; }' is not assignable to type 'BattleCardEffect'.
+        Type '{ kind: string; damageType: string; amount: number; }' is not assignable to type '{ kind: "self-damage"; damageType: EnemyStatusId; amount: number; }'.
+          Types of property 'kind' are incompatible.
+            Type 'string' is not assignable to type '"self-damage"'.
+tests/lib/battle/status-stun-resolve.test.ts(69,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(82,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(94,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(108,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(120,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(145,39): error TS2345: Argument of type '{ enemyHealth: number; enemyMaxHealth: number; enemyCC: { stunSkipTurns: number; }; enemyStatuses: { stun: number; burn: number; bleed: number; poison: number; freeze: number; }; talentEffects: { stunThresholdReduction: number; ... 164 more ...; natureLeechChance: number; }; ... 37 more ...; pendingMaterials: Materi...' is not assignable to parameter of type 'BattleState'.
+  Types of property 'enemyCC' are incompatible.
+    Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(177,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(191,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(205,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(226,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(245,7): error TS2739: Type '{ armor: number; forge: number; freezeBonus: number; }' is missing the following properties from type 'EnemyMitigation': burnBonus, block
+tests/lib/battle/status-stun-resolve.test.ts(246,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(258,7): error TS2739: Type '{ armor: number; forge: number; freezeBonus: number; }' is missing the following properties from type 'EnemyMitigation': burnBonus, block
+tests/lib/battle/status-stun-resolve.test.ts(259,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-stun-resolve.test.ts(272,7): error TS2739: Type '{ stunSkipTurns: number; }' is missing the following properties from type 'CcState': freezeSkipTurns, cooldown
+tests/lib/battle/status-ticks.test.ts(14,7): error TS2739: Type '{ burn: number; }' is missing the following properties from type 'EnemyStatusValues': stun, bleed, poison, freeze
+tests/lib/battle/status-ticks.test.ts(26,7): error TS2739: Type '{ burn: number; }' is missing the following properties from type 'EnemyStatusValues': stun, bleed, poison, freeze
+tests/lib/battle/status-ticks.test.ts(36,7): error TS2739: Type '{ poison: number; }' is missing the following properties from type 'EnemyStatusValues': stun, burn, bleed, freeze
+tests/lib/battle/status-ticks.test.ts(48,7): error TS2739: Type '{ bleed: number; }' is missing the following properties from type 'EnemyStatusValues': stun, burn, poison, freeze
+tests/lib/battle/status-ticks.test.ts(61,7): error TS2739: Type '{ bleed: number; }' is missing the following properties from type 'EnemyStatusValues': stun, burn, poison, freeze
+tests/lib/battle/status-ticks.test.ts(83,7): error TS2739: Type '{ burn: number; poison: number; bleed: number; }' is missing the following properties from type 'EnemyStatusValues': stun, freeze
+tests/lib/battle/status-ticks.test.ts(98,7): error TS2740: Type '{ burn: number; stun: number; }' is missing the following properties from type 'PlayerStatusValues': block, bleed, poison, freeze, and 4 more.
+tests/lib/battle/status-ticks.test.ts(109,7): error TS2739: Type '{ burn: number; }' is missing the following properties from type 'EnemyStatusValues': stun, bleed, poison, freeze
+tests/lib/battle/status-ticks.test.ts(110,7): error TS2740: Type '{ burnDoubleChance: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/status-ticks.test.ts(120,7): error TS2739: Type '{ poison: number; }' is missing the following properties from type 'EnemyStatusValues': stun, burn, bleed, freeze
+tests/lib/battle/status-ticks.test.ts(121,7): error TS2740: Type '{ poisonGainChance: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/status-ticks.test.ts(133,7): error TS2739: Type '{ poison: number; }' is missing the following properties from type 'EnemyStatusValues': stun, burn, bleed, freeze
+tests/lib/battle/status-ticks.test.ts(147,7): error TS2739: Type '{ burn: number; }' is missing the following properties from type 'EnemyStatusValues': stun, bleed, poison, freeze
+tests/lib/battle/status-ticks.test.ts(158,7): error TS2739: Type '{ burn: number; }' is missing the following properties from type 'EnemyStatusValues': stun, bleed, poison, freeze
+tests/lib/battle/status-ticks.test.ts(179,7): error TS2739: Type '{ burn: number; }' is missing the following properties from type 'EnemyStatusValues': stun, bleed, poison, freeze
+tests/lib/battle/status-ticks.test.ts(201,7): error TS2739: Type '{ bleed: number; }' is missing the following properties from type 'EnemyStatusValues': stun, burn, poison, freeze
+tests/lib/battle/status-ticks.test.ts(225,7): error TS2740: Type '{ burn: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, bleed, poison, and 5 more.
+tests/lib/battle/status-ticks.test.ts(237,7): error TS2740: Type '{ burn: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, bleed, poison, and 5 more.
+tests/lib/battle/status-ticks.test.ts(247,7): error TS2740: Type '{ burn: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, bleed, poison, and 5 more.
+tests/lib/battle/status-ticks.test.ts(248,7): error TS2740: Type '{ receiveHalfBurnDamage: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/status-ticks.test.ts(259,7): error TS2740: Type '{ burn: number; armor: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, bleed, poison, and 4 more.
+tests/lib/battle/status-ticks.test.ts(260,7): error TS2740: Type '{ armorMitigatesBurn: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/status-ticks.test.ts(273,7): error TS2740: Type '{ burn: number; armor: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, bleed, poison, and 4 more.
+tests/lib/battle/status-ticks.test.ts(274,7): error TS2740: Type '{ armorMitigatesBurn: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/status-ticks.test.ts(286,7): error TS2740: Type '{ burn: number; block: number; }' is missing the following properties from type 'PlayerStatusValues': stun, bleed, poison, freeze, and 4 more.
+tests/lib/battle/status-ticks.test.ts(287,7): error TS2740: Type '{ blockReduceBurnDamage: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/status-ticks.test.ts(298,7): error TS2740: Type '{ burn: number; block: number; }' is missing the following properties from type 'PlayerStatusValues': stun, bleed, poison, freeze, and 4 more.
+tests/lib/battle/status-ticks.test.ts(299,7): error TS2740: Type '{ blockReduceBurnDamage: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/status-ticks.test.ts(310,7): error TS2740: Type '{ burn: number; block: number; }' is missing the following properties from type 'PlayerStatusValues': stun, bleed, poison, freeze, and 4 more.
+tests/lib/battle/status-ticks.test.ts(311,7): error TS2740: Type '{ blockReduceBurnDamage: number; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/status-ticks.test.ts(322,7): error TS2740: Type '{ burn: number; block: number; armor: number; }' is missing the following properties from type 'PlayerStatusValues': stun, bleed, poison, freeze, and 3 more.
+tests/lib/battle/status-ticks.test.ts(323,7): error TS2740: Type '{ blockReduceBurnDamage: number; armorMitigatesBurn: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 160 more.
+tests/lib/battle/status-ticks.test.ts(335,7): error TS2740: Type '{ poison: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/status-ticks.test.ts(347,7): error TS2740: Type '{ poison: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/status-ticks.test.ts(356,7): error TS2740: Type '{ poison: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/status-ticks.test.ts(357,7): error TS2740: Type '{ receiveHalfPoisonDamage: true; }' is missing the following properties from type 'TalentEffectManifest': flatPhysicalDamage, armorToPhysicalDamage, physicalCritChance, firstPhysicalCardFree, and 161 more.
+tests/lib/battle/status-ticks.test.ts(368,7): error TS2740: Type '{ bleed: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, poison, and 5 more.
+tests/lib/battle/status-ticks.test.ts(381,7): error TS2740: Type '{ stun: number; }' is missing the following properties from type 'PlayerStatusValues': block, burn, bleed, poison, and 5 more.
+tests/lib/battle/status-ticks.test.ts(396,7): error TS2740: Type '{ stun: number; }' is missing the following properties from type 'PlayerStatusValues': block, burn, bleed, poison, and 5 more.
+tests/lib/battle/status-ticks.test.ts(412,7): error TS2740: Type '{ stun: number; }' is missing the following properties from type 'PlayerStatusValues': block, burn, bleed, poison, and 5 more.
+tests/lib/battle/status-ticks.test.ts(425,7): error TS2740: Type '{ freeze: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/status-ticks.test.ts(440,7): error TS2740: Type '{ freeze: number; }' is missing the following properties from type 'PlayerStatusValues': block, stun, burn, bleed, and 5 more.
+tests/lib/battle/status-ticks.test.ts(452,7): error TS2740: Type '{ stun: number; }' is missing the following properties from type 'PlayerStatusValues': block, burn, bleed, poison, and 5 more.
+tests/lib/battle/status-ticks.test.ts(473,7): error TS2740: Type '{ stun: number; }' is missing the following properties from type 'PlayerStatusValues': block, burn, bleed, poison, and 5 more.
+tests/lib/battle/status-ticks.test.ts(503,7): error TS2739: Type '{ burn: number; poison: number; bleed: number; stun: number; freeze: number; }' is missing the following properties from type 'PlayerStatusValues': block, forge, armor, phoenixFeather, haste
+tests/lib/battle/trinket-effects.test.ts(9,7): error TS2740: Type '{ block: number; }' is missing the following properties from type 'PlayerStatusValues': stun, burn, bleed, poison, and 5 more.
+tests/lib/battle/trinket-effects.test.ts(10,7): error TS2740: Type '{ blockToArmorThreshold: number; blockToArmorAmount: number; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstHolyDamageDoubled, firstBurnDoubled, boneCharmHealOnKill, and 21 more.
+tests/lib/battle/trinket-effects.test.ts(21,7): error TS2740: Type '{ block: number; }' is missing the following properties from type 'PlayerStatusValues': stun, burn, bleed, poison, and 5 more.
+tests/lib/battle/trinket-effects.test.ts(22,7): error TS2740: Type '{ blockToArmorThreshold: number; blockToArmorAmount: number; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstHolyDamageDoubled, firstBurnDoubled, boneCharmHealOnKill, and 21 more.
+tests/lib/battle/trinket-effects.test.ts(31,38): error TS2740: Type '{ block: number; }' is missing the following properties from type 'PlayerStatusValues': stun, burn, bleed, poison, and 5 more.
+tests/lib/battle/trinket-effects.test.ts(40,7): error TS2740: Type '{ block: number; }' is missing the following properties from type 'PlayerStatusValues': stun, burn, bleed, poison, and 5 more.
+tests/lib/battle/trinket-effects.test.ts(41,7): error TS2740: Type '{ blockToArmorThreshold: number; blockToArmorAmount: number; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstHolyDamageDoubled, firstBurnDoubled, boneCharmHealOnKill, and 21 more.
+tests/lib/battle/trinket-effects.test.ts(54,7): error TS2740: Type '{ boneCharmHealOnKill: number; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstHolyDamageDoubled, firstBurnDoubled, forgeStunThreshold, and 22 more.
+tests/lib/battle/trinket-effects.test.ts(90,7): error TS2740: Type '{ luckyCloverGoldChance: number; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstHolyDamageDoubled, firstBurnDoubled, boneCharmHealOnKill, and 22 more.
+tests/lib/battle/trinket-effects.test.ts(101,7): error TS2740: Type '{ luckyCloverGoldChance: number; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstHolyDamageDoubled, firstBurnDoubled, boneCharmHealOnKill, and 22 more.
+tests/lib/battle/trinket-effects.test.ts(120,7): error TS2740: Type '{ luckyCloverGoldChance: number; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstHolyDamageDoubled, firstBurnDoubled, boneCharmHealOnKill, and 22 more.
+tests/lib/battle/trinket-effects.test.ts(130,7): error TS2740: Type '{ luckyCloverGoldChance: number; }' is missing the following properties from type 'TrinketManifest': extraDrawPerBattle, firstHolyDamageDoubled, firstBurnDoubled, boneCharmHealOnKill, and 22 more.
+tests/lib/battle/wish.test.ts(18,45): error TS2345: Argument of type '{ id: string; title: string; descriptionLines: string[]; art: string; cost: number; effects: { kind: string; damageType: string; amount: number; }[]; }' is not assignable to parameter of type 'BattleCard'.
+  Types of property 'effects' are incompatible.
+    Type '{ kind: string; damageType: string; amount: number; }[]' is not assignable to type 'BattleCardEffect[]'.
+      Type '{ kind: string; damageType: string; amount: number; }' is not assignable to type 'BattleCardEffect'.
+        Type '{ kind: string; damageType: string; amount: number; }' is not assignable to type '{ kind: "self-damage"; damageType: EnemyStatusId; amount: number; }'.
+          Types of property 'kind' are incompatible.
+            Type 'string' is not assignable to type '"self-damage"'.
+tests/lib/battle/wish.test.ts(152,14): error TS2322: Type '{ id: string; title: string; descriptionLines: string[]; art: string; cost: number; effects: { kind: string; damageType: string; amount: number; }[]; }' is not assignable to type 'BattleCard'.
+  Types of property 'effects' are incompatible.
+    Type '{ kind: string; damageType: string; amount: number; }[]' is not assignable to type 'BattleCardEffect[]'.
+      Type '{ kind: string; damageType: string; amount: number; }' is not assignable to type 'BattleCardEffect'.
+        Type '{ kind: string; damageType: string; amount: number; }' is not assignable to type '{ kind: "self-damage"; damageType: EnemyStatusId; amount: number; }'.
+          Types of property 'kind' are incompatible.
+            Type 'string' is not assignable to type '"self-damage"'.
+tests/lib/battle/wish.test.ts(156,43): error TS2345: Argument of type '{ id: string; title: string; descriptionLines: string[]; art: string; cost: number; effects: { kind: string; damageType: string; amount: number; }[]; }' is not assignable to parameter of type 'BattleCard'.
+  Types of property 'effects' are incompatible.
+    Type '{ kind: string; damageType: string; amount: number; }[]' is not assignable to type 'BattleCardEffect[]'.
+      Type '{ kind: string; damageType: string; amount: number; }' is not assignable to type 'BattleCardEffect'.
+        Type '{ kind: string; damageType: string; amount: number; }' is not assignable to type '{ kind: "self-damage"; damageType: EnemyStatusId; amount: number; }'.
+          Types of property 'kind' are incompatible.
+            Type 'string' is not assignable to type '"self-damage"'.
+tests/lib/battle/wish.test.ts(200,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/battle/wish.test.ts(223,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(27,19): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(33,35): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(40,14): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(61,22): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(124,22): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(127,26): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(143,23): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(153,19): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(154,19): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(170,19): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(171,19): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(173,41): error TS18048: 'a' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(173,52): error TS18048: 'b' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(194,19): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(200,27): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(200,39): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(202,23): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(202,32): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(202,44): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(204,46): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(204,63): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(212,19): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(215,27): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(215,39): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(216,21): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(216,33): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(217,21): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(217,33): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(218,14): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(218,23): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(218,35): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(225,19): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(229,27): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(229,39): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(230,21): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(230,33): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(231,22): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(231,31): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(231,43): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(241,22): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(245,39): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(245,51): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(249,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(249,21): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(249,33): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(253,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(254,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(254,22): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(254,34): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(255,45): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(255,62): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(271,42): error TS18048: 'next' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(271,52): error TS18048: 'next' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(273,50): error TS18048: 'next' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(273,65): error TS18048: 'next' is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(274,7): error TS2322: Type '{ row: number; col: number; } | undefined' is not assignable to type '{ row: number; col: number; }'.
+  Type 'undefined' is not assignable to type '{ row: number; col: number; }'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(306,18): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-generation.test.ts(324,18): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-graph.test.ts(113,5): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-graph.test.ts(114,5): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-graph.test.ts(118,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-graph.test.ts(119,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-graph.test.ts(124,5): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-graph.test.ts(126,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-graph.test.ts(131,5): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-graph.test.ts(132,5): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-graph.test.ts(135,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-state.test.ts(74,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-state.test.ts(75,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-state.test.ts(90,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-state.test.ts(91,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-state.test.ts(92,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-state.test.ts(104,5): error TS2322: Type 'LabyrinthNode' is not assignable to type 'null'.
+tests/lib/content-systems/labyrinth/map-state.test.ts(107,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-state.test.ts(108,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-state.test.ts(120,5): error TS2322: Type 'LabyrinthNode' is not assignable to type 'null'.
+tests/lib/content-systems/labyrinth/map-state.test.ts(123,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-state.test.ts(124,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/map-state.test.ts(125,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/content-systems/labyrinth/modifiers.test.ts(44,44): error TS2345: Argument of type '"tempered" | "plated" | "reinforced" | "braced" | "septic" | "caustic" | "flesheater" | "combustible" | "chilling" | "thorns" | "zealot" | "insatiable" | "jealous" | "concussive" | "rooted" | "overgrowth" | "holy-retribution" | "divine-aegis"' is not assignable to parameter of type '"companion" | "alchemist" | "generous" | "scavenger"'.
+  Type '"tempered"' is not assignable to type '"companion" | "alchemist" | "generous" | "scavenger"'.
+tests/lib/game-data/companions.test.ts(23,14): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type 'Record<CompanionId, CompanionDefinition>'.
+  No index signature with a parameter of type 'string' was found on type 'Record<CompanionId, CompanionDefinition>'.
+tests/lib/game-data/compendium.test.ts(29,12): error TS18048: 'phys' is possibly 'undefined'.
+tests/lib/game-data/compendium.test.ts(30,12): error TS18048: 'phys' is possibly 'undefined'.
+tests/lib/game-data/compendium.test.ts(30,17): error TS2339: Property 'damageType' does not exist on type 'EnemyAttackEffect'.
+  Property 'damageType' does not exist on type '{ kind: "player-status"; status: PlayerStatusId; amount: number; }'.
+tests/lib/game-data/compendium.test.ts(31,12): error TS18048: 'phys' is possibly 'undefined'.
+tests/lib/game-data/compendium.test.ts(33,12): error TS18048: 'burn' is possibly 'undefined'.
+tests/lib/game-data/compendium.test.ts(34,12): error TS18048: 'burn' is possibly 'undefined'.
+tests/lib/game-data/compendium.test.ts(34,17): error TS2339: Property 'damageType' does not exist on type 'EnemyAttackEffect'.
+  Property 'damageType' does not exist on type '{ kind: "player-status"; status: PlayerStatusId; amount: number; }'.
+tests/lib/game-data/compendium.test.ts(35,12): error TS18048: 'burn' is possibly 'undefined'.
+tests/lib/game-data/descriptions-match-effects.test.ts(340,60): error TS2345: Argument of type 'BattleCardEffect | undefined' is not assignable to parameter of type 'BattleCardEffect'.
+  Type 'undefined' is not assignable to type 'BattleCardEffect'.
+tests/lib/game-data/difficulties.test.ts(9,8): error TS2459: Module '"@/lib/game-data/difficulties"' declares 'CharacterId' locally, but it is not exported.
+tests/lib/game-data/difficulties.test.ts(26,14): error TS7053: Element implicitly has an 'any' type because expression of type 'CharacterId' can't be used to index type 'Record<CharacterId, ClassDifficultyConfig>'.
+tests/lib/game-data/difficulties.test.ts(27,14): error TS7053: Element implicitly has an 'any' type because expression of type 'CharacterId' can't be used to index type 'Record<CharacterId, ClassDifficultyConfig>'.
+tests/lib/game-data/difficulties.test.ts(33,21): error TS7053: Element implicitly has an 'any' type because expression of type 'CharacterId' can't be used to index type 'Record<CharacterId, ClassDifficultyConfig>'.
+tests/lib/game-data/difficulties.test.ts(46,26): error TS7053: Element implicitly has an 'any' type because expression of type 'CharacterId' can't be used to index type 'Record<CharacterId, ClassDifficultyConfig>'.
+tests/lib/game-data/difficulties.test.ts(55,26): error TS7053: Element implicitly has an 'any' type because expression of type 'CharacterId' can't be used to index type 'Record<CharacterId, ClassDifficultyConfig>'.
+tests/lib/game-data/difficulties.test.ts(81,26): error TS7053: Element implicitly has an 'any' type because expression of type 'CharacterId' can't be used to index type 'Record<CharacterId, ClassDifficultyConfig>'.
+tests/lib/game-data/effects-registry.test.ts(19,34): error TS2345: Argument of type '"chance"' is not assignable to parameter of type '"wish" | "damage" | "player-status" | "enemy-status" | "heal" | "restore-mana" | "lose-mana" | "lose-max-mana" | "gain-max-mana" | "gain-gold" | "summon-companion" | "remove-harmful-status" | ... 8 more ... | "random-damage"'.
+tests/lib/game-data/keywords.test.ts(21,38): error TS2532: Object is possibly 'undefined'.
+tests/lib/game-data/reward-selection.test.ts(116,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/game-data/reward-selection.test.ts(140,45): error TS2532: Object is possibly 'undefined'.
+tests/lib/game-data/reward-selection.test.ts(197,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/gear/crafting.test.ts(62,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/gear/crafting.test.ts(97,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/gear/crafting.test.ts(98,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/gear/crafting.test.ts(102,21): error TS2554: Expected 3 arguments, but got 2.
+tests/lib/gear/crafting.test.ts(107,21): error TS2554: Expected 3 arguments, but got 2.
+tests/lib/gear/gear.test.ts(46,37): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(47,37): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(149,38): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(157,24): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(163,38): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(252,12): error TS2554: Expected 4 arguments, but got 3.
+tests/lib/gear/gear.test.ts(256,60): error TS2353: Object literal may only specify known properties, and '"trinket-1"' does not exist in type 'Partial<GearLoadout>'.
+tests/lib/gear/gear.test.ts(344,29): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(345,29): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(346,29): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(347,29): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(348,29): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(352,23): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(353,23): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(354,23): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(358,26): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(359,26): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(360,26): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(361,26): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(368,41): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(377,41): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(395,23): error TS2304: Cannot find name 'GearLoadouts'.
+tests/lib/gear/gear.test.ts(399,41): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(410,32): error TS2304: Cannot find name 'GearLoadouts'.
+tests/lib/gear/gear.test.ts(423,11): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/gear.test.ts(436,11): error TS2345: Argument of type 'GearDefinition | undefined' is not assignable to parameter of type 'GearDefinition'.
+  Type 'undefined' is not assignable to type 'GearDefinition'.
+tests/lib/gear/generation.test.ts(48,20): error TS18048: 'definition' is possibly 'undefined'.
+tests/lib/image-preload.test.ts(55,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/image-preload.test.ts(56,5): error TS2532: Object is possibly 'undefined'.
+tests/lib/image-preload.test.ts(63,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/image-preload.test.ts(64,5): error TS2532: Object is possibly 'undefined'.
+tests/lib/image-preload.test.ts(70,5): error TS2532: Object is possibly 'undefined'.
+tests/lib/image-preload.test.ts(76,5): error TS2532: Object is possibly 'undefined'.
+tests/lib/image-preload.test.ts(83,5): error TS2532: Object is possibly 'undefined'.
+tests/lib/image-preload.test.ts(97,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/image-preload.test.ts(98,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/image-preload.test.ts(99,12): error TS2532: Object is possibly 'undefined'.
+tests/lib/image-preload.test.ts(113,5): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/lib/image-preload.test.ts(120,5): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/lib/image-preload.test.ts(122,5): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/lib/image-preload.test.ts(129,5): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/lib/image-preload.test.ts(135,5): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+tests/lib/platform-storage.test.ts(19,34): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+tests/lib/platform-storage.test.ts(23,12): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+tests/lib/platform-storage.test.ts(32,12): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+tests/lib/platform-storage.test.ts(50,12): error TS2339: Property 'alchemyDesktop' does not exist on type 'Window & typeof globalThis'.
+tests/lib/routing/run-phase-presence.test.ts(7,70): error TS2345: Argument of type '"mage"' is not assignable to parameter of type 'CharacterId | null | undefined'.
+tests/lib/validation/normalize-active-run-data.test.ts(13,12): error TS18046: 'result.runDeck' is of type 'unknown'.
+tests/lib/validation/normalize-active-run-data.test.ts(31,12): error TS18046: 'result.runDeck' is of type 'unknown'.
+tests/lib/validation/normalize-active-run-data.test.ts(32,13): error TS18046: 'result.runDeck' is of type 'unknown'.
+tests/lib/validation/save-schemas.test.ts(518,22): error TS2532: Object is possibly 'undefined'.
+tests/lib/validation/save-schemas.test.ts(520,39): error TS18048: 'target' is possibly 'undefined'.
+tests/lib/validation/save-schemas.test.ts(520,51): error TS18048: 'target' is possibly 'undefined'.
+tests/pages/battle-page.ts(6,24): error TS2729: Property 'page' is used before its initialization.
+tests/pages/battle-page.ts(7,29): error TS2729: Property 'page' is used before its initialization.
+tests/pages/battle-page.ts(8,37): error TS2729: Property 'page' is used before its initialization.
+tests/pages/battle-page.ts(9,36): error TS2729: Property 'page' is used before its initialization.
+tests/pages/battle-page.ts(10,30): error TS2729: Property 'page' is used before its initialization.
+tests/pages/battle-page.ts(11,34): error TS2729: Property 'page' is used before its initialization.
+tests/pages/battle-page.ts(12,33): error TS2729: Property 'page' is used before its initialization.
+tests/pages/battle-page.ts(13,29): error TS2729: Property 'page' is used before its initialization.
+tests/pages/battle-page.ts(14,27): error TS2729: Property 'page' is used before its initialization.
+tests/pages/battle-page.ts(15,34): error TS2729: Property 'page' is used before its initialization.
+tests/pages/battle-page.ts(16,34): error TS2729: Property 'page' is used before its initialization.
+tests/pages/corruption-page.ts(12,32): error TS2729: Property 'page' is used before its initialization.
+tests/pages/corruption-page.ts(13,30): error TS2729: Property 'page' is used before its initialization.
+tests/pages/corruption-page.ts(14,37): error TS2729: Property 'page' is used before its initialization.
+tests/pages/corruption-page.ts(15,28): error TS2729: Property 'page' is used before its initialization.
+tests/pages/corruption-page.ts(16,31): error TS2729: Property 'page' is used before its initialization.
+tests/pages/corruption-page.ts(17,28): error TS2729: Property 'page' is used before its initialization.
+tests/pages/destination-page.ts(6,27): error TS2729: Property 'page' is used before its initialization.
+tests/pages/game-stage.ts(7,24): error TS2729: Property 'page' is used before its initialization.
+tests/pages/homestead-page.ts(1,10): error TS6133: 'expect' is declared but its value is never read.
+tests/pages/homestead-page.ts(8,27): error TS2729: Property 'page' is used before its initialization.
+tests/pages/homestead-page.ts(9,32): error TS2729: Property 'page' is used before its initialization.
+tests/pages/homestead-page.ts(10,27): error TS2729: Property 'page' is used before its initialization.
+tests/pages/homestead-page.ts(11,31): error TS2729: Property 'page' is used before its initialization.
+tests/pages/homestead-page.ts(12,33): error TS2729: Property 'page' is used before its initialization.
+tests/pages/menu-page.ts(14,27): error TS2729: Property 'page' is used before its initialization.
+tests/pages/menu-page.ts(15,33): error TS2729: Property 'page' is used before its initialization.
+tests/pages/menu-page.ts(16,30): error TS2729: Property 'page' is used before its initialization.
+tests/pages/menu-page.ts(17,30): error TS2729: Property 'page' is used before its initialization.
+tests/pages/menu-page.ts(18,32): error TS2729: Property 'page' is used before its initialization.
+tests/pages/mystery-page.ts(6,29): error TS2729: Property 'page' is used before its initialization.
+tests/pages/mystery-page.ts(7,31): error TS2729: Property 'page' is used before its initialization.
+tests/pages/mystery-page.ts(8,28): error TS2729: Property 'page' is used before its initialization.
+tests/pages/reward-page.ts(6,32): error TS2729: Property 'page' is used before its initialization.
+tests/pages/shop-page.ts(12,27): error TS2729: Property 'page' is used before its initialization.
+tests/pages/shop-page.ts(13,26): error TS2729: Property 'page' is used before its initialization.
+tests/pages/shop-page.ts(14,33): error TS2729: Property 'page' is used before its initialization.
+tests/pages/shop-page.ts(15,30): error TS2729: Property 'page' is used before its initialization.
+tests/pages/shop-page.ts(16,26): error TS2729: Property 'page' is used before its initialization.
+tests/pages/shop-page.ts(17,30): error TS2729: Property 'page' is used before its initialization.
+tests/pages/shop-page.ts(18,31): error TS2729: Property 'page' is used before its initialization.
+tests/pages/shop-page.ts(19,28): error TS2729: Property 'page' is used before its initialization.
+tests/pages/shop-page.ts(20,33): error TS2729: Property 'page' is used before its initialization.
+tests/pages/shop-page.ts(21,28): error TS2729: Property 'page' is used before its initialization.
+tests/pages/shop-page.ts(22,34): error TS2729: Property 'page' is used before its initialization.
+tests/pages/shop-page.ts(82,62): error TS2322: Type '"Merchant's Shop" | "Alchemist's Shop" | "Trinket Shop" | "Equipment Shop"' is not assignable to type 'DestinationName | undefined'.
+  Type '"Trinket Shop"' is not assignable to type 'DestinationName | undefined'.
+tests/scripts/generate-patch-notes.test.ts(11,8): error TS7016: Could not find a declaration file for module '../../scripts/lib/patch-notes-core.mjs'. 'C:/Users/Talye/Alchemy/scripts/lib/patch-notes-core.mjs' implicitly has an 'any' type.
+tests/scripts/generate-patch-notes.test.ts(49,24): error TS7006: Parameter 'line' implicitly has an 'any' type.
+tests/scripts/steam-vdf.test.ts(4,57): error TS7016: Could not find a declaration file for module '../../scripts/lib/steam-vdf.mjs'. 'C:/Users/Talye/Alchemy/scripts/lib/steam-vdf.mjs' implicitly has an 'any' type.
+tests/scripts/sync-changelog.test.ts(5,40): error TS7016: Could not find a declaration file for module '../../scripts/sync-changelog.mjs'. 'C:/Users/Talye/Alchemy/scripts/sync-changelog.mjs' implicitly has an 'any' type.

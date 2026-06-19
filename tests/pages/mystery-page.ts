@@ -1,11 +1,17 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export class MysteryPage {
-  constructor(private page: Page) {}
+  private page: Page;
+  readonly choiceBtn: Locator;
+  readonly continueBtn: Locator;
+  readonly cardGrid: Locator;
 
-  readonly choiceBtn = this.page.getByTestId("mystery-choice").first();
-  readonly continueBtn = this.page.getByRole("button", { name: "Continue" });
-  readonly cardGrid = this.page.locator('[data-testid="card-selection-grid"]');
+  constructor(page: Page) {
+    this.page = page;
+    this.choiceBtn = this.page.getByTestId("mystery-choice").first();
+    this.continueBtn = this.page.getByRole("button", { name: "Continue" });
+    this.cardGrid = this.page.locator('[data-testid="card-selection-grid"]');
+  }
 
   async pickFirstChoice() {
     await expect(this.choiceBtn).toBeVisible({ timeout: 3000 });

@@ -1,20 +1,35 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export class BattlePage {
-  constructor(private page: Page) {}
+  private page: Page;
+  readonly hand: Locator;
+  readonly manaPanel: Locator;
+  readonly playerHealthPanel: Locator;
+  readonly enemyHealthPanel: Locator;
+  readonly endTurnBtn: Locator;
+  readonly victoryHeading: Locator;
+  readonly defeatHeading: Locator;
+  readonly blockChip: Locator;
+  readonly menuBtn: Locator;
+  readonly companionPanel: Locator;
+  readonly deathsDoorIcon: Locator;
+  readonly statusChip: (name: string) => Locator;
 
-  readonly hand = this.page.locator('[aria-label^="Play "]');
-  readonly manaPanel = this.page.getByTestId("mana-panel");
-  readonly playerHealthPanel = this.page.getByTestId("player-health");
-  readonly enemyHealthPanel = this.page.getByTestId("enemy-health");
-  readonly endTurnBtn = this.page.getByRole("button", { name: "End Turn" });
-  readonly victoryHeading = this.page.getByRole("heading", { name: /^Victory/ });
-  readonly defeatHeading = this.page.getByRole("heading", { name: "Defeat" });
-  readonly blockChip = this.page.getByRole("button", { name: /^Block \d+$/ }).first();
-  readonly menuBtn = this.page.getByRole("button", { name: "Menu" });
-  readonly companionPanel = this.page.getByTestId("active-companion");
-  readonly deathsDoorIcon = this.page.getByLabel("Death's Door");
-  readonly statusChip = (name: string) => this.page.getByRole("button", { name: new RegExp(`^${name} \\d+$`) });
+  constructor(page: Page) {
+    this.page = page;
+    this.hand = this.page.locator('[aria-label^="Play "]');
+    this.manaPanel = this.page.getByTestId("mana-panel");
+    this.playerHealthPanel = this.page.getByTestId("player-health");
+    this.enemyHealthPanel = this.page.getByTestId("enemy-health");
+    this.endTurnBtn = this.page.getByRole("button", { name: "End Turn" });
+    this.victoryHeading = this.page.getByRole("heading", { name: /^Victory/ });
+    this.defeatHeading = this.page.getByRole("heading", { name: "Defeat" });
+    this.blockChip = this.page.getByRole("button", { name: /^Block \d+$/ }).first();
+    this.menuBtn = this.page.getByRole("button", { name: "Menu" });
+    this.companionPanel = this.page.getByTestId("active-companion");
+    this.deathsDoorIcon = this.page.getByLabel("Death's Door");
+    this.statusChip = (name: string) => this.page.getByRole("button", { name: new RegExp(`^${name} \\d+$`) });
+  }
 
   async mana(): Promise<number> {
     return Number(await this.manaPanel.getAttribute("data-mana"));
@@ -91,7 +106,6 @@ export class BattlePage {
     }
   }
 
-  /** Win by playing cards and ending turns — works in preview/production builds. */
   async winViaCombat(maxTurns = 6) {
     for (let turn = 0; turn < maxTurns; turn++) {
       if (await this.isBattleOver()) break;

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { normalizeActiveRunData } from "@/lib/validation";
+import type { BattleCard } from "@/lib/game-data";
 import { baseActiveRunInput } from "../../fixtures/active-run";
 
 const baseInput = baseActiveRunInput;
@@ -10,7 +11,7 @@ describe("normalizeActiveRunData", () => {
     expect(result.contentSystemType).toBe("campaign");
     expect(result.runPlayerHealth).toBe(30);
     expect(Array.isArray(result.runDeck)).toBe(true);
-    expect(result.runDeck.length).toBeGreaterThan(0);
+    expect((result.runDeck as BattleCard[]).length).toBeGreaterThan(0);
     expect(result.labyrinthMap).toBeNull();
   });
 
@@ -28,8 +29,8 @@ describe("normalizeActiveRunData", () => {
 
   it("replaces empty deck with starting deck for unstarted run", () => {
     const result = normalizeActiveRunData(baseInput());
-    expect(result.runDeck.length).toBeGreaterThan(0);
-    expect((result.runDeck[0] as { id: string }).id).toBeTruthy();
+    expect((result.runDeck as BattleCard[]).length).toBeGreaterThan(0);
+    expect((result.runDeck as BattleCard[])[0].id).toBeTruthy();
   });
 
   it("replaces legacy starter deck with current starting deck for unstarted run", () => {
