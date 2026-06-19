@@ -6,6 +6,7 @@ import { getCommitsSinceTag, latestVersionTag } from "./lib/git-release.mjs";
 import { buildChangelogUnreleased, replaceChangelogUnreleased } from "./lib/patch-notes-core.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const GENERATED_CHANGELOG_SUBJECT = "chore(changelog): sync unreleased";
 
 function normalizeNewlines(text) {
   return text.replace(/\r\n/gu, "\n");
@@ -17,7 +18,9 @@ export function readChangelog(rootDir = root) {
 
 export function computeSyncedChangelog(existingContent, rootDir = root) {
   const lastTag = latestVersionTag(rootDir);
-  const commits = getCommitsSinceTag(rootDir, lastTag);
+  const commits = getCommitsSinceTag(rootDir, lastTag).filter(
+    (commit) => commit.subject !== GENERATED_CHANGELOG_SUBJECT,
+  );
   const unreleasedMarkdown = buildChangelogUnreleased(commits);
   return replaceChangelogUnreleased(normalizeNewlines(existingContent), unreleasedMarkdown);
 }
