@@ -382,7 +382,7 @@ describe("gear domain", () => {
       expect(result.knight["off-hand"]).toBe(quiver.instanceId);
     });
 
-    it("rejects equipping a non-ranged main-hand when a quiver is in the off-hand", () => {
+    it("allows equipping a non-ranged main-hand when a quiver is in the off-hand and clears the off-hand via resolveHandConflicts", () => {
       const loadouts: GearLoadouts = createEmptyGearLoadouts();
       loadouts.knight["off-hand"] = quiver.instanceId;
       const inventory = [quiver, longsword];
@@ -393,10 +393,10 @@ describe("gear domain", () => {
           loadouts.knight,
           inventory,
         ),
-      ).toBe(false);
+      ).toBe(true);
       const result = equipGear(loadouts, "knight", "main-hand", longsword, inventory);
-      expect(result.knight["main-hand"]).toBeNull();
-      expect(result.knight["off-hand"]).toBe(quiver.instanceId);
+      expect(result.knight["main-hand"]).toBe(longsword.instanceId);
+      expect(result.knight["off-hand"]).toBeNull();
     });
 
     it("resolveHandConflicts clears the off-hand quiver when a non-ranged main-hand is equipped", () => {

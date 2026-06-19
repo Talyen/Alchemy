@@ -57,7 +57,7 @@ export function isGearCompatibleWithLoadoutSlot(
     return mainHandDef ? isRangedWeapon(mainHandDef) : false;
   }
   if (slot === "main-hand" && !isRangedWeapon(definition) && offHandDef && isQuiver(offHandDef)) {
-    return false;
+    return true;
   }
   return true;
 }
