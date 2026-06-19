@@ -44,7 +44,7 @@ describe("New Gear Affixes Integration Tests", () => {
       playerStatuses: { ...makeState().playerStatuses, block: 10 },
       gearEffects: { ...makeState().gearEffects, damageReductionPerMana: 2 },
     });
-    const effect = { kind: "damage" as const, damageType: "physical", amount: 10 };
+    const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 10 };
     const texts: any[] = [];
     const nextState = processEnemyDamageEffect(state, effect, texts);
     // absorb: 2 * 3 = 6. incoming damage: 10 - 6 = 4.
@@ -150,7 +150,7 @@ describe("New Gear Affixes Integration Tests", () => {
       playerStatuses: { ...makeState().playerStatuses, block: 2 },
       gearEffects: { ...makeState().gearEffects, stunOnBlockDepleted: 6 },
     });
-    const effect = { kind: "damage" as const, damageType: "physical", amount: 5 };
+    const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
     const texts: any[] = [];
     const nextState = processEnemyDamageEffect(state, effect, texts);
     expect(nextState.playerStatuses.block).toBe(0);

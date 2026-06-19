@@ -205,7 +205,7 @@ describe("createActiveRunSnapshot", () => {
       version: 3 as const,
       phase: "reward" as const,
       draftChoices: [],
-      remainingBossIds: ["iron-bear"] as const,
+      remainingBossIds: ["iron-bear"],
       previousBossId: "forge-golem" as const,
       currentBossId: "frostwarden" as const,
       currentCombatTraitIds: ["tempered" as const],

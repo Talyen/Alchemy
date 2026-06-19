@@ -104,7 +104,7 @@ describe("getEffectiveCost", () => {
 
   it("does not make a card free if it lacks the matching damage type", () => {
     const state = makeState({}, { firstPhysicalCardFree: true, firstHolyCardFree: true });
-    const card = { ...physicalCard(), effects: [{ kind: "heal", amount: 5 }] };
+    const card = { ...physicalCard(), effects: [{ kind: "heal" as const, amount: 5 }] };
     expect(getEffectiveCost(state, card)).toBe(2);
   });
 

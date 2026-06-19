@@ -229,7 +229,7 @@ describe("drawCards — edge cases", () => {
   it("all drawn cards get unique uids", () => {
     const deck = [makeCard("d1"), makeCard("d2"), makeCard("d3")];
     const result = drawCards(deck, [], [], 3, 100, Math.random);
-    const uids = result.hand.map((c: { uid: number }) => c.uid);
+    const uids = result.hand.map((c) => c.uid!);
     expect(new Set(uids).size).toBe(3);
     expect(uids).toEqual([100, 101, 102]);
   });

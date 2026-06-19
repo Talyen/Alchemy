@@ -100,7 +100,7 @@ describe("failNode", () => {
     const row0 = Array.from({ length: cols }, (_, col) =>
       col === LABYRINTH_START_COL ? makeNode("entrance", "cleared") : null,
     );
-    const row1 = Array.from({ length: cols }, () => null);
+    const row1: (LabyrinthNode | null)[] = Array.from({ length: cols }, () => null);
     row1[3] = makeNode("combat", "current");
     const map = makeMap([row0, row1], { row: 1, col: 3 });
     failNode(map, 1, 3);
@@ -116,7 +116,7 @@ describe("withFailedNode", () => {
     const row0 = Array.from({ length: cols }, (_, col) =>
       col === LABYRINTH_START_COL ? makeNode("entrance", "cleared") : null,
     );
-    const row1 = Array.from({ length: cols }, () => null);
+    const row1: (LabyrinthNode | null)[] = Array.from({ length: cols }, () => null);
     row1[3] = makeNode("elite", "current");
     const original = makeMap([row0, row1], { row: 1, col: 3 });
     const next = withFailedNode(original, { row: 1, col: 3 });

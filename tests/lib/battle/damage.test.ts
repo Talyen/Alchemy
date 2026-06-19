@@ -30,7 +30,7 @@ function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
 function makeEffect(damageType: string, amount: number, extras: Partial<BattleCardEffect> = {}): BattleCardEffect {
   return {
     kind: "damage",
-    damageType: damageType as BattleCardEffect["damageType"],
+    damageType: damageType as import("@/lib/game-data/types").DamageType,
     amount,
     ...extras,
   } as BattleCardEffect;

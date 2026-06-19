@@ -13,7 +13,7 @@ describe("effect dispatch registry", () => {
 
   it("template definitions cover all non-chance kinds", () => {
     expect(TEMPLATE_EFFECT_DEFINITIONS).toHaveLength(21);
-    const templateKinds = new Set(TEMPLATE_EFFECT_DEFINITIONS.map((def) => def.kind));
+    const templateKinds = new Set<string>(TEMPLATE_EFFECT_DEFINITIONS.map((def) => def.kind));
     for (const kind of BATTLE_CARD_EFFECT_KINDS) {
       if (kind === "chance") {
         expect(templateKinds.has(kind)).toBe(false);

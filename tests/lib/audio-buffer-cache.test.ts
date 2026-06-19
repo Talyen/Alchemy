@@ -37,7 +37,7 @@ describe("getAudioContext", () => {
     const ctx = getAudioContext();
     expect(ctx).toBe(mockCtx);
     expect(mockCtx.createGain).toHaveBeenCalledOnce();
-    expect(mockCtx.createGain()!.connect).toHaveBeenCalledWith("dest");
+    expect(mockCtx.createGain!().connect).toHaveBeenCalledWith("dest");
   });
 
   it("returns existing AudioContext on subsequent calls", () => {

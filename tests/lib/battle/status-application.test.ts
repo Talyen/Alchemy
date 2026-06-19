@@ -39,7 +39,7 @@ describe("applyPlayerStatusFromAttack", () => {
         const texts: CombatTextEvent[] = [];
         const effect = { kind: "player-status" as const, status, amount: 4 };
         const result = applyPlayerStatusFromAttack(state, effect, texts);
-        expect(result.playerStatuses[status]).toBe(4);
+        expect(result.playerStatuses[status as keyof typeof result.playerStatuses]).toBe(4);
         expect(texts).toEqual([{ target: "player", kind: "status", stat: status, amount: 4 }]);
       },
     );
@@ -90,7 +90,7 @@ describe("applyPlayerStatusFromAttack", () => {
         { kind: "player-status", status: status as "bleed" | "poison" | "stun", amount: 4 },
         texts,
       );
-      expect(result.playerStatuses[status]).toBe(0);
+      expect(result.playerStatuses[status as keyof typeof result.playerStatuses]).toBe(0);
       expect(texts).toEqual([]);
     });
 
@@ -109,7 +109,7 @@ describe("applyPlayerStatusFromAttack", () => {
         { kind: "player-status", status: status as "bleed" | "poison" | "stun", amount: 4 },
         texts,
       );
-      expect(result.playerStatuses[status]).toBe(4);
+      expect(result.playerStatuses[status as keyof typeof result.playerStatuses]).toBe(4);
     });
 
     it("does not block burn even with block and talents", () => {

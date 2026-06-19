@@ -118,6 +118,7 @@ describe("armoryTargetingReducer", () => {
         salvageMode: true,
         salvageTarget: helm,
         activeCurrencyId: discordant,
+        transferMenu: null,
         cursorPoint: { x: 1, y: 2 },
       };
       const next = armoryTargetingReducer(dirty, { type: "CLEAR_TARGETING" });
@@ -137,6 +138,7 @@ describe("armoryTargetingReducer", () => {
         salvageMode: true,
         salvageTarget: helm,
         activeCurrencyId: discordant,
+        transferMenu: null,
         cursorPoint: { x: 1, y: 2 },
       };
       const next = armoryTargetingReducer(dirty, { type: "EDITABLE_LOST" });
@@ -153,6 +155,7 @@ describe("armoryTargetingReducer", () => {
         salvageMode: true,
         salvageTarget: helm,
         activeCurrencyId: discordant,
+        transferMenu: null,
         cursorPoint: { x: 1, y: 2 },
       };
       const next = armoryTargetingReducer(dirty, { type: "SELECT_CHARACTER" });
@@ -188,7 +191,7 @@ describe("armoryTargetingReducer", () => {
     it("CLOSE_TRANSFER_MENU clears the transfer menu state", () => {
       const withMenu = {
         ...initialArmoryTargetingState,
-        transferMenu: { instanceId: "helm-1", sourceCharacterId: "knight", anchor: { x: 100, y: 200 } },
+        transferMenu: { instanceId: "helm-1", sourceCharacterId: "knight" as const, anchor: { x: 100, y: 200 } },
       };
       const next = armoryTargetingReducer(withMenu, { type: "CLOSE_TRANSFER_MENU" });
       expect(next.transferMenu).toBeNull();

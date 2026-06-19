@@ -25,7 +25,7 @@ describe("gear stun integration", () => {
     const next = resolveStunTrigger(state, texts);
     expect(next.playerStatuses.block).toBeGreaterThanOrEqual(3);
     const blockText = texts.find((t) => t.stat === "block");
-    expect(blockText?.amount).toBe(3);
+    expect((blockText as { amount: number } | undefined)?.amount).toBe(3);
   });
 
   it("awards healOnKill when stun proc damage kills the enemy", () => {

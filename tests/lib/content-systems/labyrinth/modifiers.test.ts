@@ -41,7 +41,7 @@ describe("getEnemyModifiersForNodeType", () => {
       for (let trial = 0; trial < 30; trial++) {
         const mods = getEnemyModifiersForNodeType(type, Math.random);
         for (const m of mods) {
-          expect(REWARD_MODIFIER_KINDS.has(m)).toBe(false);
+          expect(REWARD_MODIFIER_KINDS.has(m as "companion" | "alchemist" | "generous" | "scavenger")).toBe(false);
         }
       }
     }

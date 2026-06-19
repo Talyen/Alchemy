@@ -69,7 +69,7 @@ describe("createBattleState", () => {
   });
 
   it("wires boon and talent manifests from inputs", () => {
-    const talents = computeTalentEffects(["physical-heavy-blows"]);
+    const talents = computeTalentEffects({ physical: ["physical-heavy-blows"] });
     const result = createBattleState({
       runDeck: battleDeck,
       currentEnemy: skeleton,
@@ -84,7 +84,7 @@ describe("createBattleState", () => {
   });
 
   it("wires gear effects separately from talent effects", () => {
-    const talents = computeTalentEffects([]);
+    const talents = computeTalentEffects({});
     const result = createBattleState({
       runDeck: battleDeck,
       currentEnemy: skeleton,

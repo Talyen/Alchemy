@@ -117,7 +117,9 @@ describe("packInventory", () => {
   });
 
   it("keeps saved crafting currency cells and respects gear occupancy", () => {
-    const gear = [{ item: { instanceId: "helm", definitionId: "leather-helm-basic" }, col: 1, row: 1, w: 2, h: 2 }];
+    const gear = [
+      { item: { instanceId: "helm", definitionId: "leather-helm-basic", affixes: [] }, col: 1, row: 1, w: 2, h: 2 },
+    ];
     const result = packCurrencyWithPositions(
       ["voidstone", "discordant-dice"],
       7,
@@ -136,8 +138,8 @@ describe("packInventory", () => {
 
   it("finds the nearest collision-free position using the full footprint", () => {
     const items = [
-      { item: { instanceId: "blocker" }, col: 3, row: 2, w: 2, h: 2 },
-      { item: { instanceId: "dragged" }, col: 1, row: 1, w: 2, h: 3 },
+      { item: { instanceId: "blocker", definitionId: "blocker", affixes: [] }, col: 3, row: 2, w: 2, h: 2 },
+      { item: { instanceId: "dragged", definitionId: "dragged", affixes: [] }, col: 1, row: 1, w: 2, h: 3 },
     ];
     const placement = findNearestInventoryPlacement(
       items,
@@ -153,8 +155,8 @@ describe("packInventory", () => {
 
   it("finds the first top-left free position for automatic inventory placement", () => {
     const items = [
-      { item: { instanceId: "blocker" }, col: 1, row: 1, w: 2, h: 2 },
-      { item: { instanceId: "dragged" }, col: 5, row: 5, w: 2, h: 2 },
+      { item: { instanceId: "blocker", definitionId: "blocker", affixes: [] }, col: 1, row: 1, w: 2, h: 2 },
+      { item: { instanceId: "dragged", definitionId: "dragged", affixes: [] }, col: 5, row: 5, w: 2, h: 2 },
     ];
 
     expect(findFirstInventoryPlacement(items, "dragged", { w: 2, h: 2 }, 8)).toEqual({ col: 3, row: 1 });
@@ -162,8 +164,8 @@ describe("packInventory", () => {
 
   it("allows same-footprint gear to occupy a vacated inventory placement during equip swap", () => {
     const items = [
-      { item: { instanceId: "incoming" }, col: 3, row: 2, w: 2, h: 2 },
-      { item: { instanceId: "neighbor" }, col: 1, row: 1, w: 2, h: 2 },
+      { item: { instanceId: "incoming", definitionId: "incoming", affixes: [] }, col: 3, row: 2, w: 2, h: 2 },
+      { item: { instanceId: "neighbor", definitionId: "neighbor", affixes: [] }, col: 1, row: 1, w: 2, h: 2 },
     ];
 
     expect(
@@ -173,7 +175,7 @@ describe("packInventory", () => {
 
   it("rejects vacated placements that do not fit a different footprint", () => {
     const items = [
-      { item: { instanceId: "incoming" }, col: 1, row: 1, w: 2, h: 1 },
+      { item: { instanceId: "incoming", definitionId: "incoming", affixes: [] }, col: 1, row: 1, w: 2, h: 1 },
       { item: { instanceId: "blocker" }, col: 2, row: 1, w: 2, h: 2 },
     ];
 

@@ -66,7 +66,7 @@ describe("resolveStunTrigger", () => {
       descriptionLines: [""],
       art: "",
       cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+      effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 4 }],
     };
     const state = createTestBattleState({
       deck: [card, card, card],

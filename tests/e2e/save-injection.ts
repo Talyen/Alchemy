@@ -7,8 +7,13 @@ import { makeHighDamageCard } from "./cards";
 function createMinimalLabyrinthMap(options?: { rows?: number; cols?: number }) {
   const rows = options?.rows ?? 8;
   const cols = options?.cols ?? 9;
-  const emptyRow = () => Array.from({ length: cols }, () => null);
-  const grid = Array.from({ length: rows }, () => emptyRow());
+  const grid: ({
+    type: string;
+    modifiers: string[];
+    rewardModifiers: string[];
+    connections: { row: number; col: number }[];
+    state: string;
+  } | null)[][] = Array.from({ length: rows }, () => Array.from({ length: cols }, () => null));
   for (let r = 0; r < rows - 1; r++) {
     const col = Math.floor(cols / 2);
     grid[r][col] = {

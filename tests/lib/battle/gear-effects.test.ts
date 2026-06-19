@@ -66,6 +66,6 @@ describe("gear-effects", () => {
     expect(next.playerHealth).toBe(13);
     expect(next.gold).toBe(11);
     expect(texts.some((t) => t.kind === "heal")).toBe(true);
-    expect(texts.some((t) => t.stat === "gold" && t.amount === 6)).toBe(true);
+    expect(texts.some((t) => t.stat === "gold" && (t as { amount: number }).amount === 6)).toBe(true);
   });
 });

@@ -736,7 +736,8 @@ describe("ArmoryScreen", () => {
   });
 
   it("renders tooltips for equipped items and portals them to document.body", async () => {
-    const loadoutWithHelm = { ...createEmptyGearLoadouts(), knight: { helm: "gear-helm" } };
+    const loadoutWithHelm = createEmptyGearLoadouts();
+    (loadoutWithHelm.knight as Record<string, string | null>).helm = "gear-helm";
     render(
       <ArmoryScreen
         inventories={mockInventories()}

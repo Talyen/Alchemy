@@ -65,7 +65,7 @@ describe("applyEffectByKind (utility effects)", () => {
   it("summon-companion sets activeCompanion from library", () => {
     const state = createTestBattleState({ activeCompanion: null });
     const card = makeTestCard({ effects: [{ kind: "summon-companion", companionId: "imp" }] });
-    const effect = { kind: "summon-companion" as const, companionId: "imp" };
+    const effect = { kind: "summon-companion" as const, companionId: "imp" as const };
     const result = applyEffectByKind(effect.kind, state, card, effect, 1, makeTexts());
     expect(result.activeCompanion).toEqual(companionLibrary.imp);
   });

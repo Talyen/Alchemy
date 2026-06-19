@@ -30,8 +30,8 @@ describe("collection item helpers", () => {
   });
 
   it("fills incomplete collection pages to the configured page size", () => {
-    expect(getCollectionFillerCount(0)).toBe(COLLECTION_PAGE_SIZE);
-    expect(getCollectionFillerCount(COLLECTION_PAGE_SIZE - 1)).toBe(1);
-    expect(getCollectionFillerCount(COLLECTION_PAGE_SIZE)).toBe(0);
+    expect(getCollectionFillerCount(0, "cards")).toBe(COLLECTION_PAGE_SIZE);
+    expect(getCollectionFillerCount(COLLECTION_PAGE_SIZE - 1, "cards")).toBe(1);
+    expect(getCollectionFillerCount(COLLECTION_PAGE_SIZE, "cards")).toBe(0);
   });
 });
