@@ -181,6 +181,7 @@ describe("createRunFlowHandlers victory paths", () => {
         currentRewardTraitIds: ["companion"],
         rewardType: "card",
         rewardChoiceIds: [],
+        rewardGearChoices: [],
         selectedRewardId: null,
       },
     });

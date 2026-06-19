@@ -30,7 +30,7 @@ describe("useLabyrinthController hook", () => {
         onStartMystery: vi.fn(),
         onStartShop: vi.fn(),
         onStartAlchemist: vi.fn(),
-      });
+      } as any);
     });
 
     expect(entered).toBe(true);
@@ -51,7 +51,7 @@ describe("useLabyrinthController hook", () => {
         onStartMystery: vi.fn(),
         onStartShop: vi.fn(),
         onStartAlchemist: vi.fn(),
-      });
+      } as any);
       result.current.onNodeCleared();
     });
 

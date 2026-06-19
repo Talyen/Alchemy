@@ -67,6 +67,12 @@ function makeState(): BattleState {
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,
     difficultyModifiers: [],
+    deathsDoorGraceTurnsRemaining: null,
+    pendingEnemyBleedLeechHealing: 0,
+    enemyPhysicalDamageBonus: 0,
+    companionDamageBuff: 0,
+    gearEffects: {} as import("@/lib/gear/gear-effect-manifest").GearEffectManifest,
+    pendingMaterials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
     rng: Math.random,
   };
 }

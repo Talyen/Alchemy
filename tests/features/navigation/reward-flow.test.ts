@@ -262,14 +262,14 @@ describe("reward flow orchestration", () => {
 
     it("returns the selected boon reward", () => {
       const result = finalizeRewardState({
-        rewardState: stampedRewardState({
-          choices: [boonChoice],
+        rewardState: {
+          ...stampedRewardState({}),
+          rewardType: "trinket" as const,
+          choices: [boonChoice] as import("@/lib/game-data/types").TrinketEntry[],
           gold: 10,
           materials: emptyInventory(),
           selectedId: "bone-charm",
-          destinations: [],
-          rewardType: "trinket" as const,
-        }) as import("@/lib/active-run-session/reward-types").TrinketRewardState,
+        } as unknown as import("@/lib/active-run-session/reward-types").TrinketRewardState,
         companionRewardCards: null,
       });
 

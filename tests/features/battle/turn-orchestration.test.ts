@@ -38,7 +38,11 @@ describe("resolveEndTurnOrchestration", () => {
     const state = defaultBattleState();
     state.playerStatuses.haste = 1;
 
-    resolveEndTurnOrchestration(deps, state, 1);
+    resolveEndTurnOrchestration(
+      deps as unknown as import("@/features/alchemy/run-loop/battle/turn-orchestration").TurnOrchestrationDeps,
+      state,
+      1,
+    );
 
     expect(deps.getStore().setSyncedBattleState).not.toHaveBeenCalled();
   });

@@ -81,7 +81,7 @@ describe("save migration guard", () => {
     expect(migrated.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(migrated.talentXP.archery).toBe(12);
     expect(migrated.unlockedTalents.archery).toContain("archery-damage");
-    expect(migrated.talentXP.arrow).toBeUndefined();
+    expect((migrated.talentXP as Record<string, number | undefined>).arrow).toBeUndefined();
   });
 
   it("migrates v2 saves and backfills finishedRunCharacters", () => {
@@ -140,7 +140,9 @@ describe("save migration guard", () => {
     // pending rewards gear choices check
     const reward = migrated.activeRun?.pendingReward;
     expect(reward?.rewardType).toBe("gear");
-    const rewardItem = reward?.gearChoices.find((g: any) => g.instanceId === "gear-reward-1");
+    const rewardItem = (
+      reward as { gearChoices: { instanceId: string; affixes: { id: string; value: number }[] }[] } | null
+    )?.gearChoices.find((g: any) => g.instanceId === "gear-reward-1");
     expect(rewardItem).toBeDefined();
     expect(rewardItem?.affixes.find((a: any) => a.id === "flat-physical")?.value).toBe(2);
     expect(rewardItem?.affixes.find((a: any) => a.id === "poison-leech")?.value).toBe(5);

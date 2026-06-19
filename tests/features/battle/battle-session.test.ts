@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/controller-context";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import { createTransferCancelRegistry } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
 import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
@@ -28,7 +29,7 @@ function makeSession() {
     companionScheduledRef,
     onBattleVictory,
     onBattleDefeat,
-  });
+  } as unknown as BattleControllerContext);
 
   return {
     session,

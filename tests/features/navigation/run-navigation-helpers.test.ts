@@ -24,7 +24,10 @@ describe("tryStartNoviceCampaignBattle", () => {
     return {
       completedDifficulties: {},
       initializeRunForDifficulty: vi.fn(() => ({ freshDeck, totalStartGold: 99 })),
-      getDifficultyModifiers: vi.fn(() => [{ id: "test-mod", title: "Test", description: "" }]),
+      getDifficultyModifiers: vi.fn(
+        (_charId: import("@/lib/game-data").CharacterId, _diffId: import("@/lib/game-data").DifficultyId) =>
+          [{ kind: "start-block" as const, amount: 5 }] as import("@/lib/game-data/difficulties").DifficultyModifier[],
+      ),
       onStartBattle: vi.fn(),
       navigateToBattle: vi.fn(),
       ...overrides,
@@ -38,7 +41,7 @@ describe("tryStartNoviceCampaignBattle", () => {
     expect(started).toBe(true);
     expect(deps.initializeRunForDifficulty).toHaveBeenCalledWith("knight", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
     expect(deps.onStartBattle).toHaveBeenCalledWith(freshDeck, 99, DEFAULT_BATTLE_ENEMY_TYPE, [
-      { id: "test-mod", title: "Test", description: "" },
+      { kind: "start-block", amount: 5 },
     ]);
     expect(deps.navigateToBattle).toHaveBeenCalledOnce();
   });

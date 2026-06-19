@@ -1,4 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
+import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/controller-context";
 import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { computeTalentEffects } from "@/lib/game-data";
@@ -26,7 +27,7 @@ describe("createBattleInit", () => {
   const setCardTransferInProgress = vi.fn();
 
   function makeInit() {
-    return createBattleInit({
+    const ctx: BattleControllerContext = {
       run: makeRunController(),
       talents: makeTalentController(),
       homesteadEffectsRef,
@@ -34,7 +35,8 @@ describe("createBattleInit", () => {
       setCardTransfers,
       setHiddenHandCardKeys,
       setCardTransferInProgress,
-    });
+    } as unknown as BattleControllerContext;
+    return createBattleInit(ctx);
   }
 
   it("merges talent and homestead manifests into battle state", () => {

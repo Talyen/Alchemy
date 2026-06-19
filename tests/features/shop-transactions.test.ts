@@ -61,7 +61,7 @@ describe("refreshOfferings", () => {
       count: 2,
       setRunGold: vi.fn((fn: (g: number) => number) => fn(10)),
       setState: vi.fn(),
-      mapState: (prev: { cards: BattleCard[] }, items: BattleCard[]) => ({ ...prev, cards: items }),
+      mapState: (prev: unknown, items: BattleCard[]) => ({ ...(prev as { cards: BattleCard[] }), cards: items }),
       ...overrides,
     };
   }
