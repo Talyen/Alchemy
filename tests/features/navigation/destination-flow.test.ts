@@ -214,7 +214,7 @@ describe("sampleDestinationChoices", () => {
           DESTINATIONS.ALCHEMIST_SHOP,
           DESTINATIONS.TRINKET_SHOP,
           DESTINATIONS.EQUIPMENT_SHOP,
-        ].includes(destination),
+        ].includes(destination as "Merchant's Shop" | "Alchemist's Shop" | "Trinket Shop" | "Equipment Shop"),
       ).length;
       expect(shopCount).toBeLessThanOrEqual(1);
     }

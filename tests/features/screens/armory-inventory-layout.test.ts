@@ -176,7 +176,7 @@ describe("packInventory", () => {
   it("rejects vacated placements that do not fit a different footprint", () => {
     const items = [
       { item: { instanceId: "incoming", definitionId: "incoming", affixes: [] }, col: 1, row: 1, w: 2, h: 1 },
-      { item: { instanceId: "blocker" }, col: 2, row: 1, w: 2, h: 2 },
+      { item: { instanceId: "blocker", definitionId: "blocker", affixes: [] }, col: 2, row: 1, w: 2, h: 2 },
     ];
 
     expect(

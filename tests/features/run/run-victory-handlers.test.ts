@@ -171,7 +171,7 @@ describe("createRunFlowHandlers victory paths", () => {
       },
       companionRewardCards: [companion],
       wildwoodDraft: {
-        version: 2,
+        version: 3 as const,
         phase: "reward",
         draftChoices: [],
         remainingBossIds: [],

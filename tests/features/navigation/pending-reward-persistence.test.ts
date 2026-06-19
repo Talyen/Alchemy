@@ -43,7 +43,7 @@ describe("pending reward persistence", () => {
       choiceIds: ["bone-charm"],
       selectedId: null,
       gold: 0,
-      materials: {},
+      materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
       destinations: [],
       selectedBossId: null,
       lastVictoryEnemyType: null,

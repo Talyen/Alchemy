@@ -756,7 +756,7 @@ describe("session facade API", () => {
         version: 3 as const,
         phase: "recovery" as const,
         draftChoices: [],
-        remainingBossIds: ["iron-bear"],
+        remainingBossIds: ["iron-bear"] as ("forge-golem" | "frostwarden" | "blight-treant" | "iron-bear")[],
         previousBossId: null,
         currentBossId: null,
         currentCombatTraitIds: [],

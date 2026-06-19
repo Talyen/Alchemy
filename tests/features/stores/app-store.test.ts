@@ -63,6 +63,7 @@ const makeSave = (overrides: Partial<SaveData> = {}): SaveData => ({
     "smiths-whetstone": 0,
   },
   finishedRunCharacters: [],
+  lastSavedAt: 0,
   talentXP: {},
   unlockedTalents: {},
   activeRun: null,

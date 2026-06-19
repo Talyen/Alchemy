@@ -134,7 +134,7 @@ describe("reward flow orchestration", () => {
 
   describe("Labyrinth reward modifier helpers", () => {
     it("exposes reward traits for encounter modes but not campaign", () => {
-      const modifiers: LabyrinthModifierKind[] = ["alchemist", "collector"];
+      const modifiers = ["alchemist", "generous"] as ("companion" | "alchemist" | "generous" | "scavenger")[];
 
       expect(getActiveRewardModifiersForContentSystem("labyrinth", modifiers)).toBe(modifiers);
       expect(getActiveRewardModifiersForContentSystem("campaign", modifiers)).toEqual([]);
@@ -160,7 +160,7 @@ describe("reward flow orchestration", () => {
     });
 
     it("maps reward modifier kinds to reward behavior flags", () => {
-      const modifiers: LabyrinthModifierKind[] = ["companion", "alchemist"];
+      const modifiers = ["companion", "alchemist"] as ("companion" | "alchemist" | "generous" | "scavenger")[];
 
       expect(shouldGrantCompanionReward(modifiers)).toBe(true);
       expect(shouldGrantAlchemistReward(modifiers)).toBe(true);
@@ -268,8 +268,8 @@ describe("reward flow orchestration", () => {
           materials: emptyInventory(),
           selectedId: "bone-charm",
           destinations: [],
-          rewardType: "trinket",
-        }),
+          rewardType: "trinket" as const,
+        }) as import("@/lib/active-run-session/reward-types").TrinketRewardState,
         companionRewardCards: null,
       });
 

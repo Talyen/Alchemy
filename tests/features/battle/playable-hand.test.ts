@@ -13,14 +13,14 @@ const affordableCard: BattleCard = {
   art: "",
   cost: 1,
   effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-  uid: "a",
+  uid: 1,
 };
 
 const expensiveCard: BattleCard = {
   ...affordableCard,
   id: "meteor",
   cost: 9,
-  uid: "b",
+  uid: 2,
 };
 
 describe("getPlayableHandCardKeys", () => {
@@ -34,8 +34,8 @@ describe("getPlayableHandCardKeys", () => {
     };
 
     const playable = getPlayableHandCardKeys(state);
-    expect(playable.has("slash-a")).toBe(true);
-    expect(playable.has("meteor-b")).toBe(false);
+    expect(playable.has("slash-1")).toBe(true);
+    expect(playable.has("meteor-2")).toBe(false);
   });
 
   it("returns empty when wish options are active", () => {
@@ -53,7 +53,7 @@ describe("getPlayableHandCardKeys", () => {
 
 describe("getPlayableHandCardKeysExcludingHidden", () => {
   it("excludes hidden keys but keeps other affordable cards", () => {
-    const drawingCard: BattleCard = { ...affordableCard, id: "draw", uid: "c" };
+    const drawingCard: BattleCard = { ...affordableCard, id: "draw", uid: 3 };
     const state = {
       ...defaultBattleState(),
       turnPhase: "player" as const,
@@ -62,8 +62,8 @@ describe("getPlayableHandCardKeysExcludingHidden", () => {
       hand: [affordableCard, drawingCard],
     };
 
-    const playable = getPlayableHandCardKeysExcludingHidden(state, new Set(["draw-c"]));
-    expect(playable.has("slash-a")).toBe(true);
-    expect(playable.has("draw-c")).toBe(false);
+    const playable = getPlayableHandCardKeysExcludingHidden(state, new Set(["draw-3"]));
+    expect(playable.has("slash-1")).toBe(true);
+    expect(playable.has("draw-3")).toBe(false);
   });
 });

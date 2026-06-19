@@ -22,7 +22,7 @@ describe("waitForStableHandCardRect", () => {
     const result = await waitForStableHandCardRect("slash-1", fallback, {
       measureHandCard: vi.fn(() => stable),
       registerCancel: () => () => {},
-      scheduleTimeout: () => () => {},
+      scheduleTimeout: (_cb, _ms) => () => {},
     });
 
     expect(result).toEqual(stable);
@@ -31,16 +31,17 @@ describe("waitForStableHandCardRect", () => {
   it("uses the timeout fallback when layout never stabilizes", async () => {
     let timeoutCb: (() => void) | null = null;
 
-    const promise = waitForStableHandCardRect("slash-1", fallback, {
+    const deps: import("@/features/alchemy/run-loop/battle/hand-card-layout").StableHandCardRectDeps = {
       measureHandCard: vi.fn(() => null),
       registerCancel: () => () => {},
-      scheduleTimeout: (cb) => {
+      scheduleTimeout: (cb, _ms) => {
         timeoutCb = cb;
         return () => {};
       },
-    });
+    };
+    const promise = waitForStableHandCardRect("slash-1", fallback, deps);
 
-    timeoutCb?.();
+    timeoutCb!();
     await expect(promise).resolves.toEqual(fallback);
   });
 
@@ -54,10 +55,10 @@ describe("waitForStableHandCardRect", () => {
         cancelCb = cb;
         return () => {};
       },
-      scheduleTimeout: () => () => {},
+      scheduleTimeout: (_cb, _ms) => () => {},
     });
 
-    cancelCb?.();
+    cancelCb!();
     await expect(promise).resolves.toEqual(measured);
   });
 });

@@ -112,7 +112,7 @@ describe("applyMysteryEffect", () => {
       const context = minimalContext();
       applyMysteryEffect({ kind: "chooseCard" }, context);
       const offered = context.setMysteryCardChoices.mock.calls[0][0];
-      if (offered.some((card) => !getCardKeywords(card).includes("archery"))) {
+      if (offered.some((card: BattleCard) => !getCardKeywords(card).includes("archery"))) {
         sawNonArchery = true;
         break;
       }
@@ -133,7 +133,7 @@ describe("applyMysteryEffect", () => {
       expect(context.setMysteryCardChoices).toHaveBeenCalledTimes(1);
       const offered = context.setMysteryCardChoices.mock.calls[0][0];
       expect(offered.length).toBeGreaterThan(0);
-      expect(offered.every((card) => card.id === "slash")).toBe(true);
+      expect(offered.every((card: BattleCard) => card.id === "slash")).toBe(true);
     } finally {
       poolSpy.mockRestore();
     }
