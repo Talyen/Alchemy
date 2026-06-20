@@ -7,7 +7,6 @@ import {
   makeHighDamageCard,
   startAtDestination,
   startBattleWithDeck,
-  skipBattleAndClaimReward,
 } from "./helpers";
 import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
@@ -115,21 +114,17 @@ test.describe("Mana Mechanics", () => {
 });
 
 test.describe("Full Run Flow", () => {
-  test("complete a victory run through destination choice", async ({ page, fastBattle, runtimeErrors }) => {
+  test("destination choice leads to a combat battle", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
-    await startBattleWithDeck(
+    await startAtDestination(
       page,
-      Array.from({ length: 6 }, () => makeCard()),
+      { runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()) },
+      { forceDestination: "Normal Combat" },
     );
-    const battle = new BattlePage(page);
 
-    await skipBattleAndClaimReward(page);
-
-    const combatBtn = page.getByRole("button", { name: /Combat/ }).first();
-    await expect(combatBtn).toBeVisible({ timeout: 3000 });
-    await combatBtn.click();
-    await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
+    await new DestinationPage(page).enterCombat("Normal Combat");
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
   });
 });
 

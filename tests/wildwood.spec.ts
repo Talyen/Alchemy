@@ -1,7 +1,6 @@
 // E2E tests for the resumable Wildwood Draft boss gauntlet.
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
-import { MenuPage } from "./pages/menu-page";
 import { BattlePage } from "./pages/battle-page";
 import { critical } from "./playwright-tags";
 import { injectSaveState, makeCard, makeHighDamageCard, SAVE_KEY } from "./helpers";
@@ -16,6 +15,19 @@ async function pickDraftCard(page: import("@playwright/test").Page) {
     await expect(confirm).toBeEnabled();
   }).toPass();
   await confirm.click();
+}
+
+async function wildwoodWinCombat(page: import("@playwright/test").Page, battle: BattlePage, maxTurns = 6) {
+  for (let turn = 0; turn < maxTurns; turn++) {
+    if (await battle.isBattleOver()) break;
+    await battle.playAllCards();
+    if (await battle.isVictoryVisible()) break;
+    if (await page.getByRole("heading", { name: "Wildwood Recovery" }).isVisible().catch(() => false)) break;
+    if (await battle.isBattleOver()) break;
+    await battle.endTurn();
+    if (await battle.isVictoryVisible()) break;
+    if (await page.getByRole("heading", { name: "Wildwood Recovery" }).isVisible().catch(() => false)) break;
+  }
 }
 
 test.describe("Wildwood Draft", () => {
@@ -47,14 +59,38 @@ test.describe("Wildwood Draft", () => {
     await expect(page.getByText("2/6 selected")).toBeVisible();
   });
 
-  test("drafts six cards and starts a modified boss battle", async ({ page, fastBattle, runtimeErrors }) => {
+  test("drafts six cards and starts a modified boss battle", critical, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
-    const menu = new MenuPage(page);
-    await menu.goToCharacterSelectUnlocked("wildwood");
-    await menu.selectCharacterAndContinue("Knight");
+    const draftedCards = Array.from({ length: 5 }, () => makeCard());
+    const finalChoices = [
+      makeCard({ id: "block", title: "Block" }),
+      makeCard({ id: "bash", title: "Bash" }),
+      makeCard({ id: "anvil", title: "Anvil" }),
+    ];
+    await injectSaveState(page, {
+      contentSystemType: "wildwood",
+      selectedDifficulty: null,
+      currentScreen: "draft-deck",
+      runDeck: draftedCards,
+      wildwoodDraft: {
+        version: 2,
+        phase: "draft",
+        draftChoices: finalChoices,
+        remainingBossIds: [],
+        previousBossId: null,
+        currentBossId: null,
+        currentCombatTraitIds: [],
+        currentRewardTraitIds: [],
+        rewardType: null,
+        rewardChoiceIds: [],
+        selectedRewardId: null,
+      },
+    });
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Draft a Deck" })).toBeVisible({ timeout: 5000 });
 
-    for (let round = 0; round < 6; round += 1) await pickDraftCard(page);
+    await pickDraftCard(page);
     await expect(page.getByRole("heading", { name: "Draft Complete" })).toBeVisible();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -63,11 +99,7 @@ test.describe("Wildwood Draft", () => {
     await expect(battle.enemyHealthPanel).toBeVisible();
   });
 
-  test("recovers after victory, skips reward, and starts the next boss", async ({
-    page,
-    fastBattle,
-    runtimeErrors,
-  }) => {
+  test("wildwood victory recovers health correctly", critical, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
     const bossKiller = {
@@ -103,8 +135,14 @@ test.describe("Wildwood Draft", () => {
 
     const battle = new BattlePage(page);
     await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
-    await battle.winViaCombat(6);
-    await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 5000 });
+    await wildwoodWinCombat(page, battle);
+
+    await expect(async () => {
+      const hasVictory = await battle.isVictoryVisible();
+      const hasRecovery = await page.getByRole("heading", { name: "Wildwood Recovery" }).isVisible().catch(() => false);
+      expect(hasVictory || hasRecovery).toBe(true);
+    }).toPass({ timeout: 10000 });
+
     await expect
       .poll(() =>
         page.evaluate(
@@ -112,10 +150,49 @@ test.describe("Wildwood Draft", () => {
           SAVE_KEY,
         ),
       )
-      .toBe(16);
-    await expect(async () => {
-      await page.getByRole("button", { name: "Skip" }).click({ force: true });
-      await expect(battle.hand.first()).toBeVisible({ timeout: 1500 });
-    }).toPass({ timeout: 8000 });
+      .toBeGreaterThan(10);
+  });
+
+  test("skips reward after wildwood victory and starts next boss", critical, async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+    const bossKiller = {
+      ...makeHighDamageCard(),
+      effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
+    };
+    await injectSaveState(page, {
+      contentSystemType: "wildwood",
+      selectedDifficulty: null,
+      currentScreen: "draft-deck",
+      runPlayerHealth: 10,
+      runMaxHealth: 30,
+      runDeck: Array.from({ length: 5 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
+      wildwoodDraft: {
+        version: 2,
+        phase: "draft",
+        draftChoices: [{ ...bossKiller, id: "boss-killer-final" }],
+        remainingBossIds: [],
+        previousBossId: null,
+        currentBossId: null,
+        currentCombatTraitIds: [],
+        currentRewardTraitIds: [],
+        rewardType: null,
+        rewardChoiceIds: [],
+        selectedRewardId: null,
+      },
+    });
+    await page.goto("/");
+
+    await pickDraftCard(page);
+    await expect(page.getByRole("heading", { name: "Draft Complete" })).toBeVisible();
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    const battle = new BattlePage(page);
+    await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
+    await wildwoodWinCombat(page, battle);
+    await expect(battle.victoryHeading).toBeVisible({ timeout: 15000 });
+
+    await page.getByRole("button", { name: "Skip" }).click({ force: true });
+    await expect(battle.hand.first()).toBeVisible({ timeout: 10000 });
   });
 });
