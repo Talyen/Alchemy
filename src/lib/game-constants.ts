@@ -197,8 +197,6 @@ export const PAGE_EXIT_MS = 130;
 
 // ============ Startup Loading ============
 export const INITIAL_LOAD_MIN_DURATION_MS = 650;
-export const INITIAL_LOAD_MAX_DURATION_MS = 12000;
-export const INITIAL_LOAD_BATCH_SIZE = 4;
 
 // ============ Animation / Timing ============
 export const SHIMMER_COOLDOWN_MS = 350;

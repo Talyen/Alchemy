@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-import { allGameArt, characterArt, type CharacterId, type DifficultyId } from "@/lib/game-data";
+import { characterArt, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import { useAppAudioEffects } from "@/app/use-app-audio-effects";
 import { useAppDisplayEffects } from "@/app/use-app-display-effects";
 import { useScreenAssetPreloadEffects } from "@/app/use-app-preload-effects";
@@ -204,7 +204,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 
   const settings = useAppSettings();
   const vrStageRef = useRef<HTMLDivElement>(null);
-  const initialLoadReady = useInitialLoadReady({ imageUrls: allGameArt });
+  const initialLoadReady = useInitialLoadReady();
   useAppDisplayEffects({
     displayMode: settings.displayMode,
     uiScale: settings.uiScale,

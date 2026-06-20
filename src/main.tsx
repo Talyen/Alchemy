@@ -5,12 +5,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 
 import App from "./App";
-import "./lib/validate-startup";
 import "./index.css";
 import { cursorArt } from "./lib/game-data/assets";
-
-// Register the error log store sink before any handlers fire.
-import "@/features/alchemy/shared/stores/error-log-store";
 
 // Use pointer_c_shaded for all cursor variants — no special effects.
 // Same image throughout; different CSS fallbacks if the image fails.
@@ -38,3 +34,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <App />
   </React.StrictMode>,
 );
+
+// Defer non-critical startup work so the first frame is not delayed.
+const idle: (cb: () => void) => void =
+  typeof globalThis.requestIdleCallback === "function"
+    ? (cb) => globalThis.requestIdleCallback(cb)
+    : (cb) => globalThis.setTimeout(cb, 0);
+idle(() => {
+  void import("./lib/validate-startup").then((m) => m.runStartupValidation());
+  void import("@/features/alchemy/shared/stores/error-log-store");
+});

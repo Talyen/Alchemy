@@ -25,6 +25,8 @@ type AppAudioEffectsOptions = {
 };
 
 // Applies persisted audio options and swaps menu/battle music as the route changes.
+// Music streaming (~45 MB of MP3s) is deferred until the first user gesture so it
+// doesn't compete with the JS bundle and CSS during the critical startup window.
 export function useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackground, screen }: AppAudioEffectsOptions) {
   const screenRef = useRef(screen);
   const gestureFiredRef = useRef(false);
@@ -64,14 +66,14 @@ export function useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackgrou
   }, [screen]);
 
   useEffect(() => {
-    // Eagerly start audio — works immediately when Chrome's Media Engagement Index
-    // allows it for this origin. Silently caught by the browser otherwise.
+    // Sound effect preloading starts immediately (the work is spread across idle
+    // callbacks so it doesn't compete with the first render). Music playback is
+    // gated on the first user gesture (below) so the ~45 MB of MP3s are not fetched
+    // during the critical startup window.
     preloadAllSounds();
-    playMusicImmediate(screenRef.current === "battle" ? MUSIC_KEYS.BATTLE : MUSIC_KEYS.MENU);
 
-    // Gesture fallback: if the browser blocked audio (low MEI), retrying inside a
-    // user gesture handler bypasses autoplay restrictions. Only fires once so
-    // subsequent keyboard/mouse input does not restart music.
+    // Gesture fallback: starts music inside a user gesture handler so autoplay
+    // restrictions never block audible playback. Only fires once.
     function resumeOnGesture() {
       if (gestureFiredRef.current) return;
       gestureFiredRef.current = true;
