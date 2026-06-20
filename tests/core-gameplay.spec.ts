@@ -17,6 +17,19 @@ import { RewardPage } from "./pages/reward-page";
 import { critical } from "./playwright-tags";
 
 test.describe("Battle Flow", critical, () => {
+  test("end turn during combat resolves without errors", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeHighDamageCard()),
+    );
+    const battle = new BattlePage(page);
+
+    await battle.endTurn();
+    await battle.winViaCombat(3);
+  });
+
   test("normal combat can be won by playing cards and ending turns", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;

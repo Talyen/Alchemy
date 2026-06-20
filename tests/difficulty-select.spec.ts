@@ -1,4 +1,5 @@
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { test } from "./fixtures/e2e";
 import { SAVE_KEY } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 
@@ -24,7 +25,8 @@ test.describe("Difficulty Select", () => {
     await expect(page.getByText("Locked").first()).toBeVisible();
   });
 
-  test("selecting difficulty enables Play and starts a battle; Back returns to character select", async ({ page }) => {
+  test("selecting difficulty enables Play and starts a battle; Back returns to character select", async ({ page, fastBattle }) => {
+    void fastBattle;
     const menu = new MenuPage(page);
     await menu.goToCharacterSelect();
     await menu.selectCharacterAndContinue("Knight");

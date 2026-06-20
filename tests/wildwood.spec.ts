@@ -47,7 +47,8 @@ test.describe("Wildwood Draft", () => {
     await expect(page.getByText("2/6 selected")).toBeVisible();
   });
 
-  test("drafts six cards and starts a modified boss battle", async ({ page, runtimeErrors }) => {
+  test("drafts six cards and starts a modified boss battle", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
     void runtimeErrors;
     const menu = new MenuPage(page);
     await menu.goToCharacterSelectUnlocked("wildwood");

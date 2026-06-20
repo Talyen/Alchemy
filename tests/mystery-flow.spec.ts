@@ -1,5 +1,6 @@
-import { expect, test } from "@playwright/test";
-import { enableFastMode, startAtDestination } from "./helpers";
+import { expect } from "@playwright/test";
+import { test } from "./fixtures/e2e";
+import { startAtDestination } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 import { MysteryPage } from "./pages/mystery-page";
 
@@ -11,8 +12,8 @@ test.describe("Mystery Event Flow", () => {
     await expect(page.getByRole("heading").first()).toBeVisible();
   });
 
-  test("mystery event completes and returns to destination choices", async ({ page }) => {
-    await enableFastMode(page);
+  test("mystery event completes and returns to destination choices", async ({ page, fastBattle }) => {
+    void fastBattle;
     await startAtDestination(page, {}, { forceDestination: "Mystery" });
     await page.getByRole("button", { name: "Mystery" }).click();
 

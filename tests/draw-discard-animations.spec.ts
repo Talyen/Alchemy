@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { failOnRuntimeErrors, makeCard, makeHighDamageCard, startBattleWithDeck } from "./helpers";
+import { failOnRuntimeErrors, makeCard, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 
 test.describe("Draw/discard animation invariants (1920×1080)", () => {
@@ -59,19 +59,3 @@ for (const { width, height, label } of ALT_RESOLUTIONS) {
   });
 }
 
-test.describe("Draw/discard edge cases", () => {
-  test("end turn during combat resolves without errors", async ({ page }) => {
-    const errors = failOnRuntimeErrors(page);
-
-    test.setTimeout(60_000);
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeHighDamageCard()),
-    );
-    const battle = new BattlePage(page);
-
-    await battle.endTurn();
-    await battle.winViaCombat(3);
-    expect(errors).toEqual([]);
-  });
-});
