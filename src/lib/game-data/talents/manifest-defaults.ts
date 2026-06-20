@@ -84,6 +84,8 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   forgeOnBurnDealt: 0,
   blockToBurnDamage: false,
   consumeBurnDamageBonusPercent: 0,
+  firstConsumeCardFree: false,
+  consumeDamageBonusPercent: 0,
   burnStunChance: 0,
 
   shopCardDiscount: 0,
@@ -160,6 +162,10 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
 
   companionDamage: 0,
   companionGoldFindActive: false,
+  companionLeechChance: 0,
+  drawOnCompanionCard: 0,
+  companionDoubledVsLowHealth: false,
+  damageReductionWithCompanion: 0,
 
   freezeThresholdReduction: 0,
   freezeDoubleDamage: false,
@@ -174,8 +180,16 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   flatFreezeDamage: 0,
 
   flatArrowDamage: 0,
+  archeryPlayTwiceChance: 0,
+  archeryDoubledVsStunned: false,
+  archeryDoubledVsFrozen: false,
+  archeryDoubledVsHighHealth: false,
 
   flatNatureDamage: 0,
+  naturePoisonChance: 0,
+  natureBleedChance: 0,
+  natureBonusVsPoisoned: 0,
+  receiveHalfNatureDamage: false,
 
   firstBleedCardFree: false,
   bleedPhysicalBonus: 0,

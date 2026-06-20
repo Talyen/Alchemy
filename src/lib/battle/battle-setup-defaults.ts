@@ -63,6 +63,7 @@ function createInitialFlags(): CombatFlags {
     firstHarmfulStatusPrevented: false,
     firstPotionFreeUsed: false,
     firstLeechCardDoubledUsed: false,
+    firstConsumeCardFreeUsed: false,
     resonantChimeUsedThisTurn: false,
     runicQuillUsedThisTurn: false,
     divineAegisTriggered: false,

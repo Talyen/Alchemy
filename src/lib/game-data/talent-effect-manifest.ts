@@ -92,6 +92,8 @@ export type TalentEffectManifest = {
   forgeOnBurnDealt: number;
   blockToBurnDamage: boolean;
   consumeBurnDamageBonusPercent: number;
+  firstConsumeCardFree: boolean;
+  consumeDamageBonusPercent: number;
   burnStunChance: number;
 
   // --- Gold ---
@@ -149,6 +151,10 @@ export type TalentEffectManifest = {
 
   companionDamage: number;
   companionGoldFindActive: boolean;
+  companionLeechChance: number;
+  drawOnCompanionCard: number;
+  companionDoubledVsLowHealth: boolean;
+  damageReductionWithCompanion: number;
 
   // --- Wishing Well ---
   wishCrystalGold: number;
@@ -179,11 +185,19 @@ export type TalentEffectManifest = {
   receiveHalfFreezeBuildUp: boolean;
   flatFreezeDamage: number;
 
-  // --- Arrow ---
+  // --- Archery ---
   flatArrowDamage: number;
+  archeryPlayTwiceChance: number;
+  archeryDoubledVsStunned: boolean;
+  archeryDoubledVsFrozen: boolean;
+  archeryDoubledVsHighHealth: boolean;
 
   // --- Nature ---
   flatNatureDamage: number;
+  naturePoisonChance: number;
+  natureBleedChance: number;
+  natureBonusVsPoisoned: number;
+  receiveHalfNatureDamage: boolean;
 
   // --- Bleed ---
   firstBleedCardFree: boolean;

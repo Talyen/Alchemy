@@ -1,6 +1,6 @@
 // Talent definitions for keyword: archery.
 import type { TalentDefinition } from "../types";
-import { addEffect, placeholderTalents } from "../types";
+import { addEffect, setEffect, placeholderTalents } from "../types";
 
 export const archeryTalents: TalentDefinition[] = [
   {
@@ -10,5 +10,33 @@ export const archeryTalents: TalentDefinition[] = [
     description: "Increase damage dealt by Archery cards by 1",
     effects: [addEffect("flatArrowDamage", 1)],
   },
-  ...placeholderTalents("archery", "archery-placeholder", 2, 10),
+  {
+    id: "archery-hail",
+    keywordId: "archery",
+    name: "Hail of Arrows",
+    description: "Archery cards have a 10% chance to deal 50% of their damage a second time",
+    effects: [setEffect("archeryPlayTwiceChance", 10)],
+  },
+  {
+    id: "archery-eagle-eye",
+    keywordId: "archery",
+    name: "Eagle Eye",
+    description: "Archery cards deal double damage against Stunned enemies",
+    effects: [setEffect("archeryDoubledVsStunned", true)],
+  },
+  {
+    id: "archery-hawk-eye",
+    keywordId: "archery",
+    name: "Hawk Eye",
+    description: "Archery cards deal double damage against Frozen enemies",
+    effects: [setEffect("archeryDoubledVsFrozen", true)],
+  },
+  {
+    id: "archery-longshot",
+    keywordId: "archery",
+    name: "Longshot",
+    description: "Archery cards deal double damage against enemies above 75% Health",
+    effects: [setEffect("archeryDoubledVsHighHealth", true)],
+  },
+  ...placeholderTalents("archery", "archery-placeholder", 6, 10),
 ];

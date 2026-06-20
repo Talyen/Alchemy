@@ -33,6 +33,8 @@ const talentLayouts: Partial<Record<KeywordId, TalentLayoutConfig>> = {
   mana: { radiusX: 46, radiusY: 22, rotate: -24 },
   nature: { radiusX: 34, radiusY: 34 },
   companion: { radiusX: 34, radiusY: 34 },
+  archery: { radiusX: 36, radiusY: 28, rotate: -20 },
+  consume: { radiusX: 32, radiusY: 32 },
 };
 
 const defaultLayout: TalentLayoutConfig = { radiusX: 30, radiusY: 30 };

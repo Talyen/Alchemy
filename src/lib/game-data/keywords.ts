@@ -111,7 +111,6 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
     colorClass: "text-violet-400",
     borderClass: "border-violet-400",
     shineColors: ["#a78bfa", "#6d28d9", "#a78bfa"],
-    hidden: true,
   },
   poison: {
     id: "poison",

@@ -207,11 +207,18 @@ function applyBurnDamageRiders(
 function applyNatureDamageRiders(
   state: BattleState,
   modifiedDamage: number,
+  _card: BattleCard,
   combatTexts: CombatTextEvent[],
 ): BattleState {
   let nextState = applyLuckyCloverGold(state, modifiedDamage, combatTexts);
   if (state.talentEffects.natureLeechChance > 0 || state.gearEffects.natureLeechChance > 0) {
     nextState = applyNatureLeech(nextState, modifiedDamage, combatTexts);
+  }
+  if (rollTalentChance(state.talentEffects.naturePoisonChance, state)) {
+    nextState = addEnemyStatus(nextState, "poison", modifiedDamage);
+  }
+  if (rollTalentChance(state.talentEffects.natureBleedChance, state)) {
+    nextState = addEnemyStatus(nextState, "bleed", modifiedDamage);
   }
   return nextState;
 }
@@ -314,12 +321,19 @@ export function applyDamageRiders(
   if (effect.lifesteal) {
     nextState = applyLifestealAndPlayerHitTriggers(nextState, modifiedDamage, combatTexts);
   }
+
+  if (card.tags?.includes("archery") && modifiedDamage > 0) {
+    if (rollTalentChance(state.talentEffects.archeryPlayTwiceChance, state)) {
+      const secondHit = Math.round(modifiedDamage / HALF_DIVISOR);
+      nextState = applyDamageRiders(nextState, card, effect, secondHit, combatTexts);
+    }
+  }
   if (effect.damageType === "holy") {
     nextState = applyHolyDamageRiders(nextState, card, modifiedDamage, combatTexts);
   }
 
   if (effect.damageType === "nature") {
-    nextState = applyNatureDamageRiders(nextState, modifiedDamage, combatTexts);
+    nextState = applyNatureDamageRiders(nextState, modifiedDamage, card, combatTexts);
   }
 
   if (modifiedDamage > 0) {

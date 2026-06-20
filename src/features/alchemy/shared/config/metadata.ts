@@ -2,8 +2,8 @@
 // Depends on Lucide icons, game-data image assets, and alchemy UI types.
 import type { LucideIcon } from "lucide-react";
 import {
+  Beaker,
   BookOpen,
-  CircleOff,
   Coins,
   Crosshair,
   Dices,
@@ -103,7 +103,7 @@ export const keywordIcons: Record<KeywordId, LucideIcon> = {
   gold: Coins,
   holy: Sun,
   wish: Sparkles,
-  consume: CircleOff,
+  consume: Beaker,
   poison: FlaskConical,
   bleed: Droplet,
   leech: HeartPulse,

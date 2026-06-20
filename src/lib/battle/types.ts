@@ -15,7 +15,7 @@ import type {
   PlayerStatusId,
   TalentEffectManifest,
 } from "@/lib/game-data";
-import { CAMPFIRE_HEAL_FRACTION } from "../game-constants";
+import { CAMPFIRE_HEAL_FRACTION, HALF_DIVISOR } from "../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
 import { applyGearDamageResistance, scaleGoldReward } from "./gear-effects";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -95,6 +95,7 @@ export type CombatFlags = {
   firstHarmfulStatusPrevented: boolean;
   firstPotionFreeUsed: boolean;
   firstLeechCardDoubledUsed: boolean;
+  firstConsumeCardFreeUsed: boolean;
   resonantChimeUsedThisTurn: boolean;
   runicQuillUsedThisTurn: boolean;
   divineAegisTriggered: boolean;
@@ -111,6 +112,7 @@ export type FirstTimeFlagKey =
   | "firstHolyDamageBonusUsed"
   | "firstBurnTrinketDoubledUsed"
   | "firstLeechCardDoubledUsed"
+  | "firstConsumeCardFreeUsed"
   | "firstPotionFreeUsed"
   | "nextCardCostReduction"
   | "resonantChimeUsedThisTurn"
@@ -126,6 +128,7 @@ const FIRST_TIME_FLAG_USED_VALUES: { [K in FirstTimeFlagKey]: CombatFlags[K] } =
   firstHolyDamageBonusUsed: true,
   firstBurnTrinketDoubledUsed: true,
   firstLeechCardDoubledUsed: true,
+  firstConsumeCardFreeUsed: true,
   firstPotionFreeUsed: true,
   nextCardCostReduction: 0,
   resonantChimeUsedThisTurn: true,
@@ -147,6 +150,7 @@ export function withPreservedFlags(state: BattleState, mutate: (s: BattleState) 
     firstHolyDamageBonusUsed: state.flags.firstHolyDamageBonusUsed,
     firstBurnTrinketDoubledUsed: state.flags.firstBurnTrinketDoubledUsed,
     firstLeechCardDoubledUsed: state.flags.firstLeechCardDoubledUsed,
+    firstConsumeCardFreeUsed: state.flags.firstConsumeCardFreeUsed,
     firstPotionFreeUsed: state.flags.firstPotionFreeUsed,
     nextCardCostReduction: state.flags.nextCardCostReduction,
     resonantChimeUsedThisTurn: state.flags.resonantChimeUsedThisTurn,
@@ -319,12 +323,18 @@ export function clampHealth(current: number, delta: number, max: number): number
 export function applyPlayerCombatDamage(state: BattleState, damage: number, damageType?: string): BattleState {
   if (damage <= 0) return state;
   let reducedDamage = damage - state.talentEffects.damageReduction;
+  if (state.activeCompanion && state.talentEffects.damageReductionWithCompanion > 0) {
+    reducedDamage -= state.talentEffects.damageReductionWithCompanion;
+  }
   if (damageType === "burn") {
     reducedDamage -= state.talentEffects.burnDamageReduction;
   } else if (damageType === "freeze") {
     reducedDamage -= state.talentEffects.freezeDamageReduction;
   } else if (damageType === "nature") {
     reducedDamage -= state.talentEffects.natureDamageReduction;
+    if (state.talentEffects.receiveHalfNatureDamage) {
+      reducedDamage = Math.round(reducedDamage / HALF_DIVISOR);
+    }
   }
   reducedDamage = Math.max(0, reducedDamage);
   reducedDamage = applyGearDamageResistance(reducedDamage, damageType, state.gearEffects);

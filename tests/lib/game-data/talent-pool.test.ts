@@ -97,14 +97,16 @@ describe("getNextTalentChoices", () => {
   });
 
   it("excludes placeholder talents", () => {
-    const choices = getNextTalentChoices("nature", [], 10);
-    expect(choices).toHaveLength(0);
-    expect(getTalentsForKeyword("nature").every(isTalentPlaceholder)).toBe(true);
+    const choices = getNextTalentChoices("consume", [], 10);
+    expect(choices).toHaveLength(5);
+    expect(getTalentsForKeyword("consume").every(isTalentPlaceholder)).toBe(false);
   });
 
   it("excludes placeholder-only keywords from the talent tree", () => {
-    expect(countImplementedTalents("nature")).toBe(0);
-    expect(getTalentTreeKeywordIds()).not.toContain("nature");
+    expect(getTalentTreeKeywordIds()).toContain("nature");
+    expect(getTalentTreeKeywordIds()).toContain("archery");
+    expect(getTalentTreeKeywordIds()).toContain("companion");
+    expect(getTalentTreeKeywordIds()).toContain("consume");
   });
 
   it("returns the requested number of choices", () => {
@@ -117,7 +119,7 @@ describe("getNextTalentChoices", () => {
     const unlocked = implemented.slice(0, -1).map((t) => t.id);
     const choices = getNextTalentChoices("archery", unlocked, 10);
     expect(choices).toHaveLength(1);
-    expect(countImplementedTalents("archery")).toBe(1);
+    expect(countImplementedTalents("archery")).toBe(5);
   });
 });
 

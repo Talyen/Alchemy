@@ -9,6 +9,8 @@ import { type BattleState, type CombatTextEvent, applyPlayerHealing, withPreserv
 import { HALF_DIVISOR } from "../game-constants";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
+import { computeLeechHeal } from "../game-constants";
+import { rollPercent, getBattleRng } from "./status-helpers";
 
 function buildCompanionCard(
   activeCompanion: NonNullable<BattleState["activeCompanion"]>,
@@ -20,6 +22,7 @@ function buildCompanionCard(
   enemyFreezeSkipTurns: number,
   maxMana: number,
   playerForge: number,
+  lowHealthMultiplier: number,
 ): BattleCard {
   return {
     id: `companion-${activeCompanion.id}`,
@@ -31,19 +34,21 @@ function buildCompanionCard(
       e.kind === "damage"
         ? {
             ...e,
-            amount:
-              e.amount +
-              companionBondLevel +
-              talentEffects.companionDamage +
-              gearEffects.companionDamageBonus +
-              (e.damageType === "bleed" ? talentEffects.companionBleedDamageBonus : 0) +
-              trinketEffects.companionDamageBonus +
-              companionDamageBuff +
-              (enemyFreezeSkipTurns > 0 ? talentEffects.companionVsFrozenBonus : 0) +
-              Math.round((maxMana * talentEffects.companionDamagePerManaCrystal) / HALF_DIVISOR) +
-              (gearEffects.companionBenefitsFromForge > 0 && (e.damageType === "physical" || e.damageType === "stun")
-                ? playerForge
-                : 0),
+            amount: Math.round(
+              (e.amount +
+                companionBondLevel +
+                talentEffects.companionDamage +
+                gearEffects.companionDamageBonus +
+                (e.damageType === "bleed" ? talentEffects.companionBleedDamageBonus : 0) +
+                trinketEffects.companionDamageBonus +
+                companionDamageBuff +
+                (enemyFreezeSkipTurns > 0 ? talentEffects.companionVsFrozenBonus : 0) +
+                Math.round((maxMana * talentEffects.companionDamagePerManaCrystal) / HALF_DIVISOR) +
+                (gearEffects.companionBenefitsFromForge > 0 && (e.damageType === "physical" || e.damageType === "stun")
+                  ? playerForge
+                  : 0)) *
+                lowHealthMultiplier,
+            ),
           }
         : e,
     ),
@@ -53,6 +58,9 @@ function buildCompanionCard(
 export function processCompanionTurnStart(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (!state.activeCompanion || state.enemyHealth <= 0) return state;
   const companionBondLevel = state.talentEffects.companionBondLevels[state.activeCompanion.id];
+
+  const lowHealthMultiplier =
+    state.talentEffects.companionDoubledVsLowHealth && state.enemyHealth <= state.enemyMaxHealth * 0.3 ? 2 : 1;
 
   const companionCard = buildCompanionCard(
     state.activeCompanion,
@@ -64,6 +72,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     state.enemyCC.freezeSkipTurns,
     state.maxMana,
     state.playerStatuses.forge,
+    lowHealthMultiplier,
   );
 
   // Companion actions are not player card plays and should not consume or benefit
@@ -90,6 +99,28 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
         });
         emitOverhealBlockText(prevState, healedState, combatTexts);
         return healedState;
+      }
+    }
+
+    if (state.talentEffects.companionLeechChance > 0) {
+      const hasDamageEffect = companionCard.effects.some((e) => e.kind === "damage");
+      if (hasDamageEffect && rollPercent(state.talentEffects.companionLeechChance, getBattleRng(state))) {
+        const companionDamage = companionCard.effects
+          .filter((e) => e.kind === "damage")
+          .reduce((sum, e) => sum + e.amount, 0);
+        const leechHeal = computeLeechHeal(companionDamage);
+        if (leechHeal > 0) {
+          const prevState = afterEffects;
+          const healedState = applyPlayerHealing(afterEffects, leechHeal);
+          mergeCombatText(combatTexts, {
+            target: "player",
+            kind: "heal",
+            stat: "health",
+            amount: leechHeal,
+          });
+          emitOverhealBlockText(prevState, healedState, combatTexts);
+          return healedState;
+        }
       }
     }
 

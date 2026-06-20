@@ -53,6 +53,10 @@ const FIRST_CARD_FREE_RULES: {
     flag: "firstBleedCardFreeUsed",
     condition: (state, card) => state.talentEffects.firstBleedCardFree && cardHasDamageType(card, "bleed"),
   },
+  {
+    flag: "firstConsumeCardFreeUsed",
+    condition: (state, card) => state.talentEffects.firstConsumeCardFree && !!card.consume,
+  },
 ];
 
 /**

@@ -177,8 +177,15 @@ function applyBurnDamageModifiers(state: BattleState, rawAmount: number, card?: 
   if (state.talentEffects.blockToBurnDamage) {
     nextAmount += getBlockScaledDamageBonus(state);
   }
-  if (card?.consume && state.talentEffects.consumeBurnDamageBonusPercent > 0) {
-    nextAmount = Math.round(nextAmount * (1 + state.talentEffects.consumeBurnDamageBonusPercent / PERCENT_DENOMINATOR));
+  if (card?.consume) {
+    if (state.talentEffects.consumeBurnDamageBonusPercent > 0) {
+      nextAmount = Math.round(
+        nextAmount * (1 + state.talentEffects.consumeBurnDamageBonusPercent / PERCENT_DENOMINATOR),
+      );
+    }
+    if (state.talentEffects.consumeDamageBonusPercent > 0) {
+      nextAmount = Math.round(nextAmount * (1 + state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR));
+    }
   }
   return nextAmount;
 }
@@ -190,7 +197,11 @@ function applyFreezeDamageModifiers(state: BattleState, rawAmount: number): numb
 }
 
 function applyNatureDamageModifiers(state: BattleState, rawAmount: number): number {
-  return rawAmount + state.talentEffects.flatNatureDamage + state.gearEffects.flatNatureDamage;
+  let nextAmount = rawAmount + state.talentEffects.flatNatureDamage + state.gearEffects.flatNatureDamage;
+  if (state.enemyStatuses.poison > 0) {
+    nextAmount += state.talentEffects.natureBonusVsPoisoned;
+  }
+  return nextAmount;
 }
 
 function applyPoisonDamageModifiers(state: BattleState, rawAmount: number): number {
@@ -329,7 +340,22 @@ export function computeCardDamageToEnemy(
 ) {
   const baseDamage = computeBaseDamage(state, effect, card);
   const { state: stateAfterFirstMods, rawDamage } = applyFirstDamageModifiers(state, effect, baseDamage);
-  const finalDamage = applyCrit(rawDamage, effect.damageType, stateAfterFirstMods);
+  let finalDamage = applyCrit(rawDamage, effect.damageType, stateAfterFirstMods);
+
+  if (card?.tags?.includes("archery")) {
+    if (stateAfterFirstMods.enemyCC.stunSkipTurns > 0 && stateAfterFirstMods.talentEffects.archeryDoubledVsStunned) {
+      finalDamage *= DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
+    }
+    if (stateAfterFirstMods.enemyCC.freezeSkipTurns > 0 && stateAfterFirstMods.talentEffects.archeryDoubledVsFrozen) {
+      finalDamage *= DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
+    }
+    if (
+      stateAfterFirstMods.enemyHealth >= stateAfterFirstMods.enemyMaxHealth &&
+      stateAfterFirstMods.talentEffects.archeryDoubledVsHighHealth
+    ) {
+      finalDamage *= DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
+    }
+  }
 
   const { state: stateAfterBlock, remainingDamage: damageAfterBlock } = applyBlockAbsorption(
     stateAfterFirstMods,

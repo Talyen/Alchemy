@@ -317,9 +317,9 @@ describe("awardMysteryXP", () => {
     expect(getRunProgressStoreView().runTalentXP.burn).toBe(50);
   });
 
-  it("skips hidden keywords like awardCardXP", () => {
+  it("awards XP to all visible keywords", () => {
     getRunProgressStoreView().awardMysteryXP("consume", 50);
-    expect(getRunProgressStoreView().runTalentXP).toEqual({});
+    expect(getRunProgressStoreView().runTalentXP.consume).toBe(50);
   });
 });
 
