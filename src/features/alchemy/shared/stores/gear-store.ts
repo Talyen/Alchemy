@@ -200,13 +200,14 @@ export const useGearStore = create<GearStore>((set, get) => ({
         }
       }
 
+      const currentPos = characterPositions[instance.instanceId];
+      if (currentPos) {
+        nextReturn[instance.instanceId] = currentPos;
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
+        delete characterPositions[instance.instanceId];
+      }
+
       if (options?.vacatedPlacement) {
-        const currentPos = characterPositions[instance.instanceId];
-        if (currentPos) {
-          nextReturn[instance.instanceId] = currentPos;
-          // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
-          delete characterPositions[instance.instanceId];
-        }
         if (options.swapDisplaced !== false && displacedId && displacedId !== instance.instanceId) {
           characterPositions[displacedId] = options.vacatedPlacement;
         }

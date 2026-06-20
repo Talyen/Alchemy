@@ -56,6 +56,7 @@ export function defaultCombatFlags(overrides?: Partial<CombatFlags>): CombatFlag
     resonantChimeUsedThisTurn: false,
     runicQuillUsedThisTurn: false,
     divineAegisTriggered: false,
+    firstConsumeCardFreeUsed: false,
     ...overrides,
   };
 }

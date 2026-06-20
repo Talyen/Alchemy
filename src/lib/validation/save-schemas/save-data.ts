@@ -215,6 +215,7 @@ export const SaveDataSchema = z.preprocess(
         gearBoardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(
           save.gearBoardPositionsByCharacter,
           save.gearInventories,
+          save.gearLoadouts,
         ),
         craftingCurrencyBoardPositionsByCharacter: sanitizeCurrencyBoardPositionsByCharacter(
           save.craftingCurrencyBoardPositionsByCharacter,

@@ -9,11 +9,15 @@ import { INVENTORY_COLS } from "./constants";
 import { footprintForInstance } from "./footprints";
 import {
   GEAR_CHARACTER_IDS,
+  GEAR_SLOTS,
   createEmptyGearBoardPositionsByCharacter,
+  flattenGearInventories,
   type GearBoardPositions,
   type GearBoardPositionsByCharacter,
   type GearInventories,
   type GearInstance,
+  type GearLoadouts,
+  type GearLoadout,
 } from "./types";
 
 function sanitizeCurrencyBoardPositions(
@@ -31,14 +35,17 @@ function sanitizeCurrencyBoardPositions(
   return next;
 }
 
-export function sanitizeGearBoardPositions(
+function sanitizeGearBoardPositions(
   boardPositions: GearBoardPositions,
   inventory: GearInstance[],
+  loadout: GearLoadout,
 ): GearBoardPositions {
   const inventoryIds = new Set(inventory.map((item) => item.instanceId));
+  const equippedIds = new Set(Object.values(loadout).filter(Boolean) as string[]);
   const next: GearBoardPositions = {};
   for (const [instanceId, position] of Object.entries(boardPositions)) {
     if (!inventoryIds.has(instanceId)) continue;
+    if (equippedIds.has(instanceId)) continue; // Equipped gear shouldn't be on the board
     const item = inventory.find((entry) => entry.instanceId === instanceId);
     if (!item) continue;
     const footprint = footprintForInstance(item);
@@ -52,10 +59,15 @@ export function sanitizeGearBoardPositions(
 export function sanitizeGearBoardPositionsByCharacter(
   boardPositionsByCharacter: GearBoardPositionsByCharacter,
   inventories: GearInventories,
+  loadouts: GearLoadouts,
 ): GearBoardPositionsByCharacter {
   const next = createEmptyGearBoardPositionsByCharacter();
   for (const characterId of GEAR_CHARACTER_IDS) {
-    next[characterId] = sanitizeGearBoardPositions(boardPositionsByCharacter[characterId], inventories[characterId]);
+    next[characterId] = sanitizeGearBoardPositions(
+      boardPositionsByCharacter[characterId],
+      inventories[characterId],
+      loadouts[characterId],
+    );
   }
   return next;
 }
@@ -67,6 +79,31 @@ export function sanitizeCurrencyBoardPositionsByCharacter(
   const next = createEmptyCurrencyBoardPositionsByCharacter();
   for (const characterId of GEAR_CHARACTER_IDS) {
     next[characterId] = sanitizeCurrencyBoardPositions(boardPositionsByCharacter[characterId], currencies);
+  }
+  return next;
+}
+
+export function sanitizeEquippedReturnPositions(
+  equippedReturnPositions: GearBoardPositions,
+  inventories: GearInventories,
+  loadouts: GearLoadouts,
+): GearBoardPositions {
+  const flatInventory = flattenGearInventories(inventories);
+  const inventoryIds = new Set(flatInventory.map((item) => item.instanceId));
+
+  const equippedIds = new Set<string>();
+  for (const characterId of GEAR_CHARACTER_IDS) {
+    for (const slot of GEAR_SLOTS) {
+      const id = loadouts[characterId][slot];
+      if (id) equippedIds.add(id);
+    }
+  }
+
+  const next: GearBoardPositions = {};
+  for (const [instanceId, position] of Object.entries(equippedReturnPositions)) {
+    if (inventoryIds.has(instanceId) && equippedIds.has(instanceId)) {
+      next[instanceId] = position;
+    }
   }
   return next;
 }

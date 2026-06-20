@@ -289,7 +289,7 @@ export const LEGACY_ARMORY_POSITIONS_STORAGE_KEY = "alchemy-armory-positions";
 function getStorage(): Storage | null {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime environment check
   if (typeof localStorage !== "undefined") return localStorage;
-  if (window.localStorage) return window.localStorage;
+  if (typeof window !== "undefined" && window.localStorage) return window.localStorage;
   return null;
 }
 

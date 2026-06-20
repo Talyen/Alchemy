@@ -118,7 +118,7 @@ export function packCurrencyWithPositions(
   }));
 }
 
-export function currencyObstaclesForBoard(
+function currencyObstaclesForBoard(
   packedCurrencies: PackedCurrencyItem[],
 ): PackedInventoryItem<{ instanceId: string }>[] {
   return packedCurrencies.map(({ currencyId, col, row, w, h }) => ({
@@ -134,6 +134,7 @@ export function buildArmoryBoardView({
   inventory,
   loadout,
   gearPositions,
+  equippedReturnPositions = {},
   currencyPositions,
   craftingCurrencies,
   cols = INVENTORY_COLS,
@@ -141,6 +142,7 @@ export function buildArmoryBoardView({
   inventory: GearInstance[];
   loadout: GearLoadout;
   gearPositions: GearBoardPositions;
+  equippedReturnPositions?: GearBoardPositions;
   currencyPositions: CraftingCurrencyBoardPositions;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   cols?: number;
@@ -158,7 +160,7 @@ export function buildArmoryBoardView({
   const packedInventory = packInventoryWithPositions(
     availableInventory,
     cols,
-    gearPositions,
+    { ...gearPositions, ...equippedReturnPositions },
     reservedEquipped,
     currencyBlockers,
   );

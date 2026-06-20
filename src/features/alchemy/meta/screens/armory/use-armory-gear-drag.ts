@@ -234,6 +234,10 @@ export function useArmoryGearDrag({
       activeInstanceRef.current = null;
       setActiveInstance(null);
     },
+    onClear: () => {
+      activeInstanceRef.current = null;
+      setActiveInstance(null);
+    },
   });
 
   useEffect(() => {

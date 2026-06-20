@@ -6,6 +6,8 @@ This file is for AI coding agents and the people guiding them. Humans should sta
 
 > **When in doubt, ask.** A short clarifying question is cheaper than an undo.
 
+> **Pragmatic simplicity.** Proactively ask before implementing complex abstractions or edge-case logic. A simpler behavior trade-off is often better than a complex codebase.
+
 > **Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [ARMORY.md](./docs/ARMORY.md) (gear data model, board packing, drag FSM) · [RELEASE.md](./docs/RELEASE.md) (Steam shipping) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks and tests) · [PROMPTS.md](./PROMPTS.md) (code-quality audits) · [MIGRATIONS.md](./src/features/alchemy/shared/storage/MIGRATIONS.md) (save schema migration) · [README.md](./README.md) (human setup)
 
 ## Contents
@@ -47,14 +49,15 @@ A scannable list of the most common ways to break the repo or violate policy. Th
 - For non-destructive work, after three failed attempts with the same approach, run the relevant audit in [PROMPTS.md](./PROMPTS.md) — code quality or [UI interaction/layout](./PROMPTS.md#ui-interaction--feedback-audit) (or [WORKFLOWS](./docs/WORKFLOWS.md) for domain wiring), then ask the user rather than continuing speculative changes.
 - Stop and ask when the requirement is ambiguous, the change spans more than a handful of files, a lint rule or test would need to be weakened to pass, or this file disagrees with an owner doc and `eslint.config.js` / `package.json` do not clearly resolve it.
 - When this file disagrees with an owner doc, stop and ask unless `eslint.config.js` or `package.json` clearly resolves the conflict.
+- Stop and ask when a trade-off between exact behavior and code/architectural simplicity is possible. Propose a simpler, more stable compromise (e.g., simplified UI, reduced scope, or alternative flows) over implementing complex or fragile logic.
 
 ## Operating procedure
 
 The six-step loop for any non-trivial task. Small fixes and obvious typos may skip steps 2–3.
 
 1. **Orient.** Find your row in [Where to look](#where-to-look). Skim the linked doc(s) before touching code — most rules and gotchas live there, not in this file.
-2. **Plan.** If the change spans more than three files, alters a store, or touches persistence, state the plan in 1–3 sentences before editing. Use the `question` tool when intent is ambiguous; do not guess.
-3. **Edit minimally.** Match the existing style and file layout. Do not refactor unrelated code in the same diff — split it into a follow-up commit. Prefer `Edit` over `Write`. Cite files with `path:line` when discussing them.
+2. **Plan.** If the change spans more than three files, alters a store, or touches persistence, state the plan in 1–3 sentences before editing. Use the `question` tool when intent is ambiguous; do not guess. **Assess simplicity:** Identify any design or behavior trade-offs that could dramatically simplify the code. Propose these options in your plan before writing code.
+3. **Edit minimally.** Keep changes as simple and direct as possible. Do not introduce new abstractions, helpers, or complex state logic unless explicitly requested or discussed in the plan. Match the existing style and file layout. Do not refactor unrelated code in the same diff — split it into a follow-up commit. Prefer `Edit` over `Write`. Cite files with `path:line` when discussing them.
 4. **Edit precisely.** Always read the file before editing. Provide 3–5 lines of surrounding context in `oldString` to make matches unique. Use `replaceAll: true` when the same change applies to multiple occurrences. After each mutation, re-read the affected region before the next edit — earlier edits change the file and stale matches will fail.
 5. **Verify.** Run the narrow test command for the area plus `npm run typecheck`. See [Verification](#verification) for the full gate.
 6. **Report.** Summarize what changed, what you didn't change, and anything you noticed that the user should decide on. Flag rule-bending decisions explicitly.
@@ -157,6 +160,7 @@ Full change-to-test mapping and the main-gate procedure live in [CONTRIBUTING.md
 
 ## Architectural invariants
 
+- **Pragmatism and Simplicity:** Favor code readability, stability, and low complexity over absolute behavioral fidelity. Avoid over-engineering, extra layers of abstraction, or complex state logic. Propose simpler behavioral compromises to the user when facing complex implementation details.
 - **Run state:** route `screen` belongs to the run domain. Feature code outside `shared/stores/` accesses run state through `run-session-facade` hooks/readers and transition APIs, not `run-domain-store` directly.
 - **Battle:** treat `BattleState` as immutable; use `state.rng` rather than `Math.random()`; keep tuning in `game-constants.ts`; use `Math.round()` rather than `Math.floor()` in battle code.
 - **Content:** card `descriptionLines` must match effects. Run-earned materials flow through `awardMaterialsDuringRun()`.

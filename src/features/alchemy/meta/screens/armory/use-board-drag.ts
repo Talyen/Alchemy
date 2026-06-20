@@ -56,6 +56,7 @@ export type UseBoardDragOptions<TId extends string, TItem, TOrigin extends DragO
   resolveExternalDestination?: (pointer: DragPoint) => DragDestination | null;
   onCommit: (input: { id: TId; origin: TOrigin; destination: DragDestination }) => void;
   onCancel?: (id: TId) => void;
+  onClear?: () => void;
 };
 
 export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrigin = DragOrigin>({
@@ -69,6 +70,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
   resolveExternalDestination,
   onCommit,
   onCancel,
+  onClear,
 }: UseBoardDragOptions<TId, TItem, TOrigin>) {
   const [activeId, setActiveId] = useState<TId | null>(null);
   const [dragVisual, setDragVisual] = useState<BoardDragVisual<TId, TOrigin> | null>(null);
@@ -88,7 +90,11 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
 
   useEffect(
     () => () => {
-      if (cleanupTimerRef.current !== null) window.clearTimeout(cleanupTimerRef.current);
+      if (cleanupTimerRef.current !== null) {
+        window.clearTimeout(cleanupTimerRef.current);
+      }
+      pendingCommitRef.current?.();
+      pendingCommitRef.current = null;
     },
     [],
   );
@@ -154,7 +160,8 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
     activeDragRef.current = null;
     pendingCommitRef.current?.();
     pendingCommitRef.current = null;
-  }, []);
+    onClear?.();
+  }, [onClear]);
 
   const clearDragAfterAnimation = useCallback(
     (delay = 1000) => {
