@@ -222,90 +222,6 @@ function resolveQueuedCompanionTurn(deps: TurnOrchestrationDeps, state: BattleSt
   return { state, combatTexts };
 }
 
-function buildDrawTurnDeps(deps: TurnOrchestrationDeps, logContext: string) {
-  return {
-    store: deps.getTurnResolutionStore(),
-    drawSequence: deps.getDrawSequenceDeps(),
-    logDrawError: (err: unknown) => deps.logBattleError(logContext, err),
-  };
-}
-
-function resolveHasteSkipTurnOrchestration(
-  deps: TurnOrchestrationDeps,
-  result: EndPlayerTurnResult,
-  companionState: BattleState,
-  session: number,
-) {
-  resolveHasteSkipTurn(result, companionState, session, {
-    ...buildDrawTurnDeps(deps, "handle end turn draw sequence"),
-    setResolvedAsHasteOrStun: (value) => {
-      deps.resolvedAsHasteOrStunRef.current = value;
-    },
-    clearHandTransferState: deps.resetHandTransferUi,
-    setCardPlayInProgress: (active) => {
-      deps.cardPlayInProgressRef.current = active;
-    },
-    runIfSessionActive: (activeSession, action) => {
-      deps.runIfSessionActive(activeSession, action);
-    },
-    onDrawComplete: (resultState, activeSession) => {
-      if (deps.checkBattleEnd(resultState, activeSession)) return;
-      if (result.playerTurnSkipped) {
-        deps.onResolveEndTurn(resultState, activeSession);
-        return;
-      }
-      deps.scheduleCompanionFollowUp(resultState, activeSession);
-    },
-  });
-}
-
-function resolveNormalEnemyTurnOrchestration(
-  deps: TurnOrchestrationDeps,
-  result: EndPlayerTurnResult,
-  companionResult: { state: BattleState; combatTexts: CombatTextEvent[] },
-  session: number,
-  executeEnemyPhaseFn: (
-    resultState: BattleState,
-    currentState: BattleState,
-    combatTexts: CombatTextEvent[],
-    session: number,
-    playerTurnSkipped: boolean,
-    enemyPerformedAttack: boolean,
-  ) => Promise<void>,
-) {
-  resolveNormalEnemyTurn(result, companionResult, session, {
-    store: deps.getTurnResolutionStore(),
-    executeEnemyPhase: (resultState, currentState, combatTexts, session, playerTurnSkipped, enemyPerformedAttack) =>
-      void executeEnemyPhaseFn(
-        resultState,
-        currentState,
-        combatTexts,
-        session,
-        playerTurnSkipped,
-        enemyPerformedAttack,
-      ),
-    onVictory: () => deps.handleVictoryDefeat("victory"),
-    checkBattleEnd: deps.checkBattleEnd,
-  });
-}
-
-async function executeEnemyPhaseOrchestration(
-  deps: TurnOrchestrationDeps,
-  resultState: BattleState,
-  currentState: BattleState,
-  combatTexts: CombatTextEvent[],
-  session: number,
-  playerTurnSkipped: boolean,
-  enemyPerformedAttack: boolean,
-  onPhaseComplete: (resultState: BattleState, session: number, playerTurnSkipped: boolean) => void,
-) {
-  await executeEnemyPhase(resultState, currentState, combatTexts, session, playerTurnSkipped, enemyPerformedAttack, {
-    isSessionActive: deps.isCurrentBattleSession,
-    ...buildDrawTurnDeps(deps, "handle enemy resolution draw sequence"),
-    onPhaseComplete,
-  });
-}
-
 export function resolveEndTurnOrchestration(deps: TurnOrchestrationDeps, currentState: BattleState, session: number) {
   deps.runIfSessionActive(session, () => {
     try {
@@ -329,25 +245,52 @@ export function resolveEndTurnOrchestration(deps: TurnOrchestrationDeps, current
       const result = endPlayerTurn(companionResult.state);
 
       if (!result.enemyTurnStartState) {
-        resolveHasteSkipTurnOrchestration(deps, result, companionResult.state, session);
+        resolveHasteSkipTurn(result, companionResult.state, session, {
+          store: deps.getTurnResolutionStore(),
+          drawSequence: deps.getDrawSequenceDeps(),
+          logDrawError: (err: unknown) => deps.logBattleError("handle end turn draw sequence", err),
+          setResolvedAsHasteOrStun: (value) => {
+            deps.resolvedAsHasteOrStunRef.current = value;
+          },
+          clearHandTransferState: deps.resetHandTransferUi,
+          setCardPlayInProgress: (active) => {
+            deps.cardPlayInProgressRef.current = active;
+          },
+          runIfSessionActive: (activeSession, action) => {
+            deps.runIfSessionActive(activeSession, action);
+          },
+          onDrawComplete: (resultState, activeSession) => {
+            if (deps.checkBattleEnd(resultState, activeSession)) return;
+            if (result.playerTurnSkipped) {
+              deps.onResolveEndTurn(resultState, activeSession);
+              return;
+            }
+            deps.scheduleCompanionFollowUp(resultState, activeSession);
+          },
+        });
         return;
       }
 
-      resolveNormalEnemyTurnOrchestration(
-        deps,
-        result,
-        companionResult,
-        session,
-        (resultState, current, texts, s, skipped, attacked) =>
-          executeEnemyPhaseOrchestration(deps, resultState, current, texts, s, skipped, attacked, (rs, sess, skip) => {
-            if (deps.checkBattleEnd(rs, sess)) return;
-            if (skip) {
-              deps.onResolveEndTurn(rs, sess);
-              return;
-            }
-            deps.scheduleCompanionFollowUp(rs, sess);
+      resolveNormalEnemyTurn(result, companionResult, session, {
+        store: deps.getTurnResolutionStore(),
+        executeEnemyPhase: (resultState, currentState, combatTexts, s, playerTurnSkipped, enemyPerformedAttack) =>
+          void executeEnemyPhase(resultState, currentState, combatTexts, s, playerTurnSkipped, enemyPerformedAttack, {
+            isSessionActive: deps.isCurrentBattleSession,
+            store: deps.getTurnResolutionStore(),
+            drawSequence: deps.getDrawSequenceDeps(),
+            logDrawError: (err: unknown) => deps.logBattleError("handle enemy resolution draw sequence", err),
+            onPhaseComplete: (rs, sess, skip) => {
+              if (deps.checkBattleEnd(rs, sess)) return;
+              if (skip) {
+                deps.onResolveEndTurn(rs, sess);
+                return;
+              }
+              deps.scheduleCompanionFollowUp(rs, sess);
+            },
           }),
-      );
+        onVictory: () => deps.handleVictoryDefeat("victory"),
+        checkBattleEnd: deps.checkBattleEnd,
+      });
     } catch (err) {
       deps.logBattleError("resolve end turn — forcing defeat", err);
       if (deps.isCurrentBattleSession(session)) {

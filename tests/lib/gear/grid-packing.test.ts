@@ -3,9 +3,8 @@ import {
   packInventoryGrid,
   packInventoryGridPreserving,
   packCurrencyGridWithGearObstacles,
-  resolveMoveWithSwap,
-  type BoardItem,
 } from "@/lib/gear/grid-packing";
+import { resolveMoveWithSwap, type BoardItem } from "@/lib/gear/board-moves";
 
 const COLS = 7;
 

@@ -550,6 +550,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor: simplify store, layout, and nav, and fix wildwood E2E
 - refactor(armory): simplify board movement architecture
 - refactor(lint): fix ESLint warnings across 99 files
   - Remove 42 unnecessary type assertions

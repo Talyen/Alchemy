@@ -7,12 +7,12 @@ import {
   type GearLoadouts,
   GEAR_CHARACTER_IDS,
 } from "./types";
+import { footprintForInstance } from "./footprints";
+import { resolveMoveWithSwap } from "./board-moves";
 import {
-  footprintForInstance,
-  resolveMoveWithSwap,
   sanitizeGearBoardPositionsByCharacter,
   sanitizeCurrencyBoardPositionsByCharacter,
-} from "./inventory-layout";
+} from "./board-position-sanitizers";
 import { packMixedBoard } from "./grid-packing";
 import {
   type CraftingCurrencyId,
