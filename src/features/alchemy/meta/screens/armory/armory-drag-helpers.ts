@@ -17,9 +17,6 @@ import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
 import { resolveEquipSwap } from "./resolve-equip-swap";
 import type { DragDestination, DragRect, DragPoint } from "./use-board-drag";
 
-/**
- * Pure helper function to determine which compatible loadout slot a double-clicked item should be equipped to.
- */
 export function findEquipSlotForDoubleClickedGear(loadout: GearLoadout, definition: GearDefinition): GearSlot | null {
   const compatibleSlots = definition.compatibleSlots;
   let slot = compatibleSlots.find((candidate) => !loadout[candidate]) ?? null;
@@ -39,9 +36,6 @@ export function findEquipSlotForDoubleClickedGear(loadout: GearLoadout, definiti
   return slot;
 }
 
-/**
- * Resolves whether the current pointer location is hovering within a compatible equipment slot.
- */
 export function resolveEquipmentSlotAtPointer({
   pointer,
   activeInstance,
@@ -82,9 +76,6 @@ export function resolveEquipmentSlotAtPointer({
   return null;
 }
 
-/**
- * Computes the target DragDestination for an item when double-clicked to be placed back in the inventory.
- */
 export function getInventoryDragDestination({
   board,
   instance,
@@ -112,9 +103,6 @@ export function getInventoryDragDestination({
   };
 }
 
-/**
- * Resolves displaced items that need animation after a gear placement swap.
- */
 export function calculateSecondaryDisplacedItems({
   instance,
   slot,
@@ -170,9 +158,6 @@ export type SecondaryDragVisual = {
   flyover: boolean;
 };
 
-/**
- * Builds the visual animation descriptor objects for secondary displaced items.
- */
 export function buildSecondaryDragVisuals({
   board,
   displacedItems,

@@ -67,7 +67,7 @@ describe("gear-store", () => {
         createEmptyGearLoadouts(),
         knightBoards({ [ring.instanceId]: { col: 1, row: 1 } }),
       );
-    useGearStore.getState().salvage(ring.instanceId);
+    useGearStore.getState().salvage(ring.instanceId, { rng: () => 0 });
     expect(useGearStore.getState().boardPositionsByCharacter.knight).toEqual({});
     useGearStore.getState().reset();
   });

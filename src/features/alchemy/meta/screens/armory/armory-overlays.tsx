@@ -51,7 +51,7 @@ export function ArmoryOverlays({
   onClearSecondaryDragState,
   onCloseTransferMenu,
 }: Props) {
-  const dragDefinition = dragVisual ? gearDefinitions[dragVisual.instance.definitionId] : undefined;
+  const dragDefinition = dragVisual?.instance ? gearDefinitions[dragVisual.instance.definitionId] : undefined;
 
   return (
     <>
@@ -91,6 +91,7 @@ export function ArmoryOverlays({
         <GearDragVisualPortal visual={dragVisual} art={dragDefinition.art} onComplete={onClearDragState} />
       ) : null}
       {secondaryDragVisuals.map((visual) => {
+        if (!visual.instance) return null;
         const def = gearDefinitions[visual.instance.definitionId];
         return def ? (
           <GearDragVisualPortal

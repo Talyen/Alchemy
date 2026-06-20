@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { CharacterId } from "@/lib/game-data";
 import {
@@ -62,6 +62,7 @@ export function useArmoryController(): ArmoryController {
   const hasActiveBattle = useRunDomainStore((s) => s.battle.hasActiveBattle);
   const hasActiveRun = useRunDomainStore((s) => s.session.hasActiveRun);
   const activeRunCharacterId = useRunDomainStore((s) => s.progress.characterId);
+  const rngRef = useRef<() => number>(() => Math.random());
 
   const flush = useCallback(() => {
     void flushAlchemySaveNow(resolveActiveRunForSave(hasActiveRun, returnToRunScreen ?? undefined));
@@ -106,7 +107,7 @@ export function useArmoryController(): ArmoryController {
       if (hasActiveBattle) return;
       const inventoryBefore = flattenGearInventories(gear.inventories);
       const loadoutsBefore = gear.loadouts;
-      const result = gear.salvage(instanceId);
+      const result = gear.salvage(instanceId, { rng: rngRef.current });
       if (!result) return;
       if (hasActiveRun) {
         syncRunMaxHealthFromGearMutation(
@@ -148,7 +149,7 @@ export function useArmoryController(): ArmoryController {
       if (hasActiveBattle) return false;
       const inventoryBefore = flattenGearInventories(gear.inventories);
       const loadoutsBefore = gear.loadouts;
-      const ok = gear.applyCurrency(currencyId, instanceId);
+      const ok = gear.applyCurrency(currencyId, instanceId, { rng: rngRef.current });
       if (ok) {
         if (hasActiveRun) {
           syncRunMaxHealthFromGearMutation(
@@ -169,7 +170,7 @@ export function useArmoryController(): ArmoryController {
   const onSpawnDevGear = useCallback<NonNullable<ArmoryController["onSpawnDevGear"]>>(
     (characterId) => {
       if (!isAlchemyDevBuild()) return;
-      gear.addInstance(generateDevRandomGearInstance(Math.random), characterId);
+      gear.addInstance(generateDevRandomGearInstance(rngRef.current), characterId);
       flush();
     },
     [flush, gear],

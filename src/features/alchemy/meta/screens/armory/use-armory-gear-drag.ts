@@ -41,7 +41,7 @@ export const DOUBLE_CLICK_FLYOVER_MS = 280;
 const EQUIPMENT_SNAP_INSET_RATIO = 0.3;
 
 export type GearDragVisual = {
-  instance: GearInstance;
+  instance: GearInstance | null;
   source: DragRect;
   rect: DragRect;
   origin: GearDragOrigin;
@@ -285,7 +285,7 @@ export function useArmoryGearDrag({
 
   const dragVisual: GearDragVisual | null = fsm.dragVisual
     ? {
-        instance: inventoryById.get(fsm.dragVisual.id) || activeInstance!,
+        instance: inventoryById.get(fsm.dragVisual.id) || activeInstance || null,
         source: fsm.dragVisual.source,
         rect: fsm.dragVisual.rect,
         origin: fsm.dragVisual.origin,

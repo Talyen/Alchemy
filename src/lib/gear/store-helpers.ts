@@ -14,7 +14,7 @@ import {
   sanitizeCurrencyBoardPositionsByCharacter,
   sanitizeEquippedReturnPositions,
 } from "./board-position-sanitizers";
-import { packMixedBoard } from "./grid-packing";
+
 import {
   type CraftingCurrencyId,
   type CraftingCurrencyBoardPositions,
@@ -22,6 +22,7 @@ import {
   CRAFTING_CURRENCY_IDS,
 } from "./crafting";
 import { INVENTORY_COLS } from "./constants";
+import { packInventoryWithPositions, packCurrencyWithPositions } from "./board-view";
 
 type BoardEntry =
   | {
@@ -177,38 +178,49 @@ function syncBoardPositionsForState(state: BoardSourceState): {
   const nextCurrencyPositionsByCharacter = { ...state.currencyBoardPositionsByCharacter };
 
   for (const characterId of GEAR_CHARACTER_IDS) {
-    const gearPositions = { ...nextBoardPositionsByCharacter[characterId] };
-    const currencyPositions = { ...nextCurrencyPositionsByCharacter[characterId] };
-    const mixed = buildBoardEntriesForCharacter(
-      {
-        ...state,
-        boardPositionsByCharacter: nextBoardPositionsByCharacter,
-        currencyBoardPositionsByCharacter: nextCurrencyPositionsByCharacter,
-      },
-      characterId,
-    );
+    const loadout = state.loadouts[characterId];
+    const inventory = state.inventories[characterId];
+    const equippedInstanceIds = new Set(Object.values(loadout).filter(Boolean));
+    const availableInventory = inventory.filter((item) => !equippedInstanceIds.has(item.instanceId));
+    const reservedEquipped = inventory.filter((item) => equippedInstanceIds.has(item.instanceId));
+    const gearPositions = state.boardPositionsByCharacter[characterId];
+    const currencyPositions = state.currencyBoardPositionsByCharacter[characterId];
+    const activeCurrencyIds = CRAFTING_CURRENCY_IDS.filter((id) => state.craftingCurrencies[id] > 0);
 
-    const packed = packMixedBoard<"gear" | "currency", BoardEntry>(
-      mixed,
+    const currencyBlockers = activeCurrencyIds.flatMap((id) => {
+      const position = currencyPositions[id];
+      if (!position) return [];
+      return [{ col: position.col, row: position.row, w: 1, h: 1 }];
+    });
+
+    const packedGear = packInventoryWithPositions(
+      availableInventory,
       INVENTORY_COLS,
-      (entry) => entry.footprint,
-      (entry) => entry.saved,
+      gearPositions,
+      reservedEquipped,
+      currencyBlockers,
     );
 
-    const nextGearForChar: GearBoardPositions = {};
-    const nextCurrencyForChar: CraftingCurrencyBoardPositions = {};
+    const packedCurrencies = packCurrencyWithPositions(
+      activeCurrencyIds,
+      INVENTORY_COLS,
+      currencyPositions,
+      packedGear.items,
+    );
+
     const prevGearKeys = Object.keys(gearPositions).sort();
-    const nextGearKeys: string[] = [];
-    for (const { item, col, row } of packed) {
-      if (item.kind === "gear") {
-        nextGearForChar[item.item.instanceId] = { col, row };
-        nextGearKeys.push(item.item.instanceId);
-      } else {
-        nextCurrencyForChar[item.item] = { col, row };
-      }
+    const nextGearForChar: GearBoardPositions = {};
+    for (const packed of packedGear.items) {
+      nextGearForChar[packed.item.instanceId] = { col: packed.col, row: packed.row };
     }
+    const nextGearKeys = Object.keys(nextGearForChar).sort();
     if (nextGearKeys.join("|") !== prevGearKeys.join("|")) changed = true;
+
     const prevCurrencyKeys = Object.keys(currencyPositions).sort();
+    const nextCurrencyForChar: CraftingCurrencyBoardPositions = {};
+    for (const packed of packedCurrencies) {
+      nextCurrencyForChar[packed.currencyId] = { col: packed.col, row: packed.row };
+    }
     const nextCurrencyKeys = Object.keys(nextCurrencyForChar).sort();
     if (nextCurrencyKeys.join("|") !== prevCurrencyKeys.join("|")) changed = true;
 
@@ -233,20 +245,21 @@ function syncBoardPositionsForState(state: BoardSourceState): {
   };
 }
 
-export function updateGearStateAndSync<T extends BoardSourceState & { equippedReturnPositions: GearBoardPositions }>(
-  state: T,
-  updates: Partial<T>,
-): T {
-  const merged = { ...state, ...updates };
-
-  const nextReturn: GearBoardPositions = { ...merged.equippedReturnPositions };
-  const nextBoardPositionsByCharacter = { ...merged.boardPositionsByCharacter };
+function moveEquippedOffBoard(
+  loadouts: GearLoadouts,
+  boardPositionsByCharacter: GearBoardPositionsByCharacter,
+  equippedReturnPositions: GearBoardPositions,
+): {
+  boardPositionsByCharacter: GearBoardPositionsByCharacter;
+  equippedReturnPositions: GearBoardPositions;
+} {
+  const nextReturn: GearBoardPositions = { ...equippedReturnPositions };
+  const nextBoardPositionsByCharacter = { ...boardPositionsByCharacter };
 
   for (const characterId of GEAR_CHARACTER_IDS) {
-    const loadout = merged.loadouts[characterId];
+    const loadout = loadouts[characterId];
     const equippedIds = new Set(Object.values(loadout).filter(Boolean) as string[]);
     const gearPositions = nextBoardPositionsByCharacter[characterId];
-
     const cleanGearPositions = { ...gearPositions };
     let modified = false;
     for (const [instanceId, position] of Object.entries(gearPositions)) {
@@ -264,8 +277,27 @@ export function updateGearStateAndSync<T extends BoardSourceState & { equippedRe
     }
   }
 
+  return { boardPositionsByCharacter: nextBoardPositionsByCharacter, equippedReturnPositions: nextReturn };
+}
+
+function keepUnchangedIfEqual<T>(current: T, next: T, equal: (a: T, b: T) => boolean): T {
+  return equal(current, next) ? current : next;
+}
+
+export function updateGearStateAndSync<T extends BoardSourceState & { equippedReturnPositions: GearBoardPositions }>(
+  state: T,
+  updates: Partial<T>,
+): T {
+  const merged = { ...state, ...updates };
+
+  const afterEquipMove = moveEquippedOffBoard(
+    merged.loadouts,
+    merged.boardPositionsByCharacter,
+    merged.equippedReturnPositions,
+  );
+
   const sanitizedGear = sanitizeGearBoardPositionsByCharacter(
-    nextBoardPositionsByCharacter,
+    afterEquipMove.boardPositionsByCharacter,
     merged.inventories,
     merged.loadouts,
   );
@@ -273,17 +305,19 @@ export function updateGearStateAndSync<T extends BoardSourceState & { equippedRe
     merged.currencyBoardPositionsByCharacter,
     merged.craftingCurrencies,
   );
-  const sanitizedReturn = sanitizeEquippedReturnPositions(nextReturn, merged.inventories, merged.loadouts);
+  const sanitizedReturn = sanitizeEquippedReturnPositions(
+    afterEquipMove.equippedReturnPositions,
+    merged.inventories,
+    merged.loadouts,
+  );
 
-  const finalGear = positionsByCharacterEqual(state.boardPositionsByCharacter, sanitizedGear)
-    ? state.boardPositionsByCharacter
-    : sanitizedGear;
-  const finalCurrency = positionsByCharacterEqual(state.currencyBoardPositionsByCharacter, sanitizedCurrency)
-    ? state.currencyBoardPositionsByCharacter
-    : sanitizedCurrency;
-  const finalReturn = positionsEqual(state.equippedReturnPositions, sanitizedReturn)
-    ? state.equippedReturnPositions
-    : sanitizedReturn;
+  const finalGear = keepUnchangedIfEqual(state.boardPositionsByCharacter, sanitizedGear, positionsByCharacterEqual);
+  const finalCurrency = keepUnchangedIfEqual(
+    state.currencyBoardPositionsByCharacter,
+    sanitizedCurrency,
+    positionsByCharacterEqual,
+  );
+  const finalReturn = keepUnchangedIfEqual(state.equippedReturnPositions, sanitizedReturn, positionsEqual);
 
   const mergedSanitized = {
     ...merged,
@@ -294,18 +328,16 @@ export function updateGearStateAndSync<T extends BoardSourceState & { equippedRe
 
   const synced = syncBoardPositionsForState(mergedSanitized);
 
-  const finalSyncedGear = positionsByCharacterEqual(
+  const finalSyncedGear = keepUnchangedIfEqual(
     mergedSanitized.boardPositionsByCharacter,
     synced.boardPositionsByCharacter,
-  )
-    ? mergedSanitized.boardPositionsByCharacter
-    : synced.boardPositionsByCharacter;
-  const finalSyncedCurrency = positionsByCharacterEqual(
+    positionsByCharacterEqual,
+  );
+  const finalSyncedCurrency = keepUnchangedIfEqual(
     mergedSanitized.currencyBoardPositionsByCharacter,
     synced.currencyBoardPositionsByCharacter,
-  )
-    ? mergedSanitized.currencyBoardPositionsByCharacter
-    : synced.currencyBoardPositionsByCharacter;
+    positionsByCharacterEqual,
+  );
 
   return {
     ...mergedSanitized,

@@ -10,6 +10,9 @@ export type DragDestination =
   | { kind: "equipment"; slot: string; rect: DragRect }
   | { kind: "external"; rect: DragRect };
 
+let _cursorLockCount = 0;
+let _cursorBeforeLock = "";
+
 export const INVENTORY_SNAP_RADIUS_CELLS = 0.28;
 export const MAGNET_SWITCH_MARGIN_PX = 14;
 export const MAGNET_RELEASE_HYSTERESIS_PX = 18;
@@ -81,10 +84,17 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
 
   useEffect(() => {
     if (!activeId) return;
-    const previousCursor = document.body.style.cursor;
-    document.body.style.cursor = "none";
+    if (_cursorLockCount === 0) {
+      _cursorBeforeLock = document.body.style.cursor;
+      document.body.style.cursor = "none";
+    }
+    _cursorLockCount++;
     return () => {
-      document.body.style.cursor = previousCursor;
+      _cursorLockCount--;
+      if (_cursorLockCount <= 0) {
+        _cursorLockCount = 0;
+        document.body.style.cursor = _cursorBeforeLock;
+      }
     };
   }, [activeId]);
 
@@ -93,7 +103,6 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       if (cleanupTimerRef.current !== null) {
         window.clearTimeout(cleanupTimerRef.current);
       }
-      pendingCommitRef.current?.();
       pendingCommitRef.current = null;
     },
     [],

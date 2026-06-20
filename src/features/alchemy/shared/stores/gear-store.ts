@@ -252,8 +252,10 @@ export const useGearStore = create<GearStore>((set, get) => ({
     const owner = findGearInventoryOwner(state.inventories, instanceId);
     if (!owner) return null;
 
+    const rng = options?.rng;
+    if (!rng) throw new Error("salvage requires an explicit rng");
     const flatInventory = flattenGearInventories(state.inventories);
-    const result = salvageGear(flatInventory, state.loadouts, instanceId, options?.rng ?? Math.random);
+    const result = salvageGear(flatInventory, state.loadouts, instanceId, rng);
     if (!result) return null;
 
     const nextPositionsByCharacter = { ...state.boardPositionsByCharacter };
@@ -294,7 +296,9 @@ export const useGearStore = create<GearStore>((set, get) => ({
     if ((state.craftingCurrencies[currencyId] ?? 0) < 1) return false;
     if (!canApplyCraftingCurrency(currencyId, item)) return false;
 
-    const updatedItem = applyCraftingCurrency(currencyId, item, options?.rng ?? Math.random);
+    const rng = options?.rng;
+    if (!rng) throw new Error("applyCurrency requires an explicit rng");
+    const updatedItem = applyCraftingCurrency(currencyId, item, rng);
     const nextInventories = {
       ...state.inventories,
       [owner]: state.inventories[owner].map((i) => (i.instanceId === instanceId ? updatedItem : i)),

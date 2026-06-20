@@ -21,7 +21,11 @@ import { resolveEquipSwap } from "./armory/resolve-equip-swap";
 import { useArmoryGearDrag } from "./armory/use-armory-gear-drag";
 import { useArmoryCurrencyDrag } from "./armory/use-armory-currency-drag";
 import { ArmoryCharacterTabs } from "./armory/armory-character-tabs";
-import { armoryTargetingReducer, initialArmoryTargetingState } from "./armory/armory-targeting-state";
+import {
+  armoryTargetingReducer,
+  initialArmoryTargetingState,
+  type ArmoryCursorPoint,
+} from "./armory/armory-targeting-state";
 import { useArmoryTargetingEvents } from "./armory/use-armory-targeting-events";
 import { ArmoryOverlays } from "./armory/armory-overlays";
 import "./armory/armory-screen.css";
@@ -63,7 +67,8 @@ export function ArmoryScreen({
   const [characterId, setCharacterId] = useState<CharacterId>("knight");
   const inventoryBoardRef = useRef<HTMLDivElement>(null);
   const [targeting, dispatchTargeting] = useReducer(armoryTargetingReducer, initialArmoryTargetingState);
-  const { salvageTarget, salvageMode, activeCurrencyId, cursorPoint, transferMenu } = targeting;
+  const [cursorPoint, setCursorPoint] = useState<ArmoryCursorPoint | null>(null);
+  const { salvageTarget, salvageMode, activeCurrencyId, transferMenu } = targeting;
   const characterInventory = useMemo(() => inventories[characterId], [inventories, characterId]);
   const savedPositions = useGearStore((state) => state.boardPositionsByCharacter[characterId]);
   const equippedReturnPositions = useGearStore((state) => state.equippedReturnPositions);
@@ -174,10 +179,11 @@ export function ArmoryScreen({
     onMoveCurrency: handleMoveCurrency,
   });
 
-  const secondaryDragInstanceIds = secondaryDragVisuals.map((v) => v.instance.instanceId);
+  const secondaryDragInstanceIds = secondaryDragVisuals.flatMap((v) => (v.instance ? [v.instance.instanceId] : []));
 
   const clearTargeting = useCallback(() => {
     dispatchTargeting({ type: "CLEAR_TARGETING" });
+    setCursorPoint(null);
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
@@ -192,15 +198,20 @@ export function ArmoryScreen({
 
   const handleSelectCharacter = useCallback((id: CharacterId) => {
     setCharacterId(id);
+    setCursorPoint(null);
     dispatchTargeting({ type: "SELECT_CHARACTER" });
   }, []);
 
   useEffect(() => {
-    if (!editable) dispatchTargeting({ type: "EDITABLE_LOST" });
+    if (!editable) {
+      setCursorPoint(null);
+      dispatchTargeting({ type: "EDITABLE_LOST" });
+    }
   }, [editable]);
 
   useEffect(() => {
     if (activeCurrencyId && (craftingCurrencies[activeCurrencyId] ?? 0) <= 0) {
+      setCursorPoint(null);
       dispatchTargeting({ type: "CURRENCY_DEPLETED" });
     }
   }, [activeCurrencyId, craftingCurrencies]);
@@ -266,6 +277,7 @@ export function ArmoryScreen({
     }
     playUISound("talentUnlock");
     if ((craftingCurrencies[activeCurrencyId] ?? 0) <= 1) {
+      setCursorPoint(null);
       dispatchTargeting({ type: "DESELECT_CURRENCY" });
     }
   }
@@ -301,10 +313,10 @@ export function ArmoryScreen({
             className="armory-workspace-grid"
             onPointerMove={(event) => {
               if (activeCurrencyId) {
-                dispatchTargeting({ type: "SET_CURSOR", point: { x: event.clientX, y: event.clientY } });
+                setCursorPoint({ x: event.clientX, y: event.clientY });
               }
             }}
-            onPointerLeave={() => dispatchTargeting({ type: "SET_CURSOR", point: null })}
+            onPointerLeave={() => setCursorPoint(null)}
           >
             <CharacterAndEquipmentPanel
               characterId={characterId}

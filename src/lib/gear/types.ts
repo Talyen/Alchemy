@@ -33,9 +33,6 @@ export type { GearAffixId } from "./affix-ids";
 export type { GearBaseItemId } from "./base-items";
 export type { GearDefinitionId } from "./definitions";
 
-/** @deprecated Legacy save field — normalized to affixes on load. */
-export type GearModifier = { kind: "flatPhysicalDamage"; value: number };
-
 export type GearAffixRoll = {
   id: GearAffixId;
   value: number;
@@ -99,18 +96,6 @@ export function findGearInventoryOwner(inventories: GearInventories, instanceId:
     }
   }
   return null;
-}
-
-export function pruneGearBoardPositions(
-  boardPositions: GearBoardPositions,
-  inventory: GearInstance[],
-): GearBoardPositions {
-  const inventoryIds = new Set(inventory.map((item) => item.instanceId));
-  const next: GearBoardPositions = {};
-  for (const [instanceId, position] of Object.entries(boardPositions)) {
-    if (inventoryIds.has(instanceId)) next[instanceId] = position;
-  }
-  return next;
 }
 
 export function createEmptyGearLoadout(): GearLoadout {

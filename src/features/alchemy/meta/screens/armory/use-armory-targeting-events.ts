@@ -55,7 +55,12 @@ export function useArmoryTargetingEvents({
     }
 
     function handleContextMenu(event: MouseEvent) {
-      if (event.target instanceof HTMLElement && event.target.closest('[data-testid="armory-crafting-currency"]')) {
+      if (
+        event.target instanceof HTMLElement &&
+        (event.target.closest('[data-testid="armory-crafting-currency"]') ||
+          event.target.closest('[data-testid="armory-inventory-item"]') ||
+          event.target.closest('[data-testid="armory-equipment-slot"]'))
+      ) {
         return;
       }
       event.preventDefault();

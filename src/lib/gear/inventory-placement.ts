@@ -103,7 +103,7 @@ export function findFirstInventoryPlacement<T extends { instanceId: string }>(
 export function canOccupyVacatedInventoryPlacement(
   items: PackedInventoryItem[],
   incomingInstanceId: string,
-  incomingFootprint: GearFootprint,
+  _incomingFootprint: GearFootprint,
   displacedFootprint: GearFootprint,
   placement: InventoryPlacement,
   cols: number,
@@ -111,12 +111,10 @@ export function canOccupyVacatedInventoryPlacement(
   if (placement.col < 1 || placement.row < 1 || placement.col + displacedFootprint.w - 1 > cols) {
     return false;
   }
-  if (incomingFootprint.w === displacedFootprint.w && incomingFootprint.h === displacedFootprint.h) {
-    return true;
-  }
+
   return !inventoryPlacementCollides(
     items.filter((item) => item.item.instanceId !== incomingInstanceId),
-    "__vacated__",
+    incomingInstanceId,
     placement,
     displacedFootprint,
     cols,
