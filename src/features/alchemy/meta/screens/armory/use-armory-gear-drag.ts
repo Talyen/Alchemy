@@ -36,9 +36,7 @@ export type GearPointerMove = (pointer: { x: number; y: number }, pointerId: num
 
 export type GearPointerEnd = (pointer: { x: number; y: number }, pointerId: number, cancelled?: boolean) => void;
 
-export { MAGNET_RELEASE_EASE_MS } from "./use-board-drag";
-export const DOUBLE_CLICK_FLYOVER_MS = 280;
-const EQUIPMENT_SNAP_INSET_RATIO = 0.3;
+import { DOUBLE_CLICK_FLYOVER_MS, EQUIPMENT_SNAP_INSET_RATIO } from "./drag-constants";
 
 export type GearDragVisual = {
   instance: GearInstance | null;

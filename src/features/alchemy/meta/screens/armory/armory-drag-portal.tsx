@@ -1,6 +1,7 @@
 import { createPortal } from "react-dom";
 import { motion } from "motion/react";
-import { DOUBLE_CLICK_FLYOVER_MS, MAGNET_RELEASE_EASE_MS, type GearDragVisual } from "./use-armory-gear-drag";
+import { DOUBLE_CLICK_FLYOVER_MS, MAGNET_RELEASE_EASE_MS } from "./drag-constants";
+import { type GearDragVisual } from "./use-armory-gear-drag";
 
 export function GearDragVisualPortal({
   visual,

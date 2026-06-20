@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom";
 import { motion } from "motion/react";
-import { MAGNET_RELEASE_EASE_MS } from "./use-armory-gear-drag";
+import { MAGNET_RELEASE_EASE_MS } from "./drag-constants";
 import type { CurrencyDragVisual } from "./use-armory-currency-drag";
 
 export function CurrencyDragVisualPortal({

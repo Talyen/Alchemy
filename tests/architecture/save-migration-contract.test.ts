@@ -17,7 +17,7 @@ function countMigrationSteps(source: string): number {
 
 describe("save migration contract", () => {
   it("tracks launch baseline at or below current schema version", () => {
-    expect(LAUNCH_SAVE_SCHEMA_VERSION).toBeGreaterThanOrEqual(1);
+    expect(LAUNCH_SAVE_SCHEMA_VERSION).toBe(4);
     expect(CURRENT_SAVE_SCHEMA_VERSION).toBeGreaterThanOrEqual(LAUNCH_SAVE_SCHEMA_VERSION);
   });
 

@@ -93,4 +93,13 @@ describe("applyMagnetHysteresis", () => {
     expect(result.destination).toBeNull();
     expect(result.switched).toBe(false);
   });
+
+  it("switches to the candidate when it is equidistant and within margin", () => {
+    const prev = inv(1, 1, 100, 100);
+    const cand = inv(3, 1, 100, 100);
+    const freeRect = { left: 200, top: prev.top, width: 50, height: 50 };
+    const result = applyMagnetHysteresis(input(cand, prev, freeRect));
+    expect(result.destination).toEqual(cand);
+    expect(result.switched).toBe(false);
+  });
 });

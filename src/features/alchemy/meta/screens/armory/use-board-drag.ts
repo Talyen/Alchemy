@@ -13,12 +13,7 @@ export type DragDestination =
 let _cursorLockCount = 0;
 let _cursorBeforeLock = "";
 
-export const INVENTORY_SNAP_RADIUS_CELLS = 0.28;
-export const MAGNET_SWITCH_MARGIN_PX = 14;
-export const MAGNET_RELEASE_HYSTERESIS_PX = 18;
-const DOUBLE_CLICK_FLYOVER_MS = 280;
-export const MAGNET_RELEASE_EASE_MS = 140;
-const DRAG_POINTER_ACTIVATE_DISTANCE_PX = 4;
+import { DOUBLE_CLICK_FLYOVER_MS, DRAG_POINTER_ACTIVATE_DISTANCE_PX } from "./drag-constants";
 
 export type DragOrigin =
   | { kind: "inventory"; placement: InventoryPlacement }

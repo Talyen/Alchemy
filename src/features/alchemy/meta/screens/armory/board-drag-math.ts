@@ -7,13 +7,8 @@ import {
   type InventoryPlacement,
 } from "@/lib/gear";
 import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
-import {
-  INVENTORY_SNAP_RADIUS_CELLS,
-  MAGNET_SWITCH_MARGIN_PX,
-  MAGNET_RELEASE_HYSTERESIS_PX,
-  type DragPoint,
-  type DragRect,
-} from "./use-board-drag";
+import { INVENTORY_SNAP_RADIUS_CELLS, MAGNET_SWITCH_MARGIN_PX, MAGNET_RELEASE_HYSTERESIS_PX } from "./drag-constants";
+import { type DragPoint, type DragRect } from "./use-board-drag";
 
 export type InventoryPlacementResult = {
   placement: InventoryPlacement;
