@@ -127,7 +127,7 @@ function DifficultyCard({
               </div>
             </div>
           )}
-          <p className={cn("font-display text-base font-bold text-amber-100/75", locked && "text-muted-foreground")}>
+          <p className={cn("font-sans text-base font-bold text-amber-100/75", locked && "text-muted-foreground")}>
             {name}
           </p>
           <div className="flex flex-col justify-center min-h-[5.56cqh]">
@@ -201,7 +201,7 @@ export function DifficultySelectScreen({
               className={cn(cardSurfaceClass, "w-full h-full rounded-shell-panel object-cover")}
             />
           </TiltSurface>
-          <p className="font-display text-base font-bold text-amber-100/75">{char.name}</p>
+          <p className="font-sans text-base font-bold text-amber-100/75">{char.name}</p>
           <div className="flex flex-wrap justify-center gap-1">
             {char.keywords.map((kw) => (
               <KeywordTag key={kw} keywordId={kw} pill showTooltip />

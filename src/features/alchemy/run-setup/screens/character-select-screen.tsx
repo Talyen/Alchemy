@@ -130,9 +130,7 @@ function CharacterCard({
           </TooltipPanel>
         ) : null}
       </div>
-      <p
-        className={cn("font-display text-lg font-bold text-amber-100/90 mt-1", isLocked && "text-muted-foreground/60")}
-      >
+      <p className={cn("font-sans text-lg font-bold text-amber-100/90 mt-1", isLocked && "text-muted-foreground/60")}>
         {char.name}
       </p>
     </div>

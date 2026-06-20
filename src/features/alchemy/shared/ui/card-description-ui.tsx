@@ -101,7 +101,7 @@ export function getCardDisplayTitle(card: Pick<BattleCard, "title" | "corrupted"
 
 export function CardTitle({ card, className }: { card: Pick<BattleCard, "title" | "corrupted">; className?: string }) {
   return (
-    <span className={cn("font-display font-semibold", className)}>
+    <span className={cn("font-sans font-semibold", className)}>
       {card.corrupted ? <span className="text-red-400">Corrupted </span> : null}
       {card.title}
     </span>

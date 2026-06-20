@@ -57,7 +57,7 @@ function HasteStatusIcon({ value }: { value: number }) {
       </button>
       <TooltipPanel className="pointer-events-none opacity-0 group-hover/status:opacity-100">
         <div className="flex items-center justify-between gap-3">
-          <span className="font-display text-lg font-bold text-foreground">Haste</span>
+          <span className="font-sans text-lg font-bold text-foreground">Haste</span>
           <span className="rounded-full bg-background px-2 py-0.5 text-xs font-semibold text-foreground">{value}</span>
         </div>
         <TooltipBody>
@@ -82,7 +82,7 @@ export function DeathsDoorStatusIcon() {
       </button>
       <TooltipPanel width="w-72" className="pointer-events-none opacity-0 group-hover/status:opacity-100">
         <div className="flex items-center justify-between gap-3">
-          <span className="font-display text-lg font-bold text-foreground">Death's Door</span>
+          <span className="font-sans text-lg font-bold text-foreground">Death's Door</span>
         </div>
         <TooltipBody className="italic">
           <p>

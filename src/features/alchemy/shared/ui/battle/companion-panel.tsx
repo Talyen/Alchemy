@@ -51,7 +51,7 @@ export function CompanionPanel({
         />
       </TiltSurface>
       <TooltipPanel className="opacity-0 group-hover/companion:opacity-100">
-        <p className="font-display text-base font-bold text-amber-100/75">{companion.title}</p>
+        <p className="font-sans text-base font-bold text-amber-100/75">{companion.title}</p>
         <DescriptionLines
           lines={getCompanionDescriptionLines(companion, damageBonus)}
           idPrefix={`companion-${companion.id}`}

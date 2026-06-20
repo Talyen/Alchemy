@@ -284,7 +284,7 @@ function ActorHealthHeader({
 }: Pick<ArtPanelProps, "side" | "title" | "health" | "maxHealth"> & { healthToken: number }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <p className="font-display text-base font-bold text-amber-100/75">{title}</p>
+      <p className="font-sans text-base font-bold text-amber-100/75">{title}</p>
       <p
         key={healthToken}
         data-testid={`${side}-health`}

@@ -212,7 +212,7 @@ export function useTooltipPlacementWithSideFallback(side: "left" | "right", padd
 }
 
 export function TooltipHeader({ children }: { children: ReactNode }) {
-  return <p className="font-display text-lg font-bold text-foreground mb-1">{children}</p>;
+  return <p className="font-sans text-lg font-bold text-foreground mb-1">{children}</p>;
 }
 
 export function TooltipSubheader({

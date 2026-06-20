@@ -72,7 +72,7 @@ function TalentNodeTooltip({ talent }: { talent: TalentDefinition }) {
       className="z-50"
       style={dx !== 0 ? { marginLeft: dx } : undefined}
     >
-      <div className="font-display text-base font-bold text-amber-100/75">{talent.name ?? "Talent"}</div>
+      <div className="font-sans text-base font-bold text-amber-100/75">{talent.name ?? "Talent"}</div>
       <TooltipBody className="max-w-[240px]">
         {descParts.map((part, i) =>
           part.keywordId ? (

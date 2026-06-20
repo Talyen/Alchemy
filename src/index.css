@@ -21,6 +21,7 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+  --color-mana-gem: hsl(217 58% 35%);
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
@@ -38,31 +39,10 @@
   --font-size-2xs: 0.625rem;
   --font-size-2xs--line-height: 0.875rem;
 
-  --font-body: "Inter", sans-serif;
-  --font-display: "Inter", sans-serif;
+  --font-sans: "Inter", sans-serif;
 
-  --animate-float: float 7s ease-in-out infinite;
-  --animate-pulse-soft: pulseSoft 4s ease-in-out infinite;
   --animate-shine: shine 14s linear infinite;
 
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-6px);
-    }
-  }
-  @keyframes pulseSoft {
-    0%,
-    100% {
-      opacity: 0.7;
-    }
-    50% {
-      opacity: 1;
-    }
-  }
   @keyframes shine {
     0% {
       background-position: 0% 0%;
@@ -110,9 +90,6 @@
     --ring: 36 55% 56%;
     --radius: 1.5rem;
     --mana-gem: 217 58% 35%;
-    --shadow-deaths-door: 0 0 30px rgba(127, 29, 29, 0.45);
-    --shadow-labyrinth-current: 0 0 10px rgba(251, 191, 36, 0.5);
-    --drop-shadow-mana-overflow: 0 0 3px rgba(125, 211, 252, 0.6);
     /* Keep in sync with WISH_OVERLAY_Z_INDEX in game-constants.ts */
     --z-wish-overlay: 90;
     --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -143,16 +120,13 @@
     --motion-crossfade-y: 4px;
     --motion-crossfade-scale: 1;
     --motion-startup-fade-duration: 320ms;
-    --motion-talent-unlock-duration: 620ms;
-    --motion-talent-unlock-settle-duration: 400ms;
   }
 
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
 
   html {
-    @apply scroll-smooth;
     font-size: calc(16px * var(--alchemy-ui-scale, 1));
     scrollbar-width: none;
   }
@@ -172,8 +146,10 @@
   }
 
   body {
-    @apply min-h-screen bg-background font-body text-foreground;
+    min-height: 100vh;
     background-color: hsl(30 10% 3%);
+    font-family: "Inter", sans-serif;
+    color: hsl(40 25% 88%);
     overflow: hidden;
     scrollbar-width: none;
     user-select: none;
@@ -199,9 +175,6 @@
   select,
   option {
     user-select: text;
-  }
-  .theme {
-    --animate-shine: shine var(--duration) infinite linear;
   }
 }
 
@@ -264,10 +237,6 @@
     will-change: background-position;
   }
 
-  .ease-alchemy-out {
-    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
   .tilt-surface {
     transform: var(--card-base-transform, translate3d(0px, 0px, 0px)) perspective(900px)
       rotateX(var(--tilt-rotate-x, 0deg)) rotateY(var(--tilt-rotate-y, 0deg));
@@ -298,10 +267,6 @@
     animation: cardShimmer 1800ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .animate-death {
-    animation: deathFade 800ms ease-out forwards;
-  }
-
   .animate-shake {
     animation: shake 380ms ease-out;
   }
@@ -316,15 +281,6 @@
 
   .surface-transparent {
     background: transparent !important;
-  }
-
-  @keyframes deathFade {
-    0% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0;
-    }
   }
 
   @keyframes frameFade {
@@ -345,20 +301,9 @@
     will-change: transform;
   }
 
-  /* Lift the hovered tile above grid neighbors so tooltips are not painted over. */
   .stagger-item:has(.hover-popup-panel[data-visible]),
-  .group:has(.hover-popup-panel):hover,
-  .group:has(.hover-popup-panel):focus-within,
-  .group\/keyword:has(.hover-popup-panel):hover,
-  .group\/keyword:has(.hover-popup-panel):focus-within,
-  .group\/companion:has(.hover-popup-panel):hover,
-  .group\/companion:has(.hover-popup-panel):focus-within,
-  .group\/status:has(.hover-popup-panel):hover,
-  .group\/status:has(.hover-popup-panel):focus-within,
-  .group\/art-wrapper:has(.hover-popup-panel):hover,
-  .group\/art-wrapper:has(.hover-popup-panel):focus-within,
-  .group\/wildwood-boss:has(.hover-popup-panel):hover,
-  .group\/wildwood-boss:has(.hover-popup-panel):focus-within {
+  :is(.group, .group\/keyword, .group\/companion, .group\/status, .group\/art-wrapper)
+    :has(.hover-popup-panel):is(:hover, :focus-within) {
     position: relative;
     z-index: 50;
   }
@@ -380,64 +325,17 @@
     transform: translateY(-50%);
   }
 
-  .group:hover > .hover-popup-panel,
-  .group:focus-within > .hover-popup-panel,
-  .group\/keyword:hover > .hover-popup-panel,
-  .group\/keyword:focus-within > .hover-popup-panel,
-  .group\/companion:hover > .hover-popup-panel,
-  .group\/companion:focus-within > .hover-popup-panel,
-  .group\/status:hover > .hover-popup-panel,
-  .group\/status:focus-within > .hover-popup-panel,
-  .group\/art-wrapper:hover > .hover-popup-panel,
-  .group\/art-wrapper:focus-within > .hover-popup-panel,
-  .group\/wildwood-boss:hover > .hover-popup-panel,
-  .group\/wildwood-boss:focus-within > .hover-popup-panel,
+  :is(.group, .group\/keyword, .group\/companion, .group\/status, .group\/art-wrapper)
+    :is(:hover, :focus-within) > .hover-popup-panel,
   .hover-popup-panel[data-visible] {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
 
-  .group:hover > .hover-popup-panel[data-placement="below"],
-  .group:focus-within > .hover-popup-panel[data-placement="below"],
-  .group\/keyword:hover > .hover-popup-panel[data-placement="below"],
-  .group\/keyword:focus-within > .hover-popup-panel[data-placement="below"],
-  .group\/companion:hover > .hover-popup-panel[data-placement="below"],
-  .group\/companion:focus-within > .hover-popup-panel[data-placement="below"],
-  .group\/status:hover > .hover-popup-panel[data-placement="below"],
-  .group\/status:focus-within > .hover-popup-panel[data-placement="below"],
-  .group\/art-wrapper:hover > .hover-popup-panel[data-placement="below"],
-  .group\/art-wrapper:focus-within > .hover-popup-panel[data-placement="below"],
-  .group\/wildwood-boss:hover > .hover-popup-panel[data-placement="below"],
-  .group\/wildwood-boss:focus-within > .hover-popup-panel[data-placement="below"],
-  .hover-popup-panel[data-placement="below"][data-visible] {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-
-  .group:hover > .hover-popup-panel[data-placement="side-start"],
-  .group:focus-within > .hover-popup-panel[data-placement="side-start"],
-  .group\/keyword:hover > .hover-popup-panel[data-placement="side-start"],
-  .group\/keyword:focus-within > .hover-popup-panel[data-placement="side-start"],
-  .group\/companion:hover > .hover-popup-panel[data-placement="side-start"],
-  .group\/companion:focus-within > .hover-popup-panel[data-placement="side-start"],
-  .group\/status:hover > .hover-popup-panel[data-placement="side-start"],
-  .group\/status:focus-within > .hover-popup-panel[data-placement="side-start"],
-  .group\/art-wrapper:hover > .hover-popup-panel[data-placement="side-start"],
-  .group\/art-wrapper:focus-within > .hover-popup-panel[data-placement="side-start"],
-  .group\/wildwood-boss:hover > .hover-popup-panel[data-placement="side-start"],
-  .group\/wildwood-boss:focus-within > .hover-popup-panel[data-placement="side-start"],
-  .group:hover > .hover-popup-panel[data-placement="side-end"],
-  .group:focus-within > .hover-popup-panel[data-placement="side-end"],
-  .group\/keyword:hover > .hover-popup-panel[data-placement="side-end"],
-  .group\/keyword:focus-within > .hover-popup-panel[data-placement="side-end"],
-  .group\/companion:hover > .hover-popup-panel[data-placement="side-end"],
-  .group\/companion:focus-within > .hover-popup-panel[data-placement="side-end"],
-  .group\/status:hover > .hover-popup-panel[data-placement="side-end"],
-  .group\/status:focus-within > .hover-popup-panel[data-placement="side-end"],
-  .group\/art-wrapper:hover > .hover-popup-panel[data-placement="side-end"],
-  .group\/art-wrapper:focus-within > .hover-popup-panel[data-placement="side-end"],
-  .group\/wildwood-boss:hover > .hover-popup-panel[data-placement="side-end"],
-  .group\/wildwood-boss:focus-within > .hover-popup-panel[data-placement="side-end"],
+  :is(.group, .group\/keyword, .group\/companion, .group\/status, .group\/art-wrapper)
+    :is(:hover, :focus-within) > .hover-popup-panel[data-placement="side-start"],
+  :is(.group, .group\/keyword, .group\/companion, .group\/status, .group\/art-wrapper)
+    :is(:hover, :focus-within) > .hover-popup-panel[data-placement="side-end"],
   .hover-popup-panel[data-placement="side-start"][data-visible],
   .hover-popup-panel[data-placement="side-end"][data-visible] {
     opacity: 1;
@@ -495,12 +393,6 @@
     will-change: opacity, transform;
   }
 
-  .battle-menu-pop {
-    animation: battleMenuPop var(--motion-battle-menu-duration) var(--motion-ease-out) both;
-    transform-origin: bottom right;
-    will-change: opacity, transform;
-  }
-
   .stagger-item {
     animation: staggerItemIn var(--motion-stagger-duration) var(--motion-ease-out) both;
     animation-delay: calc(var(--stagger-index, 0) * var(--motion-stagger-delay));
@@ -518,10 +410,6 @@
     animation: numberPop 280ms ease-out both;
   }
 
-  .hp-fill {
-    transition: width 360ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
   .campfire-hp-progress > div {
     transition-duration: 1250ms;
     transition-timing-function: ease-out;
@@ -532,15 +420,15 @@
   }
 
   .shadow-deaths-door-glow {
-    box-shadow: var(--shadow-deaths-door);
+    box-shadow: 0 0 30px rgba(127, 29, 29, 0.45);
   }
 
   .shadow-labyrinth-current-glow {
-    box-shadow: var(--shadow-labyrinth-current);
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
   }
 
   .drop-shadow-mana-overflow-glow {
-    filter: drop-shadow(var(--drop-shadow-mana-overflow));
+    filter: drop-shadow(0 0 3px rgba(125, 211, 252, 0.6));
   }
 
   .z-wish-overlay {
@@ -556,17 +444,13 @@
     will-change: transform, opacity;
   }
 
-  .talent-choice-pending {
-    animation: talentChoicePulse 1900ms ease-in-out infinite;
-  }
-
   .talent-unlock-ring {
     border: 2px solid var(--burst-color);
     box-shadow:
       0 0 18px var(--burst-color),
       0 0 36px color-mix(in srgb, var(--burst-color) 45%, transparent);
     opacity: 0.9;
-    animation: talentUnlockRing var(--motion-talent-unlock-duration) var(--motion-ease-out) forwards;
+    animation: talentUnlockRing 620ms var(--motion-ease-out) forwards;
     will-change: transform, opacity;
   }
 
@@ -585,18 +469,18 @@
     border-radius: 9999px;
     background-color: var(--burst-color);
     box-shadow: 0 0 6px var(--burst-color);
-    animation: talentUnlockSpark var(--spark-duration, var(--motion-talent-unlock-duration))
+    animation: talentUnlockSpark var(--spark-duration, 620ms)
       cubic-bezier(0.22, 1, 0.36, 1) var(--spark-delay, 0ms) forwards;
     transform: rotate(var(--spark-angle)) translateY(calc(-50cqmin));
     will-change: transform, opacity;
   }
 
   .talent-node-unlocking {
-    animation: talentUnlockPop var(--motion-talent-unlock-duration) var(--motion-ease-out) forwards;
+    animation: talentUnlockPop 620ms var(--motion-ease-out) forwards;
   }
 
   .talent-node-unlocked-settle {
-    animation: talentUnlockedSettle var(--motion-talent-unlock-settle-duration) var(--motion-ease-out) both;
+    animation: talentUnlockedSettle 400ms var(--motion-ease-out) both;
   }
 
   .alchemy-startup-bar {
@@ -787,15 +671,6 @@
   }
 }
 
-@keyframes shinySweep {
-  0% {
-    background-position: 150% 50%;
-  }
-  100% {
-    background-position: -50% 50%;
-  }
-}
-
 @keyframes boss-title-shine {
   from {
     background-position: 200% 50%;
@@ -844,17 +719,6 @@
   from {
     opacity: 0;
     transform: translateY(var(--motion-panel-y)) scale(var(--motion-panel-scale));
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes battleMenuPop {
-  from {
-    opacity: 0;
-    transform: translateY(var(--motion-battle-menu-y)) scale(var(--motion-battle-menu-scale));
   }
   to {
     opacity: 1;
@@ -942,44 +806,6 @@
   }
 }
 
-@keyframes talentChoicePulse {
-  0%,
-  100% {
-    box-shadow:
-      0 0 0 1px rgba(245, 196, 93, 0.12),
-      0 0 16px rgba(245, 196, 93, 0.12);
-    filter: brightness(1);
-  }
-
-  50% {
-    box-shadow:
-      0 0 0 1px rgba(245, 196, 93, 0.32),
-      0 0 24px rgba(245, 196, 93, 0.24);
-    filter: brightness(1.12);
-  }
-}
-
-@keyframes unlockTextPulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.06);
-  }
-}
-
-@keyframes talentReveal {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
 @keyframes talentUnlockRing {
   0% {
     opacity: 0.95;
@@ -1026,14 +852,6 @@
   }
 }
 
-.animate-unlock-text-pulse {
-  animation: unlockTextPulse 1.8s ease-in-out infinite;
-}
-
-.animate-talent-reveal {
-  animation: talentReveal 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1045,11 +863,6 @@
   }
 }
 
-/* alchemy-disable-animations flag — set via localStorage before page load for e2e tests.
-   Collapses all CSS animation/transition durations to 1ms. Use with the JS-side flag
-   (isAnimationDisabled in game-constants.ts) which also collapses setTimeout delays and
-   Framer Motion durations. Not for use in layout/visual/animation-specific tests. */
-html.alchemy-disable-animations,
 html.alchemy-disable-animations *,
 html.alchemy-disable-animations *::before,
 html.alchemy-disable-animations *::after {

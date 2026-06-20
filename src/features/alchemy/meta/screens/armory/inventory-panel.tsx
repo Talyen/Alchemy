@@ -93,7 +93,7 @@ export const InventoryPanel = memo(function InventoryPanel({
       data-testid="armory-inventory-panel"
       className="armory-inventory-panel alchemy-shell relative flex min-w-0 flex-col items-center rounded-shell-dialog border border-border/80 p-4"
     >
-      <h2 className="text-center font-display text-lg text-amber-100">Inventory</h2>
+      <h2 className="text-center font-sans text-lg text-amber-100">Inventory</h2>
       <div className="absolute right-4 top-3 z-20 isolate flex items-center gap-1.5">
         {import.meta.env.DEV && onSpawnDevGear ? (
           <Button
