@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { MysteryEffect } from "@/features/alchemy/run-loop/mystery-events";
+import type { MysteryEffect } from "@/lib/mystery";
 import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
 import * as gameData from "@/lib/game-data";
 import { cardLibrary, getCardKeywords, getOfferableCardPool, type BattleCard } from "@/lib/game-data";
@@ -79,12 +79,6 @@ describe("applyMysteryEffect", () => {
     const materialContext = minimalContext();
     applyMysteryEffect({ kind: "gainMaterial", material: "wood", amount: 1 }, materialContext);
     expect(materialContext.onAddMaterials).toHaveBeenCalledWith(expect.objectContaining({ wood: 1 }));
-
-    const noneContext = minimalContext();
-    const noneResult = applyMysteryEffect({ kind: "none" }, noneContext);
-    expect(noneResult.followUp).toBeNull();
-    expect(noneContext.setRunDeck).not.toHaveBeenCalled();
-    expect(noneContext.onAwardGold).not.toHaveBeenCalled();
   });
 
   it("throws for unknown effect kinds", () => {

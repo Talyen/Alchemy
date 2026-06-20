@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 import { GoldPill, MaterialPill } from "../../../shared/ui/material-icons";
 import { cardSurfaceClass, collectionTileWidthClass, viewCardWidthClass } from "@/features/alchemy/shared/config";
-import type { MysteryChoice, MysteryEffect } from "../../mystery-events";
+import type { MysteryChoice, MysteryEffect } from "@/lib/mystery";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
@@ -105,7 +105,6 @@ function MysteryRewardEffectItem({
     gainMaterial: () => renderFoundOrLost(effect, "Found"),
     loseGold: () => renderFoundOrLost(effect, "Lost"),
     removeCard: () => null,
-    none: () => null,
   };
 
   const render =

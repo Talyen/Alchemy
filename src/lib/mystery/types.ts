@@ -13,8 +13,7 @@ export type MysteryEffect =
   | { kind: "removeCard"; mode: "random" | "choose" }
   | { kind: "gainTrinket"; trinketId: string }
   | { kind: "gainRandomTrinket" }
-  | { kind: "gainMaterial"; material: MaterialId; amount: number }
-  | { kind: "none" };
+  | { kind: "gainMaterial"; material: MaterialId; amount: number };
 
 export type MysteryChoice = {
   label: string;

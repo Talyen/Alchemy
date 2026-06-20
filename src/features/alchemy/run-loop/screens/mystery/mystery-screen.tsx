@@ -6,8 +6,6 @@ import { useState } from "react";
 import { playUISound } from "@/lib/audio";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 
-import type { MysteryChoice } from "../../mystery-events";
-
 import {
   CardChoicePicker,
   RemoveCardPicker,
@@ -17,7 +15,7 @@ import {
   choiceRequiresCardRemoval,
   hasPositiveMysteryEffect,
 } from "./parts";
-import type { MysteryEvent } from "@/lib/mystery";
+import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 
 export function MysteryScreen({
   event,

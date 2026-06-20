@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { MysteryChoice } from "@/features/alchemy/run-loop/mystery-events";
+import type { MysteryChoice } from "@/lib/mystery";
 import {
   choiceOffersCardSelection,
   choiceRequiresCardRemoval,
@@ -15,7 +15,6 @@ describe("hasPositiveMysteryEffect", () => {
   it("returns false for purely negative effects", () => {
     expect(hasPositiveMysteryEffect([{ kind: "damageHealth", amount: 5 }])).toBe(false);
     expect(hasPositiveMysteryEffect([{ kind: "loseGold", amount: 5 }])).toBe(false);
-    expect(hasPositiveMysteryEffect([{ kind: "none" }])).toBe(false);
   });
 });
 

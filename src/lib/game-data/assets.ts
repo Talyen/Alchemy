@@ -41,6 +41,15 @@ import talentBgStun from "@/assets/optimized/talent-bg-stun.webp";
 import warlock from "@/assets/optimized/warlock.webp";
 import wildcard from "@/assets/optimized/wildcard.webp";
 import wizard from "@/assets/optimized/wizard.webp";
+
+// Locally imported for mysteryEventArt augmentation — also re-exported below.
+import brassCenser from "@/assets/optimized/brass-censer.webp";
+import crystalGarden from "@/assets/optimized/crystal-garden.webp";
+import herbGarden from "@/assets/optimized/herb-garden.webp";
+import huntersLodge from "@/assets/optimized/hunters-lodge.webp";
+import necromancer from "@/assets/optimized/necromancer.webp";
+import phoenixFeather from "@/assets/optimized/phoenix-feather.webp";
+import wolfCompanion from "@/assets/optimized/wolf-companion.webp";
 import theCampaign from "@/assets/optimized/the-campaign.webp";
 import theLabyrinth from "@/assets/optimized/the-labyrinth.webp";
 import theWildwoods from "@/assets/optimized/the-wildwoods.webp";
@@ -62,7 +71,7 @@ export { default as bloodthorn } from "@/assets/optimized/bloodthorn.webp";
 export { default as boneCharm } from "@/assets/optimized/bone-charm.webp";
 export { default as bossCombat } from "@/assets/optimized/boss-combat.webp";
 export { default as bountyShot } from "@/assets/optimized/bounty-shot.webp";
-export { default as brassCenser } from "@/assets/optimized/brass-censer.webp";
+export { brassCenser };
 export { default as bread } from "@/assets/optimized/bread.webp";
 export { default as briarShield } from "@/assets/optimized/briar-shield.webp";
 export { default as burningBlade } from "@/assets/optimized/burning-blade.webp";
@@ -77,7 +86,7 @@ export { default as concussiveShot } from "@/assets/optimized/concussive-shot.we
 export { default as companionsCollar } from "@/assets/optimized/companions-collar.webp";
 export { default as crystalBulwark } from "@/assets/optimized/crystal-bulwark.webp";
 export { default as corruptionAltar } from "@/assets/optimized/corruption-altar.webp";
-export { default as crystalGarden } from "@/assets/optimized/crystal-garden.webp";
+export { crystalGarden };
 export { default as cutpurseKnife } from "@/assets/optimized/cutpurse-knife.webp";
 export { default as darkPact } from "@/assets/optimized/dark-pact.webp";
 export { default as difficulty1Art } from "@/assets/optimized/difficulty-1.webp";
@@ -104,10 +113,10 @@ export { default as haste } from "@/assets/optimized/haste.webp";
 export { default as heal } from "@/assets/optimized/heal.webp";
 export { default as healthPotion } from "@/assets/optimized/health-potion.webp";
 export { default as hemorrhage } from "@/assets/optimized/hemorrhage.webp";
-export { default as herbGarden } from "@/assets/optimized/herb-garden.webp";
+export { herbGarden };
 export { default as holyRadiance } from "@/assets/optimized/holy-radiance.webp";
 export { default as iceShot } from "@/assets/optimized/ice-shot.webp";
-export { default as huntersLodge } from "@/assets/optimized/hunters-lodge.webp";
+export { huntersLodge };
 export { default as icyHeart } from "@/assets/optimized/icy-heart.webp";
 export { default as imp } from "@/assets/optimized/imp.webp";
 export { default as impCompanion } from "@/assets/optimized/imp-companion.webp";
@@ -138,7 +147,7 @@ export { default as moltenBulwark } from "@/assets/optimized/molten-bulwark.webp
 export { default as mortarAndPestle } from "@/assets/optimized/mortar-and-pestle.webp";
 export { default as mudElemental } from "@/assets/optimized/mud-elemental.webp";
 export { default as mysteryBg } from "@/assets/optimized/mystery.webp";
-export { default as necromancer } from "@/assets/optimized/necromancer.webp";
+export { necromancer };
 export { default as normalEnemyBg } from "@/assets/optimized/normal-enemy.webp";
 export { default as obsidianHammer } from "@/assets/optimized/obsidian-hammer.webp";
 export { default as orchard } from "@/assets/optimized/orchard.webp";
@@ -147,7 +156,7 @@ export { default as panaceaPotion } from "@/assets/optimized/panacea-potion.webp
 export { default as pantherCompanion } from "@/assets/optimized/panther-companion.webp";
 export { default as parasiticBloom } from "@/assets/optimized/parasitic-bloom.webp";
 export { default as phoenixCompanion } from "@/assets/optimized/phoenix-companion.webp";
-export { default as phoenixFeather } from "@/assets/optimized/phoenix-feather.webp";
+export { phoenixFeather };
 export { default as placeholderCard } from "@/assets/optimized/placeholder-card.webp";
 export { default as placeholderDestination } from "@/assets/optimized/placeholder-destination.webp";
 export { default as placeholderDifficulty } from "@/assets/optimized/placeholder-difficulty.webp";
@@ -200,7 +209,7 @@ export { default as wish } from "@/assets/optimized/wish.webp";
 export { default as wishingPotion } from "@/assets/optimized/wishing-potion.webp";
 export { default as wishingWell } from "@/assets/optimized/wishing-well.webp";
 export { default as wishingWellCoin } from "@/assets/optimized/wishing-well-coin.webp";
-export { default as wolfCompanion } from "@/assets/optimized/wolf-companion.webp";
+export { wolfCompanion };
 
 export { alchemist };
 export { alchemyLogo };
@@ -272,11 +281,20 @@ function mysteryEventArtKey(path: string): string {
   return filename.replace(/^mystery-/, "").replace(/\.webp$/, "");
 }
 
-export const mysteryEventArt = Object.fromEntries(
-  Object.entries(mysteryArtModules)
-    .filter(([path]) => !path.includes("placeholder"))
-    .map(([path, url]) => [mysteryEventArtKey(path), url as string]),
-) as Record<string, string>;
+export const mysteryEventArt: Record<string, string> = {
+  ...Object.fromEntries(
+    Object.entries(mysteryArtModules)
+      .filter(([path]) => !path.includes("placeholder"))
+      .map(([path, url]) => [mysteryEventArtKey(path), url as string]),
+  ),
+  "necromancers-offer": necromancer,
+  "medicinal-herb-garden": herbGarden,
+  "crystal-garden": crystalGarden,
+  "hunters-lodge": huntersLodge,
+  "roadside-censer": brassCenser,
+  "the-phoenix": phoenixFeather,
+  "the-wolf": wolfCompanion,
+};
 
 const assetModules = import.meta.glob("@/assets/optimized/*.webp", {
   eager: true,

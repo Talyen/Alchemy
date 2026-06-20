@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { materialLabels } from "@/lib/homestead/types";
 import { matIconMap, matPillStyle, matTextColor } from "./material-icons";
 import { TooltipHeader } from "./tooltip-panel";
-import type { MysteryEffect } from "@/features/alchemy/run-loop/mystery-events";
+import type { MysteryEffect } from "@/lib/mystery";
 
 const goldDef = keywordDefinitions.gold;
 
@@ -117,8 +117,6 @@ export function MysteryEffectBadge({
       ) : (
         <span className="text-sm text-muted-foreground">Choose a card to remove</span>
       );
-    case "none":
-      return null;
   }
 }
 
@@ -138,8 +136,6 @@ export function MysteryEffectList({
     <div className="flex flex-col items-start gap-1.5">
       <TooltipHeader>{choiceLabel ?? "Outcome"}</TooltipHeader>
       {effects.map((effect, i) => {
-        if (effect.kind === "none") return null;
-
         const prefix =
           effect.kind === "gainGold" || effect.kind === "gainMaterial"
             ? "Find "

@@ -63,7 +63,6 @@ const mysteryApplyHandlers: {
   gainTrinket: (effect, context) => gainMysteryTrinket(effect.trinketId, context),
   gainRandomTrinket: (_effect, context) => gainRandomMysteryTrinket(context),
   gainMaterial: (effect, context) => gainMysteryMaterial(effect.material, effect.amount, context),
-  none: () => ({ followUp: null }),
 };
 
 function assertNever(value: never): never {

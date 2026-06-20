@@ -1,5 +1,5 @@
 // Pure predicates for mystery choice flow (card pickers, positive SFX).
-import type { MysteryChoice, MysteryEffect } from "../../mystery-events";
+import type { MysteryChoice, MysteryEffect } from "@/lib/mystery";
 
 const POSITIVE_MYSTERY_EFFECT_KINDS = new Set<MysteryEffect["kind"]>([
   "addCard",
