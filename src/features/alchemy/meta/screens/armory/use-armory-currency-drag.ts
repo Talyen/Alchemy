@@ -1,5 +1,5 @@
 import { useCallback, type RefObject } from "react";
-import { getCraftingCurrencyDefinition, type CraftingCurrencyId, type InventoryPlacement } from "@/lib/gear";
+import { type CraftingCurrencyId, type InventoryPlacement } from "@/lib/gear";
 import { useBoardDrag, type DragDestination, type DragRect } from "./use-board-drag";
 
 const CURRENCY_FOOTPRINT = { w: 1, h: 1 };
@@ -51,11 +51,7 @@ export function useArmoryCurrencyDrag({
     occupiedRows,
     onCommit: ({ id, origin, destination }) => {
       if (destination.kind !== "inventory") return;
-      if (
-        origin.kind === "inventory" &&
-        origin.placement.col === destination.placement.col &&
-        origin.placement.row === destination.placement.row
-      ) {
+      if (origin.placement.col === destination.placement.col && origin.placement.row === destination.placement.row) {
         return;
       }
       onMoveCurrency(id, destination.placement.col, destination.placement.row);
@@ -75,7 +71,7 @@ export function useArmoryCurrencyDrag({
       pointer: { x: number; y: number },
       pointerId: number,
     ) => {
-      if (!editable || !getCraftingCurrencyDefinition(currencyId)) return;
+      if (!editable) return;
       const source: DragRect = {
         left: rect.left,
         top: rect.top,

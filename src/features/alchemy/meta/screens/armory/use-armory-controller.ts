@@ -75,7 +75,7 @@ export function useArmoryController(): ArmoryController {
       if (hasActiveRun && !hasActiveBattle && characterId === activeRunCharacterId) {
         syncRunMaxHealthFromGear(
           characterId,
-          flattenGearInventories(gear.inventories),
+          flattenGearInventories(useGearStore.getState().inventories),
           loadoutsBefore,
           useGearStore.getState().loadouts,
         );
@@ -92,7 +92,7 @@ export function useArmoryController(): ArmoryController {
       if (hasActiveRun && !hasActiveBattle && characterId === activeRunCharacterId) {
         syncRunMaxHealthFromGear(
           characterId,
-          flattenGearInventories(gear.inventories),
+          flattenGearInventories(useGearStore.getState().inventories),
           loadoutsBefore,
           useGearStore.getState().loadouts,
         );
@@ -113,7 +113,7 @@ export function useArmoryController(): ArmoryController {
           activeRunCharacterId,
           inventoryBefore,
           loadoutsBefore,
-          flattenGearInventories(gear.inventories),
+          flattenGearInventories(useGearStore.getState().inventories),
           useGearStore.getState().loadouts,
         );
       }
@@ -155,7 +155,7 @@ export function useArmoryController(): ArmoryController {
             activeRunCharacterId,
             inventoryBefore,
             loadoutsBefore,
-            flattenGearInventories(gear.inventories),
+            flattenGearInventories(useGearStore.getState().inventories),
             useGearStore.getState().loadouts,
           );
         }

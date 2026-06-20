@@ -64,8 +64,8 @@ export function ArmoryScreen({
   const inventoryBoardRef = useRef<HTMLDivElement>(null);
   const [targeting, dispatchTargeting] = useReducer(armoryTargetingReducer, initialArmoryTargetingState);
   const { salvageTarget, salvageMode, activeCurrencyId, cursorPoint, transferMenu } = targeting;
-  const characterInventory = useMemo(() => inventories[characterId] ?? [], [inventories, characterId]);
-  const savedPositions = useGearStore((state) => state.boardPositionsByCharacter[characterId] ?? {});
+  const characterInventory = useMemo(() => inventories[characterId], [inventories, characterId]);
+  const savedPositions = useGearStore((state) => state.boardPositionsByCharacter[characterId]);
   const equippedReturnPositions = useGearStore((state) => state.equippedReturnPositions);
   const moveBoardItem = useGearStore((state) => state.moveBoardItem);
   const handleMoveItem = useCallback(
@@ -75,7 +75,7 @@ export function ArmoryScreen({
     [characterId, moveBoardItem],
   );
 
-  const savedCurrencyPositions = useGearStore((state) => state.currencyBoardPositionsByCharacter[characterId] ?? {});
+  const savedCurrencyPositions = useGearStore((state) => state.currencyBoardPositionsByCharacter[characterId]);
   const handleMoveCurrency = useCallback(
     (currencyId: CraftingCurrencyId, col: number, row: number) => {
       moveBoardItem(characterId, { kind: "currency", id: currencyId }, col, row);

@@ -2,14 +2,8 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
 import { playUISound } from "@/lib/audio";
 import type { CharacterId } from "@/lib/game-data";
 import {
-  canEquipInOffHand,
-  findFirstInventoryPlacement,
   footprintForInstance,
   gearDefinitions,
-  INVENTORY_COLS,
-  inventoryPlacementRect,
-  isGearCompatibleWithLoadoutSlot,
-  isTwoHanded,
   type GearInstance,
   type GearLoadout,
   type GearSlot,
@@ -17,9 +11,14 @@ import {
   type PackedInventory,
   type PackedInventoryItem,
 } from "@/lib/gear";
-import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
-import { resolveEquipSwap } from "./resolve-equip-swap";
 import { useBoardDrag, type DragDestination, type DragRect, type DragPoint } from "./use-board-drag";
+import {
+  findEquipSlotForDoubleClickedGear,
+  resolveEquipmentSlotAtPointer,
+  getInventoryDragDestination,
+  calculateSecondaryDisplacedItems,
+  buildSecondaryDragVisuals,
+} from "./armory-drag-helpers";
 
 export type GearDragOrigin =
   | { kind: "inventory"; placement: { col: number; row: number } }
@@ -105,31 +104,7 @@ export function useArmoryGearDrag({
     (displacedItems: { instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }[]) => {
       const board = inventoryBoardRef.current;
       if (!board || displacedItems.length === 0) return;
-      const metrics = readInventoryBoardMetrics(board);
-      if (!metrics) return;
-      const { cellSize, gap, boardRect, scrollTop } = metrics;
-
-      const visuals: GearDragVisual[] = [];
-      for (const { instance: displaced, source, vacatedPlacement } of displacedItems) {
-        const footprint = footprintForInstance(displaced);
-        if (!footprint) continue;
-        const localRect = inventoryPlacementRect(vacatedPlacement, footprint, { cellSize, gap });
-        const destinationRect: DragRect = {
-          left: boardRect.left + localRect.left,
-          top: boardRect.top + localRect.top - scrollTop,
-          width: localRect.width,
-          height: localRect.height,
-        };
-        visuals.push({
-          instance: displaced,
-          source,
-          rect: destinationRect,
-          origin: { kind: "inventory", placement: vacatedPlacement },
-          destination: { kind: "inventory", placement: vacatedPlacement, rect: destinationRect },
-          flyover: true,
-        });
-      }
-
+      const visuals = buildSecondaryDragVisuals({ board, displacedItems });
       if (visuals.length === 0) return;
       setSecondaryDragVisuals(visuals);
       if (secondaryCleanupTimerRef.current !== null) window.clearTimeout(secondaryCleanupTimerRef.current);
@@ -142,36 +117,18 @@ export function useArmoryGearDrag({
 
   const maybeLaunchSwapAnimations = useCallback(
     (instance: GearInstance, slot: GearSlot, slotRect: DragRect, vacatedPlacement: InventoryPlacement) => {
-      const { displaced } = resolveEquipSwap({
-        loadout,
-        slot,
+      const displacedItems = calculateSecondaryDisplacedItems({
         instance,
+        slot,
+        slotRect,
         vacatedPlacement,
+        loadout,
         inventoryById,
         packedItems: packedInventory.items,
       });
-      const toAnimate: { instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }[] = [];
-      if (displaced) {
-        toAnimate.push({ instance: displaced, source: slotRect, vacatedPlacement });
-      }
-      const otherSlot: GearSlot | null = slot === "main-hand" ? "off-hand" : slot === "off-hand" ? "main-hand" : null;
-      if (otherSlot) {
-        const otherInstanceId = loadout[otherSlot];
-        if (otherInstanceId && otherInstanceId !== instance.instanceId && otherInstanceId !== displaced?.instanceId) {
-          const otherInstance = inventoryById.get(otherInstanceId);
-          const board = inventoryBoardRef.current;
-          if (otherInstance && board) {
-            const otherSlotEl = document.querySelector<HTMLElement>(
-              `[data-testid='armory-equipment-slot'][data-slot='${otherSlot}']`,
-            );
-            const otherSource: DragRect = otherSlotEl ? otherSlotEl.getBoundingClientRect() : slotRect;
-            toAnimate.push({ instance: otherInstance, source: otherSource, vacatedPlacement });
-          }
-        }
-      }
-      launchSecondarySwapAnimations(toAnimate);
+      launchSecondarySwapAnimations(displacedItems);
     },
-    [inventoryById, inventoryBoardRef, launchSecondarySwapAnimations, loadout, packedInventory.items],
+    [inventoryById, launchSecondarySwapAnimations, loadout, packedInventory.items],
   );
 
   const fsm = useBoardDrag<string, GearDragItem, GearDragOrigin>({
@@ -185,29 +142,14 @@ export function useArmoryGearDrag({
     inventoryBoardRef,
     occupiedRows: packedInventory.occupiedRows,
     resolveExternalDestination: (pointer) => {
-      const instance = activeInstanceRef.current;
-      if (!instance) return null;
-      const definition = gearDefinitions[instance.definitionId];
-      if (!definition) return null;
-
-      const element = document.elementFromPoint(pointer.x, pointer.y);
-      const slotElement = element?.closest<HTMLElement>("[data-testid='armory-equipment-slot']");
-      const slot = slotElement?.dataset.slot as GearSlot | undefined;
-      const inventoryList = Array.from(inventoryById.values());
-      if (slotElement && slot && isGearCompatibleWithLoadoutSlot(definition, slot, loadout, inventoryList)) {
-        const rect = slotElement.getBoundingClientRect();
-        const insetX = rect.width * EQUIPMENT_SNAP_INSET_RATIO;
-        const insetY = rect.height * EQUIPMENT_SNAP_INSET_RATIO;
-        if (
-          pointer.x >= rect.left + insetX &&
-          pointer.x <= rect.right - insetX &&
-          pointer.y >= rect.top + insetY &&
-          pointer.y <= rect.bottom - insetY
-        ) {
-          return { kind: "equipment", slot, rect };
-        }
-      }
-      return null;
+      return resolveEquipmentSlotAtPointer({
+        pointer,
+        activeInstance: activeInstanceRef.current,
+        loadout,
+        inventoryById,
+        gearDefinitions,
+        equipmentSnapInsetRatio: EQUIPMENT_SNAP_INSET_RATIO,
+      });
     },
     onCommit: ({ id, origin, destination }) => {
       const instance = activeInstanceRef.current || inventoryById.get(id);
@@ -282,21 +224,7 @@ export function useArmoryGearDrag({
       if (!definition) return;
 
       if (origin.kind === "inventory") {
-        const compatibleSlots = definition.compatibleSlots;
-        let slot = compatibleSlots.find((candidate) => !loadout[candidate]) ?? null;
-        if (!slot) {
-          if (
-            !isTwoHanded(definition) &&
-            !!loadout["main-hand"] &&
-            !loadout["off-hand"] &&
-            compatibleSlots.includes("off-hand") &&
-            canEquipInOffHand(definition)
-          ) {
-            slot = "off-hand";
-          } else {
-            slot = compatibleSlots[0] ?? null;
-          }
-        }
+        const slot = findEquipSlotForDoubleClickedGear(loadout, definition);
         if (!slot) {
           playUISound("error");
           return;
@@ -322,22 +250,8 @@ export function useArmoryGearDrag({
 
       const board = inventoryBoardRef.current;
       if (!board) return;
-      const metrics = readInventoryBoardMetrics(board);
-      const footprint = footprintForInstance(instance);
-      if (!metrics || !footprint) return;
-      const { cellSize, gap, boardRect, scrollTop } = metrics;
-      const placement = findFirstInventoryPlacement(boardObstacles, instance.instanceId, footprint, INVENTORY_COLS);
-      const localRect = inventoryPlacementRect(placement, footprint, { cellSize, gap });
-      const destination: DragDestination = {
-        kind: "inventory",
-        placement,
-        rect: {
-          left: boardRect.left + localRect.left,
-          top: boardRect.top + localRect.top - scrollTop,
-          width: localRect.width,
-          height: localRect.height,
-        },
-      };
+      const destination = getInventoryDragDestination({ board, instance, boardObstacles });
+      if (!destination) return;
       activeInstanceRef.current = instance;
       setActiveInstance(instance);
       fsm.flyoverTo(
