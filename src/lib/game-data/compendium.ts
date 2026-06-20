@@ -164,7 +164,7 @@ export const trinketLibrary = [
   trinket("brass-censer", "Brass Censer", "Your first Holy damage each combat is doubled.", brassCenser),
   trinket("tattered-pages", "Tattered Pages", "Draw 1 at the start of combat.", tatteredPages),
   trinket("meteorite", "Meteorite", "Your first Burn damage each combat is doubled.", meteorite),
-  trinket("bone-charm", "Bone Charm", "Gain 3 Health when you defeat an enemy.", boneCharm),
+  trinket("bone-charm", "Bone Charm", "Restore 3 Health when you defeat an enemy.", boneCharm),
   trinket(
     "obsidian-hammer",
     "Obsidian Hammer",
@@ -210,7 +210,7 @@ export const trinketLibrary = [
     resonantChimes,
   ),
   trinket("smugglers-map", "Smuggler's Map", "Gold rewards from combat are increased by 2.", smugglersMap),
-  trinket("groves-favor", "Grove's Favor", "Restore 2 Health at the start of each combat.", grovesFavor),
+  trinket("groves-favor", "Grove's Favor", "Restore 2 Health at the start of combat.", grovesFavor),
   trinket("companions-collar", "Companion's Collar", "Increases Companion damage by 1.", companionsCollar),
   trinket("frozen-pocketwatch", "Frozen Pocketwatch", "Freeze effects last 1 turn longer.", frozenPocketwatch),
   trinket("thunderstone", "Thunderstone", "When you Stun an enemy, deal 6 Nature damage.", thunderstone),

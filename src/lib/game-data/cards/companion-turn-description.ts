@@ -18,7 +18,7 @@ export function formatCompanionTurnLineBase(effect: BattleCardEffect, amountOver
     case "gain-gold":
       return `Steals ${effect.amount} Gold each turn`;
     case "player-status":
-      if (effect.status === "block") return `Gain ${effect.amount} Block each turn`;
+      if (effect.status === "block") return `Gains ${effect.amount} Block each turn`;
       return null;
     case "draw-cards":
       return `Draws ${effect.amount} Card${effect.amount === 1 ? "" : "s"} each turn`;

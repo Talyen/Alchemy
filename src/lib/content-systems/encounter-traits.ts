@@ -88,15 +88,15 @@ export const ENCOUNTER_TRAITS: Record<EncounterTraitId, EncounterTraitDefinition
   jealous: combat("jealous", "Jealous", "Gains 1 Physical damage each time you Wish"),
   concussive: combat("concussive", "Concussive", "Deals 1 Stun damage each turn"),
   rooted: combat("rooted", "Rooted", "Gains 1 Block when you play a Nature card"),
-  overgrowth: combat("overgrowth", "Overgrowth", "Regenerates 1 Health each turn"),
+  overgrowth: combat("overgrowth", "Overgrowth", "Restores 1 Health each turn"),
   "holy-retribution": combat("holy-retribution", "Holy Retribution", "Deals 1 Holy damage when attacked"),
   "divine-aegis": combat(
     "divine-aegis",
     "Divine Aegis",
     "Gains 2 Armor and 4 Block the first time reaching 50% Health",
   ),
-  generous: reward("generous", "Generous", "Victory gold is increased by 50%", ["labyrinth"]),
-  alchemist: reward("alchemist", "Alchemist", "Gain a random potion alongside the normal reward", [
+  generous: reward("generous", "Generous", "Victory Gold is increased by 50%", ["labyrinth"]),
+  alchemist: reward("alchemist", "Alchemist", "Gain a random Potion alongside the normal reward", [
     "labyrinth",
     "wildwood",
   ]),

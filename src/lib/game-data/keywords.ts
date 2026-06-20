@@ -41,7 +41,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   block: {
     id: "block",
     label: "Block",
-    description: "Block absorbs damage taken before health and decreases by half each turn",
+    description: "Block absorbs damage taken before Health and decreases by half each turn",
     colorClass: "text-sky-300",
     borderClass: "border-sky-300",
     shineColors: ["#7dd3fc", "#0ea5e9", "#7dd3fc"],

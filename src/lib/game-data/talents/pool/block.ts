@@ -7,7 +7,7 @@ export const blockTalents: TalentDefinition[] = [
     id: "block-depleted-heal",
     keywordId: "block",
     name: "Second Wind",
-    description: "When Block is depleted, Restore 2 Health",
+    description: "When Block is depleted, restore 2 Health",
     effects: [setEffect("blockDepletedHeal", 2)],
   },
   {

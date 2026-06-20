@@ -333,7 +333,7 @@ describe("card descriptions vs effects", () => {
           /^Restores \d+/.test(l) ||
           /^Cleanses \d+/.test(l) ||
           /^Steals \d+/.test(l) ||
-          /^Gain \d+ Block/.test(l) ||
+          /^Gains? \d+ Block/.test(l) ||
           /^Draws \d+/.test(l),
       );
       expect(companionLine, `${card.id} missing companion turn line`).toBeDefined();

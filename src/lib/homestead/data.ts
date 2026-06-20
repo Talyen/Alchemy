@@ -115,18 +115,18 @@ export const researchUpgrades = [
     {
       cost: materialCost({ crystal: 20 }),
       effects: { startMana: 1 },
-      benefitDescription: "Increase starting Mana by 1",
+      benefitDescription: "Increases starting Mana by 1",
     },
     {
       cost: materialCost({ crystal: 30 }),
       effects: { startMana: 1, endRunCrystalPerRoom: 1 },
-      benefitDescription: "Increase starting Mana by 2\nGain Crystal after each run",
+      benefitDescription: "Increases starting Mana by 2\nGain Crystal after each run",
       nonCombatBenefitDescription: "Gain Crystal after each run",
     },
     {
       cost: materialCost({ crystal: 40 }),
       effects: { startMana: 2, endRunCrystalPerRoom: 1 },
-      benefitDescription: "Increase starting Mana by 4\nGain Crystal after each run",
+      benefitDescription: "Increases starting Mana by 4\nGain Crystal after each run",
       nonCombatBenefitDescription: "Gain Crystal after each run",
     },
   ]),
@@ -169,17 +169,17 @@ export const researchUpgrades = [
     {
       cost: materialCost({ food: 20 }),
       effects: { freezeDamageReduction: 1 },
-      benefitDescription: "Reduce Freeze damage taken by 1",
+      benefitDescription: "Reduces Freeze damage taken by 1",
     },
     {
       cost: materialCost({ food: 30 }),
       effects: { burnDamageReduction: 1 },
-      benefitDescription: "Reduce Freeze and Burn damage taken by 1",
+      benefitDescription: "Reduces Freeze and Burn damage taken by 1",
     },
     {
       cost: materialCost({ food: 40 }),
       effects: { natureDamageReduction: 1 },
-      benefitDescription: "Reduce Freeze, Burn, and Nature damage taken by 1",
+      benefitDescription: "Reduces Freeze, Burn, and Nature damage taken by 1",
     },
   ]),
   defineResearch(

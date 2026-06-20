@@ -48,7 +48,7 @@ function isCompanionTurnLine(line: string): boolean {
     /^Restores \d+/.test(line) ||
     /^Cleanses \d+/.test(line) ||
     /^Steals \d+/.test(line) ||
-    /^Gain \d+ Block each turn/.test(line) ||
+    /^Gains? \d+ Block each turn/.test(line) ||
     /^Draws \d+/.test(line)
   );
 }

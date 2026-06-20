@@ -14,7 +14,7 @@ export const bleedTalents: TalentDefinition[] = [
     id: "bleed-physical-bonus",
     keywordId: "bleed",
     name: "Open Wound",
-    description: "Enemies with Bleed take +1 Physical damage",
+    description: "Bleeding enemies take +1 Physical damage",
     effects: [setEffect("bleedPhysicalBonus", 1)],
   },
   {

@@ -63,7 +63,7 @@ export const holyTalents: TalentDefinition[] = [
     id: "holy-vs-burn",
     keywordId: "holy",
     name: "Purge",
-    description: "Holy damage is increased by 20% against enemies with Burn",
+    description: "Holy damage is increased by 20% against Burning enemies",
     effects: [setEffect("holyVsBurnMultiplier", 20)],
   },
   {

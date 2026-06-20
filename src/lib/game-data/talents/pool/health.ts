@@ -28,7 +28,7 @@ export const healthTalents: TalentDefinition[] = [
     id: "health-start",
     keywordId: "health",
     name: "Combat Surge",
-    description: "Restore 4 Health at the start of each combat",
+    description: "Restore 4 Health at the start of combat",
     effects: [setEffect("startHealth", 4)],
   },
   {

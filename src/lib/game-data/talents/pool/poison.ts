@@ -14,7 +14,7 @@ export const poisonTalents: TalentDefinition[] = [
     id: "poison-physical-bonus",
     keywordId: "poison",
     name: "Corrosive",
-    description: "Enemies with Poison take +1 Physical damage",
+    description: "Poisoned enemies take +1 Physical damage",
     effects: [setEffect("poisonPhysicalBonus", 1)],
   },
   {
@@ -63,7 +63,7 @@ export const poisonTalents: TalentDefinition[] = [
     id: "poison-reduce-damage",
     keywordId: "poison",
     name: "Crippling Toxin",
-    description: "Enemies with Poison deal 1 less damage",
+    description: "Poisoned enemies deal 1 less damage",
     effects: [setEffect("poisonReducesEnemyDamage", 1)],
   },
   {
