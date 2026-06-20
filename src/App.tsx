@@ -176,7 +176,6 @@ function AppMainContent({
       <GameMenu
         isOpen={saveBlockedByNewerVersion ? false : gameMenu.gameMenuOpen}
         anchorRect={gameMenu.menuAnchorRect}
-        anchorPlacement="down-right"
         currentScreen={renderedScreen}
         onClose={gameMenu.closeGameMenu}
         onMainMenu={nav.handleMainMenu}

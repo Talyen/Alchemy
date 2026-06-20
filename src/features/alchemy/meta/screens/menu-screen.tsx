@@ -9,10 +9,8 @@ import { CardFlip } from "../../shared/ui/card-flip";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "../../shared/stores/app-store";
-import { playUISound } from "@/lib/audio";
-import { useTooltipFlip } from "../../shared/ui/tooltip-panel";
 import { StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
-import { LockedFeatureTooltip } from "../../shared/ui/locked-feature-tooltip";
+import { LockedMenuItem } from "../../shared/ui/locked-menu-item";
 
 import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data/character-unlocks";
 
@@ -49,15 +47,6 @@ export function MenuScreen({
 
   const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
   const isKnightGatedLocked = !finishedRunCharacters.includes("knight");
-
-  const [showTalentsTooltip, setShowTalentsTooltip] = useState(false);
-  const { ref: talentsTooltipRef } = useTooltipFlip(showTalentsTooltip);
-
-  const [showHomesteadTooltip, setShowHomesteadTooltip] = useState(false);
-  const { ref: homesteadTooltipRef } = useTooltipFlip(showHomesteadTooltip);
-
-  const [showArmoryTooltip, setShowArmoryTooltip] = useState(false);
-  const { ref: armoryTooltipRef } = useTooltipFlip(showArmoryTooltip);
 
   const handleLogoClick = useCallback(() => {
     if (!flipped) {
@@ -109,121 +98,56 @@ export function MenuScreen({
             Collection
           </Button>
         </StaggerItem>
-        <StaggerItem
-          index={2}
-          className="relative"
-          onMouseEnter={() => isKnightGatedLocked && setShowTalentsTooltip(true)}
-          onMouseLeave={() => setShowTalentsTooltip(false)}
-        >
-          <Button
+        <StaggerItem index={2} className="relative">
+          <LockedMenuItem
+            title="Talents"
+            message={KNIGHT_UNLOCK_MESSAGE}
+            locked={isKnightGatedLocked}
+            onSelect={onTalents}
+            icon={<WandSparkles className="h-4 w-4" />}
+            className={cn("justify-center gap-2 text-base", BUTTON_WIDTH_MENU)}
             size="lg"
             variant="outline"
-            className={cn(
-              "justify-center gap-2 text-base",
-              BUTTON_WIDTH_MENU,
-              isKnightGatedLocked && "opacity-45 grayscale-[50%] hover:bg-background cursor-not-allowed",
-            )}
-            {...(isKnightGatedLocked ? { hoverSound: false as const } : {})}
-            onClick={() => {
-              if (isKnightGatedLocked) {
-                playUISound("error");
-              } else {
-                onTalents();
-              }
-            }}
+            tooltipPlacement="side-start"
           >
-            <WandSparkles className="h-4 w-4" />
             Talents
-          </Button>
+          </LockedMenuItem>
           {hasUnspentTalents && !isKnightGatedLocked && (
             <ShineBorder shineColor="hsl(var(--primary))" borderWidth={1} duration={8} className="rounded-xl" />
           )}
-          {showTalentsTooltip && isKnightGatedLocked && (
-            <LockedFeatureTooltip
-              title="Talents"
-              message={KNIGHT_UNLOCK_MESSAGE}
-              panelRef={talentsTooltipRef}
-              visible
-              placement="side-start"
-              className="z-50 absolute left-full ml-4 top-1/2 text-left"
-            />
-          )}
         </StaggerItem>
-        <StaggerItem
-          index={3}
-          className="relative"
-          onMouseEnter={() => isKnightGatedLocked && setShowHomesteadTooltip(true)}
-          onMouseLeave={() => setShowHomesteadTooltip(false)}
-        >
-          <Button
+        <StaggerItem index={3} className="relative">
+          <LockedMenuItem
+            title="Homestead"
+            message={KNIGHT_UNLOCK_MESSAGE}
+            locked={isKnightGatedLocked}
+            onSelect={onHomestead}
+            icon={<TreePine className="h-4 w-4" />}
+            className={cn("justify-center gap-2 text-base", BUTTON_WIDTH_MENU)}
             size="lg"
             variant="outline"
-            className={cn(
-              "justify-center gap-2 text-base",
-              BUTTON_WIDTH_MENU,
-              isKnightGatedLocked && "opacity-45 grayscale-[50%] hover:bg-background cursor-not-allowed",
-            )}
-            {...(isKnightGatedLocked ? { hoverSound: false as const } : {})}
-            onClick={() => {
-              if (isKnightGatedLocked) {
-                playUISound("error");
-              } else {
-                onHomestead();
-              }
-            }}
+            tooltipPlacement="side-start"
           >
-            <TreePine className="h-4 w-4" />
             Homestead
-          </Button>
+          </LockedMenuItem>
           {hasAffordableHomestead && !isKnightGatedLocked && (
             <ShineBorder shineColor="hsl(var(--primary))" borderWidth={1} duration={8} className="rounded-xl" />
           )}
-          {showHomesteadTooltip && isKnightGatedLocked && (
-            <LockedFeatureTooltip
-              title="Homestead"
-              message={KNIGHT_UNLOCK_MESSAGE}
-              panelRef={homesteadTooltipRef}
-              visible
-              placement="side-start"
-              className="z-50 absolute left-full ml-4 top-1/2 text-left"
-            />
-          )}
         </StaggerItem>
-        <StaggerItem
-          index={4}
-          className="relative"
-          onMouseEnter={() => isArmoryLocked && setShowArmoryTooltip(true)}
-          onMouseLeave={() => setShowArmoryTooltip(false)}
-        >
-          <Button
+        <StaggerItem index={4} className="relative">
+          <LockedMenuItem
+            title="Armory"
+            message="Find Gear to unlock"
+            locked={isArmoryLocked}
+            onSelect={onArmory}
+            icon={<Shield className="h-4 w-4" />}
+            className={cn("justify-center gap-2 text-base", BUTTON_WIDTH_MENU)}
             size="lg"
             variant="outline"
-            className={cn(
-              "justify-center gap-2 text-base",
-              BUTTON_WIDTH_MENU,
-              isArmoryLocked && "opacity-45 grayscale-[50%] hover:bg-background cursor-not-allowed",
-            )}
-            {...(isArmoryLocked ? { hoverSound: false as const } : {})}
-            onClick={() => {
-              if (isArmoryLocked) {
-                playUISound("error");
-              } else {
-                onArmory();
-              }
-            }}
+            tooltipPlacement="side-start"
           >
-            <Shield className="h-4 w-4" /> Armory
-          </Button>
-          {showArmoryTooltip && isArmoryLocked && (
-            <LockedFeatureTooltip
-              title="Armory"
-              message="Find Gear to unlock"
-              panelRef={armoryTooltipRef}
-              visible
-              placement="side-start"
-              className="z-50 absolute left-full ml-4 top-1/2 text-left"
-            />
-          )}
+            Armory
+          </LockedMenuItem>
         </StaggerItem>
         <StaggerItem index={5}>
           <Button

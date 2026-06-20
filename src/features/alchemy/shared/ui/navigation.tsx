@@ -1,6 +1,4 @@
 // Navigation controls for pagination and the in-game menu overlay.
-// Depends on shared Button styling, Lucide icons, and direct viewport anchoring.
-// Used by collection-style grids and battle/menu screens.
 import {
   BookOpen,
   ChevronLeft,
@@ -13,14 +11,11 @@ import {
   TreePine,
   WandSparkles,
 } from "lucide-react";
+import { Fragment } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { Screen } from "../types";
-import { playUISound } from "@/lib/audio";
-import { tooltipSideAnchorClass, useTooltipSidePlacement } from "./tooltip-panel";
-import { LockedFeatureTooltip } from "./locked-feature-tooltip";
-import { useState } from "react";
-
+import { LockedMenuItem } from "./locked-menu-item";
 import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data/character-unlocks";
 
 const NAVIGATION_CONFIG = {
@@ -28,6 +23,8 @@ const NAVIGATION_CONFIG = {
   anchoredMenuOffsetPx: 8,
   anchoredMenuWidthPx: 392,
 } as const;
+
+type Gate = "talents" | "homestead" | "armory";
 
 export function PaginationControls({
   page,
@@ -123,7 +120,6 @@ export function GameMenu({
   onReturnToRun,
   returnToRunLabel = "Return to Run",
   anchorRect,
-  anchorPlacement = "up-left",
   currentScreen,
   isTalentsLocked = false,
   isHomesteadLocked = false,
@@ -141,31 +137,122 @@ export function GameMenu({
   onReturnToRun?: () => void;
   returnToRunLabel?: "Return to Run" | "Return to Battle";
   anchorRect?: DOMRect | null;
-  anchorPlacement?: "up-left" | "down-right" | "down-right-of-anchor";
   currentScreen?: Screen;
   isTalentsLocked?: boolean;
   isHomesteadLocked?: boolean;
   isArmoryLocked?: boolean;
 }) {
-  const [showTalentsTooltip, setShowTalentsTooltip] = useState(false);
-  const { ref: talentsTooltipRef, placement: talentsTooltipPlacement } = useTooltipSidePlacement(
-    "side-end",
-    showTalentsTooltip,
-  );
-
-  const [showHomesteadTooltip, setShowHomesteadTooltip] = useState(false);
-  const { ref: homesteadTooltipRef, placement: homesteadTooltipPlacement } = useTooltipSidePlacement(
-    "side-end",
-    showHomesteadTooltip,
-  );
-
-  const [showArmoryTooltip, setShowArmoryTooltip] = useState(false);
-  const { ref: armoryTooltipRef, placement: armoryTooltipPlacement } = useTooltipSidePlacement(
-    "side-end",
-    showArmoryTooltip,
-  );
-
   if (!isOpen) return null;
+
+  const LOCKS: Record<Gate, boolean> = {
+    talents: isTalentsLocked,
+    homestead: isHomesteadLocked,
+    armory: isArmoryLocked,
+  };
+  const MESSAGES: Record<Gate, string> = {
+    talents: KNIGHT_UNLOCK_MESSAGE,
+    homestead: KNIGHT_UNLOCK_MESSAGE,
+    armory: "Find Gear to unlock",
+  };
+
+  type MenuItem = {
+    key: string;
+    label: string;
+    Icon: typeof Swords;
+    show: boolean;
+    gate?: Gate;
+    danger?: boolean;
+    dividerBefore?: boolean;
+    handler: () => void;
+  };
+
+  const items: MenuItem[] = [
+    {
+      key: "return-to-run",
+      label: returnToRunLabel,
+      Icon: Swords,
+      show: !!onReturnToRun,
+      handler: () => {
+        onReturnToRun?.();
+        onClose();
+      },
+    },
+    {
+      key: "main-menu",
+      label: "Main Menu",
+      Icon: House,
+      show: true,
+      handler: () => {
+        onMainMenu();
+        onClose();
+      },
+    },
+    {
+      key: "collection",
+      label: "Collection",
+      Icon: BookOpen,
+      show: currentScreen !== "collection",
+      handler: () => {
+        onCollection();
+        onClose();
+      },
+    },
+    {
+      key: "talents",
+      label: "Talents",
+      Icon: WandSparkles,
+      gate: "talents",
+      show: currentScreen !== "talents",
+      handler: () => {
+        onTalents();
+        onClose();
+      },
+    },
+    {
+      key: "homestead",
+      label: "Homestead",
+      Icon: TreePine,
+      gate: "homestead",
+      show: currentScreen !== "homestead",
+      handler: () => {
+        onHomestead();
+        onClose();
+      },
+    },
+    {
+      key: "armory",
+      label: "Armory",
+      Icon: Shield,
+      gate: "armory",
+      show: currentScreen !== "armory",
+      handler: () => {
+        onArmory();
+        onClose();
+      },
+    },
+    {
+      key: "options",
+      label: "Options",
+      Icon: Cog,
+      show: currentScreen !== "options",
+      handler: () => {
+        onOptions();
+        onClose();
+      },
+    },
+    {
+      key: "end-run",
+      label: "End Run",
+      Icon: Swords,
+      danger: true,
+      dividerBefore: true,
+      show: !!onEndRun,
+      handler: () => {
+        onEndRun?.();
+        onClose();
+      },
+    },
+  ];
 
   const panel = (
     <div
@@ -174,204 +261,38 @@ export function GameMenu({
       onClick={(e) => e.stopPropagation()}
     >
       <div className="grid gap-2">
-        {onReturnToRun ? (
-          <Button
-            variant="outline"
-            className="justify-start border-0 bg-transparent"
-            onClick={() => {
-              onReturnToRun();
-              onClose();
-            }}
-          >
-            <Swords className="h-4 w-4" /> {returnToRunLabel}
-          </Button>
-        ) : null}
-        <Button
-          variant="outline"
-          className="justify-start border-0 bg-transparent"
-          onClick={() => {
-            onMainMenu();
-            onClose();
-          }}
-        >
-          <House className="h-4 w-4" /> Main Menu
-        </Button>
-        {currentScreen !== "collection" ? (
-          <Button
-            variant="outline"
-            className="justify-start border-0 bg-transparent"
-            onClick={() => {
-              onCollection();
-              onClose();
-            }}
-          >
-            <BookOpen className="h-4 w-4" /> Collection
-          </Button>
-        ) : null}
-        {currentScreen !== "talents" ? (
-          <div
-            className="relative overflow-visible"
-            onMouseEnter={() => isTalentsLocked && setShowTalentsTooltip(true)}
-            onMouseLeave={() => setShowTalentsTooltip(false)}
-          >
-            <Button
-              variant="outline"
-              className={cn(
-                "justify-start border-0 bg-transparent w-full",
-                isTalentsLocked && "opacity-50 hover:bg-transparent cursor-not-allowed",
-              )}
-              onClick={() => {
-                if (isTalentsLocked) {
-                  playUISound("error");
-                } else {
-                  onTalents();
-                  onClose();
-                }
-              }}
-            >
-              <WandSparkles className="h-4 w-4" /> Talents
-            </Button>
-            {showTalentsTooltip && isTalentsLocked && (
-              <LockedFeatureTooltip
-                title="Talents"
-                message={KNIGHT_UNLOCK_MESSAGE}
-                panelRef={talentsTooltipRef}
-                visible
-                placement={talentsTooltipPlacement}
-                className={cn(tooltipSideAnchorClass(talentsTooltipPlacement), "z-[130] text-left")}
-              />
-            )}
-          </div>
-        ) : null}
-        {currentScreen !== "homestead" ? (
-          <div
-            className="relative overflow-visible"
-            onMouseEnter={() => isHomesteadLocked && setShowHomesteadTooltip(true)}
-            onMouseLeave={() => setShowHomesteadTooltip(false)}
-          >
-            <Button
-              variant="outline"
-              className={cn(
-                "justify-start border-0 bg-transparent w-full",
-                isHomesteadLocked && "opacity-50 hover:bg-transparent cursor-not-allowed",
-              )}
-              onClick={() => {
-                if (isHomesteadLocked) {
-                  playUISound("error");
-                } else {
-                  onHomestead();
-                  onClose();
-                }
-              }}
-            >
-              <TreePine className="h-4 w-4" /> Homestead
-            </Button>
-            {showHomesteadTooltip && isHomesteadLocked && (
-              <LockedFeatureTooltip
-                title="Homestead"
-                message={KNIGHT_UNLOCK_MESSAGE}
-                panelRef={homesteadTooltipRef}
-                visible
-                placement={homesteadTooltipPlacement}
-                className={cn(tooltipSideAnchorClass(homesteadTooltipPlacement), "z-[130] text-left")}
-              />
-            )}
-          </div>
-        ) : null}
-        {currentScreen !== "armory" ? (
-          <div
-            className="relative overflow-visible"
-            onMouseEnter={() => isArmoryLocked && setShowArmoryTooltip(true)}
-            onMouseLeave={() => setShowArmoryTooltip(false)}
-          >
-            <Button
-              variant="outline"
-              className={cn(
-                "justify-start border-0 bg-transparent w-full",
-                isArmoryLocked && "opacity-50 hover:bg-transparent cursor-not-allowed",
-              )}
-              onClick={() => {
-                if (isArmoryLocked) {
-                  playUISound("error");
-                } else {
-                  onArmory();
-                  onClose();
-                }
-              }}
-            >
-              <Shield className="h-4 w-4" /> Armory
-            </Button>
-            {showArmoryTooltip && isArmoryLocked && (
-              <LockedFeatureTooltip
-                title="Armory"
-                message="Find Gear to unlock"
-                panelRef={armoryTooltipRef}
-                visible
-                placement={armoryTooltipPlacement}
-                className={cn(tooltipSideAnchorClass(armoryTooltipPlacement), "z-[130] text-left")}
-              />
-            )}
-          </div>
-        ) : null}
-        {currentScreen !== "options" ? (
-          <Button
-            variant="outline"
-            className="justify-start border-0 bg-transparent"
-            onClick={() => {
-              onOptions();
-              onClose();
-            }}
-          >
-            <Cog className="h-4 w-4" /> Options
-          </Button>
-        ) : null}
-        {onEndRun ? (
-          <>
-            <div className="my-1 border-t border-border/60" />
-            <Button
-              variant="outline"
-              className="justify-start border-0 bg-transparent text-red-400"
-              onClick={() => {
-                onEndRun();
-                onClose();
-              }}
-            >
-              <Swords className="h-4 w-4" /> End Run
-            </Button>
-          </>
-        ) : null}
+        {items
+          .filter((i) => i.show)
+          .map((item) => (
+            <Fragment key={item.key}>
+              {item.dividerBefore && <div className="my-1 border-t border-border/60" />}
+              <LockedMenuItem
+                title={item.label}
+                message={item.gate ? MESSAGES[item.gate] : ""}
+                locked={item.gate ? LOCKS[item.gate] : false}
+                onSelect={item.handler}
+                icon={<item.Icon className="h-4 w-4" />}
+                className={cn("justify-start", item.danger && "text-red-400")}
+              >
+                {item.label}
+              </LockedMenuItem>
+            </Fragment>
+          ))}
       </div>
     </div>
   );
 
   if (anchorRect) {
     const offset = NAVIGATION_CONFIG.anchoredMenuOffsetPx;
-    const anchorStyle =
-      anchorPlacement === "down-right-of-anchor"
-        ? {
-            // Menu opens to the right of the anchor, clamped to viewport right edge.
-            left: Math.min(
-              anchorRect.right + offset,
-              window.innerWidth - NAVIGATION_CONFIG.anchoredMenuWidthPx - offset,
-            ),
-            top: anchorRect.bottom + offset,
-          }
-        : anchorPlacement === "down-right"
-          ? {
-              // Right-align below the anchor, but clamp so fixed positioning cannot push the menu off-screen.
-              right: Math.min(
-                window.innerWidth - anchorRect.right + offset,
-                window.innerWidth - NAVIGATION_CONFIG.anchoredMenuWidthPx,
-              ),
-              top: anchorRect.bottom + offset,
-            }
-          : {
-              right: window.innerWidth - anchorRect.right + offset,
-              bottom: window.innerHeight - anchorRect.top + offset,
-            };
+    const anchorStyle = {
+      right: Math.min(
+        window.innerWidth - anchorRect.right + offset,
+        window.innerWidth - NAVIGATION_CONFIG.anchoredMenuWidthPx,
+      ),
+      top: anchorRect.bottom + offset,
+    };
     return (
       <div className="absolute inset-0 z-[120]" onClick={onClose}>
-        {/* anchorStyle: viewport-clamped fixed position from getBoundingClientRect — not expressible as static utilities */}
         <div className="fixed z-[121]" style={anchorStyle}>
           {panel}
         </div>

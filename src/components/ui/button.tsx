@@ -40,6 +40,10 @@ const buttonVariants = cva(
           BUTTON_HOVER_SECONDARY,
           BUTTON_PRESS_OUTLINE,
         ),
+        ghost: cn(
+          "border-0 bg-transparent text-foreground active:bg-muted/90 active:brightness-100",
+          BUTTON_HOVER_SECONDARY,
+        ),
       },
       size: {
         default: "h-11 px-5",
