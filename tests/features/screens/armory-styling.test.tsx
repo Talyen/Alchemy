@@ -3,7 +3,7 @@ import { render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { InventoryGearTile } from "@/features/alchemy/meta/screens/armory/parts/inventory-tile";
 import { SlotButton } from "@/features/alchemy/meta/screens/armory/parts/slot-button";
-import { GearDragVisualPortal } from "@/features/alchemy/meta/screens/armory/armory-drag-portal";
+import { DragVisualPortal } from "@/features/alchemy/meta/screens/armory/armory-drag-visual-portal";
 import { readInventoryBoardMetrics } from "@/features/alchemy/meta/screens/armory/read-inventory-board-metrics";
 import { placeInventoryTileFromMetrics } from "@/features/alchemy/meta/screens/armory/board-drag-math";
 import { SALVAGE_TARGET_SHADOW } from "@/features/alchemy/meta/screens/armory/targeting-highlight";
@@ -120,7 +120,11 @@ describe("Armory Styling TDD", () => {
       settling: false,
     };
 
-    const { unmount } = render(<GearDragVisualPortal visual={visual} art="dagger-art.png" onComplete={vi.fn()} />);
+    const { unmount } = render(
+      <DragVisualPortal visual={visual} onComplete={vi.fn()}>
+        <img src="dagger-art.png" alt="" />
+      </DragVisualPortal>,
+    );
 
     const img = document.body.querySelector("img");
     expect(img).not.toBeNull();

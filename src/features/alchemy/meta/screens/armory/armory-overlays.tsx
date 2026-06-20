@@ -3,8 +3,7 @@ import { getCraftingCurrencyDefinition, gearDefinitions, type GearInstance, type
 import { type CharacterId } from "@/lib/game-data";
 import { ConfirmationDialog } from "../../../shared/ui/shared-ui";
 import { GearItemTitle } from "../../../shared/ui/gear-item-title";
-import { CurrencyDragVisualPortal } from "./armory-currency-drag-portal";
-import { GearDragVisualPortal } from "./armory-drag-portal";
+import { DragVisualPortal } from "./armory-drag-visual-portal";
 import { ArmoryCurrencyCursor } from "./armory-currency-targeting";
 import { ArmoryTransferMenu } from "./armory-transfer-menu";
 import { playUISound } from "@/lib/audio";
@@ -80,27 +79,48 @@ export function ArmoryOverlays({
         />
       ) : null}
       {currencyDragVisual ? (
-        <CurrencyDragVisualPortal
+        <DragVisualPortal
           visual={currencyDragVisual}
-          art={getCraftingCurrencyDefinition(currencyDragVisual.currencyId).art}
-          count={craftingCurrencies[currencyDragVisual.currencyId] ?? 0}
+          testId="armory-currency-drag-visual"
           onComplete={onClearCurrencyDragState}
-        />
+        >
+          <div className="relative h-full w-full">
+            <img
+              src={getCraftingCurrencyDefinition(currencyDragVisual.currencyId).art}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+            <span className="absolute top-1 left-1 text-xs font-bold leading-none text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+              {craftingCurrencies[currencyDragVisual.currencyId] ?? 0}
+            </span>
+          </div>
+        </DragVisualPortal>
       ) : null}
       {dragVisual && dragDefinition ? (
-        <GearDragVisualPortal visual={dragVisual} art={dragDefinition.art} onComplete={onClearDragState} />
+        <DragVisualPortal visual={dragVisual} onComplete={onClearDragState}>
+          <img
+            src={dragDefinition.art}
+            alt=""
+            className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover"
+          />
+        </DragVisualPortal>
       ) : null}
       {secondaryDragVisuals.map((visual) => {
         if (!visual.instance) return null;
         const def = gearDefinitions[visual.instance.definitionId];
         return def ? (
-          <GearDragVisualPortal
+          <DragVisualPortal
             key={visual.instance.instanceId}
             visual={visual}
-            art={def.art}
             testId="armory-gear-swap-visual"
             onComplete={onClearSecondaryDragState}
-          />
+          >
+            <img
+              src={def.art}
+              alt=""
+              className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover"
+            />
+          </DragVisualPortal>
         ) : null;
       })}
       <ArmoryCurrencyCursor activeCurrencyId={activeCurrencyId} cursorPoint={cursorPoint} />

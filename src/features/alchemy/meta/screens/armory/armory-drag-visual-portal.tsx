@@ -1,17 +1,29 @@
+import { type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "motion/react";
-import { MAGNET_RELEASE_EASE_MS } from "./drag-constants";
-import type { CurrencyDragVisual } from "./use-armory-currency-drag";
+import { DOUBLE_CLICK_FLYOVER_MS, MAGNET_RELEASE_EASE_MS } from "./drag-constants";
+import type { DragRect } from "./use-board-drag";
 
-export function CurrencyDragVisualPortal({
+export type DragVisualBase = {
+  source: DragRect;
+  rect: DragRect;
+  releaseRect?: DragRect | undefined;
+  settling?: boolean | undefined;
+  releasing?: boolean | undefined;
+  flyover?: boolean | undefined;
+};
+
+export function DragVisualPortal({
   visual,
-  art,
-  count,
+  testId = "armory-gear-drag-visual",
+  completeOnFlyover = false,
+  children,
   onComplete,
 }: {
-  visual: CurrencyDragVisual;
-  art: string;
-  count: number;
+  visual: DragVisualBase;
+  testId?: string;
+  completeOnFlyover?: boolean;
+  children: ReactNode;
   onComplete: () => void;
 }) {
   const isDrag = !visual.settling && !visual.releasing && !visual.flyover;
@@ -20,7 +32,7 @@ export function CurrencyDragVisualPortal({
   return createPortal(
     isDrag ? (
       <div
-        data-testid="armory-currency-drag-visual"
+        data-testid={testId}
         className="pointer-events-none fixed z-[120] overflow-hidden rounded-xl"
         style={{
           left: visual.rect.left,
@@ -29,16 +41,11 @@ export function CurrencyDragVisualPortal({
           height: visual.rect.height,
         }}
       >
-        <div className="relative h-full w-full">
-          <img src={art} alt="" className="h-full w-full object-cover" />
-          <span className="absolute top-1 left-1 text-xs font-bold leading-none text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-            {count}
-          </span>
-        </div>
+        {children}
       </div>
     ) : (
       <motion.div
-        data-testid="armory-currency-drag-visual"
+        data-testid={testId}
         className="pointer-events-none fixed z-[120] overflow-hidden rounded-xl"
         initial={{
           x: 0,
@@ -60,22 +67,19 @@ export function CurrencyDragVisualPortal({
           height: visual.rect.height,
         }}
         transition={{
-          default: visual.releasing
-            ? { duration: MAGNET_RELEASE_EASE_MS / 1000, ease: [0.22, 1, 0.36, 1] }
-            : visual.settling
-              ? { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 }
+          default: visual.flyover
+            ? { duration: DOUBLE_CLICK_FLYOVER_MS / 1000, ease: [0.22, 1, 0.36, 1] }
+            : visual.releasing
+              ? { duration: MAGNET_RELEASE_EASE_MS / 1000, ease: [0.22, 1, 0.36, 1] }
               : { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 },
         }}
         onAnimationComplete={() => {
-          if (visual.settling) onComplete();
+          if (visual.settling || (completeOnFlyover && visual.flyover)) {
+            onComplete();
+          }
         }}
       >
-        <div className="relative h-full w-full">
-          <img src={art} alt="" className="h-full w-full object-cover" />
-          <span className="absolute top-1 left-1 text-xs font-bold leading-none text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-            {count}
-          </span>
-        </div>
+        {children}
       </motion.div>
     ),
     document.body,
