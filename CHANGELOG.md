@@ -274,6 +274,30 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(armory): quiver compat check, drag-FSM unmount races, rng determinism, cursorPoint perf
+  Bug fixes:
+  - Reject equipping non-ranged main-hand when quiver is in off-hand
+  - Remove same-footprint swap shortcut that ignored third-item collisions
+  - Fix drag-FSM cursor chain-capture, pendingCommit unmount races,
+    and null-instance crash in drag visual
+  - Expand contextmenu whitelist (inventory item + equip slot) so
+    right-click doesn't clear salvage/currency targeting
+  - Require explicit rng in salvage/applyCurrency; inject via ref in
+    controller; throw when omitted
+  
+  Architecture:
+  - Split updateGearStateAndSync into moveEquippedOffBoard + pipeline
+  - Unify board packing: syncBoardPositionsForState now uses same
+    packInventoryWithPositions + packCurrencyWithPositions as screen
+  - Move cursorPoint out of useReducer into local useState (stops
+    full-screen re-render on every pointer move during targeting)
+  
+  Housekeeping:
+  - Remove deprecated GearModifier and dead pruneGearBoardPositions
+  - Remove 4 AGENTS.md comment-policy doc blocks
+  - Replace __vacated__ magic string with proper param
+- fix(armory): resolve stale closure health sync bug and clean up drag hooks
+- fix(ci): resolve Electron binary missing error and stabilize E2E drag-and-drop tests
 - fix(tests): commits 3-6 - resolve remaining 25 errors across 12 files
   Battle mocks (G4): cast partial mocks as BattleControllerContext/TurnOrchestrationDeps
   BattleState mock (G5): add 6 missing fields to battle-feedback test state
@@ -552,6 +576,61 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(nav): extract LockedMenuItem, data-drive GameMenu, add ghost variant
+  - Add ghost variant to Button (replaces 11 outline+border-0 overrides)
+  - Extract LockedMenuItem component owning locked-button recipe
+  - Data-driven GameMenu with .map() over 8-item array
+  - Delete dead anchorPlacement branches (up-left, down-right-of-anchor)
+  - Migrate menu-screen to use LockedMenuItem (removes hand-rolled lock rows)
+  - Fix hover sound playing on locked nav items
+- refactor(mystery): simplify pool with ev() builder, unify art, drop dead types
+  - Replace 23 verbose event objects with compact ev() builder calls
+  - Unify all mystery art (auto-globbed + 7 special assets) into mysteryEventArt
+  - Move pickMysteryEvent into pool.ts with proper throw instead of non-null assert
+  - Delete src/features/alchemy/run-loop/mystery-events.ts re-export shim
+  - Remove dead MysteryEffect 'none' kind from type and all handlers
+  - Trim 124 lines of redundant test assertions, add art coverage + pick test
+  - Update all 8 consumers to import directly from @/lib/mystery
+- refactor(battle): eliminate BattleControllerContext, inline factories, flatten controller
+  - Delete controller-context.ts (50-field megastruct) and its contextRef indirection
+  - Each create* factory now takes a small explicit params bag instead of the full context
+  - Add resetHandTransferUi/resetCardTransfers actions to battle-presentation-store
+  - use-battle-controller.ts drops 3 ref-of-ref workarounds (resolveEndTurnRef,
+    getTurnOrchestrationDepsRef, scheduleCompanionFollowUpRef); uses direct closure
+  - Create battle-facade.ts with BattleLifecycle shared type
+  - All 171 tests pass, typecheck clean, lint clean
+- refactor(styles): strip dead CSS, collapse hover-popup and font tokens (~28% reduction)
+  - Delete 7 dead classes and 6 dead keyframes
+  - Inline 3 single-use shadow variables
+  - Replace deprecated @apply with plain CSS
+  - Collapse hover-popup-panel 110→30 lines using :is()
+  - Merge --font-body/--font-display into --font-sans
+  - Keep JS talent-timing consts, remove duplicate CSS vars
+- refactor(armory): merge gear and currency drag portals into shared DragVisualPortal
+  - Replace GearDragVisualPortal and CurrencyDragVisualPortal with
+    a single DragVisualPortal accepting children for inner content
+  - Add completeOnFlyover prop to handle gear vs currency difference
+  - Delete armory-drag-portal.tsx and armory-currency-drag-portal.tsx
+  - Update armory-overlays.tsx and test fixture to use new portal
+- refactor(armory): hoist drag constants to dedicated file, add test coverage
+  - Move 7 drag constants (INVENTORY_SNAP_RADIUS_CELLS, MAGNET_*,
+    DOUBLE_CLICK_FLYOVER_MS, DRAG_POINTER_*, EQUIPMENT_SNAP_*) from
+    use-board-drag.ts and use-armory-gear-drag.ts to drag-constants.ts
+  - Remove duplicate DOUBLE_CLICK_FLYOVER_MS declaration
+  - Update all consumers (portals, board-drag-math) to import from
+    drag-constants.ts
+  
+  Test coverage:
+  - Add equidistant hysteresis boundary test in board-drag-math
+  - Tighten LAUNCH_SAVE_SCHEMA_VERSION assertion from >=1 to ===4
+- refactor(game-data): extract pool helpers and hydrateCard from cards.ts
+  - Extract isStandardPotionCard/getOfferableCardPool/getStandardPotionPool into cards/card-pools.ts
+  - Refactor hydrateCard into cards/hydrate-card.ts (local SavedCard type, drop
+    duplicated corruptedValuePositions filter, Math.floor -> Math.round)
+  - Remove COMBAT/SUPPORT section markers from cards.ts
+  - Replace cauterize ordering comment with test reference
+  - Add card-effect-ordering.test.ts for effect-order invariants
+  - Fix WORKFLOWS.md references to non-existent combatCards/supportCards
 - refactor(armory): simplify armory screen, isolate targeting events and portaled overlays
 - refactor(gear): extract board logic from inventory-layout into focused modules
   Split inventory-layout.ts into footprints, inventory-placement, board-moves,
@@ -1059,6 +1138,15 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Tests
 
+- test(e2e): refactor 5 slowest tests — split, save-injection, runtimeErrors
+- test(armory): expand resolveEquipSwap coverage, add browseOnly and transfer-menu tests
+  - Add 4 missing resolveEquipSwap scenarios: same-instance equip,
+    displaced missing from inventoryById, incoming not on board, and
+    multi-cell displacement
+  - Add browseOnly when combat active prevents equip/unequip test
+  - Add right-click opens transfer menu during salvage mode test
+  - Tighten save-migration contract LAUNCH assertion to ===4
+  - Add equidistant hysteresis boundary test in board-drag-math
 - test(e2e): move combat test out of animation spec; apply fastBattle to draft/mystery/difficulty
 - test: fix prepush unit failures
 - test(e2e): stabilize critical run flow specs

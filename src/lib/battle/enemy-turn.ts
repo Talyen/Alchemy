@@ -8,7 +8,10 @@ import { processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-trait
 import { processEncounterTraitActionDamage, processEncounterTraitActionStart } from "./encounter-trait-events";
 import { advanceToPlayerTurn, reduceSkipTurns, resolveDeathsDoorEndOfEnemyTurn } from "./enemy-turn-utils";
 
+export type EndPlayerTurnKind = "haste" | "skipped" | "standard";
+
 export type EndPlayerTurnResolution = {
+  kind: EndPlayerTurnKind;
   state: BattleState;
   combatTexts: CombatTextEvent[];
   playerTurnSkipped: boolean;
@@ -48,6 +51,7 @@ function resolveHasteTurn(state: BattleState) {
   const combatTexts: CombatTextEvent[] = [];
   const nextState = processHasteEarlyTurn(state);
   return {
+    kind: "haste" as const,
     ...finalizePlayerTurn(nextState, combatTexts),
     enemyTurnStartCombatTexts: [] as CombatTextEvent[],
     enemyResolutionCombatTexts: [] as CombatTextEvent[],
@@ -71,6 +75,7 @@ function resolveSkippedEnemyTurn(state: BattleState, options?: { traitRoll?: num
   const combatTexts = [...enemyTurnStartCombatTexts, ...enemyResolutionCombatTexts];
 
   return {
+    kind: "skipped" as const,
     ...finalizePlayerTurn(nextState, combatTexts),
     enemyTurnStartState,
     enemyTurnStartCombatTexts,
@@ -107,6 +112,7 @@ function resolveStandardEnemyTurn(nextState: BattleState, options?: { traitRoll?
 
   if (enemyTurnStartState.enemyHealth <= 0) {
     return {
+      kind: "standard" as const,
       ...finalizePlayerTurn(enemyTurnStartState, []),
       enemyTurnStartState,
       enemyTurnStartCombatTexts,
@@ -119,6 +125,7 @@ function resolveStandardEnemyTurn(nextState: BattleState, options?: { traitRoll?
   const combatTexts = [...enemyTurnStartCombatTexts, ...actionResult.texts];
 
   return {
+    kind: "standard" as const,
     ...finalizePlayerTurn(actionResult.state, combatTexts),
     enemyTurnStartState,
     enemyTurnStartCombatTexts,

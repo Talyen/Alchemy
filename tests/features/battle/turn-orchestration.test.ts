@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { resolveEndTurnOrchestration } from "@/features/alchemy/run-loop/battle/turn-orchestration";
+import { resolveEndTurn } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { defaultBattleState } from "@/lib/battle";
 
 function makeDeps() {
@@ -11,6 +11,8 @@ function makeDeps() {
     shakePlayer: vi.fn(),
     hurtEnemy: vi.fn(),
     hurtPlayer: vi.fn(),
+    setDisplayOverrides: vi.fn(),
+    shakeCompanion: vi.fn(),
   }));
 
   return {
@@ -19,30 +21,20 @@ function makeDeps() {
     runIfSessionActive: <T>(_session: number, action: () => T) => action(),
     checkBattleEnd: vi.fn(() => false),
     handleVictoryDefeat: vi.fn(),
-    getTurnResolutionStore: vi.fn(),
     getDrawSequenceDeps: vi.fn(),
     logBattleError: vi.fn(),
-    companionScheduledRef: { current: false },
-    battleTimerGroupRef: { current: { clearAll: vi.fn() } },
-    resolvedAsHasteOrStunRef: { current: false },
-    cardPlayInProgressRef: { current: false },
     resetHandTransferUi: vi.fn(),
     scheduleCompanionFollowUp: vi.fn(),
-    onResolveEndTurn: vi.fn(),
   };
 }
 
-describe("resolveEndTurnOrchestration", () => {
+describe("resolveEndTurn", () => {
   it("does not sync battle state before the haste draw sequence", () => {
     const deps = makeDeps();
     const state = defaultBattleState();
     state.playerStatuses.haste = 1;
 
-    resolveEndTurnOrchestration(
-      deps as unknown as import("@/features/alchemy/run-loop/battle/turn-orchestration").TurnOrchestrationDeps,
-      state,
-      1,
-    );
+    resolveEndTurn(state, 1, deps);
 
     expect(deps.getStore().setSyncedBattleState).not.toHaveBeenCalled();
   });

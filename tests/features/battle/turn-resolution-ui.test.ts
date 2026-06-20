@@ -27,6 +27,7 @@ function makeStore() {
     hurtPlayer: vi.fn(),
     hurtEnemy: vi.fn(),
     shakeEnemy: vi.fn(),
+    shakeCompanion: vi.fn(),
   };
 }
 
@@ -40,26 +41,31 @@ function makeDrawDeps(): HandDrawSequenceDeps {
   };
 }
 
+function makeTurnDeps(store: ReturnType<typeof makeStore>) {
+  return {
+    getStore: () => store,
+    isCurrentBattleSession: () => true,
+    runIfSessionActive: <T>(_session: number, action: () => T) => action(),
+    checkBattleEnd: vi.fn(() => false),
+    handleVictoryDefeat: vi.fn(),
+    getDrawSequenceDeps: () => makeDrawDeps(),
+    logBattleError: vi.fn(),
+    resetHandTransferUi: vi.fn(),
+    scheduleCompanionFollowUp: vi.fn(),
+  };
+}
+
 describe("resolveHasteSkipTurn", () => {
   it("shows combat texts and runs the draw sequence", async () => {
     const store = makeStore();
-    const onDrawComplete = vi.fn();
     const state = defaultBattleState();
     const result = endPlayerTurn({ ...state, playerStatuses: { ...state.playerStatuses, haste: 1 } });
+    const deps = makeTurnDeps(store);
 
-    resolveHasteSkipTurn(result, state, 1, {
-      store,
-      drawSequence: makeDrawDeps(),
-      onDrawComplete,
-      logDrawError: vi.fn(),
-      setResolvedAsHasteOrStun: vi.fn(),
-      clearHandTransferState: vi.fn(),
-      setCardPlayInProgress: vi.fn(),
-      runIfSessionActive: (_session, action) => action(),
-    });
+    resolveHasteSkipTurn(result, state, 1, deps);
 
     await vi.waitFor(() => {
-      expect(onDrawComplete).toHaveBeenCalled();
+      expect(deps.scheduleCompanionFollowUp).toHaveBeenCalled();
     });
     if (result.combatTexts.length > 0) {
       expect(store.showCombatTexts).toHaveBeenCalledWith(result.combatTexts);
@@ -68,23 +74,19 @@ describe("resolveHasteSkipTurn", () => {
 });
 
 describe("resolveNormalEnemyTurn", () => {
-  it("calls onVictory when the enemy is already dead", () => {
+  it("calls handleVictoryDefeat when the enemy is already dead", () => {
     const store = makeStore();
-    const onVictory = vi.fn();
     const state = defaultBattleState();
     const deadResult = {
       ...endPlayerTurn(state),
+      kind: "standard" as const,
       state: { ...state, enemyHealth: 0, turnPhase: "enemy" as const },
     };
+    const deps = makeTurnDeps(store);
 
-    resolveNormalEnemyTurn(deadResult, { state, combatTexts: [] }, 1, {
-      store,
-      executeEnemyPhase: vi.fn(),
-      onVictory,
-      checkBattleEnd: () => false,
-    });
+    resolveNormalEnemyTurn(deadResult, state, [], 1, deps);
 
-    expect(onVictory).toHaveBeenCalledOnce();
+    expect(deps.handleVictoryDefeat).toHaveBeenCalledWith("victory");
     expect(store.setSyncedBattleState).toHaveBeenCalled();
   });
 });
@@ -102,13 +104,7 @@ describe("executeEnemyPhase", () => {
       1,
       false,
       true,
-      {
-        isSessionActive: () => true,
-        store,
-        drawSequence: makeDrawDeps(),
-        logDrawError: vi.fn(),
-        onPhaseComplete: vi.fn(),
-      },
+      makeTurnDeps(store),
     );
 
     expect(store.shakePlayer).toHaveBeenCalledOnce();
@@ -128,13 +124,7 @@ describe("executeEnemyPhase", () => {
       1,
       false,
       true,
-      {
-        isSessionActive: () => true,
-        store,
-        drawSequence: makeDrawDeps(),
-        logDrawError: vi.fn(),
-        onPhaseComplete: vi.fn(),
-      },
+      makeTurnDeps(store),
     );
 
     expect(store.hurtPlayer).not.toHaveBeenCalled();

@@ -115,20 +115,6 @@ export function createBattleSession(deps: BattleSessionDeps) {
     });
   }
 
-  function getTurnResolutionStore() {
-    const domain = getStore();
-    const presentation = getPresentationStore();
-    return {
-      showCombatTexts: presentation.showCombatTexts.bind(presentation),
-      setSyncedBattleState: domain.setSyncedBattleState.bind(domain),
-      setDisplayOverrides: domain.setDisplayOverrides.bind(domain),
-      shakeEnemy: presentation.shakeEnemy.bind(presentation),
-      shakePlayer: presentation.shakePlayer.bind(presentation),
-      hurtPlayer: presentation.hurtPlayer.bind(presentation),
-      hurtEnemy: presentation.hurtEnemy.bind(presentation),
-    };
-  }
-
   return {
     isCurrentBattleSession,
     runIfSessionActive,
@@ -140,6 +126,5 @@ export function createBattleSession(deps: BattleSessionDeps) {
     clearBattleTimeoutsKeepCompanion,
     resetBattleSession,
     finishDrawSequence,
-    getTurnResolutionStore,
   };
 }

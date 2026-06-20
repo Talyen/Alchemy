@@ -12,7 +12,7 @@ export { canPlayCard, cardHasDamageType, playBattleCardResolved, type CardPlayOp
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 export { chooseWishCard } from "./wish";
 export { processCompanionTurnStart } from "./companion";
-export { endPlayerTurn } from "./enemy-turn";
+export { endPlayerTurn, type EndPlayerTurnResolution } from "./enemy-turn";
 export { getBattleStartPlayerHealth } from "./start-health";
 export * from "./cost";
 export { unsafeNonSeededRng } from "./rng";

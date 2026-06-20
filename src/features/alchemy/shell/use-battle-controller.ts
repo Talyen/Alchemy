@@ -1,5 +1,5 @@
 // React battle orchestrator for combat state, card play, turn timing, ghosts, and feedback.
-/* eslint-disable react-hooks/refs, react-hooks/immutability, react-hooks/preserve-manual-memoization -- factories receive ref objects for async handlers; ref.current assignments and closure mutations are deliberate */
+/* eslint-disable react-hooks/refs, react-hooks/preserve-manual-memoization -- factories receive ref objects for async handlers; ref.current assignments are deliberate */
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { BattleState } from "@/lib/battle";
@@ -159,7 +159,6 @@ export function useBattleController({
     clearAllBattleTimeouts,
     clearBattleTimeoutsKeepCompanion,
     resetBattleSession,
-    getTurnResolutionStore,
   } = battleSession;
 
   const resetHandTransferUi = useCallback(() => {
@@ -196,15 +195,20 @@ export function useBattleController({
   );
 
   // Companion follow-up, turn orchestration, and end-turn UI
-  // Order matters: scheduleCompanionFollowUp(→runIfSessionActive) → getTurnOrchestrationDeps(→scheduleCompanion+resolveEndTurn) → createBattleEndTurnUi(→getTurnOrchestrationDeps)
-  // resolveEndTurn is defined after createBattleEndTurnUi returns, so a let-variable bridges the cycle.
   const scheduleCompanionFollowUp = useCallback(
     (resultState: BattleState, session: number) => {
       if (!resultState.activeCompanion || resultState.enemyHealth <= 0) return;
       battleTimerGroupRef.current.setTimeout(() => {
         runIfSessionActive(session, () => {
           companionScheduledRef.current = false;
-          const texts = resolveCompanionFollowUpTexts(getTurnOrchestrationDepsRef.current(), session);
+          const texts = resolveCompanionFollowUpTexts(
+            {
+              getStore: getBattleSessionStore,
+              isCurrentBattleSession,
+              runIfSessionActive,
+            },
+            session,
+          );
           if (texts.length > 0) {
             const store = getBattleSessionStore();
             store.showCombatTexts(texts);
@@ -214,105 +218,56 @@ export function useBattleController({
       }, COMPANION_ATTACK_DELAY);
       companionScheduledRef.current = true;
     },
-    [runIfSessionActive],
+    [runIfSessionActive, isCurrentBattleSession],
   );
 
-  // A stable ref to hold the latest getTurnOrchestrationDeps (updated after resolveEndTurn is created)
-  const getTurnOrchestrationDepsRef = useRef<() => TurnOrchestrationDeps>(
-    null as unknown as () => TurnOrchestrationDeps,
-  );
-
-  const { handleEndTurn, resolveEndTurn } = useMemo(() => {
-    // eslint-disable-next-line prefer-const -- reassigned after createBattleEndTurnUi returns to break circular dependency
-    let lateResolveEndTurn: (currentState: BattleState, session: number) => void;
-
-    const getTurnOrchestrationDeps = () => ({
-      getStore: getBattleSessionStore,
-      isCurrentBattleSession,
-      runIfSessionActive,
-      checkBattleEnd,
-      handleVictoryDefeat,
-      getTurnResolutionStore,
-      getDrawSequenceDeps: () => transferDeps.getDrawSequenceDeps(),
-      logBattleError,
-      companionScheduledRef,
-      battleTimerGroupRef,
-      resolvedAsHasteOrStunRef,
-      cardPlayInProgressRef,
-      resetHandTransferUi,
-      scheduleCompanionFollowUp,
-      onResolveEndTurn: (state: BattleState, session: number) => lateResolveEndTurn(state, session),
-    });
-
-    const endTurnUi = createBattleEndTurnUi({
-      screen,
-      battleSessionRef,
-      cardPlayInProgressRef,
-      runIfSessionActive,
-      logBattleError,
-      resetHandTransferUi,
-      resolvedAsHasteOrStunRef,
-      clearBattleTimeoutsKeepCompanion,
-      getTurnOrchestrationDeps,
-      animateDiscardedHand: (hand, session) => transferDeps.animateDiscardedHand(hand, session),
-      cardTransferInProgress: false,
-    });
-
-    lateResolveEndTurn = endTurnUi.resolveEndTurn;
-
-    return { handleEndTurn: endTurnUi.handleEndTurn, resolveEndTurn: endTurnUi.resolveEndTurn };
-  }, [
-    isCurrentBattleSession,
-    runIfSessionActive,
-    checkBattleEnd,
-    handleVictoryDefeat,
-    getTurnResolutionStore,
-    transferDeps,
-    logBattleError,
-    companionScheduledRef,
-    battleTimerGroupRef,
-    resolvedAsHasteOrStunRef,
-    cardPlayInProgressRef,
-    resetHandTransferUi,
-    scheduleCompanionFollowUp,
-    screen,
-    battleSessionRef,
-    clearBattleTimeoutsKeepCompanion,
-  ]);
-
-  getTurnOrchestrationDepsRef.current = useCallback(
+  const deps: TurnOrchestrationDeps = useMemo(
     () => ({
       getStore: getBattleSessionStore,
       isCurrentBattleSession,
       runIfSessionActive,
       checkBattleEnd,
       handleVictoryDefeat,
-      getTurnResolutionStore,
       getDrawSequenceDeps: () => transferDeps.getDrawSequenceDeps(),
       logBattleError,
-      companionScheduledRef,
-      battleTimerGroupRef,
-      resolvedAsHasteOrStunRef,
-      cardPlayInProgressRef,
       resetHandTransferUi,
       scheduleCompanionFollowUp,
-      onResolveEndTurn: resolveEndTurn,
     }),
     [
       isCurrentBattleSession,
       runIfSessionActive,
       checkBattleEnd,
       handleVictoryDefeat,
-      getTurnResolutionStore,
       transferDeps,
       logBattleError,
-      companionScheduledRef,
-      battleTimerGroupRef,
-      resolvedAsHasteOrStunRef,
-      cardPlayInProgressRef,
       resetHandTransferUi,
       scheduleCompanionFollowUp,
-      resolveEndTurn,
+    ],
+  );
+
+  const { handleEndTurn } = useMemo(
+    () =>
+      createBattleEndTurnUi({
+        screen,
+        battleSessionRef,
+        cardPlayInProgressRef,
+        runIfSessionActive,
+        logBattleError,
+        resetHandTransferUi,
+        clearBattleTimeoutsKeepCompanion,
+        animateDiscardedHand: (hand, session) => transferDeps.animateDiscardedHand(hand, session),
+        deps,
+      }),
+    [
+      screen,
+      battleSessionRef,
+      cardPlayInProgressRef,
+      runIfSessionActive,
+      logBattleError,
+      resetHandTransferUi,
+      clearBattleTimeoutsKeepCompanion,
+      transferDeps,
+      deps,
     ],
   );
 
