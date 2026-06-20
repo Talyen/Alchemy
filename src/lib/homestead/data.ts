@@ -111,7 +111,7 @@ export const farmPlots = [
 export const visibleFarmPlots = farmPlots.filter((farm) => !farm.hidden);
 
 export const researchUpgrades = [
-  defineResearch("carpentry", "Leyline Energy", [
+  defineResearch("leyline-energy", "Leyline Energy", [
     {
       cost: materialCost({ crystal: 20 }),
       effects: { startMana: 1 },
@@ -130,7 +130,7 @@ export const researchUpgrades = [
       nonCombatBenefitDescription: "Gain Crystal after each run",
     },
   ]),
-  defineResearch("masonry", "Detect Magic", [
+  defineResearch("detect-magic", "Detect Magic", [
     {
       cost: materialCost({ crystal: 20 }),
       effects: { gearAstralChanceBonus: 0.03 },
@@ -148,7 +148,7 @@ export const researchUpgrades = [
     },
   ]),
   defineResearch(
-    "crop-rotation",
+    "botanical-distillation",
     "Botanical Distillation",
     stackingTiers(
       singleMaterialCosts("herbs"),
@@ -157,7 +157,7 @@ export const researchUpgrades = [
     ),
   ),
   defineResearch(
-    "animal-husbandry",
+    "culinary-arts",
     "Culinary Arts",
     stackingTiers(
       singleMaterialCosts("food"),
@@ -165,7 +165,7 @@ export const researchUpgrades = [
       (tier) => `Health restored from Consume increased by ${tier * 10}%`,
     ),
   ),
-  defineResearch("fortified-walls", "Wool Tailoring", [
+  defineResearch("wool-tailoring", "Wool Tailoring", [
     {
       cost: materialCost({ food: 20 }),
       effects: { freezeDamageReduction: 1 },
@@ -183,7 +183,7 @@ export const researchUpgrades = [
     },
   ]),
   defineResearch(
-    "metallurgy",
+    "agility-training",
     "Agility Training",
     stackingTiers(
       singleMaterialCosts("food"),

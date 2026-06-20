@@ -519,12 +519,12 @@ describe("SaveDataSchema", () => {
     const result = parseSave({
       constructedBuildings: { "blacksmiths-forge": 2 },
       plantedFarms: { "herb-garden": 3 },
-      completedResearch: { carpentry: 1 },
+      completedResearch: { "leyline-energy": 1 },
       bondedCompanions: { wolf: 2 },
     });
     expect(result.constructedBuildings["blacksmiths-forge"]).toBe(2);
     expect(result.plantedFarms["herb-garden"]).toBe(3);
-    expect(result.completedResearch.carpentry).toBe(1);
+    expect(result.completedResearch["leyline-energy"]).toBe(1);
     expect(result.bondedCompanions.wolf).toBe(2);
   });
 
@@ -593,7 +593,7 @@ describe("SaveDataSchema", () => {
     expect(result.materialInventory).toEqual({ wood: 4, iron: 2, herbs: 0, food: 0, crystal: 0 });
     expect(result.constructedBuildings["blacksmiths-forge"]).toBe(1);
     expect(result.plantedFarms.pasture).toBe(1);
-    expect(result.completedResearch.carpentry).toBe(1);
+    expect(result.completedResearch["leyline-energy"]).toBe(1);
     expect(result.bondedCompanions.wolf).toBe(1);
   });
 
@@ -852,7 +852,7 @@ describe("SaveDataSchema", () => {
       materialInventory: { wood: 12, iron: 5, herbs: 3, food: 0, crystal: 1 },
       constructedBuildings: { "blacksmiths-forge": 1, "alchemists-laboratory": 1 },
       plantedFarms: { pasture: 1, "herb-garden": 1 },
-      completedResearch: { carpentry: 1, masonry: 2 },
+      completedResearch: { "leyline-energy": 1, "detect-magic": 2 },
       bondedCompanions: { wolf: 3, "lizard-scout": 1 },
       completedDifficulties: { knight: ["difficulty-1"], wizard: ["difficulty-1", "difficulty-2"] },
       activeRun: null,

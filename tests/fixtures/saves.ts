@@ -77,12 +77,12 @@ export const baseHomesteadSave: HomesteadSaveFixture = {
     "crystal-garden": 0,
   },
   completedResearch: {
-    carpentry: 0,
-    masonry: 0,
-    "crop-rotation": 0,
-    "animal-husbandry": 0,
-    "fortified-walls": 0,
-    metallurgy: 0,
+    "leyline-energy": 0,
+    "detect-magic": 0,
+    "botanical-distillation": 0,
+    "culinary-arts": 0,
+    "wool-tailoring": 0,
+    "agility-training": 0,
   },
   bondedCompanions: {
     wolf: 0,

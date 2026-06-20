@@ -45,7 +45,7 @@ import {
 import {
   sanitizeGearBoardPositionsByCharacter,
   sanitizeCurrencyBoardPositionsByCharacter,
-} from "@/lib/gear/inventory-layout";
+} from "@/lib/gear/board-position-sanitizers";
 import {
   createEmptyCurrencyBoardPositionsByCharacter,
   type CraftingCurrencyBoardPositions,
@@ -183,7 +183,14 @@ export const SaveDataSchema = z.preprocess(
         "plantedFarms",
       ),
       completedResearch: caught(
-        createTierRecordSchema(researchUpgrades),
+        createTierRecordSchema(researchUpgrades, {
+          carpentry: "leyline-energy",
+          masonry: "detect-magic",
+          "crop-rotation": "botanical-distillation",
+          "animal-husbandry": "culinary-arts",
+          "fortified-walls": "wool-tailoring",
+          metallurgy: "agility-training",
+        }),
         createEmptyTierRecord(researchUpgrades),
         "completedResearch",
       ),

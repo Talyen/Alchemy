@@ -34,12 +34,12 @@ export type BuildingId =
 export type FarmId = "wheat-field" | "herb-garden" | "chicken-coop" | "pasture" | "orchard" | "crystal-garden";
 
 export type ResearchId =
-  | "carpentry"
-  | "masonry"
-  | "crop-rotation"
-  | "animal-husbandry"
-  | "fortified-walls"
-  | "metallurgy";
+  | "leyline-energy"
+  | "detect-magic"
+  | "botanical-distillation"
+  | "culinary-arts"
+  | "wool-tailoring"
+  | "agility-training";
 
 type HomesteadUpgradeTier = {
   cost: MaterialInventory;

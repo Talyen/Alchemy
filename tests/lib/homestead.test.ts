@@ -251,7 +251,7 @@ describe("computeHomesteadEffects", () => {
   });
 
   it("leyline energy tiers 2-3 add endRunCrystalPerRoom", () => {
-    const effects = computeHomesteadEffects({}, {}, { carpentry: 3 });
+    const effects = computeHomesteadEffects({}, {}, { "leyline-energy": 3 });
     expect(effects.startMana).toBe(4);
     expect(effects.endRunCrystalPerRoom).toBe(2);
   });
@@ -267,9 +267,9 @@ describe("computeHomesteadEffects", () => {
   });
 
   it("detect magic stacks gear astral chance bonus across tiers", () => {
-    expect(computeHomesteadEffects({}, {}, { masonry: 1 }).gearAstralChanceBonus).toBeCloseTo(0.03);
-    expect(computeHomesteadEffects({}, {}, { masonry: 2 }).gearAstralChanceBonus).toBeCloseTo(0.06);
-    expect(computeHomesteadEffects({}, {}, { masonry: 3 }).gearAstralChanceBonus).toBeCloseTo(0.1);
+    expect(computeHomesteadEffects({}, {}, { "detect-magic": 1 }).gearAstralChanceBonus).toBeCloseTo(0.03);
+    expect(computeHomesteadEffects({}, {}, { "detect-magic": 2 }).gearAstralChanceBonus).toBeCloseTo(0.06);
+    expect(computeHomesteadEffects({}, {}, { "detect-magic": 3 }).gearAstralChanceBonus).toBeCloseTo(0.1);
   });
 
   it("ignores unknown building IDs", () => {

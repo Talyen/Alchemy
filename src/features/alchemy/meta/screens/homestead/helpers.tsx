@@ -24,6 +24,15 @@ import alchemyLab from "@/assets/optimized/alchemy-lab.webp";
 import crystalGarden from "@/assets/optimized/crystal-garden.webp";
 import wheatField from "@/assets/optimized/wheat-field.webp";
 import orchard from "@/assets/optimized/orchard.webp";
+import runesmithsWorkshop from "@/assets/optimized/runesmiths-workshop.webp";
+import companionSanctuary from "@/assets/optimized/companion-sanctuary.webp";
+import homesteadWishingWell from "@/assets/optimized/homestead-wishing-well.webp";
+import leylineEnergy from "@/assets/optimized/leyline-energy.webp";
+import detectMagic from "@/assets/optimized/detect-magic.webp";
+import botanicalDistillation from "@/assets/optimized/botanical-distillation.webp";
+import culinaryArts from "@/assets/optimized/culinary-arts.webp";
+import woolTailoring from "@/assets/optimized/wool-tailoring.webp";
+import agilityTraining from "@/assets/optimized/agility-training.webp";
 import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp";
 
 export type Tab = "buildings" | "companions" | "farm" | "research";
@@ -51,6 +60,15 @@ const itemArt: Record<string, string> = {
   "crystal-garden": crystalGarden,
   "wheat-field": wheatField,
   orchard: orchard,
+  "runesmiths-workshop": runesmithsWorkshop,
+  "companion-sanctuary": companionSanctuary,
+  "wishing-well": homesteadWishingWell,
+  "leyline-energy": leylineEnergy,
+  "detect-magic": detectMagic,
+  "botanical-distillation": botanicalDistillation,
+  "culinary-arts": culinaryArts,
+  "wool-tailoring": woolTailoring,
+  "agility-training": agilityTraining,
 };
 
 export function getArt(id: string): string {
