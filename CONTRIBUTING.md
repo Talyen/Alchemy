@@ -15,6 +15,10 @@ GitHub branch protection is not available on this repo, so **local hooks are the
 
 **Before pushing to `main`**, also run `npm run test:e2e:prepush:full` (`@critical`, preview + CI flags). The pre-push hook only runs `@prepush`; CI on `main` runs the broader `@critical` suite (~40 tests). If using a PR branch, run the same before opening the PR.
 
+To analyze test performance and trace failures, you can run:
+- `npm run test:e2e:timings` — runs the E2E suite and exports a timing/stats JSON to `reports/e2e-results.json`.
+- `npm run test:e2e:audit` — runs the timing E2E suite and automatically compiles a diagnostic markdown report to `reports/e2e-audit-report.md`.
+
 Manual full gate before **`main`**: `npm run test:e2e:main-gate` (full suite, same as CI `e2e-full`). Lighter checks: `npm run check:push` or `npm run test:e2e:prepush:full` (`@critical` only).
 
 Install hooks once: `npm run prepare` (runs on `npm install`).
@@ -96,6 +100,7 @@ Layout: bootstrap helpers in [`tests/e2e/`](tests/e2e/) (`battle-setup.ts`, `arm
 
 - **`fastBattle`** — opt-in fixture dep; calls `enableFastMode` before the test when listed in the callback params and referenced (`void fastBattle;`).
 - **`runtimeErrors`** — collects page errors and asserts `[]` after each test.
+- **`autoDiagnostic`** — runs automatically on every test. If a test fails, it automatically dumps browser console logs, page errors, and a 10KB DOM snapshot to `test-results/failures/<test-title>.md` to allow agents and developers to quickly inspect the failures in text format.
 
 ### Page objects (`tests/pages/`)
 

@@ -72,6 +72,8 @@ Never disable a lint rule, delete a test, or weaken a type to make something pas
 - `npm run test:e2e:prepush` — 9-test `@prepush` E2E subset
 - `npm run test:e2e:prepush:full` — broader `@critical` E2E subset
 - `npm run test:e2e:main-gate` — full E2E suite (CI `e2e-full` equivalent)
+- `npm run test:e2e:timings` — run E2E suite and export timing JSON to reports/e2e-results.json
+- `npm run test:e2e:audit` — run E2E suite and generate timing/flakiness report in reports/e2e-audit-report.md
 - `npm run check:push` — local pre-push gate
 - `npm run check:ship` — ship/save/desktop unit and build validation
 - `npm run check:ship:full` — release gate
@@ -89,8 +91,9 @@ For the change-to-test mapping, see [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-
 | Changing battle or card effects               | [REFERENCE battle rules](./docs/REFERENCE.md#battle-implementation-rules), [BATTLE_HANDLERS.md](./src/lib/game-data/effects/BATTLE_HANDLERS.md)                                    | `tests/lib/battle` and `descriptions-match-effects`                               |
 | Changing UI or motion                         | [WORKFLOWS stagger guidance](./docs/WORKFLOWS.md#staggered-screen-enter-motion); stuck on interaction/layout UX → [PROMPTS UI audits](./PROMPTS.md#ui-interaction--feedback-audit) | Targeted UI tests and `npm run lint:ci`                                           |
 | Changing saves or releases                    | [WORKFLOWS persistence guidance](./docs/WORKFLOWS.md#change-persisted-save-data), [MIGRATIONS.md](./src/features/alchemy/shared/storage/MIGRATIONS.md), [RELEASE.md](./docs/RELEASE.md)                                                                  | Ship checks from [CONTRIBUTING](./CONTRIBUTING.md)                                |
-| Tuning numbers or balance                     | `game-constants.ts`, `npm run balance:sim`                                                                                                                                          | Targeted tests from [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) |
+| Tuning numbers or balance                     | `game-constants.ts`, `npm run balance:sim`                                                                                                           | Targeted tests from [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) |
 | Desktop / Steam / Electron                    | [RELEASE.md](./docs/RELEASE.md), `desktop/` directory                                                                                                                                | `npm run test:ship:desktop` and `npm run check:ship:full`                         |
+| Diagnosing E2E failures / slowness            | `test-results/failures/` (DOM & console logs), `reports/e2e-audit-report.md`                                                                                                       | `npm run test:e2e:audit`                                                          |
 | Stuck after three attempts                    | Run the relevant audit in [PROMPTS.md](./PROMPTS.md), then follow the [Escalation policy](#escalation-policy) above                                                                | Ask the user after the audit                                                      |
 
 ## Branch and commit policy
@@ -113,7 +116,7 @@ No body or footer is required. The pre-push hook syncs `CHANGELOG.md` ## [Unrele
 ## Testing policy
 
 - **Unit:** Vitest, path-mirrored under `tests/`. Focused runs via `npm test -- <glob>`.
-- **E2E:** Playwright. Page objects in `tests/pages/`, helpers in `tests/e2e/`, fixtures in `tests/fixtures/e2e.ts`.
+- **E2E:** Playwright. Page objects in `tests/pages/`, helpers in `tests/e2e/`, fixtures in `tests/fixtures/e2e.ts`. On failure, diagnostic markdown summaries containing console/runtime logs and a DOM snapshot are generated under `test-results/failures/`. Prioritize reading these text summaries to diagnose issues.
 - **Combat specs:** prefer the `fastBattle` + `runtimeErrors` fixtures from `tests/fixtures/e2e`. Animation canaries must use raw `@playwright/test` and never `enableFastMode` — ESLint enforces this in those files.
 - **Gate tiers:** `@prepush` (9) → `@critical` (~40) → `main-gate` (full). See [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-run-when-you-change) for the full mapping.
 - **Determinism:** tests must not depend on dev QA bypasses. Combat specs use `winViaCombat()` or `playCardNamed()`.

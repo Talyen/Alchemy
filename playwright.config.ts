@@ -30,7 +30,7 @@ export default defineConfig({
   reporter: isPrepush ? "line" : isCi ? [["github"], ["html"]] : "html",
   use: {
     baseURL: "http://127.0.0.1:4173",
-    trace: isPrepush ? "off" : "on-first-retry",
+    trace: isPrepush ? "off" : "retain-on-failure",
     actionTimeout: isCi ? 15_000 : 10_000,
     storageState: {
       cookies: [],
