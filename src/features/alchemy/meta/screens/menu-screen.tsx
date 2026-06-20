@@ -198,14 +198,19 @@ export function MenuScreen({
           <Button
             size="lg"
             variant="outline"
-            disabled={isArmoryLocked}
             className={cn(
               "justify-center gap-2 text-base",
               BUTTON_WIDTH_MENU,
               isArmoryLocked && "opacity-45 grayscale-[50%] hover:bg-background cursor-not-allowed",
             )}
             {...(isArmoryLocked ? { hoverSound: false as const } : {})}
-            onClick={onArmory}
+            onClick={() => {
+              if (isArmoryLocked) {
+                playUISound("error");
+              } else {
+                onArmory();
+              }
+            }}
           >
             <Shield className="h-4 w-4" /> Armory
           </Button>

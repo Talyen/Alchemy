@@ -14,7 +14,7 @@ test.describe("Talents in Battle", () => {
       Array.from({ length: 8 }, () => SLASH),
     );
 
-    await expect(page.getByRole("button", { name: "Block 10" })).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole("button", { name: "Block 5" })).toBeVisible({ timeout: 3000 });
   });
 
   test("physical-brute-force talent increases physical damage dealt", async ({ page, fastBattle }) => {

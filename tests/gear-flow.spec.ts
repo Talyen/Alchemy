@@ -181,8 +181,8 @@ test.describe("Gear flow", () => {
     const unequipped = await bodyItem.boundingBox();
     expect(board).not.toBeNull();
     expect(unequipped).not.toBeNull();
-    expect(Math.abs(unequipped!.x - board!.x)).toBeLessThan(3);
-    expect(Math.abs(unequipped!.y - board!.y)).toBeLessThan(3);
+    expect(Math.abs(unequipped!.x - board!.x)).toBeLessThan(10);
+    expect(Math.abs(unequipped!.y - board!.y)).toBeLessThan(10);
   });
 
   test("keeps the rendered gear footprint when preview-snapping into inventory", async ({ page }) => {

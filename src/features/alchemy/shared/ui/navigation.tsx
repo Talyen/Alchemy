@@ -286,14 +286,17 @@ export function GameMenu({
           >
             <Button
               variant="outline"
-              disabled={isArmoryLocked}
               className={cn(
                 "justify-start border-0 bg-transparent w-full",
                 isArmoryLocked && "opacity-50 hover:bg-transparent cursor-not-allowed",
               )}
               onClick={() => {
-                onArmory();
-                onClose();
+                if (isArmoryLocked) {
+                  playUISound("error");
+                } else {
+                  onArmory();
+                  onClose();
+                }
               }}
             >
               <Shield className="h-4 w-4" /> Armory

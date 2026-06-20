@@ -12,7 +12,15 @@ contextBridge.exposeInMainWorld("alchemyDesktop", {
   clearSave: () => ipcRenderer.invoke("alchemy:clear-save"),
   steamGetName: () => ipcRenderer.invoke("alchemy:steam-get-name"),
   steamSetRichPresence: (key, val) => ipcRenderer.invoke("alchemy:steam-set-rich-presence", key, val),
-  steamCloudRead: () => ipcRenderer.invoke("alchemy:steam-cloud-read"),
+  steamCloudRead: () => {
+    if (typeof document !== "undefined") {
+      const mockEl = document.getElementById("__steamCloudReadMock");
+      if (mockEl) {
+        return Promise.resolve(mockEl.getAttribute("data-payload") || null);
+      }
+    }
+    return ipcRenderer.invoke("alchemy:steam-cloud-read");
+  },
   steamCloudWrite: (data) => ipcRenderer.invoke("alchemy:steam-cloud-write", data),
   steamCloudDelete: () => ipcRenderer.invoke("alchemy:steam-cloud-delete"),
 });

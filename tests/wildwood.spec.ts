@@ -59,7 +59,7 @@ test.describe("Wildwood Draft", () => {
 
     const battle = new BattlePage(page);
     await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText("Placeholder Wildwood modifier. No combat effect yet.")).toBeVisible();
+    await expect(battle.enemyHealthPanel).toBeVisible();
   });
 
   test("recovers after victory, skips reward, and starts the next boss", async ({
@@ -69,7 +69,10 @@ test.describe("Wildwood Draft", () => {
   }) => {
     void fastBattle;
     void runtimeErrors;
-    const bossKiller = makeHighDamageCard();
+    const bossKiller = {
+      ...makeHighDamageCard(),
+      effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
+    };
     await injectSaveState(page, {
       contentSystemType: "wildwood",
       selectedDifficulty: null,
@@ -109,7 +112,9 @@ test.describe("Wildwood Draft", () => {
         ),
       )
       .toBe(16);
-    await page.getByRole("button", { name: "Skip" }).click();
-    await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
+    await expect(async () => {
+      await page.getByRole("button", { name: "Skip" }).click({ force: true });
+      await expect(battle.hand.first()).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 8000 });
   });
 });

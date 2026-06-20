@@ -26,7 +26,6 @@ import {
   normalizeCraftingCurrencies,
   sanitizeGearBoardPositionsByCharacter,
   sanitizeCurrencyBoardPositionsByCharacter,
-  sanitizeGearBoardPositions,
   footprintForInstance,
   CRAFTING_CURRENCY_IDS,
   INVENTORY_COLS,
@@ -339,6 +338,69 @@ function syncBoardPositionsForState(state: {
   };
 }
 
+function updateGearStateAndSync(
+  state: {
+    inventories: GearInventories;
+    loadouts: GearLoadouts;
+    boardPositionsByCharacter: GearBoardPositionsByCharacter;
+    equippedReturnPositions: GearBoardPositions;
+    currencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
+    craftingCurrencies: Record<CraftingCurrencyId, number>;
+  },
+  updates: Partial<{
+    inventories: GearInventories;
+    loadouts: GearLoadouts;
+    boardPositionsByCharacter: GearBoardPositionsByCharacter;
+    equippedReturnPositions: GearBoardPositions;
+    currencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
+    craftingCurrencies: Record<CraftingCurrencyId, number>;
+  }>,
+) {
+  const merged = { ...state, ...updates };
+  const sanitizedGear = sanitizeGearBoardPositionsByCharacter(merged.boardPositionsByCharacter, merged.inventories);
+  const sanitizedCurrency = sanitizeCurrencyBoardPositionsByCharacter(
+    merged.currencyBoardPositionsByCharacter,
+    merged.craftingCurrencies,
+  );
+
+  const finalGear = boardPositionsByCharacterEqual(state.boardPositionsByCharacter, sanitizedGear)
+    ? state.boardPositionsByCharacter
+    : sanitizedGear;
+  const finalCurrency = currencyBoardPositionsByCharacterEqual(
+    state.currencyBoardPositionsByCharacter,
+    sanitizedCurrency,
+  )
+    ? state.currencyBoardPositionsByCharacter
+    : sanitizedCurrency;
+
+  const mergedSanitized = {
+    ...merged,
+    boardPositionsByCharacter: finalGear,
+    currencyBoardPositionsByCharacter: finalCurrency,
+  };
+
+  const synced = syncBoardPositionsForState(mergedSanitized);
+
+  const finalSyncedGear = boardPositionsByCharacterEqual(
+    merged.boardPositionsByCharacter,
+    synced.boardPositionsByCharacter,
+  )
+    ? merged.boardPositionsByCharacter
+    : synced.boardPositionsByCharacter;
+  const finalSyncedCurrency = currencyBoardPositionsByCharacterEqual(
+    merged.currencyBoardPositionsByCharacter,
+    synced.currencyBoardPositionsByCharacter,
+  )
+    ? merged.currencyBoardPositionsByCharacter
+    : synced.currencyBoardPositionsByCharacter;
+
+  return {
+    ...mergedSanitized,
+    boardPositionsByCharacter: finalSyncedGear,
+    currencyBoardPositionsByCharacter: finalSyncedCurrency,
+  };
+}
+
 export const useGearStore = create<GearStore>((set, get) => ({
   ...initialState,
   initialize: (
@@ -357,24 +419,14 @@ export const useGearStore = create<GearStore>((set, get) => ({
     }
     const normalizedCurrencies = normalizeCraftingCurrencies(craftingCurrencies);
     set((state) => {
-      const nextState = {
+      return updateGearStateAndSync(state, {
         inventories,
         loadouts,
-        boardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(boardPositionsByCharacter, inventories),
+        boardPositionsByCharacter,
         equippedReturnPositions: nextReturn,
         craftingCurrencies: normalizedCurrencies,
-        currencyBoardPositionsByCharacter: sanitizeCurrencyBoardPositionsByCharacter(
-          currencyBoardPositionsByCharacter,
-          normalizedCurrencies,
-        ),
-      };
-      return {
-        ...nextState,
-        ...syncBoardPositionsForState({
-          ...state,
-          ...nextState,
-        }),
-      };
+        currencyBoardPositionsByCharacter,
+      });
     });
   },
   addInstance: (instance, characterId) =>
@@ -383,16 +435,7 @@ export const useGearStore = create<GearStore>((set, get) => ({
         ...state.inventories,
         [characterId]: [...(state.inventories[characterId] ?? []), instance],
       };
-      const nextState = {
-        inventories: nextInventories,
-      };
-      return {
-        ...nextState,
-        ...syncBoardPositionsForState({
-          ...state,
-          ...nextState,
-        }),
-      };
+      return updateGearStateAndSync(state, { inventories: nextInventories });
     }),
   transferToInventory: (instanceId, targetCharacterId) => {
     const state = get();
@@ -432,19 +475,14 @@ export const useGearStore = create<GearStore>((set, get) => ({
     nextPositionsByCharacter[owner] = ownerPositions;
     nextPositionsByCharacter[targetCharacterId] = targetPositions;
 
-    const nextState = {
-      inventories: nextInventories,
-      loadouts: nextLoadouts,
-      boardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(nextPositionsByCharacter, nextInventories),
-      equippedReturnPositions: nextReturn,
-    };
-    set({
-      ...nextState,
-      ...syncBoardPositionsForState({
-        ...state,
-        ...nextState,
+    set((state) =>
+      updateGearStateAndSync(state, {
+        inventories: nextInventories,
+        loadouts: nextLoadouts,
+        boardPositionsByCharacter: nextPositionsByCharacter,
+        equippedReturnPositions: nextReturn,
       }),
-    });
+    );
     return true;
   },
   equip: (characterId, slot, instance, options) =>
@@ -503,20 +541,12 @@ export const useGearStore = create<GearStore>((set, get) => ({
 
       nextPositionsByCharacter[characterId] = characterPositions;
 
-      const nextState = {
+      return updateGearStateAndSync(state, {
         inventories: nextInventories,
         loadouts: nextLoadouts,
-        boardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(nextPositionsByCharacter, nextInventories),
+        boardPositionsByCharacter: nextPositionsByCharacter,
         equippedReturnPositions: nextReturn,
-      };
-
-      return {
-        ...nextState,
-        ...syncBoardPositionsForState({
-          ...state,
-          ...nextState,
-        }),
-      };
+      });
     }),
   unequip: (characterId, slot) =>
     set((state) => {
@@ -531,24 +561,17 @@ export const useGearStore = create<GearStore>((set, get) => ({
         delete nextReturn[instanceId];
       }
       nextPositionsByCharacter[characterId] = characterPositions;
-      const nextState = {
+      return updateGearStateAndSync(state, {
         loadouts: nextLoadouts,
-        boardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(nextPositionsByCharacter, state.inventories),
+        boardPositionsByCharacter: nextPositionsByCharacter,
         equippedReturnPositions: nextReturn,
-      };
-      return {
-        ...nextState,
-        ...syncBoardPositionsForState({
-          ...state,
-          ...nextState,
-        }),
-      };
+      });
     }),
   moveBoardItem: (characterId, item, col, row) =>
     set((state) => moveBoardItemForState(state, characterId, item, col, row)),
   syncBoardPositions: () =>
     set((state) => {
-      return syncBoardPositionsForState(state);
+      return updateGearStateAndSync(state, {});
     }),
   salvage: (instanceId, options) => {
     const state = get();
@@ -563,10 +586,6 @@ export const useGearStore = create<GearStore>((set, get) => ({
     const ownerPositions = { ...(nextPositionsByCharacter[owner] ?? {}) };
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
     delete ownerPositions[instanceId];
-    nextPositionsByCharacter[owner] = sanitizeGearBoardPositions(
-      ownerPositions,
-      state.inventories[owner].filter((item) => item.instanceId !== instanceId),
-    );
 
     const nextReturn = { ...state.equippedReturnPositions };
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
@@ -579,25 +598,16 @@ export const useGearStore = create<GearStore>((set, get) => ({
 
     const nextCurrencies = addCraftingCurrencies(state.craftingCurrencies, result.yieldedCurrencies);
 
-    const nextState = {
-      inventories: nextInventories,
-      loadouts: result.loadouts,
-      boardPositionsByCharacter: nextPositionsByCharacter,
-      equippedReturnPositions: nextReturn,
-      craftingCurrencies: nextCurrencies,
-      currencyBoardPositionsByCharacter: sanitizeCurrencyBoardPositionsByCharacter(
-        state.currencyBoardPositionsByCharacter,
-        nextCurrencies,
-      ),
-    };
-
-    set({
-      ...nextState,
-      ...syncBoardPositionsForState({
-        ...state,
-        ...nextState,
+    set(
+      updateGearStateAndSync(state, {
+        inventories: nextInventories,
+        loadouts: result.loadouts,
+        boardPositionsByCharacter: nextPositionsByCharacter,
+        equippedReturnPositions: nextReturn,
+        craftingCurrencies: nextCurrencies,
+        currencyBoardPositionsByCharacter: state.currencyBoardPositionsByCharacter,
       }),
-    });
+    );
     return { inventories: nextInventories, yieldedCurrencies: result.yieldedCurrencies };
   },
   applyCurrency: (currencyId, instanceId, options) => {
@@ -620,41 +630,22 @@ export const useGearStore = create<GearStore>((set, get) => ({
       [currencyId]: (state.craftingCurrencies[currencyId] ?? 0) - 1,
     });
 
-    const nextState = {
-      inventories: nextInventories,
-      craftingCurrencies: nextCurrencies,
-      currencyBoardPositionsByCharacter: sanitizeCurrencyBoardPositionsByCharacter(
-        state.currencyBoardPositionsByCharacter,
-        nextCurrencies,
-      ),
-    };
-
-    set({
-      ...nextState,
-      ...syncBoardPositionsForState({
-        ...state,
-        ...nextState,
+    set(
+      updateGearStateAndSync(state, {
+        inventories: nextInventories,
+        craftingCurrencies: nextCurrencies,
+        currencyBoardPositionsByCharacter: state.currencyBoardPositionsByCharacter,
       }),
-    });
+    );
     return true;
   },
   addCurrencies: (currencies) =>
     set((state) => {
       const nextCurrencies = addCraftingCurrencies(state.craftingCurrencies, currencies);
-      const nextState = {
+      return updateGearStateAndSync(state, {
         craftingCurrencies: nextCurrencies,
-        currencyBoardPositionsByCharacter: sanitizeCurrencyBoardPositionsByCharacter(
-          state.currencyBoardPositionsByCharacter,
-          nextCurrencies,
-        ),
-      };
-      return {
-        ...nextState,
-        ...syncBoardPositionsForState({
-          ...state,
-          ...nextState,
-        }),
-      };
+        currencyBoardPositionsByCharacter: state.currencyBoardPositionsByCharacter,
+      });
     }),
   reset: () => set(initialState),
 }));

@@ -19,11 +19,13 @@ test.describe("Electron cloud mock", desktop, () => {
           const desktop = window.alchemyDesktop;
           if (!desktop) throw new Error("desktop bridge missing");
 
-          const originalCloudRead = desktop.steamCloudRead?.bind(desktop);
           await desktop.clearSave();
           await desktop.writeSave(localPayload);
 
-          desktop.steamCloudRead = async () => cloudPayload;
+          const mockEl = document.createElement("div");
+          mockEl.id = "__steamCloudReadMock";
+          mockEl.setAttribute("data-payload", cloudPayload);
+          document.body.appendChild(mockEl);
 
           const readLocal = await desktop.loadSave();
           const readCloud = await desktop.steamCloudRead?.();
@@ -31,9 +33,7 @@ test.describe("Electron cloud mock", desktop, () => {
             window as unknown as { __cloudMergeProbe: { local: string | null; cloud: string | null } }
           ).__cloudMergeProbe = { local: readLocal, cloud: readCloud ?? null };
 
-          if (originalCloudRead) {
-            desktop.steamCloudRead = originalCloudRead;
-          }
+          mockEl.remove();
         },
         { localPayload, cloudPayload },
       );
