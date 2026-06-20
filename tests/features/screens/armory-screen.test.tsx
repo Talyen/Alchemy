@@ -522,6 +522,27 @@ describe("ArmoryScreen", () => {
     expect(screen.getByText("Equipment can be changed after combat.").isConnected).toBe(true);
   });
 
+  it("prevents equipment slot interaction (double-click unequip) when browseOnly is true", () => {
+    const onEquip = vi.fn();
+    const onUnequip = vi.fn();
+    render(
+      <ArmoryScreen
+        inventories={mockInventories([{ instanceId: "helm-1", definitionId: "leather-helm-basic", affixes: [] }])}
+        loadouts={createEmptyGearLoadouts({ knight: { helm: "helm-1" } })}
+        finishedRunCharacters={["knight"]}
+        browseOnly={true}
+        onOpenMenu={vi.fn()}
+        onEquip={onEquip}
+        onUnequip={onUnequip}
+        onSalvage={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Equipment can be changed after combat.").isConnected).toBe(true);
+    expect(onEquip).not.toHaveBeenCalled();
+    expect(onUnequip).not.toHaveBeenCalled();
+  });
+
   it("disables locked character tabs until the previous class is finished", () => {
     render(
       <ArmoryScreen

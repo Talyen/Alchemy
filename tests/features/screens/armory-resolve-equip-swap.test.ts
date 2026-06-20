@@ -100,4 +100,122 @@ describe("resolveEquipSwap", () => {
       }),
     ).toEqual({ canSwap: false, displaced: null });
   });
+
+  it("returns canSwap false when the incoming instance is the same as the slot's current item", () => {
+    const inventory = [helmA];
+    const packed = packInventoryWithPositions(inventory, 7, { [helmA.instanceId]: { col: 3, row: 2 } }).items;
+    const inventoryById = new Map(inventory.map((item) => [item.instanceId, item]));
+    const loadout = {
+      body: null,
+      helm: helmA.instanceId,
+      boots: null,
+      gloves: null,
+      belt: null,
+      "main-hand": null,
+      "off-hand": null,
+      "left-ring": null,
+      "right-ring": null,
+      amulet: null,
+    };
+
+    expect(
+      resolveEquipSwap({
+        loadout,
+        slot: "helm",
+        instance: helmA,
+        vacatedPlacement: { col: 3, row: 2 },
+        inventoryById,
+        packedItems: packed,
+      }),
+    ).toEqual({ canSwap: false, displaced: null });
+  });
+
+  it("returns canSwap false when the displaced item is not in inventoryById", () => {
+    const inventory = [helmA];
+    const packed = packInventoryWithPositions(inventory, 7, { [helmA.instanceId]: { col: 3, row: 2 } }).items;
+    const inventoryById = new Map(inventory.map((item) => [item.instanceId, item]));
+    const loadout = {
+      body: null,
+      helm: helmB.instanceId,
+      boots: null,
+      gloves: null,
+      belt: null,
+      "main-hand": null,
+      "off-hand": null,
+      "left-ring": null,
+      "right-ring": null,
+      amulet: null,
+    };
+
+    expect(
+      resolveEquipSwap({
+        loadout,
+        slot: "helm",
+        instance: helmA,
+        vacatedPlacement: { col: 3, row: 2 },
+        inventoryById,
+        packedItems: packed,
+      }),
+    ).toEqual({ canSwap: false, displaced: null });
+  });
+
+  it("returns canSwap false when the incoming item is not on the board (no vacated owner to displace)", () => {
+    const incoming: GearInstance = { instanceId: "no-inv", definitionId: "leather-helm-basic", affixes: [] };
+    const inventory = [helmA];
+    const packed = packInventoryWithPositions(inventory, 7, { [helmA.instanceId]: { col: 3, row: 2 } }).items;
+    const inventoryById = new Map(inventory.map((item) => [item.instanceId, item]));
+    const loadout = {
+      body: null,
+      helm: helmA.instanceId,
+      boots: null,
+      gloves: null,
+      belt: null,
+      "main-hand": null,
+      "off-hand": null,
+      "left-ring": null,
+      "right-ring": null,
+      amulet: null,
+    };
+
+    const result = resolveEquipSwap({
+      loadout,
+      slot: "helm",
+      instance: incoming,
+      vacatedPlacement: { col: 3, row: 2 },
+      inventoryById,
+      packedItems: packed,
+    });
+    expect(result).toEqual({ canSwap: false, displaced: null });
+  });
+
+  it("returns canSwap true when a multi-cell item displaces a smaller item into the vacated placement", () => {
+    const bodyGear: GearInstance = { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] };
+    const helmGear: GearInstance = { instanceId: "helm-1", definitionId: "leather-helm-basic", affixes: [] };
+    const inventory = [bodyGear, helmGear];
+    const packed = [{ item: helmGear, col: 1, row: 1, w: 2, h: 2 }];
+    const inventoryById = new Map(inventory.map((item) => [item.instanceId, item]));
+    const loadout = {
+      body: bodyGear.instanceId,
+      helm: null,
+      boots: null,
+      gloves: null,
+      belt: null,
+      "main-hand": null,
+      "off-hand": null,
+      "left-ring": null,
+      "right-ring": null,
+      amulet: null,
+    };
+
+    const result = resolveEquipSwap({
+      loadout,
+      slot: "body",
+      instance: helmGear,
+      vacatedPlacement: { col: 1, row: 1 },
+      inventoryById,
+      packedItems: packed,
+    });
+    expect(result.canSwap).toBe(true);
+    expect(result.displaced?.instanceId).toBe(bodyGear.instanceId);
+  });
 });
