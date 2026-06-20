@@ -58,4 +58,3 @@ for (const { width, height, label } of ALT_RESOLUTIONS) {
     });
   });
 }
-

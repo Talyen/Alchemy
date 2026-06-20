@@ -25,7 +25,10 @@ test.describe("Difficulty Select", () => {
     await expect(page.getByText("Locked").first()).toBeVisible();
   });
 
-  test("selecting difficulty enables Play and starts a battle; Back returns to character select", async ({ page, fastBattle }) => {
+  test("selecting difficulty enables Play and starts a battle; Back returns to character select", async ({
+    page,
+    fastBattle,
+  }) => {
     void fastBattle;
     const menu = new MenuPage(page);
     await menu.goToCharacterSelect();

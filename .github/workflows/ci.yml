@@ -503,6 +503,8 @@ jobs:
             node_modules/electron/dist
             node_modules/electron/path.txt
           key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            electron-${{ runner.os }}-
 
       - name: Ensure Electron binary
         if: steps.changes.outputs.run == 'true'

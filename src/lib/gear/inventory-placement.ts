@@ -122,16 +122,3 @@ export function canOccupyVacatedInventoryPlacement(
     cols,
   );
 }
-
-export function resolveInventoryReturnPlacement<T extends { instanceId: string }>(
-  items: PackedInventoryItem<T>[],
-  instanceId: string,
-  footprint: GearFootprint,
-  preferred: InventoryPlacement | undefined,
-  cols: number,
-): InventoryPlacement {
-  if (preferred && !inventoryPlacementCollides(items, instanceId, preferred, footprint, cols)) {
-    return preferred;
-  }
-  return findFirstInventoryPlacement(items, instanceId, footprint, cols);
-}

@@ -109,7 +109,7 @@ try {
 
   // Sort tests by duration (slowest first)
   const slowestTests = [...allTests]
-    .filter(t => t.status !== "skipped")
+    .filter((t) => t.status !== "skipped")
     .sort((a, b) => b.duration - a.duration)
     .slice(0, 10);
 
@@ -126,7 +126,7 @@ try {
     `| **Failed** | ${failedTests.length} |`,
     `| **Flaky (passed on retry)** | ${flakyTests.length} |`,
     `| **Skipped** | ${skippedTests} |`,
-    `| **Total Duration** | ${((allTests.reduce((sum, t) => sum + t.duration, 0)) / 1000).toFixed(2)}s |`,
+    `| **Total Duration** | ${(allTests.reduce((sum, t) => sum + t.duration, 0) / 1000).toFixed(2)}s |`,
   ];
 
   // 1. Failures Section
@@ -134,13 +134,15 @@ try {
     mdReport.push(`\n## ❌ Failed Tests (${failedTests.length})`);
     for (const test of failedTests) {
       const cleanTitle = test.title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
-      mdReport.push([
-        `### 🛑 ${test.title}`,
-        `- **File:** [${test.file}:${test.line}](file:///${path.resolve(test.file).replace(/\\/g, "/")})`,
-        `- **Duration:** ${(test.duration / 1000).toFixed(2)}s`,
-        `- **Failure Diagnostics:** Check [test-results/failures/${cleanTitle}.md](file:///${path.resolve("test-results/failures/" + cleanTitle + ".md").replace(/\\/g, "/")}) for DOM & console logs.`,
-        `\n\`\`\`text\n${test.errorMessage || "No explicit error message captured by Playwright."}\n\`\`\``,
-      ].join("\n"));
+      mdReport.push(
+        [
+          `### 🛑 ${test.title}`,
+          `- **File:** [${test.file}:${test.line}](file:///${path.resolve(test.file).replace(/\\/g, "/")})`,
+          `- **Duration:** ${(test.duration / 1000).toFixed(2)}s`,
+          `- **Failure Diagnostics:** Check [test-results/failures/${cleanTitle}.md](file:///${path.resolve("test-results/failures/" + cleanTitle + ".md").replace(/\\/g, "/")}) for DOM & console logs.`,
+          `\n\`\`\`text\n${test.errorMessage || "No explicit error message captured by Playwright."}\n\`\`\``,
+        ].join("\n"),
+      );
     }
   } else {
     mdReport.push(`\n## ❌ Failed Tests\n🎉 No test failures in this run!`);
@@ -149,16 +151,20 @@ try {
   // 2. Flaky Section
   if (flakyTests.length > 0) {
     mdReport.push(`\n## ⚠️ Flaky Tests (${flakyTests.length})`);
-    mdReport.push(`*These tests failed initially but passed after a retry. They represent potential timing or animation issues.*`);
+    mdReport.push(
+      `*These tests failed initially but passed after a retry. They represent potential timing or animation issues.*`,
+    );
     for (const test of flakyTests) {
-      mdReport.push([
-        `### 🟨 ${test.title}`,
-        `- **File:** [${test.file}:${test.line}](file:///${path.resolve(test.file).replace(/\\/g, "/")})`,
-        `- **Total Duration (including retries):** ${(test.duration / 1000).toFixed(2)}s`,
-        `- **Retries:** ${test.retries}`,
-        `\n**First Run Error Message:**`,
-        `\`\`\`text\n${test.errorMessage || "No explicit error message captured."}\n\`\`\``,
-      ].join("\n"));
+      mdReport.push(
+        [
+          `### 🟨 ${test.title}`,
+          `- **File:** [${test.file}:${test.line}](file:///${path.resolve(test.file).replace(/\\/g, "/")})`,
+          `- **Total Duration (including retries):** ${(test.duration / 1000).toFixed(2)}s`,
+          `- **Retries:** ${test.retries}`,
+          `\n**First Run Error Message:**`,
+          `\`\`\`text\n${test.errorMessage || "No explicit error message captured."}\n\`\`\``,
+        ].join("\n"),
+      );
     }
   }
 
@@ -168,23 +174,26 @@ try {
   for (const test of slowestTests) {
     const fileLink = `[${path.basename(test.file)}:${test.line}](file:///${path.resolve(test.file).replace(/\\/g, "/")})`;
     const statusIcon = test.status === "passed" ? "🟢" : test.status === "failed" ? "🔴" : "🟨";
-    mdReport.push(`| ${test.title} | ${fileLink} | ${(test.duration / 1000).toFixed(2)}s | ${statusIcon} ${test.status} |`);
+    mdReport.push(
+      `| ${test.title} | ${fileLink} | ${(test.duration / 1000).toFixed(2)}s | ${statusIcon} ${test.status} |`,
+    );
   }
 
   // 4. Optimization Recommendations
-  mdReport.push([
-    `\n## 💡 Best Practice Recommendations`,
-    `1. **Leverage Fast Battle Mode:** If the test is in a combat cycle, ensure it uses the \`fastBattle\` fixture from \`tests/fixtures/e2e.ts\` to disable time-consuming card and turn animations.`,
-    `2. **Use State Injection:** Instead of playing through early stages of combat, utilize state injection hooks like \`injectMidCombatSave\` or seed the character storage states to jump directly to the target node.`,
-    `3. **Eliminate Hard Wait Hooks:** Never use manual timeouts or \`page.waitForTimeout()\`. Instead, rely on Playwright's locator assertions (e.g. \`expect(locator).toBeVisible()\`) which leverage auto-retry capability.`,
-    `4. **Trace Files:** Open the trace ZIPs in Playwright's trace viewer (\`npx playwright show-trace test-results/.../trace.zip\`) to step through actions, network calls, and console error timestamps.`,
-  ].join("\n"));
+  mdReport.push(
+    [
+      `\n## 💡 Best Practice Recommendations`,
+      `1. **Leverage Fast Battle Mode:** If the test is in a combat cycle, ensure it uses the \`fastBattle\` fixture from \`tests/fixtures/e2e.ts\` to disable time-consuming card and turn animations.`,
+      `2. **Use State Injection:** Instead of playing through early stages of combat, utilize state injection hooks like \`injectMidCombatSave\` or seed the character storage states to jump directly to the target node.`,
+      `3. **Eliminate Hard Wait Hooks:** Never use manual timeouts or \`page.waitForTimeout()\`. Instead, rely on Playwright's locator assertions (e.g. \`expect(locator).toBeVisible()\`) which leverage auto-retry capability.`,
+      `4. **Trace Files:** Open the trace ZIPs in Playwright's trace viewer (\`npx playwright show-trace test-results/.../trace.zip\`) to step through actions, network calls, and console error timestamps.`,
+    ].join("\n"),
+  );
 
   const auditReportPath = path.join(reportsDir, "e2e-audit-report.md");
   fs.writeFileSync(auditReportPath, mdReport.join("\n"), "utf-8");
   console.log(`\n🎉 Audit report generated successfully at:`);
   console.log(`👉 file:///${auditReportPath.replace(/\\/g, "/")}\n`);
-
 } catch (err) {
   console.error("❌ Failed to process playwright JSON and generate audit report:", err);
 }

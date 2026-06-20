@@ -6,6 +6,8 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Features
 
+- feat(talents): implement 21 new talents across nature, consume, archery, companion pools
+- feat(homestead): add art for all nodes and fix mismatched research IDs
 - feat(ci): commit 7 - enable strict test config and wire typecheck:all into lint:ci
   - tsconfig.test.json: noUnusedLocals: true, noUnusedParameters: true
   - package.json lint:ci: npm run typecheck -> npm run typecheck:all
@@ -550,6 +552,14 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(armory): simplify armory screen, isolate targeting events and portaled overlays
+- refactor(gear): extract board logic from inventory-layout into focused modules
+  Split inventory-layout.ts into footprints, inventory-placement, board-moves,
+  board-view, and board-position-sanitizers. Update exports in index.ts, adapt
+  grid-packing and affix-catalog, and add optimized homestead node art.
+  
+  Also includes turn-orchestration adjustments and asset script improvements.
+- refactor(gear): simplify gear-store and extract stateless helpers
 - refactor: simplify store, layout, and nav, and fix wildwood E2E
 - refactor(armory): simplify board movement architecture
 - refactor(lint): fix ESLint warnings across 99 files
@@ -1049,6 +1059,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Tests
 
+- test(e2e): move combat test out of animation spec; apply fastBattle to draft/mystery/difficulty
 - test: fix prepush unit failures
 - test(e2e): stabilize critical run flow specs
 - test(armory): add 7 e2e tests for right-click gear transfer and auto-swap
@@ -1153,6 +1164,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore(e2e): add timing/audit scripts and auto-diagnostic failure reports
 - chore(changelog): ignore generated sync commits
 - chore(code-quality): tighten lint, TS strictness, knip, and prettier configs
   - Fix knip default-mode gate (delete dead code, remove stale suppressions)
@@ -1169,6 +1181,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Style
 
+- style: unify user-facing text phrasing across cards, trinkets, talents, affixes, homestead, and encounter traits
 - style: apply prettier formatting
 - style(armory): clean up gear tooltip layout and purchasable item styling
   - Compact tooltip descriptions by removing redundant gradient wrapper

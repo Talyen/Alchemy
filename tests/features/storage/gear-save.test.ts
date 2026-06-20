@@ -200,7 +200,7 @@ describe("gear save normalization", () => {
       ],
       gearLoadouts: {
         knight: { body: "body-1" },
-        rogue: { "left-ring": "ring-1" },
+        rogue: {},
       },
       gearBoardPositions: {
         "body-1": { col: 2, row: 1 },
@@ -210,12 +210,11 @@ describe("gear save normalization", () => {
 
     expect(save.gearInventories.knight).toEqual([
       { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] },
-    ]);
-    expect(save.gearInventories.rogue).toEqual([
       { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] },
     ]);
-    expect(save.gearBoardPositionsByCharacter.knight).toEqual({ "body-1": { col: 2, row: 1 } });
-    expect(save.gearBoardPositionsByCharacter.rogue).toEqual({ "ring-1": { col: 4, row: 2 } });
+    expect(save.gearInventories.rogue).toEqual([]);
+    expect(save.gearBoardPositionsByCharacter.knight).toEqual({ "ring-1": { col: 4, row: 2 } });
+    expect(save.gearBoardPositionsByCharacter.rogue).toEqual({});
   });
 
   it("migrates persisted legacy trinket field names to trinkets", () => {

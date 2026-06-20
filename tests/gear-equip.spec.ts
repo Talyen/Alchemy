@@ -72,7 +72,7 @@ test.describe("Gear equip", () => {
 
     const targetX = slotBox!.x + slotBox!.width / 2;
     const targetY = slotBox!.y + slotBox!.height / 2;
-    await page.mouse.move(targetX, targetY, { steps: 8 });
+    await page.mouse.move(targetX, targetY, { steps: 12 });
     await expect(page.getByTestId("armory-gear-drag-visual")).toBeVisible();
 
     await expect
@@ -84,6 +84,7 @@ test.describe("Gear equip", () => {
       })
       .toBeLessThan(5);
 
+    await page.evaluate(() => new Promise(requestAnimationFrame));
     await page.mouse.up();
     await expect(bodySlot.locator("img")).toHaveCount(2);
   });
@@ -137,12 +138,13 @@ test.describe("Gear equip", () => {
 
     await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2);
     await page.mouse.down();
-    await page.mouse.move(boardBox!.x + boardBox!.width / 2, boardBox!.y + boardBox!.height / 2, { steps: 8 });
+    await page.mouse.move(boardBox!.x + boardBox!.width / 2, boardBox!.y + boardBox!.height / 2, { steps: 12 });
 
     await expect(page.getByTestId("armory-gear-drag-visual")).toBeVisible();
     await expect
       .poll(async () => page.getByTestId("armory-gear-drag-visual").boundingBox())
       .toMatchObject({ width: expect.closeTo(source!.width, 0), height: expect.closeTo(source!.height, 0) });
+    await page.evaluate(() => new Promise(requestAnimationFrame));
     await page.mouse.up();
   });
 
@@ -188,7 +190,8 @@ test.describe("Gear equip", () => {
     expect(target).not.toBeNull();
     await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2);
     await page.mouse.down();
-    await page.mouse.move(target!.x + target!.width / 2, target!.y + target!.height / 2, { steps: 8 });
+    await page.mouse.move(target!.x + target!.width / 2, target!.y + target!.height / 2, { steps: 12 });
+    await page.evaluate(() => new Promise(requestAnimationFrame));
     await page.mouse.up();
 
     // After auto-swap: longsword equipped, quiver removed from off-hand

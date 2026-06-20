@@ -136,7 +136,7 @@ test.describe("Gear flow", () => {
 
     const targetX = slotBox!.x + slotBox!.width / 2;
     const targetY = slotBox!.y + slotBox!.height / 2;
-    await page.mouse.move(targetX, targetY, { steps: 8 });
+    await page.mouse.move(targetX, targetY, { steps: 12 });
     await expect(page.getByTestId("armory-gear-drag-visual")).toBeVisible();
 
     await expect
@@ -148,6 +148,7 @@ test.describe("Gear flow", () => {
       })
       .toBeLessThan(5);
 
+    await page.evaluate(() => new Promise(requestAnimationFrame));
     await page.mouse.up();
     await expect(bodySlot.locator("img")).toHaveCount(2);
   });
@@ -201,12 +202,13 @@ test.describe("Gear flow", () => {
 
     await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2);
     await page.mouse.down();
-    await page.mouse.move(boardBox!.x + boardBox!.width / 2, boardBox!.y + boardBox!.height / 2, { steps: 8 });
+    await page.mouse.move(boardBox!.x + boardBox!.width / 2, boardBox!.y + boardBox!.height / 2, { steps: 12 });
 
     await expect(page.getByTestId("armory-gear-drag-visual")).toBeVisible();
     await expect
       .poll(async () => page.getByTestId("armory-gear-drag-visual").boundingBox())
       .toMatchObject({ width: expect.closeTo(source!.width, 0), height: expect.closeTo(source!.height, 0) });
+    await page.evaluate(() => new Promise(requestAnimationFrame));
     await page.mouse.up();
   });
 
