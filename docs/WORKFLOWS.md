@@ -158,7 +158,7 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared
 
 | Step | File(s) |
 |---|---|
-| 1. Define card in `combatCards.ts` or `supportCards.ts` (merged into `cardLibrary`) | `src/lib/game-data/cards/` |
+| 1. Define card in `cardLibrary` (`src/lib/game-data/cards.ts`) | one entry in the `cardLibrary` array |
 | 2. Add effects (discriminated union on `kind`) | same entry, `effects: [...]` |
 | 3. Add art reference | `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP) |
 | 4. (Optional) Register card sound | `src/lib/sound-registry.ts` (`cardSounds` record) |
@@ -235,7 +235,7 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 | 1. Add companion ID to `CompanionId` union | `src/lib/game-data/types.ts` |
 | 2. Add optimized art and barrel export | `src/lib/game-data/assets.ts` |
 | 3. Define companion in `companionLibrary` record | `src/lib/game-data/companions.ts` |
-| 4. Add summon card via `summonCompanionCard()` in `combatCards.ts` / `supportCards.ts` | `src/lib/game-data/cards/card-builders.ts` — companion must have **exactly one** `turnStartEffects` entry |
+| 4. Add summon card via `summonCompanionCard()` in `cardLibrary` (`src/lib/game-data/cards.ts`) | `src/lib/game-data/cards/card-builders.ts` — companion must have **exactly one** `turnStartEffects` entry |
 | 5. Add summon card ID to `CardId` union | `src/lib/game-data/types.ts` |
 | 6. (Optional) Register card sound | `src/lib/sound-registry.ts` |
 | 7. Add bond level to talent defaults (`companionBondLevels`) | `src/lib/game-data/talents/manifest-defaults.ts` |

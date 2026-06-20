@@ -1,17 +1,5 @@
-/**
- * Card Library Definitions
- *
- * This file aggregates all static card definitions for the game.
- *
- * DESIGN NOTE:
- * Do NOT split this file into sub-libraries (such as "combat" vs "support" cards).
- * The game does not differentiate between combat and support cards in terms of gameplay
- * mechanics, drafting pools, rewards, or shop offerings. Maintaining them in a single,
- * unified file prevents arbitrary categorization, simplifies imports/barrels, and provides
- * a single source of truth for the complete card catalog.
- */
-
-import { MIXED_POTION_CARD_ID, POTION_CARD_ID_SUFFIX } from "@/lib/game-constants";
+// Static card definitions. Cards are data and live in a single flat library by design.
+// Pool/persistence helpers live in cards/card-pools.ts and cards/hydrate-card.ts.
 import type { BattleCard } from "./types";
 import {
   acidPotion,
@@ -122,7 +110,6 @@ import {
 } from "./cards/card-builders";
 
 export const cardLibrary: BattleCard[] = [
-  // --- COMBAT CARDS ---
   damageCard({ id: "slash", art: slash, damageType: "physical", amount: 6 }),
   damageCard({ id: "stab", art: stab, damageType: "bleed", amount: 2 }),
   singleEffectCard({
@@ -368,8 +355,6 @@ export const cardLibrary: BattleCard[] = [
       { kind: "player-status", status: "phoenixFeather", amount: 1 },
     ],
   },
-
-  // --- SUPPORT CARDS ---
   summonCompanionCard({
     id: "frost-whelp-companion",
     art: frostWhelpCompanion,
@@ -421,7 +406,7 @@ export const cardLibrary: BattleCard[] = [
       { damageType: "burn", amount: 2 },
     ],
   }),
-  // remove-harmful-status must come before self-damage so the burn cost is not instantly cleansed,
+  // Effect order invariant: remove-harmful-status before self-damage (see card-effect-ordering.test.ts)
   {
     id: "cauterize",
     title: "Cauterize",
@@ -692,76 +677,5 @@ export const cardLibrary: BattleCard[] = [
 ];
 
 export { expectedCompanionTurnLine, formatCompanionTurnLineBase } from "./cards/companion-turn-description";
-
-export function isStandardPotionCard(card: Pick<BattleCard, "id">): boolean {
-  return card.id.endsWith(POTION_CARD_ID_SUFFIX) && card.id !== MIXED_POTION_CARD_ID;
-}
-
-/**
- * Cards that can appear in merchant shop, combat rewards, mysteries, wish, and draft.
- * Adding a card to cardLibrary includes it here automatically (except mixed potion).
- */
-export function getOfferableCardPool(): BattleCard[] {
-  return cardLibrary.filter((card) => card.id !== MIXED_POTION_CARD_ID);
-}
-
-/** Shop, alchemist, and reward flows share this pool (excludes generated mixed potion). */
-export function getStandardPotionPool(): BattleCard[] {
-  return cardLibrary.filter(isStandardPotionCard);
-}
-
-export function hydrateCard(savedCard: BattleCard): BattleCard {
-  const libraryCard = cardLibrary.find((c) => c.id === savedCard.id);
-  if (!libraryCard) return savedCard;
-
-  const descriptionLines =
-    Array.isArray(savedCard.descriptionLines) &&
-    (savedCard as unknown as { descriptionLinesFullyValid?: boolean }).descriptionLinesFullyValid !== false
-      ? [...savedCard.descriptionLines]
-      : [...libraryCard.descriptionLines];
-
-  const effects =
-    Array.isArray(savedCard.effects) &&
-    (savedCard as unknown as { effectsFullyValid?: boolean }).effectsFullyValid !== false
-      ? (savedCard.effects.map((e) => (typeof e === "object" ? { ...e } : e)) as BattleCard["effects"])
-      : libraryCard.effects.map((e) => ({ ...e }));
-
-  const corruptedValuePositions = Array.isArray(savedCard.corruptedValuePositions)
-    ? savedCard.corruptedValuePositions.filter(
-        (p) =>
-          typeof p === "object" &&
-          Number.isInteger(p.lineIndex) &&
-          Number.isInteger(p.matchIndex) &&
-          p.lineIndex >= 0 &&
-          p.matchIndex >= 0,
-      )
-    : undefined;
-
-  const cost =
-    typeof savedCard.cost === "number" && Number.isFinite(savedCard.cost) && savedCard.cost >= 0
-      ? Math.floor(savedCard.cost)
-      : libraryCard.cost;
-
-  const result: BattleCard = {
-    ...libraryCard,
-    descriptionLines,
-    effects,
-    cost,
-  };
-  if (savedCard.consume !== undefined) {
-    result.consume = savedCard.consume;
-  }
-  if (savedCard.corrupted !== undefined) {
-    result.corrupted = savedCard.corrupted;
-  }
-  if (savedCard.baseTitle !== undefined) {
-    result.baseTitle = savedCard.baseTitle;
-  }
-  if (savedCard.uid !== undefined) {
-    result.uid = savedCard.uid;
-  }
-  if (corruptedValuePositions && corruptedValuePositions.length > 0) {
-    result.corruptedValuePositions = corruptedValuePositions;
-  }
-  return result;
-}
+export { isStandardPotionCard, getOfferableCardPool, getStandardPotionPool } from "./cards/card-pools";
+export { hydrateCard } from "./cards/hydrate-card";
