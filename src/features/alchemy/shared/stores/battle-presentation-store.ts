@@ -42,6 +42,8 @@ type BattlePresentationStore = {
   setCardTransfers: (transfers: CardTransfer[] | ((prev: CardTransfer[]) => CardTransfer[])) => void;
   setHiddenHandCardKeys: (keys: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   setCardTransferInProgress: (inProgress: boolean | ((prev: boolean) => boolean)) => void;
+  resetHandTransferUi: () => void;
+  resetCardTransfers: () => void;
   resetPresentation: () => void;
 };
 
@@ -157,6 +159,10 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
     set((s) => ({
       cardTransferInProgress: typeof inProgress === "function" ? inProgress(s.cardTransferInProgress) : inProgress,
     })),
+
+  resetHandTransferUi: () => set({ hiddenHandCardKeys: new Set(), cardTransferInProgress: false }),
+
+  resetCardTransfers: () => set({ cardTransfers: [] }),
 
   resetPresentation: () => {
     invalidateCombatTextSequence();

@@ -9,19 +9,31 @@ import type { HandDrawSequenceDeps } from "./draw-sequence";
 import type { StableHandCardRectDeps } from "./hand-card-layout";
 import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
 import { useRunDomainStore } from "../../shared/stores/run-session-facade";
-import type { BattleControllerContext } from "./controller-context";
+import type { RefObject } from "react";
+import type { TimerGroup } from "@/lib/animation/game-timer";
+import type { TransferCancelRegistry } from "./card-transfer-animations";
 
-export function createBattleTransferDeps(contextOrGetter: BattleControllerContext | (() => BattleControllerContext)) {
-  const getContext = typeof contextOrGetter === "function" ? contextOrGetter : () => contextOrGetter;
+export function createBattleTransferDeps(params: {
+  measureElementRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
+  measureVisualCardRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
+  battleSceneRef: RefObject<HTMLDivElement | null>;
+  transferIdCounterRef: RefObject<number>;
+  transferCancelRegistryRef: RefObject<TransferCancelRegistry>;
+  handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
+  battleTimerGroupRef: RefObject<TimerGroup>;
+  isCurrentBattleSession: (session: number) => boolean;
+  discardPileRef: RefObject<HTMLDivElement | null>;
+  drawPileRef: RefObject<HTMLDivElement | null>;
+  cardPlayInProgressRef: RefObject<boolean>;
+}) {
+  const getPresentation = () => useBattlePresentationStore.getState();
 
   function localRectFromElement(element: HTMLElement | null): CardRect | null {
-    const context = getContext();
-    return context.measureElementRect(element, context.battleSceneRef.current);
+    return params.measureElementRect(element, params.battleSceneRef.current);
   }
 
   function localVisualCardRect(element: HTMLElement | null): CardRect | null {
-    const context = getContext();
-    return context.measureVisualCardRect(element, context.battleSceneRef.current);
+    return params.measureVisualCardRect(element, params.battleSceneRef.current);
   }
 
   function playTransferSound(delayMs = 0) {
@@ -32,21 +44,20 @@ export function createBattleTransferDeps(contextOrGetter: BattleControllerContex
 
   function runCardTransfer(transfer: Omit<CardTransfer, "id">, onComplete?: () => void): Promise<void> {
     return new Promise((resolve) => {
-      const context = getContext();
-      context.transferIdCounterRef.current += 1;
-      const id = `transfer-${context.transferIdCounterRef.current}`;
+      params.transferIdCounterRef.current += 1;
+      const id = `transfer-${params.transferIdCounterRef.current}`;
       let completed = false;
       let unregisterCancel = () => {};
       const finish = (completeTransfer: boolean) => {
         if (completed) return;
         completed = true;
         unregisterCancel();
-        context.setCardTransfers((current) => current.filter((item) => item.id !== id));
+        getPresentation().setCardTransfers((current) => current.filter((item) => item.id !== id));
         if (completeTransfer) onComplete?.();
         resolve();
       };
-      unregisterCancel = context.transferCancelRegistryRef.current.register(() => finish(false));
-      context.setCardTransfers([{ ...transfer, id }]);
+      unregisterCancel = params.transferCancelRegistryRef.current.register(() => finish(false));
+      getPresentation().setCardTransfers([{ ...transfer, id }]);
       void delay(Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs).then(() =>
         finish(true),
       );
@@ -55,40 +66,39 @@ export function createBattleTransferDeps(contextOrGetter: BattleControllerContex
 
   function getStableHandCardDeps(): StableHandCardRectDeps {
     return {
-      measureHandCard: (cardKey) => localVisualCardRect(getContext().handCardRefs.current[cardKey] ?? null),
-      registerCancel: (callback) => getContext().transferCancelRegistryRef.current.register(callback),
-      scheduleTimeout: (fn, ms) => getContext().battleTimerGroupRef.current.setTimeout(fn, ms),
+      measureHandCard: (cardKey) => localVisualCardRect(params.handCardRefs.current[cardKey] ?? null),
+      registerCancel: (callback) => params.transferCancelRegistryRef.current.register(callback),
+      scheduleTimeout: (fn, ms) => params.battleTimerGroupRef.current.setTimeout(fn, ms),
     };
   }
 
   function getCardTransferDeps(): CardTransferAnimationDeps {
-    const context = getContext();
     return {
-      isSessionActive: context.isCurrentBattleSession,
-      measureDiscardPile: () => localRectFromElement(context.discardPileRef.current),
-      measureDrawPile: () => localRectFromElement(context.drawPileRef.current),
-      measureHandCard: (cardKey) => localVisualCardRect(context.handCardRefs.current[cardKey] ?? null),
+      isSessionActive: params.isCurrentBattleSession,
+      measureDiscardPile: () => localRectFromElement(params.discardPileRef.current),
+      measureDrawPile: () => localRectFromElement(params.drawPileRef.current),
+      measureHandCard: (cardKey) => localVisualCardRect(params.handCardRefs.current[cardKey] ?? null),
       runCardTransfer,
       playTransferSound,
-      setHiddenHandCardKeys: (update) => context.setHiddenHandCardKeys(update),
-      revealCardKey: (cardKey) => useBattlePresentationStore.getState().addRevealedCardKey(cardKey),
+      setHiddenHandCardKeys: (update) => getPresentation().setHiddenHandCardKeys(update),
+      revealCardKey: (cardKey) => getPresentation().addRevealedCardKey(cardKey),
       setCardPlayInProgress: (active) => {
-        context.cardPlayInProgressRef.current = active;
+        params.cardPlayInProgressRef.current = active;
       },
-      setTransferInProgress: context.setCardTransferInProgress,
+      setTransferInProgress: getPresentation().setCardTransferInProgress,
       stableHandCardDeps: getStableHandCardDeps(),
     };
   }
 
   function getDrawSequenceDeps(): HandDrawSequenceDeps {
     return {
-      isSessionActive: getContext().isCurrentBattleSession,
+      isSessionActive: params.isCurrentBattleSession,
       animateDrawnHand: (cards, allHandCards, session) =>
         animateDrawnHand(cards, allHandCards, session, getCardTransferDeps()),
-      setTransferInProgress: getContext().setCardTransferInProgress,
-      setHiddenHandCardKeys: getContext().setHiddenHandCardKeys,
+      setTransferInProgress: getPresentation().setCardTransferInProgress,
+      setHiddenHandCardKeys: getPresentation().setHiddenHandCardKeys,
       runIfSessionActive: (session, action) => {
-        if (getContext().isCurrentBattleSession(session)) action();
+        if (params.isCurrentBattleSession(session)) action();
       },
     };
   }

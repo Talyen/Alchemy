@@ -13,7 +13,9 @@ import { applyCombatTextPortraitFeedback, shouldHurtEnemyFromCombatTexts } from 
 import { playCompanionSound } from "./controller-utils";
 import { runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
 import { getBattleSessionStore } from "./battle-session";
-import type { BattleControllerContext } from "./controller-context";
+import type { RefObject } from "react";
+import type { BattleCard } from "@/lib/game-data";
+import type { Screen } from "../../shared/types";
 
 export type EndPlayerTurnResult = ReturnType<typeof endPlayerTurn>;
 
@@ -192,10 +194,10 @@ export type TurnOrchestrationDeps = {
   getTurnResolutionStore: () => TurnResolutionStore;
   getDrawSequenceDeps: () => HandDrawSequenceDeps;
   logBattleError: (context: string, err: unknown) => void;
-  companionScheduledRef: React.RefObject<boolean>;
-  battleTimerGroupRef: React.RefObject<import("@/lib/animation/game-timer").TimerGroup>;
-  resolvedAsHasteOrStunRef: React.RefObject<boolean>;
-  cardPlayInProgressRef: React.RefObject<boolean>;
+  companionScheduledRef: RefObject<boolean>;
+  battleTimerGroupRef: RefObject<import("@/lib/animation/game-timer").TimerGroup>;
+  resolvedAsHasteOrStunRef: RefObject<boolean>;
+  cardPlayInProgressRef: RefObject<boolean>;
   resetHandTransferUi: () => void;
   scheduleCompanionFollowUp: (resultState: BattleState, session: number) => void;
   onResolveEndTurn: (currentState: BattleState, session: number) => void;
@@ -292,7 +294,7 @@ export function resolveEndTurnOrchestration(deps: TurnOrchestrationDeps, current
         checkBattleEnd: deps.checkBattleEnd,
       });
     } catch (err) {
-      deps.logBattleError("resolve end turn — forcing defeat", err);
+      deps.logBattleError("resolve end turn forcing defeat", err);
       if (deps.isCurrentBattleSession(session)) {
         deps.handleVictoryDefeat("defeat");
       }
@@ -310,48 +312,56 @@ export function resolveCompanionFollowUpTexts(deps: TurnOrchestrationDeps, sessi
   }, []);
 }
 
-export function createBattleEndTurnUi(contextOrGetter: BattleControllerContext | (() => BattleControllerContext)) {
-  const getContext = typeof contextOrGetter === "function" ? contextOrGetter : () => contextOrGetter;
-  const getStore = () => getBattleSessionStore();
-
+export function createBattleEndTurnUi(params: {
+  screen: Screen;
+  battleSessionRef: RefObject<number>;
+  cardPlayInProgressRef: RefObject<boolean>;
+  runIfSessionActive: <T>(session: number, action: () => T, fallback?: T) => T;
+  logBattleError: (context: string, err: unknown) => void;
+  resetHandTransferUi: () => void;
+  resolvedAsHasteOrStunRef: RefObject<boolean>;
+  clearBattleTimeoutsKeepCompanion: () => void;
+  getTurnOrchestrationDeps: () => TurnOrchestrationDeps;
+  animateDiscardedHand: (hand: BattleCard[], session: number) => Promise<void>;
+  cardTransferInProgress: boolean;
+}) {
   function resolveEndTurn(currentState: BattleState, session: number) {
-    resolveEndTurnOrchestration(getContext().getTurnOrchestrationDeps(), currentState, session);
+    resolveEndTurnOrchestration(params.getTurnOrchestrationDeps(), currentState, session);
   }
 
   async function animateEndTurnThenResolve(currentState: BattleState, session: number) {
-    const context = getContext();
     try {
       if (!isAnimationDisabled()) {
         try {
-          await context.animateDiscardedHand(currentState.hand, session);
+          await params.animateDiscardedHand(currentState.hand, session);
         } catch (err) {
-          context.logBattleError("discard hand animation", err);
+          params.logBattleError("discard hand animation", err);
         }
       }
-      context.runIfSessionActive(session, () => resolveEndTurn(currentState, session));
+      params.runIfSessionActive(session, () => resolveEndTurn(currentState, session));
     } finally {
-      context.runIfSessionActive(session, () => {
-        if (!context.resolvedAsHasteOrStunRef.current) context.resetHandTransferUi();
-        context.cardPlayInProgressRef.current = false;
+      params.runIfSessionActive(session, () => {
+        if (!params.resolvedAsHasteOrStunRef.current) params.resetHandTransferUi();
+        params.cardPlayInProgressRef.current = false;
       });
     }
   }
 
   function handleEndTurn() {
-    const context = getContext();
+    const getStore = () => getBattleSessionStore();
     const currentState = getStore().battleState;
     if (
-      context.screen !== "battle" ||
+      params.screen !== "battle" ||
       currentState.turnPhase !== "player" ||
       currentState.wishOptions ||
-      context.cardPlayInProgressRef.current ||
-      context.cardTransferInProgress
+      params.cardPlayInProgressRef.current ||
+      params.cardTransferInProgress
     )
       return;
-    context.clearBattleTimeoutsKeepCompanion();
-    const session = context.battleSessionRef.current;
+    params.clearBattleTimeoutsKeepCompanion();
+    const session = params.battleSessionRef.current;
     void animateEndTurnThenResolve(currentState, session).catch((err: unknown) =>
-      context.logBattleError("resolve end turn animation sequence", err),
+      params.logBattleError("resolve end turn animation sequence", err),
     );
   }
 

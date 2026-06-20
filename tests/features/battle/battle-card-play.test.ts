@@ -5,8 +5,8 @@ import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-
 import { getBattleStoreView, resetRunBattleSlice } from "../../helpers/run-domain-store-test";
 import { createTestBattleState } from "../../lib/battle/test-state";
 import { makeTestCard } from "../../fixtures/battle";
-import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/controller-context";
 import { playUISound } from "@/lib/audio";
+import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
 
 vi.mock("@/lib/audio", () => ({
   playCardSound: vi.fn(),
@@ -30,11 +30,8 @@ function makeDeps(overrides: Partial<Parameters<typeof createBattleCardPlay>[0]>
   const cardPlayInProgressRef = { current: false };
   return {
     screen: "battle" as const,
-    battleState: getBattleStoreView().battleState,
     battleSessionRef,
     cardPlayInProgressRef,
-    hiddenHandCardKeys: new Set<string>(),
-    cardTransferInProgress: false,
     playerPanelRef: { current: null },
     enemyPanelRef: { current: null },
     battleSceneRef: { current: null },
@@ -90,7 +87,7 @@ describe("createBattleCardPlay", () => {
     getBattleStoreView().setSyncedBattleState(state);
 
     const deps = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(deps as BattleControllerContext);
+    const { handleCardClick } = createBattleCardPlay(deps);
     clickCard(handleCardClick, { ...slash, uid: 1 }, 0);
 
     expect(getBattleStoreView().battleState.hand.length).toBe(0);
@@ -113,7 +110,7 @@ describe("createBattleCardPlay", () => {
     getBattleStoreView().setSyncedBattleState(state);
 
     const deps = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(deps as BattleControllerContext);
+    const { handleCardClick } = createBattleCardPlay(deps);
     clickCard(handleCardClick, { ...expensive, uid: 2 }, 0);
 
     expect(getBattleStoreView().battleState).toEqual(state);
@@ -137,7 +134,7 @@ describe("createBattleCardPlay", () => {
     getBattleStoreView().setSyncedBattleState(state);
 
     const deps = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(deps as BattleControllerContext);
+    const { handleCardClick } = createBattleCardPlay(deps);
     clickCard(handleCardClick, { ...slash, uid: 3 }, 0);
 
     expect(getBattleStoreView().battleState.enemyHealth).toBe(state.enemyHealth);
@@ -158,7 +155,7 @@ describe("createBattleCardPlay", () => {
     getBattleStoreView().setSyncedBattleState(state);
 
     const deps = makeDeps({ cardTransferInProgress: true });
-    const { handleCardClick } = createBattleCardPlay(deps as BattleControllerContext);
+    const { handleCardClick } = createBattleCardPlay(deps);
     clickCard(handleCardClick, { ...slash, uid: 5 }, 0);
 
     expect(getBattleStoreView().battleState.hand.length).toBe(0);
@@ -178,12 +175,11 @@ describe("createBattleCardPlay", () => {
       enemyHealth: 30,
     });
     getBattleStoreView().setSyncedBattleState(state);
+    useBattlePresentationStore.getState().setCardTransferInProgress(true);
+    useBattlePresentationStore.getState().setHiddenHandCardKeys(new Set(["slash-6"]));
 
-    const deps = makeDeps({
-      cardTransferInProgress: true,
-      hiddenHandCardKeys: new Set(["slash-6"]),
-    });
-    const { handleCardClick } = createBattleCardPlay(deps as BattleControllerContext);
+    const deps = makeDeps();
+    const { handleCardClick } = createBattleCardPlay(deps);
     clickCard(handleCardClick, { ...slash, uid: 6 }, 0);
 
     expect(getBattleStoreView().battleState).toEqual(state);
@@ -205,7 +201,7 @@ describe("createBattleCardPlay", () => {
     getBattleStoreView().setSyncedBattleState(state);
 
     const deps = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(deps as BattleControllerContext);
+    const { handleCardClick } = createBattleCardPlay(deps);
     clickCard(handleCardClick, { ...slash, uid: 4 }, 0);
 
     expect(getBattleStoreView().battleState.hand.length).toBe(0);

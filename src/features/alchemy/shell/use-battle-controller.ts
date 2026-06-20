@@ -1,5 +1,5 @@
 // React battle orchestrator for combat state, card play, turn timing, ghosts, and feedback.
-/* eslint-disable react-hooks/refs -- session factories receive ref objects used only in async handlers */
+/* eslint-disable react-hooks/refs, react-hooks/immutability, react-hooks/preserve-manual-memoization -- factories receive ref objects for async handlers; ref.current assignments and closure mutations are deliberate */
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { BattleState } from "@/lib/battle";
@@ -17,8 +17,9 @@ import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/bat
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { BattleScreenData } from "@/features/alchemy/run-loop/screens/battle-screen/types";
-import { getBattleSessionStore } from "@/features/alchemy/run-loop/battle/battle-session";
 import { createTransferCancelRegistry } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
+import { getBattleSessionStore } from "@/features/alchemy/run-loop/battle/battle-session";
+import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import {
   defaultMeasureElementRect,
   defaultMeasureVisualCardRect,
@@ -27,14 +28,12 @@ import {
   resolveCompanionFollowUpTexts,
   type TurnOrchestrationDeps,
 } from "@/features/alchemy/run-loop/battle/turn-orchestration";
-import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
 import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { createBattleDevOutcomes } from "@/features/alchemy/run-loop/battle/battle-dev-outcomes";
 import { isVictoryGraceActive } from "@/features/alchemy/run-loop/battle/battle-victory-grace";
-import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/controller-context";
 
 export function useBattleController({
   run,
@@ -107,6 +106,7 @@ export function useBattleController({
     ],
   );
 
+  // Refs
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const drawPileRef = useRef<HTMLDivElement | null>(null);
   const discardPileRef = useRef<HTMLDivElement | null>(null);
@@ -119,18 +119,8 @@ export function useBattleController({
   const battleSessionRef = useRef(0);
   const victoryDefeatHandledRef = useRef(false);
   const transferCancelRegistryRef = useRef(createTransferCancelRegistry());
-  const cardTransfers = useBattlePresentationStore((s) => s.cardTransfers);
-  const setCardTransfers = useBattlePresentationStore((s) => s.setCardTransfers);
-  const hiddenHandCardKeys = useBattlePresentationStore((s) => s.hiddenHandCardKeys);
-  const setHiddenHandCardKeys = useBattlePresentationStore((s) => s.setHiddenHandCardKeys);
-  const cardTransferInProgress = useBattlePresentationStore((s) => s.cardTransferInProgress);
-  const setCardTransferInProgress = useBattlePresentationStore((s) => s.setCardTransferInProgress);
   const transferIdCounterRef = useRef(0);
   const resolvedAsHasteOrStunRef = useRef(false);
-
-  function logBattleError(context: string, err: unknown) {
-    logError(`Failed to ${context}`, "battle", { error: String(err) }, err instanceof Error ? err.stack : undefined);
-  }
 
   const onVictoryRef = useRef(onBattleVictory);
   const onDefeatRef = useRef(onBattleDefeat);
@@ -139,22 +129,32 @@ export function useBattleController({
     onDefeatRef.current = onBattleDefeat;
   }, [onBattleVictory, onBattleDefeat]);
 
-  function getStore() {
-    return getBattleSessionStore();
-  }
+  const logBattleError = useCallback((context: string, err: unknown) => {
+    logError(`Failed to ${context}`, "battle", { error: String(err) }, err instanceof Error ? err.stack : undefined);
+  }, []);
 
-  // Define stable getter for context to avoid circular reference issues
-  const contextRef = useRef<BattleControllerContext>(null as unknown as BattleControllerContext);
-  const getContext = useCallback(() => contextRef.current, []);
-
-  // Base session identity & guards
-  const battleSession = useMemo(() => createBattleSession(getContext), [getContext]);
+  // Session identity & guards
+  const battleSession = useMemo(
+    () =>
+      createBattleSession({
+        battleSessionRef,
+        battleTimerGroupRef,
+        transferCancelRegistryRef,
+        cardPlayInProgressRef,
+        victoryDefeatHandledRef,
+        resolvedAsHasteOrStunRef,
+        companionScheduledRef,
+        onBattleVictory: () => onVictoryRef.current?.(),
+        onBattleDefeat: () => onDefeatRef.current?.(),
+      }),
+    [],
+  );
 
   const {
     isCurrentBattleSession,
     runIfSessionActive,
-    handleVictoryDefeat,
     checkBattleEnd,
+    handleVictoryDefeat,
     clearTransferHandles,
     clearAllBattleTimeouts,
     clearBattleTimeoutsKeepCompanion,
@@ -162,15 +162,9 @@ export function useBattleController({
     getTurnResolutionStore,
   } = battleSession;
 
-  const playableHandCardKeys = useMemo(
-    () => getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys),
-    [battleState, hiddenHandCardKeys],
-  );
-
   const resetHandTransferUi = useCallback(() => {
-    setHiddenHandCardKeys(new Set());
-    setCardTransferInProgress(false);
-  }, [setHiddenHandCardKeys, setCardTransferInProgress]);
+    useBattlePresentationStore.getState().resetHandTransferUi();
+  }, []);
 
   const finishDrawSequence = useCallback(
     (session: number, state: BattleState) => {
@@ -182,15 +176,28 @@ export function useBattleController({
     [battleSession, resetHandTransferUi, checkBattleEnd],
   );
 
-  // Re-evaluable EndTurn callback refs to prevent stale captures
-  const resolveEndTurnRef = useRef<(_currentState: BattleState, _session: number) => void>(() => {});
-  const getTurnOrchestrationDepsRef = useRef<() => TurnOrchestrationDeps>(
-    null as unknown as () => TurnOrchestrationDeps,
-  );
-  const scheduleCompanionFollowUpRef = useRef<(resultState: BattleState, session: number) => void>(
-    null as unknown as (resultState: BattleState, session: number) => void,
+  // Transfer deps (animation helpers)
+  const transferDeps = useMemo(
+    () =>
+      createBattleTransferDeps({
+        measureElementRect,
+        measureVisualCardRect,
+        battleSceneRef,
+        transferIdCounterRef,
+        transferCancelRegistryRef,
+        handCardRefs,
+        battleTimerGroupRef,
+        isCurrentBattleSession,
+        discardPileRef,
+        drawPileRef,
+        cardPlayInProgressRef,
+      }),
+    [measureElementRect, measureVisualCardRect, isCurrentBattleSession],
   );
 
+  // Companion follow-up, turn orchestration, and end-turn UI
+  // Order matters: scheduleCompanionFollowUp(→runIfSessionActive) → getTurnOrchestrationDeps(→scheduleCompanion+resolveEndTurn) → createBattleEndTurnUi(→getTurnOrchestrationDeps)
+  // resolveEndTurn is defined after createBattleEndTurnUi returns, so a let-variable bridges the cycle.
   const scheduleCompanionFollowUp = useCallback(
     (resultState: BattleState, session: number) => {
       if (!resultState.activeCompanion || resultState.enemyHealth <= 0) return;
@@ -199,7 +206,7 @@ export function useBattleController({
           companionScheduledRef.current = false;
           const texts = resolveCompanionFollowUpTexts(getTurnOrchestrationDepsRef.current(), session);
           if (texts.length > 0) {
-            const store = getStore();
+            const store = getBattleSessionStore();
             store.showCombatTexts(texts);
             applyCombatTextPortraitFeedback(texts, store);
           }
@@ -209,44 +216,181 @@ export function useBattleController({
     },
     [runIfSessionActive],
   );
-  scheduleCompanionFollowUpRef.current = scheduleCompanionFollowUp;
 
-  const getTurnOrchestrationDeps = useCallback(() => {
-    return {
-      getStore,
+  // A stable ref to hold the latest getTurnOrchestrationDeps (updated after resolveEndTurn is created)
+  const getTurnOrchestrationDepsRef = useRef<() => TurnOrchestrationDeps>(
+    null as unknown as () => TurnOrchestrationDeps,
+  );
+
+  const { handleEndTurn, resolveEndTurn } = useMemo(() => {
+    // eslint-disable-next-line prefer-const -- reassigned after createBattleEndTurnUi returns to break circular dependency
+    let lateResolveEndTurn: (currentState: BattleState, session: number) => void;
+
+    const getTurnOrchestrationDeps = () => ({
+      getStore: getBattleSessionStore,
       isCurrentBattleSession,
       runIfSessionActive,
       checkBattleEnd,
       handleVictoryDefeat,
       getTurnResolutionStore,
-      getDrawSequenceDeps: () => getContext().getDrawSequenceDeps(),
+      getDrawSequenceDeps: () => transferDeps.getDrawSequenceDeps(),
       logBattleError,
       companionScheduledRef,
       battleTimerGroupRef,
       resolvedAsHasteOrStunRef,
       cardPlayInProgressRef,
       resetHandTransferUi,
-      scheduleCompanionFollowUp: scheduleCompanionFollowUpRef.current,
-      onResolveEndTurn: (currentState: BattleState, session: number) =>
-        resolveEndTurnRef.current(currentState, session),
-    };
+      scheduleCompanionFollowUp,
+      onResolveEndTurn: (state: BattleState, session: number) => lateResolveEndTurn(state, session),
+    });
+
+    const endTurnUi = createBattleEndTurnUi({
+      screen,
+      battleSessionRef,
+      cardPlayInProgressRef,
+      runIfSessionActive,
+      logBattleError,
+      resetHandTransferUi,
+      resolvedAsHasteOrStunRef,
+      clearBattleTimeoutsKeepCompanion,
+      getTurnOrchestrationDeps,
+      animateDiscardedHand: (hand, session) => transferDeps.animateDiscardedHand(hand, session),
+      cardTransferInProgress: false,
+    });
+
+    lateResolveEndTurn = endTurnUi.resolveEndTurn;
+
+    return { handleEndTurn: endTurnUi.handleEndTurn, resolveEndTurn: endTurnUi.resolveEndTurn };
   }, [
     isCurrentBattleSession,
     runIfSessionActive,
     checkBattleEnd,
     handleVictoryDefeat,
     getTurnResolutionStore,
+    transferDeps,
+    logBattleError,
+    companionScheduledRef,
+    battleTimerGroupRef,
+    resolvedAsHasteOrStunRef,
+    cardPlayInProgressRef,
     resetHandTransferUi,
-    getContext,
+    scheduleCompanionFollowUp,
+    screen,
+    battleSessionRef,
+    clearBattleTimeoutsKeepCompanion,
   ]);
-  getTurnOrchestrationDepsRef.current = getTurnOrchestrationDeps;
 
-  const transferDeps = useMemo(() => createBattleTransferDeps(getContext), [getContext]);
+  getTurnOrchestrationDepsRef.current = useCallback(
+    () => ({
+      getStore: getBattleSessionStore,
+      isCurrentBattleSession,
+      runIfSessionActive,
+      checkBattleEnd,
+      handleVictoryDefeat,
+      getTurnResolutionStore,
+      getDrawSequenceDeps: () => transferDeps.getDrawSequenceDeps(),
+      logBattleError,
+      companionScheduledRef,
+      battleTimerGroupRef,
+      resolvedAsHasteOrStunRef,
+      cardPlayInProgressRef,
+      resetHandTransferUi,
+      scheduleCompanionFollowUp,
+      onResolveEndTurn: resolveEndTurn,
+    }),
+    [
+      isCurrentBattleSession,
+      runIfSessionActive,
+      checkBattleEnd,
+      handleVictoryDefeat,
+      getTurnResolutionStore,
+      transferDeps,
+      logBattleError,
+      companionScheduledRef,
+      battleTimerGroupRef,
+      resolvedAsHasteOrStunRef,
+      cardPlayInProgressRef,
+      resetHandTransferUi,
+      scheduleCompanionFollowUp,
+      resolveEndTurn,
+    ],
+  );
 
-  const battleInit = useMemo(() => createBattleInit(getContext), [getContext]);
+  // Auto end turn
+  const { scheduleAutoEndTurn } = useBattleAutoEndTurn({
+    autoEndTurn,
+    screen,
+    battleState,
+    onEndTurn: handleEndTurn,
+  });
+
+  // Card play
+  const cardPlay = useMemo(
+    () =>
+      createBattleCardPlay({
+        screen,
+        runIfSessionActive,
+        cardPlayInProgressRef,
+        battleSessionRef,
+        finishDrawSequence,
+        logBattleError,
+        playerPanelRef,
+        enemyPanelRef,
+        battleSceneRef,
+        setHoveredCardId,
+        talents,
+        getDrawSequenceDeps: () => transferDeps.getDrawSequenceDeps(),
+        scheduleAutoEndTurn,
+      }),
+    [
+      screen,
+      runIfSessionActive,
+      finishDrawSequence,
+      logBattleError,
+      setHoveredCardId,
+      talents,
+      transferDeps,
+      scheduleAutoEndTurn,
+    ],
+  );
+  const { handleCardClick, handleWishChoice } = cardPlay;
+
+  // Battle init
+  const battleInit = useMemo(
+    () =>
+      createBattleInit({
+        resetBattleSession,
+        run,
+        talents,
+        homesteadEffectsRef,
+      }),
+    [resetBattleSession, run, talents, homesteadEffectsRef],
+  );
   const { startBattle, startBossBattle, startBossById } = battleInit;
 
-  // Mount-only teardown — do not re-run when session helper identities change.
+  // Dev outcomes
+  const devOutcomes = useMemo(
+    () =>
+      createBattleDevOutcomes({
+        screen,
+        resetBattleSession,
+        handleVictoryDefeat,
+      }),
+    [screen, resetBattleSession, handleVictoryDefeat],
+  );
+  const { handleEndRun, skipCombatDevMode } = devOutcomes;
+
+  // Playable hand card keys
+  const hiddenHandCardKeys = useBattlePresentationStore((s) => s.hiddenHandCardKeys);
+  const playableHandCardKeys = useMemo(
+    () => getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys),
+    [battleState, hiddenHandCardKeys],
+  );
+
+  const cardTransfers = useBattlePresentationStore((s) => s.cardTransfers);
+  const cardTransferInProgress = useBattlePresentationStore((s) => s.cardTransferInProgress);
+
+  // Mount-only teardown
   useEffect(
     () => () => {
       clearAllBattleTimeouts();
@@ -264,89 +408,16 @@ export function useBattleController({
     if (isVictoryGraceActive(screen, battleState.enemyHealth, victoryDefeatHandledRef.current)) return;
     resetBattleSession();
     queueMicrotask(() => {
-      setCardTransfers([]);
+      useBattlePresentationStore.getState().resetCardTransfers();
       resetHandTransferUi();
     });
-  }, [hasActiveBattle, screen, battleState.enemyHealth, resetBattleSession, setCardTransfers, resetHandTransferUi]);
+  }, [hasActiveBattle, screen, battleState.enemyHealth, resetBattleSession, resetHandTransferUi]);
 
   useEffect(() => {
     if (screen !== "battle") {
       clearFloatingCombatTexts();
     }
   }, [screen, clearFloatingCombatTexts]);
-
-  const endTurnUi = useMemo(() => createBattleEndTurnUi(getContext), [getContext]);
-  const { handleEndTurn, resolveEndTurn: assignResolveEndTurn } = endTurnUi;
-  resolveEndTurnRef.current = assignResolveEndTurn;
-
-  const { scheduleAutoEndTurn } = useBattleAutoEndTurn({
-    autoEndTurn,
-    screen,
-    battleState,
-    onEndTurn: handleEndTurn,
-  });
-
-  const cardPlay = useMemo(() => createBattleCardPlay(getContext), [getContext]);
-  const { handleCardClick, handleWishChoice } = cardPlay;
-
-  const devOutcomes = useMemo(() => createBattleDevOutcomes(getContext), [getContext]);
-  const { handleEndRun, skipCombatDevMode } = devOutcomes;
-
-  // Populate contextRef.current on every render. Since consumers access it
-  // lazily via getContext(), they always receive the latest values from this render.
-  contextRef.current = {
-    screen,
-    run,
-    talents,
-    autoEndTurn,
-    homesteadEffectsRef,
-    onBattleVictory,
-    onBattleDefeat,
-    measureElementRect,
-    measureVisualCardRect,
-    setHoveredCardId,
-
-    handCardRefs,
-    drawPileRef,
-    discardPileRef,
-    battleSceneRef,
-    playerPanelRef,
-    enemyPanelRef,
-
-    cardPlayInProgressRef,
-    companionScheduledRef,
-    battleTimerGroupRef,
-    battleSessionRef,
-    victoryDefeatHandledRef,
-    transferCancelRegistryRef,
-    transferIdCounterRef,
-    resolvedAsHasteOrStunRef,
-
-    battleState,
-    cardTransfers,
-    setCardTransfers,
-    hiddenHandCardKeys,
-    setHiddenHandCardKeys,
-    cardTransferInProgress,
-    setCardTransferInProgress,
-
-    isCurrentBattleSession,
-    runIfSessionActive,
-    checkBattleEnd,
-    handleVictoryDefeat,
-    clearAllBattleTimeouts,
-    clearBattleTimeoutsKeepCompanion,
-    resetBattleSession,
-    logBattleError,
-    resetHandTransferUi,
-
-    getDrawSequenceDeps: () => transferDeps.getDrawSequenceDeps(),
-    finishDrawSequence,
-    scheduleAutoEndTurn: (state: BattleState) => scheduleAutoEndTurn(state),
-    getTurnOrchestrationDeps: () => getTurnOrchestrationDepsRef.current(),
-    animateDiscardedHand: (hand: import("@/lib/game-data").BattleCard[], session: number) =>
-      transferDeps.animateDiscardedHand(hand, session),
-  };
 
   return {
     battleState,

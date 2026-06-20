@@ -1,5 +1,5 @@
 // Card play, wish resolution, and post-play draw sequences in battle UI.
-import type { MouseEvent } from "react";
+import type { MouseEvent, RefObject } from "react";
 import {
   canPlayCard as canPlayCardInBattle,
   chooseWishCard,
@@ -19,21 +19,35 @@ import { applyCombatTextPortraitFeedback, shouldPlayCardGoldGain } from "./battl
 import { getCardKey } from "./controller-utils";
 import { runHandDrawSequence } from "./draw-sequence";
 import { getBattleSessionStore } from "./battle-session";
-import type { BattleControllerContext } from "./controller-context";
+import type { HandDrawSequenceDeps } from "./draw-sequence";
+import type { Screen } from "../../shared/types";
 
 const BATTLE_CARD_PLAY_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
 
-export function createBattleCardPlay(contextOrGetter: BattleControllerContext | (() => BattleControllerContext)) {
-  const getContext = typeof contextOrGetter === "function" ? contextOrGetter : () => contextOrGetter;
+export function createBattleCardPlay(params: {
+  screen: Screen;
+  runIfSessionActive: <T>(session: number, action: () => T, fallback?: T) => T;
+  cardPlayInProgressRef: RefObject<boolean>;
+  battleSessionRef: RefObject<number>;
+  finishDrawSequence: (session: number, state: BattleState) => void;
+  logBattleError: (context: string, err: unknown) => void;
+  playerPanelRef: RefObject<HTMLDivElement | null>;
+  enemyPanelRef: RefObject<HTMLDivElement | null>;
+  battleSceneRef: RefObject<HTMLDivElement | null>;
+  setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
+  talents: { awardCardXP: (card: BattleCard) => void };
+  getDrawSequenceDeps: () => HandDrawSequenceDeps;
+  scheduleAutoEndTurn: (state: BattleState) => void;
+}) {
   const getStore = () => getBattleSessionStore();
 
   function handleDrawSequence(
     oldHand: BattleCard[],
     newState: BattleState,
     applyState: () => void,
-    session = getContext().battleSessionRef.current,
+    session = params.battleSessionRef.current,
   ): Promise<boolean> {
-    return runHandDrawSequence(oldHand, newState, applyState, session, getContext().getDrawSequenceDeps());
+    return runHandDrawSequence(oldHand, newState, applyState, session, params.getDrawSequenceDeps());
   }
 
   function runDrawSequenceAndFinalize(
@@ -44,17 +58,17 @@ export function createBattleCardPlay(contextOrGetter: BattleControllerContext | 
     errorContext: string,
   ) {
     void handleDrawSequence(oldHand, newState, onCommitState, session)
-      .catch((err: unknown) => getContext().logBattleError(`handle ${errorContext} draw sequence`, err))
-      .finally(() => getContext().finishDrawSequence(session, newState));
+      .catch((err: unknown) => params.logBattleError(`handle ${errorContext} draw sequence`, err))
+      .finally(() => params.finishDrawSequence(session, newState));
   }
 
   function canPlayCard(card: BattleCard, index: number, state: BattleState) {
-    const context = getContext();
+    const hiddenKeys = getStore().hiddenHandCardKeys;
     return (
-      context.screen === "battle" &&
+      params.screen === "battle" &&
       canPlayCardInBattle(state, card, index, BATTLE_CARD_PLAY_OPTIONS) &&
-      !context.cardPlayInProgressRef.current &&
-      !context.hiddenHandCardKeys.has(getCardKey(card))
+      !params.cardPlayInProgressRef.current &&
+      !hiddenKeys.has(getCardKey(card))
     );
   }
 
@@ -63,15 +77,14 @@ export function createBattleCardPlay(contextOrGetter: BattleControllerContext | 
     index: number,
     sourceRect: { x: number; y: number; width: number; height: number },
   ) {
-    const context = getContext();
     const centerOffset = index - (getStore().battleState.hand.length - 1) / 2;
     animateCardActivation(
       card,
       sourceRect,
       centerOffset * CARD_ACTIVATION_ROTATION_DEGREES,
-      context.playerPanelRef,
-      context.enemyPanelRef,
-      context.battleSceneRef,
+      params.playerPanelRef,
+      params.enemyPanelRef,
+      params.battleSceneRef,
       getStore().spawnCardGhost,
     );
   }
@@ -97,16 +110,14 @@ export function createBattleCardPlay(contextOrGetter: BattleControllerContext | 
       playUISound("error");
       return;
     }
-    const session = getContext().battleSessionRef.current;
-    getContext().cardPlayInProgressRef.current = true;
+    const session = params.battleSessionRef.current;
+    params.cardPlayInProgressRef.current = true;
     animatePlayedCard(card, index, sourceRect);
     playCardSound(card.id);
     const resolution = playBattleCardResolved(currentState, card.id, index, BATTLE_CARD_PLAY_OPTIONS);
     playCardResolutionFeedback(card, currentState, resolution.state, resolution.combatTexts);
-    getContext().setHoveredCardId((current) =>
-      current === getHoverId("hand", `${card.id}-${card.uid}`) ? null : current,
-    );
-    getContext().talents.awardCardXP(card);
+    params.setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${card.uid}`) ? null : current));
+    params.talents.awardCardXP(card);
 
     runDrawSequenceAndFinalize(
       currentState.hand,
@@ -118,8 +129,8 @@ export function createBattleCardPlay(contextOrGetter: BattleControllerContext | 
       session,
       "play card",
     );
-    getContext().runIfSessionActive(session, () => {
-      getContext().scheduleAutoEndTurn(resolution.state);
+    params.runIfSessionActive(session, () => {
+      params.scheduleAutoEndTurn(resolution.state);
     });
   }
 
@@ -130,7 +141,7 @@ export function createBattleCardPlay(contextOrGetter: BattleControllerContext | 
   function handleWishChoice(cardOrNull: BattleCard | null) {
     const currentState = getStore().battleState;
     const newState = chooseWishCard(currentState, cardOrNull?.id ?? null);
-    const session = getContext().battleSessionRef.current;
+    const session = params.battleSessionRef.current;
     if (cardOrNull) {
       useAppStore.getState().setDiscoveredCardIds((current) => appendUnique(current, cardOrNull.id));
     }
