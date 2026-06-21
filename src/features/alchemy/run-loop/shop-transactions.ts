@@ -39,6 +39,58 @@ type RefreshOfferingsInput<T> = {
   deck?: BattleCard[];
 };
 
+export function markSlotPurchased(keys: string[], slotKey: string): string[] {
+  return keys.includes(slotKey) ? keys : [...keys, slotKey];
+}
+
+export function makeCardRefreshHandler<T>(config: {
+  getPrice: () => number;
+  getRefreshesLeft: () => number;
+  getRunGold: () => number;
+  setRunGold: (fn: (g: number) => number) => void;
+  getPool: () => BattleCard[];
+  getCurrentItems: () => BattleCard[];
+  count: number;
+  setState: (fn: (prev: T) => T) => void;
+  getDeck: () => BattleCard[];
+  getMapState: (prev: T, items: BattleCard[]) => T;
+}): () => boolean {
+  return () =>
+    refreshOfferings({
+      price: config.getPrice(),
+      refreshesLeft: config.getRefreshesLeft(),
+      runGold: config.getRunGold(),
+      pool: config.getPool(),
+      currentItems: config.getCurrentItems(),
+      count: config.count,
+      setRunGold: config.setRunGold,
+      setState: config.setState,
+      mapState: (prev, items) => config.getMapState(prev, items),
+      deck: config.getDeck(),
+    });
+}
+
+export function makeShopRefreshHandler<T>(config: {
+  getPrice: () => number;
+  getRefreshesLeft: () => number;
+  getRunGold: () => number;
+  setRunGold: (fn: (g: number) => number) => void;
+  setState: (fn: (prev: T) => T) => void;
+  resample: () => unknown[];
+  getMapState: (prev: T, items: unknown[]) => T;
+}): () => boolean {
+  return () =>
+    refreshShopOfferings({
+      price: config.getPrice(),
+      refreshesLeft: config.getRefreshesLeft(),
+      runGold: config.getRunGold(),
+      setRunGold: config.setRunGold,
+      setState: config.setState,
+      resample: config.resample,
+      mapState: (prev, items) => config.getMapState(prev, items),
+    });
+}
+
 export function refreshOfferings<T>(input: RefreshOfferingsInput<T>): boolean {
   return refreshShopOfferings<T>({
     price: input.price,

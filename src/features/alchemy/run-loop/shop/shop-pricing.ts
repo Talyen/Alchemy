@@ -44,3 +44,22 @@ export function getGenericBuyTalentDiscounts(talents: Pick<TalentEffectManifest,
 } {
   return { haggleDiscount: talents.shopCardDiscount, apothecaryDiscount: 0 };
 }
+
+export function makeBuyPriceGetter<Item>(
+  getBasePrice: (item: Item) => number,
+  getDiscounts: (item: Item) => { haggleDiscount: number; apothecaryDiscount: number },
+  getFirstPurchaseUsed: () => boolean,
+  merchantsFavorDiscount: number,
+): (item: Item) => number {
+  return (item) => {
+    const base = getBasePrice(item);
+    const { haggleDiscount, apothecaryDiscount } = getDiscounts(item);
+    return computeShopBuyPrice({
+      basePrice: base,
+      haggleDiscount,
+      apothecaryDiscount,
+      merchantsFavorDiscount,
+      firstPurchaseUsed: getFirstPurchaseUsed(),
+    });
+  };
+}

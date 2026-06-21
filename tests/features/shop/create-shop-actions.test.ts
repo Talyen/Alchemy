@@ -18,6 +18,7 @@ import {
   createInitialShopState,
   createInitialAlchemistState,
   createInitialTrinketShopState,
+  createInitialEquipmentShopState,
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import {
   SHOP_CARD_PRICE,
@@ -27,6 +28,7 @@ import {
   ALCHEMIST_REFRESH_PRICE,
   ALCHEMIST_MIX_PRICE,
   TRINKET_SHOP_TRINKET_PRICE,
+  MIXED_POTION_CARD_ID,
 } from "@/lib/game-constants";
 
 beforeEach(() => {
@@ -89,6 +91,7 @@ function buildActions(
     gearAstralChanceBonus: number;
     trinketIds: string[];
   }>,
+  rng?: () => number,
 ) {
   if (overrides?.trinketIds) {
     getRunProgressStoreView().setRunTrinkets(() => overrides.trinketIds!);
@@ -100,6 +103,7 @@ function buildActions(
   return createShopActions({
     run,
     talents: { talentEffects } as any,
+    rng,
     homesteadEffectsRef: { current: { gearAstralChanceBonus: overrides?.gearAstralChanceBonus ?? 0 } } as any,
     shopState: shopStates.shopState,
     alchemistState: shopStates.alchemistState,
@@ -299,6 +303,41 @@ describe("createShopActions", () => {
       expect(actions.handleAlchemistMixPotions(0, 5)).toBeNull();
       expect(actions.handleAlchemistMixPotions(0, 0)).toBeNull();
     });
+
+    it("consumes mix slot on every attempt — even if mixing fails", () => {
+      setRunProgress({
+        runGold: 999,
+        runDeck: [makeCard({ id: MIXED_POTION_CARD_ID, title: "Mixed" }), makeCard({ id: "b", title: "Potion" })],
+      });
+      setAlchemistState(createInitialAlchemistState());
+      const actions = buildActions({ talentEffects: { potionMixPotency: 0 } });
+
+      // Mixing a Mixed Potion with another potion fails, but gold is deducted
+      // and mixUsed is set so the player can't retry.
+      const result = actions.handleAlchemistMixPotions(0, 1);
+      expect(result).toBeNull();
+      expect(getRunProgressStoreView().runGold).toBeLessThan(999);
+      expect(getRunSessionStoreView().alchemistState.mixUsed).toBe(true);
+    });
+
+    it("prevents a second mix attempt after first succeeds", () => {
+      setRunProgress({
+        runGold: 999,
+        runDeck: [makeCard({ id: "a", title: "Potion A" }), makeCard({ id: "b", title: "Potion B" })],
+      });
+      setAlchemistState(createInitialAlchemistState());
+      const firstActions = buildActions({ talentEffects: { potionMixPotency: 0 } });
+
+      const first = firstActions.handleAlchemistMixPotions(0, 1);
+      expect(first).not.toBeNull();
+      expect(getRunSessionStoreView().alchemistState.mixUsed).toBe(true);
+
+      // Fresh snapshot picks up mixUsed: true in the new closure
+      const secondActions = buildActions({ talentEffects: { potionMixPotency: 0 } });
+      const second = secondActions.handleAlchemistMixPotions(0, 1);
+      expect(second).toBeNull();
+      expect(getRunProgressStoreView().runGold).toBe(999 - ALCHEMIST_MIX_PRICE);
+    });
   });
 
   describe("trinket shop", () => {
@@ -369,6 +408,40 @@ describe("createShopActions", () => {
       // Fresh snapshot after purchase
       const postBuyActions = buildActions();
       expect(postBuyActions.getMerchantCardBuyPrice(card)).toBe(SHOP_CARD_PRICE);
+    });
+  });
+
+  describe("alchemist refresh dedup", () => {
+    it("does not restock the same potion id on refresh", () => {
+      setRunProgress({ runGold: 999 });
+      setAlchemistState(createInitialAlchemistState());
+      const actions = buildActions();
+      const beforeIds = getRunSessionStoreView().alchemistState.potions.map((p) => p.id);
+
+      actions.handleAlchemistRefresh();
+
+      const afterIds = getRunSessionStoreView().alchemistState.potions.map((p) => p.id);
+      const overlap = beforeIds.filter((id) => afterIds.includes(id));
+      expect(overlap.length).toBeLessThan(beforeIds.length);
+    });
+  });
+
+  describe("injected rng", () => {
+    it("supports deterministic rng for equipment shop init", () => {
+      const rng = () => 0.5;
+      setRunProgress({ runGold: 999 });
+
+      setEquipmentShopState(createInitialEquipmentShopState(rng));
+      const firstActions = buildActions({}, rng);
+      firstActions.initEquipmentShop();
+      const firstGear = getRunSessionStoreView().equipmentShopState.gear.map((g) => g.definitionId);
+
+      setEquipmentShopState(createInitialEquipmentShopState(rng));
+      const secondActions = buildActions({}, rng);
+      secondActions.initEquipmentShop();
+      const secondGear = getRunSessionStoreView().equipmentShopState.gear.map((g) => g.definitionId);
+
+      expect(firstGear).toEqual(secondGear);
     });
   });
 });
