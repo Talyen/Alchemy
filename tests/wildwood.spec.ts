@@ -2,7 +2,7 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
-import { critical } from "./playwright-tags";
+import { critical, prepush } from "./playwright-tags";
 import { injectSaveState, makeCard, makeHighDamageCard, SAVE_KEY } from "./helpers";
 
 async function pickDraftCard(page: import("@playwright/test").Page) {
@@ -43,7 +43,7 @@ async function wildwoodWinCombat(page: import("@playwright/test").Page, battle: 
 }
 
 test.describe("Wildwood Draft", () => {
-  test("resumes a persisted mid-draft run", critical, async ({ page, runtimeErrors }) => {
+  test("resumes a persisted mid-draft run", { ...critical, ...prepush }, async ({ page, runtimeErrors }) => {
     void runtimeErrors;
     const drafted = makeCard({ id: "slash" });
     const choices = [makeCard({ id: "block" }), makeCard({ id: "bash" }), makeCard({ id: "anvil" })];

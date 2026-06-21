@@ -5,8 +5,9 @@ import { makeCard } from "./e2e/cards";
 import { BattlePage } from "./pages/battle-page";
 import { MenuPage } from "./pages/menu-page";
 import { test } from "./fixtures/e2e";
+import { armory } from "./playwright-tags";
 
-test.describe("Gear combat", () => {
+test.describe("Gear combat", armory, () => {
   test("equipped gear increases physical damage in battle", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;

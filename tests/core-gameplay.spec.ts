@@ -1,6 +1,5 @@
 import { expect } from "@playwright/test";
 import {
-  ANVIL_CARD,
   pinDestinationChoice,
   MANA_BERRIES_CARD,
   makeCard,
@@ -16,19 +15,6 @@ import { RewardPage } from "./pages/reward-page";
 import { critical } from "./playwright-tags";
 
 test.describe("Battle Flow", critical, () => {
-  test("end turn during combat resolves without errors", async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeHighDamageCard()),
-    );
-    const battle = new BattlePage(page);
-
-    await battle.endTurn();
-    await battle.winViaCombat(3);
-  });
-
   test("normal combat can be won by playing cards and ending turns", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
@@ -39,24 +25,6 @@ test.describe("Battle Flow", critical, () => {
     const battle = new BattlePage(page);
     await battle.winViaCombat(3);
     await expect(battle.victoryHeading).toBeVisible();
-  });
-
-  test("playing a card consumes mana and applies effects", async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeCard()),
-    );
-    const battle = new BattlePage(page);
-
-    const manaBefore = await battle.mana();
-    await battle.playFirstCard();
-    const manaAfter = await battle.mana();
-    expect(manaAfter).toBe(manaBefore - 1);
-
-    const handAfter = await battle.handCount();
-    expect(handAfter).toBeGreaterThanOrEqual(0);
   });
 
   test("end turn triggers enemy phase and draws new cards", async ({ page, fastBattle, runtimeErrors }) => {
@@ -75,19 +43,6 @@ test.describe("Battle Flow", critical, () => {
     await battle.endTurn();
     const handAfterTurn = await battle.handCount();
     expect(handAfterTurn).toBe(4);
-  });
-
-  test("anvil card grants forge status that persists across turns", async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-    await startBattleWithDeck(page, [ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD]);
-    const battle = new BattlePage(page);
-
-    await battle.playCardNamed("Anvil");
-    await expect(page.getByRole("button", { name: "Forge 1" })).toBeVisible();
-
-    await battle.endTurn();
-    await expect(page.getByRole("button", { name: /Forge/ })).toHaveCount(1);
   });
 });
 

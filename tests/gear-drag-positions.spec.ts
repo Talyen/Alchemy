@@ -10,13 +10,13 @@ import {
   currencyLocator,
 } from "./e2e/armory";
 import { test } from "./fixtures/e2e";
-import { critical, prepush } from "./playwright-tags";
+import { armory, prepush } from "./playwright-tags";
 
 const beltGear: GearInstance = { instanceId: "gear-belt", definitionId: "leather-belt-basic", affixes: [] };
 const ringGear: GearInstance = { instanceId: "gear-ring", definitionId: "ruby-ring-basic", affixes: [] };
 
-test.describe("Gear drag positions", critical, () => {
-  test("drag equipped item back to a specific inventory cell", prepush, async ({ page }) => {
+test.describe("Gear drag positions", armory, () => {
+  test("drag equipped item back to a specific inventory cell", async ({ page }) => {
     await openArmory(page, [bodyGear]);
 
     const bodyItem = gearItemLocator(page, "Leather Armor");
@@ -37,7 +37,7 @@ test.describe("Gear drag positions", critical, () => {
     expect(Math.abs(itemBox!.x - cellOrigin!.x)).toBeGreaterThan(0);
   });
 
-  test("drag inventory item to a specific empty cell", prepush, async ({ page }) => {
+  test("drag inventory item to a specific empty cell", async ({ page }) => {
     await openArmory(page, [bodyGear, beltGear, ringGear]);
 
     const beltItem = gearItemLocator(page, "Leather Belt");
@@ -55,7 +55,7 @@ test.describe("Gear drag positions", critical, () => {
     expect(moved).toBe(true);
   });
 
-  test("swap displaced item returns to vacated cell", prepush, async ({ page }) => {
+  test("swap displaced item returns to vacated cell", async ({ page }) => {
     const helmA: GearInstance = { instanceId: "helm-a", definitionId: "leather-helm-basic", affixes: [] };
     const helmB: GearInstance = { instanceId: "helm-b", definitionId: "leather-helm-basic", affixes: [] };
     const loadouts = createEmptyGearLoadouts();
@@ -73,7 +73,7 @@ test.describe("Gear drag positions", critical, () => {
     expect(await gearItemLocator(page, "Leather Helm").count()).toBe(1);
   });
 
-  test("items remain in inventory after switching characters (no auto-sort)", async ({ page }) => {
+  test("items remain in inventory after switching characters with no auto-sort", async ({ page }) => {
     await openArmory(page, [beltGear]);
 
     const beltItem = gearItemLocator(page, "Leather Belt");
@@ -109,7 +109,7 @@ test.describe("Gear drag positions", critical, () => {
     await page.mouse.up();
   });
 
-  test("sort button moves items", prepush, async ({ page }) => {
+  test("sort button moves items", async ({ page }) => {
     await openArmory(page, {
       inventory: [bodyGear, ringGear],
       craftingCurrencies: { voidstone: 5, "sprig-of-growth": 3 },
@@ -195,7 +195,7 @@ test.describe("Gear drag positions", critical, () => {
     expect(dragBox!.y).toBeGreaterThan(sourceBox!.y + 20);
   });
 
-  test("carried item swap uses its own size, not the dropped item's size", prepush, async ({ page }) => {
+  test("carried item swap uses its own size, not the dropped item's size", async ({ page }) => {
     await openArmory(page, [beltGear, ringGear]);
 
     const beltItem = gearItemLocator(page, "Leather Belt");
@@ -237,7 +237,7 @@ test.describe("Gear drag positions", critical, () => {
     expect(dragBox!.width).toBeCloseTo(metrics.cellSize, 0);
   });
 
-  test("inventory board has enough right padding to prevent border cutoff", prepush, async ({ page }) => {
+  test("inventory board has enough right padding to prevent border cutoff", async ({ page }) => {
     await openArmory(page, [bodyGear]);
     const board = page.getByTestId("armory-inventory-board");
     const paddingRight = await board.evaluate((el) => window.getComputedStyle(el).paddingRight);
@@ -307,7 +307,7 @@ test.describe("Gear drag positions", critical, () => {
     await page.mouse.up();
   });
 
-  test("rightmost inventory cell fits within the board", prepush, async ({ page }) => {
+  test("rightmost inventory cell fits within the board", async ({ page }) => {
     await openArmory(page, [bodyGear]);
     const board = page.getByTestId("armory-inventory-board");
     const rightmostCell = board.locator('[data-armory-inventory-cell="7-1"]');
@@ -317,7 +317,7 @@ test.describe("Gear drag positions", critical, () => {
     expect(cellRect.right).toBeLessThanOrEqual(boardRect.right);
   });
 
-  test("dragging a currency onto a gear picks up the gear on the cursor", prepush, async ({ page }) => {
+  test("dragging a currency onto a gear picks up the gear on the cursor", async ({ page }) => {
     const affixedBodyGear = {
       ...bodyGear,
       affixes: [{ id: "max-health" as const, value: 7 }],

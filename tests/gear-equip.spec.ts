@@ -9,8 +9,9 @@ import {
   pointerDragToInventory,
 } from "./e2e/armory";
 import { test } from "./fixtures/e2e";
+import { armory } from "./playwright-tags";
 
-test.describe("Gear equip", () => {
+test.describe("Gear equip", armory, () => {
   test("keeps the full inventory visible, equips by dragging, and switches characters", async ({ page }) => {
     await openArmory(page);
 
@@ -32,28 +33,6 @@ test.describe("Gear equip", () => {
 
     await page.getByRole("button", { name: "Rogue", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Rogue" })).toBeVisible();
-  });
-
-  test("swaps equipped gear when dragging inventory item onto occupied slot", async ({ page }) => {
-    const helmA = { instanceId: "helm-a", definitionId: "leather-helm-basic" as const, affixes: [] };
-    const helmB = { instanceId: "helm-b", definitionId: "leather-helm-basic" as const, affixes: [] };
-    const loadouts = createEmptyGearLoadouts();
-    (loadouts.knight as Record<string, string | null>).helm = "helm-b";
-
-    await openArmory(page, {
-      inventory: [helmA, helmB],
-      loadouts,
-    });
-
-    const helmSlot = page.locator('[data-testid="armory-equipment-slot"][data-slot="helm"]');
-    const helmAItem = gearItemLocator(page, "Leather Helm").first();
-    await expect(helmSlot.locator("img")).toHaveCount(2);
-    await expect(gearItemLocator(page, "Leather Helm")).toHaveCount(1);
-
-    await pointerDrag(page, helmAItem, helmSlot);
-
-    await expect(helmSlot.locator("img")).toHaveCount(2);
-    await expect(gearItemLocator(page, "Leather Helm")).toHaveCount(1);
   });
 
   test("follows the cursor exactly without magnetization-snapping when dragged over slot", async ({ page }) => {

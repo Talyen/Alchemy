@@ -1,8 +1,9 @@
 import { expect } from "@playwright/test";
 import { bodyGear, gearItemLocator, openArmory } from "./e2e/armory";
 import { test } from "./fixtures/e2e";
+import { armory } from "./playwright-tags";
 
-test.describe("Gear transfer", () => {
+test.describe("Gear transfer", armory, () => {
   test("sends gear to another class from the right-click menu", async ({ page }) => {
     await openArmory(page, [bodyGear]);
 

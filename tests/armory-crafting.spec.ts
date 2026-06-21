@@ -18,7 +18,7 @@ import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
 import { MenuPage } from "./pages/menu-page";
 import { seedRandom } from "./e2e/rng";
-import { critical, prepush } from "./playwright-tags";
+import { armory, critical, prepush } from "./playwright-tags";
 
 const affixedHelm = {
   instanceId: "gear-helm",
@@ -35,7 +35,7 @@ const emptyCraftingCurrencies = {
   "smiths-whetstone": 0,
 };
 
-test.describe("Armory crafting", critical, () => {
+test.describe("Armory crafting", { ...armory, ...critical }, () => {
   test("salvages gear and grants crafting materials", prepush, async ({ page }) => {
     await seedRandom(page, 0);
     const sword = {

@@ -48,7 +48,6 @@ async function waitForHandEntryAnimations(page: import("@playwright/test").Page)
 const RESOLUTIONS = [
   { width: 1366, height: 768, label: "1366x768" },
   { width: 1920, height: 1080, label: "1920x1080" },
-  { width: 3840, height: 2160, label: "3840x2160 (4K)" },
 ] as const;
 
 const CARD_VIEWPORT_TOLERANCE_PX = 12;

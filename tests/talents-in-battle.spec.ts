@@ -3,33 +3,46 @@ import { injectTalentUnlocks, makeCard, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
 
+type TalentCase = {
+  id: string;
+  category: string;
+  description: string;
+  run: (page: import("@playwright/test").Page, battle: BattlePage) => Promise<void>;
+};
+
+const TALENT_CASES: TalentCase[] = [
+  {
+    id: "block-start",
+    category: "block",
+    description: "gives starting block in combat",
+    run: async (page, _battle) => {
+      await expect(page.getByRole("button", { name: "Block 5" })).toBeVisible({ timeout: 3000 });
+    },
+  },
+  {
+    id: "physical-brute-force",
+    category: "physical",
+    description: "increases physical damage dealt",
+    run: async (page, battle) => {
+      const enemyHpBefore = await battle.enemyHealth();
+      await battle.playCardNamed("Slash");
+      await expect(async () => {
+        expect(await battle.enemyHealth()).toBeLessThan(enemyHpBefore - 6);
+      }).toPass({ timeout: 5000 });
+    },
+  },
+];
+
 test.describe("Talents in Battle", () => {
-  test("block-start talent gives starting block in combat", async ({ page, fastBattle }) => {
-    void fastBattle;
-
-    await injectTalentUnlocks(page, { block: ["block-start"] });
-    const SLASH = makeCard();
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 8 }, () => SLASH),
-    );
-
-    await expect(page.getByRole("button", { name: "Block 5" })).toBeVisible({ timeout: 3000 });
-  });
-
-  test("physical-brute-force talent increases physical damage dealt", async ({ page, fastBattle }) => {
-    void fastBattle;
-
-    await injectTalentUnlocks(page, { physical: ["physical-brute-force"] });
-    const SLASH = makeCard();
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 8 }, () => SLASH),
-    );
-    const battle = new BattlePage(page);
-
-    await battle.playCardNamed("Slash");
-    const enemyHpAfter = await battle.enemyHealth();
-    expect(enemyHpAfter).toBeLessThan(30 - 6);
-  });
+  for (const tc of TALENT_CASES) {
+    test(`${tc.id} ${tc.description}`, async ({ page, fastBattle }) => {
+      void fastBattle;
+      await injectTalentUnlocks(page, { [tc.category]: [tc.id] });
+      await startBattleWithDeck(
+        page,
+        Array.from({ length: 8 }, () => makeCard()),
+      );
+      await tc.run(page, new BattlePage(page));
+    });
+  }
 });

@@ -3,6 +3,7 @@ import { bodyGear, gearItemLocator, openArmory, expectSalvageDialog, salvageInve
 import { startBattleWithDeck } from "./e2e/battle-setup";
 import { makeCard } from "./e2e/cards";
 import { test } from "./fixtures/e2e";
+import { armory } from "./playwright-tags";
 
 const armoryViewports = [
   { width: 1920, height: 1080, label: "standard" },
@@ -11,7 +12,7 @@ const armoryViewports = [
   { width: 1366, height: 650, label: "short height" },
 ];
 
-test.describe("Gear layout", () => {
+test.describe("Gear layout", armory, () => {
   test("armory screen opens from the main menu", async ({ page }) => {
     await openArmory(page, [{ instanceId: "gear-1", definitionId: "leather-armor-basic", affixes: [] }]);
     await expect(page.getByRole("heading", { name: "Inventory" })).toBeVisible();
