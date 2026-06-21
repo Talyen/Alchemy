@@ -275,6 +275,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix: resolve pre-existing typecheck and E2E test errors
 - fix(e2e): add missing test imports and fix reward-flow setup
 - fix(shop): consume mix slot on any attempt, dedup price/refresh handlers
   - Fix bug where mix slot was not consumed on failed mix attempts
