@@ -199,7 +199,7 @@
       "tests/scripts/global.d.ts",
       "tests/electron-environment.d.ts"
     ],
-    "ignoreDependencies": []
+    "ignoreDependencies": ["tailwindcss-animate"]
   },
   "build": {
     "appId": "com.alchemy.game",
