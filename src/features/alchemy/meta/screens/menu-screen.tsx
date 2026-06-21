@@ -113,7 +113,7 @@ export function MenuScreen({
             Talents
           </LockedMenuItem>
           {hasUnspentTalents && !isKnightGatedLocked && (
-            <ShineBorder shineColor="hsl(var(--primary))" borderWidth={1} duration={8} className="rounded-xl" />
+            <ShineBorder shineColor="var(--color-primary)" borderWidth={1} duration={8} className="rounded-xl" />
           )}
         </StaggerItem>
         <StaggerItem index={3} className="relative">
@@ -131,7 +131,7 @@ export function MenuScreen({
             Homestead
           </LockedMenuItem>
           {hasAffordableHomestead && !isKnightGatedLocked && (
-            <ShineBorder shineColor="hsl(var(--primary))" borderWidth={1} duration={8} className="rounded-xl" />
+            <ShineBorder shineColor="var(--color-primary)" borderWidth={1} duration={8} className="rounded-xl" />
           )}
         </StaggerItem>
         <StaggerItem index={4} className="relative">

@@ -6,6 +6,9 @@ import { keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 function colorWithAlpha(color: string, alpha: number): string {
+  if (color.startsWith("var(")) {
+    return `color-mix(in srgb, ${color} ${alpha * 100}%, transparent)`;
+  }
   if (color.startsWith("#")) {
     const clean = color.replace("#", "");
     const r = parseInt(clean.slice(0, 2), 16);

@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
+  --color-background: hsl(30 10% 3%);
+  --color-foreground: hsl(40 25% 88%);
+  --color-card: hsl(30 8% 6%);
+  --color-card-foreground: hsl(40 25% 88%);
+  --color-popover: hsl(30 8% 6%);
+  --color-popover-foreground: hsl(40 25% 88%);
+  --color-primary: hsl(36 55% 56%);
+  --color-primary-foreground: hsl(28 22% 12%);
+  --color-secondary: hsl(30 8% 10%);
+  --color-secondary-foreground: hsl(38 20% 86%);
+  --color-muted: hsl(30 6% 8%);
+  --color-muted-foreground: hsl(35 12% 62%);
+  --color-accent: hsl(195 30% 48%);
+  --color-accent-foreground: hsl(28 22% 12%);
+  --color-destructive: hsl(0 50% 45%);
+  --color-destructive-foreground: hsl(40 25% 88%);
+  --color-border: hsl(30 8% 16%);
+  --color-input: hsl(30 8% 16%);
+  --color-ring: hsl(36 55% 56%);
   --color-mana-gem: hsl(217 58% 35%);
 
   --z-index-wish-overlay: 90;
@@ -45,6 +45,14 @@
 
   --animate-shine: shine 14s linear infinite;
 
+  --animate-shake: shake 380ms ease-out;
+  --animate-hurt-flash: hurtFlash 280ms ease-out forwards;
+  --animate-frame-fade: frameFade 900ms ease-out forwards;
+
+  --shadow-deaths-door-glow: 0 0 30px rgba(127, 29, 29, 0.45);
+  --shadow-labyrinth-current-glow: 0 0 10px rgba(251, 191, 36, 0.5);
+  --drop-shadow-mana-overflow-glow: 0 0 3px rgba(125, 211, 252, 0.6);
+
   @keyframes shine {
     0% {
       background-position: 0% 0%;
@@ -59,30 +67,8 @@
 }
 
 @layer base {
-  :root {
-    --background: 30 10% 3%;
-    --foreground: 40 25% 88%;
-    --card: 30 8% 6%;
-    --card-foreground: 40 25% 88%;
-    --popover: 30 8% 6%;
-    --popover-foreground: 40 25% 88%;
-    --primary: 36 55% 56%;
-    --primary-foreground: 28 22% 12%;
-    --secondary: 30 8% 10%;
-    --secondary-foreground: 38 20% 86%;
-    --muted: 30 6% 8%;
-    --muted-foreground: 35 12% 62%;
-    --accent: 195 30% 48%;
-    --accent-foreground: 28 22% 12%;
-    --destructive: 0 50% 45%;
-    --destructive-foreground: 40 25% 88%;
-    --border: 30 8% 16%;
-    --input: 30 8% 16%;
-    --ring: 36 55% 56%;
-  }
-
   * {
-    border-color: hsl(var(--border));
+    border-color: var(--color-border);
     scrollbar-width: none;
   }
 
@@ -164,7 +150,7 @@
   .talent-node-glass {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    background-color: hsl(var(--background) / 0.3);
+    background-color: color-mix(in srgb, var(--color-background) 30%, transparent);
     background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05));
   }
 
@@ -222,31 +208,10 @@
     animation: cardShimmer 1800ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .animate-shake {
-    animation: shake 380ms ease-out;
-  }
 
-  .animate-hurt-flash {
-    animation: hurtFlash 280ms ease-out forwards;
-  }
-
-  .animate-frame-fade {
-    animation: frameFade 900ms ease-out forwards;
-  }
-
-  @keyframes frameFade {
-    0% {
-      opacity: 1;
-      transform: translateX(0px) translateY(0px) rotate(0deg);
-    }
-    100% {
-      opacity: 0;
-      transform: translateX(80px) translateY(20px) rotate(6deg);
-    }
-  }
 
   .hover-popup-panel {
-    box-shadow: 0 8px 24px hsl(var(--background) / 0.75);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--color-background) 75%, transparent);
     transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
     will-change: transform;
   }
@@ -373,17 +338,7 @@
     animation: manaGemSettle 260ms ease-out both;
   }
 
-  .shadow-deaths-door-glow {
-    box-shadow: 0 0 30px rgba(127, 29, 29, 0.45);
-  }
 
-  .shadow-labyrinth-current-glow {
-    box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
-  }
-
-  .drop-shadow-mana-overflow-glow {
-    filter: drop-shadow(0 0 3px rgba(125, 211, 252, 0.6));
-  }
 
   .status-chip-pop {
     animation: statusChipPop 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -434,7 +389,7 @@
   }
 
   .alchemy-startup-bar {
-    background: hsl(var(--primary));
+    background: var(--color-primary);
     animation: startupBarCycle 1200ms ease-in-out forwards;
     transform-origin: left;
   }
@@ -770,6 +725,17 @@
   }
   100% {
     box-shadow: 0 0 16px hsl(36 55% 56% / 0.32);
+  }
+}
+
+@keyframes frameFade {
+  0% {
+    opacity: 1;
+    transform: translateX(0px) translateY(0px) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(80px) translateY(20px) rotate(6deg);
   }
 }
 
