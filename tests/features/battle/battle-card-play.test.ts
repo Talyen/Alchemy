@@ -161,7 +161,6 @@ describe("createBattleCardPlay", () => {
     getBattleStoreView().setSyncedBattleState(state);
 
     const deps = makeDeps();
-    deps.cardPlayInProgressRef.current = true;
     const { handleCardClick } = createBattleCardPlay(deps);
     clickCard(handleCardClick, { ...slash, uid: 5 }, 0);
 
