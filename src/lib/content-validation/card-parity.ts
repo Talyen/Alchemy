@@ -77,36 +77,20 @@ function reportMismatch(
 function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
   const issues: ContentValidationIssue[] = [];
   const { effects, descriptionLines } = card;
-  let damageIndex = 0;
-  let playerStatusIndex = 0;
-  let healIndex = 0;
-  let restoreManaIndex = 0;
-  let goldIndex = 0;
-  let wishIndex = 0;
-  let removeHarmfulIndex = 0;
 
-  const damageEffects = effects.filter(
-    (effect): effect is Extract<BattleCardEffect, { kind: "damage" }> => effect.kind === "damage",
-  );
-  const playerStatusEffects = effects.filter(
-    (effect): effect is Extract<BattleCardEffect, { kind: "player-status" }> => effect.kind === "player-status",
-  );
-  const healEffects = effects.filter(
-    (effect): effect is Extract<BattleCardEffect, { kind: "heal" }> => effect.kind === "heal",
-  );
-  const restoreManaEffects = effects.filter(
-    (effect): effect is Extract<BattleCardEffect, { kind: "restore-mana" }> => effect.kind === "restore-mana",
-  );
-  const goldEffects = effects.filter(
-    (effect): effect is Extract<BattleCardEffect, { kind: "gain-gold" }> => effect.kind === "gain-gold",
-  );
-  const wishEffects = effects.filter(
-    (effect): effect is Extract<BattleCardEffect, { kind: "wish" }> => effect.kind === "wish",
-  );
-  const removeHarmfulEffects = effects.filter(
-    (effect): effect is Extract<BattleCardEffect, { kind: "remove-harmful-status" }> =>
-      effect.kind === "remove-harmful-status",
-  );
+  const getNext = <T extends BattleCardEffect["kind"]>(kind: T) => {
+    const filtered = effects.filter((e) => e.kind === kind) as Extract<BattleCardEffect, { kind: T }>[];
+    let index = 0;
+    return () => filtered[index++];
+  };
+
+  const nextDamage = getNext("damage");
+  const nextPlayerStatus = getNext("player-status");
+  const nextHeal = getNext("heal");
+  const nextRestoreMana = getNext("restore-mana");
+  const nextGold = getNext("gain-gold");
+  const nextWish = getNext("wish");
+  const nextRemoveHarmful = getNext("remove-harmful-status");
 
   function mismatch(line: string, actual: number): void {
     issues.push({
@@ -121,7 +105,7 @@ function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
     if (line.startsWith("Deals ")) continue;
 
     if (line.startsWith("Deal ")) {
-      const effect = damageEffects[damageIndex];
+      const effect = nextDamage();
       if (
         !effect ||
         effect.equalToBlock ||
@@ -130,17 +114,14 @@ function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
         line.includes("equal to") ||
         line.toLowerCase().includes("random")
       ) {
-        damageIndex++;
         continue;
       }
-      damageIndex++;
       if (parseLeadingNumber(line, "Deal ") !== effect.amount) mismatch(line, effect.amount);
       continue;
     }
 
     if (line.startsWith("Gain ") && line.includes(" Gold")) {
-      const effect = goldEffects[goldIndex];
-      goldIndex++;
+      const effect = nextGold();
       if (effect) {
         if (parseLeadingNumber(line, "Gain ") !== effect.amount) mismatch(line, effect.amount);
       } else {
@@ -155,18 +136,15 @@ function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
     }
 
     if (line.startsWith("Gain ") && line.includes(" Block") && line.includes("per Mana Crystal")) {
-      const effect = playerStatusEffects[playerStatusIndex];
-      playerStatusIndex++;
-      const perManaCrystal =
-        effect?.kind === "player-status" && effect.status === "block" ? effect.perManaCrystal : undefined;
+      const effect = nextPlayerStatus();
+      const perManaCrystal = effect?.status === "block" ? effect.perManaCrystal : undefined;
       if (perManaCrystal !== undefined && parseLeadingNumber(line, "Gain ") !== perManaCrystal)
         mismatch(line, perManaCrystal);
       continue;
     }
 
     if (line.startsWith("Gain ") && (line.includes(" Block") || line.includes(" Armor") || line.includes(" Forge"))) {
-      const effect = playerStatusEffects[playerStatusIndex];
-      playerStatusIndex++;
+      const effect = nextPlayerStatus();
       if (
         effect &&
         effect.status !== "haste" &&
@@ -179,8 +157,7 @@ function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
     }
 
     if (line.startsWith("Heal ")) {
-      const effect = healEffects[healIndex];
-      healIndex++;
+      const effect = nextHeal();
       if (effect) {
         if (parseLeadingNumber(line, "Heal ") !== effect.amount) mismatch(line, effect.amount);
       } else {
@@ -195,8 +172,7 @@ function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
     }
 
     if (line.startsWith("Restore ") && line.includes("Mana")) {
-      const effect = restoreManaEffects[restoreManaIndex];
-      restoreManaIndex++;
+      const effect = nextRestoreMana();
       if (effect) {
         if (parseLeadingNumber(line, "Restore ") !== effect.amount) mismatch(line, effect.amount);
       } else {
@@ -211,8 +187,7 @@ function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
     }
 
     if (line.startsWith("Restore ") && line.includes("Health")) {
-      const effect = healEffects[healIndex];
-      healIndex++;
+      const effect = nextHeal();
       if (effect) {
         if (parseLeadingNumber(line, "Restore ") !== effect.amount) mismatch(line, effect.amount);
       } else {
@@ -227,8 +202,7 @@ function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
     }
 
     if (line.startsWith("Wish ")) {
-      const effect = wishEffects[wishIndex];
-      wishIndex++;
+      const effect = nextWish();
       if (effect) {
         if (parseLeadingNumber(line, "Wish ") !== effect.amount) mismatch(line, effect.amount);
       } else {
@@ -243,8 +217,7 @@ function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
     }
 
     if ((line.startsWith("Remove ") || line.startsWith("Cleanse ")) && line.includes("harmful status")) {
-      const effect = removeHarmfulEffects[removeHarmfulIndex];
-      removeHarmfulIndex++;
+      const effect = nextRemoveHarmful();
       if (effect) {
         const parsed = parseLeadingNumber(line, line.startsWith("Remove ") ? "Remove " : "Cleanse ");
         if (parsed !== effect.amount) mismatch(line, effect.amount);
@@ -262,6 +235,117 @@ function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
   return issues;
 }
 
+interface CountParityRule {
+  label: string;
+  countLines: (lines: string[]) => number;
+  countEffects: (effects: BattleCardEffect[]) => number;
+}
+
+const COUNT_PARITY_RULES: CountParityRule[] = [
+  {
+    label: "heal",
+    countLines: countHealLines,
+    countEffects: (effects) => countByKind(effects, "heal"),
+  },
+  {
+    label: "restore-mana",
+    countLines: (lines) => lines.filter((line) => line.startsWith("Restore ") && !line.includes("Health")).length,
+    countEffects: (effects) => countByKind(effects, "restore-mana"),
+  },
+  {
+    label: "gain-gold",
+    countLines: (lines) =>
+      lines.filter((line) => (line.startsWith("Gain ") || line.startsWith("Steal ")) && line.includes("Gold")).length +
+      lines.filter((line) => line.includes(" or Gain ") && line.includes("Gold")).length,
+    countEffects: (effects) => countByKind(effects, "gain-gold"),
+  },
+  {
+    label: "wish",
+    countLines: (lines) => countLinesStartingWith(lines, "Wish "),
+    countEffects: (effects) => countByKind(effects, "wish"),
+  },
+  {
+    label: "remove-harmful-status",
+    countLines: (lines) =>
+      lines.filter(
+        (line) => line.startsWith("Remove ") || (line.startsWith("Cleanse ") && line.includes("harmful status")),
+      ).length,
+    countEffects: (effects) => countByKind(effects, "remove-harmful-status"),
+  },
+  {
+    label: "lose-max-mana",
+    countLines: (lines) => lines.filter((line) => line.startsWith("Lose ") && line.includes("Mana Crystal")).length,
+    countEffects: (effects) => countByKind(effects, "lose-max-mana"),
+  },
+  {
+    label: "gain-max-mana",
+    countLines: (lines) => lines.filter((line) => line.includes("Maximum Mana")).length,
+    countEffects: (effects) => countByKind(effects, "gain-max-mana"),
+  },
+  {
+    label: "lose-health",
+    countLines: (lines) => lines.filter((line) => line.startsWith("Lose ") && line.includes("Health")).length,
+    countEffects: (effects) => countByKind(effects, "lose-health"),
+  },
+  {
+    label: "draw-cards",
+    countLines: (lines) => countLinesStartingWith(lines, "Draw "),
+    countEffects: (effects) => countByKind(effects, "draw-cards"),
+  },
+  {
+    label: "remove-enemy-armor",
+    countLines: (lines) => countLinesStartingWith(lines, "Strip "),
+    countEffects: (effects) => countByKind(effects, "remove-enemy-armor"),
+  },
+  {
+    label: "multiply-enemy-status",
+    countLines: (lines) => countLinesStartingWith(lines, "Double "),
+    countEffects: (effects) => countByKind(effects, "multiply-enemy-status"),
+  },
+  {
+    label: "remove-player-status",
+    countLines: (lines) =>
+      lines.filter((line) => line.startsWith("Cleanse ") && !line.includes("harmful status")).length,
+    countEffects: (effects) =>
+      countByKind(effects, "remove-player-status") + countByKind(effects, "cleanse-player-status-to-damage"),
+  },
+  {
+    label: "block",
+    countLines: (lines) =>
+      lines.filter(
+        (line) =>
+          line.startsWith("Gain ") &&
+          line.includes(" Block") &&
+          !line.includes("per Mana Crystal") &&
+          !line.endsWith("each turn"),
+      ).length,
+    countEffects: (effects) =>
+      effects.filter(
+        (effect) => effect.kind === "player-status" && effect.status === "block" && effect.perManaCrystal === undefined,
+      ).length,
+  },
+  {
+    label: "per-mana block",
+    countLines: (lines) => lines.filter((line) => line.includes("per Mana Crystal")).length,
+    countEffects: (effects) =>
+      effects.filter(
+        (effect) => effect.kind === "player-status" && effect.status === "block" && effect.perManaCrystal !== undefined,
+      ).length,
+  },
+  {
+    label: "armor",
+    countLines: (lines) => lines.filter((line) => line.startsWith("Gain ") && line.includes(" Armor")).length,
+    countEffects: (effects) =>
+      effects.filter((effect) => effect.kind === "player-status" && effect.status === "armor").length,
+  },
+  {
+    label: "forge",
+    countLines: (lines) => lines.filter((line) => line.startsWith("Gain ") && line.includes(" Forge")).length,
+    countEffects: (effects) =>
+      effects.filter((effect) => effect.kind === "player-status" && effect.status === "forge").length,
+  },
+];
+
 export function validateCardDescriptionParity(card: BattleCard): ContentValidationIssue[] {
   const issues: ContentValidationIssue[] = [];
   const { effects, descriptionLines } = card;
@@ -269,16 +353,6 @@ export function validateCardDescriptionParity(card: BattleCard): ContentValidati
     (line) => line.startsWith("Deal ") && !line.includes("equal to") && !line.toLowerCase().includes("random"),
   ).length;
   const damageEffects = countByKind(effects, "damage") + countByKind(effects, "random-damage");
-  const restoreLinesCount = countLinesStartingWith(descriptionLines, "Restore ");
-  const restoreHealthLines = descriptionLines.filter(
-    (line) => line.startsWith("Restore ") && line.includes("Health"),
-  ).length;
-  const goldEffectLines =
-    descriptionLines.filter((line) => (line.startsWith("Gain ") || line.startsWith("Steal ")) && line.includes("Gold"))
-      .length + descriptionLines.filter((line) => line.includes(" or Gain ") && line.includes("Gold")).length;
-  const removeLines = descriptionLines.filter(
-    (line) => line.startsWith("Remove ") || (line.startsWith("Cleanse ") && line.includes("harmful status")),
-  ).length;
 
   if (!hasNonStandardDamageEffects(effects)) {
     if (hasKind(effects, "self-damage")) {
@@ -295,110 +369,9 @@ export function validateCardDescriptionParity(card: BattleCard): ContentValidati
     }
   }
 
-  reportMismatch(issues, card.id, "heal", countHealLines(descriptionLines), countByKind(effects, "heal"));
-  reportMismatch(
-    issues,
-    card.id,
-    "restore-mana",
-    restoreLinesCount - restoreHealthLines,
-    countByKind(effects, "restore-mana"),
-  );
-  reportMismatch(issues, card.id, "gain-gold", goldEffectLines, countByKind(effects, "gain-gold"));
-  reportMismatch(
-    issues,
-    card.id,
-    "wish",
-    countLinesStartingWith(descriptionLines, "Wish "),
-    countByKind(effects, "wish"),
-  );
-  reportMismatch(issues, card.id, "remove-harmful-status", removeLines, countByKind(effects, "remove-harmful-status"));
-  reportMismatch(
-    issues,
-    card.id,
-    "lose-max-mana",
-    descriptionLines.filter((line) => line.startsWith("Lose ") && line.includes("Mana Crystal")).length,
-    countByKind(effects, "lose-max-mana"),
-  );
-  reportMismatch(
-    issues,
-    card.id,
-    "gain-max-mana",
-    descriptionLines.filter((line) => line.includes("Maximum Mana")).length,
-    countByKind(effects, "gain-max-mana"),
-  );
-  reportMismatch(
-    issues,
-    card.id,
-    "lose-health",
-    descriptionLines.filter((line) => line.startsWith("Lose ") && line.includes("Health")).length,
-    countByKind(effects, "lose-health"),
-  );
-  reportMismatch(
-    issues,
-    card.id,
-    "draw-cards",
-    countLinesStartingWith(descriptionLines, "Draw "),
-    countByKind(effects, "draw-cards"),
-  );
-  reportMismatch(
-    issues,
-    card.id,
-    "remove-enemy-armor",
-    countLinesStartingWith(descriptionLines, "Strip "),
-    countByKind(effects, "remove-enemy-armor"),
-  );
-  reportMismatch(
-    issues,
-    card.id,
-    "multiply-enemy-status",
-    countLinesStartingWith(descriptionLines, "Double "),
-    countByKind(effects, "multiply-enemy-status"),
-  );
-  reportMismatch(
-    issues,
-    card.id,
-    "remove-player-status",
-    descriptionLines.filter((line) => line.startsWith("Cleanse ") && !line.includes("harmful status")).length,
-    countByKind(effects, "remove-player-status") + countByKind(effects, "cleanse-player-status-to-damage"),
-  );
-  reportMismatch(
-    issues,
-    card.id,
-    "block",
-    descriptionLines.filter(
-      (line) =>
-        line.startsWith("Gain ") &&
-        line.includes(" Block") &&
-        !line.includes("per Mana Crystal") &&
-        !line.endsWith("each turn"),
-    ).length,
-    effects.filter(
-      (effect) => effect.kind === "player-status" && effect.status === "block" && effect.perManaCrystal === undefined,
-    ).length,
-  );
-  reportMismatch(
-    issues,
-    card.id,
-    "per-mana block",
-    descriptionLines.filter((line) => line.includes("per Mana Crystal")).length,
-    effects.filter(
-      (effect) => effect.kind === "player-status" && effect.status === "block" && effect.perManaCrystal !== undefined,
-    ).length,
-  );
-  reportMismatch(
-    issues,
-    card.id,
-    "armor",
-    descriptionLines.filter((line) => line.startsWith("Gain ") && line.includes(" Armor")).length,
-    effects.filter((effect) => effect.kind === "player-status" && effect.status === "armor").length,
-  );
-  reportMismatch(
-    issues,
-    card.id,
-    "forge",
-    descriptionLines.filter((line) => line.startsWith("Gain ") && line.includes(" Forge")).length,
-    effects.filter((effect) => effect.kind === "player-status" && effect.status === "forge").length,
-  );
+  for (const rule of COUNT_PARITY_RULES) {
+    reportMismatch(issues, card.id, rule.label, rule.countLines(descriptionLines), rule.countEffects(effects));
+  }
 
   if (
     effects.some((effect) => effect.kind === "player-status" && effect.status === "haste") &&
@@ -480,110 +453,31 @@ export function validateCardDescriptionParity(card: BattleCard): ContentValidati
   return [...issues, ...validateCardNumericParity(card)];
 }
 
+const TRAIT_REQUIRED_PATTERNS: Record<string, { pattern: RegExp; term: string }> = {
+  "iron-hide": { pattern: /armor/, term: "armor" },
+  "rusting-carapace": { pattern: /forge/, term: "forge" },
+  "glacial-shell": { pattern: /freeze|burn/, term: "freeze or burn" },
+  regeneration: { pattern: /health|heal/, term: "health or heal" },
+  "brittle-bones": { pattern: /holy|stun/, term: "holy or stun" },
+  "trinket-hoarder": { pattern: /burn|trinket/, term: "burn or trinket" },
+  "burn-resistance": { pattern: /burn/, term: "burn" },
+  "poison-resistance": { pattern: /poison/, term: "poison" },
+  "holy-vulnerability": { pattern: /holy/, term: "holy" },
+  "living-armor": { pattern: /bleed|armor/, term: "bleed or armor" },
+  "gold-trove": { pattern: /gold/, term: "gold" },
+};
+
 export function validateEnemyTraitDescriptionParity(enemy: BestiaryEntry): ContentValidationIssue[] {
   const issues: ContentValidationIssue[] = [];
   for (const trait of enemy.traits) {
-    const desc = trait.description.toLowerCase();
-    switch (trait.id) {
-      case "iron-hide":
-        if (!/armor/.test(desc))
-          issues.push({
-            severity: "error",
-            area: "enemies",
-            id: enemy.id,
-            message: `Trait "${trait.id}" description does not mention armor`,
-          });
-        break;
-      case "rusting-carapace":
-        if (!/forge/.test(desc))
-          issues.push({
-            severity: "error",
-            area: "enemies",
-            id: enemy.id,
-            message: `Trait "${trait.id}" description does not mention forge`,
-          });
-        break;
-      case "glacial-shell":
-        if (!/freeze|burn/.test(desc))
-          issues.push({
-            severity: "error",
-            area: "enemies",
-            id: enemy.id,
-            message: `Trait "${trait.id}" description does not mention freeze or burn`,
-          });
-        break;
-      case "regeneration":
-        if (!/health|heal/.test(desc))
-          issues.push({
-            severity: "error",
-            area: "enemies",
-            id: enemy.id,
-            message: `Trait "${trait.id}" description does not mention health or heal`,
-          });
-        break;
-      case "brittle-bones":
-        if (!/holy|stun/.test(desc))
-          issues.push({
-            severity: "error",
-            area: "enemies",
-            id: enemy.id,
-            message: `Trait "${trait.id}" description does not mention holy or stun`,
-          });
-        break;
-      case "trinket-hoarder":
-        if (!/burn|trinket/.test(desc))
-          issues.push({
-            severity: "error",
-            area: "enemies",
-            id: enemy.id,
-            message: `Trait "${trait.id}" description does not mention burn or trinket`,
-          });
-        break;
-      case "burn-resistance":
-        if (!/burn/.test(desc))
-          issues.push({
-            severity: "error",
-            area: "enemies",
-            id: enemy.id,
-            message: `Trait "${trait.id}" description does not mention burn`,
-          });
-        break;
-      case "poison-resistance":
-        if (!/poison/.test(desc))
-          issues.push({
-            severity: "error",
-            area: "enemies",
-            id: enemy.id,
-            message: `Trait "${trait.id}" description does not mention poison`,
-          });
-        break;
-      case "holy-vulnerability":
-        if (!/holy/.test(desc))
-          issues.push({
-            severity: "error",
-            area: "enemies",
-            id: enemy.id,
-            message: `Trait "${trait.id}" description does not mention holy`,
-          });
-        break;
-      case "living-armor":
-        if (!/bleed|armor/.test(desc))
-          issues.push({
-            severity: "error",
-            area: "enemies",
-            id: enemy.id,
-            message: `Trait "${trait.id}" description does not mention bleed or armor`,
-          });
-        break;
-      case "gold-trove":
-        if (!/gold/.test(desc))
-          issues.push({
-            severity: "error",
-            area: "enemies",
-            id: enemy.id,
-            message: `Trait "${trait.id}" description does not mention gold`,
-          });
-        break;
+    const config = TRAIT_REQUIRED_PATTERNS[trait.id];
+    if (config && !config.pattern.test(trait.description.toLowerCase())) {
+      issues.push({
+        severity: "error",
+        area: "enemies",
+        id: enemy.id,
+        message: `Trait "${trait.id}" description does not mention ${config.term}`,
+      });
     }
   }
   return issues;
