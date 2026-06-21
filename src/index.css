@@ -163,6 +163,7 @@
       0 4px 16px rgba(0, 0, 0, 0.6);
   }
 
+
   .boss-title-shine {
     animation: boss-title-shine 10s linear infinite;
     will-change: background-position;
@@ -440,6 +441,7 @@
     opacity: 1;
   }
 }
+
 
 @keyframes cardShimmer {
   0% {

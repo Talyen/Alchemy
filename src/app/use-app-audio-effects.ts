@@ -14,8 +14,8 @@ import {
   setSfxVolume,
 } from "@/lib/audio";
 import { audioState } from "@/lib/audio-state";
-import { getBossMusicKey } from "@/lib/audio-music";
-import { readBattleStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { getBossMusicKey, invalidateCacheForKey } from "@/lib/audio-music";
+import { useRunDomainStore, readBattleStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { Screen } from "@/features/alchemy/shared/types";
 
 type AppAudioEffectsOptions = {
@@ -72,6 +72,18 @@ export function useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackgrou
   }, [muteInBackground]);
 
   const initialScreenRef = useRef(true);
+
+  const hasActiveBattle = useRunDomainStore((s) => s.battle.hasActiveBattle);
+  const lastBattleActiveRef = useRef(hasActiveBattle);
+  useEffect(() => {
+    // When a new battle starts (false → true), invalidate the cache for any battle
+    // or boss key so the track will be fresh, not a resume of the previous battle.
+    if (hasActiveBattle && !lastBattleActiveRef.current) {
+      const musicKey = pickMusicKey(screen);
+      invalidateCacheForKey(musicKey);
+    }
+    lastBattleActiveRef.current = hasActiveBattle;
+  }, [hasActiveBattle, screen]);
 
   useEffect(() => {
     screenRef.current = screen;

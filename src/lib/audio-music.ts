@@ -43,6 +43,26 @@ export function getBossMusicKey(bossId: string): string | undefined {
   }
 }
 
+// Cache of HTMLAudioElements keyed by music key, so re-entering a battle or boss fight
+// resumes the same track from its saved position instead of starting from 0.
+const musicCache = new Map<string, HTMLAudioElement>();
+
+// Returns the cached element for a key, or undefined if miss.
+function getCachedElement(key: string): HTMLAudioElement | undefined {
+  return musicCache.get(key);
+}
+
+// Invalidates (removes) the cache entry for a key. The next playMusic call for this
+// key will pick a fresh random track and create a new element.
+export function invalidateCacheForKey(key: string): void {
+  const cached = musicCache.get(key);
+  if (cached) {
+    cached.pause();
+    cached.currentTime = 0;
+  }
+  musicCache.delete(key);
+}
+
 // Global counter tracking active scene music transitions to prevent concurrent crossfades
 // from racing or playing overlapping tracks.
 let musicTransitionToken = 0;
@@ -60,26 +80,39 @@ export function applyMusicVolume(el: HTMLAudioElement) {
   el.volume = audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN;
 }
 
-// Stops and clears the current HTML audio element before starting a different track.
-function replaceCurrentTrack(track: string, volume: number) {
+// Stops and clears the current HTML audio element, then returns an element for
+// the given (key, track) pair — either from cache (resuming position) or newly created.
+function replaceCurrentTrack(key: string, track: string, volume: number) {
   if (audioState.currentMusic) {
     audioState.currentMusic.pause();
     audioState.currentMusic.currentTime = 0;
     audioState.currentMusic = null;
   }
+
+  const cached = musicCache.get(key);
+  if (cached) {
+    // Resume cached element from its saved position.
+    cached.volume = volume;
+    cached.muted = audioState.muted;
+    playElement(cached);
+    audioState.currentMusic = cached;
+    return cached;
+  }
+
   const el = new Audio(musicBase + track);
   el.loop = true;
   el.volume = volume;
   el.muted = audioState.muted;
   playElement(el);
+  musicCache.set(key, el);
   audioState.currentMusic = el;
   return el;
 }
 
-// Starts a track with the standard delayed fade-in used for scene transitions.
+// Starts a keyed track with the standard delayed fade-in used for scene transitions.
 // Leverages requestAnimationFrame for smooth volume interpolation.
-function startTrack(track: string) {
-  const el = replaceCurrentTrack(track, MUSIC_CONFIG.VOLUME_MIN);
+function startTrack(key: string, track: string) {
+  const el = replaceCurrentTrack(key, track, MUSIC_CONFIG.VOLUME_MIN);
   const startTime = performance.now();
 
   function fadeIn() {
@@ -100,20 +133,31 @@ function startTrack(track: string) {
   requestAnimationFrame(fadeIn);
 }
 
-// Starts a keyed music group immediately, choosing one registered track at random.
+// Starts a keyed music group immediately (no crossfade), choosing one registered track
+// at random or resuming a cached element.
 export function playMusicImmediate(key: string) {
   musicTransitionToken += 1;
   audioState.currentMusicKey = key;
-  const track = pickRandom(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? []);
+
+  const cached = getCachedElement(key);
+  const track = cached?.src
+    ? pathFromSrc(cached.src)
+    : pickRandom(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? []);
   if (!track) return;
 
   // Inlined startTrackImmediate logic to reduce indirection.
-  replaceCurrentTrack(track, audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN);
+  replaceCurrentTrack(key, track, audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN);
 }
 
-// Handles smooth fade-out interpolation of a track before starting the next one.
+// Extracts the filename portion from an absolute Audio element src URL.
+function pathFromSrc(src: string): string | undefined {
+  const parts = src.split("/");
+  return parts[parts.length - 1];
+}
+
+// Handles smooth fade-out of the old track, then starts (or resumes) the new keyed track.
 // Checks the musicTransitionToken to abort if a new transition has been scheduled.
-function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newTrack: string, transitionToken: number) {
+function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newKey: string, newTrack: string, transitionToken: number) {
   const oldVol = oldTrack.volume;
   const startTime = performance.now();
 
@@ -134,7 +178,7 @@ function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newTrack: string, tran
     if (audioState.currentMusic === oldTrack) {
       audioState.currentMusic = null;
     }
-    startTrack(newTrack);
+    startTrack(newKey, newTrack);
   }
 
   requestAnimationFrame(fadeOut);
@@ -153,12 +197,15 @@ export function playMusic(key: string) {
   musicTransitionToken = transitionToken;
   audioState.currentMusicKey = key;
 
-  const track = pickRandom(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? []);
+  const cached = getCachedElement(key);
+  const track = cached?.src
+    ? pathFromSrc(cached.src)
+    : pickRandom(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? []);
   if (!track) return;
 
   if (audioState.currentMusic) {
-    fadeOutAndStartTrack(audioState.currentMusic, track, transitionToken);
+    fadeOutAndStartTrack(audioState.currentMusic, key, track, transitionToken);
   } else {
-    startTrack(track);
+    startTrack(key, track);
   }
 }
