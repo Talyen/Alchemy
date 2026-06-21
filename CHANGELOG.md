@@ -1380,6 +1380,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore(content-validation): remove unused exports
 - chore(e2e): add timing/audit scripts and auto-diagnostic failure reports
 - chore(changelog): ignore generated sync commits
 - chore(code-quality): tighten lint, TS strictness, knip, and prettier configs
