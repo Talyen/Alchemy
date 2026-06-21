@@ -48,6 +48,7 @@ type Props = {
   craftingCurrencies?: Record<CraftingCurrencyId, number>;
   onApplyCurrency?: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onTransferGear?: (instanceId: string, targetCharacterId: CharacterId) => boolean;
+  onSortBoard?: (characterId: CharacterId) => void;
 };
 
 export function ArmoryScreen({
@@ -61,6 +62,7 @@ export function ArmoryScreen({
   onSalvage,
   onSpawnDevGear,
   onTransferGear = () => false,
+  onSortBoard,
   craftingCurrencies = EMPTY_CRAFTING_CURRENCIES,
   onApplyCurrency = () => false,
 }: Props) {
@@ -142,6 +144,7 @@ export function ArmoryScreen({
   const {
     draggedGear,
     dragVisual,
+    carriedInstance,
     secondaryDragVisuals,
     isDraggingActive,
     beginGearPointer,
@@ -177,6 +180,7 @@ export function ArmoryScreen({
     occupiedRows: boardView.occupiedRows,
     inventoryBoardRef,
     onMoveCurrency: handleMoveCurrency,
+    boardObstacles: boardView.boardObstacles,
   });
 
   const secondaryDragInstanceIds = secondaryDragVisuals.flatMap((v) => (v.instance ? [v.instance.instanceId] : []));
@@ -347,7 +351,7 @@ export function ArmoryScreen({
               draggedInstanceId={draggedGear?.instanceId ?? null}
               draggedCurrencyId={draggedCurrencyId}
               secondaryDragInstanceIds={secondaryDragInstanceIds}
-              isDraggingActive={isDraggingActive || isCurrencyDraggingActive}
+              isDraggingActive={isDraggingActive || isCurrencyDraggingActive || !!carriedInstance}
               boardRef={inventoryBoardRef}
               salvageMode={salvageMode}
               activeCurrencyId={activeCurrencyId}
@@ -369,6 +373,7 @@ export function ArmoryScreen({
               onApplyCurrency={handleApplyCurrency}
               onAbortGearDrag={abortGearDragIfDragging}
               onTransferRequest={handleOpenTransferMenu}
+              {...(onSortBoard ? { onSortBoard: () => onSortBoard(characterId) } : {})}
             />
           </div>
         </div>
