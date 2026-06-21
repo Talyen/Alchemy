@@ -89,12 +89,16 @@ export function useArmoryGearDrag({
 }: UseArmoryGearDragOptions) {
   const activeIdRef = useRef<string | null>(null);
   const packedInventoryRef = useRef(packedInventory);
-  packedInventoryRef.current = packedInventory;
+  useEffect(() => {
+    packedInventoryRef.current = packedInventory;
+  }, [packedInventory]);
+
   const [secondaryDragVisuals, setSecondaryDragVisuals] = useState<GearDragVisual[]>([]);
   const secondaryCleanupTimerRef = useRef<number | null>(null);
   const [carriedInstance, setCarriedInstance] = useState<GearInstance | null>(null);
   const [carriedVisual, setCarriedVisual] = useState<DragRect | null>(null);
   const carryCleanupRef = useRef<(() => void) | null>(null);
+  const startCarryRef = useRef<((instance: GearInstance, sourceRect: DragRect) => void) | null>(null);
 
   const clearCarry = useCallback(() => {
     carryCleanupRef.current?.();
@@ -114,7 +118,19 @@ export function useArmoryGearDrag({
     (instance: GearInstance, sourceRect: DragRect) => {
       carryCleanupRef.current?.();
       setCarriedInstance(instance);
-      setCarriedVisual(sourceRect);
+
+      const element = document.querySelector(`[data-instance-id="${instance.instanceId}"]`);
+      const rect = element?.getBoundingClientRect();
+      const actualRect = rect
+        ? {
+            left: sourceRect.left,
+            top: sourceRect.top,
+            width: rect.width,
+            height: rect.height,
+          }
+        : sourceRect;
+
+      setCarriedVisual(actualRect);
 
       const footprint = footprintForInstance(instance);
       if (!footprint) {
@@ -122,12 +138,12 @@ export function useArmoryGearDrag({
         return;
       }
 
-      const onMouseMove = (e: MouseEvent) => {
+      const onPointerMove = (e: PointerEvent) => {
         setCarriedVisual({
-          left: e.clientX - sourceRect.width / 2,
-          top: e.clientY - sourceRect.height / 2,
-          width: sourceRect.width,
-          height: sourceRect.height,
+          left: e.clientX - actualRect.width / 2,
+          top: e.clientY - actualRect.height / 2,
+          width: actualRect.width,
+          height: actualRect.height,
         });
       };
 
@@ -136,7 +152,7 @@ export function useArmoryGearDrag({
         e.preventDefault();
 
         const board = inventoryBoardRef.current;
-        if (!board || !footprint) {
+        if (!board) {
           autoPlaceCarried(instance);
           clearCarry();
           return;
@@ -174,7 +190,7 @@ export function useArmoryGearDrag({
           const occupantInstance = inventoryById.get(occupant.item.instanceId);
           onMoveItem(instance.instanceId, result.placement.col, result.placement.row);
           if (occupantInstance) {
-            startCarry(occupantInstance, freeRect);
+            startCarryRef.current?.(occupantInstance, freeRect);
           } else {
             clearCarry();
           }
@@ -191,18 +207,22 @@ export function useArmoryGearDrag({
         }
       };
 
-      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("pointermove", onPointerMove);
       document.addEventListener("pointerdown", onPointerDown, { capture: true });
       document.addEventListener("keydown", onKeyDown);
 
       carryCleanupRef.current = () => {
-        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("pointermove", onPointerMove);
         document.removeEventListener("pointerdown", onPointerDown, { capture: true });
         document.removeEventListener("keydown", onKeyDown);
       };
     },
     [autoPlaceCarried, clearCarry, inventoryBoardRef, inventoryById, onMoveItem],
   );
+
+  useEffect(() => {
+    startCarryRef.current = startCarry;
+  }, [startCarry]);
 
   const clearSecondaryDragState = useCallback(() => {
     if (secondaryCleanupTimerRef.current !== null) {

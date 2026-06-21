@@ -208,14 +208,14 @@ export function ArmoryScreen({
 
   useEffect(() => {
     if (!editable) {
-      setCursorPoint(null);
+      setTimeout(() => setCursorPoint(null), 0);
       dispatchTargeting({ type: "EDITABLE_LOST" });
     }
   }, [editable]);
 
   useEffect(() => {
     if (activeCurrencyId && (craftingCurrencies[activeCurrencyId] ?? 0) <= 0) {
-      setCursorPoint(null);
+      setTimeout(() => setCursorPoint(null), 0);
       dispatchTargeting({ type: "CURRENCY_DEPLETED" });
     }
   }, [activeCurrencyId, craftingCurrencies]);

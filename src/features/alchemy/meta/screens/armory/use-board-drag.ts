@@ -76,7 +76,9 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
   const cleanupTimerRef = useRef<number | null>(null);
   const pendingCommitRef = useRef<(() => void) | null>(null);
   const boardObstaclesRef = useRef(boardObstacles);
-  boardObstaclesRef.current = boardObstacles;
+  useEffect(() => {
+    boardObstaclesRef.current = boardObstacles;
+  }, [boardObstacles]);
 
   useEffect(
     () => () => {

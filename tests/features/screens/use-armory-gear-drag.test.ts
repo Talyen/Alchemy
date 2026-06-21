@@ -369,4 +369,170 @@ describe("useArmoryGearDrag multi-item unequip animations", () => {
 
     expect(result.current.secondaryDragVisuals.length).toBeGreaterThanOrEqual(1);
   });
+
+  it("does not launch secondary visuals for off-hand when equipping a compatible one-handed weapon", () => {
+    const onEquip = vi.fn();
+    const daggerInstance: GearInstance = {
+      instanceId: "dagger-1",
+      definitionId: "dagger-basic",
+      affixes: [],
+    };
+    const shieldInstance: GearInstance = {
+      instanceId: "shield-1",
+      definitionId: "kite-shield-basic",
+      affixes: [],
+    };
+    const newSwordInstance: GearInstance = {
+      instanceId: "sword-2",
+      definitionId: "shortsword-basic",
+      affixes: [],
+    };
+
+    const loadout = {
+      "main-hand": "dagger-1",
+      "off-hand": "shield-1",
+      body: null,
+      helm: null,
+      boots: null,
+      gloves: null,
+      belt: null,
+      "left-ring": null,
+      "right-ring": null,
+      amulet: null,
+    };
+
+    const inventoryById = new Map<string, GearInstance>([
+      ["dagger-1", daggerInstance],
+      ["shield-1", shieldInstance],
+      ["sword-2", newSwordInstance],
+    ]);
+
+    const board = document.createElement("div");
+    const metricCell = document.createElement("div");
+    metricCell.setAttribute("data-armory-grid-metric", "cell");
+    const metricStride = document.createElement("div");
+    metricStride.setAttribute("data-armory-grid-metric", "stride");
+    board.appendChild(metricCell);
+    board.appendChild(metricStride);
+
+    vi.spyOn(board, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 400,
+      height: 400,
+      right: 400,
+      bottom: 400,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    vi.spyOn(metricCell, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 48,
+      height: 48,
+      right: 48,
+      bottom: 48,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    vi.spyOn(metricStride, "getBoundingClientRect").mockReturnValue({
+      left: 52,
+      top: 0,
+      width: 48,
+      height: 48,
+      right: 100,
+      bottom: 48,
+      x: 52,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    vi.spyOn(window, "getComputedStyle").mockReturnValue({
+      paddingLeft: "0px",
+      paddingTop: "0px",
+      paddingRight: "0px",
+      paddingBottom: "0px",
+      borderLeftWidth: "0px",
+      borderTopWidth: "0px",
+      borderRightWidth: "0px",
+      borderBottomWidth: "0px",
+    } as any);
+
+    const mockMainSlotEl = document.createElement("div");
+    mockMainSlotEl.setAttribute("data-testid", "armory-equipment-slot");
+    mockMainSlotEl.setAttribute("data-slot", "main-hand");
+    vi.spyOn(mockMainSlotEl, "getBoundingClientRect").mockReturnValue({
+      left: 100,
+      top: 100,
+      width: 50,
+      height: 50,
+      right: 150,
+      bottom: 150,
+      x: 100,
+      y: 100,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    const mockOffSlotEl = document.createElement("div");
+    mockOffSlotEl.setAttribute("data-testid", "armory-equipment-slot");
+    mockOffSlotEl.setAttribute("data-slot", "off-hand");
+    vi.spyOn(mockOffSlotEl, "getBoundingClientRect").mockReturnValue({
+      left: 160,
+      top: 100,
+      width: 50,
+      height: 50,
+      right: 210,
+      bottom: 150,
+      x: 160,
+      y: 100,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    vi.spyOn(document, "querySelector").mockImplementation((selector) => {
+      if (selector === "[data-testid='armory-equipment-slot'][data-slot='main-hand']") return mockMainSlotEl;
+      if (selector === "[data-testid='armory-equipment-slot'][data-slot='off-hand']") return mockOffSlotEl;
+      return null;
+    });
+
+    const inventoryBoardRef = { current: board };
+
+    const { result } = renderHook(() =>
+      useArmoryGearDrag({
+        characterId: "knight",
+        editable: true,
+        loadout,
+        inventoryById,
+        packedInventory: { items: [], occupiedRows: 0 },
+        inventoryBoardRef,
+        boardObstacles: [],
+        onEquip,
+        onUnequip: vi.fn(),
+        onMoveItem: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      result.current.handleGearDoubleClick(
+        newSwordInstance,
+        { kind: "inventory", placement: { col: 1, row: 1 } },
+        { left: 0, top: 0, width: 0, height: 0 },
+      );
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(onEquip).toHaveBeenCalledWith(
+      "knight",
+      "main-hand",
+      newSwordInstance,
+      expect.objectContaining({ vacatedPlacement: { col: 1, row: 1 } }),
+    );
+
+    // Only 1 item should fly (the displaced main-hand dagger), NOT the off-hand shield
+    expect(result.current.secondaryDragVisuals).toHaveLength(1);
+    expect(result.current.secondaryDragVisuals[0]?.instance?.instanceId).toBe("dagger-1");
+  });
 });

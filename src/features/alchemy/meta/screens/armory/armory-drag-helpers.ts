@@ -6,6 +6,7 @@ import {
   inventoryPlacementRect,
   isGearCompatibleWithLoadoutSlot,
   isTwoHanded,
+  gearDefinitions,
   type GearInstance,
   type GearLoadout,
   type GearSlot,
@@ -158,12 +159,35 @@ export function calculateSecondaryDisplacedItems({
     const otherInstanceId = loadout[otherSlot];
     if (otherInstanceId && otherInstanceId !== instance.instanceId && otherInstanceId !== displaced?.instanceId) {
       const otherInstance = inventoryById.get(otherInstanceId);
-      if (otherInstance) {
-        const otherSlotEl = document.querySelector<HTMLElement>(
-          `[data-testid='armory-equipment-slot'][data-slot='${otherSlot}']`,
-        );
-        const otherSource: DragRect = otherSlotEl ? otherSlotEl.getBoundingClientRect() : slotRect;
-        toAnimate.push({ instance: otherInstance, source: otherSource, vacatedPlacement });
+      const otherDefinition = otherInstance ? gearDefinitions[otherInstance.definitionId] : undefined;
+      const definition = gearDefinitions[instance.definitionId];
+      if (otherInstance && otherDefinition && definition) {
+        let isDisplaced = false;
+        if (slot === "main-hand") {
+          if (definition.requiresTwoHands) {
+            isDisplaced = true;
+          } else {
+            if (otherDefinition.requiresTwoHands) {
+              isDisplaced = true;
+            } else if (otherDefinition.quiver && !definition.rangedWeapon) {
+              isDisplaced = true;
+            } else if (!otherDefinition.quiver && definition.rangedWeapon) {
+              isDisplaced = true;
+            }
+          }
+        } else if (slot === "off-hand") {
+          if (otherDefinition.requiresTwoHands) {
+            isDisplaced = true;
+          }
+        }
+
+        if (isDisplaced) {
+          const otherSlotEl = document.querySelector<HTMLElement>(
+            `[data-testid='armory-equipment-slot'][data-slot='${otherSlot}']`,
+          );
+          const otherSource: DragRect = otherSlotEl ? otherSlotEl.getBoundingClientRect() : slotRect;
+          toAnimate.push({ instance: otherInstance, source: otherSource, vacatedPlacement });
+        }
       }
     }
   }

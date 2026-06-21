@@ -227,7 +227,7 @@ export const InventoryGearTile = memo(function InventoryGearTile({
         onGearPointerEnd({ x: event.clientX, y: event.clientY }, event.pointerId, true);
       }}
       onDoubleClick={(event) => {
-        if (!editable || targetingMode) return;
+        if (!editable || targetingMode || interactionSuppressed) return;
         onGearDoubleClick(
           instance,
           { kind: "inventory", placement: { col: placement.col, row: placement.row } },
@@ -244,6 +244,7 @@ export const InventoryGearTile = memo(function InventoryGearTile({
       onFocus={handleFocus}
       onBlur={handleBlur}
       data-testid="armory-inventory-item"
+      data-instance-id={instance.instanceId}
       data-gear-title={getGearInstanceTitle(instance)}
     >
       <img

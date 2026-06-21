@@ -108,6 +108,7 @@ export const SlotButton = memo(function SlotButton({
         salvageMode || activeCurrencyId ? "cursor-default" : "cursor-grab active:cursor-grabbing",
       )}
       aria-label={`${SLOT_LABELS[slot]} equipment slot`}
+      data-instance-id={instance?.instanceId}
       data-salvageable={salvageMode && instance ? "true" : undefined}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -144,7 +145,7 @@ export const SlotButton = memo(function SlotButton({
         onGearPointerEnd({ x: event.clientX, y: event.clientY }, event.pointerId, true);
       }}
       onDoubleClick={(event) => {
-        if (editable && instance && !salvageMode && !activeCurrencyId)
+        if (editable && instance && !salvageMode && !activeCurrencyId && !isDraggingActive)
           onGearDoubleClick(instance, { kind: "equipment", slot }, event.currentTarget.getBoundingClientRect());
       }}
       onClick={(event) => {

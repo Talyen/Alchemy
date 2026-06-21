@@ -83,8 +83,9 @@ export function useArmoryController(): ArmoryController {
           useGearStore.getState().loadouts,
         );
       }
+      flush();
     },
-    [activeRunCharacterId, gear, hasActiveBattle, hasActiveRun],
+    [activeRunCharacterId, gear, hasActiveBattle, hasActiveRun, flush],
   );
 
   const onUnequip = useCallback<ArmoryController["onUnequip"]>(
@@ -100,8 +101,9 @@ export function useArmoryController(): ArmoryController {
           useGearStore.getState().loadouts,
         );
       }
+      flush();
     },
-    [activeRunCharacterId, gear, hasActiveBattle, hasActiveRun],
+    [activeRunCharacterId, gear, hasActiveBattle, hasActiveRun, flush],
   );
 
   const onSalvage = useCallback<ArmoryController["onSalvage"]>(

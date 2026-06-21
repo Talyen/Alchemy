@@ -28,21 +28,26 @@ export function DragVisualPortal({
 }) {
   const isDrag = !visual.settling && !visual.releasing && !visual.flyover;
   const startRect = visual.source;
-  const dx = visual.rect.left - startRect.left;
-  const dy = visual.rect.top - startRect.top;
+  const dx = Math.round(visual.rect.left - startRect.left);
+  const dy = Math.round(visual.rect.top - startRect.top);
+
+  const rx = Math.round(visual.releaseRect ? visual.releaseRect.left - startRect.left : dx);
+  const ry = Math.round(visual.releaseRect ? visual.releaseRect.top - startRect.top : dy);
 
   return createPortal(
     <motion.div
+      key={isDrag ? "drag" : "settle"}
       data-testid={testId}
-      className="pointer-events-none fixed z-[120] overflow-hidden rounded-xl"
+      className="pointer-events-none fixed z-[120] overflow-hidden rounded-xl bg-background/60"
       style={{
-        left: startRect.left,
-        top: startRect.top,
-        width: startRect.width,
-        height: startRect.height,
+        left: Math.round(startRect.left),
+        top: Math.round(startRect.top),
+        width: Math.round(startRect.width),
+        height: Math.round(startRect.height),
         willChange: "transform",
+        ...(isDrag ? { x: dx, y: dy } : {}),
       }}
-      initial={isDrag ? { x: dx, y: dy } : { x: 0, y: 0 }}
+      initial={visual.flyover ? { x: 0, y: 0 } : { x: rx, y: ry }}
       animate={{ x: dx, y: dy }}
       transition={
         isDrag
