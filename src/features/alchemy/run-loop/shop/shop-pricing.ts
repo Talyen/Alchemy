@@ -9,13 +9,12 @@ export type ShopBuyPriceInput = {
   apothecaryDiscount?: number;
   merchantsFavorDiscount?: number;
   firstPurchaseUsed: boolean;
-  favorConsumed: boolean;
 };
 
 export function computeShopBuyPrice(input: ShopBuyPriceInput): number {
   const apothecary = input.apothecaryDiscount ?? 0;
   let price = Math.max(0, input.basePrice - input.haggleDiscount - apothecary);
-  if (!input.firstPurchaseUsed && !input.favorConsumed) {
+  if (!input.firstPurchaseUsed) {
     price = Math.max(0, price - (input.merchantsFavorDiscount ?? 0));
   }
   return price;

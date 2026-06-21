@@ -131,17 +131,17 @@ export function resampleEquipmentShopOfferings(
   return generateGearRewardChoices(EQUIPMENT_SHOP_OFFERED, rng, gearAstralChanceBonus);
 }
 
-export function createInitialShopState(deck: BattleCard[] = []): ShopState {
+export function createInitialShopState(deck: BattleCard[] = [], rng?: () => number): ShopState {
   return {
     ...emptyShopState(),
-    cards: selectRewardCards(deck, getOfferableCardPool(), SHOP_CARDS_OFFERED),
+    cards: selectRewardCards(deck, getOfferableCardPool(), SHOP_CARDS_OFFERED, [], rng),
   };
 }
 
-export function createInitialAlchemistState(deck: BattleCard[] = []): AlchemistState {
+export function createInitialAlchemistState(deck: BattleCard[] = [], rng?: () => number): AlchemistState {
   return {
     ...emptyAlchemistState(),
-    potions: selectRewardCards(deck, getStandardPotionPool(), ALCHEMIST_POTIONS_OFFERED),
+    potions: selectRewardCards(deck, getStandardPotionPool(), ALCHEMIST_POTIONS_OFFERED, [], rng),
   };
 }
 

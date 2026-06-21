@@ -23,7 +23,6 @@ describe("shop-pricing", () => {
         basePrice: TRINKET_SHOP_TRINKET_PRICE,
         haggleDiscount: 5,
         firstPurchaseUsed: false,
-        favorConsumed: true,
       }),
     ).toBe(45);
   });
@@ -40,7 +39,6 @@ describe("shop-pricing", () => {
         haggleDiscount,
         apothecaryDiscount,
         firstPurchaseUsed: false,
-        favorConsumed: true,
       }),
     ).toBe(10);
   });
@@ -52,7 +50,6 @@ describe("shop-pricing", () => {
         haggleDiscount: 0,
         merchantsFavorDiscount: 7,
         firstPurchaseUsed: false,
-        favorConsumed: false,
       }),
     ).toBe(43);
   });

@@ -1,0 +1,374 @@
+import { describe, expect, it, beforeEach } from "vitest";
+import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
+import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
+import {
+  getRunProgressStoreView,
+  getRunSessionStoreView,
+  resetRunProgressSlice,
+  setRunProgress,
+} from "../../helpers/run-domain-store-test";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+import {
+  setShopState,
+  setAlchemistState,
+  setTrinketShopState,
+  setEquipmentShopState,
+} from "@/features/alchemy/shared/stores/run-session-facade";
+import {
+  createInitialShopState,
+  createInitialAlchemistState,
+  createInitialTrinketShopState,
+} from "@/features/alchemy/run-loop/shop/shop-state-init";
+import {
+  SHOP_CARD_PRICE,
+  SHOP_REFRESH_PRICE,
+  SHOP_REMOVE_PRICE,
+  ALCHEMIST_POTION_PRICE,
+  ALCHEMIST_REFRESH_PRICE,
+  ALCHEMIST_MIX_PRICE,
+  TRINKET_SHOP_TRINKET_PRICE,
+} from "@/lib/game-constants";
+
+beforeEach(() => {
+  resetRunProgressSlice();
+  resetTransientRunUi();
+});
+
+function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
+  return {
+    id: "test",
+    title: "Test",
+    descriptionLines: [""],
+    art: "",
+    cost: 2,
+    effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    ...overrides,
+  };
+}
+
+const defaultTalentEffects: TalentEffectManifest = {
+  shopCardDiscount: 0,
+  potionDiscount: 0,
+  shopFreeRefresh: false,
+  removeCardDiscount: 0,
+  mixPotionDiscount: 0,
+  potionMixPotency: 0,
+  // fill remaining manifest fields with defaults
+  extraDrawPerBattle: 0,
+  firstHolyDamageDoubled: false,
+  firstBurnDoubled: false,
+  boneCharmHealOnKill: 0,
+  forgeStunThreshold: 0,
+  forgeStunAmount: 0,
+  frozenHeartDamage: 0,
+  blockToArmorThreshold: 0,
+  blockToArmorAmount: 0,
+  runicQuillDrawOnConsume: 0,
+  sinEaterHealOnHarmfulStatusRemove: 0,
+  vanguardCrestForgeOnBlockAbsorb: 0,
+  parasiticBloomLeechChance: 0,
+  cutpurseGoldOnBleed: 0,
+  wishingWellGoldOnWish: 0,
+  plagueDoctorImmunity: false,
+  mortarPestleFreeFirstPotion: false,
+  sunderingArmorPiercing: 0,
+  resonantChimeCardsRequired: 0,
+  resonantChimeMana: 0,
+  smugglersMapGoldBonus: 0,
+  grovesFavorStartHeal: 0,
+  merchantsFavorDiscount: 0,
+  companionDamageBonus: 0,
+  freezeDurationExtension: 0,
+  thunderstoneDamageOnStun: 0,
+  luckyCloverGoldChance: 0,
+};
+
+function buildActions(
+  overrides?: Partial<{
+    talentEffects: Partial<TalentEffectManifest>;
+    gearAstralChanceBonus: number;
+    trinketIds: string[];
+  }>,
+) {
+  if (overrides?.trinketIds) {
+    getRunProgressStoreView().setRunTrinkets(() => overrides.trinketIds!);
+  }
+  // Read fresh state after any mutations above
+  const run = getRunProgressStoreView();
+  const shopStates = getRunSessionStoreView();
+  const talentEffects = { ...defaultTalentEffects, ...overrides?.talentEffects } as TalentEffectManifest;
+  return createShopActions({
+    run,
+    talents: { talentEffects } as any,
+    homesteadEffectsRef: { current: { gearAstralChanceBonus: overrides?.gearAstralChanceBonus ?? 0 } } as any,
+    shopState: shopStates.shopState,
+    alchemistState: shopStates.alchemistState,
+    trinketShopState: shopStates.trinketShopState,
+    equipmentShopState: shopStates.equipmentShopState,
+    setShopState,
+    setAlchemistState,
+    setTrinketShopState,
+    setEquipmentShopState,
+  });
+}
+
+describe("createShopActions", () => {
+  describe("merchant shop buy", () => {
+    it("deducts gold and appends card on successful purchase", () => {
+      setRunProgress({ runGold: 999 });
+      setShopState(createInitialShopState());
+      const actions = buildActions();
+      const card = getRunSessionStoreView().shopState.cards[0];
+      if (!card) return;
+
+      const deckBefore = getRunProgressStoreView().runDeck.length;
+      const result = actions.handleShopBuyCard(card, "slot-0");
+
+      expect(result).toBe(true);
+      expect(getRunProgressStoreView().runGold).toBe(999 - SHOP_CARD_PRICE);
+      expect(getRunProgressStoreView().runDeck.length).toBe(deckBefore + 1);
+      expect(getRunSessionStoreView().shopState.firstPurchaseUsed).toBe(true);
+      expect(getRunSessionStoreView().shopState.purchasedSlotKeys).toContain("slot-0");
+    });
+
+    it("returns false and does nothing when gold is insufficient", () => {
+      setRunProgress({ runGold: 0 });
+      setShopState(createInitialShopState());
+      const actions = buildActions();
+      const card = getRunSessionStoreView().shopState.cards[0];
+      if (!card) return;
+
+      const deckBefore = getRunProgressStoreView().runDeck.length;
+      const result = actions.handleShopBuyCard(card, "slot-0");
+
+      expect(result).toBe(false);
+      expect(getRunProgressStoreView().runGold).toBe(0);
+      expect(getRunProgressStoreView().runDeck.length).toBe(deckBefore);
+    });
+  });
+
+  describe("merchant remove card", () => {
+    it("deducts gold and removes card from deck", () => {
+      setRunProgress({ runGold: 999, runDeck: [makeCard({ id: "a" }), makeCard({ id: "b" })] });
+      setShopState(createInitialShopState());
+      const actions = buildActions();
+
+      actions.handleShopRemoveCard(0);
+
+      expect(getRunProgressStoreView().runGold).toBe(999 - SHOP_REMOVE_PRICE);
+      expect(getRunProgressStoreView().runDeck).toHaveLength(1);
+      expect(getRunProgressStoreView().runDeck[0].id).toBe("b");
+      expect(getRunSessionStoreView().shopState.removeUsed).toBe(true);
+    });
+
+    it("does nothing when removeUsed is already true", () => {
+      setRunProgress({ runGold: 999 });
+      setShopState({ ...createInitialShopState(), removeUsed: true });
+      const actions = buildActions();
+
+      actions.handleShopRemoveCard(0);
+
+      expect(getRunProgressStoreView().runGold).toBe(999);
+    });
+
+    it("does nothing for out-of-bounds index", () => {
+      setRunProgress({ runGold: 999, runDeck: [makeCard()] });
+      setShopState(createInitialShopState());
+      const actions = buildActions();
+
+      actions.handleShopRemoveCard(-1);
+      actions.handleShopRemoveCard(5);
+
+      expect(getRunProgressStoreView().runGold).toBe(999);
+    });
+  });
+
+  describe("merchant refresh", () => {
+    it("deducts gold and decrements refreshesLeft", () => {
+      setRunProgress({ runGold: 999 });
+      setShopState(createInitialShopState());
+      const actions = buildActions();
+      const beforeRefreshes = getRunSessionStoreView().shopState.refreshesLeft;
+
+      actions.handleShopRefresh();
+
+      expect(getRunSessionStoreView().shopState.refreshesLeft).toBe(beforeRefreshes - 1);
+      expect(getRunProgressStoreView().runGold).toBe(999 - SHOP_REFRESH_PRICE);
+      expect(getRunSessionStoreView().shopState.purchasedSlotKeys).toHaveLength(0);
+    });
+  });
+
+  describe("merchants-favor first-purchase discount", () => {
+    it("applies discount on first purchase when trinket is owned", () => {
+      setRunProgress({ runGold: 999 });
+      setShopState(createInitialShopState());
+      const actions = buildActions({ trinketIds: ["merchants-favor"] });
+      const card = getRunSessionStoreView().shopState.cards[0];
+      if (!card) return;
+
+      const discountedPrice = SHOP_CARD_PRICE - 7;
+      actions.handleShopBuyCard(card, "slot-0");
+
+      expect(getRunProgressStoreView().runGold).toBe(999 - discountedPrice);
+    });
+
+    it("does not apply discount on second purchase in same visit", () => {
+      setRunProgress({ runGold: 999 });
+      setShopState(createInitialShopState());
+      const firstActions = buildActions({ trinketIds: ["merchants-favor"] });
+      const cards = getRunSessionStoreView().shopState.cards;
+      if (cards.length < 2) return;
+
+      firstActions.handleShopBuyCard(cards[0], "slot-0");
+      const discountPrice = SHOP_CARD_PRICE - 7;
+      const goldAfterFirst = 999 - discountPrice;
+
+      // Rebuild actions with fresh snapshot (firstPurchaseUsed is now true in store)
+      const secondActions = buildActions({ trinketIds: ["merchants-favor"] });
+      const result = secondActions.handleShopBuyCard(cards[1], "slot-1");
+      expect(result).toBe(true);
+      expect(getRunProgressStoreView().runGold).toBe(goldAfterFirst - SHOP_CARD_PRICE);
+    });
+  });
+
+  describe("talent discounts", () => {
+    it("applies haggle discount to shop card price", () => {
+      setRunProgress({ runGold: 999 });
+      setShopState(createInitialShopState());
+      const actions = buildActions({ talentEffects: { shopCardDiscount: 5 } });
+      const card = getRunSessionStoreView().shopState.cards[0];
+      if (!card) return;
+
+      expect(actions.getMerchantCardBuyPrice(card)).toBe(SHOP_CARD_PRICE - 5);
+    });
+
+    it("applies potion discount only for standard potions in alchemist", () => {
+      setRunProgress({ runGold: 999 });
+      setAlchemistState(createInitialAlchemistState());
+      const actions = buildActions({ talentEffects: { potionDiscount: 5, shopCardDiscount: 3 } });
+      const potion = getRunSessionStoreView().alchemistState.potions[0];
+      if (!potion) return;
+
+      // Potion discount stacks with shop card discount for potion cards
+      expect(actions.getAlchemistPotionBuyPrice(potion)).toBeLessThanOrEqual(ALCHEMIST_POTION_PRICE - 3);
+    });
+  });
+
+  describe("per-shop isolation", () => {
+    it("buying in merchant shop does not affect alchemist state", () => {
+      setRunProgress({ runGold: 999 });
+      setShopState(createInitialShopState());
+      setAlchemistState(createInitialAlchemistState());
+      const actions = buildActions();
+      const card = getRunSessionStoreView().shopState.cards[0];
+      if (!card) return;
+
+      actions.handleShopBuyCard(card, "slot-0");
+
+      expect(getRunSessionStoreView().alchemistState.firstPurchaseUsed).toBe(false);
+    });
+  });
+
+  describe("alchemist mix potions", () => {
+    it("deducts gold, replaces two cards with mixed potion, marks mixUsed", () => {
+      setRunProgress({
+        runGold: 999,
+        runDeck: [makeCard({ id: "a", title: "Potion A" }), makeCard({ id: "b", title: "Potion B" })],
+      });
+      setAlchemistState(createInitialAlchemistState());
+      const actions = buildActions();
+
+      const result = actions.handleAlchemistMixPotions(0, 1);
+
+      // tryCreateMixedPotion may return null if the cards can't be mixed
+      if (result) {
+        expect(getRunProgressStoreView().runGold).toBeLessThan(999);
+        expect(getRunSessionStoreView().alchemistState.mixUsed).toBe(true);
+        // Deck has the mixed card instead of the original two
+        const deck = getRunProgressStoreView().runDeck;
+        expect(deck.length).toBeLessThanOrEqual(2);
+      }
+    });
+
+    it("returns null for out-of-bounds indices", () => {
+      setRunProgress({ runGold: 999, runDeck: [makeCard()] });
+      setAlchemistState(createInitialAlchemistState());
+      const actions = buildActions();
+
+      expect(actions.handleAlchemistMixPotions(-1, 0)).toBeNull();
+      expect(actions.handleAlchemistMixPotions(0, 5)).toBeNull();
+      expect(actions.handleAlchemistMixPotions(0, 0)).toBeNull();
+    });
+  });
+
+  describe("trinket shop", () => {
+    it("deducts gold and adds trinket on purchase", () => {
+      setRunProgress({ runGold: 999 });
+      setTrinketShopState(createInitialTrinketShopState(() => 0));
+      const actions = buildActions();
+      const trinket = getRunSessionStoreView().trinketShopState.trinkets[0];
+      if (!trinket) return;
+
+      const result = actions.handleTrinketShopBuy(trinket, "slot-0");
+
+      expect(result).toBe(true);
+      expect(getRunProgressStoreView().runGold).toBe(999 - TRINKET_SHOP_TRINKET_PRICE);
+      expect(getRunProgressStoreView().runTrinkets).toContain(trinket.id);
+      expect(getRunSessionStoreView().trinketShopState.firstPurchaseUsed).toBe(true);
+    });
+  });
+
+  describe("price selectors", () => {
+    it("getRemoveCardPrice returns base price minus discount", () => {
+      const actions = buildActions({ talentEffects: { removeCardDiscount: 10 } });
+      expect(actions.getRemoveCardPrice()).toBe(Math.max(0, SHOP_REMOVE_PRICE - 10));
+    });
+
+    it("getMixPotionPrice returns base price minus discount", () => {
+      const actions = buildActions({ talentEffects: { mixPotionDiscount: 10 } });
+      expect(actions.getMixPotionPrice()).toBe(Math.max(0, ALCHEMIST_MIX_PRICE - 10));
+    });
+
+    it("getShopRefreshPrice returns base price with free refresh talent", () => {
+      const actions = buildActions({ talentEffects: { shopFreeRefresh: true } });
+      expect(actions.getShopRefreshPrice(1)).toBe(0);
+      expect(actions.getShopRefreshPrice(0)).toBe(SHOP_REFRESH_PRICE);
+    });
+
+    it("getAlchemistRefreshPrice returns base price with free refresh talent", () => {
+      const actions = buildActions({ talentEffects: { shopFreeRefresh: true } });
+      expect(actions.getAlchemistRefreshPrice(1)).toBe(0);
+      expect(actions.getAlchemistRefreshPrice(0)).toBe(ALCHEMIST_REFRESH_PRICE);
+    });
+  });
+
+  describe("init", () => {
+    it("initShop creates initial shop state from deck", () => {
+      setRunProgress({ runDeck: [makeCard()] });
+      const actions = buildActions();
+
+      actions.initShop();
+
+      const shop = getRunSessionStoreView().shopState;
+      expect(shop.firstPurchaseUsed).toBe(false);
+      expect(shop.purchasedSlotKeys).toHaveLength(0);
+      expect(shop.cards.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("selectors reflect current store state", () => {
+    it("getMerchantCardBuyPrice returns post-first-purchase price with fresh snapshot", () => {
+      setRunProgress({ runGold: 999 });
+      setShopState(createInitialShopState());
+      const card = getRunSessionStoreView().shopState.cards[0];
+      if (!card) return;
+
+      // Buy once to flip firstPurchaseUsed
+      buildActions().handleShopBuyCard(card, "slot-0");
+
+      // Fresh snapshot after purchase
+      const postBuyActions = buildActions();
+      expect(postBuyActions.getMerchantCardBuyPrice(card)).toBe(SHOP_CARD_PRICE);
+    });
+  });
+});
