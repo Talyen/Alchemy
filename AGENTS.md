@@ -95,7 +95,7 @@ For the change-to-test mapping, see [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-
 | Changing battle or card effects               | [REFERENCE battle rules](./docs/REFERENCE.md#battle-implementation-rules), [BATTLE_HANDLERS.md](./src/lib/game-data/effects/BATTLE_HANDLERS.md)                                    | `tests/lib/battle` and `descriptions-match-effects`                               |
 | Changing UI or motion                         | [WORKFLOWS stagger guidance](./docs/WORKFLOWS.md#staggered-screen-enter-motion); stuck on interaction/layout UX → [PROMPTS UI audits](./PROMPTS.md#ui-interaction--feedback-audit) | Targeted UI tests and `npm run lint:ci`                                           |
 | Changing saves or releases                    | [WORKFLOWS persistence guidance](./docs/WORKFLOWS.md#change-persisted-save-data), [MIGRATIONS.md](./src/features/alchemy/shared/storage/MIGRATIONS.md), [RELEASE.md](./docs/RELEASE.md)                                                                  | Ship checks from [CONTRIBUTING](./CONTRIBUTING.md)                                |
-| Tuning numbers or balance                     | `game-constants.ts`, `npm run balance:sim`                                                                                                           | Targeted tests from [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) |
+| Tuning numbers or balance                     | `game-constants.ts`, `npm run balance:sim` (output: `reports/balance-report.html`)                                                                  | Targeted tests from [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) |
 | Desktop / Steam / Electron                    | [RELEASE.md](./docs/RELEASE.md), `desktop/` directory                                                                                                                                | `npm run test:ship:desktop` and `npm run check:ship:full`                         |
 | Diagnosing E2E failures / slowness            | `test-results/failures/` (DOM & console logs), `reports/e2e-audit-report.md`                                                                                                       | `npm run test:e2e:audit`                                                          |
 | Stuck after three attempts                    | Run the relevant audit in [PROMPTS.md](./PROMPTS.md), then follow the [Escalation policy](#escalation-policy) above                                                                | Ask the user after the audit                                                      |
@@ -105,6 +105,7 @@ For the change-to-test mapping, see [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-
 - Trunk-based. When the user explicitly asks for a commit, commit directly to `main` — no PRs, no feature branches.
 - Commit-message format, examples, and type → audience mapping: see [Commit messages and changelog](#commit-messages-and-changelog). Read that before writing the first commit on a task.
 - Tag / release flow: [RELEASE.md](./docs/RELEASE.md).
+- The pre-commit hook automatically runs lockfile-check, `typecheck`, and `prettier --write` on staged files. Use `npx lefthook run pre-commit` locally to preview.
 
 ## Commit messages and changelog
 
@@ -148,7 +149,7 @@ No body or footer is required. The pre-push hook syncs `CHANGELOG.md` ## [Unrele
 Full change-to-test mapping and the main-gate procedure live in [CONTRIBUTING.md](./CONTRIBUTING.md#before-you-push). In short:
 
 1. While iterating, run the narrow test command for the changed area plus `npm run typecheck` (included in `npm run lint:ci`).
-2. Before a requested push, run `npm run check:push`. The pre-push hook runs a 6-stage piped sequence (changelog sync, ci dry-run, lint:ci, unit tests, build:ship, prepush E2E) automatically on push to `main` — see [CONTRIBUTING.md](./CONTRIBUTING.md#before-you-push) for details.
+2. Before a requested push, run `npm run check:push`. The pre-push hook runs a 6-stage piped sequence (changelog sync, lockfile dry-run, lint:ci, unit tests, build:ship, prepush E2E) automatically on push to `main` — see [CONTRIBUTING.md](./CONTRIBUTING.md#before-you-push) for details.
 3. Before an explicitly requested release, run `npm run check:ship:full`.
 
 ## Sources of truth
@@ -212,4 +213,5 @@ Full change-to-test mapping and the main-gate procedure live in [CONTRIBUTING.md
 ## Debugging
 
 - Battle warnings use the `[Enemy Turn]` prefix.
+- On E2E failure, read `test-results/failures/` for diagnostic markdown (console/runtime logs + DOM snapshot). Run `npm run test:e2e:audit` for flakiness analysis per spec.
 - After three failed attempts with the same approach, follow the [Escalation policy](#escalation-policy) above.
