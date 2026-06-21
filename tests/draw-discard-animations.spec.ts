@@ -59,9 +59,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", () => {
     const count = await battle.handCount();
     expect(count).toBeGreaterThan(0);
     await Promise.all(
-      Array.from({ length: count }, (_, i) =>
-        expect(battle.hand.nth(i)).toBeEnabled({ timeout: 2000 }),
-      ),
+      Array.from({ length: count }, (_, i) => expect(battle.hand.nth(i)).toBeEnabled({ timeout: 2000 })),
     );
     expect(errors).toEqual([]);
   });

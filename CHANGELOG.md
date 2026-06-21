@@ -274,6 +274,52 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(use-battle-controller): guard companion follow-up re-entry, stabilize cardPlay deps cascade
+  - Fix scheduleCompanionFollowUp guard to prevent duplicate timers under
+    concurrent turn resolution (early return + set ref before setTimeout)
+  - Wrap scheduleAutoEndTurn behind a ref so cardPlay doesn't rebuild on
+    every battle state tick; mirrors onEndTurnRef pattern in same hook
+  - Narrow cardPlay deps from whole talents object to stable
+    awardCardXP store action only, avoiding rebuilds on talent changes
+  - Replace resetHandTransferUi useCallback with direct Zustand selector
+  - Extract inline Props type to named UseBattleControllerProps alias
+  - Update AGENTS.md comment policy: allow 'why' comments, section
+    markers; ban only pointless 'what' comments
+- fix(armory): polish drag visuals, unified carry, and edge-case fixes
+  - fix: add image-rendering-pixelated to gear art to eliminate 1px edge flicker
+  - fix: increase board right padding 8->12px so rightmost borders aren't cut off
+  - fix: shrink equipment panel padding p-2->p-1 to free up board space
+  - fix: discordant-dice requires item.affixes.length > 0 to be a valid target
+  - fix: hide 'Salvage for...' tooltip text on 0-affix items
+  - fix: implement unified item carry — currency drops on gear/currency now
+    pick up the displaced item on the cursor (like gear-on-gear already did)
+  - fix: clear FSM settled visual when carry starts, preventing item A from
+    'shifting' after swapping with item B and moving B away
+  - refactor: use overlaps() helper in currency drag occupant check
+  - refactor: move fsmClearDragRef assignment into useEffect for consistency
+  - docs: add load-bearing precedence comment near dragVisual derivation
+  - test: add unit tests for carry mechanism exposure
+  - test: add E2E assertions for rightmost cell fit and currency-on-gear swap
+  - test: add E2E assertion for image-rendering: pixelated on drag visual
+- fix(armory): polish gear drag placement and salvage sound
+- fix(armory): correct secondary displacement logic and drag visual stability
+- fix(armory): eliminate drag flicker by unifying DragVisualPortal element type
+  The portal conditionally rendered <div> (drag) vs <motion.div> (settle/flyover).
+  Every type-swap caused a fresh mount where Framer's initial={{x:0,y:0}}
+  reset the visual to its startRect (origin), producing rapid cursor-to-origin
+  teleporting.
+  
+  - Replace the ternary with a single <motion.div> that uses {duration:0}
+    during the active drag (instant cursor-follow) and easing/spring for
+    settle/flyover.
+  - Anchor style.left/top on visual.source (the drag-start rect) so the
+    CSS box stays stable across drag-settle transitions.
+  - Set initial to the cursor delta during drag so first-mount targets the
+    cursor, not the origin.
+  - Skip onAnimationComplete during drag (early return) to avoid spurious
+    callbacks.
+  - Remove now-unused carriedVisual/clearCarry from screen destructure and
+    overlay prop-passing (carry is rendered via the main dragVisual portal).
 - fix(armory): quiver compat check, drag-FSM unmount races, rng determinism, cursorPoint perf
   Bug fixes:
   - Reject equipping non-ranged main-hand when quiver is in off-hand
@@ -571,11 +617,38 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Performance
 
+- perf(startup): defer image decode gate, music fetch, fonts, and non-critical work
+  - Drop upfront decode gate for all 305 webp assets (22 MB) — menu now
+    paints after 650 ms min duration; images stream in via idle callback
+  - Defer music MP3 fetch (~45 MB) to first user gesture instead of mount
+  - Self-host Inter variable woff2 (48 KB) — eliminates render-blocking
+    Google Fonts CSS request entirely; no FOUC
+  - Defer startup validation and error-log-store registration to idle time
+    (~1.5 KB removed from main JS critical path)
 - perf: speed up pre-push e2e with parallel @prepush subset
   Run eight parallel prepush tests locally; keep full critical suite for CI via test:e2e:prepush:full.
 
 ### Refactors
 
+- refactor(shop): simplify shop actions and unify pricing selectors
+- refactor(run-flow): trim deps, extract wildwood victory commit, dedupe teardown
+- refactor(shop): extract pure shop-actions factory, drop favorConsumed refs, add bounds checks
+- refactor(armory): overhaul drag system with gear-store helpers, add sort board
+  - Rewrite gear drag with unified DragVisualPortal and improved math
+  - Add board sorting (onSortBoard) via meta-routes
+  - Extract gear-store helpers for equip/swap/transfer logic
+  - Add drag-position E2E spec, remove obsolete gear-flow spec
+  - Fix music audio level jump on screen change
+  - Update CONTRIBUTING.md gear test mapping
+- refactor(battle): simplify turn orchestration and eliminate controller cycle
+  - Add explicit kind: haste | skipped | standard discriminator to EndPlayerTurnResolution
+  - Drop TurnResolutionStore and getTurnResolutionStore() factory
+  - Collapse turn-orchestration.ts: resolveEndTurn single entry dispatches by kind
+  - Slim TurnOrchestrationDeps from 14 to 9 fields (no refs, no onResolveEndTurn)
+  - Kill let lateResolveEndTurn / getTurnOrchestrationDepsRef cycle (~80 LOC)
+  - Drop dead cardTransferInProgress: false param
+  - Fix missing isCurrentBattleSession dep in scheduleCompanionFollowUp
+  - Update test mocks and imports for new API
 - refactor(nav): extract LockedMenuItem, data-drive GameMenu, add ghost variant
   - Add ghost variant to Button (replaces 11 outline+border-0 overrides)
   - Extract LockedMenuItem component owning locked-button recipe

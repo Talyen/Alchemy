@@ -23,12 +23,22 @@ test.describe("Mystery Event Flow", () => {
     await mystery.pickFirstChoice();
 
     await expect(async () => {
-      if (await page.getByText("Choose a Card").isVisible().catch(() => false)) {
+      if (
+        await page
+          .getByText("Choose a Card")
+          .isVisible()
+          .catch(() => false)
+      ) {
         const cardChoice = page.locator("button[aria-label^='Select']").first();
         await cardChoice.click();
         await page.getByRole("button", { name: "Add Card" }).click();
       }
-      if (await page.getByText("Select a card to remove").isVisible().catch(() => false)) {
+      if (
+        await page
+          .getByText("Select a card to remove")
+          .isVisible()
+          .catch(() => false)
+      ) {
         const cardTile = mystery.cardGrid.locator('[aria-label^="Select "]').first();
         await cardTile.click();
         await page.getByRole("button", { name: /^Remove Card$/ }).click();

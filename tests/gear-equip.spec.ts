@@ -81,7 +81,10 @@ test.describe("Gear equip", () => {
       .poll(async () => {
         const box = await page.getByTestId("armory-gear-drag-visual").boundingBox();
         return box
-          ? Math.max(Math.abs(box.x - (targetX - (sourceCenterX - source!.x))), Math.abs(box.y - (targetY - (sourceCenterY - source!.y))))
+          ? Math.max(
+              Math.abs(box.x - (targetX - (sourceCenterX - source!.x))),
+              Math.abs(box.y - (targetY - (sourceCenterY - source!.y))),
+            )
           : Number.POSITIVE_INFINITY;
       })
       .toBeLessThan(5);

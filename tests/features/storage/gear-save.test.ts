@@ -275,7 +275,6 @@ describe("gear save normalization", () => {
         loadouts,
         gearBoardPositionsByCharacter,
         craftingCurrencies,
-        {},
         currencyBoardPositionsByCharacter,
       );
 

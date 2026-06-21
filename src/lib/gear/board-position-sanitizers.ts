@@ -19,12 +19,14 @@ import {
 } from "./types";
 
 function sanitizeCurrencyBoardPositions(
-  boardPositions: CraftingCurrencyBoardPositions,
-  currencies: Record<CraftingCurrencyId, number>,
+  boardPositions: CraftingCurrencyBoardPositions | undefined,
+  currencies: Record<CraftingCurrencyId, number> | undefined,
 ): CraftingCurrencyBoardPositions {
   const next: CraftingCurrencyBoardPositions = {};
+  if (!boardPositions || !currencies) return next;
   for (const id of CRAFTING_CURRENCY_IDS) {
-    if (currencies[id] <= 0) continue;
+    const qty = currencies[id] ?? 0;
+    if (qty <= 0) continue;
     const position = boardPositions[id];
     if (!position) continue;
     if (position.col < 1 || position.row < 1 || position.col > INVENTORY_COLS) continue;
@@ -71,12 +73,13 @@ export function sanitizeGearBoardPositionsByCharacter(
 }
 
 export function sanitizeCurrencyBoardPositionsByCharacter(
-  boardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter,
-  currencies: Record<CraftingCurrencyId, number>,
+  boardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter | undefined,
+  currencies: Record<CraftingCurrencyId, number> | undefined,
 ): CraftingCurrencyBoardPositionsByCharacter {
   const next = createEmptyCurrencyBoardPositionsByCharacter();
+  const safeCurrencies = currencies ?? ({} as Record<CraftingCurrencyId, number>);
   for (const characterId of GEAR_CHARACTER_IDS) {
-    next[characterId] = sanitizeCurrencyBoardPositions(boardPositionsByCharacter[characterId], currencies);
+    next[characterId] = sanitizeCurrencyBoardPositions(boardPositionsByCharacter?.[characterId], safeCurrencies);
   }
   return next;
 }

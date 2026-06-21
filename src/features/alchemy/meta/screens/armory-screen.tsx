@@ -183,7 +183,6 @@ export function ArmoryScreen({
     occupiedRows: boardView.occupiedRows,
     inventoryBoardRef,
     onMoveCurrency: handleMoveCurrency,
-    boardObstacles: boardView.boardObstacles,
     packedItems: boardView.packedInventory.items,
     packedCurrencies: boardView.packedCurrencies,
     inventoryById,

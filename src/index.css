@@ -23,9 +23,12 @@
   --color-ring: hsl(var(--ring));
   --color-mana-gem: hsl(217 58% 35%);
 
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
+  --z-index-wish-overlay: 90;
+
+  --radius: 1.5rem;
+  --radius-lg: 1.5rem;
+  --radius-md: 1.375rem;
+  --radius-sm: 1.25rem;
 
   --radius-shell-compact: 0.875rem;
   --radius-shell-card: 1.125rem;
@@ -54,17 +57,6 @@
       background-position: 0% 0%;
     }
   }
-  @keyframes button-primary-bloom-puff {
-    0% {
-      box-shadow: 0 0 0 hsl(36 55% 56% / 0);
-    }
-    50% {
-      box-shadow: 0 0 24px hsl(36 55% 56% / 0.4);
-    }
-    100% {
-      box-shadow: 0 0 16px hsl(36 55% 56% / 0.32);
-    }
-  }
 }
 
 @layer base {
@@ -89,37 +81,6 @@
     --input: 30 8% 16%;
     --ring: 36 55% 56%;
     --radius: 1.5rem;
-    --mana-gem: 217 58% 35%;
-    /* Keep in sync with WISH_OVERLAY_Z_INDEX in game-constants.ts */
-    --z-wish-overlay: 90;
-    --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-    --motion-page-enter-duration: 240ms;
-    --motion-page-exit-duration: 120ms;
-    --motion-page-enter-y: 6px;
-    --motion-page-exit-y: -4px;
-    --motion-page-enter-scale: 1;
-    --motion-page-exit-scale: 1;
-    --motion-state-duration: 170ms;
-    --motion-state-ease: cubic-bezier(0.16, 1, 0.3, 1);
-    --motion-state-y: 4px;
-    --motion-state-scale: 1;
-    --motion-stagger-duration: 230ms;
-    --motion-stagger-delay: 36ms;
-    --motion-stagger-y: 10px;
-    --motion-stagger-scale: 1;
-    --motion-overlay-duration: 150ms;
-    --motion-wish-overlay-duration: 260ms;
-    --motion-panel-duration: 190ms;
-    --motion-wish-panel-duration: 300ms;
-    --motion-panel-y: 8px;
-    --motion-panel-scale: 1;
-    --motion-battle-menu-duration: 150ms;
-    --motion-battle-menu-y: 6px;
-    --motion-battle-menu-scale: 1;
-    --motion-crossfade-duration: 170ms;
-    --motion-crossfade-y: 4px;
-    --motion-crossfade-scale: 1;
-    --motion-startup-fade-duration: 320ms;
   }
 
   * {
@@ -295,15 +256,13 @@
   }
 
   .hover-popup-panel {
-    background-color: var(--color-card);
     box-shadow: 0 8px 24px hsl(var(--background) / 0.75);
     transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
     will-change: transform;
   }
 
   .stagger-item:has(.hover-popup-panel[data-visible]),
-  :is(.group, .group\/keyword, .group\/companion, .group\/status, .group\/art-wrapper)
-    :has(.hover-popup-panel):is(:hover, :focus-within) {
+  [class*="group"]:has(.hover-popup-panel):is(:hover, :focus-within) {
     position: relative;
     z-index: 50;
   }
@@ -319,25 +278,19 @@
     transform: translateX(-50%) translateY(-6px);
   }
 
-  .hover-popup-panel[data-placement="side-start"],
-  .hover-popup-panel[data-placement="side-end"] {
+  .hover-popup-panel[data-placement^="side-"] {
     transform-origin: left center;
     transform: translateY(-50%);
   }
 
-  :is(.group, .group\/keyword, .group\/companion, .group\/status, .group\/art-wrapper)
-    :is(:hover, :focus-within) > .hover-popup-panel,
+  [class*="group"]:is(:hover, :focus-within) > .hover-popup-panel,
   .hover-popup-panel[data-visible] {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
 
-  :is(.group, .group\/keyword, .group\/companion, .group\/status, .group\/art-wrapper)
-    :is(:hover, :focus-within) > .hover-popup-panel[data-placement="side-start"],
-  :is(.group, .group\/keyword, .group\/companion, .group\/status, .group\/art-wrapper)
-    :is(:hover, :focus-within) > .hover-popup-panel[data-placement="side-end"],
-  .hover-popup-panel[data-placement="side-start"][data-visible],
-  .hover-popup-panel[data-placement="side-end"][data-visible] {
+  [class*="group"]:is(:hover, :focus-within) > .hover-popup-panel[data-placement^="side-"],
+  .hover-popup-panel[data-placement^="side-"][data-visible] {
     opacity: 1;
     transform: translateY(-50%);
   }
@@ -376,34 +329,38 @@
   }
 
   .motion-overlay {
-    animation: overlayFadeIn var(--motion-overlay-duration) ease-out both;
+    animation: fadeIn 150ms ease-out both;
   }
 
   .wish-overlay-backdrop {
-    animation: overlayFadeIn var(--motion-wish-overlay-duration) ease-out both;
+    animation: fadeIn 260ms ease-out both;
   }
 
   .motion-panel {
-    animation: panelPopIn var(--motion-panel-duration) var(--motion-ease-out) both;
+    animation: slideUpIn 190ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    --slide-y: 8px;
     will-change: opacity, transform;
   }
 
   .wish-overlay-panel {
-    animation: panelPopIn var(--motion-wish-panel-duration) var(--motion-ease-out) both;
+    animation: slideUpIn 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    --slide-y: 8px;
     will-change: opacity, transform;
   }
 
   .stagger-item {
-    animation: staggerItemIn var(--motion-stagger-duration) var(--motion-ease-out) both;
-    animation-delay: calc(var(--stagger-index, 0) * var(--motion-stagger-delay));
+    animation: slideUpIn 230ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--stagger-index, 0) * 36ms);
+    --slide-y: 10px;
   }
 
   .state-swap {
-    animation: stateSwapIn var(--motion-state-duration) var(--motion-state-ease) both;
+    animation: slideUpIn 170ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    --slide-y: 4px;
   }
 
   .state-fade {
-    animation: stateFadeIn var(--motion-state-duration) var(--motion-state-ease) both;
+    animation: fadeIn 170ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .hp-number-pop {
@@ -431,10 +388,6 @@
     filter: drop-shadow(0 0 3px rgba(125, 211, 252, 0.6));
   }
 
-  .z-wish-overlay {
-    z-index: var(--z-wish-overlay);
-  }
-
   .status-chip-pop {
     animation: statusChipPop 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
@@ -450,7 +403,7 @@
       0 0 18px var(--burst-color),
       0 0 36px color-mix(in srgb, var(--burst-color) 45%, transparent);
     opacity: 0.9;
-    animation: talentUnlockRing 620ms var(--motion-ease-out) forwards;
+    animation: talentUnlockRing 620ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
     will-change: transform, opacity;
   }
 
@@ -469,18 +422,18 @@
     border-radius: 9999px;
     background-color: var(--burst-color);
     box-shadow: 0 0 6px var(--burst-color);
-    animation: talentUnlockSpark var(--spark-duration, 620ms)
-      cubic-bezier(0.22, 1, 0.36, 1) var(--spark-delay, 0ms) forwards;
+    animation: talentUnlockSpark var(--spark-duration, 620ms) cubic-bezier(0.22, 1, 0.36, 1) var(--spark-delay, 0ms)
+      forwards;
     transform: rotate(var(--spark-angle)) translateY(calc(-50cqmin));
     will-change: transform, opacity;
   }
 
   .talent-node-unlocking {
-    animation: talentUnlockPop 620ms var(--motion-ease-out) forwards;
+    animation: talentUnlockPop 620ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   .talent-node-unlocked-settle {
-    animation: talentUnlockedSettle 400ms var(--motion-ease-out) both;
+    animation: talentUnlockedSettle 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .alchemy-startup-bar {
@@ -490,17 +443,17 @@
   }
 
   .alchemy-loading-fade {
-    animation: startupBlurFadeIn var(--motion-startup-fade-duration) var(--motion-state-ease) both;
+    animation: startupBlurFadeIn 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .motion-crossfade {
     transition:
-      opacity var(--motion-crossfade-duration) var(--motion-state-ease),
-      transform var(--motion-crossfade-duration) var(--motion-state-ease);
+      opacity 170ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 170ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .motion-crossfade-hidden {
-    transform: translateY(var(--motion-crossfade-y)) scale(var(--motion-crossfade-scale));
+    transform: translateY(4px);
   }
 
   .game-page-scroll::-webkit-scrollbar {
@@ -515,34 +468,49 @@
   }
 
   .page-enter {
-    animation: pageEnter var(--motion-page-enter-duration) var(--motion-ease-out) both;
+    animation: slideUpIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    --slide-y: 6px;
   }
 
   .page-exit {
-    animation: pageExit var(--motion-page-exit-duration) ease-in both;
+    animation: slideUpOut 120ms ease-in both;
+    --slide-y-out: -4px;
     pointer-events: none;
   }
-}
 
-@keyframes pageEnter {
-  from {
-    opacity: 0;
-    transform: translateY(var(--motion-page-enter-y)) scale(var(--motion-page-enter-scale));
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
+  .image-rendering-pixelated {
+    image-rendering: pixelated;
   }
 }
 
-@keyframes pageExit {
+@keyframes slideUpIn {
+  from {
+    opacity: 0;
+    transform: translateY(var(--slide-y, 8px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUpOut {
   from {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
   to {
     opacity: 0;
-    transform: translateY(var(--motion-page-exit-y)) scale(var(--motion-page-exit-scale));
+    transform: translateY(var(--slide-y-out, -4px));
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -706,57 +674,6 @@
   }
 }
 
-@keyframes overlayFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes panelPopIn {
-  from {
-    opacity: 0;
-    transform: translateY(var(--motion-panel-y)) scale(var(--motion-panel-scale));
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes staggerItemIn {
-  from {
-    opacity: 0;
-    transform: translateY(var(--motion-stagger-y)) scale(var(--motion-stagger-scale));
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes stateSwapIn {
-  from {
-    opacity: 0;
-    transform: translateY(var(--motion-state-y)) scale(var(--motion-state-scale));
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes stateFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 @keyframes numberPop {
   0% {
     transform: translateY(2px) scale(0.96);
@@ -849,6 +766,18 @@
   }
   to {
     filter: brightness(1);
+  }
+}
+
+@keyframes button-primary-bloom-puff {
+  0% {
+    box-shadow: 0 0 0 hsl(36 55% 56% / 0);
+  }
+  50% {
+    box-shadow: 0 0 24px hsl(36 55% 56% / 0.4);
+  }
+  100% {
+    box-shadow: 0 0 16px hsl(36 55% 56% / 0.32);
   }
 }
 

@@ -318,8 +318,12 @@ test.describe("Gear drag positions", critical, () => {
   });
 
   test("dragging a currency onto a gear picks up the gear on the cursor", prepush, async ({ page }) => {
+    const affixedBodyGear = {
+      ...bodyGear,
+      affixes: [{ id: "max-health" as const, value: 7 }],
+    };
     await openArmory(page, {
-      inventory: [bodyGear],
+      inventory: [affixedBodyGear],
       craftingCurrencies: { "discordant-dice": 1 },
     });
 

@@ -22,11 +22,23 @@ async function wildwoodWinCombat(page: import("@playwright/test").Page, battle: 
     if (await battle.isBattleOver()) break;
     await battle.playAllCards();
     if (await battle.isVictoryVisible()) break;
-    if (await page.getByRole("heading", { name: "Wildwood Recovery" }).isVisible().catch(() => false)) break;
+    if (
+      await page
+        .getByRole("heading", { name: "Wildwood Recovery" })
+        .isVisible()
+        .catch(() => false)
+    )
+      break;
     if (await battle.isBattleOver()) break;
     await battle.endTurn();
     if (await battle.isVictoryVisible()) break;
-    if (await page.getByRole("heading", { name: "Wildwood Recovery" }).isVisible().catch(() => false)) break;
+    if (
+      await page
+        .getByRole("heading", { name: "Wildwood Recovery" })
+        .isVisible()
+        .catch(() => false)
+    )
+      break;
   }
 }
 
@@ -139,7 +151,10 @@ test.describe("Wildwood Draft", () => {
 
     await expect(async () => {
       const hasVictory = await battle.isVictoryVisible();
-      const hasRecovery = await page.getByRole("heading", { name: "Wildwood Recovery" }).isVisible().catch(() => false);
+      const hasRecovery = await page
+        .getByRole("heading", { name: "Wildwood Recovery" })
+        .isVisible()
+        .catch(() => false);
       expect(hasVictory || hasRecovery).toBe(true);
     }).toPass({ timeout: 10000 });
 
@@ -153,46 +168,50 @@ test.describe("Wildwood Draft", () => {
       .toBeGreaterThan(10);
   });
 
-  test("skips reward after wildwood victory and starts next boss", critical, async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-    const bossKiller = {
-      ...makeHighDamageCard(),
-      effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
-    };
-    await injectSaveState(page, {
-      contentSystemType: "wildwood",
-      selectedDifficulty: null,
-      currentScreen: "draft-deck",
-      runPlayerHealth: 10,
-      runMaxHealth: 30,
-      runDeck: Array.from({ length: 5 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
-      wildwoodDraft: {
-        version: 2,
-        phase: "draft",
-        draftChoices: [{ ...bossKiller, id: "boss-killer-final" }],
-        remainingBossIds: [],
-        previousBossId: null,
-        currentBossId: null,
-        currentCombatTraitIds: [],
-        currentRewardTraitIds: [],
-        rewardType: null,
-        rewardChoiceIds: [],
-        selectedRewardId: null,
-      },
-    });
-    await page.goto("/");
+  test(
+    "skips reward after wildwood victory and starts next boss",
+    critical,
+    async ({ page, fastBattle, runtimeErrors }) => {
+      void fastBattle;
+      void runtimeErrors;
+      const bossKiller = {
+        ...makeHighDamageCard(),
+        effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
+      };
+      await injectSaveState(page, {
+        contentSystemType: "wildwood",
+        selectedDifficulty: null,
+        currentScreen: "draft-deck",
+        runPlayerHealth: 10,
+        runMaxHealth: 30,
+        runDeck: Array.from({ length: 5 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
+        wildwoodDraft: {
+          version: 2,
+          phase: "draft",
+          draftChoices: [{ ...bossKiller, id: "boss-killer-final" }],
+          remainingBossIds: [],
+          previousBossId: null,
+          currentBossId: null,
+          currentCombatTraitIds: [],
+          currentRewardTraitIds: [],
+          rewardType: null,
+          rewardChoiceIds: [],
+          selectedRewardId: null,
+        },
+      });
+      await page.goto("/");
 
-    await pickDraftCard(page);
-    await expect(page.getByRole("heading", { name: "Draft Complete" })).toBeVisible();
-    await page.getByRole("button", { name: "Continue" }).click();
+      await pickDraftCard(page);
+      await expect(page.getByRole("heading", { name: "Draft Complete" })).toBeVisible();
+      await page.getByRole("button", { name: "Continue" }).click();
 
-    const battle = new BattlePage(page);
-    await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
-    await wildwoodWinCombat(page, battle);
-    await expect(battle.victoryHeading).toBeVisible({ timeout: 15000 });
+      const battle = new BattlePage(page);
+      await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
+      await wildwoodWinCombat(page, battle);
+      await expect(battle.victoryHeading).toBeVisible({ timeout: 15000 });
 
-    await page.getByRole("button", { name: "Skip" }).click({ force: true });
-    await expect(battle.hand.first()).toBeVisible({ timeout: 10000 });
-  });
+      await page.getByRole("button", { name: "Skip" }).click({ force: true });
+      await expect(battle.hand.first()).toBeVisible({ timeout: 10000 });
+    },
+  );
 });

@@ -94,7 +94,7 @@ test.describe("Armory crafting", critical, () => {
     const helm = gearItemLocator(page, "Leather Helm");
     await helm.hover();
     await expect(page.getByText("Enduring")).toHaveCount(0);
-    await expect(page.getByText("Salvage for Basic crafting currency")).toBeVisible();
+    await expect(page.getByText("Salvage for Basic crafting currency")).toBeHidden();
   });
 
   test("upgrades basic gear to astral with ascension seal", async ({ page }) => {

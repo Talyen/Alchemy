@@ -45,7 +45,6 @@ type UseArmoryCurrencyDragOptions = {
   occupiedRows: number;
   inventoryBoardRef: RefObject<HTMLDivElement | null>;
   onMoveCurrency: (currencyId: CraftingCurrencyId, col: number, row: number) => void;
-  boardObstacles?: PackedInventoryItem<{ instanceId: string }>[];
   packedItems: PackedInventoryItem[];
   packedCurrencies: PackedCurrencyItem[];
   inventoryById: Map<string, GearInstance>;
@@ -57,7 +56,6 @@ export function useArmoryCurrencyDrag({
   occupiedRows,
   inventoryBoardRef,
   onMoveCurrency,
-  boardObstacles = [],
   packedItems,
   packedCurrencies,
   inventoryById,
@@ -70,7 +68,6 @@ export function useArmoryCurrencyDrag({
     getFootprint: () => CURRENCY_FOOTPRINT,
     inventoryBoardRef,
     occupiedRows,
-    boardObstacles,
     onCommit: ({ id, origin, destination }) => {
       if (destination.kind !== "inventory") return;
       if (origin.placement.col === destination.placement.col && origin.placement.row === destination.placement.row) {
