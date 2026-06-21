@@ -28,7 +28,7 @@ export function useBattleAutoEndTurn({ autoEndTurn, screen, battleState, onEndTu
     autoEndTimerRef.current = null;
   }, []);
 
-  const scheduleAutoEndTurn = useCallback(
+  const scheduleAutoEndTurnRaw = useCallback(
     (state: BattleState = battleState) => {
       clearAutoEndTurn();
       if (
@@ -47,10 +47,17 @@ export function useBattleAutoEndTurn({ autoEndTurn, screen, battleState, onEndTu
     [autoEndTurn, battleState, clearAutoEndTurn, screen],
   );
 
+  const scheduleAutoEndTurnRef = useRef(scheduleAutoEndTurnRaw);
   useEffect(() => {
-    scheduleAutoEndTurn();
+    scheduleAutoEndTurnRef.current = scheduleAutoEndTurnRaw;
+  }, [scheduleAutoEndTurnRaw]);
+
+  const scheduleAutoEndTurn = useCallback((state: BattleState) => scheduleAutoEndTurnRef.current(state), []);
+
+  useEffect(() => {
+    scheduleAutoEndTurnRaw();
     return clearAutoEndTurn;
-  }, [scheduleAutoEndTurn, clearAutoEndTurn]);
+  }, [scheduleAutoEndTurnRaw, clearAutoEndTurn]);
 
   return { scheduleAutoEndTurn, clearAutoEndTurn };
 }

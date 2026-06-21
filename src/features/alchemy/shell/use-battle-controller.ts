@@ -1,4 +1,3 @@
-// React battle orchestrator for combat state, card play, turn timing, ghosts, and feedback.
 /* eslint-disable react-hooks/refs, react-hooks/preserve-manual-memoization -- factories receive ref objects for async handlers; ref.current assignments are deliberate */
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -35,6 +34,19 @@ import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/turn-o
 import { createBattleDevOutcomes } from "@/features/alchemy/run-loop/battle/battle-dev-outcomes";
 import { isVictoryGraceActive } from "@/features/alchemy/run-loop/battle/battle-victory-grace";
 
+type UseBattleControllerProps = {
+  run: RunStateController;
+  talents: TalentStateController;
+  autoEndTurn: boolean;
+  homesteadEffectsRef: React.RefObject<HomesteadEffectManifest>;
+  screen: Screen;
+  setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
+  onBattleVictory?: () => void;
+  onBattleDefeat?: () => void;
+  measureElementRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
+  measureVisualCardRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
+};
+
 export function useBattleController({
   run,
   talents,
@@ -46,18 +58,7 @@ export function useBattleController({
   onBattleDefeat,
   measureElementRect = defaultMeasureElementRect,
   measureVisualCardRect = defaultMeasureVisualCardRect,
-}: {
-  run: RunStateController;
-  talents: TalentStateController;
-  autoEndTurn: boolean;
-  homesteadEffectsRef: React.RefObject<HomesteadEffectManifest>;
-  screen: Screen;
-  setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
-  onBattleVictory?: () => void;
-  onBattleDefeat?: () => void;
-  measureElementRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
-  measureVisualCardRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
-}) {
+}: UseBattleControllerProps) {
   const {
     battle: { battleState, hasActiveBattle },
     activeLabyrinthModifiers,
@@ -161,9 +162,7 @@ export function useBattleController({
     resetBattleSession,
   } = battleSession;
 
-  const resetHandTransferUi = useCallback(() => {
-    useBattlePresentationStore.getState().resetHandTransferUi();
-  }, []);
+  const resetHandTransferUi = useBattlePresentationStore((s) => s.resetHandTransferUi);
 
   const finishDrawSequence = useCallback(
     (session: number, state: BattleState) => {
@@ -175,7 +174,6 @@ export function useBattleController({
     [battleSession, resetHandTransferUi, checkBattleEnd],
   );
 
-  // Transfer deps (animation helpers)
   const transferDeps = useMemo(
     () =>
       createBattleTransferDeps({
@@ -194,10 +192,11 @@ export function useBattleController({
     [measureElementRect, measureVisualCardRect, isCurrentBattleSession],
   );
 
-  // Companion follow-up, turn orchestration, and end-turn UI
   const scheduleCompanionFollowUp = useCallback(
     (resultState: BattleState, session: number) => {
       if (!resultState.activeCompanion || resultState.enemyHealth <= 0) return;
+      if (companionScheduledRef.current) return;
+      companionScheduledRef.current = true;
       battleTimerGroupRef.current.setTimeout(() => {
         runIfSessionActive(session, () => {
           companionScheduledRef.current = false;
@@ -216,7 +215,6 @@ export function useBattleController({
           }
         });
       }, COMPANION_ATTACK_DELAY);
-      companionScheduledRef.current = true;
     },
     [runIfSessionActive, isCurrentBattleSession],
   );
@@ -279,7 +277,8 @@ export function useBattleController({
     onEndTurn: handleEndTurn,
   });
 
-  // Card play
+  const awardCardXp = talents.awardCardXP;
+
   const cardPlay = useMemo(
     () =>
       createBattleCardPlay({
@@ -293,7 +292,7 @@ export function useBattleController({
         enemyPanelRef,
         battleSceneRef,
         setHoveredCardId,
-        talents,
+        talents: { awardCardXP: awardCardXp },
         getDrawSequenceDeps: () => transferDeps.getDrawSequenceDeps(),
         scheduleAutoEndTurn,
       }),
@@ -303,7 +302,7 @@ export function useBattleController({
       finishDrawSequence,
       logBattleError,
       setHoveredCardId,
-      talents,
+      awardCardXp,
       transferDeps,
       scheduleAutoEndTurn,
     ],

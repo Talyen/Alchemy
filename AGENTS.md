@@ -39,7 +39,8 @@ A scannable list of the most common ways to break the repo or violate policy. Th
 - No hand-edits to `CHANGELOG.md`, `release-notes/`, `package-lock.json`, or `src/lib/validation/metadata.generated.ts`.
 - No dev QA controls in E2E specs — no Skip Combat, Unlock All, Error Log, `skipCombatToVictory()`, or their labels. Use `winViaCombat()` or `playCardNamed()`.
 - No `React.lazy()` for route screens. No `React.FC`. No `Math.random()` in battle code (use `state.rng`). No `Math.floor()` in battle (use `Math.round()`).
-- No template literals in `className` (use `cn()`). No code comments unless the user asks.
+- No template literals in `className` (use `cn()`).
+- **Comments:** Avoid "what" comments that narrate the obvious. "Why" comments, file-level summaries, and section markers that genuinely help a reader navigate or understand a non-obvious trade-off are allowed. TODO/FIXME markers must include a reason.
 - No reads or prints of `.env`, `secrets/**`, or auth tokens. Ask the user if credentials are required.
 - No destructive or hard-to-reverse actions (deletions, schema migrations, force operations, public releases) without confirming on the **first** attempt, not the third.
 
