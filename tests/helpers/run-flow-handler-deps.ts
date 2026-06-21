@@ -6,10 +6,8 @@ export function makeFlowHandlerDeps(overrides: Partial<RunFlowHandlerDeps> = {})
   return {
     run: makeRunController(),
     talents: makeTalentController(),
-    activeLabyrinthRewardModifiers: [],
     navigateTo: () => {},
     transition: () => {},
-    setHasActiveBattle: () => {},
     onLabyrinthFailNode: () => {},
     onLabyrinthClearNode: () => {},
     onInitShop: () => {},
@@ -20,6 +18,7 @@ export function makeFlowHandlerDeps(overrides: Partial<RunFlowHandlerDeps> = {})
     onStartBossBattle: () => {},
     onStartBossById: () => true,
     onMarkDifficultyCompleted: () => {},
+    onCommitWildwoodVictory: () => {},
     contentNav: {
       createInitialDestinations: () => createEmptyRewardState(),
     },

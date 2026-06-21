@@ -22,6 +22,7 @@ import {
   pickWildwoodRewardTrait,
   type WildwoodModifierId,
 } from "@/lib/content-systems/wildwood/gauntlet";
+import type { VictoryRewardsResult } from "@/features/alchemy/run-loop/navigation/victory-flow";
 
 type UseWildwoodGauntletFlowOptions = {
   run: RunStateController;
@@ -173,6 +174,20 @@ export function useWildwoodGauntletFlow({
     [run.contentSystemType],
   );
 
+  const commitWildwoodVictory = useCallback((result: VictoryRewardsResult) => {
+    const wildwood = readRunSessionStore().wildwoodDraft;
+    if (!wildwood) return;
+    const rewardType = result.rewardState.rewardType;
+    setWildwoodDraft({
+      ...wildwood,
+      phase: "recovery",
+      rewardType,
+      rewardChoiceIds: rewardType === "gear" ? [] : result.rewardState.choices.map((choice) => choice.id),
+      rewardGearChoices: rewardType === "gear" ? result.rewardState.choices : [],
+      selectedRewardId: null,
+    });
+  }, []);
+
   return {
     startNextWildwoodBoss,
     resumeWildwoodRun,
@@ -183,5 +198,6 @@ export function useWildwoodGauntletFlow({
     handleWildwoodRemoveCard,
     handleWildwoodSkipRemoval,
     selectRewardChoice,
+    commitWildwoodVictory,
   };
 }

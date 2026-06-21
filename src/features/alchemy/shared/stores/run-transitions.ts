@@ -192,6 +192,13 @@ export function syncBattleToRun(options?: { playerHealth?: number }): void {
   store.setRunPlayerHealth(health);
 }
 
+/** Clear the battle-active flag and battle-related presentation state. */
+export function clearBattleUi(): void {
+  getRunDomainStore().setHasActiveBattle(false);
+  useUiStore.getState().clearCardHover();
+  useBattlePresentationStore.getState().clearCardGhosts();
+}
+
 /** Clear active combat, run progression, session UI, navigation, and presentation. */
 export function teardownRun(): void {
   useRunDomainStore.setState((state) => {

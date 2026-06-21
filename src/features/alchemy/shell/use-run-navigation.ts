@@ -83,7 +83,6 @@ export function useRunNavigation({
   const runPhase = nav.phase;
   const hasActiveBattle = nav.hasActiveBattle;
   const hasActiveRun = nav.hasActiveRun;
-  const activeLabyrinthRewardModifiers = nav.activeLabyrinthRewardModifiers;
   const rewardState = nav.rewardState;
   const runEndMaterials = nav.runEndMaterials;
   const corruptionResult = nav.corruptionResult;
@@ -170,10 +169,8 @@ export function useRunNavigation({
       createRunFlowHandlers({
         run,
         talents,
-        activeLabyrinthRewardModifiers,
         navigateTo,
         transition,
-        setHasActiveBattle,
         onLabyrinthFailNode,
         onLabyrinthClearNode,
         onInitShop,
@@ -184,6 +181,7 @@ export function useRunNavigation({
         onStartBossBattle,
         onStartBossById,
         onMarkDifficultyCompleted,
+        onCommitWildwoodVictory: wildwood.commitWildwoodVictory,
         contentNav,
         getAvailableDestinations,
         beginMysteryEvent,
@@ -193,10 +191,8 @@ export function useRunNavigation({
     [
       run,
       talents,
-      activeLabyrinthRewardModifiers,
       navigateTo,
       transition,
-      setHasActiveBattle,
       onLabyrinthFailNode,
       onLabyrinthClearNode,
       onInitShop,
@@ -207,6 +203,7 @@ export function useRunNavigation({
       onStartBossBattle,
       onStartBossById,
       onMarkDifficultyCompleted,
+      wildwood.commitWildwoodVictory,
       contentNav,
       getAvailableDestinations,
       beginMysteryEvent,
