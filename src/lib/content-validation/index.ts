@@ -45,7 +45,7 @@ import type {
   ContentValidationSeverity,
 } from "./types";
 
-export type { ContentValidationArea, ContentValidationIssue, ContentValidationResult } from "./types";
+export type { ContentValidationArea } from "./types";
 
 const keywordIds = Object.keys(keywordDefinitions) as [KeywordId, ...KeywordId[]];
 const playerStatusIds = [
@@ -76,7 +76,7 @@ const KeywordIdSchema = z.enum(keywordIds);
 const PlayerStatusIdSchema = z.enum(playerStatusIds);
 const DamageTypeSchema = z.enum(DAMAGE_TYPES as [string, ...string[]]);
 
-export const CardContentSchema = z.object({
+const CardContentSchema = z.object({
   id: NonEmptyStringSchema,
   title: NonEmptyStringSchema,
   descriptionLines: z.array(NonEmptyStringSchema).min(1),
@@ -87,7 +87,7 @@ export const CardContentSchema = z.object({
   effects: z.array(BattleCardEffectSchema),
 });
 
-export const EnemyAttackEffectSchema = z.discriminatedUnion("kind", [
+const EnemyAttackEffectSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("damage"),
     damageType: DamageTypeSchema,
@@ -101,7 +101,7 @@ export const EnemyAttackEffectSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
-export const EnemyContentSchema = z.object({
+const EnemyContentSchema = z.object({
   id: NonEmptyStringSchema,
   title: NonEmptyStringSchema,
   subtitle: NonEmptyStringSchema,
@@ -118,21 +118,21 @@ export const EnemyContentSchema = z.object({
   attackEffects: z.array(EnemyAttackEffectSchema).min(1),
 });
 
-export const CompanionContentSchema = z.object({
+const CompanionContentSchema = z.object({
   id: NonEmptyStringSchema,
   title: NonEmptyStringSchema,
   art: NonEmptyStringSchema,
   turnStartEffects: z.array(BattleCardEffectSchema).length(1),
 });
 
-export const TrinketContentSchema = z.object({
+const TrinketContentSchema = z.object({
   id: NonEmptyStringSchema,
   title: NonEmptyStringSchema,
   descriptionLines: z.array(NonEmptyStringSchema).min(1),
   art: NonEmptyStringSchema,
 });
 
-export const GearDefinitionContentSchema = z.object({
+const GearDefinitionContentSchema = z.object({
   id: NonEmptyStringSchema,
   baseItemId: NonEmptyStringSchema,
   rarity: z.enum(GEAR_RARITIES).nullable(),
@@ -147,7 +147,7 @@ export const GearDefinitionContentSchema = z.object({
   quiver: z.boolean().optional(),
 });
 
-export const GearAffixContentSchema = z.object({
+const GearAffixContentSchema = z.object({
   id: z.enum(GEAR_AFFIX_IDS),
   aspect: z.enum(["offensive", "defensive"]),
   keywordId: KeywordIdSchema,
@@ -157,7 +157,7 @@ export const GearAffixContentSchema = z.object({
   roll: z.record(z.enum(GEAR_RARITIES), z.object({ min: PositiveIntegerSchema, max: PositiveIntegerSchema })),
 });
 
-export const EncounterTraitContentSchema = z.object({
+const EncounterTraitContentSchema = z.object({
   id: z.enum([...COMBAT_ENCOUNTER_TRAIT_IDS, ...REWARD_ENCOUNTER_TRAIT_IDS]),
   category: z.enum(["combat", "reward"]),
   label: NonEmptyStringSchema,

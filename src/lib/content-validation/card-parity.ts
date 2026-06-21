@@ -9,7 +9,7 @@ export function flattenEffects(effects: BattleCardEffect[]): BattleCardEffect[] 
   );
 }
 
-export function countByKind(effects: BattleCardEffect[], kind: string): number {
+function countByKind(effects: BattleCardEffect[], kind: string): number {
   return flattenEffects(effects).filter((effect) => effect.kind === kind).length;
 }
 
@@ -21,7 +21,7 @@ export function hasLifesteal(effects: BattleCardEffect[]): boolean {
   return flattenEffects(effects).some((effect) => effect.kind === "damage" && effect.lifesteal === true);
 }
 
-export function hasEqualToBlockOrArmor(effects: BattleCardEffect[]): boolean {
+function hasEqualToBlockOrArmor(effects: BattleCardEffect[]): boolean {
   return effects.some(
     (effect) =>
       effect.kind === "damage" &&
@@ -29,7 +29,7 @@ export function hasEqualToBlockOrArmor(effects: BattleCardEffect[]): boolean {
   );
 }
 
-export function hasNonStandardDamageEffects(effects: BattleCardEffect[]): boolean {
+function hasNonStandardDamageEffects(effects: BattleCardEffect[]): boolean {
   const flat = flattenEffects(effects);
   return (
     hasEqualToBlockOrArmor(flat) ||
@@ -38,11 +38,11 @@ export function hasNonStandardDamageEffects(effects: BattleCardEffect[]): boolea
   );
 }
 
-export function countLinesStartingWith(lines: string[], prefix: string): number {
+function countLinesStartingWith(lines: string[], prefix: string): number {
   return lines.filter((line) => line.startsWith(prefix)).length;
 }
 
-export function countHealLines(lines: string[]): number {
+function countHealLines(lines: string[]): number {
   return lines.filter(
     (line) =>
       line.startsWith("Heal ") ||
@@ -51,7 +51,7 @@ export function countHealLines(lines: string[]): number {
   ).length;
 }
 
-export function parseLeadingNumber(line: string, prefix: string): number | null {
+function parseLeadingNumber(line: string, prefix: string): number | null {
   if (!line.startsWith(prefix)) return null;
   const match = line.slice(prefix.length).match(/^(\d+)/);
   return match ? Number(match[1]) : null;
