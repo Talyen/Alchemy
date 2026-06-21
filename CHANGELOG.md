@@ -1396,6 +1396,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Style
 
+- style: fix pre-existing formatting in 4 files
 - style: unify user-facing text phrasing across cards, trinkets, talents, affixes, homestead, and encounter traits
 - style: apply prettier formatting
 - style(armory): clean up gear tooltip layout and purchasable item styling
