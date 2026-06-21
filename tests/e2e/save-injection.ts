@@ -138,7 +138,7 @@ export async function injectLabyrinthRun(
       };
       if (data.deck) (save.activeRun as Record<string, unknown>).runDeck = data.deck;
       if (data.runOverrides) {
-        Object.assign(save.activeRun, data.runOverrides);
+        Object.assign(save.activeRun as Record<string, unknown>, data.runOverrides);
       }
       save.discoveredCardIds = data.discoveredCardIds || ["slash"];
       if (!Array.isArray(save.finishedRunCharacters)) {
