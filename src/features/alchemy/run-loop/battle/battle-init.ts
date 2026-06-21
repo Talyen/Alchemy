@@ -2,9 +2,7 @@
 import { createBattleState, getBattleStartPlayerHealth } from "@/lib/battle";
 export { getBattleStartPlayerHealth };
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
-import type { RunStateController, TalentStateController } from "../../shared/stores/run-session-facade";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";
 import { readBattleStore, readRunSessionStore } from "../../shared/stores/run-session-facade";
 import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
@@ -15,14 +13,10 @@ import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-sys
 import { appendEncounterTraits, type EncounterCombatTraitId } from "@/lib/content-systems/encounter-traits";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
-import type { RefObject } from "react";
+import type { BattleControllerContext } from "./battle-context";
+import type { createBattleSession } from "./battle-session";
 
-export function createBattleInit(params: {
-  resetBattleSession: () => void;
-  run: RunStateController;
-  talents: TalentStateController;
-  homesteadEffectsRef: RefObject<HomesteadEffectManifest>;
-}) {
+export function createBattleInit(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
   const getStore = () => readBattleStore();
   const getPresentationStore = () => useBattlePresentationStore.getState();
 
@@ -36,16 +30,14 @@ export function createBattleInit(params: {
   ) {
     const gear = useGearStore.getState();
     const gearEffects = computeGearManifest(
-      params.run.characterId,
+      ctx.run.characterId,
       flattenGearInventories(gear.inventories),
       gear.loadouts,
     );
-    const battleEffects = mergeIntoManifest(params.talents.talentEffects, params.homesteadEffectsRef.current);
+    const battleEffects = mergeIntoManifest(ctx.talents.talentEffects, ctx.homesteadEffectsRef.current);
     const activeModifiers =
       modifiers ??
-      (params.run.selectedDifficulty
-        ? getDifficultyModifiers(params.run.characterId, params.run.selectedDifficulty)
-        : []);
+      (ctx.run.selectedDifficulty ? getDifficultyModifiers(ctx.run.characterId, ctx.run.selectedDifficulty) : []);
     return createBattleState({
       runDeck: deck,
       gold,
@@ -54,8 +46,8 @@ export function createBattleInit(params: {
       playerHealth,
       talentEffects: battleEffects,
       discoveredCardIds: useAppStore.getState().discoveredCardIds,
-      maxHealth: params.run.runMaxHealth,
-      trinketIds: params.run.runTrinkets,
+      maxHealth: ctx.run.runMaxHealth,
+      trinketIds: ctx.run.runTrinkets,
       gearEffects,
       difficultyModifiers: activeModifiers,
     });
@@ -63,15 +55,15 @@ export function createBattleInit(params: {
 
   function beginBattle(enemy: BestiaryEntry, deck: BattleCard[], gold: number, modifiers?: DifficultyModifier[]) {
     const presentationStore = useBattlePresentationStore.getState();
-    params.resetBattleSession();
+    session.resetBattleSession();
     presentationStore.resetCardTransfers();
     presentationStore.resetHandTransferUi();
     const startingHealth = syncRunToBattleStart();
-    const nextRoomsEncountered = params.run.roomsEncountered + 1;
-    params.run.setRoomsEncountered(nextRoomsEncountered);
+    const nextRoomsEncountered = ctx.run.roomsEncountered + 1;
+    ctx.run.setRoomsEncountered(nextRoomsEncountered);
     getPresentationStore().clearCardGhosts();
     const encounterTraitIds =
-      params.run.contentSystemType === "labyrinth"
+      ctx.run.contentSystemType === "labyrinth"
         ? (readRunSessionStore().activeLabyrinthModifiers as EncounterCombatTraitId[])
         : [];
     const battleEnemy = encounterTraitIds.length > 0 ? appendEncounterTraits(enemy, encounterTraitIds) : enemy;
@@ -86,21 +78,21 @@ export function createBattleInit(params: {
     getStore().setSyncedBattleState(nextBattleState);
     getStore().setBattleStartState(nextBattleState);
     getStore().setHasActiveBattle(true);
-    params.run.setEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
+    ctx.run.setEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
     useAppStore.getState().setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
   }
 
   function startBattle(
-    deck: BattleCard[] = params.run.runDeck,
-    gold: number = params.run.runGold,
+    deck: BattleCard[] = ctx.run.runDeck,
+    gold: number = ctx.run.runGold,
     enemyType: "normal" | "elite" = "normal",
     modifiers?: DifficultyModifier[],
   ) {
-    beginBattle(getCurrentEnemy(enemyType, params.run.encounteredRunEnemyIds), deck, gold, modifiers);
+    beginBattle(getCurrentEnemy(enemyType, ctx.run.encounteredRunEnemyIds), deck, gold, modifiers);
   }
 
   function startBossBattle(modifiers?: DifficultyModifier[]) {
-    beginBattle(getBossEnemy(params.run.encounteredRunEnemyIds), params.run.runDeck, params.run.runGold, modifiers);
+    beginBattle(getBossEnemy(ctx.run.encounteredRunEnemyIds), ctx.run.runDeck, ctx.run.runGold, modifiers);
   }
 
   function startBossById(
@@ -115,8 +107,8 @@ export function createBattleInit(params: {
     }
     beginBattle(
       wildwoodModifierId ? withWildwoodModifier(boss, wildwoodModifierId) : boss,
-      params.run.runDeck,
-      params.run.runGold,
+      ctx.run.runDeck,
+      ctx.run.runGold,
       modifiers,
     );
     return true;

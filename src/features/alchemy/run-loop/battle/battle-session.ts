@@ -3,34 +3,21 @@ import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import { stopAllSfx } from "@/lib/audio";
 import { readBattleStore } from "../../shared/stores/run-session-facade";
 import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
-import type { RefObject } from "react";
-import type { TimerGroup } from "@/lib/animation/game-timer";
-import type { TransferCancelRegistry } from "./card-transfer-animations";
+import type { BattleControllerContext } from "./battle-context";
 
 /** Domain battle state plus presentation VFX actions used by turn/card-play orchestration. */
 export function getBattleSessionStore() {
   return { ...readBattleStore(), ...useBattlePresentationStore.getState() };
 }
 
-export type BattleSessionDeps = {
-  battleSessionRef: RefObject<number>;
-  battleTimerGroupRef: RefObject<TimerGroup>;
-  transferCancelRegistryRef: RefObject<TransferCancelRegistry>;
-  cardPlayInProgressRef: RefObject<boolean>;
-  victoryDefeatHandledRef: RefObject<boolean>;
-  companionScheduledRef: RefObject<boolean>;
-  onBattleVictory?: () => void;
-  onBattleDefeat?: () => void;
-};
-
-export function createBattleSession(deps: BattleSessionDeps) {
+export function createBattleSession(ctx: BattleControllerContext) {
   const getStore = () => readBattleStore();
   const getPresentationStore = () => useBattlePresentationStore.getState();
 
   function isBattleSessionActive(session: number) {
-    if (session !== deps.battleSessionRef.current) return false;
+    if (session !== ctx.battleSessionRef.current) return false;
     const store = getStore();
-    return store.hasActiveBattle || (deps.victoryDefeatHandledRef.current && store.battleState.enemyHealth <= 0);
+    return store.hasActiveBattle || (ctx.victoryDefeatHandledRef.current && store.battleState.enemyHealth <= 0);
   }
 
   function isCurrentBattleSession(session: number) {
@@ -47,10 +34,10 @@ export function createBattleSession(deps: BattleSessionDeps) {
   }
 
   function handleVictoryDefeat(kind: "victory" | "defeat") {
-    if (!deps.victoryDefeatHandledRef.current) {
-      deps.victoryDefeatHandledRef.current = true;
-      if (kind === "victory") deps.onBattleVictory?.();
-      else deps.onBattleDefeat?.();
+    if (!ctx.victoryDefeatHandledRef.current) {
+      ctx.victoryDefeatHandledRef.current = true;
+      if (kind === "victory") ctx.onBattleVictory?.();
+      else ctx.onBattleDefeat?.();
     }
   }
 
@@ -68,20 +55,20 @@ export function createBattleSession(deps: BattleSessionDeps) {
   }
 
   function registerTransferCancelCallback(callback: () => void) {
-    return deps.transferCancelRegistryRef.current.register(callback);
+    return ctx.transferCancelRegistryRef.current.register(callback);
   }
 
   function clearTransferHandles() {
-    deps.transferCancelRegistryRef.current.cancelAll();
+    ctx.transferCancelRegistryRef.current.cancelAll();
   }
 
   function clearAllBattleTimeouts() {
-    deps.battleTimerGroupRef.current.clearAll();
-    deps.companionScheduledRef.current = false;
+    ctx.battleTimerGroupRef.current.clearAll();
+    ctx.companionScheduledRef.current = false;
   }
 
   function clearBattleTimeoutsKeepCompanion() {
-    deps.battleTimerGroupRef.current.clearAll();
+    ctx.battleTimerGroupRef.current.clearAll();
   }
 
   function stopBattleFeedback() {
@@ -89,13 +76,13 @@ export function createBattleSession(deps: BattleSessionDeps) {
   }
 
   function resetBattleSession() {
-    deps.battleSessionRef.current += 1;
-    deps.battleTimerGroupRef.current.clearAll();
+    ctx.battleSessionRef.current += 1;
+    ctx.battleTimerGroupRef.current.clearAll();
     clearTransferHandles();
     stopBattleFeedback();
-    deps.cardPlayInProgressRef.current = false;
-    deps.victoryDefeatHandledRef.current = false;
-    deps.companionScheduledRef.current = false;
+    ctx.cardPlayInProgressRef.current = false;
+    ctx.victoryDefeatHandledRef.current = false;
+    ctx.companionScheduledRef.current = false;
     getPresentationStore().clearRevealedCardKeys();
     getStore().setBattleStartState(null);
     getPresentationStore().resetPortraitHurtTokens();
@@ -108,7 +95,7 @@ export function createBattleSession(deps: BattleSessionDeps) {
     onComplete: (session: number, state: BattleState) => void,
   ) {
     runIfSessionActive(session, () => {
-      deps.cardPlayInProgressRef.current = false;
+      ctx.cardPlayInProgressRef.current = false;
       onComplete(session, state);
     });
   }

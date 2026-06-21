@@ -2,23 +2,20 @@
 import type { BattleState } from "@/lib/battle";
 import { isAlchemyDevBuild } from "../../shared/utils";
 import { readBattleStore } from "../../shared/stores/run-session-facade";
-import type { Screen } from "../../shared/types";
+import type { BattleControllerContext } from "./battle-context";
+import type { createBattleSession } from "./battle-session";
 
-export function createBattleDevOutcomes(params: {
-  screen: Screen;
-  resetBattleSession: () => void;
-  handleVictoryDefeat: (outcome: "victory" | "defeat") => void;
-}) {
+export function createBattleDevOutcomes(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
   const getStore = () => readBattleStore();
 
   function forceBattleOutcome(outcome: "victory" | "defeat", patch: (state: BattleState) => BattleState) {
-    params.resetBattleSession();
+    session.resetBattleSession();
     getStore().setSyncedBattleState(patch);
-    params.handleVictoryDefeat(outcome);
+    session.handleVictoryDefeat(outcome);
   }
 
   function handleEndRun() {
-    if (params.screen !== "battle") return;
+    if (ctx.screen !== "battle") return;
     forceBattleOutcome("defeat", (c) => ({
       ...c,
       playerHealth: 0,
@@ -29,7 +26,7 @@ export function createBattleDevOutcomes(params: {
   }
 
   function skipCombatDevMode() {
-    if (!isAlchemyDevBuild() || params.screen !== "battle") return;
+    if (!isAlchemyDevBuild() || ctx.screen !== "battle") return;
     forceBattleOutcome("victory", (c) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] }));
   }
 
