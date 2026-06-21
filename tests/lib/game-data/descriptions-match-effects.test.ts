@@ -12,6 +12,7 @@ import {
   enemyBestiary,
   expectedCompanionTurnLine,
   trinketLibrary,
+  type BattleCardEffect,
 } from "@/lib/game-data";
 import { hasKind, hasLifesteal, validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
 

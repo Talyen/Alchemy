@@ -530,7 +530,7 @@ describe("ArmoryScreen", () => {
     render(
       <ArmoryScreen
         inventories={mockInventories([{ instanceId: "helm-1", definitionId: "leather-helm-basic", affixes: [] }])}
-        loadouts={createEmptyGearLoadouts({ knight: { helm: "helm-1" } })}
+        loadouts={{ ...createEmptyGearLoadouts(), knight: { ...createEmptyGearLoadouts().knight, helm: "helm-1" } }}
         finishedRunCharacters={["knight"]}
         browseOnly={true}
         onOpenMenu={vi.fn()}

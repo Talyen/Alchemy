@@ -23,7 +23,7 @@ const TALENT_CASES: TalentCase[] = [
     id: "physical-brute-force",
     category: "physical",
     description: "increases physical damage dealt",
-    run: async (page, battle) => {
+    run: async (_page, battle) => {
       const enemyHpBefore = await battle.enemyHealth();
       await battle.playCardNamed("Slash");
       await expect(async () => {

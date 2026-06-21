@@ -140,7 +140,7 @@ export async function pointerDragToInventory(
 }
 
 export async function expectItemAtCell(
-  page: Page,
+  _page: Page,
   board: Locator,
   itemLocator: Locator,
   col: number,

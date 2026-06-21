@@ -15,7 +15,7 @@ const TRINKET_CASES: TrinketCase[] = [
     id: "tattered-pages",
     description: "loads without runtime errors",
     deck: Array.from({ length: 6 }, () => makeCard()),
-    run: async (page, battle) => {
+    run: async (_page, battle) => {
       expect(await battle.handCount()).toBeGreaterThan(0);
     },
   },
@@ -23,7 +23,7 @@ const TRINKET_CASES: TrinketCase[] = [
     id: "companions-collar",
     description: "bonus applies to companion attacks",
     deck: Array.from({ length: 6 }, () => WOLF_COMPANION_CARD),
-    run: async (page, battle) => {
+    run: async (_page, battle) => {
       await battle.playCardNamed("Wolf");
       await expect(battle.companionPanel).toBeVisible({ timeout: 3000 });
       const enemyHpBefore = await battle.enemyHealth();
@@ -46,7 +46,7 @@ const TRINKET_CASES: TrinketCase[] = [
           effects: [{ kind: "damage", damageType: "holy", amount: 5 }],
         }) as Record<string, unknown>,
     ),
-    run: async (page, battle) => {
+    run: async (_page, battle) => {
       const enemyHpBefore = await battle.enemyHealth();
       await battle.playCardNamed("Holy Strike");
       await expect(async () => {

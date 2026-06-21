@@ -6,6 +6,7 @@ import {
 } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { defaultBattleState, endPlayerTurn } from "@/lib/battle";
 import type { HandDrawSequenceDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
+import { getBattleSessionStore } from "@/features/alchemy/run-loop/battle/battle-session";
 
 vi.mock("@/features/alchemy/run-loop/battle/draw-sequence");
 
@@ -18,7 +19,7 @@ vi.mock("@/lib/audio", () => ({
   playEnemyAttack: vi.fn(),
 }));
 
-function makeStore() {
+function makeStore(): ReturnType<typeof getBattleSessionStore> {
   return {
     showCombatTexts: vi.fn(),
     setSyncedBattleState: vi.fn(),
@@ -28,7 +29,55 @@ function makeStore() {
     hurtEnemy: vi.fn(),
     shakeEnemy: vi.fn(),
     shakeCompanion: vi.fn(),
-  };
+    battleState: defaultBattleState(),
+    cardGhosts: [],
+    floatingCombatTexts: [],
+    enemyShaking: false,
+    playerShaking: false,
+    companionShaking: false,
+    playerHurtFlashToken: 0,
+    deathsDoorActive: false,
+    previousPlayerHealth: 30,
+    previousEnemyHealth: 0,
+    manaPanelMode: "normal" as const,
+    maxManaFlashActive: false,
+    menuOpen: false,
+    handDisabled: false,
+    handDiscarded: false,
+    drawPending: false,
+    resolvePending: false,
+    autoEndTurnTimerId: null,
+    damageReductionFloor: null,
+    cardsThatCannotBeAutoEndTurnedOn: [],
+    transferInProgress: false,
+    hiddenHandCardKeys: new Set(),
+    pendingDraw: null,
+    pendingTransferAnimations: [],
+    pendingResolveAnimations: [],
+    battleSessionHistory: [],
+    hudOverride: null,
+    displayOverrides: {},
+    initializeActiveBattle: vi.fn(),
+    setBattleState: vi.fn(),
+    setDeathDoor: vi.fn(),
+    setMenuOpen: vi.fn(),
+    setHandDisabled: vi.fn(),
+    setHandDiscarded: vi.fn(),
+    setDrawPending: vi.fn(),
+    setResolvePending: vi.fn(),
+    setAutoEndTurnTimerId: vi.fn(),
+    setDamageReductionFloor: vi.fn(),
+    setCardsThatCannotBeAutoEndTurnedOn: vi.fn(),
+    setTransferInProgress: vi.fn(),
+    setHiddenHandCardKeys: vi.fn(),
+    setPendingDraw: vi.fn(),
+    setHudOverride: vi.fn(),
+    setBattleSessionHistory: vi.fn(),
+    pushCombatTexts: vi.fn(),
+    setMaxManaFlash: vi.fn(),
+    resetDisplayOverrides: vi.fn(),
+    getAutoEndTurnCandidate: vi.fn(() => null),
+  } as unknown as ReturnType<typeof getBattleSessionStore>;
 }
 
 function makeDrawDeps(): HandDrawSequenceDeps {

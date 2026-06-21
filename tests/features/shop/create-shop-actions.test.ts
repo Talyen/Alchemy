@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
-import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
+import { createEmptyTalentManifest, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
@@ -48,42 +48,7 @@ function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
   };
 }
 
-const defaultTalentEffects: TalentEffectManifest = {
-  shopCardDiscount: 0,
-  potionDiscount: 0,
-  shopFreeRefresh: false,
-  removeCardDiscount: 0,
-  mixPotionDiscount: 0,
-  potionMixPotency: 0,
-  // fill remaining manifest fields with defaults
-  extraDrawPerBattle: 0,
-  firstHolyDamageDoubled: false,
-  firstBurnDoubled: false,
-  boneCharmHealOnKill: 0,
-  forgeStunThreshold: 0,
-  forgeStunAmount: 0,
-  frozenHeartDamage: 0,
-  blockToArmorThreshold: 0,
-  blockToArmorAmount: 0,
-  runicQuillDrawOnConsume: 0,
-  sinEaterHealOnHarmfulStatusRemove: 0,
-  vanguardCrestForgeOnBlockAbsorb: 0,
-  parasiticBloomLeechChance: 0,
-  cutpurseGoldOnBleed: 0,
-  wishingWellGoldOnWish: 0,
-  plagueDoctorImmunity: false,
-  mortarPestleFreeFirstPotion: false,
-  sunderingArmorPiercing: 0,
-  resonantChimeCardsRequired: 0,
-  resonantChimeMana: 0,
-  smugglersMapGoldBonus: 0,
-  grovesFavorStartHeal: 0,
-  merchantsFavorDiscount: 0,
-  companionDamageBonus: 0,
-  freezeDurationExtension: 0,
-  thunderstoneDamageOnStun: 0,
-  luckyCloverGoldChance: 0,
-};
+const defaultTalentEffects: TalentEffectManifest = createEmptyTalentManifest();
 
 function buildActions(
   overrides?: Partial<{

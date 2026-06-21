@@ -37,7 +37,13 @@ function makeDeps(overrides: Partial<Parameters<typeof createBattleCardPlay>[0]>
     battleSceneRef: { current: null },
     setHoveredCardId: vi.fn(),
     talents: { awardCardXP: vi.fn() },
-    getDrawSequenceDeps: vi.fn(() => ({})),
+    getDrawSequenceDeps: vi.fn(() => ({
+      isSessionActive: () => true,
+      animateDrawnHand: vi.fn(),
+      setTransferInProgress: vi.fn(),
+      setHiddenHandCardKeys: vi.fn(),
+      runIfSessionActive: vi.fn(),
+    })),
     finishDrawSequence: vi.fn(),
     runIfSessionActive: vi.fn((_session, action) => action()),
     scheduleAutoEndTurn: vi.fn(),
@@ -154,7 +160,8 @@ describe("createBattleCardPlay", () => {
     });
     getBattleStoreView().setSyncedBattleState(state);
 
-    const deps = makeDeps({ cardTransferInProgress: true });
+    const deps = makeDeps();
+    deps.cardPlayInProgressRef.current = true;
     const { handleCardClick } = createBattleCardPlay(deps);
     clickCard(handleCardClick, { ...slash, uid: 5 }, 0);
 
