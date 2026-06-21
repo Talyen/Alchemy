@@ -39,6 +39,7 @@ type PendingBoardDrag<TId extends string, TOrigin extends DragOrigin> = {
 };
 
 type FootprintFn<TId extends string, TItem> = (id: TId, lookup: TItem | undefined) => { w: number; h: number } | null;
+type BoardDragCommitResult<TItem> = { heldItem?: { item: TItem; source: DragRect } } | undefined;
 
 export type UseBoardDragOptions<TId extends string, TItem, TOrigin extends DragOrigin> = {
   itemLookup: TItem | undefined;
@@ -49,7 +50,7 @@ export type UseBoardDragOptions<TId extends string, TItem, TOrigin extends DragO
   occupiedRows: number;
   externalDestinations?: ReadonlyArray<DragDestination>;
   resolveExternalDestination?: (pointer: DragPoint) => DragDestination | null;
-  onCommit: (input: { id: TId; origin: TOrigin; destination: DragDestination }) => void;
+  onCommit: (input: { id: TId; origin: TOrigin; destination: DragDestination }) => BoardDragCommitResult<TItem>;
   onCancel?: (id: TId) => void;
   onClear?: () => void;
   boardObstacles?: PackedInventoryItem<{ instanceId: string }>[];
@@ -75,6 +76,8 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
   const activeDragRef = useRef<BoardDragVisual<TId, TOrigin> | null>(null);
   const cleanupTimerRef = useRef<number | null>(null);
   const pendingCommitRef = useRef<(() => void) | null>(null);
+  const heldCleanupRef = useRef<(() => void) | null>(null);
+  const beginHeldRef = useRef<(item: TItem, source: DragRect) => void>(() => {});
   const boardObstaclesRef = useRef(boardObstacles);
   useEffect(() => {
     boardObstaclesRef.current = boardObstacles;
@@ -86,6 +89,8 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
         window.clearTimeout(cleanupTimerRef.current);
       }
       pendingCommitRef.current = null;
+      heldCleanupRef.current?.();
+      heldCleanupRef.current = null;
     },
     [],
   );
@@ -148,6 +153,8 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       window.clearTimeout(cleanupTimerRef.current);
       cleanupTimerRef.current = null;
     }
+    heldCleanupRef.current?.();
+    heldCleanupRef.current = null;
     setActiveId(null);
     setDragVisual(null);
     activeDragRef.current = null;
@@ -165,6 +172,107 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
     },
     [clearDragState],
   );
+
+  const commitDestination = useCallback(
+    (visual: BoardDragVisual<TId, TOrigin>, destination: DragDestination): BoardDragCommitResult<TItem> => {
+      const result = onCommit({ id: visual.id, origin: visual.origin, destination });
+      playUISound("gearMove");
+      return result;
+    },
+    [onCommit],
+  );
+
+  const beginHeld = useCallback(
+    (item: TItem, source: DragRect) => {
+      if (cleanupTimerRef.current !== null) {
+        window.clearTimeout(cleanupTimerRef.current);
+        cleanupTimerRef.current = null;
+      }
+      heldCleanupRef.current?.();
+      pendingCommitRef.current = null;
+      pendingDragRef.current = null;
+
+      const id = getItemId(item);
+      const origin = getOrigin(item);
+      const buildVisual = (pointer: DragPoint | null): BoardDragVisual<TId, TOrigin> => {
+        const rect = pointer
+          ? {
+              left: pointer.x - source.width / 2,
+              top: pointer.y - source.height / 2,
+              width: source.width,
+              height: source.height,
+            }
+          : source;
+        return {
+          id,
+          source,
+          rect,
+          origin,
+          destination: pointer ? getDragDestination(id, rect, pointer) : null,
+          releasing: false,
+        };
+      };
+
+      const initial = buildVisual(null);
+      activeDragRef.current = initial;
+      setActiveId(id);
+      setDragVisual(initial);
+
+      const onPointerMove = (event: PointerEvent) => {
+        const visual = buildVisual({ x: event.clientX, y: event.clientY });
+        activeDragRef.current = visual;
+        setDragVisual(visual);
+      };
+
+      const onPointerDown = (event: PointerEvent) => {
+        event.stopPropagation();
+        event.preventDefault();
+        const visual = buildVisual({ x: event.clientX, y: event.clientY });
+        const destination = visual.destination;
+        heldCleanupRef.current?.();
+        heldCleanupRef.current = null;
+
+        if (!destination) {
+          if (onCancel) onCancel(id);
+          clearDragState();
+          return;
+        }
+
+        const result = commitDestination(visual, destination);
+        if (result?.heldItem) {
+          beginHeldRef.current(result.heldItem.item, result.heldItem.source);
+          return;
+        }
+
+        const settled = { ...visual, rect: destination.rect, settling: true, releaseRect: visual.rect };
+        activeDragRef.current = settled;
+        setDragVisual(settled);
+        clearDragAfterAnimation();
+      };
+
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (onCancel) onCancel(id);
+        clearDragState();
+      };
+
+      document.addEventListener("pointermove", onPointerMove);
+      document.addEventListener("pointerdown", onPointerDown, { capture: true });
+      document.addEventListener("keydown", onKeyDown, true);
+      heldCleanupRef.current = () => {
+        document.removeEventListener("pointermove", onPointerMove);
+        document.removeEventListener("pointerdown", onPointerDown, { capture: true });
+        document.removeEventListener("keydown", onKeyDown, true);
+      };
+    },
+    [clearDragAfterAnimation, clearDragState, commitDestination, getDragDestination, getItemId, getOrigin, onCancel],
+  );
+
+  useEffect(() => {
+    beginHeldRef.current = beginHeld;
+  }, [beginHeld]);
 
   const updateActiveDrag = useCallback(
     (pointer: DragPoint, pointerId: number) => {
@@ -214,6 +322,8 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
         window.clearTimeout(cleanupTimerRef.current);
         cleanupTimerRef.current = null;
       }
+      heldCleanupRef.current?.();
+      heldCleanupRef.current = null;
       pendingCommitRef.current?.();
       pendingCommitRef.current = null;
       activeDragRef.current = null;
@@ -279,14 +389,17 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
         return;
       }
 
-      onCommit({ id: pending.id, origin: pending.origin, destination });
+      const result = commitDestination(visual, destination);
+      if (result?.heldItem) {
+        beginHeldRef.current(result.heldItem.item, result.heldItem.source);
+        return;
+      }
       const settled = { ...visual, rect: destination.rect, settling: true, releaseRect };
       activeDragRef.current = settled;
       setDragVisual(settled);
-      playUISound("gearMove");
       clearDragAfterAnimation();
     },
-    [clearDragAfterAnimation, onCancel, onCommit, updateActiveDrag],
+    [clearDragAfterAnimation, commitDestination, onCancel, updateActiveDrag],
   );
 
   const flyoverTo = useCallback(
@@ -322,6 +435,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
     isAnimating: !!dragVisual?.settling,
     isDraggingActive: !!activeId && (!dragVisual || (!dragVisual.settling && !dragVisual.releasing)),
     beginPointer,
+    beginHeld,
     movePointer,
     finishPointer,
     flyoverTo,

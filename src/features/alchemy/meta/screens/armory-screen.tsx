@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   canApplyCraftingCurrency,
   EMPTY_CRAFTING_CURRENCIES,
   findGearInventoryOwner,
   buildArmoryBoardView,
+  type BoardItemRef,
+  type CraftingCurrencyBoardPositionsByCharacter,
   type CraftingCurrencyId,
+  type GearBoardPositionsByCharacter,
   type GearInstance,
   type GearInventories,
   type GearLoadouts,
@@ -15,24 +18,25 @@ import { cn } from "@/lib/utils";
 import { characters, getRequiredPreviousCharacter, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
 import { HamburgerTrigger, PageLayout, ScreenHeader } from "../../shared/ui/shared-ui";
-import { useGearStore } from "../../shared/stores/gear-store";
-import { CharacterAndEquipmentPanel, InventoryPanel } from "./armory/armory-panels";
+import { CharacterAndEquipmentPanel } from "./armory/character-panel";
+import { InventoryPanel } from "./armory/inventory-panel";
 import { resolveEquipSwap } from "./armory/resolve-equip-swap";
 import { useArmoryGearDrag } from "./armory/use-armory-gear-drag";
 import { useArmoryCurrencyDrag } from "./armory/use-armory-currency-drag";
 import { ArmoryCharacterTabs } from "./armory/armory-character-tabs";
-import {
-  armoryTargetingReducer,
-  initialArmoryTargetingState,
-  type ArmoryCursorPoint,
-} from "./armory/armory-targeting-state";
 import { useArmoryTargetingEvents } from "./armory/use-armory-targeting-events";
 import { ArmoryOverlays } from "./armory/armory-overlays";
+import type { TransferMenuState } from "./armory/armory-transfer-menu";
+import type { DragRect } from "./armory/use-board-drag";
 import "./armory/armory-screen.css";
+
+type ArmoryCursorPoint = { x: number; y: number };
 
 type Props = {
   inventories: GearInventories;
   loadouts: GearLoadouts;
+  gearBoardPositionsByCharacter?: GearBoardPositionsByCharacter;
+  currencyBoardPositionsByCharacter?: CraftingCurrencyBoardPositionsByCharacter;
   finishedRunCharacters: CharacterId[];
   browseOnly: boolean;
   onOpenMenu: (rect?: DOMRect) => void;
@@ -48,12 +52,15 @@ type Props = {
   craftingCurrencies?: Record<CraftingCurrencyId, number>;
   onApplyCurrency?: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onTransferGear?: (instanceId: string, targetCharacterId: CharacterId) => boolean;
+  onMoveBoardItem?: (characterId: CharacterId, item: BoardItemRef, col: number, row: number) => void;
   onSortBoard?: (characterId: CharacterId) => void;
 };
 
 export function ArmoryScreen({
   inventories,
   loadouts,
+  gearBoardPositionsByCharacter,
+  currencyBoardPositionsByCharacter,
   finishedRunCharacters,
   browseOnly,
   onOpenMenu,
@@ -65,29 +72,45 @@ export function ArmoryScreen({
   onSortBoard,
   craftingCurrencies = EMPTY_CRAFTING_CURRENCIES,
   onApplyCurrency = () => false,
+  onMoveBoardItem = () => {},
 }: Props) {
   const [characterId, setCharacterId] = useState<CharacterId>("knight");
   const inventoryBoardRef = useRef<HTMLDivElement>(null);
-  const [targeting, dispatchTargeting] = useReducer(armoryTargetingReducer, initialArmoryTargetingState);
+  const [salvageMode, setSalvageMode] = useState(false);
+  const [salvageTarget, setSalvageTarget] = useState<GearInstance | null>(null);
+  const [activeCurrencyId, setActiveCurrencyId] = useState<CraftingCurrencyId | null>(null);
+  const [transferMenu, setTransferMenu] = useState<TransferMenuState | null>(null);
   const [cursorPoint, setCursorPoint] = useState<ArmoryCursorPoint | null>(null);
-  const { salvageTarget, salvageMode, activeCurrencyId, transferMenu } = targeting;
   const characterInventory = useMemo(() => inventories[characterId], [inventories, characterId]);
-  const savedPositions = useGearStore((state) => state.boardPositionsByCharacter[characterId]);
-  const moveBoardItem = useGearStore((state) => state.moveBoardItem);
+  const savedPositions = useMemo(
+    () => gearBoardPositionsByCharacter?.[characterId] ?? {},
+    [characterId, gearBoardPositionsByCharacter],
+  );
   const handleMoveItem = useCallback(
     (instanceId: string, col: number, row: number) => {
-      moveBoardItem(characterId, { kind: "gear", id: instanceId }, col, row);
+      onMoveBoardItem(characterId, { kind: "gear", id: instanceId }, col, row);
     },
-    [characterId, moveBoardItem],
+    [characterId, onMoveBoardItem],
   );
 
-  const savedCurrencyPositions = useGearStore((state) => state.currencyBoardPositionsByCharacter[characterId]);
+  const savedCurrencyPositions = useMemo(
+    () => currencyBoardPositionsByCharacter?.[characterId] ?? {},
+    [characterId, currencyBoardPositionsByCharacter],
+  );
   const handleMoveCurrency = useCallback(
     (currencyId: CraftingCurrencyId, col: number, row: number) => {
-      moveBoardItem(characterId, { kind: "currency", id: currencyId }, col, row);
+      onMoveBoardItem(characterId, { kind: "currency", id: currencyId }, col, row);
     },
-    [characterId, moveBoardItem],
+    [characterId, onMoveBoardItem],
   );
+  const beginHeldCurrencyRef = useRef<
+    | ((
+        currencyId: CraftingCurrencyId,
+        origin: { kind: "inventory"; placement: InventoryPlacement },
+        source: DragRect,
+      ) => void)
+    | null
+  >(null);
 
   const inventoryById = useMemo(
     () => new Map(characterInventory.map((item) => [item.instanceId, item])),
@@ -142,7 +165,6 @@ export function ArmoryScreen({
   const {
     draggedGear,
     dragVisual,
-    carriedInstance,
     secondaryDragVisuals,
     isDraggingActive,
     beginGearPointer,
@@ -152,22 +174,20 @@ export function ArmoryScreen({
     clearDragState,
     clearSecondaryDragState,
     abortGearDragIfDragging,
-    startCarry,
-    carriedCurrencyId,
-    carriedCurrencyVisual,
-    startCarryCurrency,
+    beginHeldGear,
   } = useArmoryGearDrag({
     characterId,
     editable,
     loadout,
     inventoryById,
     packedInventory: boardView.packedInventory,
+    packedCurrencies: boardView.packedCurrencies,
     inventoryBoardRef,
     boardObstacles: boardView.boardObstacles,
     onEquip: handleEquipWithSwap,
     onUnequip,
     onMoveItem: handleMoveItem,
-    onMoveCurrency: handleMoveCurrency,
+    onHoldCurrency: (currencyId, origin, source) => beginHeldCurrencyRef.current?.(currencyId, origin, source),
   });
 
   const {
@@ -177,6 +197,7 @@ export function ArmoryScreen({
     beginCurrencyPointer,
     moveCurrencyPointer,
     finishCurrencyPointer,
+    beginHeldCurrency,
     clearDragState: clearCurrencyDragState,
   } = useArmoryCurrencyDrag({
     editable,
@@ -188,17 +209,20 @@ export function ArmoryScreen({
     inventoryById,
     onSwapWithItem: (item, rect) => {
       if (item.kind === "gear") {
-        startCarry(item.instance, rect);
-      } else {
-        startCarryCurrency(item.currencyId, rect);
+        beginHeldGear({ instance: item.instance, origin: item.origin }, rect);
       }
     },
   });
 
+  useEffect(() => {
+    beginHeldCurrencyRef.current = beginHeldCurrency;
+  }, [beginHeldCurrency]);
+
   const secondaryDragInstanceIds = secondaryDragVisuals.flatMap((v) => (v.instance ? [v.instance.instanceId] : []));
 
   const clearTargeting = useCallback(() => {
-    dispatchTargeting({ type: "CLEAR_TARGETING" });
+    setSalvageMode(false);
+    setActiveCurrencyId(null);
     setCursorPoint(null);
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
@@ -214,28 +238,42 @@ export function ArmoryScreen({
 
   const handleSelectCharacter = useCallback((id: CharacterId) => {
     setCharacterId(id);
+    setSalvageMode(false);
+    setSalvageTarget(null);
+    setActiveCurrencyId(null);
     setCursorPoint(null);
-    dispatchTargeting({ type: "SELECT_CHARACTER" });
   }, []);
 
   useEffect(() => {
     if (!editable) {
-      setTimeout(() => setCursorPoint(null), 0);
-      dispatchTargeting({ type: "EDITABLE_LOST" });
+      const timer = setTimeout(() => {
+        setCursorPoint(null);
+        setSalvageMode(false);
+        setSalvageTarget(null);
+        setActiveCurrencyId(null);
+      }, 0);
+      return () => clearTimeout(timer);
     }
+    return;
   }, [editable]);
 
   useEffect(() => {
-    if (activeCurrencyId && (craftingCurrencies[activeCurrencyId] ?? 0) <= 0) {
-      setTimeout(() => setCursorPoint(null), 0);
-      dispatchTargeting({ type: "CURRENCY_DEPLETED" });
+    if (activeCurrencyId && craftingCurrencies[activeCurrencyId] <= 0) {
+      const timer = setTimeout(() => {
+        setCursorPoint(null);
+        setActiveCurrencyId(null);
+      }, 0);
+      return () => clearTimeout(timer);
     }
+    return;
   }, [activeCurrencyId, craftingCurrencies]);
 
   useEffect(() => {
     if (salvageTarget && !inventoryById.has(salvageTarget.instanceId)) {
-      dispatchTargeting({ type: "SALVAGE_TARGET_GONE" });
+      const timer = setTimeout(() => setSalvageTarget(null), 0);
+      return () => clearTimeout(timer);
     }
+    return;
   }, [salvageTarget, inventoryById]);
 
   useEffect(() => {
@@ -253,30 +291,30 @@ export function ArmoryScreen({
   }, [characterId]);
 
   function handleSelectCurrency(currencyId: CraftingCurrencyId) {
-    if (!editable || (craftingCurrencies[currencyId] ?? 0) <= 0) return;
-    dispatchTargeting({ type: "TOGGLE_CURRENCY", currencyId });
+    if (!editable || craftingCurrencies[currencyId] <= 0) return;
+    setActiveCurrencyId((current) => (current === currencyId ? null : currencyId));
+    setSalvageMode(false);
   }
 
   const startSalvageTarget = useCallback((target: GearInstance) => {
-    dispatchTargeting({ type: "START_SALVAGE_TARGET", target });
+    setSalvageTarget(target);
   }, []);
 
   const handleOpenTransferMenu = useCallback(
     (instance: GearInstance, anchor: { x: number; y: number }) => {
-      const owner = findGearInventoryOwner(useGearStore.getState().inventories, instance.instanceId);
+      const owner = findGearInventoryOwner(inventories, instance.instanceId);
       if (!owner) return;
       const recipients = (Object.keys(characters) as CharacterId[])
         .filter((id) => id !== owner)
         .filter((id) => isCharacterUnlocked(id, finishedRunCharacters));
       if (recipients.length === 0) return;
-      dispatchTargeting({
-        type: "OPEN_TRANSFER_MENU",
+      setTransferMenu({
         instanceId: instance.instanceId,
         sourceCharacterId: owner,
         anchor,
       });
     },
-    [finishedRunCharacters],
+    [finishedRunCharacters, inventories],
   );
 
   function handleApplyCurrency(instance: GearInstance) {
@@ -292,9 +330,9 @@ export function ArmoryScreen({
       return;
     }
     playUISound("talentUnlock");
-    if ((craftingCurrencies[activeCurrencyId] ?? 0) <= 1) {
+    if (craftingCurrencies[activeCurrencyId] <= 1) {
       setCursorPoint(null);
-      dispatchTargeting({ type: "DESELECT_CURRENCY" });
+      setActiveCurrencyId(null);
     }
   }
 
@@ -363,7 +401,7 @@ export function ArmoryScreen({
               draggedInstanceId={draggedGear?.instanceId ?? null}
               draggedCurrencyId={draggedCurrencyId}
               secondaryDragInstanceIds={secondaryDragInstanceIds}
-              isDraggingActive={isDraggingActive || isCurrencyDraggingActive || !!carriedInstance}
+              isDraggingActive={isDraggingActive || isCurrencyDraggingActive}
               boardRef={inventoryBoardRef}
               salvageMode={salvageMode}
               activeCurrencyId={activeCurrencyId}
@@ -371,7 +409,10 @@ export function ArmoryScreen({
               hasSalvageableGear={
                 editable && (characterInventory.length > 0 || Object.values(loadouts[characterId]).some(Boolean))
               }
-              onToggleSalvageMode={() => dispatchTargeting({ type: "TOGGLE_SALVAGE_MODE" })}
+              onToggleSalvageMode={() => {
+                setSalvageMode((current) => !current);
+                setActiveCurrencyId(null);
+              }}
               onSelectCurrency={handleSelectCurrency}
               {...(onSpawnDevGear ? { onSpawnDevGear: () => onSpawnDevGear(characterId) } : {})}
               onGearPointerStart={beginGearPointer}
@@ -400,15 +441,13 @@ export function ArmoryScreen({
           craftingCurrencies={craftingCurrencies}
           finishedRunCharacters={finishedRunCharacters}
           editable={editable}
-          carriedCurrencyId={carriedCurrencyId}
-          carriedCurrencyVisual={carriedCurrencyVisual}
           onSalvage={onSalvage}
           onTransferGear={onTransferGear}
-          onClearSalvageTarget={() => dispatchTargeting({ type: "CLEAR_SALVAGE_TARGET" })}
+          onClearSalvageTarget={() => setSalvageTarget(null)}
           onClearCurrencyDragState={clearCurrencyDragState}
           onClearDragState={clearDragState}
           onClearSecondaryDragState={clearSecondaryDragState}
-          onCloseTransferMenu={() => dispatchTargeting({ type: "CLOSE_TRANSFER_MENU" })}
+          onCloseTransferMenu={() => setTransferMenu(null)}
         />
       </div>
     </PageLayout>

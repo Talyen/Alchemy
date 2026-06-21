@@ -9,6 +9,7 @@ import {
   type GearLoadout,
   type GearSlot,
   type InventoryPlacement,
+  type PackedCurrencyItem,
   type PackedInventory,
   type PackedInventoryItem,
 } from "@/lib/gear";
@@ -21,7 +22,6 @@ import {
   calculateSecondaryDisplacedItems,
   buildSecondaryDragVisuals,
 } from "./armory-drag-helpers";
-import { placeInventoryTileFromMetrics } from "./board-drag-math";
 
 export type GearDragOrigin =
   | { kind: "inventory"; placement: { col: number; row: number } }
@@ -64,6 +64,7 @@ type UseArmoryGearDragOptions = {
   loadout: GearLoadout;
   inventoryById: Map<string, GearInstance>;
   packedInventory: PackedInventory;
+  packedCurrencies: PackedCurrencyItem[];
   inventoryBoardRef: RefObject<HTMLDivElement | null>;
   boardObstacles: PackedInventoryItem<{ instanceId: string }>[];
   onEquip: (
@@ -74,7 +75,11 @@ type UseArmoryGearDragOptions = {
   ) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onMoveItem: (instanceId: string, col: number, row: number) => void;
-  onMoveCurrency?: (currencyId: CraftingCurrencyId, col: number, row: number) => void;
+  onHoldCurrency?: (
+    currencyId: CraftingCurrencyId,
+    origin: { kind: "inventory"; placement: InventoryPlacement },
+    source: DragRect,
+  ) => void;
 };
 
 export function useArmoryGearDrag({
@@ -83,253 +88,27 @@ export function useArmoryGearDrag({
   loadout,
   inventoryById,
   packedInventory,
+  packedCurrencies,
   inventoryBoardRef,
   boardObstacles,
   onEquip,
   onUnequip,
   onMoveItem,
-  onMoveCurrency,
+  onHoldCurrency,
 }: UseArmoryGearDragOptions) {
   const activeIdRef = useRef<string | null>(null);
   const packedInventoryRef = useRef(packedInventory);
   useEffect(() => {
     packedInventoryRef.current = packedInventory;
   }, [packedInventory]);
+  const packedCurrenciesRef = useRef(packedCurrencies);
+  useEffect(() => {
+    packedCurrenciesRef.current = packedCurrencies;
+  }, [packedCurrencies]);
 
   const [secondaryDragVisuals, setSecondaryDragVisuals] = useState<GearDragVisual[]>([]);
   const secondaryCleanupTimerRef = useRef<number | null>(null);
-  const [carriedInstance, setCarriedInstance] = useState<GearInstance | null>(null);
-  const [carriedVisual, setCarriedVisual] = useState<DragRect | null>(null);
-  const carryCleanupRef = useRef<(() => void) | null>(null);
-  const startCarryRef = useRef<((instance: GearInstance, sourceRect: DragRect) => void) | null>(null);
   const fsmClearDragRef = useRef<() => void>(() => {});
-
-  const [carriedCurrencyId, setCarriedCurrencyId] = useState<CraftingCurrencyId | null>(null);
-  const [carriedCurrencyVisual, setCarriedCurrencyVisual] = useState<DragRect | null>(null);
-  const carryCurrencyCleanupRef = useRef<(() => void) | null>(null);
-  const startCarryCurrencyRef = useRef<((currencyId: CraftingCurrencyId, sourceRect: DragRect) => void) | null>(null);
-
-  const clearCarryCurrency = useCallback(() => {
-    carryCurrencyCleanupRef.current?.();
-    carryCurrencyCleanupRef.current = null;
-    setCarriedCurrencyId(null);
-    setCarriedCurrencyVisual(null);
-  }, []);
-
-  const clearCarry = useCallback(() => {
-    carryCleanupRef.current?.();
-    carryCleanupRef.current = null;
-    setCarriedInstance(null);
-    setCarriedVisual(null);
-  }, []);
-
-  const autoPlaceCarried = useCallback(
-    (instance: GearInstance) => {
-      onMoveItem(instance.instanceId, 1, 1);
-    },
-    [onMoveItem],
-  );
-
-  const startCarry = useCallback(
-    (instance: GearInstance, sourceRect: DragRect) => {
-      fsmClearDragRef.current();
-      carryCleanupRef.current?.();
-      setCarriedInstance(instance);
-
-      const element = document.querySelector(`[data-instance-id="${instance.instanceId}"]`);
-      const rect = element?.getBoundingClientRect();
-      const actualRect = rect
-        ? {
-            left: sourceRect.left,
-            top: sourceRect.top,
-            width: rect.width,
-            height: rect.height,
-          }
-        : sourceRect;
-
-      setCarriedVisual(actualRect);
-
-      const footprint = footprintForInstance(instance);
-      if (!footprint) {
-        clearCarry();
-        return;
-      }
-
-      const onPointerMove = (e: PointerEvent) => {
-        setCarriedVisual({
-          left: e.clientX - actualRect.width / 2,
-          top: e.clientY - actualRect.height / 2,
-          width: actualRect.width,
-          height: actualRect.height,
-        });
-      };
-
-      const onPointerDown = (e: PointerEvent) => {
-        e.stopPropagation();
-        e.preventDefault();
-
-        const board = inventoryBoardRef.current;
-        if (!board) {
-          autoPlaceCarried(instance);
-          clearCarry();
-          return;
-        }
-
-        const freeRect: DragRect = {
-          left: e.clientX - sourceRect.width / 2,
-          top: e.clientY - sourceRect.height / 2,
-          width: sourceRect.width,
-          height: sourceRect.height,
-        };
-
-        const result = placeInventoryTileFromMetrics(board, footprint, freeRect, null, {
-          requireProximity: false,
-          occupiedRows: packedInventoryRef.current.occupiedRows,
-        });
-
-        if (!result) {
-          autoPlaceCarried(instance);
-          clearCarry();
-          return;
-        }
-
-        const currentPacked = packedInventoryRef.current.items;
-        const occupant = currentPacked.find(
-          (item) =>
-            item.item.instanceId !== instance.instanceId &&
-            overlaps(
-              { col: result.placement.col, row: result.placement.row, w: footprint.w, h: footprint.h },
-              { col: item.col, row: item.row, w: item.w, h: item.h },
-            ),
-        );
-
-        if (occupant) {
-          const occupantInstance = inventoryById.get(occupant.item.instanceId);
-          onMoveItem(instance.instanceId, result.placement.col, result.placement.row);
-          if (occupantInstance) {
-            startCarryRef.current?.(occupantInstance, freeRect);
-          } else {
-            clearCarry();
-          }
-        } else {
-          onMoveItem(instance.instanceId, result.placement.col, result.placement.row);
-          clearCarry();
-        }
-      };
-
-      const onKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
-          autoPlaceCarried(instance);
-          clearCarry();
-        }
-      };
-
-      document.addEventListener("pointermove", onPointerMove);
-      document.addEventListener("pointerdown", onPointerDown, { capture: true });
-      document.addEventListener("keydown", onKeyDown);
-
-      carryCleanupRef.current = () => {
-        document.removeEventListener("pointermove", onPointerMove);
-        document.removeEventListener("pointerdown", onPointerDown, { capture: true });
-        document.removeEventListener("keydown", onKeyDown);
-      };
-    },
-    [autoPlaceCarried, clearCarry, inventoryBoardRef, inventoryById, onMoveItem],
-  );
-
-  useEffect(() => {
-    startCarryRef.current = startCarry;
-  }, [startCarry]);
-
-  const startCarryCurrency = useCallback(
-    (currencyId: CraftingCurrencyId, sourceRect: DragRect) => {
-      fsmClearDragRef.current();
-      carryCurrencyCleanupRef.current?.();
-      setCarriedCurrencyId(currencyId);
-      setCarriedCurrencyVisual(sourceRect);
-
-      const onPointerMove = (e: PointerEvent) => {
-        setCarriedCurrencyVisual({
-          left: e.clientX - sourceRect.width / 2,
-          top: e.clientY - sourceRect.height / 2,
-          width: sourceRect.width,
-          height: sourceRect.height,
-        });
-      };
-
-      const onPointerDown = (e: PointerEvent) => {
-        e.stopPropagation();
-        e.preventDefault();
-
-        const board = inventoryBoardRef.current;
-        if (!board) {
-          if (onMoveCurrency) onMoveCurrency(currencyId, 1, 1);
-          clearCarryCurrency();
-          return;
-        }
-
-        const freeRect: DragRect = {
-          left: e.clientX - sourceRect.width / 2,
-          top: e.clientY - sourceRect.height / 2,
-          width: sourceRect.width,
-          height: sourceRect.height,
-        };
-
-        const result = placeInventoryTileFromMetrics(board, { w: 1, h: 1 }, freeRect, null, {
-          requireProximity: false,
-          occupiedRows: packedInventoryRef.current.occupiedRows,
-        });
-
-        if (!result) {
-          if (onMoveCurrency) onMoveCurrency(currencyId, 1, 1);
-          clearCarryCurrency();
-          return;
-        }
-
-        const currentPacked = packedInventoryRef.current.items;
-        const occupant = currentPacked.find((item) =>
-          overlaps(
-            { col: result.placement.col, row: result.placement.row, w: 1, h: 1 },
-            { col: item.col, row: item.row, w: item.w, h: item.h },
-          ),
-        );
-
-        if (occupant) {
-          const occupantInstance = inventoryById.get(occupant.item.instanceId);
-          if (onMoveCurrency) onMoveCurrency(currencyId, result.placement.col, result.placement.row);
-          if (occupantInstance) {
-            startCarryRef.current?.(occupantInstance, freeRect);
-          }
-          clearCarryCurrency();
-        } else {
-          if (onMoveCurrency) onMoveCurrency(currencyId, result.placement.col, result.placement.row);
-          clearCarryCurrency();
-        }
-      };
-
-      const onKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
-          if (onMoveCurrency) onMoveCurrency(currencyId, 1, 1);
-          clearCarryCurrency();
-        }
-      };
-
-      document.addEventListener("pointermove", onPointerMove);
-      document.addEventListener("pointerdown", onPointerDown, { capture: true });
-      document.addEventListener("keydown", onKeyDown);
-
-      carryCurrencyCleanupRef.current = () => {
-        document.removeEventListener("pointermove", onPointerMove);
-        document.removeEventListener("pointerdown", onPointerDown, { capture: true });
-        document.removeEventListener("keydown", onKeyDown);
-      };
-    },
-    [clearCarryCurrency, inventoryBoardRef, inventoryById, onMoveCurrency],
-  );
-
-  useEffect(() => {
-    startCarryCurrencyRef.current = startCarryCurrency;
-  }, [startCarryCurrency]);
 
   const clearSecondaryDragState = useCallback(() => {
     if (secondaryCleanupTimerRef.current !== null) {
@@ -423,21 +202,50 @@ export function useArmoryGearDrag({
                 ),
             )
           : undefined;
+        const occupantCurrency = footprint
+          ? packedCurrenciesRef.current.find((currency) =>
+              overlaps(
+                { col: destination.placement.col, row: destination.placement.row, w: footprint.w, h: footprint.h },
+                { col: currency.col, row: currency.row, w: currency.w, h: currency.h },
+              ),
+            )
+          : undefined;
         onMoveItem(id, destination.placement.col, destination.placement.row);
         if (occupant) {
           const occupantInstance = inventoryById.get(occupant.item.instanceId);
           if (occupantInstance) {
-            startCarry(occupantInstance, destination.rect);
+            return {
+              heldItem: {
+                item: {
+                  instance: occupantInstance,
+                  origin: { kind: "inventory", placement: { col: occupant.col, row: occupant.row } },
+                },
+                source: destination.rect,
+              },
+            };
           }
+        } else if (occupantCurrency && onHoldCurrency) {
+          onHoldCurrency(
+            occupantCurrency.currencyId,
+            { kind: "inventory", placement: { col: occupantCurrency.col, row: occupantCurrency.row } },
+            destination.rect,
+          );
         }
       }
+      return undefined;
     },
     onCancel: () => {},
     onClear: () => {},
   });
+  const fsmClearDragState = fsm.clearDragState;
+
   useEffect(() => {
-    fsmClearDragRef.current = fsm.clearDragState;
-  }, [fsm.clearDragState]);
+    fsmClearDragRef.current = fsmClearDragState;
+  }, [fsmClearDragState]);
+
+  useEffect(() => {
+    if (!editable) fsmClearDragState();
+  }, [editable, fsmClearDragState]);
 
   useEffect(() => {
     return () => {
@@ -529,43 +337,25 @@ export function useArmoryGearDrag({
     ],
   );
 
-  const draggedGear: GearInstance | null = carriedInstance
-    ? carriedInstance
-    : fsm.dragVisual?.id
-      ? (inventoryById.get(fsm.dragVisual.id) ?? null)
-      : null;
+  const draggedGear: GearInstance | null = fsm.dragVisual?.id ? (inventoryById.get(fsm.dragVisual.id) ?? null) : null;
 
-  const dragVisual: GearDragVisual | null =
-    // Precedence: carried visual over FSM settled visual.
-    // This ordering is load-bearing for the issue 5 fix: when startCarry clears the
-    // FSM settled visual, the carried visual is the only active visual.
-    // If you reverse this precedence, the settled FSM visual would flash briefly.
-    carriedVisual && carriedInstance
-      ? {
-          instance: carriedInstance,
-          source: carriedVisual,
-          rect: carriedVisual,
-          origin: { kind: "inventory", placement: { col: 1, row: 1 } },
-          destination: null,
-        }
-      : fsm.dragVisual
-        ? {
-            instance: inventoryById.get(fsm.dragVisual.id) ?? null,
-            source: fsm.dragVisual.source,
-            rect: fsm.dragVisual.rect,
-            origin: fsm.dragVisual.origin,
-            destination: fsm.dragVisual.destination,
-            settling: fsm.dragVisual.settling,
-            releasing: fsm.dragVisual.releasing,
-            flyover: fsm.dragVisual.flyover,
-            releaseRect: fsm.dragVisual.releaseRect,
-          }
-        : null;
+  const dragVisual: GearDragVisual | null = fsm.dragVisual
+    ? {
+        instance: inventoryById.get(fsm.dragVisual.id) ?? null,
+        source: fsm.dragVisual.source,
+        rect: fsm.dragVisual.rect,
+        origin: fsm.dragVisual.origin,
+        destination: fsm.dragVisual.destination,
+        settling: fsm.dragVisual.settling,
+        releasing: fsm.dragVisual.releasing,
+        flyover: fsm.dragVisual.flyover,
+        releaseRect: fsm.dragVisual.releaseRect,
+      }
+    : null;
 
   const dragVisualIdRef = useRef<string | null>(null);
   const isFlyoverRef = useRef<boolean>(false);
 
-  const fsmClearDragState = fsm.clearDragState;
   const clearDragState = useCallback(() => {
     fsmClearDragState();
   }, [fsmClearDragState]);
@@ -589,11 +379,9 @@ export function useArmoryGearDrag({
   return {
     draggedGear,
     dragVisual,
-    carriedInstance,
-    carriedVisual,
     secondaryDragVisuals,
-    isAnimating: fsm.isAnimating || secondaryDragVisuals.some((v) => v.flyover) || !!carriedInstance,
-    isDraggingActive: fsm.isDraggingActive || !!carriedInstance,
+    isAnimating: fsm.isAnimating || secondaryDragVisuals.some((v) => v.flyover),
+    isDraggingActive: fsm.isDraggingActive,
     beginGearPointer,
     moveGearPointer,
     finishGearPointer,
@@ -601,11 +389,6 @@ export function useArmoryGearDrag({
     clearDragState,
     clearSecondaryDragState,
     abortGearDragIfDragging,
-    clearCarry,
-    startCarry,
-    carriedCurrencyId,
-    carriedCurrencyVisual,
-    startCarryCurrency,
-    clearCarryCurrency,
+    beginHeldGear: fsm.beginHeld,
   };
 }

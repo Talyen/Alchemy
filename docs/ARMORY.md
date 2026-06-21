@@ -8,29 +8,25 @@ The Armory is the permanent meta-progression screen for managing **Gear** (per-c
 
 | File | Role |
 |------|------|
-| `use-armory-controller.ts` | Facade hook: reads `useGearStore`, wraps mutations with HP-sync + save-flush side effects. Consumed by `meta-routes.tsx`. |
-| `armory-targeting-state.ts` | Reducer + 13 typed actions for the local UI state (`salvageMode`, `salvageTarget`, `activeCurrencyId`, `cursorPoint`). |
+| `use-armory-controller.ts` | Facade hook: reads `useGearStore`, wraps gear mutations with HP-sync + save-flush side effects, and exposes board movement to the route. Consumed by `meta-routes.tsx`. |
 | `use-armory-gear-drag.ts` | Pointer FSM for gear drag from inventory/equipment, equipment-slot destination detection, secondary swap animation, double-click flyover. |
 | `use-armory-currency-drag.ts` | Pointer FSM for crafting-currency drag, 1×1 footprint. Wraps `useBoardDrag`. |
-| `use-board-drag.ts` | Shared FSM core: magnet snap, hysteresis, animation timer, cursor lock. |
+| `use-board-drag.ts` | Shared FSM core: magnet snap, hysteresis, animation timer, cursor lock, and held-item follow-up drags. |
 | `board-drag-math.ts` | Pure helpers: `placeInventoryTileFromMetrics`, `applyMagnetHysteresis`, `sameDestinationIdentity`, `rectCenter`, `distanceBetweenRects`. |
 | `armory-character-tabs.tsx` | Character tab strip with locked/unlocked state. |
 | `armory-currency-targeting.tsx` | Follow-cursor targeting visual. |
-| `armory-drag-portal.tsx` | Gear drag animation portal. |
-| `armory-currency-drag-portal.tsx` | Currency drag animation portal. |
-| `armory-salvage-confirm.tsx` | Salvage confirmation dialog. |
+| `armory-drag-visual-portal.tsx` | Shared gear/currency drag animation portal. |
+| `armory-overlays.tsx` | Salvage confirmation, drag visuals, currency cursor, and transfer menu composition. |
+| `gear-tooltip-portal.tsx` | Shared portaled gear tooltip rendering for inventory and equipment tiles. |
 | `resolve-equip-swap.ts` | Pure function: given an incoming instance, target slot, and vacated placement, decide whether the displaced item fits. |
 | `armory-tooltip-placement.ts` | Stage-aware portaled tooltip placement (reads `[data-testid="vr-stage"]`). |
 | `read-inventory-board-metrics.ts` | DOM probe of `[data-armory-grid-metric="cell"|"stride"]`. |
-| `use-armory-inventory-positions.ts` | Thin wrapper: `boardPositionsByCharacter[id]` slice + `setBoardPosition` + `syncBoardPositions`. |
-| `use-armory-currency-positions.ts` | Same shape for crafting currency positions. |
 | `character-panel.tsx` | `CharacterAndEquipmentPanel`: character art + 10 `SlotButton`s. |
 | `inventory-panel.tsx` | `InventoryPanel`: currency stacks + `InventoryGearTile`s. |
 | `parts/grid-styles.ts` | `SLOT_LABELS`, `EQUIP_SLOT_PLACEMENT`, `equipmentSlotStyle`, `packedItemStyle`. |
 | `parts/slot-button.tsx` | `SlotButton` (single equipment slot tile). |
 | `parts/inventory-tile.tsx` | `InventoryGearTile` (single gear tile in the inventory). |
 | `parts/currency-tile.tsx` | `CraftingCurrencyTile` (single crafting currency tile). |
-| `armory-panels.tsx` | Barrel re-exporting `CharacterAndEquipmentPanel` and `InventoryPanel`. |
 
 ## Data model
 
@@ -134,14 +130,15 @@ type CraftingCurrencyBoardPositionsByCharacter = Record<CharacterId, CraftingCur
 3. **Crafting-currency apply** — `useGearStore.applyCurrency(currencyId, instanceId, options?)` mutates the item's affixes via `applyCraftingCurrency`.
 4. **Transfer to another character** — `useGearStore.transferToInventory(instanceId, targetCharacterId)` moves the item and updates board positions.
 5. **Add new instance (rewards / shop / dev spawn)** — `useGearStore.addInstance(instance, characterId)`.
-6. **Move on board** — `useGearStore.setBoardPosition` and `setCurrencyBoardPosition` both call into `grid-packing.resolveMoveWithSwap` to push displaced items to the closest open cell.
-7. **Bulk position repair** — `useGearStore.syncBoardPositions()` re-packs all positions on init via `useEffect`s in the two position hooks.
+6. **Move on board** — `useGearStore.moveBoardItem(characterId, item, col, row)` calls into `grid-packing.resolveMoveWithSwap` to push displaced items to the closest open cell.
+7. **Bulk position repair** — `useGearStore.syncBoardPositions()` re-packs all positions.
 
 ### `useArmoryController` facade
 
 The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not call `useGearStore` directly. It consumes `useArmoryController()`, which:
 
 - Reads `inventories`, `loadouts`, `craftingCurrencies` from the store.
+- Reads per-character gear/currency board positions and exposes `onMoveBoardItem` so the screen does not mutate `useGearStore` directly.
 - Wraps `equip`/`unequip` with `syncRunMaxHealthFromGear` (HP-sync side effect).
 - Wraps `salvage`/`applyCurrency` with `syncRunMaxHealthFromGearMutation` + `flushAlchemySaveNow`.
 - Provides a dev-only `onSpawnDevGear` that calls `generateDevRandomGearInstance` + `addInstance` + `flushAlchemySaveNow`.
@@ -178,7 +175,9 @@ The 64 effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-m
 
 ## Drag FSM
 
-`useBoardDrag` is the shared FSM core. It exposes `beginPointer`, `movePointer`, `finishPointer`, `flyoverTo`, `clearDragState`, plus the magnet-snap `getInventoryDestination` and the `applyMagnetHysteresis` math. Gear and currency drag hooks both wrap it.
+`useBoardDrag` is the shared FSM core. It exposes `beginPointer`, `beginHeld`, `movePointer`, `finishPointer`, `flyoverTo`, `clearDragState`, plus the magnet-snap `getInventoryDestination` and the `applyMagnetHysteresis` math. Gear and currency drag hooks both wrap it.
+
+When a board item is dropped onto another board item, the first item is committed and the displaced item can be handed back to `useBoardDrag` as a held drag. That keeps the familiar inventory behavior — drop A on B, A lands, B is now under the cursor — without separate carry-specific document listeners in the Armory hooks.
 
 Magnet constants (all in `useBoardDrag` + re-exported from `board-drag-math`):
 
@@ -207,7 +206,7 @@ Migration steps are in `src/lib/validation/migration/steps.ts`. Notable steps:
 - **v8→v9** — splits the flat `gearInventory` into per-character `gearInventories` and per-character board positions.
 - **v9→v10** — `migrateV9ToV10` is a one-shot localStorage shim: reads `alchemy-armory-positions`, merges the positions into `gearBoardPositionsByCharacter.knight`, and removes the storage key. The shim previously lived in `gear-store.ts`; it now lives in the canonical migration pipeline.
 
-`useAppSaveState.ts` subscribes to the entire `useGearStore` and triggers an autosave on any change. The 4 mutation callbacks in `useArmoryController` also call `flushAlchemySaveNow` after gear mutations during an active run.
+`useAppSaveState.ts` subscribes to the entire `useGearStore` and triggers an autosave on any change. The gear mutation callbacks in `useArmoryController` also call `flushAlchemySaveNow` after mutations during an active run.
 
 ## Tests
 
@@ -225,7 +224,6 @@ Migration steps are in `src/lib/validation/migration/steps.ts`. Notable steps:
 | `tests/features/screens/armory-screen.test.tsx` | 28 integration tests covering render, character switching, salvage mode, currency targeting, double-click swap animations, transfer menu, tooltips, browse-only, locked characters, two-handed off-hand dimming, dev spawn. |
 | `tests/features/screens/armory-inventory-layout.test.ts` | Pure packer / placement / swap helpers. |
 | `tests/features/screens/armory-resolve-equip-swap.test.ts` | `resolveEquipSwap` canSwap / displaced decisions. |
-| `tests/features/screens/armory-targeting-state.test.ts` | 21 reducer unit tests. |
 | `tests/features/screens/board-drag-math.test.ts` | 12 math helper unit tests. |
 | `tests/features/ui/armory-tooltip-placement.test.ts` | Portaled tooltip placement helpers. |
 | `tests/features/storage/gear-save.test.ts` | Save round-trip, legacy migration, per-character split. |

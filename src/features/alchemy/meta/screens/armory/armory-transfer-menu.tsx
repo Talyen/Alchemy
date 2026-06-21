@@ -2,7 +2,12 @@ import { useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { characters, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-import type { TransferMenuState } from "./armory-targeting-state";
+
+export type TransferMenuState = {
+  instanceId: string;
+  sourceCharacterId: CharacterId;
+  anchor: { x: number; y: number };
+};
 
 export function ArmoryTransferMenu({
   transferMenu,
@@ -19,7 +24,6 @@ export function ArmoryTransferMenu({
 
   const handleClick = useCallback(
     (targetId: CharacterId) => {
-      if (!transferMenu) return;
       onTransferGear(transferMenu.instanceId, targetId);
       onClose();
     },
@@ -27,7 +31,6 @@ export function ArmoryTransferMenu({
   );
 
   useEffect(() => {
-    if (!transferMenu) return;
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         onClose();
@@ -50,7 +53,6 @@ export function ArmoryTransferMenu({
     };
   }, [transferMenu, onClose]);
 
-  if (!transferMenu) return null;
   const { sourceCharacterId, anchor } = transferMenu;
 
   const recipients = (Object.keys(characters) as CharacterId[])

@@ -4,7 +4,10 @@ import type { CharacterId } from "@/lib/game-data";
 import {
   flattenGearInventories,
   generateDevRandomGearInstance,
+  type BoardItemRef,
+  type CraftingCurrencyBoardPositionsByCharacter,
   type CraftingCurrencyId,
+  type GearBoardPositionsByCharacter,
   type GearInventories,
   type GearInstance,
   type GearLoadouts,
@@ -26,6 +29,8 @@ import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils/dev-mode";
 export type ArmoryController = {
   inventories: GearInventories;
   loadouts: GearLoadouts;
+  gearBoardPositionsByCharacter: GearBoardPositionsByCharacter;
+  currencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   finishedRunCharacters: CharacterId[];
   browseOnly: boolean;
@@ -40,6 +45,7 @@ export type ArmoryController = {
   onSalvage: (instanceId: string) => boolean;
   onTransferGear: (instanceId: string, targetCharacterId: CharacterId) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
+  onMoveBoardItem: (characterId: CharacterId, item: BoardItemRef, col: number, row: number) => void;
   onSpawnDevGear?: (characterId: CharacterId) => void;
   onSortBoard: (characterId: CharacterId) => void;
 };
@@ -50,6 +56,8 @@ export function useArmoryController(): ArmoryController {
     useShallow((s) => ({
       inventories: s.inventories,
       loadouts: s.loadouts,
+      gearBoardPositionsByCharacter: s.boardPositionsByCharacter,
+      currencyBoardPositionsByCharacter: s.currencyBoardPositionsByCharacter,
       craftingCurrencies: s.craftingCurrencies,
       equip: s.equip,
       unequip: s.unequip,
@@ -57,6 +65,7 @@ export function useArmoryController(): ArmoryController {
       addInstance: s.addInstance,
       applyCurrency: s.applyCurrency,
       transferToInventory: s.transferToInventory,
+      moveBoardItem: s.moveBoardItem,
       sortBoard: s.sortBoard,
     })),
   );
@@ -75,7 +84,7 @@ export function useArmoryController(): ArmoryController {
       if (hasActiveBattle) return;
       const loadoutsBefore = gear.loadouts;
       gear.equip(characterId, slot, instance, options);
-      if (hasActiveRun && !hasActiveBattle && characterId === activeRunCharacterId) {
+      if (hasActiveRun && characterId === activeRunCharacterId) {
         syncRunMaxHealthFromGear(
           characterId,
           flattenGearInventories(useGearStore.getState().inventories),
@@ -93,7 +102,7 @@ export function useArmoryController(): ArmoryController {
       if (hasActiveBattle) return;
       const loadoutsBefore = gear.loadouts;
       gear.unequip(characterId, slot);
-      if (hasActiveRun && !hasActiveBattle && characterId === activeRunCharacterId) {
+      if (hasActiveRun && characterId === activeRunCharacterId) {
         syncRunMaxHealthFromGear(
           characterId,
           flattenGearInventories(useGearStore.getState().inventories),
@@ -158,6 +167,14 @@ export function useArmoryController(): ArmoryController {
     [gear, hasActiveBattle, flush],
   );
 
+  const onMoveBoardItem = useCallback<ArmoryController["onMoveBoardItem"]>(
+    (characterId, item, col, row) => {
+      if (hasActiveBattle) return;
+      gear.moveBoardItem(characterId, item, col, row);
+    },
+    [gear, hasActiveBattle],
+  );
+
   const onApplyCurrency = useCallback<ArmoryController["onApplyCurrency"]>(
     (currencyId, instanceId) => {
       if (hasActiveBattle) return false;
@@ -193,6 +210,8 @@ export function useArmoryController(): ArmoryController {
   const controller: ArmoryController = {
     inventories: gear.inventories,
     loadouts: gear.loadouts,
+    gearBoardPositionsByCharacter: gear.gearBoardPositionsByCharacter,
+    currencyBoardPositionsByCharacter: gear.currencyBoardPositionsByCharacter,
     craftingCurrencies: gear.craftingCurrencies,
     finishedRunCharacters,
     browseOnly: hasActiveBattle,
@@ -202,6 +221,7 @@ export function useArmoryController(): ArmoryController {
     onSalvage,
     onTransferGear,
     onApplyCurrency,
+    onMoveBoardItem,
     onSortBoard,
   };
   if (isAlchemyDevBuild()) controller.onSpawnDevGear = onSpawnDevGear;

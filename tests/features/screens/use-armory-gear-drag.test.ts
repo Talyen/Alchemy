@@ -78,6 +78,7 @@ describe("useArmoryGearDrag double click equipping", () => {
         loadout,
         inventoryById,
         packedInventory: { items: [], occupiedRows: 0 },
+        packedCurrencies: [],
         inventoryBoardRef: { current: null },
         boardObstacles: [],
         onEquip,
@@ -167,6 +168,7 @@ describe("useArmoryGearDrag double click equipping", () => {
         loadout,
         inventoryById,
         packedInventory: { items: [], occupiedRows: 0 },
+        packedCurrencies: [],
         inventoryBoardRef: { current: null },
         boardObstacles: [],
         onEquip,
@@ -340,6 +342,7 @@ describe("useArmoryGearDrag multi-item unequip animations", () => {
         loadout,
         inventoryById,
         packedInventory: { items: [], occupiedRows: 0 },
+        packedCurrencies: [],
         inventoryBoardRef,
         boardObstacles: [],
         onEquip,
@@ -504,6 +507,7 @@ describe("useArmoryGearDrag multi-item unequip animations", () => {
         loadout,
         inventoryById,
         packedInventory: { items: [], occupiedRows: 0 },
+        packedCurrencies: [],
         inventoryBoardRef,
         boardObstacles: [],
         onEquip,
@@ -537,7 +541,7 @@ describe("useArmoryGearDrag multi-item unequip animations", () => {
   });
 });
 
-describe("useArmoryGearDrag carry mechanism", () => {
+describe("useArmoryGearDrag held gear", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
@@ -547,7 +551,7 @@ describe("useArmoryGearDrag carry mechanism", () => {
     vi.useRealTimers();
   });
 
-  it("exposes startCarry and sets carriedInstance/dragVisual when called", () => {
+  it("exposes beginHeldGear and uses the shared drag visual", () => {
     const dagger: GearInstance = {
       instanceId: "dagger-1",
       definitionId: "dagger-basic",
@@ -626,6 +630,7 @@ describe("useArmoryGearDrag carry mechanism", () => {
         },
         inventoryById,
         packedInventory: { items: [], occupiedRows: 0 },
+        packedCurrencies: [],
         inventoryBoardRef: { current: board },
         boardObstacles: [],
         onEquip: vi.fn(),
@@ -634,28 +639,125 @@ describe("useArmoryGearDrag carry mechanism", () => {
       }),
     );
 
-    expect(result.current.startCarry).toBeDefined();
-    expect(result.current.startCarryCurrency).toBeDefined();
-    expect(result.current.carriedInstance).toBeNull();
-    expect(result.current.carriedVisual).toBeNull();
-    expect(result.current.carriedCurrencyId).toBeNull();
+    expect(result.current.beginHeldGear).toBeDefined();
+    expect(result.current.dragVisual).toBeNull();
 
     act(() => {
-      result.current.startCarry(dagger, { left: 100, top: 100, width: 48, height: 48 });
+      result.current.beginHeldGear(
+        { instance: dagger, origin: { kind: "inventory", placement: { col: 1, row: 1 } } },
+        { left: 100, top: 100, width: 48, height: 48 },
+      );
     });
 
-    expect(result.current.carriedInstance?.instanceId).toBe("dagger-1");
-    expect(result.current.carriedVisual).not.toBeNull();
     expect(result.current.dragVisual).not.toBeNull();
     expect(result.current.dragVisual?.instance?.instanceId).toBe("dagger-1");
-    expect(result.current.isAnimating).toBe(true);
     expect(result.current.isDraggingActive).toBe(true);
 
     act(() => {
-      result.current.clearCarry();
+      result.current.clearDragState();
     });
 
-    expect(result.current.carriedInstance).toBeNull();
-    expect(result.current.carriedVisual).toBeNull();
+    expect(result.current.dragVisual).toBeNull();
+  });
+
+  it("cancels held gear without moving it when the armory becomes non-editable", () => {
+    const dagger: GearInstance = {
+      instanceId: "dagger-1",
+      definitionId: "dagger-basic",
+      affixes: [],
+    };
+    const onMoveItem = vi.fn();
+    const inventoryById = new Map<string, GearInstance>([["dagger-1", dagger]]);
+
+    const { result, rerender } = renderHook(
+      ({ editable }) =>
+        useArmoryGearDrag({
+          characterId: "knight",
+          editable,
+          loadout: {
+            "main-hand": null,
+            "off-hand": null,
+            body: null,
+            helm: null,
+            boots: null,
+            gloves: null,
+            belt: null,
+            "left-ring": null,
+            "right-ring": null,
+            amulet: null,
+          },
+          inventoryById,
+          packedInventory: { items: [], occupiedRows: 0 },
+          packedCurrencies: [],
+          inventoryBoardRef: { current: null },
+          boardObstacles: [],
+          onEquip: vi.fn(),
+          onUnequip: vi.fn(),
+          onMoveItem,
+        }),
+      { initialProps: { editable: true } },
+    );
+
+    act(() => {
+      result.current.beginHeldGear(
+        { instance: dagger, origin: { kind: "inventory", placement: { col: 1, row: 1 } } },
+        { left: 100, top: 100, width: 48, height: 48 },
+      );
+    });
+
+    rerender({ editable: false });
+    document.dispatchEvent(new MouseEvent("pointerdown", { clientX: 10, clientY: 10, bubbles: true }));
+
+    expect(result.current.dragVisual).toBeNull();
+    expect(onMoveItem).not.toHaveBeenCalled();
+  });
+
+  it("removes held gear listeners on unmount without moving it", () => {
+    const dagger: GearInstance = {
+      instanceId: "dagger-1",
+      definitionId: "dagger-basic",
+      affixes: [],
+    };
+    const onMoveItem = vi.fn();
+    const inventoryById = new Map<string, GearInstance>([["dagger-1", dagger]]);
+
+    const { result, unmount } = renderHook(() =>
+      useArmoryGearDrag({
+        characterId: "knight",
+        editable: true,
+        loadout: {
+          "main-hand": null,
+          "off-hand": null,
+          body: null,
+          helm: null,
+          boots: null,
+          gloves: null,
+          belt: null,
+          "left-ring": null,
+          "right-ring": null,
+          amulet: null,
+        },
+        inventoryById,
+        packedInventory: { items: [], occupiedRows: 0 },
+        packedCurrencies: [],
+        inventoryBoardRef: { current: null },
+        boardObstacles: [],
+        onEquip: vi.fn(),
+        onUnequip: vi.fn(),
+        onMoveItem,
+      }),
+    );
+
+    act(() => {
+      result.current.beginHeldGear(
+        { instance: dagger, origin: { kind: "inventory", placement: { col: 1, row: 1 } } },
+        { left: 100, top: 100, width: 48, height: 48 },
+      );
+    });
+
+    unmount();
+    document.dispatchEvent(new MouseEvent("pointerdown", { clientX: 10, clientY: 10, bubbles: true }));
+
+    expect(onMoveItem).not.toHaveBeenCalled();
   });
 });

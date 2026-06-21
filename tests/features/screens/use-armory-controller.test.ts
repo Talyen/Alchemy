@@ -34,4 +34,19 @@ describe("useArmoryController", () => {
 
     expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
   });
+
+  it("moves board items through the controller facade", () => {
+    const helm: GearInstance = { instanceId: "helm-a", definitionId: "leather-helm-basic", affixes: [] };
+    const inventories = createEmptyGearInventories();
+    inventories.knight = [helm];
+    useGearStore.getState().initialize(inventories, useGearStore.getState().loadouts);
+
+    const { result } = renderHook(() => useArmoryController());
+
+    act(() => {
+      result.current.onMoveBoardItem("knight", { kind: "gear", id: helm.instanceId }, 2, 1);
+    });
+
+    expect(useGearStore.getState().boardPositionsByCharacter.knight[helm.instanceId]).toEqual({ col: 2, row: 1 });
+  });
 });

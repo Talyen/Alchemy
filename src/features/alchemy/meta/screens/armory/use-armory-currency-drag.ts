@@ -1,4 +1,4 @@
-import { useCallback, type RefObject } from "react";
+import { useCallback, useEffect, type RefObject } from "react";
 import {
   type CraftingCurrencyId,
   type GearInstance,
@@ -12,7 +12,7 @@ import { useBoardDrag, type DragDestination, type DragRect } from "./use-board-d
 const CURRENCY_FOOTPRINT = { w: 1, h: 1 };
 
 export type CarriableItem =
-  | { kind: "gear"; instance: GearInstance }
+  | { kind: "gear"; instance: GearInstance; origin: CurrencyDragOrigin }
   | { kind: "currency"; currencyId: CraftingCurrencyId };
 
 export type CurrencyDragOrigin = { kind: "inventory"; placement: InventoryPlacement };
@@ -81,13 +81,30 @@ export function useArmoryCurrencyDrag({
       const occupantInstance = occupant ? inventoryById.get(occupant.item.instanceId) : undefined;
       const occupantCurrency = packedCurrencies.find((c) => c.col === col && c.row === row);
       onMoveCurrency(id, col, row);
-      if (occupantInstance && onSwapWithItem) {
-        onSwapWithItem({ kind: "gear", instance: occupantInstance }, destination.rect);
+      if (occupant && occupantInstance && onSwapWithItem) {
+        onSwapWithItem(
+          {
+            kind: "gear",
+            instance: occupantInstance,
+            origin: { kind: "inventory", placement: { col: occupant.col, row: occupant.row } },
+          },
+          destination.rect,
+        );
       } else if (occupantCurrency && onSwapWithItem) {
-        onSwapWithItem({ kind: "currency", currencyId: occupantCurrency.currencyId }, destination.rect);
+        return {
+          heldItem: {
+            item: {
+              id: occupantCurrency.currencyId,
+              origin: { kind: "inventory", placement: { col: occupantCurrency.col, row: occupantCurrency.row } },
+            },
+            source: destination.rect,
+          },
+        };
       }
+      return undefined;
     },
   });
+  const fsmClearDragState = fsm.clearDragState;
 
   // Derive draggedCurrencyId from the FSM's dragVisual — only true once the drag actually
   // activates (after pointer moves past activation distance), preventing the source tile from
@@ -121,12 +138,24 @@ export function useArmoryCurrencyDrag({
     [fsm],
   );
 
+  const beginHeldCurrency = useCallback(
+    (currencyId: CraftingCurrencyId, origin: CurrencyDragOrigin, source: DragRect) => {
+      if (!editable) return;
+      fsm.beginHeld({ id: currencyId, origin }, source);
+    },
+    [editable, fsm],
+  );
+
   const finishCurrencyPointer = useCallback(
     (pointer: { x: number; y: number }, pointerId: number, cancelled = false) => {
       fsm.finishPointer(pointer, pointerId, cancelled);
     },
     [fsm],
   );
+
+  useEffect(() => {
+    if (!editable) fsmClearDragState();
+  }, [editable, fsmClearDragState]);
 
   const dragVisual: CurrencyDragVisual | null = fsm.dragVisual
     ? {
@@ -150,6 +179,7 @@ export function useArmoryCurrencyDrag({
     beginCurrencyPointer,
     moveCurrencyPointer,
     finishCurrencyPointer,
-    clearDragState: fsm.clearDragState,
+    beginHeldCurrency,
+    clearDragState: fsmClearDragState,
   };
 }

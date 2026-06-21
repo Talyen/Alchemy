@@ -229,7 +229,7 @@ export const InventoryPanel = memo(function InventoryPanel({
               <CraftingCurrencyTile
                 key={placement.currencyId}
                 currencyId={placement.currencyId}
-                count={craftingCurrencies[placement.currencyId] ?? 0}
+                count={craftingCurrencies[placement.currencyId]}
                 placement={placement}
                 editable={editable}
                 dragging={draggedCurrencyId === placement.currencyId}

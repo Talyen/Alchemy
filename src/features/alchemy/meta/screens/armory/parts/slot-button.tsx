@@ -1,13 +1,10 @@
 import { memo, useEffect, useRef, useState, type FocusEvent } from "react";
-import { createPortal } from "react-dom";
 import { gearDefinitions, type GearInstance, type GearLoadout, type GearSlot } from "@/lib/gear";
 import { gearSlotBackgroundArt } from "@/lib/game-data";
 import { canApplyCraftingCurrency, isGearCompatibleWithLoadoutSlot, type CraftingCurrencyId } from "@/lib/gear";
 import { playUISound } from "@/lib/audio";
 import { cn } from "@/lib/utils";
-import { TooltipPanel } from "../../../../shared/ui/tooltip-panel";
-import { GearTooltipContent, ARMORY_TOOLTIP_WIDTH } from "../gear-tooltip-content";
-import { useArmoryPortaledTooltipPlacement } from "../armory-tooltip-placement";
+import { GearTooltipPortal } from "../gear-tooltip-portal";
 import { SLOT_LABELS } from "./grid-styles";
 import {
   SALVAGE_TARGET_RING,
@@ -62,7 +59,6 @@ export const SlotButton = memo(function SlotButton({
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(containerRef, showTooltip);
   const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
 
   useEffect(() => {
@@ -197,21 +193,14 @@ export const SlotButton = memo(function SlotButton({
           )}
         />
       )}
-      {showTooltip && definition && !isDraggingActive
-        ? createPortal(
-            <TooltipPanel
-              ref={tooltipRef}
-              width={ARMORY_TOOLTIP_WIDTH}
-              visible
-              flip={placeBelow}
-              className="armory-inventory-tooltip pointer-events-none fixed bottom-auto top-auto z-[100] mb-0 mt-0 !shadow-none"
-              style={tooltipStyle}
-            >
-              <GearTooltipContent definition={definition} {...(instance ? { instance } : {})} />
-            </TooltipPanel>,
-            document.body,
-          )
-        : null}
+      {definition ? (
+        <GearTooltipPortal
+          triggerRef={containerRef}
+          visible={showTooltip && !isDraggingActive}
+          definition={definition}
+          {...(instance ? { instance } : {})}
+        />
+      ) : null}
     </div>
   );
 });

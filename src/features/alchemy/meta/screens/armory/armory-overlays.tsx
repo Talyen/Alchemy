@@ -5,12 +5,10 @@ import { ConfirmationDialog } from "../../../shared/ui/shared-ui";
 import { GearItemTitle } from "../../../shared/ui/gear-item-title";
 import { DragVisualPortal } from "./armory-drag-visual-portal";
 import { ArmoryCurrencyCursor } from "./armory-currency-targeting";
-import { ArmoryTransferMenu } from "./armory-transfer-menu";
+import { ArmoryTransferMenu, type TransferMenuState } from "./armory-transfer-menu";
 import { playUISound } from "@/lib/audio";
-import type { DragRect } from "./use-board-drag";
 import type { GearDragVisual } from "./use-armory-gear-drag";
 import type { CurrencyDragVisual } from "./use-armory-currency-drag";
-import type { TransferMenuState } from "./armory-targeting-state";
 
 type Props = {
   salvageTarget: GearInstance | null;
@@ -19,12 +17,10 @@ type Props = {
   secondaryDragVisuals: GearDragVisual[];
   activeCurrencyId: CraftingCurrencyId | null;
   cursorPoint: { x: number; y: number } | null;
-  transferMenu: TransferMenuState;
+  transferMenu: TransferMenuState | null;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   finishedRunCharacters: CharacterId[];
   editable: boolean;
-  carriedCurrencyId: CraftingCurrencyId | null;
-  carriedCurrencyVisual: DragRect | null;
   onSalvage: (instanceId: string) => boolean;
   onTransferGear: (instanceId: string, targetCharacterId: CharacterId) => boolean;
   onClearSalvageTarget: () => void;
@@ -45,8 +41,6 @@ export function ArmoryOverlays({
   craftingCurrencies,
   finishedRunCharacters,
   editable,
-  carriedCurrencyId,
-  carriedCurrencyVisual,
   onSalvage,
   onTransferGear,
   onClearSalvageTarget,
@@ -100,7 +94,7 @@ export function ArmoryOverlays({
               className="h-full w-full object-cover"
             />
             <span className="absolute top-1 left-1 text-xs font-bold leading-none text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-              {craftingCurrencies[currencyDragVisual.currencyId] ?? 0}
+              {craftingCurrencies[currencyDragVisual.currencyId]}
             </span>
           </div>
         </DragVisualPortal>
@@ -133,20 +127,6 @@ export function ArmoryOverlays({
           </DragVisualPortal>
         ) : null;
       })}
-      {carriedCurrencyId && carriedCurrencyVisual ? (
-        <DragVisualPortal
-          visual={{ source: carriedCurrencyVisual, rect: carriedCurrencyVisual }}
-          testId="armory-currency-carry-visual"
-          className="bg-background/60"
-          onComplete={() => {}}
-        >
-          <img
-            src={getCraftingCurrencyDefinition(carriedCurrencyId).art}
-            alt=""
-            className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated"
-          />
-        </DragVisualPortal>
-      ) : null}
       <ArmoryCurrencyCursor activeCurrencyId={activeCurrencyId} cursorPoint={cursorPoint} />
       {transferMenu ? (
         <ArmoryTransferMenu

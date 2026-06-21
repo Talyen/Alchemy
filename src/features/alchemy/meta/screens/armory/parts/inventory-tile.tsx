@@ -1,5 +1,4 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   canApplyCraftingCurrency,
   canSalvageGear,
@@ -11,9 +10,7 @@ import {
 } from "@/lib/gear";
 import { playUISound } from "@/lib/audio";
 import { cn } from "@/lib/utils";
-import { TooltipPanel } from "../../../../shared/ui/tooltip-panel";
-import { GearTooltipContent, ARMORY_TOOLTIP_WIDTH } from "../gear-tooltip-content";
-import { useArmoryPortaledTooltipPlacement } from "../armory-tooltip-placement";
+import { GearTooltipPortal } from "../gear-tooltip-portal";
 import { packedItemStyle } from "./grid-styles";
 import {
   SALVAGE_TARGET_RING,
@@ -122,8 +119,6 @@ export const InventoryGearTile = memo(function InventoryGearTile({
       closeTooltip();
     }
   }, [closeTooltip, dragCooldown, hasActiveDrag, openTooltip, shouldSuppressClick]);
-
-  const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(tileRef, showTooltip);
 
   const handleMouseEnter = () => {
     if (!shouldSuppressClick()) {
@@ -262,21 +257,7 @@ export const InventoryGearTile = memo(function InventoryGearTile({
         />
       )}
       {flash ? <div className="absolute inset-0 pointer-events-none rounded-xl craft-flash-overlay z-30" /> : null}
-      {showTooltip
-        ? createPortal(
-            <TooltipPanel
-              ref={tooltipRef}
-              width={ARMORY_TOOLTIP_WIDTH}
-              visible
-              flip={placeBelow}
-              className="armory-inventory-tooltip pointer-events-none fixed bottom-auto top-auto z-[100] mb-0 mt-0 !shadow-none"
-              style={tooltipStyle}
-            >
-              <GearTooltipContent definition={definition} instance={instance} />
-            </TooltipPanel>,
-            document.body,
-          )
-        : null}
+      <GearTooltipPortal triggerRef={tileRef} visible={showTooltip} definition={definition} instance={instance} />
     </div>
   );
 });
