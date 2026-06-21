@@ -275,6 +275,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(e2e): correct destination and labyrinth test navigation timing
 - fix: revert incorrect cardPlayInProgressRef change in battle test
 - fix: resolve pre-existing typecheck and E2E test errors
 - fix(e2e): add missing test imports and fix reward-flow setup
