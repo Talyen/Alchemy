@@ -138,37 +138,3 @@ export async function pointerDragToInventory(
   await page.mouse.up();
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 }
-
-async function expectItemAtCell(
-  _page: Page,
-  board: Locator,
-  itemLocator: Locator,
-  col: number,
-  row: number,
-  widthCells: number,
-  heightCells: number,
-  tolerance = 2,
-) {
-  const itemBox = await itemLocator.boundingBox();
-  expect(itemBox).not.toBeNull();
-  const metrics = await board.evaluate((element) => {
-    const boardRect = element.getBoundingClientRect();
-    const cell = element.querySelector<HTMLElement>("[data-armory-grid-metric='cell']")!.getBoundingClientRect();
-    const stride = element.querySelector<HTMLElement>("[data-armory-grid-metric='stride']")!.getBoundingClientRect();
-    return {
-      left: boardRect.left,
-      top: boardRect.top,
-      cellSize: cell.width,
-      gap: stride.left - cell.left - cell.width,
-      stride: stride.left - cell.left,
-    };
-  });
-  const expectedLeft = metrics.left + (col - 1) * metrics.stride;
-  const expectedTop = metrics.top + (row - 1) * metrics.stride;
-  const expectedWidth = widthCells * metrics.cellSize + (widthCells - 1) * metrics.gap;
-  const expectedHeight = heightCells * metrics.cellSize + (heightCells - 1) * metrics.gap;
-  expect(Math.abs(itemBox!.x - expectedLeft)).toBeLessThanOrEqual(tolerance);
-  expect(Math.abs(itemBox!.y - expectedTop)).toBeLessThanOrEqual(tolerance);
-  expect(Math.abs(itemBox!.width - expectedWidth)).toBeLessThanOrEqual(tolerance);
-  expect(Math.abs(itemBox!.height - expectedHeight)).toBeLessThanOrEqual(tolerance);
-}
