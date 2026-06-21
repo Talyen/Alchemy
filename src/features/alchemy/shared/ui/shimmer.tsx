@@ -23,10 +23,7 @@ export function ShimmerOverlay({
         active ? "card-shimmer-active" : "",
       )}
     >
-      <div
-        key={active ? token : undefined}
-        className={cn("card-shimmer-sweep", active ? "opacity-100" : "opacity-0")}
-      />
+      <div key={active ? token : undefined} className="card-shimmer-sweep" />
     </div>
   );
 }

@@ -217,7 +217,7 @@ function ActorArtFrame({
         cardSurfaceClass,
         cardWidthClass ?? battleCardWidthClass,
         sparksOverflow && "overflow-visible",
-        isDead && "overflow-visible animate-frame-fade surface-transparent",
+        isDead && "overflow-visible animate-frame-fade !bg-transparent",
       )}
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
@@ -259,7 +259,7 @@ function ActorStatsPanel({
         "surface-muted rounded-shell-inner px-4 py-3 relative",
         cardWidthClass,
         deathsDoorActive && "shadow-deaths-door-glow",
-        isDead && "animate-frame-fade surface-transparent",
+        isDead && "animate-frame-fade !bg-transparent",
       )}
     >
       {deathsDoorActive ? <StatsDeathDoorBorder /> : null}

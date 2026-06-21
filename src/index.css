@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@plugin "tailwindcss-animate";
 
 @theme {
   --color-background: hsl(var(--background));
@@ -84,11 +83,11 @@
 
   * {
     border-color: hsl(var(--border));
+    scrollbar-width: none;
   }
 
   html {
     font-size: calc(16px * var(--alchemy-ui-scale, 1));
-    scrollbar-width: none;
   }
 
   *::-webkit-scrollbar {
@@ -108,7 +107,6 @@
     font-family: var(--font-sans);
     color: hsl(40 25% 88%);
     overflow: hidden;
-    scrollbar-width: none;
     user-select: none;
   }
 
@@ -234,10 +232,6 @@
 
   .animate-frame-fade {
     animation: frameFade 900ms ease-out forwards;
-  }
-
-  .surface-transparent {
-    background: transparent !important;
   }
 
   @keyframes frameFade {
