@@ -1,4 +1,16 @@
 // Talent definitions for keyword: bleed.
+import {
+  Swords,
+  Slash,
+  HeartPulse,
+  Bone,
+  Bandage,
+  Skull,
+  HeartCrack,
+  FlaskConical,
+  TriangleAlert,
+  Scissors,
+} from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -8,6 +20,7 @@ export const bleedTalents: TalentDefinition[] = [
     keywordId: "bleed",
     name: "First Blood",
     description: "Your first Bleed card each combat is free",
+    icon: Swords,
     effects: [setEffect("firstBleedCardFree", true)],
   },
   {
@@ -15,6 +28,7 @@ export const bleedTalents: TalentDefinition[] = [
     keywordId: "bleed",
     name: "Open Wound",
     description: "Bleeding enemies take +1 Physical damage",
+    icon: Slash,
     effects: [setEffect("bleedPhysicalBonus", 1)],
   },
   {
@@ -22,6 +36,7 @@ export const bleedTalents: TalentDefinition[] = [
     keywordId: "bleed",
     name: "Sanguine",
     description: "Bleed has a 15% chance to Leech",
+    icon: HeartPulse,
     effects: [setEffect("bleedLeechChance", 15)],
   },
   {
@@ -29,6 +44,7 @@ export const bleedTalents: TalentDefinition[] = [
     keywordId: "bleed",
     name: "Mortal Wound",
     description: "Bleed reduces enemy healing by half",
+    icon: Bone,
     effects: [setEffect("bleedHalvesEnemyHealing", true)],
   },
   {
@@ -36,6 +52,7 @@ export const bleedTalents: TalentDefinition[] = [
     keywordId: "bleed",
     name: "Wound Care",
     description: "Receive half Bleed damage",
+    icon: Bandage,
     effects: [setEffect("receiveHalfBleedDamage", true)],
   },
   {
@@ -43,6 +60,7 @@ export const bleedTalents: TalentDefinition[] = [
     keywordId: "bleed",
     name: "Exsanguinate",
     description: "Bleed deals double damage against enemies below 30% Health",
+    icon: Skull,
     effects: [setEffect("bleedExecuteThreshold", 30)],
   },
   {
@@ -50,6 +68,7 @@ export const bleedTalents: TalentDefinition[] = [
     keywordId: "bleed",
     name: "Bleeding Out",
     description: "You deal double Bleed damage while below 50% Health",
+    icon: HeartCrack,
     effects: [setEffect("bleedDesperateMultiplier", 2)],
   },
   {
@@ -57,6 +76,7 @@ export const bleedTalents: TalentDefinition[] = [
     keywordId: "bleed",
     name: "Tainted Wound",
     description: "Bleed has a 10% chance to Poison",
+    icon: FlaskConical,
     effects: [setEffect("bleedPoisonChance", 10)],
   },
   {
@@ -64,6 +84,7 @@ export const bleedTalents: TalentDefinition[] = [
     keywordId: "bleed",
     name: "Septic Shock",
     description: "Bleed increases Poison damage taken by 1",
+    icon: TriangleAlert,
     effects: [setEffect("bleedPoisonDamageTakenBonus", 1)],
   },
   {
@@ -71,6 +92,7 @@ export const bleedTalents: TalentDefinition[] = [
     keywordId: "bleed",
     name: "Rip and Tear",
     description: "Companion Bleed damage is increased by 1",
+    icon: Scissors,
     effects: [addEffect("companionBleedDamageBonus", 1)],
   },
 

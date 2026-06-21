@@ -1,4 +1,16 @@
 // Talent definitions for keyword: physical.
+import {
+  Anvil,
+  HandFist,
+  Hammer,
+  Skull,
+  Split,
+  Scissors,
+  Droplets,
+  ChevronsUp,
+  ShieldCheck,
+  Shield,
+} from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -8,6 +20,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Expert Blacksmith",
     description: "Physical damage bonus from Forge is increased by 50%",
+    icon: Anvil,
     effects: [setEffect("forgeToPhysicalDamageMultiplier", 1.5)],
   },
   {
@@ -15,6 +28,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Shield Bash",
     description: "Physical damage is increased by 30% of your Block",
+    icon: Shield,
     effects: [setEffect("blockToPhysicalDamageMultiplier", 0.3)],
   },
   {
@@ -22,6 +36,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Armored Fists",
     description: "Physical damage is increased by your Armor",
+    icon: HandFist,
     effects: [setEffect("armorToPhysicalDamage", true)],
   },
   {
@@ -29,6 +44,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Heavy Blows",
     description: "Physical damage has a 10% chance to Stun",
+    icon: Hammer,
     effects: [setEffect("physicalStunChance", 10)],
   },
   {
@@ -36,6 +52,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Finish Him",
     description: "Physical damage is doubled against Stunned enemies",
+    icon: Skull,
     effects: [setEffect("physicalDoubledVsStunned", true)],
   },
   {
@@ -43,6 +60,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Shatter",
     description: "Physical damage is doubled against Frozen enemies",
+    icon: Split,
     effects: [setEffect("physicalDoubledVsFrozen", true)],
   },
   {
@@ -50,6 +68,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Lacerate",
     description: "Physical damage has a 10% chance to Bleed",
+    icon: Scissors,
     effects: [setEffect("physicalBleedChance", 10)],
   },
   {
@@ -57,6 +76,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Hemorrhage",
     description: "Physical damage detonates Bleed",
+    icon: Droplets,
     effects: [setEffect("physicalDetonatesBleed", true)],
   },
   {
@@ -64,6 +84,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Brute Force",
     description: "Increase Physical damage by 1",
+    icon: ChevronsUp,
     effects: [addEffect("flatPhysicalDamage", 1)],
   },
   {
@@ -71,6 +92,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Unrelenting",
     description: "You deal double Physical damage while below 50% Health",
+    icon: ShieldCheck,
     effects: [setEffect("physicalDoubledBelowHalfHealth", true)],
   },
 

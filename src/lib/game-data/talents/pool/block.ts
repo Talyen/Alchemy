@@ -1,4 +1,5 @@
 // Talent definitions for keyword: block.
+import { Wind, ShieldCheck, Sun, Zap, Anchor, Weight, Flame, ChevronsUp, Droplets, FlaskConical } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { setEffect } from "../types";
 
@@ -8,6 +9,7 @@ export const blockTalents: TalentDefinition[] = [
     keywordId: "block",
     name: "Second Wind",
     description: "When Block is depleted, restore 2 Health",
+    icon: Wind,
     effects: [setEffect("blockDepletedHeal", 2)],
   },
   {
@@ -15,6 +17,7 @@ export const blockTalents: TalentDefinition[] = [
     keywordId: "block",
     name: "Reinforce",
     description: "Block absorbs 20% more Physical damage",
+    icon: ShieldCheck,
     effects: [setEffect("blockAbsorbPhysicalBonus", 20)],
   },
   {
@@ -22,6 +25,7 @@ export const blockTalents: TalentDefinition[] = [
     keywordId: "block",
     name: "Sacred Shield",
     description: "Increase Holy damage by half your Block",
+    icon: Sun,
     effects: [setEffect("blockToHolyDamage", true)],
   },
   {
@@ -29,6 +33,7 @@ export const blockTalents: TalentDefinition[] = [
     keywordId: "block",
     name: "Impact Guard",
     description: "Stun damage is increased by 30% of your Block",
+    icon: Zap,
     effects: [setEffect("blockToStunDamage", true)],
   },
   {
@@ -36,6 +41,7 @@ export const blockTalents: TalentDefinition[] = [
     keywordId: "block",
     name: "Grounding",
     description: "Block prevents receiving Stun buildup",
+    icon: Anchor,
     effects: [setEffect("blockPreventsStun", true)],
   },
   {
@@ -43,6 +49,7 @@ export const blockTalents: TalentDefinition[] = [
     keywordId: "block",
     name: "Weighted Guard",
     description: "Physical damage is increased by 30% of your Block",
+    icon: Weight,
     effects: [setEffect("blockToPhysicalDamageMultiplier", 0.3)],
   },
   {
@@ -50,6 +57,7 @@ export const blockTalents: TalentDefinition[] = [
     keywordId: "block",
     name: "Fireproof",
     description: "Block reduces Burn damage by 1",
+    icon: Flame,
     effects: [setEffect("blockReduceBurnDamage", 1)],
   },
   {
@@ -57,6 +65,7 @@ export const blockTalents: TalentDefinition[] = [
     keywordId: "block",
     name: "Fortify",
     description: "Start each combat with 5 Block",
+    icon: ChevronsUp,
     effects: [setEffect("startBlock", 5)],
   },
   {
@@ -64,6 +73,7 @@ export const blockTalents: TalentDefinition[] = [
     keywordId: "block",
     name: "Coagulate",
     description: "Block prevents receiving Bleed status effects",
+    icon: Droplets,
     effects: [setEffect("blockPreventsBleed", true)],
   },
   {
@@ -71,6 +81,7 @@ export const blockTalents: TalentDefinition[] = [
     keywordId: "block",
     name: "Detoxify",
     description: "Block prevents receiving Poison status effects",
+    icon: FlaskConical,
     effects: [setEffect("blockPreventsPoison", true)],
   },
 

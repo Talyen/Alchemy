@@ -1,4 +1,16 @@
 // Talent definitions for keyword: forge.
+import {
+  Flame,
+  Sun,
+  Shield,
+  Thermometer,
+  FlameKindling,
+  Eraser,
+  ShieldOff,
+  ChevronsUp,
+  HeartCrack,
+  Castle,
+} from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -8,6 +20,7 @@ export const forgeTalents: TalentDefinition[] = [
     keywordId: "forge",
     name: "Ignite",
     description: "Forge also increases Burn damage",
+    icon: Flame,
     effects: [setEffect("forgeToBurn", true)],
   },
   {
@@ -15,6 +28,7 @@ export const forgeTalents: TalentDefinition[] = [
     keywordId: "forge",
     name: "Sanctify",
     description: "Forge also increases Holy damage",
+    icon: Sun,
     effects: [setEffect("forgeToHoly", true)],
   },
   {
@@ -22,6 +36,7 @@ export const forgeTalents: TalentDefinition[] = [
     keywordId: "forge",
     name: "Tempered Guard",
     description: "Forge also increases Block amount",
+    icon: Shield,
     effects: [setEffect("forgeToBlock", true)],
   },
   {
@@ -29,6 +44,7 @@ export const forgeTalents: TalentDefinition[] = [
     keywordId: "forge",
     name: "Overheat",
     description: "When you reach 4 Forge, deal 8 Burn",
+    icon: Thermometer,
     effects: [setEffect("forgeBurnThreshold", 4), setEffect("forgeBurnDamage", 8)],
   },
   {
@@ -36,6 +52,7 @@ export const forgeTalents: TalentDefinition[] = [
     keywordId: "forge",
     name: "Forge Mastery",
     description: "Start each combat with 1 Forge",
+    icon: FlameKindling,
     effects: [setEffect("startForge", 1)],
   },
   {
@@ -43,6 +60,7 @@ export const forgeTalents: TalentDefinition[] = [
     keywordId: "forge",
     name: "Rust",
     description: "Forge also increases Bleed damage",
+    icon: Eraser,
     effects: [setEffect("forgeToBleed", true)],
   },
   {
@@ -50,6 +68,7 @@ export const forgeTalents: TalentDefinition[] = [
     keywordId: "forge",
     name: "Sunder",
     description: "When you reach 6 Forge, remove all enemy Armor",
+    icon: ShieldOff,
     effects: [setEffect("forgeStripArmorThreshold", 6)],
   },
   {
@@ -57,6 +76,7 @@ export const forgeTalents: TalentDefinition[] = [
     keywordId: "forge",
     name: "Intensify",
     description: "Increase Forge gained by 1",
+    icon: ChevronsUp,
     effects: [addEffect("flatForgeGained", 1)],
   },
   {
@@ -64,6 +84,7 @@ export const forgeTalents: TalentDefinition[] = [
     keywordId: "forge",
     name: "Desperate Forge",
     description: "Forge gained is doubled when Health is below 50%",
+    icon: HeartCrack,
     effects: [setEffect("forgeDoubledBelowHalfHealth", true)],
   },
   {
@@ -71,6 +92,7 @@ export const forgeTalents: TalentDefinition[] = [
     keywordId: "forge",
     name: "Forged Bulwark",
     description: "When you reach 6 Forge, gain 10 Block",
+    icon: Castle,
     effects: [setEffect("forgeBlockThreshold", 6), setEffect("forgeBlockAmount", 10)],
   },
 

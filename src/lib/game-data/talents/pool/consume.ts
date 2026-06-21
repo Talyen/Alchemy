@@ -1,4 +1,5 @@
 // Talent definitions for keyword: consume.
+import { Apple, Gift, Flame, FlaskConical, Wine } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect, placeholderTalents } from "../types";
 
@@ -8,6 +9,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Gourmand",
     description: "Consume cards heal 20% more",
+    icon: Apple,
     effects: [setEffect("consumeHealMultiplier", 0.2)],
   },
   {
@@ -15,6 +17,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Last Supper",
     description: "Your first Consume card each combat is free",
+    icon: Gift,
     effects: [setEffect("firstConsumeCardFree", true)],
   },
   {
@@ -22,6 +25,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Volatility",
     description: "Consume cards deal 20% more damage",
+    icon: Flame,
     effects: [setEffect("consumeDamageBonusPercent", 20)],
   },
   {
@@ -29,6 +33,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Distillation",
     description: "Potions are 20% more potent",
+    icon: FlaskConical,
     effects: [addEffect("potionPotency", 0.2)],
   },
   {
@@ -36,6 +41,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Brewmaster",
     description: "Mixed Potion potency is increased by 1",
+    icon: Wine,
     effects: [addEffect("potionMixPotency", 1)],
   },
   ...placeholderTalents("consume", "consume", 6, 10),

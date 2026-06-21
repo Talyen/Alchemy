@@ -14,41 +14,7 @@ import type { KeywordId } from "@/lib/game-data";
 import { TALENT_UNLOCK_ANIMATION_MS, TALENT_UNLOCK_SETTLE_MS } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
 import { TalentUnlockBurst } from "./talent-unlock-burst";
-
-interface TalentLayoutConfig {
-  radiusX: number;
-  radiusY: number;
-  rotate?: number;
-  startOffset?: number;
-}
-
-const talentLayouts: Partial<Record<KeywordId, TalentLayoutConfig>> = {
-  physical: { radiusX: 36, radiusY: 36 },
-  stun: { radiusX: 40, radiusY: 20, rotate: -23 },
-  forge: { radiusX: 42, radiusY: 28, rotate: -15 },
-  armor: { radiusX: 34, radiusY: 34 },
-  burn: { radiusX: 29, radiusY: 29 },
-  bleed: { radiusX: 27, radiusY: 33, rotate: 60, startOffset: 8 },
-  freeze: { radiusX: 30, radiusY: 30 },
-  mana: { radiusX: 46, radiusY: 22, rotate: -24 },
-  nature: { radiusX: 34, radiusY: 34 },
-  companion: { radiusX: 34, radiusY: 34 },
-  archery: { radiusX: 36, radiusY: 28, rotate: -20 },
-  consume: { radiusX: 32, radiusY: 32 },
-};
-
-const defaultLayout: TalentLayoutConfig = { radiusX: 30, radiusY: 30 };
-
-/** Node diameter as % of the square tree container; center via calc() — not transform — so backdrop-filter can sample art. */
-const TALENT_NODE_SIZE_PERCENT = 8.64;
-const TALENT_NODE_CENTER_OFFSET_PERCENT = TALENT_NODE_SIZE_PERCENT / 2;
-
-function talentNodePositionStyle(left: number, top: number): CSSProperties {
-  return {
-    left: `calc(${left}% - ${TALENT_NODE_CENTER_OFFSET_PERCENT}%)`,
-    top: `calc(${top}% - ${TALENT_NODE_CENTER_OFFSET_PERCENT}%)`,
-  };
-}
+import { computeTalentNodePositions, talentNodePositionStyle } from "./talent-positions";
 
 export interface TalentLayoutProps {
   keywordId: KeywordId;
@@ -106,7 +72,7 @@ function TalentNode({
   const def = keywordDefinitions[talent.keywordId];
   const shineColors = getKeywordShineColors(talent.keywordId);
   const baseColor = shineColors[0];
-  const Icon = keywordIcons[talent.keywordId];
+  const Icon = talent.icon ?? keywordIcons[talent.keywordId];
   const canInteract = isChoice && !isUnlocking;
 
   return (
@@ -131,6 +97,7 @@ function TalentNode({
         isUnlocking && "talent-node-unlocking",
         isSettling && "talent-node-unlocked-settle",
         !isUnlocked && !isChoice && !isUnlocking && "brightness-[0.8]",
+        "state-fade",
       )}
       style={{ "--talent-glass-accent": baseColor } as CSSProperties}
       aria-label={
@@ -167,26 +134,7 @@ export function TalentTree({
   const nodes = allTalents;
   const N = nodes.length;
 
-  const { radiusX, radiusY, rotate, startOffset } = talentLayouts[keywordId] ?? defaultLayout;
-  const rotateRad = ((rotate ?? 0) * Math.PI) / 180;
-  const cosR = Math.cos(rotateRad);
-  const sinR = Math.sin(rotateRad);
-
-  const positions = useMemo(() => {
-    if (N === 0) return [];
-    if (N === 1) return [{ left: 50, top: 50 }];
-
-    const offset = startOffset ?? 0;
-    return Array.from({ length: N }, (_, i) => {
-      const angle = -Math.PI / 2 + (2 * Math.PI * ((i + offset) % N)) / N;
-      const dx = radiusX * Math.cos(angle);
-      const dy = radiusY * Math.sin(angle);
-      return {
-        left: 50 + dx * cosR - dy * sinR,
-        top: 50 + dx * sinR + dy * cosR,
-      };
-    });
-  }, [N, radiusX, radiusY, cosR, sinR, startOffset]);
+  const positions = useMemo(() => computeTalentNodePositions(keywordId, nodes.length), [keywordId, nodes.length]);
 
   const handleUnlock = useCallback(
     async (talentId: string) => {

@@ -1,4 +1,16 @@
 // Talent definitions for keyword: health.
+import {
+  HeartCrack,
+  Shield,
+  Activity,
+  ChevronsUp,
+  TrendingUp,
+  HeartPulse,
+  Container,
+  Sparkles,
+  ShieldHalf,
+  Flame,
+} from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { setEffect } from "../types";
 
@@ -8,6 +20,7 @@ export const healthTalents: TalentDefinition[] = [
     keywordId: "health",
     name: "Last Resort",
     description: "When Health drops below 25%, gain 3 Armor",
+    icon: HeartCrack,
     effects: [setEffect("healthThresholdArmor", { threshold: 25, amount: 3 })],
   },
   {
@@ -15,6 +28,7 @@ export const healthTalents: TalentDefinition[] = [
     keywordId: "health",
     name: "Desperate Guard",
     description: "When Health drops below 50%, gain 6 Block",
+    icon: Shield,
     effects: [setEffect("healthThresholdBlock", { threshold: 50, amount: 6 })],
   },
   {
@@ -22,6 +36,7 @@ export const healthTalents: TalentDefinition[] = [
     keywordId: "health",
     name: "Will to Live",
     description: "Death's Door lasts 1 turn longer",
+    icon: Activity,
     effects: [setEffect("deathsDoorExtension", 1)],
   },
   {
@@ -29,6 +44,7 @@ export const healthTalents: TalentDefinition[] = [
     keywordId: "health",
     name: "Combat Surge",
     description: "Restore 4 Health at the start of combat",
+    icon: ChevronsUp,
     effects: [setEffect("startHealth", 4)],
   },
   {
@@ -36,6 +52,7 @@ export const healthTalents: TalentDefinition[] = [
     keywordId: "health",
     name: "Vitality",
     description: "Gain 1 Max Health after every combat",
+    icon: TrendingUp,
     effects: [setEffect("maxHealthPerCombat", 1)],
   },
   {
@@ -43,6 +60,7 @@ export const healthTalents: TalentDefinition[] = [
     keywordId: "health",
     name: "Mending",
     description: "Healing effects are 10% stronger",
+    icon: HeartPulse,
     effects: [setEffect("healMultiplier", 1.1)],
   },
   {
@@ -50,6 +68,7 @@ export const healthTalents: TalentDefinition[] = [
     keywordId: "health",
     name: "Overflow",
     description: "When you overheal, gain 50% of the excess as Block",
+    icon: Container,
     effects: [setEffect("overhealToBlockRatio", 0.5)],
   },
   {
@@ -57,6 +76,7 @@ export const healthTalents: TalentDefinition[] = [
     keywordId: "health",
     name: "Cleansing Status",
     description: "Cleansing a status restores 6 Health",
+    icon: Sparkles,
     effects: [setEffect("healOnStatusCleanse", 6)],
   },
   {
@@ -64,6 +84,7 @@ export const healthTalents: TalentDefinition[] = [
     keywordId: "health",
     name: "Thick Skin",
     description: "Reduce all damage taken by 1",
+    icon: ShieldHalf,
     effects: [setEffect("damageReduction", 1)],
   },
   {
@@ -71,6 +92,7 @@ export const healthTalents: TalentDefinition[] = [
     keywordId: "health",
     name: "Warm Rest",
     description: "Campfire heals 10% more Health",
+    icon: Flame,
     effects: [setEffect("campfireHealBonus", 0.1)],
   },
 
