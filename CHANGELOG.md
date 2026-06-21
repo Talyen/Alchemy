@@ -1380,6 +1380,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore: remove unused battle-facade, ignore tailwindcss-animate false positive
 - chore: delete unused expectItemAtCell helper
 - chore: remove unused exports across the codebase
 - chore(content-validation): remove unused exports
