@@ -5,9 +5,15 @@ import {
   inventoryPlacementRect,
   type GearFootprint,
   type InventoryPlacement,
+  type PackedInventoryItem as GearPackedItem,
 } from "@/lib/gear";
 import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
-import { INVENTORY_SNAP_RADIUS_CELLS, MAGNET_SWITCH_MARGIN_PX, MAGNET_RELEASE_HYSTERESIS_PX } from "./drag-constants";
+import {
+  HYSTERESIS_CROSS_KIND_MARGIN_PX,
+  INVENTORY_SNAP_RADIUS_CELLS,
+  MAGNET_SWITCH_MARGIN_PX,
+  MAGNET_RELEASE_HYSTERESIS_PX,
+} from "./drag-constants";
 import { type DragPoint, type DragRect } from "./use-board-drag";
 
 export type InventoryPlacementResult = {
@@ -20,17 +26,22 @@ export function placeInventoryTileFromMetrics(
   footprint: GearFootprint,
   freeRect: DragRect,
   pointerScrollOffset: { scrollTop: number } | null,
-  options: { requireProximity?: boolean; occupiedRows?: number } = {},
+  options: {
+    requireProximity?: boolean;
+    occupiedRows?: number;
+    obstacles?: GearPackedItem<{ instanceId: string }>[];
+    draggedInstanceId?: string;
+  } = {},
 ): InventoryPlacementResult {
   const metrics = readInventoryBoardMetrics(board);
   if (!metrics) return null;
   const { cellSize, gap, boardRect, scrollTop } = metrics;
-  const { requireProximity = true, occupiedRows = 0 } = options;
+  const { requireProximity = true, occupiedRows = 0, obstacles = [], draggedInstanceId = "" } = options;
   const renderedRows = Math.max(INVENTORY_VISIBLE_ROWS, occupiedRows + footprint.h);
   const localPointer = pointerScrollOffset ?? { scrollTop };
   const placement = findNearestInventoryPlacement(
-    [],
-    "",
+    obstacles,
+    draggedInstanceId,
     footprint,
     { cellSize, gap, cols: INVENTORY_COLS, rows: renderedRows },
     {
@@ -109,8 +120,18 @@ export function applyMagnetHysteresis<TDest extends { rect: DragRect; kind: stri
   if (candidate && sameDestinationIdentity(previousDestination, candidate)) {
     return { destination: candidate, switched: false };
   }
+
+  const crossKind = candidate && previousDestination.kind !== candidate.kind;
   const previousDistance = distanceBetweenRects(freeRect, previousDestination.rect);
   const candidateDistance = candidate ? distanceBetweenRects(freeRect, candidate.rect) : Number.POSITIVE_INFINITY;
+
+  if (crossKind) {
+    if (previousDistance <= candidateDistance + HYSTERESIS_CROSS_KIND_MARGIN_PX) {
+      return { destination: previousDestination, switched: true };
+    }
+    return { destination: candidate, switched: false };
+  }
+
   if (
     previousDistance <= candidateDistance + MAGNET_SWITCH_MARGIN_PX &&
     previousDistance <=
@@ -127,6 +148,9 @@ export function sameDestinationIdentity<TDest extends { kind: string }>(left: TD
     const lInv = left as unknown as { placement: { col: number; row: number } };
     const rInv = right as unknown as { placement: { col: number; row: number } };
     return lInv.placement.col === rInv.placement.col && lInv.placement.row === rInv.placement.row;
+  }
+  if (left.kind === "equipment" && right.kind === "equipment") {
+    return (left as unknown as { slot: string }).slot === (right as unknown as { slot: string }).slot;
   }
   return true;
 }

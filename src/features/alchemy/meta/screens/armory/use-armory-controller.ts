@@ -41,6 +41,7 @@ export type ArmoryController = {
   onTransferGear: (instanceId: string, targetCharacterId: CharacterId) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
+  onSortBoard: (characterId: CharacterId) => void;
 };
 
 export function useArmoryController(): ArmoryController {
@@ -56,6 +57,7 @@ export function useArmoryController(): ArmoryController {
       addInstance: s.addInstance,
       applyCurrency: s.applyCurrency,
       transferToInventory: s.transferToInventory,
+      sortBoard: s.sortBoard,
     })),
   );
   const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
@@ -144,6 +146,15 @@ export function useArmoryController(): ArmoryController {
     [activeRunCharacterId, flush, gear, hasActiveBattle, hasActiveRun],
   );
 
+  const onSortBoard = useCallback<ArmoryController["onSortBoard"]>(
+    (characterId) => {
+      if (hasActiveBattle) return;
+      gear.sortBoard(characterId);
+      flush();
+    },
+    [gear, hasActiveBattle, flush],
+  );
+
   const onApplyCurrency = useCallback<ArmoryController["onApplyCurrency"]>(
     (currencyId, instanceId) => {
       if (hasActiveBattle) return false;
@@ -188,6 +199,7 @@ export function useArmoryController(): ArmoryController {
     onSalvage,
     onTransferGear,
     onApplyCurrency,
+    onSortBoard,
   };
   if (isAlchemyDevBuild()) controller.onSpawnDevGear = onSpawnDevGear;
   return controller;

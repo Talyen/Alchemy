@@ -91,7 +91,7 @@ export const SlotButton = memo(function SlotButton({
   const canCraft = activeCurrencyId && instance ? canApplyCraftingCurrency(activeCurrencyId, instance) : false;
   const handleMouseEnter = () => {
     if (instance) playUISound("buttonHover");
-    if (!salvageMode) setShowTooltip(true);
+    setShowTooltip(true);
   };
 
   const handleMouseLeave = () => {
@@ -196,7 +196,7 @@ export const SlotButton = memo(function SlotButton({
           )}
         />
       )}
-      {showTooltip && definition && !isDraggingActive && !salvageMode
+      {showTooltip && definition && !isDraggingActive
         ? createPortal(
             <TooltipPanel
               ref={tooltipRef}

@@ -73,6 +73,27 @@ export function resolveEquipmentSlotAtPointer({
       return { kind: "equipment", slot, rect };
     }
   }
+
+  const allSlots = document.querySelectorAll<HTMLElement>("[data-testid='armory-equipment-slot']");
+  let bestSlot: { slot: GearSlot; rect: DOMRect } | null = null;
+  let bestDistance = 48;
+  for (const el of allSlots) {
+    const candidateSlot = el.dataset.slot as GearSlot | undefined;
+    if (!candidateSlot || !isGearCompatibleWithLoadoutSlot(definition, candidateSlot, loadout, inventoryList)) continue;
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const dist = Math.hypot(pointer.x - cx, pointer.y - cy);
+    if (dist < bestDistance) {
+      bestDistance = dist;
+      bestSlot = { slot: candidateSlot, rect: r };
+    }
+  }
+
+  if (bestSlot) {
+    return { kind: "equipment", slot: bestSlot.slot, rect: bestSlot.rect };
+  }
+
   return null;
 }
 

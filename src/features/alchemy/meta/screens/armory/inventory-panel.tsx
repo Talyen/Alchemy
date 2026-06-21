@@ -1,5 +1,5 @@
 import { memo, type RefObject } from "react";
-import { Dices, Trash2 } from "lucide-react";
+import { ArrowDownUp, Dices, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   INVENTORY_COLS,
@@ -45,6 +45,7 @@ export const InventoryPanel = memo(function InventoryPanel({
   onApplyCurrency,
   onAbortGearDrag,
   onTransferRequest,
+  onSortBoard,
 }: {
   packedItems: PackedInventoryItem[];
   packedCurrencies: PackedCurrencyItem[];
@@ -73,6 +74,7 @@ export const InventoryPanel = memo(function InventoryPanel({
   onApplyCurrency: (instance: GearInstance) => void;
   onAbortGearDrag: (instanceId: string) => void;
   onTransferRequest?: (instance: GearInstance, anchor: { x: number; y: number }) => void;
+  onSortBoard?: () => void;
 }) {
   const renderedRows = Math.max(INVENTORY_VISIBLE_ROWS, occupiedRows);
   const canScroll = renderedRows > INVENTORY_VISIBLE_ROWS;
@@ -108,6 +110,21 @@ export const InventoryPanel = memo(function InventoryPanel({
             <Dices className="h-3.5 w-3.5" />
           </Button>
         ) : null}
+        <Button
+          type="button"
+          size="icon"
+          variant="outline"
+          disabled={!editable || (packedItems.length === 0 && packedCurrencies.length === 0)}
+          data-testid="armory-sort-button"
+          className="h-8 w-8 border-border/60 text-muted-foreground/70 hover:border-amber-500/50 hover:bg-amber-950/20 hover:text-amber-200 disabled:border-border/40 disabled:text-muted-foreground/45 cursor-pointer"
+          aria-label="Sort inventory"
+          onClick={(event) => {
+            event.stopPropagation();
+            onSortBoard?.();
+          }}
+        >
+          <ArrowDownUp className="h-3.5 w-3.5" />
+        </Button>
         <Button
           type="button"
           size="icon"

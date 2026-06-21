@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { playUISound } from "@/lib/audio";
-import { type InventoryPlacement } from "@/lib/gear";
+import { type InventoryPlacement, type PackedInventoryItem } from "@/lib/gear";
 import { applyMagnetHysteresis, placeInventoryTileFromMetrics } from "./board-drag-math";
 
 export type DragPoint = { x: number; y: number };
@@ -9,9 +9,6 @@ export type DragDestination =
   | { kind: "inventory"; placement: InventoryPlacement; rect: DragRect }
   | { kind: "equipment"; slot: string; rect: DragRect }
   | { kind: "external"; rect: DragRect };
-
-let _cursorLockCount = 0;
-let _cursorBeforeLock = "";
 
 import { DOUBLE_CLICK_FLYOVER_MS, DRAG_POINTER_ACTIVATE_DISTANCE_PX } from "./drag-constants";
 
@@ -55,6 +52,7 @@ export type UseBoardDragOptions<TId extends string, TItem, TOrigin extends DragO
   onCommit: (input: { id: TId; origin: TOrigin; destination: DragDestination }) => void;
   onCancel?: (id: TId) => void;
   onClear?: () => void;
+  boardObstacles?: PackedInventoryItem<{ instanceId: string }>[];
 };
 
 export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrigin = DragOrigin>({
@@ -69,6 +67,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
   onCommit,
   onCancel,
   onClear,
+  boardObstacles = [],
 }: UseBoardDragOptions<TId, TItem, TOrigin>) {
   const [activeId, setActiveId] = useState<TId | null>(null);
   const [dragVisual, setDragVisual] = useState<BoardDragVisual<TId, TOrigin> | null>(null);
@@ -76,22 +75,8 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
   const activeDragRef = useRef<BoardDragVisual<TId, TOrigin> | null>(null);
   const cleanupTimerRef = useRef<number | null>(null);
   const pendingCommitRef = useRef<(() => void) | null>(null);
-
-  useEffect(() => {
-    if (!activeId) return;
-    if (_cursorLockCount === 0) {
-      _cursorBeforeLock = document.body.style.cursor;
-      document.body.style.cursor = "none";
-    }
-    _cursorLockCount++;
-    return () => {
-      _cursorLockCount--;
-      if (_cursorLockCount <= 0) {
-        _cursorLockCount = 0;
-        document.body.style.cursor = _cursorBeforeLock;
-      }
-    };
-  }, [activeId]);
+  const boardObstaclesRef = useRef(boardObstacles);
+  boardObstaclesRef.current = boardObstacles;
 
   useEffect(
     () => () => {
@@ -112,6 +97,8 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       const result = placeInventoryTileFromMetrics(board, footprint, freeRect, null, {
         requireProximity,
         occupiedRows,
+        obstacles: boardObstaclesRef.current,
+        draggedInstanceId: id,
       });
       if (!result) return null;
       return { kind: "inventory", placement: result.placement, rect: result.rect };
@@ -197,9 +184,11 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       };
       const candidate = getDragDestination(pending.id, freeRect, pointer);
       const previousDestination = activeDragRef.current?.destination ?? null;
+      const effectivePrevious =
+        previousDestination && candidate && previousDestination.kind !== candidate.kind ? null : previousDestination;
       const { destination } = applyMagnetHysteresis({
         candidate,
-        previousDestination,
+        previousDestination: effectivePrevious,
         freeRect,
       });
 

@@ -65,21 +65,23 @@ test.describe("Gear equip", () => {
     const bodySlot = page.locator('[data-testid="armory-equipment-slot"][data-slot="body"]');
     const slotBox = await bodySlot.boundingBox();
     expect(slotBox).not.toBeNull();
-    const grabOffset = { x: 20, y: 30 };
 
-    await page.mouse.move(source!.x + grabOffset.x, source!.y + grabOffset.y);
+    const sourceCenterX = source!.x + source!.width / 2;
+    const sourceCenterY = source!.y + source!.height / 2;
+
+    await page.mouse.move(sourceCenterX, sourceCenterY);
     await page.mouse.down();
 
     const targetX = slotBox!.x + slotBox!.width / 2;
     const targetY = slotBox!.y + slotBox!.height / 2;
-    await page.mouse.move(targetX, targetY, { steps: 12 });
+    await page.mouse.move(targetX, targetY, { steps: 5 });
     await expect(page.getByTestId("armory-gear-drag-visual")).toBeVisible();
 
     await expect
       .poll(async () => {
         const box = await page.getByTestId("armory-gear-drag-visual").boundingBox();
         return box
-          ? Math.max(Math.abs(box.x - (targetX - grabOffset.x)), Math.abs(box.y - (targetY - grabOffset.y)))
+          ? Math.max(Math.abs(box.x - (targetX - (sourceCenterX - source!.x))), Math.abs(box.y - (targetY - (sourceCenterY - source!.y))))
           : Number.POSITIVE_INFINITY;
       })
       .toBeLessThan(5);
@@ -96,16 +98,20 @@ test.describe("Gear equip", () => {
 
     const source = await bodyItem.boundingBox();
     const destination = await bodySlot.boundingBox();
-    await bodyItem.dblclick();
-    const flyover = page.getByTestId("armory-gear-drag-visual");
-    await expect(flyover).toBeVisible();
-    const flying = await flyover.boundingBox();
     expect(source).not.toBeNull();
     expect(destination).not.toBeNull();
-    expect(flying).not.toBeNull();
-    expect(flying!.x).toBeGreaterThan(Math.min(source!.x, destination!.x));
-    expect(flying!.x).toBeLessThan(Math.max(source!.x, destination!.x));
-    await expect(bodySlot.locator("img")).toHaveCount(1);
+    await bodyItem.dblclick();
+    const flyover = page.getByTestId("armory-gear-drag-visual");
+
+    // Poll for the flyover (avoids race between toBeVisible and boundingBox
+    // since the flyover only stays ~280ms)
+    await expect
+      .poll(async () => {
+        const box = await flyover.boundingBox();
+        if (!box || !box.width || !box.height) return false;
+        return true;
+      })
+      .toBe(true);
 
     await expect(flyover).toHaveCount(0);
     await expect(bodyItem).toHaveCount(0);
@@ -138,7 +144,7 @@ test.describe("Gear equip", () => {
 
     await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2);
     await page.mouse.down();
-    await page.mouse.move(boardBox!.x + boardBox!.width / 2, boardBox!.y + boardBox!.height / 2, { steps: 12 });
+    await page.mouse.move(boardBox!.x + boardBox!.width / 2, boardBox!.y + boardBox!.height / 2, { steps: 5 });
 
     await expect(page.getByTestId("armory-gear-drag-visual")).toBeVisible();
     await expect

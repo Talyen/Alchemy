@@ -9,6 +9,8 @@ import {
 } from "./types";
 import { footprintForInstance } from "./footprints";
 import { resolveMoveWithSwap } from "./board-moves";
+import { packGridItems } from "./grid-packing";
+import { getGearInstanceTitle } from "./item-names";
 import {
   sanitizeGearBoardPositionsByCharacter,
   sanitizeCurrencyBoardPositionsByCharacter,
@@ -140,6 +142,54 @@ function resolveMoveItemAndSwap(
     }
   }
   return { nextGearPositions, nextCurrencyPositions };
+}
+
+export function sortBoardForCharacter(
+  state: BoardSourceState,
+  characterId: CharacterId,
+): {
+  gearPositions: GearBoardPositions;
+  currencyPositions: CraftingCurrencyBoardPositions;
+} {
+  const loadout = state.loadouts[characterId];
+  const equippedInstanceIds = new Set(Object.values(loadout).filter(Boolean) as string[]);
+  const availableInventory = state.inventories[characterId].filter((item) => !equippedInstanceIds.has(item.instanceId));
+  const activeCurrencyIds = CRAFTING_CURRENCY_IDS.filter((id) => state.craftingCurrencies[id] > 0);
+
+  const gridItems: { id: string; w: number; h: number }[] = [];
+
+  for (const currencyId of activeCurrencyIds) {
+    gridItems.push({ id: currencyId, w: 1, h: 1 });
+  }
+
+  const sortedGear = [...availableInventory].sort((a, b) => {
+    const aFootprint = footprintForInstance(a);
+    const bFootprint = footprintForInstance(b);
+    const aArea = aFootprint ? aFootprint.w * aFootprint.h : 0;
+    const bArea = bFootprint ? bFootprint.w * bFootprint.h : 0;
+    if (bArea !== aArea) return bArea - aArea;
+    return getGearInstanceTitle(a).localeCompare(getGearInstanceTitle(b));
+  });
+
+  for (const item of sortedGear) {
+    const footprint = footprintForInstance(item);
+    if (!footprint) continue;
+    gridItems.push({ id: item.instanceId, w: footprint.w, h: footprint.h });
+  }
+
+  const result = packGridItems(gridItems, INVENTORY_COLS);
+
+  const gearPositions: GearBoardPositions = {};
+  const currencyPositions: CraftingCurrencyBoardPositions = {};
+  for (const packed of result.items) {
+    if (CRAFTING_CURRENCY_IDS.includes(packed.item.id as (typeof CRAFTING_CURRENCY_IDS)[number])) {
+      currencyPositions[packed.item.id as CraftingCurrencyId] = { col: packed.col, row: packed.row };
+    } else {
+      gearPositions[packed.item.id] = { col: packed.col, row: packed.row };
+    }
+  }
+
+  return { gearPositions, currencyPositions };
 }
 
 export function moveBoardItemForState(

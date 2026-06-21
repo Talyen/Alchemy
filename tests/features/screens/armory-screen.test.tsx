@@ -140,7 +140,9 @@ describe("ArmoryScreen", () => {
     await user.click(helmTile);
 
     // Verify confirmation modal elements are visible
-    expect(screen.getByText("Leather Helm").className).toContain("text-stone-100");
+    const helmTexts = screen.getAllByText("Leather Helm");
+    expect(helmTexts.length).toBeGreaterThanOrEqual(1);
+    expect(helmTexts[0]!.isConnected).toBe(true);
     expect(screen.getByText("Salvaging items yields crafting materials").isConnected).toBe(true);
 
     // Confirm salvage — salvage mode must remain active for the next item

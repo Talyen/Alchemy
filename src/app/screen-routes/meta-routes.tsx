@@ -56,6 +56,7 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "onOpe
       onUnequip={controller.onUnequip}
       onSalvage={controller.onSalvage}
       onTransferGear={controller.onTransferGear}
+      onSortBoard={controller.onSortBoard}
       {...(controller.onSpawnDevGear ? { onSpawnDevGear: controller.onSpawnDevGear } : {})}
     />
   );

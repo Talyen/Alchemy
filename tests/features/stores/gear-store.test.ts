@@ -100,9 +100,7 @@ describe("gear-store", () => {
     expect(useGearStore.getState().boardPositionsByCharacter.knight).toEqual({
       [helmB.instanceId]: { col: 3, row: 2 },
     });
-    expect(useGearStore.getState().equippedReturnPositions).toEqual({
-      [helmA.instanceId]: { col: 3, row: 2 },
-    });
+    expect(useGearStore.getState().equippedReturnPositions).toEqual({});
     useGearStore.getState().reset();
   });
 
@@ -300,6 +298,76 @@ describe("gear-store", () => {
       expect(useGearStore.getState().transferToInventory(helm.instanceId, "rogue")).toBe(true);
       expect(useGearStore.getState().loadouts.knight.helm).toBeNull();
       expect(useGearStore.getState().equippedReturnPositions[helm.instanceId]).toBeUndefined();
+      useGearStore.getState().reset();
+    });
+  });
+
+  describe("sortBoard", () => {
+    it("places crafting currencies top-left, then gear sorted by footprint area descending", () => {
+      useGearStore.getState().reset();
+      const body: GearInstance = { instanceId: "gear-body", definitionId: "leather-armor-basic", affixes: [] };
+      const helm: GearInstance = { instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [] };
+      const belt: GearInstance = { instanceId: "gear-belt", definitionId: "leather-belt-basic", affixes: [] };
+      const ring: GearInstance = { instanceId: "gear-ring", definitionId: "ruby-ring-basic", affixes: [] };
+
+      useGearStore
+        .getState()
+        .initialize(knightInventories(body, helm, belt, ring), createEmptyGearLoadouts(), knightBoards({}), {
+          voidstone: 5,
+          "sprig-of-growth": 3,
+        });
+
+      useGearStore.getState().sortBoard("knight");
+      const gearPositions = useGearStore.getState().boardPositionsByCharacter.knight;
+      const currencyPositions = useGearStore.getState().currencyBoardPositionsByCharacter.knight;
+
+      // Currencies should have positions (top-left of board)
+      expect(currencyPositions["voidstone"]).toBeDefined();
+      expect(currencyPositions["sprig-of-growth"]).toBeDefined();
+
+      // All gear should have positions
+      expect(gearPositions["gear-body"]).toBeDefined();
+      expect(gearPositions["gear-helm"]).toBeDefined();
+      expect(gearPositions["gear-belt"]).toBeDefined();
+      expect(gearPositions["gear-ring"]).toBeDefined();
+
+      // Gear positions should not overlap currency positions
+      const allCurrencyCells = new Set<string>();
+      for (const pos of Object.values(currencyPositions)) {
+        if (!pos) continue;
+        allCurrencyCells.add(`${pos.col}-${pos.row}`);
+      }
+      for (const pos of Object.values(gearPositions)) {
+        if (!pos) continue;
+        expect(allCurrencyCells.has(`${pos.col}-${pos.row}`)).toBe(false);
+      }
+
+      // Body (largest, 2x3) should be placed before helm (2x2) — body should be earlier in grid order
+      const bodyPos = gearPositions["gear-body"]!;
+      const helmPos = gearPositions["gear-helm"]!;
+      const bodyGridOrder = bodyPos.row * 100 + bodyPos.col;
+      const helmGridOrder = helmPos.row * 100 + helmPos.col;
+      expect(bodyGridOrder).toBeLessThan(helmGridOrder);
+
+      useGearStore.getState().reset();
+    });
+
+    it("does not reposition equipped gear", () => {
+      useGearStore.getState().reset();
+      const helm: GearInstance = { instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [] };
+      const ring: GearInstance = { instanceId: "gear-ring", definitionId: "ruby-ring-basic", affixes: [] };
+      const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "helm", helm, [helm, ring]);
+
+      useGearStore.getState().initialize(knightInventories(helm, ring), loadouts, knightBoards({}));
+
+      useGearStore.getState().sortBoard("knight");
+      const gearPositions = useGearStore.getState().boardPositionsByCharacter.knight;
+
+      // Helm is equipped, should NOT have a board position
+      expect(gearPositions["gear-helm"]).toBeUndefined();
+      // Ring is in inventory, should have a position
+      expect(gearPositions["gear-ring"]).toBeDefined();
+
       useGearStore.getState().reset();
     });
   });

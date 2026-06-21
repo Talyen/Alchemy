@@ -28,6 +28,7 @@ import {
   type BoardItemRef,
   updateGearStateAndSync,
   moveBoardItemForState,
+  sortBoardForCharacter,
 } from "@/lib/gear";
 
 type GearStore = {
@@ -56,6 +57,7 @@ type GearStore = {
   unequip: (characterId: CharacterId, slot: GearSlot) => void;
   moveBoardItem: (characterId: CharacterId, item: BoardItemRef, col: number, row: number) => void;
   syncBoardPositions: () => void;
+  sortBoard: (characterId: CharacterId) => void;
   salvage: (
     instanceId: string,
     options?: { rng?: () => number },
@@ -210,6 +212,7 @@ export const useGearStore = create<GearStore>((set, get) => ({
       if (options?.vacatedPlacement) {
         if (options.swapDisplaced !== false && displacedId && displacedId !== instance.instanceId) {
           characterPositions[displacedId] = options.vacatedPlacement;
+          delete nextReturn[instance.instanceId];
         }
       }
 
@@ -246,6 +249,20 @@ export const useGearStore = create<GearStore>((set, get) => ({
   syncBoardPositions: () =>
     set((state) => {
       return updateGearStateAndSync(state, {});
+    }),
+  sortBoard: (characterId) =>
+    set((state) => {
+      const { gearPositions, currencyPositions } = sortBoardForCharacter(state, characterId);
+      return updateGearStateAndSync(state, {
+        boardPositionsByCharacter: {
+          ...state.boardPositionsByCharacter,
+          [characterId]: gearPositions,
+        },
+        currencyBoardPositionsByCharacter: {
+          ...state.currencyBoardPositionsByCharacter,
+          [characterId]: currencyPositions,
+        },
+      });
     }),
   salvage: (instanceId, options) => {
     const state = get();

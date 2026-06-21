@@ -7,6 +7,8 @@ type DragState = {
   moved: boolean;
 };
 
+const ITEM_SELECTOR = "[data-testid='armory-inventory-item'],[data-testid='armory-crafting-currency']";
+
 export function useInventoryScrollDrag({
   canScroll,
   salvageMode,
@@ -26,6 +28,8 @@ export function useInventoryScrollDrag({
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
     if (!canScroll || salvageMode || activeCurrencyId || event.pointerType === "touch" || event.button !== 0) return;
+    const target = event.target as HTMLElement;
+    if (target.closest(ITEM_SELECTOR)) return;
     dragRef.current = {
       pointerId: event.pointerId,
       startY: event.clientY,

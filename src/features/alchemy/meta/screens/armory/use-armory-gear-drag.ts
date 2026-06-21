@@ -11,6 +11,7 @@ import {
   type PackedInventory,
   type PackedInventoryItem,
 } from "@/lib/gear";
+import { overlaps } from "@/lib/gear/grid-packing";
 import { useBoardDrag, type DragDestination, type DragRect, type DragPoint } from "./use-board-drag";
 import {
   findEquipSlotForDoubleClickedGear,
@@ -19,6 +20,7 @@ import {
   calculateSecondaryDisplacedItems,
   buildSecondaryDragVisuals,
 } from "./armory-drag-helpers";
+import { placeInventoryTileFromMetrics } from "./board-drag-math";
 
 export type GearDragOrigin =
   | { kind: "inventory"; placement: { col: number; row: number } }
@@ -85,10 +87,122 @@ export function useArmoryGearDrag({
   onUnequip,
   onMoveItem,
 }: UseArmoryGearDragOptions) {
-  const activeInstanceRef = useRef<GearInstance | null>(null);
-  const [activeInstance, setActiveInstance] = useState<GearInstance | null>(null);
+  const activeIdRef = useRef<string | null>(null);
+  const packedInventoryRef = useRef(packedInventory);
+  packedInventoryRef.current = packedInventory;
   const [secondaryDragVisuals, setSecondaryDragVisuals] = useState<GearDragVisual[]>([]);
   const secondaryCleanupTimerRef = useRef<number | null>(null);
+  const [carriedInstance, setCarriedInstance] = useState<GearInstance | null>(null);
+  const [carriedVisual, setCarriedVisual] = useState<DragRect | null>(null);
+  const carryCleanupRef = useRef<(() => void) | null>(null);
+
+  const clearCarry = useCallback(() => {
+    carryCleanupRef.current?.();
+    carryCleanupRef.current = null;
+    setCarriedInstance(null);
+    setCarriedVisual(null);
+  }, []);
+
+  const autoPlaceCarried = useCallback(
+    (instance: GearInstance) => {
+      onMoveItem(instance.instanceId, 1, 1);
+    },
+    [onMoveItem],
+  );
+
+  const startCarry = useCallback(
+    (instance: GearInstance, sourceRect: DragRect) => {
+      carryCleanupRef.current?.();
+      setCarriedInstance(instance);
+      setCarriedVisual(sourceRect);
+
+      const footprint = footprintForInstance(instance);
+      if (!footprint) {
+        clearCarry();
+        return;
+      }
+
+      const onMouseMove = (e: MouseEvent) => {
+        setCarriedVisual({
+          left: e.clientX - sourceRect.width / 2,
+          top: e.clientY - sourceRect.height / 2,
+          width: sourceRect.width,
+          height: sourceRect.height,
+        });
+      };
+
+      const onPointerDown = (e: PointerEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const board = inventoryBoardRef.current;
+        if (!board || !footprint) {
+          autoPlaceCarried(instance);
+          clearCarry();
+          return;
+        }
+
+        const freeRect: DragRect = {
+          left: e.clientX - sourceRect.width / 2,
+          top: e.clientY - sourceRect.height / 2,
+          width: sourceRect.width,
+          height: sourceRect.height,
+        };
+
+        const result = placeInventoryTileFromMetrics(board, footprint, freeRect, null, {
+          requireProximity: false,
+          occupiedRows: packedInventoryRef.current.occupiedRows,
+        });
+
+        if (!result) {
+          autoPlaceCarried(instance);
+          clearCarry();
+          return;
+        }
+
+        const currentPacked = packedInventoryRef.current.items;
+        const occupant = currentPacked.find(
+          (item) =>
+            item.item.instanceId !== instance.instanceId &&
+            overlaps(
+              { col: result.placement.col, row: result.placement.row, w: footprint.w, h: footprint.h },
+              { col: item.col, row: item.row, w: item.w, h: item.h },
+            ),
+        );
+
+        if (occupant) {
+          const occupantInstance = inventoryById.get(occupant.item.instanceId);
+          onMoveItem(instance.instanceId, result.placement.col, result.placement.row);
+          if (occupantInstance) {
+            startCarry(occupantInstance, freeRect);
+          } else {
+            clearCarry();
+          }
+        } else {
+          onMoveItem(instance.instanceId, result.placement.col, result.placement.row);
+          clearCarry();
+        }
+      };
+
+      const onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          autoPlaceCarried(instance);
+          clearCarry();
+        }
+      };
+
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("pointerdown", onPointerDown, { capture: true });
+      document.addEventListener("keydown", onKeyDown);
+
+      carryCleanupRef.current = () => {
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("pointerdown", onPointerDown, { capture: true });
+        document.removeEventListener("keydown", onKeyDown);
+      };
+    },
+    [autoPlaceCarried, clearCarry, inventoryBoardRef, inventoryById, onMoveItem],
+  );
 
   const clearSecondaryDragState = useCallback(() => {
     if (secondaryCleanupTimerRef.current !== null) {
@@ -134,15 +248,17 @@ export function useArmoryGearDrag({
     getItemId: (item) => item.instance.instanceId,
     getOrigin: (item) => item.origin,
     getFootprint: (id) => {
-      const instance = activeInstanceRef.current || inventoryById.get(id);
+      const instance = inventoryById.get(id);
       return instance ? footprintForInstance(instance) : null;
     },
     inventoryBoardRef,
     occupiedRows: packedInventory.occupiedRows,
     resolveExternalDestination: (pointer) => {
+      const id = activeIdRef.current;
+      const activeInstance = id ? inventoryById.get(id) : undefined;
       return resolveEquipmentSlotAtPointer({
         pointer,
-        activeInstance: activeInstanceRef.current,
+        activeInstance: activeInstance ?? null,
         loadout,
         inventoryById,
         gearDefinitions,
@@ -150,7 +266,7 @@ export function useArmoryGearDrag({
       });
     },
     onCommit: ({ id, origin, destination }) => {
-      const instance = activeInstanceRef.current || inventoryById.get(id);
+      const instance = inventoryById.get(id);
       if (!instance) return;
       if (destination.kind === "equipment") {
         const slot = destination.slot as GearSlot;
@@ -160,24 +276,37 @@ export function useArmoryGearDrag({
         }
         onEquip(characterId, slot, instance, vacatedPlacement ? { vacatedPlacement } : undefined);
       } else if (destination.kind === "inventory") {
-        const unchanged =
-          origin.kind === "inventory" &&
-          origin.placement.col === destination.placement.col &&
-          origin.placement.row === destination.placement.row;
-        if (!unchanged) {
+        if (origin.kind === "equipment") {
+          onUnequip(characterId, origin.slot);
           onMoveItem(id, destination.placement.col, destination.placement.row);
-          if (origin.kind === "equipment") onUnequip(characterId, origin.slot);
+          return;
+        }
+        const unchanged =
+          origin.placement.col === destination.placement.col && origin.placement.row === destination.placement.row;
+        if (unchanged) return;
+        const footprint = footprintForInstance(instance);
+        const packed = packedInventoryRef.current.items;
+        const occupant = footprint
+          ? packed.find(
+              (item) =>
+                item.item.instanceId !== id &&
+                overlaps(
+                  { col: destination.placement.col, row: destination.placement.row, w: footprint.w, h: footprint.h },
+                  { col: item.col, row: item.row, w: item.w, h: item.h },
+                ),
+            )
+          : undefined;
+        onMoveItem(id, destination.placement.col, destination.placement.row);
+        if (occupant) {
+          const occupantInstance = inventoryById.get(occupant.item.instanceId);
+          if (occupantInstance) {
+            startCarry(occupantInstance, destination.rect);
+          }
         }
       }
     },
-    onCancel: () => {
-      activeInstanceRef.current = null;
-      setActiveInstance(null);
-    },
-    onClear: () => {
-      activeInstanceRef.current = null;
-      setActiveInstance(null);
-    },
+    onCancel: () => {},
+    onClear: () => {},
   });
 
   useEffect(() => {
@@ -192,11 +321,9 @@ export function useArmoryGearDrag({
   const beginGearPointer = useCallback(
     (instance: GearInstance, origin: GearDragOrigin, source: DragRect, pointer: DragPoint, pointerId: number) => {
       if (!editable || !gearDefinitions[instance.definitionId]) return;
-      activeInstanceRef.current = instance;
-      setActiveInstance(instance);
       fsmBeginPointer({ instance, origin }, source, pointer, pointerId);
     },
-    [editable, fsmBeginPointer, setActiveInstance],
+    [editable, fsmBeginPointer],
   );
 
   const fsmMovePointer = fsm.movePointer;
@@ -232,8 +359,6 @@ export function useArmoryGearDrag({
         );
         if (!slotElement) return;
         const slotRect = slotElement.getBoundingClientRect();
-        activeInstanceRef.current = instance;
-        setActiveInstance(instance);
         fsm.flyoverTo(
           { instance, origin },
           { kind: "equipment", slot, rect: slotRect },
@@ -250,8 +375,6 @@ export function useArmoryGearDrag({
       if (!board) return;
       const destination = getInventoryDragDestination({ board, instance, boardObstacles });
       if (!destination) return;
-      activeInstanceRef.current = instance;
-      setActiveInstance(instance);
       fsm.flyoverTo(
         { instance, origin },
         destination,
@@ -273,38 +396,45 @@ export function useArmoryGearDrag({
       onUnequip,
       onMoveItem,
       maybeLaunchSwapAnimations,
-      setActiveInstance,
     ],
   );
 
-  const draggedGear: GearInstance | null = fsm.dragVisual?.id
-    ? inventoryById.get(fsm.dragVisual.id) || activeInstance
-    : null;
+  const draggedGear: GearInstance | null = carriedInstance
+    ? carriedInstance
+    : fsm.dragVisual?.id
+      ? (inventoryById.get(fsm.dragVisual.id) ?? null)
+      : null;
 
-  const dragVisual: GearDragVisual | null = fsm.dragVisual
-    ? {
-        instance: inventoryById.get(fsm.dragVisual.id) || activeInstance || null,
-        source: fsm.dragVisual.source,
-        rect: fsm.dragVisual.rect,
-        origin: fsm.dragVisual.origin,
-        destination: fsm.dragVisual.destination,
-        settling: fsm.dragVisual.settling,
-        releasing: fsm.dragVisual.releasing,
-        flyover: fsm.dragVisual.flyover,
-        releaseRect: fsm.dragVisual.releaseRect,
-      }
-    : null;
+  const dragVisual: GearDragVisual | null =
+    carriedVisual && carriedInstance
+      ? {
+          instance: carriedInstance,
+          source: carriedVisual,
+          rect: carriedVisual,
+          origin: { kind: "inventory", placement: { col: 1, row: 1 } },
+          destination: null,
+        }
+      : fsm.dragVisual
+        ? {
+            instance: inventoryById.get(fsm.dragVisual.id) ?? null,
+            source: fsm.dragVisual.source,
+            rect: fsm.dragVisual.rect,
+            origin: fsm.dragVisual.origin,
+            destination: fsm.dragVisual.destination,
+            settling: fsm.dragVisual.settling,
+            releasing: fsm.dragVisual.releasing,
+            flyover: fsm.dragVisual.flyover,
+            releaseRect: fsm.dragVisual.releaseRect,
+          }
+        : null;
+
+  const dragVisualIdRef = useRef<string | null>(null);
+  const isFlyoverRef = useRef<boolean>(false);
 
   const fsmClearDragState = fsm.clearDragState;
   const clearDragState = useCallback(() => {
-    activeInstanceRef.current = null;
-    setActiveInstance(null);
     fsmClearDragState();
   }, [fsmClearDragState]);
-
-  const activeIdRef = useRef<string | null>(null);
-  const dragVisualIdRef = useRef<string | null>(null);
-  const isFlyoverRef = useRef<boolean>(false);
 
   useEffect(() => {
     activeIdRef.current = fsm.activeId;
@@ -325,9 +455,11 @@ export function useArmoryGearDrag({
   return {
     draggedGear,
     dragVisual,
+    carriedInstance,
+    carriedVisual,
     secondaryDragVisuals,
-    isAnimating: fsm.isAnimating || secondaryDragVisuals.some((v) => v.flyover),
-    isDraggingActive: fsm.isDraggingActive,
+    isAnimating: fsm.isAnimating || secondaryDragVisuals.some((v) => v.flyover) || !!carriedInstance,
+    isDraggingActive: fsm.isDraggingActive || !!carriedInstance,
     beginGearPointer,
     moveGearPointer,
     finishGearPointer,
@@ -335,5 +467,6 @@ export function useArmoryGearDrag({
     clearDragState,
     clearSecondaryDragState,
     abortGearDragIfDragging,
+    clearCarry,
   };
 }

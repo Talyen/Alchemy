@@ -134,7 +134,7 @@ export function buildArmoryBoardView({
   inventory,
   loadout,
   gearPositions,
-  equippedReturnPositions = {},
+  equippedReturnPositions: _equippedReturnPositions = {},
   currencyPositions,
   craftingCurrencies,
   cols = INVENTORY_COLS,
@@ -160,7 +160,7 @@ export function buildArmoryBoardView({
   const packedInventory = packInventoryWithPositions(
     availableInventory,
     cols,
-    { ...gearPositions, ...equippedReturnPositions },
+    gearPositions,
     reservedEquipped,
     currencyBlockers,
   );

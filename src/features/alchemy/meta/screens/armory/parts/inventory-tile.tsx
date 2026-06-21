@@ -115,18 +115,18 @@ export const InventoryGearTile = memo(function InventoryGearTile({
 
   useEffect(() => {
     if (!hasActiveDrag && !dragCooldown && tileRef.current?.matches(":hover")) {
-      if (!salvageMode && !shouldSuppressClick()) {
+      if (!shouldSuppressClick()) {
         openTooltip();
       }
     } else {
       closeTooltip();
     }
-  }, [closeTooltip, dragCooldown, hasActiveDrag, openTooltip, salvageMode, shouldSuppressClick]);
+  }, [closeTooltip, dragCooldown, hasActiveDrag, openTooltip, shouldSuppressClick]);
 
   const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(tileRef, showTooltip);
 
   const handleMouseEnter = () => {
-    if (!salvageMode && !shouldSuppressClick()) {
+    if (!shouldSuppressClick()) {
       playUISound("buttonHover");
       openTooltip();
     }

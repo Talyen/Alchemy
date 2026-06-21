@@ -60,8 +60,16 @@ export function useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackgrou
     };
   }, [muteInBackground]);
 
+  const initialScreenRef = useRef(true);
+
   useEffect(() => {
     screenRef.current = screen;
+    // Skip the first playMusic call — the gesture handler owns music startup so
+    // it can start at the correct saved volume without an audible level jump.
+    if (initialScreenRef.current) {
+      initialScreenRef.current = false;
+      return;
+    }
     playMusic(screen === "battle" ? MUSIC_KEYS.BATTLE : MUSIC_KEYS.MENU);
   }, [screen]);
 

@@ -14,6 +14,12 @@ const inv = (col: number, row: number, left: number, top: number): DragDestinati
   rect: { left, top, width: 10, height: 10 },
 });
 
+const equip = (slot: string, left: number, top: number, width = 10, height = 10): DragDestination => ({
+  kind: "equipment",
+  slot,
+  rect: { left, top, width, height },
+});
+
 const ext = (left: number, top: number): DragDestination => ({
   kind: "external",
   rect: { left, top, width: 10, height: 10 },
@@ -54,6 +60,22 @@ describe("sameDestinationIdentity", () => {
 
   it("rejects cross-kind comparisons", () => {
     expect(sameDestinationIdentity(inv(1, 1, 0, 0), ext(0, 0))).toBe(false);
+  });
+
+  it("treats equipment destinations with the same slot as equal", () => {
+    expect(sameDestinationIdentity(equip("body", 0, 0), equip("body", 999, 999))).toBe(true);
+  });
+
+  it("rejects equipment destinations with different slots", () => {
+    expect(sameDestinationIdentity(equip("body", 0, 0), equip("helm", 0, 0))).toBe(false);
+  });
+
+  it("rejects inventory vs equipment cross-kind", () => {
+    expect(sameDestinationIdentity(inv(1, 1, 0, 0), equip("body", 100, 100))).toBe(false);
+  });
+
+  it("rejects equipment vs inventory cross-kind", () => {
+    expect(sameDestinationIdentity(equip("body", 100, 100), inv(1, 1, 0, 0))).toBe(false);
   });
 });
 
@@ -98,6 +120,32 @@ describe("applyMagnetHysteresis", () => {
     const prev = inv(1, 1, 100, 100);
     const cand = inv(3, 1, 100, 100);
     const freeRect = { left: 200, top: prev.top, width: 50, height: 50 };
+    const result = applyMagnetHysteresis(input(cand, prev, freeRect));
+    expect(result.destination).toEqual(cand);
+    expect(result.switched).toBe(false);
+  });
+
+  it("switches from equipment to inventory when pointer is in the board area", () => {
+    const prev = equip("body", 100, 100, 80, 80);
+    const cand = inv(1, 1, 50, 50);
+    const freeRect = { left: 55, top: 55, width: 10, height: 10 };
+    const result = applyMagnetHysteresis(input(cand, prev, freeRect));
+    expect(result.destination).toEqual(cand);
+    expect(result.switched).toBe(false);
+  });
+
+  it("sticks to equipment slot when still very close to it and no candidate", () => {
+    const prev = equip("body", 100, 100, 80, 80);
+    const freeRect = { left: 105, top: 105, width: 10, height: 10 };
+    const result = applyMagnetHysteresis(input(null, prev, freeRect));
+    expect(result.destination).toEqual(prev);
+    expect(result.switched).toBe(true);
+  });
+
+  it("switches from equipment slot A to equipment slot B when pointer is over B", () => {
+    const prev = equip("body", 0, 0, 80, 80);
+    const cand = equip("helm", 200, 0, 80, 80);
+    const freeRect = { left: 210, top: 10, width: 10, height: 10 };
     const result = applyMagnetHysteresis(input(cand, prev, freeRect));
     expect(result.destination).toEqual(cand);
     expect(result.switched).toBe(false);

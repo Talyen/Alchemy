@@ -100,9 +100,10 @@ export async function pointerDrag(page: Page, source: Locator, target: Locator) 
   expect(targetBox).not.toBeNull();
   await page.mouse.move(sourceBox!.x + sourceBox!.width / 2, sourceBox!.y + sourceBox!.height / 2);
   await page.mouse.down();
-  await page.mouse.move(targetBox!.x + targetBox!.width / 2, targetBox!.y + targetBox!.height / 2, { steps: 12 });
+  await page.mouse.move(targetBox!.x + targetBox!.width / 2, targetBox!.y + targetBox!.height / 2, { steps: 5 });
   await page.evaluate(() => new Promise(requestAnimationFrame));
   await page.mouse.up();
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 }
 
 export async function pointerDragToInventory(
@@ -132,7 +133,42 @@ export async function pointerDragToInventory(
     (heightCells * metrics.cellSize + (heightCells - 1) * (metrics.stride - metrics.cellSize)) / 2;
   await page.mouse.move(sourceBox!.x + sourceBox!.width / 2, sourceBox!.y + sourceBox!.height / 2);
   await page.mouse.down();
-  await page.mouse.move(targetX, targetY, { steps: 12 });
+  await page.mouse.move(targetX, targetY, { steps: 5 });
   await page.evaluate(() => new Promise(requestAnimationFrame));
   await page.mouse.up();
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+}
+
+export async function expectItemAtCell(
+  page: Page,
+  board: Locator,
+  itemLocator: Locator,
+  col: number,
+  row: number,
+  widthCells: number,
+  heightCells: number,
+  tolerance = 2,
+) {
+  const itemBox = await itemLocator.boundingBox();
+  expect(itemBox).not.toBeNull();
+  const metrics = await board.evaluate((element) => {
+    const boardRect = element.getBoundingClientRect();
+    const cell = element.querySelector<HTMLElement>("[data-armory-grid-metric='cell']")!.getBoundingClientRect();
+    const stride = element.querySelector<HTMLElement>("[data-armory-grid-metric='stride']")!.getBoundingClientRect();
+    return {
+      left: boardRect.left,
+      top: boardRect.top,
+      cellSize: cell.width,
+      gap: stride.left - cell.left - cell.width,
+      stride: stride.left - cell.left,
+    };
+  });
+  const expectedLeft = metrics.left + (col - 1) * metrics.stride;
+  const expectedTop = metrics.top + (row - 1) * metrics.stride;
+  const expectedWidth = widthCells * metrics.cellSize + (widthCells - 1) * metrics.gap;
+  const expectedHeight = heightCells * metrics.cellSize + (heightCells - 1) * metrics.gap;
+  expect(Math.abs(itemBox!.x - expectedLeft)).toBeLessThanOrEqual(tolerance);
+  expect(Math.abs(itemBox!.y - expectedTop)).toBeLessThanOrEqual(tolerance);
+  expect(Math.abs(itemBox!.width - expectedWidth)).toBeLessThanOrEqual(tolerance);
+  expect(Math.abs(itemBox!.height - expectedHeight)).toBeLessThanOrEqual(tolerance);
 }

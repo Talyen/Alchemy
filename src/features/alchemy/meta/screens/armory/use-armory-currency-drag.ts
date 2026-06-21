@@ -1,5 +1,5 @@
 import { useCallback, type RefObject } from "react";
-import { type CraftingCurrencyId, type InventoryPlacement } from "@/lib/gear";
+import { type CraftingCurrencyId, type InventoryPlacement, type PackedInventoryItem } from "@/lib/gear";
 import { useBoardDrag, type DragDestination, type DragRect } from "./use-board-drag";
 
 const CURRENCY_FOOTPRINT = { w: 1, h: 1 };
@@ -34,6 +34,7 @@ type UseArmoryCurrencyDragOptions = {
   occupiedRows: number;
   inventoryBoardRef: RefObject<HTMLDivElement | null>;
   onMoveCurrency: (currencyId: CraftingCurrencyId, col: number, row: number) => void;
+  boardObstacles?: PackedInventoryItem<{ instanceId: string }>[];
 };
 
 export function useArmoryCurrencyDrag({
@@ -41,6 +42,7 @@ export function useArmoryCurrencyDrag({
   occupiedRows,
   inventoryBoardRef,
   onMoveCurrency,
+  boardObstacles = [],
 }: UseArmoryCurrencyDragOptions) {
   const fsm = useBoardDrag<CraftingCurrencyId, CurrencyItem, CurrencyDragOrigin>({
     itemLookup: undefined,
@@ -49,6 +51,7 @@ export function useArmoryCurrencyDrag({
     getFootprint: () => CURRENCY_FOOTPRINT,
     inventoryBoardRef,
     occupiedRows,
+    boardObstacles,
     onCommit: ({ id, origin, destination }) => {
       if (destination.kind !== "inventory") return;
       if (origin.placement.col === destination.placement.col && origin.placement.row === destination.placement.row) {

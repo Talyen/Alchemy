@@ -27,6 +27,36 @@ function mockDomRect(partial: Partial<DOMRect>): DOMRect {
 }
 
 describe("useBoardDrag", () => {
+  it("does not mutate document.body.style.cursor during drag", () => {
+    const onCommit = vi.fn();
+    const originalCursor = document.body.style.cursor;
+    const inventoryBoardRef = { current: null };
+
+    const { result } = renderHook(() =>
+      useBoardDrag({
+        itemLookup: { id: "item-1" },
+        getItemId: (item) => item.id,
+        getOrigin: () => ({ kind: "inventory", placement: { col: 0, row: 0 } }),
+        getFootprint: () => ({ w: 1, h: 1 }),
+        inventoryBoardRef,
+        occupiedRows: 0,
+        onCommit,
+      }),
+    );
+
+    act(() => {
+      result.current.beginPointer({ id: "item-1" }, { left: 10, top: 20, width: 50, height: 50 }, { x: 15, y: 25 }, 1);
+    });
+    act(() => {
+      result.current.movePointer({ x: 30, y: 40 }, 1);
+    });
+    act(() => {
+      result.current.finishPointer({ x: 30, y: 40 }, 1, false);
+    });
+
+    expect(document.body.style.cursor).toBe(originalCursor);
+  });
+
   it("captures releaseRect on unchanged/reverted drag", () => {
     const onCommit = vi.fn();
     const inventoryBoardRef = { current: null };
