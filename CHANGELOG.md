@@ -647,6 +647,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(content): dedupe card-parity, drop noise warning, add trait-keyword parity
 - refactor(armory): simplify drag and targeting state
 - refactor(battle-controller): remove dead resolvedAsHasteOrStunRef and redundant teardown effect
 - refactor(style): simplify index.css — remove dead theme tokens, collapse card-ghost classes, dedupe vars
