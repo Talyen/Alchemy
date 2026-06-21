@@ -53,21 +53,24 @@ test.describe("Wildwood Traits", critical, () => {
     void fastBattle;
     void runtimeErrors;
 
-    await injectSaveState(page, wildwoodBossState({
-      wildwoodDraft: {
-        version: 2,
-        phase: "draft",
-        draftChoices: [makeCard()],
-        remainingBossIds: [],
-        previousBossId: null,
-        currentBossId: null,
-        currentCombatTraitIds: ["reinforced"],
-        currentRewardTraitIds: [],
-        rewardType: null,
-        rewardChoiceIds: [],
-        selectedRewardId: null,
-      },
-    }));
+    await injectSaveState(
+      page,
+      wildwoodBossState({
+        wildwoodDraft: {
+          version: 2,
+          phase: "draft",
+          draftChoices: [makeCard()],
+          remainingBossIds: [],
+          previousBossId: null,
+          currentBossId: null,
+          currentCombatTraitIds: ["reinforced"],
+          currentRewardTraitIds: [],
+          rewardType: null,
+          rewardChoiceIds: [],
+          selectedRewardId: null,
+        },
+      }),
+    );
     await page.goto("/");
     await wildwoodPickDraftCard(page);
 
@@ -79,25 +82,32 @@ test.describe("Wildwood Traits", critical, () => {
     }).toPass({ timeout: 5000 });
   });
 
-  test("reward trait data passes through the save system without corruption", async ({ page, fastBattle, runtimeErrors }) => {
+  test("reward trait data passes through the save system without corruption", async ({
+    page,
+    fastBattle,
+    runtimeErrors,
+  }) => {
     void fastBattle;
     void runtimeErrors;
 
-    await injectSaveState(page, wildwoodBossState({
-      wildwoodDraft: {
-        version: 2,
-        phase: "draft",
-        draftChoices: [makeCard()],
-        remainingBossIds: [],
-        previousBossId: null,
-        currentBossId: null,
-        currentCombatTraitIds: ["thorns"],
-        currentRewardTraitIds: ["alchemist"],
-        rewardType: null,
-        rewardChoiceIds: [],
-        selectedRewardId: null,
-      },
-    }));
+    await injectSaveState(
+      page,
+      wildwoodBossState({
+        wildwoodDraft: {
+          version: 2,
+          phase: "draft",
+          draftChoices: [makeCard()],
+          remainingBossIds: [],
+          previousBossId: null,
+          currentBossId: null,
+          currentCombatTraitIds: ["thorns"],
+          currentRewardTraitIds: ["alchemist"],
+          rewardType: null,
+          rewardChoiceIds: [],
+          selectedRewardId: null,
+        },
+      }),
+    );
     await page.goto("/");
     await wildwoodPickDraftCard(page);
 
@@ -112,21 +122,24 @@ test.describe("Wildwood Traits", critical, () => {
     void fastBattle;
     void runtimeErrors;
 
-    await injectSaveState(page, wildwoodBossState({
-      wildwoodDraft: {
-        version: 2,
-        phase: "draft",
-        draftChoices: [makeCard()],
-        remainingBossIds: [],
-        previousBossId: null,
-        currentBossId: null,
-        currentCombatTraitIds: ["zealot"],
-        currentRewardTraitIds: [],
-        rewardType: null,
-        rewardChoiceIds: [],
-        selectedRewardId: null,
-      },
-    }));
+    await injectSaveState(
+      page,
+      wildwoodBossState({
+        wildwoodDraft: {
+          version: 2,
+          phase: "draft",
+          draftChoices: [makeCard()],
+          remainingBossIds: [],
+          previousBossId: null,
+          currentBossId: null,
+          currentCombatTraitIds: ["zealot"],
+          currentRewardTraitIds: [],
+          rewardType: null,
+          rewardChoiceIds: [],
+          selectedRewardId: null,
+        },
+      }),
+    );
     await page.goto("/");
 
     const traitsBefore = await page.evaluate((saveKey) => {

@@ -64,5 +64,3 @@ test.describe("Draw/discard animation invariants (1920×1080)", () => {
     expect(errors).toEqual([]);
   });
 });
-
-

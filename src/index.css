@@ -198,8 +198,6 @@
     animation: cardShimmer 1800ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-
-
   .hover-popup-panel {
     box-shadow: 0 8px 24px color-mix(in srgb, var(--color-background) 75%, transparent);
     transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -327,8 +325,6 @@
   .mana-gem-active {
     animation: manaGemSettle 260ms ease-out both;
   }
-
-
 
   .status-chip-pop {
     animation: statusChipPop 220ms cubic-bezier(0.16, 1, 0.3, 1) both;

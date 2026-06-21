@@ -1,5 +1,11 @@
 import { expect } from "@playwright/test";
-import { injectSaveState, makeHighDamageCard, SAVE_KEY, skipBattleAndClaimReward, startBattleWithDeck } from "./helpers";
+import {
+  injectSaveState,
+  makeHighDamageCard,
+  SAVE_KEY,
+  skipBattleAndClaimReward,
+  startBattleWithDeck,
+} from "./helpers";
 import { DestinationPage } from "./pages/destination-page";
 import { RewardPage } from "./pages/reward-page";
 import { test } from "./fixtures/e2e";
@@ -59,9 +65,7 @@ test.describe("Reward Flow", critical, () => {
       currentScreen: "reward",
       pendingReward: {
         rewardType: "gear",
-        gearChoices: [
-          { instanceId: "reward-gear", definitionId: "leather-armor-basic", affixes: [] },
-        ],
+        gearChoices: [{ instanceId: "reward-gear", definitionId: "leather-armor-basic", affixes: [] }],
         selectedId: null,
         gold: 0,
         materials: {},
