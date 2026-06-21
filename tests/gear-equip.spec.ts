@@ -95,11 +95,9 @@ test.describe("Gear equip", () => {
     await openArmory(page, [bodyGear]);
     const bodyItem = gearItemLocator(page, "Leather Armor");
     const bodySlot = page.locator('[data-testid="armory-equipment-slot"][data-slot="body"]');
+    const board = page.getByTestId("armory-inventory-board");
 
-    const source = await bodyItem.boundingBox();
-    const destination = await bodySlot.boundingBox();
-    expect(source).not.toBeNull();
-    expect(destination).not.toBeNull();
+    await pointerDragToInventory(page, bodyItem, board, 3, 1, 2, 3);
     await bodyItem.dblclick();
     const flyover = page.getByTestId("armory-gear-drag-visual");
 
@@ -118,14 +116,21 @@ test.describe("Gear equip", () => {
     await expect(bodySlot.locator("img")).toHaveCount(2);
 
     await bodySlot.dblclick();
+    const firstCell = await page.locator('[data-armory-inventory-cell="1-1"]').boundingBox();
+    expect(firstCell).not.toBeNull();
+    await expect
+      .poll(async () => {
+        const box = await flyover.boundingBox();
+        if (!box) return Number.POSITIVE_INFINITY;
+        return Math.max(Math.abs(box.x - firstCell!.x), Math.abs(box.y - firstCell!.y));
+      })
+      .toBeLessThan(3);
     await expect(bodyItem).toBeVisible();
     await expect(bodySlot.locator("img")).toHaveCount(1);
-    const gridOrigin = await page.locator("[data-armory-grid-metric='cell']").boundingBox();
     const unequipped = await bodyItem.boundingBox();
-    expect(gridOrigin).not.toBeNull();
     expect(unequipped).not.toBeNull();
-    expect(Math.abs(unequipped!.x - gridOrigin!.x)).toBeLessThan(3);
-    expect(Math.abs(unequipped!.y - gridOrigin!.y)).toBeLessThan(3);
+    expect(Math.abs(unequipped!.x - firstCell!.x)).toBeLessThan(3);
+    expect(Math.abs(unequipped!.y - firstCell!.y)).toBeLessThan(3);
   });
 
   test("keeps the rendered gear footprint when preview-snapping into inventory", async ({ page }) => {

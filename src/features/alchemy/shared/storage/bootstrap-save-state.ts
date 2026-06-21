@@ -29,7 +29,6 @@ export function applySaveDataToStores(data: SaveData) {
       data.gearLoadouts,
       data.gearBoardPositionsByCharacter,
       data.craftingCurrencies,
-      {},
       data.craftingCurrencyBoardPositionsByCharacter,
     );
 }

@@ -9,9 +9,7 @@ import { INVENTORY_COLS } from "./constants";
 import { footprintForInstance } from "./footprints";
 import {
   GEAR_CHARACTER_IDS,
-  GEAR_SLOTS,
   createEmptyGearBoardPositionsByCharacter,
-  flattenGearInventories,
   type GearBoardPositions,
   type GearBoardPositionsByCharacter,
   type GearInventories,
@@ -79,31 +77,6 @@ export function sanitizeCurrencyBoardPositionsByCharacter(
   const next = createEmptyCurrencyBoardPositionsByCharacter();
   for (const characterId of GEAR_CHARACTER_IDS) {
     next[characterId] = sanitizeCurrencyBoardPositions(boardPositionsByCharacter[characterId], currencies);
-  }
-  return next;
-}
-
-export function sanitizeEquippedReturnPositions(
-  equippedReturnPositions: GearBoardPositions,
-  inventories: GearInventories,
-  loadouts: GearLoadouts,
-): GearBoardPositions {
-  const flatInventory = flattenGearInventories(inventories);
-  const inventoryIds = new Set(flatInventory.map((item) => item.instanceId));
-
-  const equippedIds = new Set<string>();
-  for (const characterId of GEAR_CHARACTER_IDS) {
-    for (const slot of GEAR_SLOTS) {
-      const id = loadouts[characterId][slot];
-      if (id) equippedIds.add(id);
-    }
-  }
-
-  const next: GearBoardPositions = {};
-  for (const [instanceId, position] of Object.entries(equippedReturnPositions)) {
-    if (inventoryIds.has(instanceId) && equippedIds.has(instanceId)) {
-      next[instanceId] = position;
-    }
   }
   return next;
 }

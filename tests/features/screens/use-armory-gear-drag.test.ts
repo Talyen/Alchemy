@@ -96,7 +96,7 @@ describe("useArmoryGearDrag double click equipping", () => {
 
     // Advance timer to trigger the flyover commit
     act(() => {
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(500);
     });
 
     // It should choose main-hand and call onEquip with 'main-hand'
@@ -184,7 +184,7 @@ describe("useArmoryGearDrag double click equipping", () => {
     });
 
     act(() => {
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(500);
     });
 
     expect(onEquip).toHaveBeenCalledWith(
@@ -357,7 +357,7 @@ describe("useArmoryGearDrag multi-item unequip animations", () => {
     });
 
     act(() => {
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(500);
     });
 
     expect(onEquip).toHaveBeenCalledWith(
@@ -521,7 +521,7 @@ describe("useArmoryGearDrag multi-item unequip animations", () => {
     });
 
     act(() => {
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(500);
     });
 
     expect(onEquip).toHaveBeenCalledWith(

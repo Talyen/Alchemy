@@ -10,7 +10,7 @@ export type DragDestination =
   | { kind: "equipment"; slot: string; rect: DragRect }
   | { kind: "external"; rect: DragRect };
 
-import { DOUBLE_CLICK_FLYOVER_MS, DRAG_POINTER_ACTIVATE_DISTANCE_PX } from "./drag-constants";
+import { DOUBLE_CLICK_FLYOVER_CLEAR_DELAY_MS, DRAG_POINTER_ACTIVATE_DISTANCE_PX } from "./drag-constants";
 
 export type DragOrigin =
   | { kind: "inventory"; placement: InventoryPlacement }
@@ -295,7 +295,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       destination: DragDestination,
       commit: () => void,
       source?: DragRect,
-      holdMs = DOUBLE_CLICK_FLYOVER_MS,
+      holdMs = DOUBLE_CLICK_FLYOVER_CLEAR_DELAY_MS,
     ) => {
       const startSource = source ?? { left: 0, top: 0, width: 0, height: 0 };
       const visual: BoardDragVisual<TId, TOrigin> = {

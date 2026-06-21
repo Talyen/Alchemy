@@ -122,7 +122,7 @@ type CraftingCurrencyBoardPositionsByCharacter = Record<CharacterId, CraftingCur
 ### Read paths
 
 - **`MenuScreen`** — reads `useGearStore` directly to compute `isArmoryLocked = flattenGearInventories(...).length === 0`.
-- **`ArmoryScreen`** — reads `inventories`, `loadouts`, `craftingCurrencies`, `equippedReturnPositions`, board position slices.
+- **`ArmoryScreen`** — reads `inventories`, `loadouts`, `craftingCurrencies`, and board position slices.
 - **`useArmoryController`** — facade hook that bundles the read-only state plus the 5 mutation callbacks.
 - **Battle** — `computeGearManifest(characterId, inventory, loadouts)` is called in `battle-init.ts` and produces a flat `GearEffectManifest` (64 numeric keys) that is copied into `BattleState.gearEffects` and frozen at battle start.
 - **Run start** — `content-system-navigation.ts` snapshots `computeGearManifest.maxHealth` into `RunStartSnapshot.gearMaxHealthBonus`.

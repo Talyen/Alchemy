@@ -38,7 +38,7 @@ export function DragVisualPortal({
     <motion.div
       key={isDrag ? "drag" : "settle"}
       data-testid={testId}
-      className="pointer-events-none fixed z-[120] overflow-hidden rounded-xl bg-background/60"
+      className="pointer-events-none fixed z-[120] overflow-hidden rounded-xl"
       style={{
         left: Math.round(startRect.left),
         top: Math.round(startRect.top),

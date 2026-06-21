@@ -73,7 +73,6 @@ export function ArmoryScreen({
   const { salvageTarget, salvageMode, activeCurrencyId, transferMenu } = targeting;
   const characterInventory = useMemo(() => inventories[characterId], [inventories, characterId]);
   const savedPositions = useGearStore((state) => state.boardPositionsByCharacter[characterId]);
-  const equippedReturnPositions = useGearStore((state) => state.equippedReturnPositions);
   const moveBoardItem = useGearStore((state) => state.moveBoardItem);
   const handleMoveItem = useCallback(
     (instanceId: string, col: number, row: number) => {
@@ -104,11 +103,10 @@ export function ArmoryScreen({
         inventory: characterInventory,
         loadout,
         gearPositions: savedPositions,
-        equippedReturnPositions,
         currencyPositions: savedCurrencyPositions,
         craftingCurrencies,
       }),
-    [characterInventory, craftingCurrencies, loadout, savedCurrencyPositions, savedPositions, equippedReturnPositions],
+    [characterInventory, craftingCurrencies, loadout, savedCurrencyPositions, savedPositions],
   );
 
   const handleEquipWithSwap = useCallback(

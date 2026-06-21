@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import * as audioBufferCache from "@/lib/audio-buffer-cache";
 import { audioState } from "@/lib/audio-state";
+import { uiSounds } from "@/lib/sound-registry";
 import {
   stopAllSfx,
   playCardSound,
@@ -141,6 +142,13 @@ describe("playUISound", () => {
 
   it("plays audio for error sound", () => {
     playUISound("error");
+    expectLastSourceStarted();
+  });
+
+  it("plays salvage with the mine sound", () => {
+    expect(uiSounds.salvage).toBe("mine-2.ogg");
+    playUISound("salvage");
+    expect(audioBufferCache.getCachedBuffer).toHaveBeenCalledWith("mine-2.ogg");
     expectLastSourceStarted();
   });
 });

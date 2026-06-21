@@ -10,7 +10,6 @@ import {
   findGearInventoryOwner,
   salvageGear,
   unequipGear,
-  type GearBoardPositions,
   type GearBoardPositionsByCharacter,
   type GearInstance,
   type GearInventories,
@@ -24,7 +23,6 @@ import {
   addCraftingCurrencies,
   normalizeCraftingCurrencies,
   GEAR_CHARACTER_IDS,
-  GEAR_SLOTS,
   type BoardItemRef,
   updateGearStateAndSync,
   moveBoardItemForState,
@@ -35,7 +33,6 @@ type GearStore = {
   inventories: GearInventories;
   loadouts: GearLoadouts;
   boardPositionsByCharacter: GearBoardPositionsByCharacter;
-  equippedReturnPositions: GearBoardPositions;
   currencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   initialize: (
@@ -43,7 +40,6 @@ type GearStore = {
     loadouts: GearLoadouts,
     boardPositionsByCharacter?: GearBoardPositionsByCharacter,
     craftingCurrencies?: Partial<Record<CraftingCurrencyId, number>>,
-    equippedReturnPositions?: GearBoardPositions,
     currencyBoardPositionsByCharacter?: CraftingCurrencyBoardPositionsByCharacter,
   ) => void;
   addInstance: (instance: GearInstance, characterId: CharacterId) => void;
@@ -71,7 +67,6 @@ const initialState = {
   inventories: createEmptyGearInventories(),
   loadouts: createEmptyGearLoadouts(),
   boardPositionsByCharacter: createEmptyGearBoardPositionsByCharacter(),
-  equippedReturnPositions: {} as GearBoardPositions,
   currencyBoardPositionsByCharacter: createEmptyCurrencyBoardPositionsByCharacter(),
   craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
 };
@@ -83,22 +78,14 @@ export const useGearStore = create<GearStore>((set, get) => ({
     loadouts,
     boardPositionsByCharacter = createEmptyGearBoardPositionsByCharacter(),
     craftingCurrencies = initialState.craftingCurrencies,
-    equippedReturnPositions = {},
     currencyBoardPositionsByCharacter = createEmptyCurrencyBoardPositionsByCharacter(),
   ) => {
-    const flatInventory = flattenGearInventories(inventories);
-    const inventoryIds = new Set(flatInventory.map((item) => item.instanceId));
-    const nextReturn: GearBoardPositions = {};
-    for (const [instanceId, position] of Object.entries(equippedReturnPositions)) {
-      if (inventoryIds.has(instanceId)) nextReturn[instanceId] = position;
-    }
     const normalizedCurrencies = normalizeCraftingCurrencies(craftingCurrencies);
     set((state) => {
       return updateGearStateAndSync(state, {
         inventories,
         loadouts,
         boardPositionsByCharacter,
-        equippedReturnPositions: nextReturn,
         craftingCurrencies: normalizedCurrencies,
         currencyBoardPositionsByCharacter,
       });
@@ -138,12 +125,9 @@ export const useGearStore = create<GearStore>((set, get) => ({
     const nextPositionsByCharacter = { ...state.boardPositionsByCharacter };
     const ownerPositions = { ...(nextPositionsByCharacter[owner] ?? {}) };
     const targetPositions = { ...(nextPositionsByCharacter[targetCharacterId] ?? {}) };
-    const nextReturn = { ...state.equippedReturnPositions };
-    const transferPosition = ownerPositions[instanceId] ?? nextReturn[instanceId];
+    const transferPosition = ownerPositions[instanceId];
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
     delete ownerPositions[instanceId];
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
-    delete nextReturn[instanceId];
     if (transferPosition) {
       targetPositions[instanceId] = transferPosition;
     }
@@ -155,7 +139,6 @@ export const useGearStore = create<GearStore>((set, get) => ({
         inventories: nextInventories,
         loadouts: nextLoadouts,
         boardPositionsByCharacter: nextPositionsByCharacter,
-        equippedReturnPositions: nextReturn,
       }),
     );
     return true;
@@ -167,7 +150,6 @@ export const useGearStore = create<GearStore>((set, get) => ({
       const nextLoadouts = equipGear(state.loadouts, characterId, slot, instance, flatInventory);
       const nextPositionsByCharacter = { ...state.boardPositionsByCharacter };
       const characterPositions = { ...(nextPositionsByCharacter[characterId] ?? {}) };
-      const nextReturn = { ...state.equippedReturnPositions };
 
       const currentOwner = findGearInventoryOwner(state.inventories, instance.instanceId);
       let nextInventories = state.inventories;
@@ -179,32 +161,13 @@ export const useGearStore = create<GearStore>((set, get) => ({
         };
         const currentOwnerPositions = { ...(nextPositionsByCharacter[currentOwner] ?? {}) };
         if (currentOwnerPositions[instance.instanceId]) {
-          characterPositions[instance.instanceId] = currentOwnerPositions[instance.instanceId]!;
           // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
           delete currentOwnerPositions[instance.instanceId];
           nextPositionsByCharacter[currentOwner] = currentOwnerPositions;
         }
       }
 
-      const originalLoadout = state.loadouts[characterId];
-      const nextLoadout = nextLoadouts[characterId];
-      if (originalLoadout && nextLoadout) {
-        for (const gearSlot of GEAR_SLOTS) {
-          const origInstanceId = originalLoadout[gearSlot];
-          const nextInstanceId = nextLoadout[gearSlot];
-          if (origInstanceId && !nextInstanceId && origInstanceId !== instance.instanceId) {
-            if (nextReturn[origInstanceId]) {
-              characterPositions[origInstanceId] = nextReturn[origInstanceId];
-              // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
-              delete nextReturn[origInstanceId];
-            }
-          }
-        }
-      }
-
-      const currentPos = characterPositions[instance.instanceId];
-      if (currentPos) {
-        nextReturn[instance.instanceId] = currentPos;
+      if (characterPositions[instance.instanceId]) {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
         delete characterPositions[instance.instanceId];
       }
@@ -212,7 +175,6 @@ export const useGearStore = create<GearStore>((set, get) => ({
       if (options?.vacatedPlacement) {
         if (options.swapDisplaced !== false && displacedId && displacedId !== instance.instanceId) {
           characterPositions[displacedId] = options.vacatedPlacement;
-          delete nextReturn[instance.instanceId];
         }
       }
 
@@ -222,26 +184,13 @@ export const useGearStore = create<GearStore>((set, get) => ({
         inventories: nextInventories,
         loadouts: nextLoadouts,
         boardPositionsByCharacter: nextPositionsByCharacter,
-        equippedReturnPositions: nextReturn,
       });
     }),
   unequip: (characterId, slot) =>
     set((state) => {
-      const instanceId = state.loadouts[characterId]?.[slot];
       const nextLoadouts = unequipGear(state.loadouts, characterId, slot);
-      const nextPositionsByCharacter = { ...state.boardPositionsByCharacter };
-      const characterPositions = { ...(nextPositionsByCharacter[characterId] ?? {}) };
-      const nextReturn = { ...state.equippedReturnPositions };
-      if (instanceId && nextReturn[instanceId]) {
-        characterPositions[instanceId] = nextReturn[instanceId];
-        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
-        delete nextReturn[instanceId];
-      }
-      nextPositionsByCharacter[characterId] = characterPositions;
       return updateGearStateAndSync(state, {
         loadouts: nextLoadouts,
-        boardPositionsByCharacter: nextPositionsByCharacter,
-        equippedReturnPositions: nextReturn,
       });
     }),
   moveBoardItem: (characterId, item, col, row) =>
@@ -279,10 +228,7 @@ export const useGearStore = create<GearStore>((set, get) => ({
     const ownerPositions = { ...(nextPositionsByCharacter[owner] ?? {}) };
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
     delete ownerPositions[instanceId];
-
-    const nextReturn = { ...state.equippedReturnPositions };
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
-    delete nextReturn[instanceId];
+    nextPositionsByCharacter[owner] = ownerPositions;
 
     const nextInventories = {
       ...state.inventories,
@@ -296,7 +242,6 @@ export const useGearStore = create<GearStore>((set, get) => ({
         inventories: nextInventories,
         loadouts: result.loadouts,
         boardPositionsByCharacter: nextPositionsByCharacter,
-        equippedReturnPositions: nextReturn,
         craftingCurrencies: nextCurrencies,
         currencyBoardPositionsByCharacter: state.currencyBoardPositionsByCharacter,
       }),

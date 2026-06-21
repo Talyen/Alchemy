@@ -38,7 +38,7 @@ export type GearPointerMove = (pointer: { x: number; y: number }, pointerId: num
 
 export type GearPointerEnd = (pointer: { x: number; y: number }, pointerId: number, cancelled?: boolean) => void;
 
-import { DOUBLE_CLICK_FLYOVER_MS, EQUIPMENT_SNAP_INSET_RATIO } from "./drag-constants";
+import { DOUBLE_CLICK_FLYOVER_CLEAR_DELAY_MS, EQUIPMENT_SNAP_INSET_RATIO } from "./drag-constants";
 
 export type GearDragVisual = {
   instance: GearInstance | null;
@@ -242,7 +242,7 @@ export function useArmoryGearDrag({
       if (secondaryCleanupTimerRef.current !== null) window.clearTimeout(secondaryCleanupTimerRef.current);
       secondaryCleanupTimerRef.current = window.setTimeout(() => {
         clearSecondaryDragState();
-      }, DOUBLE_CLICK_FLYOVER_MS);
+      }, DOUBLE_CLICK_FLYOVER_CLEAR_DELAY_MS);
     },
     [clearSecondaryDragState, inventoryBoardRef],
   );

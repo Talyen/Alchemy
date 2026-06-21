@@ -4,7 +4,7 @@ import { GEAR_FOOTPRINT, type GearFootprint } from "./footprints";
 import { packGridItems } from "./grid-packing";
 import type { PackedInventory, PackedInventoryItem } from "./inventory-placement";
 import { gearDefinitions } from "./definitions";
-import type { GearBoardPositions, GearInstance, GearLoadout } from "./types";
+import type { GearInstance, GearLoadout } from "./types";
 
 export type PackedCurrencyItem = {
   currencyId: CraftingCurrencyId;
@@ -134,15 +134,13 @@ export function buildArmoryBoardView({
   inventory,
   loadout,
   gearPositions,
-  equippedReturnPositions: _equippedReturnPositions = {},
   currencyPositions,
   craftingCurrencies,
   cols = INVENTORY_COLS,
 }: {
   inventory: GearInstance[];
   loadout: GearLoadout;
-  gearPositions: GearBoardPositions;
-  equippedReturnPositions?: GearBoardPositions;
+  gearPositions: Record<string, { col: number; row: number }>;
   currencyPositions: CraftingCurrencyBoardPositions;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   cols?: number;

@@ -18,6 +18,39 @@ import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
 import { resolveEquipSwap } from "./resolve-equip-swap";
 import type { DragDestination, DragRect, DragPoint } from "./use-board-drag";
 
+function inventoryCellDragRect({
+  board,
+  placement,
+  footprint,
+  metrics,
+}: {
+  board: HTMLElement;
+  placement: InventoryPlacement;
+  footprint: { w: number; h: number };
+  metrics: NonNullable<ReturnType<typeof readInventoryBoardMetrics>>;
+}): DragRect {
+  const { cellSize, gap, boardRect, scrollTop } = metrics;
+  const cell = board.querySelector<HTMLElement>(`[data-armory-inventory-cell="${placement.col}-${placement.row}"]`);
+  const width = cellSize * footprint.w + gap * (footprint.w - 1);
+  const height = cellSize * footprint.h + gap * (footprint.h - 1);
+  if (cell) {
+    const cellRect = cell.getBoundingClientRect();
+    return {
+      left: cellRect.left,
+      top: cellRect.top,
+      width,
+      height,
+    };
+  }
+  const localRect = inventoryPlacementRect(placement, footprint, { cellSize, gap });
+  return {
+    left: boardRect.left + localRect.left,
+    top: boardRect.top + localRect.top - scrollTop,
+    width: localRect.width,
+    height: localRect.height,
+  };
+}
+
 export function findEquipSlotForDoubleClickedGear(loadout: GearLoadout, definition: GearDefinition): GearSlot | null {
   const compatibleSlots = definition.compatibleSlots;
   let slot = compatibleSlots.find((candidate) => !loadout[candidate]) ?? null;
@@ -110,18 +143,11 @@ export function getInventoryDragDestination({
   const metrics = readInventoryBoardMetrics(board);
   const footprint = footprintForInstance(instance);
   if (!metrics || !footprint) return null;
-  const { cellSize, gap, boardRect, scrollTop } = metrics;
   const placement = findFirstInventoryPlacement(boardObstacles, instance.instanceId, footprint, INVENTORY_COLS);
-  const localRect = inventoryPlacementRect(placement, footprint, { cellSize, gap });
   return {
     kind: "inventory",
     placement,
-    rect: {
-      left: boardRect.left + localRect.left,
-      top: boardRect.top + localRect.top - scrollTop,
-      width: localRect.width,
-      height: localRect.height,
-    },
+    rect: inventoryCellDragRect({ board, placement, footprint, metrics }),
   };
 }
 
@@ -212,19 +238,12 @@ export function buildSecondaryDragVisuals({
 }): SecondaryDragVisual[] {
   const metrics = readInventoryBoardMetrics(board);
   if (!metrics) return [];
-  const { cellSize, gap, boardRect, scrollTop } = metrics;
 
   const visuals: SecondaryDragVisual[] = [];
   for (const { instance: displaced, source, vacatedPlacement } of displacedItems) {
     const footprint = footprintForInstance(displaced);
     if (!footprint) continue;
-    const localRect = inventoryPlacementRect(vacatedPlacement, footprint, { cellSize, gap });
-    const destinationRect: DragRect = {
-      left: boardRect.left + localRect.left,
-      top: boardRect.top + localRect.top - scrollTop,
-      width: localRect.width,
-      height: localRect.height,
-    };
+    const destinationRect = inventoryCellDragRect({ board, placement: vacatedPlacement, footprint, metrics });
     visuals.push({
       instance: displaced,
       source,

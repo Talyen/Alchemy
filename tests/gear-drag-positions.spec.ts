@@ -243,7 +243,7 @@ test.describe("Gear drag positions", critical, () => {
     expect(parseFloat(paddingRight)).toBeGreaterThanOrEqual(8);
   });
 
-  test("drag visual uses integer pixel coordinates and background class", prepush, async ({ page }) => {
+  test("drag visual uses integer pixel coordinates without visual tinting", prepush, async ({ page }) => {
     await openArmory(page, [bodyGear]);
 
     const bodyItem = gearItemLocator(page, "Leather Armor");
@@ -260,21 +260,27 @@ test.describe("Gear drag positions", critical, () => {
     const dragVisual = page.getByTestId("armory-gear-drag-visual");
     await expect(dragVisual).toBeVisible();
 
-    // Check that it has the background color class
-    await expect(dragVisual).toHaveClass(/bg-background\/60/);
+    await expect(dragVisual).not.toHaveClass(/bg-background\/60/);
 
     const styles = await dragVisual.evaluate((el) => {
       const rect = el.getBoundingClientRect();
       const style = window.getComputedStyle(el);
       const transform = style.transform;
       return {
+        backgroundColor: style.backgroundColor,
+        filter: style.filter,
         left: rect.left,
+        opacity: style.opacity,
         top: rect.top,
         width: rect.width,
         height: rect.height,
         transform,
       };
     });
+
+    expect(styles.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    expect(styles.filter).toBe("none");
+    expect(styles.opacity).toBe("1");
 
     // Bounding rect values should be integers
     expect(styles.left % 1).toBe(0);
