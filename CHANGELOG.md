@@ -6,6 +6,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Features
 
+- feat(content): add content validation and audit tooling
 - feat(talents): implement 21 new talents across nature, consume, archery, companion pools
 - feat(homestead): add art for all nodes and fix mismatched research IDs
 - feat(ci): commit 7 - enable strict test config and wire typecheck:all into lint:ci
@@ -274,6 +275,21 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(shop): consume mix slot on any attempt, dedup price/refresh handlers
+  - Fix bug where mix slot was not consumed on failed mix attempts
+    (mixing with an existing Mixed Potion could be retried indefinitely)
+  - Gate handleAlchemistMixPotions on mixUsed; set mixUsed=true and
+    deduct gold before the operation, not after — any attempt counts
+  - Remove stale eslint-disable comments on initAlchemist and
+    handleEquipmentShopRefresh (no unused params exist)
+  - Add rng?: () => number to CreateShopActionsDeps for deterministic
+    equipment shop init/refresh (defaults to Math.random)
+  - Collapse 4 price getters into makeBuyPriceGetter factory
+  - Collapse 4 refresh handlers into makeCardRefreshHandler /
+    makeShopRefreshHandler factories
+  - Move markSlotPurchased to shop-transactions.ts for reuse
+  - Add 4 tests: mix cooldown on failure, second-mix block, alchemist
+    refresh dedup, and deterministic rng for equipment shop
 - fix(armory): fix gear-save store initialization, workspace layout overflow, and currency drag swap targeting
 - fix(use-battle-controller): guard companion follow-up re-entry, stabilize cardPlay deps cascade
   - Fix scheduleCompanionFollowUp guard to prevent duplicate timers under
@@ -631,6 +647,10 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(armory): simplify drag and targeting state
+- refactor(battle-controller): remove dead resolvedAsHasteOrStunRef and redundant teardown effect
+- refactor(style): simplify index.css — remove dead theme tokens, collapse card-ghost classes, dedupe vars
+- refactor(style): flatten index.css variables and consolidate design tokens
 - refactor(style): simplify index.css and clean up unused tailwindcss-animate plugin
 - refactor(style): simplify index.css architecture and resolve redundancies
 - refactor(gear): simplify store-helpers architecture
@@ -1215,6 +1235,32 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Tests
 
+- test(e2e): consolidate, expand, and retag E2E suite
+  Phase 1 - Consolidation:
+  - Collapse core-gameplay Battle Flow from 6 tests to 3
+  - Demote 7 micro-geometry tests in gear-drag-positions to @full
+  - Delete redundant swap test in gear-equip (duplicated in drag-positions)
+  - Fix Brass Censer assertion to check for doubled damage
+  - Split mystery-flow into outcome-specific tests
+  - Rename lethal-damage-flow -> death-door-flow, expand to 4 tests
+  - Slim resolution matrices in aspect-ratio-layout and draw-discard-animations
+  - Remove Death's Door tests from game-over-flow (now in death-door-flow)
+  
+  Phase 2 - Coverage expansion:
+  - Create status-persistence.spec.ts (Anvil forge persist)
+  - Create reward-flow.spec.ts (card/trinket/gear reward, reload persist)
+  - Create destination-progression.spec.ts (choice pool, boss at act-end)
+  - Create homestead-actions.spec.ts (building/farm/research state)
+  - Create run-end-meta.spec.ts (defeat clears activeRun)
+  - Create wildwood-traits.spec.ts (combat/reward trait system)
+  - Create labyrinth-full.spec.ts (rest, treasure, boss chambers)
+  - Create autosave-cadence.spec.ts (save-after-turn/reward/nav)
+  - Create difficulty-modifiers.spec.ts (Novice vs Legend HP)
+  - Parameterize talents-in-battle and trinkets-flow
+  
+  Phase 3+4 - Tagging:
+  - Add @armory tag to all gear/*armory specs
+  - Add @prepush to page-level smokes (homestead, wildwood, reward)
 - test(changelog): conditionally skip sync guard locally
 - test(e2e): refactor 5 slowest tests — split, save-injection, runtimeErrors
 - test(armory): expand resolveEquipSwap coverage, add browseOnly and transfer-menu tests
@@ -1298,6 +1344,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Docs
 
+- docs(agents): add balance:sim output path and pre-commit hook note
 - docs(agents): fix broken cross-references, add missing section links, reconcile policies
 - docs(agents): update AGENTS.md with quick commands, conventions, and escalation policy
 - docs(armory): add docs/ARMORY.md and cross-link from AGENTS + ARCHITECTURE
