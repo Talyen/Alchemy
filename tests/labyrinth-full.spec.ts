@@ -1,4 +1,5 @@
 import { expect } from "@playwright/test";
+import { test } from "./fixtures/e2e";
 import { injectLabyrinthRun, makeHighDamageCard } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 import { critical } from "./playwright-tags";

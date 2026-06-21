@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { injectSaveState, makeHighDamageCard, SAVE_KEY, skipBattleAndClaimReward } from "./helpers";
+import { injectSaveState, makeHighDamageCard, SAVE_KEY, skipBattleAndClaimReward, startBattleWithDeck } from "./helpers";
 import { DestinationPage } from "./pages/destination-page";
 import { RewardPage } from "./pages/reward-page";
 import { test } from "./fixtures/e2e";
@@ -9,6 +9,10 @@ test.describe("Reward Flow", critical, () => {
   test("card reward: selecting and adding card works", prepush, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeHighDamageCard()),
+    );
     await skipBattleAndClaimReward(page);
     await new DestinationPage(page).expectVisible();
   });

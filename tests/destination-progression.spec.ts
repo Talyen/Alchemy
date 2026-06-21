@@ -1,4 +1,4 @@
-import { expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { injectSaveState } from "./helpers";
 import { DestinationPage } from "./pages/destination-page";
 import { critical } from "./playwright-tags";
