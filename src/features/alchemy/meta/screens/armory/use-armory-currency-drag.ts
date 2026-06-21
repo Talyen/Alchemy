@@ -11,7 +11,7 @@ import { useBoardDrag, type DragDestination, type DragRect } from "./use-board-d
 
 const CURRENCY_FOOTPRINT = { w: 1, h: 1 };
 
-export type CarriableItem =
+type CarriableItem =
   | { kind: "gear"; instance: GearInstance; origin: CurrencyDragOrigin }
   | { kind: "currency"; currencyId: CraftingCurrencyId };
 

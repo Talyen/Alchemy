@@ -139,7 +139,7 @@ export async function pointerDragToInventory(
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 }
 
-export async function expectItemAtCell(
+async function expectItemAtCell(
   _page: Page,
   board: Locator,
   itemLocator: Locator,

@@ -8,7 +8,7 @@ import { processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-trait
 import { processEncounterTraitActionDamage, processEncounterTraitActionStart } from "./encounter-trait-events";
 import { advanceToPlayerTurn, reduceSkipTurns, resolveDeathsDoorEndOfEnemyTurn } from "./enemy-turn-utils";
 
-export type EndPlayerTurnKind = "haste" | "skipped" | "standard";
+type EndPlayerTurnKind = "haste" | "skipped" | "standard";
 
 export type EndPlayerTurnResolution = {
   kind: EndPlayerTurnKind;

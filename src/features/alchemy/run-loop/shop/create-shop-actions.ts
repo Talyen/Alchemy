@@ -52,14 +52,14 @@ import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 
-export type ShopStates = {
+type ShopStates = {
   shopState: ShopState;
   alchemistState: AlchemistState;
   trinketShopState: TrinketShopState;
   equipmentShopState: EquipmentShopState;
 };
 
-export type ShopSetters = {
+type ShopSetters = {
   setShopState: (state: ShopState | ((prev: ShopState) => ShopState)) => void;
   setAlchemistState: (state: AlchemistState | ((prev: AlchemistState) => AlchemistState)) => void;
   setTrinketShopState: (state: TrinketShopState | ((prev: TrinketShopState) => TrinketShopState)) => void;

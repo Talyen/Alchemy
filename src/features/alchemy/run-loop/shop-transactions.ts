@@ -18,7 +18,7 @@ type RefreshShopOfferingsInput<T> = {
   resample: () => unknown[];
 };
 
-export function refreshShopOfferings<T>(input: RefreshShopOfferingsInput<T>): boolean {
+function refreshShopOfferings<T>(input: RefreshShopOfferingsInput<T>): boolean {
   if (input.refreshesLeft <= 0 || input.runGold < input.price) return false;
   spendRunGold(input.price, input.setRunGold);
   const newItems = input.resample();
