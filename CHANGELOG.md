@@ -1380,6 +1380,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore: delete unused expectItemAtCell helper
 - chore: remove unused exports across the codebase
 - chore(content-validation): remove unused exports
 - chore(e2e): add timing/audit scripts and auto-diagnostic failure reports
