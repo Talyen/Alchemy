@@ -4,13 +4,10 @@
   --color-background: hsl(30 10% 3%);
   --color-foreground: hsl(40 25% 88%);
   --color-card: hsl(30 8% 6%);
-  --color-card-foreground: hsl(40 25% 88%);
   --color-popover: hsl(30 8% 6%);
   --color-popover-foreground: hsl(40 25% 88%);
   --color-primary: hsl(36 55% 56%);
   --color-primary-foreground: hsl(28 22% 12%);
-  --color-secondary: hsl(30 8% 10%);
-  --color-secondary-foreground: hsl(38 20% 86%);
   --color-muted: hsl(30 6% 8%);
   --color-muted-foreground: hsl(35 12% 62%);
   --color-accent: hsl(195 30% 48%);
@@ -18,11 +15,7 @@
   --color-destructive: hsl(0 50% 45%);
   --color-destructive-foreground: hsl(40 25% 88%);
   --color-border: hsl(30 8% 16%);
-  --color-input: hsl(30 8% 16%);
-  --color-ring: hsl(36 55% 56%);
   --color-mana-gem: hsl(217 58% 35%);
-
-  --z-index-wish-overlay: 90;
 
   --radius: 1.5rem;
   --radius-lg: 1.5rem;
@@ -37,9 +30,6 @@
   --radius-shell-dialog: 1.625rem;
   --radius-shell-screen: 1.75rem;
   --radius-shell-hero: 1.875rem;
-
-  --font-size-2xs: 0.625rem;
-  --font-size-2xs--line-height: 0.875rem;
 
   --font-sans: "Inter", sans-serif;
 
@@ -262,22 +252,22 @@
     will-change: transform, opacity;
   }
 
-  .card-ghost-draw-in {
+  .card-ghost-overlay[data-variant="draw-in"] {
     animation-duration: 520ms;
     animation-name: cardGhostDrawIn;
   }
 
-  .card-ghost-discard-out {
+  .card-ghost-overlay[data-variant="discard-out"] {
     animation-duration: 320ms;
     animation-name: cardGhostDiscardOut;
   }
 
-  .card-ghost-activate {
+  .card-ghost-overlay[data-variant="activate"] {
     animation-duration: 672ms;
     animation-name: cardGhostActivate;
   }
 
-  .card-ghost-play-travel {
+  .card-ghost-overlay[data-variant="play-travel"] {
     animation-duration: 528ms;
     animation-name: cardGhostPlayTravel;
   }
@@ -302,23 +292,23 @@
 
   .motion-panel {
     animation-duration: 190ms;
-    --slide-y: 8px;
   }
 
   .wish-overlay-panel {
     animation-duration: 300ms;
-    --slide-y: 8px;
   }
 
   .stagger-item {
     animation-duration: 230ms;
     animation-delay: calc(var(--stagger-index, 0) * 36ms);
-    --slide-y: 10px;
   }
 
   .state-swap {
     animation-duration: 170ms;
-    --slide-y: 4px;
+  }
+
+  .page-enter {
+    animation: slideUpIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .state-fade {
@@ -414,14 +404,8 @@
     background: rgb(16, 13, 10);
   }
 
-  .page-enter {
-    animation: slideUpIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    --slide-y: 6px;
-  }
-
   .page-exit {
     animation: slideUpOut 120ms ease-in both;
-    --slide-y-out: -4px;
     pointer-events: none;
   }
 
@@ -433,7 +417,7 @@
 @keyframes slideUpIn {
   from {
     opacity: 0;
-    transform: translateY(var(--slide-y, 8px));
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -448,7 +432,7 @@
   }
   to {
     opacity: 0;
-    transform: translateY(var(--slide-y-out, -4px));
+    transform: translateY(-4px);
   }
 }
 

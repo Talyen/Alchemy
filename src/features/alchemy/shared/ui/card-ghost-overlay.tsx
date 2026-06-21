@@ -13,13 +13,8 @@ export function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: 
       src={ghost.art}
       alt=""
       aria-hidden="true"
-      className={cn(
-        "card-ghost-overlay pointer-events-none absolute z-[80] rounded-shell-hero bg-black object-cover",
-        ghost.variant === "draw-in" ? "card-ghost-draw-in" : null,
-        ghost.variant === "discard-out" ? "card-ghost-discard-out" : null,
-        ghost.variant === "activate" ? "card-ghost-activate" : null,
-        ghost.variant === "play-travel" ? "card-ghost-play-travel" : null,
-      )}
+      data-variant={ghost.variant}
+      className={cn("card-ghost-overlay pointer-events-none absolute z-[80] rounded-shell-hero bg-black object-cover")}
       onAnimationEnd={onDone}
       style={
         {

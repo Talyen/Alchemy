@@ -274,6 +274,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(armory): fix gear-save store initialization, workspace layout overflow, and currency drag swap targeting
 - fix(use-battle-controller): guard companion follow-up re-entry, stabilize cardPlay deps cascade
   - Fix scheduleCompanionFollowUp guard to prevent duplicate timers under
     concurrent turn resolution (early return + set ref before setTimeout)
@@ -630,6 +631,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(style): simplify index.css and clean up unused tailwindcss-animate plugin
+- refactor(style): simplify index.css architecture and resolve redundancies
+- refactor(gear): simplify store-helpers architecture
 - refactor(shop): simplify shop actions and unify pricing selectors
 - refactor(run-flow): trim deps, extract wildwood victory commit, dedupe teardown
 - refactor(shop): extract pure shop-actions factory, drop favorConsumed refs, add bounds checks
@@ -1211,6 +1215,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Tests
 
+- test(changelog): conditionally skip sync guard locally
 - test(e2e): refactor 5 slowest tests — split, save-injection, runtimeErrors
 - test(armory): expand resolveEquipSwap coverage, add browseOnly and transfer-menu tests
   - Add 4 missing resolveEquipSwap scenarios: same-instance equip,
