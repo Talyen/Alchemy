@@ -14,6 +14,8 @@ import {
   setSfxVolume,
 } from "@/lib/audio";
 import { audioState } from "@/lib/audio-state";
+import { getBossMusicKey } from "@/lib/audio-music";
+import { readBattleStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { Screen } from "@/features/alchemy/shared/types";
 
 type AppAudioEffectsOptions = {
@@ -23,6 +25,15 @@ type AppAudioEffectsOptions = {
   muteInBackground: boolean;
   screen: Screen;
 };
+
+function pickMusicKey(screen: Screen): string {
+  if (screen !== "battle") return MUSIC_KEYS.MENU;
+  const battleStore = readBattleStore();
+  if (!battleStore.hasActiveBattle) return MUSIC_KEYS.BATTLE;
+  const enemy = battleStore.battleState.currentEnemy;
+  if (enemy.enemyType !== "boss") return MUSIC_KEYS.BATTLE;
+  return getBossMusicKey(enemy.id) ?? MUSIC_KEYS.BATTLE;
+}
 
 // Applies persisted audio options and swaps menu/battle music as the route changes.
 // Music streaming (~45 MB of MP3s) is deferred until the first user gesture so it
@@ -70,7 +81,7 @@ export function useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackgrou
       initialScreenRef.current = false;
       return;
     }
-    playMusic(screen === "battle" ? MUSIC_KEYS.BATTLE : MUSIC_KEYS.MENU);
+    playMusic(pickMusicKey(screen));
   }, [screen]);
 
   useEffect(() => {
@@ -87,7 +98,7 @@ export function useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackgrou
       gestureFiredRef.current = true;
       resumeAudioContext();
       if (!audioState.currentMusic || audioState.currentMusic.paused) {
-        playMusicImmediate(screenRef.current === "battle" ? MUSIC_KEYS.BATTLE : MUSIC_KEYS.MENU);
+        playMusicImmediate(pickMusicKey(screenRef.current));
       }
     }
 

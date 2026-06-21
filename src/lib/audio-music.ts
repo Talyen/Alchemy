@@ -19,9 +19,29 @@ const MUSIC_CONFIG = {
   TRACKS: {
     [MUSIC_KEYS.MENU]: ["Menu 1.mp3", "Menu 2.mp3", "Menu 3.mp3", "Menu 4.mp3"],
     [MUSIC_KEYS.BATTLE]: ["Battle 1.mp3", "Battle 2.mp3", "Battle 3.mp3", "Battle 4.mp3", "Battle 5.mp3"],
+    [MUSIC_KEYS.BOSS_FORGE_GOLEM]: ["The Forge Golem.mp3"],
+    [MUSIC_KEYS.BOSS_FROSTWARDEN]: ["The Frostwarden.mp3"],
+    [MUSIC_KEYS.BOSS_BLIGHT_TREANT]: ["The Blight Treant.mp3"],
+    [MUSIC_KEYS.BOSS_IRON_BEAR]: ["The Iron Bear.mp3"],
   },
   VOLUME_MIN: 0,
 } as const;
+
+// Maps a boss enemy id to its music key, falling back to undefined for non-boss or unknown ids.
+export function getBossMusicKey(bossId: string): string | undefined {
+  switch (bossId) {
+    case "forge-golem":
+      return MUSIC_KEYS.BOSS_FORGE_GOLEM;
+    case "frostwarden":
+      return MUSIC_KEYS.BOSS_FROSTWARDEN;
+    case "blight-treant":
+      return MUSIC_KEYS.BOSS_BLIGHT_TREANT;
+    case "iron-bear":
+      return MUSIC_KEYS.BOSS_IRON_BEAR;
+    default:
+      return undefined;
+  }
+}
 
 // Global counter tracking active scene music transitions to prevent concurrent crossfades
 // from racing or playing overlapping tracks.

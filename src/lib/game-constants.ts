@@ -387,4 +387,8 @@ export const HOMESTEAD_LOOT_CONFIG = {
 export const MUSIC_KEYS = {
   MENU: "menu",
   BATTLE: "battle",
+  BOSS_FORGE_GOLEM: "boss-forge-golem",
+  BOSS_FROSTWARDEN: "boss-frostwarden",
+  BOSS_BLIGHT_TREANT: "boss-blight-treant",
+  BOSS_IRON_BEAR: "boss-iron-bear",
 } as const;

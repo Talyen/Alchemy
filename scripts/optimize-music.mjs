@@ -29,6 +29,10 @@ async function main() {
     "Battle 3.mp3",
     "Battle 4.mp3",
     "Battle 5.mp3",
+    "The Forge Golem.mp3",
+    "The Frostwarden.mp3",
+    "The Blight Treant.mp3",
+    "The Iron Bear.mp3",
   ];
 
   const results = [];
