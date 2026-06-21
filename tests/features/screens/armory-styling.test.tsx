@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { InventoryGearTile } from "@/features/alchemy/meta/screens/armory/parts/inventory-tile";
 import { SlotButton } from "@/features/alchemy/meta/screens/armory/parts/slot-button";
@@ -9,8 +9,10 @@ import { placeInventoryTileFromMetrics } from "@/features/alchemy/meta/screens/a
 import { SALVAGE_TARGET_SHADOW } from "@/features/alchemy/meta/screens/armory/targeting-highlight";
 import { GearTooltipContent } from "@/features/alchemy/meta/screens/armory/gear-tooltip-content";
 import { ArmoryTransferMenu } from "@/features/alchemy/meta/screens/armory/armory-transfer-menu";
-import { gearDefinitions } from "@/lib/gear";
+import { ArmoryOverlays } from "@/features/alchemy/meta/screens/armory/armory-overlays";
+import { EMPTY_CRAFTING_CURRENCIES, gearDefinitions } from "@/lib/gear";
 import type { GearInstance, GearLoadout } from "@/lib/gear";
+import { playUISound } from "@/lib/audio";
 
 vi.mock("@/lib/audio", () => ({
   playUISound: vi.fn(),
@@ -131,6 +133,91 @@ describe("Armory Styling TDD", () => {
     expect(img?.className).toContain("-inset-px");
     expect(img?.className).toContain("h-[calc(100%+2px)]");
     unmount();
+  });
+
+  it("sizes flyover visuals to the destination rect", async () => {
+    const visual = {
+      source: { left: 0, top: 0, width: 40, height: 40 },
+      rect: { left: 80, top: 20, width: 96, height: 64 },
+      origin: { kind: "inventory" as const, placement: { col: 1, row: 1 } },
+      destination: null,
+      flyover: true,
+    };
+
+    const { unmount } = render(
+      <DragVisualPortal visual={visual} onComplete={vi.fn()}>
+        <div />
+      </DragVisualPortal>,
+    );
+
+    const portal = screen.getByTestId("armory-gear-drag-visual");
+    await waitFor(() => {
+      expect(portal.getAttribute("style")).toContain("width: 96px");
+      expect(portal.getAttribute("style")).toContain("height: 64px");
+    });
+    unmount();
+  });
+
+  it("plays salvage sound only after successful salvage confirmation", () => {
+    const salvageTarget: GearInstance = {
+      instanceId: "gear-1",
+      definitionId: "dagger-basic",
+      affixes: [],
+    };
+    const onSalvage = vi.fn().mockReturnValue(false);
+
+    const { rerender } = render(
+      <ArmoryOverlays
+        salvageTarget={salvageTarget}
+        currencyDragVisual={null}
+        dragVisual={null}
+        secondaryDragVisuals={[]}
+        activeCurrencyId={null}
+        cursorPoint={null}
+        transferMenu={null}
+        craftingCurrencies={EMPTY_CRAFTING_CURRENCIES}
+        finishedRunCharacters={["knight"]}
+        editable={true}
+        onSalvage={onSalvage}
+        onTransferGear={vi.fn().mockReturnValue(false)}
+        onClearSalvageTarget={vi.fn()}
+        onClearCurrencyDragState={vi.fn()}
+        onClearDragState={vi.fn()}
+        onClearSecondaryDragState={vi.fn()}
+        onCloseTransferMenu={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Salvage" }));
+    expect(playUISound).not.toHaveBeenCalledWith("salvage");
+    expect(playUISound).toHaveBeenCalledWith("error");
+
+    vi.mocked(playUISound).mockClear();
+    onSalvage.mockReturnValue(true);
+    rerender(
+      <ArmoryOverlays
+        salvageTarget={salvageTarget}
+        currencyDragVisual={null}
+        dragVisual={null}
+        secondaryDragVisuals={[]}
+        activeCurrencyId={null}
+        cursorPoint={null}
+        transferMenu={null}
+        craftingCurrencies={EMPTY_CRAFTING_CURRENCIES}
+        finishedRunCharacters={["knight"]}
+        editable={true}
+        onSalvage={onSalvage}
+        onTransferGear={vi.fn().mockReturnValue(false)}
+        onClearSalvageTarget={vi.fn()}
+        onClearCurrencyDragState={vi.fn()}
+        onClearDragState={vi.fn()}
+        onClearSecondaryDragState={vi.fn()}
+        onCloseTransferMenu={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Salvage" }));
+    expect(playUISound).toHaveBeenCalledWith("salvage");
   });
 
   it("adjusts boardRect for padding/border inside readInventoryBoardMetrics", () => {

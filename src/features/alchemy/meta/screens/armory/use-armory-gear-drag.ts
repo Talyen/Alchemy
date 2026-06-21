@@ -4,6 +4,7 @@ import type { CharacterId } from "@/lib/game-data";
 import {
   footprintForInstance,
   gearDefinitions,
+  type CraftingCurrencyId,
   type GearInstance,
   type GearLoadout,
   type GearSlot,
@@ -73,6 +74,7 @@ type UseArmoryGearDragOptions = {
   ) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onMoveItem: (instanceId: string, col: number, row: number) => void;
+  onMoveCurrency?: (currencyId: CraftingCurrencyId, col: number, row: number) => void;
 };
 
 export function useArmoryGearDrag({
@@ -86,6 +88,7 @@ export function useArmoryGearDrag({
   onEquip,
   onUnequip,
   onMoveItem,
+  onMoveCurrency,
 }: UseArmoryGearDragOptions) {
   const activeIdRef = useRef<string | null>(null);
   const packedInventoryRef = useRef(packedInventory);
@@ -99,6 +102,19 @@ export function useArmoryGearDrag({
   const [carriedVisual, setCarriedVisual] = useState<DragRect | null>(null);
   const carryCleanupRef = useRef<(() => void) | null>(null);
   const startCarryRef = useRef<((instance: GearInstance, sourceRect: DragRect) => void) | null>(null);
+  const fsmClearDragRef = useRef<() => void>(() => {});
+
+  const [carriedCurrencyId, setCarriedCurrencyId] = useState<CraftingCurrencyId | null>(null);
+  const [carriedCurrencyVisual, setCarriedCurrencyVisual] = useState<DragRect | null>(null);
+  const carryCurrencyCleanupRef = useRef<(() => void) | null>(null);
+  const startCarryCurrencyRef = useRef<((currencyId: CraftingCurrencyId, sourceRect: DragRect) => void) | null>(null);
+
+  const clearCarryCurrency = useCallback(() => {
+    carryCurrencyCleanupRef.current?.();
+    carryCurrencyCleanupRef.current = null;
+    setCarriedCurrencyId(null);
+    setCarriedCurrencyVisual(null);
+  }, []);
 
   const clearCarry = useCallback(() => {
     carryCleanupRef.current?.();
@@ -116,6 +132,7 @@ export function useArmoryGearDrag({
 
   const startCarry = useCallback(
     (instance: GearInstance, sourceRect: DragRect) => {
+      fsmClearDragRef.current();
       carryCleanupRef.current?.();
       setCarriedInstance(instance);
 
@@ -224,6 +241,96 @@ export function useArmoryGearDrag({
     startCarryRef.current = startCarry;
   }, [startCarry]);
 
+  const startCarryCurrency = useCallback(
+    (currencyId: CraftingCurrencyId, sourceRect: DragRect) => {
+      fsmClearDragRef.current();
+      carryCurrencyCleanupRef.current?.();
+      setCarriedCurrencyId(currencyId);
+      setCarriedCurrencyVisual(sourceRect);
+
+      const onPointerMove = (e: PointerEvent) => {
+        setCarriedCurrencyVisual({
+          left: e.clientX - sourceRect.width / 2,
+          top: e.clientY - sourceRect.height / 2,
+          width: sourceRect.width,
+          height: sourceRect.height,
+        });
+      };
+
+      const onPointerDown = (e: PointerEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const board = inventoryBoardRef.current;
+        if (!board) {
+          if (onMoveCurrency) onMoveCurrency(currencyId, 1, 1);
+          clearCarryCurrency();
+          return;
+        }
+
+        const freeRect: DragRect = {
+          left: e.clientX - sourceRect.width / 2,
+          top: e.clientY - sourceRect.height / 2,
+          width: sourceRect.width,
+          height: sourceRect.height,
+        };
+
+        const result = placeInventoryTileFromMetrics(board, { w: 1, h: 1 }, freeRect, null, {
+          requireProximity: false,
+          occupiedRows: packedInventoryRef.current.occupiedRows,
+        });
+
+        if (!result) {
+          if (onMoveCurrency) onMoveCurrency(currencyId, 1, 1);
+          clearCarryCurrency();
+          return;
+        }
+
+        const currentPacked = packedInventoryRef.current.items;
+        const occupant = currentPacked.find((item) =>
+          overlaps(
+            { col: result.placement.col, row: result.placement.row, w: 1, h: 1 },
+            { col: item.col, row: item.row, w: item.w, h: item.h },
+          ),
+        );
+
+        if (occupant) {
+          const occupantInstance = inventoryById.get(occupant.item.instanceId);
+          if (onMoveCurrency) onMoveCurrency(currencyId, result.placement.col, result.placement.row);
+          if (occupantInstance) {
+            startCarryRef.current?.(occupantInstance, freeRect);
+          }
+          clearCarryCurrency();
+        } else {
+          if (onMoveCurrency) onMoveCurrency(currencyId, result.placement.col, result.placement.row);
+          clearCarryCurrency();
+        }
+      };
+
+      const onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          if (onMoveCurrency) onMoveCurrency(currencyId, 1, 1);
+          clearCarryCurrency();
+        }
+      };
+
+      document.addEventListener("pointermove", onPointerMove);
+      document.addEventListener("pointerdown", onPointerDown, { capture: true });
+      document.addEventListener("keydown", onKeyDown);
+
+      carryCurrencyCleanupRef.current = () => {
+        document.removeEventListener("pointermove", onPointerMove);
+        document.removeEventListener("pointerdown", onPointerDown, { capture: true });
+        document.removeEventListener("keydown", onKeyDown);
+      };
+    },
+    [clearCarryCurrency, inventoryBoardRef, inventoryById, onMoveCurrency],
+  );
+
+  useEffect(() => {
+    startCarryCurrencyRef.current = startCarryCurrency;
+  }, [startCarryCurrency]);
+
   const clearSecondaryDragState = useCallback(() => {
     if (secondaryCleanupTimerRef.current !== null) {
       window.clearTimeout(secondaryCleanupTimerRef.current);
@@ -328,6 +435,9 @@ export function useArmoryGearDrag({
     onCancel: () => {},
     onClear: () => {},
   });
+  useEffect(() => {
+    fsmClearDragRef.current = fsm.clearDragState;
+  }, [fsm.clearDragState]);
 
   useEffect(() => {
     return () => {
@@ -426,6 +536,10 @@ export function useArmoryGearDrag({
       : null;
 
   const dragVisual: GearDragVisual | null =
+    // Precedence: carried visual over FSM settled visual.
+    // This ordering is load-bearing for the issue 5 fix: when startCarry clears the
+    // FSM settled visual, the carried visual is the only active visual.
+    // If you reverse this precedence, the settled FSM visual would flash briefly.
     carriedVisual && carriedInstance
       ? {
           instance: carriedInstance,
@@ -488,5 +602,10 @@ export function useArmoryGearDrag({
     clearSecondaryDragState,
     abortGearDragIfDragging,
     clearCarry,
+    startCarry,
+    carriedCurrencyId,
+    carriedCurrencyVisual,
+    startCarryCurrency,
+    clearCarryCurrency,
   };
 }

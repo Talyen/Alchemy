@@ -28,7 +28,10 @@ describe("crafting currency logic", () => {
   });
 
   it("validates the six currency target rules", () => {
-    expect(canApplyCraftingCurrency("discordant-dice", createBasicItem([]))).toBe(true);
+    expect(canApplyCraftingCurrency("discordant-dice", createBasicItem([]))).toBe(false);
+    expect(canApplyCraftingCurrency("discordant-dice", createBasicItem([{ id: "flat-physical", value: 1 }]))).toBe(
+      true,
+    );
     expect(canApplyCraftingCurrency("sprig-of-growth", createBasicItem([{ id: "flat-physical", value: 1 }]))).toBe(
       true,
     );

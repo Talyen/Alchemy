@@ -178,7 +178,7 @@ export const SlotButton = memo(function SlotButton({
             src={definition.art}
             alt=""
             className={cn(
-              "absolute -inset-px z-10 h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover",
+              "absolute -inset-px z-10 h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated",
               instance !== undefined &&
                 (draggedGear?.instanceId === instance.instanceId ||
                   secondaryDragInstanceIds.includes(instance.instanceId)) &&

@@ -186,7 +186,7 @@ export function canApplyCraftingCurrency(currencyId: CraftingCurrencyId, item: G
   const rarity = gearInstanceRarity(item);
   switch (currencyId) {
     case "discordant-dice":
-      return true;
+      return item.affixes.length > 0;
     case "sprig-of-growth":
       return item.affixes.length < GEAR_AFFIX_COUNT[rarity].max;
     case "voidstone":

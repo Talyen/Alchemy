@@ -4,9 +4,11 @@ import {
   packInventoryGridPreserving,
   packCurrencyGridWithGearObstacles,
 } from "@/lib/gear/grid-packing";
-import { resolveMoveWithSwap, type BoardItem } from "@/lib/gear/board-moves";
+import { boardItemKey, resolveMoveWithSwap, type BoardItem } from "@/lib/gear/board-moves";
 
 const COLS = 7;
+const pos = (positions: Map<string, { col: number; row: number }>, item: Pick<BoardItem, "id" | "kind">) =>
+  positions.get(boardItemKey(item));
 
 describe("packInventoryGrid", () => {
   it("packs items in row-major order using each item's footprint", () => {
@@ -132,9 +134,9 @@ describe("packCurrencyGridWithGearObstacles", () => {
 describe("resolveMoveWithSwap", () => {
   it("reports unchanged when the target equals the current position", () => {
     const items: BoardItem[] = [{ id: "a", kind: "gear", footprint: { w: 2, h: 2 }, position: { col: 1, row: 1 } }];
-    const { positions, unchanged } = resolveMoveWithSwap(items, "a", { col: 1, row: 1 }, COLS);
+    const { positions, unchanged } = resolveMoveWithSwap(items, { kind: "gear", id: "a" }, { col: 1, row: 1 }, COLS);
     expect(unchanged).toBe(true);
-    expect(positions.get("a")).toEqual({ col: 1, row: 1 });
+    expect(pos(positions, items[0]!)).toEqual({ col: 1, row: 1 });
   });
 
   it("moves the item and keeps non-overlapping items fixed", () => {
@@ -142,10 +144,15 @@ describe("resolveMoveWithSwap", () => {
       { id: "moving", kind: "gear", footprint: { w: 2, h: 2 }, position: { col: 1, row: 1 } },
       { id: "fixed", kind: "gear", footprint: { w: 1, h: 1 }, position: { col: 5, row: 5 } },
     ];
-    const { positions, unchanged } = resolveMoveWithSwap(items, "moving", { col: 3, row: 3 }, COLS);
+    const { positions, unchanged } = resolveMoveWithSwap(
+      items,
+      { kind: "gear", id: "moving" },
+      { col: 3, row: 3 },
+      COLS,
+    );
     expect(unchanged).toBe(false);
-    expect(positions.get("moving")).toEqual({ col: 3, row: 3 });
-    expect(positions.get("fixed")).toEqual({ col: 5, row: 5 });
+    expect(pos(positions, items[0]!)).toEqual({ col: 3, row: 3 });
+    expect(pos(positions, items[1]!)).toEqual({ col: 5, row: 5 });
   });
 
   it("displaces overlapping items to the closest open position", () => {
@@ -153,10 +160,10 @@ describe("resolveMoveWithSwap", () => {
       { id: "moving", kind: "gear", footprint: { w: 2, h: 2 }, position: { col: 1, row: 1 } },
       { id: "blocker", kind: "gear", footprint: { w: 1, h: 1 }, position: { col: 3, row: 1 } },
     ];
-    const { positions } = resolveMoveWithSwap(items, "moving", { col: 3, row: 1 }, COLS);
-    expect(positions.get("moving")).toEqual({ col: 3, row: 1 });
-    expect(positions.get("blocker")?.col).not.toBe(3);
-    expect(positions.get("blocker")?.row).toBe(1);
+    const { positions } = resolveMoveWithSwap(items, { kind: "gear", id: "moving" }, { col: 3, row: 1 }, COLS);
+    expect(pos(positions, items[0]!)).toEqual({ col: 3, row: 1 });
+    expect(pos(positions, items[1]!)?.col).not.toBe(3);
+    expect(pos(positions, items[1]!)?.row).toBe(1);
   });
 
   it("places the largest displaced footprint first", () => {
@@ -165,17 +172,22 @@ describe("resolveMoveWithSwap", () => {
       { id: "small", kind: "gear", footprint: { w: 1, h: 1 }, position: { col: 3, row: 1 } },
       { id: "large", kind: "gear", footprint: { w: 2, h: 2 }, position: { col: 4, row: 1 } },
     ];
-    const { positions } = resolveMoveWithSwap(items, "moving", { col: 3, row: 1 }, COLS);
-    expect(positions.get("moving")).toEqual({ col: 3, row: 1 });
-    expect(positions.get("large")).toBeDefined();
-    expect(positions.get("small")).toBeDefined();
+    const { positions } = resolveMoveWithSwap(items, { kind: "gear", id: "moving" }, { col: 3, row: 1 }, COLS);
+    expect(pos(positions, items[0]!)).toEqual({ col: 3, row: 1 });
+    expect(pos(positions, items[2]!)).toBeDefined();
+    expect(pos(positions, items[1]!)).toBeDefined();
   });
 
   it("returns the original positions when the moving id is not found", () => {
     const items: BoardItem[] = [{ id: "a", kind: "gear", footprint: { w: 1, h: 1 }, position: { col: 1, row: 1 } }];
-    const { positions, unchanged } = resolveMoveWithSwap(items, "missing", { col: 5, row: 5 }, COLS);
+    const { positions, unchanged } = resolveMoveWithSwap(
+      items,
+      { kind: "gear", id: "missing" },
+      { col: 5, row: 5 },
+      COLS,
+    );
     expect(unchanged).toBe(true);
-    expect(positions.get("a")).toEqual({ col: 1, row: 1 });
+    expect(pos(positions, items[0]!)).toEqual({ col: 1, row: 1 });
   });
 
   it("preserves the original position of fixed items exactly", () => {
@@ -183,8 +195,8 @@ describe("resolveMoveWithSwap", () => {
       { id: "moving", kind: "gear", footprint: { w: 2, h: 2 }, position: { col: 1, row: 1 } },
       { id: "fixed", kind: "gear", footprint: { w: 1, h: 1 }, position: { col: 6, row: 6 } },
     ];
-    const { positions } = resolveMoveWithSwap(items, "moving", { col: 4, row: 4 }, COLS);
-    expect(positions.get("fixed")).toEqual({ col: 6, row: 6 });
+    const { positions } = resolveMoveWithSwap(items, { kind: "gear", id: "moving" }, { col: 4, row: 4 }, COLS);
+    expect(pos(positions, items[1]!)).toEqual({ col: 6, row: 6 });
   });
 
   it("places a 1x1 currency into the 1x1 vacated slot when both items are 1x1", () => {
@@ -192,8 +204,19 @@ describe("resolveMoveWithSwap", () => {
       { id: "moving", kind: "currency", footprint: { w: 1, h: 1 }, position: { col: 1, row: 1 } },
       { id: "blocker", kind: "currency", footprint: { w: 1, h: 1 }, position: { col: 3, row: 3 } },
     ];
-    const { positions } = resolveMoveWithSwap(items, "moving", { col: 3, row: 3 }, COLS);
-    expect(positions.get("moving")).toEqual({ col: 3, row: 3 });
-    expect(positions.get("blocker")?.col).toBeDefined();
+    const { positions } = resolveMoveWithSwap(items, { kind: "currency", id: "moving" }, { col: 3, row: 3 }, COLS);
+    expect(pos(positions, items[0]!)).toEqual({ col: 3, row: 3 });
+    expect(pos(positions, items[1]!)?.col).toBeDefined();
+  });
+
+  it("keeps gear and currency ids distinct when their raw ids match", () => {
+    const items: BoardItem[] = [
+      { id: "voidstone", kind: "gear", footprint: { w: 1, h: 1 }, position: { col: 1, row: 1 } },
+      { id: "voidstone", kind: "currency", footprint: { w: 1, h: 1 }, position: { col: 3, row: 1 } },
+    ];
+    const { positions } = resolveMoveWithSwap(items, { kind: "gear", id: "voidstone" }, { col: 3, row: 1 }, COLS);
+    expect(pos(positions, items[0]!)).toEqual({ col: 3, row: 1 });
+    expect(pos(positions, items[1]!)).toBeDefined();
+    expect(pos(positions, items[1]!)).not.toEqual(pos(positions, items[0]!));
   });
 });

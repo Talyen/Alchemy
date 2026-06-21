@@ -236,6 +236,29 @@ describe("gear-store", () => {
     useGearStore.getState().reset();
   });
 
+  it("keeps gear and currency board positions separate when ids collide", () => {
+    useGearStore.getState().reset();
+    const item: GearInstance = { instanceId: "voidstone", definitionId: "ruby-ring-basic", affixes: [] };
+
+    useGearStore
+      .getState()
+      .initialize(
+        knightInventories(item),
+        createEmptyGearLoadouts(),
+        knightBoards({ [item.instanceId]: { col: 1, row: 1 } }),
+        { voidstone: 1 },
+        knightCurrencyBoards({ voidstone: { col: 3, row: 1 } }),
+      );
+
+    useGearStore.getState().moveBoardItem("knight", { kind: "gear", id: item.instanceId }, 3, 1);
+
+    expect(useGearStore.getState().boardPositionsByCharacter.knight[item.instanceId]).toEqual({ col: 3, row: 1 });
+    expect(useGearStore.getState().currencyBoardPositionsByCharacter.knight.voidstone).toBeDefined();
+    expect(useGearStore.getState().currencyBoardPositionsByCharacter.knight.voidstone).not.toEqual({ col: 3, row: 1 });
+
+    useGearStore.getState().reset();
+  });
+
   describe("transferToInventory", () => {
     it("transfers gear and moves its board position to the target character", () => {
       useGearStore.getState().reset();

@@ -7,6 +7,7 @@ import { DragVisualPortal } from "./armory-drag-visual-portal";
 import { ArmoryCurrencyCursor } from "./armory-currency-targeting";
 import { ArmoryTransferMenu } from "./armory-transfer-menu";
 import { playUISound } from "@/lib/audio";
+import type { DragRect } from "./use-board-drag";
 import type { GearDragVisual } from "./use-armory-gear-drag";
 import type { CurrencyDragVisual } from "./use-armory-currency-drag";
 import type { TransferMenuState } from "./armory-targeting-state";
@@ -22,7 +23,9 @@ type Props = {
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   finishedRunCharacters: CharacterId[];
   editable: boolean;
-  onSalvage: (instanceId: string) => void;
+  carriedCurrencyId: CraftingCurrencyId | null;
+  carriedCurrencyVisual: DragRect | null;
+  onSalvage: (instanceId: string) => boolean;
   onTransferGear: (instanceId: string, targetCharacterId: CharacterId) => boolean;
   onClearSalvageTarget: () => void;
   onClearCurrencyDragState: () => void;
@@ -42,6 +45,8 @@ export function ArmoryOverlays({
   craftingCurrencies,
   finishedRunCharacters,
   editable,
+  carriedCurrencyId,
+  carriedCurrencyVisual,
   onSalvage,
   onTransferGear,
   onClearSalvageTarget,
@@ -72,9 +77,13 @@ export function ArmoryOverlays({
               onClearSalvageTarget();
               return;
             }
-            onSalvage(salvageTarget.instanceId);
-            playUISound("salvage");
-            onClearSalvageTarget();
+            const ok = onSalvage(salvageTarget.instanceId);
+            if (ok) {
+              playUISound("salvage");
+              onClearSalvageTarget();
+            } else {
+              playUISound("error");
+            }
           }}
         />
       ) : null}
@@ -97,11 +106,11 @@ export function ArmoryOverlays({
         </DragVisualPortal>
       ) : null}
       {dragVisual && dragDefinition ? (
-        <DragVisualPortal visual={dragVisual} onComplete={onClearDragState}>
+        <DragVisualPortal visual={dragVisual} className="bg-background/60" onComplete={onClearDragState}>
           <img
             src={dragDefinition.art}
             alt=""
-            className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover"
+            className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated"
           />
         </DragVisualPortal>
       ) : null}
@@ -113,16 +122,31 @@ export function ArmoryOverlays({
             key={visual.instance.instanceId}
             visual={visual}
             testId="armory-gear-swap-visual"
+            className="bg-background/60"
             onComplete={onClearSecondaryDragState}
           >
             <img
               src={def.art}
               alt=""
-              className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover"
+              className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated"
             />
           </DragVisualPortal>
         ) : null;
       })}
+      {carriedCurrencyId && carriedCurrencyVisual ? (
+        <DragVisualPortal
+          visual={{ source: carriedCurrencyVisual, rect: carriedCurrencyVisual }}
+          testId="armory-currency-carry-visual"
+          className="bg-background/60"
+          onComplete={() => {}}
+        >
+          <img
+            src={getCraftingCurrencyDefinition(carriedCurrencyId).art}
+            alt=""
+            className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated"
+          />
+        </DragVisualPortal>
+      ) : null}
       <ArmoryCurrencyCursor activeCurrencyId={activeCurrencyId} cursorPoint={cursorPoint} />
       {transferMenu ? (
         <ArmoryTransferMenu

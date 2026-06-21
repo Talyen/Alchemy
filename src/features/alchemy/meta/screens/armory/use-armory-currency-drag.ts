@@ -1,8 +1,19 @@
 import { useCallback, type RefObject } from "react";
-import { type CraftingCurrencyId, type InventoryPlacement, type PackedInventoryItem } from "@/lib/gear";
+import {
+  type CraftingCurrencyId,
+  type GearInstance,
+  type InventoryPlacement,
+  type PackedInventoryItem,
+} from "@/lib/gear";
+import { type PackedCurrencyItem } from "@/lib/gear/board-view";
+import { overlaps } from "@/lib/gear/grid-packing";
 import { useBoardDrag, type DragDestination, type DragRect } from "./use-board-drag";
 
 const CURRENCY_FOOTPRINT = { w: 1, h: 1 };
+
+export type CarriableItem =
+  | { kind: "gear"; instance: GearInstance }
+  | { kind: "currency"; currencyId: CraftingCurrencyId };
 
 export type CurrencyDragOrigin = { kind: "inventory"; placement: InventoryPlacement };
 export type CurrencyDragVisual = {
@@ -35,6 +46,10 @@ type UseArmoryCurrencyDragOptions = {
   inventoryBoardRef: RefObject<HTMLDivElement | null>;
   onMoveCurrency: (currencyId: CraftingCurrencyId, col: number, row: number) => void;
   boardObstacles?: PackedInventoryItem<{ instanceId: string }>[];
+  packedItems: PackedInventoryItem[];
+  packedCurrencies: PackedCurrencyItem[];
+  inventoryById: Map<string, GearInstance>;
+  onSwapWithItem?: (item: CarriableItem, sourceRect: DragRect) => void;
 };
 
 export function useArmoryCurrencyDrag({
@@ -43,6 +58,10 @@ export function useArmoryCurrencyDrag({
   inventoryBoardRef,
   onMoveCurrency,
   boardObstacles = [],
+  packedItems,
+  packedCurrencies,
+  inventoryById,
+  onSwapWithItem,
 }: UseArmoryCurrencyDragOptions) {
   const fsm = useBoardDrag<CraftingCurrencyId, CurrencyItem, CurrencyDragOrigin>({
     itemLookup: undefined,
@@ -57,7 +76,19 @@ export function useArmoryCurrencyDrag({
       if (origin.placement.col === destination.placement.col && origin.placement.row === destination.placement.row) {
         return;
       }
-      onMoveCurrency(id, destination.placement.col, destination.placement.row);
+      const col = destination.placement.col;
+      const row = destination.placement.row;
+      const occupant = packedItems.find((item) =>
+        overlaps({ col, row, w: 1, h: 1 }, { col: item.col, row: item.row, w: item.w, h: item.h }),
+      );
+      const occupantInstance = occupant ? inventoryById.get(occupant.item.instanceId) : undefined;
+      const occupantCurrency = packedCurrencies.find((c) => c.col === col && c.row === row);
+      onMoveCurrency(id, col, row);
+      if (occupantInstance && onSwapWithItem) {
+        onSwapWithItem({ kind: "gear", instance: occupantInstance }, destination.rect);
+      } else if (occupantCurrency && onSwapWithItem) {
+        onSwapWithItem({ kind: "currency", currencyId: occupantCurrency.currencyId }, destination.rect);
+      }
     },
   });
 

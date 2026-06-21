@@ -21,8 +21,10 @@ export function getGearInstanceTooltipEntries(instance: GearInstance): { key: st
   }
 
   if (definition) {
-    const text = rarity === "basic" ? "Salvage for Basic crafting currency" : "Salvage for Astral crafting currency";
-    return [{ key: "salvage", text }];
+    if (instance.affixes.length > 0) {
+      const text = rarity === "basic" ? "Salvage for Basic crafting currency" : "Salvage for Astral crafting currency";
+      return [{ key: "salvage", text }];
+    }
   }
 
   return [];

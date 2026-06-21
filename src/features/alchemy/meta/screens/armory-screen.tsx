@@ -43,7 +43,7 @@ type Props = {
     options?: { vacatedPlacement?: InventoryPlacement; swapDisplaced?: boolean },
   ) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
-  onSalvage: (instanceId: string) => void;
+  onSalvage: (instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
   craftingCurrencies?: Record<CraftingCurrencyId, number>;
   onApplyCurrency?: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
@@ -152,6 +152,10 @@ export function ArmoryScreen({
     clearDragState,
     clearSecondaryDragState,
     abortGearDragIfDragging,
+    startCarry,
+    carriedCurrencyId,
+    carriedCurrencyVisual,
+    startCarryCurrency,
   } = useArmoryGearDrag({
     characterId,
     editable,
@@ -163,6 +167,7 @@ export function ArmoryScreen({
     onEquip: handleEquipWithSwap,
     onUnequip,
     onMoveItem: handleMoveItem,
+    onMoveCurrency: handleMoveCurrency,
   });
 
   const {
@@ -179,6 +184,16 @@ export function ArmoryScreen({
     inventoryBoardRef,
     onMoveCurrency: handleMoveCurrency,
     boardObstacles: boardView.boardObstacles,
+    packedItems: boardView.packedInventory.items,
+    packedCurrencies: boardView.packedCurrencies,
+    inventoryById,
+    onSwapWithItem: (item, rect) => {
+      if (item.kind === "gear") {
+        startCarry(item.instance, rect);
+      } else {
+        startCarryCurrency(item.currencyId, rect);
+      }
+    },
   });
 
   const secondaryDragInstanceIds = secondaryDragVisuals.flatMap((v) => (v.instance ? [v.instance.instanceId] : []));
@@ -386,6 +401,8 @@ export function ArmoryScreen({
           craftingCurrencies={craftingCurrencies}
           finishedRunCharacters={finishedRunCharacters}
           editable={editable}
+          carriedCurrencyId={carriedCurrencyId}
+          carriedCurrencyVisual={carriedCurrencyVisual}
           onSalvage={onSalvage}
           onTransferGear={onTransferGear}
           onClearSalvageTarget={() => dispatchTargeting({ type: "CLEAR_SALVAGE_TARGET" })}

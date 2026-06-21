@@ -31,16 +31,12 @@ describe("gear display", () => {
     ]);
   });
 
-  it("falls back to basic salvage text when an item has no affixes", () => {
-    expect(getGearInstanceTooltipEntries(bareHelm)).toEqual([
-      { key: "salvage", text: "Salvage for Basic crafting currency" },
-    ]);
+  it("returns empty tooltip entries for items with no affixes and no description lines", () => {
+    expect(getGearInstanceTooltipEntries(bareHelm)).toEqual([]);
   });
 
-  it("falls back to astral salvage text for astral items without affixes", () => {
-    expect(getGearInstanceTooltipEntries(astralHelm)).toEqual([
-      { key: "salvage", text: "Salvage for Astral crafting currency" },
-    ]);
+  it("returns empty tooltip entries for astral items with no affixes and no description lines", () => {
+    expect(getGearInstanceTooltipEntries(astralHelm)).toEqual([]);
   });
 
   it("strips affix names from description lines", () => {

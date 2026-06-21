@@ -37,7 +37,7 @@ export type ArmoryController = {
     options?: { vacatedPlacement?: InventoryPlacement; swapDisplaced?: boolean },
   ) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
-  onSalvage: (instanceId: string) => void;
+  onSalvage: (instanceId: string) => boolean;
   onTransferGear: (instanceId: string, targetCharacterId: CharacterId) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
@@ -108,11 +108,11 @@ export function useArmoryController(): ArmoryController {
 
   const onSalvage = useCallback<ArmoryController["onSalvage"]>(
     (instanceId) => {
-      if (hasActiveBattle) return;
+      if (hasActiveBattle) return false;
       const inventoryBefore = flattenGearInventories(gear.inventories);
       const loadoutsBefore = gear.loadouts;
       const result = gear.salvage(instanceId, { rng: rngRef.current });
-      if (!result) return;
+      if (!result) return false;
       if (hasActiveRun) {
         syncRunMaxHealthFromGearMutation(
           activeRunCharacterId,
@@ -123,6 +123,7 @@ export function useArmoryController(): ArmoryController {
         );
       }
       flush();
+      return true;
     },
     [activeRunCharacterId, flush, gear, hasActiveBattle, hasActiveRun],
   );
@@ -141,8 +142,8 @@ export function useArmoryController(): ArmoryController {
           inventoryAfter,
           loadoutsAfter,
         );
-        flush();
       }
+      if (ok) flush();
       return ok;
     },
     [activeRunCharacterId, flush, gear, hasActiveBattle, hasActiveRun],

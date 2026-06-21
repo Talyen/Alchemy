@@ -536,3 +536,126 @@ describe("useArmoryGearDrag multi-item unequip animations", () => {
     expect(result.current.secondaryDragVisuals[0]?.instance?.instanceId).toBe("dagger-1");
   });
 });
+
+describe("useArmoryGearDrag carry mechanism", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("exposes startCarry and sets carriedInstance/dragVisual when called", () => {
+    const dagger: GearInstance = {
+      instanceId: "dagger-1",
+      definitionId: "dagger-basic",
+      affixes: [],
+    };
+
+    const board = document.createElement("div");
+    const metricCell = document.createElement("div");
+    metricCell.setAttribute("data-armory-grid-metric", "cell");
+    const metricStride = document.createElement("div");
+    metricStride.setAttribute("data-armory-grid-metric", "stride");
+    board.appendChild(metricCell);
+    board.appendChild(metricStride);
+
+    vi.spyOn(board, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 400,
+      height: 400,
+      right: 400,
+      bottom: 400,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    vi.spyOn(metricCell, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 48,
+      height: 48,
+      right: 48,
+      bottom: 48,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    vi.spyOn(metricStride, "getBoundingClientRect").mockReturnValue({
+      left: 52,
+      top: 0,
+      width: 48,
+      height: 48,
+      right: 100,
+      bottom: 48,
+      x: 52,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    vi.spyOn(window, "getComputedStyle").mockReturnValue({
+      paddingLeft: "0px",
+      paddingTop: "0px",
+      paddingRight: "0px",
+      paddingBottom: "0px",
+      borderLeftWidth: "0px",
+      borderTopWidth: "0px",
+      borderRightWidth: "0px",
+      borderBottomWidth: "0px",
+    } as any);
+
+    const inventoryById = new Map<string, GearInstance>([["dagger-1", dagger]]);
+
+    const { result } = renderHook(() =>
+      useArmoryGearDrag({
+        characterId: "knight",
+        editable: true,
+        loadout: {
+          "main-hand": null,
+          "off-hand": null,
+          body: null,
+          helm: null,
+          boots: null,
+          gloves: null,
+          belt: null,
+          "left-ring": null,
+          "right-ring": null,
+          amulet: null,
+        },
+        inventoryById,
+        packedInventory: { items: [], occupiedRows: 0 },
+        inventoryBoardRef: { current: board },
+        boardObstacles: [],
+        onEquip: vi.fn(),
+        onUnequip: vi.fn(),
+        onMoveItem: vi.fn(),
+      }),
+    );
+
+    expect(result.current.startCarry).toBeDefined();
+    expect(result.current.startCarryCurrency).toBeDefined();
+    expect(result.current.carriedInstance).toBeNull();
+    expect(result.current.carriedVisual).toBeNull();
+    expect(result.current.carriedCurrencyId).toBeNull();
+
+    act(() => {
+      result.current.startCarry(dagger, { left: 100, top: 100, width: 48, height: 48 });
+    });
+
+    expect(result.current.carriedInstance?.instanceId).toBe("dagger-1");
+    expect(result.current.carriedVisual).not.toBeNull();
+    expect(result.current.dragVisual).not.toBeNull();
+    expect(result.current.dragVisual?.instance?.instanceId).toBe("dagger-1");
+    expect(result.current.isAnimating).toBe(true);
+    expect(result.current.isDraggingActive).toBe(true);
+
+    act(() => {
+      result.current.clearCarry();
+    });
+
+    expect(result.current.carriedInstance).toBeNull();
+    expect(result.current.carriedVisual).toBeNull();
+  });
+});

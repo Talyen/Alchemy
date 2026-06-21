@@ -83,7 +83,7 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
         </TiltSurface>
       </div>
 
-      <div data-testid="armory-equipment-panel" className="relative flex min-w-0 flex-col items-center p-2">
+      <div data-testid="armory-equipment-panel" className="relative flex min-w-0 flex-col items-center p-1">
         <h2 className="text-center font-sans text-lg text-amber-100">Equipment</h2>
         <div data-testid="armory-equipment-board" className="armory-equipment-board relative mt-4 aspect-[6/7]">
           {EQUIP_SLOTS.map((slot: GearSlot) => {

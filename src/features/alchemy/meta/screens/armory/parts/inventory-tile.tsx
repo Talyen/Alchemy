@@ -250,7 +250,7 @@ export const InventoryGearTile = memo(function InventoryGearTile({
       <img
         src={definition.art}
         alt=""
-        className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover"
+        className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated"
       />
       {targetingMode && (
         <div

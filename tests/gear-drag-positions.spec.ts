@@ -7,6 +7,7 @@ import {
   openArmory,
   pointerDrag,
   pointerDragToInventory,
+  currencyLocator,
 } from "./e2e/armory";
 import { test } from "./fixtures/e2e";
 import { critical, prepush } from "./playwright-tags";
@@ -243,24 +244,24 @@ test.describe("Gear drag positions", critical, () => {
     expect(parseFloat(paddingRight)).toBeGreaterThanOrEqual(8);
   });
 
-  test("drag visual uses integer pixel coordinates without visual tinting", prepush, async ({ page }) => {
+  test("drag visual uses integer pixel coordinates with matching gear compositing", prepush, async ({ page }) => {
     await openArmory(page, [bodyGear]);
 
     const bodyItem = gearItemLocator(page, "Leather Armor");
     const sourceBox = await bodyItem.boundingBox();
     expect(sourceBox).not.toBeNull();
 
-    // 1. Start dragging
+    const sourceBackgroundColor = await bodyItem.evaluate((el) => window.getComputedStyle(el).backgroundColor);
+
     await page.mouse.move(sourceBox!.x + sourceBox!.width / 2, sourceBox!.y + sourceBox!.height / 2);
     await page.mouse.down();
 
-    // Drag to subpixel offset coordinates (e.g. +20.5px)
     await page.mouse.move(sourceBox!.x + sourceBox!.width / 2 + 20.5, sourceBox!.y + sourceBox!.height / 2 + 20.5);
 
     const dragVisual = page.getByTestId("armory-gear-drag-visual");
     await expect(dragVisual).toBeVisible();
 
-    await expect(dragVisual).not.toHaveClass(/bg-background\/60/);
+    await expect(dragVisual).toHaveClass(/bg-background\/60/);
 
     const styles = await dragVisual.evaluate((el) => {
       const rect = el.getBoundingClientRect();
@@ -278,17 +279,21 @@ test.describe("Gear drag positions", critical, () => {
       };
     });
 
-    expect(styles.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    expect(styles.backgroundColor).toBe(sourceBackgroundColor);
     expect(styles.filter).toBe("none");
     expect(styles.opacity).toBe("1");
 
-    // Bounding rect values should be integers
     expect(styles.left % 1).toBe(0);
     expect(styles.top % 1).toBe(0);
     expect(styles.width % 1).toBe(0);
     expect(styles.height % 1).toBe(0);
+    expect(styles.transform).toBe("none");
 
-    // Parse the transform matrix to get dx and dy
+    const innerImg = await dragVisual.locator("img").elementHandle();
+    expect(innerImg).not.toBeNull();
+    const imgRendering = await innerImg!.evaluate((el) => window.getComputedStyle(el).imageRendering);
+    expect(imgRendering).toBe("pixelated");
+
     if (styles.transform && styles.transform !== "none") {
       const match = styles.transform.match(/matrix\(([^,]+,\s*){4}([^,]+),\s*([^)]+)\)/);
       if (match) {
@@ -300,5 +305,35 @@ test.describe("Gear drag positions", critical, () => {
     }
 
     await page.mouse.up();
+  });
+
+  test("rightmost inventory cell fits within the board", prepush, async ({ page }) => {
+    await openArmory(page, [bodyGear]);
+    const board = page.getByTestId("armory-inventory-board");
+    const rightmostCell = board.locator('[data-armory-inventory-cell="7-1"]');
+    await expect(rightmostCell).toBeVisible();
+    const boardRect = await board.evaluate((el) => el.getBoundingClientRect());
+    const cellRect = await rightmostCell.evaluate((el) => el.getBoundingClientRect());
+    expect(cellRect.right).toBeLessThanOrEqual(boardRect.right);
+  });
+
+  test("dragging a currency onto a gear picks up the gear on the cursor", prepush, async ({ page }) => {
+    await openArmory(page, {
+      inventory: [bodyGear],
+      craftingCurrencies: { "discordant-dice": 1 },
+    });
+
+    const currency = currencyLocator(page, "discordant-dice");
+    const gear = gearItemLocator(page, "Leather Armor");
+
+    await expect(currency).toBeVisible();
+    await expect(gear).toBeVisible();
+
+    await pointerDrag(page, currency, gear);
+
+    await page.waitForTimeout(300);
+
+    const dragVisual = page.getByTestId("armory-gear-drag-visual");
+    await expect(dragVisual).toBeVisible();
   });
 });

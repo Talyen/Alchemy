@@ -8,7 +8,7 @@ import {
   GEAR_CHARACTER_IDS,
 } from "./types";
 import { footprintForInstance } from "./footprints";
-import { resolveMoveWithSwap } from "./board-moves";
+import { boardItemKey, resolveMoveWithSwap } from "./board-moves";
 import { packGridItems } from "./grid-packing";
 import { getGearInstanceTitle } from "./item-names";
 import {
@@ -124,14 +124,14 @@ function resolveMoveItemAndSwap(
 
   const { positions, unchanged } = resolveMoveWithSwap(
     boardItems,
-    movingItem.id,
+    movingItem,
     { col: targetCol, row: targetRow },
     INVENTORY_COLS,
   );
   if (unchanged) return { nextGearPositions, nextCurrencyPositions };
 
   for (const item of boardItems) {
-    const next = positions.get(item.id);
+    const next = positions.get(boardItemKey(item));
     if (next) {
       if (item.kind === "gear") {
         nextGearPositions[item.id] = next;
@@ -155,10 +155,16 @@ export function sortBoardForCharacter(
   const availableInventory = state.inventories[characterId].filter((item) => !equippedInstanceIds.has(item.instanceId));
   const activeCurrencyIds = CRAFTING_CURRENCY_IDS.filter((id) => state.craftingCurrencies[id] > 0);
 
-  const gridItems: { id: string; w: number; h: number }[] = [];
+  const gridItems: { id: string; kind: "gear" | "currency"; originalId: string; w: number; h: number }[] = [];
 
   for (const currencyId of activeCurrencyIds) {
-    gridItems.push({ id: currencyId, w: 1, h: 1 });
+    gridItems.push({
+      id: boardItemKey({ kind: "currency", id: currencyId }),
+      kind: "currency",
+      originalId: currencyId,
+      w: 1,
+      h: 1,
+    });
   }
 
   const sortedGear = [...availableInventory].sort((a, b) => {
@@ -173,7 +179,13 @@ export function sortBoardForCharacter(
   for (const item of sortedGear) {
     const footprint = footprintForInstance(item);
     if (!footprint) continue;
-    gridItems.push({ id: item.instanceId, w: footprint.w, h: footprint.h });
+    gridItems.push({
+      id: boardItemKey({ kind: "gear", id: item.instanceId }),
+      kind: "gear",
+      originalId: item.instanceId,
+      w: footprint.w,
+      h: footprint.h,
+    });
   }
 
   const result = packGridItems(gridItems, INVENTORY_COLS);
@@ -181,10 +193,10 @@ export function sortBoardForCharacter(
   const gearPositions: GearBoardPositions = {};
   const currencyPositions: CraftingCurrencyBoardPositions = {};
   for (const packed of result.items) {
-    if (CRAFTING_CURRENCY_IDS.includes(packed.item.id as (typeof CRAFTING_CURRENCY_IDS)[number])) {
-      currencyPositions[packed.item.id as CraftingCurrencyId] = { col: packed.col, row: packed.row };
+    if (packed.item.kind === "currency") {
+      currencyPositions[packed.item.originalId as CraftingCurrencyId] = { col: packed.col, row: packed.row };
     } else {
-      gearPositions[packed.item.id] = { col: packed.col, row: packed.row };
+      gearPositions[packed.item.originalId] = { col: packed.col, row: packed.row };
     }
   }
 

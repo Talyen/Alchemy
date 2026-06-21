@@ -10,25 +10,30 @@ export type BoardItem<TKind extends string = string> = {
   position: InventoryPlacement;
 };
 
+export function boardItemKey(item: Pick<BoardItem, "id" | "kind">): string {
+  return `${item.kind}:${item.id}`;
+}
+
 export function resolveMoveWithSwap<TKind extends string>(
   items: BoardItem<TKind>[],
-  movingId: string,
+  movingItem: Pick<BoardItem<TKind>, "id" | "kind">,
   target: InventoryPlacement,
   cols: number,
   options: { maxSearchRows?: number } = {},
 ): { positions: Map<string, InventoryPlacement>; unchanged: boolean } {
   const { maxSearchRows = GEAR_SWAP_MAX_SEARCH_ROWS } = options;
   const positions = new Map<string, InventoryPlacement>();
-  for (const item of items) positions.set(item.id, item.position);
+  for (const item of items) positions.set(boardItemKey(item), item.position);
 
-  const moving = items.find((item) => item.id === movingId);
+  const movingKey = boardItemKey(movingItem);
+  const moving = items.find((item) => boardItemKey(item) === movingKey);
   if (!moving) return { positions, unchanged: true };
   if (moving.position.col === target.col && moving.position.row === target.row) {
     return { positions, unchanged: true };
   }
 
   const targetRect = { col: target.col, row: target.row, w: moving.footprint.w, h: moving.footprint.h };
-  const others = items.filter((item) => item.id !== movingId);
+  const others = items.filter((item) => boardItemKey(item) !== movingKey);
   const displaced: BoardItem<TKind>[] = [];
   const fixed: BoardItem<TKind>[] = [];
   for (const item of others) {
@@ -74,6 +79,6 @@ export function resolveMoveWithSwap<TKind extends string>(
     placed.push(next);
   }
 
-  for (const item of placed) positions.set(item.id, item.position);
+  for (const item of placed) positions.set(boardItemKey(item), item.position);
   return { positions, unchanged: false };
 }
