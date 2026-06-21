@@ -15,7 +15,6 @@ export type BattleLifecycle = {
   victoryDefeatHandledRef: RefObject<boolean>;
   cardPlayInProgressRef: RefObject<boolean>;
   companionScheduledRef: RefObject<boolean>;
-  resolvedAsHasteOrStunRef: RefObject<boolean>;
 
   isCurrentBattleSession: (session: number) => boolean;
   runIfSessionActive: <T>(session: number, action: () => T, fallback?: T) => T;

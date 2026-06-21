@@ -18,7 +18,6 @@ export type BattleSessionDeps = {
   transferCancelRegistryRef: RefObject<TransferCancelRegistry>;
   cardPlayInProgressRef: RefObject<boolean>;
   victoryDefeatHandledRef: RefObject<boolean>;
-  resolvedAsHasteOrStunRef: RefObject<boolean>;
   companionScheduledRef: RefObject<boolean>;
   onBattleVictory?: () => void;
   onBattleDefeat?: () => void;
@@ -96,7 +95,6 @@ export function createBattleSession(deps: BattleSessionDeps) {
     stopBattleFeedback();
     deps.cardPlayInProgressRef.current = false;
     deps.victoryDefeatHandledRef.current = false;
-    deps.resolvedAsHasteOrStunRef.current = false;
     deps.companionScheduledRef.current = false;
     getPresentationStore().clearRevealedCardKeys();
     getStore().setBattleStartState(null);

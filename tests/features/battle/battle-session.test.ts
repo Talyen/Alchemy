@@ -13,7 +13,6 @@ function makeSession() {
   const transferCancelRegistryRef = { current: createTransferCancelRegistry() };
   const cardPlayInProgressRef = { current: false };
   const victoryDefeatHandledRef = { current: false };
-  const resolvedAsHasteOrStunRef = { current: false };
   const companionScheduledRef = { current: false };
   const onBattleVictory = vi.fn();
   const onBattleDefeat = vi.fn();
@@ -24,7 +23,6 @@ function makeSession() {
     transferCancelRegistryRef,
     cardPlayInProgressRef,
     victoryDefeatHandledRef,
-    resolvedAsHasteOrStunRef,
     companionScheduledRef,
     onBattleVictory,
     onBattleDefeat,

@@ -121,7 +121,6 @@ export function useBattleController({
   const victoryDefeatHandledRef = useRef(false);
   const transferCancelRegistryRef = useRef(createTransferCancelRegistry());
   const transferIdCounterRef = useRef(0);
-  const resolvedAsHasteOrStunRef = useRef(false);
 
   const onVictoryRef = useRef(onBattleVictory);
   const onDefeatRef = useRef(onBattleDefeat);
@@ -143,7 +142,6 @@ export function useBattleController({
         transferCancelRegistryRef,
         cardPlayInProgressRef,
         victoryDefeatHandledRef,
-        resolvedAsHasteOrStunRef,
         companionScheduledRef,
         onBattleVictory: () => onVictoryRef.current?.(),
         onBattleDefeat: () => onDefeatRef.current?.(),
@@ -156,8 +154,6 @@ export function useBattleController({
     runIfSessionActive,
     checkBattleEnd,
     handleVictoryDefeat,
-    clearTransferHandles,
-    clearAllBattleTimeouts,
     clearBattleTimeoutsKeepCompanion,
     resetBattleSession,
   } = battleSession;
@@ -343,19 +339,6 @@ export function useBattleController({
 
   const cardTransfers = useBattlePresentationStore((s) => s.cardTransfers);
   const cardTransferInProgress = useBattlePresentationStore((s) => s.cardTransferInProgress);
-
-  // Mount-only teardown
-  useEffect(
-    () => () => {
-      clearAllBattleTimeouts();
-      clearTransferHandles();
-      resolvedAsHasteOrStunRef.current = false;
-      cardPlayInProgressRef.current = false;
-      companionScheduledRef.current = false;
-      victoryDefeatHandledRef.current = false;
-    },
-    [clearAllBattleTimeouts, clearTransferHandles],
-  );
 
   useEffect(() => {
     if (hasActiveBattle) return;
