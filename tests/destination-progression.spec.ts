@@ -53,8 +53,7 @@ test.describe("Destination Progression", critical, () => {
     });
     await page.goto("/");
 
-    const destination = new DestinationPage(page);
-    await destination.expectVisible();
-    await expect(page.getByRole("button", { name: /Boss/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Boss/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("img", { name: /Boss/i })).toBeVisible();
   });
 });

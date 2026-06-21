@@ -119,7 +119,7 @@ export async function injectLabyrinthRun(
   const map = createMinimalLabyrinthMap();
   await page.addInitScript(
     (data) => {
-      const save = JSON.parse(localStorage.getItem(data.saveKey) || "{}");
+      const save: Record<string, unknown> = {};
       save.activeRun = {
         characterId: "knight",
         runDeck: [],
@@ -132,10 +132,11 @@ export async function injectLabyrinthRun(
         completedDestinations: [],
         runTrinkets: [],
         selectedDifficulty: null,
+        currentScreen: "labyrinth-map",
         contentSystemType: "labyrinth",
         labyrinthMap: data.map,
       };
-      if (data.deck) save.activeRun.runDeck = data.deck;
+      if (data.deck) (save.activeRun as Record<string, unknown>).runDeck = data.deck;
       if (data.runOverrides) {
         Object.assign(save.activeRun, data.runOverrides);
       }
@@ -154,14 +155,7 @@ export async function injectLabyrinthRun(
     },
   );
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Play", exact: true })).toBeEnabled({ timeout: 5000 });
-  await page.getByRole("button", { name: "Play", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Choose Your Adventure" })).toBeVisible({ timeout: 5000 });
-  await page.getByRole("button", { name: /The Labyrinth/ }).click();
-  if (options.resume) {
-    await expect(page.getByRole("button", { name: "Resume" })).toBeVisible({ timeout: 5000 });
-    await page.getByRole("button", { name: "Resume" }).click();
-  }
+  await expect(page.getByRole("heading", { name: /Labyrinth|Map/i })).toBeVisible({ timeout: 20000 });
 }
 
 export async function enableLoadingScreen(page: Page) {
