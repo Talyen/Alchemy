@@ -5,6 +5,7 @@ export * from "./types";
 export * from "./effects";
 export * from "./card-description";
 export * from "./assets";
+export * from "./gear-art";
 export * from "./keywords";
 export * from "./compendium";
 export * from "./companions";
