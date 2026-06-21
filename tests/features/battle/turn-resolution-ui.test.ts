@@ -6,7 +6,7 @@ import {
 } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { defaultBattleState, endPlayerTurn } from "@/lib/battle";
 import type { HandDrawSequenceDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
-import { getBattleSessionStore } from "@/features/alchemy/run-loop/battle/battle-session";
+import type { getBattleSessionStore } from "@/features/alchemy/run-loop/battle/battle-session";
 
 vi.mock("@/features/alchemy/run-loop/battle/draw-sequence");
 

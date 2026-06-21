@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { resolveEndTurn } from "@/features/alchemy/run-loop/battle/turn-orchestration";
-import { getBattleSessionStore } from "@/features/alchemy/run-loop/battle/battle-session";
+import type { getBattleSessionStore } from "@/features/alchemy/run-loop/battle/battle-session";
 import { defaultBattleState } from "@/lib/battle";
 
 function makeDeps() {
