@@ -275,6 +275,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix: type error in injectLabyrinthRun Object.assign call
 - fix(e2e): correct destination and labyrinth test navigation timing
 - fix: revert incorrect cardPlayInProgressRef change in battle test
 - fix: resolve pre-existing typecheck and E2E test errors
