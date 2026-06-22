@@ -1346,6 +1346,22 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### CI
 
+- ci: reduce pipeline cost, add release automation, and rebalance E2E test tiers
+  - Move full E2E suite off main-push to tag-push only (saves ~10 min per push)
+  
+  - Add lint, test, build, e2e-full (3 shards) to release.yml; block release on E2E failure
+  
+  - Add restore-keys fallback to all npm and Playwright caches; add asset cache
+  
+  - Add changelog auto-commit subject with commit count and short hash
+  
+  - Create release.mjs and release-hotfix.mjs wrapper scripts
+  
+  - Rebalance @critical to 61 fast tests covering all areas with no gaps
+  
+  - Add @slow tag to 51 slow specs (animations, drag, viewport loops)
+  
+  - Add @critical coverage to progression-locks, difficulty-select, gear-combat, keyboard-navigation
 - ci: speed up nightly with shared prepare, sharding, and caches
   Build once and upload dist, restore node_modules and Electron from cache,
   run four parallel Playwright shards with four workers, and cap Electron
