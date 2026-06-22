@@ -23,16 +23,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
+      - run: npm install -g npm@11 && npm ci --prefer-offline
 
   lint:
     needs: install
@@ -48,17 +39,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
-
+      - run: npm install -g npm@11 && npm ci --prefer-offline
       - run: npx commitlint --from $(git tag --list "v*" --sort=-v:refname | head -1) --to HEAD --verbose || true
 
       - run: npm run lint:ci
@@ -75,21 +56,11 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
-
+      - run: npm install -g npm@11 && npm ci --prefer-offline
       - run: mkdir -p reports
       - run: npx vitest run --reporter=default --reporter=json --outputFile=reports/vitest-timings.json
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: vitest-timings
@@ -108,17 +79,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
-
+      - run: npm install -g npm@11 && npm ci --prefer-offline
       - name: Cache optimized assets
         uses: actions/cache@v5
         id: asset-cache
@@ -145,7 +106,9 @@ jobs:
       - uses: actions/upload-artifact@v5
         with:
           name: dist
-          path: dist/
+          path: |
+            dist/
+            !dist/Music/
           retention-days: 1
 
   e2e-full:
@@ -165,17 +128,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
-
+      - run: npm install -g npm@11 && npm ci --prefer-offline
       - uses: actions/download-artifact@v5
         with:
           name: dist
@@ -213,7 +166,7 @@ jobs:
           path: |
             playwright-report/
             test-results/
-          retention-days: 7
+          retention-days: 3
 
   release:
     needs: [e2e-full]
@@ -282,3 +235,4 @@ jobs:
           body_path: release-notes/${{ github.ref_name }}.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

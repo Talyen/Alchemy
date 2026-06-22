@@ -25,16 +25,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
+      - run: npm install -g npm@11 && npm ci --prefer-offline
 
   lint:
     needs: install
@@ -50,17 +41,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
-
+      - run: npm install -g npm@11 && npm ci --prefer-offline
       - if: github.event_name == 'pull_request'
         run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.sha }} --verbose
 
@@ -78,21 +59,11 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
-
+      - run: npm install -g npm@11 && npm ci --prefer-offline
       - run: mkdir -p reports
       - run: npx vitest run --reporter=default --reporter=json --outputFile=reports/vitest-timings.json
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: vitest-timings
@@ -111,17 +82,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
-
+      - run: npm install -g npm@11 && npm ci --prefer-offline
       - name: Cache optimized assets
         uses: actions/cache@v5
         id: asset-cache
@@ -142,7 +103,9 @@ jobs:
       - uses: actions/upload-artifact@v5
         with:
           name: dist
-          path: dist/
+          path: |
+            dist/
+            !dist/Music/
           retention-days: 1
 
   e2e:
@@ -157,17 +120,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
-
+      - run: npm install -g npm@11 && npm ci --prefer-offline
       - uses: actions/download-artifact@v5
         with:
           name: dist
@@ -211,7 +164,7 @@ jobs:
           path: |
             playwright-report/
             test-results/
-          retention-days: 7
+          retention-days: 3
 
   ship-gate:
     needs: [lint, test, build]
@@ -225,17 +178,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
-
+      - run: npm install -g npm@11 && npm ci --prefer-offline
       - uses: actions/download-artifact@v5
         with:
           name: dist
@@ -258,17 +201,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
-
+      - run: npm install -g npm@11 && npm ci --prefer-offline
       - uses: actions/download-artifact@v5
         with:
           name: dist
@@ -322,17 +255,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
-
+      - run: npm install -g npm@11 && npm ci --prefer-offline
       - uses: actions/download-artifact@v5
         with:
           name: dist
@@ -383,17 +306,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
-
+      - run: npm install -g npm@11 && npm ci --prefer-offline
       - name: Detect desktop changes
         id: changes
         shell: bash
@@ -419,7 +332,7 @@ jobs:
         with:
           name: release-desktop-win
           path: release-desktop/
-          retention-days: 30
+          retention-days: 3
 
   electron-e2e:
     needs: install
@@ -435,18 +348,9 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        env:
+      - env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
-        run: npm install -g npm@11 && npm ci
+        run: npm install -g npm@11 && npm ci --prefer-offline
 
       - name: Detect desktop changes
         id: changes
@@ -487,3 +391,4 @@ jobs:
         run: xvfb-run --auto-servernum -- npm run test:ship:desktop
         env:
           CI: true
+

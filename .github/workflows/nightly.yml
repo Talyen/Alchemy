@@ -22,18 +22,10 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
-        if: steps.npm-cache.outputs.cache-hit != 'true'
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
-        run: npm install -g npm@11 && npm ci
-
+        run: npm install -g npm@11 && npm ci --prefer-offline
       - name: Cache Electron binary
         uses: actions/cache@v5
         id: electron-binary-cache
@@ -55,7 +47,9 @@ jobs:
       - uses: actions/upload-artifact@v5
         with:
           name: dist
-          path: dist/
+          path: |
+            dist/
+            !dist/Music/
           retention-days: 1
 
   e2e-web:
@@ -75,18 +69,10 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
-        if: steps.npm-cache.outputs.cache-hit != 'true'
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
-        run: npm install -g npm@11 && npm ci
-
+        run: npm install -g npm@11 && npm ci --prefer-offline
       - uses: actions/download-artifact@v5
         with:
           name: dist
@@ -122,7 +108,7 @@ jobs:
           path: |
             playwright-report/
             test-results/
-          retention-days: 7
+          retention-days: 3
 
   ship-gate-full:
     name: Ship gate (full)
@@ -139,18 +125,10 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
-        if: steps.npm-cache.outputs.cache-hit != 'true'
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
-        run: npm install -g npm@11 && npm ci
-
+        run: npm install -g npm@11 && npm ci --prefer-offline
       - uses: actions/download-artifact@v5
         with:
           name: dist
