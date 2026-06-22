@@ -116,14 +116,14 @@ Type → audience mapping (governs whether a commit appears in player-facing pat
 - **Player-facing** (patch notes): `feat`, `fix`, `balance`, `perf`.
 - **Dev-only** (`CHANGELOG.md` only): `refactor`, `test`, `chore`, `ci`, `build`, `docs`, `style`.
 
-No body or footer is required. The pre-push hook syncs `CHANGELOG.md` ## [Unreleased] from git history since the latest `v*` tag. Preview notes: `npm run generate:patch-notes`.
+No body or footer is required. The pre-push hook syncs `CHANGELOG.md` ## [Unreleased] from git history since the latest `v*` tag, with an auto-commit subject like `chore(changelog): sync unreleased (N commits, hhhhh)`. Preview notes: `npm run generate:patch-notes`.
 
 ## Testing policy
 
 - **Unit:** Vitest, path-mirrored under `tests/`. Focused runs via `npm test -- <glob>`.
 - **E2E:** Playwright. Page objects in `tests/pages/`, helpers in `tests/e2e/`, fixtures in `tests/fixtures/e2e.ts`. On failure, diagnostic markdown summaries containing console/runtime logs and a DOM snapshot are generated under `test-results/failures/`. Prioritize reading these text summaries to diagnose issues.
 - **Combat specs:** prefer the `fastBattle` + `runtimeErrors` fixtures from `tests/fixtures/e2e`. Animation canaries must use raw `@playwright/test` and never `enableFastMode` — ESLint enforces this in those files.
-- **Gate tiers:** `@prepush` (9) → `@critical` (~40) → `main-gate` (full). See [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-run-when-you-change) for the full mapping.
+- **Gate tiers:** `@prepush` (fast subset) → `@critical` (every push) → `release` (full E2E + ship gate on tag push). See [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-run-when-you-change) for the full mapping.
 - **Determinism:** tests must not depend on dev QA bypasses. Combat specs use `winViaCombat()` or `playCardNamed()`.
 
 ## Subagent and parallel work

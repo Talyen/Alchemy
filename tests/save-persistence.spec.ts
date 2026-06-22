@@ -25,8 +25,8 @@ function getSavedRoomCount(page: import("@playwright/test").Page): Promise<numbe
   }, SAVE_KEY);
 }
 
-test.describe("Save Persistence & Resume", critical, () => {
-  test("resume run restores exact state after reload", async ({ page }) => {
+test.describe("Save Persistence & Resume", () => {
+  test("resume run restores exact state after reload", critical, async ({ page }) => {
     await seedRandom(page, 42);
     await injectSaveState(page, {
       characterId: "knight",
@@ -85,7 +85,7 @@ test.describe("Save Persistence & Resume", critical, () => {
     await expect(page.getByRole("button", { name: "Normal Combat" })).toHaveCount(0);
   });
 
-  test("mid-battle reload returns to destination not battle", async ({ page }) => {
+  test("mid-battle reload returns to destination not battle", critical, async ({ page }) => {
     await seedRandom(page, 42);
     await injectSaveState(page, {
       runPlayerHealth: 22,
@@ -101,7 +101,7 @@ test.describe("Save Persistence & Resume", critical, () => {
     await expect(page.locator('[aria-label^="Play "]')).toHaveCount(0);
   });
 
-  test("reload restores an in-progress battle", async ({ page }) => {
+  test("reload restores an in-progress battle", critical, async ({ page }) => {
     await injectMidCombatSave(page);
     await page.goto("/");
 

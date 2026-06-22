@@ -35,9 +35,9 @@ const SAVE_ERROR_SCENARIOS: {
   },
 ];
 
-test.describe("Save Error Paths", critical, () => {
+test.describe("Save Error Paths", () => {
   for (const scenario of SAVE_ERROR_SCENARIOS) {
-    test(scenario.name, async ({ page }) => {
+    test(scenario.name, critical, async ({ page }) => {
       const errors = scenario.expectNoRuntimeErrors === false ? null : failOnRuntimeErrors(page);
 
       await page.addInitScript(
@@ -92,7 +92,7 @@ test.describe("Save Error Paths", critical, () => {
     expect(errors).toEqual([]);
   });
 
-  test("blocks gameplay when save schema is newer than this build", async ({ page }) => {
+  test("blocks gameplay when save schema is newer than this build", critical, async ({ page }) => {
     await page.addInitScript(
       (data) => {
         localStorage.setItem(

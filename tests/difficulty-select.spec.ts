@@ -3,8 +3,9 @@ import { test } from "./fixtures/e2e";
 import { SAVE_KEY, seedRandom } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 import { BattlePage } from "./pages/battle-page";
+import { critical } from "./playwright-tags";
 
-test.describe("Difficulty Select", () => {
+test.describe("Difficulty Select", critical, () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript((saveKey) => {
       const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
@@ -61,7 +62,7 @@ test.describe("Difficulty Select", () => {
   });
 });
 
-test.describe("Difficulty Skip (first-time player)", () => {
+test.describe("Difficulty Skip (first-time player)", critical, () => {
   test("selecting a character with no completed difficulties skips to battle", async ({ page }) => {
     await page.addInitScript((saveKey) => {
       localStorage.setItem(saveKey, JSON.stringify({ finishedRunCharacters: [] }));

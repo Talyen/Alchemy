@@ -2,7 +2,7 @@
 import { execSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { syncChangelog } from "./sync-changelog.mjs";
+import { changelogCommitSubject, syncChangelog } from "./sync-changelog.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -15,5 +15,6 @@ const status = execSync("git status --porcelain CHANGELOG.md", {
 
 if (status) {
   execSync("git add CHANGELOG.md", { cwd: root, stdio: "inherit" });
-  execSync('git commit -m "chore(changelog): sync unreleased"', { cwd: root, stdio: "inherit" });
+  const subject = changelogCommitSubject(root);
+  execSync(`git commit -m "${subject}"`, { cwd: root, stdio: "inherit" });
 }

@@ -2,6 +2,7 @@ import { expect } from "@playwright/test";
 import { makeCard, startBattleWithDeck, WOLF_COMPANION_CARD, seedRandom } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
+import { slow } from "./playwright-tags";
 
 type TrinketCase = {
   id: string;
@@ -56,7 +57,7 @@ const TRINKET_CASES: TrinketCase[] = [
   },
 ];
 
-test.describe("Trinket Effects in Battle", () => {
+test.describe("Trinket Effects in Battle", slow, () => {
   for (const tc of TRINKET_CASES) {
     test(`${tc.id}: ${tc.description}`, async ({ page, fastBattle, runtimeErrors }) => {
       void fastBattle;

@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { HomesteadPage } from "./pages/homestead-page";
-import { critical, prepush } from "./playwright-tags";
+import { prepush } from "./playwright-tags";
 
-test.describe("Homestead Flow", critical, () => {
+test.describe("Homestead Flow", () => {
   test.describe("with custom materials", () => {
     test.beforeEach(async ({ page }) => {
       await new HomesteadPage(page).goto({

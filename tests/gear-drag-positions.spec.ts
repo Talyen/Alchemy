@@ -10,12 +10,12 @@ import {
   currencyLocator,
 } from "./e2e/armory";
 import { test } from "./fixtures/e2e";
-import { armory, prepush } from "./playwright-tags";
+import { armory, prepush, slow } from "./playwright-tags";
 
 const beltGear: GearInstance = { instanceId: "gear-belt", definitionId: "leather-belt-basic", affixes: [] };
 const ringGear: GearInstance = { instanceId: "gear-ring", definitionId: "ruby-ring-basic", affixes: [] };
 
-test.describe("Gear drag positions", armory, () => {
+test.describe("Gear drag positions", { ...armory, ...slow }, () => {
   test("drag equipped item back to a specific inventory cell", async ({ page }) => {
     await openArmory(page, [bodyGear]);
 

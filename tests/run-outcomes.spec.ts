@@ -17,9 +17,9 @@ import { DestinationPage } from "./pages/destination-page";
 import { RewardPage } from "./pages/reward-page";
 import { critical } from "./playwright-tags";
 
-test.describe("Run Outcomes", critical, () => {
+test.describe("Run Outcomes", () => {
   test.describe("Victory Flow", () => {
-    test("beating Act I boss completes victory flow and displays Act II destination choices", async ({ page }) => {
+    test("beating Act I boss completes victory flow and displays Act II destination choices", critical, async ({ page }) => {
       await enableFastMode(page);
       await injectBossState(page);
       await seedRandom(page, 42);
@@ -81,7 +81,7 @@ test.describe("Run Outcomes", critical, () => {
       await assertDefeatFromEndRun(page, { returnToMenu: true });
     });
 
-    test("ending a run from destination screen shows defeat screen", async ({ page }) => {
+    test("ending a run from destination screen shows defeat screen", critical, async ({ page }) => {
       await startAtDestination(page, {});
       await page.getByRole("button", { name: "Open destination menu" }).click();
       await page.getByRole("button", { name: "End Run" }).click();
@@ -109,7 +109,7 @@ test.describe("Run Outcomes", critical, () => {
       expect(activeRun).toBeNull();
     });
 
-    test("after defeat by lethal damage, Continue returns to menu", async ({ page, fastBattle }) => {
+    test("after defeat by lethal damage, Continue returns to menu", critical, async ({ page, fastBattle }) => {
       void fastBattle;
 
       const battleState = {

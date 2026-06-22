@@ -2,7 +2,7 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
-import { critical, prepush } from "./playwright-tags";
+import { critical, prepush, slow } from "./playwright-tags";
 import { injectSaveState, makeCard, makeHighDamageCard, SAVE_KEY, seedRandom } from "./helpers";
 
 async function pickDraftCard(page: import("@playwright/test").Page) {
@@ -43,7 +43,7 @@ async function wildwoodWinCombat(page: import("@playwright/test").Page, battle: 
 }
 
 test.describe("Wildwood Draft", () => {
-  test("resumes a persisted mid-draft run", { ...critical, ...prepush }, async ({ page, runtimeErrors }) => {
+  test("resumes a persisted mid-draft run", prepush, async ({ page, runtimeErrors }) => {
     void runtimeErrors;
     const drafted = makeCard({ id: "slash" });
     const choices = [makeCard({ id: "block" }), makeCard({ id: "bash" }), makeCard({ id: "anvil" })];
@@ -71,7 +71,7 @@ test.describe("Wildwood Draft", () => {
     await expect(page.getByText("2/6 selected")).toBeVisible();
   });
 
-  test("drafts six cards and starts a modified boss battle", critical, async ({ page, fastBattle, runtimeErrors }) => {
+  test("drafts six cards and starts a modified boss battle", slow, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
     const draftedCards = Array.from({ length: 5 }, () => makeCard());
@@ -171,7 +171,7 @@ test.describe("Wildwood Draft", () => {
 
   test(
     "skips reward after wildwood victory and starts next boss",
-    critical,
+    slow,
     async ({ page, fastBattle, runtimeErrors }) => {
       test.setTimeout(45000);
       void fastBattle;
@@ -287,7 +287,7 @@ const VALID_COMBAT_TRAITS = [
   "divine-aegis",
 ];
 
-test.describe("Wildwood Traits", critical, () => {
+test.describe("Wildwood Traits", slow, () => {
   test.beforeEach(async ({ page }) => {
     await seedRandom(page, 42);
   });

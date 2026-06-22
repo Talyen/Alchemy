@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { enableFastMode, makeCard, SAVE_KEY, startBattleWithDeck, startAtDestination } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
+import { slow } from "./playwright-tags";
 
 async function setAspectRatio(page: import("@playwright/test").Page, aspectRatio: string) {
   await page.addInitScript(
@@ -54,7 +55,7 @@ const CARD_VIEWPORT_TOLERANCE_PX = 12;
 const CARD_VIEWPORT_TOLERANCE_RATIO = 0.015;
 
 for (const { width, height, label } of RESOLUTIONS) {
-  test.describe(`${label}`, () => {
+  test.describe(`${label}`, slow, () => {
     test("menu screen fits viewport without overflow", async ({ page }) => {
       await setAspectRatio(page, "16:9");
       await page.setViewportSize({ width, height });
@@ -112,7 +113,7 @@ function isIdentityTransform(transform: string): boolean {
   return false;
 }
 
-test.describe("Ultra HD 3840x2160 (4K) additional checks", () => {
+test.describe("Ultra HD 3840x2160 (4K) additional checks", slow, () => {
   test("stage uses native resolution (no CSS transform scaling)", async ({ page }) => {
     await setAspectRatio(page, "16:9");
     await page.setViewportSize({ width: 3840, height: 2160 });
@@ -130,7 +131,7 @@ test.describe("Ultra HD 3840x2160 (4K) additional checks", () => {
   });
 });
 
-test.describe("Card Selection Grid Layout", () => {
+test.describe("Card Selection Grid Layout", slow, () => {
   test("cards are centered within the viewport", async ({ page }) => {
     await startAtDestination(page, { runGold: 9999 }, { forceDestination: "Merchant's Shop" });
     await page.getByRole("button", { name: "Merchant's Shop" }).click();

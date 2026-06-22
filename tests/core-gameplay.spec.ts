@@ -12,7 +12,7 @@ import { BattlePage } from "./pages/battle-page";
 import { DestinationPage } from "./pages/destination-page";
 import { MenuPage } from "./pages/menu-page";
 import { RewardPage } from "./pages/reward-page";
-import { critical } from "./playwright-tags";
+import { critical, slow } from "./playwright-tags";
 
 test.describe("Battle Flow", critical, () => {
   test("normal combat can be won by playing cards and ending turns", async ({ page, fastBattle, runtimeErrors }) => {
@@ -46,7 +46,7 @@ test.describe("Battle Flow", critical, () => {
   });
 });
 
-test.describe("Mana Mechanics", () => {
+test.describe("Mana Mechanics", critical, () => {
   test("restore-mana overflows beyond maxMana", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
@@ -127,7 +127,7 @@ test.describe("Talents", () => {
   });
 });
 
-test.describe("Card Interactions", () => {
+test.describe("Card Interactions", slow, () => {
   test("multiple copies of the same card in hand can be hovered and played independently", async ({
     page,
     fastBattle,

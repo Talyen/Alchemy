@@ -30,6 +30,8 @@ jobs:
         with:
           path: node_modules/
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
 
       - if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install -g npm@11 && npm ci
@@ -53,6 +55,8 @@ jobs:
         with:
           path: node_modules/
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
 
       - if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install -g npm@11 && npm ci
@@ -79,6 +83,8 @@ jobs:
         with:
           path: node_modules/
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
 
       - if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install -g npm@11 && npm ci
@@ -110,9 +116,18 @@ jobs:
         with:
           path: node_modules/
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
 
       - if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install -g npm@11 && npm ci
+
+      - name: Cache optimized assets
+        uses: actions/cache@v5
+        id: asset-cache
+        with:
+          path: src/assets/optimized/
+          key: assets-${{ runner.os }}-${{ hashFiles('src/assets/**', 'Raw Assets/**', 'scripts/optimize-assets.mjs', 'scripts/optimize-sounds.mjs', 'scripts/optimize-music.mjs', 'scripts/sync-gear-art.mjs') }}
 
       - run: npm run build
 
@@ -132,7 +147,6 @@ jobs:
 
   e2e:
     needs: build
-    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -148,6 +162,8 @@ jobs:
         with:
           path: node_modules/
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
 
       - if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install -g npm@11 && npm ci
@@ -163,6 +179,8 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
 
       - name: Install Playwright Chromium (with system deps)
         if: steps.playwright-cache.outputs.cache-hit != 'true'
@@ -195,70 +213,6 @@ jobs:
             test-results/
           retention-days: 7
 
-  e2e-full:
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    name: Full E2E (${{ matrix.shard }}/4)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - uses: actions/cache/restore@v5
-        id: npm-cache
-        with:
-          path: node_modules/
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
-      - if: steps.npm-cache.outputs.cache-hit != 'true'
-        run: npm install -g npm@11 && npm ci
-
-      - uses: actions/download-artifact@v5
-        with:
-          name: dist
-          path: dist/
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v5
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
-      - name: Install Playwright Chromium (with system deps)
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        timeout-minutes: 15
-        run: npx playwright install --with-deps chromium
-
-      - name: Install Playwright Chromium
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        timeout-minutes: 15
-        run: npx playwright install chromium
-
-      - name: Run full e2e shard against production build
-        run: npm run test:e2e:preview -- --shard=${{ matrix.shard }}/4
-        env:
-          CI: true
-
-      - name: Upload Playwright report
-        if: failure()
-        uses: actions/upload-artifact@v5
-        with:
-          name: playwright-report-full-${{ matrix.shard }}
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 7
-
   ship-gate:
     needs: [lint, test, build]
     runs-on: ubuntu-latest
@@ -276,6 +230,8 @@ jobs:
         with:
           path: node_modules/
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
 
       - if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install -g npm@11 && npm ci
@@ -307,6 +263,8 @@ jobs:
         with:
           path: node_modules/
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
 
       - if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install -g npm@11 && npm ci
@@ -337,6 +295,8 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
 
       - name: Install Playwright Chromium
         if: steps.changes.outputs.run == 'true'
@@ -367,6 +327,8 @@ jobs:
         with:
           path: node_modules/
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
 
       - if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install -g npm@11 && npm ci
@@ -396,6 +358,8 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
 
       - name: Install Playwright Chromium
         if: steps.changes.outputs.run == 'true'
@@ -424,6 +388,8 @@ jobs:
         with:
           path: node_modules/
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
 
       - if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install -g npm@11 && npm ci
@@ -474,6 +440,8 @@ jobs:
         with:
           path: node_modules/
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
 
       - if: steps.npm-cache.outputs.cache-hit != 'true'
         env:

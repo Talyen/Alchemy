@@ -666,6 +666,8 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(validation): simplify validation enums, externalize card exceptions, and soften card parity checks
+- refactor(validation): split monolithic content-validation module
 - refactor(style): modernize theme keyframes and convert custom utilities to tailwind v4 directives
 - refactor(style): simplify index.css architecture and consolidate theme tokens
 - refactor(content-validation): simplify card-parity validation

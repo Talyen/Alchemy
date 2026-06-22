@@ -2,6 +2,7 @@ import { expect } from "@playwright/test";
 import { injectHomestead, makeCard, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
+import { critical } from "./playwright-tags";
 
 function boxesOverlapHorizontally(a: { x: number; width: number }, b: { x: number; width: number }): boolean {
   const aRight = a.x + a.width;
@@ -9,7 +10,7 @@ function boxesOverlapHorizontally(a: { x: number; width: number }, b: { x: numbe
   return a.x < bRight && b.x < aRight;
 }
 
-test.describe("Keyboard Navigation", () => {
+test.describe("Keyboard Navigation", critical, () => {
   test("keyboard controls and hotkeys work in combat", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;

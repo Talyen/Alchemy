@@ -2,11 +2,15 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getCommitsSinceTag, latestVersionTag } from "./lib/git-release.mjs";
+import { getCommitsSinceTag, latestCommitHash, latestVersionTag } from "./lib/git-release.mjs";
 import { buildChangelogUnreleased, replaceChangelogUnreleased } from "./lib/patch-notes-core.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const GENERATED_CHANGELOG_SUBJECT = "chore(changelog): sync unreleased";
+const SYNC_COMMIT_SUBJECT_PREFIX = "chore(changelog): sync unreleased";
+
+function isSyncCommitSubject(subject) {
+  return subject.startsWith(SYNC_COMMIT_SUBJECT_PREFIX);
+}
 
 function normalizeNewlines(text) {
   return text.replace(/\r\n/gu, "\n");
@@ -19,7 +23,7 @@ export function readChangelog(rootDir = root) {
 export function computeSyncedChangelog(existingContent, rootDir = root) {
   const lastTag = latestVersionTag(rootDir);
   const commits = getCommitsSinceTag(rootDir, lastTag).filter(
-    (commit) => commit.subject !== GENERATED_CHANGELOG_SUBJECT,
+    (commit) => !isSyncCommitSubject(commit.subject),
   );
   const unreleasedMarkdown = buildChangelogUnreleased(commits);
   return replaceChangelogUnreleased(normalizeNewlines(existingContent), unreleasedMarkdown);
@@ -47,6 +51,15 @@ export function syncChangelog(options = {}) {
   }
 
   return synced;
+}
+
+export function changelogCommitSubject(rootDir = root) {
+  const lastTag = latestVersionTag(rootDir);
+  const commits = getCommitsSinceTag(rootDir, lastTag).filter(
+    (commit) => !isSyncCommitSubject(commit.subject),
+  );
+  const hash = latestCommitHash(rootDir);
+  return `chore(changelog): sync unreleased (${commits.length} commits, ${hash})`;
 }
 
 const isCheck = process.argv.includes("--check");

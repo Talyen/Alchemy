@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { enableFastMode, injectHomestead } from "./helpers";
+import { critical } from "./playwright-tags";
 
-test.describe("Progression Locks", () => {
+test.describe("Progression Locks", critical, () => {
   test.beforeEach(async ({ page }) => {
     await enableFastMode(page);
   });

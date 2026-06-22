@@ -4,8 +4,8 @@ import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
 import { critical } from "./playwright-tags";
 
-test.describe("Death's Door", critical, () => {
-  test("lethal damage after grace expires shows defeat screen", async ({ page, fastBattle }) => {
+test.describe("Death's Door", () => {
+  test("lethal damage after grace expires shows defeat screen", critical, async ({ page, fastBattle }) => {
     void fastBattle;
 
     await startBattleWithDeck(
@@ -26,7 +26,7 @@ test.describe("Death's Door", critical, () => {
     await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });
   });
 
-  test("heal from Death's Door saves player and victory resolves", async ({ page, fastBattle }) => {
+  test("heal from Death's Door saves player and victory resolves", critical, async ({ page, fastBattle }) => {
     void fastBattle;
 
     const LIFE_SAVING_BREAD = {

@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { failOnRuntimeErrors, makeCard, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
+import { slow } from "./playwright-tags";
 
-test.describe("Draw/discard animation invariants (1920×1080)", () => {
+test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
   test("play card shows ghost overlay", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
     const ghostOverlays = page.locator(".card-ghost-overlay");

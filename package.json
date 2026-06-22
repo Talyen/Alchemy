@@ -66,6 +66,7 @@
     "test:e2e:electron": "cross-env PLAYWRIGHT_ELECTRON_PREVIEW_PORT=4175 node scripts/ensure-electron.mjs && playwright test --config playwright.electron.config.ts",
     "test:e2e:electron:run": "cross-env PLAYWRIGHT_ELECTRON_PREVIEW_PORT=4175 playwright test --config playwright.electron.config.ts",
     "test:e2e:ui": "playwright test --project chromium --ui",
+    "test:e2e:slow": "cross-env PLAYWRIGHT_VITE_MODE=preview CI=true playwright test --project chromium --grep @slow",
     "test:e2e:timings": "cross-env PLAYWRIGHT_JSON_OUTPUT_NAME=reports/e2e-results.json PLAYWRIGHT_VITE_MODE=preview PLAYWRIGHT_E2E_FULL=1 CI=true playwright test --project chromium --reporter=json",
     "test:e2e:audit": "node scripts/analyze-e2e.mjs",
     "balance:sim": "cross-env ALCHEMY_BALANCE_SIM=1 vitest run tests/balance/balance-report.test.ts --reporter=verbose && start \"\" reports\\balance-report.html",
@@ -82,7 +83,8 @@
     "deadcode:strict": "knip --strict --include-entry-exports",
     "format:check": "prettier --check \"{src,tests,scripts,desktop}/**/*.{ts,tsx,css,mjs,cjs}\"",
     "prepare": "lefthook install",
-    "release": "commit-and-tag-version",
+    "release": "node scripts/release.mjs",
+    "release:hotfix": "node scripts/release-hotfix.mjs",
     "release:minor": "commit-and-tag-version --release-as minor",
     "release:major": "commit-and-tag-version --release-as major"
   },

@@ -24,6 +24,20 @@ export function latestVersionTag(root) {
   return tags[0] ?? null;
 }
 
+export function latestCommitHash(root, short = true) {
+  try {
+    const flag = short ? "--short" : "";
+    return execSync(`git rev-parse ${flag} HEAD`, {
+      cwd: root,
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .toString()
+      .trim();
+  } catch {
+    return "unknown";
+  }
+}
+
 export function getCommitsSinceTag(root, tag) {
   const range = tag ? `${tag}..HEAD` : "HEAD";
   let output;

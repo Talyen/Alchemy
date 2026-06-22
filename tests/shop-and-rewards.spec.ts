@@ -12,13 +12,13 @@ import {
 } from "./helpers";
 import { critical, prepush } from "./playwright-tags";
 
-test.describe("Merchant Shop", critical, () => {
+test.describe("Merchant Shop", () => {
   test.describe("with sufficient gold", () => {
     test.beforeEach(async ({ page }) => {
       await new ShopPage(page).enterFromDestination(9999, "Merchant's Shop");
     });
 
-    test("buying a card deducts gold and marks as purchased", prepush, async ({ page }) => {
+    test("buying a card deducts gold and marks as purchased", { ...critical, ...prepush }, async ({ page }) => {
       const shop = new ShopPage(page);
       await shop.stage.expectRunPhase("runLoop");
       const goldBefore = await shop.gold();
@@ -121,8 +121,8 @@ test.describe("Alchemist Shop", () => {
   });
 });
 
-test.describe("Reward Flow", critical, () => {
-  test("card reward: selecting and adding card works", prepush, async ({ page, fastBattle, runtimeErrors }) => {
+test.describe("Reward Flow", () => {
+  test("card reward: selecting and adding card works", { ...critical, ...prepush }, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
     await startBattleWithDeck(
@@ -133,7 +133,7 @@ test.describe("Reward Flow", critical, () => {
     await new DestinationPage(page).expectVisible();
   });
 
-  test("trinket reward: trinket appears in runTrinkets after claiming", async ({ page, fastBattle, runtimeErrors }) => {
+  test("trinket reward: trinket appears in runTrinkets after claiming", critical, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
     await injectSaveState(page, {
@@ -168,7 +168,7 @@ test.describe("Reward Flow", critical, () => {
     expect(trinkets).toContain("tattered-pages");
   });
 
-  test("gear reward: claiming gear adds it to gearInventory", async ({ page, fastBattle, runtimeErrors }) => {
+  test("gear reward: claiming gear adds it to gearInventory", critical, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
     await injectSaveState(page, {

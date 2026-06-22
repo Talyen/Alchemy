@@ -28,10 +28,10 @@ Automation enforces release readiness — agents do not rely on manual checklist
 
 ## Agent release flow
 
-1. Ensure `npm run check:ship:full` passes locally.
-2. Run `npm run release` (or `release:minor` / `release:major`) — syncs changelog, bumps `package.json`, promotes ## [Unreleased] to a versioned section, tags.
-3. Push the tag: `git push origin vX.Y.Z`.
-4. [`.github/workflows/release.yml`](../.github/workflows/release.yml) builds installers, generates patch notes from the versioned changelog section, uploads Steam depots (when secrets exist), and creates a GitHub Release.
+1. Ensure your working tree is clean and you're on `main`.
+2. Run **`npm run release`** — runs `check:ship:full`, bumps version (inferred from commits via `commit-and-tag-version`), creates the release commit + `vX.Y.Z` tag, pushes both to origin, and watches the release workflow.
+3. For urgent hotfixes: **`npm run release:hotfix`** — lighter gate (`check:ship` + `prepush` E2E), forces a patch bump.
+4. [`.github/workflows/release.yml`](../.github/workflows/release.yml) runs `lint` → `test` → `build` → `e2e-full` (3-shard full E2E matrix) → `release` (builds installers, generates patch notes, uploads Steam depots when secrets exist, creates a GitHub Release). **The release job is blocked until the full E2E suite passes.**
 
 ## GitHub secrets (one-time setup)
 
@@ -53,9 +53,10 @@ Automation enforces release readiness — agents do not rely on manual checklist
 
 | Job | Trigger |
 |-----|---------|
+| `e2e` (`@critical`) | Every push |
 | `ship-gate` | Every push (`check:ship:ci` after lint/test/build) |
 | `save-gate` | Push when save/migration paths change |
 | `active-run-gate` | Push when active-run paths change |
 | `desktop-build` | Push when desktop paths change (Windows installer artifact) |
 | `electron-e2e` | Push when desktop/Electron paths change |
-| `release` | Tag `v*` push |
+| `release` (incl. `e2e-full` 3-shard matrix) | Tag `v*` push |

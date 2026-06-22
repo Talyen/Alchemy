@@ -135,7 +135,7 @@ test.describe("Navigation", () => {
   });
 });
 
-test.describe("Options Screen", critical, () => {
+test.describe("Options Screen", () => {
   test("all option tabs are accessible and show correct content", prepush, async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();

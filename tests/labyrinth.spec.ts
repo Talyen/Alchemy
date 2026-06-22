@@ -4,7 +4,7 @@ import { MenuPage } from "./pages/menu-page";
 import { critical } from "./playwright-tags";
 import { injectLabyrinthRun, makeHighDamageCard } from "./helpers";
 
-test.describe("Labyrinth Mode", critical, () => {
+test.describe("Labyrinth Mode", () => {
   test("full Labyrinth initialization and map progression", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goToCharacterSelectUnlocked("labyrinth", { finishedRunCharacters: ["knight", "rogue"] });
@@ -32,7 +32,7 @@ test.describe("Labyrinth Mode", critical, () => {
     await expect(page.getByRole("heading", { name: /Labyrinth|Map/i })).toBeVisible({ timeout: 5000 });
   });
 
-  test("labyrinth map shows with combat and rest nodes available", async ({ page }) => {
+  test("labyrinth map shows with combat and rest nodes available", critical, async ({ page }) => {
     await injectLabyrinthRun(page, { deck: Array.from({ length: 6 }, () => makeHighDamageCard()), resume: true });
 
     await expect(page.getByRole("heading", { name: /Labyrinth|Map/ })).toBeVisible({ timeout: 5000 });

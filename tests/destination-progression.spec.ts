@@ -7,8 +7,8 @@ import { CorruptionPage } from "./pages/corruption-page";
 import { MenuPage } from "./pages/menu-page";
 import { critical, prepush } from "./playwright-tags";
 
-test.describe("Destination Progression", critical, () => {
-  test("destination screen shows available choices from the pool", async ({ page }) => {
+test.describe("Destination Progression", () => {
+  test("destination screen shows available choices from the pool", critical, async ({ page }) => {
     await injectSaveState(page, {
       runPlayerHealth: 30,
       runMaxHealth: 30,
@@ -107,7 +107,7 @@ test.describe("Mystery Event Flow", () => {
   });
 });
 
-test.describe("Corruption Full Flow", critical, () => {
+test.describe("Corruption Full Flow", () => {
   test("corruption destination shows altar screen with intro and leave works", prepush, async ({ page }) => {
     const corruption = new CorruptionPage(page);
     await corruption.open();
@@ -121,7 +121,7 @@ test.describe("Corruption Full Flow", critical, () => {
     await new DestinationPage(page).expectVisible();
   });
 
-  test("selecting a card and corrupting shows result view with continue", async ({ page }) => {
+  test("selecting a card and corrupting shows result view with continue", critical, async ({ page }) => {
     const corruption = new CorruptionPage(page);
     await corruption.open();
 

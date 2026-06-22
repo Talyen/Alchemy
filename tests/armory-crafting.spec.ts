@@ -18,7 +18,7 @@ import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
 import { MenuPage } from "./pages/menu-page";
 import { seedRandom } from "./e2e/rng";
-import { armory, critical, prepush } from "./playwright-tags";
+import { armory, critical, prepush, slow } from "./playwright-tags";
 
 const affixedHelm = {
   instanceId: "gear-helm",
@@ -35,8 +35,8 @@ const emptyCraftingCurrencies = {
   "smiths-whetstone": 0,
 };
 
-test.describe("Armory crafting", { ...armory, ...critical }, () => {
-  test("salvages gear and grants crafting materials", prepush, async ({ page }) => {
+test.describe("Armory crafting", { ...armory }, () => {
+  test("salvages gear and grants crafting materials", { ...critical, ...prepush }, async ({ page }) => {
     await seedRandom(page, 0);
     const sword = {
       instanceId: "gear-sword",
@@ -82,7 +82,7 @@ test.describe("Armory crafting", { ...armory, ...critical }, () => {
     await expect(gearItemLocator(page, "Ruby Ring")).toHaveCount(1);
   });
 
-  test("applies voidstone and removes affixes", prepush, async ({ page }) => {
+  test("applies voidstone and removes affixes", { ...critical, ...prepush }, async ({ page }) => {
     await openArmory(page, {
       inventory: [affixedHelm],
       craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
@@ -100,7 +100,7 @@ test.describe("Armory crafting", { ...armory, ...critical }, () => {
     await expect(page.getByText("Salvage for Basic crafting currency")).toBeHidden();
   });
 
-  test("upgrades basic gear to astral with ascension seal", async ({ page }) => {
+  test("upgrades basic gear to astral with ascension seal", slow, async ({ page }) => {
     await openArmory(page, {
       inventory: [affixedHelm],
       craftingCurrencies: { ...emptyCraftingCurrencies, "ascension-seal": 1 },
@@ -145,7 +145,7 @@ test.describe("Armory crafting", { ...armory, ...critical }, () => {
     await expect(page.getByText("Increases Health by 7")).toBeVisible();
   });
 
-  test("affix physical damage increases battle damage", async ({ page, fastBattle, runtimeErrors }) => {
+  test("affix physical damage increases battle damage", critical, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
 

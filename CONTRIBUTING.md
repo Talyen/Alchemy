@@ -11,15 +11,15 @@ GitHub branch protection is not available on this repo, so **local hooks are the
 3. `npm run lint:ci` (format, TypeScript, ESLint, knip)
 4. `npm test` (Vitest)
 5. `npm run build:ship` (web + desktop compile)
-6. `npm run test:e2e:prepush` — fast **@prepush** subset (9 tests, parallel preview build; includes one animation canary)
+6. `npm run test:e2e:prepush` — fast **@prepush** subset (parallel preview build; includes one animation canary)
 
-**Before pushing to `main`**, also run `npm run test:e2e:prepush:full` (`@critical`, preview + CI flags). The pre-push hook only runs `@prepush`; CI on `main` runs the broader `@critical` suite (~40 tests). If using a PR branch, run the same before opening the PR.
+**Before pushing to `main`**, also run `npm run test:e2e:prepush:full` (`@critical`, preview + CI flags). The pre-push hook only runs `@prepush`; CI on every push runs the `@critical` suite (which also includes `@prepush` tests). If using a PR branch, run the same before opening the PR.
 
 To analyze test performance and trace failures, you can run:
 - `npm run test:e2e:timings` — runs the E2E suite and exports a timing/stats JSON to `reports/e2e-results.json`.
 - `npm run test:e2e:audit` — runs the timing E2E suite and automatically compiles a diagnostic markdown report to `reports/e2e-audit-report.md`.
 
-Manual full gate before **`main`**: `npm run test:e2e:main-gate` (full suite, same as CI `e2e-full`). Lighter checks: `npm run check:push` or `npm run test:e2e:prepush:full` (`@critical` only).
+Manual full gate before **releasing**: `npm run release` (pre-flight gate including `check:ship:full`). Lighter checks: `npm run check:push` or `npm run test:e2e:prepush:full` (`@critical` only).
 
 Install hooks once: `npm run prepare` (runs on `npm install`).
 
@@ -108,9 +108,11 @@ Layout: bootstrap helpers in [`tests/e2e/`](tests/e2e/) (`battle-setup.ts`, `arm
 
 ### Tags (`tests/playwright-tags.ts`)
 
-- **`@prepush`** — 9-test subset in the pre-push hook (`npm run test:e2e:prepush`).
-- **`@critical`** — broader CI gate (`npm run test:e2e:prepush:full`).
-- **`@smoke`** — quick boot/menu checks.
+- **`@prepush`** — fast subset of `@critical` in the pre-push hook (`npm run test:e2e:prepush`). App boot + battle canary.
+- **`@critical`** — CI gate on every push (`npm run test:e2e:prepush:full`). One or two fast tests per area covering core gameplay, save integrity, progression locks, difficulty select, combat mechanics, armory in battle, keyboard navigation. **~60-75 tests, ≤3 min on CI.**
+- **`@smoke`** — quick boot/menu checks (alchemy boot + Electron boot).
+- **`@slow`** — intentionally slow specs (animation canaries, drag-and-drop, viewport loops). Runs in full E2E on release; can be run manually with `npm run test:e2e:slow`.
+- **`@armory`** — armory screen / gear interaction specs. Overlaps with `critical` and `slow` on a per-test basis.
 
 
 ## CI parity
@@ -120,12 +122,8 @@ Layout: bootstrap helpers in [`tests/e2e/`](tests/e2e/) (`battle-setup.ts`, `arm
 | CI `ship-gate` | `npm run check:ship` |
 | CI `save-gate` / `active-run-gate` | `npm run test:ship:e2e` (path-filtered on PR) |
 | CI `desktop-build` / `electron-e2e` | `npm run dist:win` / `npm run test:ship:desktop` |
-| Nightly ship + Electron | `npm run check:ship:full` |
-| CI `e2e` | `npm run build && npm run test:e2e:prepush:full` |
+| CI `e2e` (`@critical`, every push) | `npm run build && npm run test:e2e:prepush:full` |
 | Pre-push hook | `npm run build:ship && npm run test:e2e:prepush` |
-| CI `e2e-full` (push to `main` only, 4 shards) | `npm run test:e2e:main-gate` |
-| Tag `v*` release | `npm run release` then push tag — see [docs/RELEASE.md](./docs/RELEASE.md) |
-
-On `main` push, CI skips the redundant `e2e` (`@critical`) job because `e2e-full` is a superset.
+| Tag `v*` release (`e2e-full` + release job) | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md) |
 
 **Docs:** [AGENTS.md](./AGENTS.md) (rules) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [docs/REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [docs/RELEASE.md](./docs/RELEASE.md) (Steam) · [PROMPTS.md](./PROMPTS.md) (audits)
