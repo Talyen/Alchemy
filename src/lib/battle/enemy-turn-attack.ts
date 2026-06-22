@@ -2,7 +2,7 @@
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { applyPlayerStatusFromAttack } from "./status-application";
 import { applyPlayerDamageStatuses, resolveStunTrigger } from "./status-effects";
-import type { EnemyAttackEffect } from "@/lib/game-data";
+import type { EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import { logError } from "../error-logger";
 import {
   applyPlayerCombatDamage,
@@ -15,6 +15,16 @@ import {
 } from "./types";
 import { BATTLE_CONFIG, computeLeechHeal, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { checkHealthThresholds, isFreezeActiveForAspect } from "./enemy-turn-utils";
+
+type DirectPlayerStatusAttackEffect = Extract<EnemyAttackEffect, { kind: "player-status" }> & {
+  status: Exclude<PlayerStatusId, "stun" | "freeze">;
+};
+
+function isDirectPlayerStatusAttack(
+  effect: Extract<EnemyAttackEffect, { kind: "player-status" }>,
+): effect is DirectPlayerStatusAttackEffect {
+  return effect.status !== "stun" && effect.status !== "freeze";
+}
 
 function applyPhysicalForgeBonus(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
   if (effect.damageType !== "physical") return effect.amount;
@@ -36,12 +46,13 @@ function computeMitigatedDamage(
   effect: EnemyAttackEffect & { kind: "damage" },
   remainingDamage: number,
 ) {
-  const rawDamage =
-    effect.damageType === "physical" ? Math.max(0, remainingDamage - state.playerStatuses.armor) : remainingDamage;
-  const actualDamage =
-    effect.damageType === "holy" && state.talentEffects.receiveHalfHolyDamage
-      ? Math.round(rawDamage / HALF_DIVISOR)
-      : rawDamage;
+  const armorMitigatesDamage =
+    effect.damageType === "physical" || (effect.damageType === "stun" && state.talentEffects.armorMitigatesStun);
+  const rawDamage = armorMitigatesDamage ? Math.max(0, remainingDamage - state.playerStatuses.armor) : remainingDamage;
+  const halvesDamage =
+    (effect.damageType === "holy" && state.talentEffects.receiveHalfHolyDamage) ||
+    (effect.damageType === "freeze" && state.talentEffects.receiveHalfFreezeBuildUp);
+  const actualDamage = halvesDamage ? Math.round(rawDamage / HALF_DIVISOR) : rawDamage;
   return actualDamage;
 }
 
@@ -60,6 +71,9 @@ function calculateBlockAndArmorMitigation(
   }
   if (effect.damageType === "burn") {
     remainingDamage += state.enemyMitigation.burnBonus;
+  }
+  if (effect.damageType === "freeze") {
+    remainingDamage += state.enemyMitigation.freezeBonus;
   }
   const effectiveBlock = computeEffectiveBlock(state, effect);
   const blockAbsorb = Math.min(remainingDamage, effectiveBlock);
@@ -258,7 +272,13 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
     try {
       if (effect.kind === "damage") {
         nextState = processEnemyDamageEffect(nextState, effect, combatTexts);
-      } else {
+      } else if (effect.status === "stun" || effect.status === "freeze") {
+        nextState = processEnemyDamageEffect(
+          nextState,
+          { kind: "damage", damageType: effect.status, amount: effect.amount },
+          combatTexts,
+        );
+      } else if (isDirectPlayerStatusAttack(effect)) {
         nextState = applyPlayerStatusFromAttack(nextState, effect, combatTexts);
       }
     } catch (err) {

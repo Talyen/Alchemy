@@ -60,7 +60,7 @@ describe("endPlayerTurn", () => {
 
   it("flags player turn skips after enemy stun so the controller can continue combat", () => {
     const state = makeState({
-      enemyAttackEffects: [{ kind: "player-status", status: "stun", amount: 20 }],
+      enemyAttackEffects: [{ kind: "damage", damageType: "stun", amount: 20 }],
       playerHealth: 30,
       playerMaxHealth: 30,
       hand: [makeCard({ id: "h1" })],
@@ -229,17 +229,18 @@ describe("endPlayerTurn", () => {
     expect(result.combatTexts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 5 });
   });
 
-  it("prevents enemy Stun buildup while Block is active when the talent is unlocked", () => {
+  it("reduces enemy Stun buildup by the amount Block absorbs", () => {
     const state = makeState({
       playerStatuses: defaultPlayerStatusValues({ block: 1 }),
-      talentEffects: { ...defaultTalentEffects, blockPreventsStun: true },
-      enemyAttackEffects: [{ kind: "player-status", status: "stun", amount: 2 }],
+      enemyAttackEffects: [{ kind: "damage", damageType: "stun", amount: 2 }],
     });
 
     const result = endPlayerTurn(state);
 
-    expect(result.state.playerStatuses.stun).toBe(0);
-    expect(result.combatTexts).not.toContainEqual({ target: "player", kind: "status", stat: "stun", amount: 2 });
+    expect(result.state.playerHealth).toBe(29);
+    expect(result.state.playerStatuses.stun).toBe(1);
+    expect(result.combatTexts).toContainEqual({ target: "player", kind: "damage", stat: "block", amount: 1 });
+    expect(result.combatTexts).toContainEqual({ target: "player", kind: "damage", stat: "stun", amount: 1 });
   });
 
   it("uses Plague Doctor's Mask only on harmful status effects", () => {
@@ -264,8 +265,6 @@ describe("endPlayerTurn", () => {
     { status: "burn", amount: 2, expectedHealth: 28, expectedStack: 1, note: "burn halves to 1" },
     { status: "poison", amount: 3, expectedHealth: 27, expectedStack: 2, note: "poison reduces by 1 to 2" },
     { status: "bleed", amount: 2, expectedHealth: 28, expectedStack: 0, note: "bleed resets to 0" },
-    { status: "freeze", amount: 3, expectedHealth: 30, expectedStack: 3, note: "freeze below threshold persists" },
-    { status: "stun", amount: 2, expectedHealth: 30, expectedStack: 2, note: "stun below threshold persists" },
   ] as const)(
     "enemy $status attack applies $status and tick $note",
     ({ status, amount, expectedHealth, expectedStack }) => {
@@ -277,6 +276,23 @@ describe("endPlayerTurn", () => {
       const result = endPlayerTurn(state);
       expect(result.state.playerHealth).toBe(expectedHealth);
       expect(result.state.playerStatuses[status]).toBe(expectedStack);
+    },
+  );
+
+  it.each([
+    { damageType: "freeze", amount: 3, expectedHealth: 27, expectedStack: 3 },
+    { damageType: "stun", amount: 2, expectedHealth: 28, expectedStack: 2 },
+  ] as const)(
+    "enemy $damageType damage also applies buildup equal to health damage",
+    ({ damageType, amount, expectedHealth, expectedStack }) => {
+      const state = makeState({
+        playerHealth: 30,
+        playerStatuses: defaultPlayerStatusValues({}),
+        enemyAttackEffects: [{ kind: "damage", damageType, amount }],
+      });
+      const result = endPlayerTurn(state);
+      expect(result.state.playerHealth).toBe(expectedHealth);
+      expect(result.state.playerStatuses[damageType]).toBe(expectedStack);
     },
   );
 
@@ -389,7 +405,7 @@ describe("enemy traits via endPlayerTurn", () => {
         art: "",
         enemyType: "normal",
         traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Gains freeze bonus each turn" }],
-        attackEffects: [{ kind: "player-status", status: "freeze", amount: 2 }],
+        attackEffects: [{ kind: "damage", damageType: "freeze", amount: 2 }],
       },
     });
     const result = endPlayerTurn(state);
@@ -412,7 +428,7 @@ describe("enemy traits via endPlayerTurn", () => {
         art: "",
         enemyType: "normal",
         traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Gains freeze bonus each turn" }],
-        attackEffects: [{ kind: "player-status", status: "freeze", amount: 2 }],
+        attackEffects: [{ kind: "damage", damageType: "freeze", amount: 2 }],
       },
     });
     const result = endPlayerTurn(state);

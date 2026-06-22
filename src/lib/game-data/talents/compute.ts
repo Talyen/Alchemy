@@ -1,7 +1,9 @@
 import type { TalentEffectManifest } from "../types";
 import { talentPool } from "./pool";
-import type { TalentEffectOperation, UnlockedTalents } from "./types";
+import { isTalentPlaceholder, type TalentEffectOperation, type UnlockedTalents } from "./types";
 import { DEFAULT_TALENT_EFFECTS } from "./manifest-defaults";
+
+const talentById = new Map(talentPool.map((talent) => [talent.id, talent]));
 
 export function createEmptyTalentManifest(): TalentEffectManifest {
   return {
@@ -14,16 +16,36 @@ export function createEmptyTalentManifest(): TalentEffectManifest {
 // numbers/booleans directly, which keeps turn resolution decoupled from talent grid data.
 export function computeTalentEffects(unlockedTalents: UnlockedTalents): TalentEffectManifest {
   const manifest = createEmptyTalentManifest();
-  const unlockedIds = new Set(Object.values(unlockedTalents).flat());
 
-  for (const talent of talentPool) {
-    if (!unlockedIds.has(talent.id)) continue;
-    for (const effect of talent.effects ?? []) {
-      applyTalentEffect(manifest, effect);
+  for (const [keywordId, talentIds] of Object.entries(unlockedTalents)) {
+    for (const talentId of talentIds ?? []) {
+      const talent = talentById.get(talentId);
+      if (!talent || isTalentPlaceholder(talent) || talent.keywordId !== keywordId) continue;
+      for (const effect of talent.effects ?? []) {
+        applyTalentEffect(manifest, effect);
+      }
     }
   }
 
   return manifest;
+}
+
+export function normalizeUnlockedTalents(unlockedTalents: UnlockedTalents): UnlockedTalents {
+  const normalized: UnlockedTalents = {};
+
+  for (const [keywordId, talentIds] of Object.entries(unlockedTalents)) {
+    const validIds = [];
+    for (const talentId of talentIds ?? []) {
+      const talent = talentById.get(talentId);
+      if (!talent || isTalentPlaceholder(talent) || talent.keywordId !== keywordId) continue;
+      validIds.push(talentId);
+    }
+    if (validIds.length > 0) {
+      normalized[keywordId as keyof UnlockedTalents] = validIds;
+    }
+  }
+
+  return normalized;
 }
 
 function applyTalentEffect(manifest: TalentEffectManifest, effect: TalentEffectOperation) {

@@ -6,6 +6,7 @@ import {
   LabyrinthMapSchema,
   MaterialInventorySchema,
   CompletedDifficultiesSchema,
+  UnlockedTalentsSchema,
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation";
 import { defaultBattleState } from "@/lib/battle";
@@ -555,6 +556,24 @@ describe("MaterialInventorySchema", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.wood).toBe(0);
+    }
+  });
+});
+
+describe("UnlockedTalentsSchema", () => {
+  it("drops mismatched, unknown, and placeholder talent ids", () => {
+    const result = UnlockedTalentsSchema.safeParse({
+      physical: ["physical-brute-force", "burn-dmg-1", "unknown-talent"],
+      consume: ["consume-6"],
+      burn: ["burn-dmg-1"],
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual({
+        physical: ["physical-brute-force"],
+        burn: ["burn-dmg-1"],
+      });
     }
   });
 });

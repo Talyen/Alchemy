@@ -25,19 +25,19 @@ describe("formatEnemyAttackLines", () => {
 
   it("formats two status effects combined", () => {
     const effects: EnemyAttackEffect[] = [
-      { kind: "player-status", status: "stun", amount: 2 },
+      { kind: "player-status", status: "bleed", amount: 2 },
       { kind: "player-status", status: "poison", amount: 2 },
     ];
-    expect(formatEnemyAttackLines(effects)).toEqual(["Deals 2 Stun and 2 Poison"]);
+    expect(formatEnemyAttackLines(effects)).toEqual(["Deals 2 Bleed and 2 Poison"]);
   });
 
   it("formats three status effects", () => {
     const effects: EnemyAttackEffect[] = [
       { kind: "player-status", status: "burn", amount: 1 },
       { kind: "player-status", status: "poison", amount: 1 },
-      { kind: "player-status", status: "freeze", amount: 1 },
+      { kind: "player-status", status: "bleed", amount: 1 },
     ];
-    expect(formatEnemyAttackLines(effects)).toEqual(["Deals 1 Burn, 1 Poison and 1 Freeze"]);
+    expect(formatEnemyAttackLines(effects)).toEqual(["Deals 1 Burn, 1 Poison and 1 Bleed"]);
   });
 
   it("formats single physical + single status as a combined line", () => {
@@ -60,12 +60,12 @@ describe("formatEnemyAttackLines", () => {
     const effects: EnemyAttackEffect[] = [
       { kind: "damage", damageType: "physical", amount: 5 },
       { kind: "player-status", status: "poison", amount: 2 },
-      { kind: "player-status", status: "freeze", amount: 2 },
+      { kind: "player-status", status: "bleed", amount: 2 },
     ];
     expect(formatEnemyAttackLines(effects)).toEqual([
       "Deals 5 Physical damage",
       "Deals 2 Poison damage",
-      "Deals 2 Freeze damage",
+      "Deals 2 Bleed damage",
     ]);
   });
 });
@@ -76,6 +76,15 @@ describe("enemyBestiary attack lines integration", () => {
     if (!entry) throw new Error(`Enemy ${id} not found`);
     return formatEnemyAttackLines(entry.attackEffects);
   }
+
+  it("authored enemies use damage effects for Stun and Freeze attacks", () => {
+    const invalid = enemyBestiary.flatMap((enemy) =>
+      enemy.attackEffects
+        .filter((effect) => effect.kind === "player-status" && (effect.status === "stun" || effect.status === "freeze"))
+        .map((effect) => `${enemy.id}:${effect.status}`),
+    );
+    expect(invalid).toEqual([]);
+  });
 
   it("Skeleton — pure physical", () => {
     expect(getAttackLines("skeleton")).toEqual(["Deals 9 Physical damage"]);

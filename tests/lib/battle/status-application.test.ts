@@ -4,15 +4,14 @@ import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
 import {
   defaultPlayerStatusValues,
-  defaultEnemyMitigation,
   defaultTalentEffects,
   defaultTrinketManifest,
   defaultCombatFlags,
 } from "../../fixtures/default-battle-state";
 
 describe("applyPlayerStatusFromAttack", () => {
-  describe("harmful statuses (burn, poison, bleed, freeze, stun)", () => {
-    it.each(["burn", "poison", "bleed", "freeze", "stun"] as const)("applies %s status from enemy attack", (status) => {
+  describe("direct harmful statuses (burn, poison, bleed)", () => {
+    it.each(["burn", "poison", "bleed"] as const)("applies %s status from enemy attack", (status) => {
       const state = createTestBattleState();
       const texts: CombatTextEvent[] = [];
       const effect = { kind: "player-status" as const, status, amount: 5 };
@@ -52,42 +51,17 @@ describe("applyPlayerStatusFromAttack", () => {
     });
   });
 
-  describe("freeze bonus from enemy mitigation", () => {
-    it("adds freezeBonus to freeze amount when enemy has Glacial-Shell active", () => {
-      const state = createTestBattleState({
-        enemyMitigation: defaultEnemyMitigation({ armor: 0, forge: 0, freezeBonus: 2 }),
-      });
-      const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "freeze", amount: 3 }, texts);
-      expect(result.playerStatuses.freeze).toBe(5);
-    });
-
-    it("does not add freezeBonus to non-freeze statuses", () => {
-      const state = createTestBattleState({
-        enemyMitigation: defaultEnemyMitigation({ armor: 0, forge: 0, freezeBonus: 2 }),
-      });
-      const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "burn", amount: 3 }, texts);
-      expect(result.playerStatuses.burn).toBe(3);
-    });
-  });
-
   describe("block prevents status via talents", () => {
     it.each([
       { status: "bleed", talentKey: "blockPreventsBleed" as const },
       { status: "poison", talentKey: "blockPreventsPoison" as const },
-      { status: "stun", talentKey: "blockPreventsStun" as const },
     ])("prevents $status when player has block and $talentKey talent", ({ status, talentKey }) => {
       const state = createTestBattleState({
         playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, block: 5 }),
         talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, [talentKey]: true },
       });
       const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(
-        state,
-        { kind: "player-status", status: status as "bleed" | "poison" | "stun", amount: 4 },
-        texts,
-      );
+      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status, amount: 4 }, texts);
       expect(result.playerStatuses[status as keyof typeof result.playerStatuses]).toBe(0);
       expect(texts).toEqual([]);
     });
@@ -95,18 +69,13 @@ describe("applyPlayerStatusFromAttack", () => {
     it.each([
       { status: "bleed", talentKey: "blockPreventsBleed" as const },
       { status: "poison", talentKey: "blockPreventsPoison" as const },
-      { status: "stun", talentKey: "blockPreventsStun" as const },
     ])("does not block $status when talent is inactive even with block", ({ status, talentKey }) => {
       const state = createTestBattleState({
         playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, block: 5 }),
         talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, [talentKey]: false },
       });
       const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(
-        state,
-        { kind: "player-status", status: status as "bleed" | "poison" | "stun", amount: 4 },
-        texts,
-      );
+      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status, amount: 4 }, texts);
       expect(result.playerStatuses[status as keyof typeof result.playerStatuses]).toBe(4);
     });
 
@@ -118,54 +87,11 @@ describe("applyPlayerStatusFromAttack", () => {
           ...createTestBattleState().talentEffects,
           blockPreventsBleed: true,
           blockPreventsPoison: true,
-          blockPreventsStun: true,
         },
       });
       const texts: CombatTextEvent[] = [];
       const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "burn", amount: 3 }, texts);
       expect(result.playerStatuses.burn).toBe(3);
-    });
-
-    it("does not block freeze even with block and talents", () => {
-      const state = createTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, block: 5 }),
-        talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, blockPreventsBleed: true },
-      });
-      const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "freeze", amount: 3 }, texts);
-      expect(result.playerStatuses.freeze).toBe(3);
-    });
-  });
-
-  describe("armor mitigates stun", () => {
-    it("reduces stun amount by player armor when armorMitigatesStun is active", () => {
-      const state = createTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, armor: 3 }),
-        talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, armorMitigatesStun: true },
-      });
-      const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "stun", amount: 5 }, texts);
-      expect(result.playerStatuses.stun).toBe(2);
-    });
-
-    it("reduces stun to 0 when armor exceeds stun amount", () => {
-      const state = createTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, armor: 10 }),
-        talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, armorMitigatesStun: true },
-      });
-      const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "stun", amount: 5 }, texts);
-      expect(result.playerStatuses.stun).toBe(0);
-    });
-
-    it("does not reduce stun when armorMitigatesStun is inactive", () => {
-      const state = createTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, armor: 3 }),
-        talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, armorMitigatesStun: false },
-      });
-      const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "stun", amount: 5 }, texts);
-      expect(result.playerStatuses.stun).toBe(5);
     });
   });
 

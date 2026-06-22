@@ -79,6 +79,18 @@ describe("processEnemyAttack", () => {
     expect(result.playerHealth).toBe(25);
   });
 
+  it("halves freeze damage and buildup when receiveHalfFreezeBuildUp talent is active", () => {
+    const state = createTestBattleState({
+      playerHealth: 30,
+      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
+      talentEffects: { ...createTestBattleState().talentEffects, receiveHalfFreezeBuildUp: true },
+      enemyAttackEffects: [{ kind: "damage", damageType: "freeze", amount: 10 }],
+    });
+    const result = processEnemyAttack(state, makeTexts());
+    expect(result.playerHealth).toBe(25);
+    expect(result.playerStatuses.freeze).toBe(3);
+  });
+
   it("adds enemy burnBonus to burn damage", () => {
     const state = createTestBattleState({
       playerHealth: 30,
@@ -88,6 +100,18 @@ describe("processEnemyAttack", () => {
     });
     const result = processEnemyAttack(state, makeTexts());
     expect(result.playerHealth).toBe(24);
+  });
+
+  it("adds enemy freezeBonus to freeze damage and buildup", () => {
+    const state = createTestBattleState({
+      playerHealth: 30,
+      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0 },
+      enemyMitigation: { ...createTestBattleState().enemyMitigation, freezeBonus: 2 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "freeze", amount: 4 }],
+    });
+    const result = processEnemyAttack(state, makeTexts());
+    expect(result.playerHealth).toBe(24);
+    expect(result.playerStatuses.freeze).toBe(6);
   });
 
   it("reduces incoming damage when enemy is poisoned and poisonReducesEnemyDamage is active", () => {
@@ -192,10 +216,24 @@ describe("processEnemyAttack", () => {
 
   it("applies player-status attack effects", () => {
     const state = createTestBattleState({
-      enemyAttackEffects: [{ kind: "player-status", status: "stun", amount: 2 }],
+      enemyAttackEffects: [{ kind: "player-status", status: "poison", amount: 2 }],
     });
     const result = processEnemyAttack(state, makeTexts());
+    expect(result.playerStatuses.poison).toBe(2);
+  });
+
+  it("treats direct stun status attacks as stun damage", () => {
+    const state = createTestBattleState({
+      playerHealth: 30,
+      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 3 },
+      talentEffects: { ...createTestBattleState().talentEffects, armorMitigatesStun: true },
+      enemyAttackEffects: [{ kind: "player-status", status: "stun", amount: 5 }],
+    });
+    const texts = makeTexts();
+    const result = processEnemyAttack(state, texts);
+    expect(result.playerHealth).toBe(28);
     expect(result.playerStatuses.stun).toBe(2);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "stun", amount: 2 });
   });
 
   it("grants forge from vanguard crest when block fully absorbs the attack", () => {

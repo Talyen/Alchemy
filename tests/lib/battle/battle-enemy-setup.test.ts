@@ -74,11 +74,22 @@ describe("initializeEnemyState", () => {
     expect(physical?.kind === "damage" && physical.amount).toBe(9 + 2 + 1);
   });
 
-  it("does not increase non-matching player-status attack amounts", () => {
+  it("does not increase non-matching Stun damage attacks with status bonuses", () => {
     const mods: DifficultyModifier[] = [{ kind: "increase-enemy-status", status: "poison", amount: 2 }];
     const result = initializeEnemyState(forgeGolem, 1, mods);
-    const stun = result.modifiedEffects.find((e) => e.kind === "player-status" && e.status === "stun");
-    expect(stun?.kind === "player-status" && stun.amount).toBe(1);
+    const stun = result.modifiedEffects.find((e) => e.kind === "damage" && e.damageType === "stun");
+    expect(stun?.kind === "damage" && stun.amount).toBe(1);
+  });
+
+  it("increase-enemy-status boosts matching freeze damage attacks", () => {
+    const freezeEnemy: BestiaryEntry = {
+      ...skeleton,
+      attackEffects: [{ kind: "damage", damageType: "freeze", amount: 3 }],
+    };
+    const mods: DifficultyModifier[] = [{ kind: "increase-enemy-status", status: "freeze", amount: 2 }];
+    const result = initializeEnemyState(freezeEnemy, 1, mods);
+    const freeze = result.modifiedEffects.find((e) => e.kind === "damage" && e.damageType === "freeze");
+    expect(freeze?.kind === "damage" && freeze.amount).toBe(5);
   });
 
   it("adds lifesteal to all damage attacks when enemy-attacks-gain-leech is active", () => {

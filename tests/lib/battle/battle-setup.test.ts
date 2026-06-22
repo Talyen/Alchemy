@@ -244,6 +244,24 @@ describe("createBattleState", () => {
       expect(dmgEffect.amount).toBe(6);
     });
 
+    it("increase-enemy-status boosts matching freeze damage effect", () => {
+      const withBoss: BestiaryEntry = {
+        ...skeleton,
+        attackEffects: [
+          { kind: "damage", damageType: "physical", amount: 6 },
+          { kind: "damage", damageType: "freeze", amount: 2 },
+        ],
+      };
+      const result = createBattleState({
+        runDeck: battleDeck,
+        currentEnemy: withBoss,
+        difficultyModifiers: [{ kind: "increase-enemy-status", status: "freeze", amount: 2 }],
+        rng: seededRng(42),
+      });
+      const freezeEffect = result.enemyAttackEffects.find((e) => e.kind === "damage" && e.damageType === "freeze")!;
+      expect(freezeEffect.amount).toBe(4);
+    });
+
     it("enemy-attacks-gain-leech adds lifesteal to damage effects", () => {
       const withBoss: BestiaryEntry = {
         ...skeleton,

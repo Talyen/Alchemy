@@ -70,6 +70,9 @@ function applyDifficultyAttackModifiers(effects: EnemyAttackEffect[], modifiers:
       let amount = effect.amount;
       if (dmgMul !== 1) amount = Math.round(amount * dmgMul);
       if (damageBonus) amount += damageBonus;
+      if (effect.damageType === "stun" || effect.damageType === "freeze") {
+        amount += statusBonusById.get(effect.damageType) ?? 0;
+      }
       return {
         ...effect,
         amount,

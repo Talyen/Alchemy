@@ -168,6 +168,11 @@ describe("computeTalentEffects", () => {
     expect(effects.flatPhysicalDamage).toBe(1);
   });
 
+  it("ignores talent ids saved under the wrong keyword", () => {
+    const effects = computeTalentEffects({ burn: ["physical-brute-force"] });
+    expect(effects.flatPhysicalDamage).toBe(0);
+  });
+
   it("applies block-to-physical via multiplier field", () => {
     const effects = computeTalentEffects({ block: ["block-to-physical"] });
     expect(effects.blockToPhysicalDamageMultiplier).toBe(0.3);

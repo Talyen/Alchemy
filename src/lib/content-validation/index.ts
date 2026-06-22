@@ -314,6 +314,13 @@ function validateEnemies(collector: ReturnType<typeof createCollector>): void {
     if (enemy.attackEffects.some((effect) => effect.amount <= 0)) {
       collector.warning("balance", enemy.id, "Enemy has a zero or negative attack value");
     }
+    if (
+      enemy.attackEffects.some(
+        (effect) => effect.kind === "player-status" && (effect.status === "stun" || effect.status === "freeze"),
+      )
+    ) {
+      collector.error("enemies", enemy.id, "Enemy Stun and Freeze attacks must be damage effects");
+    }
     for (const issue of validateEnemyTraitDescriptionParity(enemy)) collector.issues.push(issue);
   }
 

@@ -51,7 +51,7 @@ export const enemyBestiary = [
       trait("rusting-carapace", "Rusting Carapace", "Gains Forge each turn"),
       trait("starting-block", "Sturdy Plating", "Starts with 4 Block"),
     ],
-    attackEffects: [phys(4), playerStatus("stun", 1)],
+    attackEffects: [phys(4), { kind: "damage", damageType: "stun", amount: 1 }],
   }),
   defineEnemy({
     id: "frostwarden",
@@ -65,7 +65,7 @@ export const enemyBestiary = [
         "Receives half Freeze damage\nReceives double Burn damage\nGains Freeze damage each turn",
       ),
     ],
-    attackEffects: [phys(6), playerStatus("freeze", 1)],
+    attackEffects: [phys(6), { kind: "damage", damageType: "freeze", amount: 1 }],
   }),
   defineEnemy({
     id: "blight-treant",
@@ -124,7 +124,7 @@ export const enemyBestiary = [
     art: mudElemental,
     enemyType: "elite",
     traits: [regeneration("Regeneration")],
-    attackEffects: [playerStatus("stun", 2), playerStatus("poison", 2)],
+    attackEffects: [{ kind: "damage", damageType: "stun", amount: 2 }, playerStatus("poison", 2)],
   }),
   defineEnemy({
     id: "necromancer",

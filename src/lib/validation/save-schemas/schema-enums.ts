@@ -4,9 +4,11 @@ import {
   characters,
   companionLibrary,
   DIFFICULTY_ORDER,
+  normalizeUnlockedTalents,
   type CharacterId,
   type CompanionId,
   type DifficultyId,
+  type UnlockedTalents,
 } from "@/lib/game-data";
 import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies } from "@/lib/gear/crafting";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
@@ -109,7 +111,9 @@ function recordOfStringArraysSchema(defaultFactory?: () => Record<string, string
   );
 }
 
-export const UnlockedTalentsSchema = recordOfStringArraysSchema();
+export const UnlockedTalentsSchema = recordOfStringArraysSchema().transform((data) =>
+  normalizeUnlockedTalents(data as UnlockedTalents),
+);
 
 export const CompletedDifficultiesSchema = recordOfStringArraysSchema(() =>
   Object.fromEntries(CHARACTER_IDS.map((id) => [id, []])),

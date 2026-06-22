@@ -7,16 +7,16 @@ import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import { mergeCombatText } from "./combat-text";
 import { addPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
-import { scaleFreezeBuildUp } from "./status-helpers";
+
+type DirectPlayerStatusId = Exclude<PlayerStatusId, "stun" | "freeze">;
+type DirectPlayerStatusAttackEffect = Extract<EnemyAttackEffect, { kind: "player-status" }> & {
+  status: DirectPlayerStatusId;
+};
 
 const CONSTANTS = {
   STATUS_NAMES: {
-    FREEZE: "freeze",
     BLEED: "bleed",
     POISON: "poison",
-    STUN: "stun",
-    ARMOR: "armor",
-    BLOCK: "block",
   },
   TARGETS: {
     PLAYER: "player",
@@ -27,22 +27,16 @@ const CONSTANTS = {
   },
 } as const;
 
-function computeAttackStatusAmount(state: BattleState, status: PlayerStatusId, baseAmount: number) {
-  const extraFreeze = status === CONSTANTS.STATUS_NAMES.FREEZE ? state.enemyMitigation.freezeBonus : 0;
-  return baseAmount + extraFreeze;
-}
-
-function shouldBlockPreventStatus(state: BattleState, status: PlayerStatusId) {
+function shouldBlockPreventStatus(state: BattleState, status: DirectPlayerStatusId) {
   if (state.playerStatuses.block <= 0) return false;
   if (status === CONSTANTS.STATUS_NAMES.BLEED && state.talentEffects.blockPreventsBleed) return true;
   if (status === CONSTANTS.STATUS_NAMES.POISON && state.talentEffects.blockPreventsPoison) return true;
-  if (status === CONSTANTS.STATUS_NAMES.STUN && state.talentEffects.blockPreventsStun) return true;
   return false;
 }
 
 function applyHarmfulStatusFromAttack(
   state: BattleState,
-  status: PlayerStatusId,
+  status: DirectPlayerStatusId,
   amount: number,
   blockPreventsStatus: boolean,
   combatTexts: CombatTextEvent[],
@@ -55,11 +49,7 @@ function applyHarmfulStatusFromAttack(
   if (state.trinketEffects.plagueDoctorImmunity && !state.flags.firstHarmfulStatusPrevented) {
     return { ...state, flags: { ...state.flags, firstHarmfulStatusPrevented: true } };
   }
-  const adjustedAmount = scaleFreezeBuildUp(
-    amount,
-    status === "freeze" && state.talentEffects.receiveHalfFreezeBuildUp,
-  );
-  const nextState = addPlayerStatus(state, status, adjustedAmount);
+  const nextState = addPlayerStatus(state, status, amount);
   mergeCombatText(combatTexts, {
     target: CONSTANTS.TARGETS.PLAYER,
     kind: CONSTANTS.COMBAT_TEXT_KINDS.DAMAGE,
@@ -71,7 +61,7 @@ function applyHarmfulStatusFromAttack(
 
 function applyBeneficialStatusFromAttack(
   state: BattleState,
-  status: PlayerStatusId,
+  status: DirectPlayerStatusId,
   amount: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
@@ -86,14 +76,11 @@ function applyBeneficialStatusFromAttack(
 
 export function applyPlayerStatusFromAttack(
   state: BattleState,
-  effect: EnemyAttackEffect & { kind: "player-status" },
+  effect: DirectPlayerStatusAttackEffect,
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const status = effect.status;
-  let amount = computeAttackStatusAmount(state, status, effect.amount);
-  if (status === CONSTANTS.STATUS_NAMES.STUN && state.talentEffects.armorMitigatesStun) {
-    amount = Math.max(0, amount - state.playerStatuses.armor);
-  }
+  const amount = effect.amount;
   const blockPreventsStatus = shouldBlockPreventStatus(state, status);
 
   if (harmfulPlayerStatusIds.includes(status)) {
