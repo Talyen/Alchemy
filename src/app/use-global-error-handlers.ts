@@ -3,6 +3,19 @@
 import { useEffect } from "react";
 import { logError } from "@/lib/error-logger";
 
+function stackOf(value: unknown): string | undefined {
+  const stack = (value as { stack?: unknown } | null)?.stack;
+  return typeof stack === "string" ? stack : undefined;
+}
+
+function messageOf(value: unknown): string {
+  if (value && typeof value === "object" && "message" in value) {
+    const message = (value as { message?: unknown }).message;
+    if (typeof message === "string") return message;
+  }
+  return String(value);
+}
+
 export function useGlobalErrorHandlers(): void {
   useEffect(() => {
     function onGlobalError(event: ErrorEvent) {
@@ -10,13 +23,13 @@ export function useGlobalErrorHandlers(): void {
         event.message,
         "global",
         { filename: event.filename, lineno: event.lineno, colno: event.colno },
-        event.error?.stack,
+        stackOf(event.error),
       );
     }
 
     function onUnhandledRejection(event: PromiseRejectionEvent) {
-      const reason = event.reason;
-      logError(reason?.message ?? String(reason), "promise", undefined, reason?.stack);
+      const reason: unknown = event.reason;
+      logError(messageOf(reason), "promise", undefined, stackOf(reason));
     }
 
     window.addEventListener("error", onGlobalError);

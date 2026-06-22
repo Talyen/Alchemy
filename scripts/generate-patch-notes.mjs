@@ -1,5 +1,5 @@
 // Generates player-facing patch notes from CHANGELOG.md (Unreleased or a release version).
-import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildPatchNotesMarkdown, extractChangelogSection, parseChangelogCommits } from "./lib/patch-notes-core.mjs";
