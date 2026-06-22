@@ -47,6 +47,16 @@ function resetPlayerTurnState(state: BattleState): BattleState {
   };
 }
 
+export function resetEnemyTurnState(state: BattleState): BattleState {
+  return {
+    ...state,
+    enemyMitigation: {
+      ...state.enemyMitigation,
+      block: decayHalvedStatus(state.enemyMitigation.block),
+    },
+  };
+}
+
 function handleCCSkipTurn(state: BattleState): BattleState {
   const nextState = resetPlayerTurnState(state);
   return {

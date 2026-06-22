@@ -6,7 +6,12 @@ import type { BattleState, CombatTextEvent } from "./types";
 import { processEnemyAttack } from "./enemy-turn-attack";
 import { processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-traits";
 import { processEncounterTraitActionDamage, processEncounterTraitActionStart } from "./encounter-trait-events";
-import { advanceToPlayerTurn, reduceSkipTurns, resolveDeathsDoorEndOfEnemyTurn } from "./enemy-turn-utils";
+import {
+  advanceToPlayerTurn,
+  reduceSkipTurns,
+  resetEnemyTurnState,
+  resolveDeathsDoorEndOfEnemyTurn,
+} from "./enemy-turn-utils";
 
 type EndPlayerTurnKind = "haste" | "skipped" | "standard";
 
@@ -39,11 +44,12 @@ function processHasteEarlyTurn(state: BattleState): BattleState {
 }
 
 function beginEnemyPhase(state: BattleState): BattleState {
+  const resetState = resetEnemyTurnState(state);
   return {
-    ...state,
+    ...resetState,
     turnPhase: "enemy",
     hand: [],
-    discard: [...state.discard, ...state.hand],
+    discard: [...resetState.discard, ...resetState.hand],
   };
 }
 

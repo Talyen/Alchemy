@@ -33,7 +33,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   stun: {
     id: "stun",
     label: "Stun",
-    description: "Stun damage causes the enemy to lose a turn when it reaches more than half the remaining Health",
+    description: "Stun buildup causes the target to lose a turn when it reaches more than half their Health",
     colorClass: "text-amber-300",
     borderClass: "border-amber-300",
     shineColors: ["#fcd34d", "#d97706", "#fcd34d"],
@@ -41,7 +41,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   block: {
     id: "block",
     label: "Block",
-    description: "Block absorbs damage taken before Health and decreases by half each turn",
+    description: "Block absorbs damage before Health and halves at the start of its owner's next turn",
     colorClass: "text-sky-300",
     borderClass: "border-sky-300",
     shineColors: ["#7dd3fc", "#0ea5e9", "#7dd3fc"],
@@ -58,7 +58,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   armor: {
     id: "armor",
     label: "Armor",
-    description: "Each stack of Armor decreases Physical damage taken by 1. Taking damage removes 1 Armor",
+    description: "Each stack of Armor decreases Physical and Stun damage taken by 1. Taking damage removes 1 Armor",
     colorClass: "text-gray-400",
     borderClass: "border-gray-400",
     shineColors: ["#9ca3af", "#4b5563", "#9ca3af"],
@@ -139,7 +139,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   freeze: {
     id: "freeze",
     label: "Freeze",
-    description: "Freeze damage causes the enemy to lose their turn if it accumulates to half their remaining Health",
+    description: "Freeze buildup causes the target to lose a turn if it accumulates to half their Health",
     colorClass: "text-cyan-300",
     borderClass: "border-cyan-300",
     shineColors: ["#67e8f9", "#06b6d4", "#67e8f9"],

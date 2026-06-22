@@ -1,11 +1,11 @@
 /**
  * Crowd-control threshold checks, immunity, and skip-turn assignment.
- * Enemy stun/freeze resolve on damage; player stun/freeze resolve in tickPlayerStatuses.
+ * Stun/freeze resolve when buildup crosses the threshold for either side.
  * Depends on: ./combat-text, ./types, ../game-constants.
  * Depended on by: ./status-effects, ./status-ticks.
  */
 import { mergeCombatText } from "./combat-text";
-import { BATTLE_CONFIG, STATUS_CONFIG } from "../game-constants";
+import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STATUS_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
 import { setEnemyStatus, setPlayerStatus, addPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 
 const CONSTANTS = {
@@ -40,8 +40,7 @@ export type PlayerCcTriggerInput = {
   combatTexts: CombatTextEvent[];
 };
 
-/** Player CC: checked after enemy attacks during tickPlayerStatuses.
- *  Threshold is fraction of playerMaxHealth. CC cooldown prevents immediate re-CC. */
+/** Player CC threshold is a fraction of playerMaxHealth. CC cooldown prevents immediate re-CC. */
 export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): BattleState {
   const { state, stat, stackValue, thresholdFraction, combatTexts } = input;
   if (stackValue <= 0) return state;
@@ -79,6 +78,24 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
     });
   }
 
+  return nextState;
+}
+
+export function resolvePlayerCrowdControlTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  let nextState = resolvePlayerCrowdControlTrigger({
+    state,
+    stat: CONSTANTS.STATUS_NAMES.STUN,
+    stackValue: state.playerStatuses.stun,
+    thresholdFraction: STUN_THRESHOLD_FRACTION,
+    combatTexts,
+  });
+  nextState = resolvePlayerCrowdControlTrigger({
+    state: nextState,
+    stat: CONSTANTS.STATUS_NAMES.FREEZE,
+    stackValue: nextState.playerStatuses.freeze,
+    thresholdFraction: FREEZE_THRESHOLD_FRACTION,
+    combatTexts,
+  });
   return nextState;
 }
 

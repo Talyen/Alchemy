@@ -53,11 +53,11 @@ Full script list: `package.json` / [README.md](../README.md).
 Operational rules for `src/lib/battle/` that deviate from typical CCG assumptions. Term definitions: [Domain Glossary](#domain-glossary). Tests: `tests/lib/battle/`.
 
 - **1-on-1 targeting** — one enemy per battle; attacks/debuffs go to the enemy, blocks/heals/buffs to player/companions; no target selectors.
-- **Turn order** — Player (companion attacks → play cards) → Enemy (enemy DoTs → attack → player DoTs → regen) → reset (draw 4, restore mana, halve block).
+- **Turn order** — Player (companion attacks → play cards) → Enemy (enemy DoTs → attack → player DoTs → regen) → reset (draw 4, restore mana, halve player block). Enemy block halves when the next enemy phase begins.
 - **Mana** — resets to `maxMana` each turn; unspent mana is lost (Wellspring talent excepted).
 - **Companions** — invulnerable; act at player turn start; persist indefinitely.
 - **Draw / deck** — draw 4 per turn, max hand 7 (overflow skipped); hand cleared before draw; discard reshuffles when draw pile empties; only `consume` cards leave permanently.
-- **Block** — absorbs enemy damage first; halved (not cleared) at end of enemy turn.
+- **Block** — absorbs incoming damage first; halved (not cleared) at the start of the owner's next turn, after the opposing side had a chance to attack into it.
 - **Death's Door** — at 0 HP, grace turn(s) before run ends; CC skip suppressed during grace.
 - **Battle RNG** — use `state.rng`, not `Math.random()` (`createBattleState` may pass explicit RNG in tests).
 - **Enemy status** — stack changes go through `addEnemyStatus()` / `setEnemyStatus()` in `src/lib/battle/types.ts`; `braced` enemy trait halves incoming stun.
@@ -72,8 +72,8 @@ Definitions of common terms used in the Alchemy codebase.
 
 | Term | Definition |
 |---|---|
-| **Block** | Damage absorption on player/enemy; player block halves (not clears) at end of enemy turn. |
-| **Burn** | DoT status; ticks at start of enemy turn, stack −1 after tick. |
+| **Block** | Damage absorption on player/enemy; halves at the start of the owner's next turn after one opposing attack window. |
+| **Burn** | DoT status; deals its stack as damage, then normally decays by half. |
 | **Death's Door** | At 0 HP, grace turn(s) before run ends; must heal above 0 before grace expires. |
 | **Homestead** | Between-run hub; spend **Materials** on permanent upgrades. |
 | **Mana** | Resource to play cards; resets to `maxMana` each turn (unspent lost unless Wellspring). |

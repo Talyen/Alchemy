@@ -1,6 +1,7 @@
 /**
  * Player and enemy DoT ticks. Enemy DoTs run at enemy phase start; player DoTs during enemy resolution.
- * Player stun/freeze threshold-check runs here (not on damage).
+ * Player stun/freeze threshold-check normally runs when buildup is applied; tick-time
+ * resolution remains as a fallback for pre-existing stacks.
  * Depends on: ./status-cc, ./status-helpers, ./status-effects, ./combat-text, ./types, ../game-constants.
  * Depended on by: ./enemy-turn.
  */
@@ -15,15 +16,9 @@ import {
 } from "./types";
 import { getEnemyDamageMultiplier, applyPoisonTalentRiders } from "./status-effects";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
-import { resolvePlayerCrowdControlTrigger } from "./status-cc";
+import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { decayArmorAfterDamage, decayHalvedStatus, decayPoisonStacks, rollPercent } from "./status-helpers";
-import {
-  computeLeechHeal,
-  FREEZE_THRESHOLD_FRACTION,
-  HALF_DIVISOR,
-  POISON_GAIN_AMOUNT,
-  STUN_THRESHOLD_FRACTION,
-} from "../game-constants";
+import { computeLeechHeal, HALF_DIVISOR, POISON_GAIN_AMOUNT } from "../game-constants";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 import { applyEnemyLeechHealing } from "./enemy-turn-attack";
 
@@ -262,22 +257,5 @@ export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEv
   let nextState = tickPlayerBurn(state, combatTexts);
   nextState = tickPlayerPoison(nextState, combatTexts);
   nextState = tickPlayerBleed(nextState, combatTexts);
-  // Stun/freeze thresholds checked AFTER DoT damage. A player poisoned to 0 HP
-  // may die before CC is evaluated (Death's Door triggers here; if already used,
-  // the player dies).
-  nextState = resolvePlayerCrowdControlTrigger({
-    state: nextState,
-    stat: CONSTANTS.STATUS_NAMES.STUN,
-    stackValue: nextState.playerStatuses.stun,
-    thresholdFraction: STUN_THRESHOLD_FRACTION,
-    combatTexts,
-  });
-  nextState = resolvePlayerCrowdControlTrigger({
-    state: nextState,
-    stat: CONSTANTS.STATUS_NAMES.FREEZE,
-    stackValue: nextState.playerStatuses.freeze,
-    thresholdFraction: FREEZE_THRESHOLD_FRACTION,
-    combatTexts,
-  });
-  return nextState;
+  return resolvePlayerCrowdControlTriggers(nextState, combatTexts);
 }

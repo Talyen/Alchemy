@@ -3,6 +3,7 @@ import {
   advanceToPlayerTurn,
   checkHealthThresholds,
   isFreezeActiveForAspect,
+  resetEnemyTurnState,
   resolveDeathsDoorEndOfEnemyTurn,
 } from "@/lib/battle/enemy-turn-utils";
 import { defaultTalentEffects } from "@/lib/battle";
@@ -103,6 +104,16 @@ describe("advanceToPlayerTurn", () => {
     const result = advanceToPlayerTurn(state, texts);
     expect(result.playerHealth).toBe(14);
     expect(texts.some((t) => t.kind === "heal" && t.amount === 4)).toBe(true);
+  });
+});
+
+describe("resetEnemyTurnState", () => {
+  it("halves enemy block at the start of the enemy turn", () => {
+    const state = createTestBattleState({
+      enemyMitigation: { ...createTestBattleState().enemyMitigation, block: 9 },
+    });
+    const result = resetEnemyTurnState(state);
+    expect(result.enemyMitigation.block).toBe(5);
   });
 });
 

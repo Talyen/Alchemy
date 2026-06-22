@@ -64,9 +64,9 @@ export const armorTalents: TalentDefinition[] = [
     id: "armor-mitigate-stun",
     keywordId: "armor",
     name: "Steadfast",
-    description: "Armor now reduces Stun buildup",
+    description: "When Health falls below 50%, gain 5 Armor",
     icon: Anchor,
-    effects: [setEffect("armorMitigatesStun", true)],
+    effects: [setEffect("healthThresholdArmor", { threshold: 50, amount: 5 })],
   },
   {
     id: "armor-cleanse-threshold",

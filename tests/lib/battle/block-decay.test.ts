@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import type { BattleState } from "@/lib/battle/types";
 import { defaultTalentEffects } from "@/lib/battle";
+import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { createTestBattleState } from "./test-state";
 
 function makeState(overrides: Partial<BattleState> = {}): BattleState {
@@ -57,5 +58,33 @@ describe("block decay timing", () => {
     // Enemy attacks for 2 → block: 7 → 5. Then block decays: round(5/2) = 3.
     expect(result.state.playerHealth).toBe(30);
     expect(result.state.playerStatuses.block).toBe(3);
+  });
+
+  it("enemy block decays at the start of the enemy phase after the player had an attack window", () => {
+    const state = makeState({
+      enemyAttackEffects: [],
+      enemyMitigation: { ...createTestBattleState().enemyMitigation, block: 9 },
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyMitigation.block).toBe(5);
+  });
+
+  it("enemy block gained during the enemy phase survives until the next enemy phase", () => {
+    const reinforcedEnemy = {
+      ...createTestBattleState().currentEnemy,
+      traits: [ENCOUNTER_TRAITS.reinforced.enemyTrait],
+      attackEffects: [],
+    };
+    const first = endPlayerTurn(
+      makeState({
+        currentEnemy: reinforcedEnemy,
+        enemyAttackEffects: [],
+        enemyMitigation: { ...createTestBattleState().enemyMitigation, block: 0 },
+      }),
+    );
+    expect(first.state.enemyMitigation.block).toBe(2);
+
+    const second = endPlayerTurn(first.state);
+    expect(second.state.enemyMitigation.block).toBe(3);
   });
 });

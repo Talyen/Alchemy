@@ -2,6 +2,7 @@
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { applyPlayerStatusFromAttack } from "./status-application";
 import { applyPlayerDamageStatuses, resolveStunTrigger } from "./status-effects";
+import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import type { EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import { logError } from "../error-logger";
 import {
@@ -46,8 +47,7 @@ function computeMitigatedDamage(
   effect: EnemyAttackEffect & { kind: "damage" },
   remainingDamage: number,
 ) {
-  const armorMitigatesDamage =
-    effect.damageType === "physical" || (effect.damageType === "stun" && state.talentEffects.armorMitigatesStun);
+  const armorMitigatesDamage = effect.damageType === "physical" || effect.damageType === "stun";
   const rawDamage = armorMitigatesDamage ? Math.max(0, remainingDamage - state.playerStatuses.armor) : remainingDamage;
   const halvesDamage =
     (effect.damageType === "holy" && state.talentEffects.receiveHalfHolyDamage) ||
@@ -257,6 +257,7 @@ export function processEnemyDamageEffect(
   // apply their status to the player equal to the actual damage dealt,
   // mirroring how player-side damage riders work (damage.ts applyDamageStatuses).
   nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
+  nextState = resolvePlayerCrowdControlTriggers(nextState, combatTexts);
 
   if (effect.lifesteal && actualDamage > 0) {
     nextState = applyEnemyLeechHealing(nextState, actualDamage, combatTexts);

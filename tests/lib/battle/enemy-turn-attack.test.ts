@@ -222,11 +222,10 @@ describe("processEnemyAttack", () => {
     expect(result.playerStatuses.poison).toBe(2);
   });
 
-  it("treats direct stun status attacks as stun damage", () => {
+  it("armor reduces direct stun status attacks by default", () => {
     const state = createTestBattleState({
       playerHealth: 30,
       playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 3 },
-      talentEffects: { ...createTestBattleState().talentEffects, armorMitigatesStun: true },
       enemyAttackEffects: [{ kind: "player-status", status: "stun", amount: 5 }],
     });
     const texts = makeTexts();
@@ -234,6 +233,34 @@ describe("processEnemyAttack", () => {
     expect(result.playerHealth).toBe(28);
     expect(result.playerStatuses.stun).toBe(2);
     expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "stun", amount: 2 });
+  });
+
+  it("immediately triggers player stun when incoming buildup reaches threshold", () => {
+    const state = createTestBattleState({
+      playerHealth: 30,
+      playerMaxHealth: 30,
+      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "stun", amount: 20 }],
+    });
+    const texts = makeTexts();
+    const result = processEnemyAttack(state, texts);
+    expect(result.playerStatuses.stun).toBe(0);
+    expect(result.playerCC.stunSkipTurns).toBe(1);
+    expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "stun", text: "Stunned" });
+  });
+
+  it("immediately triggers player freeze when incoming buildup reaches threshold", () => {
+    const state = createTestBattleState({
+      playerHealth: 30,
+      playerMaxHealth: 30,
+      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "freeze", amount: 20 }],
+    });
+    const texts = makeTexts();
+    const result = processEnemyAttack(state, texts);
+    expect(result.playerStatuses.freeze).toBe(0);
+    expect(result.playerCC.freezeSkipTurns).toBe(1);
+    expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "freeze", text: "Frozen" });
   });
 
   it("grants forge from vanguard crest when block fully absorbs the attack", () => {
