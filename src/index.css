@@ -158,8 +158,6 @@
       0 4px 16px rgba(0, 0, 0, 0.6);
   }
 
-
-
   .tilt-surface {
     transform: var(--card-base-transform, translate3d(0px, 0px, 0px)) perspective(900px)
       rotateX(var(--tilt-rotate-x, 0deg)) rotateY(var(--tilt-rotate-y, 0deg));
