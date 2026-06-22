@@ -18,16 +18,18 @@ import { cn } from "@/lib/utils";
 import { characters, getRequiredPreviousCharacter, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
 import { HamburgerTrigger, PageLayout, ScreenHeader } from "../../shared/ui/shared-ui";
-import { CharacterAndEquipmentPanel } from "./armory/character-panel";
-import { InventoryPanel } from "./armory/inventory-panel";
-import { resolveEquipSwap } from "./armory/resolve-equip-swap";
-import { useArmoryGearDrag } from "./armory/use-armory-gear-drag";
-import { useArmoryCurrencyDrag } from "./armory/use-armory-currency-drag";
-import { ArmoryCharacterTabs } from "./armory/armory-character-tabs";
-import { useArmoryTargetingEvents } from "./armory/use-armory-targeting-events";
-import { ArmoryOverlays } from "./armory/armory-overlays";
-import type { TransferMenuState } from "./armory/armory-transfer-menu";
-import type { DragRect } from "./armory/use-board-drag";
+import {
+  CharacterAndEquipmentPanel,
+  InventoryPanel,
+  resolveEquipSwap,
+  useArmoryGearDrag,
+  useArmoryCurrencyDrag,
+  ArmoryCharacterTabs,
+  useArmoryTargetingEvents,
+  ArmoryOverlays,
+  type TransferMenuState,
+  type DragRect,
+} from "./armory";
 import "./armory/armory-screen.css";
 
 type ArmoryCursorPoint = { x: number; y: number };

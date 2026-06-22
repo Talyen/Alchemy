@@ -1,32 +1,30 @@
 /* eslint-disable react-hooks/refs, react-hooks/preserve-manual-memoization -- factories receive ref objects for async handlers; ref.current assignments are deliberate */
 import { useEffect, useMemo, useLayoutEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { getPlayableHandCardKeysExcludingHidden } from "@/features/alchemy/run-loop/battle/playable-hand";
+import {
+  getPlayableHandCardKeysExcludingHidden,
+  useBattleAutoEndTurn,
+  createBattleSession,
+  defaultMeasureElementRect,
+  defaultMeasureVisualCardRect,
+  createBattleEndTurnUi,
+  createTurnOrchestrationDeps,
+  createBattleTransferDeps,
+  createBattleInit,
+  createBattleCardPlay,
+  createBattleDevOutcomes,
+  isVictoryGraceActive,
+  useBattleControllerContext,
+} from "@/features/alchemy/run-loop/battle";
 import type { CardRect, Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { RunStateController, TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
-import { useBattleAutoEndTurn } from "@/features/alchemy/run-loop/battle/use-battle-auto-end-turn";
 import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { BattleState } from "@/lib/battle";
 import type { BattleScreenData } from "@/features/alchemy/run-loop/screens/battle-screen/types";
-import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
-import {
-  defaultMeasureElementRect,
-  defaultMeasureVisualCardRect,
-} from "@/features/alchemy/run-loop/battle/controller-utils";
-import {
-  createBattleEndTurnUi,
-  createTurnOrchestrationDeps,
-} from "@/features/alchemy/run-loop/battle/turn-orchestration";
-import { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
-import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
-import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
-import { createBattleDevOutcomes } from "@/features/alchemy/run-loop/battle/battle-dev-outcomes";
-import { isVictoryGraceActive } from "@/features/alchemy/run-loop/battle/battle-victory-grace";
-import { useBattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 
 type UseBattleControllerProps = {
   run: RunStateController;

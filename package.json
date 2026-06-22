@@ -40,7 +40,7 @@
     "sync:steam-appid": "node scripts/sync-steam-appid.mjs",
     "sync:gear-art": "node scripts/sync-gear-art.mjs",
     "test:ship": "npm run test:ship:unit && npm run test:ship:e2e",
-    "test:ship:unit": "vitest run tests/features/storage tests/features/storage/bootstrap-save-state.test.ts tests/features/app/autosave-hook.test.ts tests/features/storage-io-cloud-merge.test.ts tests/features/storage-backup.test.ts tests/lib/validation tests/architecture tests/scripts tests/lib/validation/save-merge.test.ts",
+    "test:ship:unit": "vitest run tests/features/alchemy/shared/storage tests/features/alchemy/shared/storage/bootstrap-save-state.test.ts tests/features/alchemy/app/autosave-hook.test.ts tests/features/alchemy/shared/storage/storage-io-cloud-merge.test.ts tests/features/alchemy/shared/storage/storage-backup.test.ts tests/lib/validation tests/architecture tests/scripts tests/lib/validation/save-merge.test.ts",
     "test:ship:e2e": "playwright test tests/save-persistence.spec.ts tests/save-error-paths.spec.ts tests/save-mid-combat-resume.spec.ts tests/save-unsupported-version.spec.ts --project chromium",
     "test:ship:desktop": "cross-env PLAYWRIGHT_ELECTRON_PREVIEW_PORT=4175 node scripts/ensure-electron.mjs && playwright test --config playwright.electron.config.ts",
     "build:ship": "npm run build && npm run compile:desktop",

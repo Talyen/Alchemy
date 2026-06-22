@@ -3,7 +3,7 @@ import { useRunDomainStore } from "./run-domain-store";
 import type { CombatTextEvent } from "@/lib/battle";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
-import type { CardGhost, FloatingCombatText } from "@/features/alchemy/run-loop/battle/presentation-types";
+import type { CardGhost, FloatingCombatText } from "@/features/alchemy/run-loop/battle";
 import type { CardTransfer } from "../types";
 
 function getCombatTextDisplayText(event: CombatTextEvent): string {

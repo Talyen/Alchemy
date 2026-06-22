@@ -1258,6 +1258,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Tests
 
+- test(e2e): consolidate specs, add legacy save/preferences coverage, and stabilize tests
 - test(e2e): consolidate, expand, and retag E2E suite
   Phase 1 - Consolidation:
   - Collapse core-gameplay Battle Flow from 6 tests to 3

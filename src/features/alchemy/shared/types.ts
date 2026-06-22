@@ -8,12 +8,7 @@ import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 
 export type { Screen, Destination } from "@/lib/routing";
 export { DESTINATIONS } from "@/lib/routing";
-export type {
-  CardGhost,
-  CardRect,
-  CardTransfer,
-  FloatingCombatText,
-} from "@/features/alchemy/run-loop/battle/presentation-types";
+export type { CardGhost, CardRect, CardTransfer, FloatingCombatText } from "@/features/alchemy/run-loop/battle";
 
 export type AspectRatioOption = "auto" | "16:9" | "16:10" | "21:9";
 

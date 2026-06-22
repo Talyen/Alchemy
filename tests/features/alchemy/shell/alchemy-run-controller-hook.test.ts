@@ -1,0 +1,90 @@
+// @vitest-environment jsdom
+import { act, renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ROUTE_SCREENS } from "@/lib/routing";
+import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
+import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+import {
+  getBattleStoreView,
+  getNavigationStoreView,
+  getRunSessionStoreView,
+  resetRunBattleSlice,
+  resetRunNavigationSlice,
+  resetRunProgressSlice,
+  setRunProgress,
+} from "../../../helpers/run-domain-store-test";
+
+vi.mock("@/lib/audio", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/audio")>();
+  return {
+    ...actual,
+    playGoldGain: vi.fn(),
+    playGoldSpend: vi.fn(),
+    playUISound: vi.fn(),
+    stopAllSfx: vi.fn(),
+  };
+});
+
+vi.mock("@/lib/platform", () => ({
+  platform: {
+    isDesktop: false,
+    canQuit: false,
+    setDisplayMode: vi.fn(),
+    quit: vi.fn(),
+    steam: { isInitialized: false, playerName: null, init: vi.fn(), setRichPresence: vi.fn() },
+    cloud: { isAvailable: false, read: vi.fn(), write: vi.fn() },
+  },
+}));
+
+beforeEach(() => {
+  resetRunProgressSlice();
+  setRunProgress({ initialized: true });
+  resetRunNavigationSlice();
+  resetRunBattleSlice();
+  resetTransientRunUi();
+});
+
+describe("useAlchemyRunController", () => {
+  function renderController() {
+    return renderHook(() =>
+      useAlchemyRunController({
+        initialTalentXP: {},
+        initialUnlockedTalents: {},
+        initialActiveRun: null,
+        autoEndTurn: false,
+        homesteadEffects: defaultHomesteadEffects,
+        onMarkDifficultyCompleted: vi.fn(),
+      }),
+    );
+  }
+
+  it("exposes menu screen and meta run phase after bootstrap", () => {
+    const { result } = renderController();
+
+    expect(result.current.screen).toBe(ROUTE_SCREENS.MENU);
+    expect(result.current.runPhase).toBe("meta");
+  });
+
+  it("resetRunState tears down run stores when navigating to menu", () => {
+    vi.useFakeTimers();
+    getRunSessionStoreView().setHasActiveRun(true);
+    getBattleStoreView().setHasActiveBattle(true);
+    getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+    const { result } = renderController();
+
+    act(() => {
+      result.current.resetRunState();
+    });
+    act(() => {
+      vi.runAllTimers();
+    });
+    act(() => {
+      result.current.commitPendingTransition();
+    });
+    vi.useRealTimers();
+
+    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
+    expect(getBattleStoreView().hasActiveBattle).toBe(false);
+  });
+});
