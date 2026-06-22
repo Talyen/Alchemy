@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { applyPlayerStatusFromAttack } from "@/lib/battle/status-application";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
@@ -11,13 +11,17 @@ import {
 
 describe("applyPlayerStatusFromAttack", () => {
   describe("direct harmful statuses (burn, poison, bleed)", () => {
-    it.each(["burn", "poison", "bleed"] as const)("applies %s status from enemy attack", (status) => {
+    it.each([
+      { status: "burn", expectedAmount: 5 },
+      { status: "poison", expectedAmount: 5 },
+      { status: "bleed", expectedAmount: 10 },
+    ] as const)("applies $status status from enemy attack", ({ status, expectedAmount }) => {
       const state = createTestBattleState();
       const texts: CombatTextEvent[] = [];
       const effect = { kind: "player-status" as const, status, amount: 5 };
       const result = applyPlayerStatusFromAttack(state, effect, texts);
-      expect(result.playerStatuses[status]).toBe(5);
-      expect(texts).toEqual([{ target: "player", kind: "damage", stat: status, amount: 5 }]);
+      expect(result.playerStatuses[status]).toBe(expectedAmount);
+      expect(texts).toEqual([{ target: "player", kind: "damage", stat: status, amount: expectedAmount }]);
     });
 
     it("does not mutate original state", () => {
@@ -53,9 +57,9 @@ describe("applyPlayerStatusFromAttack", () => {
 
   describe("block prevents status via talents", () => {
     it.each([
-      { status: "bleed", talentKey: "blockPreventsBleed" as const },
-      { status: "poison", talentKey: "blockPreventsPoison" as const },
-    ])("prevents $status when player has block and $talentKey talent", ({ status, talentKey }) => {
+      { status: "bleed" as const, talentKey: "blockPreventsBleed" as const },
+      { status: "poison" as const, talentKey: "blockPreventsPoison" as const },
+    ] as const)("prevents $status when player has block and $talentKey talent", ({ status, talentKey }) => {
       const state = createTestBattleState({
         playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, block: 5 }),
         talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, [talentKey]: true },
@@ -67,16 +71,16 @@ describe("applyPlayerStatusFromAttack", () => {
     });
 
     it.each([
-      { status: "bleed", talentKey: "blockPreventsBleed" as const },
-      { status: "poison", talentKey: "blockPreventsPoison" as const },
-    ])("does not block $status when talent is inactive even with block", ({ status, talentKey }) => {
+      { status: "bleed" as const, talentKey: "blockPreventsBleed" as const },
+      { status: "poison" as const, talentKey: "blockPreventsPoison" as const },
+    ] as const)("does not block $status when talent is inactive even with block", ({ status, talentKey }) => {
       const state = createTestBattleState({
         playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, block: 5 }),
         talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, [talentKey]: false },
       });
       const texts: CombatTextEvent[] = [];
       const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status, amount: 4 }, texts);
-      expect(result.playerStatuses[status as keyof typeof result.playerStatuses]).toBe(4);
+      expect(result.playerStatuses[status as keyof typeof result.playerStatuses]).toBe(status === "bleed" ? 8 : 4);
     });
 
     it("does not block burn even with block and talents", () => {

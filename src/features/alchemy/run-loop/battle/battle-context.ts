@@ -1,4 +1,4 @@
-import { useRef, type RefObject } from "react";
+import { useRef, useMemo, useLayoutEffect, type RefObject } from "react";
 import type { BattleState } from "@/lib/battle";
 import type { CardRect, Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
@@ -37,7 +37,7 @@ export interface BattleControllerContext {
   transferIdCounterRef: RefObject<number>;
 
   // Mutable hooks & callbacks
-  scheduleAutoEndTurn?: ((state: BattleState) => void) | undefined;
+  scheduleAutoEndTurnRef: RefObject<((state: BattleState) => void) | null>;
 }
 
 export type BattleControllerContextProps = {
@@ -51,6 +51,7 @@ export type BattleControllerContextProps = {
   onBattleDefeat?: (() => void) | undefined;
   measureElementRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
+  scheduleAutoEndTurnRef: RefObject<((state: BattleState) => void) | null>;
 };
 
 export function useBattleControllerContext(props: BattleControllerContextProps): BattleControllerContext {
@@ -68,10 +69,13 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
   const victoryDefeatHandledRef = useRef(false);
   const transferCancelRegistryRef = useRef(createTransferCancelRegistry());
   const transferIdCounterRef = useRef(0);
+  const propsRef = useRef(props);
+  useLayoutEffect(() => {
+    propsRef.current = props;
+  });
 
-  const contextRef = useRef<BattleControllerContext | null>(null);
-  if (!contextRef.current) {
-    contextRef.current = {
+  const context = useMemo(() => {
+    return {
       // DOM Refs
       handCardRefs,
       drawPileRef,
@@ -87,20 +91,43 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
       victoryDefeatHandledRef,
       transferCancelRegistryRef,
       transferIdCounterRef,
+
+      // Getters for dynamic props
+      get run() {
+        return propsRef.current.run;
+      },
+      get talents() {
+        return propsRef.current.talents;
+      },
+      get autoEndTurn() {
+        return propsRef.current.autoEndTurn;
+      },
+      get homesteadEffectsRef() {
+        return propsRef.current.homesteadEffectsRef;
+      },
+      get screen() {
+        return propsRef.current.screen;
+      },
+      get setHoveredCardId() {
+        return propsRef.current.setHoveredCardId;
+      },
+      get onBattleVictory() {
+        return propsRef.current.onBattleVictory;
+      },
+      get onBattleDefeat() {
+        return propsRef.current.onBattleDefeat;
+      },
+      get measureElementRect() {
+        return propsRef.current.measureElementRect;
+      },
+      get measureVisualCardRect() {
+        return propsRef.current.measureVisualCardRect;
+      },
+      get scheduleAutoEndTurnRef() {
+        return propsRef.current.scheduleAutoEndTurnRef;
+      },
     } as unknown as BattleControllerContext;
-  }
+  }, []);
 
-  // Always keep props / callback refs up-to-date
-  contextRef.current.run = props.run;
-  contextRef.current.talents = props.talents;
-  contextRef.current.autoEndTurn = props.autoEndTurn;
-  contextRef.current.homesteadEffectsRef = props.homesteadEffectsRef;
-  contextRef.current.screen = props.screen;
-  contextRef.current.setHoveredCardId = props.setHoveredCardId;
-  contextRef.current.onBattleVictory = props.onBattleVictory;
-  contextRef.current.onBattleDefeat = props.onBattleDefeat;
-  contextRef.current.measureElementRect = props.measureElementRect;
-  contextRef.current.measureVisualCardRect = props.measureVisualCardRect;
-
-  return contextRef.current;
+  return context;
 }

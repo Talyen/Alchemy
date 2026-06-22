@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/refs, react-hooks/preserve-manual-memoization -- factories receive ref objects for async handlers; ref.current assignments are deliberate */
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useLayoutEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { getPlayableHandCardKeysExcludingHidden } from "@/features/alchemy/run-loop/battle/playable-hand";
 import type { CardRect, Screen } from "@/features/alchemy/shared/types";
@@ -10,6 +10,7 @@ import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-
 import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-facade";
+import type { BattleState } from "@/lib/battle";
 import type { BattleScreenData } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import {
@@ -100,6 +101,8 @@ export function useBattleController({
     ],
   );
 
+  const scheduleAutoEndTurnRef = useRef<((state: BattleState) => void) | null>(null);
+
   // Initialize/Update the unified context
   const ctx = useBattleControllerContext({
     run,
@@ -112,6 +115,7 @@ export function useBattleController({
     onBattleDefeat,
     measureElementRect,
     measureVisualCardRect,
+    scheduleAutoEndTurnRef,
   });
 
   // Instantiate action handlers exactly once on mount
@@ -142,7 +146,9 @@ export function useBattleController({
   });
 
   // Wire scheduleAutoEndTurn back into context so card play can call it
-  ctx.scheduleAutoEndTurn = scheduleAutoEndTurn;
+  useLayoutEffect(() => {
+    scheduleAutoEndTurnRef.current = scheduleAutoEndTurn;
+  }, [scheduleAutoEndTurn]);
 
   // Playable hand card keys
   const hiddenHandCardKeys = useBattlePresentationStore((s) => s.hiddenHandCardKeys);

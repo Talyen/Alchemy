@@ -32,6 +32,7 @@ describe("New Gear Affixes Integration Tests", () => {
       hand: [card],
       enemyMitigation: { ...makeState().enemyMitigation, armor: 5 },
       gearEffects: { ...makeState().gearEffects, archeryArmorPiercing: 3 },
+      rng: () => 0.5,
     });
     const result = computeCardDamageToEnemy(state, card.effects[0] as any, card);
     expect(result.modifiedDamage).toBe(8);
@@ -129,6 +130,7 @@ describe("New Gear Affixes Integration Tests", () => {
     const state1 = makeState({
       enemyStatuses: { ...makeState().enemyStatuses, bleed: 3 },
       gearEffects: { ...makeState().gearEffects, burnDamageBonusToBleedingPercent: 50 },
+      rng: () => 0.5,
     });
     const result1 = computeCardDamageToEnemy(state1, card.effects[0] as any, card);
     expect(result1.modifiedDamage).toBe(15);

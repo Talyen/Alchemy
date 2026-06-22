@@ -56,7 +56,10 @@ test.describe("Armory crafting", { ...armory, ...critical }, () => {
     await expect(gearItemLocator(page, "Shortsword")).toHaveCount(0);
     await expect(currencyLocator(page, "discordant-dice")).toBeVisible();
     await expect
-      .poll(async () => Number(await currencyLocator(page, "discordant-dice").innerText()))
+      .poll(async () => {
+        const text = await currencyLocator(page, "discordant-dice").textContent();
+        return Number(text?.trim() || "0");
+      })
       .toBeGreaterThan(0);
   });
 

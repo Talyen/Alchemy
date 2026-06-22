@@ -264,7 +264,7 @@ describe("endPlayerTurn", () => {
   it.each([
     { status: "burn", amount: 2, expectedHealth: 28, expectedStack: 1, note: "burn halves to 1" },
     { status: "poison", amount: 3, expectedHealth: 27, expectedStack: 2, note: "poison reduces by 1 to 2" },
-    { status: "bleed", amount: 2, expectedHealth: 28, expectedStack: 0, note: "bleed resets to 0" },
+    { status: "bleed", amount: 2, expectedHealth: 26, expectedStack: 0, note: "bleed doubles, then resets to 0" },
   ] as const)(
     "enemy $status attack applies $status and tick $note",
     ({ status, amount, expectedHealth, expectedStack }) => {

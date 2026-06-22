@@ -5,6 +5,7 @@
  */
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
+import { BLEED_STATUS_MULTIPLIER } from "../game-constants";
 import { mergeCombatText } from "./combat-text";
 import { addPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 
@@ -49,12 +50,13 @@ function applyHarmfulStatusFromAttack(
   if (state.trinketEffects.plagueDoctorImmunity && !state.flags.firstHarmfulStatusPrevented) {
     return { ...state, flags: { ...state.flags, firstHarmfulStatusPrevented: true } };
   }
-  const nextState = addPlayerStatus(state, status, amount);
+  const appliedAmount = status === CONSTANTS.STATUS_NAMES.BLEED ? amount * BLEED_STATUS_MULTIPLIER : amount;
+  const nextState = addPlayerStatus(state, status, appliedAmount);
   mergeCombatText(combatTexts, {
     target: CONSTANTS.TARGETS.PLAYER,
     kind: CONSTANTS.COMBAT_TEXT_KINDS.DAMAGE,
     stat: status,
-    amount,
+    amount: appliedAmount,
   });
   return nextState;
 }

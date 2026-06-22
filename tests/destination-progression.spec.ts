@@ -1,7 +1,11 @@
-import { expect, test } from "@playwright/test";
-import { injectSaveState } from "./helpers";
+import { expect } from "@playwright/test";
+import { test } from "./fixtures/e2e";
+import { injectSaveState, seedRandom, pinDestinationChoice } from "./helpers";
 import { DestinationPage } from "./pages/destination-page";
-import { critical } from "./playwright-tags";
+import { MysteryPage } from "./pages/mystery-page";
+import { CorruptionPage } from "./pages/corruption-page";
+import { MenuPage } from "./pages/menu-page";
+import { critical, prepush } from "./playwright-tags";
 
 test.describe("Destination Progression", critical, () => {
   test("destination screen shows available choices from the pool", async ({ page }) => {
@@ -57,3 +61,109 @@ test.describe("Destination Progression", critical, () => {
     await expect(page.getByRole("img", { name: /Boss/i })).toBeVisible();
   });
 });
+
+test.describe("Mystery Event Flow", () => {
+  test("mystery event screen shows with title and choices", prepush, async ({ page, runtimeErrors }) => {
+    void runtimeErrors;
+    await startAtDestination(page, {}, { forceDestination: "Mystery" });
+    await page.getByRole("button", { name: "Mystery" }).click();
+    await new MenuPage(page).stage.expectRunPhase("runLoop");
+    await expect(page.getByRole("heading").first()).toBeVisible();
+  });
+
+  test("mystery completes and returns to destination choices", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+    await seedRandom(page, 42);
+    await startAtDestination(page, {}, { forceDestination: "Mystery" });
+    await page.getByRole("button", { name: "Mystery" }).click();
+
+    const mystery = new MysteryPage(page);
+    await mystery.pickFirstChoice();
+
+    const continueBtn = mystery.continueBtn;
+
+    const addCardBtn = page.getByRole("button", { name: "Add Card" });
+    const removeCardBtn = page.getByRole("button", { name: /^Remove Card$/ });
+    const cardChoice = page.locator("button[aria-label^='Select']");
+
+    await expect(async () => {
+      const hasCardChoice = await cardChoice.isVisible().catch(() => false);
+
+      if (hasCardChoice) {
+        const isAdd = await addCardBtn.isVisible().catch(() => false);
+        const isRemove = await removeCardBtn.isVisible().catch(() => false);
+        if (isAdd || isRemove) {
+          await cardChoice.first().click();
+          if (isAdd) await addCardBtn.click();
+          else await removeCardBtn.click();
+        }
+      }
+      await expect(continueBtn).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 10000 });
+
+    await continueBtn.click();
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
+  });
+});
+
+test.describe("Corruption Full Flow", critical, () => {
+  test("corruption destination shows altar screen with intro and leave works", prepush, async ({ page }) => {
+    const corruption = new CorruptionPage(page);
+    await corruption.open();
+    await corruption.stage.expectRunPhase("runLoop");
+
+    await expect(corruption.altarHeading).toBeVisible({ timeout: 5000 });
+    await expect(corruption.corruptBtn).toBeVisible();
+    await expect(corruption.leaveBtn).toBeVisible();
+
+    await corruption.leaveBtn.click();
+    await new DestinationPage(page).expectVisible();
+  });
+
+  test("selecting a card and corrupting shows result view with continue", async ({ page }) => {
+    const corruption = new CorruptionPage(page);
+    await corruption.open();
+
+    await corruption.selectAndCorrupt();
+
+    await corruption.continueBtn.click();
+    await new DestinationPage(page).expectVisible();
+  });
+
+  test("corrupted card retains corruption flag in subsequent battle hand", async ({ page }) => {
+    const corruption = new CorruptionPage(page);
+    await corruption.open();
+
+    await corruption.selectAndCorrupt();
+    await pinDestinationChoice(page, "Normal Combat");
+    await corruption.continueBtn.click();
+
+    const destination = new DestinationPage(page);
+    await destination.enterCombat("Normal Combat");
+
+    const playableCards = page.locator('[aria-label^="Play "]');
+    await expect(playableCards.first()).toBeVisible({ timeout: 5000 });
+    expect(await playableCards.count()).toBeGreaterThan(0);
+  });
+});
+
+async function startAtDestination(
+  page: import("@playwright/test").Page,
+  overrides: Record<string, any> = {},
+  options: { forceDestination?: string } = {},
+) {
+  const choices = options.forceDestination ? [options.forceDestination] : ["Normal Combat"];
+  await injectSaveState(page, {
+    runPlayerHealth: 30,
+    runMaxHealth: 30,
+    roomsEncountered: 0,
+    destinationIndexInAct: 0,
+    completedDestinations: [],
+    currentScreen: "destination",
+    destinationChoices: choices,
+    ...overrides,
+  });
+  await page.goto("/");
+  await new DestinationPage(page).expectVisible();
+}

@@ -36,8 +36,13 @@ function createMinimalLabyrinthMap(options?: { rows?: number; cols?: number }) {
 }
 
 export async function injectSaveState(page: Page, overrides: Record<string, unknown> = {}) {
+  const injectionId = Math.random().toString(36).substring(2);
   await page.addInitScript(
     (data) => {
+      if (sessionStorage.getItem("alchemy-injected-id") === data.injectionId) {
+        return;
+      }
+      sessionStorage.setItem("alchemy-injected-id", data.injectionId);
       const save = JSON.parse(localStorage.getItem(data.saveKey) || "{}");
       const { discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, ...activeRunData } = data.payload;
       save.activeRun = {
@@ -64,7 +69,7 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
       }
       localStorage.setItem(data.saveKey, JSON.stringify(save));
     },
-    { saveKey: SAVE_KEY, payload: overrides },
+    { saveKey: SAVE_KEY, payload: overrides, injectionId },
   );
 }
 

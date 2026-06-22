@@ -133,7 +133,7 @@ export function createBattleCardPlay(
       "play card",
     );
     session.runIfSessionActive(sessionNum, () => {
-      ctx.scheduleAutoEndTurn?.(resolution.state);
+      ctx.scheduleAutoEndTurnRef.current?.(resolution.state);
     });
   }
 

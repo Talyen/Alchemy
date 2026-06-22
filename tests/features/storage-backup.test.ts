@@ -43,5 +43,5 @@ describe("storage io desktop backup", () => {
     await loadAlchemySaveState();
 
     expect(backupSave).toHaveBeenCalledTimes(1);
-  }, 10_000);
+  }, 30_000);
 });

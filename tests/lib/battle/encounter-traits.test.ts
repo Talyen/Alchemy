@@ -70,7 +70,7 @@ describe("encounter trait enemy actions", () => {
     const poison = endPlayerTurn(createTestBattleState({ currentEnemy, enemyAttackEffects: [], rng: () => 0.1 })).state;
     const bleed = endPlayerTurn(createTestBattleState({ currentEnemy, enemyAttackEffects: [], rng: () => 0.9 })).state;
     expect(poison.playerStatuses.poison).toBe(1);
-    expect(bleed.playerStatuses.bleed).toBe(1);
+    expect(bleed.playerStatuses.bleed).toBe(2);
   });
 
   it("applies Plated, Reinforced, and Overgrowth before the attack", () => {
@@ -127,8 +127,8 @@ describe("encounter trait enemy actions", () => {
       createTestBattleState({ currentEnemy, enemyAttackEffects: [], enemyHealth: 10, enemyMaxHealth: 20 }),
     ).state;
     expect(first.enemyHealth).toBe(11);
-    expect(first.playerStatuses.bleed).toBe(1);
-    expect(first.pendingEnemyBleedLeechHealing).toBe(1);
+    expect(first.playerStatuses.bleed).toBe(2);
+    expect(first.pendingEnemyBleedLeechHealing).toBe(2);
 
     const texts: Parameters<typeof tickPlayerStatuses>[1] = [];
     const second = tickPlayerStatuses(first, texts);

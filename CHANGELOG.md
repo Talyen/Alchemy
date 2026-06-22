@@ -6,6 +6,18 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Features
 
+- feat(assets): update Gambler's Shot art and add music element cache for battle track resume
+  - Replace Gambler's Shot raw JPEG with compressed version
+  - Rebuild optimized gamblers-shot.webp via asset pipeline
+  - Add music element cache so re-entering a battle resumes the track
+    from its saved position instead of starting over
+  - Add invalidateCacheForKey to force a fresh track on new battle
+  - Add talent-positions.ts with elliptical layout helpers
+- feat(talents): add per-node lucide icons to talent tree
+- feat(audio): add per-boss battle music tracks
+  Wire up four new boss-specific MP3s (Forge Golem, Frostwarden, Blight
+  Treant, Iron Bear) so each boss fight plays its own theme. Normal and
+  elite encounters continue using the generic Battle playlist.
 - feat(content): add content validation and audit tooling
 - feat(talents): implement 21 new talents across nature, consume, archery, companion pools
 - feat(homestead): add art for all nodes and fix mismatched research IDs
@@ -275,6 +287,8 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(battle): unify stun and freeze buildup damage
+- fix(armory): harden drag and crafting mutations
 - fix: type error in injectLabyrinthRun Object.assign call
 - fix(e2e): correct destination and labyrinth test navigation timing
 - fix: revert incorrect cardPlayInProgressRef change in battle test
@@ -652,6 +666,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(style): simplify index.css architecture and consolidate theme tokens
+- refactor(content-validation): simplify card-parity validation
+- refactor(battle): simplify battle controller architecture and dependencies
 - refactor(content): dedupe card-parity, drop noise warning, add trait-keyword parity
 - refactor(armory): simplify drag and targeting state
 - refactor(battle-controller): remove dead resolvedAsHasteOrStunRef and redundant teardown effect

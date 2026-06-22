@@ -8,7 +8,7 @@ import { addPlayerStatus, setFlag, type BattleState, type CombatTextEvent } from
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { addForgeToPlayer } from "./status-forge";
 import { scaleFreezeBuildUp } from "./status-helpers";
-import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
+import { BLEED_STATUS_MULTIPLIER, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
 
 export function countRemovableHarmfulStatuses(playerStatuses: BattleState["playerStatuses"]): number {
   return harmfulPlayerStatusIds.filter((statusId) => playerStatuses[statusId] > 0).length;
@@ -139,10 +139,10 @@ export function applyPlayerDamageStatuses(
     statusType === "freeze" ||
     statusType === "stun"
   ) {
-    const adjustedDamage = scaleFreezeBuildUp(
-      actualDamage,
-      statusType === "freeze" && state.talentEffects.receiveHalfFreezeBuildUp,
-    );
+    const adjustedDamage =
+      statusType === "bleed"
+        ? actualDamage * BLEED_STATUS_MULTIPLIER
+        : scaleFreezeBuildUp(actualDamage, statusType === "freeze" && state.talentEffects.receiveHalfFreezeBuildUp);
     return {
       ...state,
       playerStatuses: {

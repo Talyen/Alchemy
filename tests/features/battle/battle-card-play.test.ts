@@ -2,6 +2,9 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { MouseEvent } from "react";
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
+import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
+import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
+import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
 import { getBattleStoreView, resetRunBattleSlice } from "../../helpers/run-domain-store-test";
 import { createTestBattleState } from "../../lib/battle/test-state";
 import { makeTestCard } from "../../fixtures/battle";
@@ -25,10 +28,11 @@ vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", () => ({
   }),
 }));
 
-function makeDeps(overrides: Partial<Parameters<typeof createBattleCardPlay>[0]> = {}) {
+function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
   const battleSessionRef = { current: 1 };
   const cardPlayInProgressRef = { current: false };
-  return {
+  const scheduleAutoEndTurnMock = vi.fn();
+  const ctx = {
     screen: "battle" as const,
     battleSessionRef,
     cardPlayInProgressRef,
@@ -37,6 +41,19 @@ function makeDeps(overrides: Partial<Parameters<typeof createBattleCardPlay>[0]>
     battleSceneRef: { current: null },
     setHoveredCardId: vi.fn(),
     talents: { awardCardXP: vi.fn() },
+    scheduleAutoEndTurnRef: { current: scheduleAutoEndTurnMock },
+    scheduleAutoEndTurn: scheduleAutoEndTurnMock,
+    logBattleError: vi.fn(),
+    ...overrides,
+  } as unknown as BattleControllerContext;
+
+  const session = {
+    runIfSessionActive: vi.fn((_session, action) => action()),
+    finishDrawSequence: vi.fn((_sessionNum, _state, cb) => cb()),
+    checkBattleEnd: vi.fn(),
+  } as unknown as ReturnType<typeof createBattleSession>;
+
+  const transferDeps = {
     getDrawSequenceDeps: vi.fn(() => ({
       isSessionActive: () => true,
       animateDrawnHand: vi.fn(),
@@ -44,12 +61,9 @@ function makeDeps(overrides: Partial<Parameters<typeof createBattleCardPlay>[0]>
       setHiddenHandCardKeys: vi.fn(),
       runIfSessionActive: vi.fn(),
     })),
-    finishDrawSequence: vi.fn(),
-    runIfSessionActive: vi.fn((_session, action) => action()),
-    scheduleAutoEndTurn: vi.fn(),
-    logBattleError: vi.fn(),
-    ...overrides,
-  };
+  } as unknown as ReturnType<typeof createBattleTransferDeps>;
+
+  return { ctx, session, transferDeps };
 }
 
 function clickCard(
@@ -92,14 +106,14 @@ describe("createBattleCardPlay", () => {
     });
     getBattleStoreView().setSyncedBattleState(state);
 
-    const deps = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(deps);
+    const { ctx, session, transferDeps } = makeDeps();
+    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 1 }, 0);
 
     expect(getBattleStoreView().battleState.hand.length).toBe(0);
     expect(getBattleStoreView().battleState.enemyHealth).toBeLessThan(30);
-    expect(deps.scheduleAutoEndTurn).toHaveBeenCalled();
-    expect(deps.talents.awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
+    expect(ctx.scheduleAutoEndTurnRef.current).toHaveBeenCalled();
+    expect(ctx.talents.awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
     expect(playUISound).not.toHaveBeenCalled();
   });
 
@@ -115,13 +129,13 @@ describe("createBattleCardPlay", () => {
     });
     getBattleStoreView().setSyncedBattleState(state);
 
-    const deps = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(deps);
+    const { ctx, session, transferDeps } = makeDeps();
+    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...expensive, uid: 2 }, 0);
 
     expect(getBattleStoreView().battleState).toEqual(state);
-    expect(deps.scheduleAutoEndTurn).not.toHaveBeenCalled();
-    expect(deps.talents.awardCardXP).not.toHaveBeenCalled();
+    expect(ctx.scheduleAutoEndTurnRef.current).not.toHaveBeenCalled();
+    expect(ctx.talents.awardCardXP).not.toHaveBeenCalled();
     expect(playUISound).toHaveBeenCalledWith("error");
   });
 
@@ -139,8 +153,8 @@ describe("createBattleCardPlay", () => {
     });
     getBattleStoreView().setSyncedBattleState(state);
 
-    const deps = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(deps);
+    const { ctx, session, transferDeps } = makeDeps();
+    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 3 }, 0);
 
     expect(getBattleStoreView().battleState.enemyHealth).toBe(state.enemyHealth);
@@ -160,13 +174,13 @@ describe("createBattleCardPlay", () => {
     });
     getBattleStoreView().setSyncedBattleState(state);
 
-    const deps = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(deps);
+    const { ctx, session, transferDeps } = makeDeps();
+    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 5 }, 0);
 
     expect(getBattleStoreView().battleState.hand.length).toBe(0);
     expect(getBattleStoreView().battleState.enemyHealth).toBeLessThan(30);
-    expect(deps.talents.awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
+    expect(ctx.talents.awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
   });
 
   it("rejects plays for cards still animating into the hand", () => {
@@ -184,12 +198,12 @@ describe("createBattleCardPlay", () => {
     useBattlePresentationStore.getState().setCardTransferInProgress(true);
     useBattlePresentationStore.getState().setHiddenHandCardKeys(new Set(["slash-6"]));
 
-    const deps = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(deps);
+    const { ctx, session, transferDeps } = makeDeps();
+    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 6 }, 0);
 
     expect(getBattleStoreView().battleState).toEqual(state);
-    expect(deps.talents.awardCardXP).not.toHaveBeenCalled();
+    expect(ctx.talents.awardCardXP).not.toHaveBeenCalled();
     expect(playUISound).toHaveBeenCalledWith("error");
   });
 
@@ -206,13 +220,13 @@ describe("createBattleCardPlay", () => {
     });
     getBattleStoreView().setSyncedBattleState(state);
 
-    const deps = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(deps);
+    const { ctx, session, transferDeps } = makeDeps();
+    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 4 }, 0);
 
     expect(getBattleStoreView().battleState.hand.length).toBe(0);
     expect(getBattleStoreView().battleState.discard).toHaveLength(1);
     expect(getBattleStoreView().battleState.mana).toBe(2);
-    expect(deps.talents.awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
+    expect(ctx.talents.awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
   });
 });

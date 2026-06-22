@@ -1,8 +1,31 @@
-import { expect, test } from "@playwright/test";
-import { injectSaveState, openGameModeSelect, resumeCampaignRun, SAVE_KEY, seedRandom } from "./helpers";
+import { expect } from "@playwright/test";
+import { test } from "./fixtures/e2e";
+import {
+  injectSaveState,
+  openGameModeSelect,
+  resumeCampaignRun,
+  SAVE_KEY,
+  seedRandom,
+  makeHighDamageCard,
+  startAtDestination,
+  startBattleWithDeck,
+  ANVIL_CARD,
+} from "./helpers";
+import { injectMidCombatSave } from "./e2e/mid-combat-save";
+import { BattlePage } from "./pages/battle-page";
+import { DestinationPage } from "./pages/destination-page";
+import { RewardPage } from "./pages/reward-page";
 import { critical, prepush } from "./playwright-tags";
+import { legacyCampaignRunSave } from "./fixtures/legacy-saves";
 
-test.describe("Save Persistence Edge Cases", critical, () => {
+function getSavedRoomCount(page: import("@playwright/test").Page): Promise<number> {
+  return page.evaluate((saveKey) => {
+    const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+    return save.activeRun?.roomsEncountered ?? 0;
+  }, SAVE_KEY);
+}
+
+test.describe("Save Persistence & Resume", critical, () => {
   test("resume run restores exact state after reload", async ({ page }) => {
     await seedRandom(page, 42);
     await injectSaveState(page, {
@@ -76,5 +99,130 @@ test.describe("Save Persistence Edge Cases", critical, () => {
     await resumeCampaignRun(page);
 
     await expect(page.locator('[aria-label^="Play "]')).toHaveCount(0);
+  });
+
+  test("reload restores an in-progress battle", async ({ page }) => {
+    await injectMidCombatSave(page);
+    await page.goto("/");
+
+    const battle = new BattlePage(page);
+    await expect(battle.endTurnBtn).toBeVisible({ timeout: 10000 });
+    await expect.poll(() => battle.playerHealth()).toBe(18);
+    await expect.poll(() => battle.enemyHealth()).toBe(40);
+
+    const turnBefore = await page.evaluate((saveKey) => {
+      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+      return save.activeRun?.activeCombat?.battleState?.turn ?? null;
+    }, SAVE_KEY);
+    expect(turnBefore).toBe(2);
+
+    await page.reload();
+
+    await expect(battle.endTurnBtn).toBeVisible({ timeout: 10000 });
+    await expect.poll(() => battle.playerHealth()).toBe(18);
+    await expect.poll(() => battle.enemyHealth()).toBe(40);
+
+    const turnAfter = await page.evaluate((saveKey) => {
+      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+      return save.activeRun?.activeCombat?.battleState?.turn ?? null;
+    }, SAVE_KEY);
+    expect(turnAfter).toBe(2);
+  });
+
+  test("resumes a run from legacy pre-metadata save and upgrades schema", async ({ page }) => {
+    const legacySave = legacyCampaignRunSave();
+    await page.addInitScript(
+      (data) => {
+        try {
+          localStorage.setItem(data.saveKey, JSON.stringify(data.save));
+        } catch (e) {
+          // Ignore opaque origin exceptions
+        }
+      },
+      { saveKey: SAVE_KEY, save: legacySave },
+    );
+
+    await page.goto("/");
+    await resumeCampaignRun(page);
+
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
+
+    const upgraded = await page.evaluate((saveKey) => {
+      return JSON.parse(localStorage.getItem(saveKey) || "{}");
+    }, SAVE_KEY);
+    expect(upgraded.saveSchemaVersion).toBeDefined();
+    expect(upgraded.activeRun.runGold).toBe(42);
+    expect(upgraded.activeRun.runPlayerHealth).toBe(18);
+  });
+});
+
+test.describe("Autosave Cadence", () => {
+  test("save is written after the first end turn in battle", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeHighDamageCard()),
+    );
+
+    const before = await getSavedRoomCount(page);
+    const battle = new BattlePage(page);
+    await battle.endTurn();
+
+    const after = await getSavedRoomCount(page);
+    expect(after).toBeGreaterThanOrEqual(before);
+  });
+
+  test("save is written after claiming a reward", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeHighDamageCard()),
+    );
+
+    const battle = new BattlePage(page);
+    await battle.winViaCombat(3);
+
+    const reward = new RewardPage(page);
+    await reward.selectFirstReward();
+    await reward.addRewardBtn.click();
+    await new DestinationPage(page).expectVisible();
+
+    const roomsAfter = await getSavedRoomCount(page);
+    expect(roomsAfter).toBeGreaterThanOrEqual(1);
+  });
+
+  test("save persists across page navigation", async ({ page }) => {
+    test.setTimeout(30000);
+    await startAtDestination(page, { runGold: 42, runPlayerHealth: 22 }, { forceDestination: "Campfire" });
+
+    const goldBefore = await page.evaluate((saveKey) => {
+      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+      return save.activeRun?.runGold;
+    }, SAVE_KEY);
+    expect(goldBefore).toBe(42);
+
+    await page.goto("/");
+    await resumeCampaignRun(page);
+
+    const goldAfter = await page.evaluate((saveKey) => {
+      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+      return save.activeRun?.runGold;
+    }, SAVE_KEY);
+    expect(goldAfter).toBe(42);
+  });
+
+  test("forge status persists across end turn", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+    await startBattleWithDeck(page, [ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD]);
+    const battle = new BattlePage(page);
+
+    await battle.playCardNamed("Anvil");
+    await expect(page.getByRole("button", { name: "Forge 1" })).toBeVisible();
+
+    await battle.endTurn();
+    await expect(page.getByRole("button", { name: /Forge/ })).toHaveCount(1);
   });
 });

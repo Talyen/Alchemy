@@ -200,9 +200,9 @@ describe("normalizeTalentXP", () => {
 
 describe("normalizeUnlockedTalents", () => {
   it("passes through valid unlocked talents", () => {
-    const result = normalizeSaveData({ unlockedTalents: { burn: ["burn-1", "burn-2"], block: [] } });
-    expect(result.unlockedTalents.burn).toEqual(["burn-1", "burn-2"]);
-    expect(result.unlockedTalents.block).toEqual([]);
+    const result = normalizeSaveData({ unlockedTalents: { burn: ["burn-dmg-1", "burn-dmg-2"], block: [] } });
+    expect(result.unlockedTalents.burn).toEqual(["burn-dmg-1", "burn-dmg-2"]);
+    expect(result.unlockedTalents.block).toBeUndefined();
   });
 
   it("filters non-array entries", () => {

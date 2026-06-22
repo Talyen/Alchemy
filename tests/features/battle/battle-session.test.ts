@@ -7,6 +7,8 @@ import { TimerGroup } from "@/lib/animation/game-timer";
 import { getBattleStoreView, getNavigationStoreView, resetRunBattleSlice } from "../../helpers/run-domain-store-test";
 import { ROUTE_SCREENS } from "@/lib/routing";
 
+import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
+
 function makeSession() {
   const battleSessionRef = { current: 1 };
   const battleTimerGroupRef = { current: new TimerGroup() };
@@ -26,7 +28,7 @@ function makeSession() {
     companionScheduledRef,
     onBattleVictory,
     onBattleDefeat,
-  });
+  } as unknown as BattleControllerContext);
 
   return {
     session,

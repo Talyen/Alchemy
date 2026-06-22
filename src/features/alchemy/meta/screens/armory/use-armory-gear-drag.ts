@@ -15,6 +15,7 @@ import {
 } from "@/lib/gear";
 import { overlaps } from "@/lib/gear/grid-packing";
 import { useBoardDrag, type DragDestination, type DragRect, type DragPoint } from "./use-board-drag";
+import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
 import {
   findEquipSlotForDoubleClickedGear,
   resolveEquipmentSlotAtPointer,
@@ -214,13 +215,36 @@ export function useArmoryGearDrag({
         if (occupant) {
           const occupantInstance = inventoryById.get(occupant.item.instanceId);
           if (occupantInstance) {
+            let occupantSourceRect = destination.rect;
+            const board = inventoryBoardRef.current;
+            if (board) {
+              const metrics = readInventoryBoardMetrics(board);
+              if (metrics) {
+                const footprint = footprintForInstance(occupantInstance);
+                if (footprint) {
+                  const { cellSize, gap } = metrics;
+                  const w = footprint.w;
+                  const h = footprint.h;
+                  const occupantWidth = cellSize * w + gap * (w - 1);
+                  const occupantHeight = cellSize * h + gap * (h - 1);
+                  const destCenterX = destination.rect.left + destination.rect.width / 2;
+                  const destCenterY = destination.rect.top + destination.rect.height / 2;
+                  occupantSourceRect = {
+                    left: destCenterX - occupantWidth / 2,
+                    top: destCenterY - occupantHeight / 2,
+                    width: occupantWidth,
+                    height: occupantHeight,
+                  };
+                }
+              }
+            }
             return {
               heldItem: {
                 item: {
                   instance: occupantInstance,
                   origin: { kind: "inventory", placement: { col: occupant.col, row: occupant.row } },
                 },
-                source: destination.rect,
+                source: occupantSourceRect,
               },
             };
           }

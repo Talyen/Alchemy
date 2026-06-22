@@ -55,5 +55,4 @@ function computeTalentNodePositions(keywordId: KeywordId, count: number): { left
   });
 }
 
-export { computeTalentNodePositions, talentNodePositionStyle, TALENT_NODE_SIZE_PERCENT };
-export type { TalentLayoutConfig };
+export { computeTalentNodePositions, talentNodePositionStyle };

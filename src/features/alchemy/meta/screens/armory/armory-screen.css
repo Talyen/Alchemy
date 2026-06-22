@@ -6,7 +6,7 @@
 }
 
 .armory-character-art-container {
-  --battle-scene-height-mimic: calc(100cqh - 127px);
+  --battle-scene-height-mimic: calc(100cqh + 77px);
   width: clamp(
     calc(0.2724 * var(--battle-scene-height-mimic)),
     calc(0.2768 * var(--battle-scene-height-mimic)),

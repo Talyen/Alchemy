@@ -18,17 +18,25 @@ beforeEach(() => {
   resetRunProgressSlice();
 });
 
+import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
+import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
+
 describe("createBattleInit", () => {
   const homesteadEffectsRef = { current: defaultHomesteadEffects };
   const resetBattleSession = vi.fn();
 
   function makeInit() {
-    return createBattleInit({
+    const ctx = {
       run: makeRunController(),
       talents: makeTalentController(),
       homesteadEffectsRef,
+    } as unknown as BattleControllerContext;
+
+    const session = {
       resetBattleSession,
-    });
+    } as unknown as ReturnType<typeof createBattleSession>;
+
+    return createBattleInit(ctx, session);
   }
 
   it("merges talent and homestead manifests into battle state", () => {

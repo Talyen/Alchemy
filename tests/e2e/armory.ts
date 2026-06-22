@@ -82,7 +82,7 @@ export async function enterSalvageMode(page: Page) {
 
 export async function salvageInventoryItem(page: Page, gearTitle: string, index = 0) {
   await enterSalvageMode(page);
-  await page.getByLabel(`Salvage ${gearTitle}`, { exact: true }).nth(index).click();
+  await page.getByLabel(`Salvage ${gearTitle}`, { exact: true }).nth(index).click({ force: true });
 }
 
 export async function confirmSalvage(page: Page) {

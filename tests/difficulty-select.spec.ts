@@ -1,7 +1,8 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
-import { SAVE_KEY } from "./helpers";
+import { SAVE_KEY, seedRandom } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
+import { BattlePage } from "./pages/battle-page";
 
 test.describe("Difficulty Select", () => {
   test.beforeEach(async ({ page }) => {
@@ -71,5 +72,51 @@ test.describe("Difficulty Skip (first-time player)", () => {
     await menu.selectCharacterAndContinue("Knight");
 
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
+  });
+});
+
+const ENEMY_BASE_HEALTH = 30;
+
+test.describe("Difficulty Modifier Effects", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript((saveKey) => {
+      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+      save.completedDifficulties = {
+        knight: ["difficulty-1", "difficulty-2"],
+        wizard: ["difficulty-1", "difficulty-2"],
+      };
+      save.finishedRunCharacters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
+      localStorage.setItem(saveKey, JSON.stringify(save));
+    }, SAVE_KEY);
+  });
+
+  test("Novice difficulty has no enemy health modifier", async ({ page, fastBattle }) => {
+    void fastBattle;
+    await seedRandom(page, 42);
+    const menu = new MenuPage(page);
+    await menu.goToCharacterSelect();
+    await menu.selectCharacterAndContinue("Knight");
+
+    await page.getByRole("button", { name: "Novice" }).click();
+    await page.getByRole("button", { name: "Play" }).click();
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
+
+    const battle = new BattlePage(page);
+    await expect.poll(() => battle.enemyHealth()).toBe(ENEMY_BASE_HEALTH);
+  });
+
+  test("Legend difficulty increases enemy health", async ({ page, fastBattle }) => {
+    void fastBattle;
+    await seedRandom(page, 42);
+    const menu = new MenuPage(page);
+    await menu.goToCharacterSelect();
+    await menu.selectCharacterAndContinue("Knight");
+
+    await page.getByRole("button", { name: "Legend" }).click();
+    await page.getByRole("button", { name: "Play" }).click();
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
+
+    const battle = new BattlePage(page);
+    await expect.poll(() => battle.enemyHealth()).toBeGreaterThan(ENEMY_BASE_HEALTH);
   });
 });

@@ -245,7 +245,7 @@ type CompanionTextsDeps = {
   runIfSessionActive: <T>(session: number, action: () => T, fallback?: T) => T;
 };
 
-export function resolveCompanionFollowUpTexts(deps: CompanionTextsDeps, session: number): CombatTextEvent[] {
+function resolveCompanionFollowUpTexts(deps: CompanionTextsDeps, session: number): CombatTextEvent[] {
   return deps.runIfSessionActive(session, () => {
     const store = deps.getStore();
     const texts: CombatTextEvent[] = [];

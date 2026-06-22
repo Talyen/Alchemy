@@ -29,12 +29,15 @@ export async function resumeGameMode(page: Page, mode: Exclude<GameMode, "wildwo
   await selectGameMode(page, mode, "Resume");
 }
 
-/** Resume campaign when the menu flow is required, or wait if save bootstrap already opened destination. */
 export async function resumeCampaignRun(page: Page) {
   const destination = page.getByRole("heading", { name: "Choose Destination" });
-  if (await destination.isVisible({ timeout: 3000 }).catch(() => false)) {
-    return;
+  const playButton = page.getByRole("button", { name: "Play", exact: true });
+
+  try {
+    await playButton.waitFor({ state: "visible", timeout: 3000 });
+    await resumeGameMode(page, "campaign");
+  } catch {
+    // Play button did not appear; we may already be on the destination screen (e.g., bootstrapped save).
   }
-  await resumeGameMode(page, "campaign");
   await expect(destination).toBeVisible({ timeout: 10000 });
 }

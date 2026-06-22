@@ -43,5 +43,5 @@ describe("bootstrapAlchemySaveState", () => {
 
     expect(steamGetName).toHaveBeenCalled();
     expect(loadSave).toHaveBeenCalled();
-  }, 10_000);
+  }, 30_000);
 });

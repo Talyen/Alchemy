@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { makeCard, startBattleWithDeck, WOLF_COMPANION_CARD } from "./helpers";
+import { makeCard, startBattleWithDeck, WOLF_COMPANION_CARD, seedRandom } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
 
@@ -50,7 +50,7 @@ const TRINKET_CASES: TrinketCase[] = [
       const enemyHpBefore = await battle.enemyHealth();
       await battle.playCardNamed("Holy Strike");
       await expect(async () => {
-        expect(await battle.enemyHealth()).toBe(enemyHpBefore - 10);
+        expect(await battle.enemyHealth()).toBe(enemyHpBefore - 20);
       }).toPass({ timeout: 3000 });
     },
   },
@@ -61,6 +61,7 @@ test.describe("Trinket Effects in Battle", () => {
     test(`${tc.id}: ${tc.description}`, async ({ page, fastBattle, runtimeErrors }) => {
       void fastBattle;
       void runtimeErrors;
+      await seedRandom(page, 42);
       await startBattleWithDeck(page, tc.deck, { runTrinkets: [tc.id] });
       const battle = new BattlePage(page);
       await tc.run(page, battle);

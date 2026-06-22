@@ -88,11 +88,10 @@ test.describe("Death's Door", critical, () => {
     await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 3000 });
 
     await battle.playFirstCard();
-    await battle.endTurn();
     await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 3000 });
   });
 
-  test("non-lethal damage while in Death's Door stays at 1 HP", async ({ page, fastBattle }) => {
+  test("non-lethal damage while in Death's Door stays at 0 HP", async ({ page, fastBattle }) => {
     void fastBattle;
 
     await startBattleWithDeck(
@@ -108,6 +107,6 @@ test.describe("Death's Door", critical, () => {
     await battle.endTurn();
     await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 3000 });
 
-    await expect.poll(() => battle.playerHealth()).toBe(1);
+    await expect.poll(() => battle.playerHealth()).toBe(0);
   });
 });

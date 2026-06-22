@@ -554,8 +554,8 @@ describe("SaveDataSchema", () => {
       discoveredCardIds: ["slash", "future-card"],
       encounteredEnemyIds: ["goblin"],
       discoveredTrinketIds: ["bone-charm"],
-      talentXP: { physical: 25 },
-      unlockedTalents: { physical: ["physical-dmg-1"] },
+      talentXP: { burn: 25 },
+      unlockedTalents: { burn: ["burn-dmg-1"] },
       materialInventory: { wood: 7, iron: 3 },
       constructedBuildings: ["smithy"],
       plantedFarms: ["sheep-pasture"],
@@ -567,8 +567,8 @@ describe("SaveDataSchema", () => {
     expect(result.discoveredCardIds).toEqual(["slash", "future-card"]);
     expect(result.encounteredEnemyIds).toEqual(["goblin"]);
     expect(result.discoveredTrinketIds).toEqual(["bone-charm"]);
-    expect(result.talentXP.physical).toBe(25);
-    expect(result.unlockedTalents.physical).toEqual(["physical-dmg-1"]);
+    expect(result.talentXP.burn).toBe(25);
+    expect(result.unlockedTalents.burn).toEqual(["burn-dmg-1"]);
     expect(result.materialInventory).toEqual({ wood: 7, iron: 3, herbs: 0, food: 0, crystal: 0 });
     expect(result.constructedBuildings["blacksmiths-forge"]).toBe(1);
     expect(result.plantedFarms.pasture).toBe(1);
@@ -644,11 +644,11 @@ describe("SaveDataSchema", () => {
   it("normalizes talent progress without keeping non-finite values", () => {
     const result = parseSave({
       talentXP: { physical: 12.8, burn: Number.NaN, "future-keyword": 4 } as never,
-      unlockedTalents: { physical: ["physical-dmg-1", 42, "future-talent", "physical-dmg-1"], burn: "bad" } as never,
+      unlockedTalents: { burn: ["burn-dmg-1", 42, "burn-dmg-2", "burn-dmg-1"], block: "bad" } as never,
     });
 
     expect(result.talentXP).toEqual({ physical: 12, "future-keyword": 4 });
-    expect(result.unlockedTalents).toEqual({ physical: ["physical-dmg-1", "future-talent"] });
+    expect(result.unlockedTalents).toEqual({ burn: ["burn-dmg-1", "burn-dmg-2"] });
   });
 
   it("normalizes invalid display mode to default", () => {

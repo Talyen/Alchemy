@@ -80,7 +80,10 @@ describe("enemyBestiary attack lines integration", () => {
   it("authored enemies use damage effects for Stun and Freeze attacks", () => {
     const invalid = enemyBestiary.flatMap((enemy) =>
       enemy.attackEffects
-        .filter((effect) => effect.kind === "player-status" && (effect.status === "stun" || effect.status === "freeze"))
+        .filter(
+          (effect): effect is Extract<EnemyAttackEffect, { kind: "player-status" }> =>
+            effect.kind === "player-status" && (effect.status === "stun" || effect.status === "freeze"),
+        )
         .map((effect) => `${enemy.id}:${effect.status}`),
     );
     expect(invalid).toEqual([]);
