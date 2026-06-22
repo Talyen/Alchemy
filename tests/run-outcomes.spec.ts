@@ -19,34 +19,38 @@ import { critical } from "./playwright-tags";
 
 test.describe("Run Outcomes", () => {
   test.describe("Victory Flow", () => {
-    test("beating Act I boss completes victory flow and displays Act II destination choices", critical, async ({ page }) => {
-      await enableFastMode(page);
-      await injectBossState(page);
-      await seedRandom(page, 42);
-      await page.goto("/");
-      await resumeGameMode(page, "campaign");
+    test(
+      "beating Act I boss completes victory flow and displays Act II destination choices",
+      critical,
+      async ({ page }) => {
+        await enableFastMode(page);
+        await injectBossState(page);
+        await seedRandom(page, 42);
+        await page.goto("/");
+        await resumeGameMode(page, "campaign");
 
-      await expect(
-        page.getByRole("heading", { name: /The (Forge Golem|Frostwarden|Blight Treant|Iron Bear)/ }),
-      ).toBeVisible({ timeout: 5000 });
-      const bossBtn = page.getByRole("button", { name: "Boss Combat" });
-      await expect(bossBtn).toBeVisible({ timeout: 3000 });
+        await expect(
+          page.getByRole("heading", { name: /The (Forge Golem|Frostwarden|Blight Treant|Iron Bear)/ }),
+        ).toBeVisible({ timeout: 5000 });
+        const bossBtn = page.getByRole("button", { name: "Boss Combat" });
+        await expect(bossBtn).toBeVisible({ timeout: 3000 });
 
-      await bossBtn.click();
-      await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
+        await bossBtn.click();
+        await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
 
-      await new BattlePage(page).winViaCombat();
+        await new BattlePage(page).winViaCombat();
 
-      await new RewardPage(page).claimFirstReward();
+        await new RewardPage(page).claimFirstReward();
 
-      const destination = new DestinationPage(page);
-      await destination.expectVisible();
-      const destinationBtns = page
-        .locator("button")
-        .filter({ hasText: /Combat|Campfire|Merchant|Alchemist|Mystery|Corruption/ });
-      await expect(destinationBtns.first()).toBeVisible({ timeout: 3000 });
-      expect(await destinationBtns.count()).toBeGreaterThanOrEqual(1);
-    });
+        const destination = new DestinationPage(page);
+        await destination.expectVisible();
+        const destinationBtns = page
+          .locator("button")
+          .filter({ hasText: /Combat|Campfire|Merchant|Alchemist|Mystery|Corruption/ });
+        await expect(destinationBtns.first()).toBeVisible({ timeout: 3000 });
+        expect(await destinationBtns.count()).toBeGreaterThanOrEqual(1);
+      },
+    );
 
     test("defeating Act III boss shows run victory screen", async ({ page }) => {
       await enableFastMode(page);

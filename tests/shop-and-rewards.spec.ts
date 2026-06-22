@@ -122,51 +122,59 @@ test.describe("Alchemist Shop", () => {
 });
 
 test.describe("Reward Flow", () => {
-  test("card reward: selecting and adding card works", { ...critical, ...prepush }, async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeHighDamageCard()),
-    );
-    await skipBattleAndClaimReward(page);
-    await new DestinationPage(page).expectVisible();
-  });
+  test(
+    "card reward: selecting and adding card works",
+    { ...critical, ...prepush },
+    async ({ page, fastBattle, runtimeErrors }) => {
+      void fastBattle;
+      void runtimeErrors;
+      await startBattleWithDeck(
+        page,
+        Array.from({ length: 6 }, () => makeHighDamageCard()),
+      );
+      await skipBattleAndClaimReward(page);
+      await new DestinationPage(page).expectVisible();
+    },
+  );
 
-  test("trinket reward: trinket appears in runTrinkets after claiming", critical, async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-    await injectSaveState(page, {
-      runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
-      currentScreen: "rewards",
-      pendingReward: {
-        rewardType: "trinket",
-        choiceIds: ["tattered-pages", "companions-collar"],
-        selectedId: null,
-        gold: 0,
-        materials: {},
-        destinations: [],
-        selectedBossId: null,
-        lastVictoryEnemyType: "normal",
-        lastVictoryContentSystem: "campaign",
-      },
-    });
-    await page.goto("/");
+  test(
+    "trinket reward: trinket appears in runTrinkets after claiming",
+    critical,
+    async ({ page, fastBattle, runtimeErrors }) => {
+      void fastBattle;
+      void runtimeErrors;
+      await injectSaveState(page, {
+        runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
+        currentScreen: "rewards",
+        pendingReward: {
+          rewardType: "trinket",
+          choiceIds: ["tattered-pages", "companions-collar"],
+          selectedId: null,
+          gold: 0,
+          materials: {},
+          destinations: [],
+          selectedBossId: null,
+          lastVictoryEnemyType: "normal",
+          lastVictoryContentSystem: "campaign",
+        },
+      });
+      await page.goto("/");
 
-    const reward = new RewardPage(page);
-    const addRewardBtn = reward.addRewardBtn;
-    await expect(addRewardBtn).toBeDisabled();
-    await reward.selectFirstReward();
-    await expect(addRewardBtn).toBeEnabled();
-    await addRewardBtn.click();
-    await new DestinationPage(page).expectVisible();
+      const reward = new RewardPage(page);
+      const addRewardBtn = reward.addRewardBtn;
+      await expect(addRewardBtn).toBeDisabled();
+      await reward.selectFirstReward();
+      await expect(addRewardBtn).toBeEnabled();
+      await addRewardBtn.click();
+      await new DestinationPage(page).expectVisible();
 
-    const trinkets = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun?.runTrinkets ?? [];
-    }, SAVE_KEY);
-    expect(trinkets).toContain("tattered-pages");
-  });
+      const trinkets = await page.evaluate((saveKey) => {
+        const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+        return save.activeRun?.runTrinkets ?? [];
+      }, SAVE_KEY);
+      expect(trinkets).toContain("tattered-pages");
+    },
+  );
 
   test("gear reward: claiming gear adds it to gearInventory", critical, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;

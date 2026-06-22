@@ -22,9 +22,7 @@ export function readChangelog(rootDir = root) {
 
 export function computeSyncedChangelog(existingContent, rootDir = root) {
   const lastTag = latestVersionTag(rootDir);
-  const commits = getCommitsSinceTag(rootDir, lastTag).filter(
-    (commit) => !isSyncCommitSubject(commit.subject),
-  );
+  const commits = getCommitsSinceTag(rootDir, lastTag).filter((commit) => !isSyncCommitSubject(commit.subject));
   const unreleasedMarkdown = buildChangelogUnreleased(commits);
   return replaceChangelogUnreleased(normalizeNewlines(existingContent), unreleasedMarkdown);
 }
@@ -55,9 +53,7 @@ export function syncChangelog(options = {}) {
 
 export function changelogCommitSubject(rootDir = root) {
   const lastTag = latestVersionTag(rootDir);
-  const commits = getCommitsSinceTag(rootDir, lastTag).filter(
-    (commit) => !isSyncCommitSubject(commit.subject),
-  );
+  const commits = getCommitsSinceTag(rootDir, lastTag).filter((commit) => !isSyncCommitSubject(commit.subject));
   const hash = latestCommitHash(rootDir);
   return `chore(changelog): sync unreleased (${commits.length} commits, ${hash})`;
 }

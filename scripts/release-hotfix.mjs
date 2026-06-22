@@ -12,7 +12,9 @@ function run(cmd) {
 }
 
 function capture(cmd) {
-  return execSync(cmd, { cwd: root, stdio: ["ignore", "pipe", "ignore"], encoding: "utf8" }).toString().trim();
+  return execSync(cmd, { cwd: root, stdio: ["ignore", "pipe", "ignore"], encoding: "utf8" })
+    .toString()
+    .trim();
 }
 
 // Step 1: Check clean git status
