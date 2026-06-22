@@ -1442,6 +1442,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Style
 
+- style: fix Prettier formatting
 - style: fix import type annotations in battle test files
 - style: fix pre-existing formatting in 4 files
 - style: unify user-facing text phrasing across cards, trinkets, talents, affixes, homestead, and encounter traits
