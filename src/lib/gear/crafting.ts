@@ -150,14 +150,20 @@ function addRandomAffix(item: GearInstance, rng: () => number): GearInstance {
   const def = gearDefinitions[item.definitionId];
   if (!def) return item;
   const rarity = gearInstanceRarity(item);
-  const presentIds = new Set(item.affixes.map((affix) => affix.id));
-  const available = buildEligibleAffixPool(def).filter((affix) => !presentIds.has(affix.id));
+  const available = availableAffixesForItem(item);
   const chosen = pickAtRandom(available, rng);
   if (!chosen) return item;
   return {
     ...item,
     affixes: [...item.affixes, { id: chosen.id, value: rollAffixValue(chosen, rarity, rng) }],
   };
+}
+
+function availableAffixesForItem(item: GearInstance) {
+  const def = gearDefinitions[item.definitionId];
+  if (!def) return [];
+  const presentIds = new Set(item.affixes.map((affix) => affix.id));
+  return buildEligibleAffixPool(def).filter((affix) => !presentIds.has(affix.id));
 }
 
 function affixMaxValue(roll: GearAffixRoll, rarity: GearRarity): number {
@@ -188,7 +194,7 @@ export function canApplyCraftingCurrency(currencyId: CraftingCurrencyId, item: G
     case "discordant-dice":
       return item.affixes.length > 0;
     case "sprig-of-growth":
-      return item.affixes.length < GEAR_AFFIX_COUNT[rarity].max;
+      return item.affixes.length < GEAR_AFFIX_COUNT[rarity].max && availableAffixesForItem(item).length > 0;
     case "voidstone":
       return item.affixes.length > 0;
     case "ascension-seal": {

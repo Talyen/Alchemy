@@ -51,7 +51,7 @@ type GearStore = {
     options?: { vacatedPlacement?: { col: number; row: number }; swapDisplaced?: boolean },
   ) => void;
   unequip: (characterId: CharacterId, slot: GearSlot) => void;
-  moveBoardItem: (characterId: CharacterId, item: BoardItemRef, col: number, row: number) => void;
+  moveBoardItem: (characterId: CharacterId, item: BoardItemRef, col: number, row: number) => boolean;
   syncBoardPositions: () => void;
   sortBoard: (characterId: CharacterId) => void;
   salvage: (
@@ -70,6 +70,24 @@ const initialState = {
   currencyBoardPositionsByCharacter: createEmptyCurrencyBoardPositionsByCharacter(),
   craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
 };
+
+function boardPositionRegistriesEqual(
+  left: Record<string, Record<string, { col: number; row: number } | undefined>>,
+  right: Record<string, Record<string, { col: number; row: number } | undefined>>,
+): boolean {
+  const characterIds = new Set([...Object.keys(left), ...Object.keys(right)]);
+  for (const characterId of characterIds) {
+    const leftPositions = left[characterId] ?? {};
+    const rightPositions = right[characterId] ?? {};
+    const positionIds = new Set([...Object.keys(leftPositions), ...Object.keys(rightPositions)]);
+    for (const positionId of positionIds) {
+      const leftPosition = leftPositions[positionId];
+      const rightPosition = rightPositions[positionId];
+      if (leftPosition?.col !== rightPosition?.col || leftPosition?.row !== rightPosition?.row) return false;
+    }
+  }
+  return true;
+}
 
 export const useGearStore = create<GearStore>((set, get) => ({
   ...initialState,
@@ -193,8 +211,15 @@ export const useGearStore = create<GearStore>((set, get) => ({
         loadouts: nextLoadouts,
       });
     }),
-  moveBoardItem: (characterId, item, col, row) =>
-    set((state) => moveBoardItemForState(state, characterId, item, col, row)),
+  moveBoardItem: (characterId, item, col, row) => {
+    const before = get();
+    set((state) => moveBoardItemForState(state, characterId, item, col, row));
+    const after = get();
+    return (
+      !boardPositionRegistriesEqual(before.boardPositionsByCharacter, after.boardPositionsByCharacter) ||
+      !boardPositionRegistriesEqual(before.currencyBoardPositionsByCharacter, after.currencyBoardPositionsByCharacter)
+    );
+  },
   syncBoardPositions: () =>
     set((state) => {
       return updateGearStateAndSync(state, {});
@@ -261,6 +286,7 @@ export const useGearStore = create<GearStore>((set, get) => ({
     const rng = options?.rng;
     if (!rng) throw new Error("applyCurrency requires an explicit rng");
     const updatedItem = applyCraftingCurrency(currencyId, item, rng);
+    if (updatedItem === item) return false;
     const nextInventories = {
       ...state.inventories,
       [owner]: state.inventories[owner].map((i) => (i.instanceId === instanceId ? updatedItem : i)),

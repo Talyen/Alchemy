@@ -216,4 +216,61 @@ describe("useBoardDrag", () => {
       height: 40,
     });
   });
+
+  it("commits flyovers only when their animation completes naturally", () => {
+    vi.useFakeTimers();
+    const commit = vi.fn();
+    const inventoryBoardRef = { current: null };
+
+    const { result } = renderHook(() =>
+      useBoardDrag({
+        itemLookup: { id: "item-1" },
+        getItemId: (item) => item.id,
+        getOrigin: () => ({ kind: "inventory", placement: { col: 1, row: 1 } }),
+        getFootprint: () => ({ w: 1, h: 1 }),
+        inventoryBoardRef,
+        occupiedRows: 0,
+        onCommit: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      result.current.flyoverTo(
+        { id: "item-1" },
+        {
+          kind: "inventory",
+          placement: { col: 2, row: 1 },
+          rect: { left: 10, top: 10, width: 20, height: 20 },
+        },
+        commit,
+        { left: 0, top: 0, width: 20, height: 20 },
+        50,
+      );
+    });
+
+    act(() => {
+      result.current.clearDragState();
+      vi.advanceTimersByTime(50);
+    });
+
+    expect(commit).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.flyoverTo(
+        { id: "item-1" },
+        {
+          kind: "inventory",
+          placement: { col: 3, row: 1 },
+          rect: { left: 20, top: 10, width: 20, height: 20 },
+        },
+        commit,
+        { left: 0, top: 0, width: 20, height: 20 },
+        50,
+      );
+      vi.advanceTimersByTime(50);
+    });
+
+    expect(commit).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
 });

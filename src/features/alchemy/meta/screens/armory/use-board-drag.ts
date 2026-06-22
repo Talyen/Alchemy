@@ -158,8 +158,23 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
     setActiveId(null);
     setDragVisual(null);
     activeDragRef.current = null;
-    pendingCommitRef.current?.();
     pendingCommitRef.current = null;
+    onClear?.();
+  }, [onClear]);
+
+  const completeDragAnimation = useCallback(() => {
+    if (cleanupTimerRef.current !== null) {
+      window.clearTimeout(cleanupTimerRef.current);
+      cleanupTimerRef.current = null;
+    }
+    heldCleanupRef.current?.();
+    heldCleanupRef.current = null;
+    setActiveId(null);
+    setDragVisual(null);
+    activeDragRef.current = null;
+    const pendingCommit = pendingCommitRef.current;
+    pendingCommitRef.current = null;
+    pendingCommit?.();
     onClear?.();
   }, [onClear]);
 
@@ -167,10 +182,10 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
     (delay = 1000) => {
       if (cleanupTimerRef.current !== null) window.clearTimeout(cleanupTimerRef.current);
       cleanupTimerRef.current = window.setTimeout(() => {
-        clearDragState();
+        completeDragAnimation();
       }, delay);
     },
-    [clearDragState],
+    [completeDragAnimation],
   );
 
   const commitDestination = useCallback(
@@ -324,7 +339,6 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       }
       heldCleanupRef.current?.();
       heldCleanupRef.current = null;
-      pendingCommitRef.current?.();
       pendingCommitRef.current = null;
       activeDragRef.current = null;
       setDragVisual(null);

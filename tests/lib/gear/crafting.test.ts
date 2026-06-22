@@ -101,6 +101,17 @@ describe("crafting currency logic", () => {
     expect(updated.affixes[1].id).toBeDefined();
   });
 
+  it("does not allow Sprig of Growth when the eligible affix pool is exhausted", () => {
+    const item: GearInstance = {
+      instanceId: "exhausted-pool",
+      definitionId: "unknown-basic",
+      affixes: [{ id: "flat-physical", value: 1 }],
+    };
+
+    expect(canApplyCraftingCurrency("sprig-of-growth", item)).toBe(false);
+    expect(applyCraftingCurrency("sprig-of-growth", item, () => 0)).toBe(item);
+  });
+
   it("removes all affixes with Voidstone", () => {
     const updated = applyCraftingCurrency("voidstone", createBasicItem([{ id: "flat-physical", value: 1 }]), () => 0.5);
     expect(updated.affixes).toEqual([]);

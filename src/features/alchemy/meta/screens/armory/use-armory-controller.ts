@@ -45,7 +45,7 @@ export type ArmoryController = {
   onSalvage: (instanceId: string) => boolean;
   onTransferGear: (instanceId: string, targetCharacterId: CharacterId) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
-  onMoveBoardItem: (characterId: CharacterId, item: BoardItemRef, col: number, row: number) => void;
+  onMoveBoardItem: (characterId: CharacterId, item: BoardItemRef, col: number, row: number) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
   onSortBoard: (characterId: CharacterId) => void;
 };
@@ -169,10 +169,12 @@ export function useArmoryController(): ArmoryController {
 
   const onMoveBoardItem = useCallback<ArmoryController["onMoveBoardItem"]>(
     (characterId, item, col, row) => {
-      if (hasActiveBattle) return;
-      gear.moveBoardItem(characterId, item, col, row);
+      if (hasActiveBattle) return false;
+      const changed = gear.moveBoardItem(characterId, item, col, row);
+      if (changed) flush();
+      return changed;
     },
-    [gear, hasActiveBattle],
+    [flush, gear, hasActiveBattle],
   );
 
   const onApplyCurrency = useCallback<ArmoryController["onApplyCurrency"]>(
