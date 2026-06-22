@@ -147,6 +147,7 @@ export type BattleCard = {
   /** Playstyle tags (e.g. archery) counted for talent XP; not damage types. */
   tags?: KeywordId[];
   effects: BattleCardEffect[];
+  excludeFromOfferPool?: boolean;
 };
 
 export type EnemyType = "normal" | "elite" | "boss";

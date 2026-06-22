@@ -9,6 +9,12 @@ import {
   type CompanionId,
   type DifficultyId,
   type UnlockedTalents,
+  DAMAGE_TYPES,
+  PLAYER_STATUS_DISPLAY_ORDER,
+  ENEMY_STATUS_DISPLAY_ORDER,
+  type DamageType,
+  type PlayerStatusId,
+  type EnemyStatusId,
 } from "@/lib/game-data";
 import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies } from "@/lib/gear/crafting";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
@@ -38,19 +44,14 @@ function createMaterialInventoryShape() {
 export const CharacterIdSchema = z.enum(CHARACTER_IDS);
 export const DifficultyIdSchema = z.enum(DIFFICULTY_IDS);
 export const ContentSystemIdSchema = z.enum(["campaign", "labyrinth", "wildwood"]);
-export const DamageTypeSchema = z.enum(["physical", "stun", "holy", "burn", "poison", "bleed", "freeze", "nature"]);
-export const PlayerStatusIdSchema = z.enum([
-  "block",
-  "armor",
-  "forge",
-  "haste",
-  "burn",
-  "poison",
-  "bleed",
-  "freeze",
-  "stun",
-]);
-export const EnemyStatusIdSchema = z.enum(["burn", "poison", "bleed", "freeze", "stun"]);
+
+const DAMAGE_TYPE_VALUES = toNonEmptyTuple(DAMAGE_TYPES as DamageType[], "Damage types");
+const PLAYER_STATUS_IDS = toNonEmptyTuple(PLAYER_STATUS_DISPLAY_ORDER as PlayerStatusId[], "Player status IDs");
+const ENEMY_STATUS_IDS = toNonEmptyTuple(ENEMY_STATUS_DISPLAY_ORDER as EnemyStatusId[], "Enemy status IDs");
+
+export const DamageTypeSchema = z.enum(DAMAGE_TYPE_VALUES);
+export const PlayerStatusIdSchema = z.enum(PLAYER_STATUS_IDS);
+export const EnemyStatusIdSchema = z.enum(ENEMY_STATUS_IDS);
 export const CompanionIdSchema = z.enum(COMPANION_IDS);
 export const LabyrinthNodeTypeSchema = z.enum([
   "entrance",

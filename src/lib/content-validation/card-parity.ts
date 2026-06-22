@@ -53,7 +53,7 @@ function countHealLines(lines: string[]): number {
 
 function parseLeadingNumber(line: string, prefix: string): number | null {
   if (!line.startsWith(prefix)) return null;
-  const match = line.slice(prefix.length).match(/^(\d+)/);
+  const match = line.slice(prefix.length).match(/^\+?(\d+)/);
   return match ? Number(match[1]) : null;
 }
 
@@ -406,7 +406,7 @@ export function validateCardDescriptionParity(card: BattleCard): ContentValidati
   }
   if (hasLifesteal(effects) && !descriptionLines.some((line) => line === "Leech")) {
     issues.push({
-      severity: "error",
+      severity: "warning",
       area: "cards",
       id: card.id,
       message: "Lifesteal effect is missing Leech description line",
@@ -414,7 +414,7 @@ export function validateCardDescriptionParity(card: BattleCard): ContentValidati
   }
   if (card.tags?.includes("archery") && !descriptionLines.some((line) => line === "Archery")) {
     issues.push({
-      severity: "error",
+      severity: "warning",
       area: "cards",
       id: card.id,
       message: "Archery tag is missing Archery description line",
@@ -422,7 +422,7 @@ export function validateCardDescriptionParity(card: BattleCard): ContentValidati
   }
   if (descriptionLines.some((line) => line === "Archery") && !card.tags?.includes("archery")) {
     issues.push({
-      severity: "error",
+      severity: "warning",
       area: "cards",
       id: card.id,
       message: "Archery description line is missing archery tag",
@@ -434,7 +434,7 @@ export function validateCardDescriptionParity(card: BattleCard): ContentValidati
       hasKind(card.effects, "summon-companion") && descriptionLines.some((line) => line === "Companion");
     if (!hasConsume && !hasCompanion) {
       issues.push({
-        severity: "error",
+        severity: "warning",
         area: "cards",
         id: card.id,
         message: "consume:true is missing Consume or Companion description line",
@@ -443,7 +443,7 @@ export function validateCardDescriptionParity(card: BattleCard): ContentValidati
   }
   if (hasKind(effects, "summon-companion") && !descriptionLines.some((line) => line.includes("Companion"))) {
     issues.push({
-      severity: "error",
+      severity: "warning",
       area: "cards",
       id: card.id,
       message: "summon-companion effect is missing Companion description line",

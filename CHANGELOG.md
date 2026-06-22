@@ -666,6 +666,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(style): modernize theme keyframes and convert custom utilities to tailwind v4 directives
 - refactor(style): simplify index.css architecture and consolidate theme tokens
 - refactor(content-validation): simplify card-parity validation
 - refactor(battle): simplify battle controller architecture and dependencies
@@ -1401,6 +1402,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore(repo): reorganize feature tests to mirror source paths
 - chore: remove unused battle-facade, ignore tailwindcss-animate false positive
 - chore: delete unused expectItemAtCell helper
 - chore: remove unused exports across the codebase

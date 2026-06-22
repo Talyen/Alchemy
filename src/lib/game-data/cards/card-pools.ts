@@ -8,7 +8,7 @@ export function isStandardPotionCard(card: Pick<BattleCard, "id">): boolean {
 }
 
 export function getOfferableCardPool(): BattleCard[] {
-  return cardLibrary.filter((card) => card.id !== MIXED_POTION_CARD_ID);
+  return cardLibrary.filter((card) => !card.excludeFromOfferPool);
 }
 
 export function getStandardPotionPool(): BattleCard[] {

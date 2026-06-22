@@ -1,7 +1,6 @@
 // Startup validation: asserts critical game constants are positive and data arrays
 // are non-empty. Deferred to idle time so it doesn't compete with the first frame.
 import { companionLibrary, enemyBestiary, cardLibrary, getOfferableCardPool } from "./game-data";
-import { MIXED_POTION_CARD_ID } from "./game-constants";
 import { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./battle/enemy-turn-traits";
 import { logError } from "./error-logger";
 
@@ -26,10 +25,8 @@ export function runStartupValidation() {
 
   const offerableIds = new Set(getOfferableCardPool().map((card) => card.id));
   check(
-    "getOfferableCardPool includes every library card except mixed potion",
-    cardLibrary.every((card) =>
-      card.id === MIXED_POTION_CARD_ID ? !offerableIds.has(card.id) : offerableIds.has(card.id),
-    ),
+    "getOfferableCardPool includes every library card except excluded ones",
+    cardLibrary.every((card) => (card.excludeFromOfferPool ? !offerableIds.has(card.id) : offerableIds.has(card.id))),
   );
 
   for (const [companionId, companion] of Object.entries(companionLibrary)) {

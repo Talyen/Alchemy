@@ -209,6 +209,7 @@ export const cardLibrary: BattleCard[] = [
     cost: 1,
     consume: true,
     effects: [],
+    excludeFromOfferPool: true,
   },
   summonCompanionCard({ id: "wolf-companion", art: wolfCompanion, companionId: "wolf" }),
   summonCompanionCard({

@@ -21,7 +21,7 @@ import {
   GEAR_RARITIES,
 } from "@/lib/gear";
 import { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "@/lib/battle";
-import { GEAR_AFFIX_COUNT, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
+import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
 import {
   COMBAT_ENCOUNTER_TRAIT_IDS,
   REWARD_ENCOUNTER_TRAIT_IDS,
@@ -72,16 +72,16 @@ export function validateCards(collector: ReturnType<typeof createCollector>): vo
         collector.error("cards", card.id, `References unknown companion: ${effect.companionId}`);
       }
     }
-    if (card.id === MIXED_POTION_CARD_ID && offerableIds.has(card.id)) {
-      collector.error("rewards", card.id, "Mixed Potion must not be offerable in normal card rewards");
+    if (card.excludeFromOfferPool && offerableIds.has(card.id)) {
+      collector.error("rewards", card.id, "Card is excluded from offer pool but was found in offerable card pool");
     }
-    if (card.id !== MIXED_POTION_CARD_ID && !offerableIds.has(card.id)) {
+    if (!card.excludeFromOfferPool && !offerableIds.has(card.id)) {
       collector.error("rewards", card.id, "Library card is missing from offerable card pool");
     }
     if (card.cost >= 5) {
       collector.warning("balance", card.id, `Card cost ${card.cost} is unusually high`);
     }
-    if (card.effects.length === 0 && card.id !== MIXED_POTION_CARD_ID) {
+    if (card.effects.length === 0 && !card.excludeFromOfferPool) {
       collector.warning("balance", card.id, "Card has no authored effects");
     }
   }

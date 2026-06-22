@@ -1,30 +1,17 @@
 import { z } from "zod";
-import { BattleCardEffectSchema, DAMAGE_TYPES, keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import { BattleCardEffectSchema, keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { GEAR_AFFIX_IDS, GEAR_EFFECT_KEYS, GEAR_RARITIES, GEAR_SLOTS } from "@/lib/gear";
+import { DamageTypeSchema, PlayerStatusIdSchema, EnemyStatusIdSchema } from "@/lib/validation";
 import { COMBAT_ENCOUNTER_TRAIT_IDS, REWARD_ENCOUNTER_TRAIT_IDS } from "../content-systems/encounter-traits";
 
 const keywordIds = Object.keys(keywordDefinitions) as [KeywordId, ...KeywordId[]];
-const playerStatusIds = [
-  "block",
-  "armor",
-  "forge",
-  "haste",
-  "phoenixFeather",
-  "burn",
-  "poison",
-  "bleed",
-  "freeze",
-  "stun",
-] as const;
-export const enemyStatusIds = ["burn", "poison", "bleed", "freeze", "stun"] as const;
+export const enemyStatusIds = EnemyStatusIdSchema.options;
 export const enemyTypes = ["normal", "elite", "boss"] as const;
 
 const NonEmptyStringSchema = z.string().min(1);
 const PositiveIntegerSchema = z.number().int().positive();
 const NonNegativeIntegerSchema = z.number().int().nonnegative();
 const KeywordIdSchema = z.enum(keywordIds);
-const PlayerStatusIdSchema = z.enum(playerStatusIds);
-const DamageTypeSchema = z.enum(DAMAGE_TYPES as [string, ...string[]]);
 
 export const CardContentSchema = z.object({
   id: NonEmptyStringSchema,
@@ -35,6 +22,7 @@ export const CardContentSchema = z.object({
   consume: z.boolean().optional(),
   tags: z.array(KeywordIdSchema).optional(),
   effects: z.array(BattleCardEffectSchema),
+  excludeFromOfferPool: z.boolean().optional(),
 });
 
 const EnemyAttackEffectSchema = z.discriminatedUnion("kind", [
