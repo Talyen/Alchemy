@@ -41,15 +41,4 @@ export function defineResearch(id: ResearchId, title: string, tiers: HomesteadUp
   return { id, title, description: "", buttonLabel: "Research", tiers };
 }
 
-export function placeholderFarm(id: FarmId, title: string, costs: readonly MaterialInventory[]): HomesteadFarm {
-  return {
-    ...defineFarm(
-      id,
-      title,
-      costs.map((cost) => ({ cost, benefitDescription: "Produces ???" })),
-    ),
-    hidden: true,
-  };
-}
-
 export { dualMaterialCosts, materialCost, singleMaterialCosts };

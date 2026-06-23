@@ -8,7 +8,6 @@ import {
   defineResearch,
   dualMaterialCosts,
   materialCost,
-  placeholderFarm,
   singleMaterialCosts,
   stackingTiers,
 } from "./data-builders";
@@ -101,11 +100,6 @@ export const farmPlots = [
       "Gain Herbs after each run",
     ),
   ),
-  placeholderFarm("wheat-field", "Wheat Field", singleMaterialCosts("food")),
-  placeholderFarm("chicken-coop", "Chicken Coop", singleMaterialCosts("food")),
-  placeholderFarm("pasture", "Pasture", singleMaterialCosts("food")),
-  placeholderFarm("orchard", "Orchard", dualMaterialCosts("wood", "food")),
-  placeholderFarm("crystal-garden", "Crystal Garden", singleMaterialCosts("crystal")),
 ];
 
 export const visibleFarmPlots = farmPlots.filter((farm) => !farm.hidden);

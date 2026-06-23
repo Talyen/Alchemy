@@ -4,13 +4,29 @@ import {
   gearArtByDefinitionId,
   mysteryEventArt,
   placeholderCard,
+  placeholderClass,
+  placeholderDestination,
+  placeholderDifficulty,
   placeholderEnemy,
+  placeholderGameMode,
+  placeholderHomestead,
   placeholderMystery,
+  placeholderTrinket,
 } from "@/lib/game-data";
 import type { ContentValidationArea, ContentValidationIssue, ContentValidationSeverity } from "./types";
 
 const knownArt = new Set([...allGameArt, ...Object.values(mysteryEventArt), ...Object.values(gearArtByDefinitionId)]);
-const placeholderArt = new Set([placeholderCard, placeholderEnemy, placeholderMystery]);
+const placeholderArt = new Set([
+  placeholderCard,
+  placeholderClass,
+  placeholderDestination,
+  placeholderDifficulty,
+  placeholderEnemy,
+  placeholderGameMode,
+  placeholderHomestead,
+  placeholderMystery,
+  placeholderTrinket,
+]);
 
 function createIssue(
   severity: ContentValidationSeverity,

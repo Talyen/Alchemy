@@ -33,7 +33,6 @@ import {
 
 import {
   alchemistShopBg,
-  bossCombat,
   campfire,
   corruptionAltar,
   eliteEnemyBg,
@@ -66,7 +65,7 @@ export const destinationMeta: Record<Destination, { icon: LucideIcon; accentClas
   Mystery: { icon: Sparkles, accentClassName: "text-zinc-200", art: mysteryBg },
   Corruption: { icon: Dices, accentClassName: "text-red-400", art: corruptionAltar },
   Campfire: { icon: Flame, accentClassName: "text-emerald-300", art: campfire },
-  "Boss Combat": { icon: Skull, accentClassName: "text-red-400", art: bossCombat },
+  "Boss Combat": { icon: Skull, accentClassName: "text-red-400", art: normalEnemyBg },
 };
 
 // Game mode visual theming for the game mode selection screen.
