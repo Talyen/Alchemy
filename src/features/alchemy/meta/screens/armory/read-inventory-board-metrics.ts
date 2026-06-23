@@ -1,3 +1,21 @@
+function readStyleInset(style: CSSStyleDeclaration, prop: string): number {
+  return parseFloat(style.getPropertyValue(prop)) || 0;
+}
+
+function buildAdjustedDOMRect(boardRect: DOMRect, inset: { l: number; t: number; r: number; b: number }): DOMRect {
+  return {
+    left: boardRect.left + inset.l,
+    top: boardRect.top + inset.t,
+    right: boardRect.right - inset.r,
+    bottom: boardRect.bottom - inset.b,
+    width: boardRect.width - inset.l - inset.r,
+    height: boardRect.height - inset.t - inset.b,
+    x: boardRect.left + inset.l,
+    y: boardRect.top + inset.t,
+    toJSON: () => ({}),
+  } as DOMRect;
+}
+
 export function readInventoryBoardMetrics(board: HTMLElement): {
   cellSize: number;
   gap: number;
@@ -12,26 +30,12 @@ export function readInventoryBoardMetrics(board: HTMLElement): {
   const gap = strideMetric.left - cellMetric.left - cellSize;
 
   const style = window.getComputedStyle(board);
-  const paddingLeft = parseFloat(style.paddingLeft || "0") || 0;
-  const paddingTop = parseFloat(style.paddingTop || "0") || 0;
-  const paddingRight = parseFloat(style.paddingRight || "0") || 0;
-  const paddingBottom = parseFloat(style.paddingBottom || "0") || 0;
-  const borderLeft = parseFloat(style.borderLeftWidth || "0") || 0;
-  const borderTop = parseFloat(style.borderTopWidth || "0") || 0;
-  const borderRight = parseFloat(style.borderRightWidth || "0") || 0;
-  const borderBottom = parseFloat(style.borderBottomWidth || "0") || 0;
+  const inset = {
+    l: readStyleInset(style, "padding-left") + readStyleInset(style, "border-left-width"),
+    t: readStyleInset(style, "padding-top") + readStyleInset(style, "border-top-width"),
+    r: readStyleInset(style, "padding-right") + readStyleInset(style, "border-right-width"),
+    b: readStyleInset(style, "padding-bottom") + readStyleInset(style, "border-bottom-width"),
+  };
 
-  const adjustedRect = {
-    left: boardRect.left + paddingLeft + borderLeft,
-    top: boardRect.top + paddingTop + borderTop,
-    right: boardRect.right - paddingRight - borderRight,
-    bottom: boardRect.bottom - paddingBottom - borderBottom,
-    width: boardRect.width - paddingLeft - paddingRight - borderLeft - borderRight,
-    height: boardRect.height - paddingTop - paddingBottom - borderTop - borderBottom,
-    x: boardRect.left + paddingLeft + borderLeft,
-    y: boardRect.top + paddingTop + borderTop,
-    toJSON: () => ({}),
-  } as DOMRect;
-
-  return { cellSize, gap, boardRect: adjustedRect, scrollTop: board.scrollTop };
+  return { cellSize, gap, boardRect: buildAdjustedDOMRect(boardRect, inset), scrollTop: board.scrollTop };
 }

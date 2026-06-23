@@ -2,7 +2,6 @@
 // Handles tilt mechanics (mouseMove/mouseLeave → setTiltFromEvent/clearTiltFromEvent)
 // and the common card-surface decoration shared across card, boon, character, and homestead tiles.
 import {
-  useEffect,
   useRef,
   type CSSProperties,
   type KeyboardEvent,
@@ -15,7 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import { staticCardTransform } from "../config/layout";
-import { clearTiltElement, clearTiltFromEvent, DEFAULT_TILT_STRENGTH, setTiltFromEvent } from "../utils";
+import { clearTiltFromEvent, DEFAULT_TILT_STRENGTH, setTiltFromEvent } from "../utils";
 import { ShimmerOverlay } from "./shimmer";
 
 interface TiltSurfaceProps {
@@ -58,8 +57,34 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
   ref.current = value;
 }
 
-export function TiltSurface({
-  as: Component = "div",
+interface ShimmerProps {
+  active: boolean | undefined;
+  token: number | undefined;
+  rounded: string | undefined;
+}
+function ShimmerSlot({ active, token, rounded }: ShimmerProps) {
+  return active !== undefined ? (
+    <ShimmerOverlay active={active} token={token} rounded={rounded ?? "rounded-shell-hero"} />
+  ) : null;
+}
+
+const TILT_CLASSES = "tilt-surface";
+
+function useTiltHandlers(canTilt: boolean, onMouseLeave?: (e: MouseEvent<HTMLElement>) => void) {
+  const handleMouseMove = canTilt ? setTiltFromEvent : undefined;
+  const handleMouseLeave = (e: MouseEvent<HTMLElement>) => {
+    if (canTilt) clearTiltFromEvent(e);
+    onMouseLeave?.(e);
+  };
+  return { handleMouseMove, handleMouseLeave };
+}
+
+interface TiltSurfaceInner extends TiltSurfaceProps {
+  surfaceStyle: CSSProperties;
+  children: ReactNode;
+}
+
+function TiltSurfaceButton({
   children,
   className,
   shimmerActive,
@@ -68,13 +93,8 @@ export function TiltSurface({
   selected,
   disabled,
   dragging,
-  tiltEnabled = true,
-  tiltStrength = DEFAULT_TILT_STRENGTH,
-  baseTransform,
-  style,
   onClick,
   onDoubleClick,
-  onDivClick,
   onPointerDown,
   onFocus,
   onBlur,
@@ -82,29 +102,72 @@ export function TiltSurface({
   ariaPressed,
   ariaExpanded,
   buttonRef,
+  testId,
+  tiltStrength,
+  onMouseEnter,
+  onMouseLeave,
+  surfaceStyle,
+}: TiltSurfaceInner) {
+  const canTilt = !disabled;
+  const buttonRef_ = useRef<HTMLButtonElement | null>(null);
+  const { handleMouseMove, handleMouseLeave } = useTiltHandlers(canTilt, onMouseLeave);
+  return (
+    <button
+      ref={(element) => {
+        buttonRef_.current = element;
+        assignRef(buttonRef, element);
+      }}
+      type="button"
+      aria-label={ariaLabel}
+      {...(ariaPressed !== undefined ? { "aria-pressed": ariaPressed } : {})}
+      {...(ariaExpanded !== undefined ? { "aria-expanded": ariaExpanded } : {})}
+      disabled={disabled}
+      onClick={onClick}
+      onDoubleClick={onDoubleClick}
+      onPointerDown={onPointerDown}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      data-testid={testId}
+      data-tilt-strength={String(tiltStrength ?? DEFAULT_TILT_STRENGTH)}
+      className={cn(
+        TILT_CLASSES,
+        selected && "ring-2 ring-primary ring-offset-4 ring-offset-background",
+        disabled && "cursor-default grayscale",
+        dragging && "opacity-0",
+        className,
+      )}
+      style={surfaceStyle}
+    >
+      <ShimmerSlot active={shimmerActive} token={shimmerToken} rounded={shimmerRounded} />
+      {children}
+    </button>
+  );
+}
+
+function TiltSurfaceDiv({
+  children,
+  className,
+  shimmerActive,
+  shimmerToken,
+  shimmerRounded,
+  selected,
+  dragging,
+  onDivClick,
+  ariaLabel,
+  ariaExpanded,
   surfaceRef,
   testId,
   dataCount,
+  tiltStrength,
   onMouseEnter,
   onMouseLeave,
-}: TiltSurfaceProps) {
-  const isButton = Component === "button";
-  const canTilt = tiltEnabled && !(isButton && disabled);
-  const surfaceElementRef = useRef<HTMLDivElement | null>(null);
-  const buttonElementRef = useRef<HTMLButtonElement | null>(null);
-
-  useEffect(() => {
-    if (canTilt) return;
-    if (surfaceElementRef.current) clearTiltElement(surfaceElementRef.current);
-    if (buttonElementRef.current) clearTiltElement(buttonElementRef.current);
-  }, [canTilt]);
-
-  const handleMouseMove = canTilt ? setTiltFromEvent : undefined;
-  const handleMouseLeave = (e: MouseEvent<HTMLElement>) => {
-    if (canTilt) clearTiltFromEvent(e);
-    onMouseLeave?.(e);
-  };
-
+  surfaceStyle,
+}: TiltSurfaceInner) {
+  const surfaceRef_ = useRef<HTMLDivElement | null>(null);
+  const { handleMouseMove, handleMouseLeave } = useTiltHandlers(true, onMouseLeave);
   const handleDivKeyDown = onDivClick
     ? (e: KeyboardEvent<HTMLDivElement>) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -113,56 +176,10 @@ export function TiltSurface({
         }
       }
     : undefined;
-
-  const surfaceStyle = { "--card-base-transform": baseTransform ?? staticCardTransform, ...style } as CSSProperties;
-
-  if (isButton) {
-    return (
-      <button
-        ref={(element) => {
-          buttonElementRef.current = element;
-          assignRef(buttonRef, element);
-        }}
-        type="button"
-        aria-label={ariaLabel}
-        {...(ariaPressed !== undefined ? { "aria-pressed": ariaPressed } : {})}
-        {...(ariaExpanded !== undefined ? { "aria-expanded": ariaExpanded } : {})}
-        disabled={disabled}
-        onClick={onClick}
-        onDoubleClick={onDoubleClick}
-        onPointerDown={onPointerDown}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        onMouseMove={handleMouseMove}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        data-testid={testId}
-        data-tilt-strength={String(tiltStrength)}
-        className={cn(
-          "tilt-surface",
-          selected && "ring-2 ring-primary ring-offset-4 ring-offset-background",
-          disabled && "cursor-default grayscale",
-          dragging && "opacity-0",
-          className,
-        )}
-        style={surfaceStyle}
-      >
-        {shimmerActive !== undefined ? (
-          <ShimmerOverlay
-            active={shimmerActive}
-            token={shimmerToken}
-            rounded={shimmerRounded ?? "rounded-shell-hero"}
-          />
-        ) : null}
-        {children}
-      </button>
-    );
-  }
-
   return (
     <div
       ref={(element) => {
-        surfaceElementRef.current = element;
+        surfaceRef_.current = element;
         assignRef(surfaceRef, element);
       }}
       data-testid={testId}
@@ -176,19 +193,41 @@ export function TiltSurface({
       onMouseMove={handleMouseMove}
       onMouseEnter={onMouseEnter}
       onMouseLeave={handleMouseLeave}
-      data-tilt-strength={String(tiltStrength)}
+      data-tilt-strength={String(tiltStrength ?? DEFAULT_TILT_STRENGTH)}
       className={cn(
-        "tilt-surface",
+        TILT_CLASSES,
         selected && "ring-2 ring-primary ring-offset-4 ring-offset-background",
         dragging && "opacity-0",
         className,
       )}
       style={surfaceStyle}
     >
-      {shimmerActive !== undefined ? (
-        <ShimmerOverlay active={shimmerActive} token={shimmerToken} rounded={shimmerRounded ?? "rounded-shell-hero"} />
-      ) : null}
+      <ShimmerSlot active={shimmerActive} token={shimmerToken} rounded={shimmerRounded} />
       {children}
     </div>
+  );
+}
+
+export function TiltSurface(props: TiltSurfaceProps) {
+  const {
+    as: Component = "div",
+    tiltEnabled = true,
+    tiltStrength = DEFAULT_TILT_STRENGTH,
+    baseTransform,
+    style,
+    children,
+    ...rest
+  } = props;
+  const surfaceStyle = { "--card-base-transform": baseTransform ?? staticCardTransform, ...style } as CSSProperties;
+  if (Component === "button")
+    return (
+      <TiltSurfaceButton tiltStrength={tiltStrength} {...rest} surfaceStyle={surfaceStyle}>
+        {children}
+      </TiltSurfaceButton>
+    );
+  return (
+    <TiltSurfaceDiv tiltStrength={tiltStrength} {...rest} surfaceStyle={surfaceStyle}>
+      {children}
+    </TiltSurfaceDiv>
   );
 }

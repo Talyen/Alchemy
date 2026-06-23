@@ -70,6 +70,49 @@ export function findEquipSlotForDoubleClickedGear(loadout: GearLoadout, definiti
   return slot;
 }
 
+function findSlotUnderPointer(
+  pointer: DragPoint,
+  definition: GearDefinition,
+  loadout: GearLoadout,
+  inventoryList: GearInstance[],
+  snapInsetRatio: number,
+): { slot: GearSlot; rect: DOMRect } | null {
+  const element = document.elementFromPoint(pointer.x, pointer.y);
+  const slotEl = element?.closest<HTMLElement>("[data-testid='armory-equipment-slot']");
+  const slot = slotEl?.dataset.slot as GearSlot | undefined;
+  if (!slotEl || !slot || !isGearCompatibleWithLoadoutSlot(definition, slot, loadout, inventoryList)) return null;
+  const rect = slotEl.getBoundingClientRect();
+  const insetX = rect.width * snapInsetRatio;
+  const insetY = rect.height * snapInsetRatio;
+  if (pointer.x < rect.left + insetX || pointer.x > rect.right - insetX) return null;
+  if (pointer.y < rect.top + insetY || pointer.y > rect.bottom - insetY) return null;
+  return { slot, rect };
+}
+
+function findNearestCompatibleSlot(
+  pointer: DragPoint,
+  definition: GearDefinition,
+  loadout: GearLoadout,
+  inventoryList: GearInstance[],
+): { slot: GearSlot; rect: DOMRect } | null {
+  const slots = document.querySelectorAll<HTMLElement>("[data-testid='armory-equipment-slot']");
+  let best: { slot: GearSlot; rect: DOMRect } | null = null;
+  let bestDist = 48;
+  for (const el of slots) {
+    const candidate = el.dataset.slot as GearSlot | undefined;
+    if (!candidate || !isGearCompatibleWithLoadoutSlot(definition, candidate, loadout, inventoryList)) continue;
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const dist = Math.hypot(pointer.x - cx, pointer.y - cy);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = { slot: candidate, rect: r };
+    }
+  }
+  return best;
+}
+
 export function resolveEquipmentSlotAtPointer({
   pointer,
   activeInstance,
@@ -89,45 +132,12 @@ export function resolveEquipmentSlotAtPointer({
   const definition = gearDefinitions[activeInstance.definitionId];
   if (!definition) return null;
 
-  const element = document.elementFromPoint(pointer.x, pointer.y);
-  const slotElement = element?.closest<HTMLElement>("[data-testid='armory-equipment-slot']");
-  const slot = slotElement?.dataset.slot as GearSlot | undefined;
   const inventoryList = Array.from(inventoryById.values());
+  const directHit = findSlotUnderPointer(pointer, definition, loadout, inventoryList, equipmentSnapInsetRatio);
+  if (directHit) return { kind: "equipment", slot: directHit.slot, rect: directHit.rect };
 
-  if (slotElement && slot && isGearCompatibleWithLoadoutSlot(definition, slot, loadout, inventoryList)) {
-    const rect = slotElement.getBoundingClientRect();
-    const insetX = rect.width * equipmentSnapInsetRatio;
-    const insetY = rect.height * equipmentSnapInsetRatio;
-    if (
-      pointer.x >= rect.left + insetX &&
-      pointer.x <= rect.right - insetX &&
-      pointer.y >= rect.top + insetY &&
-      pointer.y <= rect.bottom - insetY
-    ) {
-      return { kind: "equipment", slot, rect };
-    }
-  }
-
-  const allSlots = document.querySelectorAll<HTMLElement>("[data-testid='armory-equipment-slot']");
-  let bestSlot: { slot: GearSlot; rect: DOMRect } | null = null;
-  let bestDistance = 48;
-  for (const el of allSlots) {
-    const candidateSlot = el.dataset.slot as GearSlot | undefined;
-    if (!candidateSlot || !isGearCompatibleWithLoadoutSlot(definition, candidateSlot, loadout, inventoryList)) continue;
-    const r = el.getBoundingClientRect();
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-    const dist = Math.hypot(pointer.x - cx, pointer.y - cy);
-    if (dist < bestDistance) {
-      bestDistance = dist;
-      bestSlot = { slot: candidateSlot, rect: r };
-    }
-  }
-
-  if (bestSlot) {
-    return { kind: "equipment", slot: bestSlot.slot, rect: bestSlot.rect };
-  }
-
+  const nearest = findNearestCompatibleSlot(pointer, definition, loadout, inventoryList);
+  if (nearest) return { kind: "equipment", slot: nearest.slot, rect: nearest.rect };
   return null;
 }
 
@@ -151,6 +161,52 @@ export function getInventoryDragDestination({
   };
 }
 
+function shouldDisplaceOtherSlot(slot: GearSlot, def: GearDefinition, otherDef: GearDefinition): boolean {
+  if (slot === "main-hand") {
+    if (def.requiresTwoHands) return true;
+    if (otherDef.requiresTwoHands) return true;
+    if (otherDef.quiver && !def.rangedWeapon) return true;
+    if (!otherDef.quiver && def.rangedWeapon) return true;
+    return false;
+  }
+  if (slot === "off-hand" && otherDef.requiresTwoHands) return true;
+  return false;
+}
+
+function getOppositeSlot(slot: GearSlot): GearSlot | null {
+  if (slot === "main-hand") return "off-hand";
+  if (slot === "off-hand") return "main-hand";
+  return null;
+}
+
+function findOtherSlotAnimation(
+  slot: GearSlot,
+  loadout: GearLoadout,
+  instance: GearInstance,
+  displaced: GearInstance | null | undefined,
+  inventoryById: Map<string, GearInstance>,
+  slotRect: DragRect,
+  vacatedPlacement: InventoryPlacement,
+): { instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement } | null {
+  const otherSlot = getOppositeSlot(slot);
+  if (!otherSlot) return null;
+  const otherId = loadout[otherSlot];
+  if (!otherId) return null;
+  if (otherId === instance.instanceId) return null;
+  if (otherId === displaced?.instanceId) return null;
+  const otherInstance = inventoryById.get(otherId);
+  if (!otherInstance) return null;
+  const otherDef = gearDefinitions[otherInstance.definitionId];
+  const def = gearDefinitions[instance.definitionId];
+  if (!otherDef || !def) return null;
+  if (!shouldDisplaceOtherSlot(slot, def, otherDef)) return null;
+  const otherEl = document.querySelector<HTMLElement>(
+    `[data-testid='armory-equipment-slot'][data-slot='${otherSlot}']`,
+  );
+  const source = otherEl ? otherEl.getBoundingClientRect() : slotRect;
+  return { instance: otherInstance, source, vacatedPlacement };
+}
+
 export function calculateSecondaryDisplacedItems({
   instance,
   slot,
@@ -168,55 +224,19 @@ export function calculateSecondaryDisplacedItems({
   inventoryById: Map<string, GearInstance>;
   packedItems: PackedInventoryItem[];
 }): Array<{ instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }> {
-  const { displaced } = resolveEquipSwap({
-    loadout,
-    slot,
-    instance,
-    vacatedPlacement,
-    inventoryById,
-    packedItems,
-  });
+  const { displaced } = resolveEquipSwap({ loadout, slot, instance, vacatedPlacement, inventoryById, packedItems });
   const toAnimate: Array<{ instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }> = [];
-  if (displaced) {
-    toAnimate.push({ instance: displaced, source: slotRect, vacatedPlacement });
-  }
-  const otherSlot: GearSlot | null = slot === "main-hand" ? "off-hand" : slot === "off-hand" ? "main-hand" : null;
-  if (otherSlot) {
-    const otherInstanceId = loadout[otherSlot];
-    if (otherInstanceId && otherInstanceId !== instance.instanceId && otherInstanceId !== displaced?.instanceId) {
-      const otherInstance = inventoryById.get(otherInstanceId);
-      const otherDefinition = otherInstance ? gearDefinitions[otherInstance.definitionId] : undefined;
-      const definition = gearDefinitions[instance.definitionId];
-      if (otherInstance && otherDefinition && definition) {
-        let isDisplaced = false;
-        if (slot === "main-hand") {
-          if (definition.requiresTwoHands) {
-            isDisplaced = true;
-          } else {
-            if (otherDefinition.requiresTwoHands) {
-              isDisplaced = true;
-            } else if (otherDefinition.quiver && !definition.rangedWeapon) {
-              isDisplaced = true;
-            } else if (!otherDefinition.quiver && definition.rangedWeapon) {
-              isDisplaced = true;
-            }
-          }
-        } else if (slot === "off-hand") {
-          if (otherDefinition.requiresTwoHands) {
-            isDisplaced = true;
-          }
-        }
-
-        if (isDisplaced) {
-          const otherSlotEl = document.querySelector<HTMLElement>(
-            `[data-testid='armory-equipment-slot'][data-slot='${otherSlot}']`,
-          );
-          const otherSource: DragRect = otherSlotEl ? otherSlotEl.getBoundingClientRect() : slotRect;
-          toAnimate.push({ instance: otherInstance, source: otherSource, vacatedPlacement });
-        }
-      }
-    }
-  }
+  if (displaced) toAnimate.push({ instance: displaced, source: slotRect, vacatedPlacement });
+  const otherAnim = findOtherSlotAnimation(
+    slot,
+    loadout,
+    instance,
+    displaced,
+    inventoryById,
+    slotRect,
+    vacatedPlacement,
+  );
+  if (otherAnim) toAnimate.push(otherAnim);
   return toAnimate;
 }
 

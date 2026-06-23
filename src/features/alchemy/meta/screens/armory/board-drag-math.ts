@@ -21,6 +21,45 @@ export type InventoryPlacementResult = {
   rect: DragRect;
 } | null;
 
+function computeTileSnapRect(
+  board: HTMLElement,
+  boardRect: DOMRect,
+  placement: InventoryPlacement,
+  footprint: GearFootprint,
+  cellSize: number,
+  gap: number,
+  scrollTop: number,
+): DragRect {
+  const cellEl = board.querySelector<HTMLElement>(`[data-armory-inventory-cell="${placement.col}-${placement.row}"]`);
+  if (!cellEl) {
+    const local = inventoryPlacementRect(placement, footprint, { cellSize, gap });
+    return {
+      left: boardRect.left + local.left,
+      top: boardRect.top + local.top - scrollTop,
+      width: local.width,
+      height: local.height,
+    };
+  }
+  const domRect = cellEl.getBoundingClientRect();
+  return {
+    left: domRect.left,
+    top: domRect.top,
+    width: cellSize * footprint.w + gap * (footprint.w - 1),
+    height: cellSize * footprint.h + gap * (footprint.h - 1),
+  };
+}
+
+function isWithinSnapRadius(
+  freeCenter: DragPoint,
+  snapRect: DragRect,
+  cellSize: number,
+  requireProximity: boolean,
+): boolean {
+  if (!requireProximity) return true;
+  const destCenter = { x: snapRect.left + snapRect.width / 2, y: snapRect.top + snapRect.height / 2 };
+  return Math.hypot(freeCenter.x - destCenter.x, freeCenter.y - destCenter.y) <= cellSize * INVENTORY_SNAP_RADIUS_CELLS;
+}
+
 export function placeInventoryTileFromMetrics(
   board: HTMLElement,
   footprint: GearFootprint,
@@ -38,53 +77,18 @@ export function placeInventoryTileFromMetrics(
   const { cellSize, gap, boardRect, scrollTop } = metrics;
   const { requireProximity = true, occupiedRows = 0, obstacles = [], draggedInstanceId = "" } = options;
   const renderedRows = Math.max(INVENTORY_VISIBLE_ROWS, occupiedRows + footprint.h);
-  const localPointer = pointerScrollOffset ?? { scrollTop };
+  const scrollRef = pointerScrollOffset ?? { scrollTop };
+  const freeCenter = { x: freeRect.left + freeRect.width / 2, y: freeRect.top + freeRect.height / 2 };
   const placement = findNearestInventoryPlacement(
     obstacles,
     draggedInstanceId,
     footprint,
     { cellSize, gap, cols: INVENTORY_COLS, rows: renderedRows },
-    {
-      x: freeRect.left + freeRect.width / 2 - boardRect.left,
-      y: freeRect.top + freeRect.height / 2 - boardRect.top + localPointer.scrollTop,
-    },
+    { x: freeCenter.x - boardRect.left, y: freeCenter.y - boardRect.top + scrollRef.scrollTop },
   );
   if (!placement) return null;
-  const localRect = inventoryPlacementRect(placement, footprint, { cellSize, gap });
-  const freeCenter = { x: freeRect.left + freeRect.width / 2, y: freeRect.top + freeRect.height / 2 };
-
-  const cellEl = board.querySelector<HTMLElement>(`[data-armory-inventory-cell="${placement.col}-${placement.row}"]`);
-  let snapRect: DragRect;
-  if (cellEl) {
-    const cellDomRect = cellEl.getBoundingClientRect();
-    const tileWidth = cellSize * footprint.w + gap * (footprint.w - 1);
-    const tileHeight = cellSize * footprint.h + gap * (footprint.h - 1);
-    snapRect = {
-      left: cellDomRect.left,
-      top: cellDomRect.top,
-      width: tileWidth,
-      height: tileHeight,
-    };
-  } else {
-    snapRect = {
-      left: boardRect.left + localRect.left,
-      top: boardRect.top + localRect.top - scrollTop,
-      width: localRect.width,
-      height: localRect.height,
-    };
-  }
-
-  const destinationCenter = {
-    x: snapRect.left + snapRect.width / 2,
-    y: snapRect.top + snapRect.height / 2,
-  };
-  if (
-    requireProximity &&
-    Math.hypot(freeCenter.x - destinationCenter.x, freeCenter.y - destinationCenter.y) >
-      cellSize * INVENTORY_SNAP_RADIUS_CELLS
-  ) {
-    return null;
-  }
+  const snapRect = computeTileSnapRect(board, boardRect, placement, footprint, cellSize, gap, scrollTop);
+  if (!isWithinSnapRadius(freeCenter, snapRect, cellSize, requireProximity)) return null;
   return { placement, rect: snapRect };
 }
 
