@@ -228,18 +228,27 @@ The audits below each target a single measurable criterion with a target and a q
 
 **Measure:**
 
-- `git log --since="3 months ago" --grep="^(feat|fix|balance)" --name-only --format="--- %s"`
-- Count files per `---`-delimited commit block; compute the median. List files appearing in > 25% of feature commits (hotspots).
-- Target: median ≤ 5; no hotspot edited in > 25% of feature commits without a clear owning seam.
+Use `scripts/audit-change-amplification.mjs` (run with `node scripts/audit-change-amplification.mjs`) which handles the encoding issues PowerShell's `>` redirect introduces (UTF-16 LE, not UTF-8). The script produces three views:
+
+- **Raw view** — all `feat`/`fix`/`balance` commits, every file counted
+- **Filtered view** — drop pure-asset/sound/webp commits and pure-infra commits (no `src/` or `tests/` files)
+- **Clean view** — filtered minus ≥100-file milestone commits and `fix(tests)` type-cleanup batches (the "what developers actually author" view)
+
+For each view the script reports: count, median, mean, p90, max, a histogram, and a list of files exceeding 25% (hotspots). It also prints a **co-edit signal**: count how many commits touch both `src/lib/game-data/*` and a `screens/` file — to detect parallel-edit coupling that a single-file hotspot count misses.
+
+Target: median ≤ 5 in clean view. No source file in > 25% of clean-view commits without a clear owning seam.
 
 **Check:**
 
-- For the top 3 hotspots, identify the missing seam (facade, event, interface, colocated data) and introduce it so the next change is localized
+- For the top 3 hotspots (true or near), identify the missing seam (facade, event, interface, colocated data) and introduce it so the next change is localized
+- For high co-edit pairs that don't show up as single-file hotspots, look for a cross-layer facade that lets one side change without dragging the other
 - Remove duplicated responsibility that forces parallel edits across files
-- Colocate logic that is always changed together
+- Colocate logic that is always changed together (e.g. one mega test file covering 17 unrelated subsystems → split by subsystem)
+- Treat the composition root (e.g. `src/App.tsx`) as expected, not a seam target
+- Treat ≥100-file milestone commits as inherent to the milestone, not as bugs to fix
 - This is a pattern audit — propose the seam to the user before implementing if the fix is non-obvious (per [AGENTS.md — Escalation policy](./AGENTS.md#escalation-policy))
 
-**Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) · [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants)
+**Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) · [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants) · [AGENTS.md — Generated and heavy files](./AGENTS.md#generated-and-heavy-files)
 
 **When done:** `npm run lint:ci && npm test -- <touched paths>`
 

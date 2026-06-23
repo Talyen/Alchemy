@@ -36,7 +36,7 @@ A scannable list of the most common ways to break the repo or violate policy. Th
 
 - No `git reset`, `git checkout --`, `git restore`, `git clean`, `git rebase`, or `git merge`. Ask before `git stash`.
 - No commits, pushes, tags, releases, stashes, PRs, version bumps, dependency changes, or asset regeneration unless the user explicitly asks.
-- No hand-edits to `CHANGELOG.md`, `release-notes/`, `package-lock.json`, or `src/lib/validation/metadata.generated.ts`.
+- No hand-edits to `CHANGELOG.md`, `release-notes/`, `package-lock.json`, `src/lib/validation/metadata.generated.ts`, or `src/lib/game-data/assets.generated.ts`.
 - No dev QA controls in E2E specs — no Skip Combat, Unlock All, Error Log, `skipCombatToVictory()`, or their labels. Use `winViaCombat()` or `playCardNamed()`.
 - No `React.lazy()` for route screens. No `React.FC`. No `Math.random()` in battle code (use `state.rng`). No `Math.floor()` in battle (use `Math.round()`).
 - No template literals in `className` (use `cn()`).
@@ -196,12 +196,12 @@ Full change-to-test mapping and the main-gate procedure live in [CONTRIBUTING.md
 
 ### Generated (do not hand-edit)
 
-- `src/lib/validation/metadata.generated.ts` comes from `npm run sync:version`; `CHANGELOG.md` ## [Unreleased] from `npm run sync:changelog`; optimized assets from the asset scripts documented in [WORKFLOWS](./docs/WORKFLOWS.md#assets). Regenerate by running the script; never hand-edit.
+- `src/lib/validation/metadata.generated.ts` comes from `npm run sync:version`; `src/lib/game-data/assets.generated.ts` from `npm run sync:assets`; `CHANGELOG.md` ## [Unreleased] from `npm run sync:changelog`; optimized assets from the asset scripts documented in [WORKFLOWS](./docs/WORKFLOWS.md#assets). Regenerate by running the script; never hand-edit.
 - Never edit dependency, build, coverage, or report output directories: `node_modules/`, `dist/`, `.vite/`, `release-desktop/`, `coverage/`, and `reports/`.
 
 ### Read-on-demand (read once, then reference by path)
 
-- Don't re-read large generated, binary, or asset-bundled files you've already seen in this session. Treat `Raw Assets/`, `Music/`, `src/assets/optimized/`, `game-constants.ts`, `cards.ts`, `keywords.ts`, `assets.ts`, `vite.config.ts`, and anything under `src/lib/validation/metadata.generated.ts` as read-on-demand. The same applies to `node_modules/`, `dist/`, `.vite/`, `release-desktop/`, `coverage/`, and `reports/`.
+- Don't re-read large generated, binary, or asset-bundled files you've already seen in this session. Treat `Raw Assets/`, `Music/`, `src/assets/optimized/`, `game-constants.ts`, `cards.ts`, `keywords.ts`, `assets.ts`, `assets.generated.ts`, `vite.config.ts`, and anything under `src/lib/validation/metadata.generated.ts` as read-on-demand. The same applies to `node_modules/`, `dist/`, `.vite/`, `release-desktop/`, `coverage/`, and `reports/`.
 
 ## Environment
 

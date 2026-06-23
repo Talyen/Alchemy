@@ -97,7 +97,8 @@ function AppMainContent({
   const isAutosaveAllowed = (): boolean => {
     if (run.runPhase === "runEnd") return false;
     if (run.runPhase === "battle" && run.battleState.enemyHealth <= 0) return false;
-    if (run.screen === "rewards" && run.contentSystemType !== "wildwood" && run.rewardState.choices.length === 0) return false;
+    if (run.screen === "rewards" && run.contentSystemType !== "wildwood" && run.rewardState.choices.length === 0)
+      return false;
     return true;
   };
   const autosaveEnabled = isAutosaveAllowed();
@@ -113,25 +114,39 @@ function AppMainContent({
   const { particleColors, particleAlphaMultiplier } = useScreenParticleConfig(renderedScreen, isBossBattle);
 
   const pagePhaseClass = pagePhase === "exit" ? "page-exit" : "page-enter";
-  const content = saveBlockedByNewerVersion
-    ? <UnsupportedSaveVersionScreen canQuit={platform.canQuit} onQuit={platform.quit} />
-    : !initialLoadReady
-      ? <StartupLoadingScreen />
-      : <div key={renderedScreen} className={cn(pagePhaseClass, "h-full w-full overflow-hidden")}>
-          <CardDescriptionProvider cardDescriptionContext={{
-            flatPhysicalDamage: homesteadEffects.flatPhysicalDamage,
-            companionDamage: homesteadEffects.companionDamage,
-            companionBondLevels: homesteadBondedCompanions,
-            potionPotency: 1 + homesteadEffects.potionPotency,
-          }}>
-            <AppScreenChromeProvider run={run} aspectMode={aspectMode} stagePixelRatio={stagePixelRatio} returnToRunScreen={nav.returnToRunScreen}>
-              <RenderAlchemyScreen screen={renderedScreen} run={run} battleBindings={run.battleBindings}
-                onOpenBattleMenu={gameMenu.openBattleMenu} onClearSaveData={dev.clearSaveData}
-                onUnlockAllDevMode={dev.unlockAllDevMode} onBackFromOptions={nav.backFromOptions}
-              />
-            </AppScreenChromeProvider>
-          </CardDescriptionProvider>
-        </div>;
+  const content = saveBlockedByNewerVersion ? (
+    <UnsupportedSaveVersionScreen canQuit={platform.canQuit} onQuit={platform.quit} />
+  ) : !initialLoadReady ? (
+    <StartupLoadingScreen />
+  ) : (
+    <div key={renderedScreen} className={cn(pagePhaseClass, "h-full w-full overflow-hidden")}>
+      <CardDescriptionProvider
+        cardDescriptionContext={{
+          flatPhysicalDamage: homesteadEffects.flatPhysicalDamage,
+          companionDamage: homesteadEffects.companionDamage,
+          companionBondLevels: homesteadBondedCompanions,
+          potionPotency: 1 + homesteadEffects.potionPotency,
+        }}
+      >
+        <AppScreenChromeProvider
+          run={run}
+          aspectMode={aspectMode}
+          stagePixelRatio={stagePixelRatio}
+          returnToRunScreen={nav.returnToRunScreen}
+        >
+          <RenderAlchemyScreen
+            screen={renderedScreen}
+            run={run}
+            battleBindings={run.battleBindings}
+            onOpenBattleMenu={gameMenu.openBattleMenu}
+            onClearSaveData={dev.clearSaveData}
+            onUnlockAllDevMode={dev.unlockAllDevMode}
+            onBackFromOptions={nav.backFromOptions}
+          />
+        </AppScreenChromeProvider>
+      </CardDescriptionProvider>
+    </div>
+  );
 
   return (
     <>
