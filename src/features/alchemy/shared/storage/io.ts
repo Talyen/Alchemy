@@ -122,6 +122,69 @@ async function removeStorageItem(key: string): Promise<{ ok: true } | { ok: fals
   return { ok: false, error: result.error };
 }
 
+function parseCandidates(candidates: string[]): Array<{ parsed: Partial<SaveData> }> {
+  const parsed: Array<{ parsed: Partial<SaveData> }> = [];
+  for (const c of candidates) {
+    try {
+      parsed.push({ parsed: JSON.parse(c) as Partial<SaveData> });
+    } catch {
+      // Not valid JSON; try the next candidate.
+    }
+  }
+  return parsed;
+}
+
+function filterFutureCandidates(parsedCandidates: Array<{ parsed: Partial<SaveData> }>): {
+  valid: Array<{ parsed: Partial<SaveData> }>;
+  futureSchema: number;
+  futureContent: number;
+} {
+  let foundFutureSchema = false;
+  let foundFutureContent = false;
+  let maxSchemaVersion = 0;
+  let maxContentVersion = 0;
+  const valid: Array<{ parsed: Partial<SaveData> }> = [];
+  for (const c of parsedCandidates) {
+    if (isUnsupportedFutureSaveData(c.parsed)) {
+      foundFutureSchema = true;
+      maxSchemaVersion = Math.max(maxSchemaVersion, getRawSaveSchemaVersion(c.parsed));
+      continue;
+    }
+    if (isUnsupportedFutureContentData(c.parsed)) {
+      foundFutureContent = true;
+      maxContentVersion = Math.max(maxContentVersion, getRawContentVersion(c.parsed));
+      continue;
+    }
+    valid.push(c);
+  }
+  return {
+    valid,
+    futureSchema: foundFutureSchema ? maxSchemaVersion : 0,
+    futureContent: foundFutureContent ? maxContentVersion : 0,
+  };
+}
+
+function returnFirstValid(validCandidates: Array<{ parsed: Partial<SaveData> }>): SaveLoadState | null {
+  if (validCandidates.length === 0) return null;
+  saveSessionState.setWritesDisabled(false);
+  for (const c of validCandidates) {
+    const result = safeParseWithErrors(SaveDataSchema, c.parsed);
+    if (!result.success) {
+      logStorageFailure("Save candidate failed validation, trying next candidate", result.error);
+      continue;
+    }
+    const data = result.data as SaveData;
+    const warnings = collectSaveRepairWarnings(c.parsed, data);
+    for (const ve of result.errors) {
+      warnings.push(`Field "${ve.path}" was corrupt: ${ve.message}`);
+    }
+    const hydrated = { ...data, activeRun: hydrateActiveRunDeck(data.activeRun) };
+    if (warnings.length > 0) console.warn("Save data was normalized during load", warnings);
+    return { data: hydrated, status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" } };
+  }
+  return null;
+}
+
 // Loads save data plus status. On desktop, candidates are walked in preference
 // order: local, bak.1, bak.2, bak.3, cloud. Each candidate is parsed and
 // Zod-validated before being accepted. The first valid, non-future-version
@@ -140,93 +203,28 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
     return { data: defaultSaveData, status: { kind: "corrupt" } };
   }
 
-  if (candidates.length === 0) {
-    return { data: defaultSaveData, status: { kind: "ok" } };
-  }
+  if (candidates.length === 0) return { data: defaultSaveData, status: { kind: "ok" } };
 
-  // Parse all candidates first so we can filter by future-version status before
-  // the expensive Zod validation.
-  const parsedCandidates: Array<{ parsed: Partial<SaveData> }> = [];
-  for (const c of candidates) {
-    try {
-      parsedCandidates.push({ parsed: JSON.parse(c) as Partial<SaveData> });
-    } catch {
-      // Not valid JSON; try the next candidate.
-    }
-  }
+  const parsedCandidates = parseCandidates(candidates);
+  if (parsedCandidates.length === 0) return { data: defaultSaveData, status: { kind: "corrupt" } };
 
-  if (parsedCandidates.length === 0) {
-    return { data: defaultSaveData, status: { kind: "corrupt" } };
-  }
-
-  // Silently skip future-version candidates. Track whether we saw any so the
-  // fallback status is accurate when every candidate is from a newer version.
-  let foundFutureSchema = false;
-  let foundFutureContent = false;
-  let maxSchemaVersion = 0;
-  let maxContentVersion = 0;
-  const validCandidates: typeof parsedCandidates = [];
-  for (const c of parsedCandidates) {
-    if (isUnsupportedFutureSaveData(c.parsed)) {
-      foundFutureSchema = true;
-      maxSchemaVersion = Math.max(maxSchemaVersion, getRawSaveSchemaVersion(c.parsed));
-      continue;
-    }
-    if (isUnsupportedFutureContentData(c.parsed)) {
-      foundFutureContent = true;
-      maxContentVersion = Math.max(maxContentVersion, getRawContentVersion(c.parsed));
-      continue;
-    }
-    validCandidates.push(c);
-  }
-
-  // If every candidate was from a future version, disable writes and return
-  // defaults. The player never sees an error screen.
-  if (validCandidates.length === 0) {
+  const { valid, futureSchema, futureContent } = filterFutureCandidates(parsedCandidates);
+  if (valid.length === 0) {
     saveSessionState.setWritesDisabled(true);
-    if (foundFutureSchema) {
+    if (futureSchema)
       return {
         data: defaultSaveData,
-        status: { kind: "unsupported-newer-schema", detectedSchemaVersion: maxSchemaVersion },
+        status: { kind: "unsupported-newer-schema", detectedSchemaVersion: futureSchema },
       };
-    }
-    if (foundFutureContent) {
+    if (futureContent)
       return {
         data: defaultSaveData,
-        status: { kind: "unsupported-newer-content", detectedContentVersion: maxContentVersion },
+        status: { kind: "unsupported-newer-content", detectedContentVersion: futureContent },
       };
-    }
     return { data: defaultSaveData, status: { kind: "corrupt" } };
   }
 
-  // Walk remaining candidates in order and take the first that Zod-validates.
-  saveSessionState.setWritesDisabled(false);
-  for (const c of validCandidates) {
-    const result = safeParseWithErrors(SaveDataSchema, c.parsed);
-    if (!result.success) {
-      logStorageFailure("Save candidate failed validation, trying next candidate", result.error);
-      continue;
-    }
-    const data = result.data as SaveData;
-    const warnings = collectSaveRepairWarnings(c.parsed, data);
-    for (const ve of result.errors) {
-      warnings.push(`Field "${ve.path}" was corrupt: ${ve.message}`);
-    }
-
-    // Eagerly hydrate active-run deck cards at load time so every consumer
-    // downstream gets fully-resolved card objects.
-    const hydrated = { ...data, activeRun: hydrateActiveRunDeck(data.activeRun) };
-
-    if (warnings.length > 0) {
-      console.warn("Save data was normalized during load", warnings);
-    }
-    return {
-      data: hydrated,
-      status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" },
-    };
-  }
-
-  return { data: defaultSaveData, status: { kind: "corrupt" } };
+  return returnFirstValid(valid) ?? { data: defaultSaveData, status: { kind: "corrupt" } };
 }
 
 // Writes the current save snapshot exactly as provided by App/controller state.

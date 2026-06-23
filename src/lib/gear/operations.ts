@@ -73,6 +73,34 @@ export function isGearCompatibleWithLoadoutSlot(
   return true;
 }
 
+function resolveMainHandTwoHanded(loadout: GearLoadouts[GearCharacterId]): GearLoadouts[GearCharacterId] {
+  return { ...loadout, "off-hand": null };
+}
+
+function resolveOffHand(
+  loadout: GearLoadouts[GearCharacterId],
+  inventory: GearInstance[],
+): GearLoadouts[GearCharacterId] {
+  const mainHandDefinition = resolveEquippedDefinitionAt(inventory, loadout, "main-hand");
+  if (mainHandDefinition && isTwoHanded(mainHandDefinition)) {
+    return { ...loadout, "main-hand": null };
+  }
+  return loadout;
+}
+
+function resolveSingleMainHand(
+  loadout: GearLoadouts[GearCharacterId],
+  definition: GearDefinition,
+  inventory: GearInstance[],
+): GearLoadouts[GearCharacterId] {
+  const offHandDef = resolveEquippedDefinitionAt(inventory, loadout, "off-hand");
+  if (!offHandDef) return loadout;
+  if (offHandDef.requiresTwoHands) return { ...loadout, "off-hand": null };
+  if (isQuiver(offHandDef) && !isRangedWeapon(definition)) return { ...loadout, "off-hand": null };
+  if (isRangedWeapon(definition) && !isQuiver(offHandDef)) return { ...loadout, "off-hand": null };
+  return loadout;
+}
+
 function resolveHandConflicts(
   characterLoadout: GearLoadouts[GearCharacterId],
   slot: GearSlot,
@@ -80,33 +108,9 @@ function resolveHandConflicts(
   inventory: GearInstance[],
 ): GearLoadouts[GearCharacterId] {
   const next = { ...characterLoadout, [slot]: characterLoadout[slot] };
-
-  if (slot === "main-hand" && isTwoHanded(definition)) {
-    next["off-hand"] = null;
-    return next;
-  }
-
-  if (slot === "off-hand") {
-    const mainHandDefinition = resolveEquippedDefinitionAt(inventory, next, "main-hand");
-    if (mainHandDefinition && isTwoHanded(mainHandDefinition)) {
-      next["main-hand"] = null;
-    }
-    return next;
-  }
-
-  if (slot === "main-hand" && !isTwoHanded(definition)) {
-    const offHandDefinition = resolveEquippedDefinitionAt(inventory, next, "off-hand");
-    if (offHandDefinition?.requiresTwoHands) {
-      next["off-hand"] = null;
-    } else if (offHandDefinition && isQuiver(offHandDefinition) && !isRangedWeapon(definition)) {
-      next["off-hand"] = null;
-    } else if (offHandDefinition && isRangedWeapon(definition) && !isQuiver(offHandDefinition)) {
-      // Ranged weapon equipped to main-hand: off-hand must be a quiver, clear non-quiver off-hand items
-      next["off-hand"] = null;
-    }
-  }
-
-  return next;
+  if (slot === "main-hand" && isTwoHanded(definition)) return resolveMainHandTwoHanded(next);
+  if (slot === "off-hand") return resolveOffHand(next, inventory);
+  return resolveSingleMainHand(next, definition, inventory);
 }
 
 export function equipGear(

@@ -5,6 +5,50 @@ import { shuffle } from "../utils";
 import { getCardKeywords } from "./keywords";
 import type { BattleCard, KeywordId } from "./types";
 
+function buildKeywordFrequency(deck: BattleCard[], seedKeywords: KeywordId[]): Record<string, number> {
+  const freq: Record<string, number> = {};
+  for (const keyword of seedKeywords) freq[keyword] = (freq[keyword] || 0) + 1;
+  for (const card of deck) for (const kw of getCardKeywords(card)) freq[kw] = (freq[kw] || 0) + 1;
+  return freq;
+}
+
+function buildAffinityPool(
+  candidates: BattleCard[],
+  deck: BattleCard[],
+  freq: Record<string, number>,
+  count: number,
+  activeRng: () => number,
+): BattleCard[] {
+  const deckIds = new Set(deck.map((c) => c.id));
+  const shuffledCandidates = shuffle(candidates, activeRng);
+  const scored = shuffledCandidates.map((card) => {
+    let score = 0;
+    for (const kw of getCardKeywords(card)) score += freq[kw] || 0;
+    if (!deckIds.has(card.id)) score += REWARD_SELECTION_CONFIG.newCardScoreBonus;
+    return { card, score };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored
+    .slice(0, Math.min(count * REWARD_SELECTION_CONFIG.affinityPoolMultiplier, scored.length))
+    .map((s) => s.card);
+}
+
+function pickOneCard(
+  pool: BattleCard[],
+  shuffledCandidates: BattleCard[],
+  selected: BattleCard[],
+  activeRng: () => number,
+): BattleCard | undefined {
+  const rollRandom = activeRng() < REWARD_RANDOM_CHANCE;
+  const availableAffinity = pool.filter((c) => !selected.includes(c));
+  const availableRandom = shuffledCandidates.filter((c) => !selected.includes(c));
+  const primary = rollRandom ? availableRandom : availableAffinity;
+  const fallback = rollRandom ? availableAffinity : availableRandom;
+  if (primary.length > 0) return shuffle(primary, activeRng)[0];
+  if (fallback.length > 0) return shuffle(fallback, activeRng)[0];
+  return undefined;
+}
+
 export function selectRewardCards(
   deck: BattleCard[] = [],
   allCards: BattleCard[],
@@ -14,67 +58,15 @@ export function selectRewardCards(
   seedKeywords: KeywordId[] = [],
 ): BattleCard[] {
   const activeRng = rng ?? Math.random;
-
-  // Filter out excluded cards upfront
   const candidates = allCards.filter((c) => !exclude.some((ex) => ex.id === c.id));
-
-  // Tie-Resolution Fix: Shuffle candidates before scoring/sorting
-  // to ensure that ties (e.g. no matches) are resolved randomly
-  // without database/library order bias.
   const shuffledCandidates = shuffle(candidates, activeRng);
   const selected: BattleCard[] = [];
-
-  const freq: Record<string, number> = {};
-  for (const keyword of seedKeywords) {
-    freq[keyword] = (freq[keyword] || 0) + 1;
-  }
-  for (const card of deck) {
-    for (const kw of getCardKeywords(card)) {
-      freq[kw] = (freq[kw] || 0) + 1;
-    }
-  }
-
-  const deckIds = new Set(deck.map((c) => c.id));
-
-  const scored = shuffledCandidates.map((card) => {
-    let score = 0;
-    for (const kw of getCardKeywords(card)) {
-      score += freq[kw] || 0;
-    }
-    if (!deckIds.has(card.id)) {
-      score += REWARD_SELECTION_CONFIG.newCardScoreBonus;
-    }
-    return { card, score };
-  });
-
-  scored.sort((a, b) => b.score - a.score);
-  const affinityPool = scored
-    .slice(0, Math.min(count * REWARD_SELECTION_CONFIG.affinityPoolMultiplier, scored.length))
-    .map((s) => s.card);
+  const freq = buildKeywordFrequency(deck, seedKeywords);
+  const affinityPool = buildAffinityPool(candidates, deck, freq, count, activeRng);
 
   for (let i = 0; i < count; i++) {
-    const rollRandom = activeRng() < REWARD_RANDOM_CHANCE;
-    const availableAffinity = affinityPool.filter((c) => !selected.includes(c));
-    const availableRandom = shuffledCandidates.filter((c) => !selected.includes(c));
-
-    let chosenCard: BattleCard | undefined;
-    if (rollRandom) {
-      if (availableRandom.length > 0) {
-        chosenCard = shuffle(availableRandom, activeRng)[0];
-      } else if (availableAffinity.length > 0) {
-        chosenCard = shuffle(availableAffinity, activeRng)[0];
-      }
-    } else {
-      if (availableAffinity.length > 0) {
-        chosenCard = shuffle(availableAffinity, activeRng)[0];
-      } else if (availableRandom.length > 0) {
-        chosenCard = shuffle(availableRandom, activeRng)[0];
-      }
-    }
-
-    if (chosenCard) {
-      selected.push(chosenCard);
-    }
+    const chosenCard = pickOneCard(affinityPool, shuffledCandidates, selected, activeRng);
+    if (chosenCard) selected.push(chosenCard);
   }
 
   return selected;

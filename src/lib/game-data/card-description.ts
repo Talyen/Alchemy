@@ -79,6 +79,90 @@ function getCompanionLine(card: Pick<BattleCard, "effects">, context: CardDescri
   });
 }
 
+type LineGetter<T> = () => T | undefined;
+
+function createGetter<T>(array: T[]): () => T | undefined {
+  let index = 0;
+  return () => array[index++];
+}
+
+function processDealLine(
+  line: string,
+  getNext: LineGetter<Extract<BattleCard["effects"][number], { kind: "damage" }>>,
+  context: CardDescriptionContext,
+  potionMultiplier: number,
+): string | null {
+  if (!line.startsWith("Deal ")) return null;
+  const effect = getNext();
+  if (effect?.equalToBlock || effect?.equalToArmor || effect?.equalToGoldPercent) return line;
+  return effect
+    ? `Deal ${adjustedDamageAmount(effect, context, potionMultiplier)} ${displayDamageType(effect.damageType)} damage`
+    : line;
+}
+
+function processGoldLine(
+  line: string,
+  getNext: LineGetter<{ amount: number }>,
+  potionMultiplier: number,
+): string | null {
+  if (!line.startsWith("Gain ") || !line.includes(" Gold")) return null;
+  const effect = getNext();
+  return effect ? `Gain ${adjustedAmount(effect.amount, potionMultiplier)} Gold` : line;
+}
+
+function processStatusLine(
+  line: string,
+  getNext: LineGetter<Extract<BattleCard["effects"][number], { kind: "player-status" }>>,
+  potionMultiplier: number,
+): string | null {
+  if (!line.startsWith("Gain ")) return null;
+  const effect = getNext();
+  if (effect?.perManaCrystal) return line;
+  return effect ? `Gain ${adjustedAmount(effect.amount, potionMultiplier)} ${displayDamageType(effect.status)}` : line;
+}
+
+function processHealLine(
+  line: string,
+  getNext: LineGetter<{ amount: number }>,
+  potionMultiplier: number,
+): string | null {
+  if (!line.startsWith("Heal ")) return null;
+  const effect = getNext();
+  return effect ? `Heal ${adjustedAmount(effect.amount, potionMultiplier)}` : line;
+}
+
+function processRestoreLine(
+  line: string,
+  getNext: LineGetter<{ amount: number }>,
+  potionMultiplier: number,
+): string | null {
+  if (!line.startsWith("Restore ")) return null;
+  const effect = getNext();
+  return effect ? `Restore ${adjustedAmount(effect.amount, potionMultiplier)} Mana` : line;
+}
+
+function processWishLine(
+  line: string,
+  getNext: LineGetter<{ amount: number }>,
+  potionMultiplier: number,
+): string | null {
+  if (!line.startsWith("Wish ")) return null;
+  const effect = getNext();
+  return effect ? `Wish ${adjustedAmount(effect.amount, potionMultiplier)}` : line;
+}
+
+function processRemoveLine(
+  line: string,
+  getNext: LineGetter<{ amount: number }>,
+  potionMultiplier: number,
+): string | null {
+  if (!line.startsWith("Remove ")) return null;
+  const effect = getNext();
+  return effect
+    ? `Remove ${adjustedAmount(effect.amount, potionMultiplier)} harmful Status${adjustedAmount(effect.amount, potionMultiplier) === 1 ? "" : "es"}`
+    : line;
+}
+
 /** Returns description lines whose numbers match known mechanical bonuses. */
 export function getEffectiveCardDescriptionLines(
   card: Pick<BattleCard, "id" | "effects" | "descriptionLines">,
@@ -86,13 +170,6 @@ export function getEffectiveCardDescriptionLines(
 ): string[] {
   const potionMultiplier = getPotionMultiplier(card, context);
   const companionLine = getCompanionLine(card, context);
-  let damageIndex = 0;
-  let playerStatusIndex = 0;
-  let healIndex = 0;
-  let manaIndex = 0;
-  let goldIndex = 0;
-  let wishIndex = 0;
-  let cleanseIndex = 0;
   const damageEffects = card.effects.filter(
     (effect): effect is Extract<BattleCard["effects"][number], { kind: "damage" }> => effect.kind === "damage",
   );
@@ -118,44 +195,25 @@ export function getEffectiveCardDescriptionLines(
       effect.kind === "remove-harmful-status",
   );
 
+  const getDamage = createGetter(damageEffects);
+  const getGold = createGetter(goldEffects);
+  const getStatus = createGetter(playerStatusEffects);
+  const getHeal = createGetter(healEffects);
+  const getMana = createGetter(manaEffects);
+  const getWish = createGetter(wishEffects);
+  const getCleanse = createGetter(cleanseEffects);
+
   return card.descriptionLines.map((line) => {
     if (companionLine && isCompanionTurnLine(line)) return companionLine;
-    if (line.startsWith("Deal ")) {
-      const effect = damageEffects[damageIndex++];
-      if (effect?.equalToBlock || effect?.equalToArmor || effect?.equalToGoldPercent) return line;
-      return effect
-        ? `Deal ${adjustedDamageAmount(effect, context, potionMultiplier)} ${displayDamageType(effect.damageType)} damage`
-        : line;
-    }
-    if (line.startsWith("Gain ") && line.includes(" Gold")) {
-      const effect = goldEffects[goldIndex++];
-      return effect ? `Gain ${adjustedAmount(effect.amount, potionMultiplier)} Gold` : line;
-    }
-    if (line.startsWith("Gain ")) {
-      const effect = playerStatusEffects[playerStatusIndex++];
-      if (effect?.perManaCrystal) return line;
-      return effect
-        ? `Gain ${adjustedAmount(effect.amount, potionMultiplier)} ${displayDamageType(effect.status)}`
-        : line;
-    }
-    if (line.startsWith("Heal ")) {
-      const effect = healEffects[healIndex++];
-      return effect ? `Heal ${adjustedAmount(effect.amount, potionMultiplier)}` : line;
-    }
-    if (line.startsWith("Restore ")) {
-      const effect = manaEffects[manaIndex++];
-      return effect ? `Restore ${adjustedAmount(effect.amount, potionMultiplier)} Mana` : line;
-    }
-    if (line.startsWith("Wish ")) {
-      const effect = wishEffects[wishIndex++];
-      return effect ? `Wish ${adjustedAmount(effect.amount, potionMultiplier)}` : line;
-    }
-    if (line.startsWith("Remove ")) {
-      const effect = cleanseEffects[cleanseIndex++];
-      return effect
-        ? `Remove ${adjustedAmount(effect.amount, potionMultiplier)} harmful Status${adjustedAmount(effect.amount, potionMultiplier) === 1 ? "" : "es"}`
-        : line;
-    }
-    return line;
+    return (
+      processDealLine(line, getDamage, context, potionMultiplier) ??
+      processGoldLine(line, getGold, potionMultiplier) ??
+      processStatusLine(line, getStatus, potionMultiplier) ??
+      processHealLine(line, getHeal, potionMultiplier) ??
+      processRestoreLine(line, getMana, potionMultiplier) ??
+      processWishLine(line, getWish, potionMultiplier) ??
+      processRemoveLine(line, getCleanse, potionMultiplier) ??
+      line
+    );
   });
 }

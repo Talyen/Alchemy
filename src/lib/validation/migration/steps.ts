@@ -170,44 +170,44 @@ function migrateGearInstance(item: Record<string, unknown>): Record<string, unkn
   };
 }
 
+function migrateGearArray(raw: unknown): unknown[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  return raw.map(migrateGearInstance);
+}
+
+function migrateActiveRunGear(activeRun: Record<string, unknown>): Record<string, unknown> {
+  const run = { ...activeRun };
+  if (run.equipmentShopState && typeof run.equipmentShopState === "object") {
+    const shopState = { ...(run.equipmentShopState as Record<string, unknown>) };
+    const migrated = migrateGearArray(shopState.gear);
+    if (migrated) shopState.gear = migrated;
+    run.equipmentShopState = shopState;
+  }
+  if (run.pendingReward && typeof run.pendingReward === "object") {
+    const reward = { ...(run.pendingReward as Record<string, unknown>) };
+    if (reward.rewardType === "gear") {
+      const migrated = migrateGearArray(reward.gearChoices);
+      if (migrated) reward.gearChoices = migrated;
+    }
+    run.pendingReward = reward;
+  }
+  if (run.wildwoodDraft && typeof run.wildwoodDraft === "object") {
+    const draft = { ...(run.wildwoodDraft as Record<string, unknown>) };
+    const migrated = migrateGearArray(draft.rewardGearChoices);
+    if (migrated) draft.rewardGearChoices = migrated;
+    run.wildwoodDraft = draft;
+  }
+  return run;
+}
+
 export function migrateV5ToV6(parsed: RawSaveData): RawSaveData {
   const next = { ...parsed };
-  if (Array.isArray(next.gearInventory)) {
-    next.gearInventory = (next.gearInventory as Array<Record<string, unknown>>).map(migrateGearInstance);
-  }
+  const migratedInventory = migrateGearArray(next.gearInventory);
+  if (migratedInventory) next.gearInventory = migratedInventory;
   if (next.activeRun && typeof next.activeRun === "object") {
-    const activeRun = { ...(next.activeRun as Record<string, unknown>) };
-    if (activeRun.equipmentShopState && typeof activeRun.equipmentShopState === "object") {
-      const shopState = { ...(activeRun.equipmentShopState as Record<string, unknown>) };
-      if (Array.isArray(shopState.gear)) {
-        shopState.gear = (shopState.gear as Array<Record<string, unknown>>).map(migrateGearInstance);
-      }
-      activeRun.equipmentShopState = shopState;
-    }
-    if (activeRun.pendingReward && typeof activeRun.pendingReward === "object") {
-      const pendingReward = { ...(activeRun.pendingReward as Record<string, unknown>) };
-      if (pendingReward.rewardType === "gear" && Array.isArray(pendingReward.gearChoices)) {
-        pendingReward.gearChoices = (pendingReward.gearChoices as Array<Record<string, unknown>>).map(
-          migrateGearInstance,
-        );
-      }
-      activeRun.pendingReward = pendingReward;
-    }
-    if (activeRun.wildwoodDraft && typeof activeRun.wildwoodDraft === "object") {
-      const wildwoodDraft = { ...(activeRun.wildwoodDraft as Record<string, unknown>) };
-      if (Array.isArray(wildwoodDraft.rewardGearChoices)) {
-        wildwoodDraft.rewardGearChoices = (wildwoodDraft.rewardGearChoices as Array<Record<string, unknown>>).map(
-          migrateGearInstance,
-        );
-      }
-      activeRun.wildwoodDraft = wildwoodDraft;
-    }
-    next.activeRun = activeRun;
+    next.activeRun = migrateActiveRunGear(next.activeRun as Record<string, unknown>);
   }
-  return {
-    ...next,
-    saveSchemaVersion: 6,
-  };
+  return { ...next, saveSchemaVersion: 6 };
 }
 
 export function migrateV6ToV7(parsed: RawSaveData): RawSaveData {
@@ -228,22 +228,40 @@ export function migrateV7ToV8(parsed: RawSaveData): RawSaveData {
   };
 }
 
+function readLegacyLoadouts(rawLoadouts: unknown): GearLoadouts {
+  if (!rawLoadouts || typeof rawLoadouts !== "object") {
+    return GEAR_CHARACTER_IDS.reduce((acc, id) => ({ ...acc, [id]: {} }), {} as GearLoadouts);
+  }
+  return GEAR_CHARACTER_IDS.reduce((acc, characterId) => {
+    const raw = (rawLoadouts as Record<string, unknown>)[characterId];
+    acc[characterId] = normalizeGearLoadout(raw as Partial<Record<string, string | null>>);
+    return acc;
+  }, {} as GearLoadouts);
+}
+
+function assignLegacyInventory(
+  gearInventories: ReturnType<typeof createEmptyGearInventories>,
+  gearBoardPositionsByCharacter: ReturnType<typeof createEmptyGearBoardPositionsByCharacter>,
+  legacyInventory: GearInstance[],
+  loadouts: GearLoadouts,
+  legacyBoardPositions: Record<string, { col: number; row: number }>,
+): void {
+  for (const item of legacyInventory) {
+    if (!item || typeof item !== "object" || typeof item.instanceId !== "string") continue;
+    const owner = findGearEquippedCharacter(loadouts, item.instanceId) ?? "knight";
+    gearInventories[owner].push(item);
+    const position = legacyBoardPositions[item.instanceId];
+    if (position) gearBoardPositionsByCharacter[owner][item.instanceId] = position;
+  }
+}
+
 export function migrateV8ToV9(parsed: RawSaveData): RawSaveData {
   if (parsed.gearInventories && typeof parsed.gearInventories === "object") {
     return { ...parsed, saveSchemaVersion: 9 };
   }
 
   const legacyInventory = Array.isArray(parsed.gearInventory) ? (parsed.gearInventory as GearInstance[]) : [];
-  const rawLoadouts = parsed.gearLoadouts;
-  const loadouts = GEAR_CHARACTER_IDS.reduce((acc, characterId) => {
-    const raw =
-      rawLoadouts && typeof rawLoadouts === "object"
-        ? (rawLoadouts as Record<string, unknown>)[characterId]
-        : undefined;
-    acc[characterId] = normalizeGearLoadout(raw as Partial<Record<string, string | null>>);
-    return acc;
-  }, {} as GearLoadouts);
-
+  const loadouts = readLegacyLoadouts(parsed.gearLoadouts);
   const legacyBoardPositions =
     parsed.gearBoardPositions && typeof parsed.gearBoardPositions === "object"
       ? (parsed.gearBoardPositions as Record<string, { col: number; row: number }>)
@@ -257,17 +275,13 @@ export function migrateV8ToV9(parsed: RawSaveData): RawSaveData {
   const gearBoardPositionsByCharacter = createEmptyGearBoardPositionsByCharacter();
   const currencyBoardPositionsByCharacter = createEmptyCurrencyBoardPositionsByCharacter();
 
-  for (const item of legacyInventory) {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- item is unknown runtime data from raw save
-    if (!item || typeof item !== "object" || typeof item.instanceId !== "string") continue;
-    const owner = findGearEquippedCharacter(loadouts, item.instanceId) ?? "knight";
-    gearInventories[owner].push(item);
-    const position = legacyBoardPositions[item.instanceId];
-    if (position) {
-      gearBoardPositionsByCharacter[owner][item.instanceId] = position;
-    }
-  }
-
+  assignLegacyInventory(
+    gearInventories,
+    gearBoardPositionsByCharacter,
+    legacyInventory,
+    loadouts,
+    legacyBoardPositions,
+  );
   currencyBoardPositionsByCharacter.knight = { ...legacyCurrencyPositions };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure to extract ...rest discarding legacy keys

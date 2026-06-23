@@ -45,14 +45,14 @@ export function resolveMoveWithSwap<TKind extends string>(
 
   const placed: Array<BoardItem<TKind>> = [{ ...moving, position: target }, ...fixed];
 
-  const isOccupied = (col: number, row: number, w: number, h: number): boolean => {
+  function isOccupied(col: number, row: number, w: number, h: number): boolean {
     if (col < 1 || col + w - 1 > cols || row < 1) return true;
     return placed.some((p) =>
       overlaps({ col: p.position.col, row: p.position.row, w: p.footprint.w, h: p.footprint.h }, { col, row, w, h }),
     );
-  };
+  }
 
-  for (const item of displaced) {
+  function findClosestPlacement(item: BoardItem<TKind>): { col: number; row: number } {
     let bestCol = 1;
     let bestRow = 1;
     let bestDistanceSq = Number.POSITIVE_INFINITY;
@@ -74,9 +74,12 @@ export function resolveMoveWithSwap<TKind extends string>(
         }
       }
     }
+    return { col: bestCol, row: bestRow };
+  }
 
-    const next: BoardItem<TKind> = { ...item, position: { col: bestCol, row: bestRow } };
-    placed.push(next);
+  for (const item of displaced) {
+    const pos = findClosestPlacement(item);
+    placed.push({ ...item, position: pos });
   }
 
   for (const item of placed) positions.set(boardItemKey(item), item.position);

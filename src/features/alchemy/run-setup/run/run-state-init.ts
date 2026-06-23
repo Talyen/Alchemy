@@ -52,35 +52,81 @@ function hydrateDestinationRoundsSinceOffered(
   return roundsSinceOffered;
 }
 
+function hydrateDeck(initialActiveRun: ActiveRunData | null, characterId: CharacterId): BattleCard[] {
+  if (initialActiveRun) return initialActiveRun.runDeck.map(hydrateCard);
+  return getStartingDeck(characterId).map((c) => ({ ...c }));
+}
+
+function hydrateDestinations(initialActiveRun: ActiveRunData | null): {
+  completedDestinations: Destination[];
+  lastOfferedDestinations: Destination[];
+  destinationRoundsSinceOffered: Partial<Record<Destination, number>>;
+} {
+  if (!initialActiveRun)
+    return { completedDestinations: [], lastOfferedDestinations: [], destinationRoundsSinceOffered: {} };
+  return {
+    completedDestinations: initialActiveRun.completedDestinations?.length
+      ? filterValidDestinations(initialActiveRun.completedDestinations)
+      : [],
+    lastOfferedDestinations: filterValidDestinations(initialActiveRun.lastOfferedDestinations),
+    destinationRoundsSinceOffered: hydrateDestinationRoundsSinceOffered(initialActiveRun.destinationRoundsSinceOffered),
+  };
+}
+
+function hydrateRunMeta(
+  initialActiveRun: ActiveRunData | null,
+): Pick<
+  RunStateFields,
+  | "runGold"
+  | "runPlayerHealth"
+  | "runMaxHealth"
+  | "roomsEncountered"
+  | "currentAct"
+  | "destinationIndexInAct"
+  | "runTrinkets"
+  | "encounteredRunEnemyIds"
+  | "selectedDifficulty"
+  | "contentSystemType"
+> {
+  const fallback = <T>(val: T | null | undefined, def: T): T => val ?? def;
+  const copyIf = <T>(val: T[] | null | undefined): T[] => (val ? [...val] : []);
+
+  const runGold = fallback(initialActiveRun?.runGold, 0);
+  const runPlayerHealth = fallback(initialActiveRun?.runPlayerHealth, MAX_PLAYER_HEALTH);
+  const runMaxHealth = fallback(initialActiveRun?.runMaxHealth, MAX_PLAYER_HEALTH);
+  const roomsEncountered = fallback(initialActiveRun?.roomsEncountered, 0);
+  const currentAct = fallback(initialActiveRun?.currentAct, 1);
+  const destinationIndexInAct = fallback(initialActiveRun?.destinationIndexInAct, 0);
+  const runTrinkets = copyIf(initialActiveRun?.runTrinkets);
+  const encounteredRunEnemyIds = copyIf(initialActiveRun?.encounteredRunEnemyIds);
+  const selectedDifficulty = fallback(initialActiveRun?.selectedDifficulty, null);
+  const contentSystemType = fallback(initialActiveRun?.contentSystemType, "campaign");
+
+  return {
+    runGold,
+    runPlayerHealth,
+    runMaxHealth,
+    roomsEncountered,
+    currentAct,
+    destinationIndexInAct,
+    runTrinkets,
+    encounteredRunEnemyIds,
+    selectedDifficulty,
+    contentSystemType,
+  };
+}
+
 export function createInitialRunState(
   initialActiveRun: ActiveRunData | null,
   fallbackCharacterId: CharacterId = "knight",
 ): RunStateFields {
   const characterId = initialActiveRun?.characterId ?? fallbackCharacterId;
+  const dest = hydrateDestinations(initialActiveRun);
   return {
     characterId,
-    runDeck: initialActiveRun
-      ? initialActiveRun.runDeck.map(hydrateCard)
-      : getStartingDeck(characterId).map((c) => ({ ...c })),
-    runGold: initialActiveRun?.runGold ?? 0,
-    runPlayerHealth: initialActiveRun?.runPlayerHealth ?? MAX_PLAYER_HEALTH,
-    runMaxHealth: initialActiveRun?.runMaxHealth ?? MAX_PLAYER_HEALTH,
-    roomsEncountered: initialActiveRun?.roomsEncountered ?? 0,
-    currentAct: initialActiveRun?.currentAct ?? 1,
-    destinationIndexInAct: initialActiveRun?.destinationIndexInAct ?? 0,
-    completedDestinations: initialActiveRun?.completedDestinations?.length
-      ? filterValidDestinations(initialActiveRun.completedDestinations)
-      : [],
-    lastOfferedDestinations: filterValidDestinations(initialActiveRun?.lastOfferedDestinations),
-    destinationRoundsSinceOffered: hydrateDestinationRoundsSinceOffered(
-      initialActiveRun?.destinationRoundsSinceOffered,
-    ),
-    runTrinkets: initialActiveRun?.runTrinkets ? [...initialActiveRun.runTrinkets] : [],
-    encounteredRunEnemyIds: initialActiveRun?.encounteredRunEnemyIds
-      ? [...initialActiveRun.encounteredRunEnemyIds]
-      : [],
-    selectedDifficulty: initialActiveRun?.selectedDifficulty ?? null,
-    contentSystemType: initialActiveRun?.contentSystemType ?? "campaign",
+    runDeck: hydrateDeck(initialActiveRun, characterId),
+    ...hydrateRunMeta(initialActiveRun),
+    ...dest,
     talentXP: {},
     runTalentXP: initialActiveRun?.runTalentXP ?? {},
     runMaterialsEarned: initialActiveRun?.runMaterialsEarned ?? emptyInventory(),

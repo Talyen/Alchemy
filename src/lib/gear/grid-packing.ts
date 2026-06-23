@@ -80,6 +80,78 @@ export function overlaps(
   return !(a.col + a.w <= b.col || b.col + b.w <= a.col || a.row + a.h <= b.row || b.row + b.h <= a.row);
 }
 
+function placeBlockedCells(occupancy: boolean[][], blockedCells: readonly Obstacle[], cols: number): number {
+  let occupiedRows = 0;
+  for (const cell of blockedCells) {
+    if (cell.col < 1 || cell.row < 1 || cell.col + cell.w - 1 > cols) continue;
+    markPlaced(occupancy, cell.col, cell.row, { w: cell.w, h: cell.h }, cols);
+    occupiedRows = Math.max(occupiedRows, cell.row - 1 + cell.h);
+  }
+  return occupiedRows;
+}
+
+function placeReservedItems<T extends GridItemInput>(
+  occupancy: boolean[][],
+  reservedItems: readonly T[],
+  visibleIds: Set<string>,
+  cols: number,
+): number {
+  let occupiedRows = 0;
+  for (const item of reservedItems) {
+    if (visibleIds.has(item.id)) continue;
+    const saved = item.saved;
+    if (!saved || saved.col < 1 || saved.row < 1 || saved.col + item.w - 1 > cols) continue;
+    if (!canPlace(occupancy, saved.col, saved.row, { w: item.w, h: item.h }, cols)) continue;
+    markPlaced(occupancy, saved.col, saved.row, { w: item.w, h: item.h }, cols);
+    occupiedRows = Math.max(occupiedRows, saved.row - 1 + item.h);
+  }
+  return occupiedRows;
+}
+
+function placeSavedItems<T extends GridItemInput>(
+  occupancy: boolean[][],
+  items: T[],
+  cols: number,
+  packedItems: Array<PackedGridItem<T>>,
+): { remainingItems: T[]; occupiedRows: number } {
+  let occupiedRows = 0;
+  const remainingItems: T[] = [];
+
+  for (const item of items) {
+    const saved = item.saved;
+    if (saved && saved.col >= 1 && saved.row >= 1 && saved.col + item.w - 1 <= cols) {
+      if (canPlace(occupancy, saved.col, saved.row, { w: item.w, h: item.h }, cols)) {
+        markPlaced(occupancy, saved.col, saved.row, { w: item.w, h: item.h }, cols);
+        packedItems.push({ item, col: saved.col, row: saved.row, w: item.w, h: item.h });
+        occupiedRows = Math.max(occupiedRows, saved.row - 1 + item.h);
+        continue;
+      }
+    }
+    remainingItems.push(item);
+  }
+
+  return { remainingItems, occupiedRows };
+}
+
+function placeRemainingItems<T extends GridItemInput>(
+  occupancy: boolean[][],
+  items: T[],
+  cols: number,
+  packedItems: Array<PackedGridItem<T>>,
+): number {
+  let occupiedRows = 0;
+  for (const item of items) {
+    if (item.w < 1 || item.h < 1 || item.w > cols) {
+      throw new RangeError(`Inventory footprint ${item.w}x${item.h} does not fit ${cols}-column board`);
+    }
+    const position = findPlacement(occupancy, { w: item.w, h: item.h }, cols);
+    packedItems.push({ item, col: position.col, row: position.row, w: item.w, h: item.h });
+    markPlaced(occupancy, position.col, position.row, { w: item.w, h: item.h }, cols);
+    occupiedRows = Math.max(occupiedRows, position.row - 1 + item.h);
+  }
+  return occupiedRows;
+}
+
 export function packGridItems<T extends GridItemInput>(
   items: T[],
   cols: number,
@@ -91,56 +163,14 @@ export function packGridItems<T extends GridItemInput>(
   const { reservedItems = [], blockedCells = [] } = options;
   const packedItems: Array<PackedGridItem<T>> = [];
   const occupancy: boolean[][] = [];
-  let occupiedRows = 0;
   const visibleIds = new Set(items.map((item) => item.id));
 
-  for (const cell of blockedCells) {
-    if (cell.col < 1 || cell.row < 1 || cell.col + cell.w - 1 > cols) continue;
-    markPlaced(occupancy, cell.col, cell.row, { w: cell.w, h: cell.h }, cols);
-    occupiedRows = Math.max(occupiedRows, cell.row - 1 + cell.h);
-  }
+  const blockedRows = placeBlockedCells(occupancy, blockedCells, cols);
+  const reservedRows = placeReservedItems(occupancy, reservedItems, visibleIds, cols);
+  const { remainingItems, occupiedRows: savedRows } = placeSavedItems(occupancy, items, cols, packedItems);
+  const fillRows = placeRemainingItems(occupancy, remainingItems, cols, packedItems);
 
-  for (const item of reservedItems) {
-    if (visibleIds.has(item.id)) continue;
-    const saved = item.saved;
-    if (!saved || saved.col < 1 || saved.row < 1 || saved.col + item.w - 1 > cols) continue;
-    if (!canPlace(occupancy, saved.col, saved.row, { w: item.w, h: item.h }, cols)) continue;
-    markPlaced(occupancy, saved.col, saved.row, { w: item.w, h: item.h }, cols);
-    occupiedRows = Math.max(occupiedRows, saved.row - 1 + item.h);
-  }
-
-  const remainingItems: T[] = [];
-
-  for (const item of items) {
-    const saved = item.saved;
-    if (saved && saved.col >= 1 && saved.row >= 1 && saved.col + item.w - 1 <= cols) {
-      if (canPlace(occupancy, saved.col, saved.row, { w: item.w, h: item.h }, cols)) {
-        markPlaced(occupancy, saved.col, saved.row, { w: item.w, h: item.h }, cols);
-        packedItems.push({
-          item,
-          col: saved.col,
-          row: saved.row,
-          w: item.w,
-          h: item.h,
-        });
-        occupiedRows = Math.max(occupiedRows, saved.row - 1 + item.h);
-        continue;
-      }
-    }
-    remainingItems.push(item);
-  }
-
-  for (const item of remainingItems) {
-    if (item.w < 1 || item.h < 1 || item.w > cols) {
-      throw new RangeError(`Inventory footprint ${item.w}x${item.h} does not fit ${cols}-column board`);
-    }
-    const position = findPlacement(occupancy, { w: item.w, h: item.h }, cols);
-    packedItems.push({ item, col: position.col, row: position.row, w: item.w, h: item.h });
-    markPlaced(occupancy, position.col, position.row, { w: item.w, h: item.h }, cols);
-    occupiedRows = Math.max(occupiedRows, position.row - 1 + item.h);
-  }
-
-  return { items: packedItems, occupiedRows };
+  return { items: packedItems, occupiedRows: Math.max(blockedRows, reservedRows, savedRows, fillRows) };
 }
 
 export function packInventoryGrid<T>(

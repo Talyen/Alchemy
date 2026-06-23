@@ -29,47 +29,38 @@ function applyStunTalentEffects(state: BattleState, combatTexts?: CombatTextEven
   return nextState;
 }
 
+function applyStunGearDamage(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
+  const gear = state.gearEffects;
+  if (gear.damageOnStunPhysical <= 0) return state;
+  const enemyWasAlive = state.enemyHealth > 0;
+  const finalDamage = applyGearProcPhysicalDamage(state, gear.damageOnStunPhysical);
+  let next = { ...state, enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth) };
+  if (combatTexts)
+    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "physical", amount: finalDamage });
+  next = applyLuckyCloverGold(next, finalDamage, combatTexts ?? []);
+  if (enemyWasAlive && next.enemyHealth <= 0) next = applyGearKillRewards(next, true, combatTexts ?? []);
+  return next;
+}
+
 function applyStunGearEffects(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
   let nextState = state;
   const gear = nextState.gearEffects;
-  if (gear.damageOnStunPhysical > 0) {
-    const enemyWasAlive = nextState.enemyHealth > 0;
-    const finalDamage = applyGearProcPhysicalDamage(nextState, gear.damageOnStunPhysical);
-    nextState = {
-      ...nextState,
-      enemyHealth: clampHealth(nextState.enemyHealth, -finalDamage, nextState.enemyMaxHealth),
-    };
-    if (combatTexts) {
-      mergeCombatText(combatTexts, {
-        target: "enemy",
-        kind: "damage",
-        stat: "physical",
-        amount: finalDamage,
-      });
-    }
-    nextState = applyLuckyCloverGold(nextState, finalDamage, combatTexts ?? []);
-    if (enemyWasAlive && nextState.enemyHealth <= 0) {
-      nextState = applyGearKillRewards(nextState, true, combatTexts ?? []);
-    }
-  }
+  nextState = applyStunGearDamage(nextState, combatTexts);
   if (gear.forgeOnStun > 0) {
     nextState = addPlayerStatus(nextState, "forge", gear.forgeOnStun);
-    if (combatTexts) {
+    if (combatTexts)
       mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "forge", amount: gear.forgeOnStun });
-    }
   }
   if (gear.blockOnStun > 0) {
     const blockGain = gear.blockOnStun + (gear.flatBlockGained > 0 ? gear.flatBlockGained : 0);
     nextState = addPlayerStatus(nextState, "block", gear.blockOnStun);
-    if (combatTexts) {
+    if (combatTexts)
       mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "block", amount: blockGain });
-    }
   }
   if (gear.manaOnStun > 0) {
     nextState = { ...nextState, mana: nextState.mana + gear.manaOnStun };
-    if (combatTexts) {
+    if (combatTexts)
       mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: gear.manaOnStun });
-    }
   }
   return nextState;
 }

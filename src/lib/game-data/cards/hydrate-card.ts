@@ -7,49 +7,46 @@ type SavedCard = BattleCard & {
   effectsFullyValid?: boolean;
 };
 
+function hydrateDescriptionLines(saved: SavedCard, libraryCard: BattleCard): string[] {
+  if (Array.isArray(saved.descriptionLines) && saved.descriptionLinesFullyValid !== false)
+    return [...saved.descriptionLines];
+  return [...libraryCard.descriptionLines];
+}
+
+function hydrateEffects(saved: SavedCard, libraryCard: BattleCard): BattleCard["effects"] {
+  if (Array.isArray(saved.effects) && saved.effectsFullyValid !== false)
+    return saved.effects.map((e) => (typeof e === "object" ? { ...e } : e)) as BattleCard["effects"];
+  return libraryCard.effects.map((e) => ({ ...e }));
+}
+
+function hydrateCost(saved: SavedCard, libraryCard: BattleCard): number {
+  if (typeof saved.cost === "number" && Number.isFinite(saved.cost) && saved.cost >= 0) return Math.round(saved.cost);
+  return libraryCard.cost;
+}
+
+function pickOptionalField<T>(saved: SavedCard, key: keyof SavedCard): T | undefined {
+  return saved[key] !== undefined ? (saved[key] as T) : undefined;
+}
+
 export function hydrateCard(savedCard: BattleCard): BattleCard {
   const libraryCard = cardLibrary.find((c) => c.id === savedCard.id);
   if (!libraryCard) return savedCard;
 
   const saved = savedCard as SavedCard;
-
-  const descriptionLines =
-    Array.isArray(saved.descriptionLines) && saved.descriptionLinesFullyValid !== false
-      ? [...saved.descriptionLines]
-      : [...libraryCard.descriptionLines];
-
-  const effects =
-    Array.isArray(saved.effects) && saved.effectsFullyValid !== false
-      ? (saved.effects.map((e) => (typeof e === "object" ? { ...e } : e)) as BattleCard["effects"])
-      : libraryCard.effects.map((e) => ({ ...e }));
-
-  const cost =
-    typeof saved.cost === "number" && Number.isFinite(saved.cost) && saved.cost >= 0
-      ? Math.round(saved.cost)
-      : libraryCard.cost;
-
   const corruptedValuePositions =
     Array.isArray(saved.corruptedValuePositions) && saved.corruptedValuePositions.length > 0
       ? saved.corruptedValuePositions
       : undefined;
 
-  const result: BattleCard = { ...libraryCard, descriptionLines, effects, cost };
-
-  if (saved.consume !== undefined) {
-    result.consume = saved.consume;
-  }
-  if (saved.corrupted !== undefined) {
-    result.corrupted = saved.corrupted;
-  }
-  if (saved.baseTitle !== undefined) {
-    result.baseTitle = saved.baseTitle;
-  }
-  if (saved.uid !== undefined) {
-    result.uid = saved.uid;
-  }
-  if (corruptedValuePositions) {
-    result.corruptedValuePositions = corruptedValuePositions;
-  }
-
-  return result;
+  return {
+    ...libraryCard,
+    descriptionLines: hydrateDescriptionLines(saved, libraryCard),
+    effects: hydrateEffects(saved, libraryCard),
+    cost: hydrateCost(saved, libraryCard),
+    ...(pickOptionalField<boolean>(saved, "consume") !== undefined && { consume: saved.consume }),
+    ...(pickOptionalField<boolean>(saved, "corrupted") !== undefined && { corrupted: saved.corrupted }),
+    ...(pickOptionalField<string>(saved, "baseTitle") !== undefined && { baseTitle: saved.baseTitle }),
+    ...(pickOptionalField<string>(saved, "uid") !== undefined && { uid: saved.uid }),
+    ...(corruptedValuePositions && { corruptedValuePositions }),
+  };
 }

@@ -57,21 +57,181 @@ function parseLeadingNumber(line: string, prefix: string): number | null {
   return match ? Number(match[1]) : null;
 }
 
-function reportMismatch(
+function pushMissingEffect(issues: ContentValidationIssue[], id: string, line: string): void {
+  issues.push({
+    severity: "error",
+    area: "cards",
+    id,
+    message: `"${line}" has no matching effect`,
+  });
+}
+
+function pushValueMismatch(issues: ContentValidationIssue[], id: string, line: string, actual: number): void {
+  issues.push({
+    severity: "error",
+    area: "cards",
+    id,
+    message: `"${line}" does not match authored amount ${actual}`,
+  });
+}
+
+function checkSimpleValueLine(
+  line: string,
+  prefix: string,
+  nextEffect: () => { amount: number } | undefined,
   issues: ContentValidationIssue[],
-  id: string,
-  label: string,
-  described: number,
-  actual: number,
-): void {
-  if (described !== actual) {
-    issues.push({
-      severity: "error",
-      area: "cards",
-      id,
-      message: `${label} description count ${described} does not match effect count ${actual}`,
-    });
+  cardId: string,
+): boolean {
+  if (!line.startsWith(prefix)) return false;
+  const effect = nextEffect();
+  if (!effect) {
+    pushMissingEffect(issues, cardId, line);
+    return true;
   }
+  const parsed = parseLeadingNumber(line, prefix);
+  if (parsed !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
+  return true;
+}
+
+function checkRestoreManaLine(
+  line: string,
+  nextEffect: () => { amount: number } | undefined,
+  issues: ContentValidationIssue[],
+  cardId: string,
+): boolean {
+  if (!line.startsWith("Restore ") || !line.includes("Mana")) return false;
+  const effect = nextEffect();
+  if (!effect) {
+    pushMissingEffect(issues, cardId, line);
+    return true;
+  }
+  if (parseLeadingNumber(line, "Restore ") !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
+  return true;
+}
+
+function checkRestoreHealthLine(
+  line: string,
+  nextEffect: () => { amount: number } | undefined,
+  issues: ContentValidationIssue[],
+  cardId: string,
+): boolean {
+  if (!line.startsWith("Restore ") || !line.includes("Health")) return false;
+  const effect = nextEffect();
+  if (!effect) {
+    pushMissingEffect(issues, cardId, line);
+    return true;
+  }
+  if (parseLeadingNumber(line, "Restore ") !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
+  return true;
+}
+
+type NextDamageFn = () => (BattleCardEffect & { kind: "damage" }) | undefined;
+type NextPlayerStatusFn = () => (BattleCardEffect & { kind: "player-status" }) | undefined;
+type NextSimpleFn<T extends { amount: number }> = () => T | undefined;
+
+function checkDealLine(
+  line: string,
+  nextDamage: NextDamageFn,
+  issues: ContentValidationIssue[],
+  cardId: string,
+): boolean {
+  if (!line.startsWith("Deal ")) return false;
+  const effect = nextDamage();
+  if (
+    !effect ||
+    effect.equalToBlock ||
+    effect.equalToArmor ||
+    effect.equalToGoldPercent ||
+    line.includes("equal to") ||
+    line.toLowerCase().includes("random")
+  ) {
+    return true;
+  }
+  if (parseLeadingNumber(line, "Deal ") !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
+  return true;
+}
+
+function checkGoldLine(
+  line: string,
+  nextGold: NextSimpleFn<{ amount: number }>,
+  issues: ContentValidationIssue[],
+  cardId: string,
+): boolean {
+  if (!line.startsWith("Gain ") || !line.includes(" Gold")) return false;
+  const effect = nextGold();
+  if (!effect) {
+    pushMissingEffect(issues, cardId, line);
+    return true;
+  }
+  if (parseLeadingNumber(line, "Gain ") !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
+  return true;
+}
+
+function checkPerManaBlockLine(
+  line: string,
+  nextPlayerStatus: NextPlayerStatusFn,
+  issues: ContentValidationIssue[],
+  cardId: string,
+): boolean {
+  if (!line.startsWith("Gain ") || !line.includes(" Block") || !line.includes("per Mana Crystal")) return false;
+  const effect = nextPlayerStatus();
+  const perManaCrystal = effect?.status === "block" ? effect.perManaCrystal : undefined;
+  if (perManaCrystal !== undefined && parseLeadingNumber(line, "Gain ") !== perManaCrystal)
+    pushValueMismatch(issues, cardId, line, perManaCrystal);
+  return true;
+}
+
+function checkStatusLine(
+  line: string,
+  nextPlayerStatus: NextPlayerStatusFn,
+  issues: ContentValidationIssue[],
+  cardId: string,
+): boolean {
+  if (!line.startsWith("Gain ") || !(line.includes(" Block") || line.includes(" Armor") || line.includes(" Forge")))
+    return false;
+  const effect = nextPlayerStatus();
+  if (
+    effect &&
+    effect.status !== "haste" &&
+    effect.perManaCrystal === undefined &&
+    parseLeadingNumber(line, "Gain ") !== effect.amount
+  ) {
+    pushValueMismatch(issues, cardId, line, effect.amount);
+  }
+  return true;
+}
+
+function checkRemoveHarmfulLine(
+  line: string,
+  nextRemoveHarmful: NextSimpleFn<{ amount: number }>,
+  issues: ContentValidationIssue[],
+  cardId: string,
+): boolean {
+  if (!(line.startsWith("Remove ") || line.startsWith("Cleanse ")) || !line.includes("harmful status")) return false;
+  const effect = nextRemoveHarmful();
+  const prefix = line.startsWith("Remove ") ? "Remove " : "Cleanse ";
+  if (!effect) {
+    pushMissingEffect(issues, cardId, line);
+    return true;
+  }
+  if (parseLeadingNumber(line, prefix) !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
+  return true;
+}
+
+function checkWishLine(
+  line: string,
+  nextWish: NextSimpleFn<{ amount: number }>,
+  issues: ContentValidationIssue[],
+  cardId: string,
+): boolean {
+  if (!line.startsWith("Wish ")) return false;
+  const effect = nextWish();
+  if (!effect) {
+    pushMissingEffect(issues, cardId, line);
+    return true;
+  }
+  if (parseLeadingNumber(line, "Wish ") !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
+  return true;
 }
 
 function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
@@ -92,144 +252,17 @@ function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
   const nextWish = getNext("wish");
   const nextRemoveHarmful = getNext("remove-harmful-status");
 
-  function mismatch(line: string, actual: number): void {
-    issues.push({
-      severity: "error",
-      area: "cards",
-      id: card.id,
-      message: `"${line}" does not match authored amount ${actual}`,
-    });
-  }
-
   for (const line of descriptionLines) {
     if (line.startsWith("Deals ")) continue;
-
-    if (line.startsWith("Deal ")) {
-      const effect = nextDamage();
-      if (
-        !effect ||
-        effect.equalToBlock ||
-        effect.equalToArmor ||
-        effect.equalToGoldPercent ||
-        line.includes("equal to") ||
-        line.toLowerCase().includes("random")
-      ) {
-        continue;
-      }
-      if (parseLeadingNumber(line, "Deal ") !== effect.amount) mismatch(line, effect.amount);
-      continue;
-    }
-
-    if (line.startsWith("Gain ") && line.includes(" Gold")) {
-      const effect = nextGold();
-      if (effect) {
-        if (parseLeadingNumber(line, "Gain ") !== effect.amount) mismatch(line, effect.amount);
-      } else {
-        issues.push({
-          severity: "error",
-          area: "cards",
-          id: card.id,
-          message: `"${line}" has no matching gain-gold effect`,
-        });
-      }
-      continue;
-    }
-
-    if (line.startsWith("Gain ") && line.includes(" Block") && line.includes("per Mana Crystal")) {
-      const effect = nextPlayerStatus();
-      const perManaCrystal = effect?.status === "block" ? effect.perManaCrystal : undefined;
-      if (perManaCrystal !== undefined && parseLeadingNumber(line, "Gain ") !== perManaCrystal)
-        mismatch(line, perManaCrystal);
-      continue;
-    }
-
-    if (line.startsWith("Gain ") && (line.includes(" Block") || line.includes(" Armor") || line.includes(" Forge"))) {
-      const effect = nextPlayerStatus();
-      if (
-        effect &&
-        effect.status !== "haste" &&
-        effect.perManaCrystal === undefined &&
-        parseLeadingNumber(line, "Gain ") !== effect.amount
-      ) {
-        mismatch(line, effect.amount);
-      }
-      continue;
-    }
-
-    if (line.startsWith("Heal ")) {
-      const effect = nextHeal();
-      if (effect) {
-        if (parseLeadingNumber(line, "Heal ") !== effect.amount) mismatch(line, effect.amount);
-      } else {
-        issues.push({
-          severity: "error",
-          area: "cards",
-          id: card.id,
-          message: `"${line}" has no matching heal effect`,
-        });
-      }
-      continue;
-    }
-
-    if (line.startsWith("Restore ") && line.includes("Mana")) {
-      const effect = nextRestoreMana();
-      if (effect) {
-        if (parseLeadingNumber(line, "Restore ") !== effect.amount) mismatch(line, effect.amount);
-      } else {
-        issues.push({
-          severity: "error",
-          area: "cards",
-          id: card.id,
-          message: `"${line}" has no matching restore-mana effect`,
-        });
-      }
-      continue;
-    }
-
-    if (line.startsWith("Restore ") && line.includes("Health")) {
-      const effect = nextHeal();
-      if (effect) {
-        if (parseLeadingNumber(line, "Restore ") !== effect.amount) mismatch(line, effect.amount);
-      } else {
-        issues.push({
-          severity: "error",
-          area: "cards",
-          id: card.id,
-          message: `"${line}" has no matching heal effect`,
-        });
-      }
-      continue;
-    }
-
-    if (line.startsWith("Wish ")) {
-      const effect = nextWish();
-      if (effect) {
-        if (parseLeadingNumber(line, "Wish ") !== effect.amount) mismatch(line, effect.amount);
-      } else {
-        issues.push({
-          severity: "error",
-          area: "cards",
-          id: card.id,
-          message: `"${line}" has no matching wish effect`,
-        });
-      }
-      continue;
-    }
-
-    if ((line.startsWith("Remove ") || line.startsWith("Cleanse ")) && line.includes("harmful status")) {
-      const effect = nextRemoveHarmful();
-      if (effect) {
-        const parsed = parseLeadingNumber(line, line.startsWith("Remove ") ? "Remove " : "Cleanse ");
-        if (parsed !== effect.amount) mismatch(line, effect.amount);
-      } else {
-        issues.push({
-          severity: "error",
-          area: "cards",
-          id: card.id,
-          message: `"${line}" has no matching remove-harmful-status effect`,
-        });
-      }
-    }
+    if (checkDealLine(line, nextDamage, issues, card.id)) continue;
+    if (checkGoldLine(line, nextGold, issues, card.id)) continue;
+    if (checkPerManaBlockLine(line, nextPlayerStatus, issues, card.id)) continue;
+    if (checkStatusLine(line, nextPlayerStatus, issues, card.id)) continue;
+    if (checkSimpleValueLine(line, "Heal ", nextHeal, issues, card.id)) continue;
+    if (checkRestoreManaLine(line, nextRestoreMana, issues, card.id)) continue;
+    if (checkRestoreHealthLine(line, nextHeal, issues, card.id)) continue;
+    if (checkWishLine(line, nextWish, issues, card.id)) continue;
+    checkRemoveHarmfulLine(line, nextRemoveHarmful, issues, card.id);
   }
 
   return issues;
@@ -346,108 +379,182 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
   },
 ];
 
-export function validateCardDescriptionParity(card: BattleCard): ContentValidationIssue[] {
-  const issues: ContentValidationIssue[] = [];
+function checkDamageParity(card: BattleCard): ContentValidationIssue | null {
   const { effects, descriptionLines } = card;
-  const dealLines = descriptionLines.filter(
-    (line) => line.startsWith("Deal ") && !line.includes("equal to") && !line.toLowerCase().includes("random"),
-  ).length;
-  const damageEffects = countByKind(effects, "damage") + countByKind(effects, "random-damage");
-
-  if (!hasNonStandardDamageEffects(effects)) {
-    if (hasKind(effects, "self-damage")) {
-      if (!descriptionLines.some((line) => /self|Receive/.test(line))) {
-        issues.push({
-          severity: "error",
-          area: "cards",
-          id: card.id,
-          message: "Self-damage effect is missing matching description text",
-        });
-      }
-    } else {
-      reportMismatch(issues, card.id, "damage", dealLines, damageEffects);
+  if (hasNonStandardDamageEffects(effects)) return null;
+  if (hasKind(effects, "self-damage")) {
+    if (!descriptionLines.some((line) => /self|Receive/.test(line))) {
+      return {
+        severity: "error",
+        area: "cards",
+        id: card.id,
+        message: "Self-damage effect is missing matching description text",
+      };
+    }
+  } else {
+    const dealLines = descriptionLines.filter(
+      (line) => line.startsWith("Deal ") && !line.includes("equal to") && !line.toLowerCase().includes("random"),
+    ).length;
+    const damageEffects = countByKind(effects, "damage") + countByKind(effects, "random-damage");
+    if (dealLines !== damageEffects) {
+      return {
+        severity: "error",
+        area: "cards",
+        id: card.id,
+        message: `damage description count ${dealLines} does not match effect count ${damageEffects}`,
+      };
     }
   }
+  return null;
+}
 
-  for (const rule of COUNT_PARITY_RULES) {
-    reportMismatch(issues, card.id, rule.label, rule.countLines(descriptionLines), rule.countEffects(effects));
-  }
-
+function checkHasteParity(card: BattleCard): ContentValidationIssue | null {
+  const { effects, descriptionLines } = card;
   if (
     effects.some((effect) => effect.kind === "player-status" && effect.status === "haste") &&
     !descriptionLines.some((line) => line.includes("extra turn"))
   ) {
-    issues.push({
+    return {
       severity: "error",
       area: "cards",
       id: card.id,
       message: "Haste effect is missing extra-turn description text",
-    });
+    };
   }
+  return null;
+}
+
+function checkPhoenixFeatherParity(card: BattleCard): ContentValidationIssue | null {
+  const { effects, descriptionLines } = card;
   if (
     flattenEffects(effects).some((effect) => effect.kind === "player-status" && effect.status === "phoenixFeather") &&
     !descriptionLines.some((line) => line.includes("die") || line.includes("30%"))
   ) {
-    issues.push({
+    return {
       severity: "error",
       area: "cards",
       id: card.id,
       message: "Phoenix Feather effect is missing revive description text",
-    });
+    };
   }
-  if (!hasKind(effects, "self-damage")) {
-    reportMismatch(
-      issues,
-      card.id,
-      "buff-companion",
-      countLinesStartingWith(descriptionLines, "Increase "),
-      countByKind(effects, "buff-companion"),
-    );
+  return null;
+}
+
+function checkBuffCompanionParity(card: BattleCard): ContentValidationIssue | null {
+  if (hasKind(card.effects, "self-damage")) return null;
+  const described = countLinesStartingWith(card.descriptionLines, "Increase ");
+  const actual = countByKind(card.effects, "buff-companion");
+  if (described !== actual) {
+    return {
+      severity: "error",
+      area: "cards",
+      id: card.id,
+      message: `buff-companion description count ${described} does not match effect count ${actual}`,
+    };
   }
-  if (hasLifesteal(effects) && !descriptionLines.some((line) => line === "Leech")) {
-    issues.push({
+  return null;
+}
+
+function checkLifestealParity(card: BattleCard): ContentValidationIssue | null {
+  if (!hasLifesteal(card.effects)) return null;
+  if (!card.descriptionLines.some((line) => line === "Leech")) {
+    return {
       severity: "warning",
       area: "cards",
       id: card.id,
       message: "Lifesteal effect is missing Leech description line",
-    });
+    };
   }
-  if (card.tags?.includes("archery") && !descriptionLines.some((line) => line === "Archery")) {
-    issues.push({
+  return null;
+}
+
+function checkArcheryTagParity(card: BattleCard): ContentValidationIssue | null {
+  const hasArcheryTag = card.tags?.includes("archery");
+  const hasArcheryLine = card.descriptionLines.some((line) => line === "Archery");
+  if (hasArcheryTag && !hasArcheryLine) {
+    return {
       severity: "warning",
       area: "cards",
       id: card.id,
       message: "Archery tag is missing Archery description line",
-    });
+    };
   }
-  if (descriptionLines.some((line) => line === "Archery") && !card.tags?.includes("archery")) {
-    issues.push({
+  if (hasArcheryLine && !hasArcheryTag) {
+    return {
       severity: "warning",
       area: "cards",
       id: card.id,
       message: "Archery description line is missing archery tag",
-    });
+    };
   }
-  if (card.consume === true) {
-    const hasConsume = descriptionLines.some((line) => line === "Consume");
-    const hasCompanion =
-      hasKind(card.effects, "summon-companion") && descriptionLines.some((line) => line === "Companion");
-    if (!hasConsume && !hasCompanion) {
-      issues.push({
-        severity: "warning",
-        area: "cards",
-        id: card.id,
-        message: "consume:true is missing Consume or Companion description line",
-      });
-    }
+  return null;
+}
+
+function checkConsumeParity(card: BattleCard): ContentValidationIssue | null {
+  if (card.consume !== true) return null;
+  const hasConsume = card.descriptionLines.some((line) => line === "Consume");
+  const hasCompanion =
+    hasKind(card.effects, "summon-companion") && card.descriptionLines.some((line) => line === "Companion");
+  if (!hasConsume && !hasCompanion) {
+    return {
+      severity: "warning",
+      area: "cards",
+      id: card.id,
+      message: "consume:true is missing Consume or Companion description line",
+    };
   }
-  if (hasKind(effects, "summon-companion") && !descriptionLines.some((line) => line.includes("Companion"))) {
-    issues.push({
+  return null;
+}
+
+function checkCompanionParity(card: BattleCard): ContentValidationIssue | null {
+  if (!hasKind(card.effects, "summon-companion")) return null;
+  if (!card.descriptionLines.some((line) => line.includes("Companion"))) {
+    return {
       severity: "warning",
       area: "cards",
       id: card.id,
       message: "summon-companion effect is missing Companion description line",
-    });
+    };
+  }
+  return null;
+}
+
+function checkRuleParity(card: BattleCard): ContentValidationIssue[] {
+  const issues: ContentValidationIssue[] = [];
+  for (const rule of COUNT_PARITY_RULES) {
+    const described = rule.countLines(card.descriptionLines);
+    const actual = rule.countEffects(card.effects);
+    if (described !== actual) {
+      issues.push({
+        severity: "error",
+        area: "cards",
+        id: card.id,
+        message: `${rule.label} description count ${described} does not match effect count ${actual}`,
+      });
+    }
+  }
+  return issues;
+}
+
+export function validateCardDescriptionParity(card: BattleCard): ContentValidationIssue[] {
+  const issues: ContentValidationIssue[] = [];
+
+  const check = checkDamageParity(card);
+  if (check) issues.push(check);
+
+  issues.push(...checkRuleParity(card));
+
+  for (const fn of [
+    checkHasteParity,
+    checkPhoenixFeatherParity,
+    checkBuffCompanionParity,
+    checkLifestealParity,
+    checkArcheryTagParity,
+    checkConsumeParity,
+    checkCompanionParity,
+  ]) {
+    const result = fn(card);
+    if (result) issues.push(result);
   }
 
   return [...issues, ...validateCardNumericParity(card)];

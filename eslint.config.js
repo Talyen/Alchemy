@@ -118,6 +118,7 @@ export default tseslint.config(
   // Global style rules (no types needed)
   {
     rules: {
+      complexity: ["warn", 11],
       eqeqeq: ["error", "always", { null: "ignore" }],
       "@typescript-eslint/consistent-type-imports": [
         "error",

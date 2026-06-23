@@ -357,29 +357,32 @@ export function cleansePlayerStatusCard({
   };
 }
 
+type DescriptionLineRenderer = (effect: BattleCardEffect) => string | undefined;
+
+const EFFECT_DESCRIPTION_RENDERERS: Partial<Record<BattleCardEffect["kind"], DescriptionLineRenderer>> = {
+  heal: (effect) => `Restore ${(effect as Extract<BattleCardEffect, { kind: "heal" }>).amount} Health`,
+  "restore-mana": (effect) => `Restore ${(effect as Extract<BattleCardEffect, { kind: "restore-mana" }>).amount} Mana`,
+  "gain-max-mana": (effect) =>
+    `Gain ${(effect as Extract<BattleCardEffect, { kind: "gain-max-mana" }>).amount} Maximum Mana`,
+  "remove-harmful-status": (effect) =>
+    `Remove ${(effect as Extract<BattleCardEffect, { kind: "remove-harmful-status" }>).amount} harmful status effect`,
+  "player-status": (effect) => {
+    const e = effect as Extract<BattleCardEffect, { kind: "player-status" }>;
+    if (e.status === "block" || e.status === "armor" || e.status === "forge")
+      return playerStatusDescriptionLine(e.status, e.amount);
+    return undefined;
+  },
+  damage: (effect) => {
+    const e = effect as Extract<BattleCardEffect, { kind: "damage" }>;
+    return `Deal ${e.amount} ${capitalizeWord(e.damageType)} damage`;
+  },
+  "gain-gold": (effect) => `Gain ${(effect as Extract<BattleCardEffect, { kind: "gain-gold" }>).amount} Gold`,
+  wish: (effect) => `Wish ${(effect as Extract<BattleCardEffect, { kind: "wish" }>).amount}`,
+};
+
 function effectDescriptionLine(effect: BattleCardEffect): string {
-  switch (effect.kind) {
-    case "heal":
-      return `Restore ${effect.amount} Health`;
-    case "restore-mana":
-      return `Restore ${effect.amount} Mana`;
-    case "gain-max-mana":
-      return `Gain ${effect.amount} Maximum Mana`;
-    case "remove-harmful-status":
-      return `Remove ${effect.amount} harmful status effect`;
-    case "player-status":
-      if (effect.status === "block" || effect.status === "armor" || effect.status === "forge") {
-        return playerStatusDescriptionLine(effect.status, effect.amount);
-      }
-      break;
-    case "damage":
-      return `Deal ${effect.amount} ${capitalizeWord(effect.damageType)} damage`;
-    case "gain-gold":
-      return `Gain ${effect.amount} Gold`;
-    case "wish":
-      return `Wish ${effect.amount}`;
-    default:
-      break;
-  }
+  const render = EFFECT_DESCRIPTION_RENDERERS[effect.kind];
+  const result = render?.(effect);
+  if (result !== undefined) return result;
   throw new Error(`effectDescriptionLine: unsupported effect kind ${(effect as { kind: string }).kind}`);
 }

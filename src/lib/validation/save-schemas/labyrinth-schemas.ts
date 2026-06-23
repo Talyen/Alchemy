@@ -39,18 +39,43 @@ interface LabyrinthMapShape {
   currentNode: { row: number; col: number };
 }
 
-function isValidLabyrinthMap(map: LabyrinthMapShape): boolean {
+function hasValidGridDimensions(map: LabyrinthMapShape): boolean {
   if (map.rows <= 0 || map.cols <= 0) return false;
   if (map.grid.length !== map.rows) return false;
-  if (map.grid.some((row) => row.length !== map.cols)) return false;
-  const current = map.grid[map.currentNode.row]?.[map.currentNode.col];
-  if (!current) return false;
+  return !map.grid.some((row) => row.length !== map.cols);
+}
+
+function isAdjacentNeighbor(a: { row: number; col: number }, b: { row: number; col: number }): boolean {
+  const dr = Math.abs(a.row - b.row);
+  const dc = Math.abs(a.col - b.col);
+  return (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
+}
+
+function validateNodeConnections(
+  map: LabyrinthMapShape,
+  node: NonNullable<LabyrinthMapShape["grid"][number][number]>,
+  r: number,
+  c: number,
+): boolean {
+  if (node.connections.length < LABYRINTH_MIN_CONNECTIONS || node.connections.length > LABYRINTH_MAX_CONNECTIONS)
+    return false;
+  for (const conn of node.connections) {
+    const target = map.grid[conn.row]?.[conn.col];
+    if (!target) return false;
+    if (!isAdjacentNeighbor(conn, { row: r, col: c })) return false;
+  }
+  return true;
+}
+
+function countNodeTypes(
+  map: LabyrinthMapShape,
+): { entranceCount: number; bossCount: number; currentCount: number } | null {
   let entranceCount = 0;
   let bossCount = 0;
   let currentCount = 0;
   for (let r = 0; r < map.rows; r++) {
     const row = map.grid[r];
-    if (!row) return false;
+    if (!row) return null;
     for (let c = 0; c < map.cols; c++) {
       const node = row[c];
       if (!node) continue;
@@ -58,20 +83,21 @@ function isValidLabyrinthMap(map: LabyrinthMapShape): boolean {
       if (node.type === "boss") bossCount++;
       if (node.state === "current") {
         currentCount++;
-        if (map.currentNode.row !== r || map.currentNode.col !== c) return false;
+        if (map.currentNode.row !== r || map.currentNode.col !== c) return null;
       }
-      if (node.connections.length < LABYRINTH_MIN_CONNECTIONS || node.connections.length > LABYRINTH_MAX_CONNECTIONS)
-        return false;
-      for (const conn of node.connections) {
-        const target = map.grid[conn.row]?.[conn.col];
-        if (!target) return false;
-        const dr = Math.abs(conn.row - r);
-        const dc = Math.abs(conn.col - c);
-        if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) return false;
-      }
+      if (!validateNodeConnections(map, node, r, c)) return null;
     }
   }
-  return entranceCount === 1 && bossCount === 1 && currentCount === 1;
+  return { entranceCount, bossCount, currentCount };
+}
+
+function isValidLabyrinthMap(map: LabyrinthMapShape): boolean {
+  if (!hasValidGridDimensions(map)) return false;
+  const current = map.grid[map.currentNode.row]?.[map.currentNode.col];
+  if (!current) return false;
+  const counts = countNodeTypes(map);
+  if (!counts) return false;
+  return counts.entranceCount === 1 && counts.bossCount === 1 && counts.currentCount === 1;
 }
 
 export const LabyrinthMapSchema = z

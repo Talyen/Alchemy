@@ -31,6 +31,19 @@ export function getRawContentVersion(parsed: unknown): number {
   return version;
 }
 
+const SCHEMA_MIGRATIONS: Array<{ targetVersion: number; migrate: (data: RawSaveData) => RawSaveData }> = [
+  { targetVersion: 1, migrate: migrateV0ToV1 },
+  { targetVersion: 2, migrate: migrateV1ToV2 },
+  { targetVersion: 3, migrate: migrateV2ToV3 },
+  { targetVersion: 4, migrate: migrateV3ToV4 },
+  { targetVersion: 5, migrate: migrateV4ToV5 },
+  { targetVersion: 6, migrate: migrateV5ToV6 },
+  { targetVersion: 7, migrate: migrateV6ToV7 },
+  { targetVersion: 8, migrate: migrateV7ToV8 },
+  { targetVersion: 9, migrate: migrateV8ToV9 },
+  { targetVersion: 10, migrate: migrateV9ToV10 },
+];
+
 // Runs all historical migrations in sequence, then applies the legacy aspect-ratio rename.
 // ORDERING IS IMPORTANT: aspect-ratio normalization runs last because it reads the field
 // written by earlier steps. Each migration step must be idempotent for already-migrated saves.
@@ -38,46 +51,13 @@ export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
   if (!parsed || typeof parsed !== "object") return {};
   let current = { ...(parsed as RawSaveData) };
   let version = getRawSaveSchemaVersion(current);
-  if (version < 1) {
-    current = migrateV0ToV1(current);
-    version = 1;
+
+  for (const step of SCHEMA_MIGRATIONS) {
+    if (version >= step.targetVersion) continue;
+    current = step.migrate(current);
+    version = step.targetVersion;
   }
-  if (version < 2) {
-    current = migrateV1ToV2(current);
-    version = 2;
-  }
-  if (version < 3) {
-    current = migrateV2ToV3(current);
-    version = 3;
-  }
-  if (version < 4) {
-    current = migrateV3ToV4(current);
-    version = 4;
-  }
-  if (version < 5) {
-    current = migrateV4ToV5(current);
-    version = 5;
-  }
-  if (version < 6) {
-    current = migrateV5ToV6(current);
-    version = 6;
-  }
-  if (version < 7) {
-    current = migrateV6ToV7(current);
-    version = 7;
-  }
-  if (version < 8) {
-    current = migrateV7ToV8(current);
-    version = 8;
-  }
-  if (version < 9) {
-    current = migrateV8ToV9(current);
-    version = 9;
-  }
-  if (version < 10) {
-    current = migrateV9ToV10(current);
-    version = 10;
-  }
+
   if (getRawContentVersion(current) < CURRENT_CONTENT_VERSION) {
     current = migrateContentV2(current);
   }

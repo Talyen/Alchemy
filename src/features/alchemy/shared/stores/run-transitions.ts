@@ -27,6 +27,46 @@ import { useUiStore } from "./ui-store";
 import { useAppStore } from "./app-store";
 import { getRunSession } from "./run-session-model";
 
+function restoreLabyrinth(store: ReturnType<typeof getRunDomainStore>, activeRun: ActiveRunData): void {
+  if (activeRun.labyrinthMap) store.setLabyrinthMap(activeRun.labyrinthMap);
+  if (activeRun.activeCombat) {
+    store.setActiveLabyrinthModifiers(activeRun.activeCombat.activeLabyrinthModifiers);
+    store.setActiveLabyrinthRewardModifiers(activeRun.activeCombat.activeLabyrinthRewardModifiers);
+  }
+  if (activeRun.labyrinthPendingNode) store.setActiveLabyrinthPendingNode(activeRun.labyrinthPendingNode);
+}
+
+function restoreWildwoodReward(store: ReturnType<typeof getRunDomainStore>, activeRun: ActiveRunData): void {
+  const wildwoodDraft = activeRun.wildwoodDraft;
+  if (!wildwoodDraft?.rewardType) return;
+  if (wildwoodDraft.phase !== "reward" && wildwoodDraft.phase !== "recovery") return;
+  store.setRewardState(
+    restoreWildwoodRewardState(
+      wildwoodDraft.rewardType,
+      wildwoodDraft.rewardChoiceIds,
+      wildwoodDraft.selectedRewardId,
+      wildwoodDraft.rewardGearChoices,
+    ),
+  );
+}
+
+function restoreReward(store: ReturnType<typeof getRunDomainStore>, activeRun: ActiveRunData): void {
+  if (activeRun.currentScreen === "destination" && activeRun.destinationChoices.length > 0) {
+    store.setRewardState({ ...createEmptyRewardState(), destinations: activeRun.destinationChoices as Destination[] });
+  } else if (activeRun.pendingReward) {
+    const restored = restorePendingReward(activeRun.pendingReward);
+    if (restored) store.setRewardState(restored);
+  }
+}
+
+function restoreShops(store: ReturnType<typeof getRunDomainStore>, activeRun: ActiveRunData): void {
+  if (activeRun.shopState) store.setShopState(hydrateShopState(activeRun.shopState));
+  if (activeRun.alchemistState) store.setAlchemistState(hydrateAlchemistState(activeRun.alchemistState));
+  if (activeRun.trinketShopState) store.setTrinketShopState(hydrateTrinketShopState(activeRun.trinketShopState));
+  if (activeRun.equipmentShopState)
+    store.setEquipmentShopState(hydrateEquipmentShopState(activeRun.equipmentShopState));
+}
+
 /** Apply persisted active-run data to the domain store atomically. */
 export function restoreRun(
   activeRun: ActiveRunData | null,
@@ -37,64 +77,15 @@ export function restoreRun(
   store.initialize(activeRun, talentXP, unlockedTalents);
   store.initializeActiveBattle(activeRun?.activeCombat?.battleState ?? null);
 
-  if (activeRun?.currentScreen) {
-    store.setScreen(activeRun.currentScreen);
-  }
-
-  if (!activeRun) {
-    return;
-  }
+  if (activeRun?.currentScreen) store.setScreen(activeRun.currentScreen);
+  if (!activeRun) return;
 
   store.setHasActiveRun(true);
-
-  if (activeRun.labyrinthMap) {
-    store.setLabyrinthMap(activeRun.labyrinthMap);
-  }
-
-  if (activeRun.activeCombat) {
-    store.setActiveLabyrinthModifiers(activeRun.activeCombat.activeLabyrinthModifiers);
-    store.setActiveLabyrinthRewardModifiers(activeRun.activeCombat.activeLabyrinthRewardModifiers);
-  }
-
-  if (activeRun.labyrinthPendingNode) {
-    store.setActiveLabyrinthPendingNode(activeRun.labyrinthPendingNode);
-  }
-
   store.setWildwoodDraft(activeRun.wildwoodDraft);
-  const wildwoodDraft = activeRun.wildwoodDraft;
-  if (wildwoodDraft?.rewardType && (wildwoodDraft.phase === "reward" || wildwoodDraft.phase === "recovery")) {
-    store.setRewardState(
-      restoreWildwoodRewardState(
-        wildwoodDraft.rewardType,
-        wildwoodDraft.rewardChoiceIds,
-        wildwoodDraft.selectedRewardId,
-        wildwoodDraft.rewardGearChoices,
-      ),
-    );
-  }
-
-  if (activeRun.currentScreen === "destination" && activeRun.destinationChoices.length > 0) {
-    store.setRewardState({
-      ...createEmptyRewardState(),
-      destinations: activeRun.destinationChoices as Destination[],
-    });
-  } else if (activeRun.pendingReward) {
-    const restored = restorePendingReward(activeRun.pendingReward);
-    if (restored) store.setRewardState(restored);
-  }
-
-  if (activeRun.shopState) {
-    store.setShopState(hydrateShopState(activeRun.shopState));
-  }
-  if (activeRun.alchemistState) {
-    store.setAlchemistState(hydrateAlchemistState(activeRun.alchemistState));
-  }
-  if (activeRun.trinketShopState) {
-    store.setTrinketShopState(hydrateTrinketShopState(activeRun.trinketShopState));
-  }
-  if (activeRun.equipmentShopState) {
-    store.setEquipmentShopState(hydrateEquipmentShopState(activeRun.equipmentShopState));
-  }
+  restoreLabyrinth(store, activeRun);
+  restoreWildwoodReward(store, activeRun);
+  restoreReward(store, activeRun);
+  restoreShops(store, activeRun);
 }
 
 /** Active-run snapshot for autosave — null when the run has ended. */

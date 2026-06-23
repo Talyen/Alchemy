@@ -119,6 +119,43 @@ export const CompletedDifficultiesSchema = recordOfStringArraysSchema(() =>
   Object.fromEntries(CHARACTER_IDS.map((id) => [id, []])),
 );
 
+function normalizeArrayInput(arr: unknown[], renameMap: Record<string, string>): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const rawId of arr) {
+    const id = typeof rawId === "string" ? (renameMap[rawId] ?? rawId) : String(rawId);
+    result[id] = (result[id] ?? 0) + 1;
+  }
+  return result;
+}
+
+function normalizeObjectInput(obj: Record<string, unknown>, renameMap: Record<string, string>): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const [rawId, level] of Object.entries(obj)) {
+    const id = renameMap[rawId] ?? rawId;
+    result[id] = typeof level === "number" && Number.isFinite(level) ? Math.max(0, Math.floor(level)) : 0;
+  }
+  return result;
+}
+
+function normalizeTierRecordInput(val: unknown, renameMap: Record<string, string>): Record<string, number> {
+  if (Array.isArray(val)) return normalizeArrayInput(val, renameMap);
+  if (val && typeof val === "object") return normalizeObjectInput(val as Record<string, unknown>, renameMap);
+  return {};
+}
+
+function clampTierLevels<T extends string>(
+  data: Record<string, number>,
+  items: ReadonlyArray<{ id: T; tiers: readonly unknown[] }>,
+  validIds: T[],
+): Record<T, number> {
+  const result: Record<T, number> = {} as Record<T, number>;
+  for (const id of validIds) {
+    const maxTier = items.find((item) => item.id === id)?.tiers.length ?? 0;
+    result[id] = Math.min(maxTier, Math.max(0, data[id] ?? 0)) as number;
+  }
+  return result;
+}
+
 export function createTierRecordSchema<T extends string>(
   items: ReadonlyArray<{ id: T; tiers: readonly unknown[] }>,
   renameMap: Record<string, string> = {},
@@ -126,33 +163,8 @@ export function createTierRecordSchema<T extends string>(
   const validIds = items.map((item) => item.id);
   return z
     .preprocess(
-      (val) => {
-        if (Array.isArray(val)) {
-          const result: Record<string, number> = {};
-          for (const rawId of val) {
-            const id = typeof rawId === "string" ? (renameMap[rawId] ?? rawId) : String(rawId);
-            result[id] = (result[id] ?? 0) + 1;
-          }
-          return result;
-        }
-        if (val && typeof val === "object") {
-          const result: Record<string, number> = {};
-          for (const [rawId, level] of Object.entries(val as Record<string, unknown>)) {
-            const id = renameMap[rawId] ?? rawId;
-            result[id] = typeof level === "number" && Number.isFinite(level) ? Math.max(0, Math.floor(level)) : 0;
-          }
-          return result;
-        }
-        return {};
-      },
+      (val) => normalizeTierRecordInput(val, renameMap),
       z.record(z.string(), z.number().int().nonnegative().catch(0)),
     )
-    .transform((data) => {
-      const result: Record<string, number> = {};
-      for (const id of validIds) {
-        const maxTier = items.find((item) => item.id === id)?.tiers.length ?? 0;
-        result[id] = Math.min(maxTier, Math.max(0, data[id] ?? 0));
-      }
-      return result;
-    });
+    .transform((data) => clampTierLevels(data, items, validIds));
 }
