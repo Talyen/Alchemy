@@ -1,7 +1,6 @@
 // Deck and library card pickers for mystery choose/remove effects.
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
@@ -9,7 +8,7 @@ import { viewCardWidthClass } from "@/features/alchemy/shared/config";
 import { CardSelectionGrid, type CardSelectionGridItem } from "../../../shared/ui/card-selection-grid";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
-import { ScreenDescription, ScreenHeader, StaggerGroup, StaggerItem } from "../../../shared/ui/shared-ui";
+import { ScreenHeader, StaggerGroup, StaggerItem } from "../../../shared/ui/shared-ui";
 
 function DeckCardSelectionFlow({
   intro,
@@ -100,35 +99,6 @@ function SelectableCardTile({
         <CardTitle card={card} />
       </p>
     </div>
-  );
-}
-
-export function RemoveCardPicker({ runDeck, onSelect }: { runDeck: BattleCard[]; onSelect: (index: number) => void }) {
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [page, setPage] = useState(0);
-  const items = runDeck.map((card, index) => ({ card, index }));
-
-  return (
-    <DeckCardSelectionFlow
-      intro={<ScreenDescription>Select a card to remove from your deck</ScreenDescription>}
-      items={items}
-      page={page}
-      onPageChange={setPage}
-      pageSize={SELECTION_GRID_PAGE_SIZE}
-      renderItem={({ card, index }, _visualIndex) => (
-        <SelectableCardTile
-          card={card}
-          isSelected={selectedIndex === index}
-          onClick={() => setSelectedIndex(index)}
-          showTitle
-        />
-      )}
-      confirmLabel="Remove Card"
-      confirmDisabled={selectedIndex === null}
-      onConfirm={() => {
-        if (selectedIndex !== null) onSelect(selectedIndex);
-      }}
-    />
   );
 }
 

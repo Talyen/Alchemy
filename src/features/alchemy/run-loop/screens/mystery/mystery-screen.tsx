@@ -6,9 +6,11 @@ import { useState } from "react";
 import { playUISound } from "@/lib/audio";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 
+import { ScreenDescription } from "../../../shared/ui/shared-ui";
+import { RemoveCardPanel } from "../../../shared/ui/remove-card-panel";
+
 import {
   CardChoicePicker,
-  RemoveCardPicker,
   MysteryRewardSummary,
   MysteryEventIntro,
   choiceOffersCardSelection,
@@ -90,7 +92,11 @@ export function MysteryScreen({
       {mysteryCardChoices ? (
         <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
       ) : pendingRemoval ? (
-        <RemoveCardPicker runDeck={runDeck} onSelect={handleRemoveConfirm} />
+        <RemoveCardPanel
+          runDeck={runDeck}
+          intro={<ScreenDescription>Select a card to remove from your deck</ScreenDescription>}
+          onConfirm={handleRemoveConfirm}
+        />
       ) : chosen ? (
         <MysteryRewardSummary
           choice={chosen}
