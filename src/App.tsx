@@ -155,8 +155,12 @@ function AppMainContent({
         )}
         {content}
         {isRunLoopScreen(renderedScreen) && renderedScreen !== "battle" && renderedScreen !== "labyrinth-map" ? (
-          <div className="absolute right-4 top-4 z-50">
-            <HamburgerTrigger onClick={gameMenu.openBattleMenu} label={`Open ${renderedScreen} menu`} />
+          <div className="pointer-events-none absolute inset-0 z-50 flex justify-center">
+            <div className="pointer-events-none relative w-full max-w-6xl">
+              <div className="pointer-events-auto absolute right-4 top-4">
+                <HamburgerTrigger onClick={gameMenu.openBattleMenu} label={`Open ${renderedScreen} menu`} />
+              </div>
+            </div>
           </div>
         ) : null}
       </div>
