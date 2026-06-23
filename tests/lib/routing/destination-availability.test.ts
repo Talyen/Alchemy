@@ -2,6 +2,15 @@ import { describe, expect, it } from "vitest";
 import { getAvailableDestinations } from "@/lib/routing";
 
 describe("getAvailableDestinations", () => {
+  it("excludes Equipment Shop when no gear is owned (Armory locked)", () => {
+    const destinations = getAvailableDestinations(30, 100, 30, false);
+    expect(destinations).not.toContain("Equipment Shop");
+  });
+
+  it("includes Equipment Shop when gear is owned and gold >= 40", () => {
+    const destinations = getAvailableDestinations(30, 40, 30, true);
+    expect(destinations).toContain("Equipment Shop");
+  });
   it("never includes Boss Combat", () => {
     const destinations = getAvailableDestinations(30, 100, 30);
     expect(destinations).not.toContain("Boss Combat");

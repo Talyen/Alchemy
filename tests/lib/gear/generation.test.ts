@@ -9,6 +9,7 @@ import {
 import { affixMatchesAffinity } from "@/lib/gear/affixes";
 import { buildEligibleAffixPool } from "@/lib/gear/generation";
 import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
+import { createSeededRng } from "@/lib/utils";
 
 describe("gear generation", () => {
   it("generates gear reward instances with affixes", () => {
@@ -26,6 +27,16 @@ describe("gear generation", () => {
       for (const affix of instance.affixes) {
         expect(affix.value).toBeGreaterThan(0);
       }
+    }
+  });
+
+  it("never offers the same base item across the three choices (dedupe by baseItemId)", () => {
+    for (let seed = 1; seed <= 50; seed += 1) {
+      const rng = createSeededRng(seed);
+      const choices = generateGearRewardChoices(3, rng);
+      expect(choices).toHaveLength(3);
+      const baseItemIds = choices.map((c) => gearDefinitions[c.definitionId]?.baseItemId);
+      expect(new Set(baseItemIds).size, `seed ${seed}: ${JSON.stringify(baseItemIds)}`).toBe(baseItemIds.length);
     }
   });
 

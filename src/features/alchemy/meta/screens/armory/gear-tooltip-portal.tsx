@@ -2,7 +2,8 @@ import { createPortal } from "react-dom";
 import type { RefObject } from "react";
 import type { GearDefinition, GearInstance } from "@/lib/gear";
 import { TooltipPanel } from "../../../shared/ui/tooltip-panel";
-import { ARMORY_TOOLTIP_WIDTH, GearTooltipContent } from "./gear-tooltip-content";
+import { GearTooltipContent } from "../../../shared/ui/gear-tooltip-content";
+import { ARMORY_TOOLTIP_WIDTH } from "./gear-tooltip-content";
 import { useArmoryPortaledTooltipPlacement } from "./armory-tooltip-placement";
 
 interface Props {

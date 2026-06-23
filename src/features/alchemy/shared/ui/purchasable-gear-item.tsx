@@ -1,12 +1,12 @@
 // Shop gear tile with buy button and sold-out state.
 import { Button } from "@/components/ui/button";
-import { gearDefinitions, getGearInstanceDescriptionLines, getGearInstanceTitle, type GearInstance } from "@/lib/gear";
+import { gearDefinitions, getGearInstanceTitle, type GearInstance } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 
 import { cardSurfaceClass, collectionTileWidthClass } from "../config";
-import { DetailPopup } from "./card-popup";
-import { GearItemTitle } from "./gear-item-title";
 import { DisabledTooltip, GoldCost, StaggerItem } from "./shared-ui";
+import { GearDetailPopup } from "./gear-detail-popup";
+import { gearInstanceAspectClass } from "./gear-aspect";
 import { TiltSurface } from "./tilt-surface";
 import { useInteractiveCard } from "./use-interactive-card";
 
@@ -30,7 +30,6 @@ export function PurchasableGearItem({
   const definition = gearDefinitions[instance.definitionId];
   const title = getGearInstanceTitle(instance);
   const art = definition?.art ?? "";
-  const descriptionLines = getGearInstanceDescriptionLines(instance);
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
     "shop",
     instance.instanceId,
@@ -41,7 +40,7 @@ export function PurchasableGearItem({
       <div className="flex flex-col items-center gap-3 rounded-shell-card border border-border/30 bg-card/30 p-4 text-center opacity-50">
         <TiltSurface
           as="div"
-          className={cn(cardSurfaceClass, collectionTileWidthClass, "group", "aspect-[6/7]")}
+          className={cn(cardSurfaceClass, collectionTileWidthClass, "group", gearInstanceAspectClass(definition))}
           shimmerActive={false}
           shimmerToken={undefined}
           selected={false}
@@ -49,7 +48,6 @@ export function PurchasableGearItem({
         >
           <img src={art} alt={title} className="absolute inset-0 h-full w-full object-cover rounded-shell-hero" />
         </TiltSurface>
-        <GearItemTitle instance={instance} className="text-sm font-semibold text-amber-100/75" />
         <span className="text-xs font-semibold text-muted-foreground">Purchased</span>
       </div>
     );
@@ -59,17 +57,10 @@ export function PurchasableGearItem({
   const content = (
     <div className="flex flex-col items-center gap-3 rounded-shell-card border border-border/70 bg-card/60 p-4 text-center">
       <div onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
-        {isHovered ? (
-          <DetailPopup
-            idPrefix={instance.instanceId}
-            title={title}
-            subtitle="Permanent Gear"
-            descriptionLines={descriptionLines}
-          />
-        ) : null}
+        {isHovered ? <GearDetailPopup definition={definition} instance={instance} /> : null}
         <TiltSurface
           as="div"
-          className={cn(cardSurfaceClass, collectionTileWidthClass, "group", "aspect-[6/7]")}
+          className={cn(cardSurfaceClass, collectionTileWidthClass, "group", gearInstanceAspectClass(definition))}
           shimmerActive={shimmerActive}
           shimmerToken={shimmerToken}
           selected={false}
@@ -78,7 +69,6 @@ export function PurchasableGearItem({
           <img src={art} alt={title} className="absolute inset-0 h-full w-full object-cover rounded-shell-hero" />
         </TiltSurface>
       </div>
-      <GearItemTitle instance={instance} className="text-sm font-semibold text-foreground" />
       <DisabledTooltip show={gold < price} message="Not Enough Gold">
         <Button variant="outline" disabled={gold < price} onClick={onBuy}>
           Buy <GoldCost amount={price} />

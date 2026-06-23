@@ -33,7 +33,7 @@ export function PurchasableTrinketItem({
       <div className="flex flex-col items-center gap-3 rounded-shell-card border border-border/30 bg-card/30 p-4 text-center opacity-50">
         <TiltSurface
           as="div"
-          className={cn(cardSurfaceClass, collectionTileWidthClass, "group", "aspect-[6/7]")}
+          className={cn(cardSurfaceClass, collectionTileWidthClass, "group", "aspect-square")}
           shimmerActive={false}
           shimmerToken={undefined}
           selected={false}
@@ -45,7 +45,6 @@ export function PurchasableTrinketItem({
             className="absolute inset-0 h-full w-full object-cover rounded-shell-hero"
           />
         </TiltSurface>
-        <p className="text-sm font-semibold text-amber-100/75">{trinket.title}</p>
         <span className="text-xs font-semibold text-muted-foreground">Purchased</span>
       </div>
     );
@@ -65,7 +64,7 @@ export function PurchasableTrinketItem({
         ) : null}
         <TiltSurface
           as="div"
-          className={cn(cardSurfaceClass, collectionTileWidthClass, "group", "aspect-[6/7]")}
+          className={cn(cardSurfaceClass, collectionTileWidthClass, "group", "aspect-square")}
           shimmerActive={shimmerActive}
           shimmerToken={shimmerToken}
           selected={false}
@@ -78,7 +77,6 @@ export function PurchasableTrinketItem({
           />
         </TiltSurface>
       </div>
-      <p className="text-sm font-semibold text-foreground">{trinket.title}</p>
       <DisabledTooltip show={gold < price} message="Not Enough Gold">
         <Button variant="outline" disabled={gold < price} onClick={onBuy}>
           Buy <GoldCost amount={price} />

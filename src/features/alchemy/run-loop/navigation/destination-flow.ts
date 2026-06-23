@@ -24,6 +24,7 @@ export interface DestinationOptionsInput {
   currentGold?: number;
   destinationIndexInAct?: number;
   maxHealth?: number;
+  hasAnyOwnedGear?: boolean;
 }
 
 export interface DestinationOfferState {
@@ -47,6 +48,7 @@ interface DestinationAvailabilityInput {
   currentGold: number;
   maxHealth: number;
   previousDestination?: Destination | undefined;
+  hasAnyOwnedGear?: boolean;
 }
 
 export function createEmptyDestinationOfferState(): DestinationOfferState {
@@ -61,11 +63,12 @@ export function getRunAvailableDestinations({
   currentGold,
   maxHealth,
   previousDestination,
+  hasAnyOwnedGear = true,
 }: DestinationAvailabilityInput): Destination[] {
   if (destinationIndexInAct >= DESTINATIONS_PER_ACT - 1) {
     return [DESTINATIONS.BOSS_COMBAT];
   }
-  const destinations = getFilteredDestinations(currentHealth, currentGold, maxHealth);
+  const destinations = getFilteredDestinations(currentHealth, currentGold, maxHealth, hasAnyOwnedGear);
   return previousDestination === DESTINATIONS.CORRUPTION
     ? destinations.filter((destination) => destination !== DESTINATIONS.CORRUPTION)
     : destinations;

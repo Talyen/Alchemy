@@ -11,6 +11,7 @@ import { DetailPopup } from "../../shared/ui/card-popup";
 import { ActionButtonRow, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { cardSurfaceClass, collectionTileWidthClass } from "@/features/alchemy/shared/config";
+import { gearInstanceAspectClass } from "@/features/alchemy/shared/ui/gear-aspect";
 import {
   getRewardChoiceId,
   type RewardState,
@@ -90,7 +91,7 @@ function GearRewardButton({
       ) : null}
       <TiltSurface
         as="button"
-        className={cn(cardSurfaceClass, collectionTileWidthClass, "group")}
+        className={cn(cardSurfaceClass, collectionTileWidthClass, "group", gearInstanceAspectClass(definition))}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
         selected={selected}
@@ -99,7 +100,7 @@ function GearRewardButton({
         onFocus={onHoverStart}
         onBlur={onHoverEnd}
       >
-        <img src={art} alt={title} className="block w-full rounded-shell-hero aspect-square" />
+        <img src={art} alt={title} className="block w-full rounded-shell-hero" />
       </TiltSurface>
     </div>
   );

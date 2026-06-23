@@ -672,6 +672,43 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(imports): break 6 cycle clusters, remove dev-mode from utils barrel
+  - Cluster 1: move ghost/transfer types from presentation-types into shared/types
+  - Cluster 2: lift applyGearDamageResistance/scaleGoldReward from gear-effects to types
+  - Cluster 3: move getEnemyDamageMultiplier from status-effects barrel to status-helpers leaf
+  - Cluster 4: extract TalentPreset to balance/types.ts, break simulator↔homestead-preset
+  - Cluster 5: move withSelectedBossForDestinations from victory-flow to destination-flow
+  - Cluster 6: import StaggerGroup/StaggerItem from source files, not shared-ui barrel
+  - Extract dev-mode.ts from shared/utils barrel to stop store-dep chain
+  - Move scene-rect functions from card-transfer-animations to controller-utils
+  
+  59 cycles eliminated (82→23); boundary violations remain 0; p90 imports 9
+- refactor(complexity): clean up DragVisualPortal, InventoryGearTile, TalentNode, AppMainContent
+- refactor(complexity): clean up SlotButton, ActorPanel, EnemyTooltip, LabyrinthNodeButton, DifficultyCard
+- refactor(complexity): clean up armory drag math, board metrics, TiltSurface
+- refactor(complexity): clean up battle engine, simulator, gear-store, labyrinth, destination-flow
+- refactor(complexity): reduce cyclomatic complexity of 24 functions below threshold 11
+- refactor(type-safety): eliminate non-null assertions and casts in src (non-test)
+  - Fix 9 non-null assertions (crafting, generation, simulator, homestead,
+    alchemist-shop, background-particles) with null guards or ?? defaults
+  - Replace 9 as-unknown-as casts at save/boundary and UI tier with typed
+    loops, in-operator guards, or discriminated union narrowing
+  - Change DAMAGE_TYPES to as-const, removing the cast in shared-schemas
+  - Simplify globalThis.requestIdleCallback access in image-preload
+  - Fix keyboard-event forwarding in tilt-surface (no more cast through unknown)
+  - Remove 2 eslint-disable lines in gauntlet.ts by eliminating ! assertions
+  - Document remaining eslint-disable lines with reasons
+  - Remove unused eslint-disable directive in effects/schemas.ts
+- refactor(storage): simplify save-load path, drop diagnostics, fix Windows backup rotation
+  - Revert SaveLoadStatus to 4-kind shape; no candidate/triedAll fields
+  - Future-versioned candidates silently skipped, not errored to player
+  - Eager card hydration at load time with silent drop for unknown IDs
+  - Remove App.tsx parseActiveRun gate (hydration now in io.ts)
+  - Delete save-merge.ts (local-wins policy, no cross-device merge)
+  - Delete dead loadSave/backupSave IPC handlers and SAVE_BACKUP_PATH
+  - Fix Windows backup rotation rename with { overwrite: true }
+  - Simplify tombstoned-content-ids.ts to just card IDs
+  - Update all tests and MIGRATIONS.md to match simplified policy
 - refactor(validation): simplify validation enums, externalize card exceptions, and soften card parity checks
 - refactor(validation): split monolithic content-validation module
 - refactor(style): modernize theme keyframes and convert custom utilities to tailwind v4 directives
@@ -1393,6 +1430,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Docs
 
+- docs(quality): rewrite PROMPTS.md with measurable code-quality audit criteria
 - docs(agents): add balance:sim output path and pre-commit hook note
 - docs(agents): fix broken cross-references, add missing section links, reconcile policies
 - docs(agents): update AGENTS.md with quick commands, conventions, and escalation policy
@@ -1426,6 +1464,19 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore(lint): enforce consistent-type-definitions, array-type; promote 5 rules to error; fix type->interface side effects
+  - eslint.config.js: add consistent-type-definitions, array-type,
+    no-template-curly-in-string; promote 5 rules to error
+  - eslint.config.js: enable no-non-null-assertion as warn;
+    react-refresh/only-export-components error in shared/ui
+  - tsconfig.json: enable useUnknownInCatchVariables
+  - Fix type->interface side effects in store-actions.ts,
+    _field-setter.ts, all 4 slice files
+  - Fix electron-smoke.spec.ts: loadSave -> listSaveCandidates
+  - Remove unused imports in storage-backup.test.ts,
+    platform-storage.test.ts
+  - Prettier format desktop/main.cjs and all auto-fixed files
+  - Auto-fix: type aliases -> interface, T[] -> Array<T>
 - chore(ci): reduce GitHub Actions storage usage
   - Exclude dist/Music/ from upload artifacts (~70 MB saved per run)
   - Remove duplicate node_modules caches in favor of setup-node --prefer-offline

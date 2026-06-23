@@ -114,6 +114,7 @@ function tryAddDistinctRoll(choices: GearInstance[], seenFullRolls: Set<string>,
 export function generateGearRewardChoices(count: number, rng: () => number, astralChanceBonus = 0): GearInstance[] {
   const choices: GearInstance[] = [];
   const seenFullRolls = new Set<string>();
+  const seenBaseItemIds = new Set<string>();
 
   let attempts = 0;
   const maxDistinctRollAttempts = count * 30;
@@ -121,6 +122,9 @@ export function generateGearRewardChoices(count: number, rng: () => number, astr
     attempts += 1;
     const instance = generateGearInstance(rng, astralChanceBonus);
     if (!instance) continue;
+    const def = gearDefinitions[instance.definitionId];
+    if (!def || seenBaseItemIds.has(def.baseItemId)) continue;
+    seenBaseItemIds.add(def.baseItemId);
     tryAddDistinctRoll(choices, seenFullRolls, instance);
   }
 

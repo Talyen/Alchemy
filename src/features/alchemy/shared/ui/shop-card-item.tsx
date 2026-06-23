@@ -8,7 +8,7 @@ import type { BattleCard } from "@/lib/game-data";
 
 import { collectionTileWidthClass } from "../config";
 import { BattleCardButton } from "./card-button";
-import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
+import { getCardDisplayTitle } from "./card-description-ui";
 import { DisabledTooltip, GoldCost, StaggerItem } from "./shared-ui";
 
 interface PurchasableCardItemProps {
@@ -49,9 +49,6 @@ export function PurchasableCardItem(props: PurchasableCardItemProps) {
           className={widthClass}
         />
       </div>
-      <p className="text-sm font-semibold text-foreground">
-        <CardTitle card={card} />
-      </p>
       <DisabledTooltip show={gold < price} message="Not Enough Gold">
         <Button variant="outline" disabled={gold < price} onClick={onBuy}>
           Buy <GoldCost amount={price} />
@@ -84,9 +81,6 @@ function PurchasedCardItem({
         className={widthClass}
         disabled
       />
-      <p className="text-sm font-semibold text-amber-100/75">
-        <CardTitle card={card} />
-      </p>
       <span className="text-xs font-semibold text-muted-foreground">Purchased</span>
     </div>
   );

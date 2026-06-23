@@ -13,6 +13,8 @@ import { teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
+import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { flattenGearInventories } from "@/lib/gear";
 import { type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
 
@@ -99,6 +101,8 @@ export function useRunNavigation({
         currentGold: options.currentGold ?? run.runGold,
         maxHealth: options.maxHealth ?? run.runMaxHealth,
         previousDestination,
+        hasAnyOwnedGear:
+          options.hasAnyOwnedGear ?? flattenGearInventories(useGearStore.getState().inventories).length > 0,
       });
     },
     [run.destinationIndexInAct, run.completedDestinations, run.runPlayerHealth, run.runGold, run.runMaxHealth],
