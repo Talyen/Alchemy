@@ -36,16 +36,23 @@ export function LabyrinthNodeButton({ row, col, node, labyrinthMap, onNodeClick,
   const isEnterable = canEnterLabyrinthNode(labyrinthMap, row, col);
   const meta = LABYRINTH_NODE_META[node.type];
   const Icon = isCurrent ? Star : meta.icon;
+  const btnClasses = cn(
+    "relative flex aspect-square h-full w-full items-center justify-center rounded-full border-2 text-xs transition-[transform,border-color] duration-150",
+    meta.className,
+    isCurrent && "border-amber-400",
+    isCurrent && node.type !== "entrance" && "shadow-labyrinth-current-glow",
+    isEnterable && "hover:-translate-y-0.5 active:scale-95",
+    isCleared && "border-emerald-200 opacity-30",
+    isFailed && "border-red-400 opacity-30",
+    !isEnterable && "cursor-default border-2 border-white/20",
+  );
+  const iconClasses = cn(node.type === "boss" && !isCurrent ? "h-7 w-7" : "h-6 w-6", isCurrent && "text-amber-400");
 
-  const handleHover = () => {
+  const handleHover = () =>
     onHover({ row, col, type: node.type, modifiers: node.modifiers, rewardModifiers: node.rewardModifiers });
-  };
-
   const handleBlur = (event: React.FocusEvent<HTMLDivElement>) => {
     const nextTarget = event.relatedTarget;
-    if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
-      onLeave();
-    }
+    if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) onLeave();
   };
 
   return (
@@ -62,16 +69,7 @@ export function LabyrinthNodeButton({ row, col, node, labyrinthMap, onNodeClick,
         disabled={!isEnterable}
         aria-label={getNodeAriaLabel(node.type, node.state, node.modifiers.length, isEnterable)}
         onClick={() => onNodeClick(row, col)}
-        className={cn(
-          "relative flex aspect-square h-full w-full items-center justify-center rounded-full border-2 text-xs transition-[transform,border-color] duration-150",
-          meta.className,
-          isCurrent && "border-amber-400",
-          isCurrent && node.type !== "entrance" && "shadow-labyrinth-current-glow",
-          isEnterable && "hover:-translate-y-0.5 active:scale-95",
-          isCleared && "border-emerald-200 opacity-30",
-          isFailed && "border-red-400 opacity-30",
-          !isEnterable && "cursor-default border-2 border-white/20",
-        )}
+        className={btnClasses}
       >
         {isEnterable ? (
           <ShineBorder
@@ -81,9 +79,7 @@ export function LabyrinthNodeButton({ row, col, node, labyrinthMap, onNodeClick,
           />
         ) : null}
         <span className="relative z-10">
-          <Icon
-            className={cn(node.type === "boss" && !isCurrent ? "h-7 w-7" : "h-6 w-6", isCurrent && "text-amber-400")}
-          />
+          <Icon className={iconClasses} />
         </span>
       </button>
     </div>

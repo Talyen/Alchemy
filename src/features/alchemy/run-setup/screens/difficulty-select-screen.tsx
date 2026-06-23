@@ -78,12 +78,8 @@ function DifficultyCard({
   const bonusLine = DIFFICULTY_CONFIG.XP_BONUSES[difficultyId] ?? "";
   const fullDescription = description + (bonusLine ? "\n" + bonusLine : "");
   const showTilt = !locked;
-  const diffArt =
-    difficultyId === "difficulty-1"
-      ? difficulty1Art
-      : difficultyId === "difficulty-2"
-        ? difficulty2Art
-        : difficulty3Art;
+  const DIFFICULTY_ART: Record<string, string> = { "difficulty-1": difficulty1Art, "difficulty-2": difficulty2Art };
+  const diffArt = DIFFICULTY_ART[difficultyId] ?? difficulty3Art;
 
   return (
     <div className="relative group flex flex-col items-center">

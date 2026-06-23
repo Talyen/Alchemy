@@ -81,6 +81,8 @@ export function ArtPanel({
   const healthToken = useChangeToken(health);
   const healthPercent = maxHealth > 0 ? (health / maxHealth) * ACTOR_PANEL_CONFIG.fullHealthPercent : 0;
 
+  const artWrapClass = cn(isBoss && "scale-[1.3] origin-bottom");
+
   return (
     <div className={cn("relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
       <div className="group/art-wrapper relative">
@@ -92,24 +94,7 @@ export function ArtPanel({
           currentEnemyAttackEffects={currentEnemyAttackEffects}
           activeLabyrinthModifiers={activeLabyrinthModifiers}
         />
-        {isBoss ? (
-          <div className="scale-[1.3] origin-bottom">
-            <ActorArtFrame
-              side={side}
-              title={title}
-              art={art}
-              shimmerId={shimmerId}
-              shimmerActive={shimmerActive}
-              shimmerToken={shimmerToken}
-              onHoverShimmer={onHoverShimmer}
-              surfaceRef={surfaceRef}
-              isDead={isDead}
-              cardWidthClass={cardWidthClass}
-              deathsDoorActive={deathsDoorActive}
-              hurtFlashToken={hurtFlashToken}
-            />
-          </div>
-        ) : (
+        <div className={artWrapClass}>
           <ActorArtFrame
             side={side}
             title={title}
@@ -124,7 +109,7 @@ export function ArtPanel({
             deathsDoorActive={deathsDoorActive}
             hurtFlashToken={hurtFlashToken}
           />
-        )}
+        </div>
       </div>
       <ActorStatsPanel
         side={side}

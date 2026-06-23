@@ -17,6 +17,25 @@ import {
   useTooltipPlacementWithSideFallback,
 } from "./tooltip-panel";
 
+function EnemyTooltipModifiers({ modifiers }: { modifiers: LabyrinthModifierKind[] }) {
+  if (modifiers.length === 0) return null;
+  return (
+    <>
+      <TooltipSeparator />
+      <TooltipSection label="Special Modifiers">
+        {modifiers.map((modifier) => {
+          const def = ALL_LABYRINTH_MODIFIERS[modifier];
+          return def ? (
+            <p key={modifier}>
+              <span className="font-semibold text-amber-100">{def.label}:</span> {def.description}
+            </p>
+          ) : null;
+        })}
+      </TooltipSection>
+    </>
+  );
+}
+
 export function EnemyTooltip({
   entry,
   discovered = true,
@@ -33,14 +52,12 @@ export function EnemyTooltip({
   className?: string;
 }) {
   const { ref, placement, flip, dx } = useTooltipPlacementWithSideFallback(align, 8, entry.id);
-
+  const isSide = placement === "side-start" || placement === "side-end";
   const attackLines = formatEnemyAttackLines(attackEffects ?? entry.attackEffects);
   const separatelyDisplayedTraitIds = new Set<string>(labyrinthModifiers);
   const traitLines = entry.traits
     .filter((trait) => !separatelyDisplayedTraitIds.has(trait.id))
     .flatMap((trait) => trait.description.split("\n"));
-
-  const isSide = placement === "side-start" || placement === "side-end";
 
   return (
     <TooltipPanel
@@ -56,10 +73,7 @@ export function EnemyTooltip({
             : "absolute left-[calc(100%+1.11cqh)] top-0 bottom-auto right-auto"),
         className,
       )}
-      style={{
-        ...(isSide ? { transform: "none" } : {}),
-        ...(dx !== 0 ? { marginLeft: dx } : {}),
-      }}
+      style={{ ...(isSide ? { transform: "none" } : {}), ...(dx !== 0 ? { marginLeft: dx } : {}) }}
     >
       <TooltipHeader>{discovered ? entry.title : "Undiscovered"}</TooltipHeader>
       <TooltipBody>
@@ -71,22 +85,7 @@ export function EnemyTooltip({
           <p>Undiscovered</p>
         )}
       </TooltipBody>
-      {discovered && labyrinthModifiers.length > 0 ? (
-        <>
-          <TooltipSeparator />
-          <TooltipSection label="Special Modifiers">
-            {labyrinthModifiers.map((modifier) => {
-              const definition = ALL_LABYRINTH_MODIFIERS[modifier];
-              if (!definition) return null;
-              return (
-                <p key={modifier}>
-                  <span className="font-semibold text-amber-100">{definition.label}:</span> {definition.description}
-                </p>
-              );
-            })}
-          </TooltipSection>
-        </>
-      ) : null}
+      <EnemyTooltipModifiers modifiers={labyrinthModifiers} />
     </TooltipPanel>
   );
 }
