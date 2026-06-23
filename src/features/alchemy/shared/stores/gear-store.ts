@@ -89,6 +89,36 @@ function boardPositionRegistriesEqual(
   return true;
 }
 
+function extractInstanceFromOtherOwner(
+  inventories: GearInventories,
+  positionsByCharacter: GearBoardPositionsByCharacter,
+  instanceId: string,
+  targetCharacterId: CharacterId,
+  currentOwner: CharacterId | null,
+): { movedInventories: GearInventories; clearedPositions: GearBoardPositionsByCharacter } {
+  if (!currentOwner || currentOwner === targetCharacterId) {
+    return { movedInventories: inventories, clearedPositions: positionsByCharacter };
+  }
+  const nextPositions = { ...positionsByCharacter };
+  if (nextPositions[currentOwner]?.[instanceId]) {
+    const ownerPositions = { ...nextPositions[currentOwner] };
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
+    delete ownerPositions[instanceId];
+    nextPositions[currentOwner] = ownerPositions;
+  }
+  return {
+    movedInventories: {
+      ...inventories,
+      [currentOwner]: inventories[currentOwner].filter((item) => item.instanceId !== instanceId),
+      [targetCharacterId]: [
+        ...(inventories[targetCharacterId] ?? []),
+        inventories[currentOwner].find((item) => item.instanceId === instanceId)!,
+      ],
+    },
+    clearedPositions: nextPositions,
+  };
+}
+
 export const useGearStore = create<GearStore>((set, get) => ({
   ...initialState,
   initialize: (
@@ -166,40 +196,30 @@ export const useGearStore = create<GearStore>((set, get) => ({
       const flatInventory = flattenGearInventories(state.inventories);
       const displacedId = state.loadouts[characterId]?.[slot] ?? null;
       const nextLoadouts = equipGear(state.loadouts, characterId, slot, instance, flatInventory);
-      const nextPositionsByCharacter = { ...state.boardPositionsByCharacter };
-      const characterPositions = { ...(nextPositionsByCharacter[characterId] ?? {}) };
 
       const currentOwner = findGearInventoryOwner(state.inventories, instance.instanceId);
-      let nextInventories = state.inventories;
-      if (currentOwner && currentOwner !== characterId) {
-        nextInventories = {
-          ...state.inventories,
-          [currentOwner]: state.inventories[currentOwner].filter((item) => item.instanceId !== instance.instanceId),
-          [characterId]: [...(state.inventories[characterId] ?? []), instance],
-        };
-        const currentOwnerPositions = { ...(nextPositionsByCharacter[currentOwner] ?? {}) };
-        if (currentOwnerPositions[instance.instanceId]) {
-          // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
-          delete currentOwnerPositions[instance.instanceId];
-          nextPositionsByCharacter[currentOwner] = currentOwnerPositions;
-        }
-      }
+      const { movedInventories, clearedPositions } = extractInstanceFromOtherOwner(
+        state.inventories,
+        state.boardPositionsByCharacter,
+        instance.instanceId,
+        characterId,
+        currentOwner,
+      );
 
+      const characterPositions = { ...(clearedPositions[characterId] ?? {}) };
       if (characterPositions[instance.instanceId]) {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
         delete characterPositions[instance.instanceId];
       }
-
       if (options?.vacatedPlacement) {
         if (options.swapDisplaced !== false && displacedId && displacedId !== instance.instanceId) {
           characterPositions[displacedId] = options.vacatedPlacement;
         }
       }
 
-      nextPositionsByCharacter[characterId] = characterPositions;
-
+      const nextPositionsByCharacter = { ...clearedPositions, [characterId]: characterPositions };
       return updateGearStateAndSync(state, {
-        inventories: nextInventories,
+        inventories: movedInventories,
         loadouts: nextLoadouts,
         boardPositionsByCharacter: nextPositionsByCharacter,
       });

@@ -140,23 +140,33 @@ export interface CardPlayOptions {
   allowAfterEnemyDefeat?: boolean;
 }
 
+function cardHasOnlyCleanseEffect(card: BattleCard, state: BattleState): boolean {
+  if (!card.effects.some((effect) => effect.kind === "remove-harmful-status")) return false;
+  const hasUsefulEffect = card.effects.some(
+    (effect) => effect.kind !== "remove-harmful-status" && effect.kind !== "self-damage",
+  );
+  return !hasUsefulEffect && countRemovableHarmfulStatuses(state.playerStatuses) === 0;
+}
+
+function isCardInHand(state: BattleState, card: BattleCard, index: number): boolean {
+  const currentCard = state.hand[index];
+  return !!currentCard && currentCard.id === card.id && currentCard.uid === card.uid;
+}
+
+function canAffordCard(state: BattleState, index: number): boolean {
+  const currentCard = state.hand[index];
+  return !!currentCard && state.mana >= computeEffectiveCost(state, currentCard).effectiveCost;
+}
+
 /** Battle-engine playability (mana, phase, defeat, wish). UI adds screen/animation guards on top. */
 export function canPlayCard(state: BattleState, card: BattleCard, index: number, options?: CardPlayOptions): boolean {
-  if (!options?.allowAfterEnemyDefeat && state.enemyHealth <= 0) return false;
+  if (state.enemyHealth <= 0 && !options?.allowAfterEnemyDefeat) return false;
   if (isPlayerDefeated(state)) return false;
   if (state.wishOptions) return false;
   if (state.turnPhase !== "player") return false;
-  const currentCard = state.hand[index];
-  if (!currentCard || currentCard.id !== card.id || currentCard.uid !== card.uid) return false;
-  if (state.mana < computeEffectiveCost(state, currentCard).effectiveCost) return false;
-
-  const removesHarmfulStatus = card.effects.some((effect) => effect.kind === "remove-harmful-status");
-  const hasIndependentUsefulEffect = card.effects.some(
-    (effect) => effect.kind !== "remove-harmful-status" && effect.kind !== "self-damage",
-  );
-  if (removesHarmfulStatus && !hasIndependentUsefulEffect && countRemovableHarmfulStatuses(state.playerStatuses) === 0)
-    return false;
-
+  if (!isCardInHand(state, card, index)) return false;
+  if (!canAffordCard(state, index)) return false;
+  if (cardHasOnlyCleanseEffect(card, state)) return false;
   return true;
 }
 

@@ -1,6 +1,6 @@
 // Enemy trait and difficulty turn-start handlers plus regeneration.
 import { mergeCombatText } from "./combat-text";
-import type { DifficultyModifier } from "@/lib/game-data";
+import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";
 import { clampHealth, type BattleState, type CombatTextEvent, addEnemyMitigation } from "./types";
@@ -159,6 +159,41 @@ export function collectUncoveredDifficultyModifierKinds(
   return [...new Set(kinds)].filter((kind) => !isDifficultyModifierTurnStartCovered(kind));
 }
 
+function processTraitHandler(
+  trait: BestiaryEntry["traits"][number],
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+  traitRoll: number,
+): BattleState {
+  const handler = enemyTraitTurnStartHandlers[trait.id];
+  if (handler) return handler(state, combatTexts, { traitRoll });
+  if (!PASSIVE_ONLY_TRAITS.has(trait.id)) {
+    console.warn(`[Enemy Turn] No turn-start handler for trait: ${trait.id}`);
+    logError(`No turn-start handler for trait: ${trait.id}`, "battle", { state });
+    if (import.meta.env.DEV) throw new Error(`No turn-start handler for trait: ${trait.id}`);
+  }
+  return state;
+}
+
+function processDifficultyModifier(
+  modifier: DifficultyModifier,
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+  scalingBlocked: boolean,
+): BattleState {
+  const handler = difficultyTurnStartHandlers[modifier.kind];
+  if (!handler) {
+    if (!PASSIVE_ONLY_MODIFIERS.has(modifier.kind)) {
+      console.warn(`[Enemy Turn] No turn-start handler for difficulty modifier: ${modifier.kind}`);
+      logError(`No turn-start handler for difficulty modifier: ${modifier.kind}`, "battle", { state });
+      if (import.meta.env.DEV) throw new Error(`No turn-start handler for difficulty modifier: ${modifier.kind}`);
+    }
+    return state;
+  }
+  if (modifier.kind === "enemy-gains-forge-each-turn" && scalingBlocked) return state;
+  return handler(state, combatTexts);
+}
+
 export function processEnemyTraits(
   state: BattleState,
   combatTexts: CombatTextEvent[],
@@ -171,14 +206,7 @@ export function processEnemyTraits(
   if (!scalingBlocked) {
     for (const trait of nextState.currentEnemy.traits) {
       try {
-        const handler = enemyTraitTurnStartHandlers[trait.id];
-        if (handler) {
-          nextState = handler(nextState, combatTexts, { traitRoll });
-        } else if (!PASSIVE_ONLY_TRAITS.has(trait.id)) {
-          console.warn(`[Enemy Turn] No turn-start handler for trait: ${trait.id}`);
-          logError(`No turn-start handler for trait: ${trait.id}`, "battle", { state: nextState });
-          if (import.meta.env.DEV) throw new Error(`No turn-start handler for trait: ${trait.id}`);
-        }
+        nextState = processTraitHandler(trait, nextState, combatTexts, traitRoll);
       } catch (err) {
         logError(`Enemy trait handler failed: ${(err as Error).message}`, "battle", { traitId: trait.id });
       }
@@ -186,17 +214,7 @@ export function processEnemyTraits(
   }
 
   for (const modifier of nextState.difficultyModifiers) {
-    const handler = difficultyTurnStartHandlers[modifier.kind];
-    if (!handler) {
-      if (!PASSIVE_ONLY_MODIFIERS.has(modifier.kind)) {
-        console.warn(`[Enemy Turn] No turn-start handler for difficulty modifier: ${modifier.kind}`);
-        logError(`No turn-start handler for difficulty modifier: ${modifier.kind}`, "battle", { state: nextState });
-        if (import.meta.env.DEV) throw new Error(`No turn-start handler for difficulty modifier: ${modifier.kind}`);
-      }
-      continue;
-    }
-    if (modifier.kind === "enemy-gains-forge-each-turn" && scalingBlocked) continue;
-    nextState = handler(nextState, combatTexts);
+    nextState = processDifficultyModifier(modifier, nextState, combatTexts, scalingBlocked);
   }
 
   return nextState;

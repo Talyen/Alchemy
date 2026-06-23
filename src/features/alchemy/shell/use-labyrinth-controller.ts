@@ -45,42 +45,26 @@ interface LabyrinthNodeHandlers {
   onStartEquipmentShop: () => void;
 }
 
+type NodeAction = (node: LabyrinthNode, handlers: LabyrinthNodeHandlers) => void;
+
+const NODE_ACTIONS: Partial<Record<LabyrinthNode["type"], NodeAction>> = {
+  combat: (node, handlers) => handlers.onStartBattleWithModifiers("normal", node.modifiers, node.rewardModifiers),
+  elite: (node, handlers) => handlers.onStartBattleWithModifiers("elite", node.modifiers, node.rewardModifiers),
+  boss: (node, handlers) => handlers.onStartBossBattleWithModifiers(node.modifiers, node.rewardModifiers),
+  entrance: () => {},
+  rest: (_, handlers) => handlers.onStartRest(),
+  mystery: (_, handlers) => handlers.onStartMystery(),
+  shop: (_, handlers) => handlers.onStartShop(),
+  alchemist: (_, handlers) => handlers.onStartAlchemist(),
+  "trinket-shop": (_, handlers) => handlers.onStartTrinketShop(),
+  "equipment-shop": (_, handlers) => handlers.onStartEquipmentShop(),
+};
+
 /**
  * Handles navigation routing logic based on the type of entered node.
  */
 function routeNodeInteraction(node: LabyrinthNode, handlers: LabyrinthNodeHandlers): void {
-  switch (node.type) {
-    case "combat":
-    case "elite": {
-      const enemyType = node.type === "elite" ? "elite" : "normal";
-      handlers.onStartBattleWithModifiers(enemyType, node.modifiers, node.rewardModifiers);
-      break;
-    }
-    case "boss": {
-      handlers.onStartBossBattleWithModifiers(node.modifiers, node.rewardModifiers);
-      break;
-    }
-    case "entrance":
-      break;
-    case "rest":
-      handlers.onStartRest();
-      break;
-    case "mystery":
-      handlers.onStartMystery();
-      break;
-    case "shop":
-      handlers.onStartShop();
-      break;
-    case "alchemist":
-      handlers.onStartAlchemist();
-      break;
-    case "trinket-shop":
-      handlers.onStartTrinketShop();
-      break;
-    case "equipment-shop":
-      handlers.onStartEquipmentShop();
-      break;
-  }
+  NODE_ACTIONS[node.type]?.(node, handlers);
 }
 
 export function useLabyrinthController(_screen: Screen): LabyrinthController {

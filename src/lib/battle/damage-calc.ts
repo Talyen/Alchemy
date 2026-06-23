@@ -330,6 +330,26 @@ function applyBlockAbsorption(state: BattleState, damage: number): { state: Batt
   return { state: nextState, remainingDamage };
 }
 
+function applyArcheryMultiplier(damage: number, state: BattleState): number {
+  const cc = state.enemyCC;
+  const talent = state.talentEffects;
+  if (cc.stunSkipTurns > 0 && talent.archeryDoubledVsStunned) return damage * DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
+  if (cc.freezeSkipTurns > 0 && talent.archeryDoubledVsFrozen) return damage * DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
+  if (state.enemyHealth >= state.enemyMaxHealth && talent.archeryDoubledVsHighHealth)
+    return damage * DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
+  return damage;
+}
+
+function computeBurnMultiplier(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleState): number {
+  if (
+    effect.damageType !== "burn" ||
+    state.enemyStatuses.bleed <= 0 ||
+    state.gearEffects.burnDamageBonusToBleedingPercent <= 0
+  )
+    return 1;
+  return 1 + state.gearEffects.burnDamageBonusToBleedingPercent / PERCENT_DENOMINATOR;
+}
+
 /**
  * Computes final adjusted damage to the enemy, considering critical strikes, traits, and armor reduction.
  */
@@ -341,39 +361,19 @@ export function computeCardDamageToEnemy(
   const baseDamage = computeBaseDamage(state, effect, card);
   const { state: stateAfterFirstMods, rawDamage } = applyFirstDamageModifiers(state, effect, baseDamage);
   let finalDamage = applyCrit(rawDamage, effect.damageType, stateAfterFirstMods);
-
-  if (card?.tags?.includes("archery")) {
-    if (stateAfterFirstMods.enemyCC.stunSkipTurns > 0 && stateAfterFirstMods.talentEffects.archeryDoubledVsStunned) {
-      finalDamage *= DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
-    }
-    if (stateAfterFirstMods.enemyCC.freezeSkipTurns > 0 && stateAfterFirstMods.talentEffects.archeryDoubledVsFrozen) {
-      finalDamage *= DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
-    }
-    if (
-      stateAfterFirstMods.enemyHealth >= stateAfterFirstMods.enemyMaxHealth &&
-      stateAfterFirstMods.talentEffects.archeryDoubledVsHighHealth
-    ) {
-      finalDamage *= DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
-    }
-  }
+  if (card?.tags?.includes("archery")) finalDamage = applyArcheryMultiplier(finalDamage, stateAfterFirstMods);
 
   const { state: stateAfterBlock, remainingDamage: damageAfterBlock } = applyBlockAbsorption(
     stateAfterFirstMods,
     finalDamage,
   );
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
-
   const nextState = applySunderingArmorPiercing(stateAfterBlock, isPhysicalOrStun, card);
   const effectiveArmor = isPhysicalOrStun ? nextState.enemyMitigation.armor : 0;
   const damageAfterArmor = Math.max(0, damageAfterBlock - effectiveArmor);
-  let multiplier =
-    getEnemyDamageMultiplier(stateAfterFirstMods, effect.damageType) * gearFrozenDamageMultiplier(stateAfterFirstMods);
-  if (
-    effect.damageType === "burn" &&
-    stateAfterFirstMods.enemyStatuses.bleed > 0 &&
-    stateAfterFirstMods.gearEffects.burnDamageBonusToBleedingPercent > 0
-  ) {
-    multiplier *= 1 + stateAfterFirstMods.gearEffects.burnDamageBonusToBleedingPercent / PERCENT_DENOMINATOR;
-  }
+  const multiplier =
+    getEnemyDamageMultiplier(stateAfterFirstMods, effect.damageType) *
+    gearFrozenDamageMultiplier(stateAfterFirstMods) *
+    computeBurnMultiplier(effect, stateAfterFirstMods);
   return { nextState, modifiedDamage: Math.round(damageAfterArmor * multiplier) };
 }

@@ -116,52 +116,60 @@ export function advanceDestinationOfferState(
   };
 }
 
+function pickCombatPity(
+  remaining: Destination[],
+  weightContext: DestinationWeightContext,
+  rng: () => number,
+): { picked: Destination; remaining: Destination[] } | null {
+  const combatPool = remaining.filter(isCombatDestination);
+  const picked = weightedPick(combatPool, weightContext, rng);
+  if (!picked) return null;
+  return { picked, remaining: remaining.filter((d) => d !== picked && !isCombatDestination(d)) };
+}
+
+function fillRemainingSlots(
+  remaining: Destination[],
+  weightContext: DestinationWeightContext,
+  rng: () => number,
+): Destination[] {
+  const choices: Destination[] = [];
+  while (choices.length < DESTINATION_CHOICES && remaining.length > 0) {
+    const hasShop = choices.some(isShopDestination);
+    const pool = hasShop ? remaining.filter((d) => !isShopDestination(d)) : remaining;
+    if (pool.length === 0) break;
+    const picked = weightedPick(pool, weightContext, rng);
+    if (!picked) break;
+    choices.push(picked);
+    remaining = remaining.filter((d) => d !== picked);
+  }
+  return choices;
+}
+
 export function sampleDestinationChoices(
   destinations: Destination[],
   offerState: DestinationOfferState = createEmptyDestinationOfferState(),
   rng: () => number = Math.random,
 ): SampleDestinationChoicesResult {
   if (destinations.length === 1 && destinations[0] === DESTINATIONS.BOSS_COMBAT) {
-    const choices = [DESTINATIONS.BOSS_COMBAT];
     return {
-      choices,
-      offerState: advanceDestinationOfferState(offerState, destinations, choices),
+      choices: [DESTINATIONS.BOSS_COMBAT],
+      offerState: advanceDestinationOfferState(offerState, destinations, [DESTINATIONS.BOSS_COMBAT]),
     };
   }
 
-  const weightContext: DestinationWeightContext = {
+  const weightContext = {
     lastOfferedDestinations: offerState.lastOfferedDestinations,
     roundsSinceOffered: offerState.roundsSinceOffered,
   };
-  const choices: Destination[] = [];
   let remaining = [...destinations];
-  const combatPity = !lastOfferedIncludesCombat(offerState.lastOfferedDestinations);
 
-  if (combatPity) {
-    const combatPool = remaining.filter(isCombatDestination);
-    const pickedCombat = weightedPick(combatPool, weightContext, rng);
-    if (pickedCombat) {
-      choices.push(pickedCombat);
-      remaining = remaining.filter((destination) => destination !== pickedCombat && !isCombatDestination(destination));
-    }
+  if (!lastOfferedIncludesCombat(offerState.lastOfferedDestinations)) {
+    const pity = pickCombatPity(remaining, weightContext, rng);
+    if (pity) remaining = pity.remaining;
   }
 
-  while (choices.length < DESTINATION_CHOICES && remaining.length > 0) {
-    const hasShop = choices.some(isShopDestination);
-    const pickPool = hasShop ? remaining.filter((destination) => !isShopDestination(destination)) : remaining;
-    if (pickPool.length === 0) break;
-
-    const picked = weightedPick(pickPool, weightContext, rng);
-    if (!picked) break;
-
-    choices.push(picked);
-    remaining = remaining.filter((destination) => destination !== picked);
-  }
-
-  return {
-    choices,
-    offerState: advanceDestinationOfferState(offerState, destinations, choices),
-  };
+  const choices = fillRemainingSlots(remaining, weightContext, rng);
+  return { choices, offerState: advanceDestinationOfferState(offerState, destinations, choices) };
 }
 
 /** Campaign resume keeps prior choices; advancing samples fresh destinations for the next room. */

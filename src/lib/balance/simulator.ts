@@ -153,32 +153,33 @@ function getImmediateDefense(card: BattleCard): number {
   }, 0);
 }
 
+function pickGreedyDamage(
+  playable: Array<{ card: BattleCard; index: number }>,
+): { card: BattleCard; index: number } | null {
+  const first = playable[0];
+  if (!first) return null;
+  let best = first;
+  let bestDamage = getImmediateDamage(best.card);
+  for (let i = 1; i < playable.length; i += 1) {
+    const candidate = playable[i];
+    if (!candidate) continue;
+    const damage = getImmediateDamage(candidate.card);
+    if (damage > bestDamage) {
+      best = candidate;
+      bestDamage = damage;
+    }
+  }
+  return { card: best.card, index: best.index };
+}
+
 function chooseCardToPlay(state: BattleState, policy: BalancePlayPolicy): { card: BattleCard; index: number } | null {
   const playable = getPlayableCards(state);
   if (playable.length === 0) return null;
-
-  if (policy === "greedy-damage") {
-    const first = playable[0];
-    if (!first) return null;
-    let best = first;
-    let bestDamage = getImmediateDamage(best.card);
-    for (let i = 1; i < playable.length; i += 1) {
-      const candidate = playable[i];
-      if (!candidate) continue;
-      const damage = getImmediateDamage(candidate.card);
-      if (damage > bestDamage) {
-        best = candidate;
-        bestDamage = damage;
-      }
-    }
-    return { card: best.card, index: best.index };
-  }
-
+  if (policy === "greedy-damage") return pickGreedyDamage(playable);
   if (policy === "defensive-random" && state.playerHealth <= state.playerMaxHealth / 2) {
     const defensive = playable.filter(({ card }) => getImmediateDefense(card) > 0);
     if (defensive.length > 0) return defensive[randomIndex(state.rng, defensive.length)] ?? null;
   }
-
   return playable[randomIndex(state.rng, playable.length)] ?? null;
 }
 
@@ -215,61 +216,82 @@ function playAutomatedTurn(
   return { state: nextState, combatTexts: allCombatTexts };
 }
 
+function resolveTalentEffects(config: BattleSimulationConfig, playerDeck: BattleCard[]): TalentEffectManifest {
+  if (config.talentEffects) return config.talentEffects;
+  if (!config.talentPreset) return defaultTalentEffects;
+  const base = buildPresetManifest(characters[config.characterId].keywords, config.talentPreset);
+  const homestead = {
+    ...defaultHomesteadEffects,
+    companionBondLevels: buildSimCompanionBondLevels(playerDeck, config.talentPreset),
+  };
+  return mergeIntoManifest(base, homestead);
+}
+
+function runSimTurn(
+  state: BattleState,
+  policy: BalancePlayPolicy,
+  cardsPlayed: Record<string, number>,
+  anomalies: BattleAnomalies,
+): BattleState {
+  const turnCombatTexts: CombatTextEvent[] = [];
+  state = processCompanionTurnStart(state, turnCombatTexts);
+  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
+
+  const turnResult = playAutomatedTurn(state, policy, cardsPlayed);
+  state = turnResult.state;
+  turnCombatTexts.push(...turnResult.combatTexts);
+  sampleAnomalies(state, turnCombatTexts, anomalies);
+  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
+
+  const resolution = endPlayerTurn(state);
+  if (resolution.afterAttackState) sampleAnomalies(resolution.afterAttackState, [], anomalies);
+  state = choosePendingWishCards(resolution.state);
+  sampleAnomalies(state, resolution.combatTexts, anomalies);
+  return state;
+}
+
+function orFallback<T>(val: T | null | undefined, fallback: T): T {
+  return val ?? fallback;
+}
+
+function buildSimBattleConfig(config: BattleSimulationConfig, rng: () => number, enemy: BestiaryEntry) {
+  const playerMaxHealth = orFallback(config.playerMaxHealth, MAX_PLAYER_HEALTH);
+  const playerDeck = orFallback(config.deck, getStartingDeck(config.characterId));
+  const talentEffects = resolveTalentEffects(config, playerDeck);
+
+  return {
+    state: createBattleState({
+      runDeck: playerDeck,
+      gold: orFallback(config.gold, 0),
+      totalRooms: orFallback(config.depth, 0),
+      currentEnemy: enemy,
+      playerHealth: orFallback(config.playerHealth, playerMaxHealth),
+      talentEffects,
+      maxHealth: playerMaxHealth,
+      trinketIds: orFallback(config.trinketIds, []),
+      difficultyModifiers: orFallback(config.difficultyModifiers, []),
+      rng,
+    }),
+    playerDeck,
+    playerMaxHealth,
+  };
+}
+
 export function simulateBattle(config: BattleSimulationConfig): BattleSimulationResult {
-  const seed = config.seed ?? DEFAULT_SEED;
+  const seed = orFallback(config.seed, DEFAULT_SEED);
   const rng = createSeededRng(seed);
   const enemy = enemyBestiary.find((entry) => entry.id === config.enemyId);
   if (!enemy) throw new Error(`Unknown enemy id: ${config.enemyId}`);
 
-  const trinketIds = config.trinketIds ?? [];
-  const policy = config.policy ?? DEFAULT_POLICY;
-  const playerMaxHealth = config.playerMaxHealth ?? MAX_PLAYER_HEALTH;
-  const playerDeck = config.deck ?? getStartingDeck(config.characterId);
-  const talentEffects = (() => {
-    if (config.talentEffects) return config.talentEffects;
-    if (!config.talentPreset) return defaultTalentEffects;
-    const base = buildPresetManifest(characters[config.characterId].keywords, config.talentPreset);
-    const homestead = {
-      ...defaultHomesteadEffects,
-      companionBondLevels: buildSimCompanionBondLevels(playerDeck, config.talentPreset),
-    };
-    return mergeIntoManifest(base, homestead);
-  })();
-
-  let state = createBattleState({
-    runDeck: playerDeck,
-    gold: config.gold ?? 0,
-    totalRooms: config.depth ?? 0,
-    currentEnemy: enemy,
-    playerHealth: config.playerHealth ?? playerMaxHealth,
-    talentEffects,
-    maxHealth: playerMaxHealth,
-    trinketIds,
-    difficultyModifiers: config.difficultyModifiers ?? [],
-    rng,
-  });
-
+  const { state: initialState, playerMaxHealth } = buildSimBattleConfig(config, rng, enemy);
+  const maxTurns = orFallback(config.maxTurns, DEFAULT_MAX_TURNS);
   const cardsPlayed: Record<string, number> = {};
-  const maxTurns = config.maxTurns ?? DEFAULT_MAX_TURNS;
   const anomalies = createEmptyAnomalies();
 
+  let state = initialState;
+
   while (state.enemyHealth > 0 && !isPlayerDefeated(state) && state.turn <= maxTurns) {
-    const turnCombatTexts: CombatTextEvent[] = [];
-    state = processCompanionTurnStart(state, turnCombatTexts);
-    if (state.enemyHealth <= 0 || isPlayerDefeated(state)) break;
-
-    const turnResult = playAutomatedTurn(state, policy, cardsPlayed);
-    state = turnResult.state;
-    turnCombatTexts.push(...turnResult.combatTexts);
-    sampleAnomalies(state, turnCombatTexts, anomalies);
-    if (state.enemyHealth <= 0 || isPlayerDefeated(state)) break;
-
-    const resolution = endPlayerTurn(state);
-    if (resolution.afterAttackState) {
-      sampleAnomalies(resolution.afterAttackState, [], anomalies);
-    }
-    state = choosePendingWishCards(resolution.state);
-    sampleAnomalies(state, resolution.combatTexts, anomalies);
+    state = runSimTurn(state, orFallback(config.policy, DEFAULT_POLICY), cardsPlayed, anomalies);
   }
 
   const outcome: BattleSimulationOutcome =
@@ -282,13 +304,13 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
     outcome,
     turns: state.turn,
     playerHealth: state.playerHealth,
-    playerMaxHealth: state.playerMaxHealth,
+    playerMaxHealth,
     enemyHealth: state.enemyHealth,
     enemyMaxHealth: state.enemyMaxHealth,
     cardsPlayed,
     totalCardsPlayed: Object.values(cardsPlayed).reduce((total, count) => total + count, 0),
-    trinketIds,
-    policy,
+    trinketIds: orFallback(config.trinketIds, []),
+    policy: orFallback(config.policy, DEFAULT_POLICY),
     seed,
     anomalies,
   };
