@@ -7,11 +7,11 @@ import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { SelectableShopCard } from "../../shared/ui/shop-card-item";
 import { ScreenDescription, ScreenHeader, ActionButtonRow, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 
-type Props = {
+interface Props {
   runDeck: BattleCard[];
   onRemove: (index: number) => void;
   onSkip: () => void;
-};
+}
 
 export function WildwoodRemovalScreen({ runDeck, onRemove, onSkip }: Props) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);

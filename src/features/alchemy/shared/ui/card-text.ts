@@ -7,7 +7,10 @@ const CARD_TEXT_CONFIG = {
   numericValuePattern: /\d+/g,
 } as const;
 
-export type CorruptedTextFragment = { text: string; corrupted: boolean };
+export interface CorruptedTextFragment {
+  text: string;
+  corrupted: boolean;
+}
 
 // Corruption positions are stored as character offsets within a rendered description line.
 export function getCorruptedValueOffsets(

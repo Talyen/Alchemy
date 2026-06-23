@@ -21,9 +21,9 @@ import { EnemyTooltip } from "./enemy-tooltip";
 import { TiltSurface } from "./tilt-surface";
 import { useInteractiveCard } from "./use-interactive-card";
 
-type CompendiumTileProps = {
+interface CompendiumTileProps {
   item: CollectionTileItem;
-};
+}
 
 export function CompendiumTile({ item }: CompendiumTileProps) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(

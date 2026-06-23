@@ -138,7 +138,7 @@ export function getInventoryDragDestination({
 }: {
   board: HTMLElement;
   instance: GearInstance;
-  boardObstacles: PackedInventoryItem<{ instanceId: string }>[];
+  boardObstacles: Array<PackedInventoryItem<{ instanceId: string }>>;
 }): { kind: "inventory"; placement: InventoryPlacement; rect: DragRect } | null {
   const metrics = readInventoryBoardMetrics(board);
   const footprint = footprintForInstance(instance);
@@ -167,7 +167,7 @@ export function calculateSecondaryDisplacedItems({
   loadout: GearLoadout;
   inventoryById: Map<string, GearInstance>;
   packedItems: PackedInventoryItem[];
-}): { instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }[] {
+}): Array<{ instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }> {
   const { displaced } = resolveEquipSwap({
     loadout,
     slot,
@@ -176,7 +176,7 @@ export function calculateSecondaryDisplacedItems({
     inventoryById,
     packedItems,
   });
-  const toAnimate: { instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }[] = [];
+  const toAnimate: Array<{ instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }> = [];
   if (displaced) {
     toAnimate.push({ instance: displaced, source: slotRect, vacatedPlacement });
   }
@@ -220,21 +220,21 @@ export function calculateSecondaryDisplacedItems({
   return toAnimate;
 }
 
-export type SecondaryDragVisual = {
+export interface SecondaryDragVisual {
   instance: GearInstance;
   source: DragRect;
   rect: DragRect;
   origin: { kind: "inventory"; placement: InventoryPlacement };
   destination: DragDestination;
   flyover: boolean;
-};
+}
 
 export function buildSecondaryDragVisuals({
   board,
   displacedItems,
 }: {
   board: HTMLElement;
-  displacedItems: { instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }[];
+  displacedItems: Array<{ instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }>;
 }): SecondaryDragVisual[] {
   const metrics = readInventoryBoardMetrics(board);
   if (!metrics) return [];

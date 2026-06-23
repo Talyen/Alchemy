@@ -344,7 +344,7 @@ export const ENEMY_TRAIT_IDS = {
 } as const;
 
 // Trait damage rules: first matching (traitId, damageType) wins.
-export const TRAIT_DAMAGE_RULES: { traitId: string; damageType: string; multiplier: number }[] = [
+export const TRAIT_DAMAGE_RULES: Array<{ traitId: string; damageType: string; multiplier: number }> = [
   { traitId: ENEMY_TRAIT_IDS.BRITTLE_BONES, damageType: "holy", multiplier: TRAIT_DAMAGE_WEAKNESS },
   { traitId: ENEMY_TRAIT_IDS.BRITTLE_BONES, damageType: "stun", multiplier: TRAIT_DAMAGE_WEAKNESS },
   { traitId: ENEMY_TRAIT_IDS.TRINKET_HOARDER, damageType: "burn", multiplier: TRAIT_DAMAGE_WEAKNESS },

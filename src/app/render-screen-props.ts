@@ -3,7 +3,7 @@ import type { Screen } from "@/lib/routing";
 import type { BattleControllerBindings } from "@/features/alchemy/shell/battle-bindings";
 import type { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 
-export type RenderAlchemyScreenProps = {
+export interface RenderAlchemyScreenProps {
   screen: Screen;
   run: ReturnType<typeof useAlchemyRunController>;
   battleBindings: BattleControllerBindings;
@@ -11,4 +11,4 @@ export type RenderAlchemyScreenProps = {
   onClearSaveData: () => void;
   onUnlockAllDevMode: () => void;
   onBackFromOptions: () => void;
-};
+}

@@ -79,7 +79,7 @@ function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
   const { effects, descriptionLines } = card;
 
   const getNext = <T extends BattleCardEffect["kind"]>(kind: T) => {
-    const filtered = effects.filter((e) => e.kind === kind) as Extract<BattleCardEffect, { kind: T }>[];
+    const filtered = effects.filter((e) => e.kind === kind) as Array<Extract<BattleCardEffect, { kind: T }>>;
     let index = 0;
     return () => filtered[index++];
   };

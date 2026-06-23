@@ -94,7 +94,7 @@ export function createBattleTransferDeps(
 
   return {
     getDrawSequenceDeps,
-    animateDiscardedHand: (hand: import("@/lib/game-data").BattleCard[], session: number) =>
+    animateDiscardedHand: (hand: Array<import("@/lib/game-data").BattleCard>, session: number) =>
       animateDiscardedHand(hand, session, getCardTransferDeps()),
   };
 }

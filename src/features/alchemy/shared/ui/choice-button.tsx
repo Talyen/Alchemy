@@ -5,14 +5,14 @@ import { CHIP_BUTTON_CLASS, BUTTON_SHAPE } from "@/features/alchemy/shared/confi
 import { cn } from "@/lib/utils";
 import { PressableMotion } from "./pressable-motion";
 
-type ChoiceButtonProps = {
+interface ChoiceButtonProps {
   label: ReactNode;
   icon?: ElementType;
   accentClassName?: string;
   shineColor?: string | readonly string[] | null;
   onClick: () => void;
   className?: string;
-};
+}
 
 export function ChoiceButton({
   label,

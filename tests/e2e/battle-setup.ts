@@ -49,7 +49,7 @@ export async function startAtDestination(
 
 export async function startBattleWithDeck(
   page: Page,
-  deck: Record<string, unknown>[],
+  deck: Array<Record<string, unknown>>,
   overrides: Record<string, unknown> = {},
 ) {
   await forceNextDestinationChoice(page, "Normal Combat");

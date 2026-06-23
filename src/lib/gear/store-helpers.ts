@@ -22,13 +22,13 @@ import { buildArmoryBoardView } from "./board-view";
 
 export type BoardItemRef = { kind: "gear"; id: string } | { kind: "currency"; id: CraftingCurrencyId };
 
-export type BoardSourceState = {
+export interface BoardSourceState {
   inventories: GearInventories;
   loadouts: GearLoadouts;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   boardPositionsByCharacter: GearBoardPositionsByCharacter;
   currencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
-};
+}
 
 type PositionRegistry = Record<string, { col: number; row: number }>;
 type CharacterPositionRegistry = Record<CharacterId, PositionRegistry>;
@@ -128,7 +128,7 @@ export function sortBoardForCharacter(
   const availableInventory = state.inventories[characterId].filter((item) => !equippedInstanceIds.has(item.instanceId));
   const activeCurrencyIds = CRAFTING_CURRENCY_IDS.filter((id) => state.craftingCurrencies[id] > 0);
 
-  const gridItems: { id: string; kind: "gear" | "currency"; originalId: string; w: number; h: number }[] = [];
+  const gridItems: Array<{ id: string; kind: "gear" | "currency"; originalId: string; w: number; h: number }> = [];
 
   for (const currencyId of activeCurrencyIds) {
     gridItems.push({

@@ -73,7 +73,7 @@ describe("defaultBattleState", () => {
 
   it("initializes all player statuses to 0", () => {
     const s = defaultBattleState();
-    const statusKeys: (keyof typeof s.playerStatuses)[] = [
+    const statusKeys: Array<keyof typeof s.playerStatuses> = [
       "block",
       "armor",
       "forge",
@@ -89,7 +89,7 @@ describe("defaultBattleState", () => {
 
   it("initializes all enemy statuses to 0", () => {
     const s = defaultBattleState();
-    const statusKeys: (keyof typeof s.enemyStatuses)[] = ["burn", "poison", "bleed", "freeze", "stun"];
+    const statusKeys: Array<keyof typeof s.enemyStatuses> = ["burn", "poison", "bleed", "freeze", "stun"];
     for (const key of statusKeys) expect(s.enemyStatuses[key]).toBe(0);
   });
 

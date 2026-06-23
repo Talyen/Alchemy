@@ -1,9 +1,9 @@
 import type { GearAffixId } from "./affix-ids";
 
-export type GearAffixNameParts = {
+export interface GearAffixNameParts {
   prefix?: string;
   suffix?: string;
-};
+}
 
 export const gearAffixNameParts: Record<GearAffixId, GearAffixNameParts> = {
   "flat-physical": { prefix: "Ironbound", suffix: "the Crusher" },

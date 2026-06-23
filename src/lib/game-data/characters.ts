@@ -6,14 +6,14 @@ import type { KeywordId } from "./types";
 
 export type CharacterId = "knight" | "ranger" | "rogue" | "wizard" | "alchemist" | "warlock" | "druid" | "wildcard";
 
-export type CharacterDefinition = {
+export interface CharacterDefinition {
   id: CharacterId;
   name: string;
   role: string;
   description: string;
   startingDeck: BattleCard[];
   keywords: KeywordId[];
-};
+}
 
 function resolveDeck(ids: string[]): BattleCard[] {
   return ids

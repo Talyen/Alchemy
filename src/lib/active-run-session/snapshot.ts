@@ -16,7 +16,7 @@ import type {
   PersistedEquipmentShopState,
 } from "./types";
 
-export type ActiveRunSnapshotSource = {
+export interface ActiveRunSnapshotSource {
   characterId: CharacterId;
   runDeck: BattleCard[];
   runGold: number;
@@ -48,7 +48,7 @@ export type ActiveRunSnapshotSource = {
   alchemistState: PersistedAlchemistState | null;
   trinketShopState: PersistedTrinketShopState | null;
   equipmentShopState: PersistedEquipmentShopState | null;
-};
+}
 
 export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): ActiveRunData {
   const activeCombat =

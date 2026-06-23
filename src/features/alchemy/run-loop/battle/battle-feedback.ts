@@ -32,12 +32,12 @@ export function shouldHurtEnemyFromCombatTexts(combatTexts: CombatTextEvent[]) {
   return combatTexts.some((ct) => ct.target === "enemy" && isPortraitHurtCombatText(ct));
 }
 
-export type PortraitFeedback = {
+export interface PortraitFeedback {
   shakeEnemy: () => void;
   shakePlayer: () => void;
   hurtEnemy: () => void;
   hurtPlayer: () => void;
-};
+}
 
 // Applies shake + hurt portrait feedback from resolved combat text batches.
 export function applyCombatTextPortraitFeedback(combatTexts: CombatTextEvent[], feedback: PortraitFeedback) {

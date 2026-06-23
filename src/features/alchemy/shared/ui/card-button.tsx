@@ -13,7 +13,7 @@ import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
 import { DetailPopup } from "./card-popup";
 import { TiltSurface } from "./tilt-surface";
 
-type BattleCardButtonProps = {
+interface BattleCardButtonProps {
   card: BattleCard;
   hovered: boolean;
   onHoverStart: () => void;
@@ -35,7 +35,7 @@ type BattleCardButtonProps = {
   dragging?: boolean;
   tiltEnabled?: boolean;
   descriptionContext?: CardDescriptionContext;
-};
+}
 
 export function BattleCardButton(props: BattleCardButtonProps) {
   const {

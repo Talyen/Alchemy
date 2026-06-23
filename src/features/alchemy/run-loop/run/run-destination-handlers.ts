@@ -9,7 +9,7 @@ import { getRandomPotionCard } from "../navigation/reward-flow";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "./deck-mutations";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
 
-export type DestinationRouteHandlers = {
+export interface DestinationRouteHandlers {
   navigateTo: (nextScreen: Screen) => void;
   beginMysteryEvent: () => void;
   resetCorruption: () => void;
@@ -19,7 +19,7 @@ export type DestinationRouteHandlers = {
   startEquipmentShop: () => void;
   startBattle: (enemyType: typeof CONSTANTS.ENEMY_TYPES.NORMAL | typeof CONSTANTS.ENEMY_TYPES.ELITE) => void;
   startBossBattle: () => void;
-};
+}
 
 const DESTINATION_HANDLERS: Record<Destination, (handlers: DestinationRouteHandlers) => void> = {
   [CONSTANTS.DESTINATIONS.CAMPFIRE]: (handlers) => handlers.navigateTo(CONSTANTS.SCREENS.CAMPFIRE),
@@ -63,12 +63,12 @@ export function routeDestinationChoice(destination: Destination, handlers: Desti
   handler(handlers);
 }
 
-type RewardSelectionInput = {
+interface RewardSelectionInput {
   choice: BattleCard | { id: string } | GearInstance;
   type: RewardState["rewardType"];
   setRunDeck: Dispatch<SetStateAction<BattleCard[]>>;
   setRunTrinkets: Dispatch<SetStateAction<string[]>>;
-};
+}
 
 export function applyRewardSelection({ choice, type, setRunDeck, setRunTrinkets }: RewardSelectionInput) {
   if (type === "card") {

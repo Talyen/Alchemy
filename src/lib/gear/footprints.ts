@@ -1,7 +1,10 @@
 import { gearDefinitions } from "./definitions";
 import type { GearDefinition, GearSlot } from "./types";
 
-export type GearFootprint = { w: number; h: number };
+export interface GearFootprint {
+  w: number;
+  h: number;
+}
 
 export const GEAR_FOOTPRINT: Record<GearSlot, GearFootprint> = {
   helm: { w: 2, h: 2 },

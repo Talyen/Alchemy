@@ -7,12 +7,17 @@ import { emptyInventory, addInventory } from "./inventory";
 import { HOMESTEAD_LOOT_CONFIG } from "../game-constants";
 
 // Per-enemy loot table: a guaranteed drop, plus possible bonus drops with weight.
-type MaterialLootEntry = { material: MaterialId; min: number; max: number; weight: number };
+interface MaterialLootEntry {
+  material: MaterialId;
+  min: number;
+  max: number;
+  weight: number;
+}
 
-type EnemyLootTable = {
+interface EnemyLootTable {
   guaranteed: MaterialInventory;
   bonuses: MaterialLootEntry[];
-};
+}
 
 function lootEntry(material: MaterialId, min: number, max: number, weight = 1): MaterialLootEntry {
   return { material, min, max, weight };

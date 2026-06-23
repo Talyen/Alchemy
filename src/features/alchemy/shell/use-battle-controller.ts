@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/refs, react-hooks/preserve-manual-memoization -- factories receive ref objects for async handlers; ref.current assignments are deliberate */
 import { useEffect, useMemo, useLayoutEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import {
@@ -26,7 +25,7 @@ import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run
 import type { BattleState } from "@/lib/battle";
 import type { BattleScreenData } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 
-type UseBattleControllerProps = {
+interface UseBattleControllerProps {
   run: RunStateController;
   talents: TalentStateController;
   autoEndTurn: boolean;
@@ -37,7 +36,7 @@ type UseBattleControllerProps = {
   onBattleDefeat?: () => void;
   measureElementRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
-};
+}
 
 export function useBattleController({
   run,

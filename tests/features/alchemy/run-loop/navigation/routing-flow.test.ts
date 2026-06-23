@@ -3,7 +3,7 @@ import { routeDestinationChoice } from "@/features/alchemy/run-loop/run/run-dest
 import { DESTINATIONS, type Destination } from "@/features/alchemy/shared/types";
 import { makeDestinationRouteHandlers } from "../../../../helpers/destination-route-handlers";
 
-const ROUTE_CASES: {
+const ROUTE_CASES: Array<{
   destination: Destination;
   expectedScreen: string;
   startShop?: boolean;
@@ -14,7 +14,7 @@ const ROUTE_CASES: {
   resetCorruption?: boolean;
   battleType?: "normal" | "elite";
   bossBattle?: boolean;
-}[] = [
+}> = [
   { destination: DESTINATIONS.CAMPFIRE, expectedScreen: "campfire" },
   { destination: DESTINATIONS.MERCHANT_SHOP, expectedScreen: "shop", startShop: true },
   { destination: DESTINATIONS.ALCHEMIST_SHOP, expectedScreen: "alchemist", startAlchemist: true },

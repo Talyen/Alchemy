@@ -4,9 +4,14 @@ import type { BattleCard } from "@/lib/game-data";
 
 type CardGhostVariant = "draw-in" | "discard-out" | "activate" | "play-travel";
 
-export type CardRect = { x: number; y: number; width: number; height: number };
+export interface CardRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
-export type CardGhost = {
+export interface CardGhost {
   id: string;
   art: string;
   rect: CardRect;
@@ -18,9 +23,9 @@ export type CardGhost = {
     y: number;
     scale: number;
   };
-};
+}
 
-export type CardTransfer = {
+export interface CardTransfer {
   id: string;
   card: BattleCard;
   from: CardRect;
@@ -31,7 +36,7 @@ export type CardTransfer = {
   toRotation: number;
   rotateY: number[];
   duration: number;
-};
+}
 
 export type FloatingCombatText = CombatTextEvent & {
   id: string;

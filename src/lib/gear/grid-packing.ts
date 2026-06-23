@@ -1,16 +1,27 @@
 import type { GearFootprint } from "./footprints";
 import type { InventoryPlacement } from "./inventory-placement";
 
-type GridItemInput = {
+interface GridItemInput {
   id: string;
   w: number;
   h: number;
   saved?: { col: number; row: number } | undefined;
-};
+}
 
-type Obstacle = { col: number; row: number; w: number; h: number };
+interface Obstacle {
+  col: number;
+  row: number;
+  w: number;
+  h: number;
+}
 
-export type PackedGridItem<T> = { item: T; col: number; row: number; w: number; h: number };
+export interface PackedGridItem<T> {
+  item: T;
+  col: number;
+  row: number;
+  w: number;
+  h: number;
+}
 
 function ensureRows(occupancy: boolean[][], rows: number, cols: number): void {
   while (occupancy.length < rows) {
@@ -76,9 +87,9 @@ export function packGridItems<T extends GridItemInput>(
     reservedItems?: readonly T[];
     blockedCells?: readonly Obstacle[];
   } = {},
-): { items: PackedGridItem<T>[]; occupiedRows: number } {
+): { items: Array<PackedGridItem<T>>; occupiedRows: number } {
   const { reservedItems = [], blockedCells = [] } = options;
-  const packedItems: PackedGridItem<T>[] = [];
+  const packedItems: Array<PackedGridItem<T>> = [];
   const occupancy: boolean[][] = [];
   let occupiedRows = 0;
   const visibleIds = new Set(items.map((item) => item.id));
@@ -136,7 +147,7 @@ export function packInventoryGrid<T>(
   items: T[],
   cols: number,
   getFootprint: (item: T) => GearFootprint,
-): PackedGridItem<T>[] {
+): Array<PackedGridItem<T>> {
   return packGridItems(
     items.map((item, idx) => {
       const footprint = getFootprint(item);
@@ -157,7 +168,7 @@ export function packInventoryGridPreserving<T extends { id: string }>(
   cols: number,
   getFootprint: (item: T) => GearFootprint,
   getSavedPosition: (item: T) => InventoryPlacement | undefined,
-): PackedGridItem<T>[] {
+): Array<PackedGridItem<T>> {
   return packGridItems(
     items.map((item) => {
       const footprint = getFootprint(item);
@@ -179,7 +190,7 @@ export function packMixedBoard<TKind extends string, TItem extends { id: string;
   cols: number,
   getFootprint: (item: TItem) => GearFootprint,
   getSavedPosition: (item: TItem) => InventoryPlacement | undefined,
-): { item: TItem; col: number; row: number }[] {
+): Array<{ item: TItem; col: number; row: number }> {
   return packGridItems(
     items.map((item) => {
       const footprint = getFootprint(item);
@@ -197,8 +208,8 @@ export function packCurrencyGridWithGearObstacles(
   currencyIds: string[],
   cols: number,
   savedPositions: Record<string, InventoryPlacement | undefined>,
-  gearObstacles: { col: number; row: number; w: number; h: number }[],
-): { id: string; col: number; row: number; w: 1; h: 1 }[] {
+  gearObstacles: Array<{ col: number; row: number; w: number; h: number }>,
+): Array<{ id: string; col: number; row: number; w: 1; h: 1 }> {
   const result = packGridItems(
     currencyIds.map((id) => ({ id, w: 1, h: 1, saved: savedPositions[id] })),
     cols,

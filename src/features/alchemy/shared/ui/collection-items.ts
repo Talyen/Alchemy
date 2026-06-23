@@ -15,7 +15,7 @@ const COLLECTION_ITEMS_CONFIG = {
   hiddenTrinketDescription: "Find this trinket to reveal its effect.",
 } as const;
 
-export type CollectionTileItem = {
+export interface CollectionTileItem {
   id: string;
   title: string;
   subtitle: string | undefined;
@@ -25,7 +25,7 @@ export type CollectionTileItem = {
   hoverScope: string;
   frameType: "card" | "bestiary" | "trinket";
   enemyEntry?: BestiaryEntry;
-};
+}
 
 function getCollectionPageSize(tab: CollectionTab): number {
   return tab === "trinkets" ? TRINKET_PAGE_SIZE : COLLECTION_PAGE_SIZE;

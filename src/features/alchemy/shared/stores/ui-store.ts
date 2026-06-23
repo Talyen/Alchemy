@@ -4,13 +4,13 @@ import { SHIMMER_COOLDOWN_MS } from "@/lib/game-constants";
 
 type ShimmerState = { cardId: string; token: number } | null;
 
-type UiStore = {
+interface UiStore {
   hoveredCardId: string | null;
   shimmerState: ShimmerState;
   setHoveredCardId: (id: string | null | ((prev: string | null) => string | null)) => void;
   clearCardHover: () => void;
   maybeTriggerShimmer: (cardId: string) => void;
-};
+}
 
 export const useUiStore = create<UiStore>()((set, get) => ({
   hoveredCardId: null,

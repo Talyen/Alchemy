@@ -13,11 +13,11 @@ import { LabyrinthNodeButton, type HoveredLabyrinthNode } from "./labyrinth-node
 import { LabyrinthNodeTooltip } from "./labyrinth-node-tooltip";
 import { positionStyle } from "./labyrinth-map-layout";
 
-type Props = {
+interface Props {
   labyrinthMap: LabyrinthMap | null;
   onNodeClick: (row: number, col: number) => void;
   onOpenMenu: (rect?: DOMRect) => void;
-};
+}
 
 export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Props) {
   const [hoveredNode, setHoveredNode] = useState<HoveredLabyrinthNode | null>(null);

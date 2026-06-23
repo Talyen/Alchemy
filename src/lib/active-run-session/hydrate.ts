@@ -6,7 +6,7 @@ import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet
 
 import type { ActiveRunData, LabyrinthNodePosition } from "./types";
 
-export type ActiveRunHydrationTargets = {
+export interface ActiveRunHydrationTargets {
   runStore: {
     initialize: (activeRun: ActiveRunData | null, talentXP: TalentXP, unlockedTalents: UnlockedTalents) => void;
   };
@@ -22,7 +22,7 @@ export type ActiveRunHydrationTargets = {
     setWildwoodDraft?: (state: WildwoodDraftState | null) => void;
     applyDestinationChoices: (choices: string[]) => void;
   };
-};
+}
 
 export function hydrateActiveRunSession(
   activeRun: ActiveRunData | null,

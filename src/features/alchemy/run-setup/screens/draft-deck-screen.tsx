@@ -64,12 +64,12 @@ function ChoiceCardItem({
   );
 }
 
-type Props = {
+interface Props {
   onComplete: (draftedCards: BattleCard[]) => void;
   draftedCards?: BattleCard[];
   draftChoices?: BattleCard[];
   onPick?: (card: BattleCard) => void;
-};
+}
 
 export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick }: Props) {
   const [localDrafted, setLocalDrafted] = useState<BattleCard[]>([]);

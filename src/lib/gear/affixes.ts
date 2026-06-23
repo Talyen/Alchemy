@@ -45,9 +45,9 @@ function normalizeLegacyAffixId(id: string): GearAffixId | null {
 }
 
 export function normalizeAffixRolls(raw: {
-  affixes?: { id: string; value: number }[];
+  affixes?: Array<{ id: string; value: number }>;
   affixIds?: string[];
-  modifiers?: { kind: string; value: number }[];
+  modifiers?: Array<{ kind: string; value: number }>;
 }): GearAffixRoll[] {
   if (raw.affixes && raw.affixes.length > 0) {
     return raw.affixes.flatMap((entry) => {
@@ -67,7 +67,9 @@ export function normalizeAffixRolls(raw: {
   return legacyFlatPhysicalModifiersToAffixRolls(raw.modifiers ?? []);
 }
 
-export function legacyFlatPhysicalModifiersToAffixRolls(modifiers: { kind: string; value: number }[]): GearAffixRoll[] {
+export function legacyFlatPhysicalModifiersToAffixRolls(
+  modifiers: Array<{ kind: string; value: number }>,
+): GearAffixRoll[] {
   const rolls: GearAffixRoll[] = [];
   for (const modifier of modifiers) {
     if (modifier.kind !== "flatPhysicalDamage" || !Number.isFinite(modifier.value)) continue;
@@ -93,7 +95,7 @@ export function getGearAffixDisplayName(affixId: GearAffixId): string {
 export function getGearAffixTooltipEntries(
   affixes: readonly GearAffixRoll[],
   _rarity?: GearRarity,
-): { key: string; name: string; text: string }[] {
+): Array<{ key: string; name: string; text: string }> {
   return affixes.flatMap((roll, index) => {
     const def = gearAffixCatalog[roll.id];
     return [

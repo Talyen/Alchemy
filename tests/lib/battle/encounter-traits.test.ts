@@ -12,7 +12,7 @@ import type { BattleCard, BestiaryEntry } from "@/lib/game-data";
 import { createTestBattleState } from "./test-state";
 import { defaultCcState } from "../../fixtures/default-battle-state";
 
-function enemyWith(...ids: (keyof typeof ENCOUNTER_TRAITS)[]): BestiaryEntry {
+function enemyWith(...ids: Array<keyof typeof ENCOUNTER_TRAITS>): BestiaryEntry {
   return {
     id: "trait-test-enemy",
     title: "Trait Test Enemy",

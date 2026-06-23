@@ -21,7 +21,7 @@ import { waitForStableHandCardRect, type StableHandCardRectDeps } from "./hand-c
 
 type CardTransferRunner = (transfer: Omit<CardTransfer, "id">, onComplete?: () => void) => Promise<void>;
 
-export type CardTransferAnimationDeps = {
+export interface CardTransferAnimationDeps {
   isSessionActive: (session: number) => boolean;
   measureDiscardPile: () => CardRect | null;
   measureDrawPile: () => CardRect | null;
@@ -33,7 +33,7 @@ export type CardTransferAnimationDeps = {
   setCardPlayInProgress: (active: boolean) => void;
   setTransferInProgress: (active: boolean) => void;
   stableHandCardDeps: StableHandCardRectDeps;
-};
+}
 
 export async function animateDiscardedHand(cards: BattleCard[], session: number, deps: CardTransferAnimationDeps) {
   const discardPileRect = deps.measureDiscardPile();
@@ -122,10 +122,10 @@ export async function animateDrawnHand(
   }
 }
 
-export type TransferCancelRegistry = {
+export interface TransferCancelRegistry {
   register: (callback: () => void) => () => void;
   cancelAll: () => void;
-};
+}
 
 export function createTransferCancelRegistry(): TransferCancelRegistry {
   const callbacks = new Set<() => void>();
@@ -206,12 +206,12 @@ function getCardPlayGhostTargetRect(
   return sceneRect ? viewportRectToBattleSceneRect(fallback, sceneRect) : fallback;
 }
 
-export type BattleSceneLocalRect = {
+export interface BattleSceneLocalRect {
   left: number;
   top: number;
   scaleX: number;
   scaleY: number;
-};
+}
 
 export function getBattleSceneLocalRect(scene: HTMLDivElement | null): BattleSceneLocalRect | null {
   if (!scene) return null;

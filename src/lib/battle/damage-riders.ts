@@ -65,7 +65,7 @@ function applyLeechManaRider(state: BattleState, combatTexts: CombatTextEvent[])
 function applyLeechTrinketSiphonRider(state: BattleState): BattleState {
   if (rollTalentChance(state.talentEffects.trinketSiphonChance, state)) {
     const mit = state.enemyMitigation;
-    const pool: { key: keyof EnemyMitigation; status: PlayerStatusId }[] = [];
+    const pool: Array<{ key: keyof EnemyMitigation; status: PlayerStatusId }> = [];
     if (mit.forge > 0) pool.push({ key: "forge", status: "forge" });
     if (mit.armor > 0) pool.push({ key: "armor", status: "armor" });
     if (mit.block > 0) pool.push({ key: "block", status: "block" });

@@ -5,7 +5,7 @@ import {
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation/metadata";
 
-export type HomesteadSaveFixture = {
+export interface HomesteadSaveFixture {
   saveSchemaVersion: number;
   gameBuildVersion: string;
   contentVersion: number;
@@ -32,7 +32,7 @@ export type HomesteadSaveFixture = {
   unlockedTalents: Record<string, unknown>;
   finishedRunCharacters: string[];
   lastSavedAt: number;
-};
+}
 
 export const baseHomesteadSave: HomesteadSaveFixture = {
   saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,

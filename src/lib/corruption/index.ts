@@ -13,19 +13,19 @@ import {
 
 type NumericEffect = BattleCardEffect & { amount: number };
 
-type CorruptionTarget = {
+interface CorruptionTarget {
   lineIndex: number;
   matchIndex: number;
   value: number;
   effectIndex: number;
-};
+}
 
-export type CorruptionResult = {
+export interface CorruptionResult {
   originalCard: BattleCard;
   corruptedCard: BattleCard;
   transformed: boolean;
   delta: 1 | -1;
-};
+}
 
 // Generated/special cards do not have stable base content, so corruption transforms avoid them.
 export function isSpecialCorruptionCard(card: Pick<BattleCard, "id">) {

@@ -10,14 +10,14 @@ import { DisabledTooltip, GoldCost, StaggerItem } from "./shared-ui";
 import { TiltSurface } from "./tilt-surface";
 import { useInteractiveCard } from "./use-interactive-card";
 
-type PurchasableGearItemProps = {
+interface PurchasableGearItemProps {
   instance: GearInstance;
   price: number;
   gold: number;
   purchased: boolean;
   onBuy: () => void;
   staggerIndex?: number;
-};
+}
 
 export function PurchasableGearItem({
   instance,

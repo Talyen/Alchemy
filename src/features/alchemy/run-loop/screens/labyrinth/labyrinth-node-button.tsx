@@ -11,15 +11,15 @@ import { cn } from "@/lib/utils";
 import { LABYRINTH_NODE_META } from "@/features/alchemy/shared/config";
 import { positionStyle } from "./labyrinth-map-layout";
 
-export type HoveredLabyrinthNode = {
+export interface HoveredLabyrinthNode {
   row: number;
   col: number;
   type: LabyrinthNodeType;
   modifiers: LabyrinthModifierKind[];
   rewardModifiers: LabyrinthModifierKind[];
-};
+}
 
-type Props = {
+interface Props {
   row: number;
   col: number;
   node: NonNullable<LabyrinthMap["grid"][number][number]>;
@@ -27,7 +27,7 @@ type Props = {
   onNodeClick: (row: number, col: number) => void;
   onHover: (node: HoveredLabyrinthNode) => void;
   onLeave: () => void;
-};
+}
 
 export function LabyrinthNodeButton({ row, col, node, labyrinthMap, onNodeClick, onHover, onLeave }: Props) {
   const isCleared = node.state === "cleared";

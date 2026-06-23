@@ -5,7 +5,7 @@ import { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds 
 import { logError } from "./error-logger";
 
 export function runStartupValidation() {
-  const checks: { name: string; ok: boolean }[] = [];
+  const checks: Array<{ name: string; ok: boolean }> = [];
 
   function check(name: string, condition: boolean) {
     checks.push({ name, ok: condition });

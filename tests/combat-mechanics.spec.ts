@@ -141,12 +141,12 @@ test.describe("Companion Battle Behavior", () => {
   });
 });
 
-type TalentCase = {
+interface TalentCase {
   id: string;
   category: string;
   description: string;
   run: (page: import("@playwright/test").Page, battle: BattlePage) => Promise<void>;
-};
+}
 
 const TALENT_CASES: TalentCase[] = [
   {

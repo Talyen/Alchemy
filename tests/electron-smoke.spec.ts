@@ -36,7 +36,9 @@ test.describe("Electron desktop integration", { ...desktop, ...smoke }, () => {
       }, payload);
       expect(wrote).toBe(true);
 
-      const readBack = await window.evaluate(async () => window.alchemyDesktop?.loadSave() ?? null);
+      const readBack = await window.evaluate(
+        async () => ((await window.alchemyDesktop?.listSaveCandidates()) ?? [])[0] ?? null,
+      );
       expect(readBack).toBe(payload);
       expect(errors).toEqual([]);
     } finally {
@@ -85,7 +87,7 @@ test.describe("Electron desktop integration", { ...desktop, ...smoke }, () => {
           mockEl.setAttribute("data-payload", cloudPayload);
           document.body.appendChild(mockEl);
 
-          const readLocal = await desktop.loadSave();
+          const readLocal = (await desktop.listSaveCandidates())[0] ?? null;
           const readCloud = await desktop.steamCloudRead?.();
           (
             window as unknown as { __cloudMergeProbe: { local: string | null; cloud: string | null } }

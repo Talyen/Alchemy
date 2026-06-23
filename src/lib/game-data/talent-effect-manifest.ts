@@ -1,7 +1,7 @@
 // Pre-computed bonuses from unlocked talents, recalculated each battle start.
 import type { CompanionId } from "./types";
 
-export type TalentEffectManifest = {
+export interface TalentEffectManifest {
   // --- Physical ---
   flatPhysicalDamage: number;
   armorToPhysicalDamage: boolean;
@@ -222,4 +222,4 @@ export type TalentEffectManifest = {
   leechPoisonChance: number;
   blockEnemyLeech: boolean;
   natureLeechChance: number;
-};
+}

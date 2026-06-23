@@ -10,7 +10,7 @@ import { playUISound } from "@/lib/audio";
 import type { GearDragVisual } from "./use-armory-gear-drag";
 import type { CurrencyDragVisual } from "./use-armory-currency-drag";
 
-type Props = {
+interface Props {
   salvageTarget: GearInstance | null;
   currencyDragVisual: CurrencyDragVisual | null;
   dragVisual: GearDragVisual | null;
@@ -28,7 +28,7 @@ type Props = {
   onClearDragState: () => void;
   onClearSecondaryDragState: () => void;
   onCloseTransferMenu: () => void;
-};
+}
 
 export function ArmoryOverlays({
   salvageTarget,

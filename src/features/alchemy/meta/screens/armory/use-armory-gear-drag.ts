@@ -42,7 +42,7 @@ export type GearPointerEnd = (pointer: { x: number; y: number }, pointerId: numb
 
 import { DOUBLE_CLICK_FLYOVER_CLEAR_DELAY_MS, EQUIPMENT_SNAP_INSET_RATIO } from "./drag-constants";
 
-export type GearDragVisual = {
+export interface GearDragVisual {
   instance: GearInstance | null;
   source: DragRect;
   rect: DragRect;
@@ -52,14 +52,14 @@ export type GearDragVisual = {
   flyover?: boolean | undefined;
   releasing?: boolean | undefined;
   releaseRect?: DragRect | undefined;
-};
+}
 
-type GearDragItem = {
+interface GearDragItem {
   instance: GearInstance;
   origin: GearDragOrigin;
-};
+}
 
-type UseArmoryGearDragOptions = {
+interface UseArmoryGearDragOptions {
   characterId: CharacterId;
   editable: boolean;
   loadout: GearLoadout;
@@ -67,7 +67,7 @@ type UseArmoryGearDragOptions = {
   packedInventory: PackedInventory;
   packedCurrencies: PackedCurrencyItem[];
   inventoryBoardRef: RefObject<HTMLDivElement | null>;
-  boardObstacles: PackedInventoryItem<{ instanceId: string }>[];
+  boardObstacles: Array<PackedInventoryItem<{ instanceId: string }>>;
   onEquip: (
     characterId: CharacterId,
     slot: GearSlot,
@@ -81,7 +81,7 @@ type UseArmoryGearDragOptions = {
     origin: { kind: "inventory"; placement: InventoryPlacement },
     source: DragRect,
   ) => void;
-};
+}
 
 export function useArmoryGearDrag({
   characterId,
@@ -120,7 +120,7 @@ export function useArmoryGearDrag({
   }, []);
 
   const launchSecondarySwapAnimations = useCallback(
-    (displacedItems: { instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }[]) => {
+    (displacedItems: Array<{ instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }>) => {
       const board = inventoryBoardRef.current;
       if (!board || displacedItems.length === 0) return;
       const visuals = buildSecondaryDragVisuals({ board, displacedItems });

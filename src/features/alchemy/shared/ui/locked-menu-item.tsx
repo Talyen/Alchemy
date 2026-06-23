@@ -5,7 +5,7 @@ import { tooltipSideAnchorClass, useTooltipSidePlacement } from "./tooltip-panel
 import { cn } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
 
-type LockedMenuItemProps = {
+interface LockedMenuItemProps {
   title: string;
   message: string;
   locked: boolean;
@@ -16,7 +16,7 @@ type LockedMenuItemProps = {
   tooltipPlacement?: "side-start" | "side-end";
   size?: "sm" | "default" | "lg";
   variant?: "outline" | "ghost";
-};
+}
 
 export function LockedMenuItem({
   title,

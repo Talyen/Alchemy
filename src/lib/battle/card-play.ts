@@ -33,10 +33,10 @@ export function cardHasDamageType(card: BattleCard, damageType: string): boolean
 
 type CardCostState = Pick<BattleState, "flags" | "talentEffects" | "trinketEffects">;
 
-const FIRST_CARD_FREE_RULES: {
+const FIRST_CARD_FREE_RULES: Array<{
   flag: BooleanCombatFlag;
   condition: (state: CardCostState, card: BattleCard) => boolean;
-}[] = [
+}> = [
   {
     flag: "firstPhysicalCardFreeUsed",
     condition: (state, card) => state.talentEffects.firstPhysicalCardFree && cardHasDamageType(card, "physical"),
@@ -136,7 +136,9 @@ function getPlayableCard(state: BattleState, cardId: string, index: number): Bat
   return card;
 }
 
-export type CardPlayOptions = { allowAfterEnemyDefeat?: boolean };
+export interface CardPlayOptions {
+  allowAfterEnemyDefeat?: boolean;
+}
 
 /** Battle-engine playability (mana, phase, defeat, wish). UI adds screen/animation guards on top. */
 export function canPlayCard(state: BattleState, card: BattleCard, index: number, options?: CardPlayOptions): boolean {

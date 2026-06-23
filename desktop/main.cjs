@@ -120,10 +120,7 @@ app.whenReady().then(() => {
   // filtering.
   ipcMain.handle("alchemy:list-save-candidates", async () => {
     const candidates = [];
-    const localPaths = [
-      SAVE_FILE_PATH,
-      ...SAVE_BAK_PATHS,
-    ];
+    const localPaths = [SAVE_FILE_PATH, ...SAVE_BAK_PATHS];
     for (const filePath of localPaths) {
       try {
         const data = await fs.promises.readFile(filePath, "utf8");

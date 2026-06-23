@@ -80,19 +80,19 @@ export function getCompanionCardChoices(rng: () => number = Math.random): Battle
 
 export type FinalizeRewardRoute = (typeof CONSTANTS.REWARD_ROUTES)[keyof typeof CONSTANTS.REWARD_ROUTES];
 
-export type FinalizeRewardInput = {
+export interface FinalizeRewardInput {
   rewardState: RewardState;
   companionRewardCards: BattleCard[] | null;
-};
+}
 
-export type FinalizeRewardResult = {
+export interface FinalizeRewardResult {
   selectedChoice: BattleCard | TrinketEntry | GearInstance | null;
   selectedRewardType: RewardState["rewardType"];
   materials: MaterialInventory;
   nextRewardState: CardRewardState;
   clearCompanionRewardCards: boolean;
   route: FinalizeRewardRoute;
-};
+}
 
 function resolveRewardRoute(contentSystemType: ContentSystemId, currentEnemyType: string): FinalizeRewardRoute {
   if (contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
@@ -148,14 +148,14 @@ export function finalizeRewardState({ rewardState, companionRewardCards }: Final
   };
 }
 
-export type RewardRouteTransitionHandlers = {
+export interface RewardRouteTransitionHandlers {
   navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
   completeRunVictory: (materials: MaterialInventory, onRenderedScreenCommit?: () => void) => void;
   handleActComplete: (materials: MaterialInventory) => void;
   onLabyrinthClearNode: () => void;
   setCompanionRewardCards: (cards: BattleCard[] | null) => void;
   setRewardState: (state: RewardState) => void;
-};
+}
 
 export function executeRewardRouteTransition(
   route: FinalizeRewardResult["route"],
@@ -189,7 +189,7 @@ export function executeRewardRouteTransition(
   }
 }
 
-type BossRewardInput = {
+interface BossRewardInput {
   gold: number;
   bossBonus: number;
   generousBonus: number;
@@ -199,9 +199,9 @@ type BossRewardInput = {
   goldMultiplier?: number;
   rng?: () => number;
   gearAstralChanceBonus?: number;
-};
+}
 
-type CombatRewardInput = {
+interface CombatRewardInput {
   battleState: BattleState;
   runDeck: BattleCard[];
   gold: number;
@@ -213,7 +213,7 @@ type CombatRewardInput = {
   trinketIds: string[];
   goldMultiplier?: number;
   rng?: () => number;
-};
+}
 
 export function createBossRewardState({
   gold,

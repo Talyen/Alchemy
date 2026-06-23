@@ -11,7 +11,7 @@ function joinAttackTypes(types: string[]): string {
   return `${types.slice(0, -1).join(", ")} and ${types[types.length - 1]}`;
 }
 
-function formatStatusAttackTypes(attackEffects: Extract<EnemyAttackEffect, { kind: "player-status" }>[]) {
+function formatStatusAttackTypes(attackEffects: Array<Extract<EnemyAttackEffect, { kind: "player-status" }>>) {
   if (attackEffects.length === 1) {
     const e = attackEffects[0]!;
     return `Deals ${e.amount} ${capitalizeWord(e.status)} damage`;

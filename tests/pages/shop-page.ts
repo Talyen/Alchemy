@@ -72,7 +72,7 @@ export class ShopPage {
     await this.refreshBtn.click();
   }
 
-  async getInspectLabels(): Promise<(string | null)[]> {
+  async getInspectLabels(): Promise<Array<string | null>> {
     return Promise.all((await this.inspectButtons.all()).map((btn) => btn.getAttribute("aria-label")));
   }
 

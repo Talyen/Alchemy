@@ -9,7 +9,7 @@ import type { DifficultyId, TalentXP } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 
-export type RunStateFields = {
+export interface RunStateFields {
   characterId: CharacterId;
   runDeck: BattleCard[];
   runGold: number;
@@ -30,7 +30,7 @@ export type RunStateFields = {
   runMaterialsEarned: MaterialInventory;
   unlockedTalents: UnlockedTalents;
   initialized: boolean;
-};
+}
 
 const VALID_DESTINATIONS = new Set<Destination>(Object.values(DESTINATIONS));
 

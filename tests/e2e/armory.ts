@@ -34,11 +34,11 @@ export function createEmptyGearLoadouts() {
   );
 }
 
-export type OpenArmoryOptions = {
+export interface OpenArmoryOptions {
   inventory?: GearInstance[];
   loadouts?: ReturnType<typeof createEmptyGearLoadouts>;
   craftingCurrencies?: Partial<Record<CraftingCurrencyId, number>>;
-};
+}
 
 export async function openArmory(page: Page, options: GearInstance[] | OpenArmoryOptions = [bodyGear, helmGear]) {
   const resolved: OpenArmoryOptions = Array.isArray(options) ? { inventory: options } : options;

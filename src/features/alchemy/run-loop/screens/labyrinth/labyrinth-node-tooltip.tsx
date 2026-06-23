@@ -15,11 +15,11 @@ import {
   useTooltipViewportClamp,
 } from "../../../shared/ui/tooltip-panel";
 
-type Props = {
+interface Props {
   type: LabyrinthNodeType;
   modifiers: LabyrinthModifierKind[];
   rewardModifiers: LabyrinthModifierKind[];
-};
+}
 
 function ModifierTooltipCard({ modifier, variant }: { modifier: LabyrinthModifierKind; variant: "enemy" | "reward" }) {
   const definition = ALL_LABYRINTH_MODIFIERS[modifier];

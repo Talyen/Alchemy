@@ -52,19 +52,19 @@ import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 
-type ShopStates = {
+interface ShopStates {
   shopState: ShopState;
   alchemistState: AlchemistState;
   trinketShopState: TrinketShopState;
   equipmentShopState: EquipmentShopState;
-};
+}
 
-type ShopSetters = {
+interface ShopSetters {
   setShopState: (state: ShopState | ((prev: ShopState) => ShopState)) => void;
   setAlchemistState: (state: AlchemistState | ((prev: AlchemistState) => AlchemistState)) => void;
   setTrinketShopState: (state: TrinketShopState | ((prev: TrinketShopState) => TrinketShopState)) => void;
   setEquipmentShopState: (state: EquipmentShopState | ((prev: EquipmentShopState) => EquipmentShopState)) => void;
-};
+}
 
 export type CreateShopActionsDeps = {
   run: RunStateController;
@@ -74,7 +74,7 @@ export type CreateShopActionsDeps = {
 } & ShopStates &
   ShopSetters;
 
-export type ShopActions = {
+export interface ShopActions {
   initShop: () => void;
   initAlchemist: () => void;
   initTrinketShop: () => void;
@@ -101,7 +101,7 @@ export type ShopActions = {
   getMixPotionPrice: () => number;
   shopCards: BattleCard[];
   alchemistPotions: BattleCard[];
-};
+}
 
 export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
   const {

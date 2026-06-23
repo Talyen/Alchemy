@@ -30,7 +30,7 @@ import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { useGearStore } from "../../shared/stores/gear-store";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 
-export type ContentSystemNavigationDeps = {
+export interface ContentSystemNavigationDeps {
   run: RunStateController;
   talents: TalentStateController;
   draftedDeckRef: RefObject<BattleCard[] | null>;
@@ -49,7 +49,7 @@ export type ContentSystemNavigationDeps = {
   getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
   onResumeWildwood: () => void;
   onStartNextWildwoodBoss: () => void;
-};
+}
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
   function createInitialDestinations(options?: DestinationOptionsInput) {

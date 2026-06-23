@@ -5,14 +5,14 @@ import { formatCompanionTurnLineBase } from "./cards/companion-turn-description"
 import { companionLibrary } from "./companions";
 import type { BattleCard, BattleCardEffect, CompanionId } from "./types";
 
-export type CardDescriptionContext = {
+export interface CardDescriptionContext {
   flatPhysicalDamage?: number;
   companionDamage?: number;
   companionDamageBonus?: number;
   companionDamageBuff?: number;
   companionBondLevels?: Record<string, number>;
   potionPotency?: number;
-};
+}
 
 function displayDamageType(type: string): string {
   return capitalizeWord(type);

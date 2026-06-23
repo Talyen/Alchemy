@@ -49,10 +49,10 @@ export function isInRowBand(point: Point, band: Readonly<{ min: number; max: num
   return point.row >= band.min && point.row <= band.max;
 }
 
-export function generateRouteGraph(rng: () => number): { points: Point[]; edges: { from: Point; to: Point }[] } {
+export function generateRouteGraph(rng: () => number): { points: Point[]; edges: Array<{ from: Point; to: Point }> } {
   const start: Point = { row: LABYRINTH_START_ROW, col: LABYRINTH_START_COL };
   const points: Point[] = [];
-  const edges: { from: Point; to: Point }[] = [];
+  const edges: Array<{ from: Point; to: Point }> = [];
   const used = new Set<string>();
   const degree = new Map<string, number>();
   const boss: Point = { row: LABYRINTH_BOSS_ROW, col: start.col };
@@ -93,7 +93,7 @@ function buildMainRoute(start: Point, boss: Point): Point[] {
 
 function addPath(
   points: Point[],
-  edges: { from: Point; to: Point }[],
+  edges: Array<{ from: Point; to: Point }>,
   used: Set<string>,
   degree: Map<string, number>,
   path: readonly Point[],
@@ -124,7 +124,7 @@ function addPoint(path: Point[], used: Set<string>, point: Point) {
   used.add(keyOf(point));
 }
 
-export function connect(grid: (LabyrinthNode | null)[][], a: Point, b: Point) {
+export function connect(grid: Array<Array<LabyrinthNode | null>>, a: Point, b: Point) {
   const nodeA = grid[a.row]?.[a.col];
   const nodeB = grid[b.row]?.[b.col];
   if (!nodeA || !nodeB) return;
@@ -132,7 +132,7 @@ export function connect(grid: (LabyrinthNode | null)[][], a: Point, b: Point) {
   nodeB.connections.push({ row: a.row, col: a.col });
 }
 
-function addEdge(edges: { from: Point; to: Point }[], degree: Map<string, number>, from: Point, to: Point) {
+function addEdge(edges: Array<{ from: Point; to: Point }>, degree: Map<string, number>, from: Point, to: Point) {
   const fromKey = keyOf(from);
   const toKey = keyOf(to);
   if (
@@ -146,7 +146,7 @@ function addEdge(edges: { from: Point; to: Point }[], degree: Map<string, number
   degree.set(toKey, (degree.get(toKey) ?? 0) + 1);
 }
 
-function shortestPathNodeCount(points: Point[], edges: { from: Point; to: Point }[], start: Point, boss: Point) {
+function shortestPathNodeCount(points: Point[], edges: Array<{ from: Point; to: Point }>, start: Point, boss: Point) {
   const adjacency = new Map<string, string[]>();
   for (const point of points) adjacency.set(keyOf(point), []);
   for (const edge of edges) {

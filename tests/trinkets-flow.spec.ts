@@ -4,12 +4,12 @@ import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
 import { slow } from "./playwright-tags";
 
-type TrinketCase = {
+interface TrinketCase {
   id: string;
   description: string;
-  deck: Record<string, unknown>[];
+  deck: Array<Record<string, unknown>>;
   run: (page: import("@playwright/test").Page, battle: BattlePage) => Promise<void>;
-};
+}
 
 const TRINKET_CASES: TrinketCase[] = [
   {

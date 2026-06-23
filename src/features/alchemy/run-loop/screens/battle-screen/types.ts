@@ -31,21 +31,21 @@ export type BattleScreenState = Pick<
   | "flags"
 >;
 
-type BattleScreenViewProps = {
+interface BattleScreenViewProps {
   battleState: BattleScreenState;
   heroArt: string;
   playerName: string;
   aspectMode?: "standard" | "narrow" | "ultrawide";
   stagePixelRatio: number;
-};
+}
 
-export type BattleHoverProps = {
+export interface BattleHoverProps {
   hoveredCardId: string | null;
   shimmerState: { cardId: string; token: number } | null;
   maybeTriggerShimmer: (cardId: string) => void;
-};
+}
 
-export type BattleFeedbackProps = {
+export interface BattleFeedbackProps {
   playerStatusChips: StatusChip[];
   enemyStatusChips: StatusChip[];
   playerCombatTexts: FloatingCombatText[];
@@ -57,18 +57,18 @@ export type BattleFeedbackProps = {
   playerHurtFlashToken: number;
   enemyHurtFlashToken: number;
   activeLabyrinthModifiers: LabyrinthModifierKind[];
-};
+}
 
-export type BattleRefsProps = {
+export interface BattleRefsProps {
   handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
   drawPileRef: RefObject<HTMLDivElement | null>;
   discardPileRef: RefObject<HTMLDivElement | null>;
   battleSceneRef: RefObject<HTMLDivElement | null>;
   playerPanelRef: RefObject<HTMLDivElement | null>;
   enemyPanelRef: RefObject<HTMLDivElement | null>;
-};
+}
 
-export type BattleActionsProps = {
+export interface BattleActionsProps {
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   onOpenMenu: (rect?: DOMRect) => void;
   onWishChoice: (card: BattleCard | null) => void;
@@ -80,12 +80,12 @@ export type BattleActionsProps = {
   playableHandCardKeys: Set<string>;
   revealedCardKeys: Set<string>;
   isDevMode: boolean;
-};
+}
 
 export type RequiredBattleViewProps = Required<BattleScreenViewProps>;
 
 /** Read-only battle view state passed from useBattleController (single subscription path). */
-export type BattleScreenData = {
+export interface BattleScreenData {
   battleState: BattleState;
   displayOverrides: DisplayOverrides;
   revealedCardKeys: Set<string>;
@@ -100,4 +100,4 @@ export type BattleScreenData = {
   shimmerState: BattleHoverProps["shimmerState"];
   maybeTriggerShimmer: (cardId: string) => void;
   activeLabyrinthModifiers: LabyrinthModifierKind[];
-};
+}

@@ -7,11 +7,11 @@ import { CAMPFIRE_ANIMATION_MS, CAMPFIRE_CONTINUE_DELAY } from "@/lib/game-const
 import { getWildwoodRecoveryHealth, WILDWOOD_RECOVERY_FRACTION } from "@/lib/content-systems/wildwood/gauntlet";
 import { ScreenDescription, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 
-type Props = {
+interface Props {
   playerHealth: number;
   maxHealth: number;
   onComplete: () => void;
-};
+}
 
 export function WildwoodRecoveryScreen({ playerHealth, maxHealth, onComplete }: Props) {
   const targetHealth = getWildwoodRecoveryHealth(playerHealth, maxHealth);

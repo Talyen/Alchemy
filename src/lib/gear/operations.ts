@@ -182,7 +182,7 @@ function readStringArray(value: unknown): string[] | undefined {
   return strings.length > 0 ? strings : undefined;
 }
 
-function readAffixEntries(value: unknown): { id: string; value: number }[] | undefined {
+function readAffixEntries(value: unknown): Array<{ id: string; value: number }> | undefined {
   if (!Array.isArray(value)) return undefined;
   const entries = value.flatMap((entry) => {
     if (!isRecord(entry)) return [];
@@ -194,7 +194,7 @@ function readAffixEntries(value: unknown): { id: string; value: number }[] | und
   return entries.length > 0 ? entries : undefined;
 }
 
-function readModifierEntries(value: unknown): { kind: string; value: number }[] | undefined {
+function readModifierEntries(value: unknown): Array<{ kind: string; value: number }> | undefined {
   if (!Array.isArray(value)) return undefined;
   const entries = value.flatMap((entry) => {
     if (!isRecord(entry)) return [];

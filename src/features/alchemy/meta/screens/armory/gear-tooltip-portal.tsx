@@ -5,12 +5,12 @@ import { TooltipPanel } from "../../../shared/ui/tooltip-panel";
 import { ARMORY_TOOLTIP_WIDTH, GearTooltipContent } from "./gear-tooltip-content";
 import { useArmoryPortaledTooltipPlacement } from "./armory-tooltip-placement";
 
-type Props = {
+interface Props {
   triggerRef: RefObject<HTMLElement | null>;
   visible: boolean;
   definition: GearDefinition;
   instance?: GearInstance;
-};
+}
 
 export function GearTooltipPortal({ triggerRef, visible, definition, instance }: Props) {
   const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(triggerRef, visible);

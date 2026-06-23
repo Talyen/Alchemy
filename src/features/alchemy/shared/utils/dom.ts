@@ -5,12 +5,12 @@ import type { MouseEvent } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardRect } from "../types";
 
-type TiltFrame = {
+interface TiltFrame {
   rect: DOMRect;
   x: number;
   y: number;
   rafId: number | null;
-};
+}
 
 const tiltFrames = new WeakMap<HTMLElement, TiltFrame>();
 

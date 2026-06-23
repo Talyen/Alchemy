@@ -11,7 +11,7 @@ function ev(
   id: string,
   title: string,
   narrative: string,
-  choices: [label: string, effects: MysteryEffect[]][],
+  choices: Array<[label: string, effects: MysteryEffect[]]>,
 ): MysteryEvent {
   return {
     id,

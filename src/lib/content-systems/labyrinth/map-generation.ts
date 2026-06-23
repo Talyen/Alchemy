@@ -14,7 +14,7 @@ import { logError } from "../../error-logger";
 
 export { canEnterLabyrinthNode, setCurrentNode, withCurrentNode, failNode, withFailedNode } from "./map-state";
 
-function initializeEmptyGrid(): (LabyrinthNode | null)[][] {
+function initializeEmptyGrid(): Array<Array<LabyrinthNode | null>> {
   return Array.from({ length: LABYRINTH_ROWS }, () => Array.from({ length: LABYRINTH_COLS }, () => null));
 }
 

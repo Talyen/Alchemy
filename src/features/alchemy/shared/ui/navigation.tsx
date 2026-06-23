@@ -155,7 +155,7 @@ export function GameMenu({
     armory: "Find Gear to unlock",
   };
 
-  type MenuItem = {
+  interface MenuItem {
     key: string;
     label: string;
     Icon: typeof Swords;
@@ -164,7 +164,7 @@ export function GameMenu({
     danger?: boolean;
     dividerBefore?: boolean;
     handler: () => void;
-  };
+  }
 
   const items: MenuItem[] = [
     {

@@ -5,11 +5,11 @@ import { test as base, expect } from "@playwright/test";
 import { enableFastMode } from "../e2e/battle-setup";
 import { failOnRuntimeErrors } from "../e2e/errors";
 
-type E2EFixtures = {
+interface E2EFixtures {
   fastBattle: void;
   runtimeErrors: string[];
   autoDiagnostic: void;
-};
+}
 
 export const test = base.extend<E2EFixtures>({
   fastBattle: async ({ page }, run) => {

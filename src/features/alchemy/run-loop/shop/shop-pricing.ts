@@ -3,13 +3,13 @@ import type { BattleCard } from "@/lib/game-data";
 import { isStandardPotionCard } from "@/lib/game-data";
 import type { TalentEffectManifest } from "@/lib/game-data/talent-effect-manifest";
 
-export type ShopBuyPriceInput = {
+export interface ShopBuyPriceInput {
   basePrice: number;
   haggleDiscount: number;
   apothecaryDiscount?: number;
   merchantsFavorDiscount?: number;
   firstPurchaseUsed: boolean;
-};
+}
 
 export function computeShopBuyPrice(input: ShopBuyPriceInput): number {
   const apothecary = input.apothecaryDiscount ?? 0;

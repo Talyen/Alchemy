@@ -5,11 +5,11 @@ import type { ReactNode } from "react";
 import { playUISound } from "@/lib/audio";
 import type { UISound } from "@/lib/sound-registry";
 
-type PressableMotionProps = {
+interface PressableMotionProps {
   children: ReactNode;
   className?: string;
   hoverSound?: UISound | false;
-};
+}
 
 export function PressableMotion({ children, className, hoverSound }: PressableMotionProps) {
   return (

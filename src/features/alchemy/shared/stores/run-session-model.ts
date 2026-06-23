@@ -40,25 +40,25 @@ type RunSessionRunSlice = Pick<
 
 type RunSessionTransientSlice = RunSessionFields;
 
-type RunSessionBattleSlice = {
+interface RunSessionBattleSlice {
   hasActiveBattle: boolean;
   battleState: BattleState;
-};
+}
 
 /** Unified view of an in-progress or resumable run (screen defaults to navigation slice). */
-export type RunSession = {
+export interface RunSession {
   screen: Screen;
   phase: RunPhase;
   run: RunSessionRunSlice;
   session: RunSessionTransientSlice;
   battle: RunSessionBattleSlice;
-};
+}
 
-export type RunSessionBattleContext = {
+export interface RunSessionBattleContext {
   phase: RunPhase;
   battle: RunSessionBattleSlice;
   activeLabyrinthModifiers: LabyrinthModifierKind[];
-};
+}
 
 export type RunSessionShopSlice = Pick<
   RunSessionTransientSlice,
@@ -69,7 +69,7 @@ export type RunSessionMysterySlice = Pick<RunSessionTransientSlice, "mysteryEven
 
 export type RunSessionLabyrinthSlice = Pick<RunSessionTransientSlice, "labyrinthMap" | "activeLabyrinthPendingNode">;
 
-export type RunSessionNavigationSlice = {
+export interface RunSessionNavigationSlice {
   phase: RunPhase;
   hasActiveBattle: boolean;
   hasActiveRun: boolean;
@@ -82,7 +82,7 @@ export type RunSessionNavigationSlice = {
   corruptionResult: CorruptionResult | null;
   pendingCharacterId: CharacterId | null;
   pendingContentSystemType: ContentSystemId;
-};
+}
 
 function resolveScreen(screen?: Screen): Screen {
   return screen ?? getRunDomainStore().navigation.screen;

@@ -19,19 +19,19 @@ export type DifficultyModifier =
   | { kind: "enemy-health-multiplier"; amount: number }
   | { kind: "enemy-damage-multiplier"; amount: number };
 
-export type DifficultyDefinition = {
+export interface DifficultyDefinition {
   id: DifficultyId;
   name: string;
   description: string;
   order: number;
   modifiers: DifficultyModifier[];
   xpMultiplier?: number;
-};
+}
 
-export type ClassDifficultyConfig = {
+export interface ClassDifficultyConfig {
   headerTitle: string;
   difficulties: DifficultyDefinition[];
-};
+}
 
 export const GLOBAL_DIFFICULTIES: DifficultyDefinition[] = [
   {

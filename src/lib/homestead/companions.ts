@@ -8,7 +8,7 @@ export const COMPANION_BOND_TIERS = singleMaterialCosts("food");
 
 export const COMPANION_MAX_TIER = COMPANION_BOND_TIERS.length;
 
-export const companionTierItems: readonly TieredItem<CompanionId>[] = Object.keys(companionLibrary).map((id) => ({
+export const companionTierItems: ReadonlyArray<TieredItem<CompanionId>> = Object.keys(companionLibrary).map((id) => ({
   id: id as CompanionId,
   tiers: COMPANION_BOND_TIERS,
 }));

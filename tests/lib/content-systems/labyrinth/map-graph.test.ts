@@ -22,8 +22,8 @@ function pointKey(point: { row: number; col: number }) {
 }
 
 function bossReachable(
-  points: { row: number; col: number }[],
-  edges: { from: { row: number; col: number }; to: { row: number; col: number } }[],
+  points: Array<{ row: number; col: number }>,
+  edges: Array<{ from: { row: number; col: number }; to: { row: number; col: number } }>,
 ) {
   const start = { row: LABYRINTH_START_ROW, col: LABYRINTH_START_COL };
   const boss = { row: LABYRINTH_BOSS_ROW, col: LABYRINTH_START_COL };
@@ -107,7 +107,7 @@ describe("generateRouteGraph", () => {
 
 describe("connect", () => {
   it("adds bidirectional connections between populated nodes", () => {
-    const grid: (LabyrinthNode | null)[][] = Array.from({ length: LABYRINTH_ROWS }, () =>
+    const grid: Array<Array<LabyrinthNode | null>> = Array.from({ length: LABYRINTH_ROWS }, () =>
       Array.from({ length: LABYRINTH_COLS }, () => null),
     );
     grid[0][LABYRINTH_START_COL] = makeNode("entrance");
@@ -120,14 +120,18 @@ describe("connect", () => {
   });
 
   it("no-ops when either endpoint is missing", () => {
-    const grid: (LabyrinthNode | null)[][] = Array.from({ length: 2 }, () => Array.from({ length: 2 }, () => null));
+    const grid: Array<Array<LabyrinthNode | null>> = Array.from({ length: 2 }, () =>
+      Array.from({ length: 2 }, () => null),
+    );
     grid[0][0] = makeNode("entrance");
     connect(grid, { row: 0, col: 0 }, { row: 1, col: 1 });
     expect(grid[0][0]!.connections).toEqual([]);
   });
 
   it("does not duplicate the same directed connection", () => {
-    const grid: (LabyrinthNode | null)[][] = Array.from({ length: 2 }, () => Array.from({ length: 2 }, () => null));
+    const grid: Array<Array<LabyrinthNode | null>> = Array.from({ length: 2 }, () =>
+      Array.from({ length: 2 }, () => null),
+    );
     grid[0][0] = makeNode("entrance");
     grid[1][1] = makeNode("combat");
     connect(grid, { row: 0, col: 0 }, { row: 1, col: 1 });

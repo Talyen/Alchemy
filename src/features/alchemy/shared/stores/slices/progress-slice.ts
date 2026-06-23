@@ -28,7 +28,7 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import { defineFieldSetter, type ImmerSet } from "./_field-setter";
 import type { RunDomainDataState } from "../run-domain-types";
 
-export type ProgressActions = {
+export interface ProgressActions {
   setRunDeck: (action: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
   setRunGold: (action: number | ((prev: number) => number)) => void;
   setRunPlayerHealth: (action: number | ((prev: number) => number)) => void;
@@ -87,10 +87,10 @@ export type ProgressActions = {
     fallbackCharacterId?: CharacterId,
   ) => void;
   hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void;
-};
+}
 
 export function defineProgressActions(set: ImmerSet<RunDomainDataState>): ProgressActions {
-  const setField = defineFieldSetter<RunStateFields>(set, "progress");
+  const setField = defineFieldSetter<RunStateFields, RunDomainDataState>(set, "progress");
 
   return {
     setRunDeck: setField("runDeck"),

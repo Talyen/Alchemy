@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, describe, it, vi } from "vitest";
 import { legacyCampaignRunSave } from "../../../../fixtures/legacy-saves";
 
 const globalWithWindow = globalThis as unknown as { window?: object };

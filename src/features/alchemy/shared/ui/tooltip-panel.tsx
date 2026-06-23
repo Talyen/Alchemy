@@ -10,7 +10,7 @@ import { popupBaseClassName, tooltipAnchorClassNames } from "../config";
 
 export type TooltipPlacement = "above" | "below" | "side-start" | "side-end";
 
-type TooltipPanelProps = {
+interface TooltipPanelProps {
   children: ReactNode;
   width?: string;
   className?: string;
@@ -23,7 +23,7 @@ type TooltipPanelProps = {
   ref?: React.Ref<HTMLDivElement>;
   onMouseEnter?: MouseEventHandler<HTMLDivElement>;
   onMouseLeave?: MouseEventHandler<HTMLDivElement>;
-};
+}
 
 function tooltipAnchorClass(placement: TooltipPlacement): string {
   if (placement === "below") return tooltipAnchorClassNames.below;

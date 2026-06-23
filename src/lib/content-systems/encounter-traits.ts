@@ -43,14 +43,14 @@ export type EncounterTraitId = EncounterCombatTraitId | EncounterRewardTraitId;
 export type EncounterTraitCategory = "combat" | "reward";
 type EncounterMode = Extract<ContentSystemId, "labyrinth" | "wildwood">;
 
-export type EncounterTraitDefinition = {
+export interface EncounterTraitDefinition {
   id: EncounterTraitId;
   category: EncounterTraitCategory;
   label: string;
   description: string;
   modes: readonly EncounterMode[];
   enemyTrait: EnemyTrait;
-};
+}
 
 function combat(id: EncounterCombatTraitId, label: string, description: string): EncounterTraitDefinition {
   return {

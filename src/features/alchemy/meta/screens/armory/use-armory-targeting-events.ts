@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
 
-type UseArmoryTargetingEventsOptions = {
+interface UseArmoryTargetingEventsOptions {
   salvageMode: boolean;
   activeCurrencyId: CraftingCurrencyId | null;
   salvageTarget: GearInstance | null;
   clearTargeting: () => void;
-};
+}
 
 export function useArmoryTargetingEvents({
   salvageMode,

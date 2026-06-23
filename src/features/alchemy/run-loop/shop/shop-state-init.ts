@@ -26,11 +26,11 @@ import { generateGearRewardChoices, type GearInstance } from "@/lib/gear";
 import { trinketLibrary } from "@/lib/game-data";
 import { sampleItems } from "@/features/alchemy/shared/utils";
 
-type RefreshableShopFields = {
+interface RefreshableShopFields {
   refreshesLeft: number;
   firstPurchaseUsed: boolean;
   purchasedSlotKeys: string[];
-};
+}
 
 type RefreshablePersistedFields = Pick<
   RefreshableShopFields,
@@ -109,7 +109,6 @@ function hydrateRefreshableFields(data: RefreshablePersistedFields): Refreshable
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- TPersisted constrains the persisted data shape
 function hydrateRefreshableShopState<
   TState extends RefreshableShopFields,
   TPersisted extends RefreshablePersistedFields,

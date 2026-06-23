@@ -14,7 +14,7 @@ export const GearInstanceSchema = z.object({
   affixes: z.array(GearAffixRollSchema),
 });
 
-export function normalizeGearInstanceArray(raw: unknown): z.infer<typeof GearInstanceSchema>[] {
+export function normalizeGearInstanceArray(raw: unknown): Array<z.infer<typeof GearInstanceSchema>> {
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((item) => {
     const normalized = normalizeGearInstance(item);

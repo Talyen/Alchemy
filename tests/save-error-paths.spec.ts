@@ -6,12 +6,12 @@ import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/vali
 
 type SaveErrorSetupKind = "corrupt" | "missing" | "nullActiveRun" | "empty";
 
-const SAVE_ERROR_SCENARIOS: {
+const SAVE_ERROR_SCENARIOS: Array<{
   name: string;
   kind: SaveErrorSetupKind;
   expectNoRuntimeErrors?: boolean;
   extraAssertions?: (menu: MenuPage) => Promise<void>;
-}[] = [
+}> = [
   {
     name: "corrupted JSON in localStorage falls back to defaults gracefully",
     kind: "corrupt",

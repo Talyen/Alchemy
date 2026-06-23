@@ -38,7 +38,10 @@ export const LABYRINTH_START_COL = Math.floor(LABYRINTH_COLS / 2);
 export const LABYRINTH_START_ROW = 0;
 export const LABYRINTH_BOSS_ROW = LABYRINTH_ROWS - 1;
 
-export type LabyrinthPoint = { row: number; col: number };
+export interface LabyrinthPoint {
+  row: number;
+  col: number;
+}
 
 export const LABYRINTH_MAP_CONFIG = {
   minBossPathNodes: 11,

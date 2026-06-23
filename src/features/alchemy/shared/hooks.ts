@@ -35,7 +35,7 @@ export function resolveAutoAspectRatio(
   viewportHeight: number,
 ): Exclude<AspectRatioOption, "auto"> {
   const viewportAspect = viewportWidth / viewportHeight;
-  const aspectKeys = Object.keys(LAYOUT_CONFIG.PRESET_ASPECT_VALUES) as Exclude<AspectRatioOption, "auto">[];
+  const aspectKeys = Object.keys(LAYOUT_CONFIG.PRESET_ASPECT_VALUES) as Array<Exclude<AspectRatioOption, "auto">>;
   return aspectKeys.reduce((best, key) =>
     Math.abs(viewportAspect - LAYOUT_CONFIG.PRESET_ASPECT_VALUES[key]) <
     Math.abs(viewportAspect - LAYOUT_CONFIG.PRESET_ASPECT_VALUES[best])

@@ -21,7 +21,7 @@ import { BATTLE_PARTICLE_ALPHA_BOSS, BATTLE_PARTICLE_ALPHA_NORMAL } from "@/lib/
 import { getEnemyStatusChips, getPlayerStatusChips, isAlchemyDevBuild } from "../../../shared/utils";
 import { BackgroundParticles } from "../../../shared/ui/background-particles";
 
-type BattleScreenProps = {
+interface BattleScreenProps {
   battleScreenData: BattleScreenData;
   heroArt: string;
   playerName: string;
@@ -43,7 +43,7 @@ type BattleScreenProps = {
   cardTransfers: CardTransfer[];
   hiddenHandCardKeys: Set<string>;
   cardTransferInProgress: boolean;
-};
+}
 
 export function BattleScreen(props: BattleScreenProps) {
   const {

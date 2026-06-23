@@ -20,12 +20,12 @@ const DEFAULT_HURT_SPARK_COLORS = [
 const EDGE_INSET = 2;
 const OUTWARD_ANGLE_JITTER = 0.5;
 
-export type HurtSparkBounds = {
+export interface HurtSparkBounds {
   x: number;
   y: number;
   width: number;
   height: number;
-};
+}
 
 // Picks a random point on the portrait perimeter and the outward-facing normal at that point.
 function samplePerimeterSpawn(bounds: HurtSparkBounds): { x: number; y: number; nx: number; ny: number } {

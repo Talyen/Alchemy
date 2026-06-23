@@ -11,7 +11,7 @@ import { BattleCardButton } from "./card-button";
 import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
 import { DisabledTooltip, GoldCost, StaggerItem } from "./shared-ui";
 
-type PurchasableCardItemProps = {
+interface PurchasableCardItemProps {
   card: BattleCard;
   price: number;
   gold: number;
@@ -19,7 +19,7 @@ type PurchasableCardItemProps = {
   onBuy: () => void;
   widthClass?: string;
   staggerIndex?: number;
-};
+}
 
 export function PurchasableCardItem(props: PurchasableCardItemProps) {
   const { card, price, gold, purchased, onBuy, widthClass = collectionTileWidthClass, staggerIndex } = props;

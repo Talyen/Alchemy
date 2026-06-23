@@ -4,17 +4,17 @@ import { cn } from "@/lib/utils";
 import { CHIP_BUTTON_CLASS } from "@/features/alchemy/shared/config";
 import { PressableMotion } from "./pressable-motion";
 
-export type TabBarProps<T extends string> = {
-  tabs: {
+export interface TabBarProps<T extends string> {
+  tabs: Array<{
     id: T;
     label: string;
     icon: ElementType;
     disabled?: boolean;
     iconClassName?: string;
-  }[];
+  }>;
   activeTab: T;
   onSelectTab: (tab: T) => void;
-};
+}
 
 export function TabBar<T extends string>({ tabs, activeTab, onSelectTab }: TabBarProps<T>) {
   return (

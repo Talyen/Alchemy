@@ -7,13 +7,15 @@ import { makeHighDamageCard } from "./cards";
 function createMinimalLabyrinthMap(options?: { rows?: number; cols?: number }) {
   const rows = options?.rows ?? 8;
   const cols = options?.cols ?? 9;
-  const grid: ({
-    type: string;
-    modifiers: string[];
-    rewardModifiers: string[];
-    connections: { row: number; col: number }[];
-    state: string;
-  } | null)[][] = Array.from({ length: rows }, () => Array.from({ length: cols }, () => null));
+  const grid: Array<
+    Array<{
+      type: string;
+      modifiers: string[];
+      rewardModifiers: string[];
+      connections: Array<{ row: number; col: number }>;
+      state: string;
+    } | null>
+  > = Array.from({ length: rows }, () => Array.from({ length: cols }, () => null));
   for (let r = 0; r < rows - 1; r++) {
     const col = Math.floor(cols / 2);
     grid[r][col] = {
@@ -116,7 +118,7 @@ export async function injectLabyrinthRun(
   page: Page,
   options: {
     runOverrides?: Record<string, unknown>;
-    deck?: Record<string, unknown>[];
+    deck?: Array<Record<string, unknown>>;
     discoveredCardIds?: string[];
     resume?: boolean;
   } = {},

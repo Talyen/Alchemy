@@ -30,7 +30,7 @@ const optionsTabs = [
   { id: "other" as const, label: "Other", icon: Sliders },
 ];
 
-type DisplayOptionsProps = {
+interface DisplayOptionsProps {
   selectedAspectRatio: AspectRatioOption;
   onAspectRatioChange: (aspectRatio: AspectRatioOption) => void;
   displayMode: DisplayMode;
@@ -40,9 +40,9 @@ type DisplayOptionsProps = {
   onUiScaleChange: (scale: UiScale) => void;
   brightness: number;
   onBrightnessChange: (value: number) => void;
-};
+}
 
-type AudioOptionsProps = {
+interface AudioOptionsProps {
   masterVol: number;
   musicVol: number;
   sfxVol: number;
@@ -51,26 +51,26 @@ type AudioOptionsProps = {
   onSfxVolChange: (value: number) => void;
   muteInBackground: boolean;
   onMuteInBackgroundChange: (checked: boolean) => void;
-};
+}
 
-type GameplayOptionsProps = {
+interface GameplayOptionsProps {
   autoEndTurn: boolean;
   onAutoEndTurnChange: (checked: boolean) => void;
-};
+}
 
-type SaveDataOptionsProps = {
+interface SaveDataOptionsProps {
   showClearSaveConfirm: boolean;
   onOpenClearSaveConfirm: () => void;
   onCloseClearSaveConfirm: () => void;
   onConfirmClearSave: () => void;
   onResetOptions: () => void;
-};
+}
 
-type DevOptionsProps = {
+interface DevOptionsProps {
   onClearSave?: () => void;
   onUnlockAll: () => void;
   onOpenErrorLog?: () => void;
-};
+}
 
 // Keeps slider rows consistent so volume settings read as one sound board.
 function SliderOption({

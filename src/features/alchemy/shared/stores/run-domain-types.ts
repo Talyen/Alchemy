@@ -27,26 +27,26 @@ import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryEvent } from "@/lib/mystery";
 import type { MaterialInventory } from "@/lib/homestead/types";
 
-export type DisplayOverrides = {
+export interface DisplayOverrides {
   hand?: BattleCard[];
   turnPhase?: TurnPhase;
   playerHealth?: number;
   playerStatuses?: PlayerStatusValues;
-};
+}
 
-export type RunDomainBattleState = {
+export interface RunDomainBattleState {
   battleState: BattleState;
   displayOverrides: DisplayOverrides;
   battleStartState: BattleState | null;
   hasActiveBattle: boolean;
-};
+}
 
-export type RunDomainDataState = {
+export interface RunDomainDataState {
   progress: RunStateFields;
   session: RunSessionFields;
   navigation: { screen: Screen };
   battle: RunDomainBattleState;
-};
+}
 
 const emptyShop: ShopState = emptyShopState();
 const emptyAlchemist: AlchemistState = emptyAlchemistState();
@@ -102,7 +102,7 @@ export function createInitialRunDomainData(): RunDomainDataState {
   };
 }
 
-export type RunSessionFields = {
+export interface RunSessionFields {
   hasActiveRun: boolean;
   activeLabyrinthModifiers: LabyrinthModifierKind[];
   activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
@@ -122,4 +122,4 @@ export type RunSessionFields = {
   equipmentShopState: EquipmentShopState;
   mysteryEvent: MysteryEvent | null;
   mysteryCardChoices: BattleCard[] | null;
-};
+}

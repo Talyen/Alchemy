@@ -5,14 +5,14 @@ import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/compan
 import { canAfford } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 
-type HomesteadAffordabilityInput = {
+interface HomesteadAffordabilityInput {
   materialInventory: MaterialInventory;
   constructedBuildings: Record<string, number>;
   plantedFarms: Record<string, number>;
   completedResearch: Record<string, number>;
   bondedCompanions: Record<string, number>;
   discoveredCardIds: string[];
-};
+}
 
 export function hasAffordableHomesteadUpgrade(input: HomesteadAffordabilityInput): boolean {
   const {

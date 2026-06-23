@@ -200,7 +200,7 @@ describe("resolveMoveWithSwap", () => {
   });
 
   it("places a 1x1 currency into the 1x1 vacated slot when both items are 1x1", () => {
-    const items: BoardItem<"currency">[] = [
+    const items: Array<BoardItem<"currency">> = [
       { id: "moving", kind: "currency", footprint: { w: 1, h: 1 }, position: { col: 1, row: 1 } },
       { id: "blocker", kind: "currency", footprint: { w: 1, h: 1 }, position: { col: 3, row: 3 } },
     ];

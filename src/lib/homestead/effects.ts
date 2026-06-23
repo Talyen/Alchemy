@@ -9,7 +9,7 @@ import { buildings, farmPlots, researchUpgrades } from "./data";
 
 function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<HomesteadEffectManifest>): void {
   if (!partial) return;
-  for (const key of Object.keys(partial) as (keyof HomesteadEffectManifest)[]) {
+  for (const key of Object.keys(partial) as Array<keyof HomesteadEffectManifest>) {
     if (key === "companionBondLevels") continue;
     const val = partial[key];
     if (typeof val === "number") {
@@ -21,7 +21,7 @@ function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<Homes
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- I constrains tier structure across all items
-function applyItemTiers<I extends { id: string; tiers: { effects?: Partial<HomesteadEffectManifest> }[] }>(
+function applyItemTiers<I extends { id: string; tiers: Array<{ effects?: Partial<HomesteadEffectManifest> }> }>(
   base: HomesteadEffectManifest,
   items: I[],
   levels: Record<string, number>,

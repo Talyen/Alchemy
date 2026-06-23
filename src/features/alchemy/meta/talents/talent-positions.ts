@@ -34,7 +34,7 @@ function talentNodePositionStyle(left: number, top: number) {
   };
 }
 
-function computeTalentNodePositions(keywordId: KeywordId, count: number): { left: number; top: number }[] {
+function computeTalentNodePositions(keywordId: KeywordId, count: number): Array<{ left: number; top: number }> {
   if (count === 0) return [];
   if (count === 1) return [{ left: 50, top: 50 }];
 

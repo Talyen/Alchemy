@@ -9,13 +9,13 @@ import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 import { companionTierItems, COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
 
-type HomesteadState = {
+interface HomesteadState {
   materialInventory: MaterialInventory;
   constructedBuildings: Record<BuildingId, number>;
   plantedFarms: Record<FarmId, number>;
   completedResearch: Record<ResearchId, number>;
   bondedCompanions: Record<CompanionId, number>;
-};
+}
 
 type HomesteadStore = HomesteadState & {
   effects: HomesteadEffectManifest;
@@ -38,7 +38,9 @@ function computeEffects(state: HomesteadState): HomesteadEffectManifest {
   );
 }
 
-type TieredUpgradeItem = { tiers: { cost: MaterialInventory }[] };
+interface TieredUpgradeItem {
+  tiers: Array<{ cost: MaterialInventory }>;
+}
 
 function tryUpgradeTierItem(
   item: TieredUpgradeItem | undefined,
@@ -153,7 +155,7 @@ export const useHomesteadStore = create<HomesteadStore>()(
         s.constructedBuildings = createEmptyTierRecord(buildings);
         s.plantedFarms = createEmptyTierRecord(farmPlots);
         s.completedResearch = createEmptyTierRecord(researchUpgrades);
-        s.bondedCompanions = createEmptyTierRecord(companionTierItems) as Record<CompanionId, number>;
+        s.bondedCompanions = createEmptyTierRecord(companionTierItems);
         s.effects = computeEffects(s);
       }),
 

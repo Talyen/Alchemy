@@ -4,7 +4,7 @@ import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
 import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
 
-type LabyrinthNodeRoutingDeps = {
+interface LabyrinthNodeRoutingDeps {
   applyLabyrinthBattleModifiers: (modifiers: LabyrinthModifierKind[]) => void;
   applyLabyrinthRewardModifiers: (modifiers: LabyrinthModifierKind[]) => void;
   navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
@@ -42,7 +42,7 @@ type LabyrinthNodeRoutingDeps = {
   };
   nav: { beginMysteryEvent: () => void };
   shop: { initShop: () => void; initAlchemist: () => void; initTrinketShop: () => void; initEquipmentShop: () => void };
-};
+}
 
 export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
   function enterLabyrinthNodeScreen(

@@ -10,45 +10,48 @@ import type { PersistedPendingReward } from "@/lib/validation/save-schemas/activ
 
 export type { PersistedPendingReward };
 
-export type PersistedShopState = {
+export interface PersistedShopState {
   cards: BattleCard[];
   removeUsed: boolean;
   refreshesLeft: number;
   firstPurchaseUsed: boolean;
   purchasedSlotKeys: string[];
-};
+}
 
-export type PersistedAlchemistState = {
+export interface PersistedAlchemistState {
   potions: BattleCard[];
   mixUsed: boolean;
   refreshesLeft: number;
   firstPurchaseUsed: boolean;
   purchasedSlotKeys: string[];
-};
+}
 
-export type PersistedTrinketShopState = {
+export interface PersistedTrinketShopState {
   trinketIds: string[];
   refreshesLeft: number;
   firstPurchaseUsed: boolean;
   purchasedSlotKeys: string[];
-};
+}
 
-export type PersistedEquipmentShopState = {
+export interface PersistedEquipmentShopState {
   gear: GearInstance[];
   refreshesLeft: number;
   firstPurchaseUsed: boolean;
   purchasedSlotKeys: string[];
-};
+}
 
-export type LabyrinthNodePosition = { row: number; col: number };
+export interface LabyrinthNodePosition {
+  row: number;
+  col: number;
+}
 
-type ActiveCombatData = {
+interface ActiveCombatData {
   battleState: BattleState;
   activeLabyrinthModifiers: LabyrinthModifierKind[];
   activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
-};
+}
 
-export type ActiveRunData = {
+export interface ActiveRunData {
   characterId: CharacterId;
   runDeck: BattleCard[];
   runGold: number;
@@ -77,4 +80,4 @@ export type ActiveRunData = {
   alchemistState: PersistedAlchemistState | null;
   trinketShopState: PersistedTrinketShopState | null;
   equipmentShopState: PersistedEquipmentShopState | null;
-};
+}

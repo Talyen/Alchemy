@@ -64,7 +64,7 @@ function buildPresetManifest(keywords: KeywordId[], preset: TalentPreset): Talen
   return computeTalentEffects(unlockedTalents);
 }
 
-export type BattleSimulationConfig = {
+export interface BattleSimulationConfig {
   characterId: CharacterId;
   enemyId: string;
   deck?: BattleCard[];
@@ -79,11 +79,11 @@ export type BattleSimulationConfig = {
   playerHealth?: number;
   playerMaxHealth?: number;
   gold?: number;
-};
+}
 
 export { ANOMALY_THRESHOLD_BY_PRESET, ANOMALY_METRICS, getAnomalyThreshold } from "./anomalies";
 
-export type BattleSimulationResult = {
+export interface BattleSimulationResult {
   characterId: CharacterId;
   enemyId: string;
   enemyType: BestiaryEntry["enemyType"];
@@ -99,14 +99,14 @@ export type BattleSimulationResult = {
   policy: BalancePlayPolicy;
   seed: number;
   anomalies: BattleAnomalies;
-};
+}
 
 export type BalanceBatchConfig = Omit<BattleSimulationConfig, "seed"> & {
   iterations: number;
   seed?: number;
 };
 
-export type BalanceBatchResult = {
+export interface BalanceBatchResult {
   config: BalanceBatchConfig;
   iterations: number;
   wins: number;
@@ -120,7 +120,7 @@ export type BalanceBatchResult = {
   averageCardsPlayed: number;
   cardPlayCounts: Record<string, number>;
   results: BattleSimulationResult[];
-};
+}
 
 const DEFAULT_MAX_TURNS = 30;
 const DEFAULT_POLICY: BalancePlayPolicy = "random-playable";
@@ -130,7 +130,7 @@ function randomIndex(rng: () => number, length: number): number {
   return Math.floor(rng() * length);
 }
 
-function getPlayableCards(state: BattleState): { card: BattleCard; index: number }[] {
+function getPlayableCards(state: BattleState): Array<{ card: BattleCard; index: number }> {
   return state.hand
     .map((card, index) => ({ card, index }))
     .filter(({ card, index }) => canPlayCard(state, card, index));

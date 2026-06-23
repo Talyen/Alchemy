@@ -12,7 +12,7 @@ import type {
 import { defineFieldSetter, type ImmerSet } from "./_field-setter";
 import { createInitialSessionFields, type RunSessionFields, type RunDomainDataState } from "../run-domain-types";
 
-export type SessionActions = {
+export interface SessionActions {
   setHasActiveRun: (active: boolean) => void;
   setActiveLabyrinthModifiers: (modifiers: LabyrinthModifierKind[]) => void;
   setActiveLabyrinthRewardModifiers: (modifiers: LabyrinthModifierKind[]) => void;
@@ -39,10 +39,10 @@ export type SessionActions = {
       | ((prev: RunSessionFields["mysteryCardChoices"]) => RunSessionFields["mysteryCardChoices"]),
   ) => void;
   clearTransientSession: () => void;
-};
+}
 
 export function defineSessionActions(set: ImmerSet<RunDomainDataState>): SessionActions {
-  const setField = defineFieldSetter<RunSessionFields>(set, "session");
+  const setField = defineFieldSetter<RunSessionFields, RunDomainDataState>(set, "session");
 
   return {
     setHasActiveRun: setField("hasActiveRun"),

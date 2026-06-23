@@ -26,7 +26,10 @@ export type CraftingCurrencyId =
   | "severance-maw"
   | "smiths-whetstone";
 
-type CraftingCurrencyBoardPosition = { col: number; row: number };
+interface CraftingCurrencyBoardPosition {
+  col: number;
+  row: number;
+}
 export type CraftingCurrencyBoardPositions = Partial<Record<CraftingCurrencyId, CraftingCurrencyBoardPosition>>;
 export type CraftingCurrencyBoardPositionsByCharacter = Record<GearCharacterId, CraftingCurrencyBoardPositions>;
 
@@ -34,13 +37,13 @@ export function createEmptyCurrencyBoardPositionsByCharacter(): CraftingCurrency
   return Object.fromEntries(GEAR_CHARACTER_IDS.map((id) => [id, {}])) as CraftingCurrencyBoardPositionsByCharacter;
 }
 
-export type CraftingCurrencyDefinition = {
+export interface CraftingCurrencyDefinition {
   id: CraftingCurrencyId;
   displayName: string;
   description: string;
   tooltipEffect: string;
   art: string;
-};
+}
 
 export const CRAFTING_CURRENCY_LIST: CraftingCurrencyDefinition[] = [
   {

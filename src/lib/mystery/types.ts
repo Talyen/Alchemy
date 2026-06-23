@@ -15,15 +15,15 @@ export type MysteryEffect =
   | { kind: "gainRandomTrinket" }
   | { kind: "gainMaterial"; material: MaterialId; amount: number };
 
-export type MysteryChoice = {
+export interface MysteryChoice {
   label: string;
   effects: MysteryEffect[];
-};
+}
 
-export type MysteryEvent = {
+export interface MysteryEvent {
   id: string;
   title: string;
   art: string;
   narrative: string;
   choices: MysteryChoice[];
-};
+}

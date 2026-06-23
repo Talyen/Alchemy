@@ -82,7 +82,7 @@ export function makeHighDamageCard(amount = 500) {
   };
 }
 
-export const STARTING_DECK: Record<string, unknown>[] = [
+export const STARTING_DECK: Array<Record<string, unknown>> = [
   {
     id: "slash",
     title: "Slash",

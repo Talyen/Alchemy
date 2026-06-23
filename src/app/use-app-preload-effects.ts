@@ -8,7 +8,7 @@ import { pileDiscardArt, pileDrawArt } from "@/lib/game-data";
 import { preloadImages } from "@/lib/image-preload";
 import type { Screen } from "@/features/alchemy/shared/types";
 
-type ScreenAssetPreloadOptions = {
+interface ScreenAssetPreloadOptions {
   heroArt: string;
   screen: Screen;
   battleEnemyArt: string;
@@ -17,7 +17,7 @@ type ScreenAssetPreloadOptions = {
   shopCards: Array<{ art: string }>;
   alchemistPotions: Array<{ art: string }>;
   mysteryEvent: { art?: string } | null;
-};
+}
 
 // Preloads only assets for the current or imminent screen so card/enemy art does not
 // pop in, without forcing the entire collection into memory on startup.

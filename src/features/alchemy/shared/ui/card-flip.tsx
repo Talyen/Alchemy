@@ -2,7 +2,7 @@
 // Parent controls `flipped` state and provides front/back content (typically <img> elements).
 import type { CSSProperties, ReactNode } from "react";
 
-type CardFlipProps = {
+interface CardFlipProps {
   flipped: boolean;
   front: ReactNode;
   back: ReactNode;
@@ -10,7 +10,7 @@ type CardFlipProps = {
   style?: CSSProperties;
   transition?: string;
   onFlipEnd?: () => void;
-};
+}
 
 const DEFAULT_TRANSITION = "transform 460ms cubic-bezier(0.16, 1, 0.3, 1)";
 

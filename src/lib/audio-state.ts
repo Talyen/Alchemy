@@ -3,7 +3,7 @@
 // Used only by the audio implementation modules so public callers keep importing from lib/audio.
 import { DEFAULT_MUSIC_VOLUME, DEFAULT_SFX_VOLUME } from "./game-constants";
 
-type AudioRuntimeState = {
+interface AudioRuntimeState {
   context: AudioContext | null;
   masterGain: GainNode | null;
   muted: boolean;
@@ -14,7 +14,7 @@ type AudioRuntimeState = {
   currentMusic: HTMLAudioElement | null;
   currentMusicKey: string | null;
   lastPlayedAt: Map<string, number>;
-};
+}
 
 export const audioState: AudioRuntimeState = {
   context: null,

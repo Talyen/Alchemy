@@ -72,7 +72,7 @@ export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
 }
 
 export function isDefaultTrinketManifest(manifest: TrinketManifest): boolean {
-  return (Object.keys(defaultTrinketEffects) as (keyof TrinketManifest)[]).every(
+  return (Object.keys(defaultTrinketEffects) as Array<keyof TrinketManifest>).every(
     (key) => manifest[key] === defaultTrinketEffects[key],
   );
 }

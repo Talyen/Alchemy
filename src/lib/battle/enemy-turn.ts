@@ -15,7 +15,7 @@ import {
 
 type EndPlayerTurnKind = "haste" | "skipped" | "standard";
 
-export type EndPlayerTurnResolution = {
+export interface EndPlayerTurnResolution {
   kind: EndPlayerTurnKind;
   state: BattleState;
   combatTexts: CombatTextEvent[];
@@ -25,7 +25,7 @@ export type EndPlayerTurnResolution = {
   enemyResolutionCombatTexts: CombatTextEvent[];
   enemyPerformedAttack: boolean;
   afterAttackState?: BattleState;
-};
+}
 
 function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = applyIronwoodBuckler(state, combatTexts);
@@ -34,7 +34,10 @@ function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) 
   return { state: finalState, combatTexts, playerTurnSkipped: finalState.turnPhase === "enemy" };
 }
 
-type CombatTextResult = { state: BattleState; texts: CombatTextEvent[] };
+interface CombatTextResult {
+  state: BattleState;
+  texts: CombatTextEvent[];
+}
 
 function processHasteEarlyTurn(state: BattleState): BattleState {
   return {

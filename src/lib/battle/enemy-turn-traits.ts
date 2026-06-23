@@ -119,14 +119,14 @@ export const ENEMY_TRAIT_TURN_START_HANDLER_IDS = Object.keys(enemyTraitTurnStar
 export const PASSIVE_ONLY_ENEMY_TRAIT_IDS = [...PASSIVE_ONLY_TRAITS];
 
 /** Difficulty modifiers with turn-start handlers — used by tests and startup validation. */
-export const DIFFICULTY_TURN_START_MODIFIER_KINDS = Object.keys(
-  difficultyTurnStartHandlers,
-) as DifficultyModifier["kind"][];
+export const DIFFICULTY_TURN_START_MODIFIER_KINDS = Object.keys(difficultyTurnStartHandlers) as Array<
+  DifficultyModifier["kind"]
+>;
 
 /** Passive difficulty modifiers with no turn-start handler — used by tests and startup validation. */
 export const PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS = [...PASSIVE_ONLY_MODIFIERS];
 
-const ALL_DIFFICULTY_MODIFIER_KINDS: DifficultyModifier["kind"][] = [
+const ALL_DIFFICULTY_MODIFIER_KINDS: Array<DifficultyModifier["kind"]> = [
   "enemy-starting-armor",
   "enemy-gains-forge-each-turn",
   "increase-enemy-physical-damage",
@@ -155,7 +155,7 @@ export function collectUncoveredEnemyTraitIds(traitIds: Iterable<string>): strin
 
 export function collectUncoveredDifficultyModifierKinds(
   kinds: Iterable<DifficultyModifier["kind"]> = ALL_DIFFICULTY_MODIFIER_KINDS,
-): DifficultyModifier["kind"][] {
+): Array<DifficultyModifier["kind"]> {
   return [...new Set(kinds)].filter((kind) => !isDifficultyModifierTurnStartCovered(kind));
 }
 

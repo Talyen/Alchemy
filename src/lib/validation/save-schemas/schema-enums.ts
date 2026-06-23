@@ -121,7 +121,7 @@ export const CompletedDifficultiesSchema = recordOfStringArraysSchema(() =>
 );
 
 export function createTierRecordSchema<T extends string>(
-  items: readonly { id: T; tiers: readonly unknown[] }[],
+  items: ReadonlyArray<{ id: T; tiers: readonly unknown[] }>,
   renameMap: Record<string, string> = {},
 ): z.ZodType<Record<T, number>> {
   const validIds = items.map((item) => item.id);

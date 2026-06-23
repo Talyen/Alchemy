@@ -29,7 +29,7 @@ import {
   sortBoardForCharacter,
 } from "@/lib/gear";
 
-type GearStore = {
+interface GearStore {
   inventories: GearInventories;
   loadouts: GearLoadouts;
   boardPositionsByCharacter: GearBoardPositionsByCharacter;
@@ -61,7 +61,7 @@ type GearStore = {
   applyCurrency: (currencyId: CraftingCurrencyId, instanceId: string, options?: { rng?: () => number }) => boolean;
   addCurrencies: (currencies: Partial<Record<CraftingCurrencyId, number>>) => void;
   reset: () => void;
-};
+}
 
 const initialState = {
   inventories: createEmptyGearInventories(),

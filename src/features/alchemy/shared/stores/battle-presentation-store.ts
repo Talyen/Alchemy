@@ -13,7 +13,7 @@ function getCombatTextDisplayText(event: CombatTextEvent): string {
   return `${showPlus ? "+" : ""}${event.amount}`;
 }
 
-type BattlePresentationStore = {
+interface BattlePresentationStore {
   cardGhosts: CardGhost[];
   floatingCombatTexts: FloatingCombatText[];
   enemyShaking: boolean;
@@ -45,7 +45,7 @@ type BattlePresentationStore = {
   resetHandTransferUi: () => void;
   resetCardTransfers: () => void;
   resetPresentation: () => void;
-};
+}
 
 const shakeDuration = SHAKE_DURATION;
 const combatTextLifetimeMs = COMBAT_TEXT_LIFETIME_MS;

@@ -7,13 +7,13 @@ import { getAudioContext, getCachedBuffer, loadSoundBuffer, resumeAudioContext }
 import { pickRandom } from "./utils";
 import { SFX_COOLDOWN_MS, SFX_DEFEAT_VOLUME, SFX_UI_VOLUME, SFX_VICTORY_VOLUME } from "./game-constants";
 
-type PlaySoundOptions = {
+interface PlaySoundOptions {
   volume?: number;
   delay?: number;
   cooldownMs?: number;
   /** When false, sound plays through screen transitions (UI feedback, stingers). Default true for combat SFX. */
   trackForCleanup?: boolean;
-};
+}
 
 // Grouped local constants and settings for SFX playback.
 const SFX_CONFIG = {

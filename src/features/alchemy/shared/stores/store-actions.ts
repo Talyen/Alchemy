@@ -28,7 +28,7 @@ export type HomesteadStoreActions = Pick<
   (typeof homesteadActionKeys)[number]
 >;
 
-function pickActions<T extends Record<string, unknown>, K extends keyof T>(state: T, keys: readonly K[]): Pick<T, K> {
+function pickActions<T extends object, K extends keyof T>(state: T, keys: readonly K[]): Pick<T, K> {
   const out = {} as Pick<T, K>;
   for (const key of keys) {
     out[key] = state[key];
@@ -52,7 +52,7 @@ export function useHomesteadActions(): HomesteadStoreActions {
   return useHomesteadStore(useShallow(selectHomesteadActions));
 }
 
-export type AppSettings = {
+export interface AppSettings {
   selectedAspectRatio: ReturnType<typeof useAppStore.getState>["selectedAspectRatio"];
   displayMode: ReturnType<typeof useAppStore.getState>["displayMode"];
   uiScale: ReturnType<typeof useAppStore.getState>["uiScale"];
@@ -62,7 +62,7 @@ export type AppSettings = {
   masterVol: ReturnType<typeof useAppStore.getState>["masterVol"];
   muteInBackground: ReturnType<typeof useAppStore.getState>["muteInBackground"];
   autoEndTurn: ReturnType<typeof useAppStore.getState>["autoEndTurn"];
-};
+}
 
 function selectAppSettings(state: ReturnType<typeof useAppStore.getState>): AppSettings {
   return {

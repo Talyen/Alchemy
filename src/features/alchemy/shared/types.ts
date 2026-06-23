@@ -47,15 +47,15 @@ export const CONSTANTS = {
 
 export type CollectionTab = "cards" | "bestiary" | "trinkets";
 
-export type StatusChip = {
+export interface StatusChip {
   id: PlayerStatusId | EnemyStatusId;
   value: number;
-};
+}
 
-export type DescriptionPart = {
+export interface DescriptionPart {
   text: string;
   keywordId?: KeywordId;
-};
+}
 
 export type GhostStyle = CSSProperties & {
   "--ghost-rotation": string;

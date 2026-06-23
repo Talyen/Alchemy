@@ -29,7 +29,7 @@ export function placeInventoryTileFromMetrics(
   options: {
     requireProximity?: boolean;
     occupiedRows?: number;
-    obstacles?: GearPackedItem<{ instanceId: string }>[];
+    obstacles?: Array<GearPackedItem<{ instanceId: string }>>;
     draggedInstanceId?: string;
   } = {},
 ): InventoryPlacementResult {
@@ -88,16 +88,16 @@ export function placeInventoryTileFromMetrics(
   return { placement, rect: snapRect };
 }
 
-export type MagnetHysteresisInput<TDest> = {
+export interface MagnetHysteresisInput<TDest> {
   candidate: TDest | null;
   previousDestination: TDest | null;
   freeRect: DragRect;
-};
+}
 
-export type MagnetHysteresisResult<TDest> = {
+export interface MagnetHysteresisResult<TDest> {
   destination: TDest | null;
   switched: boolean;
-};
+}
 
 export function rectCenter(rect: DragRect): DragPoint {
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };

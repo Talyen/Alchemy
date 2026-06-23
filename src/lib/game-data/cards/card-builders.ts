@@ -5,12 +5,12 @@ import { companionLibrary } from "../companions";
 import type { BattleCard, BattleCardEffect, CompanionId, DamageType, EnemyStatusId } from "../types";
 import { expectedCompanionTurnLine } from "./companion-turn-description";
 
-type CardBaseInput = {
+interface CardBaseInput {
   id: BattleCard["id"];
   title?: string;
   art: BattleCard["art"];
   cost?: number;
-};
+}
 
 function deriveTitle(id: string, customTitle?: string): string {
   if (customTitle) return customTitle;
@@ -92,7 +92,10 @@ export function damageCard({
   };
 }
 
-type DamageHit = { damageType: DamageType; amount: number };
+interface DamageHit {
+  damageType: DamageType;
+  amount: number;
+}
 
 type DualDamageCardInput = CardBaseInput & {
   hits: [DamageHit, DamageHit];

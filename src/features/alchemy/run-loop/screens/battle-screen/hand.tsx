@@ -61,8 +61,9 @@ function HandCardItem({
 
   /* eslint-disable react-compiler/react-compiler, react-hooks/immutability --
      Writing to handCardRefs.current (a MutableRefObject) in useLayoutEffect and its cleanup
-     is the correct imperative pattern for maintaining a live ref registry. Both rules flag
-     this as a prop mutation but MutableRefObject.current writes are explicitly safe in effects. */
+     is the correct imperative pattern for maintaining a live ref registry. The compiler
+     flags this as a prop mutation; react-hooks/immutability similarly flags ref.current
+     writes, but MutableRefObject.current writes are explicitly safe inside effects. */
   useLayoutEffect(() => {
     const el = elementRef.current;
     const currentRefs = handCardRefs.current;

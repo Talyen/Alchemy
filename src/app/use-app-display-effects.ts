@@ -5,12 +5,12 @@ import { useEffect, useLayoutEffect, type RefObject } from "react";
 import { platform } from "@/lib/platform";
 import type { DisplayMode, UiScale } from "@/features/alchemy/shared/types";
 
-type AppDisplayEffectsOptions = {
+interface AppDisplayEffectsOptions {
   displayMode: DisplayMode;
   uiScale: UiScale;
   brightness: number;
   stageRef: RefObject<HTMLDivElement | null>;
-};
+}
 
 // Keeps browser/document and desktop display settings synchronized with options state.
 const DISPLAY_CONFIG = {

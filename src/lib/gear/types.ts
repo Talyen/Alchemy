@@ -33,12 +33,12 @@ export type { GearAffixId } from "./affix-ids";
 export type { GearBaseItemId } from "./base-items";
 export type { GearDefinitionId } from "./definitions";
 
-export type GearAffixRoll = {
+export interface GearAffixRoll {
   id: GearAffixId;
   value: number;
-};
+}
 
-export type GearDefinition = {
+export interface GearDefinition {
   id: string;
   baseItemId: GearBaseItemId;
   rarity: GearRarity | null;
@@ -51,20 +51,23 @@ export type GearDefinition = {
   salvageValue: MaterialInventory;
   rangedWeapon?: boolean;
   quiver?: boolean;
-};
+}
 
-export type GearInstance = {
+export interface GearInstance {
   instanceId: string;
   definitionId: GearDefinitionId;
   affixes: GearAffixRoll[];
-};
+}
 
 export type GearInventory = GearInstance[];
 export type GearInventories = Record<GearCharacterId, GearInventory>;
 export type GearLoadout = Record<GearSlot, string | null>;
 export type GearLoadouts = Record<GearCharacterId, GearLoadout>;
 
-export type GearBoardPosition = { col: number; row: number };
+export interface GearBoardPosition {
+  col: number;
+  row: number;
+}
 export type GearBoardPositions = Record<string, GearBoardPosition>;
 export type GearBoardPositionsByCharacter = Record<GearCharacterId, GearBoardPositions>;
 

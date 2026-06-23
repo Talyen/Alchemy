@@ -1,30 +1,33 @@
 import type { GearFootprint } from "./footprints";
 import type { GearInstance } from "./types";
 
-export type InventoryPlacement = { col: number; row: number };
+export interface InventoryPlacement {
+  col: number;
+  row: number;
+}
 
-export type PackedInventoryItem<T = GearInstance> = {
+export interface PackedInventoryItem<T = GearInstance> {
   item: T;
   col: number;
   row: number;
   w: number;
   h: number;
-};
+}
 
-export type PackedInventory<T = GearInstance> = {
-  items: PackedInventoryItem<T>[];
+export interface PackedInventory<T = GearInstance> {
+  items: Array<PackedInventoryItem<T>>;
   occupiedRows: number;
-};
+}
 
-export type InventoryGridMetrics = {
+export interface InventoryGridMetrics {
   cellSize: number;
   gap: number;
   cols: number;
   rows: number;
-};
+}
 
 export function inventoryPlacementCollides<T extends { instanceId: string }>(
-  items: PackedInventoryItem<T>[],
+  items: Array<PackedInventoryItem<T>>,
   draggedInstanceId: string,
   placement: InventoryPlacement,
   footprint: GearFootprint,
@@ -58,7 +61,7 @@ export function inventoryPlacementRect(
 }
 
 export function findNearestInventoryPlacement<T extends { instanceId: string }>(
-  items: PackedInventoryItem<T>[],
+  items: Array<PackedInventoryItem<T>>,
   draggedInstanceId: string,
   footprint: GearFootprint,
   metrics: InventoryGridMetrics,
@@ -87,7 +90,7 @@ export function findNearestInventoryPlacement<T extends { instanceId: string }>(
 }
 
 export function findFirstInventoryPlacement<T extends { instanceId: string }>(
-  items: PackedInventoryItem<T>[],
+  items: Array<PackedInventoryItem<T>>,
   draggedInstanceId: string,
   footprint: GearFootprint,
   cols: number,

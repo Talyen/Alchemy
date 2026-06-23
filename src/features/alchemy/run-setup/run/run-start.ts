@@ -11,7 +11,7 @@ import {
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { Destination } from "../../shared/types";
 
-export type RunStartSnapshot = {
+export interface RunStartSnapshot {
   characterId: CharacterId;
   contentSystemType: ContentSystemId;
   freshDeck: BattleCard[];
@@ -25,9 +25,9 @@ export type RunStartSnapshot = {
   completedDestinations: Destination[];
   runTrinkets: string[];
   hasActiveRun: boolean;
-};
+}
 
-export type RunStartInput = {
+export interface RunStartInput {
   characterId: CharacterId;
   contentSystemType: ContentSystemId;
   difficultyId?: DifficultyId | null | undefined;
@@ -35,7 +35,7 @@ export type RunStartInput = {
   talentXP: TalentXP;
   draftedDeck?: BattleCard[] | undefined;
   gearMaxHealthBonus?: number;
-};
+}
 
 // Builds a coherent new-run state so every mode starts from a fresh, testable snapshot.
 export function createRunStartSnapshot({

@@ -36,7 +36,7 @@ function setupOpeningHand(deck: BattleCard[], extraDrawPerBattle: number, rng: (
   );
 }
 
-export type CreateBattleStateOptions = {
+export interface CreateBattleStateOptions {
   runDeck: BattleCard[];
   gold?: number;
   totalRooms?: number;
@@ -49,7 +49,7 @@ export type CreateBattleStateOptions = {
   gearEffects?: GearEffectManifest;
   difficultyModifiers?: DifficultyModifier[];
   rng?: () => number;
-};
+}
 
 function initializePlayerHealthAndBlock(
   options: CreateBattleStateOptions,

@@ -12,11 +12,11 @@ function isRectStable(rect: CardRect, lastRect: CardRect | null): boolean {
   );
 }
 
-export type StableHandCardRectDeps = {
+export interface StableHandCardRectDeps {
   measureHandCard: (cardKey: string) => CardRect | null;
   registerCancel: (onCancel: () => void) => () => void;
   scheduleTimeout: (onTimeout: () => void, ms: number) => () => void;
-};
+}
 
 export function waitForStableHandCardRect(
   cardKey: string,

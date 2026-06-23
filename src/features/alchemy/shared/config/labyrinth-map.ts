@@ -5,11 +5,11 @@ import type { LabyrinthNodeType } from "@/lib/content-systems/types";
 
 import { SHINE_PALETTES } from "./shine-palettes";
 
-export type LabyrinthNodeMeta = {
+export interface LabyrinthNodeMeta {
   icon: React.ComponentType<{ className?: string }>;
   className: string;
   shineColors: string[];
-};
+}
 
 export const LABYRINTH_NODE_META: Record<LabyrinthNodeType, LabyrinthNodeMeta> = {
   entrance: {

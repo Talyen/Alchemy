@@ -8,7 +8,7 @@ import type { RunScreenData } from "./run-screen-data";
 
 export type { RunScreenData } from "./run-screen-data";
 
-const SCREEN_FIELDS: Record<Screen, (keyof RunScreenData)[]> = {
+const SCREEN_FIELDS: Record<Screen, Array<keyof RunScreenData>> = {
   campfire: ["runPlayerHealth", "runMaxHealth"],
   shop: ["runGold", "runDeck", "shopState"],
   alchemist: ["runGold", "runDeck", "alchemistState"],

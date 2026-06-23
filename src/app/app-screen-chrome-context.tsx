@@ -8,7 +8,7 @@ import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-st
 import type { Screen } from "@/lib/routing";
 import type { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 
-export type AppScreenChrome = {
+export interface AppScreenChrome {
   heroArt: string;
   playerName: string;
   aspectMode: "standard" | "narrow" | "ultrawide";
@@ -16,7 +16,7 @@ export type AppScreenChrome = {
   hasUnspentTalents: boolean;
   hasAffordableHomestead: boolean;
   returnToRunScreen: Screen | null;
-};
+}
 
 const AppScreenChromeContext = createContext<AppScreenChrome | null>(null);
 

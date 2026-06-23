@@ -1,7 +1,7 @@
 // Anomaly metric registry and peak sampling for balance simulation reports.
 import type { BattleState, CombatTextEvent } from "@/lib/battle";
 
-export type BattleAnomalies = {
+export interface BattleAnomalies {
   maxPlayerBlock: number;
   maxPlayerArmor: number;
   maxPlayerBurn: number;
@@ -24,17 +24,17 @@ export type BattleAnomalies = {
   maxSingleHeal: number;
   maxSingleHitDamageToEnemyStat: string;
   maxSingleHitDamageToPlayerStat: string;
-};
+}
 
 type NumericAnomalyKey = {
   [K in keyof BattleAnomalies]: BattleAnomalies[K] extends number ? K : never;
 }[keyof BattleAnomalies];
 
-type StatusAnomalyMetric = {
+interface StatusAnomalyMetric {
   key: NumericAnomalyKey;
   label: string;
   read: (state: BattleState) => number;
-};
+}
 
 const STATUS_ANOMALY_METRICS: StatusAnomalyMetric[] = [
   { key: "maxPlayerBlock", label: "Block on Player", read: (s) => s.playerStatuses.block },
@@ -56,7 +56,7 @@ const STATUS_ANOMALY_METRICS: StatusAnomalyMetric[] = [
   { key: "maxEnemyBlock", label: "Block on Enemy", read: (s) => s.enemyMitigation.block },
 ];
 
-export const ANOMALY_METRICS: { key: keyof BattleAnomalies; label: string }[] = [
+export const ANOMALY_METRICS: Array<{ key: keyof BattleAnomalies; label: string }> = [
   ...STATUS_ANOMALY_METRICS.map(({ key, label }) => ({ key, label })),
   { key: "maxSingleHitDamageToEnemy", label: "Player→Enemy Dmg" },
   { key: "maxSingleHitDamageToPlayer", label: "Enemy→Player Dmg" },

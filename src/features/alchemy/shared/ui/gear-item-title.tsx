@@ -1,10 +1,10 @@
 import { getGearInstanceShineGradient, getGearInstanceTitle, type GearInstance } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 
-type Props = {
+interface Props {
   instance: GearInstance;
   className?: string;
-};
+}
 
 export function GearItemTitle({ instance, className }: Props) {
   const title = getGearInstanceTitle(instance);

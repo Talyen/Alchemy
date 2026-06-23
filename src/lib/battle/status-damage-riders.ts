@@ -268,12 +268,12 @@ function applyPhysicalStatusRider(
   return nextState;
 }
 
-type DamageStatusContext = {
+interface DamageStatusContext {
   state: BattleState;
   effect: Extract<BattleCardEffect, { kind: "damage" }>;
   actualDamage: number;
   combatTexts: CombatTextEvent[];
-};
+}
 
 type DamageStatusHandler = (ctx: DamageStatusContext) => BattleState;
 

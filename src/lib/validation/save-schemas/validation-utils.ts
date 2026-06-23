@@ -2,7 +2,10 @@
 import { z } from "zod";
 import { logError } from "@/lib/error-logger";
 
-export type ValidationError = { path: string; message: string };
+export interface ValidationError {
+  path: string;
+  message: string;
+}
 
 class ErrorCollectorStack {
   private stack: ValidationError[][] = [];

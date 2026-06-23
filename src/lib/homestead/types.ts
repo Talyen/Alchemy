@@ -41,23 +41,23 @@ export type ResearchId =
   | "wool-tailoring"
   | "agility-training";
 
-type HomesteadUpgradeTier = {
+interface HomesteadUpgradeTier {
   cost: MaterialInventory;
   effects?: Partial<HomesteadEffectManifest>;
   benefitDescription: string;
   nonCombatBenefitDescription?: string;
-};
+}
 
-export type HomesteadBuilding = {
+export interface HomesteadBuilding {
   id: BuildingId;
   title: string;
   description: string;
   tiers: HomesteadUpgradeTier[];
   buttonLabel: string;
   yield?: MaterialInventory;
-};
+}
 
-export type HomesteadFarm = {
+export interface HomesteadFarm {
   id: FarmId;
   title: string;
   description: string;
@@ -66,19 +66,19 @@ export type HomesteadFarm = {
   buttonLabel: string;
   /** Hidden from UI until content is implemented; save data is preserved. */
   hidden?: boolean;
-};
+}
 
-export type HomesteadResearch = {
+export interface HomesteadResearch {
   id: ResearchId;
   title: string;
   description: string;
   tiers: HomesteadUpgradeTier[];
   buttonLabel: string;
-};
+}
 
 // Pre-computed bonuses that Homestead provides to runs. Battle-level effects
 // are merged into TalentEffectManifest; run-level effects applied at character select.
-export type HomesteadEffectManifest = {
+export interface HomesteadEffectManifest {
   flatPhysicalDamage: number;
   companionDamage: number;
   companionBondLevels: Record<import("@/lib/game-data").CompanionId, number>;
@@ -100,4 +100,4 @@ export type HomesteadEffectManifest = {
   burnDamageReduction: number;
   freezeDamageReduction: number;
   natureDamageReduction: number;
-};
+}

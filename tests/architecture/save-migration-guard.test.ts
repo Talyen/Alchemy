@@ -143,7 +143,7 @@ describe("save migration guard", () => {
     const reward = migrated.activeRun?.pendingReward;
     expect(reward?.rewardType).toBe("gear");
     const rewardItem = (
-      reward as { gearChoices: { instanceId: string; affixes: { id: string; value: number }[] }[] } | null
+      reward as { gearChoices: Array<{ instanceId: string; affixes: Array<{ id: string; value: number }> }> } | null
     )?.gearChoices.find((g: any) => g.instanceId === "gear-reward-1");
     expect(rewardItem).toBeDefined();
     expect(rewardItem?.affixes.find((a: any) => a.id === "flat-physical")?.value).toBe(2);

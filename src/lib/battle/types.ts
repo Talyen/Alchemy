@@ -29,28 +29,28 @@ export type TurnPhase = "player" | "enemy";
 
 // Enemy mitigation lives outside enemyStatuses: armor reduces incoming damage,
 // forge adds physical attack bonus (decays per hit), freezeBonus adds freeze stacks from attacks.
-export type EnemyMitigation = {
+export interface EnemyMitigation {
   armor: number;
   forge: number;
   freezeBonus: number;
   burnBonus: number;
   block: number;
-};
+}
 
 export const EMPTY_ENEMY_MITIGATION: EnemyMitigation = { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 };
 
 // Per-side CC state: skip-turn counters and immunity cooldown, grouped to prevent
 // update-site drift (was 6 top-level fields before the regroup).
-export type CcState = {
+export interface CcState {
   stunSkipTurns: number;
   freezeSkipTurns: number;
   cooldown: number;
-};
+}
 
 // Pre-computed bonuses from boons acquired during the run. Follows the same
 // pattern as TalentEffectManifest — computed once at battle start, immutable for
 // the duration of the battle.
-export type TrinketManifest = {
+export interface TrinketManifest {
   extraDrawPerBattle: number;
   firstHolyDamageDoubled: boolean;
   firstBurnDoubled: boolean;
@@ -78,10 +78,10 @@ export type TrinketManifest = {
   freezeDurationExtension: number;
   thunderstoneDamageOnStun: number;
   luckyCloverGoldChance: number;
-};
+}
 
 // Threshold-driven combat flags that reset each battle.
-export type CombatFlags = {
+export interface CombatFlags {
   firstPhysicalCardFreeUsed: boolean;
   firstHolyCardFreeUsed: boolean;
   firstBurnCardDoubledUsed: boolean;
@@ -99,7 +99,7 @@ export type CombatFlags = {
   resonantChimeUsedThisTurn: boolean;
   runicQuillUsedThisTurn: boolean;
   divineAegisTriggered: boolean;
-};
+}
 
 // Subset of CombatFlags consumed by card play — companion actions must not consume these.
 export type FirstTimeFlagKey =
@@ -166,7 +166,7 @@ export function withPreservedFlags(state: BattleState, mutate: (s: BattleState) 
 
 // The full snapshot of a battle at one point in time. Every mutation returns a new
 // BattleState (immutable), enabling the controller to diff states for animation.
-export type BattleState = {
+export interface BattleState {
   deck: BattleCard[];
   hand: BattleCard[];
   discard: BattleCard[];
@@ -210,7 +210,7 @@ export type BattleState = {
   difficultyModifiers: DifficultyModifier[];
   rng: () => number;
   pendingMaterials: MaterialInventory;
-};
+}
 
 // Combat texts are emitted by battle functions and consumed by the floating-text
 // animation system. They're merged by (target, kind, stat) so rapid-fire damage
@@ -219,26 +219,26 @@ export type CombatTextTarget = "player" | "enemy";
 export type CombatTextKind = "damage" | "heal" | "status" | "multiply" | "notice";
 export type CombatTextStat = DamageType | PlayerStatusId | EnemyStatusId | "health" | "mana" | "gold" | "crystal";
 
-export type NumericCombatTextEvent = {
+export interface NumericCombatTextEvent {
   target: CombatTextTarget;
   kind: Exclude<CombatTextKind, "notice">;
   stat: CombatTextStat;
   amount: number;
-};
+}
 
-export type NoticeCombatTextEvent = {
+export interface NoticeCombatTextEvent {
   target: CombatTextTarget;
   kind: "notice";
   stat: CombatTextStat;
   text: string;
-};
+}
 
 export type CombatTextEvent = NumericCombatTextEvent | NoticeCombatTextEvent;
 
-export type BattleResolution = {
+export interface BattleResolution {
   state: BattleState;
   combatTexts: CombatTextEvent[];
-};
+}
 
 // Immutable update helpers for BattleState. Replaces the error-prone nested spread
 // pattern used ~25 times across the battle engine with one-line focused updaters.

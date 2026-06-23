@@ -27,7 +27,7 @@ export function getCombatTextIcon(event: CombatTextEvent) {
 }
 
 function buildStatusChips(
-  order: readonly StatusChip["id"][],
+  order: ReadonlyArray<StatusChip["id"]>,
   statuses: Record<string, number> | undefined,
 ): StatusChip[] {
   if (!statuses) return [];

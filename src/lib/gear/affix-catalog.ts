@@ -5,7 +5,7 @@ import type { GearRarity } from "./types";
 
 export type GearAffixAspect = "offensive" | "defensive";
 
-export type GearAffixDefinition = {
+export interface GearAffixDefinition {
   id: GearAffixId;
   aspect: GearAffixAspect;
   keywordId: KeywordId;
@@ -13,9 +13,9 @@ export type GearAffixDefinition = {
   descriptionTemplate: string;
   effectKey: keyof GearEffectManifest;
   roll: Record<GearRarity, { min: number; max: number }>;
-};
+}
 
-type AffixRow = {
+interface AffixRow {
   id: GearAffixId;
   aspect: GearAffixAspect;
   keywordId: KeywordId;
@@ -24,7 +24,7 @@ type AffixRow = {
   effectKey: keyof GearEffectManifest;
   basic: { min: number; max: number };
   astral: { min: number; max: number };
-};
+}
 
 const affixRows: readonly AffixRow[] = [
   {

@@ -20,35 +20,35 @@ import { DESTINATIONS, type Destination } from "../../shared/types";
 import type { RewardState } from "./reward-flow";
 import { withSelectedBossForDestinations } from "./victory-flow";
 
-export type DestinationOptionsInput = {
+export interface DestinationOptionsInput {
   currentHealth?: number;
   currentGold?: number;
   destinationIndexInAct?: number;
   maxHealth?: number;
-};
+}
 
-export type DestinationOfferState = {
+export interface DestinationOfferState {
   lastOfferedDestinations: Destination[];
   roundsSinceOffered: Partial<Record<Destination, number>>;
-};
+}
 
-export type DestinationWeightContext = {
+export interface DestinationWeightContext {
   lastOfferedDestinations: Destination[];
   roundsSinceOffered: Partial<Record<Destination, number>>;
-};
+}
 
-export type SampleDestinationChoicesResult = {
+export interface SampleDestinationChoicesResult {
   choices: Destination[];
   offerState: DestinationOfferState;
-};
+}
 
-type DestinationAvailabilityInput = {
+interface DestinationAvailabilityInput {
   destinationIndexInAct: number;
   currentHealth: number;
   currentGold: number;
   maxHealth: number;
   previousDestination?: Destination | undefined;
-};
+}
 
 export function createEmptyDestinationOfferState(): DestinationOfferState {
   return { lastOfferedDestinations: [], roundsSinceOffered: {} };

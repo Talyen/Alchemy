@@ -7,7 +7,7 @@ type CollectionPages = Record<CollectionTab, number>;
 
 const initialCollectionPages: CollectionPages = { cards: 0, bestiary: 0, trinkets: 0 };
 
-type AppStore = {
+interface AppStore {
   selectedAspectRatio: AspectRatioOption;
   displayMode: DisplayMode;
   uiScale: UiScale;
@@ -51,7 +51,7 @@ type AppStore = {
   handleCollectionTabChange: (nextTab: CollectionTab) => void;
   clearSavedAppState: () => void;
   initialize: (save: SaveData) => void;
-};
+}
 
 export const useAppStore = create<AppStore>()((set) => ({
   selectedAspectRatio: "auto",

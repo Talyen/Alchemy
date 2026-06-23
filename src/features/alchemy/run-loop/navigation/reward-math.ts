@@ -6,7 +6,7 @@ import { CONSTANTS } from "../../shared/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 
-export type VictoryGoldInput = {
+export interface VictoryGoldInput {
   battleState: Pick<BattleState, "gold">;
   runGold: number;
   runTrinkets: string[];
@@ -16,22 +16,22 @@ export type VictoryGoldInput = {
   bossBonus: number;
   talentGoldPerCombat: number;
   goldMultiplier: number;
-};
+}
 
-export type VictoryGoldResult = {
+export interface VictoryGoldResult {
   unmultipliedTotal: number;
   earnedBeforeMultiplier: number;
   persistedRunGold: number;
-};
+}
 
-export type RewardGoldInput = {
+export interface RewardGoldInput {
   baseGold: number;
   bonusGold: number;
   generousBonus: number;
   talentGoldPerCombat: number;
   trinketIds: string[];
   goldMultiplier: number;
-};
+}
 
 function hasRewardModifier(modifiers: EncounterRewardTraitId[], kind: EncounterRewardTraitId): boolean {
   return modifiers.includes(kind);

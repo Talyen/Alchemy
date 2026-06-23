@@ -4,9 +4,9 @@ import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
 
 import { getUniqueConnections, positionFor, trimLine } from "./labyrinth-map-layout";
 
-type Props = {
+interface Props {
   labyrinthMap: LabyrinthMap;
-};
+}
 
 export function LabyrinthConnectionLayer({ labyrinthMap }: Props) {
   const connections = getUniqueConnections(labyrinthMap);

@@ -1,11 +1,11 @@
 import { useRef, useState } from "react";
 
-type DragState = {
+interface DragState {
   pointerId: number;
   startY: number;
   startScrollTop: number;
   moved: boolean;
-};
+}
 
 const ITEM_SELECTOR = "[data-testid='armory-inventory-item'],[data-testid='armory-crafting-currency']";
 

@@ -12,15 +12,15 @@ export type ContentValidationArea =
   | "statuses"
   | "trinkets";
 
-export type ContentValidationIssue = {
+export interface ContentValidationIssue {
   severity: ContentValidationSeverity;
   area: ContentValidationArea;
   id: string;
   message: string;
-};
+}
 
-export type ContentValidationResult = {
+export interface ContentValidationResult {
   issues: ContentValidationIssue[];
   errors: ContentValidationIssue[];
   warnings: ContentValidationIssue[];
-};
+}

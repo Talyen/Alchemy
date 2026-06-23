@@ -32,9 +32,12 @@ import {
 } from "./armory";
 import "./armory/armory-screen.css";
 
-type ArmoryCursorPoint = { x: number; y: number };
+interface ArmoryCursorPoint {
+  x: number;
+  y: number;
+}
 
-type Props = {
+interface Props {
   inventories: GearInventories;
   loadouts: GearLoadouts;
   gearBoardPositionsByCharacter?: GearBoardPositionsByCharacter;
@@ -56,7 +59,7 @@ type Props = {
   onTransferGear?: (instanceId: string, targetCharacterId: CharacterId) => boolean;
   onMoveBoardItem?: (characterId: CharacterId, item: BoardItemRef, col: number, row: number) => void;
   onSortBoard?: (characterId: CharacterId) => void;
-};
+}
 
 export function ArmoryScreen({
   inventories,

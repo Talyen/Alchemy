@@ -40,7 +40,7 @@ export interface BattleControllerContext {
   scheduleAutoEndTurnRef: RefObject<((state: BattleState) => void) | null>;
 }
 
-export type BattleControllerContextProps = {
+export interface BattleControllerContextProps {
   run: RunStateController;
   talents: TalentStateController;
   autoEndTurn: boolean;
@@ -52,7 +52,7 @@ export type BattleControllerContextProps = {
   measureElementRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   scheduleAutoEndTurnRef: RefObject<((state: BattleState) => void) | null>;
-};
+}
 
 export function useBattleControllerContext(props: BattleControllerContextProps): BattleControllerContext {
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -126,7 +126,7 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
       get scheduleAutoEndTurnRef() {
         return propsRef.current.scheduleAutoEndTurnRef;
       },
-    } as unknown as BattleControllerContext;
+    };
   }, []);
 
   return context;

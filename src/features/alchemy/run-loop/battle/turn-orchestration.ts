@@ -24,7 +24,7 @@ import { getBattleSessionStore, type createBattleSession } from "./battle-sessio
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 
-export type TurnOrchestrationDeps = {
+export interface TurnOrchestrationDeps {
   getStore: () => ReturnType<typeof getBattleSessionStore>;
   isCurrentBattleSession: (session: number) => boolean;
   runIfSessionActive: <T>(session: number, action: () => T, fallback?: T) => T;
@@ -34,7 +34,7 @@ export type TurnOrchestrationDeps = {
   logBattleError: (context: string, err: unknown) => void;
   resetHandTransferUi: () => void;
   scheduleCompanionFollowUp: (resultState: BattleState, session: number) => void;
-};
+}
 
 // ── Helpers ──
 
@@ -239,11 +239,11 @@ export async function executeEnemyPhase(
   });
 }
 
-type CompanionTextsDeps = {
+interface CompanionTextsDeps {
   getStore: () => ReturnType<typeof getBattleSessionStore>;
   isCurrentBattleSession: (session: number) => boolean;
   runIfSessionActive: <T>(session: number, action: () => T, fallback?: T) => T;
-};
+}
 
 function resolveCompanionFollowUpTexts(deps: CompanionTextsDeps, session: number): CombatTextEvent[] {
   return deps.runIfSessionActive(session, () => {

@@ -45,12 +45,16 @@ const LEGEND_MODIFIERS: DifficultyModifier[] = [
   { kind: "enemy-damage-multiplier", amount: 1.6 },
 ];
 
-const TIERS: { label: string; preset: TalentPreset; depthOffset: number; difficultyModifiers: DifficultyModifier[] }[] =
-  [
-    { label: "Early", preset: "early", depthOffset: 0, difficultyModifiers: [] },
-    { label: "Mid", preset: "mid", depthOffset: 8, difficultyModifiers: ADVENTURER_MODIFIERS },
-    { label: "Late", preset: "late", depthOffset: 16, difficultyModifiers: LEGEND_MODIFIERS },
-  ];
+const TIERS: Array<{
+  label: string;
+  preset: TalentPreset;
+  depthOffset: number;
+  difficultyModifiers: DifficultyModifier[];
+}> = [
+  { label: "Early", preset: "early", depthOffset: 0, difficultyModifiers: [] },
+  { label: "Mid", preset: "mid", depthOffset: 8, difficultyModifiers: ADVENTURER_MODIFIERS },
+  { label: "Late", preset: "late", depthOffset: 16, difficultyModifiers: LEGEND_MODIFIERS },
+];
 
 // Lookup maps from internal ID to in-game display title.
 const ENEMY_TITLES: Record<string, string> = Object.fromEntries(enemyBestiary.map((e) => [e.id, e.title]));
@@ -79,7 +83,7 @@ function percent(value: number): string {
 
 // --- Core scenario runner ---
 
-type TieredResults = { tier: string; label: string; results: BalanceBatchResult[] }[];
+type TieredResults = Array<{ tier: string; label: string; results: BalanceBatchResult[] }>;
 
 const ALL_CARD_IDS = cardLibrary.map((c) => c.id);
 
@@ -156,7 +160,7 @@ function runCoreScenarios(): TieredResults {
 
 // --- Enemy / class ranking per tier ---
 
-function rankEnemies(results: BalanceBatchResult[]): { id: string; winRate: number }[] {
+function rankEnemies(results: BalanceBatchResult[]): Array<{ id: string; winRate: number }> {
   const byEnemy: Record<string, { total: number; count: number }> = {};
   for (const result of results) {
     const enemyId = result.config.enemyId;
@@ -169,7 +173,7 @@ function rankEnemies(results: BalanceBatchResult[]): { id: string; winRate: numb
     .sort((a, b) => b.winRate - a.winRate);
 }
 
-function rankCharacters(results: BalanceBatchResult[]): { id: CharacterId; winRate: number }[] {
+function rankCharacters(results: BalanceBatchResult[]): Array<{ id: CharacterId; winRate: number }> {
   const byChar: Record<CharacterId, { total: number; count: number }> = {} as never;
   for (const result of results) {
     const charId = result.config.characterId;
@@ -177,19 +181,19 @@ function rankCharacters(results: BalanceBatchResult[]): { id: CharacterId; winRa
     byChar[charId].total += result.winRate;
     byChar[charId].count += 1;
   }
-  return (Object.entries(byChar) as [CharacterId, { total: number; count: number }][])
+  return (Object.entries(byChar) as Array<[CharacterId, { total: number; count: number }]>)
     .map(([id, { total, count }]) => ({ id, winRate: total / count }))
     .sort((a, b) => b.winRate - a.winRate);
 }
 
 // --- Anomaly detection ---
 
-type AnomalySummary = {
+interface AnomalySummary {
   field: string;
   maxValue: number;
   battles: number;
   peakScenario: { character: string; enemy: string; tier: string; peakStat?: string } | null;
-};
+}
 
 // A flat list of (field, label) pairs to check for anomalies in a BattleAnomalies record.
 const ANOMALY_FIELDS = ANOMALY_METRICS;
@@ -232,7 +236,7 @@ function collectAnomalies(results: BalanceBatchResult[], tierLabel: string, thre
 
 function collectAllAnomalyMetrics(
   tieredResults: TieredResults,
-): { field: string; early: number; mid: number; late: number; thresholds: number[] }[] {
+): Array<{ field: string; early: number; mid: number; late: number; thresholds: number[] }> {
   const perTier = TIERS.map((_tier, i) => {
     const byField: Record<string, number> = {};
     for (const batch of tieredResults[i].results) {
@@ -259,10 +263,10 @@ function collectAllAnomalyMetrics(
 
 // --- Boon sweep per tier ---
 
-type TieredTrinkets = {
+type TieredTrinkets = Array<{
   tier: string;
-  entries: { trinketId: string; delta: number; winRate: number; baseline: number }[];
-}[];
+  entries: Array<{ trinketId: string; delta: number; winRate: number; baseline: number }>;
+}>;
 
 function runTrinketSweep(): TieredTrinkets {
   const characterIds = Object.keys(characters) as CharacterId[];
@@ -317,7 +321,10 @@ function runTrinketSweep(): TieredTrinkets {
 
 // --- Card sweep per tier ---
 
-type TieredCards = { tier: string; entries: { cardId: string; delta: number; winRate: number; baseline: number }[] }[];
+type TieredCards = Array<{
+  tier: string;
+  entries: Array<{ cardId: string; delta: number; winRate: number; baseline: number }>;
+}>;
 
 function runCardSweep(): TieredCards {
   const characterIds = Object.keys(characters) as CharacterId[];
@@ -370,7 +377,7 @@ function runCardSweep(): TieredCards {
     }
     const baseline = baselineRates.reduce((total, rate) => total + rate, 0) / baselineRates.length;
 
-    const cardResults: { cardId: string; winRate: number }[] = [];
+    const cardResults: Array<{ cardId: string; winRate: number }> = [];
     for (const targetId of ALL_CARDS) {
       if (!targetId) continue;
       const rates: number[] = [];
@@ -410,12 +417,12 @@ function runCardSweep(): TieredCards {
 // --- HTML report generation ---
 
 function writeHtmlReport(
-  tieredEnemies: { tier: string; entries: { id: string; winRate: number }[] }[],
-  tieredClasses: { tier: string; entries: { id: CharacterId; winRate: number }[] }[],
+  tieredEnemies: Array<{ tier: string; entries: Array<{ id: string; winRate: number }> }>,
+  tieredClasses: Array<{ tier: string; entries: Array<{ id: CharacterId; winRate: number }> }>,
   tieredBoons: TieredTrinkets,
   tieredCards: TieredCards,
   anomalies: AnomalySummary[],
-  allMetrics: { field: string; early: number; mid: number; late: number; thresholds: number[] }[],
+  allMetrics: Array<{ field: string; early: number; mid: number; late: number; thresholds: number[] }>,
 ) {
   const tierLabels = TIERS.map((t) => t.label);
 
@@ -480,7 +487,7 @@ function writeHtmlReport(
   }
 
   function tableRows(
-    items: { id: string; early: number; mid: number; late: number }[],
+    items: Array<{ id: string; early: number; mid: number; late: number }>,
     cellFn: (v: number) => string,
     titleFn: (id: string) => string,
   ) {

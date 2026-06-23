@@ -10,20 +10,20 @@ import { TimerGroup } from "@/lib/animation/game-timer";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 import type { Screen } from "@/features/alchemy/shared/types";
 
-export type ScreenTransitionOptions = {
+export interface ScreenTransitionOptions {
   delayMs?: number;
   immediate?: boolean;
   onCommit?: () => void;
   /** When provided, transition is skipped if this returns false (checked at apply time, including after delay). */
   guard?: () => boolean;
-};
+}
 
-type ScreenTransitions = {
+interface ScreenTransitions {
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
   transition: (nextScreen: Screen, options?: ScreenTransitionOptions) => void;
   commitPendingTransition: () => void;
   cancelPending: () => void;
-};
+}
 
 export function useScreenTransitions(
   currentScreen: Screen,

@@ -6,7 +6,7 @@ import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
 
 export function getUniqueConnections(map: LabyrinthMap) {
   const seen = new Set<string>();
-  const result: { from: { row: number; col: number }; to: { row: number; col: number } }[] = [];
+  const result: Array<{ from: { row: number; col: number }; to: { row: number; col: number } }> = [];
   for (let row = 0; row < map.rows; row += 1) {
     for (let col = 0; col < map.cols; col += 1) {
       const node = map.grid[row]?.[col];

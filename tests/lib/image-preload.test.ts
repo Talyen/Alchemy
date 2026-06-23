@@ -1,12 +1,12 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
-type MockImage = {
+interface MockImage {
   src: string;
   decoding: string;
   onload: (() => void) | null;
   onerror: (() => void) | null;
   decode: () => Promise<void>;
-};
+}
 
 function createMockImage(): MockImage {
   return {

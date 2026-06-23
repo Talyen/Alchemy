@@ -12,7 +12,7 @@ import type {
 } from "@/lib/gear";
 import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
 
-export type SaveData = {
+export interface SaveData {
   saveSchemaVersion: number;
   gameBuildVersion: string;
   contentVersion: number;
@@ -44,4 +44,4 @@ export type SaveData = {
   completedDifficulties: Record<CharacterId, DifficultyId[]>;
   finishedRunCharacters: CharacterId[];
   lastSavedAt: number;
-};
+}

@@ -5,14 +5,14 @@ import { cn } from "@/lib/utils";
 import { DOUBLE_CLICK_FLYOVER_MS, MAGNET_RELEASE_EASE_MS } from "./drag-constants";
 import type { DragRect } from "./use-board-drag";
 
-export type DragVisualBase = {
+export interface DragVisualBase {
   source: DragRect;
   rect: DragRect;
   releaseRect?: DragRect | undefined;
   settling?: boolean | undefined;
   releasing?: boolean | undefined;
   flyover?: boolean | undefined;
-};
+}
 
 export function DragVisualPortal({
   visual,

@@ -26,7 +26,7 @@ import {
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils/dev-mode";
 
-export type ArmoryController = {
+export interface ArmoryController {
   inventories: GearInventories;
   loadouts: GearLoadouts;
   gearBoardPositionsByCharacter: GearBoardPositionsByCharacter;
@@ -48,7 +48,7 @@ export type ArmoryController = {
   onMoveBoardItem: (characterId: CharacterId, item: BoardItemRef, col: number, row: number) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
   onSortBoard: (characterId: CharacterId) => void;
-};
+}
 
 export function useArmoryController(): ArmoryController {
   const { returnToRunScreen } = useAppScreenChrome();

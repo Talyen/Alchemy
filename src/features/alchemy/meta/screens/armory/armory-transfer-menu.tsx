@@ -3,11 +3,11 @@ import { createPortal } from "react-dom";
 import { characters, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-export type TransferMenuState = {
+export interface TransferMenuState {
   instanceId: string;
   sourceCharacterId: CharacterId;
   anchor: { x: number; y: number };
-};
+}
 
 export function ArmoryTransferMenu({
   transferMenu,

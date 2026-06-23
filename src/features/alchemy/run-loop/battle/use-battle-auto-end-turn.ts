@@ -7,12 +7,12 @@ import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
 
 import type { Screen } from "../../shared/types";
 
-type AutoEndTurnOptions = {
+interface AutoEndTurnOptions {
   autoEndTurn: boolean;
   screen: Screen;
   battleState: BattleState;
   onEndTurn: () => void;
-};
+}
 
 // Schedules end turn only after the battle reaches a stable no-actions state.
 export function useBattleAutoEndTurn({ autoEndTurn, screen, battleState, onEndTurn }: AutoEndTurnOptions) {

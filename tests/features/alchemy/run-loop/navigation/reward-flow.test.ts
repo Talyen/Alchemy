@@ -133,7 +133,7 @@ describe("reward flow orchestration", () => {
 
   describe("Labyrinth reward modifier helpers", () => {
     it("exposes reward traits for encounter modes but not campaign", () => {
-      const modifiers = ["alchemist", "generous"] as ("companion" | "alchemist" | "generous" | "scavenger")[];
+      const modifiers = ["alchemist", "generous"] as Array<"companion" | "alchemist" | "generous" | "scavenger">;
 
       expect(getActiveRewardModifiersForContentSystem("labyrinth", modifiers)).toBe(modifiers);
       expect(getActiveRewardModifiersForContentSystem("campaign", modifiers)).toEqual([]);
@@ -159,7 +159,7 @@ describe("reward flow orchestration", () => {
     });
 
     it("maps reward modifier kinds to reward behavior flags", () => {
-      const modifiers = ["companion", "alchemist"] as ("companion" | "alchemist" | "generous" | "scavenger")[];
+      const modifiers = ["companion", "alchemist"] as Array<"companion" | "alchemist" | "generous" | "scavenger">;
 
       expect(shouldGrantCompanionReward(modifiers)).toBe(true);
       expect(shouldGrantAlchemistReward(modifiers)).toBe(true);
@@ -264,7 +264,7 @@ describe("reward flow orchestration", () => {
         rewardState: {
           ...stampedRewardState({}),
           rewardType: "trinket" as const,
-          choices: [boonChoice] as import("@/lib/game-data/types").TrinketEntry[],
+          choices: [boonChoice] as Array<import("@/lib/game-data/types").TrinketEntry>,
           gold: 10,
           materials: emptyInventory(),
           selectedId: "bone-charm",

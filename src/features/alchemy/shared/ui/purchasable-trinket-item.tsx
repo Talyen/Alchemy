@@ -9,14 +9,14 @@ import { DisabledTooltip, GoldCost, StaggerItem } from "./shared-ui";
 import { TiltSurface } from "./tilt-surface";
 import { useInteractiveCard } from "./use-interactive-card";
 
-type PurchasableTrinketItemProps = {
+interface PurchasableTrinketItemProps {
   trinket: TrinketEntry;
   price: number;
   gold: number;
   purchased: boolean;
   onBuy: () => void;
   staggerIndex?: number;
-};
+}
 
 export function PurchasableTrinketItem({
   trinket,

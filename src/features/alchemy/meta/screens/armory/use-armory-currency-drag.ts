@@ -15,8 +15,11 @@ type CarriableItem =
   | { kind: "gear"; instance: GearInstance; origin: CurrencyDragOrigin }
   | { kind: "currency"; currencyId: CraftingCurrencyId };
 
-export type CurrencyDragOrigin = { kind: "inventory"; placement: InventoryPlacement };
-export type CurrencyDragVisual = {
+export interface CurrencyDragOrigin {
+  kind: "inventory";
+  placement: InventoryPlacement;
+}
+export interface CurrencyDragVisual {
   currencyId: CraftingCurrencyId;
   source: DragRect;
   rect: DragRect;
@@ -26,7 +29,7 @@ export type CurrencyDragVisual = {
   releasing?: boolean | undefined;
   flyover?: boolean | undefined;
   releaseRect?: DragRect | undefined;
-};
+}
 
 export type CurrencyPointerStart = (
   currencyId: CraftingCurrencyId,
@@ -38,9 +41,12 @@ export type CurrencyPointerStart = (
 export type CurrencyPointerMove = (pointer: { x: number; y: number }, pointerId: number) => void;
 export type CurrencyPointerEnd = (pointer: { x: number; y: number }, pointerId: number, cancelled?: boolean) => void;
 
-type CurrencyItem = { id: CraftingCurrencyId; origin: CurrencyDragOrigin };
+interface CurrencyItem {
+  id: CraftingCurrencyId;
+  origin: CurrencyDragOrigin;
+}
 
-type UseArmoryCurrencyDragOptions = {
+interface UseArmoryCurrencyDragOptions {
   editable: boolean;
   occupiedRows: number;
   inventoryBoardRef: RefObject<HTMLDivElement | null>;
@@ -49,7 +55,7 @@ type UseArmoryCurrencyDragOptions = {
   packedCurrencies: PackedCurrencyItem[];
   inventoryById: Map<string, GearInstance>;
   onSwapWithItem?: (item: CarriableItem, sourceRect: DragRect) => void;
-};
+}
 
 export function useArmoryCurrencyDrag({
   editable,

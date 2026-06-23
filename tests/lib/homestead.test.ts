@@ -336,7 +336,7 @@ describe("mergeIntoManifest", () => {
 
   it("does not spread homestead-only fields into talent manifest", () => {
     const merged = mergeIntoManifest(makeTalentManifest(), makeHomesteadEffects());
-    expect((merged as Record<string, unknown>).endRunFoodPerRoom).toBeUndefined();
+    expect((merged as unknown as Record<string, unknown>).endRunFoodPerRoom).toBeUndefined();
   });
 });
 

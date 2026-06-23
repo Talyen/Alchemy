@@ -7,7 +7,9 @@ export function getGearInstanceDescriptionLines(instance: GearInstance): string[
   return getGearInstanceTooltipLines(instance).map((entry) => entry.text);
 }
 
-export function getGearInstanceTooltipEntries(instance: GearInstance): { key: string; name?: string; text: string }[] {
+export function getGearInstanceTooltipEntries(
+  instance: GearInstance,
+): Array<{ key: string; name?: string; text: string }> {
   const definition = gearDefinitions[instance.definitionId];
   const rarity = gearInstanceRarity(instance);
   const affixEntries = getGearAffixTooltipEntries(instance.affixes, rarity);
@@ -30,6 +32,6 @@ export function getGearInstanceTooltipEntries(instance: GearInstance): { key: st
   return [];
 }
 
-export function getGearInstanceTooltipLines(instance: GearInstance): { key: string; text: string }[] {
+export function getGearInstanceTooltipLines(instance: GearInstance): Array<{ key: string; text: string }> {
   return getGearInstanceTooltipEntries(instance).map(({ key, text }) => ({ key, text }));
 }

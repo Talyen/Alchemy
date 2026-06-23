@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEmptyTierRecord, normalizeTierRecord, type TieredItem } from "@/lib/homestead/tiers";
 
-const testItems: TieredItem<"a" | "b" | "c">[] = [
+const testItems: Array<TieredItem<"a" | "b" | "c">> = [
   { id: "a", tiers: [1, 2, 3] },
   { id: "b", tiers: [1, 2] },
   { id: "c", tiers: [1] },

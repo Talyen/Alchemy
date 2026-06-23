@@ -36,7 +36,11 @@ type TalentEffectSetOperation = {
   [K in keyof TalentEffectManifest]: { kind: "set"; field: K; value: TalentEffectManifest[K] };
 }[keyof TalentEffectManifest];
 
-type TalentEffectAddOperation = { kind: "add"; field: NumericTalentEffectField; amount: number };
+interface TalentEffectAddOperation {
+  kind: "add";
+  field: NumericTalentEffectField;
+  amount: number;
+}
 
 export type TalentEffectOperation = TalentEffectSetOperation | TalentEffectAddOperation;
 

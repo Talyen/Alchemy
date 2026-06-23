@@ -72,11 +72,11 @@ export type EnemyAttackEffect =
   | { kind: "damage"; damageType: DamageType; amount: number; lifesteal?: boolean }
   | { kind: "player-status"; status: PlayerStatusId; amount: number };
 
-export type EnemyTrait = {
+export interface EnemyTrait {
   id: string;
   title: string;
   description: string;
-};
+}
 
 export type BattleCardEffect =
   | {
@@ -125,14 +125,14 @@ export type BattleCardEffect =
       failureEffects: BattleCardEffect[];
     };
 
-export type CompanionDefinition = {
+export interface CompanionDefinition {
   id: CompanionId;
   title: string;
   art: string;
   turnStartEffects: BattleCardEffect[];
-};
+}
 
-export type BattleCard = {
+export interface BattleCard {
   id: string;
   uid?: number;
   title: string;
@@ -142,17 +142,17 @@ export type BattleCard = {
   consume?: boolean;
   corrupted?: boolean;
   /** Positions of numeric values in descriptionLines that were modified by corruption, used to highlight them in the UI. */
-  corruptedValuePositions?: { lineIndex: number; matchIndex: number }[];
+  corruptedValuePositions?: Array<{ lineIndex: number; matchIndex: number }>;
   baseTitle?: string;
   /** Playstyle tags (e.g. archery) counted for talent XP; not damage types. */
   tags?: KeywordId[];
   effects: BattleCardEffect[];
   excludeFromOfferPool?: boolean;
-};
+}
 
 export type EnemyType = "normal" | "elite" | "boss";
 
-export type BestiaryEntry = {
+export interface BestiaryEntry {
   id: string;
   title: string;
   subtitle: string;
@@ -161,16 +161,16 @@ export type BestiaryEntry = {
   enemyType: EnemyType;
   traits: EnemyTrait[];
   attackEffects: EnemyAttackEffect[];
-};
+}
 
-export type TrinketEntry = {
+export interface TrinketEntry {
   id: string;
   title: string;
   descriptionLines: string[];
   art: string;
-};
+}
 
-export type KeywordDefinition = {
+export interface KeywordDefinition {
   id: KeywordId;
   label: string;
   description: string;
@@ -180,7 +180,7 @@ export type KeywordDefinition = {
   /** Translucent pill background for badges; must be a full Tailwind class string for JIT. */
   pillBgClass?: string;
   hidden?: boolean;
-};
+}
 
 export const harmfulPlayerStatusIds: PlayerStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];
 

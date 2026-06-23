@@ -8,7 +8,7 @@ const templateEffectSchemas = TEMPLATE_EFFECT_DEFINITIONS.map((def) => def.schem
 
 const BattleCardEffectSchemaBase = z.discriminatedUnion(
   "kind",
-  templateEffectSchemas as unknown as [z.ZodObject<{ kind: z.ZodType }>, ...z.ZodObject<{ kind: z.ZodType }>[]],
+  templateEffectSchemas as unknown as [z.ZodObject<{ kind: z.ZodType }>, ...Array<z.ZodObject<{ kind: z.ZodType }>>],
 );
 
 export const BattleCardEffectSchema: z.ZodType<BattleCardEffect> = z.lazy(() => {

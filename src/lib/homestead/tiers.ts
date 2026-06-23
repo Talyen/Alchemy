@@ -1,13 +1,13 @@
 // Shared tier-record helpers for Homestead persistence and runtime state.
 // Depends only on item IDs and tier counts so storage and React state use one normalization path.
 
-export type TieredItem<T extends string = string> = {
+export interface TieredItem<T extends string = string> {
   id: T;
   tiers: readonly unknown[];
-};
+}
 
 // Creates a complete zero-filled tier record for all known items.
-export function createEmptyTierRecord<T extends string>(items: readonly TieredItem<T>[]): Record<T, number> {
+export function createEmptyTierRecord<T extends string>(items: ReadonlyArray<TieredItem<T>>): Record<T, number> {
   const record = {} as Record<T, number>;
   for (const { id } of items) {
     record[id] = 0;
@@ -24,7 +24,7 @@ function clampTierLevel(value: unknown, maxTier: number): number {
 // clamped tier record. Rename maps preserve progress when content IDs change.
 export function normalizeTierRecord<T extends string>(
   value: unknown,
-  items: readonly TieredItem<T>[],
+  items: ReadonlyArray<TieredItem<T>>,
   renameMap: Record<string, T> = {},
 ): Record<T, number> {
   const result = createEmptyTierRecord(items);

@@ -136,7 +136,7 @@ export function MaterialsBar({ materialInventory }: { materialInventory: Materia
   );
 }
 
-const tabs: { id: Tab; label: string; icon: typeof Hammer }[] = [
+const tabs: Array<{ id: Tab; label: string; icon: typeof Hammer }> = [
   { id: "buildings", label: "Buildings", icon: Hammer },
   { id: "farm", label: "Farm", icon: Wheat },
   { id: "research", label: "Research", icon: FlaskConical },

@@ -16,7 +16,11 @@ export async function seedRandom(page: Page, seed = 42) {
   );
 }
 
-type DestinationRngArgs = { value: number; mult: number; inc: number };
+interface DestinationRngArgs {
+  value: number;
+  mult: number;
+  inc: number;
+}
 
 function installDestinationRng({ value, mult, inc }: DestinationRngArgs) {
   let seed = 42;

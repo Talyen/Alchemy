@@ -8,7 +8,7 @@ export function spendRunGold(price: number, setRunGold: (fn: (g: number) => numb
   setRunGold((g) => Math.max(0, g - price));
 }
 
-type RefreshShopOfferingsInput<T> = {
+interface RefreshShopOfferingsInput<T> {
   price: number;
   refreshesLeft: number;
   runGold: number;
@@ -16,7 +16,7 @@ type RefreshShopOfferingsInput<T> = {
   setState: (fn: (prev: T) => T) => void;
   mapState: (prev: T, newItems: unknown[]) => T;
   resample: () => unknown[];
-};
+}
 
 function refreshShopOfferings<T>(input: RefreshShopOfferingsInput<T>): boolean {
   if (input.refreshesLeft <= 0 || input.runGold < input.price) return false;
@@ -26,7 +26,7 @@ function refreshShopOfferings<T>(input: RefreshShopOfferingsInput<T>): boolean {
   return true;
 }
 
-type RefreshOfferingsInput<T> = {
+interface RefreshOfferingsInput<T> {
   price: number;
   refreshesLeft: number;
   runGold: number;
@@ -37,7 +37,7 @@ type RefreshOfferingsInput<T> = {
   setState: (fn: (prev: T) => T) => void;
   mapState: (prev: T, newItems: BattleCard[]) => T;
   deck?: BattleCard[];
-};
+}
 
 export function markSlotPurchased(keys: string[], slotKey: string): string[] {
   return keys.includes(slotKey) ? keys : [...keys, slotKey];

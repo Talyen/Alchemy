@@ -5,7 +5,7 @@ import { ShineBorder } from "@/components/ui/shine-border";
 import { BUTTON_SHAPE, BUTTON_WIDTH_TIER_CLASS, type ButtonWidthTier } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 
-type ShineAccentButtonProps = {
+interface ShineAccentButtonProps {
   children: ReactNode;
   icon?: ElementType;
   accentClassName?: string;
@@ -14,7 +14,7 @@ type ShineAccentButtonProps = {
   width?: ButtonWidthTier;
   className?: string;
   onClick: () => void;
-};
+}
 
 export function ShineAccentButton({
   children,

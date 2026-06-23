@@ -36,7 +36,7 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
     : [];
   const isUnstarted =
     roomsEncountered === 0 && currentAct === 1 && destinationIndexInAct === 0 && completedDestinations.length === 0;
-  const runDeckArr = Array.isArray(data.runDeck) ? (data.runDeck as { id: string }[]) : [];
+  const runDeckArr = Array.isArray(data.runDeck) ? (data.runDeck as Array<{ id: string }>) : [];
   const legacySet = new Set(LEGACY_STARTER_DECK_IDS);
   const hasLegacyDeck =
     runDeckArr.length === LEGACY_STARTER_DECK_IDS.length &&

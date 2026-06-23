@@ -4,20 +4,20 @@ import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_TIER_CLASS, type ButtonWidthTier } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 
-type ActionButtonConfig = {
+interface ActionButtonConfig {
   label: ReactNode;
   onClick: () => void;
   disabled?: boolean;
   className?: string;
-};
+}
 
-type ActionButtonRowProps = {
+interface ActionButtonRowProps {
   secondary?: ActionButtonConfig | undefined;
   primary: ActionButtonConfig;
   size?: "default" | "lg";
   width?: ButtonWidthTier;
   className?: string;
-};
+}
 
 export function ActionButtonRow({
   secondary,

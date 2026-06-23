@@ -3,8 +3,16 @@ import { playUISound } from "@/lib/audio";
 import { type InventoryPlacement, type PackedInventoryItem } from "@/lib/gear";
 import { applyMagnetHysteresis, placeInventoryTileFromMetrics } from "./board-drag-math";
 
-export type DragPoint = { x: number; y: number };
-export type DragRect = { left: number; top: number; width: number; height: number };
+export interface DragPoint {
+  x: number;
+  y: number;
+}
+export interface DragRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
 export type DragDestination =
   | { kind: "inventory"; placement: InventoryPlacement; rect: DragRect }
   | { kind: "equipment"; slot: string; rect: DragRect }
@@ -17,7 +25,7 @@ export type DragOrigin =
   | { kind: "equipment"; slot: string }
   | { kind: "external" };
 
-export type BoardDragVisual<TId extends string, TOrigin extends DragOrigin> = {
+export interface BoardDragVisual<TId extends string, TOrigin extends DragOrigin> {
   id: TId;
   source: DragRect;
   rect: DragRect;
@@ -27,34 +35,34 @@ export type BoardDragVisual<TId extends string, TOrigin extends DragOrigin> = {
   releasing?: boolean;
   flyover?: boolean;
   releaseRect?: DragRect | undefined;
-};
+}
 
-type PendingBoardDrag<TId extends string, TOrigin extends DragOrigin> = {
+interface PendingBoardDrag<TId extends string, TOrigin extends DragOrigin> {
   id: TId;
   origin: TOrigin;
   source: DragRect;
   pointerId: number;
   pointerStart: DragPoint;
   offset: DragPoint;
-};
+}
 
 type FootprintFn<TId extends string, TItem> = (id: TId, lookup: TItem | undefined) => { w: number; h: number } | null;
 type BoardDragCommitResult<TItem> = { heldItem?: { item: TItem; source: DragRect } } | undefined;
 
-export type UseBoardDragOptions<TId extends string, TItem, TOrigin extends DragOrigin> = {
+export interface UseBoardDragOptions<TId extends string, TItem, TOrigin extends DragOrigin> {
   itemLookup: TItem | undefined;
   getItemId: (item: TItem) => TId;
   getOrigin: (item: TItem) => TOrigin;
   getFootprint: FootprintFn<TId, TItem>;
   inventoryBoardRef: RefObject<HTMLDivElement | null>;
   occupiedRows: number;
-  externalDestinations?: ReadonlyArray<DragDestination>;
+  externalDestinations?: readonly DragDestination[];
   resolveExternalDestination?: (pointer: DragPoint) => DragDestination | null;
   onCommit: (input: { id: TId; origin: TOrigin; destination: DragDestination }) => BoardDragCommitResult<TItem>;
   onCancel?: (id: TId) => void;
   onClear?: () => void;
-  boardObstacles?: PackedInventoryItem<{ instanceId: string }>[];
-};
+  boardObstacles?: Array<PackedInventoryItem<{ instanceId: string }>>;
+}
 
 export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrigin = DragOrigin>({
   itemLookup,

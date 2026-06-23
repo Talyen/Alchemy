@@ -18,7 +18,7 @@ import { staticCardTransform } from "../config/layout";
 import { clearTiltElement, clearTiltFromEvent, DEFAULT_TILT_STRENGTH, setTiltFromEvent } from "../utils";
 import { ShimmerOverlay } from "./shimmer";
 
-type TiltSurfaceProps = {
+interface TiltSurfaceProps {
   as?: "button" | "div";
   children?: ReactNode;
   className?: string;
@@ -47,7 +47,7 @@ type TiltSurfaceProps = {
   dataCount?: number;
   onMouseEnter?: (e: MouseEvent<HTMLElement>) => void;
   onMouseLeave?: (e: MouseEvent<HTMLElement>) => void;
-};
+}
 
 function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
   if (!ref) return;

@@ -11,10 +11,10 @@ const CARD_SELECTION_GRID_CONFIG = {
   cardsPerRow: 4,
 } as const;
 
-export type CardSelectionGridItem = {
+export interface CardSelectionGridItem {
   card: BattleCard;
   index: number;
-};
+}
 
 export function CardSelectionGrid({
   items,

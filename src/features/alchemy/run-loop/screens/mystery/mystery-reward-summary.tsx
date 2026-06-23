@@ -15,10 +15,10 @@ import { DetailPopup } from "../../../shared/ui/card-popup";
 import { MysteryEffectBadge } from "../../../shared/ui/mystery-effect-badge";
 import { ScreenHeader, StaggerGroup, StaggerItem } from "../../../shared/ui/shared-ui";
 
-type LookupProps = {
+interface LookupProps {
   findCard: (id: string) => BattleCard | undefined;
   findTrinket: (id: string) => TrinketEntry | undefined;
-};
+}
 
 function renderFoundOrLost(effect: MysteryEffect, prefix: string) {
   return (

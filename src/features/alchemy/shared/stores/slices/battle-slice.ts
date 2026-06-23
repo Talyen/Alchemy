@@ -16,23 +16,23 @@ function hydrateBattleState(battleState: BattleState): BattleState {
   };
 }
 
-export type BattleActions = {
+export interface BattleActions {
   setSyncedBattleState: (action: BattleState | ((prev: BattleState) => BattleState)) => void;
   setDisplayOverrides: (overrides: DisplayOverrides) => void;
   clearDisplayOverrides: () => void;
   setBattleStartState: (state: BattleState | null) => void;
   setHasActiveBattle: (active: boolean | ((prev: boolean) => boolean)) => void;
   initializeActiveBattle: (battleState: BattleState | null) => void;
-};
+}
 
 export function defineBattleActions(set: ImmerSet<RunDomainDataState>): BattleActions & { resetBattle: () => void } {
-  type BattleStateFields = {
+  interface BattleStateFields {
     battleState: BattleState;
     displayOverrides: DisplayOverrides;
     battleStartState: BattleState | null;
     hasActiveBattle: boolean;
-  };
-  const setField = defineFieldSetter<BattleStateFields>(set, "battle");
+  }
+  const setField = defineFieldSetter<BattleStateFields, RunDomainDataState>(set, "battle");
 
   return {
     setSyncedBattleState: (action) =>

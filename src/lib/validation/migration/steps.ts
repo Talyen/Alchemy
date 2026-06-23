@@ -60,9 +60,11 @@ function remapArrowUnlockedTalents(record: Record<string, unknown> | undefined):
     next[key] = value;
   }
   const arrowIds = record.arrow;
-  const archeryIds = record.archery;
+  const archeryIds = Array.isArray(record.archery)
+    ? record.archery.filter((id): id is string => typeof id === "string")
+    : [];
   const mergedIds = [
-    ...(Array.isArray(archeryIds) ? archeryIds : []),
+    ...archeryIds,
     ...(Array.isArray(arrowIds)
       ? arrowIds.filter((id): id is string => typeof id === "string").map(remapArrowTalentId)
       : []),
@@ -171,28 +173,30 @@ function migrateGearInstance(item: Record<string, unknown>): Record<string, unkn
 export function migrateV5ToV6(parsed: RawSaveData): RawSaveData {
   const next = { ...parsed };
   if (Array.isArray(next.gearInventory)) {
-    next.gearInventory = (next.gearInventory as Record<string, unknown>[]).map(migrateGearInstance);
+    next.gearInventory = (next.gearInventory as Array<Record<string, unknown>>).map(migrateGearInstance);
   }
   if (next.activeRun && typeof next.activeRun === "object") {
     const activeRun = { ...(next.activeRun as Record<string, unknown>) };
     if (activeRun.equipmentShopState && typeof activeRun.equipmentShopState === "object") {
       const shopState = { ...(activeRun.equipmentShopState as Record<string, unknown>) };
       if (Array.isArray(shopState.gear)) {
-        shopState.gear = (shopState.gear as Record<string, unknown>[]).map(migrateGearInstance);
+        shopState.gear = (shopState.gear as Array<Record<string, unknown>>).map(migrateGearInstance);
       }
       activeRun.equipmentShopState = shopState;
     }
     if (activeRun.pendingReward && typeof activeRun.pendingReward === "object") {
       const pendingReward = { ...(activeRun.pendingReward as Record<string, unknown>) };
       if (pendingReward.rewardType === "gear" && Array.isArray(pendingReward.gearChoices)) {
-        pendingReward.gearChoices = (pendingReward.gearChoices as Record<string, unknown>[]).map(migrateGearInstance);
+        pendingReward.gearChoices = (pendingReward.gearChoices as Array<Record<string, unknown>>).map(
+          migrateGearInstance,
+        );
       }
       activeRun.pendingReward = pendingReward;
     }
     if (activeRun.wildwoodDraft && typeof activeRun.wildwoodDraft === "object") {
       const wildwoodDraft = { ...(activeRun.wildwoodDraft as Record<string, unknown>) };
       if (Array.isArray(wildwoodDraft.rewardGearChoices)) {
-        wildwoodDraft.rewardGearChoices = (wildwoodDraft.rewardGearChoices as Record<string, unknown>[]).map(
+        wildwoodDraft.rewardGearChoices = (wildwoodDraft.rewardGearChoices as Array<Record<string, unknown>>).map(
           migrateGearInstance,
         );
       }
@@ -287,7 +291,6 @@ export function migrateV8ToV9(parsed: RawSaveData): RawSaveData {
 export const LEGACY_ARMORY_POSITIONS_STORAGE_KEY = "alchemy-armory-positions";
 
 function getStorage(): Storage | null {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime environment check
   if (typeof localStorage !== "undefined") return localStorage;
   if (typeof window !== "undefined" && window.localStorage) return window.localStorage;
   return null;

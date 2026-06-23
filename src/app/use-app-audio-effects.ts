@@ -18,13 +18,13 @@ import { getBossMusicKey, invalidateCacheForKey } from "@/lib/audio-music";
 import { useRunDomainStore, readBattleStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { Screen } from "@/features/alchemy/shared/types";
 
-type AppAudioEffectsOptions = {
+interface AppAudioEffectsOptions {
   masterVol: number;
   musicVol: number;
   sfxVol: number;
   muteInBackground: boolean;
   screen: Screen;
-};
+}
 
 function pickMusicKey(screen: Screen): string {
   if (screen !== "battle") return MUSIC_KEYS.MENU;

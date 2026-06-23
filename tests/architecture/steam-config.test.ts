@@ -4,12 +4,12 @@ import { describe, expect, it } from "vitest";
 
 const ROOT = join(import.meta.dirname, "../..");
 
-type PlatformsConfig = {
+interface PlatformsConfig {
   targets: string[];
   appIdEnv: string;
   depotBranch: string;
   devAppId: number;
-};
+}
 
 const VALID_TARGETS = new Set(["win", "linux", "mac"]);
 

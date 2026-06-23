@@ -3,19 +3,19 @@ import type { InventoryPlacement } from "./inventory-placement";
 import { overlaps } from "./grid-packing";
 import { GEAR_SWAP_MAX_SEARCH_ROWS } from "./constants";
 
-export type BoardItem<TKind extends string = string> = {
+export interface BoardItem<TKind extends string = string> {
   id: string;
   kind: TKind;
   footprint: GearFootprint;
   position: InventoryPlacement;
-};
+}
 
 export function boardItemKey(item: Pick<BoardItem, "id" | "kind">): string {
   return `${item.kind}:${item.id}`;
 }
 
 export function resolveMoveWithSwap<TKind extends string>(
-  items: BoardItem<TKind>[],
+  items: Array<BoardItem<TKind>>,
   movingItem: Pick<BoardItem<TKind>, "id" | "kind">,
   target: InventoryPlacement,
   cols: number,
@@ -34,8 +34,8 @@ export function resolveMoveWithSwap<TKind extends string>(
 
   const targetRect = { col: target.col, row: target.row, w: moving.footprint.w, h: moving.footprint.h };
   const others = items.filter((item) => boardItemKey(item) !== movingKey);
-  const displaced: BoardItem<TKind>[] = [];
-  const fixed: BoardItem<TKind>[] = [];
+  const displaced: Array<BoardItem<TKind>> = [];
+  const fixed: Array<BoardItem<TKind>> = [];
   for (const item of others) {
     const itemRect = { col: item.position.col, row: item.position.row, w: item.footprint.w, h: item.footprint.h };
     if (overlaps(targetRect, itemRect)) displaced.push(item);
@@ -43,7 +43,7 @@ export function resolveMoveWithSwap<TKind extends string>(
   }
   displaced.sort((a, b) => b.footprint.w * b.footprint.h - a.footprint.w * a.footprint.h);
 
-  const placed: BoardItem<TKind>[] = [{ ...moving, position: target }, ...fixed];
+  const placed: Array<BoardItem<TKind>> = [{ ...moving, position: target }, ...fixed];
 
   const isOccupied = (col: number, row: number, w: number, h: number): boolean => {
     if (col < 1 || col + w - 1 > cols || row < 1) return true;

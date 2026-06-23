@@ -1,6 +1,10 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 
-export type PortaledTooltipAnchor = { centerX: number; top: number; bottom: number };
+export interface PortaledTooltipAnchor {
+  centerX: number;
+  top: number;
+  bottom: number;
+}
 
 const VR_STAGE_SELECTOR = '[data-testid="vr-stage"]';
 const DEFAULT_HORIZONTAL_INSET = 152;

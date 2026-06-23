@@ -11,7 +11,7 @@ export function getPreviousDestination(
   return destinationIndexInAct === 0 ? undefined : completedDestinations[completedDestinations.length - 1];
 }
 
-type NoviceCampaignStartDeps = {
+interface NoviceCampaignStartDeps {
   completedDifficulties: Record<string, DifficultyId[]>;
   initializeRunForDifficulty: (
     characterId: CharacterId,
@@ -25,7 +25,7 @@ type NoviceCampaignStartDeps = {
     modifiers: DifficultyModifier[],
   ) => void;
   navigateToBattle: () => void;
-};
+}
 
 export function tryStartNoviceCampaignBattle(characterId: CharacterId, deps: NoviceCampaignStartDeps): boolean {
   const completed = deps.completedDifficulties[characterId] ?? [];

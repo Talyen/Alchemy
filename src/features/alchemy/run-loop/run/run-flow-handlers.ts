@@ -39,7 +39,7 @@ import type { ContentSystemNavigationApi } from "@/features/alchemy/run-setup/ru
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
 import type { RunStateController, TalentStateController } from "../../shared/stores/run-session-facade";
 
-export type RunFlowHandlerDeps = {
+export interface RunFlowHandlerDeps {
   run: RunStateController;
   talents: TalentStateController;
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
@@ -65,12 +65,12 @@ export type RunFlowHandlerDeps = {
   beginMysteryEvent: () => void;
   clearMysteryCardChoices: () => void;
   onWildwoodRewardComplete: () => void;
-};
+}
 
 function getActiveRewardTraits(contentSystemType: RunStateController["contentSystemType"]): EncounterRewardTraitId[] {
   const session = readRunSessionStore();
   if (contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-    return (session.wildwoodDraft?.currentRewardTraitIds ?? []) as EncounterRewardTraitId[];
+    return session.wildwoodDraft?.currentRewardTraitIds ?? [];
   }
   return session.activeLabyrinthRewardModifiers as EncounterRewardTraitId[];
 }

@@ -25,7 +25,7 @@ export type WildwoodModifierId = EncounterCombatTraitId;
 export type WildwoodBossId = (typeof WILDWOOD_BOSS_IDS)[number];
 type WildwoodDraftPhase = "draft" | "battle" | "recovery" | "reward" | "removal";
 
-export type WildwoodDraftState = {
+export interface WildwoodDraftState {
   version: 3;
   phase: WildwoodDraftPhase;
   draftChoices: BattleCard[];
@@ -38,7 +38,7 @@ export type WildwoodDraftState = {
   rewardChoiceIds: string[];
   rewardGearChoices: GearInstance[];
   selectedRewardId: string | null;
-};
+}
 
 export function createWildwoodDraftChoices(
   characterId: CharacterId,

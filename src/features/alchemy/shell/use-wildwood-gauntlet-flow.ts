@@ -24,7 +24,7 @@ import {
 } from "@/lib/content-systems/wildwood/gauntlet";
 import type { VictoryRewardsResult } from "@/features/alchemy/run-loop/navigation/victory-flow";
 
-type UseWildwoodGauntletFlowOptions = {
+interface UseWildwoodGauntletFlowOptions {
   run: RunStateController;
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
   onStartBossById: (
@@ -34,7 +34,7 @@ type UseWildwoodGauntletFlowOptions = {
   ) => boolean;
   setHasActiveBattle: (active: boolean) => void;
   clearCardHover: () => void;
-};
+}
 
 export function useWildwoodGauntletFlow({
   run,

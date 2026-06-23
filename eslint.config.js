@@ -6,7 +6,21 @@ import prettierConfig from "eslint-config-prettier";
 import reactCompiler from "eslint-plugin-react-compiler";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", ".vite", "Raw Assets", "scratch", "playwright-report", "test-results", "coverage", "release-desktop", "reports", ".knip-output.json"] },
+  {
+    ignores: [
+      "dist",
+      "node_modules",
+      ".vite",
+      "Raw Assets",
+      "scratch",
+      "playwright-report",
+      "test-results",
+      "coverage",
+      "release-desktop",
+      "reports",
+      ".knip-output.json",
+    ],
+  },
 
   // Base recommended configs
   eslint.configs.recommended,
@@ -32,7 +46,7 @@ export default tseslint.config(
   {
     files: ["src/**"],
     rules: {
-      "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-non-null-assertion": "warn",
       "@typescript-eslint/no-confusing-void-expression": "off",
       "@typescript-eslint/restrict-template-expressions": "off",
       "@typescript-eslint/no-unnecessary-condition": "warn",
@@ -44,15 +58,15 @@ export default tseslint.config(
       "@typescript-eslint/no-invalid-void-type": "warn",
       "@typescript-eslint/no-misused-spread": "warn",
       "@typescript-eslint/no-base-to-string": "warn",
-      "@typescript-eslint/no-floating-promises": "warn",
+      "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-dynamic-delete": "warn",
       "@typescript-eslint/restrict-plus-operands": "warn",
       "@typescript-eslint/no-unsafe-return": "warn",
       "@typescript-eslint/no-unsafe-argument": "warn",
-      "@typescript-eslint/no-unsafe-member-access": "warn",
+      "@typescript-eslint/no-unsafe-member-access": "error",
       "@typescript-eslint/no-duplicate-type-constituents": "warn",
-      "@typescript-eslint/use-unknown-in-catch-callback-variable": "warn",
-      "@typescript-eslint/no-misused-promises": "warn",
+      "@typescript-eslint/use-unknown-in-catch-callback-variable": "error",
+      "@typescript-eslint/no-misused-promises": "error",
       "@typescript-eslint/unbound-method": "warn",
       "@typescript-eslint/no-useless-default-assignment": "warn",
       "@typescript-eslint/no-unsafe-assignment": "warn",
@@ -104,8 +118,13 @@ export default tseslint.config(
   // Global style rules (no types needed)
   {
     rules: {
-      "eqeqeq": ["error", "always", { null: "ignore" }],
-      "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports", fixStyle: "inline-type-imports", disallowTypeAnnotations: false }],
+      eqeqeq: ["error", "always", { null: "ignore" }],
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        { prefer: "type-imports", fixStyle: "inline-type-imports", disallowTypeAnnotations: false },
+      ],
+      "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
+      "@typescript-eslint/array-type": ["error", { default: "array-simple" }],
     },
   },
 
@@ -141,9 +160,18 @@ export default tseslint.config(
             { group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." },
             { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
             { group: ["@/lib/validation/*"], message: "Import from @/lib/validation (barrel) instead of deep paths." },
-            { group: ["@/features/alchemy/shared/screens/*"], message: "Import from @/features/alchemy/shared/screens (barrel) instead of deep paths." },
-            { group: ["@/features/alchemy/shared/utils/*"], message: "Import from @/features/alchemy/shared/utils (barrel) instead of deep paths." },
-            { group: ["@/features/alchemy/shared/storage/*"], message: "Import from @/features/alchemy/shared/storage (barrel) instead of deep paths." },
+            {
+              group: ["@/features/alchemy/shared/screens/*"],
+              message: "Import from @/features/alchemy/shared/screens (barrel) instead of deep paths.",
+            },
+            {
+              group: ["@/features/alchemy/shared/utils/*"],
+              message: "Import from @/features/alchemy/shared/utils (barrel) instead of deep paths.",
+            },
+            {
+              group: ["@/features/alchemy/shared/storage/*"],
+              message: "Import from @/features/alchemy/shared/storage (barrel) instead of deep paths.",
+            },
           ],
         },
       ],
@@ -218,7 +246,8 @@ export default tseslint.config(
         },
         {
           selector: 'MemberExpression[object.name="Math"][property.name="random"]',
-          message: "Use unsafeNonSeededRng from ./rng for placeholder RNG instead of Math.random references.",
+          message:
+            "Reference to Math.random is not allowed in the battle engine. Use state.rng for seeded RNG during combat, or unsafeNonSeededRng from ./rng only in setup/defaults paths.",
         },
       ],
     },
@@ -269,7 +298,11 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ["@/features/alchemy/shared/screens", "@/features/alchemy/shared/screens/*", "**/features/alchemy/screens/**"],
+              group: [
+                "@/features/alchemy/shared/screens",
+                "@/features/alchemy/shared/screens/*",
+                "**/features/alchemy/screens/**",
+              ],
               message: "Battle orchestration must not import screen components. Pass data via controllers/stores.",
             },
           ],
@@ -285,7 +318,11 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ["@/features/alchemy/shared/screens", "@/features/alchemy/shared/screens/*", "**/features/alchemy/screens/**"],
+              group: [
+                "@/features/alchemy/shared/screens",
+                "@/features/alchemy/shared/screens/*",
+                "**/features/alchemy/screens/**",
+              ],
               message: "Navigation flows must not import screen components. Wire screens from app/screen-routes.",
             },
           ],
@@ -331,9 +368,7 @@ export default tseslint.config(
               message: "Screens must not import run orchestration. Pass data via controller props.",
             },
             {
-              group: [
-                "@/features/alchemy/shared/stores/run-domain-store",
-              ],
+              group: ["@/features/alchemy/shared/stores/run-domain-store"],
               message: "Screens must not mutate session state directly. Use controller callbacks.",
             },
           ],
@@ -388,6 +423,7 @@ export default tseslint.config(
           ],
         },
       ],
+      "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
     },
   },
 
@@ -396,6 +432,7 @@ export default tseslint.config(
     files: ["src/**/*.{ts,tsx}"],
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
+      "no-template-curly-in-string": "error",
     },
   },
 
@@ -463,8 +500,7 @@ export default tseslint.config(
         },
         {
           selector: 'CallExpression[callee.property.name="skipCombatToVictory"]',
-          message:
-            "skipCombatToVictory() is dev-only. Use winViaCombat() or playCardNamed() in preview-safe specs.",
+          message: "skipCombatToVictory() is dev-only. Use winViaCombat() or playCardNamed() in preview-safe specs.",
         },
         {
           selector: 'Literal[value="Skip Combat"]',
@@ -480,10 +516,7 @@ export default tseslint.config(
 
   // Animation specs must not disable animations via fastBattle or enableFastMode.
   {
-    files: [
-      "tests/draw-discard-animations.spec.ts",
-      "tests/battle-end-turn-canary.spec.ts",
-    ],
+    files: ["tests/draw-discard-animations.spec.ts", "tests/battle-end-turn-canary.spec.ts"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -541,7 +574,21 @@ export default tseslint.config(
   // Node.js scripts (CommonJS + ESM) — after base rules so overrides take effect
   {
     files: ["desktop/**/*.cjs", "scripts/**/*.mjs"],
-    languageOptions: { globals: { console: "readable", process: "readable", require: "readable", module: "readable", __dirname: "readable", __filename: "readable", Buffer: "readable", setTimeout: "readable", clearTimeout: "readable", setInterval: "readable", clearInterval: "readable" } },
+    languageOptions: {
+      globals: {
+        console: "readable",
+        process: "readable",
+        require: "readable",
+        module: "readable",
+        __dirname: "readable",
+        __filename: "readable",
+        Buffer: "readable",
+        setTimeout: "readable",
+        clearTimeout: "readable",
+        setInterval: "readable",
+        clearInterval: "readable",
+      },
+    },
     rules: { "@typescript-eslint/no-require-imports": "off", "no-undef": "off" },
   },
 

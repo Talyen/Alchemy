@@ -40,13 +40,13 @@ import {
 import { sampleDestinationChoices, type DestinationOfferState } from "./destination-flow";
 import { playGoldGain } from "@/lib/audio";
 
-type VictoryGoldRoll = {
+interface VictoryGoldRoll {
   gold: number;
   eliteBonus: number;
   bossBonus: number;
   generousBonus: number;
   baseGold: number;
-};
+}
 
 function rollVictoryGold(
   battleState: BattleState,
@@ -77,7 +77,7 @@ function rollVictoryGold(
   return { gold, eliteBonus, bossBonus, generousBonus, baseGold };
 }
 
-export type VictoryRewardsInput = {
+export interface VictoryRewardsInput {
   characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
   unlockedTalents: UnlockedTalents;
@@ -100,9 +100,9 @@ export type VictoryRewardsInput = {
   }) => Destination[];
   bossEnemyId?: string | null | undefined;
   destinationOfferState: DestinationOfferState;
-};
+}
 
-export type VictoryRewardsResult = {
+export interface VictoryRewardsResult {
   newGold: number;
   rewardState: RewardState;
   labyrinthRewardModifiers: EncounterRewardTraitId[];
@@ -116,7 +116,7 @@ export type VictoryRewardsResult = {
   bossBonus: number;
   generousBonus: number;
   destinationOfferState: DestinationOfferState;
-};
+}
 
 export function withSelectedBossForDestinations(
   destinations: Destination[],
@@ -301,7 +301,7 @@ export function computeVictoryRewards(
   };
 }
 
-export type CommitVictoryRewardsDeps = {
+export interface CommitVictoryRewardsDeps {
   battleState: BattleState;
   contentSystemType: ContentSystemId;
   addHomesteadMaterials: (materials: MaterialInventory) => void;
@@ -311,7 +311,7 @@ export type CommitVictoryRewardsDeps = {
   setCompanionRewardCards: (cards: BattleCard[] | null) => void;
   setDestinationOfferState: (state: DestinationOfferState) => void;
   clearCombatState: () => void;
-};
+}
 
 export function commitVictoryRewards(result: VictoryRewardsResult, deps: CommitVictoryRewardsDeps) {
   if (deps.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD && deps.battleState.pendingMaterials.crystal > 0) {

@@ -20,15 +20,15 @@ import type { Dispatch, SetStateAction } from "react";
 import type { MysteryEffect } from "@/lib/mystery";
 import { sampleItems } from "../../shared/utils";
 
-export type MysteryEffectResult = {
+export interface MysteryEffectResult {
   /**
    * When non-null, indicates that a sub-picker dialog (e.g., choosing a card)
    * was opened, which pauses the evaluation of subsequent effects in the list.
    */
   followUp: "choose-card" | null;
-};
+}
 
-type MysteryEffectContext = {
+interface MysteryEffectContext {
   runDeck?: BattleCard[];
   runMaxHealth: number;
   setRunDeck: Dispatch<SetStateAction<BattleCard[]>>;
@@ -39,7 +39,7 @@ type MysteryEffectContext = {
   awardMysteryXP: (keyword: KeywordId, amount: number) => void;
   onAddMaterials: (materials: MaterialInventory) => void;
   onAwardGold: (amount: number) => void;
-};
+}
 
 // Applies a single mystery consequence effect to the run state.
 // Returns a result indicating if the navigation flow must pause for follow-up choice UI.

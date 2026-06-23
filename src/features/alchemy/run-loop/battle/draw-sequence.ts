@@ -11,13 +11,13 @@ function detectNewHandCards(oldHand: BattleCard[], newHand: BattleCard[]): Battl
   return newHand.filter((c) => !oldUidSet.has(c.uid));
 }
 
-export type HandDrawSequenceDeps = {
+export interface HandDrawSequenceDeps {
   isSessionActive: (session: number) => boolean;
   animateDrawnHand: (cards: BattleCard[], allHandCards: BattleCard[], session: number) => Promise<void>;
   setTransferInProgress: (active: boolean) => void;
   setHiddenHandCardKeys: (update: Set<string> | ((current: Set<string>) => Set<string>)) => void;
   runIfSessionActive: (session: number, action: () => void) => void;
-};
+}
 
 export async function runHandDrawSequence(
   oldHand: BattleCard[],

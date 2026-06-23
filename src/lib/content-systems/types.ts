@@ -24,21 +24,21 @@ export type LabyrinthModifierKind = EncounterTraitId;
 
 type LabyrinthNodeState = "hidden" | "visible" | "current" | "cleared" | "failed";
 
-export type LabyrinthNode = {
+export interface LabyrinthNode {
   type: LabyrinthNodeType;
   modifiers: EncounterCombatTraitId[];
   rewardModifiers: EncounterRewardTraitId[];
-  connections: { row: number; col: number }[];
+  connections: Array<{ row: number; col: number }>;
   state: LabyrinthNodeState;
   enemyId?: string;
-};
+}
 
-export type LabyrinthMap = {
-  grid: (LabyrinthNode | null)[][];
+export interface LabyrinthMap {
+  grid: Array<Array<LabyrinthNode | null>>;
   rows: number;
   cols: number;
   currentNode: { row: number; col: number };
-};
+}
 
 // ============ Wildwood ============
 // No separate entry type — display data comes from compendium.

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { GearBaseItemDefinition } from "@/lib/gear/base-items";
 import { gearBaseItemList } from "@/lib/gear/base-items";
 
-const list = gearBaseItemList as (GearBaseItemDefinition & { rangedWeapon?: boolean; quiver?: boolean })[];
+const list = gearBaseItemList as Array<GearBaseItemDefinition & { rangedWeapon?: boolean; quiver?: boolean }>;
 
 describe("ranged weapon tagging", () => {
   it("every main-hand base item has an explicit rangedWeapon value", () => {

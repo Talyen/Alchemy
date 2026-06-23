@@ -207,7 +207,7 @@ test.describe("Reward Flow", () => {
     const gearInventory = await page.evaluate((saveKey) => {
       const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
       const inventories = save.gearInventories || {};
-      return Object.values(inventories).flat() as { instanceId: string }[];
+      return Object.values(inventories).flat() as Array<{ instanceId: string }>;
     }, SAVE_KEY);
     expect(gearInventory.some((g) => g.instanceId === "reward-gear")).toBe(true);
   });

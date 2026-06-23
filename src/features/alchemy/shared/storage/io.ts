@@ -52,10 +52,10 @@ type SaveLoadStatus =
   | { kind: "unsupported-newer-content"; detectedContentVersion: number }
   | { kind: "corrupt" };
 
-export type SaveLoadState = {
+export interface SaveLoadState {
   data: SaveData;
   status: SaveLoadStatus;
-};
+}
 
 // Silently drops deck cards whose IDs no longer exist in the catalog, then
 // eagerly hydrates remaining cards with library art/keywordIds. The run always
@@ -146,7 +146,7 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
 
   // Parse all candidates first so we can filter by future-version status before
   // the expensive Zod validation.
-  const parsedCandidates: { parsed: Partial<SaveData> }[] = [];
+  const parsedCandidates: Array<{ parsed: Partial<SaveData> }> = [];
   for (const c of candidates) {
     try {
       parsedCandidates.push({ parsed: JSON.parse(c) as Partial<SaveData> });

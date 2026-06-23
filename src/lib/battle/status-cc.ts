@@ -32,13 +32,13 @@ function clearEnemyCcStack(state: BattleState, stat: CcStat): BattleState {
   return setEnemyStatus(state, stat, 0);
 }
 
-export type PlayerCcTriggerInput = {
+export interface PlayerCcTriggerInput {
   state: BattleState;
   stat: CcStat;
   stackValue: number;
   thresholdFraction: number;
   combatTexts: CombatTextEvent[];
-};
+}
 
 /** Player CC threshold is a fraction of playerMaxHealth. CC cooldown prevents immediate re-CC. */
 export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): BattleState {
@@ -99,12 +99,12 @@ export function resolvePlayerCrowdControlTriggers(state: BattleState, combatText
   return nextState;
 }
 
-export type EnemyCcImmunityInput = {
+export interface EnemyCcImmunityInput {
   nextState: BattleState;
   stat: CcStat;
   /** Pre-hit cooldown — enemy freeze checks state before stacks from this hit. */
   ccCooldown: number;
-};
+}
 
 /** If enemy CC immunity is active, clear the stack on nextState without skipping. */
 export function applyEnemyCcImmunityClear(input: EnemyCcImmunityInput): BattleState | null {
@@ -112,13 +112,13 @@ export function applyEnemyCcImmunityClear(input: EnemyCcImmunityInput): BattleSt
   return clearEnemyCcStack(input.nextState, input.stat);
 }
 
-export type EnemyCcTriggerInput = {
+export interface EnemyCcTriggerInput {
   nextState: BattleState;
   stat: CcStat;
   skipDuration: number;
   combatTexts: CombatTextEvent[];
   postTrigger?: (state: BattleState) => BattleState;
-};
+}
 
 /** Assigns enemy skip turns, cooldown, and notice after threshold was met. */
 export function assignEnemyCrowdControlSkip(input: EnemyCcTriggerInput): BattleState {

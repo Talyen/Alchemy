@@ -18,16 +18,16 @@ import { readRunSessionStore } from "@/features/alchemy/shared/stores/run-sessio
 import type { Screen } from "@/features/alchemy/shared/types";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 
-export type LabyrinthController = {
+export interface LabyrinthController {
   labyrinthMap: LabyrinthMap;
   enterNode: (row: number, col: number, handlers: LabyrinthNodeHandlers) => boolean;
   onNodeCleared: () => void;
   onNodeFailed: () => void;
   resetMap: () => void;
   pendingNode: LabyrinthNodePosition | null;
-};
+}
 
-type LabyrinthNodeHandlers = {
+interface LabyrinthNodeHandlers {
   onStartBattleWithModifiers: (
     enemyType: "normal" | "elite",
     modifiers: LabyrinthModifierKind[],
@@ -43,7 +43,7 @@ type LabyrinthNodeHandlers = {
   onStartAlchemist: () => void;
   onStartTrinketShop: () => void;
   onStartEquipmentShop: () => void;
-};
+}
 
 /**
  * Handles navigation routing logic based on the type of entered node.

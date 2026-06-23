@@ -6,22 +6,22 @@ import type { PackedInventory, PackedInventoryItem } from "./inventory-placement
 import { gearDefinitions } from "./definitions";
 import type { GearInstance, GearLoadout } from "./types";
 
-export type PackedCurrencyItem = {
+export interface PackedCurrencyItem {
   currencyId: CraftingCurrencyId;
   col: number;
   row: number;
   w: 1;
   h: 1;
-};
+}
 
-export type ArmoryBoardView = {
+export interface ArmoryBoardView {
   activeCurrencyIds: CraftingCurrencyId[];
   availableInventory: GearInstance[];
   packedInventory: PackedInventory;
   packedCurrencies: PackedCurrencyItem[];
-  boardObstacles: PackedInventoryItem<{ instanceId: string }>[];
+  boardObstacles: Array<PackedInventoryItem<{ instanceId: string }>>;
   occupiedRows: number;
-};
+}
 
 export function packInventory<T>(
   items: T[],
@@ -53,7 +53,7 @@ export function packInventoryWithPositions<T extends { definitionId: string; ins
   cols: number,
   savedPositions: Record<string, { col: number; row: number }>,
   reservedItems: readonly T[] = [],
-  blockedCells: readonly { col: number; row: number; w: number; h: number }[] = [],
+  blockedCells: ReadonlyArray<{ col: number; row: number; w: number; h: number }> = [],
 ): PackedInventory<T> {
   const mapToGridItem = (item: T) => {
     const definition = gearDefinitions[item.definitionId];
@@ -120,7 +120,7 @@ export function packCurrencyWithPositions(
 
 function currencyObstaclesForBoard(
   packedCurrencies: PackedCurrencyItem[],
-): PackedInventoryItem<{ instanceId: string }>[] {
+): Array<PackedInventoryItem<{ instanceId: string }>> {
   return packedCurrencies.map(({ currencyId, col, row, w, h }) => ({
     item: { instanceId: currencyId },
     col,

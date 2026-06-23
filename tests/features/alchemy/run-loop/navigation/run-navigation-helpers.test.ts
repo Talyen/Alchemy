@@ -26,7 +26,9 @@ describe("tryStartNoviceCampaignBattle", () => {
       initializeRunForDifficulty: vi.fn(() => ({ freshDeck, totalStartGold: 99 })),
       getDifficultyModifiers: vi.fn(
         (_charId: import("@/lib/game-data").CharacterId, _diffId: import("@/lib/game-data").DifficultyId) =>
-          [{ kind: "start-block" as const, amount: 5 }] as import("@/lib/game-data/difficulties").DifficultyModifier[],
+          [{ kind: "start-block" as const, amount: 5 }] as Array<
+            import("@/lib/game-data/difficulties").DifficultyModifier
+          >,
       ),
       onStartBattle: vi.fn(),
       navigateToBattle: vi.fn(),

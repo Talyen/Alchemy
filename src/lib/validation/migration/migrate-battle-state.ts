@@ -4,8 +4,10 @@ import type { RawSaveData } from "./types";
 function remapEnemyTraits(traits: unknown): unknown {
   if (!Array.isArray(traits)) return traits;
   return traits.map((trait) => {
-    if (!trait || typeof trait !== "object" || !("id" in trait) || typeof trait.id !== "string") return trait;
-    return { ...trait, id: remapLegacyBoonContentId(trait.id) };
+    if (!trait || typeof trait !== "object") return trait;
+    const t = trait as Record<string, unknown>;
+    if (typeof t.id !== "string") return trait;
+    return { ...t, id: remapLegacyBoonContentId(t.id) };
   });
 }
 

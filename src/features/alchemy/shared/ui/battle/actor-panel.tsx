@@ -28,7 +28,7 @@ const ACTOR_PANEL_CONFIG = {
   deathDoorStatsBorderWidth: 2,
 } as const;
 
-type ArtPanelProps = {
+interface ArtPanelProps {
   side: "player" | "enemy";
   title: string;
   art: string;
@@ -51,7 +51,7 @@ type ArtPanelProps = {
   isBoss?: boolean;
   statsCardWidthClass?: string | undefined;
   hurtFlashToken?: number;
-};
+}
 
 // Renders one battle actor card with health/status chrome and optional enemy tooltip.
 export function ArtPanel({

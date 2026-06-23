@@ -8,9 +8,9 @@ const SPARK_DURATION_MIN_RATIO = 0.55;
 const SPARK_DURATION_MAX_RATIO = 1.45;
 const SPARK_MAX_DELAY_MS = 70;
 
-type TalentUnlockBurstProps = {
+interface TalentUnlockBurstProps {
   accentColor: string;
-};
+}
 
 export function TalentUnlockBurst({ accentColor }: TalentUnlockBurstProps) {
   const [sparks] = useState(() =>

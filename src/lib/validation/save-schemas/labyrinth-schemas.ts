@@ -32,12 +32,12 @@ export const LabyrinthNodeSchema = z
   .nullable()
   .catch(null);
 
-type LabyrinthMapShape = {
+interface LabyrinthMapShape {
   rows: number;
   cols: number;
   grid: Array<Array<z.infer<typeof LabyrinthNodeSchema> | null>>;
   currentNode: { row: number; col: number };
-};
+}
 
 function isValidLabyrinthMap(map: LabyrinthMapShape): boolean {
   if (map.rows <= 0 || map.cols <= 0) return false;

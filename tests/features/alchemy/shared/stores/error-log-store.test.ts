@@ -51,7 +51,7 @@ describe("useErrorLogStore", () => {
     useErrorLogStore.getState().pushError({ message: "persisted", source: "storage" });
     const raw = localStorage.getItem(STORAGE_KEY);
     expect(raw).toContain("persisted");
-    const parsed = JSON.parse(raw ?? "[]") as { message: string }[];
+    const parsed = JSON.parse(raw ?? "[]") as Array<{ message: string }>;
     expect(parsed[0]?.message).toBe("persisted");
   });
 });
