@@ -244,10 +244,10 @@ describe("computeHomesteadEffects", () => {
     expect(effects.endRunFoodPerRoom).toBe(3);
   });
 
-  it("herb-garden adds herbFindBonus and endRunHerbsPerRoom", () => {
+  it("herb-garden adds poisonDamageReduction and natureDamageReduction", () => {
     const effects = computeHomesteadEffects({}, { "herb-garden": 2 }, {});
-    expect(effects.herbFindBonus).toBeCloseTo(0.2);
-    expect(effects.endRunHerbsPerRoom).toBe(2);
+    expect(effects.poisonDamageReduction).toBe(2);
+    expect(effects.natureDamageReduction).toBe(2);
   });
 
   it("leyline energy tiers 2-3 add endRunCrystalPerRoom", () => {
@@ -451,11 +451,10 @@ describe("applyEndOfRunHomesteadBonuses", () => {
 });
 
 describe("homestead content integrity", () => {
-  it("hides placeholder farms from visibleFarmPlots", () => {
-    expect(visibleFarmPlots.every((farm) => !farm.hidden)).toBe(true);
-    expect(visibleFarmPlots).toHaveLength(1);
-    expect(visibleFarmPlots[0]?.id).toBe("herb-garden");
-    expect(farmPlots.some((farm) => farm.hidden)).toBe(true);
+  it("all farm plots are visible", () => {
+    expect(farmPlots.every((farm) => !farm.hidden)).toBe(true);
+    expect(visibleFarmPlots).toHaveLength(6);
+    expect(farmPlots[0]?.id).toBe("wheat-field");
   });
 
   it("maps nonCombatBenefitDescription to end-of-run effect fields", () => {
@@ -468,7 +467,11 @@ describe("homestead content integrity", () => {
     for (const farm of farmPlots) {
       for (const tier of farm.tiers) {
         if (!tier.nonCombatBenefitDescription) continue;
-        expect(tier.effects?.endRunHerbsPerRoom).toBeGreaterThan(0);
+        expect(
+          (tier.effects?.endRunFoodPerRoom ?? 0) +
+            (tier.effects?.endRunHerbsPerRoom ?? 0) +
+            (tier.effects?.endRunCrystalPerRoom ?? 0),
+        ).toBeGreaterThan(0);
       }
     }
     for (const research of researchUpgrades) {

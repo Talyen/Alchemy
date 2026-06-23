@@ -35,6 +35,7 @@ export interface RunStartInput {
   talentXP: TalentXP;
   draftedDeck?: BattleCard[] | undefined;
   gearMaxHealthBonus?: number;
+  homesteadMaxHealthBonus?: number;
 }
 
 // Builds a coherent new-run state so every mode starts from a fresh, testable snapshot.
@@ -46,8 +47,9 @@ export function createRunStartSnapshot({
   talentXP,
   draftedDeck,
   gearMaxHealthBonus = 0,
+  homesteadMaxHealthBonus = 0,
 }: RunStartInput): RunStartSnapshot {
-  const runMaxHealth = computeStartingMaxHealth(talentXP) + gearMaxHealthBonus;
+  const runMaxHealth = computeStartingMaxHealth(talentXP) + gearMaxHealthBonus + homesteadMaxHealthBonus;
   const runGold = contentSystemType === "wildwood" ? 0 : talentStartGold;
 
   return {

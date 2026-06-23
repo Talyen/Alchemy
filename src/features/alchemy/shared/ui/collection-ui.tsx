@@ -1,7 +1,7 @@
 // Collection grid, tab, and pagination layout widgets.
 // Depends on shaped collection items, tile rendering, collection metadata, and pagination UI.
 // Used by CollectionScreen to render encyclopedia-style grids without owning screen routing.
-/* eslint-disable react-refresh/only-export-components */
+/* eslint-disable react-refresh/only-export-components -- co-located collection subcomponents and search/zoom utilities */
 import { cn } from "@/lib/utils";
 import { PaginationControls, StaggerGroup, StaggerItem } from "./shared-ui";
 import {

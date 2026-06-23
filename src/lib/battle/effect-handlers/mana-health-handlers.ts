@@ -80,7 +80,8 @@ export const applyHealEffect: EffectHandler = (state, card, effect, potionMult, 
   const consumeBonus = card.consume
     ? state.talentEffects.consumeHealMultiplier + state.gearEffects.consumeHealBonusPercent / PERCENT_DENOMINATOR
     : 0;
-  const healAmount = Math.round(adjustedHeal * (state.talentEffects.healMultiplier + consumeBonus));
+  const cardSpecificBonus = state.talentEffects.cardHealBonus[card.id] ?? 0;
+  const healAmount = Math.round(adjustedHeal * (state.talentEffects.healMultiplier + consumeBonus)) + cardSpecificBonus;
   return applyHealingWithCombatText(state, healAmount, combatTexts);
 };
 

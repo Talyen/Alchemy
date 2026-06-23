@@ -93,7 +93,6 @@ interface SlotHandlerContext {
   activeCurrencyId: CraftingCurrencyId | null;
   isDraggingActive: boolean;
   setShowTooltip: (v: boolean) => void;
-  containerRef: React.RefObject<HTMLDivElement | null>;
   onGearPointerStart: GearPointerStart;
   onGearPointerMove: GearPointerMove;
   onGearPointerEnd: GearPointerEnd;
@@ -245,7 +244,6 @@ export const SlotButton = memo(function SlotButton({
     activeCurrencyId,
     isDraggingActive,
     setShowTooltip,
-    containerRef,
     onGearPointerStart,
     onGearPointerMove,
     onGearPointerEnd,

@@ -334,6 +334,8 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number, dama
     if (state.talentEffects.receiveHalfNatureDamage) {
       reducedDamage = Math.round(reducedDamage / HALF_DIVISOR);
     }
+  } else if (damageType === "poison") {
+    reducedDamage -= state.talentEffects.poisonDamageReduction;
   }
   reducedDamage = Math.max(0, reducedDamage);
   reducedDamage = applyGearDamageResistance(reducedDamage, damageType, state.gearEffects);

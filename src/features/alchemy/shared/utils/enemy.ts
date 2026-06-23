@@ -31,9 +31,11 @@ export function formatEnemyAttackLines(attackEffects: EnemyAttackEffect[]): stri
 
   const damageEffects = attackEffects.filter((e) => e.kind === "damage");
   const statusEffects = attackEffects.filter((e) => e.kind === "player-status");
-  if (damageEffects.length === 1 && statusEffects.length === 1 && !damageEffects[0]!.lifesteal) {
+  const firstDamage = damageEffects[0];
+  const firstStatus = statusEffects[0];
+  if (firstDamage && firstStatus && !firstDamage.lifesteal) {
     return [
-      `Deals ${joinAttackTypes([`${damageEffects[0]!.amount} ${capitalizeWord(damageEffects[0]!.damageType)}`, `${statusEffects[0]!.amount} ${capitalizeWord(statusEffects[0]!.status)}`])}`,
+      `Deals ${joinAttackTypes([`${firstDamage.amount} ${capitalizeWord(firstDamage.damageType)}`, `${firstStatus.amount} ${capitalizeWord(firstStatus.status)}`])}`,
     ];
   }
 

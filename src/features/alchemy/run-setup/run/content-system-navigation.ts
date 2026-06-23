@@ -28,6 +28,7 @@ import type { DestinationOptionsInput } from "@/features/alchemy/run-loop/naviga
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { useGearStore } from "../../shared/stores/gear-store";
+import { useHomesteadStore } from "../../shared/stores/homestead-store";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 
 export interface ContentSystemNavigationDeps {
@@ -126,6 +127,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
               flattenGearInventories(useGearStore.getState().inventories),
               useGearStore.getState().loadouts,
             ).maxHealth,
+            homesteadMaxHealthBonus: useHomesteadStore.getState().effects.runMaxHealthBonus,
           }
         : {
             ...baseInput,
@@ -134,6 +136,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
               flattenGearInventories(useGearStore.getState().inventories),
               useGearStore.getState().loadouts,
             ).maxHealth,
+            homesteadMaxHealthBonus: useHomesteadStore.getState().effects.runMaxHealthBonus,
           },
     );
   }

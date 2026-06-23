@@ -100,4 +100,8 @@ export interface HomesteadEffectManifest {
   burnDamageReduction: number;
   freezeDamageReduction: number;
   natureDamageReduction: number;
+  poisonDamageReduction: number;
+  runMaxHealthBonus: number;
+  runMaxManaBonus: number;
+  cardHealBonus: Record<string, number>;
 }

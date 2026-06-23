@@ -11,6 +11,7 @@ function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<Homes
   if (!partial) return;
   for (const key of Object.keys(partial) as Array<keyof HomesteadEffectManifest>) {
     if (key === "companionBondLevels") continue;
+    if (key === "cardHealBonus") continue;
     const val = partial[key];
     if (typeof val === "number") {
       (base[key] as number) += val;
@@ -54,6 +55,32 @@ export function computeHomesteadEffects(
     }
   }
 
+  // Accumulate cardHealBonus from all tier effects
+  const cardBonuses: Record<string, number> = {};
+  const collectCards = (
+    items: Array<{ id: string; tiers: Array<{ effects?: Partial<HomesteadEffectManifest> }> }>,
+    levels: Record<string, number>,
+  ) => {
+    for (const [id, level] of Object.entries(levels)) {
+      const item = items.find((i) => i.id === id);
+      if (!item) continue;
+      for (let i = 0; i < level; i++) {
+        const tier = item.tiers[i]?.effects;
+        if (tier?.cardHealBonus) {
+          for (const [cardId, bonus] of Object.entries(tier.cardHealBonus)) {
+            cardBonuses[cardId] = (cardBonuses[cardId] ?? 0) + bonus;
+          }
+        }
+      }
+    }
+  };
+  collectCards(buildings, constructedBuildings);
+  collectCards(farmPlots, plantedFarms);
+  collectCards(researchUpgrades, completedResearch);
+  if (Object.keys(cardBonuses).length > 0) {
+    effects.cardHealBonus = { ...effects.cardHealBonus, ...cardBonuses };
+  }
+
   return effects;
 }
 
@@ -81,5 +108,9 @@ export function mergeIntoManifest(
     burnDamageReduction: talentEffects.burnDamageReduction + homesteadEffects.burnDamageReduction,
     freezeDamageReduction: talentEffects.freezeDamageReduction + homesteadEffects.freezeDamageReduction,
     natureDamageReduction: talentEffects.natureDamageReduction + homesteadEffects.natureDamageReduction,
+    poisonDamageReduction: talentEffects.poisonDamageReduction + homesteadEffects.poisonDamageReduction,
+    cardHealBonus: { ...talentEffects.cardHealBonus, ...homesteadEffects.cardHealBonus },
+    runMaxHealthBonus: talentEffects.runMaxHealthBonus + homesteadEffects.runMaxHealthBonus,
+    runMaxManaBonus: talentEffects.runMaxManaBonus + homesteadEffects.runMaxManaBonus,
   };
 }

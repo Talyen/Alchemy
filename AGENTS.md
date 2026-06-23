@@ -8,12 +8,15 @@ This file is for AI coding agents and the people guiding them. Humans should sta
 
 > **Pragmatic simplicity.** Proactively ask before implementing complex abstractions or edge-case logic. A simpler behavior trade-off is often better than a complex codebase.
 
+> **Ask in player terms, recommend an answer.** When you need clarification, lead with the design intent and the player-facing impact, and pick a recommended option. Translate technical details into gameplay terms. Implementation notes (files, schemas, abstractions) belong in a short context line at the end, not in the question itself.
+
 > **Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [ARMORY.md](./docs/ARMORY.md) (gear data model, board packing, drag FSM) · [RELEASE.md](./docs/RELEASE.md) (Steam shipping) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks and tests) · [PROMPTS.md](./PROMPTS.md) (code-quality audits) · [MIGRATIONS.md](./src/features/alchemy/shared/storage/MIGRATIONS.md) (save schema migration) · [README.md](./README.md) (human setup)
 
 ## Contents
 
 - [Hard NO's](#hard-nos)
 - [Escalation policy](#escalation-policy)
+  - [Question framing](#question-framing)
 - [Operating procedure](#operating-procedure)
 - [Quick commands](#quick-commands)
 - [Where to look](#where-to-look)
@@ -50,14 +53,24 @@ A scannable list of the most common ways to break the repo or violate policy. Th
 - For non-destructive work, after three failed attempts with the same approach, run the relevant audit in [PROMPTS.md](./PROMPTS.md) — code quality or [UI interaction/layout](./PROMPTS.md#ui-interaction--feedback-audit) (or [WORKFLOWS](./docs/WORKFLOWS.md) for domain wiring), then ask the user rather than continuing speculative changes.
 - Stop and ask when the requirement is ambiguous, the change spans more than a handful of files, a lint rule or test would need to be weakened to pass, or this file disagrees with an owner doc and `eslint.config.js` / `package.json` do not clearly resolve it.
 - When this file disagrees with an owner doc, stop and ask unless `eslint.config.js` or `package.json` clearly resolves the conflict.
-- Stop and ask when a trade-off between exact behavior and code/architectural simplicity is possible. Propose a simpler, more stable compromise (e.g., simplified UI, reduced scope, or alternative flows) over implementing complex or fragile logic.
+- Stop and ask when a trade-off between exact behavior and code/architectural simplicity is possible. Propose a simpler, more stable compromise (e.g., simplified UI, reduced scope, or alternative flows) and recommend it over implementing complex or fragile logic. Implementation reasoning stays in the chat, not in the question to the user.
+
+### Question framing
+
+When you stop to ask the user, the question should:
+
+- **State the design intent.** What is the player-facing goal or behavior in question? (e.g. "How should Frostbite feel — a slow tick, a brittle debuff, or a one-shot shatter?")
+- **Describe the impact in player terms.** What does the player see, choose, feel, or risk under each option? Keep file paths, store names, and schema terms out of the question body.
+- **Lead with a recommendation.** Pick the option you think best serves the game, mark it `(Recommended)`, and briefly explain why in player terms. The user can override.
+- **List 1–2 alternatives only if materially different.** Skip neutral menus of near-identical options.
+- **Add a one-line context footnote** at the end if the implementation is non-obvious (e.g. "this would require a new persistence field" or "this is a breaking change to saved runs"). Keep it out of the question body.
 
 ## Operating procedure
 
 The six-step loop for any non-trivial task. Small fixes and obvious typos may skip steps 2–3.
 
 1. **Orient.** Find your row in [Where to look](#where-to-look). Skim the linked doc(s) before touching code — most rules and gotchas live there, not in this file.
-2. **Plan.** If the change spans more than three files, alters a store, or touches persistence, state the plan in 1–3 sentences before editing. Use the `question` tool when intent is ambiguous; do not guess. **Assess simplicity:** Identify any design or behavior trade-offs that could dramatically simplify the code. Propose these options in your plan before writing code.
+2. **Plan.** If the change spans more than three files, alters a store, or touches persistence, state the plan in 1–3 sentences before editing. Use the `question` tool when intent is ambiguous; do not guess. Frame questions per the [Question framing](#question-framing) checklist — lead with design intent and player impact, mark a recommended option, and keep implementation details out of the question body. **Assess simplicity:** Identify any design or behavior trade-offs that could dramatically simplify the code. Propose these options in your plan before writing code.
 3. **Edit minimally.** Keep changes as simple and direct as possible. Do not introduce new abstractions, helpers, or complex state logic unless explicitly requested or discussed in the plan. Match the existing style and file layout. Do not refactor unrelated code in the same diff — split it into a follow-up commit. Prefer `Edit` over `Write`. Cite files with `path:line` when discussing them.
 4. **Edit precisely.** Always read the file before editing. Provide 3–5 lines of surrounding context in `oldString` to make matches unique. Use `replaceAll: true` when the same change applies to multiple occurrences. After each mutation, re-read the affected region before the next edit — earlier edits change the file and stale matches will fail.
 5. **Verify.** Run the narrow test command for the area plus `npm run typecheck`. See [Verification](#verification) for the full gate.

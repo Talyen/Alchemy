@@ -25,4 +25,8 @@ export const defaultHomesteadEffects: HomesteadEffectManifest = {
   burnDamageReduction: 0,
   freezeDamageReduction: 0,
   natureDamageReduction: 0,
+  poisonDamageReduction: 0,
+  runMaxHealthBonus: 0,
+  runMaxManaBonus: 0,
+  cardHealBonus: {},
 };

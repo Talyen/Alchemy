@@ -135,7 +135,12 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   companionDamagePerManaCrystal: 0,
   healOnManaGain: 0,
 
+  runMaxHealthBonus: 0,
+  runMaxManaBonus: 0,
+  cardHealBonus: {},
+
   firstPoisonCardFree: false,
+  poisonDamageReduction: 0,
   poisonPhysicalBonus: 0,
   poisonGainChance: 0,
   receiveHalfPoisonDamage: false,

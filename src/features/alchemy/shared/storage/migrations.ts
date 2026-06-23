@@ -19,5 +19,5 @@ export { getRawSaveSchemaVersion, migrateSaveDataToCurrent, isUnsupportedFutureS
 // exercised by migrations.test.ts without needing a second implementation.
 // SaveDataSchema uses .catch() on every field, so this will not throw for any input.
 export function normalizeSaveData(parsed: unknown): SaveData {
-  return SaveDataSchema.parse(parsed) as unknown as SaveData;
+  return SaveDataSchema.parse(parsed) as SaveData;
 }

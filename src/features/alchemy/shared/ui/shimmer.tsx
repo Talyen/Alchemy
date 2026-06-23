@@ -1,4 +1,4 @@
-/* eslint-disable react-refresh/only-export-components */
+/* eslint-disable react-refresh/only-export-components -- co-located Shimmer component and staggerDelay utility */
 import { cn } from "@/lib/utils";
 import { ANIMATION_STAGGER_UNIT } from "@/lib/game-constants";
 

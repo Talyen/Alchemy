@@ -137,7 +137,13 @@ export interface TalentEffectManifest {
   wishBlockBelowHealthPct: number;
   wishCardsUpgraded: boolean;
 
+  // --- Homestead ---
+  runMaxHealthBonus: number;
+  runMaxManaBonus: number;
+  cardHealBonus: Record<string, number>;
+
   // --- Poison ---
+  poisonDamageReduction: number;
   firstPoisonCardFree: boolean;
   poisonPhysicalBonus: number;
   poisonGainChance: number;

@@ -1,5 +1,5 @@
 // Shared material icon and color utilities for reward/UI screens.
-/* eslint-disable react-refresh/only-export-components */
+/* eslint-disable react-refresh/only-export-components -- co-located MaterialIcon component and icon/color constants */
 import type { ReactNode } from "react";
 import { Apple, Coins, Gem, Leaf, Pickaxe, TreePine } from "lucide-react";
 

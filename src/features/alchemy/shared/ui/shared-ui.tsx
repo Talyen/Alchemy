@@ -1,4 +1,4 @@
-/* eslint-disable react-refresh/only-export-components */
+/* eslint-disable react-refresh/only-export-components -- barrel re-export from shared UI modules */
 export { ActionButtonRow } from "./action-button-row";
 export { DestinationChoices } from "./destination-choices";
 export { ShineAccentButton } from "./shine-accent-button";

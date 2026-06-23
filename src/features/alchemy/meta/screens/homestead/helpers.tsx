@@ -1,4 +1,4 @@
-/* eslint-disable react-refresh/only-export-components */
+/* eslint-disable react-refresh/only-export-components -- co-located homestead screen subcomponents and tab helpers */
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import {

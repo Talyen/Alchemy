@@ -1,7 +1,7 @@
 // Shared hover tooltip container with standard header/subheader/body/section slots.
 // Provides consistent styling across all tooltips — enemy, card, keyword, status, map, etc.
 // Width is configurable via the `width` prop (defaults to w-60).
-/* eslint-disable react-refresh/only-export-components */
+/* eslint-disable react-refresh/only-export-components -- exports TooltipPanel plus measurement helpers from same module */
 import { type CSSProperties, type MouseEventHandler, type ReactNode, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";

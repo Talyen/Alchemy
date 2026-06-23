@@ -185,7 +185,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     deck,
     hand,
     discard,
-    mana: BASE_PLAYER_MANA + manaBonus + battleTalents.startMana,
+    mana: BASE_PLAYER_MANA + manaBonus + battleTalents.startMana + battleTalents.runMaxManaBonus,
     gold: battleGold,
     playerHealth: startingHealth,
     playerMaxHealth: finalMaxHealth,

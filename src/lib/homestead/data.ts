@@ -91,15 +91,71 @@ export const buildings = [
 
 export const farmPlots = [
   defineFarm(
+    "wheat-field",
+    "Wheat Field",
+    stackingTiers(
+      singleMaterialCosts("food"),
+      { cardHealBonus: { bread: 2 }, endRunFoodPerRoom: 2 },
+      (tier) => `Bread restores ${2 * tier} more Health`,
+      "Gain Food after each run",
+    ),
+  ),
+  defineFarm(
     "herb-garden",
     "Herb Garden",
     stackingTiers(
       singleMaterialCosts("herbs"),
-      { herbFindBonus: 0.1, endRunHerbsPerRoom: 1 },
-      (tier) => `Find ${tier * 10}% more Herbs`,
-      "Gain Herbs after each run",
+      { poisonDamageReduction: 1, natureDamageReduction: 1 },
+      (tier) => `Reduces Poison and Nature damage taken by ${tier}`,
     ),
   ),
+  defineFarm(
+    "chicken-coop",
+    "Chicken Coop",
+    stackingTiers(
+      dualMaterialCosts("wood", "food"),
+      { runMaxHealthBonus: 5, endRunFoodPerRoom: 2 },
+      (tier) => `Increases Maximum Health by ${5 * tier}`,
+      "Gain Food after each run",
+    ),
+  ),
+  defineFarm(
+    "pasture",
+    "Pasture",
+    stackingTiers(
+      dualMaterialCosts("wood", "food"),
+      { freezeDamageReduction: 1, endRunFoodPerRoom: 1 },
+      (tier) => `Reduces Freeze damage taken by ${tier}`,
+      "Gain Food after each run",
+    ),
+  ),
+  defineFarm(
+    "orchard",
+    "Orchard",
+    stackingTiers(
+      dualMaterialCosts("wood", "food"),
+      { cardHealBonus: { apple: 2 }, endRunFoodPerRoom: 2 },
+      (tier) => `Apple restores ${2 * tier} more Health`,
+      "Gain Food after each run",
+    ),
+  ),
+  defineFarm("crystal-garden", "Crystal Garden", [
+    {
+      cost: materialCost({ crystal: 20 }),
+      effects: { endRunCrystalPerRoom: 2 },
+      benefitDescription: "Gain Crystal after each run",
+    },
+    {
+      cost: materialCost({ crystal: 30 }),
+      effects: { startMana: 1, endRunCrystalPerRoom: 2 },
+      benefitDescription: "Start combat with 1 additional Mana\nGain Crystal after each run",
+    },
+    {
+      cost: materialCost({ crystal: 40 }),
+      effects: { runMaxManaBonus: 1, endRunCrystalPerRoom: 2 },
+      benefitDescription: "Gain 1 Mana Crystal\nGain Crystal after each run",
+    },
+  ]),
 ];
 
 export const visibleFarmPlots = farmPlots.filter((farm) => !farm.hidden);
