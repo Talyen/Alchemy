@@ -14,6 +14,43 @@ export interface DragVisualBase {
   flyover?: boolean | undefined;
 }
 
+function computeDragTransition(visual: DragVisualBase): Record<string, unknown> {
+  if (!visual.settling && !visual.releasing && !visual.flyover) return { duration: 0 };
+  if (visual.flyover) return { duration: DOUBLE_CLICK_FLYOVER_MS / 1000, ease: [0.22, 1, 0.36, 1] };
+  if (visual.releasing) return { duration: MAGNET_RELEASE_EASE_MS / 1000, ease: [0.22, 1, 0.36, 1] };
+  return { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 };
+}
+
+function computeDragInitial(
+  visual: DragVisualBase,
+  startRect: DragRect,
+  release: { left: number; top: number; width: number; height: number },
+) {
+  if (!visual.settling && !visual.releasing && !visual.flyover) return false;
+  if (visual.flyover)
+    return {
+      left: Math.round(startRect.left),
+      top: Math.round(startRect.top),
+      width: Math.round(startRect.width),
+      height: Math.round(startRect.height),
+    };
+  return release;
+}
+
+function computeDragStyle(
+  isDrag: boolean,
+  dest: { left: number; top: number; width: number; height: number },
+  startRect: DragRect,
+) {
+  if (isDrag) return dest;
+  return {
+    left: Math.round(startRect.left),
+    top: Math.round(startRect.top),
+    width: Math.round(startRect.width),
+    height: Math.round(startRect.height),
+  };
+}
+
 export function DragVisualPortal({
   visual,
   testId = "armory-gear-drag-visual",
@@ -31,62 +68,32 @@ export function DragVisualPortal({
 }) {
   const isDrag = !visual.settling && !visual.releasing && !visual.flyover;
   const startRect = visual.source;
-  const releaseLeft = Math.round(visual.releaseRect?.left ?? visual.rect.left);
-  const releaseTop = Math.round(visual.releaseRect?.top ?? visual.rect.top);
-  const releaseWidth = Math.round(visual.releaseRect?.width ?? startRect.width);
-  const releaseHeight = Math.round(visual.releaseRect?.height ?? startRect.height);
-  const destinationLeft = Math.round(visual.rect.left);
-  const destinationTop = Math.round(visual.rect.top);
-  const destinationWidth = Math.round(visual.rect.width);
-  const destinationHeight = Math.round(visual.rect.height);
+  const release = {
+    left: Math.round(visual.releaseRect?.left ?? visual.rect.left),
+    top: Math.round(visual.releaseRect?.top ?? visual.rect.top),
+    width: Math.round(visual.releaseRect?.width ?? startRect.width),
+    height: Math.round(visual.releaseRect?.height ?? startRect.height),
+  };
+  const dest = {
+    left: Math.round(visual.rect.left),
+    top: Math.round(visual.rect.top),
+    width: Math.round(visual.rect.width),
+    height: Math.round(visual.rect.height),
+  };
+  const dragStyle = computeDragStyle(isDrag, dest, startRect);
+  const arrow = visual.settling || (completeOnFlyover && visual.flyover);
 
   return createPortal(
     <motion.div
       key={isDrag ? "drag" : "settle"}
       data-testid={testId}
       className={cn("pointer-events-none fixed z-[120] overflow-hidden rounded-xl", className)}
-      style={{
-        left: isDrag ? destinationLeft : Math.round(startRect.left),
-        top: isDrag ? destinationTop : Math.round(startRect.top),
-        width: isDrag ? destinationWidth : Math.round(startRect.width),
-        height: isDrag ? destinationHeight : Math.round(startRect.height),
-      }}
-      initial={
-        isDrag
-          ? false
-          : visual.flyover
-            ? {
-                left: Math.round(startRect.left),
-                top: Math.round(startRect.top),
-                width: Math.round(startRect.width),
-                height: Math.round(startRect.height),
-              }
-            : { left: releaseLeft, top: releaseTop, width: releaseWidth, height: releaseHeight }
-      }
-      animate={
-        isDrag
-          ? false
-          : {
-              left: destinationLeft,
-              top: destinationTop,
-              width: destinationWidth,
-              height: destinationHeight,
-            }
-      }
-      transition={
-        isDrag
-          ? { duration: 0 }
-          : visual.flyover
-            ? { duration: DOUBLE_CLICK_FLYOVER_MS / 1000, ease: [0.22, 1, 0.36, 1] }
-            : visual.releasing
-              ? { duration: MAGNET_RELEASE_EASE_MS / 1000, ease: [0.22, 1, 0.36, 1] }
-              : { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 }
-      }
+      style={dragStyle}
+      initial={computeDragInitial(visual, startRect, release)}
+      animate={isDrag ? false : dest}
+      transition={computeDragTransition(visual)}
       onAnimationComplete={() => {
-        if (isDrag) return;
-        if (visual.settling || (completeOnFlyover && visual.flyover)) {
-          onComplete();
-        }
+        if (!isDrag && arrow) onComplete();
       }}
     >
       {children}

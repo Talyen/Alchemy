@@ -1,6 +1,6 @@
 // Interactive talent tree — keyword-level XP progress, unlock buttons, and reveal animations.
 // Depends on game-data keywords, shared UI primitives, and talent XP math.
-import { Fragment, useCallback, useMemo, useState, type CSSProperties } from "react";
+import { Fragment, useCallback, useMemo, useState, type ComponentType, type CSSProperties } from "react";
 
 import { Lock } from "lucide-react";
 import { keywordDefinitions } from "@/lib/game-data";
@@ -54,6 +54,19 @@ function TalentNodeTooltip({ talent }: { talent: TalentDefinition }) {
   );
 }
 
+function TalentNodeIcon({
+  revealed,
+  keywordColor,
+  Icon: IconComp,
+}: {
+  revealed: boolean;
+  keywordColor?: string;
+  Icon: ComponentType<{ className?: string }>;
+}) {
+  if (revealed) return <IconComp className={cn("h-7 w-7", keywordColor)} />;
+  return <Lock className="h-7 w-7 text-muted-foreground" />;
+}
+
 function TalentNode({
   talent,
   isUnlocked,
@@ -74,30 +87,30 @@ function TalentNode({
   const baseColor = shineColors[0];
   const Icon = talent.icon ?? keywordIcons[talent.keywordId];
   const canInteract = isChoice && !isUnlocking;
+  const revealed = isUnlocked || isChoice || isUnlocking;
+
+  const handleKeyDown = canInteract
+    ? (e: React.KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onUnlock?.(talent.id);
+        }
+      }
+    : undefined;
 
   return (
     <div
       role={canInteract ? "button" : undefined}
       tabIndex={canInteract ? 0 : undefined}
       onClick={canInteract ? () => onUnlock?.(talent.id) : undefined}
-      onKeyDown={
-        canInteract
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onUnlock?.(talent.id);
-              }
-            }
-          : undefined
-      }
+      onKeyDown={handleKeyDown}
       className={cn(
-        "talent-node-glass relative select-none w-full h-full transition-[filter,box-shadow] duration-200 outline-none rounded-full",
+        "talent-node-glass relative select-none w-full h-full transition-[filter,box-shadow] duration-200 outline-none rounded-full state-fade",
         canInteract && "cursor-pointer",
         isChoice && !isUnlocking ? "talent-node-glass--choice" : "talent-node-glass--bordered",
         isUnlocking && "talent-node-unlocking",
         isSettling && "talent-node-unlocked-settle",
         !isUnlocked && !isChoice && !isUnlocking && "brightness-[0.8]",
-        "state-fade",
       )}
       style={{ "--talent-glass-accent": baseColor } as CSSProperties}
       aria-label={
@@ -108,11 +121,7 @@ function TalentNode({
         <ShineBorder shineColor={shineColors} borderWidth={3} duration={8} className="rounded-full" />
       )}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-        {isUnlocked || isChoice || isUnlocking ? (
-          <Icon className={cn("h-7 w-7", def?.colorClass)} />
-        ) : (
-          <Lock className="h-7 w-7 text-muted-foreground" />
-        )}
+        <TalentNodeIcon revealed={revealed} keywordColor={def?.colorClass} Icon={Icon} />
       </div>
     </div>
   );
