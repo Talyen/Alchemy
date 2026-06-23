@@ -174,6 +174,7 @@ describe("sampleDestinationChoices", () => {
       (destination) => destination === DESTINATIONS.NORMAL_COMBAT || destination === DESTINATIONS.ELITE_COMBAT,
     ).length;
     expect(combatCount).toBe(1);
+    expect(result.choices).toHaveLength(3);
   });
 
   it("allows zero combats when the previous screen offered combat", () => {
@@ -241,6 +242,56 @@ describe("sampleDestinationChoices", () => {
     });
     expect(pityWeight).toBeGreaterThan(repeatWeight);
     expect(pityWeight).toBeGreaterThan(DEFAULT_DESTINATION_WEIGHT);
+  });
+
+  it("always returns DESTINATION_CHOICES entries when the pool has enough destinations", () => {
+    // 200 seeded rolls across the full pool — never short by 1 or 2.
+    for (let seed = 0; seed < 200; seed += 1) {
+      let i = 0;
+      const rng = () => {
+        const value = (Math.sin(seed * 13 + i++) + 1) / 2;
+        return value;
+      };
+      const result = sampleDestinationChoices([...FULL_POOL], createEmptyDestinationOfferState(), rng);
+      expect(result.choices).toHaveLength(3);
+    }
+  });
+
+  it("includes the picked combat in choices when the previous screen had none (regression)", () => {
+    // Regression: pickCombatPity used to drop the picked combat on the floor, leaving
+    // a pool of [Mystery, Corruption] when the only combat was consumed by pity.
+    for (let seed = 0; seed < 50; seed += 1) {
+      let i = 0;
+      const rng = () => {
+        const value = (Math.sin(seed * 17 + i++) + 1) / 2;
+        return value;
+      };
+      const result = sampleDestinationChoices([...FULL_POOL], createEmptyDestinationOfferState(), rng);
+      const combatCount = result.choices.filter(
+        (d) => d === DESTINATIONS.NORMAL_COMBAT || d === DESTINATIONS.ELITE_COMBAT,
+      ).length;
+      expect(combatCount).toBe(1);
+      expect(result.choices).toHaveLength(3);
+    }
+  });
+
+  it("still respects the single-shop cap when topping up", () => {
+    // If weighted picking under-fills and the top-up runs, the shop cap must still hold.
+    for (let seed = 0; seed < 100; seed += 1) {
+      let i = 0;
+      const rng = () => (Math.sin(seed * 19 + i++) + 1) / 2;
+      const result = sampleDestinationChoices([...FULL_POOL], createEmptyDestinationOfferState(), rng);
+      const shopCount = result.choices.filter((d) =>
+        [
+          DESTINATIONS.MERCHANT_SHOP,
+          DESTINATIONS.ALCHEMIST_SHOP,
+          DESTINATIONS.TRINKET_SHOP,
+          DESTINATIONS.EQUIPMENT_SHOP,
+        ].includes(d as "Merchant's Shop" | "Alchemist's Shop" | "Trinket Shop" | "Equipment Shop"),
+      ).length;
+      expect(shopCount).toBeLessThanOrEqual(1);
+      expect(result.choices).toHaveLength(3);
+    }
   });
 });
 

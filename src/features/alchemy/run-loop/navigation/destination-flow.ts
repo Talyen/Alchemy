@@ -130,9 +130,10 @@ function fillRemainingSlots(
   remaining: Destination[],
   weightContext: DestinationWeightContext,
   rng: () => number,
+  capacity: number = DESTINATION_CHOICES,
 ): Destination[] {
   const choices: Destination[] = [];
-  while (choices.length < DESTINATION_CHOICES && remaining.length > 0) {
+  while (choices.length < capacity && remaining.length > 0) {
     const hasShop = choices.some(isShopDestination);
     const pool = hasShop ? remaining.filter((d) => !isShopDestination(d)) : remaining;
     if (pool.length === 0) break;
@@ -161,13 +162,30 @@ export function sampleDestinationChoices(
     roundsSinceOffered: offerState.roundsSinceOffered,
   };
   let remaining = [...destinations];
+  const choices: Destination[] = [];
 
   if (!lastOfferedIncludesCombat(offerState.lastOfferedDestinations)) {
     const pity = pickCombatPity(remaining, weightContext, rng);
-    if (pity) remaining = pity.remaining;
+    if (pity) {
+      choices.push(pity.picked);
+      remaining = pity.remaining;
+    }
   }
 
-  const choices = fillRemainingSlots(remaining, weightContext, rng);
+  choices.push(...fillRemainingSlots(remaining, weightContext, rng, DESTINATION_CHOICES - choices.length));
+
+  // Top up to DESTINATION_CHOICES if weighted picking under-filled. Boss-only pools
+  // already short-circuit at the top of this function, so this only runs for normal acts.
+  if (choices.length < DESTINATION_CHOICES) {
+    const used = new Set(choices);
+    const fillers = destinations.filter((d) => !used.has(d));
+    while (choices.length < DESTINATION_CHOICES && fillers.length > 0) {
+      const idx = Math.floor(rng() * fillers.length);
+      const [picked] = fillers.splice(idx, 1);
+      if (picked) choices.push(picked);
+    }
+  }
+
   return { choices, offerState: advanceDestinationOfferState(offerState, destinations, choices) };
 }
 

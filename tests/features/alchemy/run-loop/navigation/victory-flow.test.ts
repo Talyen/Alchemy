@@ -23,6 +23,13 @@ vi.mock("@/features/alchemy/run-loop/navigation/destination-flow", () => ({
     choices: dests.slice(0, 3),
     offerState: { lastOfferedDestinations: dests.slice(0, 3), roundsSinceOffered: {} },
   })),
+  withSelectedBossForDestinations: vi.fn((destinations, reward, bossEnemyId) => ({
+    ...reward,
+    selectedBossId:
+      destinations.length === 1 && destinations[0] === "Boss Combat"
+        ? (reward.selectedBossId ?? bossEnemyId ?? null)
+        : null,
+  })),
 }));
 
 vi.mock("@/lib/homestead/loot", () => ({
