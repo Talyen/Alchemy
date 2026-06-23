@@ -287,6 +287,37 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(ui): constrain hamburger trigger to centered column on run-loop screens
+- fix(shops): gear tooltip parity, per-slot aspect ratio, armory gating, dedupe, label cleanup
+  - Equipment Shop tooltips now use Armory's GearTooltipContent (shine on
+    titles, shine on max-rolled astral affixes, affix entries)
+  - Equipment Shop and Boss Reward gear tiles use per-slot aspect ratio
+    matching the Armory inventory grid (1:1 for rings/boots, 2:3 for
+    mains/offs/body, etc.)
+  - Equipment Shop destination hidden from pool until Armory is unlocked
+    (player must own at least one gear piece)
+  - generateGearRewardChoices deduplicates by baseItemId across offerings
+  - Title labels removed beneath all shop items (shown only in tooltips)
+  - Trinket Shop changed from 6:7 to 1:1 aspect ratio
+- fix(mystery): reuse merchant RemoveCardPanel for Fairy Ring card removal
+  Replace the separate RemoveCardPicker in mystery-deck-pickers with the
+  shared RemoveCardPanel (extracted from the merchant shop's remove-mode),
+  so the Fairy Ring (and any removeCard + choose mystery) reuses the
+  merchant's exact card-removal UI. Only the gold display and Cancel
+  button are omitted for mystery events.
+- fix(destination): restore combat pity push, guarantee 3 choices, soften repeat penalty
+  Three interacting changes:
+  
+  1. Restore the dropped choices.push(pickedCombat) in sampleDestinationChoices
+     — the refactor in fb7b2f4a silently discarded the combat selected by
+     pickCombatPity, causing the destination count to drop to 2 or 1.
+  2. Add top-up logic to always fill to DESTINATION_CHOICES (3) for normal
+     acts, preventing weighted-picking early-exit from showing fewer than 3.
+  3. Raise LAST_OFFERED_DESTINATION_WEIGHT from 1 to 3 so recently-offered
+     destinations aren't aggressively starved (0.3 multiplier instead of 0.1).
+  
+  Also added 3 regression tests: length invariant, combat-included after
+  pity, and shop-cap-still-respected during top-up.
 - fix(battle): trigger player CC immediately on enemy damage, fix enemy block decay timing
   - Player stun/freeze now resolves on damage (not deferred to tick phase)
   - Enemy block decays at start of enemy phase (not end)
@@ -672,6 +703,24 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(core): confine side-effect primitives to designated seams
+  - corruption/index.ts: corruptCard/corruptDeckCard now require rng param
+    instead of direct Math.random calls
+  - homestead/loot.ts: rollBonuses/getEnemyMaterialLoot now require rng param
+  - mystery-flow.ts: rng added to MysteryEffectContext, replaces Math.random
+  - game-constants.ts: isAnimationDisabled moved to new
+    lib/animation/animation-prefs.ts seam
+  - Update all call-sites and tests to thread rng through
+- refactor(dedup): extract shared LabyrinthNodeHandlers type and defaultCompanionBondLevels
+- refactor(seams): auto-generate asset barrel, split damage test, add audit tooling
+  - Add scripts/sync-assets.mjs to auto-generate src/lib/game-data/assets.generated.ts
+    from src/assets/optimized/ directory scan; hook into prebuild
+  - Split tests/lib/battle/damage.test.ts (789-line mega test) into 9 focused files
+    by describe-block family with shared test helpers
+  - Write scripts/audit-change-amplification.mjs for reproducible hotspot analysis
+  - Update PROMPTS.md #6 with co-edit signal, three-view methodology, encoding fix
+  - Save audit plan to .opencode/plans/change-amplification-audit.md
+  - Update AGENTS.md generated-files section for assets.generated.ts
 - refactor(imports): break 6 cycle clusters, remove dev-mode from utils barrel
   - Cluster 1: move ghost/transfer types from presentation-types into shared/types
   - Cluster 2: lift applyGearDamageResistance/scaleGoldReward from gear-effects to types

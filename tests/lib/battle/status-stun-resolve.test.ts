@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
+import { defaultGearEffects } from "@/lib/gear";
 import {
   defaultEnemyMitigation,
   defaultCcState,
@@ -283,5 +284,74 @@ describe("resolveStunTrigger", () => {
     const result = resolveStunTrigger(state, texts);
     expect(result.mana).toBe(3);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 1 });
+  });
+
+  it("deals physical damage on stun with gear damageOnStunPhysical", () => {
+    const state = createTestBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
+      enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
+      gearEffects: { ...defaultGearEffects, damageOnStunPhysical: 7 },
+    });
+    const result = resolveStunTrigger(state);
+    expect(result.enemyHealth).toBe(23);
+  });
+
+  it("deals physical damage on stun with gear damageOnStunPhysical and produces combat text", () => {
+    const state = createTestBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
+      enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
+      gearEffects: { ...defaultGearEffects, damageOnStunPhysical: 7 },
+    });
+    const texts = makeTexts();
+    const result = resolveStunTrigger(state, texts);
+    expect(result.enemyHealth).toBe(23);
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 7 });
+  });
+
+  it("applies gear forgeOnStun with combat text", () => {
+    const state = createTestBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
+      enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
+      gearEffects: { ...defaultGearEffects, forgeOnStun: 4 },
+    });
+    const texts = makeTexts();
+    const result = resolveStunTrigger(state, texts);
+    expect(result.playerStatuses.forge).toBe(4);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 4 });
+  });
+
+  it("applies gear blockOnStun with combat text", () => {
+    const state = createTestBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
+      enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
+      gearEffects: { ...defaultGearEffects, blockOnStun: 5 },
+    });
+    const texts = makeTexts();
+    const result = resolveStunTrigger(state, texts);
+    expect(result.playerStatuses.block).toBe(5);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 5 });
+  });
+
+  it("applies gear manaOnStun with combat text", () => {
+    const state = createTestBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      mana: 3,
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
+      enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
+      gearEffects: { ...defaultGearEffects, manaOnStun: 2 },
+    });
+    const texts = makeTexts();
+    const result = resolveStunTrigger(state, texts);
+    expect(result.mana).toBe(5);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 2 });
   });
 });

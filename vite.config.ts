@@ -79,6 +79,7 @@ export default defineConfig(({ mode }) => ({
         "src/features/alchemy/shared/screens/**",
         "src/components/**",
         "tests/**",
+        "**/*.md",
       ],
     },
   },

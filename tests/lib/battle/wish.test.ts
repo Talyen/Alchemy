@@ -222,6 +222,39 @@ describe("chooseWishCard", () => {
     expect(result.discard[0].uid).toBe(100);
     expect(result.nextCardUid).toBe(101);
   });
+
+  it("passes through to next wish when cardId is null", () => {
+    const state = createTestBattleState({
+      wishOptions: [{ id: "card-a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [] }],
+      wishQueue: [[{ id: "card-b", title: "B", descriptionLines: [""], art: "", cost: 1, effects: [] }]],
+    });
+    const result = chooseWishCard(state, null);
+    expect(result.wishOptions).toHaveLength(1);
+    expect(result.wishOptions![0].id).toBe("card-b");
+    expect(result.wishQueue).toEqual([]);
+  });
+
+  it("returns state unchanged when chosen card is not in wishOptions", () => {
+    const state = createTestBattleState({
+      wishOptions: [{ id: "card-a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [] }],
+      wishQueue: [],
+      nextCardUid: 1,
+    });
+    const result = chooseWishCard(state, "non-existent-card");
+    expect(result).toBe(state);
+  });
+
+  it("sets wishOptions to null when no queue and card selected", () => {
+    const card = { id: "only-card", title: "Only", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const state = createTestBattleState({
+      wishOptions: [card],
+      wishQueue: [],
+      hand: [],
+    });
+    const result = chooseWishCard(state, "only-card");
+    expect(result.wishOptions).toBeNull();
+    expect(result.wishQueue).toEqual([]);
+  });
 });
 
 describe("new wish talents", () => {

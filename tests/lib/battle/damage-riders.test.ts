@@ -146,4 +146,56 @@ describe("damage riders via applyCardEffects", () => {
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyStatuses.poison).toBe(8);
   });
+
+  it("applies forge on burn via talent forgeOnBurnDealt", () => {
+    const state = makeState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      talentEffects: { ...makeState().talentEffects, forgeOnBurnDealt: 3 },
+      rng: () => 0.5,
+      deck: [],
+      hand: [],
+      discard: [],
+      exhausted: [],
+    });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerStatuses.forge).toBeGreaterThanOrEqual(3);
+  });
+
+  it("applies forge on burn via gear forgeOnBurnDealt", () => {
+    const state = makeState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      gearEffects: { ...makeState().gearEffects, forgeOnBurnDealt: 2 },
+      rng: () => 0.5,
+      deck: [],
+      hand: [],
+      discard: [],
+      exhausted: [],
+    });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerStatuses.forge).toBeGreaterThanOrEqual(2);
+  });
+
+  it("lifesteal effect heals player proportionally", () => {
+    const state = makeState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      deck: [],
+      hand: [],
+      discard: [],
+      exhausted: [],
+    });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10, lifesteal: true }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyHealth).toBe(40);
+    expect(result.playerHealth).toBeGreaterThan(10);
+  });
 });

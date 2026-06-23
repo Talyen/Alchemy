@@ -1,5 +1,11 @@
 ﻿import { describe, expect, it, vi } from "vitest";
-import { decayHalvedStatus, rollPercent, decayArmorAfterDamage } from "@/lib/battle/status-helpers";
+import {
+  decayHalvedStatus,
+  decayPoisonStacks,
+  rollPercent,
+  decayArmorAfterDamage,
+  getEnemyDamageMultiplier,
+} from "@/lib/battle/status-helpers";
 import { BATTLE_CONFIG, PERCENT_DENOMINATOR } from "@/lib/game-constants";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
@@ -33,6 +39,41 @@ describe("decayHalvedStatus", () => {
   it("handles large values", () => {
     expect(decayHalvedStatus(100)).toBe(50);
     expect(decayHalvedStatus(99)).toBe(50);
+  });
+});
+
+describe("decayPoisonStacks", () => {
+  it("returns 0 for 0 stacks", () => {
+    expect(decayPoisonStacks(0)).toBe(0);
+  });
+
+  it("returns 0 for negative stacks", () => {
+    expect(decayPoisonStacks(-1)).toBe(0);
+  });
+
+  it("decays stacks by percent, min 1 lost", () => {
+    expect(decayPoisonStacks(10)).toBeLessThan(10);
+    expect(decayPoisonStacks(1)).toBe(0);
+  });
+
+  it("decays at least 1 stack even when percent decay rounds to 0", () => {
+    expect(decayPoisonStacks(1)).toBe(0);
+    expect(decayPoisonStacks(2)).toBe(1);
+  });
+});
+
+describe("getEnemyDamageMultiplier", () => {
+  it("returns 1 with no modifier effects", () => {
+    const state = createTestBattleState();
+    expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
+  });
+
+  it("does not activate freezeDoubleDamage when freezeSkipTurns is 0", () => {
+    const state = createTestBattleState({
+      enemyCC: { stunSkipTurns: 0, freezeSkipTurns: 0, cooldown: 0 },
+      talentEffects: { ...createTestBattleState().talentEffects, freezeDoubleDamage: true },
+    });
+    expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
   });
 });
 
@@ -188,6 +229,17 @@ describe("decayArmorAfterDamage", () => {
       });
       const result = decayArmorAfterDamage(state, 3, "player");
       expect(result.playerStatuses.armor).toBe(0);
+    });
+
+    it("does not grant armorBreakBlock when armor was already 0", () => {
+      const state = createTestBattleState({
+        playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, armor: 0 }),
+        talentEffects: { ...createTestBattleState().talentEffects, armorBreakBlock: 4 },
+      });
+      const texts: CombatTextEvent[] = [];
+      const result = decayArmorAfterDamage(state, 3, "player", texts);
+      expect(result.playerStatuses.block).toBe(0);
+      expect(texts).toEqual([]);
     });
   });
 });

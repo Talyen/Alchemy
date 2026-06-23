@@ -96,12 +96,11 @@
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
-    "@electron/get": "^2.0.0",
     "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^21.0.1",
+    "@electron/get": "^2.0.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.60.0",
-    "playwright": "^1.60.0",
     "@radix-ui/react-select": "^2.1.4",
     "@radix-ui/react-slot": "^1.2.4",
     "@rolldown/plugin-babel": "^0.2.3",
@@ -123,11 +122,11 @@
     "electron": "^39.2.6",
     "electron-builder": "^26.0.12",
     "eslint": "^10.3.0",
-    "extract-zip": "^2.0.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-compiler": "^19.1.0-rc.2",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
+    "extract-zip": "^2.0.1",
     "ffmpeg-static": "^5.3.0",
     "immer": "^11.1.8",
     "jsdom": "^29.1.1",
@@ -135,6 +134,7 @@
     "lefthook": "^2.1.6",
     "lucide-react": "^1.11.0",
     "motion": "^12.38.0",
+    "playwright": "^1.60.0",
     "prettier": "^3.8.3",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
@@ -176,34 +176,83 @@
       "start"
     ],
     "ignoreIssues": {
-      "tests/playwright-tags.ts": ["exports"],
-      "src/features/alchemy/shared/stores/run-domain-store.ts": ["exports", "duplicates"],
-      "src/features/alchemy/shared/stores/run-transitions.ts": ["exports"],
-      "src/lib/active-run-session/index.ts": ["exports", "types"],
-      "src/lib/gear/types.ts": ["exports", "types"],
-      "scripts/lib/git-release.mjs": ["exports"],
-      "scripts/lib/patch-notes-core.mjs": ["exports"],
-      "src/features/alchemy/run-loop/navigation/destination-flow.ts": ["exports"],
-      "src/lib/game-constants.ts": ["exports"],
-      "src/lib/routing/destinations.ts": ["exports"],
-      "src/lib/routing/index.ts": ["exports"],
-      "src/features/alchemy/meta/screens/armory/parts/grid-styles.ts": ["exports"],
-      "src/lib/game-data/effects/registry.ts": ["exports"],
-      "src/lib/gear/grid-packing.ts": ["exports"],
-      "src/lib/gear/inventory-layout.ts": ["exports"],
-      "src/lib/routing/run-screen-router.ts": ["exports"],
-      "src/lib/utils.ts": ["exports", "types"],
-      "src/app/screen-routes/index.tsx": ["types"],
-      "src/features/alchemy/meta/screens/armory/armory-panels.tsx": ["types"],
-      "src/features/alchemy/meta/screens/armory/armory-targeting-state.ts": ["types"],
-      "src/lib/validation/migration/tombstoned-content-ids.ts": ["exports", "types"]
+      "tests/playwright-tags.ts": [
+        "exports"
+      ],
+      "src/features/alchemy/shared/stores/run-domain-store.ts": [
+        "exports",
+        "duplicates"
+      ],
+      "src/features/alchemy/shared/stores/run-transitions.ts": [
+        "exports"
+      ],
+      "src/lib/active-run-session/index.ts": [
+        "exports",
+        "types"
+      ],
+      "src/lib/gear/types.ts": [
+        "exports",
+        "types"
+      ],
+      "scripts/lib/git-release.mjs": [
+        "exports"
+      ],
+      "scripts/lib/patch-notes-core.mjs": [
+        "exports"
+      ],
+      "src/features/alchemy/run-loop/navigation/destination-flow.ts": [
+        "exports"
+      ],
+      "src/lib/game-constants.ts": [
+        "exports"
+      ],
+      "src/lib/routing/destinations.ts": [
+        "exports"
+      ],
+      "src/lib/routing/index.ts": [
+        "exports"
+      ],
+      "src/features/alchemy/meta/screens/armory/parts/grid-styles.ts": [
+        "exports"
+      ],
+      "src/lib/game-data/effects/registry.ts": [
+        "exports"
+      ],
+      "src/lib/gear/grid-packing.ts": [
+        "exports"
+      ],
+      "src/lib/gear/inventory-layout.ts": [
+        "exports"
+      ],
+      "src/lib/routing/run-screen-router.ts": [
+        "exports"
+      ],
+      "src/lib/utils.ts": [
+        "exports",
+        "types"
+      ],
+      "src/app/screen-routes/index.tsx": [
+        "types"
+      ],
+      "src/features/alchemy/meta/screens/armory/armory-panels.tsx": [
+        "types"
+      ],
+      "src/features/alchemy/meta/screens/armory/armory-targeting-state.ts": [
+        "types"
+      ],
+      "src/lib/validation/migration/tombstoned-content-ids.ts": [
+        "exports",
+        "types"
+      ]
     },
     "ignore": [
       "tests/environment.d.ts",
       "tests/scripts/global.d.ts",
       "tests/electron-environment.d.ts"
     ],
-    "ignoreDependencies": ["tailwindcss-animate"]
+    "ignoreDependencies": [
+      "tailwindcss-animate"
+    ]
   },
   "build": {
     "appId": "com.alchemy.game",

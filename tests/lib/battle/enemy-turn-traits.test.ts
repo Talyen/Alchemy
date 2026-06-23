@@ -70,6 +70,71 @@ describe("processEnemyRegeneration", () => {
     const result = processEnemyRegeneration(state, []);
     expect(result.enemyHealth).toBe(20);
   });
+
+  it("halves regen when enemy has poison and poisonHalvesHealing talent", () => {
+    const state = createTestBattleState({
+      enemyHealth: 20,
+      enemyMaxHealth: 30,
+      enemyRegeneration: 5,
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, poison: 3 },
+      talentEffects: {
+        ...createTestBattleState().talentEffects,
+        poisonHalvesHealing: true,
+      },
+    });
+    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
+    const result = processEnemyRegeneration(state, texts);
+    expect(result.enemyHealth).toBe(23);
+  });
+
+  it("halves regen when enemy has bleed and bleedHalvesEnemyHealing talent", () => {
+    const state = createTestBattleState({
+      enemyHealth: 20,
+      enemyMaxHealth: 30,
+      enemyRegeneration: 5,
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, bleed: 3 },
+      talentEffects: {
+        ...createTestBattleState().talentEffects,
+        bleedHalvesEnemyHealing: true,
+      },
+    });
+    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
+    const result = processEnemyRegeneration(state, texts);
+    expect(result.enemyHealth).toBe(23);
+  });
+
+  it("halves regen twice when enemy has both poison and bleed with both talents", () => {
+    const state = createTestBattleState({
+      enemyHealth: 20,
+      enemyMaxHealth: 30,
+      enemyRegeneration: 8,
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, poison: 3, bleed: 3 },
+      talentEffects: {
+        ...createTestBattleState().talentEffects,
+        poisonHalvesHealing: true,
+        bleedHalvesEnemyHealing: true,
+      },
+    });
+    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
+    const result = processEnemyRegeneration(state, texts);
+    expect(result.enemyHealth).toBe(22);
+  });
+
+  it("still heals 1 when regen is 1 and halved by poison (rounds up)", () => {
+    const state = createTestBattleState({
+      enemyHealth: 20,
+      enemyMaxHealth: 30,
+      enemyRegeneration: 1,
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, poison: 3 },
+      talentEffects: {
+        ...createTestBattleState().talentEffects,
+        poisonHalvesHealing: true,
+      },
+    });
+    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
+    const result = processEnemyRegeneration(state, texts);
+    expect(result.enemyHealth).toBe(21);
+  });
 });
 
 describe("processEnemyTraits", () => {

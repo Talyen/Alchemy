@@ -9,7 +9,7 @@ function read(relPath: string): string {
 }
 
 function extractActiveRunDataKeys(typeSource: string): string[] {
-  const match = typeSource.match(/export type ActiveRunData = \{([\s\S]*?)\n\};/);
+  const match = typeSource.match(/(?:export (?:type|interface) ActiveRunData) (?:= )?\{([\s\S]*?)\n\};?/);
   expect(match).not.toBeNull();
   const body = match![1];
   return [...body.matchAll(/^\s+(\w+):/gm)].map((m) => m[1]);
