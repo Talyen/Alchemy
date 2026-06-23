@@ -4,7 +4,7 @@ Agent prompts for **code quality and UI/UX** — readability, hardening, interac
 
 **Docs:** [AGENTS.md](./AGENTS.md) (rules) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks & tests)
 
-**Verification tiers:** narrow area tests from [CONTRIBUTING — What to run when you change](./CONTRIBUTING.md#what-to-run-when-you-change) · **Default gate:** `npm run lint:ci && npm test` · **Pre-push parity:** `npm run check:push` · **Save/ship:** `npm run check:ship`
+**Verification tiers:** narrow area tests from [CONTRIBUTING — What to run when you change](./CONTRIBUTING.md#what-to-run-when-you-change) · **Default gate:** `npm run lint:ci && npm test` · **Pre-push parity:** `npm run check:push` · **Save/ship:** `npm run check:ship` (full release: `npm run check:ship:full` — also runs `npm run test:ship:e2e` and `npm run test:ship:desktop`)
 
 Qualitative audits use: **Goal** · **Check** · **Docs** · **When done**. Measurable criteria audits (in [Measurable code-quality criteria](#measurable-code-quality-criteria)) add a **Measure** field with a quantification command and numeric target.
 
@@ -98,9 +98,44 @@ Qualitative audits use: **Goal** · **Check** · **Docs** · **When done**. Meas
 
 ---
 
+## TODO/FIXME & runtime-warning audit
+
+**Goal:** No stale markers, no `console.log` left in production code, and no swallowed warnings.
+
+**Check:**
+
+- `TODO` and `FIXME` markers must include a reason and a target — per [AGENTS.md — Hard NO's (Comments)](./AGENTS.md#hard-nos). Find candidates: `rg -n 'TODO|FIXME|XXX|HACK' src --type ts` — every hit must be paired with a `(reason: ...)` or `// because ...` clause; bare markers are violations
+- `console.log` / `console.debug` calls in `src/**` (eslint `no-console` allows only `console.warn` / `console.error` per `eslint.config.js:74`) — find with `rg -n 'console\.(log|debug|info|trace)' src --type ts -g '!*.test.*'`. Strip before merging; surviving calls need a `// eslint-disable-next-line` with a reason
+- Swallowed errors: empty `catch {}` blocks or `.catch(() => {})` lambdas that drop the error — `rg -n 'catch\s*(\(\)\s*=>\s*\{\s*\}|{\s*\})' src --type ts` — every silent catch must log the error or document why silence is intentional
+- Unused `// @ts-expect-error` / `// @ts-ignore` — these should appear with a comment justifying the escape; bare ones are caught by [Type safety density audit](#1-type-safety-density-audit) but flag any without context here
+
+**When done:** `rg -n 'TODO|FIXME|XXX|HACK|console\.(log|debug|info|trace)|catch\s*(\(\)\s*=>\s*\{\s*\}|{\s*\})' src --type ts -g '!*.test.*'` (manual review) + `npm run lint:ci`
+
+---
+
+## Accessibility audit
+
+**Goal:** Keyboard, screen-reader, and motion-sensitive users can complete core flows. **Desktop keyboard + screen reader only.**
+
+**Check:**
+
+- Every interactive element (button, link, focusable div) has an accessible name — `aria-label`, visible text, or `aria-labelledby`. Quick scan: `rg -n '<button|<a |<div[^>]*tabIndex' src --type tsx -g '!**/*.test.*'` and check for missing `aria-label` on icon-only controls
+- Focus order matches visual order; modals trap focus while open and restore focus to the trigger on close
+- Visible focus ring on every focusable element — no `outline: none` without a replacement `:focus-visible` style
+- Color is never the only signal (statuses, error states) — pair with icon or text
+- `prefers-reduced-motion` respected for stagger / shake / particle effects (see [WORKFLOWS — Staggered screen enter motion](./docs/WORKFLOWS.md#staggered-screen-enter-motion))
+- Escape closes overlays (menus, modals, drawers) where users expect it — see [UI interaction & feedback audit](#ui-interaction--feedback-audit)
+- After changes, run a 30s manual pass with keyboard only (Tab, Shift+Tab, Enter, Escape) on the touched screen; ask the user if focus order or motion behavior is unclear
+
+**When done:** relevant `tests/features/screens/` and `tests/*.spec.ts` for the touched screen + `npm run lint:ci`
+
+---
+
 ## Measurable code-quality criteria
 
 The audits below each target a single measurable criterion with a target and a quantification command. Run **Measure** to find violations, **Check** to fix them, **When done** to verify. Targets are directionals to drive toward across passes — reduce the count each pass, not necessarily to zero in one pass. Criteria #7 and #9 are deliberate counterweights to #2/#4/#5: do not optimize complexity, length, or coupling by over-abstracting.
+
+> **Tooling note:** audits that use `madge` or `jscpd` invoke them via `npx -y`, which fetches the package on first run. Expect a ~30–60s cold start; subsequent runs in the same `node_modules` cache are fast. knip runs through the repo scripts (`deadcode` / `deadcode:strict`) and is already warmed by `npm run lint:ci`.
 
 ---
 
@@ -149,7 +184,7 @@ The audits below each target a single measurable criterion with a target and a q
 
 **Docs:** [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants)
 
-**When done:** `npm run lint:ci && npm test -- <touched paths>`
+**When done:** `npm run typecheck && npm run lint:ci && npm test -- <touched paths>`
 
 ---
 
@@ -171,7 +206,7 @@ The audits below each target a single measurable criterion with a target and a q
 
 **Docs:** [AGENTS.md — Generated and heavy files](./AGENTS.md#generated-and-heavy-files)
 
-**When done:** `npm run deadcode:strict && npm run lint:ci && npm test`
+**When done:** `npm run typecheck && npm run deadcode:strict && npm run lint:ci && npm test`
 
 ---
 
@@ -181,7 +216,7 @@ The audits below each target a single measurable criterion with a target and a q
 
 **Measure:**
 
-- Function length: `npx eslint --rule 'max-lines-per-function: ["warn", 51, { skipComments: true }]' src` — target zero warnings
+- Function length: `npx eslint --rule 'max-lines-per-function: ["warn", 50, { skipComments: true }]' src` — target zero warnings (threshold matches the goal exactly; `skipComments: true` excludes file-level summaries and section markers so they don't inflate the count)
 - File length (top offenders in PowerShell):
   `Get-ChildItem -Recurse -File -Include *.ts,*.tsx -Path src | ForEach-Object { [PSCustomObject]@{ Name=$_.Name; Lines=(Get-Content $_.FullName).Count } } | Sort-Object Lines -Descending | Select-Object -First 20`
 - Target: zero source files > 300 lines (exclude `*.test.*`, `*.spec.*`, and generated files from judgement)
@@ -195,7 +230,7 @@ The audits below each target a single measurable criterion with a target and a q
 
 **Docs:** [AGENTS.md — Pragmatism and Simplicity](./AGENTS.md#pragmatism-and-simplicity)
 
-**When done:** `npm run lint:ci && npm test -- <touched paths>`
+**When done:** `npm run typecheck && npm run lint:ci && npm test -- <touched paths>`
 
 ---
 
@@ -218,7 +253,7 @@ The audits below each target a single measurable criterion with a target and a q
 
 **Docs:** [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants) · [eslint.config.js](./eslint.config.js)
 
-**When done:** `npx -y madge --circular --extensions ts --ts-config tsconfig.json src; npm run lint:ci`
+**When done:** `npx -y madge --circular --extensions ts --ts-config tsconfig.json src && npm run typecheck && npm run lint:ci`
 
 ---
 
@@ -228,15 +263,19 @@ The audits below each target a single measurable criterion with a target and a q
 
 **Measure:**
 
-Use `scripts/audit-change-amplification.mjs` (run with `node scripts/audit-change-amplification.mjs`) which handles the encoding issues PowerShell's `>` redirect introduces (UTF-16 LE, not UTF-8). The script produces three views:
+Use `scripts/audit-change-amplification.mjs` (run with `node scripts/audit-change-amplification.mjs`) which handles the encoding issues PowerShell's `>` redirect introduces (UTF-16 LE, not UTF-8). The script writes a `.tmp-audit/` directory at the repo root and removes it on completion; if the run is interrupted, clean it up with `Remove-Item -Recurse -Force .tmp-audit` (it is not in `.gitignore`).
+
+The script produces three views:
 
 - **Raw view** — all `feat`/`fix`/`balance` commits, every file counted
 - **Filtered view** — drop pure-asset/sound/webp commits and pure-infra commits (no `src/` or `tests/` files)
 - **Clean view** — filtered minus ≥100-file milestone commits and `fix(tests)` type-cleanup batches (the "what developers actually author" view)
 
-For each view the script reports: count, median, mean, p90, max, a histogram, and a list of files exceeding 25% (hotspots). It also prints a **co-edit signal**: count how many commits touch both `src/lib/game-data/*` and a `screens/` file — to detect parallel-edit coupling that a single-file hotspot count misses.
+For each view the script reports: count, median, mean, p90, max, a histogram, and a list of files exceeding 25% (hotspots). It also prints a **co-edit signal**: count how many commits touch both `src/lib/game-data/*` and a `screens/*` file — to detect parallel-edit coupling that a single-file hotspot count misses.
 
 Target: median ≤ 5 in clean view. No source file in > 25% of clean-view commits without a clear owning seam.
+
+> **Sample-size guard:** median and p90 are unreliable when the clean-view count is small. If `clean.n < 30`, widen the script's `--since=3 months ago` to `6 months ago` (or `12 months ago`) before enforcing the target; below 15 commits, treat the audit as directional only.
 
 **Check:**
 
@@ -250,7 +289,7 @@ Target: median ≤ 5 in clean view. No source file in > 25% of clean-view commit
 
 **Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) · [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants) · [AGENTS.md — Generated and heavy files](./AGENTS.md#generated-and-heavy-files)
 
-**When done:** `npm run lint:ci && npm test -- <touched paths>`
+**When done:** `npm run typecheck && npm run lint:ci && npm test -- <touched paths>`
 
 ---
 
@@ -260,9 +299,14 @@ Target: median ≤ 5 in clean view. No source file in > 25% of clean-view commit
 
 **Measure:**
 
-- `npm run deadcode:strict` flags zero-use abstractions; for single-use, scan the rest:
-  for each interface/factory/generic helper, count non-definition references with `rg -l 'Name' src`
-- Track total abstractions vs. single-use abstractions — target < 15% single-use.
+Run `node scripts/audit-single-use.mjs` (or `npm run audit:single-use`). The script scans every `src/**/*.{ts,tsx}` file (skipping tests, generated, and declaration files) for `export function|const|class|interface|type` declarations, then for each name counts non-definition references across the same tree. It reports the total number of exports, the number with ≤ 1 caller, the ratio, and a status of `OK` or `REVIEW`. The top 25 single-use symbols are listed with their declaring file.
+
+- Total exports: same line in script output
+- Single-use (≤ 1 caller): same line
+- Ratio: target < 15%
+- Status: `REVIEW` exits with code 1 so CI/cron can flag regressions
+
+Pair with `npm run deadcode:strict` (knip) — knip catches zero-use, the script catches single-use. Together they cover the "no future-proofing" half of the audit.
 
 **Check:**
 
@@ -270,10 +314,11 @@ Target: median ≤ 5 in clean view. No source file in > 25% of clean-view commit
 - Remove "future-proof" parameters, config objects, and strategy/factory layers with one implementation
 - Collapse indirection chains where the caller could use the underlying API directly
 - Counterweight to #2/#4/#5: do not extract a helper unless it has ≥ 2 call sites with identical intent
+- Heuristic caveats: barrel re-exports inflate the reference count; the script subtracts one reference per definition site to compensate, so legitimate re-exports still count. Inline `console.log` debug statements can also match — the report is a starting point, not a verdict
 
 **Docs:** [AGENTS.md — Pragmatism and Simplicity](./AGENTS.md#pragmatism-and-simplicity)
 
-**When done:** `npm run lint:ci && npm test`
+**When done:** `node scripts/audit-single-use.mjs && npm run typecheck && npm run lint:ci && npm test`
 
 ---
 
@@ -297,7 +342,7 @@ Target: median ≤ 5 in clean view. No source file in > 25% of clean-view commit
 
 **Docs:** [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants) · [REFERENCE.md](./docs/REFERENCE.md#battle-implementation-rules)
 
-**When done:** `npm run lint:ci && npm test -- <touched paths>`
+**When done:** `npm run typecheck && npm run lint:ci && npm test -- <touched paths>`
 
 ---
 
@@ -320,7 +365,7 @@ Target: median ≤ 5 in clean view. No source file in > 25% of clean-view commit
 
 **Docs:** [AGENTS.md — Pragmatism and Simplicity](./AGENTS.md#pragmatism-and-simplicity)
 
-**When done:** `npx -y jscpd --path src --min-lines 6 --format typescript --ignore '**/*.test.*,**/*.spec.*' && npm run lint:ci && npm test`
+**When done:** `npx -y jscpd --path src --min-lines 6 --format typescript --ignore '**/*.test.*,**/*.spec.*' && npm run typecheck && npm run lint:ci && npm test`
 
 ---
 
@@ -332,15 +377,43 @@ Target: median ≤ 5 in clean view. No source file in > 25% of clean-view commit
 
 - Coverage: `npm run test:coverage` — review `coverage/` for modules with < 80% branch coverage on `src/lib/battle`, `src/lib/gear`, `src/features/alchemy/shared/storage`
 - Export presence: for each export in `src/lib/**`, confirm ≥ 1 test references it (`rg -l 'exportName' tests`) — target ≥ 90% on domain logic
-- Mutation (expensive — one module per pass): `npx -y @stryker-mutator/core init` to configure once, then run per module targeting `src/lib/<module>/*.ts` — target mutation score ≥ 60% on battle/state/validation core
 
 **Check:**
 
 - Add behavior-targeted tests for untested exports (assert outcomes, not implementation)
-- Strengthen assertions that mutation testing shows are weak (a surviving mutation means the test does not catch the change)
 - No trivial assertions ("function exists", "returns defined") — see [Test quality audit](#test-quality-audit)
 - Prefer fewer strong tests over many weak ones; do not chase line coverage with dead assertions
 
 **Docs:** [CONTRIBUTING — What to run when you change](./CONTRIBUTING.md#what-to-run-when-you-change) · [Test quality audit](#test-quality-audit)
 
-**When done:** `npm run test:coverage && npm run lint:ci`
+**When done:** `npm run test:coverage && npm run typecheck && npm run lint:ci`
+
+---
+
+## Running all measurable audits
+
+For a periodic sweep (nightly CI, post-milestone cleanup, or before a refactor), run every measurable audit in one shot:
+
+```sh
+npm run audit:all
+```
+
+This wraps `scripts/audit-all.mjs`, which runs in order:
+
+1. `npm run deadcode:strict` (knip)
+2. `node scripts/audit-single-use.mjs` ([#7](#7-single-use-abstraction-audit))
+3. `npx -y madge --circular …` ([#5](#5-import-coupling--boundary-audit))
+4. `npx eslint --rule complexity --rule max-lines-per-function …` ([#2](#2-cyclomatic-complexity-audit), [#4](#4-function--file-length-audit))
+5. `node scripts/audit-change-amplification.mjs` ([#6](#6-change-amplification-audit))
+
+Total wall-clock time: ~3–5 minutes cold, ~30–60s warm. Any failed audit prints a non-zero exit code so CI can gate on it.
+
+The wrapper is **not** a pre-push gate — use `npm run check:push` for that. It is intentionally broader and slower, intended for one of:
+
+- a manual sweep before opening a refactor PR
+- a scheduled nightly CI job
+- a post-milestone cleanup pass
+
+To run a single audit in isolation, use `npm run audit:single-use` for #7, or invoke the exact command from that audit's **Measure** block.
+
+`#1` (type safety), `#3` (dead code), `#8` (side-effect surface), `#9` (duplication), and `#10` (coverage) are excluded from the wrapper because they are already part of `npm run lint:ci` (`#1`, `#3`, `#8`) or `npm run test:coverage` (`#10`); `#9` is intentionally opt-in due to the `jscpd` cold-start cost.

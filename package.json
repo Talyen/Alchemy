@@ -34,6 +34,8 @@
     "dist:desktop": "npm run build:desktop && node scripts/dist-desktop.mjs",
     "generate:patch-notes": "node scripts/generate-patch-notes.mjs",
     "content:audit": "node scripts/content-audit.mjs",
+    "audit:all": "node scripts/audit-all.mjs",
+    "audit:single-use": "node scripts/audit-single-use.mjs",
     "sync:changelog": "node scripts/sync-changelog.mjs",
     "sync:changelog:check": "node scripts/sync-changelog.mjs --check",
     "sync:version": "node scripts/sync-version-metadata.mjs",

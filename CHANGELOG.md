@@ -703,6 +703,14 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(assets): remove placeholder art stubs and expand audit
+  - Delete boss-combat.webp stub (98 B) and source JPEG (343 B), replace fallback with normalEnemyBg
+  
+  - Remove 5 hidden placeholderFarm entries and the factory
+  
+  - Delete orphan placeholder-boon.webp (no source PNG)
+  
+  - Expand content-validation placeholderArt set from 3 to 9 entries
 - refactor(core): confine side-effect primitives to designated seams
   - corruption/index.ts: corruptCard/corruptDeckCard now require rng param
     instead of direct Math.random calls
@@ -1513,6 +1521,16 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore(deps): remove stryker-mutator, finalize battle core test coverage
+  - Drop @stryker-mutator/{core,typescript-checker,vitest-runner} devDeps
+  
+  - Add start-health tests (new file)
+  
+  - Strengthen wish/damage-riders/enemy-turn-traits/status-stun-resolve/status-helpers tests
+  
+  - Fix coverage parser for *.md and active-run-snapshot-parity regex
+  
+  - Remove unused vi/beforeEach/afterEach imports
 - chore(lint): enforce consistent-type-definitions, array-type; promote 5 rules to error; fix type->interface side effects
   - eslint.config.js: add consistent-type-definitions, array-type,
     no-template-curly-in-string; promote 5 rules to error
