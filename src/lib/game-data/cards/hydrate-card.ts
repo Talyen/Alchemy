@@ -11,7 +11,7 @@ export function hydrateCard(savedCard: BattleCard): BattleCard {
   const libraryCard = cardLibrary.find((c) => c.id === savedCard.id);
   if (!libraryCard) return savedCard;
 
-  const saved = savedCard as unknown as SavedCard;
+  const saved = savedCard as SavedCard;
 
   const descriptionLines =
     Array.isArray(saved.descriptionLines) && saved.descriptionLinesFullyValid !== false

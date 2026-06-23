@@ -34,7 +34,7 @@ interface TiltSurfaceProps {
   style?: CSSProperties;
   onClick?: ((e: MouseEvent<HTMLButtonElement>) => void) | undefined;
   onDoubleClick?: ((e: MouseEvent<HTMLButtonElement>) => void) | undefined;
-  onDivClick?: ((e: MouseEvent<HTMLDivElement>) => void) | undefined;
+  onDivClick?: ((e?: MouseEvent<HTMLDivElement>) => void) | undefined;
   onPointerDown?: ((e: PointerEvent<HTMLButtonElement>) => void) | undefined;
   onFocus?: () => void;
   onBlur?: () => void;
@@ -109,7 +109,7 @@ export function TiltSurface({
     ? (e: KeyboardEvent<HTMLDivElement>) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onDivClick(e as unknown as MouseEvent<HTMLDivElement>);
+          onDivClick();
         }
       }
     : undefined;

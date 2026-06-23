@@ -10,6 +10,8 @@ import { matIconMap, matPillStyle, matTextColor } from "../../../shared/ui/mater
 import { HOMESTEAD_CONFIG, type GoalItem, MaterialCost, getArt, renderTextWithMaterials } from "./helpers";
 import { HomesteadTileCompletedFooter, HomesteadTileFrame } from "./homestead-tile-node";
 
+const ZERO_COST: MaterialInventory = { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 };
+
 export function HomesteadUpgradeNode({
   item,
   index,
@@ -31,7 +33,8 @@ export function HomesteadUpgradeNode({
   const isTier0 = currentLevel === 0;
   const isCompleted = currentLevel >= maxTiers;
   const displayTierIndex = isCompleted ? maxTiers - 1 : Math.max(0, currentLevel - 1);
-  const itemCost = item.data.tiers[isCompleted ? maxTiers - 1 : Math.min(currentLevel, maxTiers - 1)]!.cost;
+  const tier = item.data.tiers[isCompleted ? maxTiers - 1 : Math.min(currentLevel, maxTiers - 1)];
+  const itemCost = tier?.cost ?? ZERO_COST;
   const itemAffordable = !isCompleted && canAfford(materialInventory, itemCost);
   const costItems = MATERIAL_IDS.filter((m) => (itemCost[m] ?? 0) > 0);
 

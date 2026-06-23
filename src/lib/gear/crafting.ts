@@ -144,7 +144,8 @@ function rollDistinctAffixes(item: GearInstance, count: number, rng: () => numbe
   while (affixes.length < count && remaining.length > 0) {
     const index = Math.floor(rng() * remaining.length);
     const [chosen] = remaining.splice(index, 1);
-    affixes.push({ id: chosen!.id, value: rollAffixValue(chosen!, rarity, rng) });
+    if (!chosen) break;
+    affixes.push({ id: chosen.id, value: rollAffixValue(chosen, rarity, rng) });
   }
   return affixes;
 }

@@ -8,6 +8,7 @@ const templateEffectSchemas = TEMPLATE_EFFECT_DEFINITIONS.map((def) => def.schem
 
 const BattleCardEffectSchemaBase = z.discriminatedUnion(
   "kind",
+  // Zod discriminatedUnion requires a non-empty tuple; the array is known to be non-empty at init
   templateEffectSchemas as unknown as [z.ZodObject<{ kind: z.ZodType }>, ...Array<z.ZodObject<{ kind: z.ZodType }>>],
 );
 

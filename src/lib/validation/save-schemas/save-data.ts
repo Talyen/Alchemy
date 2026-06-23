@@ -56,13 +56,12 @@ const GearInventorySchema = GearInstanceArraySchema;
 const emptyGearInventories = createEmptyGearInventories();
 const emptyGearBoardPositionsByCharacter = createEmptyGearBoardPositionsByCharacter();
 const emptyCurrencyBoardPositionsByCharacter = createEmptyCurrencyBoardPositionsByCharacter();
+const gearInventoriesShape: Record<string, z.ZodTypeAny> = {};
+for (const id of CHARACTER_IDS) {
+  gearInventoriesShape[id] = GearInventorySchema.catch([]);
+}
 const GearInventoriesSchema = z
-  .object(
-    Object.fromEntries(CHARACTER_IDS.map((id) => [id, GearInventorySchema.catch([])])) as unknown as Record<
-      (typeof CHARACTER_IDS)[number],
-      z.ZodType
-    >,
-  )
+  .object(gearInventoriesShape)
   .catch(emptyGearInventories)
   .transform((inventories) => inventories as GearInventories);
 const GearLoadoutSchema = z
@@ -92,31 +91,30 @@ const CraftingCurrencyBoardPositionsSchema = z
   .catch({})
   .transform((positions) => positions as CraftingCurrencyBoardPositions);
 
+const gearBoardPositionsShape: Record<string, z.ZodTypeAny> = {};
+for (const id of CHARACTER_IDS) {
+  gearBoardPositionsShape[id] = GearBoardPositionsSchema.catch({});
+}
 const GearBoardPositionsByCharacterSchema = z
-  .object(
-    Object.fromEntries(CHARACTER_IDS.map((id) => [id, GearBoardPositionsSchema.catch({})])) as unknown as Record<
-      (typeof CHARACTER_IDS)[number],
-      z.ZodType
-    >,
-  )
+  .object(gearBoardPositionsShape)
   .catch(emptyGearBoardPositionsByCharacter)
   .transform((positions) => positions as GearBoardPositionsByCharacter);
 
+const craftingCurrencyBoardPositionsShape: Record<string, z.ZodTypeAny> = {};
+for (const id of CHARACTER_IDS) {
+  craftingCurrencyBoardPositionsShape[id] = CraftingCurrencyBoardPositionsSchema.catch({});
+}
 const CraftingCurrencyBoardPositionsByCharacterSchema = z
-  .object(
-    Object.fromEntries(
-      CHARACTER_IDS.map((id) => [id, CraftingCurrencyBoardPositionsSchema.catch({})]),
-    ) as unknown as Record<(typeof CHARACTER_IDS)[number], z.ZodType>,
-  )
+  .object(craftingCurrencyBoardPositionsShape)
   .catch(emptyCurrencyBoardPositionsByCharacter)
   .transform((positions) => positions as CraftingCurrencyBoardPositionsByCharacter);
 
+const gearLoadoutsShape: Record<string, z.ZodTypeAny> = {};
+for (const id of CHARACTER_IDS) {
+  gearLoadoutsShape[id] = GearLoadoutSchema.catch(emptyGearLoadouts[id]);
+}
 const GearLoadoutsSchema = z
-  .object(
-    Object.fromEntries(
-      CHARACTER_IDS.map((id) => [id, GearLoadoutSchema.catch(emptyGearLoadouts[id])]),
-    ) as unknown as Record<(typeof CHARACTER_IDS)[number], z.ZodType>,
-  )
+  .object(gearLoadoutsShape)
   .transform((loadouts) => normalizeExclusiveGearLoadouts(loadouts as GearLoadouts));
 
 export const SaveDataSchema = z.preprocess(

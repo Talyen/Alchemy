@@ -32,11 +32,11 @@ export function parseActiveRun(activeRun: unknown): ActiveRunData | null {
   return {
     ...data,
     contentSystemType: data.contentSystemType,
-    runDeck: (data.runDeck as unknown as BattleCard[]).map(hydrateCard),
+    runDeck: data.runDeck.map((card) => hydrateCard(card as BattleCard)),
     wildwoodDraft: data.wildwoodDraft
       ? {
           ...data.wildwoodDraft,
-          draftChoices: (data.wildwoodDraft.draftChoices as unknown as BattleCard[]).map(hydrateCard),
+          draftChoices: data.wildwoodDraft.draftChoices.map((card) => hydrateCard(card as BattleCard)),
         }
       : null,
     labyrinthMap: data.labyrinthMap as LabyrinthMap | null,

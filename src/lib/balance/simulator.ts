@@ -158,16 +158,20 @@ function chooseCardToPlay(state: BattleState, policy: BalancePlayPolicy): { card
   if (playable.length === 0) return null;
 
   if (policy === "greedy-damage") {
-    let best = playable[0]!;
+    const first = playable[0];
+    if (!first) return null;
+    let best = first;
     let bestDamage = getImmediateDamage(best.card);
     for (let i = 1; i < playable.length; i += 1) {
-      const damage = getImmediateDamage(playable[i]!.card);
+      const candidate = playable[i];
+      if (!candidate) continue;
+      const damage = getImmediateDamage(candidate.card);
       if (damage > bestDamage) {
-        best = playable[i]!;
+        best = candidate;
         bestDamage = damage;
       }
     }
-    return best;
+    return { card: best.card, index: best.index };
   }
 
   if (policy === "defensive-random" && state.playerHealth <= state.playerMaxHealth / 2) {

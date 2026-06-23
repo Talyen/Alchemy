@@ -270,14 +270,8 @@ export function migrateV8ToV9(parsed: RawSaveData): RawSaveData {
 
   currencyBoardPositionsByCharacter.knight = { ...legacyCurrencyPositions };
 
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-  const {
-    gearInventory: _gearInventory,
-    gearBoardPositions: _gearBoardPositions,
-    craftingCurrencyBoardPositions: _craftingCurrencyBoardPositions,
-    ...rest
-  } = parsed;
-  /* eslint-enable @typescript-eslint/no-unused-vars */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure to extract ...rest discarding legacy keys
+  const { gearInventory, gearBoardPositions, craftingCurrencyBoardPositions, ...rest } = parsed;
 
   return {
     ...rest,

@@ -142,15 +142,17 @@ export function applyMagnetHysteresis<TDest extends { rect: DragRect; kind: stri
   return { destination: candidate, switched: false };
 }
 
-export function sameDestinationIdentity<TDest extends { kind: string }>(left: TDest, right: TDest): boolean {
+export function sameDestinationIdentity(left: { kind: string }, right: { kind: string }): boolean {
   if (left.kind !== right.kind) return false;
-  if (left.kind === "inventory" && right.kind === "inventory") {
-    const lInv = left as unknown as { placement: { col: number; row: number } };
-    const rInv = right as unknown as { placement: { col: number; row: number } };
-    return lInv.placement.col === rInv.placement.col && lInv.placement.row === rInv.placement.row;
+  if (left.kind === "inventory" && "placement" in left && "placement" in right) {
+    const l = left as { placement: { col: number; row: number } };
+    const r = right as { placement: { col: number; row: number } };
+    return l.placement.col === r.placement.col && l.placement.row === r.placement.row;
   }
-  if (left.kind === "equipment" && right.kind === "equipment") {
-    return (left as unknown as { slot: string }).slot === (right as unknown as { slot: string }).slot;
+  if (left.kind === "equipment" && "slot" in left && "slot" in right) {
+    const l = left as { slot: string };
+    const r = right as { slot: string };
+    return l.slot === r.slot;
   }
   return true;
 }

@@ -27,16 +27,7 @@ export type KeywordId =
 export type DamageType = "physical" | "stun" | "holy" | "burn" | "poison" | "bleed" | "freeze" | "nature";
 
 /** Damage types used for random-hit effects (e.g. Roulette). Archery is a card tag, not a damage type. */
-export const DAMAGE_TYPES: readonly DamageType[] = [
-  "physical",
-  "stun",
-  "holy",
-  "burn",
-  "poison",
-  "bleed",
-  "freeze",
-  "nature",
-];
+export const DAMAGE_TYPES = ["physical", "stun", "holy", "burn", "poison", "bleed", "freeze", "nature"] as const;
 
 export type PlayerStatusId =
   | "block"

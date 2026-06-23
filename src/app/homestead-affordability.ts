@@ -27,19 +27,25 @@ export function hasAffordableHomesteadUpgrade(input: HomesteadAffordabilityInput
   const affordableBuilding = buildings.some((b) => {
     const currentLevel = constructedBuildings[b.id] ?? 0;
     if (currentLevel >= b.tiers.length) return false;
-    return canAfford(materialInventory, b.tiers[currentLevel]!.cost);
+    const tier = b.tiers[currentLevel];
+    if (!tier) return false;
+    return canAfford(materialInventory, tier.cost);
   });
 
   const affordableFarm = visibleFarmPlots.some((f) => {
     const currentLevel = plantedFarms[f.id] ?? 0;
     if (currentLevel >= f.tiers.length) return false;
-    return canAfford(materialInventory, f.tiers[currentLevel]!.cost);
+    const tier = f.tiers[currentLevel];
+    if (!tier) return false;
+    return canAfford(materialInventory, tier.cost);
   });
 
   const affordableResearch = researchUpgrades.some((r) => {
     const currentLevel = completedResearch[r.id] ?? 0;
     if (currentLevel >= r.tiers.length) return false;
-    return canAfford(materialInventory, r.tiers[currentLevel]!.cost);
+    const tier = r.tiers[currentLevel];
+    if (!tier) return false;
+    return canAfford(materialInventory, tier.cost);
   });
 
   const affordableBond = cardLibrary.some((c) => {
@@ -50,7 +56,9 @@ export function hasAffordableHomesteadUpgrade(input: HomesteadAffordabilityInput
     if (!discoveredCardIds.includes(c.id)) return false;
     const currentLevel = bondedCompanions[effect.companionId] ?? 0;
     if (currentLevel >= COMPANION_MAX_TIER) return false;
-    return canAfford(materialInventory, COMPANION_BOND_TIERS[currentLevel]!);
+    const bondTier = COMPANION_BOND_TIERS[currentLevel];
+    if (!bondTier) return false;
+    return canAfford(materialInventory, bondTier);
   });
 
   return affordableBuilding || affordableFarm || affordableResearch || affordableBond;

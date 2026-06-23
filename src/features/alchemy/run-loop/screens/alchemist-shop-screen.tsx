@@ -79,7 +79,9 @@ export function AlchemistShopScreen({
   function selectMixCard(index: number) {
     // Potion mixing is a two-step selection machine: generated Mixed Potions are excluded,
     // re-clicking the first pick backs up to step one, and the second pick toggles freely.
-    if (runDeck[index]!.id === MIXED_POTION_CARD_ID) return;
+    const card = runDeck[index];
+    if (!card) return;
+    if (card.id === MIXED_POTION_CARD_ID) return;
     if (mixStep === 1) {
       setSelectedA(index);
       setMixStep(2);

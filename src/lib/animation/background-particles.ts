@@ -83,7 +83,7 @@ function spawnParticle(width: number, height: number, config: BackgroundParticle
     swayAmplitude: 10 + Math.random() * 30,
     swaySpeed: 0.2 + Math.random() * 0.4,
     swayOffset: Math.random() * Math.PI * 2,
-    color: rawColor!.replace("X", "1"),
+    color: (rawColor ?? "rgba(255, 200, 80, X)").replace("X", "1"),
   };
 }
 

@@ -88,12 +88,16 @@ export function drawWildwoodBoss(
   if (bag.length === 0) {
     bag = createWildwoodBossBag(rng);
     if (previousBossId && bag[0] === previousBossId && bag.length > 1) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- array index access returns T | undefined, need non-null for tuple assignment
-      [bag[0], bag[1]] = [bag[1]!, bag[0]!];
+      const b0 = bag[0];
+      const b1 = bag[1];
+      if (b0 !== undefined && b1 !== undefined) {
+        bag[0] = b1;
+        bag[1] = b0;
+      }
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- default value needs non-null assertion since array access returns T | undefined
-  const [bossId = WILDWOOD_BOSS_IDS[0]!, ...rest] = bag;
+  const [firstBoss] = WILDWOOD_BOSS_IDS;
+  const [bossId = firstBoss, ...rest] = bag;
   return { bossId, remainingBossIds: rest };
 }
 

@@ -12,7 +12,6 @@ import {
   DAMAGE_TYPES,
   PLAYER_STATUS_DISPLAY_ORDER,
   ENEMY_STATUS_DISPLAY_ORDER,
-  type DamageType,
   type PlayerStatusId,
   type EnemyStatusId,
 } from "@/lib/game-data";
@@ -45,7 +44,7 @@ export const CharacterIdSchema = z.enum(CHARACTER_IDS);
 export const DifficultyIdSchema = z.enum(DIFFICULTY_IDS);
 export const ContentSystemIdSchema = z.enum(["campaign", "labyrinth", "wildwood"]);
 
-const DAMAGE_TYPE_VALUES = toNonEmptyTuple(DAMAGE_TYPES as DamageType[], "Damage types");
+const DAMAGE_TYPE_VALUES = toNonEmptyTuple(DAMAGE_TYPES, "Damage types");
 const PLAYER_STATUS_IDS = toNonEmptyTuple(PLAYER_STATUS_DISPLAY_ORDER as PlayerStatusId[], "Player status IDs");
 const ENEMY_STATUS_IDS = toNonEmptyTuple(ENEMY_STATUS_DISPLAY_ORDER as EnemyStatusId[], "Enemy status IDs");
 
