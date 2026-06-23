@@ -6,6 +6,8 @@ import { migrateSaveDataToCurrent } from "@/lib/validation/migration";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { flattenGearInventories } from "@/lib/gear";
+import { cardLibrary } from "@/lib/game-data/cards";
+import { TOMBSTONED_CARD_IDS } from "@/lib/validation/migration/tombstoned-content-ids";
 import {
   LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION,
   MIGRATION_SCENARIO_FIXTURES,
@@ -167,5 +169,23 @@ describe("save migration guard", () => {
     expect(defaultKeys).toContain("saveSchemaVersion");
     expect(defaultKeys).toContain("activeRun");
     expect(new Set(defaultKeys).size).toBe(defaultKeys.length);
+  });
+
+  it("references only catalog or tombstoned card IDs in migrated fixtures", () => {
+    const cardIds = new Set(cardLibrary.map((c) => c.id));
+
+    const fixtures = [
+      ...Object.values(LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION),
+      ...Object.values(MIGRATION_SCENARIO_FIXTURES),
+    ];
+    const offenders: string[] = [];
+    for (const createFixture of fixtures) {
+      const migrated = normalizeSaveData(createFixture());
+
+      for (const id of migrated.discoveredCardIds ?? []) {
+        if (!cardIds.has(id) && !TOMBSTONED_CARD_IDS.has(id)) offenders.push(`discoveredCardIds: ${id}`);
+      }
+    }
+    expect(offenders, "Add tombstoned entries for unknown IDs, or fix the migration chain.").toEqual([]);
   });
 });

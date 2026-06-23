@@ -6,6 +6,7 @@ import {
   isUnsupportedFutureSaveData,
   isUnsupportedFutureContentData,
 } from "@/lib/validation/migration";
+import { migrateContentV2 } from "@/lib/validation/migration/migrate-content-v2";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_CONTENT_VERSION } from "@/lib/validation/metadata";
 import { legacyCampaignRunSave, legacyLabyrinthRunSave, legacyCorruptedCardRunSave } from "../../fixtures/legacy-saves";
 
@@ -250,5 +251,29 @@ describe("legacy fixture migration determinism", () => {
     expect(campaign.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(labyrinth.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(corrupted.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+  });
+});
+
+describe("migrateContentV2 idempotency", () => {
+  it("running migrateContentV2 twice produces a stable result", () => {
+    const before = {
+      contentVersion: 1,
+      discoveredTrinketIds: ["wish-boon", "leech-boon-siphon"],
+      unlockedTalents: { wish: ["wish-boon"], leech: ["leech-boon-siphon"] },
+    } as unknown as Record<string, unknown>;
+    const once = migrateContentV2(before as never);
+    const twice = migrateContentV2(once as never);
+    expect(twice).toEqual(once);
+    expect(once.contentVersion).toBe(CURRENT_CONTENT_VERSION);
+  });
+
+  it("running migrateContentV2 with no legacy ids is a no-op", () => {
+    const input = {
+      contentVersion: 1,
+      discoveredTrinketIds: ["bone-charm"],
+      unlockedTalents: { wish: ["wish-trinket"] },
+    } as unknown as Record<string, unknown>;
+    const once = migrateContentV2(input as never);
+    expect(once).toEqual({ ...input, contentVersion: CURRENT_CONTENT_VERSION });
   });
 });

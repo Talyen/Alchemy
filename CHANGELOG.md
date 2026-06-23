@@ -287,6 +287,12 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(battle): trigger player CC immediately on enemy damage, fix enemy block decay timing
+  - Player stun/freeze now resolves on damage (not deferred to tick phase)
+  - Enemy block decays at start of enemy phase (not end)
+  - Armor mitigates Stun damage by default (no longer talent-gated)
+  - Rework Steadfast talent to grant Armor at low health instead
+  - Update keyword and reference docs to match new timing rules
 - fix(battle): unify stun and freeze buildup damage
 - fix(armory): harden drag and crafting mutations
 - fix: type error in injectLabyrinthRun Object.assign call
@@ -1420,6 +1426,13 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore(ci): reduce GitHub Actions storage usage
+  - Exclude dist/Music/ from upload artifacts (~70 MB saved per run)
+  - Remove duplicate node_modules caches in favor of setup-node --prefer-offline
+  - Drop release-desktop-win retention 30d -> 3d
+  - Drop Playwright report retention 7d -> 3d
+  - Delete 32 unused PNGs from public/ (webp versions already in use, ~54 MB freed)
+- chore(lint): resolve CI warnings — type safety, unused import, fast-refresh split
 - chore(repo): reorganize feature tests to mirror source paths
 - chore: remove unused battle-facade, ignore tailwindcss-animate false positive
 - chore: delete unused expectItemAtCell helper

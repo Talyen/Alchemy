@@ -194,7 +194,8 @@
       "src/lib/utils.ts": ["exports", "types"],
       "src/app/screen-routes/index.tsx": ["types"],
       "src/features/alchemy/meta/screens/armory/armory-panels.tsx": ["types"],
-      "src/features/alchemy/meta/screens/armory/armory-targeting-state.ts": ["types"]
+      "src/features/alchemy/meta/screens/armory/armory-targeting-state.ts": ["types"],
+      "src/lib/validation/migration/tombstoned-content-ids.ts": ["exports", "types"]
     },
     "ignore": [
       "tests/environment.d.ts",

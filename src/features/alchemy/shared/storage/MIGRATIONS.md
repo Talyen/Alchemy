@@ -60,6 +60,21 @@ Migration tests must verify gameplay progress, not just field presence:
 
 Saves with a schema newer than the current build are intentionally not migrated or overwritten. The load path returns defaults for the session and disables autosave writes so an older build cannot destroy newer progress.
 
+## Public save contract
+
+`LAUNCH_SAVE_SCHEMA_VERSION` (currently `4`) is the frozen pre-launch baseline. **It is never modified post-launch.** Every bump to `CURRENT_SAVE_SCHEMA_VERSION >= LAUNCH_SAVE_SCHEMA_VERSION` is a public save-compat commitment: a player who upgrades from any prior build must be able to load and play their existing save.
+
+### Policy: local is authoritative
+
+Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring rotation) and then mirror to Steam Cloud. On load, candidates are walked in preference order (local → bak.1 → bak.2 → bak.3 → cloud) and the first that Zod-validates is used. Future-versioned candidates are silently skipped. Only when every candidate is from a future version does the load fall back to defaults with writes disabled; even then, the player sees no error UI.
+
+### Implementation rules
+
+- Migration steps in `src/lib/validation/migration/steps.ts` from v0→v4 are pre-launch history and stay frozen. Post-launch steps (v4→v5, v5→v6, …) may be added but never removed without a deliberate compat decision.
+- Card IDs that disappear from the live catalog must be added to `TOMBSTONED_CARD_IDS` in `src/lib/validation/migration/tombstoned-content-ids.ts`. The guard test in `save-migration-guard.test.ts` fails CI if a fixture references a card ID that is neither in the catalog nor in the tombstone set.
+- Saved active-run decks are eagerly hydrated at load time: card IDs are resolved against the live library, and any card whose ID no longer exists is silently dropped from the deck. The run always has a valid, drawable set of cards. No player-facing diagnostics.
+- The `SaveLoadStatus` shape has four variants: `ok`, `unsupported-newer-schema`, `unsupported-newer-content`, and `corrupt`. No diagnostic fields surface to the player.
+
 ## Progression gate fields
 
 When adding a new saved field that gates features (unlocks, meta screens, game modes):

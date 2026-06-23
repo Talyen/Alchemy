@@ -3,9 +3,8 @@ interface Window {
     isDesktop: boolean;
     setDisplayMode: (mode: "windowed" | "borderless-fullscreen" | "fullscreen") => Promise<void>;
     quit: () => Promise<void>;
-    loadSave: () => Promise<string | null>;
+    listSaveCandidates: () => Promise<string[]>;
     writeSave: (data: string) => Promise<boolean>;
-    backupSave: () => Promise<boolean>;
     clearSave: () => Promise<boolean>;
     steamGetName: () => Promise<string | null>;
     steamSetRichPresence: (key: string, val: string) => Promise<boolean>;

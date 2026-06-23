@@ -14,7 +14,7 @@ describe("bootstrapAlchemySaveState", () => {
 
   it("initializes Steam before loading on desktop", async () => {
     const steamGetName = vi.fn().mockResolvedValue("Tester");
-    const loadSave = vi.fn().mockResolvedValue(null);
+    const listSaveCandidates = vi.fn().mockResolvedValue([]);
 
     globalWithWindow.window = {
       localStorage: {
@@ -26,9 +26,8 @@ describe("bootstrapAlchemySaveState", () => {
         isDesktop: true,
         setDisplayMode: vi.fn(),
         quit: vi.fn(),
-        loadSave,
+        listSaveCandidates,
         writeSave: vi.fn(),
-        backupSave: vi.fn(),
         clearSave: vi.fn(),
         steamGetName,
         steamSetRichPresence: vi.fn(),
@@ -42,6 +41,6 @@ describe("bootstrapAlchemySaveState", () => {
     await bootstrapAlchemySaveState();
 
     expect(steamGetName).toHaveBeenCalled();
-    expect(loadSave).toHaveBeenCalled();
+    expect(listSaveCandidates).toHaveBeenCalled();
   }, 30_000);
 });

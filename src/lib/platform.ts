@@ -55,19 +55,11 @@ export const platform = {
 
   // Persisted save I/O: localStorage on web; desktop file + optional Steam Cloud.
   storage: {
-    async readLocal(key: string): Promise<StorageReadResult> {
-      const desktop = getDesktopApi();
-      if (desktop?.isDesktop) {
-        try {
-          return { ok: true, data: await desktop.loadSave() };
-        } catch (error) {
-          return { ok: false, error };
-        }
-      }
+    readLocal(key: string): Promise<StorageReadResult> {
       try {
-        return { ok: true, data: window.localStorage.getItem(key) };
+        return Promise.resolve({ ok: true, data: window.localStorage.getItem(key) });
       } catch (error) {
-        return { ok: false, error };
+        return Promise.resolve({ ok: false, error });
       }
     },
 
@@ -75,15 +67,20 @@ export const platform = {
       const desktop = getDesktopApi();
       if (desktop?.isDesktop) {
         try {
+          // Local first (atomic + backup-ring rotation in the IPC handler), then
+          // mirror to Steam Cloud. A partial cloud write no longer leaves a stale
+          // cloud copy that beats the local file on next boot.
+          const ok = await desktop.writeSave(value);
+          if (!ok) {
+            return { ok: false, error: new Error("Failed to write desktop save file") };
+          }
           if (platform.cloud.isAvailable) {
             const cloudOk = await platform.cloud.write(DESKTOP_SAVE_FILENAME, value);
             if (!cloudOk) {
               console.warn("Steam Cloud write failed, save may not sync");
             }
           }
-          const ok = await desktop.writeSave(value);
-          if (ok) return { ok: true };
-          return { ok: false, error: new Error("Failed to write desktop save file") };
+          return { ok: true };
         } catch (error) {
           return { ok: false, error };
         }
@@ -100,15 +97,17 @@ export const platform = {
       const desktop = getDesktopApi();
       if (desktop?.isDesktop) {
         try {
+          const ok = await desktop.clearSave();
+          if (!ok) {
+            return { ok: false, error: new Error("Failed to clear desktop save file") };
+          }
           if (platform.cloud.isAvailable) {
             const cloudOk = await platform.cloud.delete(DESKTOP_SAVE_FILENAME);
             if (!cloudOk) {
               console.warn("Steam Cloud delete failed, save may remain in cloud");
             }
           }
-          const ok = await desktop.clearSave();
-          if (ok) return { ok: true };
-          return { ok: false, error: new Error("Failed to clear desktop save file") };
+          return { ok: true };
         } catch (error) {
           return { ok: false, error };
         }
@@ -130,10 +129,14 @@ export const platform = {
       }
     },
 
-    async backupLocal(): Promise<void> {
+    async listSaveCandidates(): Promise<string[]> {
       const desktop = getDesktopApi();
-      if (desktop?.backupSave) {
-        await desktop.backupSave();
+      if (!desktop?.listSaveCandidates) return [];
+      try {
+        return await desktop.listSaveCandidates();
+      } catch (error) {
+        console.warn("listSaveCandidates failed", error);
+        return [];
       }
     },
   },

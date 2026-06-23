@@ -216,4 +216,73 @@ describe("storage io", () => {
       discoveredCardIds: ["future-card"],
     });
   });
+
+  it("walks backup.1 when local is corrupt on desktop", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const validFromBackup = JSON.stringify({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      contentVersion: CURRENT_CONTENT_VERSION,
+      discoveredCardIds: ["slash", "block"],
+    });
+    const corruptLocal = "not-valid-json";
+
+    (globalWithWindow as { window?: object }).window = {
+      localStorage: {
+        getItem: () => null,
+        setItem: () => undefined,
+        removeItem: () => undefined,
+      } as unknown as Storage,
+      alchemyDesktop: {
+        isDesktop: true,
+        setDisplayMode: vi.fn(),
+        quit: vi.fn(),
+        listSaveCandidates: vi.fn().mockResolvedValue([corruptLocal, validFromBackup]),
+        writeSave: vi.fn().mockResolvedValue(true),
+        clearSave: vi.fn(),
+        steamGetName: vi.fn().mockResolvedValue(null),
+        steamSetRichPresence: vi.fn(),
+        steamCloudRead: vi.fn().mockResolvedValue(null),
+        steamCloudWrite: vi.fn(),
+        steamCloudDelete: vi.fn(),
+      },
+    } as unknown as Window;
+
+    const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
+    const loaded = await loadAlchemySaveState();
+
+    expect(loaded.status.kind).toBe("ok");
+    expect(loaded.data.discoveredCardIds).toEqual(["slash", "block"]);
+  });
+
+  it("returns corrupt when every candidate fails JSON parsing on desktop", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    (globalWithWindow as { window?: object }).window = {
+      localStorage: {
+        getItem: () => null,
+        setItem: () => undefined,
+        removeItem: () => undefined,
+      } as unknown as Storage,
+      alchemyDesktop: {
+        isDesktop: true,
+        setDisplayMode: vi.fn(),
+        quit: vi.fn(),
+        listSaveCandidates: vi.fn().mockResolvedValue(["garbage", "also-garbage"]),
+        writeSave: vi.fn().mockResolvedValue(true),
+        clearSave: vi.fn(),
+        steamGetName: vi.fn().mockResolvedValue(null),
+        steamSetRichPresence: vi.fn(),
+        steamCloudRead: vi.fn().mockResolvedValue(null),
+        steamCloudWrite: vi.fn(),
+        steamCloudDelete: vi.fn(),
+      },
+    } as unknown as Window;
+
+    const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
+    const loaded = await loadAlchemySaveState();
+
+    expect(loaded.status.kind).toBe("corrupt");
+  });
 });

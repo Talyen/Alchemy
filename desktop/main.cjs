@@ -19,7 +19,8 @@ try {
 const DEV_SERVER_URL = process.env.ELECTRON_RENDERER_URL ?? "http://127.0.0.1:5173";
 const WINDOWED_SIZE = { width: 1280, height: 720 };
 const SAVE_FILE_PATH = path.join(app.getPath("userData"), "save.json");
-const SAVE_BACKUP_PATH = path.join(app.getPath("userData"), "save.json.bak");
+const SAVE_TMP_PATH = path.join(app.getPath("userData"), "save.json.tmp");
+const SAVE_BAK_PATHS = [1, 2, 3].map((i) => path.join(app.getPath("userData"), `save.json.bak.${i}`));
 
 function isDisplayMode(value) {
   return value === "windowed" || value === "borderless-fullscreen" || value === "fullscreen";
@@ -112,33 +113,29 @@ app.whenReady().then(() => {
   });
 
   // Asynchronous Save/Load handlers
-  ipcMain.handle("alchemy:load-save", async () => {
-    try {
-      return await fs.promises.readFile(SAVE_FILE_PATH, "utf8");
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        return null;
-      }
-      console.error("Error reading save file:", error);
-      return null;
-    }
-  });
 
-  ipcMain.handle("alchemy:backup-save", async () => {
-    try {
-      if (fs.existsSync(SAVE_BACKUP_PATH)) {
-        return true;
+  // Returns every save candidate the renderer can walk, in preference order
+  // (local, bak.1, bak.2, bak.3). Each string is a raw file payload that the
+  // renderer parses and validates; this handler only does cheap I/O and size
+  // filtering.
+  ipcMain.handle("alchemy:list-save-candidates", async () => {
+    const candidates = [];
+    const localPaths = [
+      SAVE_FILE_PATH,
+      ...SAVE_BAK_PATHS,
+    ];
+    for (const filePath of localPaths) {
+      try {
+        const data = await fs.promises.readFile(filePath, "utf8");
+        if (typeof data === "string" && Buffer.byteLength(data, "utf8") <= MAX_SAVE_PAYLOAD_BYTES) {
+          candidates.push(data);
+        }
+      } catch (err) {
+        if (err && err.code === "ENOENT") continue;
+        console.error(`Error reading save candidate ${filePath}:`, err);
       }
-      const data = await fs.promises.readFile(SAVE_FILE_PATH, "utf8");
-      await fs.promises.writeFile(SAVE_BACKUP_PATH, data, "utf8");
-      return true;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        return true;
-      }
-      console.error("Error backing up save file:", error);
-      return false;
     }
+    return candidates;
   });
 
   ipcMain.handle("alchemy:write-save", async (_event, data) => {
@@ -150,9 +147,50 @@ app.whenReady().then(() => {
       if (!fs.existsSync(dir)) {
         await fs.promises.mkdir(dir, { recursive: true });
       }
-      await fs.promises.writeFile(SAVE_FILE_PATH, data, "utf8");
+
+      // 1. Write to save.json.tmp in the same directory (required for Windows
+      //    MoveFileEx replace semantics to be atomic across volumes).
+      const handle = await fs.promises.open(SAVE_TMP_PATH, "w");
+      try {
+        await handle.writeFile(data, "utf8");
+        await handle.fdatasync();
+      } finally {
+        await handle.close();
+      }
+
+      // 2. Rotate backups: save.json -> bak.1 -> bak.2 -> bak.3 (delete oldest).
+      //    Iterate from highest index down so we never clobber a slot we still need.
+      for (let i = SAVE_BAK_PATHS.length - 1; i >= 0; i -= 1) {
+        const to = SAVE_BAK_PATHS[i];
+        const from = i === 0 ? SAVE_FILE_PATH : SAVE_BAK_PATHS[i - 1];
+        try {
+          await fs.promises.access(from, fs.constants.F_OK);
+        } catch (err) {
+          if (err && err.code === "ENOENT") continue;
+          throw err;
+        }
+        if (i === SAVE_BAK_PATHS.length - 1) {
+          try {
+            await fs.promises.unlink(to);
+          } catch (err) {
+            if (!err || err.code !== "ENOENT") throw err;
+          }
+        }
+        await fs.promises.rename(from, to, { overwrite: true });
+      }
+
+      // 3. Final atomic swap.
+      await fs.promises.rename(SAVE_TMP_PATH, SAVE_FILE_PATH, { overwrite: true });
       return true;
     } catch (error) {
+      // Best-effort cleanup of partial temp file.
+      try {
+        await fs.promises.unlink(SAVE_TMP_PATH);
+      } catch (err) {
+        if (!err || err.code !== "ENOENT") {
+          console.error("Error cleaning up temp save file:", err);
+        }
+      }
       console.error("Error writing save file:", error);
       return false;
     }
@@ -176,7 +214,13 @@ app.whenReady().then(() => {
     if (!steamClient) return null;
     try {
       if (steamClient.cloud.fileExists("save.json")) {
-        return steamClient.cloud.readFile("save.json");
+        const buf = await steamClient.cloud.readFile("save.json");
+        // Reject oversized cloud blobs before they hit the renderer.
+        if (buf && buf.length > MAX_SAVE_PAYLOAD_BYTES) {
+          console.error(`Steam Cloud save exceeds ${MAX_SAVE_PAYLOAD_BYTES} bytes (got ${buf.length}); ignoring.`);
+          return null;
+        }
+        return buf ? buf.toString("utf8") : null;
       }
     } catch (err) {
       console.error("Error reading Steam Cloud save:", err);

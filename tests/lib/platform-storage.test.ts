@@ -45,25 +45,10 @@ describe("platform.storage", () => {
     if (read.ok) expect(read.data).toBe('{"ok":true}');
   });
 
-  it("uses desktop loadSave when packaged", async () => {
-    const loadSave = vi.fn().mockResolvedValue('{"desktop":true}');
-    window.alchemyDesktop = {
-      isDesktop: true,
-      setDisplayMode: vi.fn(),
-      quit: vi.fn(),
-      loadSave,
-      writeSave: vi.fn(),
-      backupSave: vi.fn(),
-      clearSave: vi.fn(),
-      steamGetName: vi.fn(),
-      steamSetRichPresence: vi.fn(),
-      steamCloudRead: vi.fn(),
-      steamCloudWrite: vi.fn(),
-      steamCloudDelete: vi.fn(),
-    };
-    const read = await platform.storage.readLocal("ignored");
-    expect(loadSave).toHaveBeenCalled();
+  it("reads via localStorage on web", async () => {
+    window.localStorage.setItem("test", '{"web":true}');
+    const read = await platform.storage.readLocal("test");
     expect(read.ok).toBe(true);
-    if (read.ok) expect(read.data).toBe('{"desktop":true}');
+    if (read.ok) expect(read.data).toBe('{"web":true}');
   });
 });

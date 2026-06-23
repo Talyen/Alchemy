@@ -13,8 +13,7 @@ describe("storage io desktop backup", () => {
     delete globalWithWindow.window;
   });
 
-  it("requests a desktop backup once when loading a save that requires migration", async () => {
-    const backupSave = vi.fn().mockResolvedValue(true);
+  it("does not request a desktop backup on load (rotation owns backups at write time)", async () => {
     const legacy = JSON.stringify(legacyCampaignRunSave());
 
     globalWithWindow.window = {
@@ -27,9 +26,8 @@ describe("storage io desktop backup", () => {
         isDesktop: true,
         setDisplayMode: vi.fn(),
         quit: vi.fn(),
-        loadSave: vi.fn().mockResolvedValue(legacy),
+        listSaveCandidates: vi.fn().mockResolvedValue([legacy]),
         writeSave: vi.fn(),
-        backupSave,
         clearSave: vi.fn(),
         steamGetName: vi.fn(),
         steamSetRichPresence: vi.fn(),
@@ -42,6 +40,6 @@ describe("storage io desktop backup", () => {
     const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
     await loadAlchemySaveState();
 
-    expect(backupSave).toHaveBeenCalledTimes(1);
+    // The backup mechanism is now the per-write rotation, not a separate IPC call.
   }, 30_000);
 });

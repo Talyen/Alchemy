@@ -31,7 +31,7 @@ describe("storage io cloud merge", () => {
     delete globalWithWindow.window;
   });
 
-  it("prefers newer cloud save on desktop cold boot before steam init completes", async () => {
+  it("prefers local save over cloud on desktop cold boot", async () => {
     const localSave = {
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
       lastSavedAt: 0,
@@ -49,9 +49,37 @@ describe("storage io cloud merge", () => {
       isDesktop: true,
       setDisplayMode: vi.fn(),
       quit: vi.fn(),
-      loadSave: vi.fn().mockResolvedValue(JSON.stringify(localSave)),
+      listSaveCandidates: vi.fn().mockResolvedValue([JSON.stringify(localSave)]),
       writeSave: vi.fn().mockResolvedValue(true),
-      backupSave: vi.fn().mockResolvedValue(true),
+      clearSave: vi.fn(),
+      steamGetName: vi.fn().mockResolvedValue(null),
+      steamSetRichPresence: vi.fn(),
+      steamCloudRead: vi.fn().mockResolvedValue(JSON.stringify(cloudSave)),
+      steamCloudWrite: vi.fn(),
+      steamCloudDelete: vi.fn(),
+    };
+
+    const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
+    const loaded = await loadAlchemySaveState();
+
+    expect(loaded.data.discoveredCardIds).toEqual(["slash"]);
+    expect(mockStorage[SAVE_KEY]).toBeUndefined();
+  });
+
+  it("falls back to cloud when local save is missing", async () => {
+    const cloudSave = {
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      lastSavedAt: 0,
+      discoveredCardIds: ["slash", "block"],
+      activeRun: null,
+    };
+
+    globalWithWindow.window!.alchemyDesktop = {
+      isDesktop: true,
+      setDisplayMode: vi.fn(),
+      quit: vi.fn(),
+      listSaveCandidates: vi.fn().mockResolvedValue([]),
+      writeSave: vi.fn().mockResolvedValue(true),
       clearSave: vi.fn(),
       steamGetName: vi.fn().mockResolvedValue(null),
       steamSetRichPresence: vi.fn(),
@@ -64,6 +92,6 @@ describe("storage io cloud merge", () => {
     const loaded = await loadAlchemySaveState();
 
     expect(loaded.data.discoveredCardIds).toEqual(["slash", "block"]);
-    expect(mockStorage[SAVE_KEY]).toBeUndefined();
+    expect(loaded.status.kind).toBe("ok");
   });
 });
