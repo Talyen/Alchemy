@@ -1,51 +1,12 @@
 # Alchemy — Code quality audits
 
-Agent prompts for **code quality and UI/UX** — simplification, hardening, readability, and interaction/layout review. Copy a section into your agent with target paths or a diff attached. For domain wiring (cards, saves, screens, gear), use [WORKFLOWS.md](./docs/WORKFLOWS.md) and [CONTRIBUTING.md](./CONTRIBUTING.md) instead.
+Agent prompts for **code quality and UI/UX** — readability, hardening, interaction/layout review, and measurable code-quality criteria. Copy a section into your agent with target paths or a diff attached. For domain wiring (cards, saves, screens, gear), use [WORKFLOWS.md](./docs/WORKFLOWS.md) and [CONTRIBUTING.md](./CONTRIBUTING.md) instead.
 
 **Docs:** [AGENTS.md](./AGENTS.md) (rules) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks & tests)
 
 **Verification tiers:** narrow area tests from [CONTRIBUTING — What to run when you change](./CONTRIBUTING.md#what-to-run-when-you-change) · **Default gate:** `npm run lint:ci && npm test` · **Pre-push parity:** `npm run check:push` · **Save/ship:** `npm run check:ship`
 
-Each audit uses: **Goal** · **Check** · **Docs** · **When done**
-
----
-
-## Simplicity & LOC reduction audit
-
-**Goal:** Remove dead code, duplication, and unnecessary indirection without breaking generated outputs.
-
-**Check:**
-
-- Run `npm run deadcode` (knip; also runs inside `lint:ci`)
-- Unused exports, duplicate helpers, orphaned test files
-- Duplicate logic across files — consolidate or extract only when it reduces total LOC
-- Pass-through wrappers (re-export, thin delegate, alias function with no behavior)
-- Unnecessary intermediate types/interfaces used in one place
-- Split files only when cohesion is genuinely different; prefer deleting over splitting
-- Do not delete symbols only referenced from generated files (`gear-art.ts`, `metadata.generated.ts`) without running the asset/sync scripts
-
-**Docs:** [AGENTS.md — Generated and heavy files](./AGENTS.md#generated-and-heavy-files)
-
-**When done:** `npm run deadcode && npm run lint:ci && npm test`
-
----
-
-## Over-engineering audit
-
-**Goal:** Remove abstraction that costs more than it saves.
-
-**Check:**
-
-- Generalization for a single caller (config objects, strategy/factory for 2 cases)
-- Unused extension points, hooks, or "future-proof" parameters
-- Indirection chains where the caller could use the underlying API directly
-- Duplicate state sources (derive instead of sync)
-- Comments explaining confusing code — prefer simplifying the code and deleting the comment
-- New dependencies or patterns inconsistent with the surrounding module
-
-**Docs:** [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants)
-
-**When done:** `npm run lint:ci && npm test` (narrow tests for touched paths)
+Qualitative audits use: **Goal** · **Check** · **Docs** · **When done**. Measurable criteria audits (in [Measurable code-quality criteria](#measurable-code-quality-criteria)) add a **Measure** field with a quantification command and numeric target.
 
 ---
 
@@ -65,41 +26,6 @@ Each audit uses: **Goal** · **Check** · **Docs** · **When done**
 **Docs:** [AGENTS.md — UI conventions](./AGENTS.md#ui-conventions)
 
 **When done:** `npm run lint:ci`
-
----
-
-## Type safety audit
-
-**Goal:** Eliminate unsafe typing in changed files; keep persistence boundaries validated.
-
-**Check:**
-
-- Hunt `any`, `@ts-expect-error`, `@ts-ignore`, `eslint-disable`, `as unknown as`, and non-null assertions at persistence boundaries
-- Prefer narrowing over assertion at boundaries
-- Zod/validation at save/load boundaries
-
-**Docs:** [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants) · [WORKFLOWS — persisted save data](./docs/WORKFLOWS.md#change-persisted-save-data)
-
-**When done:** `npm run lint:ci`
-
----
-
-## Architecture compliance audit
-
-**Goal:** Verify changed files respect layer constraints and boundary patterns enforced by ESLint and project invariants.
-
-**Check:**
-
-- `eslint.config.js` is the source of truth for import boundaries
-- `src/lib/**` must not import `@/features/**`
-- Feature screens must not import run-loop orchestration
-- `src/lib/battle/**` remains framework-agnostic and must not import features
-- `shared/ui` receives run/battle/session data through props only
-- Features outside `shared/stores/` use `run-session-facade`, not `run-domain-store` directly
-
-**Docs:** [AGENTS.md — Import boundary summary](./AGENTS.md#import-boundary-summary) · [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants) · [ARCHITECTURE.md — Import boundaries](./docs/ARCHITECTURE.md#import-boundaries)
-
-**When done:** `npm run lint:ci` (+ architecture tests if facade/store paths touched)
 
 ---
 
@@ -169,3 +95,243 @@ Each audit uses: **Goal** · **Check** · **Docs** · **When done**
 - Check narrow + wide desktop viewports when layout changed; ask the user if clipping is uncertain
 
 **When done:** `tests/features/ui/` or relevant `tests/*.spec.ts` if placement/layout logic changed; `npm run lint:ci`
+
+---
+
+## Measurable code-quality criteria
+
+The audits below each target a single measurable criterion with a target and a quantification command. Run **Measure** to find violations, **Check** to fix them, **When done** to verify. Targets are directionals to drive toward across passes — reduce the count each pass, not necessarily to zero in one pass. Criteria #7 and #9 are deliberate counterweights to #2/#4/#5: do not optimize complexity, length, or coupling by over-abstracting.
+
+---
+
+## 1. Type safety density audit
+
+**Goal:** Drive unsafe typing escapes toward zero in non-test source.
+
+**Measure:**
+
+- `any` in src (already `error` via `@typescript-eslint/no-explicit-any`): `rg -n '\bany\b' src --type ts -g '!*.test.*' -g '!*.spec.*'` — target 0
+- Type escapes: `rg -n '@ts-ignore|@ts-expect-error|eslint-disable|as unknown as' src` — target trending to 0; each survivor needs a line-scoped reason
+- Non-null assertions (`expr!.prop`): `rg -n '!\.' src --type ts -g '!*.test.*'` — target ≤ 1 per ~500 LOC
+
+**Check:**
+
+- Replace `as` casts with type guards, narrowing, or discriminated unions
+- Replace `@ts-ignore` / `@ts-expect-error` by fixing the underlying type mismatch
+- Remove `eslint-disable` by fixing the violation; a surviving disable must be line-scoped with a reason
+- Replace non-null assertions with explicit null checks or optional chaining
+- Keep Zod/validation at save/load boundaries (see [WORKFLOWS — persisted save data](./docs/WORKFLOWS.md#change-persisted-save-data))
+
+**Docs:** [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants)
+
+**When done:** `npm run typecheck && npm run lint:ci`
+
+---
+
+## 2. Cyclomatic complexity audit
+
+**Goal:** No function exceeds complexity 10; p90 ≤ 6.
+
+**Measure:**
+
+- Flag offenders by layering the ESLint `complexity` rule over the existing config:
+  `npx eslint --rule 'complexity: ["warn", 11]' src`
+  (Every warning is a function with complexity > 10. Record the list; re-run at threshold 7 to gauge p90.)
+- Target: zero warnings at threshold 11.
+
+**Check:**
+
+- Extract branch-heavy logic into named helpers with a single responsibility
+- Replace nested `if/else` with early returns / guard clauses
+- Replace `switch` or chained `if` over a discriminant with a lookup table / record map
+- Split combinatorial conditions into named boolean predicates
+- Do not split a function that reads cleanly top-to-bottom at ≤ 10 — splitting for its own sake hurts [single-use abstraction audit](#7-single-use-abstraction-audit)
+
+**Docs:** [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants)
+
+**When done:** `npm run lint:ci && npm test -- <touched paths>`
+
+---
+
+## 3. Dead code ratio audit
+
+**Goal:** Zero dead exports, imports, types, and files.
+
+**Measure:**
+
+- `npm run deadcode:strict` (knip, strict, includes entry exports) — target 0 findings
+- For context, total exports: `rg -c 'export ' src --type ts`
+
+**Check:**
+
+- Delete unused exports, types, and files outright (prefer deleting over commenting)
+- Inline single-use helpers where inlining reduces total LOC
+- Do not delete symbols referenced only from generated files (`metadata.generated.ts`, optimized assets) without running the sync/asset scripts — see [AGENTS.md — Generated and heavy files](./AGENTS.md#generated-and-heavy-files)
+- Remove orphaned test files for deleted source
+
+**Docs:** [AGENTS.md — Generated and heavy files](./AGENTS.md#generated-and-heavy-files)
+
+**When done:** `npm run deadcode:strict && npm run lint:ci && npm test`
+
+---
+
+## 4. Function & file length audit
+
+**Goal:** No function > 50 executable lines; no source file > 300 lines (excluding tests and generated files).
+
+**Measure:**
+
+- Function length: `npx eslint --rule 'max-lines-per-function: ["warn", 51, { skipComments: true }]' src` — target zero warnings
+- File length (top offenders in PowerShell):
+  `Get-ChildItem -Recurse -File -Include *.ts,*.tsx -Path src | ForEach-Object { [PSCustomObject]@{ Name=$_.Name; Lines=(Get-Content $_.FullName).Count } } | Sort-Object Lines -Descending | Select-Object -First 20`
+- Target: zero source files > 300 lines (exclude `*.test.*`, `*.spec.*`, and generated files from judgement)
+
+**Check:**
+
+- Split long functions by responsibility (not by arbitrary line count)
+- Split long files by cohesive concern; run [dead code ratio audit](#3-dead-code-ratio-audit) first since length is often dead code
+- For UI components, extract subcomponents only when reused or genuinely independent
+- Do not split if it worsens [single-use abstraction audit](#7-single-use-abstraction-audit)
+
+**Docs:** [AGENTS.md — Pragmatism and Simplicity](./AGENTS.md#pragmatism-and-simplicity)
+
+**When done:** `npm run lint:ci && npm test -- <touched paths>`
+
+---
+
+## 5. Import coupling & boundary audit
+
+**Goal:** Zero circular imports; efferent imports per module p90 ≤ 12, max ≤ 20; zero layer-boundary violations.
+
+**Measure:**
+
+- Circular imports: `npx -y madge --circular --extensions ts --ts-config tsconfig.json src` — target 0 (look for "Circular dependencies found" or listed cycles)
+- Efferent imports per file: `rg -c '^import ' src --type ts` — flag files with > 20; target p90 ≤ 12
+- Boundary violations: `npm run lint` (enforced by `eslint.config.js` `no-restricted-imports`) — target 0
+
+**Check:**
+
+- Break cycles by inverting the dependency (extract a shared module, or depend on an interface/type, not the concrete store)
+- Reduce efferent coupling by depending on a barrel/facade instead of many deep modules
+- Move shared code to its owning layer rather than reaching across
+- Boundary violations are lint failures — fix the import, do not widen the rule
+
+**Docs:** [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants) · [eslint.config.js](./eslint.config.js)
+
+**When done:** `npx -y madge --circular --extensions ts --ts-config tsconfig.json src; npm run lint:ci`
+
+---
+
+## 6. Change amplification audit
+
+**Goal:** Feature changes touch a small, predictable set of files — median ≤ 5 per `feat`/`fix`/`balance` commit; no single behavior change forces edits across > 8 files.
+
+**Measure:**
+
+- `git log --since="3 months ago" --grep="^(feat|fix|balance)" --name-only --format="--- %s"`
+- Count files per `---`-delimited commit block; compute the median. List files appearing in > 25% of feature commits (hotspots).
+- Target: median ≤ 5; no hotspot edited in > 25% of feature commits without a clear owning seam.
+
+**Check:**
+
+- For the top 3 hotspots, identify the missing seam (facade, event, interface, colocated data) and introduce it so the next change is localized
+- Remove duplicated responsibility that forces parallel edits across files
+- Colocate logic that is always changed together
+- This is a pattern audit — propose the seam to the user before implementing if the fix is non-obvious (per [AGENTS.md — Escalation policy](./AGENTS.md#escalation-policy))
+
+**Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) · [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants)
+
+**When done:** `npm run lint:ci && npm test -- <touched paths>`
+
+---
+
+## 7. Single-use abstraction audit
+
+**Goal:** < 15% of abstractions (interfaces, generic helpers, factories, wrapper functions) have exactly one call site.
+
+**Measure:**
+
+- `npm run deadcode:strict` flags zero-use abstractions; for single-use, scan the rest:
+  for each interface/factory/generic helper, count non-definition references with `rg -l 'Name' src`
+- Track total abstractions vs. single-use abstractions — target < 15% single-use.
+
+**Check:**
+
+- Inline an abstraction with exactly one caller and no near-term second caller
+- Remove "future-proof" parameters, config objects, and strategy/factory layers with one implementation
+- Collapse indirection chains where the caller could use the underlying API directly
+- Counterweight to #2/#4/#5: do not extract a helper unless it has ≥ 2 call sites with identical intent
+
+**Docs:** [AGENTS.md — Pragmatism and Simplicity](./AGENTS.md#pragmatism-and-simplicity)
+
+**When done:** `npm run lint:ci && npm test`
+
+---
+
+## 8. Side-effect surface audit
+
+**Goal:** Side effects (I/O, shared/global mutation, non-deterministic primitives) confined to designated seams (stores, storage, RNG injectors); zero in pure logic and UI components.
+
+**Measure:**
+
+- Non-deterministic primitives outside seams:
+  `rg -n 'Math\.random|Date\.now|new Date\(\)|fetch\(|localStorage|sessionStorage' src --type ts -g '!**/stores/**' -g '!**/storage/**' -g '!**/rng*'`
+- Battle RNG (eslint-enforced): `rg -n 'Math\.random' src/lib/battle` — target 0
+- Target: zero hits in `src/lib/**` pure logic and `src/features/**/screens` components (excluding designated seams).
+
+**Check:**
+
+- Inject the dependency (RNG, clock, store) as a parameter rather than calling the global
+- Push the effect to the seam (store/repository) and keep the function pure
+- For `Math.random` in battle, use `state.rng` / `getBattleRng(state)` — see [REFERENCE — battle rules](./docs/REFERENCE.md#battle-implementation-rules)
+- For UI randomness, initialize lazily with `useState(() => …)` per [AGENTS.md — UI conventions](./AGENTS.md#ui-conventions)
+
+**Docs:** [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants) · [REFERENCE.md](./docs/REFERENCE.md#battle-implementation-rules)
+
+**When done:** `npm run lint:ci && npm test -- <touched paths>`
+
+---
+
+## 9. Code duplication density audit
+
+**Goal:** < 3% duplicated blocks (≥ 6 lines) across non-test source.
+
+**Measure:**
+
+- `npx -y jscpd --path src --min-lines 6 --format typescript --ignore '**/*.test.*,**/*.spec.*' --reporters json,console`
+- Read the console summary line ("Total duplicated lines: X (Y%)") or `jscpd-report.json` `duplicates.percentage` — target < 3%.
+- List the top duplicated blocks by size from the report.
+
+**Check:**
+
+- Extract a shared helper **only** when ≥ 2–3 sites share identical intent (counterweight to #2/#4 — do not over-DRY coincidental similarity)
+- For near-duplicates that diverge by a value, parameterize the value rather than copying the block
+- For duplicates that diverge by behavior, leave them separate and note the intentional divergence
+- Do not extract duplicates that are only superficially similar
+
+**Docs:** [AGENTS.md — Pragmatism and Simplicity](./AGENTS.md#pragmatism-and-simplicity)
+
+**When done:** `npx -y jscpd --path src --min-lines 6 --format typescript --ignore '**/*.test.*,**/*.spec.*' && npm run lint:ci && npm test`
+
+---
+
+## 10. Meaningful test coverage audit
+
+**Goal:** High test presence on exported domain logic; mutation score ≥ 60% on core modules.
+
+**Measure:**
+
+- Coverage: `npm run test:coverage` — review `coverage/` for modules with < 80% branch coverage on `src/lib/battle`, `src/lib/gear`, `src/features/alchemy/shared/storage`
+- Export presence: for each export in `src/lib/**`, confirm ≥ 1 test references it (`rg -l 'exportName' tests`) — target ≥ 90% on domain logic
+- Mutation (expensive — one module per pass): `npx -y @stryker-mutator/core init` to configure once, then run per module targeting `src/lib/<module>/*.ts` — target mutation score ≥ 60% on battle/state/validation core
+
+**Check:**
+
+- Add behavior-targeted tests for untested exports (assert outcomes, not implementation)
+- Strengthen assertions that mutation testing shows are weak (a surviving mutation means the test does not catch the change)
+- No trivial assertions ("function exists", "returns defined") — see [Test quality audit](#test-quality-audit)
+- Prefer fewer strong tests over many weak ones; do not chase line coverage with dead assertions
+
+**Docs:** [CONTRIBUTING — What to run when you change](./CONTRIBUTING.md#what-to-run-when-you-change) · [Test quality audit](#test-quality-audit)
+
+**When done:** `npm run test:coverage && npm run lint:ci`
