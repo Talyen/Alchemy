@@ -1,6 +1,8 @@
 // Core types for the Homestead persistent progression system.
 // Materials, building/farm/research IDs, and effect manifests.
 
+import type { TalentEffectManifest } from "@/lib/game-data";
+
 export type MaterialId = "wood" | "iron" | "herbs" | "food" | "crystal";
 
 export const MATERIAL_IDS: MaterialId[] = ["wood", "iron", "herbs", "food", "crystal"];
@@ -76,32 +78,66 @@ export interface HomesteadResearch {
   buttonLabel: string;
 }
 
-// Pre-computed bonuses that Homestead provides to runs. Battle-level effects
-// are merged into TalentEffectManifest; run-level effects applied at character select.
-export interface HomesteadEffectManifest {
-  flatPhysicalDamage: number;
-  companionDamage: number;
-  companionBondLevels: Record<import("@/lib/game-data").CompanionId, number>;
-  potionPotency: number;
+// ─── Homestead key arrays ───────────────────────────────────────────
+// Single source of truth for which TalentEffectManifest fields homestead
+// can contribute to. The generic merger (effects.ts) iterates these arrays
+// — adding a key here automatically makes it mergeable from homestead data.
+
+type NumericTalentKey = {
+  [K in keyof TalentEffectManifest]: TalentEffectManifest[K] extends number ? K : never;
+}[keyof TalentEffectManifest];
+
+type BooleanTalentKey = {
+  [K in keyof TalentEffectManifest]: TalentEffectManifest[K] extends boolean ? K : never;
+}[keyof TalentEffectManifest];
+
+type RecordTalentKey = {
+  [K in keyof TalentEffectManifest]: TalentEffectManifest[K] extends Record<string, unknown> ? K : never;
+}[keyof TalentEffectManifest];
+
+export const HOMESTEAD_BATTLE_NUMERIC_KEYS = [
+  "flatPhysicalDamage",
+  "companionDamage",
+  "potionPotency",
+  "flatBurnDamage",
+  "flatArrowDamage",
+  "flatFreezeDamage",
+  "flatNatureDamage",
+  "wishCrystalGold",
+  "startMana",
+  "consumeHealMultiplier",
+  "potionMixPotency",
+  "burnDamageReduction",
+  "freezeDamageReduction",
+  "natureDamageReduction",
+  "poisonDamageReduction",
+  "runMaxHealthBonus",
+  "runMaxManaBonus",
+] as const satisfies readonly NumericTalentKey[];
+
+export const HOMESTEAD_BATTLE_BOOLEAN_KEYS = ["forgeToBurn"] as const satisfies readonly BooleanTalentKey[];
+
+export const HOMESTEAD_BATTLE_RECORD_KEYS = [
+  "companionBondLevels",
+  "cardHealBonus",
+] as const satisfies readonly RecordTalentKey[];
+
+export const HOMESTEAD_BATTLE_KEYS = [
+  ...HOMESTEAD_BATTLE_NUMERIC_KEYS,
+  ...HOMESTEAD_BATTLE_BOOLEAN_KEYS,
+  ...HOMESTEAD_BATTLE_RECORD_KEYS,
+] as const;
+
+export type HomesteadBattleEffects = Pick<TalentEffectManifest, (typeof HOMESTEAD_BATTLE_KEYS)[number]>;
+
+// Run-level homestead bonuses that never enter battle state.
+export interface HomesteadMetaEffects {
   herbFindBonus: number;
   endRunFoodPerRoom: number;
   endRunHerbsPerRoom: number;
   endRunCrystalPerRoom: number;
-  forgeToBurn: boolean;
-  flatBurnDamage: number;
-  flatArrowDamage: number;
-  flatFreezeDamage: number;
-  flatNatureDamage: number;
-  wishCrystalGold: number;
-  startMana: number;
-  consumeHealMultiplier: number;
-  potionMixPotency: number;
   gearAstralChanceBonus: number;
-  burnDamageReduction: number;
-  freezeDamageReduction: number;
-  natureDamageReduction: number;
-  poisonDamageReduction: number;
-  runMaxHealthBonus: number;
-  runMaxManaBonus: number;
-  cardHealBonus: Record<string, number>;
 }
+
+// Composite: all homestead bonuses feed through a single manifest type.
+export type HomesteadEffectManifest = HomesteadBattleEffects & HomesteadMetaEffects;

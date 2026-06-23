@@ -1,27 +1,31 @@
-// Computes the HomesteadEffectManifest from constructed buildings, farm plots,
-// completed research, and bonded companions. Also provides a merge helper that
-// folds homestead effects into a TalentEffectManifest for battle use.
-
 import type { TalentEffectManifest } from "@/lib/game-data";
 import type { HomesteadEffectManifest } from "./types";
+import { HOMESTEAD_BATTLE_NUMERIC_KEYS, HOMESTEAD_BATTLE_BOOLEAN_KEYS, HOMESTEAD_BATTLE_RECORD_KEYS } from "./types";
 import { defaultHomesteadEffects } from "./defaults";
 import { buildings, farmPlots, researchUpgrades } from "./data";
 
 function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<HomesteadEffectManifest>): void {
   if (!partial) return;
   for (const key of Object.keys(partial) as Array<keyof HomesteadEffectManifest>) {
-    if (key === "companionBondLevels") continue;
-    if (key === "cardHealBonus") continue;
     const val = partial[key];
     if (typeof val === "number") {
       (base[key] as number) += val;
     } else if (typeof val === "boolean") {
       (base[key] as boolean) = (base[key] as boolean) || val;
+    } else if (typeof val === "object") {
+      const baseVal = base[key];
+      if (typeof baseVal === "object") {
+        const merged = { ...(baseVal as Record<string, number>) };
+        for (const [k, v] of Object.entries(val)) {
+          merged[k] = (merged[k] ?? 0) + v;
+        }
+        (base[key] as Record<string, number>) = merged;
+      }
     }
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- I constrains tier structure across all items
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 function applyItemTiers<I extends { id: string; tiers: Array<{ effects?: Partial<HomesteadEffectManifest> }> }>(
   base: HomesteadEffectManifest,
   items: I[],
@@ -55,62 +59,36 @@ export function computeHomesteadEffects(
     }
   }
 
-  // Accumulate cardHealBonus from all tier effects
-  const cardBonuses: Record<string, number> = {};
-  const collectCards = (
-    items: Array<{ id: string; tiers: Array<{ effects?: Partial<HomesteadEffectManifest> }> }>,
-    levels: Record<string, number>,
-  ) => {
-    for (const [id, level] of Object.entries(levels)) {
-      const item = items.find((i) => i.id === id);
-      if (!item) continue;
-      for (let i = 0; i < level; i++) {
-        const tier = item.tiers[i]?.effects;
-        if (tier?.cardHealBonus) {
-          for (const [cardId, bonus] of Object.entries(tier.cardHealBonus)) {
-            cardBonuses[cardId] = (cardBonuses[cardId] ?? 0) + bonus;
-          }
-        }
-      }
-    }
-  };
-  collectCards(buildings, constructedBuildings);
-  collectCards(farmPlots, plantedFarms);
-  collectCards(researchUpgrades, completedResearch);
-  if (Object.keys(cardBonuses).length > 0) {
-    effects.cardHealBonus = { ...effects.cardHealBonus, ...cardBonuses };
-  }
-
   return effects;
 }
 
 // Merges homestead effects into a TalentEffectManifest so battle code reads
-// combined bonuses from a single source.
+// combined bonuses from a single source. The merger is generic — it iterates
+// the key arrays from types.ts, so adding a key to HOMESTEAD_BATTLE_*_KEYS
+// automatically makes it mergeable. No per-field listing to maintain.
 export function mergeIntoManifest(
   talentEffects: TalentEffectManifest,
   homesteadEffects: HomesteadEffectManifest,
 ): TalentEffectManifest {
-  return {
-    ...talentEffects,
-    flatPhysicalDamage: talentEffects.flatPhysicalDamage + homesteadEffects.flatPhysicalDamage,
-    companionDamage: talentEffects.companionDamage + homesteadEffects.companionDamage,
-    companionBondLevels: { ...talentEffects.companionBondLevels, ...homesteadEffects.companionBondLevels },
-    potionPotency: talentEffects.potionPotency + homesteadEffects.potionPotency,
-    forgeToBurn: talentEffects.forgeToBurn || homesteadEffects.forgeToBurn,
-    flatBurnDamage: talentEffects.flatBurnDamage + homesteadEffects.flatBurnDamage,
-    flatArrowDamage: talentEffects.flatArrowDamage + homesteadEffects.flatArrowDamage,
-    flatFreezeDamage: talentEffects.flatFreezeDamage + homesteadEffects.flatFreezeDamage,
-    flatNatureDamage: talentEffects.flatNatureDamage + homesteadEffects.flatNatureDamage,
-    wishCrystalGold: talentEffects.wishCrystalGold + homesteadEffects.wishCrystalGold,
-    startMana: talentEffects.startMana + homesteadEffects.startMana,
-    consumeHealMultiplier: talentEffects.consumeHealMultiplier + homesteadEffects.consumeHealMultiplier,
-    potionMixPotency: talentEffects.potionMixPotency + homesteadEffects.potionMixPotency,
-    burnDamageReduction: talentEffects.burnDamageReduction + homesteadEffects.burnDamageReduction,
-    freezeDamageReduction: talentEffects.freezeDamageReduction + homesteadEffects.freezeDamageReduction,
-    natureDamageReduction: talentEffects.natureDamageReduction + homesteadEffects.natureDamageReduction,
-    poisonDamageReduction: talentEffects.poisonDamageReduction + homesteadEffects.poisonDamageReduction,
-    cardHealBonus: { ...talentEffects.cardHealBonus, ...homesteadEffects.cardHealBonus },
-    runMaxHealthBonus: talentEffects.runMaxHealthBonus + homesteadEffects.runMaxHealthBonus,
-    runMaxManaBonus: talentEffects.runMaxManaBonus + homesteadEffects.runMaxManaBonus,
-  };
+  const merged: TalentEffectManifest = { ...talentEffects };
+
+  for (const key of HOMESTEAD_BATTLE_NUMERIC_KEYS) {
+    merged[key] += homesteadEffects[key];
+  }
+
+  for (const key of HOMESTEAD_BATTLE_BOOLEAN_KEYS) {
+    if (homesteadEffects[key]) {
+      merged[key] = true;
+    }
+  }
+
+  for (const key of HOMESTEAD_BATTLE_RECORD_KEYS) {
+    const hv = homesteadEffects[key];
+    if (Object.keys(hv).length > 0) {
+      const mv = (merged as unknown as Record<string, unknown>)[key] as Record<string, unknown>;
+      (merged as unknown as Record<string, unknown>)[key] = { ...mv, ...(hv as Record<string, unknown>) };
+    }
+  }
+
+  return merged;
 }
