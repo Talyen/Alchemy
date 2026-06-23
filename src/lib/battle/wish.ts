@@ -11,7 +11,8 @@ import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect, getEnemyDamageMultiplier } from "./status-effects";
 import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
 import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, WISH_CRYSTAL_GOLD_CHANCE, MAX_HAND_SIZE } from "../game-constants";
-import { scaleGoldReward, applyGearKillRewards, gearFrozenDamageMultiplier } from "./gear-effects";
+import { applyGearKillRewards, gearFrozenDamageMultiplier } from "./gear-effects";
+import { scaleGoldReward } from "./types";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 
 function upgradeWishCard(card: BattleCard): BattleCard {

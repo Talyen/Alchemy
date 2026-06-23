@@ -3,7 +3,7 @@
 // background via idle-time preloading so the user never waits for a full decode pass.
 // When shouldSkipStartupLoadingGate() is true (Playwright), the gate is skipped entirely.
 import { useEffect, useState } from "react";
-import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
+import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils/dev-mode";
 import { INITIAL_LOAD_MIN_DURATION_MS } from "@/lib/game-constants";
 import { preloadImagesWhenIdle } from "@/lib/image-preload";
 import { allGameArt } from "@/lib/game-data";

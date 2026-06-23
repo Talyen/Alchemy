@@ -6,7 +6,7 @@ import { clampHealth, addPlayerStatus, type BattleState, type CombatTextEvent } 
 import { mergeCombatText } from "./combat-text";
 import { applyLuckyCloverGold } from "./trinket-effects";
 import { applyGearKillRewards, applyGearProcPhysicalDamage } from "./gear-effects";
-import { getEnemyDamageMultiplier } from "./status-effects";
+import { getEnemyDamageMultiplier } from "./status-helpers";
 import {
   applyStunBlockTalent,
   applyStunDrawTalent,

@@ -15,7 +15,7 @@ import type { BattleState } from "@/lib/battle";
 import { shuffle } from "@/lib/utils";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import { sampleItems } from "../../shared/utils";
+import { sampleItems } from "../../shared/utils/random";
 import {
   resolveCardChoices,
   resolveGearChoices,

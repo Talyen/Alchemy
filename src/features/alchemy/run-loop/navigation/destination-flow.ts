@@ -18,7 +18,6 @@ import {
 } from "@/lib/routing";
 import { DESTINATIONS, type Destination } from "../../shared/types";
 import type { RewardState } from "./reward-flow";
-import { withSelectedBossForDestinations } from "./victory-flow";
 
 export interface DestinationOptionsInput {
   currentHealth?: number;
@@ -197,4 +196,15 @@ export function restoreOrCreateDestinationRewardState(
     { ...prev, destinations: sampled.choices },
     options.bossEnemyId,
   );
+}
+
+export function withSelectedBossForDestinations(
+  destinations: Destination[],
+  rewardState: RewardState,
+  bossEnemyId?: string | null,
+): RewardState {
+  if (destinations.length === 1 && destinations[0] === DESTINATIONS.BOSS_COMBAT) {
+    return { ...rewardState, selectedBossId: rewardState.selectedBossId ?? bossEnemyId ?? null };
+  }
+  return { ...rewardState, selectedBossId: null };
 }

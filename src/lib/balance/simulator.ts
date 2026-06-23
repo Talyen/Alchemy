@@ -36,7 +36,8 @@ import { buildSimCompanionBondLevels } from "./homestead-preset";
 export type BalancePlayPolicy = "random-playable" | "greedy-damage" | "defensive-random";
 type BattleSimulationOutcome = "win" | "loss" | "timeout";
 
-export type TalentPreset = "early" | "mid" | "late";
+import type { TalentPreset } from "./types";
+export type { TalentPreset };
 
 const LATE_AFFINITY_TALENT_CAP = 7;
 

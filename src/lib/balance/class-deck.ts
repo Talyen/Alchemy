@@ -11,7 +11,7 @@ import {
   type KeywordId,
 } from "@/lib/game-data";
 import { createSeededRng, shuffle } from "@/lib/utils";
-import type { TalentPreset } from "./simulator";
+import type { TalentPreset } from "./types";
 
 const ALCHEMIST_MIXED_POTION_COUNT = 2;
 

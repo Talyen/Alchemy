@@ -1,9 +1,33 @@
-// Extracted utility functions for battle controller card measurement, transfer timing, and companion audio.
+// Extracted utility functions for battle controller card measurement, transfer timing, scene rects, and companion audio.
 import { playCardSound } from "@/lib/audio";
 import { CARD_TRANSFER_CONFIG, COMPANION_SOUND_CARD_IDS } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardRect } from "../../shared/types";
-import { getBattleSceneLocalRect, viewportRectToBattleSceneRect } from "./card-transfer-animations";
+
+export interface BattleSceneLocalRect {
+  left: number;
+  top: number;
+  scaleX: number;
+  scaleY: number;
+}
+
+export function getBattleSceneLocalRect(scene: HTMLDivElement | null): BattleSceneLocalRect | null {
+  if (!scene) return null;
+  const rect = scene.getBoundingClientRect();
+  const scaleX = rect.width / scene.offsetWidth;
+  const scaleY = rect.height / scene.offsetHeight;
+  if (!Number.isFinite(scaleX) || !Number.isFinite(scaleY) || scaleX === 0 || scaleY === 0) return null;
+  return { left: rect.left, top: rect.top, scaleX, scaleY };
+}
+
+export function viewportRectToBattleSceneRect(rect: CardRect, sceneRect: BattleSceneLocalRect): CardRect {
+  return {
+    x: (rect.x - sceneRect.left) / sceneRect.scaleX,
+    y: (rect.y - sceneRect.top) / sceneRect.scaleY,
+    width: rect.width / sceneRect.scaleX,
+    height: rect.height / sceneRect.scaleY,
+  };
+}
 
 export function playCompanionSound(companionId: string) {
   const soundCardId = COMPANION_SOUND_CARD_IDS[companionId];

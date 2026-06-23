@@ -18,7 +18,7 @@ import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { applyFreezeBlockTalent, applyFreezeStripArmorTalent } from "./talent-effects";
 import { applyEnemyCcImmunityClear, assignEnemyCrowdControlSkip } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
-import { getEnemyDamageMultiplier } from "./status-effects";
+import { getEnemyDamageMultiplier } from "./status-helpers";
 import { decayArmorAfterDamage, rollPercent } from "./status-helpers";
 import { BLEED_STATUS_MULTIPLIER, BATTLE_CONFIG, computeLeechHeal, FREEZE_THRESHOLD_FRACTION } from "../game-constants";
 import { scaledGearLeechHeal, applyGearKillRewards, applyGearProcPhysicalDamage } from "./gear-effects";

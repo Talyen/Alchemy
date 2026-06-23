@@ -3,12 +3,54 @@
 // Used across alchemy controllers, hooks, screens, and reusable UI widgets.
 import type { CSSProperties } from "react";
 
-import type { EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
+import type { BattleCard, EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
+import type { CombatTextEvent } from "@/lib/battle";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 
 export type { Screen, Destination } from "@/lib/routing";
 export { DESTINATIONS } from "@/lib/routing";
-export type { CardGhost, CardRect, CardTransfer, FloatingCombatText } from "@/features/alchemy/run-loop/battle";
+
+type CardGhostVariant = "draw-in" | "discard-out" | "activate" | "play-travel";
+
+export interface CardRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface CardGhost {
+  id: string;
+  art: string;
+  rect: CardRect;
+  rotation: number;
+  delay: number;
+  variant: CardGhostVariant;
+  travel?: {
+    x: number;
+    y: number;
+    scale: number;
+  };
+}
+
+export interface CardTransfer {
+  id: string;
+  card: BattleCard;
+  from: CardRect;
+  to: CardRect;
+  fromScale: number;
+  toScale: number;
+  fromRotation: number;
+  toRotation: number;
+  rotateY: number[];
+  duration: number;
+}
+
+export type FloatingCombatText = CombatTextEvent & {
+  id: string;
+  lane: number;
+  displayText: string;
+};
 
 export type AspectRatioOption = "auto" | "16:9" | "16:10" | "21:9";
 

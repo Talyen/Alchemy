@@ -37,7 +37,11 @@ import {
   shouldGrantCompanionReward,
   type RewardState,
 } from "./reward-flow";
-import { sampleDestinationChoices, type DestinationOfferState } from "./destination-flow";
+import {
+  sampleDestinationChoices,
+  withSelectedBossForDestinations,
+  type DestinationOfferState,
+} from "./destination-flow";
 import { playGoldGain } from "@/lib/audio";
 
 interface VictoryGoldRoll {
@@ -116,17 +120,6 @@ export interface VictoryRewardsResult {
   bossBonus: number;
   generousBonus: number;
   destinationOfferState: DestinationOfferState;
-}
-
-export function withSelectedBossForDestinations(
-  destinations: Destination[],
-  rewardState: RewardState,
-  bossEnemyId?: string | null,
-): RewardState {
-  if (destinations.length === 1 && destinations[0] === CONSTANTS.DESTINATIONS.BOSS_COMBAT) {
-    return { ...rewardState, selectedBossId: rewardState.selectedBossId ?? bossEnemyId ?? null };
-  }
-  return { ...rewardState, selectedBossId: null };
 }
 
 export function createDestinationRewardState(destinations: Destination[], bossEnemyId?: string | null): RewardState {

@@ -16,6 +16,9 @@ import {
   getCardKey,
   getCardTransferBatchSpeed,
   transferCardIntervalSeconds,
+  getBattleSceneLocalRect,
+  viewportRectToBattleSceneRect,
+  type BattleSceneLocalRect,
 } from "./controller-utils";
 import { waitForStableHandCardRect, type StableHandCardRectDeps } from "./hand-card-layout";
 
@@ -204,29 +207,4 @@ function getCardPlayGhostTargetRect(
     height: GHOST_FALLBACK_HEIGHT_PX,
   };
   return sceneRect ? viewportRectToBattleSceneRect(fallback, sceneRect) : fallback;
-}
-
-export interface BattleSceneLocalRect {
-  left: number;
-  top: number;
-  scaleX: number;
-  scaleY: number;
-}
-
-export function getBattleSceneLocalRect(scene: HTMLDivElement | null): BattleSceneLocalRect | null {
-  if (!scene) return null;
-  const rect = scene.getBoundingClientRect();
-  const scaleX = rect.width / scene.offsetWidth;
-  const scaleY = rect.height / scene.offsetHeight;
-  if (!Number.isFinite(scaleX) || !Number.isFinite(scaleY) || scaleX === 0 || scaleY === 0) return null;
-  return { left: rect.left, top: rect.top, scaleX, scaleY };
-}
-
-export function viewportRectToBattleSceneRect(rect: CardRect, sceneRect: BattleSceneLocalRect): CardRect {
-  return {
-    x: (rect.x - sceneRect.left) / sceneRect.scaleX,
-    y: (rect.y - sceneRect.top) / sceneRect.scaleY,
-    width: rect.width / sceneRect.scaleX,
-    height: rect.height / sceneRect.scaleY,
-  };
 }

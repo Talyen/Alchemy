@@ -1,6 +1,13 @@
-// Shared status math: halved decay, armor decay after damage, percent rolls.
+// Shared status math: halved decay, armor decay after damage, percent rolls, damage multipliers.
 // Depends on game-constants and battle types. Used by status-ticks and status-effects.
-import { BATTLE_CONFIG, HALF_DIVISOR, PERCENT_DENOMINATOR, POISON_DECAY_PERCENT } from "../game-constants";
+import {
+  BATTLE_CONFIG,
+  HALF_DIVISOR,
+  PERCENT_DENOMINATOR,
+  POISON_DECAY_PERCENT,
+  TRAIT_DAMAGE_RULES,
+  TRAIT_DAMAGE_WEAKNESS,
+} from "../game-constants";
 import { mergeCombatText } from "./combat-text";
 import { unsafeNonSeededRng } from "./rng";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -35,6 +42,21 @@ export function decayPoisonStacks(stacks: number): number {
 /** Halves freeze stack gain when the player talent is active. */
 export function scaleFreezeBuildUp(amount: number, halfBuildUp: boolean): number {
   return halfBuildUp ? Math.round(amount / HALF_DIVISOR) : amount;
+}
+
+/** Trait weakness/resistance — first matching trait wins, then CC bonuses. */
+export function getEnemyDamageMultiplier(
+  state: Pick<BattleState, "currentEnemy" | "enemyCC" | "talentEffects">,
+  damageType: string,
+): number {
+  const traitIds = state.currentEnemy.traits.map((t) => t.id);
+  for (const rule of TRAIT_DAMAGE_RULES) {
+    if (traitIds.includes(rule.traitId) && damageType === rule.damageType) return rule.multiplier;
+  }
+  let multiplier = 1;
+  if (state.enemyCC.stunSkipTurns > 0 && state.talentEffects.stunDoubleDamage) multiplier *= TRAIT_DAMAGE_WEAKNESS;
+  if (state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.freezeDoubleDamage) multiplier *= TRAIT_DAMAGE_WEAKNESS;
+  return multiplier;
 }
 
 /** Rolls a 0–100 talent/boon chance. Safe-guards against null rng. */

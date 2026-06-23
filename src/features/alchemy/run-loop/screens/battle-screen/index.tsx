@@ -18,7 +18,8 @@ import type {
   BattleScreenState,
 } from "./types";
 import { BATTLE_PARTICLE_ALPHA_BOSS, BATTLE_PARTICLE_ALPHA_NORMAL } from "@/lib/game-constants";
-import { getEnemyStatusChips, getPlayerStatusChips, isAlchemyDevBuild } from "../../../shared/utils";
+import { getEnemyStatusChips, getPlayerStatusChips } from "../../../shared/utils";
+import { isAlchemyDevBuild } from "../../../shared/utils/dev-mode";
 import { BackgroundParticles } from "../../../shared/ui/background-particles";
 
 interface BattleScreenProps {

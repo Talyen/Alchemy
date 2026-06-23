@@ -15,9 +15,8 @@ import type {
   PlayerStatusId,
   TalentEffectManifest,
 } from "@/lib/game-data";
-import { CAMPFIRE_HEAL_FRACTION, HALF_DIVISOR } from "../game-constants";
+import { CAMPFIRE_HEAL_FRACTION, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
-import { applyGearDamageResistance, scaleGoldReward } from "./gear-effects";
 import type { MaterialInventory } from "@/lib/homestead/types";
 
 // Both player and enemy use status ID unions, but enemies never gain
@@ -381,6 +380,32 @@ export function applyPlayerHealing(state: BattleState, amount: number): BattleSt
     nextState = addPlayerStatus(nextState, "block", blockGain);
   }
   return nextState;
+}
+
+export function applyGearDamageResistance(
+  damage: number,
+  damageType: string | undefined,
+  gear: GearEffectManifest,
+): number {
+  const RESIST_BY_DAMAGE_TYPE: Record<string, keyof GearEffectManifest> = {
+    physical: "resistPhysical",
+    stun: "resistStun",
+    holy: "resistHoly",
+    burn: "resistBurn",
+    poison: "resistPoison",
+    bleed: "resistBleed",
+    freeze: "resistFreeze",
+    nature: "resistNature",
+  };
+  const key = damageType ? RESIST_BY_DAMAGE_TYPE[damageType] : undefined;
+  const resist = key ? gear[key] : 0;
+  if (resist <= 0) return damage;
+  return Math.max(0, Math.round(damage * (1 - resist / PERCENT_DENOMINATOR)));
+}
+
+export function scaleGoldReward(baseGold: number, gear: GearEffectManifest): number {
+  if (gear.goldGainPercent <= 0) return baseGold;
+  return Math.round(baseGold * (1 + gear.goldGainPercent / PERCENT_DENOMINATOR));
 }
 
 export function isPlayerDefeated(state: Pick<BattleState, "playerHealth" | "deathsDoorActive">): boolean {

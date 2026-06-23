@@ -1,7 +1,7 @@
 // Homestead companion bond presets for balance simulations.
 import { type BattleCard, type CompanionId } from "@/lib/game-data";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
-import type { TalentPreset } from "./simulator";
+import type { TalentPreset } from "./types";
 
 const SIM_COMPANION_BOND_BY_PRESET: Record<TalentPreset, number> = {
   early: 1,

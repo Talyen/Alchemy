@@ -1,35 +1,8 @@
 import type { GearEffectManifest } from "@/lib/gear";
 import { PERCENT_DENOMINATOR } from "../game-constants";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
-import { getEnemyDamageMultiplier } from "./status-effects";
-import { applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
-
-const RESIST_BY_DAMAGE_TYPE: Record<string, keyof GearEffectManifest> = {
-  physical: "resistPhysical",
-  stun: "resistStun",
-  holy: "resistHoly",
-  burn: "resistBurn",
-  poison: "resistPoison",
-  bleed: "resistBleed",
-  freeze: "resistFreeze",
-  nature: "resistNature",
-};
-
-function gearResistancePercent(gear: GearEffectManifest, damageType?: string): number {
-  if (!damageType) return 0;
-  const key = RESIST_BY_DAMAGE_TYPE[damageType];
-  return key ? gear[key] : 0;
-}
-
-export function applyGearDamageResistance(
-  damage: number,
-  damageType: string | undefined,
-  gear: GearEffectManifest,
-): number {
-  const resist = gearResistancePercent(gear, damageType);
-  if (resist <= 0) return damage;
-  return Math.max(0, Math.round(damage * (1 - resist / PERCENT_DENOMINATOR)));
-}
+import { getEnemyDamageMultiplier } from "./status-helpers";
+import { applyPlayerHealing, scaleGoldReward, type BattleState, type CombatTextEvent } from "./types";
 
 export function applyGearKillRewards(
   state: BattleState,
@@ -72,9 +45,4 @@ export function applyGearProcPhysicalDamage(state: BattleState, baseDamage: numb
 export function scaledGearLeechHeal(baseHeal: number, gear: GearEffectManifest): number {
   if (gear.leechHealBonusPercent <= 0) return baseHeal;
   return Math.round(baseHeal * (1 + gear.leechHealBonusPercent / PERCENT_DENOMINATOR));
-}
-
-export function scaleGoldReward(baseGold: number, gear: GearEffectManifest): number {
-  if (gear.goldGainPercent <= 0) return baseGold;
-  return Math.round(baseGold * (1 + gear.goldGainPercent / PERCENT_DENOMINATOR));
 }

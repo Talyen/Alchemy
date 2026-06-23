@@ -1,6 +1,5 @@
 // Dev and run-end battle outcome shortcuts (skip combat, abandon run).
 import type { BattleState } from "@/lib/battle";
-import { isAlchemyDevBuild } from "../../shared/utils";
 import { readBattleStore } from "../../shared/stores/run-session-facade";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
@@ -26,7 +25,7 @@ export function createBattleDevOutcomes(ctx: BattleControllerContext, session: R
   }
 
   function skipCombatDevMode() {
-    if (!isAlchemyDevBuild() || ctx.screen !== "battle") return;
+    if (!import.meta.env.DEV || ctx.screen !== "battle") return;
     forceBattleOutcome("victory", (c) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] }));
   }
 

@@ -5,7 +5,8 @@ import { destinationMeta, getBossEnemy, getBossShineColors, SHINE_PALETTES } fro
 import { type Destination } from "../types";
 import { ChoiceButton } from "./choice-button";
 import { TiltSurface } from "./tilt-surface";
-import { StaggerGroup, StaggerItem } from "./shared-ui";
+import { StaggerGroup } from "./stagger-group";
+import { StaggerItem } from "./stagger-item";
 
 const SHINE_BORDER_DESTINATIONS = new Set<Destination>(["Boss Combat", "Corruption"]);
 
