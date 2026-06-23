@@ -1,26 +1,12 @@
 // Default homestead effect manifest — all zeros/false. Used as the base state
 // before applying building/farm/research bonuses from computeHomesteadEffects.
+import { defaultCompanionBondLevels } from "@/lib/game-data/companions";
 import type { HomesteadEffectManifest } from "./types";
 
 export const defaultHomesteadEffects: HomesteadEffectManifest = {
   flatPhysicalDamage: 0,
   companionDamage: 0,
-  companionBondLevels: {
-    wolf: 0,
-    "lizard-scout": 0,
-    imp: 0,
-    "frost-whelp": 0,
-    bear: 0,
-    panther: 0,
-    phoenix: 0,
-    skeleton: 0,
-    pixie: 0,
-    "mana-moth": 0,
-    "will-o-wisp": 0,
-    "golden-retriever": 0,
-    "shield-scarab": 0,
-    "library-owl": 0,
-  },
+  companionBondLevels: { ...defaultCompanionBondLevels },
   potionPotency: 0,
   herbFindBonus: 0,
   endRunFoodPerRoom: 0,

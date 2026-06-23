@@ -15,7 +15,7 @@ import {
   wolfCompanion,
   frostWhelpCompanion,
 } from "./assets";
-import type { CompanionDefinition } from "./types";
+import type { CompanionDefinition, CompanionId } from "./types";
 
 // Companion definitions describe persistent battle allies and the player-originated
 // effects they trigger at the beginning of each player turn.
@@ -104,4 +104,21 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
     art: libraryOwlCompanion,
     turnStartEffects: [{ kind: "draw-cards", amount: 1 }],
   },
+};
+
+export const defaultCompanionBondLevels: Record<CompanionId, number> = {
+  wolf: 0,
+  "lizard-scout": 0,
+  imp: 0,
+  "frost-whelp": 0,
+  bear: 0,
+  panther: 0,
+  phoenix: 0,
+  skeleton: 0,
+  pixie: 0,
+  "mana-moth": 0,
+  "will-o-wisp": 0,
+  "golden-retriever": 0,
+  "shield-scarab": 0,
+  "library-owl": 0,
 };

@@ -27,7 +27,7 @@ export interface LabyrinthController {
   pendingNode: LabyrinthNodePosition | null;
 }
 
-interface LabyrinthNodeHandlers {
+export interface LabyrinthNodeHandlers {
   onStartBattleWithModifiers: (
     enemyType: "normal" | "elite",
     modifiers: LabyrinthModifierKind[],

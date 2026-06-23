@@ -3,33 +3,14 @@ import { labyrinthModifiersToDifficulty } from "@/lib/content-systems/labyrinth/
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
 import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
+import type { LabyrinthNodeHandlers } from "./use-labyrinth-controller";
 
 interface LabyrinthNodeRoutingDeps {
   applyLabyrinthBattleModifiers: (modifiers: LabyrinthModifierKind[]) => void;
   applyLabyrinthRewardModifiers: (modifiers: LabyrinthModifierKind[]) => void;
   navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
   labyrinth: {
-    enterNode: (
-      row: number,
-      col: number,
-      handlers: {
-        onStartBattleWithModifiers: (
-          enemyType: "normal" | "elite",
-          modifiers: LabyrinthModifierKind[],
-          rewardModifiers: LabyrinthModifierKind[],
-        ) => void;
-        onStartBossBattleWithModifiers: (
-          modifiers: LabyrinthModifierKind[],
-          rewardModifiers: LabyrinthModifierKind[],
-        ) => void;
-        onStartRest: () => void;
-        onStartMystery: () => void;
-        onStartShop: () => void;
-        onStartAlchemist: () => void;
-        onStartTrinketShop: () => void;
-        onStartEquipmentShop: () => void;
-      },
-    ) => boolean;
+    enterNode: (row: number, col: number, handlers: LabyrinthNodeHandlers) => boolean;
   };
   battle: {
     startBattle: (

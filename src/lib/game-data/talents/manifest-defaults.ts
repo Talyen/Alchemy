@@ -1,3 +1,4 @@
+import { defaultCompanionBondLevels } from "../companions";
 import type { TalentEffectManifest } from "../types";
 
 export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
@@ -100,22 +101,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   eliteGoldDropBonus: 0,
   goldOnWish: 0,
   mixPotionDiscount: 0,
-  companionBondLevels: {
-    wolf: 0,
-    "lizard-scout": 0,
-    imp: 0,
-    "frost-whelp": 0,
-    bear: 0,
-    panther: 0,
-    phoenix: 0,
-    skeleton: 0,
-    pixie: 0,
-    "mana-moth": 0,
-    "will-o-wisp": 0,
-    "golden-retriever": 0,
-    "shield-scarab": 0,
-    "library-owl": 0,
-  },
+  companionBondLevels: { ...defaultCompanionBondLevels },
 
   holyLifestealPercent: 0,
   firstHolyCardFree: false,
