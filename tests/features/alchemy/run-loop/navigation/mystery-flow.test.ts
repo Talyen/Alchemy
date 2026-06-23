@@ -17,6 +17,7 @@ function minimalContext(overrides: { runDeck?: BattleCard[] } = {}) {
   return {
     runDeck: overrides.runDeck,
     runMaxHealth: 30,
+    rng: vi.fn(() => 0.5),
     setRunDeck: vi.fn(),
     setRunGold: vi.fn(),
     setRunPlayerHealth: vi.fn(),

@@ -3,7 +3,7 @@
 // Used by play card, wish, end turn, and enemy phase flows in the battle controller.
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
-import { isAnimationDisabled } from "@/lib/game-constants";
+import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { getCardKey } from "./controller-utils";
 
 function detectNewHandCards(oldHand: BattleCard[], newHand: BattleCard[]): BattleCard[] {

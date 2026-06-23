@@ -240,6 +240,7 @@ export function computeVictoryRewards(
   const baseMaterials = getEnemyMaterialLoot(
     input.battleState.currentEnemy.id,
     input.battleState.currentEnemy.enemyType,
+    rng,
   );
   const materials = applyLabyrinthRewardMaterialModifiers(
     applyMaterialFindBonus(baseMaterials, input.homesteadEffects),

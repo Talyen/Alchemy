@@ -1,7 +1,7 @@
 // Centralized game timing utilities.
 // delay() provides awaitable pauses that respect the animation-disabled flag.
 // TimerGroup manages fire-and-forget timeout lifecycle so callers don't need refs.
-import { isAnimationDisabled, ANIMATION_DISABLED_DURATION } from "@/lib/game-constants";
+import { isAnimationDisabled, ANIMATION_DISABLED_DURATION } from "@/lib/animation/animation-prefs";
 
 export function delay(ms: number): Promise<void> {
   const actual = isAnimationDisabled() ? ANIMATION_DISABLED_DURATION : ms;

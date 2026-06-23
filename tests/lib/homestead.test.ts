@@ -342,30 +342,26 @@ describe("mergeIntoManifest", () => {
 
 // ─── loot ───────────────────────────────────────────────────────
 
+function stableRngZero(): () => number {
+  return () => 0;
+}
+
 describe("getEnemyMaterialLoot", () => {
-  beforeEach(() => {
-    vi.spyOn(Math, "random").mockReturnValue(0);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it("returns empty inventory for unknown enemy", () => {
-    const loot = getEnemyMaterialLoot("unknown", "normal");
+    const loot = getEnemyMaterialLoot("unknown", "normal", stableRngZero());
     for (const mat of MATERIAL_IDS) {
       expect(loot[mat]).toBe(0);
     }
   });
 
   it("goblin drops guaranteed wood and food for normal type", () => {
-    const loot = getEnemyMaterialLoot("goblin", "normal");
+    const loot = getEnemyMaterialLoot("goblin", "normal", stableRngZero());
     expect(loot.wood).toBe(1);
     expect(loot.food).toBe(1);
   });
 
   it("skeleton has no guaranteed materials", () => {
-    const loot = getEnemyMaterialLoot("skeleton", "normal");
+    const loot = getEnemyMaterialLoot("skeleton", "normal", stableRngZero());
     expect(loot.wood).toBe(0);
     expect(loot.iron).toBe(0);
     expect(loot.herbs).toBe(0);
@@ -374,31 +370,23 @@ describe("getEnemyMaterialLoot", () => {
   });
 
   it("necromancer drops guaranteed herbs and crystal", () => {
-    const loot = getEnemyMaterialLoot("necromancer", "normal");
+    const loot = getEnemyMaterialLoot("necromancer", "normal", stableRngZero());
     expect(loot.herbs).toBe(2);
     expect(loot.crystal).toBe(1);
   });
 });
 
 describe("getEnemyMaterialLoot with elite multiplier", () => {
-  beforeEach(() => {
-    vi.spyOn(Math, "random").mockReturnValue(0);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it("applies 1.3x material multiplier for elite enemies", () => {
-    const normal = getEnemyMaterialLoot("goblin", "normal");
-    const elite = getEnemyMaterialLoot("goblin", "elite");
+    const normal = getEnemyMaterialLoot("goblin", "normal", stableRngZero());
+    const elite = getEnemyMaterialLoot("goblin", "elite", stableRngZero());
     expect(elite.wood).toBe(Math.floor(normal.wood * 1.3));
     expect(elite.food).toBe(Math.floor(normal.food * 1.3));
   });
 
   it("triples loot for boss enemies", () => {
-    const normal = getEnemyMaterialLoot("goblin", "normal");
-    const boss = getEnemyMaterialLoot("goblin", "boss");
+    const normal = getEnemyMaterialLoot("goblin", "normal", stableRngZero());
+    const boss = getEnemyMaterialLoot("goblin", "boss", stableRngZero());
     expect(boss.wood).toBe(normal.wood * 3);
     expect(boss.food).toBe(normal.food * 3);
   });
@@ -406,15 +394,20 @@ describe("getEnemyMaterialLoot with elite multiplier", () => {
 
 describe("getEnemyMaterialLoot with bonus rolls", () => {
   it("grants bonus materials when random rolls are favorable", () => {
-    vi.spyOn(Math, "random").mockReturnValueOnce(0.1).mockReturnValueOnce(0.5);
-    const loot = getEnemyMaterialLoot("mimic", "normal");
+    const rng = vi
+      .fn()
+      .mockReturnValueOnce(0.1)
+      .mockReturnValueOnce(0.5)
+      .mockReturnValueOnce(0.3)
+      .mockReturnValueOnce(0.1);
+    const loot = getEnemyMaterialLoot("mimic", "normal", rng);
     expect(loot.iron).toBeGreaterThanOrEqual(2);
     expect(loot.crystal).toBeGreaterThanOrEqual(0);
   });
 
   it("skips bonuses when random rolls fail", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.9);
-    const loot = getEnemyMaterialLoot("mimic", "normal");
+    const rng = vi.fn(() => 0.9);
+    const loot = getEnemyMaterialLoot("mimic", "normal", rng);
     expect(loot.iron).toBe(2);
     expect(loot.crystal).toBe(0);
   });

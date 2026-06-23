@@ -80,6 +80,7 @@ export function useRunNavigation({
   const completedDifficulties = useAppStore((s) => s.completedDifficulties);
 
   const draftedDeckRef = useRef<BattleCard[] | null>(null);
+  const rngRef = useRef<() => number>(() => Math.random());
   const nav = useRunSessionNavigationSlice(screen);
   const clearCardHover = useUiStore((s) => s.clearCardHover);
   const runPhase = nav.phase;
@@ -227,7 +228,7 @@ export function useRunNavigation({
   }
 
   function handleCorruptCard(cardIndex: number) {
-    applyCorruptionToDeck(run.runDeck, cardIndex, run.setRunDeck);
+    applyCorruptionToDeck(run.runDeck, cardIndex, rngRef.current, run.setRunDeck);
   }
 
   function handleCorruptionExit() {

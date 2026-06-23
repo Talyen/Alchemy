@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   corruptCard,
   corruptDeckCard,
@@ -7,6 +7,11 @@ import {
 } from "@/features/alchemy/run-loop/corruption";
 import { getCardDisplayTitle } from "@/features/alchemy/shared/ui/card-description-ui";
 import type { BattleCard } from "@/lib/game-data";
+
+function makeRng(values: number[]): () => number {
+  let index = 0;
+  return () => values[index++] ?? values[values.length - 1] ?? 0.99;
+}
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
   return {
@@ -21,15 +26,6 @@ function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
   };
 }
 
-function mockRandomSequence(values: number[]) {
-  let index = 0;
-  return vi.spyOn(Math, "random").mockImplementation(() => values[index++] ?? values[values.length - 1] ?? 0.99);
-}
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
 describe("card corruption", () => {
   it("finds editable numeric description targets with matching effects", () => {
     const targets = getEditableCorruptionTargets(makeCard());
@@ -39,9 +35,9 @@ describe("card corruption", () => {
   });
 
   it("increments a card description and matching mechanical amount", () => {
-    mockRandomSequence([0, 0.9]);
+    const rng = makeRng([0, 0.9]);
 
-    const result = corruptCard(makeCard(), [makeCard()]);
+    const result = corruptCard(makeCard(), [makeCard()], rng);
 
     expect(result.corruptedCard.descriptionLines).toEqual(["Deal 6 Physical damage"]);
     expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 6 });
@@ -50,16 +46,16 @@ describe("card corruption", () => {
   });
 
   it("decrements a card description and matching mechanical amount", () => {
-    mockRandomSequence([0, 0.1]);
+    const rng = makeRng([0, 0.1]);
 
-    const result = corruptCard(makeCard(), [makeCard()]);
+    const result = corruptCard(makeCard(), [makeCard()], rng);
 
     expect(result.corruptedCard.descriptionLines).toEqual(["Deal 4 Physical damage"]);
     expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 4 });
   });
 
   it("allows corruption to reduce a value to 0", () => {
-    mockRandomSequence([0, 0.1]);
+    const rng = makeRng([0, 0.1]);
     const anvil = makeCard({
       id: "anvil",
       title: "Anvil",
@@ -67,14 +63,14 @@ describe("card corruption", () => {
       effects: [{ kind: "player-status", status: "forge", amount: 1 }],
     });
 
-    const result = corruptCard(anvil, [anvil]);
+    const result = corruptCard(anvil, [anvil], rng);
 
     expect(result.corruptedCard.descriptionLines).toEqual(["Gain 0 Forge"]);
     expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 0 });
   });
 
   it("falls back to transforming cards with no editable numeric description", () => {
-    mockRandomSequence([0, 0, 0.9]);
+    const rng = makeRng([0, 0, 0.9]);
     const cleanse = makeCard({
       id: "cleanse",
       title: "Cleanse",
@@ -83,7 +79,7 @@ describe("card corruption", () => {
     });
     const slash = makeCard();
 
-    const result = corruptCard(cleanse, [cleanse, slash]);
+    const result = corruptCard(cleanse, [cleanse, slash], rng);
 
     expect(result.transformed).toBe(true);
     expect(result.corruptedCard.id).toBe("slash");
@@ -97,7 +93,7 @@ describe("card corruption", () => {
   });
 
   it("replaces only the selected deck slot", () => {
-    mockRandomSequence([0.9, 0, 0.9]);
+    const rng = makeRng([0.9, 0, 0.9]);
     const slash = makeCard();
     const stab = makeCard({
       id: "stab",
@@ -106,7 +102,7 @@ describe("card corruption", () => {
       effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
     });
 
-    const result = corruptDeckCard([slash, stab], 1, [slash, stab]);
+    const result = corruptDeckCard([slash, stab], 1, [slash, stab], rng);
 
     expect(result.deck[0]).toBe(slash);
     expect(result.deck[1].descriptionLines).toEqual(["Deal 5 Physical damage"]);
@@ -114,7 +110,7 @@ describe("card corruption", () => {
   });
 
   it("transforms when random < 0.5 even with editable targets", () => {
-    mockRandomSequence([0.4, 0, 0, 0.9]);
+    const rng = makeRng([0.4, 0, 0, 0.9]);
     const slash = makeCard();
     const bash = makeCard({
       id: "bash",
@@ -123,7 +119,7 @@ describe("card corruption", () => {
       effects: [{ kind: "damage", damageType: "physical", amount: 8 }],
     });
 
-    const result = corruptCard(slash, [slash, bash]);
+    const result = corruptCard(slash, [slash, bash], rng);
 
     expect(result.transformed).toBe(true);
     expect(result.corruptedCard.id).toBe("bash");

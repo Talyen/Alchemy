@@ -8,12 +8,8 @@ import {
   type EndPlayerTurnResolution,
 } from "@/lib/battle";
 import { playBattleEvent, playEnemyAttack } from "@/lib/audio";
-import {
-  ENEMY_ATTACK_RECOVERY_DELAY,
-  ENEMY_PHASE_DELAY,
-  isAnimationDisabled,
-  COMPANION_ATTACK_DELAY,
-} from "@/lib/game-constants";
+import { ENEMY_ATTACK_RECOVERY_DELAY, ENEMY_PHASE_DELAY, COMPANION_ATTACK_DELAY } from "@/lib/game-constants";
+import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { delay } from "@/lib/animation/game-timer";
 import { logError } from "@/lib/error-logger";
 import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";

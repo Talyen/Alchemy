@@ -5,6 +5,7 @@ import { cardLibrary } from "@/lib/game-data";
 import { pickMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "../run/deck-mutations";
 import { applyMysteryEffect } from "./mystery-flow";
+import { useRef } from "react";
 import { useRunSessionMysterySlice } from "../../shared/stores/run-session-facade";
 import { setMysteryCardChoices, setMysteryEvent } from "../../shared/stores/run-session-facade";
 import { readActiveRunStore, awardMaterialsDuringRun } from "../../shared/stores/run-session-facade";
@@ -13,6 +14,7 @@ import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 
 export function useMysteryFlow() {
   const { mysteryEvent, mysteryCardChoices } = useRunSessionMysterySlice();
+  const rngRef = useRef<() => number>(() => Math.random());
 
   function beginMysteryEvent(navigateToMystery: () => void) {
     setMysteryEvent(pickMysteryEvent());
@@ -28,6 +30,7 @@ export function useMysteryFlow() {
       const result = applyMysteryEffect(effect, {
         runDeck: runStore.runDeck,
         runMaxHealth: runStore.runMaxHealth,
+        rng: rngRef.current,
         setRunDeck: runStore.setRunDeck,
         setRunGold: runStore.setRunGold,
         setRunPlayerHealth: runStore.setRunPlayerHealth,

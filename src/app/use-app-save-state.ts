@@ -8,7 +8,7 @@ import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-st
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-transitions";
 import { buildAlchemySaveDataFromStores, saveAlchemySaveData } from "@/features/alchemy/shared/storage";
-import { isAnimationDisabled } from "@/lib/game-constants";
+import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import type { Screen } from "@/lib/routing";
 
 // Persists the normalized App/controller snapshot whenever any saved field changes.

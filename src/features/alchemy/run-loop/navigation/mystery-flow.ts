@@ -31,6 +31,7 @@ export interface MysteryEffectResult {
 interface MysteryEffectContext {
   runDeck?: BattleCard[];
   runMaxHealth: number;
+  rng: () => number;
   setRunDeck: Dispatch<SetStateAction<BattleCard[]>>;
   setRunGold: Dispatch<SetStateAction<number>>;
   setRunPlayerHealth: Dispatch<SetStateAction<number>>;
@@ -113,7 +114,7 @@ function offerMysteryCardChoices(
 }
 
 function healFromMystery(amount: number, chance: number | undefined, context: MysteryEffectContext) {
-  if (chance !== undefined && Math.random() >= chance) return { followUp: null };
+  if (chance !== undefined && context.rng() >= chance) return { followUp: null };
   context.setRunPlayerHealth((p) => Math.min(context.runMaxHealth, p + amount));
   return { followUp: null };
 }
@@ -140,7 +141,7 @@ function removeMysteryCard(mode: "random" | "choose", context: MysteryEffectCont
   if (mode !== "random") return { followUp: null };
   context.setRunDeck((p) => {
     if (p.length === 0) return p;
-    const idx = Math.floor(Math.random() * p.length);
+    const idx = Math.floor(context.rng() * p.length);
     return p.filter((_, i) => i !== idx);
   });
   return { followUp: null };

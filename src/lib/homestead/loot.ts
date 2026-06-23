@@ -70,11 +70,11 @@ const enemyLootTables: Record<string, EnemyLootTable> = {
   },
 };
 
-function rollBonuses(table: EnemyLootTable): MaterialInventory {
+function rollBonuses(table: EnemyLootTable, rng: () => number): MaterialInventory {
   const result = emptyInventory();
   for (const bonus of table.bonuses) {
-    if (Math.random() < bonus.weight) {
-      result[bonus.material] = bonus.min + Math.floor(Math.random() * (bonus.max - bonus.min + 1));
+    if (rng() < bonus.weight) {
+      result[bonus.material] = bonus.min + Math.floor(rng() * (bonus.max - bonus.min + 1));
     }
   }
   return result;
@@ -97,11 +97,11 @@ function applyTypeMultiplier(loot: MaterialInventory, enemyType: string): Materi
   return result;
 }
 
-export function getEnemyMaterialLoot(enemyId: string, enemyType: string): MaterialInventory {
+export function getEnemyMaterialLoot(enemyId: string, enemyType: string, rng: () => number): MaterialInventory {
   const table = enemyLootTables[enemyId];
   if (!table) return emptyInventory();
   const guaranteed = { ...table.guaranteed };
-  const bonuses = rollBonuses(table);
+  const bonuses = rollBonuses(table, rng);
   const combined = addInventory(guaranteed, bonuses);
   return applyTypeMultiplier(combined, enemyType);
 }
