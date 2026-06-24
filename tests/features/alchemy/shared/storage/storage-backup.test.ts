@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, afterEach, describe, it, vi } from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { legacyCampaignRunSave } from "../../../../fixtures/legacy-saves";
 
 const globalWithWindow = globalThis as unknown as { window?: object };
@@ -37,9 +37,12 @@ describe("storage io desktop backup", () => {
       },
     } as unknown as Window;
 
+    const desktop = (globalWithWindow.window as unknown as { alchemyDesktop: { writeSave: ReturnType<typeof vi.fn> } })
+      .alchemyDesktop;
+
     const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
     await loadAlchemySaveState();
 
-    // The backup mechanism is now the per-write rotation, not a separate IPC call.
+    expect(desktop.writeSave).not.toHaveBeenCalled();
   }, 30_000);
 });

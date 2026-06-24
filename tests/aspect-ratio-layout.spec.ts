@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { enableFastMode, makeCard, SAVE_KEY, startBattleWithDeck, startAtDestination } from "./helpers";
+import { makeCard, SAVE_KEY, startBattleWithDeck, startAtDestination } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 import { slow } from "./playwright-tags";
 
@@ -75,7 +75,6 @@ for (const { width, height, label } of RESOLUTIONS) {
     test("battle screen cards and controls fit viewport without overflow", async ({ page }) => {
       await setAspectRatio(page, "16:9");
       await page.setViewportSize({ width, height });
-      await enableFastMode(page);
       await startBattleWithDeck(
         page,
         Array.from({ length: 6 }, () => makeCard()),

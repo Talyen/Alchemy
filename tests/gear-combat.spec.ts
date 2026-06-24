@@ -1,8 +1,8 @@
 import { expect } from "@playwright/test";
 import { bodyGear, createEmptyGearLoadouts, gearItemLocator } from "./e2e/armory";
+import { assertGearFlatDamageBoostsPhysicalDamage } from "./e2e/gear-combat";
 import { startBattleWithDeck } from "./e2e/battle-setup";
 import { makeCard } from "./e2e/cards";
-import { BattlePage } from "./pages/battle-page";
 import { MenuPage } from "./pages/menu-page";
 import { test } from "./fixtures/e2e";
 import { armory, critical } from "./playwright-tags";
@@ -12,40 +12,12 @@ test.describe("Gear combat", { ...armory, ...critical }, () => {
     void fastBattle;
     void runtimeErrors;
 
-    const loadouts = createEmptyGearLoadouts();
-    (loadouts.knight as Record<string, string | null>).body = "gear-1";
-
-    const menu = new MenuPage(page);
-    await menu.gotoWithUnlockedMeta({
-      gearInventory: [
-        {
-          instanceId: "gear-1",
-          definitionId: "leather-armor-basic",
-          affixes: [{ id: "flat-physical", value: 1 }],
-        },
-      ],
-      gearLoadouts: loadouts,
+    await assertGearFlatDamageBoostsPhysicalDamage(page, {
+      instanceId: "gear-1",
+      definitionId: "leather-armor-basic",
+      slot: "body",
+      affixes: [{ id: "flat-physical", value: 1 }],
     });
-
-    const physicalCard = makeCard({
-      id: "test-slash",
-      title: "Test Slash",
-      cost: 0,
-      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-    });
-
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => physicalCard),
-    );
-
-    const battle = new BattlePage(page);
-    const enemyHpBefore = await battle.enemyHealth();
-    await battle.playCardNamed("Test Slash");
-
-    await expect(async () => {
-      expect(await battle.enemyHealth()).toBe(enemyHpBefore - 6);
-    }).toPass({ timeout: 5000 });
   });
 
   test("keeps Armory editing disabled while a battle is active", async ({ page, fastBattle }) => {

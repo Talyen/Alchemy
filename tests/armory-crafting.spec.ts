@@ -4,7 +4,6 @@ import {
   applyCurrencyToGear,
   bodyGear,
   confirmSalvage,
-  createEmptyGearLoadouts,
   currencyLocator,
   enterSalvageMode,
   expectSalvageDialog,
@@ -12,11 +11,8 @@ import {
   openArmory,
   salvageInventoryItem,
 } from "./e2e/armory";
-import { startBattleWithDeck } from "./e2e/battle-setup";
-import { makeCard } from "./e2e/cards";
+import { assertGearFlatDamageBoostsPhysicalDamage } from "./e2e/gear-combat";
 import { test } from "./fixtures/e2e";
-import { BattlePage } from "./pages/battle-page";
-import { MenuPage } from "./pages/menu-page";
 import { seedRandom } from "./e2e/rng";
 import { armory, critical, prepush, slow } from "./playwright-tags";
 
@@ -149,39 +145,11 @@ test.describe("Armory crafting", { ...armory }, () => {
     void fastBattle;
     void runtimeErrors;
 
-    const loadouts = createEmptyGearLoadouts();
-    (loadouts.knight as Record<string, string | null>)["main-hand"] = "gear-sword";
-
-    const menu = new MenuPage(page);
-    await menu.gotoWithUnlockedMeta({
-      gearInventory: [
-        {
-          instanceId: "gear-sword",
-          definitionId: "shortsword-basic",
-          affixes: [{ id: "flat-physical", value: 1 }],
-        },
-      ],
-      gearLoadouts: loadouts,
+    await assertGearFlatDamageBoostsPhysicalDamage(page, {
+      instanceId: "gear-sword",
+      definitionId: "shortsword-basic",
+      slot: "main-hand",
+      affixes: [{ id: "flat-physical", value: 1 }],
     });
-
-    const physicalCard = makeCard({
-      id: "test-slash",
-      title: "Test Slash",
-      cost: 0,
-      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-    });
-
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => physicalCard),
-    );
-
-    const battle = new BattlePage(page);
-    const enemyHpBefore = await battle.enemyHealth();
-    await battle.playCardNamed("Test Slash");
-
-    await expect(async () => {
-      expect(await battle.enemyHealth()).toBe(enemyHpBefore - 6);
-    }).toPass({ timeout: 5000 });
   });
 });
