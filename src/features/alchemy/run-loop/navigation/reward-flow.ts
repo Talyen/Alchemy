@@ -1,13 +1,6 @@
 // Reward state, gold math, routing, and combat/boss reward builders.
-import {
-  cardLibrary,
-  getOfferableCardPool,
-  getStandardPotionPool,
-  selectRewardCards,
-  trinketLibrary,
-  type BattleCard,
-  type TrinketEntry,
-} from "@/lib/game-data";
+import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
+import { cardLibrary, selectRewardCards, trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";

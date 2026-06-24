@@ -1,10 +1,5 @@
-import {
-  getOfferableCardPool,
-  getStandardPotionPool,
-  selectRewardCards,
-  type BattleCard,
-  type TrinketEntry,
-} from "@/lib/game-data";
+import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
+import { selectRewardCards, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import type {
   PersistedAlchemistState,
   PersistedEquipmentShopState,

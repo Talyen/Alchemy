@@ -12,9 +12,7 @@ describe("@/lib/game-data barrel", () => {
     expect(mod.companionLibrary).toBeDefined();
     expect(mod.keywordDefinitions).toBeDefined();
     expect(mod.trinketLibrary).toBeDefined();
-    expect(mod.getStandardPotionPool).toBeTypeOf("function");
-    expect(mod.getOfferableCardPool).toBeTypeOf("function");
-    expect(mod.isStandardPotionCard).toBeTypeOf("function");
+    expect(mod.selectRewardCards).toBeTypeOf("function");
   }, 15_000);
 });
 

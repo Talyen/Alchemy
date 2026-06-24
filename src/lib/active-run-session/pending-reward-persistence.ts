@@ -1,4 +1,5 @@
-import { getOfferableCardPool, trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
+import { trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear/types";
 import type { Destination } from "@/lib/routing";
 import type { PersistedPendingReward } from "./types";

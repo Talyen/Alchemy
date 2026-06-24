@@ -6,7 +6,8 @@ import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-transitions";
-import { buildAlchemySaveDataFromStores, saveAlchemySaveData } from "@/features/alchemy/shared/storage";
+import { saveAlchemySaveData } from "@/features/alchemy/shared/storage";
+import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import type { Screen } from "@/lib/routing";
 

@@ -12,22 +12,23 @@ import {
 import { teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
+import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { flattenGearInventories } from "@/lib/gear";
 import { type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
 
 import { CONSTANTS, type Destination, type Screen } from "@/features/alchemy/shared/types";
-import { getRunAvailableDestinations } from "@/features/alchemy/run-loop/navigation/destination-flow";
-
+import {
+  getRunAvailableDestinations,
+  type DestinationOptionsInput,
+} from "@/features/alchemy/run-loop/navigation/destination-flow";
 import { getPreviousDestination } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
 import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
 import { applyCorruptionToDeck } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import type { ScreenTransitionOptions } from "./use-screen-transitions";
-import type { DestinationOptionsInput } from "@/features/alchemy/run-loop/navigation/destination-flow";
 import { useWildwoodGauntletFlow } from "./use-wildwood-gauntlet-flow";
 import type { WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 

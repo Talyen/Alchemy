@@ -1,3 +1,4 @@
+import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import {
   cardLibrary,
   companionLibrary,
@@ -7,7 +8,6 @@ import {
   harmfulPlayerStatusIds,
   PLAYER_STATUS_DISPLAY_ORDER,
   ENEMY_STATUS_DISPLAY_ORDER,
-  getOfferableCardPool,
   getVisibleKeywordIds,
   gearArtByDefinitionId,
   type BattleCard,

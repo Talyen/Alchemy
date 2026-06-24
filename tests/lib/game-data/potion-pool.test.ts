@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { cardLibrary, getStandardPotionPool, isStandardPotionCard } from "@/lib/game-data";
+import { getStandardPotionPool, isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
+import { cardLibrary } from "@/lib/game-data";
 
 describe("getStandardPotionPool", () => {
   it("returns only standard potion cards", () => {

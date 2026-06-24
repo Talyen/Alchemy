@@ -6,7 +6,7 @@ import {
   sameDestinationIdentity,
   type MagnetHysteresisInput,
 } from "@/features/alchemy/meta/screens/armory/board-drag-math";
-import type { DragDestination, DragRect } from "@/features/alchemy/meta/screens/armory/use-board-drag";
+import type { DragDestination, DragRect } from "@/features/alchemy/meta/screens/armory/drag-types";
 
 const inv = (col: number, row: number, left: number, top: number): DragDestination => ({
   kind: "inventory",

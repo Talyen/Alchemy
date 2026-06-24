@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { DOUBLE_CLICK_FLYOVER_MS, MAGNET_RELEASE_EASE_MS } from "./drag-constants";
-import type { DragRect } from "./use-board-drag";
+import type { DragRect } from "./drag-types";
 
 export interface DragVisualBase {
   source: DragRect;

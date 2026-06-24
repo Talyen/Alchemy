@@ -159,7 +159,11 @@ export default tseslint.config(
         "error",
         {
           patterns: [
-            { group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." },
+            {
+              group: ["@/lib/game-data/*"],
+              allowImportNames: ["hydrateCard", "getOfferableCardPool", "getStandardPotionPool", "isStandardPotionCard"],
+              message: "Import from @/lib/game-data (barrel) instead of deep paths.",
+            },
             { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
             { group: ["@/lib/validation/*"], message: "Import from @/lib/validation (barrel) instead of deep paths." },
             {
@@ -172,6 +176,7 @@ export default tseslint.config(
             },
             {
               group: ["@/features/alchemy/shared/storage/*"],
+              allowImportNames: ["flushAlchemySaveNow", "buildAlchemySaveDataFromStores"],
               message: "Import from @/features/alchemy/shared/storage (barrel) instead of deep paths.",
             },
           ],

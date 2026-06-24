@@ -2,7 +2,7 @@
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import { stopAllSfx } from "@/lib/audio";
 import { readBattleStore } from "../../shared/stores/run-session-facade";
-import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
+import { useBattlePresentationStore } from "./battle-presentation-store";
 import type { BattleControllerContext } from "./battle-context";
 
 /** Domain battle state plus presentation VFX actions used by turn/card-play orchestration. */

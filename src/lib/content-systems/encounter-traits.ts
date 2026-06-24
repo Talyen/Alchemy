@@ -2,29 +2,10 @@
 import type { EnemyTrait } from "@/lib/game-data";
 import { shuffle } from "@/lib/utils";
 import type { ContentSystemId } from "./types";
+import type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId } from "./encounter-trait-ids";
 
-export const COMBAT_ENCOUNTER_TRAIT_IDS = [
-  "tempered",
-  "plated",
-  "reinforced",
-  "braced",
-  "septic",
-  "caustic",
-  "flesheater",
-  "combustible",
-  "chilling",
-  "thorns",
-  "zealot",
-  "insatiable",
-  "jealous",
-  "concussive",
-  "rooted",
-  "overgrowth",
-  "holy-retribution",
-  "divine-aegis",
-] as const;
-
-export const REWARD_ENCOUNTER_TRAIT_IDS = ["generous", "alchemist", "scavenger", "companion"] as const;
+export { COMBAT_ENCOUNTER_TRAIT_IDS, REWARD_ENCOUNTER_TRAIT_IDS } from "./encounter-trait-ids";
+export type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId } from "./encounter-trait-ids";
 
 /** Retained as save-migration tombstones when encounter traits leave the catalog. */
 const RETIRED_ENCOUNTER_TRAIT_IDS = [
@@ -36,10 +17,6 @@ const RETIRED_ENCOUNTER_TRAIT_IDS = [
   "null-field",
   "collector",
 ] as const;
-
-export type EncounterCombatTraitId = (typeof COMBAT_ENCOUNTER_TRAIT_IDS)[number];
-export type EncounterRewardTraitId = (typeof REWARD_ENCOUNTER_TRAIT_IDS)[number];
-export type EncounterTraitId = EncounterCombatTraitId | EncounterRewardTraitId;
 export type EncounterTraitCategory = "combat" | "reward";
 type EncounterMode = Extract<ContentSystemId, "labyrinth" | "wildwood">;
 

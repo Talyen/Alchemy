@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import { createTransferCancelRegistry } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
-import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
+import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { defaultBattleState } from "@/lib/battle";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import {

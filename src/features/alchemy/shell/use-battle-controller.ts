@@ -19,7 +19,7 @@ import type { CardRect, Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { RunStateController, TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
-import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
+import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { BattleState } from "@/lib/battle";

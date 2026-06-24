@@ -1,7 +1,6 @@
 // Core game-data type contracts shared across lib and features: card shapes, status IDs,
 // enemy/trait/boon definitions. No runtime code — pure types only so other modules can import
 // shapes without dragging in data or side effects.
-export type { TalentEffectManifest } from "./talent-effect-manifest";
 export type KeywordId =
   | "physical"
   | "stun"

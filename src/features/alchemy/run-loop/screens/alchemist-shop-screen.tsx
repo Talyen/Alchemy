@@ -4,7 +4,8 @@ import { FlaskConical, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
-import { isStandardPotionCard, type BattleCard } from "@/lib/game-data";
+import { isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
+import type { BattleCard } from "@/lib/game-data";
 import { MIXED_POTION_CARD_ID, MIXED_POTION_TITLE, SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 
 import { BattleCardButton } from "../../shared/ui/card-button";

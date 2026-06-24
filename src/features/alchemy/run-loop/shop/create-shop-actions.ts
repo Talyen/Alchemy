@@ -44,7 +44,8 @@ import {
   makeBuyPriceGetter,
 } from "@/features/alchemy/run-loop/shop/shop-pricing";
 import { getEquipmentShopPrice } from "@/features/alchemy/run-loop/shop/shop-gear-pricing";
-import { type BattleCard, type TrinketEntry, getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data";
+import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import type { GearInstance } from "@/lib/gear";
 import type { RunStateController, TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";

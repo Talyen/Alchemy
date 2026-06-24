@@ -678,5 +678,3 @@ export const cardLibrary: BattleCard[] = [
 ];
 
 export { expectedCompanionTurnLine, formatCompanionTurnLineBase } from "./cards/companion-turn-description";
-export { isStandardPotionCard, getOfferableCardPool, getStandardPotionPool } from "./cards/card-pools";
-export { hydrateCard } from "./cards/hydrate-card";

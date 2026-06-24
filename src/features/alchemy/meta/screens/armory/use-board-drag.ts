@@ -2,21 +2,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
 import { playUISound } from "@/lib/audio";
 import { type InventoryPlacement, type PackedInventoryItem } from "@/lib/gear";
 import { applyMagnetHysteresis, placeInventoryTileFromMetrics } from "./board-drag-math";
-
-export interface DragPoint {
-  x: number;
-  y: number;
-}
-export interface DragRect {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-}
-export type DragDestination =
-  | { kind: "inventory"; placement: InventoryPlacement; rect: DragRect }
-  | { kind: "equipment"; slot: string; rect: DragRect }
-  | { kind: "external"; rect: DragRect };
+import type { DragDestination, DragPoint, DragRect } from "./drag-types";
 
 import { DOUBLE_CLICK_FLYOVER_CLEAR_DELAY_MS, DRAG_POINTER_ACTIVATE_DISTANCE_PX } from "./drag-constants";
 

@@ -3,7 +3,8 @@
  * Depends on: @/lib/game-data, ../game-constants, ./draw, ./types, ./combat-text, ./status-effects.
  * Depended on by: ./apply-effects.
  */
-import { getOfferableCardPool, selectRewardCards } from "@/lib/game-data";
+import { selectRewardCards } from "@/lib/game-data";
+import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
 import { drawFromState } from "./draw";
 import { addGold, applyPlayerHealing, clampHealth, type BattleState, type CombatTextEvent } from "./types";

@@ -4,7 +4,8 @@
  * Depended on by: src/lib/game-data/talents.ts, homestead, and the battle state machine
  */
 import type { LucideIcon } from "lucide-react";
-import type { KeywordId, TalentEffectManifest } from "../types";
+import type { KeywordId } from "../types";
+import type { TalentEffectManifest } from "../talent-effect-manifest";
 
 export const TALENTS_CONFIG = {
   PLACEHOLDER_DESCRIPTION: "Placeholder talent (NYI)",

@@ -1,10 +1,10 @@
 // Dispatches and applies mystery event consequences to the run state.
 // Depends on game libraries, audio triggers, utility helpers, and mystery types.
 // Consumed by the run navigation flow and the useMysteryFlow React hook.
+import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import {
   cardLibrary,
   getCardKeywords,
-  getOfferableCardPool,
   selectRewardCards,
   trinketLibrary,
   type BattleCard,

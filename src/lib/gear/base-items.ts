@@ -1,7 +1,7 @@
 import type { KeywordId } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { GearRarity, GearSlot } from "./types";
+import type { GearRarity, GearSlot } from "./types-core";
 
 export interface GearBaseItemDefinition {
   id: string;

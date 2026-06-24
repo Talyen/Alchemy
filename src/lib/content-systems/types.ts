@@ -17,7 +17,7 @@ export type LabyrinthNodeType =
   | "equipment-shop"
   | "boss";
 
-import type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId } from "./encounter-traits";
+import type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId } from "./encounter-trait-ids";
 
 /** @deprecated Prefer category-specific encounter trait IDs. */
 export type LabyrinthModifierKind = EncounterTraitId;

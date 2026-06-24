@@ -2,7 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useBoardDrag } from "@/features/alchemy/meta/screens/armory/use-board-drag";
-import type { DragRect } from "@/features/alchemy/meta/screens/armory/use-board-drag";
+import type { DragRect } from "@/features/alchemy/meta/screens/armory/drag-types";
 
 vi.mock("@/lib/audio", () => ({
   playUISound: vi.fn(),

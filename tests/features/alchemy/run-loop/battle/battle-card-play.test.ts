@@ -9,7 +9,7 @@ import { getBattleStoreView, resetRunBattleSlice } from "../../../../helpers/run
 import { createTestBattleState } from "../../../../lib/battle/test-state";
 import { makeTestCard } from "../../../../fixtures/battle";
 import { playUISound } from "@/lib/audio";
-import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
+import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 
 vi.mock("@/lib/audio", () => ({
   playCardSound: vi.fn(),

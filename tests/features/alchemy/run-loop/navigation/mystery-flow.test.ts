@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import type { MysteryEffect } from "@/lib/mystery";
 import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
-import * as gameData from "@/lib/game-data";
-import { cardLibrary, getCardKeywords, getOfferableCardPool, type BattleCard } from "@/lib/game-data";
+import { cardLibrary, getCardKeywords, type BattleCard } from "@/lib/game-data";
+import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
+import * as cardPools from "@/lib/game-data/cards/card-pools";
 
 vi.mock("@/features/alchemy/shared/stores/app-store", () => ({
   useAppStore: {
@@ -120,7 +121,7 @@ describe("applyMysteryEffect", () => {
     expect(slashOnly).toHaveLength(1);
     expect(getCardKeywords(slashOnly[0])).not.toContain("archery");
 
-    const poolSpy = vi.spyOn(gameData, "getOfferableCardPool").mockReturnValue(slashOnly);
+    const poolSpy = vi.spyOn(cardPools, "getOfferableCardPool").mockReturnValue(slashOnly);
     try {
       const context = minimalContext();
       applyMysteryEffect({ kind: "chooseCard", tag: "archery" }, context);

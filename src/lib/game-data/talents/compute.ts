@@ -1,4 +1,4 @@
-import type { TalentEffectManifest } from "../types";
+import type { TalentEffectManifest } from "../talent-effect-manifest";
 import { talentPool } from "./pool";
 import { isTalentPlaceholder, type TalentEffectOperation, type UnlockedTalents } from "./types";
 import { createEmptyTalentEffectManifest } from "./manifest-defaults";

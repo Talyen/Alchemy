@@ -1,7 +1,7 @@
 // Run store initial state and hydration from active-run saves or fresh-run snapshots.
+import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import {
   getStartingDeck,
-  hydrateCard,
   type BattleCard,
   type CharacterId,
   type UnlockedTalents,

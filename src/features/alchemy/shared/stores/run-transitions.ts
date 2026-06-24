@@ -5,7 +5,7 @@ import { createActiveRunSnapshot, type ActiveRunData } from "@/lib/active-run-se
 import type { Screen } from "@/lib/routing";
 import type { CharacterId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import { computeGearManifest, type GearInstance, type GearLoadouts } from "@/lib/gear";
-import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage";
+import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { restoreWildwoodRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { restorePendingReward, serializePendingReward } from "@/lib/active-run-session";
@@ -21,7 +21,7 @@ import {
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import { createInitialRunDomainData } from "./run-domain-types";
-import { useBattlePresentationStore } from "./battle-presentation-store";
+import { useBattlePresentationStore } from "../../run-loop/battle/battle-presentation-store";
 import { useUiStore } from "./ui-store";
 import { useAppStore } from "./app-store";
 import { getRunSession } from "./run-session-model";
@@ -225,7 +225,8 @@ export function teardownRun(): void {
 
 /** Write the full save file immediately (bypasses autosave debounce). */
 export async function flushPersistedSave(activeRun: ActiveRunData | null): Promise<void> {
-  await flushAlchemySaveNow(activeRun);
+  const p = getRunDomainStore().progress;
+  await flushAlchemySaveNow(activeRun, p, p.talentXP, p.unlockedTalents);
 }
 
 /** Persist meta/talent progress after a run ends with no resumable active run. */

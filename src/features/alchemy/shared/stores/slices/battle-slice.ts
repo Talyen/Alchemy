@@ -1,4 +1,4 @@
-import { hydrateCard } from "@/lib/game-data";
+import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import type { BattleState } from "@/lib/battle";
 import { createInitialBattleFields, type DisplayOverrides } from "../run-domain-types";
 import { defineFieldSetter, type ImmerSet } from "./_field-setter";

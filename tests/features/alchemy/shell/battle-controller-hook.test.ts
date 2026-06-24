@@ -5,7 +5,7 @@ import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
-import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
+import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { makeRunController, makeTalentController } from "../../../helpers/run-controller";
 import {

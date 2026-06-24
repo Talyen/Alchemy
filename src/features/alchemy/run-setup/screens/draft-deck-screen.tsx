@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { BattleCard } from "@/lib/game-data";
-import { getOfferableCardPool, selectRewardCards } from "@/lib/game-data";
+import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
+import { selectRewardCards } from "@/lib/game-data";
 import { DRAFT_ROUNDS, DRAFT_CHOICES } from "@/lib/game-constants";
 
 import { Button } from "@/components/ui/button";

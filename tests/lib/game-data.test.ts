@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  cardLibrary,
-  characters,
-  companionLibrary,
-  enemyBestiary,
-  getOfferableCardPool,
-  trinketLibrary,
-} from "@/lib/game-data";
+import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
+import { cardLibrary, characters, companionLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 
 describe("cardLibrary data integrity", () => {

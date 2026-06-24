@@ -4,30 +4,32 @@ import { logError } from "@/lib/error-logger";
 import { playGoldGain } from "@/lib/audio";
 import { appendUniqueMany } from "@/lib/utils";
 import { getDifficultyModifiers, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
-import { DEFAULT_BATTLE_ENEMY_TYPE } from "@/lib/game-constants";
+import { DEFAULT_BATTLE_ENEMY_TYPE, DRAFT_ROUNDS } from "@/lib/game-constants";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { useAppStore } from "../../shared/stores/app-store";
 import { useUiStore } from "../../shared/stores/ui-store";
+import { useGearStore } from "../../shared/stores/gear-store";
 import {
   setHasActiveRun,
   setPendingCharacterId,
   setPendingContentSystemType,
   setRewardState,
   setWildwoodDraft,
+  readRunSessionStore,
+  getRunDomainStore,
 } from "../../shared/stores/run-session-facade";
-import { readRunSessionStore, getRunDomainStore } from "../../shared/stores/run-session-facade";
 import { afterCampaignCharacterResolved } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
 import { createDestinationRewardState } from "@/features/alchemy/run-loop/navigation/victory-flow";
-import { sampleDestinationChoices } from "@/features/alchemy/run-loop/navigation/destination-flow";
-import { restoreOrCreateDestinationRewardState } from "@/features/alchemy/run-loop/navigation/destination-flow";
+import {
+  sampleDestinationChoices,
+  restoreOrCreateDestinationRewardState,
+  type DestinationOptionsInput,
+} from "@/features/alchemy/run-loop/navigation/destination-flow";
 import { createRunStartSnapshot, type RunStartSnapshot } from "./run-start";
 import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
 import type { RunStateController, TalentStateController } from "../../shared/stores/run-session-facade";
-import type { DestinationOptionsInput } from "@/features/alchemy/run-loop/navigation/destination-flow";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import { DRAFT_ROUNDS } from "@/lib/game-constants";
-import { useGearStore } from "../../shared/stores/gear-store";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 
 export interface ContentSystemNavigationDeps {

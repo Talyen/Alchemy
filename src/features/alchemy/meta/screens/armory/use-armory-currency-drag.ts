@@ -7,7 +7,8 @@ import {
 } from "@/lib/gear";
 import { type PackedCurrencyItem } from "@/lib/gear/board-view";
 import { overlaps } from "@/lib/gear/grid-packing";
-import { useBoardDrag, type DragDestination, type DragRect } from "./use-board-drag";
+import { useBoardDrag } from "./use-board-drag";
+import type { DragDestination, DragRect } from "./drag-types";
 
 const CURRENCY_FOOTPRINT = { w: 1, h: 1 };
 

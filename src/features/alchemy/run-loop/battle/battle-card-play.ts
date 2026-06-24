@@ -22,7 +22,7 @@ import { getBattleSessionStore, type createBattleSession } from "./battle-sessio
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import { logError } from "@/lib/error-logger";
-import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
+import { useBattlePresentationStore } from "./battle-presentation-store";
 
 const BATTLE_CARD_PLAY_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
 

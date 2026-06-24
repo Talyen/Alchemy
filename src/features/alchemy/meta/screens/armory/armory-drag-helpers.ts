@@ -16,7 +16,7 @@ import {
 } from "@/lib/gear";
 import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
 import { resolveEquipSwap } from "./resolve-equip-swap";
-import type { DragDestination, DragRect, DragPoint } from "./use-board-drag";
+import type { DragDestination, DragPoint, DragRect } from "./drag-types";
 
 function inventoryCellDragRect({
   board,

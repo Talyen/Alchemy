@@ -14,7 +14,8 @@ import {
   type PackedInventoryItem,
 } from "@/lib/gear";
 import { overlaps } from "@/lib/gear/grid-packing";
-import { useBoardDrag, type DragDestination, type DragRect, type DragPoint } from "./use-board-drag";
+import { useBoardDrag } from "./use-board-drag";
+import type { DragDestination, DragPoint, DragRect } from "./drag-types";
 import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
 import {
   findEquipSlotForDoubleClickedGear,

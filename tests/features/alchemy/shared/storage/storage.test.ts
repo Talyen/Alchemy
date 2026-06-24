@@ -14,7 +14,7 @@ import { parseActiveRun } from "@/lib/active-run-session";
 import { cardLibrary } from "@/lib/game-data";
 import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { hydrateCard } from "@/lib/game-data";
+import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import {
   legacyCampaignRunSave,
   legacyCorruptedCardRunSave,

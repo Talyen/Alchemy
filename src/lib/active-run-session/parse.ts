@@ -1,6 +1,7 @@
 // Runtime validation before hydration (returns ActiveRunData | null).
 // Save-file legacy fixes during load use normalizeActiveRunData in @/lib/validation.
-import { hydrateCard, type BattleCard } from "@/lib/game-data";
+import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
+import type { BattleCard } from "@/lib/game-data";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import { ActiveRunDataSchema } from "@/lib/validation";
 

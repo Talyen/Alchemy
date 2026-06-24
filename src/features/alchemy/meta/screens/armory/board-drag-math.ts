@@ -14,7 +14,7 @@ import {
   MAGNET_SWITCH_MARGIN_PX,
   MAGNET_RELEASE_HYSTERESIS_PX,
 } from "./drag-constants";
-import { type DragPoint, type DragRect } from "./use-board-drag";
+import type { DragPoint, DragRect } from "./drag-types";
 
 export type InventoryPlacementResult = {
   placement: InventoryPlacement;

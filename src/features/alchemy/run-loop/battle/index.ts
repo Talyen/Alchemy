@@ -9,4 +9,4 @@ export { createBattleCardPlay } from "./battle-card-play";
 export { createBattleDevOutcomes } from "./battle-dev-outcomes";
 export { isVictoryGraceActive } from "./battle-victory-grace";
 export { useBattleControllerContext } from "./battle-context";
-export type { CardGhost, CardRect, CardTransfer, FloatingCombatText } from "./presentation-types";
+export { useBattlePresentationStore } from "./battle-presentation-store";

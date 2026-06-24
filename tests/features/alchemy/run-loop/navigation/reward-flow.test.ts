@@ -13,7 +13,7 @@ import {
   shouldGrantAlchemistReward,
   shouldGrantCompanionReward,
 } from "@/features/alchemy/run-loop/navigation/reward-flow";
-import { getStandardPotionPool } from "@/lib/game-data";
+import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeRewardRouteHandlers } from "../../../../helpers/destination-route-handlers";

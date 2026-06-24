@@ -1,6 +1,7 @@
 // Startup validation: asserts critical game constants are positive and data arrays
 // are non-empty. Deferred to idle time so it doesn't compete with the first frame.
-import { companionLibrary, enemyBestiary, cardLibrary, getOfferableCardPool } from "./game-data";
+import { getOfferableCardPool } from "./game-data/cards/card-pools";
+import { companionLibrary, enemyBestiary, cardLibrary } from "./game-data";
 import { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./battle/enemy-turn-traits";
 import { logError } from "./error-logger";
 

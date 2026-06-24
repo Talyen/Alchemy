@@ -5,7 +5,7 @@ import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type Diffi
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";
 import { readBattleStore, readRunSessionStore } from "../../shared/stores/run-session-facade";
-import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
+import { useBattlePresentationStore } from "./battle-presentation-store";
 import { appendUnique } from "@/lib/utils";
 import { useAppStore } from "../../shared/stores/app-store";
 import { syncRunToBattleStart } from "../../shared/stores/run-transitions";

@@ -3,35 +3,19 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import type { GearAffixId } from "./affix-ids";
 import type { GearBaseItemId } from "./base-items";
 import type { GearDefinitionId } from "./definitions";
+import { GEAR_SLOTS, type GearSlot, type GearRarity, GEAR_RARITIES } from "./types-core";
 
 export type { GearEffectManifest } from "./gear-effect-manifest";
 export { defaultGearEffects, GEAR_EFFECT_KEYS } from "./gear-effect-manifest";
 
 export type GearCharacterId = CharacterId;
 
-export const GEAR_SLOTS = [
-  "body",
-  "helm",
-  "boots",
-  "gloves",
-  "belt",
-  "main-hand",
-  "off-hand",
-  "left-ring",
-  "right-ring",
-  "amulet",
-] as const;
+export { GEAR_SLOTS, GEAR_RARITIES };
+export type { GearSlot, GearRarity };
 
 export const GEAR_CHARACTER_IDS = Object.keys(characters) as GearCharacterId[];
 
-export type GearSlot = (typeof GEAR_SLOTS)[number];
-export type GearRarity = "basic" | "astral";
-
-export const GEAR_RARITIES = ["basic", "astral"] as const satisfies readonly GearRarity[];
-
 export type { GearAffixId } from "./affix-ids";
-export type { GearBaseItemId } from "./base-items";
-export type { GearDefinitionId } from "./definitions";
 
 export interface GearAffixRoll {
   id: GearAffixId;

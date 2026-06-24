@@ -1,10 +1,9 @@
 import { create } from "zustand";
-import { useRunDomainStore } from "./run-domain-store";
+import { useRunDomainStore } from "../../shared/stores/run-domain-store";
 import type { CombatTextEvent } from "@/lib/battle";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
-import type { CardGhost, FloatingCombatText } from "@/features/alchemy/run-loop/battle";
-import type { CardTransfer } from "../types";
+import type { CardGhost, CardTransfer, FloatingCombatText } from "../../shared/types";
 
 function getCombatTextDisplayText(event: CombatTextEvent): string {
   if (event.kind === "notice") return event.text;

@@ -1,5 +1,5 @@
 import { defaultCompanionBondLevels } from "../companions";
-import type { TalentEffectManifest } from "../types";
+import type { TalentEffectManifest } from "../talent-effect-manifest";
 
 export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   flatPhysicalDamage: 0,

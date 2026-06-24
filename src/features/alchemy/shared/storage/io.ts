@@ -16,7 +16,7 @@ import type { SaveData } from "./types";
 import { logError } from "@/lib/error-logger";
 import { defaultSaveData } from "./defaults";
 import { cardLibrary } from "@/lib/game-data/cards";
-import { hydrateCard } from "@/lib/game-data";
+import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import type { BattleCard } from "@/lib/game-data/types";
 
 class SaveSessionState {

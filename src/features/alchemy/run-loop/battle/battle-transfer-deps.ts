@@ -7,7 +7,7 @@ import type { CardRect, CardTransfer } from "./presentation-types";
 import { animateDiscardedHand, animateDrawnHand, type CardTransferAnimationDeps } from "./card-transfer-animations";
 import type { HandDrawSequenceDeps } from "./draw-sequence";
 import type { StableHandCardRectDeps } from "./hand-card-layout";
-import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
+import { useBattlePresentationStore } from "./battle-presentation-store";
 import { useRunDomainStore } from "../../shared/stores/run-session-facade";
 import type { BattleControllerContext } from "./battle-context";
 

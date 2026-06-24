@@ -7,6 +7,6 @@ export { ArmoryCharacterTabs } from "./armory-character-tabs";
 export { useArmoryTargetingEvents } from "./use-armory-targeting-events";
 export { ArmoryOverlays } from "./armory-overlays";
 export type { TransferMenuState } from "./armory-transfer-menu";
-export type { DragRect } from "./use-board-drag";
+export type { DragRect } from "./drag-types";
 export type { GearPointerStart, GearPointerMove, GearPointerEnd, GearDragOrigin } from "./use-armory-gear-drag";
 export type { CurrencyPointerStart, CurrencyPointerMove, CurrencyPointerEnd } from "./use-armory-currency-drag";
