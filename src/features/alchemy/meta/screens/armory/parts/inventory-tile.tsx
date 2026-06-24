@@ -44,6 +44,90 @@ function TargetingOverlay({
   );
 }
 
+function TileContent({
+  art,
+  targetingMode,
+  isSalvageTarget,
+  canCraft,
+  activeCurrencyId,
+  shineColors,
+  flash,
+}: {
+  art: string;
+  targetingMode: boolean;
+  isSalvageTarget: boolean;
+  canCraft: boolean;
+  activeCurrencyId: CraftingCurrencyId | null;
+  shineColors: readonly string[];
+  flash: boolean;
+}) {
+  return (
+    <>
+      <img
+        src={art}
+        alt=""
+        className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated"
+      />
+      <TargetingOverlay
+        visible={targetingMode}
+        salvageRing={isSalvageTarget}
+        craftRing={!!(activeCurrencyId && canCraft)}
+      />
+      {shineColors.length > 0 ? <ShineBorder shineColor={shineColors} borderWidth={1} /> : null}
+      {flash ? <div className="absolute inset-0 pointer-events-none rounded-xl craft-flash-overlay z-30" /> : null}
+    </>
+  );
+}
+
+function useDragEndFeedback(
+  instance: GearInstance,
+  hasActiveDrag: boolean,
+  dragSequence: number,
+  shouldSuppressClick: () => boolean,
+  tileRef: React.RefObject<HTMLDivElement | null>,
+  onAbortGearDrag: (instanceId: string) => void,
+  setFlash: React.Dispatch<React.SetStateAction<boolean>>,
+  setTooltipSequence: React.Dispatch<React.SetStateAction<number | null>>,
+) {
+  const [dragCooldown, setDragCooldown] = useState(false);
+  const prevAffixesRef = useRef(instance.affixes);
+  const prevDefRef = useRef(instance.definitionId);
+  const prevDragActiveRef = useRef(hasActiveDrag);
+
+  useEffect(() => {
+    const id = instance.instanceId;
+    return () => onAbortGearDrag(id);
+  }, [instance.instanceId, onAbortGearDrag]);
+
+  useEffect(() => {
+    if (prevAffixesRef.current !== instance.affixes || prevDefRef.current !== instance.definitionId) {
+      prevAffixesRef.current = instance.affixes;
+      prevDefRef.current = instance.definitionId;
+      setFlash(true);
+      const t = setTimeout(() => setFlash(false), 550);
+      return () => clearTimeout(t);
+    }
+    return;
+  }, [instance, setFlash]);
+
+  useEffect(() => {
+    const prev = prevDragActiveRef.current;
+    prevDragActiveRef.current = hasActiveDrag;
+    if (prev && !hasActiveDrag) {
+      setDragCooldown(true);
+      const t = setTimeout(() => setDragCooldown(false), 1000);
+      return () => clearTimeout(t);
+    }
+    return;
+  }, [hasActiveDrag]);
+
+  useEffect(() => {
+    if (!hasActiveDrag && !dragCooldown && tileRef.current?.matches(":hover") && !shouldSuppressClick())
+      setTooltipSequence(dragSequence);
+    else setTooltipSequence(null);
+  }, [dragCooldown, hasActiveDrag, dragSequence, shouldSuppressClick, setTooltipSequence, tileRef]);
+}
+
 interface TileHandlerCtx {
   editable: boolean;
   salvageMode: boolean;
@@ -176,40 +260,16 @@ export const InventoryGearTile = memo(function InventoryGearTile({
   const definition = gearDefinitions[instance.definitionId];
   const showTooltip = tooltipSequence === dragSequence && !interactionSuppressed;
   const [flash, setFlash] = useState(false);
-  const [dragCooldown, setDragCooldown] = useState(false);
-  const prevAffixesRef = useRef(instance.affixes);
-  const prevDefRef = useRef(instance.definitionId);
-  const prevDragActiveRef = useRef(hasActiveDrag);
-
-  useEffect(() => {
-    const id = instance.instanceId;
-    return () => onAbortGearDrag(id);
-  }, [instance.instanceId, onAbortGearDrag]);
-  useEffect(() => {
-    if (prevAffixesRef.current !== instance.affixes || prevDefRef.current !== instance.definitionId) {
-      prevAffixesRef.current = instance.affixes;
-      prevDefRef.current = instance.definitionId;
-      setFlash(true);
-      const t = setTimeout(() => setFlash(false), 550);
-      return () => clearTimeout(t);
-    }
-    return;
-  }, [instance]);
-  useEffect(() => {
-    const prev = prevDragActiveRef.current;
-    prevDragActiveRef.current = hasActiveDrag;
-    if (prev && !hasActiveDrag) {
-      setDragCooldown(true);
-      const t = setTimeout(() => setDragCooldown(false), 1000);
-      return () => clearTimeout(t);
-    }
-    return;
-  }, [hasActiveDrag]);
-  useEffect(() => {
-    if (!hasActiveDrag && !dragCooldown && tileRef.current?.matches(":hover") && !shouldSuppressClick())
-      setTooltipSequence(dragSequence);
-    else setTooltipSequence(null);
-  }, [dragCooldown, hasActiveDrag, dragSequence, shouldSuppressClick]);
+  useDragEndFeedback(
+    instance,
+    hasActiveDrag,
+    dragSequence,
+    shouldSuppressClick,
+    tileRef,
+    onAbortGearDrag,
+    setFlash,
+    setTooltipSequence,
+  );
 
   const openTooltip = useCallback(() => setTooltipSequence(dragSequence), [dragSequence]);
   const closeTooltip = useCallback(() => setTooltipSequence(null), []);
@@ -285,18 +345,15 @@ export const InventoryGearTile = memo(function InventoryGearTile({
       data-instance-id={instance.instanceId}
       data-gear-title={getGearInstanceTitle(instance)}
     >
-      <img
-        src={definition.art}
-        alt=""
-        className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated"
+      <TileContent
+        art={definition.art}
+        targetingMode={targetingMode}
+        isSalvageTarget={isSalvageTarget}
+        canCraft={canCraft}
+        activeCurrencyId={activeCurrencyId}
+        shineColors={shineColors}
+        flash={flash}
       />
-      <TargetingOverlay
-        visible={targetingMode}
-        salvageRing={isSalvageTarget}
-        craftRing={!!(activeCurrencyId && canCraft)}
-      />
-      {shineColors.length > 0 ? <ShineBorder shineColor={shineColors} borderWidth={1} /> : null}
-      {flash ? <div className="absolute inset-0 pointer-events-none rounded-xl craft-flash-overlay z-30" /> : null}
       <GearTooltipPortal triggerRef={tileRef} visible={showTooltip} definition={definition} instance={instance} />
     </div>
   );

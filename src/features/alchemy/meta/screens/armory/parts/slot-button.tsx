@@ -62,6 +62,39 @@ function CompatibilityOverlay({
   );
 }
 
+function SlotContent({
+  definition,
+  slot,
+  hideGearArt,
+  isCompatible,
+  showCompatibility,
+  salvageRing,
+  craftRing,
+  shineColors,
+}: {
+  definition: (typeof gearDefinitions)[string] | undefined;
+  slot: GearSlot;
+  hideGearArt: boolean;
+  isCompatible: boolean;
+  showCompatibility: boolean;
+  salvageRing: string[] | false;
+  craftRing: string[] | false;
+  shineColors: readonly string[];
+}) {
+  return (
+    <>
+      <GearSlotArt definition={definition} slot={slot} isHidden={hideGearArt} />
+      <CompatibilityOverlay
+        show={isCompatible || showCompatibility}
+        isCompatible={isCompatible}
+        salvageRing={salvageRing}
+        craftRing={craftRing}
+      />
+      {shineColors.length > 0 ? <ShineBorder shineColor={shineColors} borderWidth={1} /> : null}
+    </>
+  );
+}
+
 interface SlotHandlerContext {
   slot: GearSlot;
   instance: GearInstance | undefined;
@@ -232,6 +265,13 @@ export const SlotButton = memo(function SlotButton({
     onTransferRequest,
   });
 
+  const hideGearArt =
+    instance !== undefined &&
+    (draggedGear?.instanceId === instance.instanceId || secondaryDragInstanceIds.includes(instance.instanceId));
+  const showCompatibility = !!(targetingMode && instance);
+  const salvageRing = salvageMode && instance ? [SALVAGE_TARGET_RING, SALVAGE_TARGET_SHADOW] : false;
+  const craftRing = activeCurrencyId && instance && canCraft ? [VALID_TARGET_RING, VALID_TARGET_SHADOW] : false;
+
   return (
     <div
       ref={containerRef}
@@ -257,21 +297,16 @@ export const SlotButton = memo(function SlotButton({
       data-testid="armory-equipment-slot"
       data-slot={slot}
     >
-      <GearSlotArt
+      <SlotContent
         definition={definition}
         slot={slot}
-        isHidden={
-          instance !== undefined &&
-          (draggedGear?.instanceId === instance.instanceId || secondaryDragInstanceIds.includes(instance.instanceId))
-        }
-      />
-      <CompatibilityOverlay
-        show={isCompatible || !!(targetingMode && instance)}
+        hideGearArt={hideGearArt}
         isCompatible={isCompatible}
-        salvageRing={salvageMode && instance ? [SALVAGE_TARGET_RING, SALVAGE_TARGET_SHADOW] : false}
-        craftRing={activeCurrencyId && instance && canCraft ? [VALID_TARGET_RING, VALID_TARGET_SHADOW] : false}
+        showCompatibility={showCompatibility}
+        salvageRing={salvageRing}
+        craftRing={craftRing}
+        shineColors={shineColors}
       />
-      {shineColors.length > 0 ? <ShineBorder shineColor={shineColors} borderWidth={1} /> : null}
       {definition ? (
         <GearTooltipPortal
           triggerRef={containerRef}
