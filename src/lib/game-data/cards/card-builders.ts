@@ -357,27 +357,45 @@ export function cleansePlayerStatusCard({
   };
 }
 
+type EffectDescLineFormatter<K extends BattleCardEffect["kind"]> = (
+  effect: Extract<BattleCardEffect, { kind: K }>,
+) => string;
+
+const EFFECT_DESCRIPTION_FORMATTERS: {
+  [K in BattleCardEffect["kind"]]: EffectDescLineFormatter<K>;
+} = {
+  heal: (effect) => `Restore ${effect.amount} Health`,
+  "restore-mana": (effect) => `Restore ${effect.amount} Mana`,
+  "gain-max-mana": (effect) => `Gain ${effect.amount} Maximum Mana`,
+  "remove-harmful-status": (effect) => `Remove ${effect.amount} harmful status effect`,
+  "player-status": (effect) => {
+    if (effect.status === "block" || effect.status === "armor" || effect.status === "forge")
+      return playerStatusDescriptionLine(effect.status, effect.amount);
+    throw new Error(`effectDescriptionLine: unsupported player-status kind ${effect.status}`);
+  },
+  damage: (effect) => `Deal ${effect.amount} ${capitalizeWord(effect.damageType)} damage`,
+  "gain-gold": (effect) => `Gain ${effect.amount} Gold`,
+  wish: (effect) => `Wish ${effect.amount}`,
+  "enemy-status": () => unsupportedEffectKind("enemy-status"),
+  "lose-mana": () => unsupportedEffectKind("lose-mana"),
+  "lose-max-mana": () => unsupportedEffectKind("lose-max-mana"),
+  "summon-companion": () => unsupportedEffectKind("summon-companion"),
+  "buff-companion": () => unsupportedEffectKind("buff-companion"),
+  "lose-health": () => unsupportedEffectKind("lose-health"),
+  "draw-cards": () => unsupportedEffectKind("draw-cards"),
+  "remove-enemy-armor": () => unsupportedEffectKind("remove-enemy-armor"),
+  "multiply-enemy-status": () => unsupportedEffectKind("multiply-enemy-status"),
+  "remove-player-status": () => unsupportedEffectKind("remove-player-status"),
+  "self-damage": () => unsupportedEffectKind("self-damage"),
+  "cleanse-player-status-to-damage": () => unsupportedEffectKind("cleanse-player-status-to-damage"),
+  "random-damage": () => unsupportedEffectKind("random-damage"),
+  chance: () => unsupportedEffectKind("chance"),
+};
+
+function unsupportedEffectKind(kind: string): never {
+  throw new Error(`effectDescriptionLine: unsupported effect kind ${kind}`);
+}
+
 function effectDescriptionLine(effect: BattleCardEffect): string {
-  switch (effect.kind) {
-    case "heal":
-      return `Restore ${effect.amount} Health`;
-    case "restore-mana":
-      return `Restore ${effect.amount} Mana`;
-    case "gain-max-mana":
-      return `Gain ${effect.amount} Maximum Mana`;
-    case "remove-harmful-status":
-      return `Remove ${effect.amount} harmful status effect`;
-    case "player-status":
-      if (effect.status === "block" || effect.status === "armor" || effect.status === "forge")
-        return playerStatusDescriptionLine(effect.status, effect.amount);
-      throw new Error(`effectDescriptionLine: unsupported player-status kind ${effect.status}`);
-    case "damage":
-      return `Deal ${effect.amount} ${capitalizeWord(effect.damageType)} damage`;
-    case "gain-gold":
-      return `Gain ${effect.amount} Gold`;
-    case "wish":
-      return `Wish ${effect.amount}`;
-    default:
-      throw new Error(`effectDescriptionLine: unsupported effect kind ${(effect as BattleCardEffect).kind}`);
-  }
+  return EFFECT_DESCRIPTION_FORMATTERS[effect.kind](effect as never);
 }

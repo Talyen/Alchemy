@@ -34,13 +34,93 @@ import { bootstrapAlchemySaveState } from "@/features/alchemy/shared/storage/boo
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
-import { isRunLoopScreen } from "@/lib/routing";
+import { isRunLoopScreen, type Screen } from "@/lib/routing";
 import { useActiveRunScreenValue, useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { flattenGearInventories } from "@/lib/gear";
 import { applySaveDataToStores } from "@/features/alchemy/shared/storage/bootstrap-save-state";
 
 const appStore = useAppStore;
+
+function AppBackgroundParticles({
+  renderedScreen,
+  particleColors,
+  particleAlphaMultiplier,
+}: {
+  renderedScreen: Screen;
+  particleColors: readonly string[] | undefined;
+  particleAlphaMultiplier: number | undefined;
+}) {
+  if (renderedScreen === "battle") return null;
+  return (
+    <BackgroundParticles
+      variant="embers"
+      {...(particleColors ? { colors: particleColors } : {})}
+      {...(particleAlphaMultiplier ? { alphaMultiplier: particleAlphaMultiplier } : {})}
+    />
+  );
+}
+
+function AppHamburgerTrigger({ renderedScreen, onOpenMenu }: { renderedScreen: Screen; onOpenMenu: () => void }) {
+  if (!isRunLoopScreen(renderedScreen)) return null;
+  if (renderedScreen === "battle" || renderedScreen === "labyrinth-map") return null;
+  return (
+    <div className="pointer-events-none absolute inset-0 z-50 flex justify-center">
+      <div className="pointer-events-none relative w-full max-w-6xl">
+        <div className="pointer-events-auto absolute right-4 top-4">
+          <HamburgerTrigger onClick={onOpenMenu} label={`Open ${renderedScreen} menu`} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GameMenuOverlay({
+  saveBlockedByNewerVersion,
+  gameMenuOpen,
+  anchorRect,
+  currentScreen,
+  onClose,
+  nav,
+  finishedRunCharacters,
+  isArmoryLocked,
+  onEndRun,
+}: {
+  saveBlockedByNewerVersion: boolean;
+  gameMenuOpen: boolean;
+  anchorRect: DOMRect | null;
+  currentScreen: Screen;
+  onClose: () => void;
+  nav: ReturnType<typeof useReturnToRunNavigation>;
+  finishedRunCharacters: string[];
+  isArmoryLocked: boolean;
+  onEndRun: (() => void) | undefined;
+}) {
+  return (
+    <GameMenu
+      isOpen={saveBlockedByNewerVersion ? false : gameMenuOpen}
+      anchorRect={anchorRect}
+      currentScreen={currentScreen}
+      onClose={onClose}
+      onMainMenu={nav.handleMainMenu}
+      onCollection={() => nav.navigateToMeta("collection")}
+      onTalents={() => nav.navigateToMeta("talents")}
+      onHomestead={() => nav.navigateToMeta("homestead")}
+      onArmory={() => nav.navigateToMeta("armory")}
+      onOptions={() => nav.navigateToMeta("options")}
+      isTalentsLocked={!finishedRunCharacters.includes("knight")}
+      isHomesteadLocked={!finishedRunCharacters.includes("knight")}
+      isArmoryLocked={isArmoryLocked}
+      {...(nav.returnToRunTarget && shouldShowReturnToRun(nav.returnToRunTarget, currentScreen)
+        ? {
+            onReturnToRun: nav.returnToRun,
+            returnToRunLabel: resolveReturnToRunLabel(nav.returnToRunTarget),
+          }
+        : {})}
+      {...(isRunLoopScreen(currentScreen) && onEndRun ? { onEndRun } : {})}
+    />
+  );
+}
 
 function AppMainContent({
   saveBlockedByNewerVersion,
@@ -161,45 +241,24 @@ function AppMainContent({
         )}
         style={stageStyle}
       >
-        {renderedScreen !== "battle" && (
-          <BackgroundParticles
-            variant="embers"
-            {...(particleColors ? { colors: particleColors } : {})}
-            {...(particleAlphaMultiplier ? { alphaMultiplier: particleAlphaMultiplier } : {})}
-          />
-        )}
+        <AppBackgroundParticles
+          renderedScreen={renderedScreen}
+          particleColors={particleColors}
+          particleAlphaMultiplier={particleAlphaMultiplier}
+        />
         {content}
-        {isRunLoopScreen(renderedScreen) && renderedScreen !== "battle" && renderedScreen !== "labyrinth-map" ? (
-          <div className="pointer-events-none absolute inset-0 z-50 flex justify-center">
-            <div className="pointer-events-none relative w-full max-w-6xl">
-              <div className="pointer-events-auto absolute right-4 top-4">
-                <HamburgerTrigger onClick={gameMenu.openBattleMenu} label={`Open ${renderedScreen} menu`} />
-              </div>
-            </div>
-          </div>
-        ) : null}
+        <AppHamburgerTrigger renderedScreen={renderedScreen} onOpenMenu={gameMenu.openBattleMenu} />
       </div>
-      <GameMenu
-        isOpen={saveBlockedByNewerVersion ? false : gameMenu.gameMenuOpen}
+      <GameMenuOverlay
+        saveBlockedByNewerVersion={saveBlockedByNewerVersion}
+        gameMenuOpen={gameMenu.gameMenuOpen}
         anchorRect={gameMenu.menuAnchorRect}
         currentScreen={renderedScreen}
         onClose={gameMenu.closeGameMenu}
-        onMainMenu={nav.handleMainMenu}
-        onCollection={() => nav.navigateToMeta("collection")}
-        onTalents={() => nav.navigateToMeta("talents")}
-        onHomestead={() => nav.navigateToMeta("homestead")}
-        onArmory={() => nav.navigateToMeta("armory")}
-        onOptions={() => nav.navigateToMeta("options")}
-        isTalentsLocked={!finishedRunCharacters.includes("knight")}
-        isHomesteadLocked={!finishedRunCharacters.includes("knight")}
+        nav={nav}
+        finishedRunCharacters={finishedRunCharacters}
         isArmoryLocked={isArmoryLocked}
-        {...(nav.returnToRunTarget && shouldShowReturnToRun(nav.returnToRunTarget, renderedScreen)
-          ? {
-              onReturnToRun: nav.returnToRun,
-              returnToRunLabel: resolveReturnToRunLabel(nav.returnToRunTarget),
-            }
-          : {})}
-        {...(isRunLoopScreen(renderedScreen) && run.activeRunData ? { onEndRun: run.handleEndRun } : {})}
+        onEndRun={run.handleEndRun}
       />
     </>
   );

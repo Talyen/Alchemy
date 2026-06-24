@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { type ReactNode } from "react";
 import { type MaterialInventory } from "@/lib/homestead/types";
 import { canAfford } from "@/lib/homestead/inventory";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,60 @@ import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/compan
 import { getEffectiveCardDescriptionLines } from "../../../shared/utils/card-description";
 import { HOMESTEAD_CONFIG, MaterialCost } from "./helpers";
 import { HomesteadTileCompletedFooter, HomesteadTileFrame } from "./homestead-tile-node";
+
+function getCompanionFooter(
+  discovered: boolean,
+  isComplete: boolean,
+  card: BattleCard,
+  currentLevel: number,
+  bondAffordable: boolean,
+  onBond: (card: BattleCard) => void,
+): ReactNode {
+  if (!discovered || isComplete) {
+    return (
+      <HomesteadTileCompletedFooter
+        label={discovered ? card.title : "Undiscovered"}
+        stars={discovered ? <StarRating current={COMPANION_MAX_TIER} max={COMPANION_MAX_TIER} /> : null}
+        wrapperClassName="mt-0.5"
+      />
+    );
+  }
+  return (
+    <div className="mt-0.5 flex items-center gap-2">
+      <DisabledTooltip show={!bondAffordable} message="Not Enough Resources">
+        <Button variant="outline" disabled={!bondAffordable} onClick={() => onBond(card)}>
+          {card.title}
+          <MaterialCost
+            material="food"
+            amount={COMPANION_BOND_TIERS[Math.min(currentLevel, COMPANION_MAX_TIER - 1)]!.food}
+          />
+        </Button>
+      </DisabledTooltip>
+      <StarRating current={currentLevel} max={COMPANION_MAX_TIER} />
+    </div>
+  );
+}
+
+function getCompanionTooltip(
+  hoveredItemId: string | null,
+  card: BattleCard,
+  discovered: boolean,
+  bondedCompanions: Record<CompanionId, number>,
+): ReactNode {
+  if (hoveredItemId !== card.id) return null;
+  return (
+    <DetailPopup
+      idPrefix={card.id}
+      title={discovered ? card.title : "Undiscovered"}
+      subtitle={undefined}
+      descriptionLines={
+        discovered
+          ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions })
+          : ["Discover this card during a run to reveal it here."]
+      }
+    />
+  );
+}
 
 export function CompanionCardNode({
   card,
@@ -38,41 +93,9 @@ export function CompanionCardNode({
   const isComplete = currentLevel >= COMPANION_MAX_TIER;
   const bondCost = COMPANION_BOND_TIERS[Math.min(currentLevel, COMPANION_MAX_TIER - 1)]!;
   const bondAffordable = discovered && !isComplete && canAfford(materialInventory, bondCost);
-  const showButton = discovered && !isComplete;
 
-  const detailTooltip =
-    hoveredItemId === card.id ? (
-      <DetailPopup
-        idPrefix={card.id}
-        title={discovered ? card.title : "Undiscovered"}
-        subtitle={undefined}
-        descriptionLines={
-          discovered
-            ? getEffectiveCardDescriptionLines(card, {
-                companionBondLevels: bondedCompanions,
-              })
-            : ["Discover this card during a run to reveal it here."]
-        }
-      />
-    ) : null;
-
-  const footer = showButton ? (
-    <div className="mt-0.5 flex items-center gap-2">
-      <DisabledTooltip show={!bondAffordable} message="Not Enough Resources">
-        <Button variant="outline" disabled={!bondAffordable} onClick={() => onBond(card)}>
-          {card.title}
-          <MaterialCost material="food" amount={bondCost.food} />
-        </Button>
-      </DisabledTooltip>
-      <StarRating current={currentLevel} max={COMPANION_MAX_TIER} />
-    </div>
-  ) : (
-    <HomesteadTileCompletedFooter
-      label={discovered ? card.title : "Undiscovered"}
-      stars={discovered ? <StarRating current={COMPANION_MAX_TIER} max={COMPANION_MAX_TIER} /> : null}
-      wrapperClassName="mt-0.5"
-    />
-  );
+  const detailTooltip = getCompanionTooltip(hoveredItemId, card, discovered, bondedCompanions);
+  const footer = getCompanionFooter(discovered, isComplete, card, currentLevel, bondAffordable, onBond);
 
   return (
     <HomesteadTileFrame

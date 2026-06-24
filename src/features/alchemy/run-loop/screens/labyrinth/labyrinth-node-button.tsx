@@ -30,23 +30,12 @@ interface Props {
 }
 
 export function LabyrinthNodeButton({ row, col, node, labyrinthMap, onNodeClick, onHover, onLeave }: Props) {
-  const isCleared = node.state === "cleared";
-  const isFailed = node.state === "failed";
   const isCurrent = node.state === "current";
   const isEnterable = canEnterLabyrinthNode(labyrinthMap, row, col);
   const meta = LABYRINTH_NODE_META[node.type];
   const Icon = isCurrent ? Star : meta.icon;
-  const btnClasses = cn(
-    "relative flex aspect-square h-full w-full items-center justify-center rounded-full border-2 text-xs transition-[transform,border-color] duration-150",
-    meta.className,
-    isCurrent && "border-amber-400",
-    isCurrent && node.type !== "entrance" && "shadow-labyrinth-current-glow",
-    isEnterable && "hover:-translate-y-0.5 active:scale-95",
-    isCleared && "border-emerald-200 opacity-30",
-    isFailed && "border-red-400 opacity-30",
-    !isEnterable && "cursor-default border-2 border-white/20",
-  );
-  const iconClasses = cn(node.type === "boss" && !isCurrent ? "h-7 w-7" : "h-6 w-6", isCurrent && "text-amber-400");
+  const btnClasses = getNodeButtonClassName(meta, node, isCurrent, isEnterable);
+  const iconClasses = getNodeIconClassName(node.type, isCurrent);
 
   const handleHover = () =>
     onHover({ row, col, type: node.type, modifiers: node.modifiers, rewardModifiers: node.rewardModifiers });
@@ -83,6 +72,29 @@ export function LabyrinthNodeButton({ row, col, node, labyrinthMap, onNodeClick,
         </span>
       </button>
     </div>
+  );
+}
+
+function getNodeIconClassName(nodeType: LabyrinthNodeType, isCurrent: boolean): string {
+  const size = nodeType === "boss" && !isCurrent ? "h-7 w-7" : "h-6 w-6";
+  return cn(size, isCurrent && "text-amber-400");
+}
+
+function getNodeButtonClassName(
+  meta: { className: string; shineColors: string[] },
+  node: { type: LabyrinthNodeType; state: string },
+  isCurrent: boolean,
+  isEnterable: boolean,
+): string {
+  return cn(
+    "relative flex aspect-square h-full w-full items-center justify-center rounded-full border-2 text-xs transition-[transform,border-color] duration-150",
+    meta.className,
+    isCurrent && "border-amber-400",
+    isCurrent && node.type !== "entrance" && "shadow-labyrinth-current-glow",
+    isEnterable && "hover:-translate-y-0.5 active:scale-95",
+    node.state === "cleared" && "border-emerald-200 opacity-30",
+    node.state === "failed" && "border-red-400 opacity-30",
+    !isEnterable && "cursor-default border-2 border-white/20",
   );
 }
 

@@ -317,6 +317,26 @@ export function clampHealth(current: number, delta: number, max: number): number
   return Math.max(0, Math.min(max, current + delta));
 }
 
+function computeDamageReduction(baseReduction: number, damageType: string | undefined, state: BattleState): number {
+  if (damageType === "burn") {
+    return baseReduction - state.talentEffects.burnDamageReduction;
+  }
+  if (damageType === "freeze") {
+    return baseReduction - state.talentEffects.freezeDamageReduction;
+  }
+  if (damageType === "nature") {
+    let result = baseReduction - state.talentEffects.natureDamageReduction;
+    if (state.talentEffects.receiveHalfNatureDamage) {
+      result = Math.round(result / HALF_DIVISOR);
+    }
+    return result;
+  }
+  if (damageType === "poison") {
+    return baseReduction - state.talentEffects.poisonDamageReduction;
+  }
+  return baseReduction;
+}
+
 // Death's Door triggers once per battle. Subsequent zero-health hits maintain state without extra grace.
 // damageReduction subtracts flat damage (e.g., from talents) before applying to health.
 export function applyPlayerCombatDamage(state: BattleState, damage: number, damageType?: string): BattleState {
@@ -325,18 +345,7 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number, dama
   if (state.activeCompanion && state.talentEffects.damageReductionWithCompanion > 0) {
     reducedDamage -= state.talentEffects.damageReductionWithCompanion;
   }
-  if (damageType === "burn") {
-    reducedDamage -= state.talentEffects.burnDamageReduction;
-  } else if (damageType === "freeze") {
-    reducedDamage -= state.talentEffects.freezeDamageReduction;
-  } else if (damageType === "nature") {
-    reducedDamage -= state.talentEffects.natureDamageReduction;
-    if (state.talentEffects.receiveHalfNatureDamage) {
-      reducedDamage = Math.round(reducedDamage / HALF_DIVISOR);
-    }
-  } else if (damageType === "poison") {
-    reducedDamage -= state.talentEffects.poisonDamageReduction;
-  }
+  reducedDamage = computeDamageReduction(reducedDamage, damageType, state);
   reducedDamage = Math.max(0, reducedDamage);
   reducedDamage = applyGearDamageResistance(reducedDamage, damageType, state.gearEffects);
   const nextHealth = clampHealth(state.playerHealth, -reducedDamage, state.playerMaxHealth);

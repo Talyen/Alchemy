@@ -67,6 +67,42 @@ function TalentNodeIcon({
   return <Lock className="h-7 w-7 text-muted-foreground" />;
 }
 
+function getTalentNodeClassName(
+  canInteract: boolean,
+  isChoice: boolean,
+  isUnlocking: boolean,
+  isSettling: boolean,
+  isUnlocked: boolean,
+): string {
+  return cn(
+    "talent-node-glass relative select-none w-full h-full transition-[filter,box-shadow] duration-200 outline-none rounded-full state-fade",
+    canInteract && "cursor-pointer",
+    isChoice && !isUnlocking ? "talent-node-glass--choice" : "talent-node-glass--bordered",
+    isUnlocking && "talent-node-unlocking",
+    isSettling && "talent-node-unlocked-settle",
+    !isUnlocked && !isChoice && !isUnlocking && "brightness-[0.8]",
+  );
+}
+
+function getTalentAriaLabel(isChoice: boolean, talent: TalentDefinition): string | undefined {
+  if (!isChoice) return undefined;
+  const namePrefix = talent.name ? `${talent.name} — ` : "";
+  return `Unlock talent: ${namePrefix}${talent.description}`;
+}
+
+function TalentNodeVisual({
+  isChoice,
+  isUnlocking,
+  shineColors,
+}: {
+  isChoice: boolean;
+  isUnlocking: boolean;
+  shineColors: readonly string[];
+}) {
+  if (!isChoice || isUnlocking) return null;
+  return <ShineBorder shineColor={shineColors} borderWidth={3} duration={8} className="rounded-full" />;
+}
+
 function TalentNode({
   talent,
   isUnlocked,
@@ -104,22 +140,11 @@ function TalentNode({
       tabIndex={canInteract ? 0 : undefined}
       onClick={canInteract ? () => onUnlock?.(talent.id) : undefined}
       onKeyDown={handleKeyDown}
-      className={cn(
-        "talent-node-glass relative select-none w-full h-full transition-[filter,box-shadow] duration-200 outline-none rounded-full state-fade",
-        canInteract && "cursor-pointer",
-        isChoice && !isUnlocking ? "talent-node-glass--choice" : "talent-node-glass--bordered",
-        isUnlocking && "talent-node-unlocking",
-        isSettling && "talent-node-unlocked-settle",
-        !isUnlocked && !isChoice && !isUnlocking && "brightness-[0.8]",
-      )}
+      className={getTalentNodeClassName(canInteract, isChoice, isUnlocking, isSettling, isUnlocked)}
       style={{ "--talent-glass-accent": baseColor } as CSSProperties}
-      aria-label={
-        isChoice ? `Unlock talent: ${talent.name ? `${talent.name} — ` : ""}${talent.description}` : undefined
-      }
+      aria-label={getTalentAriaLabel(isChoice, talent)}
     >
-      {isChoice && !isUnlocking && (
-        <ShineBorder shineColor={shineColors} borderWidth={3} duration={8} className="rounded-full" />
-      )}
+      <TalentNodeVisual isChoice={isChoice} isUnlocking={isUnlocking} shineColors={shineColors} />
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
         <TalentNodeIcon revealed={revealed} keywordColor={def?.colorClass} Icon={Icon} />
       </div>

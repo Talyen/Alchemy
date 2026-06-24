@@ -20,6 +20,70 @@ import {
 } from "../navigation/reward-flow";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
+function RewardChoiceItems({
+  choices,
+  rewardType,
+  selectedRewardId,
+  onSelectReward,
+}: {
+  choices: RewardState["choices"];
+  rewardType: string;
+  selectedRewardId: string | null;
+  onSelectReward: (id: string) => void;
+}) {
+  const isTrinket = rewardType === "trinket";
+  const isGear = rewardType === "gear";
+  return choices.map((item, index) => {
+    const choiceId = getRewardChoiceId(item);
+    return (
+      <StaggerItem key={choiceId} index={index}>
+        {isGear ? (
+          <GearRewardButton
+            instance={item as GearRewardState["choices"][number]}
+            onClick={() => onSelectReward(choiceId)}
+            selected={selectedRewardId === choiceId}
+          />
+        ) : isTrinket ? (
+          <TrinketRewardButton
+            trinket={item as TrinketRewardState["choices"][number]}
+            onClick={() => onSelectReward(choiceId)}
+            selected={selectedRewardId === choiceId}
+          />
+        ) : (
+          <RewardCardItem
+            card={item as BattleCard}
+            selected={selectedRewardId === choiceId}
+            onSelect={onSelectReward}
+          />
+        )}
+      </StaggerItem>
+    );
+  });
+}
+
+function RewardsFound({
+  rewardGold,
+  rewardMaterials,
+}: {
+  rewardGold: number;
+  rewardMaterials: Record<string, number | undefined>;
+}) {
+  const hasRewards = rewardGold > 0 || MATERIAL_IDS.some((mat) => (rewardMaterials[mat] ?? 0) > 0);
+  if (!hasRewards) return null;
+  return (
+    <StaggerItem
+      index={100}
+      className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground"
+    >
+      Found
+      {rewardGold > 0 ? <GoldPill amount={rewardGold} /> : null}
+      {MATERIAL_IDS.filter((mat) => (rewardMaterials[mat] ?? 0) > 0).map((mat) => (
+        <MaterialPill key={mat} material={mat} amount={rewardMaterials[mat] ?? 0} />
+      ))}
+    </StaggerItem>
+  );
+}
+
 function TrinketRewardButton({
   trinket,
   onClick,
@@ -175,46 +239,15 @@ export function RewardsScreen({
           className="mt-8 flex flex-col items-center gap-8"
         >
           <div className="flex flex-wrap items-start justify-center gap-6">
-            {rewardChoices.map((item, index) => {
-              const choiceId = getRewardChoiceId(item);
-              return (
-                <StaggerItem key={choiceId} index={index}>
-                  {isGear ? (
-                    <GearRewardButton
-                      instance={item as GearRewardState["choices"][number]}
-                      onClick={() => onSelectReward(choiceId)}
-                      selected={selectedRewardId === choiceId}
-                    />
-                  ) : isTrinket ? (
-                    <TrinketRewardButton
-                      trinket={item as TrinketRewardState["choices"][number]}
-                      onClick={() => onSelectReward(choiceId)}
-                      selected={selectedRewardId === choiceId}
-                    />
-                  ) : (
-                    <RewardCardItem
-                      card={item as BattleCard}
-                      selected={selectedRewardId === choiceId}
-                      onSelect={onSelectReward}
-                    />
-                  )}
-                </StaggerItem>
-              );
-            })}
+            <RewardChoiceItems
+              choices={rewardChoices}
+              rewardType={rewardType}
+              selectedRewardId={selectedRewardId}
+              onSelectReward={onSelectReward}
+            />
           </div>
 
-          {rewardGold > 0 || MATERIAL_IDS.some((mat) => rewardMaterials[mat] > 0) ? (
-            <StaggerItem
-              index={rewardChoices.length}
-              className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground"
-            >
-              Found
-              {rewardGold > 0 ? <GoldPill amount={rewardGold} /> : null}
-              {MATERIAL_IDS.filter((mat) => rewardMaterials[mat] > 0).map((mat) => (
-                <MaterialPill key={mat} material={mat} amount={rewardMaterials[mat]} />
-              ))}
-            </StaggerItem>
-          ) : null}
+          <RewardsFound rewardGold={rewardGold} rewardMaterials={rewardMaterials} />
         </StaggerGroup>
 
         <ActionButtonRow

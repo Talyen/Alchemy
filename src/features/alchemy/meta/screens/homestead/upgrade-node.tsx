@@ -38,61 +38,7 @@ export function HomesteadUpgradeNode({
   const itemAffordable = !isCompleted && canAfford(materialInventory, itemCost);
   const costItems = MATERIAL_IDS.filter((m) => (itemCost[m] ?? 0) > 0);
 
-  const detailTooltip = useMemo(() => {
-    if (hoveredItemId !== item.data.id) return null;
-    const nodes: ReactNode[] = [];
-    const farm = item.kind === "farm" ? item.data : null;
-    const currentTier = item.data.tiers[displayTierIndex];
-
-    if (farm) {
-      for (const m of MATERIAL_IDS) {
-        if ((farm.yield[m] ?? 0) > 0) {
-          nodes.push(
-            <span
-              key={`yield-${m}`}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                matPillStyle[m],
-                matTextColor[m],
-              )}
-            >
-              {matIconMap[m]} +{farm.yield[m]} {materialLabels[m]}
-            </span>,
-          );
-        }
-      }
-    }
-
-    if (currentTier) {
-      if (currentTier.benefitDescription) {
-        for (const line of currentTier.benefitDescription.split("\n")) {
-          nodes.push(
-            <div key={`b-${nodes.length}`} className="text-sm leading-6 text-muted-foreground">
-              {renderTextWithMaterials(line)}
-            </div>,
-          );
-        }
-      }
-      if (currentTier.nonCombatBenefitDescription) {
-        nodes.push(
-          <div key={`b-${nodes.length}`} className="text-sm leading-6 text-muted-foreground">
-            {renderTextWithMaterials(currentTier.nonCombatBenefitDescription)}
-          </div>,
-        );
-      }
-    }
-
-    return (
-      <DetailPopup
-        idPrefix={item.data.id}
-        title={item.data.title}
-        subtitle={undefined}
-        descriptionLines={item.data.description ? [item.data.description] : []}
-        descriptionNodes={nodes}
-      />
-    );
-  }, [hoveredItemId, item, displayTierIndex]);
-
+  const detailTooltip = useTooltipContent(hoveredItemId, item, displayTierIndex);
   const hasCost = MATERIAL_IDS.some((m) => (itemCost[m] ?? 0) > 0);
 
   const footer = isCompleted ? (
@@ -125,4 +71,67 @@ export function HomesteadUpgradeNode({
       footer={footer}
     />
   );
+}
+
+function buildFarmYieldNodes(farm: { yield: Record<string, number> }): ReactNode[] {
+  const nodes: ReactNode[] = [];
+  for (const m of MATERIAL_IDS) {
+    if ((farm.yield[m] ?? 0) > 0) {
+      nodes.push(
+        <span
+          key={`yield-${m}`}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold",
+            matPillStyle[m],
+            matTextColor[m],
+          )}
+        >
+          {matIconMap[m]} +{farm.yield[m]} {materialLabels[m]}
+        </span>,
+      );
+    }
+  }
+  return nodes;
+}
+
+function useTooltipContent(hoveredItemId: string | null, item: GoalItem, displayTierIndex: number): ReactNode {
+  return useMemo(() => {
+    if (hoveredItemId !== item.data.id) return null;
+    const nodes: ReactNode[] = [];
+    const farm = item.kind === "farm" ? item.data : null;
+    const currentTier = item.data.tiers[displayTierIndex];
+
+    if (farm) {
+      nodes.push(...buildFarmYieldNodes(farm));
+    }
+
+    if (currentTier) {
+      if (currentTier.benefitDescription) {
+        for (const line of currentTier.benefitDescription.split("\n")) {
+          nodes.push(
+            <div key={`b-${nodes.length}`} className="text-sm leading-6 text-muted-foreground">
+              {renderTextWithMaterials(line)}
+            </div>,
+          );
+        }
+      }
+      if (currentTier.nonCombatBenefitDescription) {
+        nodes.push(
+          <div key={`b-${nodes.length}`} className="text-sm leading-6 text-muted-foreground">
+            {renderTextWithMaterials(currentTier.nonCombatBenefitDescription)}
+          </div>,
+        );
+      }
+    }
+
+    return (
+      <DetailPopup
+        idPrefix={item.data.id}
+        title={item.data.title}
+        subtitle={undefined}
+        descriptionLines={item.data.description ? [item.data.description] : []}
+        descriptionNodes={nodes}
+      />
+    );
+  }, [hoveredItemId, item, displayTierIndex]);
 }

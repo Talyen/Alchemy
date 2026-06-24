@@ -5,6 +5,7 @@ import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifiers";
 import { cn } from "@/lib/utils";
+import type React from "react";
 
 import { formatEnemyAttackLines } from "../utils";
 import { DescriptionLines } from "./card-description-ui";
@@ -36,6 +37,21 @@ function EnemyTooltipModifiers({ modifiers }: { modifiers: LabyrinthModifierKind
   );
 }
 
+function getEnemyTooltipClass(isSide: boolean, align: "left" | "right", className: string | undefined): string {
+  if (!isSide) return cn("rounded-shell-tooltip", className);
+  if (align === "left") {
+    return cn("rounded-shell-tooltip", "absolute right-[calc(100%+1.11cqh)] top-0 bottom-auto left-auto", className);
+  }
+  return cn("rounded-shell-tooltip", "absolute left-[calc(100%+1.11cqh)] top-0 bottom-auto right-auto", className);
+}
+
+function getEnemyTooltipStyle(isSide: boolean, dx: number): React.CSSProperties {
+  return {
+    ...(isSide ? { transform: "none" } : {}),
+    ...(dx !== 0 ? { marginLeft: dx } : {}),
+  };
+}
+
 export function EnemyTooltip({
   entry,
   discovered = true,
@@ -65,15 +81,8 @@ export function EnemyTooltip({
       placement={isSide ? placement : "above"}
       flip={flip}
       width="w-60"
-      className={cn(
-        "rounded-shell-tooltip",
-        isSide &&
-          (align === "left"
-            ? "absolute right-[calc(100%+1.11cqh)] top-0 bottom-auto left-auto"
-            : "absolute left-[calc(100%+1.11cqh)] top-0 bottom-auto right-auto"),
-        className,
-      )}
-      style={{ ...(isSide ? { transform: "none" } : {}), ...(dx !== 0 ? { marginLeft: dx } : {}) }}
+      className={getEnemyTooltipClass(isSide, align, className)}
+      style={getEnemyTooltipStyle(isSide, dx)}
     >
       <TooltipHeader>{discovered ? entry.title : "Undiscovered"}</TooltipHeader>
       <TooltipBody>

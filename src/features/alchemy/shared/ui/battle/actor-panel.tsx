@@ -53,6 +53,11 @@ interface ArtPanelProps {
   hurtFlashToken?: number;
 }
 
+function getStatsCardWidth(isBoss: boolean, statsCardWidthClass: string | undefined, defaultClass: string): string {
+  if (!isBoss) return defaultClass;
+  return statsCardWidthClass ?? defaultClass;
+}
+
 // Renders one battle actor card with health/status chrome and optional enemy tooltip.
 export function ArtPanel({
   side,
@@ -120,7 +125,7 @@ export function ArtPanel({
         healthToken={healthToken}
         statuses={statuses}
         isDead={isDead}
-        cardWidthClass={isBoss ? (statsCardWidthClass ?? cardWidthClass) : cardWidthClass}
+        cardWidthClass={getStatsCardWidth(isBoss, statsCardWidthClass, cardWidthClass)}
         deathsDoorActive={deathsDoorActive}
       />
     </div>
