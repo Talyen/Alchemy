@@ -1,5 +1,12 @@
 // Run store initial state and hydration from active-run saves or fresh-run snapshots.
-import { getStartingDeck, hydrateCard, type BattleCard, type CharacterId, type UnlockedTalents } from "@/lib/game-data";
+import {
+  getStartingDeck,
+  hydrateCard,
+  type BattleCard,
+  type CharacterId,
+  type UnlockedTalents,
+  type CompanionId,
+} from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { DESTINATIONS, type Destination } from "@/features/alchemy/shared/types";
 import type { ActiveRunData } from "@/lib/active-run-session";
@@ -7,7 +14,11 @@ import type { RunStartSnapshot } from "./run-start";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { DifficultyId, TalentXP } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import type { MaterialInventory } from "@/lib/homestead/types";
+import { createEmptyTierRecord } from "@/lib/homestead/tiers";
+import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { companionTierItems } from "@/lib/homestead/companions";
+import { computeHomesteadEffects } from "@/lib/homestead/effects";
+import type { MaterialInventory, BuildingId, FarmId, ResearchId, HomesteadEffectManifest } from "@/lib/homestead/types";
 
 export interface RunStateFields {
   characterId: CharacterId;
@@ -29,6 +40,12 @@ export interface RunStateFields {
   runTalentXP: TalentXP;
   runMaterialsEarned: MaterialInventory;
   unlockedTalents: UnlockedTalents;
+  materialInventory: MaterialInventory;
+  constructedBuildings: Record<BuildingId, number>;
+  plantedFarms: Record<FarmId, number>;
+  completedResearch: Record<ResearchId, number>;
+  bondedCompanions: Record<CompanionId, number>;
+  effects: HomesteadEffectManifest;
   initialized: boolean;
 }
 
@@ -131,6 +148,16 @@ export function createInitialRunState(
     runTalentXP: initialActiveRun?.runTalentXP ?? {},
     runMaterialsEarned: initialActiveRun?.runMaterialsEarned ?? emptyInventory(),
     unlockedTalents: {},
+    materialInventory: emptyInventory(),
+    constructedBuildings: createEmptyTierRecord(buildings),
+    plantedFarms: createEmptyTierRecord(farmPlots),
+    completedResearch: createEmptyTierRecord(researchUpgrades),
+    bondedCompanions: createEmptyTierRecord(companionTierItems),
+    effects: computeHomesteadEffects(
+      createEmptyTierRecord(buildings),
+      createEmptyTierRecord(farmPlots),
+      createEmptyTierRecord(researchUpgrades),
+    ),
     initialized: false,
   };
 }

@@ -196,12 +196,24 @@ export function teardownRun(): void {
     const characterId = state.progress.characterId;
     const talentXP = state.progress.talentXP;
     const unlockedTalents = state.progress.unlockedTalents;
+    const materialInventory = state.progress.materialInventory;
+    const constructedBuildings = state.progress.constructedBuildings;
+    const plantedFarms = state.progress.plantedFarms;
+    const completedResearch = state.progress.completedResearch;
+    const bondedCompanions = state.progress.bondedCompanions;
+    const effects = state.progress.effects;
     const fresh = createInitialRunDomainData();
     state.progress = {
       ...fresh.progress,
       characterId,
       talentXP,
       unlockedTalents,
+      materialInventory,
+      constructedBuildings,
+      plantedFarms,
+      completedResearch,
+      bondedCompanions,
+      effects,
       initialized: true,
     };
     state.session = { ...fresh.session, pendingContentSystemType: "campaign" };

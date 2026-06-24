@@ -38,7 +38,7 @@ function renderBattleController(screen: Screen = ROUTE_SCREENS.BATTLE) {
         run: makeRunController(),
         talents: makeTalentController(),
         autoEndTurn: false,
-        homesteadEffectsRef: { current: defaultHomesteadEffects },
+        homesteadEffects: defaultHomesteadEffects,
         screen: currentScreen,
         setHoveredCardId: vi.fn(),
       }),

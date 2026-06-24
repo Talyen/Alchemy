@@ -22,10 +22,10 @@ vi.mock("@/lib/platform", () => ({
 
 import { clearAllPersistentGameData, resetActiveRunStores } from "@/features/alchemy/shared/stores/reset";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
-import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { defaultSaveData } from "@/features/alchemy/shared/storage";
+import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
 import {
   getBattleStoreView,
   getRunProgressStoreView,
@@ -38,7 +38,6 @@ import {
 beforeEach(() => {
   useAppStore.setState(useAppStore.getInitialState());
   resetRunDomainStore();
-  useHomesteadStore.setState(useHomesteadStore.getInitialState());
   resetTransientRunUi();
 });
 
@@ -63,29 +62,33 @@ describe("resetActiveRunStores", () => {
   });
 
   it("does not reset homestead or app options", () => {
-    useHomesteadStore.getState().addMaterials({ wood: 5, iron: 0, herbs: 0, food: 0, crystal: 0 });
+    useRunDomainStore.getState().addMaterials({ wood: 5, iron: 0, herbs: 0, food: 0, crystal: 0 });
     useAppStore.getState().setMusicVol(0.25);
-    const homesteadBefore = useHomesteadStore.getState().materialInventory.wood;
+    const homesteadBefore = useRunDomainStore.getState().progress.materialInventory.wood;
     const musicBefore = useAppStore.getState().musicVol;
 
     resetActiveRunStores();
 
-    expect(useHomesteadStore.getState().materialInventory.wood).toBe(homesteadBefore);
+    expect(useRunDomainStore.getState().progress.materialInventory.wood).toBe(homesteadBefore);
     expect(useAppStore.getState().musicVol).toBe(musicBefore);
   });
 });
 
 describe("clearAllPersistentGameData", () => {
   it("wipes app, run permanent data, and homestead", () => {
-    useHomesteadStore.getState().addMaterials({ wood: 10, iron: 0, herbs: 0, food: 0, crystal: 0 });
+    useRunDomainStore.getState().addMaterials({ wood: 10, iron: 0, herbs: 0, food: 0, crystal: 0 });
     setRunProgress({ unlockedTalents: { physical: ["test-talent"] } });
     useAppStore.getState().setDiscoveredCardIds(["card-a"]);
 
     clearAllPersistentGameData();
 
-    expect(useHomesteadStore.getState().materialInventory).toEqual(
-      useHomesteadStore.getInitialState().materialInventory,
-    );
+    expect(useRunDomainStore.getState().progress.materialInventory).toEqual({
+      wood: 0,
+      iron: 0,
+      herbs: 0,
+      food: 0,
+      crystal: 0,
+    });
     expect(getRunProgressStoreView().unlockedTalents).toEqual({});
     expect(useAppStore.getState().discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
     expect(useAppStore.getState().discoveredCardIds).not.toContain("card-a");

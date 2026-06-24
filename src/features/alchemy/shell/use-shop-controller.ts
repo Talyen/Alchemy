@@ -1,5 +1,4 @@
 // React hook wrapper around the pure shop-actions factory.
-import { type RefObject } from "react";
 import type { RunStateController, TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useRunSessionShopSlice } from "@/features/alchemy/shared/stores/run-session-facade";
 import {
@@ -14,18 +13,18 @@ import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-
 export function useShopController({
   run,
   talents,
-  homesteadEffectsRef,
+  homesteadEffects,
 }: {
   run: RunStateController;
   talents: TalentStateController;
-  homesteadEffectsRef: RefObject<HomesteadEffectManifest>;
+  homesteadEffects: HomesteadEffectManifest;
 }) {
   const { shopState, alchemistState, trinketShopState, equipmentShopState } = useRunSessionShopSlice();
 
   return createShopActions({
     run,
     talents,
-    homesteadEffectsRef,
+    homesteadEffects,
     shopState,
     alchemistState,
     trinketShopState,

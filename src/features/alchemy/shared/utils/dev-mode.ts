@@ -2,7 +2,7 @@
 import { useCallback } from "react";
 import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
-import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
+import { getRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
 import type { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 
@@ -30,7 +30,7 @@ export function useDevShortcuts(run: ReturnType<typeof useAlchemyRunController>)
       .getState()
       .setFinishedRunCharacters(["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
     run.unlockAllTalents();
-    useHomesteadStore.getState().setMaterials({ wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
+    getRunDomainStore().setMaterials({ wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
   }, [run]);
 
   return { clearSaveData, unlockAllDevMode };

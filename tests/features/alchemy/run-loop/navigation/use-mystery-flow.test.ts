@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
-import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
@@ -15,7 +14,6 @@ beforeEach(() => {
   resetTransientRunUi();
   resetRunProgressSlice();
   useAppStore.setState(useAppStore.getInitialState());
-  useHomesteadStore.setState(useHomesteadStore.getInitialState());
 });
 
 describe("useMysteryFlow", () => {

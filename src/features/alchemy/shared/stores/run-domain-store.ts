@@ -5,6 +5,7 @@ import { useShallow } from "zustand/react/shallow";
 import { computeTalentEffects, type TalentEffectManifest } from "@/lib/game-data";
 import type { RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
 import type { Screen } from "@/features/alchemy/shared/types";
+import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import {
   createInitialRunDomainData,
   type RunDomainDataState,
@@ -33,84 +34,105 @@ export function getRunDomainStore(): RunDomainStore {
   return useRunDomainStore.getState();
 }
 
-// -------- Picker helpers (inferred return types, no explicit aliasing) --------
+// -------- Picker helpers (key arrays + generic picker) --------
+
+const progressActionKeys = [
+  "setRunDeck",
+  "setRunGold",
+  "setRunPlayerHealth",
+  "setRunMaxHealth",
+  "setRoomsEncountered",
+  "setCurrentAct",
+  "setDestinationIndexInAct",
+  "setCompletedDestinations",
+  "setLastOfferedDestinations",
+  "setDestinationRoundsSinceOffered",
+  "setDestinationOfferState",
+  "setRunTrinkets",
+  "setEncounteredRunEnemyIds",
+  "setSelectedDifficulty",
+  "setContentSystemType",
+  "setCharacter",
+  "addRunGold",
+  "unlockTalent",
+  "unlockAllTalents",
+  "resetUnlockedTalents",
+  "resetRunXP",
+  "clearPermanentData",
+  "awardCardXP",
+  "awardMysteryXP",
+  "addRunMaterialsEarned",
+  "clearRunMaterialsEarned",
+  "finalizeRunXP",
+  "initialize",
+  "hydrateFromSnapshot",
+  "addMaterials",
+  "setMaterials",
+  "constructBuilding",
+  "plantFarm",
+  "completeResearch",
+  "bondCompanion",
+] as const satisfies ReadonlyArray<keyof RunDomainStore>;
+
+const sessionActionKeys = [
+  "setHasActiveRun",
+  "setActiveLabyrinthModifiers",
+  "setActiveLabyrinthRewardModifiers",
+  "setActiveLabyrinthPendingNode",
+  "setRewardState",
+  "setCompanionRewardCards",
+  "setRunEndMaterials",
+  "setRunEndTalentXP",
+  "setCorruptionResult",
+  "setPendingCharacterId",
+  "setPendingContentSystemType",
+  "setLabyrinthMap",
+  "setWildwoodDraft",
+  "setShopState",
+  "setAlchemistState",
+  "setTrinketShopState",
+  "setEquipmentShopState",
+  "setMysteryEvent",
+  "setMysteryCardChoices",
+  "clearTransientSession",
+] as const satisfies ReadonlyArray<keyof RunDomainStore>;
+
+const navigationActionKeys = ["setScreen"] as const satisfies ReadonlyArray<keyof RunDomainStore>;
+
+const battleActionKeys = [
+  "setSyncedBattleState",
+  "setDisplayOverrides",
+  "clearDisplayOverrides",
+  "setBattleStartState",
+  "setHasActiveBattle",
+  "initializeActiveBattle",
+] as const satisfies ReadonlyArray<keyof RunDomainStore>;
+
+function mapActions<K extends keyof RunDomainStore>(
+  state: RunDomainStore,
+  keys: readonly K[],
+): Pick<RunDomainStore, K> {
+  const result = {} as Pick<RunDomainStore, K>;
+  for (const key of keys) {
+    result[key] = state[key];
+  }
+  return result;
+}
 
 function pickProgressActions(state: RunDomainStore) {
-  return {
-    setRunDeck: state.setRunDeck,
-    setRunGold: state.setRunGold,
-    setRunPlayerHealth: state.setRunPlayerHealth,
-    setRunMaxHealth: state.setRunMaxHealth,
-    setRoomsEncountered: state.setRoomsEncountered,
-    setCurrentAct: state.setCurrentAct,
-    setDestinationIndexInAct: state.setDestinationIndexInAct,
-    setCompletedDestinations: state.setCompletedDestinations,
-    setLastOfferedDestinations: state.setLastOfferedDestinations,
-    setDestinationRoundsSinceOffered: state.setDestinationRoundsSinceOffered,
-    setDestinationOfferState: state.setDestinationOfferState,
-    setRunTrinkets: state.setRunTrinkets,
-    setEncounteredRunEnemyIds: state.setEncounteredRunEnemyIds,
-    setSelectedDifficulty: state.setSelectedDifficulty,
-    setContentSystemType: state.setContentSystemType,
-    setCharacter: state.setCharacter,
-    reset: state.resetProgress,
-    addRunGold: state.addRunGold,
-    unlockTalent: state.unlockTalent,
-    unlockAllTalents: state.unlockAllTalents,
-    resetUnlockedTalents: state.resetUnlockedTalents,
-    resetRunXP: state.resetRunXP,
-    clearPermanentData: state.clearPermanentData,
-    awardCardXP: state.awardCardXP,
-    awardMysteryXP: state.awardMysteryXP,
-    addRunMaterialsEarned: state.addRunMaterialsEarned,
-    clearRunMaterialsEarned: state.clearRunMaterialsEarned,
-    finalizeRunXP: state.finalizeRunXP,
-    initialize: state.initialize,
-    hydrateFromSnapshot: state.hydrateFromSnapshot,
-  };
+  return { ...mapActions(state, progressActionKeys), reset: state.resetProgress };
 }
 
 function pickSessionActions(state: RunDomainStore) {
-  return {
-    setHasActiveRun: state.setHasActiveRun,
-    setActiveLabyrinthModifiers: state.setActiveLabyrinthModifiers,
-    setActiveLabyrinthRewardModifiers: state.setActiveLabyrinthRewardModifiers,
-    setActiveLabyrinthPendingNode: state.setActiveLabyrinthPendingNode,
-    setRewardState: state.setRewardState,
-    setCompanionRewardCards: state.setCompanionRewardCards,
-    setRunEndMaterials: state.setRunEndMaterials,
-    setRunEndTalentXP: state.setRunEndTalentXP,
-    setCorruptionResult: state.setCorruptionResult,
-    setPendingCharacterId: state.setPendingCharacterId,
-    setPendingContentSystemType: state.setPendingContentSystemType,
-    setLabyrinthMap: state.setLabyrinthMap,
-    setWildwoodDraft: state.setWildwoodDraft,
-    setShopState: state.setShopState,
-    setAlchemistState: state.setAlchemistState,
-    setTrinketShopState: state.setTrinketShopState,
-    setEquipmentShopState: state.setEquipmentShopState,
-    setMysteryEvent: state.setMysteryEvent,
-    setMysteryCardChoices: state.setMysteryCardChoices,
-    clearTransientSession: state.clearTransientSession,
-  };
+  return mapActions(state, sessionActionKeys);
 }
 
 function pickNavigationActions(state: RunDomainStore) {
-  return {
-    setScreen: state.setScreen,
-    reset: state.resetNavigation,
-  };
+  return { ...mapActions(state, navigationActionKeys), reset: state.resetNavigation };
 }
 
 function pickBattleActions(state: RunDomainStore) {
-  return {
-    setSyncedBattleState: state.setSyncedBattleState,
-    setDisplayOverrides: state.setDisplayOverrides,
-    clearDisplayOverrides: state.clearDisplayOverrides,
-    setBattleStartState: state.setBattleStartState,
-    setHasActiveBattle: state.setHasActiveBattle,
-    initializeActiveBattle: state.initializeActiveBattle,
-  };
+  return mapActions(state, battleActionKeys);
 }
 
 // -------- View types derived from picker return types --------
@@ -218,6 +240,10 @@ export function useTalentAdapter(): TalentStateController {
   );
   const talentEffects = useMemo(() => computeTalentEffects(base.unlockedTalents), [base.unlockedTalents]);
   return useMemo(() => ({ ...base, talentEffects }), [base, talentEffects]);
+}
+
+export function useHomesteadAdapter(): HomesteadEffectManifest {
+  return useRunDomainStore((state) => state.progress.effects);
 }
 
 /** Reset all run domain slices to initial values (tests and full teardown). */

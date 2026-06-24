@@ -1,7 +1,7 @@
 // Stable action-only selectors for render paths (functions do not change between store updates).
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore } from "./app-store";
-import { useHomesteadStore } from "./homestead-store";
+import { getRunDomainStore } from "./run-session-facade";
 
 const appActionKeys = [
   "setSelectedAspectRatio",
@@ -19,14 +19,7 @@ const appActionKeys = [
   "handleCollectionTabChange",
 ] as const;
 
-const homesteadActionKeys = ["constructBuilding", "plantFarm", "completeResearch", "bondCompanion"] as const;
-
 export type AppStoreActions = Pick<ReturnType<typeof useAppStore.getState>, (typeof appActionKeys)[number]>;
-
-export type HomesteadStoreActions = Pick<
-  ReturnType<typeof useHomesteadStore.getState>,
-  (typeof homesteadActionKeys)[number]
->;
 
 function pickActions<T extends object, K extends keyof T>(state: T, keys: readonly K[]): Pick<T, K> {
   const out = {} as Pick<T, K>;
@@ -40,16 +33,18 @@ function selectAppActions(state: ReturnType<typeof useAppStore.getState>): AppSt
   return pickActions(state, appActionKeys);
 }
 
-function selectHomesteadActions(state: ReturnType<typeof useHomesteadStore.getState>): HomesteadStoreActions {
-  return pickActions(state, homesteadActionKeys);
-}
-
 export function useAppActions(): AppStoreActions {
   return useAppStore(useShallow(selectAppActions));
 }
 
-export function useHomesteadActions(): HomesteadStoreActions {
-  return useHomesteadStore(useShallow(selectHomesteadActions));
+export function useHomesteadActions() {
+  const store = getRunDomainStore();
+  return {
+    constructBuilding: store.constructBuilding,
+    plantFarm: store.plantFarm,
+    completeResearch: store.completeResearch,
+    bondCompanion: store.bondCompanion,
+  } as const;
 }
 
 export interface AppSettings {

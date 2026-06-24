@@ -1,15 +1,12 @@
 import type { TalentEffectManifest } from "../types";
 import { talentPool } from "./pool";
 import { isTalentPlaceholder, type TalentEffectOperation, type UnlockedTalents } from "./types";
-import { DEFAULT_TALENT_EFFECTS } from "./manifest-defaults";
+import { createEmptyTalentEffectManifest } from "./manifest-defaults";
 
 const talentById = new Map(talentPool.map((talent) => [talent.id, talent]));
 
 export function createEmptyTalentManifest(): TalentEffectManifest {
-  return {
-    ...DEFAULT_TALENT_EFFECTS,
-    companionBondLevels: { ...DEFAULT_TALENT_EFFECTS.companionBondLevels },
-  };
+  return createEmptyTalentEffectManifest();
 }
 
 // Collapse unlocked IDs into a flat manifest once per change/battle. Combat code reads

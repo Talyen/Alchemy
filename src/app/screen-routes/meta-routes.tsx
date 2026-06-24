@@ -12,7 +12,7 @@ import {
   ArmoryScreen,
 } from "@/features/alchemy/shared/screens";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
-import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
+
 import { useAppActions, useHomesteadActions } from "@/features/alchemy/shared/stores/store-actions";
 import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ScreenRouteContext } from "./types";
@@ -91,7 +91,7 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "o
     })),
   );
   const appActions = useAppActions();
-  const bondedCompanions = useHomesteadStore((s) => s.bondedCompanions);
+  const bondedCompanions = useRunDomainStore((s) => s.progress.bondedCompanions);
 
   return (
     <CollectionScreen
@@ -109,13 +109,13 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "o
 }
 
 function HomesteadScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "onOpenBattleMenu">) {
-  const homesteadValues = useHomesteadStore(
+  const homesteadValues = useRunDomainStore(
     useShallow((s) => ({
-      materialInventory: s.materialInventory,
-      constructedBuildings: s.constructedBuildings,
-      plantedFarms: s.plantedFarms,
-      completedResearch: s.completedResearch,
-      bondedCompanions: s.bondedCompanions,
+      materialInventory: s.progress.materialInventory,
+      constructedBuildings: s.progress.constructedBuildings,
+      plantedFarms: s.progress.plantedFarms,
+      completedResearch: s.progress.completedResearch,
+      bondedCompanions: s.progress.bondedCompanions,
     })),
   );
   const discoveredCardIds = useAppStore((s) => s.discoveredCardIds);

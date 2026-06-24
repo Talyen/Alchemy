@@ -23,10 +23,10 @@ import {
   useRunAdapter,
   useRunDomainStore,
   useTalentAdapter,
+  useHomesteadAdapter,
   type RunProgressStore,
   type RunSessionStore,
 } from "./run-domain-store";
-import { useHomesteadStore } from "./homestead-store";
 import type { RunStateController, TalentStateController } from "./run-domain-store";
 import {
   applyRunDefeatTeardown,
@@ -62,7 +62,7 @@ export {
   teardownRun,
 };
 import { useRunScreenData } from "./use-run-screen-data";
-export { useRunAdapter, useTalentAdapter, useRunDomainStore, useRunScreenData };
+export { useRunAdapter, useTalentAdapter, useHomesteadAdapter, getRunDomainStore, useRunDomainStore, useRunScreenData };
 export type { RunStateController, TalentStateController, RunProgressStore, RunSessionStore };
 
 /** Imperative read of run progression fields (deck, gold, talents, initialized). */
@@ -142,7 +142,7 @@ export function setRunEndMaterials(materials: MaterialInventory) {
 
 /** Persist homestead materials and track totals for the run-end summary screen. */
 export function awardMaterialsDuringRun(materials: MaterialInventory) {
-  useHomesteadStore.getState().addMaterials(materials);
+  getRunDomainStore().addMaterials(materials);
   getRunDomainStore().addRunMaterialsEarned(materials);
 }
 

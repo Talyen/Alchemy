@@ -11,7 +11,7 @@ export interface BattleControllerContext {
   run: RunStateController;
   talents: TalentStateController;
   autoEndTurn: boolean;
-  homesteadEffectsRef: RefObject<HomesteadEffectManifest>;
+  homesteadEffects: HomesteadEffectManifest;
   screen: Screen;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   onBattleVictory?: (() => void) | undefined;
@@ -44,7 +44,7 @@ export interface BattleControllerContextProps {
   run: RunStateController;
   talents: TalentStateController;
   autoEndTurn: boolean;
-  homesteadEffectsRef: RefObject<HomesteadEffectManifest>;
+  homesteadEffects: HomesteadEffectManifest;
   screen: Screen;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   onBattleVictory?: (() => void) | undefined;
@@ -102,8 +102,8 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
       get autoEndTurn() {
         return propsRef.current.autoEndTurn;
       },
-      get homesteadEffectsRef() {
-        return propsRef.current.homesteadEffectsRef;
+      get homesteadEffects() {
+        return propsRef.current.homesteadEffects;
       },
       get screen() {
         return propsRef.current.screen;

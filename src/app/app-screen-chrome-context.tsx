@@ -4,7 +4,7 @@ import { characterArt, characters } from "@/lib/game-data";
 import { hasUnspentTalents } from "@/app/talent-affordability";
 import { hasAffordableHomesteadUpgrade } from "@/app/homestead-affordability";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
-import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
+import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { Screen } from "@/lib/routing";
 import type { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 
@@ -37,11 +37,11 @@ export function AppScreenChromeProvider({
   const playerName = characters[run.characterId].name;
   const hasUnspentTalentsBadge = hasUnspentTalents(run.talentXP, run.unlockedTalents);
 
-  const materialInventory = useHomesteadStore((s) => s.materialInventory);
-  const constructedBuildings = useHomesteadStore((s) => s.constructedBuildings);
-  const plantedFarms = useHomesteadStore((s) => s.plantedFarms);
-  const completedResearch = useHomesteadStore((s) => s.completedResearch);
-  const bondedCompanions = useHomesteadStore((s) => s.bondedCompanions);
+  const materialInventory = useRunDomainStore((s) => s.progress.materialInventory);
+  const constructedBuildings = useRunDomainStore((s) => s.progress.constructedBuildings);
+  const plantedFarms = useRunDomainStore((s) => s.progress.plantedFarms);
+  const completedResearch = useRunDomainStore((s) => s.progress.completedResearch);
+  const bondedCompanions = useRunDomainStore((s) => s.progress.bondedCompanions);
   const discoveredCardIds = useAppStore((s) => s.discoveredCardIds);
   const hasAffordableHomestead = hasAffordableHomesteadUpgrade({
     materialInventory,

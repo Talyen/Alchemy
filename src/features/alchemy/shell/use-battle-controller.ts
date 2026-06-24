@@ -29,7 +29,7 @@ interface UseBattleControllerProps {
   run: RunStateController;
   talents: TalentStateController;
   autoEndTurn: boolean;
-  homesteadEffectsRef: React.RefObject<HomesteadEffectManifest>;
+  homesteadEffects: HomesteadEffectManifest;
   screen: Screen;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   onBattleVictory?: () => void;
@@ -42,7 +42,7 @@ export function useBattleController({
   run,
   talents,
   autoEndTurn,
-  homesteadEffectsRef,
+  homesteadEffects,
   screen,
   setHoveredCardId,
   onBattleVictory,
@@ -105,7 +105,7 @@ export function useBattleController({
     run,
     talents,
     autoEndTurn,
-    homesteadEffectsRef,
+    homesteadEffects,
     screen,
     setHoveredCardId,
     onBattleVictory,

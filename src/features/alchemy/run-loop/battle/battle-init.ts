@@ -34,7 +34,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
       flattenGearInventories(gear.inventories),
       gear.loadouts,
     );
-    const battleEffects = mergeIntoManifest(ctx.talents.talentEffects, ctx.homesteadEffectsRef.current);
+    const battleEffects = mergeIntoManifest(ctx.talents.talentEffects, ctx.homesteadEffects);
     const activeModifiers =
       modifiers ??
       (ctx.run.selectedDifficulty ? getDifficultyModifiers(ctx.run.characterId, ctx.run.selectedDifficulty) : []);

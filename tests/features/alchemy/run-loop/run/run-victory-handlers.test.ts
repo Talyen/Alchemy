@@ -1,7 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
-import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
-import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
+import { readActiveRunStore, useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import {
@@ -33,7 +32,6 @@ import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-tra
 beforeEach(() => {
   vi.clearAllMocks();
   resetRunBattleSlice();
-  useHomesteadStore.setState(useHomesteadStore.getInitialState());
   resetRunProgressSlice();
   resetTransientRunUi();
 });
@@ -45,15 +43,15 @@ function makeHandlers() {
 describe("createRunFlowHandlers victory paths", () => {
   it("awardRunEndMaterials applies homestead end-of-run per-room bonuses", () => {
     setRunProgress({ roomsEncountered: 4, currentAct: 1 });
-    useHomesteadStore.setState((s) => ({
-      effects: { ...s.effects, endRunHerbsPerRoom: 1 },
-    }));
-    const herbsBefore = useHomesteadStore.getState().materialInventory.herbs;
+    useRunDomainStore.setState((s) => {
+      s.progress.effects.endRunHerbsPerRoom = 1;
+    });
+    const herbsBefore = useRunDomainStore.getState().progress.materialInventory.herbs;
 
     const mats = makeHandlers().awardRunEndMaterials();
 
     expect(mats.herbs).toBe(4);
-    expect(useHomesteadStore.getState().materialInventory.herbs).toBe(herbsBefore + 4);
+    expect(useRunDomainStore.getState().progress.materialInventory.herbs).toBe(herbsBefore + 4);
     expect(getRunSessionStoreView().runEndMaterials.herbs).toBe(4);
   });
 
@@ -79,9 +77,9 @@ describe("createRunFlowHandlers victory paths", () => {
 
   it("Wildwood Draft run end grants no materials", () => {
     setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, roomsEncountered: 12 });
-    useHomesteadStore.setState((state) => ({
-      effects: { ...state.effects, endRunHerbsPerRoom: 2 },
-    }));
+    useRunDomainStore.setState((s) => {
+      s.progress.effects.endRunHerbsPerRoom = 2;
+    });
     readActiveRunStore().addRunMaterialsEarned({ ...emptyInventory(), wood: 5 });
 
     const materials = makeHandlers().awardRunEndMaterials();

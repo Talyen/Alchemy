@@ -12,6 +12,7 @@ import {
   xpThresholdForPoints,
   type KeywordId,
   type CharacterId,
+  type CompanionId,
   type UnlockedTalents,
   type TalentXP,
 } from "@/lib/game-data";
@@ -23,8 +24,13 @@ import {
   runFieldsFromSnapshot,
   type RunStateFields,
 } from "@/features/alchemy/run-setup/run/run-state-init";
-import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
-import type { MaterialInventory } from "@/lib/homestead/types";
+import { addInventory, emptyInventory, subtractInventory, canAfford } from "@/lib/homestead/inventory";
+import type { MaterialInventory, BuildingId, FarmId, ResearchId } from "@/lib/homestead/types";
+import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { companionTierItems, COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
+import { computeHomesteadEffects } from "@/lib/homestead/effects";
+import { tryUpgradeTierItem } from "@/lib/homestead/upgrades";
+import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 import { defineFieldSetter, type ImmerSet } from "./_field-setter";
 import type { RunDomainDataState } from "../run-domain-types";
 
@@ -87,6 +93,12 @@ export interface ProgressActions {
     fallbackCharacterId?: CharacterId,
   ) => void;
   hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void;
+  addMaterials: (materials: MaterialInventory) => void;
+  setMaterials: (materials: MaterialInventory) => void;
+  constructBuilding: (id: BuildingId) => boolean;
+  plantFarm: (id: FarmId) => boolean;
+  completeResearch: (id: ResearchId) => boolean;
+  bondCompanion: (id: CompanionId) => boolean;
 }
 
 export function defineProgressActions(set: ImmerSet<RunDomainDataState>): ProgressActions {
@@ -123,10 +135,22 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
         const characterId = state.progress.characterId;
         const talentXP = state.progress.talentXP;
         const unlockedTalents = state.progress.unlockedTalents;
+        const materialInventory = state.progress.materialInventory;
+        const constructedBuildings = state.progress.constructedBuildings;
+        const plantedFarms = state.progress.plantedFarms;
+        const completedResearch = state.progress.completedResearch;
+        const bondedCompanions = state.progress.bondedCompanions;
+        const effects = state.progress.effects;
         Object.assign(state.progress, createInitialRunState(null, characterId), {
           talentXP,
           unlockedTalents,
           runTalentXP: {},
+          materialInventory,
+          constructedBuildings,
+          plantedFarms,
+          completedResearch,
+          bondedCompanions,
+          effects,
           initialized: true,
         });
       }),
@@ -177,6 +201,16 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
         state.progress.talentXP = {};
         state.progress.runTalentXP = {};
         state.progress.unlockedTalents = {};
+        state.progress.materialInventory = emptyInventory();
+        state.progress.constructedBuildings = createEmptyTierRecord(buildings);
+        state.progress.plantedFarms = createEmptyTierRecord(farmPlots);
+        state.progress.completedResearch = createEmptyTierRecord(researchUpgrades);
+        state.progress.bondedCompanions = createEmptyTierRecord(companionTierItems);
+        state.progress.effects = computeHomesteadEffects(
+          createEmptyTierRecord(buildings),
+          createEmptyTierRecord(farmPlots),
+          createEmptyTierRecord(researchUpgrades),
+        );
       }),
 
     awardCardXP: (card) => {
@@ -223,10 +257,19 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
 
     initialize: (activeRun, talentXP, unlockedTalents, fallbackCharacterId = "knight") =>
       set((state) => {
+        const existingHomestead = {
+          materialInventory: state.progress.materialInventory,
+          constructedBuildings: state.progress.constructedBuildings,
+          plantedFarms: state.progress.plantedFarms,
+          completedResearch: state.progress.completedResearch,
+          bondedCompanions: state.progress.bondedCompanions,
+          effects: state.progress.effects,
+        };
         Object.assign(
           state.progress,
           createInitialRunState(activeRun, fallbackCharacterId),
           createInitialTalentState(talentXP, unlockedTalents),
+          existingHomestead,
           { initialized: true },
         );
       }),
@@ -241,5 +284,104 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
           destinationRoundsSinceOffered: {},
         });
       }),
+
+    addMaterials: (materials) =>
+      set((state) => {
+        state.progress.materialInventory = addInventory(state.progress.materialInventory, materials);
+      }),
+
+    setMaterials: (materials) =>
+      set((state) => {
+        state.progress.materialInventory = materials;
+      }),
+
+    constructBuilding: (id) => {
+      let succeeded = false;
+      set((state) => {
+        const currentLevel = state.progress.constructedBuildings[id] ?? 0;
+        const result = tryUpgradeTierItem(
+          buildings.find((b) => b.id === id),
+          currentLevel,
+          state.progress.materialInventory,
+        );
+        if (!result.ok) return;
+        succeeded = true;
+        state.progress.materialInventory = result.inventory;
+        state.progress.constructedBuildings[id] = result.nextLevel;
+        state.progress.effects = computeHomesteadEffects(
+          state.progress.constructedBuildings,
+          state.progress.plantedFarms,
+          state.progress.completedResearch,
+          state.progress.bondedCompanions,
+        );
+      });
+      return succeeded;
+    },
+
+    plantFarm: (id) => {
+      let succeeded = false;
+      set((state) => {
+        const currentLevel = state.progress.plantedFarms[id] ?? 0;
+        const result = tryUpgradeTierItem(
+          farmPlots.find((f) => f.id === id),
+          currentLevel,
+          state.progress.materialInventory,
+        );
+        if (!result.ok) return;
+        succeeded = true;
+        state.progress.materialInventory = result.inventory;
+        state.progress.plantedFarms[id] = result.nextLevel;
+        state.progress.effects = computeHomesteadEffects(
+          state.progress.constructedBuildings,
+          state.progress.plantedFarms,
+          state.progress.completedResearch,
+          state.progress.bondedCompanions,
+        );
+      });
+      return succeeded;
+    },
+
+    completeResearch: (id) => {
+      let succeeded = false;
+      set((state) => {
+        const currentLevel = state.progress.completedResearch[id] ?? 0;
+        const result = tryUpgradeTierItem(
+          researchUpgrades.find((r) => r.id === id),
+          currentLevel,
+          state.progress.materialInventory,
+        );
+        if (!result.ok) return;
+        succeeded = true;
+        state.progress.materialInventory = result.inventory;
+        state.progress.completedResearch[id] = result.nextLevel;
+        state.progress.effects = computeHomesteadEffects(
+          state.progress.constructedBuildings,
+          state.progress.plantedFarms,
+          state.progress.completedResearch,
+          state.progress.bondedCompanions,
+        );
+      });
+      return succeeded;
+    },
+
+    bondCompanion: (id) => {
+      let succeeded = false;
+      set((state) => {
+        const currentLevel = state.progress.bondedCompanions[id] ?? 0;
+        if (currentLevel >= COMPANION_MAX_TIER) return;
+        const cost = COMPANION_BOND_TIERS[currentLevel]!;
+        if (!canAfford(state.progress.materialInventory, cost)) return;
+        succeeded = true;
+        state.progress.materialInventory = subtractInventory(state.progress.materialInventory, cost);
+        state.progress.bondedCompanions[id] = currentLevel + 1;
+        state.progress.effects = computeHomesteadEffects(
+          state.progress.constructedBuildings,
+          state.progress.plantedFarms,
+          state.progress.completedResearch,
+          state.progress.bondedCompanions,
+        );
+      });
+      return succeeded;
+    },
   };
 }

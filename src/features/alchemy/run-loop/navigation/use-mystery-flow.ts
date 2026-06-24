@@ -9,7 +9,6 @@ import { useRef } from "react";
 import { useRunSessionMysterySlice } from "../../shared/stores/run-session-facade";
 import { setMysteryCardChoices, setMysteryEvent } from "../../shared/stores/run-session-facade";
 import { readActiveRunStore, awardMaterialsDuringRun } from "../../shared/stores/run-session-facade";
-import { useHomesteadStore } from "../../shared/stores/homestead-store";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 
 export function useMysteryFlow() {
@@ -24,7 +23,6 @@ export function useMysteryFlow() {
 
   function handleMysteryChoice(choice: MysteryChoice) {
     const runStore = readActiveRunStore();
-    const homesteadStore = useHomesteadStore.getState();
 
     for (const effect of choice.effects) {
       const result = applyMysteryEffect(effect, {
@@ -37,8 +35,7 @@ export function useMysteryFlow() {
         setRunTrinkets: runStore.setRunTrinkets,
         setMysteryCardChoices,
         awardMysteryXP: runStore.awardMysteryXP,
-        onAddMaterials: (materials) =>
-          awardMaterialsDuringRun(applyMaterialFindBonus(materials, homesteadStore.effects)),
+        onAddMaterials: (materials) => awardMaterialsDuringRun(applyMaterialFindBonus(materials, runStore.effects)),
         onAwardGold: runStore.addRunGold,
       });
       if (result.followUp) return;

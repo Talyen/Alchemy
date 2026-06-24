@@ -15,7 +15,7 @@ import {
   setRewardState,
   setWildwoodDraft,
 } from "../../shared/stores/run-session-facade";
-import { readRunSessionStore } from "../../shared/stores/run-session-facade";
+import { readRunSessionStore, getRunDomainStore } from "../../shared/stores/run-session-facade";
 import { afterCampaignCharacterResolved } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
 import { createDestinationRewardState } from "@/features/alchemy/run-loop/navigation/victory-flow";
 import { sampleDestinationChoices } from "@/features/alchemy/run-loop/navigation/destination-flow";
@@ -28,7 +28,6 @@ import type { DestinationOptionsInput } from "@/features/alchemy/run-loop/naviga
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { useGearStore } from "../../shared/stores/gear-store";
-import { useHomesteadStore } from "../../shared/stores/homestead-store";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 
 export interface ContentSystemNavigationDeps {
@@ -127,7 +126,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
               flattenGearInventories(useGearStore.getState().inventories),
               useGearStore.getState().loadouts,
             ).maxHealth,
-            homesteadMaxHealthBonus: useHomesteadStore.getState().effects.runMaxHealthBonus,
+            homesteadMaxHealthBonus: getRunDomainStore().progress.effects.runMaxHealthBonus,
           }
         : {
             ...baseInput,
@@ -136,7 +135,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
               flattenGearInventories(useGearStore.getState().inventories),
               useGearStore.getState().loadouts,
             ).maxHealth,
-            homesteadMaxHealthBonus: useHomesteadStore.getState().effects.runMaxHealthBonus,
+            homesteadMaxHealthBonus: getRunDomainStore().progress.effects.runMaxHealthBonus,
           },
     );
   }

@@ -40,15 +40,12 @@ export function TalentsScreen({
 
   const unlockedIds = useMemo(() => unlockedTalents[selectedKeyword] ?? [], [selectedKeyword, unlockedTalents]);
   const allTalentsForKeyword = getTalentsForKeyword(selectedKeyword);
-  const implementedCount = countImplementedTalents(selectedKeyword);
-  const progress = getTalentKeywordProgress(talentXP[selectedKeyword] ?? 0, unlockedIds.length, implementedCount);
-  const allUnlocked = progress.spentPoints >= implementedCount;
   const unlockedTalentsForKeyword = useMemo(
     () => allTalentsForKeyword.filter((t) => unlockedIds.includes(t.id)),
     [allTalentsForKeyword, unlockedIds],
   );
 
-  const { currentChoices } = useTalentChoices(selectedKeyword, unlockedIds, progress.unspentPoints > 0, allUnlocked);
+  const { currentChoices } = useTalentChoices(selectedKeyword, talentXP, unlockedIds);
   const MASK_ID = "talent-bg-mask";
   const BLUR_ID = "talent-bg-blur";
 

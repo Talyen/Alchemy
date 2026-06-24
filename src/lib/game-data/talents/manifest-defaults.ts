@@ -207,3 +207,9 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
 
 // Returns a manifest with all zero/false/null values — the safe default when no talents are
 // unlocked. Deep-copies the nested companionBondLevels to prevent shared mutation.
+export function createEmptyTalentEffectManifest(): TalentEffectManifest {
+  return {
+    ...DEFAULT_TALENT_EFFECTS,
+    companionBondLevels: { ...DEFAULT_TALENT_EFFECTS.companionBondLevels },
+  };
+}

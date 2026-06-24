@@ -18,18 +18,18 @@ beforeEach(() => {
   resetRunProgressSlice();
 });
 
+import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 
 describe("createBattleInit", () => {
-  const homesteadEffectsRef = { current: defaultHomesteadEffects };
   const resetBattleSession = vi.fn();
 
-  function makeInit() {
+  function makeInit(homesteadEffects: HomesteadEffectManifest = defaultHomesteadEffects) {
     const ctx = {
       run: makeRunController(),
       talents: makeTalentController(),
-      homesteadEffectsRef,
+      homesteadEffects,
     } as unknown as BattleControllerContext;
 
     const session = {
@@ -41,12 +41,12 @@ describe("createBattleInit", () => {
 
   it("merges talent and homestead manifests into battle state", () => {
     setRunProgress({ roomsEncountered: 0, runPlayerHealth: 30, runMaxHealth: 30 });
-    homesteadEffectsRef.current = { ...defaultHomesteadEffects, flatPhysicalDamage: 2 };
+    const testEffects = { ...defaultHomesteadEffects, flatPhysicalDamage: 2 };
 
-    makeInit().startBattle(getRunProgressStoreView().runDeck, 0, "normal");
+    makeInit(testEffects).startBattle(getRunProgressStoreView().runDeck, 0, "normal");
 
     const battle = getBattleStoreView().battleState;
-    const expected = mergeIntoManifest(computeTalentEffects({}), homesteadEffectsRef.current);
+    const expected = mergeIntoManifest(computeTalentEffects({}), testEffects);
     expect(battle.talentEffects.flatPhysicalDamage).toBe(expected.flatPhysicalDamage);
     expect(battle.currentEnemy.enemyType).toBe("normal");
   });

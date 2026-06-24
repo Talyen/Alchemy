@@ -25,7 +25,7 @@ import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-scr
 import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
 import { GameMenu, HamburgerTrigger } from "@/features/alchemy/shared/ui/shared-ui";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
+import { useHomesteadAdapter } from "@/features/alchemy/shared/stores/run-session-facade";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-particles";
@@ -35,7 +35,7 @@ import type { SaveLoadState } from "@/features/alchemy/shared/storage";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
 import { isRunLoopScreen } from "@/lib/routing";
-import { useActiveRunScreenValue } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useActiveRunScreenValue, useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { flattenGearInventories } from "@/lib/gear";
 import { applySaveDataToStores } from "@/features/alchemy/shared/storage/bootstrap-save-state";
@@ -107,8 +107,8 @@ function AppMainContent({
 
   const dev = useDevShortcuts(run);
 
-  const homesteadEffects = useHomesteadStore((s) => s.effects);
-  const homesteadBondedCompanions = useHomesteadStore((s) => s.bondedCompanions);
+  const homesteadEffects = useHomesteadAdapter();
+  const homesteadBondedCompanions = useRunDomainStore(s => s.progress.bondedCompanions);
 
   const isBossBattle = renderedScreen === "battle" && run.battleState.currentEnemy.enemyType === "boss";
   const { particleColors, particleAlphaMultiplier } = useScreenParticleConfig(renderedScreen, isBossBattle);
@@ -219,8 +219,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   });
   useGlobalErrorHandlers();
 
-  const homesteadEffects = useHomesteadStore((s) => s.effects);
-
   function handleMarkDifficultyCompleted(characterId: CharacterId, difficultyId: DifficultyId) {
     const prev = appStore.getState().completedDifficulties;
     const current = prev[characterId];
@@ -246,7 +244,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
     initialTalentXP: initialSave.talentXP,
     initialUnlockedTalents: initialSave.unlockedTalents,
     autoEndTurn: settings.autoEndTurn,
-    homesteadEffects,
     onMarkDifficultyCompleted: handleMarkDifficultyCompleted,
   });
 

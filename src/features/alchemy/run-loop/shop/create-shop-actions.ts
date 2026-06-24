@@ -1,5 +1,4 @@
 // Pure factory for shop actions and selectors. No React dependencies.
-import { type RefObject } from "react";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { appendUnique } from "@/lib/utils";
 import {
@@ -69,7 +68,7 @@ interface ShopSetters {
 export type CreateShopActionsDeps = {
   run: RunStateController;
   talents: TalentStateController;
-  homesteadEffectsRef: RefObject<HomesteadEffectManifest>;
+  homesteadEffects: HomesteadEffectManifest;
   rng?: () => number;
 } & ShopStates &
   ShopSetters;
@@ -107,7 +106,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
   const {
     run,
     talents,
-    homesteadEffectsRef,
+    homesteadEffects,
     shopState,
     alchemistState,
     trinketShopState,
@@ -153,9 +152,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
   }
 
   function initEquipmentShop(): void {
-    setEquipmentShopState(
-      createInitialEquipmentShopState(activeRng, homesteadEffectsRef.current.gearAstralChanceBonus),
-    );
+    setEquipmentShopState(createInitialEquipmentShopState(activeRng, homesteadEffects.gearAstralChanceBonus));
   }
 
   // ======== Merchant Shop ========
@@ -290,7 +287,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     getRunGold: () => run.runGold,
     setRunGold: run.setRunGold,
     setState: setEquipmentShopState,
-    resample: () => resampleEquipmentShopOfferings(activeRng, homesteadEffectsRef.current.gearAstralChanceBonus),
+    resample: () => resampleEquipmentShopOfferings(activeRng, homesteadEffects.gearAstralChanceBonus),
     getMapState: (prev, gear) => ({
       ...prev,
       gear: gear as GearInstance[],

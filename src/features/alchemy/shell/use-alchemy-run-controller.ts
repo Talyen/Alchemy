@@ -1,12 +1,15 @@
 // Top-level alchemy controller composition hook.
 // Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import type { BattleControllerBindings } from "./battle-bindings";
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { CharacterId, DifficultyId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
-import { useRunAdapter, useTalentAdapter } from "@/features/alchemy/shared/stores/run-session-facade";
+import {
+  useRunAdapter,
+  useTalentAdapter,
+  useHomesteadAdapter,
+} from "@/features/alchemy/shared/stores/run-session-facade";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import {
   setActiveLabyrinthModifiers,
@@ -29,14 +32,12 @@ export function useAlchemyRunController({
   initialUnlockedTalents,
   initialActiveRun,
   autoEndTurn,
-  homesteadEffects,
   onMarkDifficultyCompleted,
 }: {
   initialTalentXP: TalentXP;
   initialUnlockedTalents: UnlockedTalents;
   initialActiveRun: ActiveRunData | null;
   autoEndTurn: boolean;
-  homesteadEffects: HomesteadEffectManifest;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
 }) {
   useLayoutEffect(() => {
@@ -45,15 +46,10 @@ export function useAlchemyRunController({
   }, [initialActiveRun, initialTalentXP, initialUnlockedTalents]);
   const run = useRunAdapter();
   const talents = useTalentAdapter();
+  const homesteadEffects = useHomesteadAdapter();
 
   const { screen, setScreen } = useActiveRunScreen();
   const { navigateTo, transition, commitPendingTransition, cancelPending } = useScreenTransitions(screen, setScreen);
-
-  // ============ Ref Wrappers ============
-  const homesteadEffectsRef = useRef(homesteadEffects);
-  useEffect(() => {
-    homesteadEffectsRef.current = homesteadEffects;
-  }, [homesteadEffects]);
 
   // ============ Store-backed Setters ============
   const setHoveredCardId = useCallback((id: string | null | ((prev: string | null) => string | null)) => {
@@ -78,14 +74,14 @@ export function useAlchemyRunController({
     run,
     talents,
     autoEndTurn,
-    homesteadEffectsRef,
+    homesteadEffects,
     screen,
     setHoveredCardId,
     onBattleVictory: () => onBattleVictoryRef.current(),
     onBattleDefeat: () => onBattleDefeatRef.current(),
   });
 
-  const shop = useShopController({ run, talents, homesteadEffectsRef });
+  const shop = useShopController({ run, talents, homesteadEffects });
 
   const labyrinth = useLabyrinthController(screen);
 

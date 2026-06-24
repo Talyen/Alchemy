@@ -7,7 +7,6 @@ import {
   readRunSessionStore,
   awardMaterialsDuringRun,
 } from "../../shared/stores/run-session-facade";
-import { useHomesteadStore } from "../../shared/stores/homestead-store";
 import {
   setCompanionRewardCards,
   setCorruptionResult,
@@ -89,10 +88,9 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       setRunEndMaterials(none);
       return none;
     }
-    const homesteadEffects = useHomesteadStore.getState().effects;
     const runCollected = runState.runMaterialsEarned;
-    const homesteadBonus = applyEndOfRunHomesteadBonuses(emptyInventory(), homesteadEffects, runState.roomsEncountered);
-    useHomesteadStore.getState().addMaterials(homesteadBonus);
+    const homesteadBonus = applyEndOfRunHomesteadBonuses(emptyInventory(), runState.effects, runState.roomsEncountered);
+    runState.addMaterials(homesteadBonus);
     setRunEndMaterials(addInventory(runCollected, homesteadBonus));
     runState.clearRunMaterialsEarned();
     return homesteadBonus;
@@ -100,7 +98,6 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
 
   function computeVictoryResult() {
     const runState = readActiveRunStore();
-    const lobby = useHomesteadStore.getState();
     return computeVictoryRewards({
       characterId: runState.characterId,
       selectedDifficulty: runState.selectedDifficulty,
@@ -115,7 +112,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       runMaxHealth: runState.runMaxHealth,
       destinationIndexInAct: runState.destinationIndexInAct,
       completedDestinations: runState.completedDestinations,
-      homesteadEffects: lobby.effects,
+      homesteadEffects: runState.effects,
       getAvailableDestinations: deps.getAvailableDestinations,
       bossEnemyId: getBossEnemy().id,
       destinationOfferState: {

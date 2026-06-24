@@ -2,7 +2,6 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
-import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { makeRunController, makeTalentController } from "../../../../helpers/run-controller";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID, DRAFT_ROUNDS } from "@/lib/game-constants";
@@ -30,7 +29,6 @@ vi.mock("@/features/alchemy/run-loop/navigation/run-navigation-helpers", async (
 beforeEach(() => {
   resetTransientRunUi();
   resetRunProgressSlice();
-  useHomesteadStore.setState(useHomesteadStore.getInitialState());
   useAppStore.setState({ discoveredCardIds: [], discoveredTrinketIds: [] });
 });
 

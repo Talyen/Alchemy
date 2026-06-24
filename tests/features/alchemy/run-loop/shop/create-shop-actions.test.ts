@@ -30,6 +30,7 @@ import {
   TRINKET_SHOP_TRINKET_PRICE,
   MIXED_POTION_CARD_ID,
 } from "@/lib/game-constants";
+import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 
 beforeEach(() => {
   resetRunProgressSlice();
@@ -69,7 +70,7 @@ function buildActions(
     run,
     talents: { talentEffects } as any,
     rng,
-    homesteadEffectsRef: { current: { gearAstralChanceBonus: overrides?.gearAstralChanceBonus ?? 0 } } as any,
+    homesteadEffects: { ...defaultHomesteadEffects, gearAstralChanceBonus: overrides?.gearAstralChanceBonus ?? 0 },
     shopState: shopStates.shopState,
     alchemistState: shopStates.alchemistState,
     trinketShopState: shopStates.trinketShopState,
