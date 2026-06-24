@@ -1,5 +1,13 @@
 import { memo, useEffect, useRef, useState, type FocusEvent } from "react";
-import { gearDefinitions, type GearInstance, type GearLoadout, type GearSlot } from "@/lib/gear";
+import {
+  gearDefinitions,
+  gearInstanceRarity,
+  getGearInstanceShineColors,
+  type GearInstance,
+  type GearLoadout,
+  type GearSlot,
+} from "@/lib/gear";
+import { ShineBorder } from "@/components/ui/shine-border";
 import { canApplyCraftingCurrency, isGearCompatibleWithLoadoutSlot, type CraftingCurrencyId } from "@/lib/gear";
 import { playUISound } from "@/lib/audio";
 import { cn } from "@/lib/utils";
@@ -193,6 +201,8 @@ export const SlotButton = memo(function SlotButton({
   const [showTooltip, setShowTooltip] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
+  const isAstral = instance ? gearInstanceRarity(instance) === "astral" : false;
+  const shineColors = instance ? getGearInstanceShineColors(instance) : [];
 
   useEffect(() => {
     if (!instance) return;
@@ -228,6 +238,7 @@ export const SlotButton = memo(function SlotButton({
       className={cn(
         "relative h-full w-full overflow-hidden rounded-xl transition-[box-shadow] duration-150",
         cursorClass,
+        instance && !isAstral && "border border-stone-500/40",
       )}
       aria-label={`${SLOT_LABELS[slot]} equipment slot`}
       data-instance-id={instance?.instanceId}
@@ -260,6 +271,7 @@ export const SlotButton = memo(function SlotButton({
         salvageRing={salvageMode && instance ? [SALVAGE_TARGET_RING, SALVAGE_TARGET_SHADOW] : false}
         craftRing={activeCurrencyId && instance && canCraft ? [VALID_TARGET_RING, VALID_TARGET_SHADOW] : false}
       />
+      {shineColors.length > 0 ? <ShineBorder shineColor={shineColors} borderWidth={1} /> : null}
       {definition ? (
         <GearTooltipPortal
           triggerRef={containerRef}

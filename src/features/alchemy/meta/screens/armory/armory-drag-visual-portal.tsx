@@ -71,12 +71,13 @@ export function DragVisualPortal({
     <motion.div
       key={isDrag ? "drag" : "settle"}
       data-testid={testId}
-      className={cn("pointer-events-none fixed z-[120] overflow-hidden rounded-xl", className)}
+      className={cn("pointer-events-none fixed z-[120] overflow-hidden rounded-xl will-change-transform", className)}
       style={{
         left: dest.left,
         top: dest.top,
         width: dest.width,
         height: dest.height,
+        transform: "translate3d(0, 0, 0)",
       }}
       initial={isDrag ? false : initialTransform}
       animate={isDrag ? false : { x: 0, y: 0 }}

@@ -1,12 +1,16 @@
 import { Sparkles } from "lucide-react";
 import {
-  getCraftingCurrencyDefinition,
   gearDefinitions,
+  gearInstanceRarity,
+  getCraftingCurrencyDefinition,
+  getGearInstanceShineColors,
+  type CraftingCurrencyId,
   type GearInstance,
   type GearSlot,
-  type CraftingCurrencyId,
 } from "@/lib/gear";
+import { ShineBorder } from "@/components/ui/shine-border";
 import { type CharacterId } from "@/lib/game-data";
+import { cn } from "@/lib/utils";
 import { ConfirmationDialog } from "../../../shared/ui/shared-ui";
 import { GearItemTitle } from "../../../shared/ui/gear-item-title";
 import { DragVisualPortal } from "./armory-drag-visual-portal";
@@ -57,6 +61,8 @@ export function ArmoryOverlays({
   onCloseTransferMenu,
 }: Props) {
   const dragDefinition = dragVisual?.instance ? gearDefinitions[dragVisual.instance.definitionId] : undefined;
+  const dragIsAstral = dragVisual?.instance ? gearInstanceRarity(dragVisual.instance) === "astral" : false;
+  const dragShineColors = dragVisual?.instance ? getGearInstanceShineColors(dragVisual.instance) : [];
 
   return (
     <>
@@ -92,6 +98,7 @@ export function ArmoryOverlays({
         <DragVisualPortal
           visual={currencyDragVisual}
           testId="armory-currency-drag-visual"
+          className="border border-stone-500/40"
           onComplete={onClearCurrencyDragState}
         >
           <div className="relative h-full w-full">
@@ -107,27 +114,39 @@ export function ArmoryOverlays({
         </DragVisualPortal>
       ) : null}
       {dragVisual && dragDefinition && dragVisual.flyover && dragVisual.destination?.kind === "equipment" ? (
-        <DragVisualPortal visual={dragVisual} onComplete={onClearDragState}>
+        <DragVisualPortal
+          visual={dragVisual}
+          onComplete={onClearDragState}
+          {...(!dragIsAstral ? { className: "border border-stone-500/40" } : {})}
+        >
           <GearSlotArt definition={dragDefinition} slot={dragVisual.destination.slot as GearSlot} />
+          {dragShineColors.length > 0 ? <ShineBorder shineColor={dragShineColors} borderWidth={1} /> : null}
         </DragVisualPortal>
       ) : dragVisual && dragDefinition ? (
-        <DragVisualPortal visual={dragVisual} className="bg-background/60" onComplete={onClearDragState}>
+        <DragVisualPortal
+          visual={dragVisual}
+          className={cn("bg-background/60", !dragIsAstral && "border border-stone-500/40")}
+          onComplete={onClearDragState}
+        >
           <img
             src={dragDefinition.art}
             alt=""
             className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated"
           />
+          {dragShineColors.length > 0 ? <ShineBorder shineColor={dragShineColors} borderWidth={1} /> : null}
         </DragVisualPortal>
       ) : null}
       {secondaryDragVisuals.map((visual) => {
         if (!visual.instance) return null;
         const def = gearDefinitions[visual.instance.definitionId];
+        const secIsAstral = gearInstanceRarity(visual.instance) === "astral";
+        const secShineColors = getGearInstanceShineColors(visual.instance);
         return def ? (
           <DragVisualPortal
             key={visual.instance.instanceId}
             visual={visual}
             testId="armory-gear-swap-visual"
-            className="bg-background/60"
+            className={cn("bg-background/60", !secIsAstral && "border border-stone-500/40")}
             onComplete={onClearSecondaryDragState}
           >
             <img
@@ -135,6 +154,7 @@ export function ArmoryOverlays({
               alt=""
               className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated"
             />
+            {secShineColors.length > 0 ? <ShineBorder shineColor={secShineColors} borderWidth={1} /> : null}
           </DragVisualPortal>
         ) : null;
       })}

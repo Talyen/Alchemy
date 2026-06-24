@@ -3,11 +3,14 @@ import {
   canApplyCraftingCurrency,
   canSalvageGear,
   gearDefinitions,
+  gearInstanceRarity,
   getCraftingCurrencyDefinition,
+  getGearInstanceShineColors,
   getGearInstanceTitle,
   type CraftingCurrencyId,
   type GearInstance,
 } from "@/lib/gear";
+import { ShineBorder } from "@/components/ui/shine-border";
 import { playUISound } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 import { GearTooltipPortal } from "../gear-tooltip-portal";
@@ -215,6 +218,8 @@ export const InventoryGearTile = memo(function InventoryGearTile({
   const targetingMode = salvageMode || !!activeCurrencyId;
   const isSalvageTarget = salvageMode && canSalvage;
   const hideTile = dragging || secondaryDragging;
+  const isAstral = gearInstanceRarity(instance) === "astral";
+  const shineColors = getGearInstanceShineColors(instance);
 
   const h = buildTileHandlers({
     editable,
@@ -244,6 +249,7 @@ export const InventoryGearTile = memo(function InventoryGearTile({
         "armory-salvage-tile absolute z-10 min-h-0 min-w-0 overflow-hidden rounded-xl",
         targetingMode ? "cursor-default" : "cursor-grab active:cursor-grabbing bg-background/60",
         hideTile && "opacity-0",
+        !isAstral && "border border-stone-500/40",
       )}
       style={packedItemStyle(placement)}
       role={editable && (isSalvageTarget || !!activeCurrencyId) ? "button" : undefined}
@@ -289,6 +295,7 @@ export const InventoryGearTile = memo(function InventoryGearTile({
         salvageRing={isSalvageTarget}
         craftRing={!!(activeCurrencyId && canCraft)}
       />
+      {shineColors.length > 0 ? <ShineBorder shineColor={shineColors} borderWidth={1} /> : null}
       {flash ? <div className="absolute inset-0 pointer-events-none rounded-xl craft-flash-overlay z-30" /> : null}
       <GearTooltipPortal triggerRef={tileRef} visible={showTooltip} definition={definition} instance={instance} />
     </div>

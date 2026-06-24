@@ -60,6 +60,7 @@ export function ArmoryCharacterTabs({
           })}
           activeTab={activeTab}
           onSelectTab={onSelectTab}
+          activeClassName=""
         />
       </div>
     </div>

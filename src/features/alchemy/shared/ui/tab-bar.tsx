@@ -14,9 +14,15 @@ export interface TabBarProps<T extends string> {
   }>;
   activeTab: T;
   onSelectTab: (tab: T) => void;
+  activeClassName?: string;
 }
 
-export function TabBar<T extends string>({ tabs, activeTab, onSelectTab }: TabBarProps<T>) {
+export function TabBar<T extends string>({
+  tabs,
+  activeTab,
+  onSelectTab,
+  activeClassName = "ring-2 ring-primary/70 ring-offset-1 ring-offset-background",
+}: TabBarProps<T>) {
   return (
     <div className="flex flex-wrap justify-center gap-3">
       {tabs.map((tab) => {
@@ -32,9 +38,7 @@ export function TabBar<T extends string>({ tabs, activeTab, onSelectTab }: TabBa
                 CHIP_BUTTON_CLASS,
                 "shrink-0",
                 isDisabled && "cursor-default opacity-50",
-                tab.id === activeTab
-                  ? "ring-2 ring-primary/70 ring-offset-1 ring-offset-background"
-                  : "hover:border-border",
+                tab.id === activeTab ? activeClassName : "hover:border-border",
               )}
               aria-label={isDisabled ? `${tab.label} (Locked)` : tab.label}
             >

@@ -111,7 +111,7 @@ export const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
     >
       <div
         className={cn(
-          "group relative h-full w-full overflow-hidden rounded-xl border border-border/60 bg-black",
+          "group relative h-full w-full overflow-hidden rounded-xl border border-stone-500/40 bg-black",
           "disabled:cursor-not-allowed disabled:opacity-40",
         )}
       >

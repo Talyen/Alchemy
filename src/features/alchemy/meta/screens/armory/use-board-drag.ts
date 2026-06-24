@@ -310,8 +310,8 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
         setActiveId(pending.id);
       }
       const freeRect: DragRect = {
-        left: pointer.x - pending.offset.x,
-        top: pointer.y - pending.offset.y,
+        left: Math.round(pointer.x - pending.offset.x),
+        top: Math.round(pointer.y - pending.offset.y),
         width: pending.source.width,
         height: pending.source.height,
       };

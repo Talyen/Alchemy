@@ -348,7 +348,6 @@ export function ArmoryScreen({
         className={cn(
           "alchemy-shell my-auto flex w-full max-w-[96rem] flex-1 flex-col rounded-shell-screen p-7 pb-1",
           salvageMode && "armory-salvage-cursor",
-          draggedGear && "cursor-none [&_*]:!cursor-none",
         )}
       >
         <div className="relative flex min-h-10 w-full items-center justify-center px-12">
