@@ -1,5 +1,5 @@
 // Staggered enter animation wrapper — applies stagger-item CSS with --stagger-index.
-// Must wrap motion components (Button, PressableMotion); never put stagger-item on them directly.
+// Must wrap motion components (Button, PressableSound); never put stagger-item on them directly.
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";

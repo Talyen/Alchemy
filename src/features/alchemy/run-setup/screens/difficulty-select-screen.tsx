@@ -18,7 +18,7 @@ import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 
 import { KeywordToken } from "../../shared/ui/card-description-ui";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
-import { PressableMotion } from "../../shared/ui/pressable-motion";
+import { PressableSound } from "../../shared/ui/pressable-sound";
 import { ScreenHeader, ActionButtonRow, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { tokenizeDescription } from "../../shared/utils";
@@ -83,7 +83,7 @@ function DifficultyCard({
 
   return (
     <div className="relative group flex flex-col items-center">
-      <PressableMotion {...(locked ? { hoverSound: false as const } : {})}>
+      <PressableSound {...(locked ? { hoverSound: false as const } : {})}>
         <button
           type="button"
           disabled={locked}
@@ -132,7 +132,7 @@ function DifficultyCard({
             </div>
           </div>
         </button>
-      </PressableMotion>
+      </PressableSound>
 
       {locked && (
         <TooltipPanel className="pointer-events-none opacity-0 group-hover:opacity-100">

@@ -201,7 +201,7 @@ Full change-to-test mapping and the main-gate procedure live in [CONTRIBUTING.md
   ```
 
 - Keep reusable `shared/ui` components isolated from run, battle, and session stores; pass domain data through props.
-- Use CSS `active:` for press feedback on buttons; no Framer hover scale. Hover uses background lift from `src/lib/ui/button-hover.ts` plus sound via `Button` or `PressableMotion`.
+- Use CSS `active:` for press feedback on buttons; no Framer hover scale. Hover uses background lift from `src/lib/ui/button-hover.ts` plus sound via `Button` or `PressableSound`.
 - Use `StaggerGroup` and `StaggerItem` according to [the motion workflow](./docs/WORKFLOWS.md#staggered-screen-enter-motion). Do not wrap translate-centered absolute map nodes with `StaggerItem`.
 - Initialize cosmetic randomness lazily with `useState(() => ...)`, not `useMemo` plus `Math.random()` during render.
 

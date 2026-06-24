@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { gameModeMeta } from "@/features/alchemy/shared/config";
-import { PressableMotion } from "../../shared/ui/pressable-motion";
+import { PressableSound } from "../../shared/ui/pressable-sound";
 import { ActionButtonRow, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { useAppStore } from "../../shared/stores/app-store";
@@ -68,7 +68,7 @@ export function GameModeSelectScreen({
 
           return (
             <StaggerItem key={modeId} index={index} className="relative">
-              <PressableMotion>
+              <PressableSound>
                 <TiltSurface
                   as="button"
                   tiltEnabled={!isLocked}
@@ -92,7 +92,7 @@ export function GameModeSelectScreen({
                   <h2 className="font-sans text-base font-bold text-amber-100/75">{meta.title}</h2>
                   <p className="text-sm leading-relaxed text-muted-foreground">{meta.description}</p>
                 </TiltSurface>
-              </PressableMotion>
+              </PressableSound>
               {hoveredModeId === modeId && isLocked && (
                 <TooltipPanel width="w-64" visible className="z-50 mb-3 text-center">
                   <TooltipHeader>{meta.title}</TooltipHeader>

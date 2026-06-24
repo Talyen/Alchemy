@@ -85,7 +85,7 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 | Step | Guidance |
 |------|----------|
 | 1. Panel wrapper | `<StaggerGroup>` on the main content container; optional `swapKey` when content identity changes and enter should replay |
-| 2. Child items | `<StaggerItem index={n}>` wrapping each row/card — not on `Button` / `PressableMotion` directly |
+| 2. Child items | `<StaggerItem index={n}>` wrapping each row/card — not on `Button` / `PressableSound` directly |
 | 3. Nested grid | Inner `<StaggerGroup animate={false}>` to avoid double panel enter (shops, pickers inside an already-entering panel) |
 | 4. Tab switch fade only | `state-fade` class instead of `state-swap` when restagger on tab change is undesirable (options tabs) |
 | 5. Absolute / map nodes | Skip `StaggerItem` when the node uses `-translate-x/y` for centering; use panel-level enter only |

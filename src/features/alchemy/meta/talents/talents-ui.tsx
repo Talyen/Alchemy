@@ -13,7 +13,7 @@ import {
   getKeywordShineColors,
 } from "@/features/alchemy/shared/config";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
-import { PressableMotion } from "../../shared/ui/pressable-motion";
+import { PressableSound } from "../../shared/ui/pressable-sound";
 
 function ringClass(isSelected: boolean, hasUnspent: boolean): string {
   if (isSelected && hasUnspent) return "ring-0";
@@ -43,7 +43,7 @@ export function TalentKeywordButton({
         : undefined;
 
   return (
-    <PressableMotion>
+    <PressableSound>
       <button
         type="button"
         className={cn(
@@ -71,6 +71,6 @@ export function TalentKeywordButton({
         )}
         <KeywordTag keywordId={keywordId} />
       </button>
-    </PressableMotion>
+    </PressableSound>
   );
 }

@@ -117,7 +117,7 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 | Game-data types | `src/lib/game-data/types.ts` |
 | Homestead data | `src/lib/homestead/` — **Detect Magic** (`masonry` research) shifts gear reward/shop Basic↔Astral rolls (+3% / +6% / +10% Astral at tiers 1–3). |
 | In-run material grants | `awardMaterialsDuringRun()` in `shared/stores/run-session-facade.ts` |
-| Motion UI (`StaggerGroup`, `StaggerItem`, `TiltSurface`, `PressableMotion`) | `src/features/alchemy/shared/ui/` — enter tokens in `src/index.css` |
+| Motion UI (`StaggerGroup`, `StaggerItem`, `TiltSurface`, `PressableSound`) | `src/features/alchemy/shared/ui/` — enter tokens in `src/index.css` |
 | Image preload helper | `src/lib/image-preload.ts` |
 | Potion mixing | `src/features/alchemy/potion-mixer.ts` |
 | Platform / Steam | `src/lib/platform.ts`, `desktop/` |

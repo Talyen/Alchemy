@@ -3,7 +3,7 @@ import type { ElementType, ReactNode } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { CHIP_BUTTON_CLASS, BUTTON_SHAPE } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
-import { PressableMotion } from "./pressable-motion";
+import { PressableSound } from "./pressable-sound";
 
 interface ChoiceButtonProps {
   label: ReactNode;
@@ -26,7 +26,7 @@ export function ChoiceButton({
 
   return (
     <div className={cn("relative", BUTTON_SHAPE, className)}>
-      <PressableMotion className="inline-block">
+      <PressableSound className="inline-block">
         <button
           type="button"
           onClick={onClick}
@@ -40,7 +40,7 @@ export function ChoiceButton({
           {Icon ? <Icon className="h-4 w-4" /> : null}
           <span className="leading-none">{label}</span>
         </button>
-      </PressableMotion>
+      </PressableSound>
       {useShineBorder ? (
         <ShineBorder shineColor={shineColor} borderWidth={1} duration={8} className={BUTTON_SHAPE} />
       ) : null}

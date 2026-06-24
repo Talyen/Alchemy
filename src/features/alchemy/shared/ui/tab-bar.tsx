@@ -2,7 +2,7 @@
 import type { ElementType } from "react";
 import { cn } from "@/lib/utils";
 import { CHIP_BUTTON_CLASS } from "@/features/alchemy/shared/config";
-import { PressableMotion } from "./pressable-motion";
+import { PressableSound } from "./pressable-sound";
 
 export interface TabBarProps<T extends string> {
   tabs: Array<{
@@ -23,7 +23,7 @@ export function TabBar<T extends string>({ tabs, activeTab, onSelectTab }: TabBa
         const Icon = tab.icon;
         const isDisabled = tab.disabled ?? false;
         return (
-          <PressableMotion key={tab.id} {...(isDisabled ? { hoverSound: false as const } : {})}>
+          <PressableSound key={tab.id} {...(isDisabled ? { hoverSound: false as const } : {})}>
             <button
               type="button"
               disabled={isDisabled}
@@ -41,7 +41,7 @@ export function TabBar<T extends string>({ tabs, activeTab, onSelectTab }: TabBa
               <Icon className={cn("h-4 w-4", tab.iconClassName)} />
               {tab.label}
             </button>
-          </PressableMotion>
+          </PressableSound>
         );
       })}
     </div>

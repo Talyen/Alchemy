@@ -5,13 +5,13 @@ import type { ReactNode } from "react";
 import { playUISound } from "@/lib/audio";
 import type { UISound } from "@/lib/sound-registry";
 
-interface PressableMotionProps {
+interface PressableSoundProps {
   children: ReactNode;
   className?: string;
   hoverSound?: UISound | false;
 }
 
-export function PressableMotion({ children, className, hoverSound }: PressableMotionProps) {
+export function PressableSound({ children, className, hoverSound }: PressableSoundProps) {
   return (
     <span
       className={className}
