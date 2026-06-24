@@ -52,6 +52,30 @@ function buildRevertedDragVisual<TId extends string, TOrigin extends DragOrigin>
   return { ...visual, rect: visual.source, destination: null, settling: true, releaseRect };
 }
 
+function findExternalDestinationMatch(
+  pointer: DragPoint,
+  resolveExternalDestination?: (pointer: DragPoint) => DragDestination | null,
+  externalDestinations?: readonly DragDestination[],
+): DragDestination | null {
+  if (resolveExternalDestination) {
+    const external = resolveExternalDestination(pointer);
+    if (external) return external;
+  }
+  if (externalDestinations) {
+    for (const external of externalDestinations) {
+      if (
+        pointer.x >= external.rect.left &&
+        pointer.x <= external.rect.left + external.rect.width &&
+        pointer.y >= external.rect.top &&
+        pointer.y <= external.rect.top + external.rect.height
+      ) {
+        return external;
+      }
+    }
+  }
+  return null;
+}
+
 function handleHeldPointerDown<TId extends string, TOrigin extends DragOrigin, TItem>(
   event: PointerEvent,
   state: FsmDragRefs<TId, TOrigin, TItem>,
@@ -242,22 +266,8 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
 
   const getDragDestination = useCallback(
     (id: TId, freeRect: DragRect, pointer: DragPoint): DragDestination | null => {
-      if (resolveExternalDestination) {
-        const external = resolveExternalDestination(pointer);
-        if (external) return external;
-      }
-      if (externalDestinations) {
-        for (const external of externalDestinations) {
-          if (
-            pointer.x >= external.rect.left &&
-            pointer.x <= external.rect.left + external.rect.width &&
-            pointer.y >= external.rect.top &&
-            pointer.y <= external.rect.top + external.rect.height
-          ) {
-            return external;
-          }
-        }
-      }
+      const external = findExternalDestinationMatch(pointer, resolveExternalDestination, externalDestinations);
+      if (external) return external;
 
       const board = inventoryBoardRef.current;
       const boardRect = board?.getBoundingClientRect();

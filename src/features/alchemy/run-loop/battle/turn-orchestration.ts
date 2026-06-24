@@ -143,16 +143,18 @@ export function resolveHasteSkipTurn(
     ),
   )
     .catch((err: unknown) => deps.logBattleError("handle end turn draw sequence", err))
-    .finally(() => {
-      deps.runIfSessionActive(session, () => {
-        if (deps.checkBattleEnd(result.state, session)) return;
-        if (result.playerTurnSkipped) {
-          resolveEndTurn(result.state, session, deps);
-          return;
-        }
-        deps.scheduleCompanionFollowUp(result.state, session);
-      });
-    });
+    .finally(() => continueAfterHasteDraw(result, session, deps));
+}
+
+function continueAfterHasteDraw(result: EndPlayerTurnResolution, session: number, deps: TurnOrchestrationDeps) {
+  deps.runIfSessionActive(session, () => {
+    if (deps.checkBattleEnd(result.state, session)) return;
+    if (result.playerTurnSkipped) {
+      resolveEndTurn(result.state, session, deps);
+      return;
+    }
+    deps.scheduleCompanionFollowUp(result.state, session);
+  });
 }
 
 export function resolveNormalEnemyTurn(
@@ -213,6 +215,16 @@ export async function executeEnemyPhase(
   applyCombatTextPortraitFeedback(playerTexts, deps.getStore());
   await delay(ENEMY_ATTACK_RECOVERY_DELAY);
   if (!deps.isCurrentBattleSession(session)) return;
+  await continueAfterEnemyDraw(resultState, currentState, session, playerTurnSkipped, deps);
+}
+
+async function continueAfterEnemyDraw(
+  resultState: BattleState,
+  currentState: BattleState,
+  session: number,
+  playerTurnSkipped: boolean,
+  deps: TurnOrchestrationDeps,
+) {
   try {
     await runHandDrawSequence(
       currentState.hand,
