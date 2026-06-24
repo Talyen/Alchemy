@@ -29,6 +29,13 @@ import {
   ArmoryOverlays,
   type TransferMenuState,
   type DragRect,
+  type GearPointerStart,
+  type GearPointerMove,
+  type GearPointerEnd,
+  type GearDragOrigin,
+  type CurrencyPointerStart,
+  type CurrencyPointerMove,
+  type CurrencyPointerEnd,
 } from "./armory";
 import "./armory/armory-screen.css";
 
@@ -59,6 +66,135 @@ interface Props {
   onTransferGear?: (instanceId: string, targetCharacterId: CharacterId) => boolean;
   onMoveBoardItem?: (characterId: CharacterId, item: BoardItemRef, col: number, row: number) => void;
   onSortBoard?: (characterId: CharacterId) => void;
+}
+
+function ArmoryScreenHeader({ onOpenMenu }: { onOpenMenu: Props["onOpenMenu"] }) {
+  return (
+    <div className="relative flex min-h-10 w-full items-center justify-center px-12">
+      <ScreenHeader title="Armory" />
+      <div className="absolute right-0 top-1/2 -translate-y-1/2">
+        <HamburgerTrigger onClick={onOpenMenu} label="Open armory menu" />
+      </div>
+    </div>
+  );
+}
+
+interface WorkspaceGridProps {
+  characterId: CharacterId;
+  locked: boolean;
+  loadout: GearLoadouts[CharacterId];
+  inventoryById: Map<string, GearInstance>;
+  editable: boolean;
+  requiredCharacterId: CharacterId | null;
+  draggedGear: GearInstance | null;
+  draggedCurrencyId: CraftingCurrencyId | null;
+  secondaryDragInstanceIds: string[];
+  isDraggingActive: boolean;
+  isCurrencyDraggingActive: boolean;
+  salvageMode: boolean;
+  activeCurrencyId: CraftingCurrencyId | null;
+  characterInventory: GearInstance[];
+  boardView: ReturnType<typeof buildArmoryBoardView>;
+  inventoryBoardRef: React.RefObject<HTMLDivElement | null>;
+  beginGearPointer: GearPointerStart;
+  moveGearPointer: GearPointerMove;
+  finishGearPointer: GearPointerEnd;
+  handleGearDoubleClick: (instance: GearInstance, origin: GearDragOrigin, rect: DOMRect) => void;
+  startSalvageTarget: (instance: GearInstance) => void;
+  handleApplyCurrency: (instance: GearInstance) => void;
+  abortGearDragIfDragging: (instanceId: string) => void;
+  handleOpenTransferMenu: (instance: GearInstance, anchor: { x: number; y: number }) => void;
+  onSpawnDevGear: ((characterId: CharacterId) => void) | undefined;
+  handleSelectCurrency: (currencyId: CraftingCurrencyId) => void;
+  beginCurrencyPointer: CurrencyPointerStart;
+  moveCurrencyPointer: CurrencyPointerMove;
+  finishCurrencyPointer: CurrencyPointerEnd;
+  craftingCurrencies: Record<CraftingCurrencyId, number>;
+  onSortBoard: ((characterId: CharacterId) => void) | undefined;
+  onToggleSalvageMode: () => void;
+  setCursorPoint: React.Dispatch<React.SetStateAction<ArmoryCursorPoint | null>>;
+}
+
+function ArmoryWorkspaceGrid(props: WorkspaceGridProps) {
+  return (
+    <div className="armory-workspace mt-2 min-w-0 flex-1" data-testid="armory-workspace">
+      <div
+        className="armory-workspace-grid"
+        onPointerMove={(event) => {
+          if (props.activeCurrencyId) {
+            props.setCursorPoint({ x: event.clientX, y: event.clientY });
+          }
+        }}
+        onPointerLeave={() => props.setCursorPoint(null)}
+      >
+        <CharacterAndEquipmentPanel
+          characterId={props.characterId}
+          locked={props.locked}
+          loadout={props.loadout}
+          inventoryById={props.inventoryById}
+          editable={props.editable}
+          requiredCharacterId={props.requiredCharacterId}
+          draggedGear={props.draggedGear}
+          secondaryDragInstanceIds={props.secondaryDragInstanceIds}
+          isDraggingActive={props.isDraggingActive}
+          salvageMode={props.salvageMode}
+          activeCurrencyId={props.activeCurrencyId}
+          onGearPointerStart={props.beginGearPointer}
+          onGearPointerMove={props.moveGearPointer}
+          onGearPointerEnd={props.finishGearPointer}
+          onGearDoubleClick={props.handleGearDoubleClick}
+          onSalvage={props.startSalvageTarget}
+          onApplyCurrency={props.handleApplyCurrency}
+          onAbortGearDrag={props.abortGearDragIfDragging}
+          onTransferRequest={props.handleOpenTransferMenu}
+        />
+        <InventoryPanel
+          packedItems={props.boardView.packedInventory.items}
+          packedCurrencies={props.boardView.packedCurrencies}
+          occupiedRows={props.boardView.occupiedRows}
+          editable={props.editable}
+          draggedInstanceId={props.draggedGear?.instanceId ?? null}
+          draggedCurrencyId={props.draggedCurrencyId}
+          secondaryDragInstanceIds={props.secondaryDragInstanceIds}
+          isDraggingActive={props.isDraggingActive || props.isCurrencyDraggingActive}
+          boardRef={props.inventoryBoardRef}
+          salvageMode={props.salvageMode}
+          activeCurrencyId={props.activeCurrencyId}
+          onSalvage={props.startSalvageTarget}
+          hasSalvageableGear={
+            props.editable && (props.characterInventory.length > 0 || Object.values(props.loadout).some(Boolean))
+          }
+          onToggleSalvageMode={props.onToggleSalvageMode}
+          onSelectCurrency={props.handleSelectCurrency}
+          {...(props.onSpawnDevGear
+            ? {
+                onSpawnDevGear: () => {
+                  props.onSpawnDevGear!(props.characterId);
+                },
+              }
+            : {})}
+          onGearPointerStart={props.beginGearPointer}
+          onGearPointerMove={props.moveGearPointer}
+          onGearPointerEnd={props.finishGearPointer}
+          onGearDoubleClick={props.handleGearDoubleClick}
+          onCurrencyPointerStart={props.beginCurrencyPointer}
+          onCurrencyPointerMove={props.moveCurrencyPointer}
+          onCurrencyPointerEnd={props.finishCurrencyPointer}
+          craftingCurrencies={props.craftingCurrencies}
+          onApplyCurrency={props.handleApplyCurrency}
+          onAbortGearDrag={props.abortGearDragIfDragging}
+          onTransferRequest={props.handleOpenTransferMenu}
+          {...(props.onSortBoard
+            ? {
+                onSortBoard: () => {
+                  props.onSortBoard!(props.characterId);
+                },
+              }
+            : {})}
+        />
+      </div>
+    </div>
+  );
 }
 
 export function ArmoryScreen({
@@ -350,12 +486,7 @@ export function ArmoryScreen({
           salvageMode && "armory-salvage-cursor",
         )}
       >
-        <div className="relative flex min-h-10 w-full items-center justify-center px-12">
-          <ScreenHeader title="Armory" />
-          <div className="absolute right-0 top-1/2 -translate-y-1/2">
-            <HamburgerTrigger onClick={onOpenMenu} label="Open armory menu" />
-          </div>
-        </div>
+        <ArmoryScreenHeader onOpenMenu={onOpenMenu} />
         {browseOnly ? (
           <p className="mx-auto mt-3 rounded-lg border border-amber-400/30 bg-amber-500/10 px-4 py-2 text-center text-sm text-amber-100">
             Equipment can be changed after combat.
@@ -366,74 +497,44 @@ export function ArmoryScreen({
           finishedRunCharacters={finishedRunCharacters}
           onSelectTab={handleSelectCharacter}
         />
-        <div className="armory-workspace mt-2 min-w-0 flex-1" data-testid="armory-workspace">
-          <div
-            className="armory-workspace-grid"
-            onPointerMove={(event) => {
-              if (activeCurrencyId) {
-                setCursorPoint({ x: event.clientX, y: event.clientY });
-              }
-            }}
-            onPointerLeave={() => setCursorPoint(null)}
-          >
-            <CharacterAndEquipmentPanel
-              characterId={characterId}
-              locked={locked}
-              loadout={loadout}
-              inventoryById={inventoryById}
-              editable={editable}
-              requiredCharacterId={requiredCharacterId}
-              draggedGear={draggedGear}
-              secondaryDragInstanceIds={secondaryDragInstanceIds}
-              isDraggingActive={isDraggingActive}
-              salvageMode={salvageMode}
-              activeCurrencyId={activeCurrencyId}
-              onGearPointerStart={beginGearPointer}
-              onGearPointerMove={moveGearPointer}
-              onGearPointerEnd={finishGearPointer}
-              onGearDoubleClick={handleGearDoubleClick}
-              onSalvage={startSalvageTarget}
-              onApplyCurrency={handleApplyCurrency}
-              onAbortGearDrag={abortGearDragIfDragging}
-              onTransferRequest={handleOpenTransferMenu}
-            />
-            <InventoryPanel
-              packedItems={boardView.packedInventory.items}
-              packedCurrencies={boardView.packedCurrencies}
-              occupiedRows={boardView.occupiedRows}
-              editable={editable}
-              draggedInstanceId={draggedGear?.instanceId ?? null}
-              draggedCurrencyId={draggedCurrencyId}
-              secondaryDragInstanceIds={secondaryDragInstanceIds}
-              isDraggingActive={isDraggingActive || isCurrencyDraggingActive}
-              boardRef={inventoryBoardRef}
-              salvageMode={salvageMode}
-              activeCurrencyId={activeCurrencyId}
-              onSalvage={startSalvageTarget}
-              hasSalvageableGear={
-                editable && (characterInventory.length > 0 || Object.values(loadouts[characterId]).some(Boolean))
-              }
-              onToggleSalvageMode={() => {
-                setSalvageMode((current) => !current);
-                setActiveCurrencyId(null);
-              }}
-              onSelectCurrency={handleSelectCurrency}
-              {...(onSpawnDevGear ? { onSpawnDevGear: () => onSpawnDevGear(characterId) } : {})}
-              onGearPointerStart={beginGearPointer}
-              onGearPointerMove={moveGearPointer}
-              onGearPointerEnd={finishGearPointer}
-              onGearDoubleClick={handleGearDoubleClick}
-              onCurrencyPointerStart={beginCurrencyPointer}
-              onCurrencyPointerMove={moveCurrencyPointer}
-              onCurrencyPointerEnd={finishCurrencyPointer}
-              craftingCurrencies={craftingCurrencies}
-              onApplyCurrency={handleApplyCurrency}
-              onAbortGearDrag={abortGearDragIfDragging}
-              onTransferRequest={handleOpenTransferMenu}
-              {...(onSortBoard ? { onSortBoard: () => onSortBoard(characterId) } : {})}
-            />
-          </div>
-        </div>
+        <ArmoryWorkspaceGrid
+          characterId={characterId}
+          locked={locked}
+          loadout={loadout}
+          inventoryById={inventoryById}
+          editable={editable}
+          requiredCharacterId={requiredCharacterId}
+          draggedGear={draggedGear}
+          draggedCurrencyId={draggedCurrencyId}
+          secondaryDragInstanceIds={secondaryDragInstanceIds}
+          isDraggingActive={isDraggingActive}
+          isCurrencyDraggingActive={isCurrencyDraggingActive}
+          salvageMode={salvageMode}
+          activeCurrencyId={activeCurrencyId}
+          characterInventory={characterInventory}
+          boardView={boardView}
+          inventoryBoardRef={inventoryBoardRef}
+          beginGearPointer={beginGearPointer}
+          moveGearPointer={moveGearPointer}
+          finishGearPointer={finishGearPointer}
+          handleGearDoubleClick={handleGearDoubleClick}
+          startSalvageTarget={startSalvageTarget}
+          handleApplyCurrency={handleApplyCurrency}
+          abortGearDragIfDragging={abortGearDragIfDragging}
+          handleOpenTransferMenu={handleOpenTransferMenu}
+          onSpawnDevGear={onSpawnDevGear}
+          handleSelectCurrency={handleSelectCurrency}
+          beginCurrencyPointer={beginCurrencyPointer}
+          moveCurrencyPointer={moveCurrencyPointer}
+          finishCurrencyPointer={finishCurrencyPointer}
+          craftingCurrencies={craftingCurrencies}
+          onSortBoard={onSortBoard}
+          onToggleSalvageMode={() => {
+            setSalvageMode((current) => !current);
+            setActiveCurrencyId(null);
+          }}
+          setCursorPoint={setCursorPoint}
+        />
         <ArmoryOverlays
           salvageTarget={salvageTarget}
           currencyDragVisual={currencyDragVisual}

@@ -41,127 +41,145 @@ interface Props {
   onCloseTransferMenu: () => void;
 }
 
-export function ArmoryOverlays({
-  salvageTarget,
-  currencyDragVisual,
-  dragVisual,
-  secondaryDragVisuals,
-  activeCurrencyId,
-  cursorPoint,
-  transferMenu,
-  craftingCurrencies,
-  finishedRunCharacters,
+function SalvageDialog({
+  target,
   editable,
   onSalvage,
-  onTransferGear,
-  onClearSalvageTarget,
-  onClearCurrencyDragState,
-  onClearDragState,
-  onClearSecondaryDragState,
-  onCloseTransferMenu,
-}: Props) {
-  const dragDefinition = dragVisual?.instance ? gearDefinitions[dragVisual.instance.definitionId] : undefined;
-  const dragIsAstral = dragVisual?.instance ? gearInstanceRarity(dragVisual.instance) === "astral" : false;
-  const dragShineColors = dragVisual?.instance ? getGearInstanceShineColors(dragVisual.instance) : [];
+  onClear,
+}: {
+  target: GearInstance;
+  editable: boolean;
+  onSalvage: (id: string) => boolean;
+  onClear: () => void;
+}) {
+  return (
+    <ConfirmationDialog
+      title={
+        <>
+          <span>Salvage </span>
+          <GearItemTitle instance={target} />?
+        </>
+      }
+      description="Salvaging items yields crafting materials"
+      confirmLabel="Salvage"
+      icon={Sparkles}
+      dimBackground={false}
+      dismissOnBackdrop={false}
+      onCancel={onClear}
+      onConfirm={() => {
+        if (!editable) {
+          onClear();
+          return;
+        }
+        if (onSalvage(target.instanceId)) {
+          playUISound("salvage");
+          onClear();
+        } else {
+          playUISound("error");
+        }
+      }}
+    />
+  );
+}
+
+function renderDragVisualPortal(
+  visual: GearDragVisual,
+  isFlyoverEquip: boolean,
+  onComplete: () => void,
+  testId?: string,
+) {
+  const instance = visual.instance!;
+  const def = gearDefinitions[instance.definitionId];
+  if (!def) return null;
+  const isAstral = gearInstanceRarity(instance) === "astral";
+  const colors = getGearInstanceShineColors(instance);
+  return (
+    <DragVisualPortal
+      visual={visual}
+      {...(testId ? { testId } : {})}
+      onComplete={onComplete}
+      className={cn(isFlyoverEquip ? "" : "bg-background/60", !isAstral && "border border-stone-500/40")}
+    >
+      {isFlyoverEquip ? (
+        <>
+          <GearSlotArt definition={def} slot={(visual.destination as { slot: string }).slot as GearSlot} />
+          {colors.length > 0 ? <ShineBorder shineColor={colors} borderWidth={1} /> : null}
+        </>
+      ) : (
+        <>
+          <img
+            src={def.art}
+            alt=""
+            className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated"
+          />
+          {colors.length > 0 ? <ShineBorder shineColor={colors} borderWidth={1} /> : null}
+        </>
+      )}
+    </DragVisualPortal>
+  );
+}
+
+export function ArmoryOverlays(props: Props) {
+  const {
+    dragVisual,
+    secondaryDragVisuals,
+    craftingCurrencies,
+    finishedRunCharacters,
+    editable,
+    onSalvage,
+    onTransferGear,
+    onClearSalvageTarget,
+    onClearCurrencyDragState,
+    onClearDragState,
+    onClearSecondaryDragState,
+    onCloseTransferMenu,
+  } = props;
 
   return (
     <>
-      {salvageTarget ? (
-        <ConfirmationDialog
-          title={
-            <>
-              Salvage <GearItemTitle instance={salvageTarget} />?
-            </>
-          }
-          description="Salvaging items yields crafting materials"
-          confirmLabel="Salvage"
-          icon={Sparkles}
-          dimBackground={false}
-          dismissOnBackdrop={false}
-          onCancel={onClearSalvageTarget}
-          onConfirm={() => {
-            if (!editable) {
-              onClearSalvageTarget();
-              return;
-            }
-            const ok = onSalvage(salvageTarget.instanceId);
-            if (ok) {
-              playUISound("salvage");
-              onClearSalvageTarget();
-            } else {
-              playUISound("error");
-            }
-          }}
+      {props.salvageTarget ? (
+        <SalvageDialog
+          target={props.salvageTarget}
+          editable={editable}
+          onSalvage={onSalvage}
+          onClear={onClearSalvageTarget}
         />
       ) : null}
-      {currencyDragVisual ? (
+      {props.currencyDragVisual ? (
         <DragVisualPortal
-          visual={currencyDragVisual}
+          visual={props.currencyDragVisual}
           testId="armory-currency-drag-visual"
           className="border border-stone-500/40"
           onComplete={onClearCurrencyDragState}
         >
           <div className="relative h-full w-full">
             <img
-              src={getCraftingCurrencyDefinition(currencyDragVisual.currencyId).art}
+              src={getCraftingCurrencyDefinition(props.currencyDragVisual.currencyId).art}
               alt=""
               className="h-full w-full object-cover"
             />
             <span className="absolute top-1 left-1 text-xs font-bold leading-none text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-              {craftingCurrencies[currencyDragVisual.currencyId]}
+              {craftingCurrencies[props.currencyDragVisual.currencyId]}
             </span>
           </div>
         </DragVisualPortal>
       ) : null}
-      {dragVisual && dragDefinition && dragVisual.flyover && dragVisual.destination?.kind === "equipment" ? (
-        <DragVisualPortal
-          visual={dragVisual}
-          onComplete={onClearDragState}
-          {...(!dragIsAstral ? { className: "border border-stone-500/40" } : {})}
-        >
-          <GearSlotArt definition={dragDefinition} slot={dragVisual.destination.slot as GearSlot} />
-          {dragShineColors.length > 0 ? <ShineBorder shineColor={dragShineColors} borderWidth={1} /> : null}
-        </DragVisualPortal>
-      ) : dragVisual && dragDefinition ? (
-        <DragVisualPortal
-          visual={dragVisual}
-          className={cn("bg-background/60", !dragIsAstral && "border border-stone-500/40")}
-          onComplete={onClearDragState}
-        >
-          <img
-            src={dragDefinition.art}
-            alt=""
-            className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated"
-          />
-          {dragShineColors.length > 0 ? <ShineBorder shineColor={dragShineColors} borderWidth={1} /> : null}
-        </DragVisualPortal>
-      ) : null}
-      {secondaryDragVisuals.map((visual) => {
-        if (!visual.instance) return null;
-        const def = gearDefinitions[visual.instance.definitionId];
-        const secIsAstral = gearInstanceRarity(visual.instance) === "astral";
-        const secShineColors = getGearInstanceShineColors(visual.instance);
-        return def ? (
-          <DragVisualPortal
-            key={visual.instance.instanceId}
-            visual={visual}
-            testId="armory-gear-swap-visual"
-            className={cn("bg-background/60", !secIsAstral && "border border-stone-500/40")}
-            onComplete={onClearSecondaryDragState}
-          >
-            <img
-              src={def.art}
-              alt=""
-              className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated"
-            />
-            {secShineColors.length > 0 ? <ShineBorder shineColor={secShineColors} borderWidth={1} /> : null}
-          </DragVisualPortal>
-        ) : null;
-      })}
-      <ArmoryCurrencyCursor activeCurrencyId={activeCurrencyId} cursorPoint={cursorPoint} />
-      {transferMenu ? (
+      {dragVisual && dragVisual.instance
+        ? renderDragVisualPortal(
+            dragVisual,
+            !!(dragVisual.flyover && dragVisual.destination?.kind === "equipment"),
+            onClearDragState,
+          )
+        : null}
+      {secondaryDragVisuals.map((visual) =>
+        visual.instance
+          ? renderDragVisualPortal(visual, false, onClearSecondaryDragState, "armory-gear-swap-visual")
+          : null,
+      )}
+      <ArmoryCurrencyCursor activeCurrencyId={props.activeCurrencyId} cursorPoint={props.cursorPoint} />
+      {props.transferMenu ? (
         <ArmoryTransferMenu
-          transferMenu={transferMenu}
+          transferMenu={props.transferMenu}
           finishedRunCharacters={finishedRunCharacters}
           onTransferGear={onTransferGear}
           onClose={onCloseTransferMenu}

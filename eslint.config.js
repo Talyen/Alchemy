@@ -119,6 +119,7 @@ export default tseslint.config(
   {
     rules: {
       complexity: ["warn", 11],
+      "max-lines-per-function": ["warn", { max: 50, skipComments: true }],
       eqeqeq: ["error", "always", { null: "ignore" }],
       "@typescript-eslint/consistent-type-imports": [
         "error",

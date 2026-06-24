@@ -83,6 +83,141 @@ interface UseArmoryGearDragOptions {
   ) => void;
 }
 
+interface GearCommitEnv {
+  characterId: CharacterId;
+  inventoryById: Map<string, GearInstance>;
+  packedInventoryRef: { current: PackedInventory };
+  packedCurrenciesRef: { current: PackedCurrencyItem[] };
+  inventoryBoardRef: { current: HTMLDivElement | null };
+  onEquip: UseArmoryGearDragOptions["onEquip"];
+  onUnequip: UseArmoryGearDragOptions["onUnequip"];
+  onMoveItem: UseArmoryGearDragOptions["onMoveItem"];
+  onHoldCurrency: UseArmoryGearDragOptions["onHoldCurrency"];
+  maybeLaunchSwapAnimations: (
+    instance: GearInstance,
+    slot: GearSlot,
+    slotRect: DragRect,
+    vacatedPlacement: InventoryPlacement,
+  ) => void;
+}
+
+function computeOccupantRect(
+  occupantInstance: GearInstance,
+  destRect: DragRect,
+  board: HTMLDivElement | null,
+): DragRect {
+  let sourceRect = destRect;
+  if (!board) return sourceRect;
+  const metrics = readInventoryBoardMetrics(board);
+  if (!metrics) return sourceRect;
+  const fprint = footprintForInstance(occupantInstance);
+  if (!fprint) return sourceRect;
+  const { cellSize, gap } = metrics;
+  const w = fprint.w;
+  const h = fprint.h;
+  const occupantWidth = cellSize * w + gap * (w - 1);
+  const occupantHeight = cellSize * h + gap * (h - 1);
+  const destCenterX = destRect.left + destRect.width / 2;
+  const destCenterY = destRect.top + destRect.height / 2;
+  return {
+    left: destCenterX - occupantWidth / 2,
+    top: destCenterY - occupantHeight / 2,
+    width: occupantWidth,
+    height: occupantHeight,
+  };
+}
+
+interface InventoryDestParams {
+  id: string;
+  origin: GearDragOrigin;
+  destination: { kind: "inventory"; placement: { col: number; row: number }; rect: DragRect };
+  instance: GearInstance;
+  env: GearCommitEnv;
+}
+
+function handleGearInventoryDestination(params: InventoryDestParams) {
+  const { id, origin, destination, instance, env } = params;
+  if (origin.kind === "equipment") {
+    env.onUnequip(env.characterId, origin.slot);
+    env.onMoveItem(id, destination.placement.col, destination.placement.row);
+    return undefined;
+  }
+  const unchanged =
+    origin.placement.col === destination.placement.col && origin.placement.row === destination.placement.row;
+  if (unchanged) return undefined;
+  const { inventoryById, packedInventoryRef, packedCurrenciesRef, inventoryBoardRef, onMoveItem, onHoldCurrency } = env;
+  const footprint = footprintForInstance(instance);
+  const packed = packedInventoryRef.current.items;
+  const occupant = footprint
+    ? packed.find(
+        (item) =>
+          item.item.instanceId !== id &&
+          overlaps(
+            { col: destination.placement.col, row: destination.placement.row, w: footprint.w, h: footprint.h },
+            { col: item.col, row: item.row, w: item.w, h: item.h },
+          ),
+      )
+    : undefined;
+  const occupantCurrency = footprint
+    ? packedCurrenciesRef.current.find((currency) =>
+        overlaps(
+          { col: destination.placement.col, row: destination.placement.row, w: footprint.w, h: footprint.h },
+          { col: currency.col, row: currency.row, w: currency.w, h: currency.h },
+        ),
+      )
+    : undefined;
+  onMoveItem(id, destination.placement.col, destination.placement.row);
+  if (occupant) {
+    const occupantInstance = inventoryById.get(occupant.item.instanceId);
+    if (occupantInstance) {
+      const occupantSourceRect = computeOccupantRect(occupantInstance, destination.rect, inventoryBoardRef.current);
+      return {
+        heldItem: {
+          item: {
+            instance: occupantInstance,
+            origin: { kind: "inventory" as const, placement: { col: occupant.col, row: occupant.row } },
+          },
+          source: occupantSourceRect,
+        },
+      };
+    }
+  } else if (occupantCurrency && onHoldCurrency) {
+    onHoldCurrency(
+      occupantCurrency.currencyId,
+      { kind: "inventory", placement: { col: occupantCurrency.col, row: occupantCurrency.row } },
+      destination.rect,
+    );
+  }
+  return undefined;
+}
+
+function handleGearCommit(params: {
+  id: string;
+  origin: GearDragOrigin;
+  destination: DragDestination;
+  instance: GearInstance;
+  env: GearCommitEnv;
+}) {
+  const { id, origin, destination, instance, env } = params;
+  if (destination.kind === "equipment") {
+    const slot = destination.slot as GearSlot;
+    const vacatedPlacement = origin.kind === "inventory" ? origin.placement : undefined;
+    if (vacatedPlacement) {
+      env.maybeLaunchSwapAnimations(instance, slot, destination.rect, vacatedPlacement);
+    }
+    env.onEquip(env.characterId, slot, instance, vacatedPlacement ? { vacatedPlacement } : undefined);
+  } else if (destination.kind === "inventory") {
+    return handleGearInventoryDestination({
+      id,
+      origin,
+      destination,
+      instance,
+      env,
+    });
+  }
+  return undefined;
+}
+
 export function useArmoryGearDrag({
   characterId,
   editable,
@@ -175,88 +310,19 @@ export function useArmoryGearDrag({
     onCommit: ({ id, origin, destination }) => {
       const instance = inventoryById.get(id);
       if (!instance) return;
-      if (destination.kind === "equipment") {
-        const slot = destination.slot as GearSlot;
-        const vacatedPlacement = origin.kind === "inventory" ? origin.placement : undefined;
-        if (vacatedPlacement) {
-          maybeLaunchSwapAnimations(instance, slot, destination.rect, vacatedPlacement);
-        }
-        onEquip(characterId, slot, instance, vacatedPlacement ? { vacatedPlacement } : undefined);
-      } else if (destination.kind === "inventory") {
-        if (origin.kind === "equipment") {
-          onUnequip(characterId, origin.slot);
-          onMoveItem(id, destination.placement.col, destination.placement.row);
-          return;
-        }
-        const unchanged =
-          origin.placement.col === destination.placement.col && origin.placement.row === destination.placement.row;
-        if (unchanged) return;
-        const footprint = footprintForInstance(instance);
-        const packed = packedInventoryRef.current.items;
-        const occupant = footprint
-          ? packed.find(
-              (item) =>
-                item.item.instanceId !== id &&
-                overlaps(
-                  { col: destination.placement.col, row: destination.placement.row, w: footprint.w, h: footprint.h },
-                  { col: item.col, row: item.row, w: item.w, h: item.h },
-                ),
-            )
-          : undefined;
-        const occupantCurrency = footprint
-          ? packedCurrenciesRef.current.find((currency) =>
-              overlaps(
-                { col: destination.placement.col, row: destination.placement.row, w: footprint.w, h: footprint.h },
-                { col: currency.col, row: currency.row, w: currency.w, h: currency.h },
-              ),
-            )
-          : undefined;
-        onMoveItem(id, destination.placement.col, destination.placement.row);
-        if (occupant) {
-          const occupantInstance = inventoryById.get(occupant.item.instanceId);
-          if (occupantInstance) {
-            let occupantSourceRect = destination.rect;
-            const board = inventoryBoardRef.current;
-            if (board) {
-              const metrics = readInventoryBoardMetrics(board);
-              if (metrics) {
-                const footprint = footprintForInstance(occupantInstance);
-                if (footprint) {
-                  const { cellSize, gap } = metrics;
-                  const w = footprint.w;
-                  const h = footprint.h;
-                  const occupantWidth = cellSize * w + gap * (w - 1);
-                  const occupantHeight = cellSize * h + gap * (h - 1);
-                  const destCenterX = destination.rect.left + destination.rect.width / 2;
-                  const destCenterY = destination.rect.top + destination.rect.height / 2;
-                  occupantSourceRect = {
-                    left: destCenterX - occupantWidth / 2,
-                    top: destCenterY - occupantHeight / 2,
-                    width: occupantWidth,
-                    height: occupantHeight,
-                  };
-                }
-              }
-            }
-            return {
-              heldItem: {
-                item: {
-                  instance: occupantInstance,
-                  origin: { kind: "inventory", placement: { col: occupant.col, row: occupant.row } },
-                },
-                source: occupantSourceRect,
-              },
-            };
-          }
-        } else if (occupantCurrency && onHoldCurrency) {
-          onHoldCurrency(
-            occupantCurrency.currencyId,
-            { kind: "inventory", placement: { col: occupantCurrency.col, row: occupantCurrency.row } },
-            destination.rect,
-          );
-        }
-      }
-      return undefined;
+      const env: GearCommitEnv = {
+        characterId,
+        inventoryById,
+        packedInventoryRef,
+        packedCurrenciesRef,
+        inventoryBoardRef,
+        onEquip,
+        onUnequip,
+        onMoveItem,
+        onHoldCurrency,
+        maybeLaunchSwapAnimations,
+      };
+      return handleGearCommit({ id, origin, destination, instance, env });
     },
     onCancel: () => {},
     onClear: () => {},
@@ -288,21 +354,8 @@ export function useArmoryGearDrag({
     [editable, fsmBeginPointer],
   );
 
-  const fsmMovePointer = fsm.movePointer;
-  const moveGearPointer = useCallback(
-    (pointer: DragPoint, pointerId: number) => {
-      fsmMovePointer(pointer, pointerId);
-    },
-    [fsmMovePointer],
-  );
-
-  const fsmFinishPointer = fsm.finishPointer;
-  const finishGearPointer = useCallback(
-    (pointer: DragPoint, pointerId: number, cancelled = false) => {
-      fsmFinishPointer(pointer, pointerId, cancelled);
-    },
-    [fsmFinishPointer],
-  );
+  const moveGearPointer = fsm.movePointer;
+  const finishGearPointer = fsm.finishPointer;
 
   const handleGearDoubleClick = useCallback(
     (instance: GearInstance, origin: GearDragOrigin, _source: DragRect) => {

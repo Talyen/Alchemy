@@ -137,12 +137,7 @@ export function useArmoryCurrencyDrag({
     [editable, fsm],
   );
 
-  const moveCurrencyPointer = useCallback(
-    (pointer: { x: number; y: number }, pointerId: number) => {
-      fsm.movePointer(pointer, pointerId);
-    },
-    [fsm],
-  );
+  const moveCurrencyPointer = fsm.movePointer;
 
   const beginHeldCurrency = useCallback(
     (currencyId: CraftingCurrencyId, origin: CurrencyDragOrigin, source: DragRect) => {
@@ -152,12 +147,7 @@ export function useArmoryCurrencyDrag({
     [editable, fsm],
   );
 
-  const finishCurrencyPointer = useCallback(
-    (pointer: { x: number; y: number }, pointerId: number, cancelled = false) => {
-      fsm.finishPointer(pointer, pointerId, cancelled);
-    },
-    [fsm],
-  );
+  const finishCurrencyPointer = fsm.finishPointer;
 
   useEffect(() => {
     if (!editable) fsmClearDragState();

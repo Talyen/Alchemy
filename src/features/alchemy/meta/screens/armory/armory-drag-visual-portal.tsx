@@ -31,6 +31,28 @@ function computeTransformOrigin(
   return { x: origin.left, y: origin.top };
 }
 
+function buildDragPortalMotionProps(visual: DragVisualBase, completeOnFlyover: boolean) {
+  const isDrag = !visual.settling && !visual.releasing && !visual.flyover;
+  const startRect = visual.source;
+  const release = {
+    left: visual.releaseRect?.left ?? visual.rect.left,
+    top: visual.releaseRect?.top ?? visual.rect.top,
+  };
+  const dest = {
+    left: visual.rect.left,
+    top: visual.rect.top,
+    width: Math.round(visual.rect.width),
+    height: Math.round(visual.rect.height),
+  };
+  const arrow = visual.settling || (completeOnFlyover && visual.flyover);
+  let initialTransform: { x: number; y: number } | false = false;
+  if (!isDrag) {
+    const origin = computeTransformOrigin(visual, startRect, release);
+    initialTransform = typeof origin === "object" ? { x: origin.x - dest.left, y: origin.y - dest.top } : false;
+  }
+  return { isDrag, dest, arrow, initialTransform };
+}
+
 export function DragVisualPortal({
   visual,
   testId = "armory-gear-drag-visual",
@@ -46,27 +68,7 @@ export function DragVisualPortal({
   children: ReactNode;
   onComplete: () => void;
 }) {
-  const isDrag = !visual.settling && !visual.releasing && !visual.flyover;
-  const startRect = visual.source;
-  const release = {
-    left: visual.releaseRect?.left ?? visual.rect.left,
-    top: visual.releaseRect?.top ?? visual.rect.top,
-  };
-  const dest = {
-    left: visual.rect.left,
-    top: visual.rect.top,
-    width: Math.round(visual.rect.width),
-    height: Math.round(visual.rect.height),
-  };
-
-  const arrow = visual.settling || (completeOnFlyover && visual.flyover);
-
-  let initialTransform: { x: number; y: number } | false = false;
-  if (!isDrag) {
-    const origin = computeTransformOrigin(visual, startRect, release);
-    initialTransform = typeof origin === "object" ? { x: origin.x - dest.left, y: origin.y - dest.top } : false;
-  }
-
+  const { isDrag, dest, arrow, initialTransform } = buildDragPortalMotionProps(visual, completeOnFlyover);
   return createPortal(
     <motion.div
       key={isDrag ? "drag" : "settle"}

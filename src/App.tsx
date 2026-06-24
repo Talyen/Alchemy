@@ -108,7 +108,7 @@ function AppMainContent({
   const dev = useDevShortcuts(run);
 
   const homesteadEffects = useHomesteadAdapter();
-  const homesteadBondedCompanions = useRunDomainStore(s => s.progress.bondedCompanions);
+  const homesteadBondedCompanions = useRunDomainStore((s) => s.progress.bondedCompanions);
 
   const isBossBattle = renderedScreen === "battle" && run.battleState.currentEnemy.enemyType === "boss";
   const { particleColors, particleAlphaMultiplier } = useScreenParticleConfig(renderedScreen, isBossBattle);
