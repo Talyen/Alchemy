@@ -51,10 +51,15 @@ export async function animateDiscardedHand(cards: BattleCard[], session: number,
     if (!deps.isSessionActive(session)) return;
     deps.playTransferSound(i * cardInterval);
   }
+  if (!deps.isSessionActive(session)) return;
   deps.setTransferInProgress(true);
   deps.setCardPlayInProgress(true);
   for (let index = cards.length - 1; index >= 0; index -= 1) {
-    if (!deps.isSessionActive(session)) return;
+    if (!deps.isSessionActive(session)) {
+      deps.setTransferInProgress(false);
+      deps.setCardPlayInProgress(false);
+      return;
+    }
     const card = cards[index]!;
     const cardKey = getCardKey(card);
     const sourceRect = deps.measureHandCard(cardKey);

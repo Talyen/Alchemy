@@ -95,6 +95,7 @@ const sessionActionKeys = [
   "setMysteryEvent",
   "setMysteryCardChoices",
   "clearTransientSession",
+  "applyDestinationChoices",
 ] as const satisfies ReadonlyArray<keyof RunDomainStore>;
 
 const navigationActionKeys = ["setScreen"] as const satisfies ReadonlyArray<keyof RunDomainStore>;

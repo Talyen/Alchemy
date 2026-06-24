@@ -1,5 +1,12 @@
-function readStyleInset(style: CSSStyleDeclaration, prop: string): number {
-  return parseFloat(style.getPropertyValue(prop)) || 0;
+function readStyleInset(
+  style: CSSStyleDeclaration | Record<string, string>,
+  camelProp: string,
+  dashedProp: string,
+): number {
+  const direct = (style as Record<string, string>)[camelProp];
+  if (typeof direct === "string") return parseFloat(direct) || 0;
+  if (typeof style.getPropertyValue === "function") return parseFloat(style.getPropertyValue(dashedProp)) || 0;
+  return 0;
 }
 
 function buildAdjustedDOMRect(boardRect: DOMRect, inset: { l: number; t: number; r: number; b: number }): DOMRect {
@@ -29,12 +36,18 @@ export function readInventoryBoardMetrics(board: HTMLElement): {
   const cellSize = cellMetric.width;
   const gap = strideMetric.left - cellMetric.left - cellSize;
 
-  const style = window.getComputedStyle(board);
+  const style = window.getComputedStyle(board) as CSSStyleDeclaration | Record<string, string>;
   const inset = {
-    l: readStyleInset(style, "padding-left") + readStyleInset(style, "border-left-width"),
-    t: readStyleInset(style, "padding-top") + readStyleInset(style, "border-top-width"),
-    r: readStyleInset(style, "padding-right") + readStyleInset(style, "border-right-width"),
-    b: readStyleInset(style, "padding-bottom") + readStyleInset(style, "border-bottom-width"),
+    l:
+      readStyleInset(style, "paddingLeft", "padding-left") +
+      readStyleInset(style, "borderLeftWidth", "border-left-width"),
+    t: readStyleInset(style, "paddingTop", "padding-top") + readStyleInset(style, "borderTopWidth", "border-top-width"),
+    r:
+      readStyleInset(style, "paddingRight", "padding-right") +
+      readStyleInset(style, "borderRightWidth", "border-right-width"),
+    b:
+      readStyleInset(style, "paddingBottom", "padding-bottom") +
+      readStyleInset(style, "borderBottomWidth", "border-bottom-width"),
   };
 
   return { cellSize, gap, boardRect: buildAdjustedDOMRect(boardRect, inset), scrollTop: board.scrollTop };

@@ -418,9 +418,21 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
 
   const beginPointer = useCallback(
     (item: TItem, source: DragRect, pointer: DragPoint, pointerId: number) => {
+      const itemId = getItemId(item);
       if (cleanupTimerRef.current !== null) {
         window.clearTimeout(cleanupTimerRef.current);
         cleanupTimerRef.current = null;
+      }
+      // Skip re-initialisation when the same item is re-pressed without meaningful movement.
+      if (
+        pendingDragRef.current?.id === itemId &&
+        Math.hypot(
+          pointer.x - pendingDragRef.current.pointerStart.x,
+          pointer.y - pendingDragRef.current.pointerStart.y,
+        ) < DRAG_POINTER_ACTIVATE_DISTANCE_PX
+      ) {
+        pendingDragRef.current = { ...pendingDragRef.current, pointerId, pointerStart: pointer };
+        return;
       }
       heldCleanupRef.current?.();
       heldCleanupRef.current = null;
@@ -429,7 +441,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       setDragVisual(null);
       setActiveId(null);
       pendingDragRef.current = {
-        id: getItemId(item),
+        id: itemId,
         origin: getOrigin(item),
         source,
         pointerId,

@@ -6,9 +6,8 @@ import type { Screen } from "@/lib/routing";
 import type { CharacterId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import { computeGearManifest, type GearInstance, type GearLoadouts } from "@/lib/gear";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage";
-import type { Destination } from "@/features/alchemy/shared/types";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { createEmptyRewardState, restoreWildwoodRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { restoreWildwoodRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { restorePendingReward, serializePendingReward } from "@/lib/active-run-session";
 import {
   hydrateAlchemistState,
@@ -52,7 +51,7 @@ function restoreWildwoodReward(store: ReturnType<typeof getRunDomainStore>, acti
 
 function restoreReward(store: ReturnType<typeof getRunDomainStore>, activeRun: ActiveRunData): void {
   if (activeRun.currentScreen === "destination" && activeRun.destinationChoices.length > 0) {
-    store.setRewardState({ ...createEmptyRewardState(), destinations: activeRun.destinationChoices as Destination[] });
+    store.applyDestinationChoices(activeRun.destinationChoices);
   } else if (activeRun.pendingReward) {
     const restored = restorePendingReward(activeRun.pendingReward);
     if (restored) store.setRewardState(restored);

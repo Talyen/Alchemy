@@ -160,6 +160,14 @@ export function sampleDestinationChoices(
     };
   }
 
+  // Not enough unique destinations to fill DESTINATION_CHOICES — return all available.
+  if (destinations.length <= DESTINATION_CHOICES) {
+    return {
+      choices: [...destinations],
+      offerState: advanceDestinationOfferState(offerState, destinations, destinations),
+    };
+  }
+
   const weightContext = {
     lastOfferedDestinations: offerState.lastOfferedDestinations,
     roundsSinceOffered: offerState.roundsSinceOffered,
@@ -183,8 +191,8 @@ export function sampleDestinationChoices(
     const used = new Set(choices);
     const fillers = destinations.filter((d) => !used.has(d));
     while (choices.length < DESTINATION_CHOICES && fillers.length > 0) {
-      const idx = Math.floor(rng() * fillers.length);
-      const [picked] = fillers.splice(idx, 1);
+      const idx = Math.round(rng() * (fillers.length - 1));
+      const [picked] = fillers.splice(Math.min(idx, fillers.length - 1), 1);
       if (picked) choices.push(picked);
     }
   }

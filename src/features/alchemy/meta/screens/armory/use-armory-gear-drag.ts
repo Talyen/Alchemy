@@ -106,7 +106,7 @@ function computeOccupantRect(
   destRect: DragRect,
   board: HTMLDivElement | null,
 ): DragRect {
-  let sourceRect = destRect;
+  const sourceRect = destRect;
   if (!board) return sourceRect;
   const metrics = readInventoryBoardMetrics(board);
   if (!metrics) return sourceRect;

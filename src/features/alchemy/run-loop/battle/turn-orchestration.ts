@@ -95,6 +95,7 @@ export function createTurnOrchestrationDeps(
 
 /** Top-level end-turn dispatch. Returns true when an async draw sequence was started (haste), false otherwise. */
 export function resolveEndTurn(currentState: BattleState, session: number, deps: TurnOrchestrationDeps): boolean {
+  if (!deps.isCurrentBattleSession(session)) return false;
   const companionTexts: CombatTextEvent[] = [];
   const companionState = triggerCompanionEffects(deps, currentState, companionTexts);
 
@@ -164,6 +165,7 @@ export function resolveNormalEnemyTurn(
   session: number,
   deps: TurnOrchestrationDeps,
 ) {
+  if (!deps.isCurrentBattleSession(session)) return;
   const enemyTurnStartTexts = [...companionTexts, ...result.enemyTurnStartCombatTexts];
   const enemyResolutionTexts = result.enemyResolutionCombatTexts;
 

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
 
 interface UseArmoryTargetingEventsOptions {
@@ -74,9 +74,14 @@ export function useArmoryTargetingEvents({
   salvageTarget,
   clearTargeting,
 }: UseArmoryTargetingEventsOptions) {
+  const clearTargetingRef = useRef(clearTargeting);
+  useEffect(() => {
+    clearTargetingRef.current = clearTargeting;
+  });
+
   useEffect(() => {
     if (!salvageMode && !activeCurrencyId) return;
     if (salvageTarget) return;
-    return setupTargetingEventListeners(salvageMode, clearTargeting);
-  }, [activeCurrencyId, clearTargeting, salvageMode, salvageTarget]);
+    return setupTargetingEventListeners(salvageMode, () => clearTargetingRef.current());
+  }, [activeCurrencyId, salvageMode, salvageTarget]);
 }

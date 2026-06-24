@@ -9,6 +9,8 @@ import type {
   TrinketShopState,
   EquipmentShopState,
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
+import { DESTINATIONS, type Destination } from "@/features/alchemy/shared/types";
+import { createEmptyRewardState } from "@/lib/active-run-session/reward-types";
 import { defineFieldSetter, type ImmerSet } from "./_field-setter";
 import { createInitialSessionFields, type RunSessionFields, type RunDomainDataState } from "../run-domain-types";
 
@@ -39,6 +41,12 @@ export interface SessionActions {
       | ((prev: RunSessionFields["mysteryCardChoices"]) => RunSessionFields["mysteryCardChoices"]),
   ) => void;
   clearTransientSession: () => void;
+
+  /**
+   * Restore reward state with pre-sampled destinations on campaign resume.
+   * Filters raw string choices to valid Destination values.
+   */
+  applyDestinationChoices: (choices: string[]) => void;
 }
 
 export function defineSessionActions(set: ImmerSet<RunDomainDataState>): SessionActions {
@@ -72,6 +80,13 @@ export function defineSessionActions(set: ImmerSet<RunDomainDataState>): Session
     clearTransientSession: () =>
       set((state) => {
         state.session = { ...createInitialSessionFields(), pendingContentSystemType: "campaign" };
+      }),
+
+    applyDestinationChoices: (choices) =>
+      set((state) => {
+        const validDestinations = new Set<string>(Object.values(DESTINATIONS));
+        const filtered = choices.filter((c): c is Destination => validDestinations.has(c));
+        state.session.rewardState = { ...createEmptyRewardState(), destinations: filtered };
       }),
   };
 }
