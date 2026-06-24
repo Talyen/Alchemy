@@ -16,6 +16,7 @@ export function HomesteadTileFrame({
   imageAlt,
   imageClassName,
   footer,
+  wrapperClassName,
 }: {
   id: string;
   index: number;
@@ -27,6 +28,7 @@ export function HomesteadTileFrame({
   imageAlt: string;
   imageClassName: string;
   footer: ReactNode;
+  wrapperClassName?: string;
 }) {
   return (
     <StaggerItem
@@ -36,7 +38,7 @@ export function HomesteadTileFrame({
       onMouseLeave={() => setHoveredItemId(null)}
     >
       {hoveredItemId === id ? detailTooltip : null}
-      <div className="group w-full overflow-hidden rounded-shell-card p-3">
+      <div className={cn("group w-full overflow-hidden rounded-shell-card p-3", wrapperClassName)}>
         <TiltSurface
           className={cn(
             "relative mx-auto flex items-center justify-center overflow-hidden rounded-shell-card bg-stone-900",
@@ -51,9 +53,22 @@ export function HomesteadTileFrame({
   );
 }
 
-export function HomesteadTileCompletedFooter({ label, stars }: { label: string; stars: ReactNode }) {
+export function HomesteadTileCompletedFooter({
+  label,
+  stars,
+  wrapperClassName,
+}: {
+  label: string;
+  stars: ReactNode;
+  wrapperClassName?: string;
+}) {
   return (
-    <div className="mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-amber-100/75">
+    <div
+      className={cn(
+        "mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-amber-100/75",
+        wrapperClassName,
+      )}
+    >
       <span>{label}</span>
       {stars}
     </div>

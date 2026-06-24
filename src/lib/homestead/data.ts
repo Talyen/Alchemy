@@ -99,6 +99,7 @@ export const farmPlots = [
       (tier) => `Bread restores ${2 * tier} more Health`,
       "Gain Food after each run",
     ),
+    true,
   ),
   defineFarm(
     "herb-garden",

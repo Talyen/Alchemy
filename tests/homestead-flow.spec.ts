@@ -106,4 +106,30 @@ test.describe("Homestead Flow", () => {
       await expect(page.getByText("Botanical Distillation").first()).toBeVisible({ timeout: 3000 });
     });
   });
+
+  test.describe("Homestead Layout", () => {
+    let homestead: HomesteadPage;
+
+    test.beforeEach(async ({ page }) => {
+      homestead = new HomesteadPage(page);
+      await homestead.goto();
+    });
+
+    test("homestead shell does not resize when switching between tabs", async ({ page }) => {
+      const shell = page.locator(".alchemy-shell").first();
+      const heights: number[] = [];
+
+      for (const tab of ["Buildings", "Farm", "Research", "Companions"] as const) {
+        await homestead.switchTab(tab);
+        await page.waitForTimeout(300);
+        const box = await shell.boundingBox();
+        expect(box).not.toBeNull();
+        heights.push(box!.height);
+      }
+
+      const max = Math.max(...heights);
+      const min = Math.min(...heights);
+      expect(max - min).toBeLessThanOrEqual(1);
+    });
+  });
 });

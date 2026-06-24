@@ -33,8 +33,16 @@ export function defineBuilding(id: BuildingId, title: string, tiers: HomesteadUp
   return { id, title, description: "", buttonLabel: "Build", tiers };
 }
 
-export function defineFarm(id: FarmId, title: string, tiers: HomesteadUpgradeTier[]): HomesteadFarm {
-  return { id, title, description: "", yield: { ...ZERO_YIELD }, buttonLabel: "Build", tiers };
+export function defineFarm(id: FarmId, title: string, tiers: HomesteadUpgradeTier[], hidden?: boolean): HomesteadFarm {
+  return {
+    id,
+    title,
+    description: "",
+    yield: { ...ZERO_YIELD },
+    buttonLabel: "Build",
+    tiers,
+    ...(hidden ? { hidden: true } : {}),
+  };
 }
 
 export function defineResearch(id: ResearchId, title: string, tiers: HomesteadUpgradeTier[]): HomesteadResearch {

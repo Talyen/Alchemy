@@ -57,7 +57,7 @@ export function CompanionCardNode({
     ) : null;
 
   const footer = showButton ? (
-    <div className="mt-1.5 flex items-center gap-2">
+    <div className="mt-0.5 flex items-center gap-2">
       <DisabledTooltip show={!bondAffordable} message="Not Enough Resources">
         <Button variant="outline" disabled={!bondAffordable} onClick={() => onBond(card)}>
           {card.title}
@@ -70,6 +70,7 @@ export function CompanionCardNode({
     <HomesteadTileCompletedFooter
       label={discovered ? card.title : "Undiscovered"}
       stars={discovered ? <StarRating current={COMPANION_MAX_TIER} max={COMPANION_MAX_TIER} /> : null}
+      wrapperClassName="mt-0.5"
     />
   );
 
@@ -80,6 +81,7 @@ export function CompanionCardNode({
       hoveredItemId={hoveredItemId}
       setHoveredItemId={setHoveredItemId}
       detailTooltip={detailTooltip}
+      wrapperClassName="p-1.5"
       surfaceClassName={cn(
         HOMESTEAD_CONFIG.companionPageWidth,
         HOMESTEAD_CONFIG.companionAspectRatio,
