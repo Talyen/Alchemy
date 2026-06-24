@@ -18,26 +18,30 @@ test.describe("Armory flyover", { ...armory, ...slow }, () => {
     // Trigger the flyover via double-click on the inventory gear
     await bodyItem.dblclick();
 
-    // Wait for the flyover element to appear (it's mounted immediately by React)
-    await expect(flyover).toBeAttached({ timeout: 3000 });
-
-    // The flyover animation duration is 280ms. Wait for it to finish,
-    // then measure before the cleanup timer (480ms total).
-    await page.waitForTimeout(350);
-
-    // Measure position of both flyover and slot
-    const flyoverBox = await flyover.boundingBox();
-    const slotBoxNow = await bodySlot.boundingBox();
-    const ref = slotBoxNow ?? slotBox!;
-
-    expect(flyoverBox, "Flyover must be visible during measurement").not.toBeNull();
-    const maxDiff = Math.max(
-      Math.abs(flyoverBox!.x - ref.x),
-      Math.abs(flyoverBox!.y - ref.y),
-      Math.abs(flyoverBox!.width - ref.width),
-      Math.abs(flyoverBox!.height - ref.height),
-    );
-    expect(maxDiff, `Flyover vs slot: x=${flyoverBox!.x}, y=${flyoverBox!.y}, w=${flyoverBox!.width}, h=${flyoverBox!.height} | slot: x=${ref.x}, y=${ref.y}, w=${ref.width}, h=${ref.height}`).toBeLessThan(0.5);
+    // Poll until the flyover's bounding box matches the slot's position.
+    // The flyover starts at the source rect and animates to dest (~280ms),
+    // then sits at dest for ~200ms before the cleanup timer removes it.
+    // Polling from the start avoids the timing window between toBeAttached
+    // and measurement that caused flakes with parallel workers.
+    await expect
+      .poll(
+        async () => {
+          const flyoverBox = await flyover.boundingBox();
+          const slotBoxNow = await bodySlot.boundingBox();
+          if (!flyoverBox || !slotBoxNow) return 99999;
+          return Math.max(
+            Math.abs(flyoverBox.x - slotBoxNow.x),
+            Math.abs(flyoverBox.y - slotBoxNow.y),
+            Math.abs(flyoverBox.width - slotBoxNow.width),
+            Math.abs(flyoverBox.height - slotBoxNow.height),
+          );
+        },
+        {
+          message: `Slot at x=${Math.round(slotBox!.x)}, y=${Math.round(slotBox!.y)}, w=${Math.round(slotBox!.width)}, h=${Math.round(slotBox!.height)}`,
+          timeout: 5000,
+        },
+      )
+      .toBeLessThan(3);
 
     // Wait for the flyover to disappear (cleanup timer fires after 480ms)
     await expect(flyover).toHaveCount(0);

@@ -1,9 +1,16 @@
 import { Sparkles } from "lucide-react";
-import { getCraftingCurrencyDefinition, gearDefinitions, type GearInstance, type CraftingCurrencyId } from "@/lib/gear";
+import {
+  getCraftingCurrencyDefinition,
+  gearDefinitions,
+  type GearInstance,
+  type GearSlot,
+  type CraftingCurrencyId,
+} from "@/lib/gear";
 import { type CharacterId } from "@/lib/game-data";
 import { ConfirmationDialog } from "../../../shared/ui/shared-ui";
 import { GearItemTitle } from "../../../shared/ui/gear-item-title";
 import { DragVisualPortal } from "./armory-drag-visual-portal";
+import { GearSlotArt } from "./parts/gear-slot-art";
 import { ArmoryCurrencyCursor } from "./armory-currency-targeting";
 import { ArmoryTransferMenu, type TransferMenuState } from "./armory-transfer-menu";
 import { playUISound } from "@/lib/audio";
@@ -99,7 +106,11 @@ export function ArmoryOverlays({
           </div>
         </DragVisualPortal>
       ) : null}
-      {dragVisual && dragDefinition ? (
+      {dragVisual && dragDefinition && dragVisual.flyover && dragVisual.destination?.kind === "equipment" ? (
+        <DragVisualPortal visual={dragVisual} onComplete={onClearDragState}>
+          <GearSlotArt definition={dragDefinition} slot={dragVisual.destination.slot as GearSlot} />
+        </DragVisualPortal>
+      ) : dragVisual && dragDefinition ? (
         <DragVisualPortal visual={dragVisual} className="bg-background/60" onComplete={onClearDragState}>
           <img
             src={dragDefinition.art}

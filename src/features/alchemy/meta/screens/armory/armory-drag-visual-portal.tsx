@@ -27,7 +27,7 @@ function computeTransformOrigin(
   release: { left: number; top: number },
 ): { x: number; y: number } | boolean {
   if (!visual.settling && !visual.releasing && !visual.flyover) return false;
-  const origin = visual.flyover ? { left: Math.round(startRect.left), top: Math.round(startRect.top) } : release;
+  const origin = visual.flyover ? { left: startRect.left, top: startRect.top } : release;
   return { x: origin.left, y: origin.top };
 }
 
@@ -49,12 +49,12 @@ export function DragVisualPortal({
   const isDrag = !visual.settling && !visual.releasing && !visual.flyover;
   const startRect = visual.source;
   const release = {
-    left: Math.round(visual.releaseRect?.left ?? visual.rect.left),
-    top: Math.round(visual.releaseRect?.top ?? visual.rect.top),
+    left: visual.releaseRect?.left ?? visual.rect.left,
+    top: visual.releaseRect?.top ?? visual.rect.top,
   };
   const dest = {
-    left: Math.round(visual.rect.left),
-    top: Math.round(visual.rect.top),
+    left: visual.rect.left,
+    top: visual.rect.top,
     width: Math.round(visual.rect.width),
     height: Math.round(visual.rect.height),
   };

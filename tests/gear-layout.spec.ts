@@ -51,7 +51,7 @@ test.describe("Gear layout", { ...armory, ...slow }, () => {
   }
 
   test("scrolls only occupied inventory rows", async ({ page }) => {
-    const rings = Array.from({ length: 57 }, (_, index) => ({
+    const rings = Array.from({ length: 65 }, (_, index) => ({
       instanceId: `ring-${index}`,
       definitionId: "ruby-ring-basic" as const,
       affixes: [],
@@ -60,7 +60,7 @@ test.describe("Gear layout", { ...armory, ...slow }, () => {
 
     const board = page.getByTestId("armory-inventory-board");
     await expect(board).toHaveAttribute("data-scrollable", "true");
-    expect(await gearItemLocator(page, "Ruby Ring").count()).toBe(57);
+    expect(await gearItemLocator(page, "Ruby Ring").count()).toBe(65);
     await board.hover();
     await page.mouse.wheel(0, 500);
 

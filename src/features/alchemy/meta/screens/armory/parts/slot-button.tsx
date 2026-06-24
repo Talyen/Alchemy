@@ -1,11 +1,11 @@
 import { memo, useEffect, useRef, useState, type FocusEvent } from "react";
-import { gearDefinitions, type GearDefinition, type GearInstance, type GearLoadout, type GearSlot } from "@/lib/gear";
-import { gearSlotBackgroundArt } from "@/lib/game-data";
+import { gearDefinitions, type GearInstance, type GearLoadout, type GearSlot } from "@/lib/gear";
 import { canApplyCraftingCurrency, isGearCompatibleWithLoadoutSlot, type CraftingCurrencyId } from "@/lib/gear";
 import { playUISound } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 import { GearTooltipPortal } from "../gear-tooltip-portal";
 import { SLOT_LABELS } from "./grid-styles";
+import { GearSlotArt } from "./gear-slot-art";
 import {
   SALVAGE_TARGET_RING,
   SALVAGE_TARGET_SHADOW,
@@ -28,37 +28,6 @@ function isSlotCompatible(
   if (!isDraggingActive || !draggedGear) return false;
   const def = gearDefinitions[draggedGear.definitionId];
   return def ? isGearCompatibleWithLoadoutSlot(def, slot, loadout, inventory) : false;
-}
-
-function GearSlotArt({
-  definition,
-  slot,
-  isHidden,
-}: {
-  definition: GearDefinition | undefined;
-  slot: GearSlot;
-  isHidden: boolean;
-}) {
-  return (
-    <div className="relative h-full w-full overflow-hidden rounded-xl">
-      <img
-        src={gearSlotBackgroundArt[slot]}
-        alt=""
-        data-testid="armory-slot-background"
-        className="absolute inset-0 h-full w-full object-cover brightness-[0.65]"
-      />
-      {definition?.art ? (
-        <img
-          src={definition.art}
-          alt=""
-          className={cn(
-            "absolute -inset-px z-10 h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated",
-            isHidden && "opacity-0",
-          )}
-        />
-      ) : null}
-    </div>
-  );
 }
 
 function CompatibilityOverlay({

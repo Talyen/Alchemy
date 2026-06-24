@@ -283,8 +283,6 @@ test.describe("Gear drag positions", { ...armory, ...slow }, () => {
     expect(styles.filter).toBe("none");
     expect(styles.opacity).toBe("1");
 
-    expect(styles.left % 1).toBe(0);
-    expect(styles.top % 1).toBe(0);
     expect(styles.width % 1).toBe(0);
     expect(styles.height % 1).toBe(0);
     expect(styles.transform).toBe("none");
