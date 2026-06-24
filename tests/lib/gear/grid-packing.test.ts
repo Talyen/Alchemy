@@ -6,7 +6,7 @@ import {
 } from "@/lib/gear/grid-packing";
 import { boardItemKey, resolveMoveWithSwap, type BoardItem } from "@/lib/gear/board-moves";
 
-const COLS = 7;
+const COLS = 8;
 const pos = (positions: Map<string, { col: number; row: number }>, item: Pick<BoardItem, "id" | "kind">) =>
   positions.get(boardItemKey(item));
 
@@ -25,17 +25,17 @@ describe("packInventoryGrid", () => {
     ]);
   });
 
-  it("packs 56 single-cell items into exactly 8 rows on a 7-column board", () => {
+  it("packs 56 single-cell items into exactly 7 rows on an 8-column board", () => {
     const items = Array.from({ length: 56 }, (_, index) => ({ id: String(index) }));
     const packed = packInventoryGrid(items, COLS, () => ({ w: 1, h: 1 }));
     expect(packed).toHaveLength(56);
-    expect(packed[55]).toEqual({ item: items[55], col: 7, row: 8, w: 1, h: 1 });
+    expect(packed[55]).toEqual({ item: items[55], col: 8, row: 7, w: 1, h: 1 });
   });
 
-  it("rolls into a ninth row when there are 57 items", () => {
+  it("rolls into an eighth row when there are 57 items", () => {
     const items = Array.from({ length: 57 }, (_, index) => ({ id: String(index) }));
     const packed = packInventoryGrid(items, COLS, () => ({ w: 1, h: 1 }));
-    expect(packed[56]).toEqual({ item: items[56], col: 1, row: 9, w: 1, h: 1 });
+    expect(packed[56]).toEqual({ item: items[56], col: 1, row: 8, w: 1, h: 1 });
   });
 
   it("returns an empty array for an empty input", () => {

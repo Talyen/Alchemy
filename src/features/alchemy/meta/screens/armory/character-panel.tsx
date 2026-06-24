@@ -59,9 +59,9 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
   return (
     <section
       data-testid="armory-left-panel"
-      className="alchemy-shell relative flex min-w-0 flex-col md:flex-row items-center justify-center gap-6 rounded-shell-dialog border border-border/80 p-5"
+      className="alchemy-shell relative flex min-w-0 flex-col md:flex-row items-center justify-center gap-4 rounded-shell-dialog border border-border/80 p-3"
     >
-      <div data-testid="armory-character-panel" className="flex min-w-0 flex-col items-center justify-center px-4 py-2">
+      <div data-testid="armory-character-panel" className="flex min-w-0 flex-col items-center justify-center px-2 py-2">
         <h2 className="text-center font-sans text-lg text-amber-100">{characters[characterId].name}</h2>
         <TiltSurface
           testId="armory-character-art-container"
@@ -85,7 +85,7 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
 
       <div data-testid="armory-equipment-panel" className="relative flex min-w-0 flex-col items-center p-1">
         <h2 className="text-center font-sans text-lg text-amber-100">Equipment</h2>
-        <div data-testid="armory-equipment-board" className="armory-equipment-board relative mt-4 aspect-[6/7]">
+        <div data-testid="armory-equipment-board" className="armory-equipment-board relative mt-4">
           {EQUIP_SLOTS.map((slot: GearSlot) => {
             const instanceId = loadout[slot];
             return (

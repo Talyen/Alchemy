@@ -1,8 +1,9 @@
-/* Inventory grid: INVENTORY_COLS=7, INVENTORY_VISIBLE_ROWS=8 (inventory-layout.ts) */
+/* Inventory grid: INVENTORY_COLS=8, INVENTORY_VISIBLE_ROWS=8 (inventory-layout.ts) */
 .armory-workspace {
   container-type: size;
   --armory-board-gap: 0.375rem;
-  --armory-cell-size: min(6.8cqh, 5.5rem, calc((100cqw - 5rem) / 7));
+  --armory-inventory-cols: 8;
+  --armory-cell-size: round(nearest, min(6.8cqh, 5.5rem, calc((100cqw - 5rem) / var(--armory-inventory-cols))), 1px);
 }
 
 .armory-character-art-container {
@@ -28,7 +29,10 @@
 }
 
 .armory-inventory-board {
-  width: calc(7 * var(--armory-cell-size) + 6 * var(--armory-board-gap) + 22px);
+  width: calc(
+    var(--armory-inventory-cols) * var(--armory-cell-size) + (var(--armory-inventory-cols) - 1) *
+      var(--armory-board-gap) + 22px
+  );
   height: calc(8 * var(--armory-cell-size) + 7 * var(--armory-board-gap) + 14px);
   padding: 6px 12px 6px 6px;
   max-width: 100%;
@@ -41,13 +45,17 @@
 
 @container (min-width: 76rem) {
   .armory-workspace-grid {
-    --armory-cell-size: min(
-      6.8cqh,
-      5.5rem,
-      calc((40cqw - 6 * var(--armory-board-gap) - 2rem) / 7),
-      calc((60cqw - 19rem - 5 * var(--armory-board-gap)) / 6)
+    --armory-cell-size: round(
+      nearest,
+      min(
+        6.8cqh,
+        5.5rem,
+        calc((40cqw - 6 * var(--armory-board-gap) - 2rem) / var(--armory-inventory-cols)),
+        calc((60cqw - 19rem - 5 * var(--armory-board-gap)) / 6)
+      ),
+      1px
     );
-    grid-template-columns: 3fr 2fr;
+    grid-template-columns: 2.4fr 2fr;
   }
 }
 

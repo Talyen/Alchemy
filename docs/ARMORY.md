@@ -146,7 +146,7 @@ The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not call `useGe
 
 ## Board packing
 
-The inventory is a **7-column × 8-row** board (the `INVENTORY_COLS` × `INVENTORY_VISIBLE_ROWS` constants). Gear footprints are defined per-slot in `GEAR_FOOTPRINT` (`src/lib/gear/inventory-layout.ts`):
+The inventory is an **8-column × 8-row** board (the `INVENTORY_COLS` × `INVENTORY_VISIBLE_ROWS` constants). Gear footprints are defined per-slot in `GEAR_FOOTPRINT` (`src/lib/gear/inventory-layout.ts`):
 
 | slot | w × h | slot | w × h |
 |------|-------|------|-------|

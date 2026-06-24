@@ -33,20 +33,20 @@ describe("packInventory", () => {
     });
   });
 
-  it("fits exactly eight rows without requiring overflow", () => {
+  it("fits exactly seven rows without requiring overflow", () => {
     const items = Array.from({ length: 56 }, (_, index) => index);
-    const packed = packInventory(items, 7, () => ({ w: 1, h: 1 }));
+    const packed = packInventory(items, 8, () => ({ w: 1, h: 1 }));
 
     expect(packed.items).toHaveLength(56);
-    expect(packed.occupiedRows).toBe(8);
+    expect(packed.occupiedRows).toBe(7);
   });
 
-  it("continues into a ninth row instead of creating a page", () => {
+  it("continues into an eighth row instead of creating a page", () => {
     const items = Array.from({ length: 57 }, (_, index) => index);
-    const packed = packInventory(items, 7, () => ({ w: 1, h: 1 }));
+    const packed = packInventory(items, 8, () => ({ w: 1, h: 1 }));
 
-    expect(packed.occupiedRows).toBe(9);
-    expect(packed.items[56]).toEqual({ item: 56, col: 1, row: 9, w: 1, h: 1 });
+    expect(packed.occupiedRows).toBe(8);
+    expect(packed.items[56]).toEqual({ item: 56, col: 1, row: 8, w: 1, h: 1 });
   });
 
   it("uses the selected slot footprint for filtered inventory", () => {
@@ -63,7 +63,7 @@ describe("packInventory", () => {
   });
 
   it("returns no occupied rows for an empty inventory", () => {
-    expect(packInventory([], 7, () => ({ w: 1, h: 1 }))).toEqual({ items: [], occupiedRows: 0 });
+    expect(packInventory([], 8, () => ({ w: 1, h: 1 }))).toEqual({ items: [], occupiedRows: 0 });
   });
 
   it("rejects footprints wider than the board", () => {
@@ -108,7 +108,7 @@ describe("packInventory", () => {
       { instanceId: "item1", definitionId: "leather-helm-basic" },
       { instanceId: "item2", definitionId: "leather-belt-basic" },
     ];
-    const result = packInventoryWithPositions(items, 7, {
+    const result = packInventoryWithPositions(items, 8, {
       item1: { col: 1, row: 1 },
       item2: { col: 1, row: 1 },
     });
@@ -124,7 +124,7 @@ describe("packInventory", () => {
     ];
     const result = packCurrencyWithPositions(
       ["voidstone", "discordant-dice"],
-      7,
+      8,
       {
         voidstone: { col: 4, row: 1 },
         "discordant-dice": { col: 1, row: 1 },
@@ -162,7 +162,7 @@ describe("packInventory", () => {
         "severance-maw": 0,
         "smiths-whetstone": 0,
       },
-      cols: 7,
+      cols: 8,
     });
 
     expect(result.activeCurrencyIds).toEqual(["voidstone"]);
@@ -206,7 +206,7 @@ describe("packInventory", () => {
     ];
 
     expect(
-      canOccupyVacatedInventoryPlacement(items, "incoming", { w: 2, h: 2 }, { w: 2, h: 2 }, { col: 3, row: 2 }, 7),
+      canOccupyVacatedInventoryPlacement(items, "incoming", { w: 2, h: 2 }, { w: 2, h: 2 }, { col: 3, row: 2 }, 8),
     ).toBe(true);
   });
 
@@ -217,7 +217,7 @@ describe("packInventory", () => {
     ];
 
     expect(
-      canOccupyVacatedInventoryPlacement(items, "incoming", { w: 2, h: 1 }, { w: 2, h: 2 }, { col: 1, row: 1 }, 7),
+      canOccupyVacatedInventoryPlacement(items, "incoming", { w: 2, h: 1 }, { w: 2, h: 2 }, { col: 1, row: 1 }, 8),
     ).toBe(false);
   });
 
