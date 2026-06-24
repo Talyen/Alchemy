@@ -21,34 +21,14 @@ function computeDragTransition(visual: DragVisualBase): Record<string, unknown> 
   return { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 };
 }
 
-function computeDragInitial(
+function computeTransformOrigin(
   visual: DragVisualBase,
   startRect: DragRect,
-  release: { left: number; top: number; width: number; height: number },
-) {
+  release: { left: number; top: number },
+): { x: number; y: number } | boolean {
   if (!visual.settling && !visual.releasing && !visual.flyover) return false;
-  if (visual.flyover)
-    return {
-      left: Math.round(startRect.left),
-      top: Math.round(startRect.top),
-      width: Math.round(startRect.width),
-      height: Math.round(startRect.height),
-    };
-  return release;
-}
-
-function computeDragStyle(
-  isDrag: boolean,
-  dest: { left: number; top: number; width: number; height: number },
-  startRect: DragRect,
-) {
-  if (isDrag) return dest;
-  return {
-    left: Math.round(startRect.left),
-    top: Math.round(startRect.top),
-    width: Math.round(startRect.width),
-    height: Math.round(startRect.height),
-  };
+  const origin = visual.flyover ? { left: Math.round(startRect.left), top: Math.round(startRect.top) } : release;
+  return { x: origin.left, y: origin.top };
 }
 
 export function DragVisualPortal({
@@ -71,8 +51,6 @@ export function DragVisualPortal({
   const release = {
     left: Math.round(visual.releaseRect?.left ?? visual.rect.left),
     top: Math.round(visual.releaseRect?.top ?? visual.rect.top),
-    width: Math.round(visual.releaseRect?.width ?? startRect.width),
-    height: Math.round(visual.releaseRect?.height ?? startRect.height),
   };
   const dest = {
     left: Math.round(visual.rect.left),
@@ -80,17 +58,28 @@ export function DragVisualPortal({
     width: Math.round(visual.rect.width),
     height: Math.round(visual.rect.height),
   };
-  const dragStyle = computeDragStyle(isDrag, dest, startRect);
+
   const arrow = visual.settling || (completeOnFlyover && visual.flyover);
+
+  let initialTransform: { x: number; y: number } | false = false;
+  if (!isDrag) {
+    const origin = computeTransformOrigin(visual, startRect, release);
+    initialTransform = typeof origin === "object" ? { x: origin.x - dest.left, y: origin.y - dest.top } : false;
+  }
 
   return createPortal(
     <motion.div
       key={isDrag ? "drag" : "settle"}
       data-testid={testId}
       className={cn("pointer-events-none fixed z-[120] overflow-hidden rounded-xl", className)}
-      style={dragStyle}
-      initial={computeDragInitial(visual, startRect, release)}
-      animate={isDrag ? false : dest}
+      style={{
+        left: dest.left,
+        top: dest.top,
+        width: dest.width,
+        height: dest.height,
+      }}
+      initial={isDrag ? false : initialTransform}
+      animate={isDrag ? false : { x: 0, y: 0 }}
       transition={computeDragTransition(visual)}
       onAnimationComplete={() => {
         if (!isDrag && arrow) onComplete();
