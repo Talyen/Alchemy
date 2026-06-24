@@ -1,18 +1,65 @@
 # Alchemy — Code quality audits
 
-Agent prompts for **code quality and UI/UX** — readability, hardening, interaction/layout review, and measurable code-quality criteria. Copy a section into your agent with target paths or a diff attached. For domain wiring (cards, saves, screens, gear), use [WORKFLOWS.md](./docs/WORKFLOWS.md) and [CONTRIBUTING.md](./CONTRIBUTING.md) instead.
+Agent prompts for **code quality and UI/UX** — readability, hardening, interaction/layout review, and measurable code-quality criteria. Each section is designed to be copy-pasted into an agent with no extra context: the audit itself tells the agent where to start. For domain wiring (cards, saves, screens, gear), use [WORKFLOWS.md](./docs/WORKFLOWS.md) and [CONTRIBUTING.md](./CONTRIBUTING.md) instead.
 
 **Docs:** [AGENTS.md](./AGENTS.md) (rules) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks & tests)
 
 **Verification tiers:** narrow area tests from [CONTRIBUTING — What to run when you change](./CONTRIBUTING.md#what-to-run-when-you-change) · **Default gate:** `npm run lint:ci && npm test` · **Pre-push parity:** `npm run check:push` · **Save/ship:** `npm run check:ship` (full release: `npm run check:ship:full` — also runs `npm run test:ship:e2e` and `npm run test:ship:desktop`)
 
-Qualitative audits use: **Goal** · **Check** · **Docs** · **When done**. Measurable criteria audits (in [Measurable code-quality criteria](#measurable-code-quality-criteria)) add a **Measure** field with a quantification command and numeric target.
+## How to use
+
+Each audit has the shape **Goal** · **Start here** · **Check** · **When done**. The **Start here** block is a concrete `rg` query (or named tool) the agent runs first to discover candidates across the codebase — you do not need to pre-select paths. If a diff or path is already in scope, hand it to the agent and tell it to **prefer that scope** but still use **Start here** to find adjacent issues.
+
+> **Token efficiency:** every **Start here** query is a candidate-list query, not a full-file read. Open files only for the top hits, batch reads by file (one open → many checks), and stop as soon as the candidates look clean. Do not read every match line — the line number is enough to navigate.
+
+Audits are split into two groups:
+
+- **[Change-time audits](#change-time-audits)** — run while iterating on a feature, fix, or refactor. Qualitative review with bounded scope.
+- **[Periodic audits](#periodic-audits)** — run on a schedule (nightly, post-milestone). Repository-wide health checks that are slow or noisy enough to gate the loop.
+
+Measurable audits live in [Measurable code-quality criteria](#measurable-code-quality-criteria) and add a **Measure** field (a quantification command and numeric target) before **Check**.
+
+### Quick reference
+
+| Audit                                                                         | Trigger                                          | Speed          | Scope                              |
+| ----------------------------------------------------------------------------- | ------------------------------------------------ | -------------- | ---------------------------------- |
+| [Readability & clarity](#readability--clarity-audit)                          | Touching complex code; before opening a PR       | seconds        | top 5 complexity offenders or diff |
+| [Behavior hardening](#behavior-hardening-audit)                               | Touching async/store/IO/modal boundaries         | seconds        | handler/persist hits or diff        |
+| [Test quality](#test-quality-audit)                                           | Weak-test signals; before opening a PR           | seconds        | low-assertion files or diff         |
+| [UI interaction & feedback](#ui-interaction--feedback-audit)                  | Touching drag/modal/tooltip/portal surfaces      | minutes (manual) | hits or diff                      |
+| [Layout & visual containment](#layout--visual-containment-audit)              | Touching popover/stage/scroll layout             | minutes (manual) | hits or diff                      |
+| [TODO/FIXME & runtime warning](#todofixme--runtime-warning-audit)             | Before pushing; periodic sweep                   | seconds        | `src/**`                           |
+| [Accessibility](#accessibility-audit)                                         | Touching interactive screens                     | minutes (manual) | hits or diff                      |
+| [Type safety density](#1-type-safety-density-audit) (#1)                      | Before pushing                                   | seconds        | `src/**`                           |
+| [Cyclomatic complexity](#2-cyclomatic-complexity-audit) (#2)                  | Before pushing                                   | seconds        | `src/**`                           |
+| [Dead code ratio](#3-dead-code-ratio-audit) (#3)                              | Before pushing                                   | seconds        | `src/**`                           |
+| [Function & file length](#4-function--file-length-audit) (#4)                 | Before pushing                                   | seconds        | `src/**`                           |
+| [Import coupling & boundary](#5-import-coupling--boundary-audit) (#5)         | Before pushing                                   | seconds        | `src/**`                           |
+| [Side-effect surface](#8-side-effect-surface-audit) (#8)                      | Before pushing                                   | seconds        | `src/**`                           |
+| [Change amplification](#6-change-amplification-audit) (#6)                    | Nightly / post-milestone / pre-refactor          | minutes        | git history                        |
+| [Single-use abstraction](#7-single-use-abstraction-audit) (#7)                | Nightly / post-milestone / pre-refactor          | minutes        | `src/**`                           |
+| [Code duplication density](#9-code-duplication-density-audit) (#9)            | Nightly / post-milestone / pre-refactor          | minutes        | `src/**`                           |
+| [Meaningful test coverage](#10-meaningful-test-coverage-audit) (#10)          | Nightly / post-milestone / pre-refactor          | minutes        | `src/**`                           |
+
+---
+
+## Change-time audits
+
+Run these while iterating on a feature, fix, or refactor. Each is qualitative review with a concrete starting query the agent uses to find candidates across the codebase.
 
 ---
 
 ## Readability & clarity audit
 
 **Goal:** Make code scannable without changing behavior.
+
+**Start here:** rank files by cyclomatic complexity and length — the offenders are usually the worst-readable too. Use file lists, not per-line output:
+
+```sh
+npx eslint --rule 'complexity: ["warn", 1]' --rule 'max-lines-per-function: ["warn", 30]' src
+```
+
+Open the top 5 files from the output and scan for the checks below. If a diff is in scope, start with the touched files and only widen if the touched files are already clean.
 
 **Check:**
 
@@ -33,6 +80,14 @@ Qualitative audits use: **Goal** · **Check** · **Docs** · **When done**. Meas
 
 **Goal:** Strengthen correctness at boundaries without defensive overkill.
 
+**Start here:** find module boundaries and re-entry points — async handlers, store actions, modal/overlay open/close, save/resume. Use `-l` so the agent gets a candidate file list (one read per file, many checks per read), not a per-line dump:
+
+```sh
+rg -l 'async function|useEffect|onClick=|addEventListener|persist|hydrate|resume' src --type ts -g '!*.test.*'
+```
+
+For each candidate file, walk the matches looking for the checks below. If a diff is in scope, prefer the touched files.
+
 **Check:**
 
 - Null/undefined/empty paths at module boundaries handled explicitly (not silently ignored)
@@ -50,6 +105,14 @@ Qualitative audits use: **Goal** · **Check** · **Docs** · **When done**. Meas
 ## Test quality audit
 
 **Goal:** Tests protect behavior without adding maintenance burden.
+
+**Start here:** find the lowest-assertion-density test files. The Measure command returns a per-file count without reading contents — the agent only opens a file when its count is unusually low. Cap the result with `head` so a giant tree doesn't print thousands of paths:
+
+```sh
+rg --no-filename -c -e '^\s*(expect|assert)' tests --type ts | sort -t: -k2 -n | head -50
+```
+
+Open the bottom 10–20 files from the list and apply the checks below. If a diff is in scope, prefer the touched test files.
 
 **Check:**
 
@@ -69,6 +132,14 @@ Qualitative audits use: **Goal** · **Check** · **Docs** · **When done**. Meas
 
 **Goal:** Find bugs desktop players feel but types miss — broken clicks, drag ghosts, stuck modes, missing feedback. **Desktop keyboard + mouse only** — hover tooltips and cursor feedback are fine.
 
+**Start here:** find the surfaces where drag, modal, targeting, or pointer capture are used. Scope to interactive components only (`tsx`, not `ts`) and skip tests so the result is small enough to read in one pass:
+
+```sh
+rg -l 'setPointerCapture|releasePointerCapture|onDrag|onPointerDown|modal|tooltip|portal' src --type tsx -g '!*.test.*'
+```
+
+For each candidate, run the checks below manually in dev. If a diff is in scope, prefer the touched screens.
+
 **Check:**
 
 - Pointer/drag: every `setPointerCapture` has matching release on up, cancel, and unmount; cursor/body styles restore on exit; no ghost clicks after drag
@@ -86,6 +157,14 @@ Qualitative audits use: **Goal** · **Check** · **Docs** · **When done**. Meas
 
 **Goal:** Find clipping, overflow, and mis-scaled UI from structure/CSS — not pixel-perfect polish.
 
+**Start here:** find popovers, tooltips, drag visuals, and stage containers — these are the surfaces most prone to clip/scale. A small candidate list (file paths only) keeps the audit cheap:
+
+```sh
+rg -l 'overflow-hidden|portal|vr-stage' src --type tsx -g '!*.test.*'
+```
+
+For each candidate, walk ancestors and check the rules below. If a diff is in scope, prefer the touched components.
+
 **Check:**
 
 - Walk ancestors of popovers/tooltips/drag visuals for `overflow-hidden`, `transform`, and scroll containers that clip floats
@@ -102,14 +181,27 @@ Qualitative audits use: **Goal** · **Check** · **Docs** · **When done**. Meas
 
 **Goal:** No stale markers, no `console.log` left in production code, and no swallowed warnings.
 
+**Start here:** run the three discovery queries below in order. Each one returns a file list (`-l`); open files only when the count is small (a 5-file list reads in 5 reads, not 50):
+
+```sh
+# 1. Stale markers
+rg -l 'TODO|FIXME|XXX|HACK' src --type ts
+
+# 2. console noise
+rg -l 'console\.(log|debug|info|trace)' src --type ts -g '!*.test.*'
+
+# 3. Swallowed errors
+rg -l 'catch\s*(\(\)\s*=>\s*\{\s*\}|{\s*\})' src --type ts
+```
+
 **Check:**
 
-- `TODO` and `FIXME` markers must include a reason and a target — per [AGENTS.md — Hard NO's (Comments)](./AGENTS.md#hard-nos). Find candidates: `rg -n 'TODO|FIXME|XXX|HACK' src --type ts` — every hit must be paired with a `(reason: ...)` or `// because ...` clause; bare markers are violations
-- `console.log` / `console.debug` calls in `src/**` (eslint `no-console` allows only `console.warn` / `console.error` per `eslint.config.js:74`) — find with `rg -n 'console\.(log|debug|info|trace)' src --type ts -g '!*.test.*'`. Strip before merging; surviving calls need a `// eslint-disable-next-line` with a reason
-- Swallowed errors: empty `catch {}` blocks or `.catch(() => {})` lambdas that drop the error — `rg -n 'catch\s*(\(\)\s*=>\s*\{\s*\}|{\s*\})' src --type ts` — every silent catch must log the error or document why silence is intentional
+- `TODO` and `FIXME` markers must include a reason and a target — per [AGENTS.md — Hard NO's (Comments)](./AGENTS.md#hard-nos). Every hit must be paired with a `(reason: ...)` or `// because ...` clause; bare markers are violations
+- `console.log` / `console.debug` calls in `src/**` (eslint `no-console` allows only `console.warn` / `console.error` per `eslint.config.js:74`). Strip before merging; surviving calls need a `// eslint-disable-next-line` with a reason
+- Swallowed errors: empty `catch {}` blocks or `.catch(() => {})` lambdas that drop the error. Every silent catch must log the error or document why silence is intentional
 - Unused `// @ts-expect-error` / `// @ts-ignore` — these should appear with a comment justifying the escape; bare ones are caught by [Type safety density audit](#1-type-safety-density-audit) but flag any without context here
 
-**When done:** `rg -n 'TODO|FIXME|XXX|HACK|console\.(log|debug|info|trace)|catch\s*(\(\)\s*=>\s*\{\s*\}|{\s*\})' src --type ts -g '!*.test.*'` (manual review) + `npm run lint:ci`
+**When done:** `rg -l 'TODO|FIXME|XXX|HACK|console\.(log|debug|info|trace)|catch\s*(\(\)\s*=>\s*\{\s*\}|{\s*\})' src --type ts -g '!*.test.*'` (manual review) + `npm run lint:ci`
 
 ---
 
@@ -117,9 +209,17 @@ Qualitative audits use: **Goal** · **Check** · **Docs** · **When done**. Meas
 
 **Goal:** Keyboard, screen-reader, and motion-sensitive users can complete core flows. **Desktop keyboard + screen reader only.**
 
+**Start here:** find the most-touched interactive screens and any custom controls (modals, drawers, popovers, drag surfaces). A small, scoped list keeps the audit cheap; sort by file size only after a candidate set exists:
+
+```sh
+rg -l '<button|<a |<div[^>]*tabIndex|role=' src --type tsx -g '!**/*.test.*'
+```
+
+Open the top 10–15 files (whichever fits in context). If a diff is in scope, prefer the touched screens.
+
 **Check:**
 
-- Every interactive element (button, link, focusable div) has an accessible name — `aria-label`, visible text, or `aria-labelledby`. Quick scan: `rg -n '<button|<a |<div[^>]*tabIndex' src --type tsx -g '!**/*.test.*'` and check for missing `aria-label` on icon-only controls
+- Every interactive element (button, link, focusable div) has an accessible name — `aria-label`, visible text, or `aria-labelledby`. Quick scan: re-run the Start-here query and check for missing `aria-label` on icon-only controls
 - Focus order matches visual order; modals trap focus while open and restore focus to the trigger on close
 - Visible focus ring on every focusable element — no `outline: none` without a replacement `:focus-visible` style
 - Color is never the only signal (statuses, error states) — pair with icon or text
@@ -142,6 +242,8 @@ The audits below each target a single measurable criterion with a target and a q
 ## 1. Type safety density audit
 
 **Goal:** Drive unsafe typing escapes toward zero in non-test source.
+
+**Start here:** run the three Measure queries in order. Each returns a per-line list — group hits by file before reading (one open per file beats 50 small reads). If the total count is under ~20, do not pre-filter; read them in one pass.
 
 **Measure:**
 
@@ -166,6 +268,8 @@ The audits below each target a single measurable criterion with a target and a q
 ## 2. Cyclomatic complexity audit
 
 **Goal:** No function exceeds complexity 10; p90 ≤ 6.
+
+**Start here:** run the Measure command at threshold 11. The warning list is the offender list — sort by warning count descending and open the top 5 files first; the rest can wait for the next pass.
 
 **Measure:**
 
@@ -192,6 +296,8 @@ The audits below each target a single measurable criterion with a target and a q
 
 **Goal:** Zero dead exports, imports, types, and files.
 
+**Start here:** `npm run deadcode:strict`. The knip output is grouped by category. Start with `Unused files` (cheapest), then `Unused exports` — both can be deleted outright. `Unused types` last because some are exported for downstream type-only consumers.
+
 **Measure:**
 
 - `npm run deadcode:strict` (knip, strict, includes entry exports) — target 0 findings
@@ -213,6 +319,8 @@ The audits below each target a single measurable criterion with a target and a q
 ## 4. Function & file length audit
 
 **Goal:** No function > 50 executable lines; no source file > 300 lines (excluding tests and generated files).
+
+**Start here:** run both Measure commands. ESLint warnings are the per-function offenders; the PowerShell snippet gives the top 20 files. Tackle the file-length list first (often dead code), then the per-function list. Cap both reads with `head`/`Select-Object -First` so the agent never loads more than 20 candidates.
 
 **Measure:**
 
@@ -238,6 +346,8 @@ The audits below each target a single measurable criterion with a target and a q
 
 **Goal:** Zero circular imports; efferent imports per module p90 ≤ 12, max ≤ 20; zero layer-boundary violations.
 
+**Start here:** run the Measure commands in order. Circular imports are blocking — fix those first (small set, high signal). Then `npm run lint` boundary violations. Efferent-count outliers are last and lowest priority; only read the top 5 files by count.
+
 **Measure:**
 
 - Circular imports: `npx -y madge --circular --extensions ts --ts-config tsconfig.json src` — target 0 (look for "Circular dependencies found" or listed cycles)
@@ -259,7 +369,11 @@ The audits below each target a single measurable criterion with a target and a q
 
 ## 6. Change amplification audit
 
+> **Periodic audit.** Do not run mid-feature. Schedule as nightly CI or run after a milestone. See [Running all periodic audits](#running-all-periodic-audits) for the wrapper command.
+
 **Goal:** Feature changes touch a small, predictable set of files — median ≤ 5 per `feat`/`fix`/`balance` commit; no single behavior change forces edits across > 8 files.
+
+**Start here:** run the script and read the `clean` view report — that's the "what developers actually author" sample. If `clean.n < 30`, widen `--since=3 months ago` to `6 months ago` (or `12 months ago`) before enforcing the target; below 15 commits, treat the audit as directional only.
 
 **Measure:**
 
@@ -297,6 +411,8 @@ Target: median ≤ 5 in clean view. No source file in > 25% of clean-view commit
 
 **Goal:** < 15% of abstractions (interfaces, generic helpers, factories, wrapper functions) have exactly one call site.
 
+**Start here:** `node scripts/audit-single-use.mjs` (or `npm run audit:single-use`). Read the top 25 single-use symbols — those are the highest-signal candidates. Pair with `npm run deadcode:strict` to catch the zero-use half.
+
 **Measure:**
 
 Run `node scripts/audit-single-use.mjs` (or `npm run audit:single-use`). The script scans every `src/**/*.{ts,tsx}` file (skipping tests, generated, and declaration files) for `export function|const|class|interface|type` declarations, then for each name counts non-definition references across the same tree. It reports the total number of exports, the number with ≤ 1 caller, the ratio, and a status of `OK` or `REVIEW`. The top 25 single-use symbols are listed with their declaring file.
@@ -326,6 +442,8 @@ Pair with `npm run deadcode:strict` (knip) — knip catches zero-use, the script
 
 **Goal:** Side effects (I/O, shared/global mutation, non-deterministic primitives) confined to designated seams (stores, storage, RNG injectors); zero in pure logic and UI components.
 
+**Start here:** run the Measure commands. The first `rg` returns a per-line list — group by file before opening; one read per file beats many small reads. Triage by file location (stores, storage, rng are allowed seams; everything else is a candidate). The battle-RNG second query is the hard rule — every hit is a violation.
+
 **Measure:**
 
 - Non-deterministic primitives outside seams:
@@ -348,6 +466,8 @@ Pair with `npm run deadcode:strict` (knip) — knip catches zero-use, the script
 
 ## 9. Code duplication density audit
 
+> **Periodic audit.** jscpd cold start is ~30–60s and the output is noisy on small samples. Run as nightly CI or before a refactor PR, not mid-feature.
+
 **Goal:** < 3% duplicated blocks (≥ 6 lines) across non-test source.
 
 **Measure:**
@@ -355,6 +475,8 @@ Pair with `npm run deadcode:strict` (knip) — knip catches zero-use, the script
 - `npx -y jscpd --path src --min-lines 6 --format typescript --ignore '**/*.test.*,**/*.spec.*' --reporters json,console`
 - Read the console summary line ("Total duplicated lines: X (Y%)") or `jscpd-report.json` `duplicates.percentage` — target < 3%.
 - List the top duplicated blocks by size from the report.
+
+> **Sample-size guard:** if the candidate set is small (e.g. one stale duplicate), do not extract a helper for it. The "Counterweight" check explicitly says "do not over-DRY coincidental similarity" — apply it before any extraction. The 3% target is a directional ceiling, not a quota.
 
 **Check:**
 
@@ -371,12 +493,16 @@ Pair with `npm run deadcode:strict` (knip) — knip catches zero-use, the script
 
 ## 10. Meaningful test coverage audit
 
-**Goal:** High test presence on exported domain logic; mutation score ≥ 60% on core modules.
+> **Periodic audit.** `npm run test:coverage` is slow and the export-presence heuristic is fragile. Run as nightly CI, not mid-feature.
+
+**Goal:** High test presence on exported domain logic; branch coverage ≥ 80% on core modules.
+
+**Start here:** `npm run test:coverage`. Open `coverage/index.html` and sort modules by branch coverage ascending — the lowest-coverage modules are the candidates. Pair the export-presence check (the second Measure bullet) by spot-checking a few low-coverage files manually.
 
 **Measure:**
 
 - Coverage: `npm run test:coverage` — review `coverage/` for modules with < 80% branch coverage on `src/lib/battle`, `src/lib/gear`, `src/features/alchemy/shared/storage`
-- Export presence: for each export in `src/lib/**`, confirm ≥ 1 test references it (`rg -l 'exportName' tests`) — target ≥ 90% on domain logic
+- Export presence (heuristic): for each export in `src/lib/**`, search for the symbol in `tests/` (`rg -l 'exportName' tests`) — target ≥ 90% on domain logic. **Caveat:** JSDoc/comments and re-exports produce false positives/negatives; treat the number as directional, not a gate.
 
 **Check:**
 
@@ -390,9 +516,17 @@ Pair with `npm run deadcode:strict` (knip) — knip catches zero-use, the script
 
 ---
 
-## Running all measurable audits
+## Periodic audits
 
-For a periodic sweep (nightly CI, post-milestone cleanup, or before a refactor), run every measurable audit in one shot:
+Run on a schedule — nightly CI, post-milestone, or before opening a refactor PR. These are repository-wide pattern audits that are slow, noisy, or measure history rather than current code. Do not run them mid-feature.
+
+The measurable periodic audits are: [#6 — change amplification](#6-change-amplification-audit), [#7 — single-use abstraction](#7-single-use-abstraction-audit), [#9 — code duplication density](#9-code-duplication-density-audit), [#10 — meaningful test coverage](#10-meaningful-test-coverage-audit). Each carries a `> **Periodic audit.**` banner at the top.
+
+---
+
+## Running all periodic audits
+
+For a periodic sweep (nightly CI, post-milestone cleanup, or before a refactor), run every periodic audit in one shot:
 
 ```sh
 npm run audit:all
@@ -408,12 +542,14 @@ This wraps `scripts/audit-all.mjs`, which runs in order:
 
 Total wall-clock time: ~3–5 minutes cold, ~30–60s warm. Any failed audit prints a non-zero exit code so CI can gate on it.
 
+> **Token note:** the wrapper invokes all five audits in sequence. If you only need a subset (e.g. just #6 and #7 for a refactor check), invoke the script commands directly from the matching **Start here** block — most return a single report file you can read once.
+
 The wrapper is **not** a pre-push gate — use `npm run check:push` for that. It is intentionally broader and slower, intended for one of:
 
 - a manual sweep before opening a refactor PR
 - a scheduled nightly CI job
 - a post-milestone cleanup pass
 
-To run a single audit in isolation, use `npm run audit:single-use` for #7, or invoke the exact command from that audit's **Measure** block.
+To run a single audit in isolation, use `npm run audit:single-use` for #7, or invoke the exact command from that audit's **Start here** block.
 
-`#1` (type safety), `#3` (dead code), `#8` (side-effect surface), `#9` (duplication), and `#10` (coverage) are excluded from the wrapper because they are already part of `npm run lint:ci` (`#1`, `#3`, `#8`) or `npm run test:coverage` (`#10`); `#9` is intentionally opt-in due to the `jscpd` cold-start cost.
+`#1` (type safety), `#3` (dead code), and `#8` (side-effect surface) are excluded from the wrapper because they are already part of `npm run lint:ci`. `#2` (cyclomatic complexity) and `#4` (function/file length) are excluded because the layered ESLint rules conflict with the project ESLint config in surprising ways — invoke them directly from their **Start here** blocks. `#9` (duplication) and `#10` (coverage) are excluded due to `jscpd` / `vitest --coverage` cold-start cost.
