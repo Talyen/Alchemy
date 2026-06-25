@@ -8,7 +8,7 @@ import {
 } from "@/lib/gear";
 import type { CharacterId } from "@/lib/game-data";
 import type { DragDestination, DragRect } from "./drag-types";
-import type { GearDragOrigin } from "./use-armory-gear-drag";
+import type { GearDragOrigin } from "./armory-gear-drag-types";
 import { findEquipSlotForDoubleClickedGear, getInventoryDragDestination } from "./armory-drag-helpers";
 import type { PackedInventoryItem } from "@/lib/gear";
 

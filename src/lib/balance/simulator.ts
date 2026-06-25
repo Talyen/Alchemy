@@ -44,7 +44,6 @@ export type {
   BattleSimulationResult,
   TalentPreset,
 } from "./simulator-types";
-export { simulateBatch } from "./simulator-batch";
 import { buildSimCompanionBondLevels } from "./homestead-preset";
 
 const LATE_AFFINITY_TALENT_CAP = 7;

@@ -2,6 +2,28 @@
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import {
+  agilityTraining,
+  alchemyLab,
+  blacksmithsForge,
+  botanicalDistillation,
+  chickenCoop,
+  companionSanctuary,
+  crystalGarden,
+  culinaryArts,
+  detectMagic,
+  herbGarden,
+  homesteadWishingWell,
+  huntersLodge,
+  keywordDefinitions,
+  leylineEnergy,
+  orchard,
+  pasture,
+  placeholderHomestead,
+  runesmithsWorkshop,
+  wheatField,
+  woolTailoring,
+} from "@/lib/game-data";
+import {
   MATERIAL_IDS,
   type HomesteadBuilding,
   type HomesteadFarm,
@@ -11,29 +33,9 @@ import {
   materialLabels,
 } from "@/lib/homestead/types";
 import { MaterialIcon, MaterialPill, matIconMap, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
-import { keywordDefinitions } from "@/lib/game-data";
 import { TabBar } from "../../../shared/ui/tab-bar";
 import { Hammer, Wheat, FlaskConical, PawPrint } from "lucide-react";
 import { tokenizeDescription } from "../../../shared/utils";
-import blacksmithsForge from "@/assets/optimized/blacksmiths-forge.webp";
-import chickenCoop from "@/assets/optimized/chicken-coop.webp";
-import herbGarden from "@/assets/optimized/herb-garden.webp";
-import pasture from "@/assets/optimized/pasture.webp";
-import huntersLodge from "@/assets/optimized/hunters-lodge.webp";
-import alchemyLab from "@/assets/optimized/alchemy-lab.webp";
-import crystalGarden from "@/assets/optimized/crystal-garden.webp";
-import wheatField from "@/assets/optimized/wheat-field.webp";
-import orchard from "@/assets/optimized/orchard.webp";
-import runesmithsWorkshop from "@/assets/optimized/runesmiths-workshop.webp";
-import companionSanctuary from "@/assets/optimized/companion-sanctuary.webp";
-import homesteadWishingWell from "@/assets/optimized/homestead-wishing-well.webp";
-import leylineEnergy from "@/assets/optimized/leyline-energy.webp";
-import detectMagic from "@/assets/optimized/detect-magic.webp";
-import botanicalDistillation from "@/assets/optimized/botanical-distillation.webp";
-import culinaryArts from "@/assets/optimized/culinary-arts.webp";
-import woolTailoring from "@/assets/optimized/wool-tailoring.webp";
-import agilityTraining from "@/assets/optimized/agility-training.webp";
-import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp";
 
 export type Tab = "buildings" | "companions" | "farm" | "research";
 

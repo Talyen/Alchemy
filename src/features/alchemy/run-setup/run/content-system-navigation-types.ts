@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { getDifficultyModifiers, type BattleCard, type DifficultyId } from "@/lib/game-data";
+import type { BattleCard, DifficultyId, getDifficultyModifiers } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { Destination, Screen } from "@/features/alchemy/shared/types";
 import type { DestinationOptionsInput } from "@/features/alchemy/run-loop/navigation/destination-flow";

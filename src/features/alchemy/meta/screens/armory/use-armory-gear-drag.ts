@@ -13,7 +13,7 @@ import {
   type PackedInventoryItem,
 } from "@/lib/gear";
 import { useBoardDrag } from "./use-board-drag";
-import type { DragDestination, DragPoint, DragRect } from "./drag-types";
+import type { DragPoint, DragRect } from "./drag-types";
 import {
   resolveEquipmentSlotAtPointer,
   calculateSecondaryDisplacedItems,
@@ -21,30 +21,17 @@ import {
 } from "./armory-drag-helpers";
 import { handleGearCommit, type GearCommitEnv } from "./armory-gear-commit";
 import { handleGearDoubleClickAction } from "./armory-gear-double-click";
-export type GearDragOrigin =
-  | { kind: "inventory"; placement: { col: number; row: number } }
-  | { kind: "equipment"; slot: GearSlot };
-export type GearPointerStart = (
-  instance: GearInstance,
-  origin: GearDragOrigin,
-  rect: DOMRect,
-  pointer: { x: number; y: number },
-  pointerId: number,
-) => void;
-export type GearPointerMove = (pointer: { x: number; y: number }, pointerId: number) => void;
-export type GearPointerEnd = (pointer: { x: number; y: number }, pointerId: number, cancelled?: boolean) => void;
 import { DOUBLE_CLICK_FLYOVER_CLEAR_DELAY_MS, EQUIPMENT_SNAP_INSET_RATIO } from "./drag-constants";
-export interface GearDragVisual {
-  instance: GearInstance | null;
-  source: DragRect;
-  rect: DragRect;
-  origin: GearDragOrigin;
-  destination: DragDestination | null;
-  settling?: boolean | undefined;
-  flyover?: boolean | undefined;
-  releasing?: boolean | undefined;
-  releaseRect?: DragRect | undefined;
-}
+import type { GearDragOrigin, GearDragVisual } from "./armory-gear-drag-types";
+
+export type {
+  GearDragOrigin,
+  GearDragVisual,
+  GearPointerEnd,
+  GearPointerMove,
+  GearPointerStart,
+} from "./armory-gear-drag-types";
+
 interface GearDragItem {
   instance: GearInstance;
   origin: GearDragOrigin;

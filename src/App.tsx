@@ -6,38 +6,38 @@ import { cn } from "@/lib/utils";
 import { characterArt, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import {
   AppBackgroundParticles,
+  AppScreenChromeProvider,
   AppHamburgerTrigger,
   GameMenuOverlay,
+  RenderAlchemyScreen,
+  StartupLoadingScreen,
   UnsupportedSaveOverlay,
+  applySaveDataToStores,
+  bootstrapAlchemySaveState,
+  useAlchemyAutosaveFromStores,
+  useAppAudioEffects,
+  useAppDisplayEffects,
+  useAppKeyboardShortcuts,
+  useGameMenuState,
+  useGlobalErrorHandlers,
+  useInitialLoadReady,
   useIsArmoryLocked,
-} from "@/app/app-overlays";
-import { useAppAudioEffects } from "@/app/use-app-audio-effects";
-import { useAppDisplayEffects } from "@/app/use-app-display-effects";
-import { useScreenAssetPreloadEffects } from "@/app/use-app-preload-effects";
+  useRenderedScreenTransition,
+  useReturnToRunNavigation,
+  useScreenAssetPreloadEffects,
+  useScreenParticleConfig,
+} from "@/app/app-shell";
 import { gearDefinitions } from "@/lib/gear";
-import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
-import { useGlobalErrorHandlers } from "@/app/use-global-error-handlers";
-import { useInitialLoadReady } from "@/app/use-initial-load-ready";
-import { useRenderedScreenTransition } from "@/app/use-rendered-screen-transition";
-import { useGameMenuState } from "@/app/use-game-menu-state";
-import { useAppKeyboardShortcuts } from "@/app/use-app-keyboard-shortcuts";
-import { useReturnToRunNavigation } from "@/app/use-return-to-run-navigation";
-import { useScreenParticleConfig } from "@/app/use-screen-particles";
 import { useDevShortcuts } from "@/features/alchemy/shared/utils/dev-mode";
-import { RenderAlchemyScreen } from "@/app/render-alchemy-screen";
-import { AppScreenChromeProvider } from "@/app/app-screen-chrome-context";
-import { StartupLoadingScreen } from "@/app/startup-loading-screen";
 import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { useHomesteadAdapter } from "@/features/alchemy/shared/stores/run-session-facade";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { bootstrapAlchemySaveState } from "@/features/alchemy/shared/storage/bootstrap-save-state";
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
 import { useActiveRunScreenValue, useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
-import { applySaveDataToStores } from "@/features/alchemy/shared/storage/bootstrap-save-state";
 
 const appStore = useAppStore;
 

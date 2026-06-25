@@ -7,7 +7,7 @@ import {
 } from "./types";
 import type { CraftingCurrencyBoardPositions, CraftingCurrencyBoardPositionsByCharacter } from "./crafting";
 import { buildArmoryBoardView } from "./board-view";
-import type { BoardSourceState } from "./store-helpers";
+import type { BoardSourceState } from "./store-state";
 
 type PositionRegistry = Record<string, { col: number; row: number }>;
 type CharacterPositionRegistry = Record<CharacterId, PositionRegistry>;

@@ -5,7 +5,7 @@ import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { tryUpgradeTierItem } from "@/lib/homestead/upgrades";
 import type { ImmerSet } from "./_field-setter";
 import type { RunDomainDataState } from "../run-domain-types";
-import type { ProgressActions } from "./progress-slice";
+import type { ProgressActions } from "./progress-action-types";
 
 export function createHomesteadProgressActions(
   set: ImmerSet<RunDomainDataState>,

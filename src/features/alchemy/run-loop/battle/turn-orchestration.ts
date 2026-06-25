@@ -263,5 +263,3 @@ function resolveCompanionFollowUpTexts(deps: CompanionTextsDeps, session: number
     return texts;
   }, []);
 }
-
-export { createBattleEndTurnUi } from "./end-turn-ui";

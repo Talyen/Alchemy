@@ -1,4 +1,4 @@
-import { buildArmoryBoardView, type CraftingCurrencyId, type GearInstance, type GearLoadouts } from "@/lib/gear";
+import type { buildArmoryBoardView, CraftingCurrencyId, GearInstance, GearLoadouts } from "@/lib/gear";
 import type { CharacterId } from "@/lib/game-data";
 import { CharacterAndEquipmentPanel } from "./character-panel";
 import { InventoryPanel } from "./inventory-panel";

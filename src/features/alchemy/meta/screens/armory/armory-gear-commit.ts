@@ -11,7 +11,7 @@ import { overlaps } from "@/lib/gear/grid-packing";
 import type { CharacterId } from "@/lib/game-data";
 import type { DragDestination, DragRect } from "./drag-types";
 import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
-import type { GearDragOrigin } from "./use-armory-gear-drag";
+import type { GearDragOrigin } from "./armory-gear-drag-types";
 
 export interface GearCommitEnv {
   characterId: CharacterId;

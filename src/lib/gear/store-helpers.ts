@@ -1,33 +1,16 @@
 import type { CharacterId } from "@/lib/game-data";
-import {
-  type GearBoardPositions,
-  type GearBoardPositionsByCharacter,
-  type GearInventories,
-  type GearLoadouts,
-} from "./types";
+import { type GearBoardPositions } from "./types";
 import { footprintForInstance } from "./footprints";
 import { type BoardItem, boardItemKey, resolveMoveWithSwap } from "./board-moves";
 import { packGridItems } from "./grid-packing";
 import { getGearInstanceTitle } from "./item-names";
 
-import {
-  type CraftingCurrencyId,
-  type CraftingCurrencyBoardPositions,
-  type CraftingCurrencyBoardPositionsByCharacter,
-  CRAFTING_CURRENCY_IDS,
-} from "./crafting";
+import { type CraftingCurrencyId, type CraftingCurrencyBoardPositions, CRAFTING_CURRENCY_IDS } from "./crafting";
 import { INVENTORY_COLS } from "./constants";
 import { syncBoardPositionsForState } from "./store-sync";
+import type { BoardSourceState } from "./store-state";
 
 export type BoardItemRef = { kind: "gear"; id: string } | { kind: "currency"; id: CraftingCurrencyId };
-
-export interface BoardSourceState {
-  inventories: GearInventories;
-  loadouts: GearLoadouts;
-  craftingCurrencies: Record<CraftingCurrencyId, number>;
-  boardPositionsByCharacter: GearBoardPositionsByCharacter;
-  currencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
-}
 
 function buildBoardItemsForCharacter(state: BoardSourceState, characterId: CharacterId): BoardItem[] {
   const equippedInstanceIds = new Set(Object.values(state.loadouts[characterId]).filter(Boolean) as string[]);
@@ -190,3 +173,4 @@ export function moveBoardItemForState(
 }
 
 export { updateGearStateAndSync } from "./store-sync";
+export type { BoardSourceState } from "./store-state";

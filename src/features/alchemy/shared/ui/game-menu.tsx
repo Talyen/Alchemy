@@ -12,7 +12,7 @@ const GAME_MENU_CONFIG = {
 
 type Gate = "talents" | "homestead" | "armory";
 
-type GameMenuProps = {
+interface GameMenuProps {
   isOpen: boolean;
   onClose: () => void;
   onMainMenu: () => void;
@@ -29,7 +29,7 @@ type GameMenuProps = {
   isTalentsLocked?: boolean;
   isHomesteadLocked?: boolean;
   isArmoryLocked?: boolean;
-};
+}
 
 interface MenuItem {
   key: string;
@@ -42,7 +42,7 @@ interface MenuItem {
   handler: () => void;
 }
 
-type BuildMenuItemsArgs = {
+interface BuildMenuItemsArgs {
   onClose: () => void;
   onMainMenu: () => void;
   onCollection: () => void;
@@ -54,7 +54,7 @@ type BuildMenuItemsArgs = {
   onReturnToRun: (() => void) | undefined;
   returnToRunLabel: "Return to Run" | "Return to Battle";
   currentScreen: Screen | undefined;
-};
+}
 
 function buildMenuItems({
   onClose,

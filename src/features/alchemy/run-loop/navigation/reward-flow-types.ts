@@ -2,7 +2,7 @@ import type { BattleState } from "@/lib/battle";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { GearInstance } from "@/lib/gear";
-import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
+import type { CONSTANTS, Destination, Screen } from "../../shared/types";
 import type { CardRewardState, RewardState } from "@/lib/active-run-session/reward-types";
 
 export type FinalizeRewardRoute = (typeof CONSTANTS.REWARD_ROUTES)[keyof typeof CONSTANTS.REWARD_ROUTES];
