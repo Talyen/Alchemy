@@ -323,4 +323,45 @@ describe("new wish talents", () => {
       }
     });
   });
+
+  it("wishCrystalGold grants gold on success roll", () => {
+    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const state = createTestBattleState({
+      talentEffects: { ...createTestBattleState().talentEffects, wishCrystalGold: 5 },
+      rng: () => 0.01,
+    });
+    const result = applyWishEffect(state, card, 1, []);
+    expect(result.gold).toBe(5);
+  });
+
+  it("wishCrystalGold grants crystal on failed roll", () => {
+    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const state = createTestBattleState({
+      talentEffects: { ...createTestBattleState().talentEffects, wishCrystalGold: 5 },
+      rng: () => 0.99,
+    });
+    const result = applyWishEffect(state, card, 1, []);
+    expect(result.pendingMaterials.crystal).toBe(5);
+  });
+
+  it("wishManaTrigger adds mana per wish", () => {
+    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const state = createTestBattleState({
+      mana: 2,
+      talentEffects: { ...createTestBattleState().talentEffects, manaOnWish: 2 },
+    });
+    const result = applyWishEffect(state, card, 1, []);
+    expect(result.mana).toBe(4);
+  });
+
+  it("wishBurnTrigger applies burn damage on wish", () => {
+    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const state = createTestBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      talentEffects: { ...createTestBattleState().talentEffects, burnOnWish: 3 },
+    });
+    const result = applyWishEffect(state, card, 1, []);
+    expect(result.enemyHealth).toBe(27);
+  });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
+import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
 import { companionLibrary } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
@@ -210,5 +211,142 @@ describe("processCompanionTurnStart", () => {
     // Doubling flags should remain unconsumed (false)
     expect(result.flags.firstBurnCardDoubledUsed).toBe(false);
     expect(result.flags.firstBurnTrinketDoubledUsed).toBe(false);
+  });
+
+  it("companionBleedDamageBonus adds to bleed-type companion (Panther) damage", () => {
+    const state = createTestBattleState({
+      activeCompanion: companionLibrary.panther,
+      talentEffects: {
+        ...createTestBattleState().talentEffects,
+        companionBleedDamageBonus: 3,
+      },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    // Panther base 1 bleed + bleed bonus 3 = 4, bleed status: 4 × 2 = 8.
+    expect(result.enemyStatuses.bleed).toBe(8);
+  });
+
+  it("companionVsFrozenBonus adds when enemy has freeze skip turns", () => {
+    const state = createTestBattleState({
+      activeCompanion: companionLibrary.imp,
+      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0, cooldown: 0 },
+      talentEffects: {
+        ...createTestBattleState().talentEffects,
+        companionVsFrozenBonus: 3,
+      },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    // Imp 1 burn + frozen bonus 3 = 4 damage → enemy 26.
+    expect(result.enemyHealth).toBe(26);
+  });
+
+  it("companionDoubledVsLowHealth doubles damage when enemy ≤ 30% HP", () => {
+    const state = createTestBattleState({
+      activeCompanion: companionLibrary.imp,
+      enemyHealth: 8,
+      enemyMaxHealth: 30,
+      talentEffects: {
+        ...createTestBattleState().talentEffects,
+        companionDoubledVsLowHealth: true,
+      },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    // Imp base 1 burn × 2 low-health = 2 → enemy 6.
+    expect(result.enemyHealth).toBe(6);
+  });
+
+  it("companionDamagePerManaCrystal scales damage with max mana", () => {
+    const state = createTestBattleState({
+      activeCompanion: companionLibrary.imp,
+      maxMana: 6,
+      talentEffects: {
+        ...createTestBattleState().talentEffects,
+        companionDamagePerManaCrystal: 200,
+      },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    // Imp base 1 + (6 × 200 / 2) = 1 + 600 = 601, burn status: 601.
+    expect(result.enemyStatuses.burn).toBe(601);
+  });
+
+  it("companionDamageBonus gear adds flat damage to companion", () => {
+    const state = createTestBattleState({
+      activeCompanion: companionLibrary.imp,
+      gearEffects: { ...defaultGearEffects, companionDamageBonus: 5 },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    // Imp 1 + 5 = 6 damage → enemy 24.
+    expect(result.enemyHealth).toBe(24);
+  });
+
+  it("gearEffects.companionDamageBonus adds to companion damage", () => {
+    const state = createTestBattleState({
+      activeCompanion: companionLibrary.imp,
+      gearEffects: { ...defaultGearEffects, companionDamageBonus: 5 },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    // Imp 1 + 5 = 6 damage → enemy 24.
+    expect(result.enemyHealth).toBe(24);
+  });
+
+  it("healOnCompanionAttack heals player when companion deals damage", () => {
+    const state = createTestBattleState({
+      activeCompanion: companionLibrary.imp,
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      gearEffects: {
+        ...createTestBattleState().gearEffects,
+        healOnCompanionAttack: 4,
+      },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    expect(result.playerHealth).toBe(14);
+  });
+
+  it("healOnCompanionAttack no-ops when companion has no damage effect", () => {
+    const state = createTestBattleState({
+      activeCompanion: companionLibrary["shield-scarab"],
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      gearEffects: {
+        ...createTestBattleState().gearEffects,
+        healOnCompanionAttack: 4,
+      },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    // Shield Scarab has no damage effects, so no heal.
+    expect(result.playerHealth).toBe(10);
+  });
+
+  it("companionLeechChance triggers leech heal on damage", () => {
+    const state = createTestBattleState({
+      activeCompanion: companionLibrary.imp,
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      talentEffects: {
+        ...createTestBattleState().talentEffects,
+        companionLeechChance: 100,
+      },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    // Imp deals 1 burn. Leech heal = leech(1) = at least 1 healing.
+    expect(result.playerHealth).toBeGreaterThan(10);
+    expect(result.enemyHealth).toBe(29);
+  });
+
+  it("companionLeechChance no-ops on failed roll", () => {
+    const state = createTestBattleState({
+      activeCompanion: companionLibrary.wolf,
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      talentEffects: {
+        ...createTestBattleState().talentEffects,
+        companionLeechChance: 50,
+      },
+      rng: () => 0.99,
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    // Roll fails, no leech.
+    expect(result.playerHealth).toBe(10);
   });
 });

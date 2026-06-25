@@ -198,4 +198,79 @@ describe("damage riders via applyCardEffects", () => {
     expect(result.enemyHealth).toBe(40);
     expect(result.playerHealth).toBeGreaterThan(10);
   });
+
+  it("archery play-twice ent ers the archery branch without recursion when chance is 0", () => {
+    const state = makeState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      playerStatuses: defaultPlayerStatusValues({ forge: 0 }),
+      talentEffects: {
+        ...defaultTalentEffects,
+        archeryPlayTwiceChance: 0,
+      },
+    });
+    const card = makeTestCard({
+      tags: ["archery"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // Archery branch hit (card has archery tag), but chance=0 prevents recursion
+    expect(result.enemyHealth).toBe(45);
+  });
+
+  it("nature leech heals player when natureLeechChance procs", () => {
+    const state = makeState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      talentEffects: { ...defaultTalentEffects, natureLeechChance: 100 },
+      rng: () => 0.01,
+      deck: [],
+      hand: [],
+      discard: [],
+      exhausted: [],
+    });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerHealth).toBeGreaterThan(10);
+  });
+
+  it("holy block grants block from holy damage percentage", () => {
+    const state = makeState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      playerStatuses: defaultPlayerStatusValues({ block: 0 }),
+      talentEffects: { ...defaultTalentEffects, holyBlockPercentFromDamage: 50 },
+      rng: () => 0.5,
+      deck: [],
+      hand: [],
+      discard: [],
+      exhausted: [],
+    });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 10 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // 50% of 10 = 5 block
+    expect(result.playerStatuses.block).toBe(5);
+  });
+
+  it("burn stun rider applies stun when talent procs on burn damage", () => {
+    const state = makeState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      talentEffects: { ...defaultTalentEffects, burnStunChance: 100 },
+      rng: () => 0.01,
+      deck: [],
+      hand: [],
+      discard: [],
+      exhausted: [],
+    });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyStatuses.stun).toBeGreaterThanOrEqual(5);
+  });
 });
