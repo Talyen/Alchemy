@@ -21,23 +21,31 @@ import {
   computeTalentEffects,
   type BattleCard,
   type BestiaryEntry,
-  type CharacterId,
   type KeywordId,
   type UnlockedTalents,
 } from "@/lib/game-data";
-import type { DifficultyModifier } from "@/lib/game-data";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { createSeededRng } from "@/lib/utils";
 import { MAX_PLAYER_HEALTH } from "../game-constants";
 import { createEmptyAnomalies, sampleAnomalies, type BattleAnomalies } from "./anomalies";
+import type {
+  BalancePlayPolicy,
+  BattleSimulationConfig,
+  BattleSimulationOutcome,
+  BattleSimulationResult,
+  TalentPreset,
+} from "./simulator-types";
+export type {
+  BalanceBatchConfig,
+  BalanceBatchResult,
+  BalancePlayPolicy,
+  BattleSimulationConfig,
+  BattleSimulationResult,
+  TalentPreset,
+} from "./simulator-types";
+export { simulateBatch } from "./simulator-batch";
 import { buildSimCompanionBondLevels } from "./homestead-preset";
-
-export type BalancePlayPolicy = "random-playable" | "greedy-damage" | "defensive-random";
-type BattleSimulationOutcome = "win" | "loss" | "timeout";
-
-import type { TalentPreset } from "./types";
-export type { TalentPreset };
 
 const LATE_AFFINITY_TALENT_CAP = 7;
 
@@ -65,67 +73,9 @@ function buildPresetManifest(keywords: KeywordId[], preset: TalentPreset): Talen
   return computeTalentEffects(unlockedTalents);
 }
 
-export interface BattleSimulationConfig {
-  characterId: CharacterId;
-  enemyId: string;
-  deck?: BattleCard[];
-  depth?: number;
-  trinketIds?: string[];
-  talentEffects?: TalentEffectManifest;
-  talentPreset?: TalentPreset;
-  difficultyModifiers?: DifficultyModifier[];
-  seed?: number;
-  maxTurns?: number;
-  policy?: BalancePlayPolicy;
-  playerHealth?: number;
-  playerMaxHealth?: number;
-  gold?: number;
-}
-
-export { ANOMALY_THRESHOLD_BY_PRESET, ANOMALY_METRICS, getAnomalyThreshold } from "./anomalies";
-
-export interface BattleSimulationResult {
-  characterId: CharacterId;
-  enemyId: string;
-  enemyType: BestiaryEntry["enemyType"];
-  outcome: BattleSimulationOutcome;
-  turns: number;
-  playerHealth: number;
-  playerMaxHealth: number;
-  enemyHealth: number;
-  enemyMaxHealth: number;
-  cardsPlayed: Record<string, number>;
-  totalCardsPlayed: number;
-  trinketIds: string[];
-  policy: BalancePlayPolicy;
-  seed: number;
-  anomalies: BattleAnomalies;
-}
-
-export type BalanceBatchConfig = Omit<BattleSimulationConfig, "seed"> & {
-  iterations: number;
-  seed?: number;
-};
-
-export interface BalanceBatchResult {
-  config: BalanceBatchConfig;
-  iterations: number;
-  wins: number;
-  losses: number;
-  timeouts: number;
-  winRate: number;
-  lossRate: number;
-  timeoutRate: number;
-  averageTurns: number;
-  averageHealthRemaining: number;
-  averageCardsPlayed: number;
-  cardPlayCounts: Record<string, number>;
-  results: BattleSimulationResult[];
-}
-
 const DEFAULT_MAX_TURNS = 30;
 const DEFAULT_POLICY: BalancePlayPolicy = "random-playable";
-const DEFAULT_SEED = 1;
+export const DEFAULT_SEED = 1;
 
 function randomIndex(rng: () => number, length: number): number {
   return Math.floor(rng() * length);
@@ -314,49 +264,5 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
     policy: orFallback(config.policy, DEFAULT_POLICY),
     seed,
     anomalies,
-  };
-}
-
-export function simulateBatch(config: BalanceBatchConfig): BalanceBatchResult {
-  const baseSeed = config.seed ?? DEFAULT_SEED;
-  const results = Array.from({ length: config.iterations }, (_, index) =>
-    simulateBattle({ ...config, seed: baseSeed + index }),
-  );
-
-  let wins = 0;
-  let losses = 0;
-  let timeouts = 0;
-  let turnTotal = 0;
-  let healthTotal = 0;
-  let cardsPlayedTotal = 0;
-  const cardPlayCounts: Record<string, number> = {};
-
-  for (const result of results) {
-    if (result.outcome === "win") wins += 1;
-    else if (result.outcome === "loss") losses += 1;
-    else timeouts += 1;
-    turnTotal += result.turns;
-    healthTotal += Math.max(0, result.playerHealth);
-    cardsPlayedTotal += result.totalCardsPlayed;
-    for (const [cardId, count] of Object.entries(result.cardsPlayed)) {
-      cardPlayCounts[cardId] = (cardPlayCounts[cardId] ?? 0) + count;
-    }
-  }
-
-  const iterations = config.iterations;
-  return {
-    config,
-    iterations,
-    wins,
-    losses,
-    timeouts,
-    winRate: wins / iterations,
-    lossRate: losses / iterations,
-    timeoutRate: timeouts / iterations,
-    averageTurns: turnTotal / iterations,
-    averageHealthRemaining: healthTotal / iterations,
-    averageCardsPlayed: cardsPlayedTotal / iterations,
-    cardPlayCounts,
-    results,
   };
 }

@@ -4,9 +4,8 @@ import { cardLibrary, selectRewardCards, trinketLibrary, type BattleCard, type T
 import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import type { BattleState } from "@/lib/battle";
 import { shuffle } from "@/lib/utils";
-import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
+import { CONSTANTS } from "../../shared/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { sampleItems } from "../../shared/utils/random";
 import {
@@ -43,6 +42,20 @@ export {
 export type { VictoryGoldInput, VictoryGoldResult, RewardGoldInput } from "./reward-math";
 
 import { computeRewardGold } from "./reward-math";
+import type {
+  BossRewardInput,
+  CombatRewardInput,
+  FinalizeRewardInput,
+  FinalizeRewardResult,
+  FinalizeRewardRoute,
+  RewardRouteTransitionHandlers,
+} from "./reward-flow-types";
+export type {
+  FinalizeRewardInput,
+  FinalizeRewardResult,
+  FinalizeRewardRoute,
+  RewardRouteTransitionHandlers,
+} from "./reward-flow-types";
 
 export function getRewardChoiceId(choice: BattleCard | TrinketEntry | GearInstance): string {
   return choice && typeof choice === "object" && "instanceId" in choice ? choice.instanceId : choice.id;
@@ -69,22 +82,6 @@ export function getRandomPotionCard(rng: () => number = Math.random): BattleCard
 export function getCompanionCardChoices(rng: () => number = Math.random): BattleCard[] {
   const companions = cardLibrary.filter((c) => c.effects?.some((e) => e.kind === "summon-companion"));
   return shuffle(companions, rng).slice(0, LABYRINTH_REWARD_CONFIG.companionCardChoices);
-}
-
-export type FinalizeRewardRoute = (typeof CONSTANTS.REWARD_ROUTES)[keyof typeof CONSTANTS.REWARD_ROUTES];
-
-export interface FinalizeRewardInput {
-  rewardState: RewardState;
-  companionRewardCards: BattleCard[] | null;
-}
-
-export interface FinalizeRewardResult {
-  selectedChoice: BattleCard | TrinketEntry | GearInstance | null;
-  selectedRewardType: RewardState["rewardType"];
-  materials: MaterialInventory;
-  nextRewardState: CardRewardState;
-  clearCompanionRewardCards: boolean;
-  route: FinalizeRewardRoute;
 }
 
 function resolveRewardRoute(contentSystemType: ContentSystemId, currentEnemyType: string): FinalizeRewardRoute {
@@ -141,15 +138,6 @@ export function finalizeRewardState({ rewardState, companionRewardCards }: Final
   };
 }
 
-export interface RewardRouteTransitionHandlers {
-  navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
-  completeRunVictory: (materials: MaterialInventory, onRenderedScreenCommit?: () => void) => void;
-  handleActComplete: (materials: MaterialInventory) => void;
-  onLabyrinthClearNode: () => void;
-  setCompanionRewardCards: (cards: BattleCard[] | null) => void;
-  setRewardState: (state: RewardState) => void;
-}
-
 export function executeRewardRouteTransition(
   route: FinalizeRewardResult["route"],
   materials: MaterialInventory,
@@ -180,32 +168,6 @@ export function executeRewardRouteTransition(
       handlers.navigateTo(CONSTANTS.SCREENS.DESTINATION, setReward);
       break;
   }
-}
-
-interface BossRewardInput {
-  gold: number;
-  bossBonus: number;
-  generousBonus: number;
-  talentGoldPerCombat: number;
-  materials: MaterialInventory;
-  trinketIds: string[];
-  goldMultiplier?: number;
-  rng?: () => number;
-  gearAstralChanceBonus?: number;
-}
-
-interface CombatRewardInput {
-  battleState: BattleState;
-  runDeck: BattleCard[];
-  gold: number;
-  eliteBonus: number;
-  generousBonus: number;
-  talentGoldPerCombat: number;
-  materials: MaterialInventory;
-  destinations: Destination[];
-  trinketIds: string[];
-  goldMultiplier?: number;
-  rng?: () => number;
 }
 
 export function createBossRewardState({

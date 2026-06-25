@@ -17,7 +17,6 @@ import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { flattenGearInventories } from "@/lib/gear";
 import { type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
-
 import { CONSTANTS, type Destination, type Screen } from "@/features/alchemy/shared/types";
 import {
   getRunAvailableDestinations,
@@ -31,7 +30,6 @@ import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/
 import type { ScreenTransitionOptions } from "./use-screen-transitions";
 import { useWildwoodGauntletFlow } from "./use-wildwood-gauntlet-flow";
 import type { WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
-
 export function useRunNavigation({
   screen,
   navigateTo,
@@ -74,12 +72,9 @@ export function useRunNavigation({
 }) {
   const run = useRunAdapter();
   const talents = useTalentAdapter();
-
   const setHasActiveBattle = useRunDomainStore((s) => s.setHasActiveBattle);
   const clearCardGhosts = useBattlePresentationStore((s) => s.clearCardGhosts);
-
   const completedDifficulties = useAppStore((s) => s.completedDifficulties);
-
   const draftedDeckRef = useRef<BattleCard[] | null>(null);
   const rngRef = useRef<() => number>(() => Math.random());
   const nav = useRunSessionNavigationSlice(screen);
@@ -92,7 +87,6 @@ export function useRunNavigation({
   const corruptionResult = nav.corruptionResult;
   const pendingCharacterId = nav.pendingCharacterId;
   const pendingContentSystemType = nav.pendingContentSystemType;
-
   const getAvailableDestinations = useCallback(
     (options: DestinationOptionsInput = {}): Destination[] => {
       const destinationIndexInAct = options.destinationIndexInAct ?? run.destinationIndexInAct;
@@ -109,11 +103,9 @@ export function useRunNavigation({
     },
     [run.destinationIndexInAct, run.completedDestinations, run.runPlayerHealth, run.runGold, run.runMaxHealth],
   );
-
   const returnToBattle = useCallback(() => {
     if (hasActiveBattle) navigateTo(CONSTANTS.SCREENS.BATTLE);
   }, [hasActiveBattle, navigateTo]);
-
   const wildwood = useWildwoodGauntletFlow({
     run,
     navigateTo,
@@ -121,7 +113,6 @@ export function useRunNavigation({
     setHasActiveBattle,
     clearCardHover,
   });
-
   const contentNav = useMemo(
     () =>
       createContentSystemNavigation({
@@ -154,7 +145,6 @@ export function useRunNavigation({
       wildwood.startNextWildwoodBoss,
     ],
   );
-
   function handleDraftComplete(draftedCards: BattleCard[]) {
     if (run.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
       contentNav.handleDraftComplete(draftedCards);
@@ -162,14 +152,11 @@ export function useRunNavigation({
     }
     wildwood.handleDraftComplete(draftedCards);
   }
-
   const mystery = useMysteryFlow();
-
   const beginMysteryEvent = useCallback(() => {
     mystery.beginMysteryEvent(() => navigateTo(CONSTANTS.SCREENS.MYSTERY));
     playUISound("musicBoxMystery");
   }, [mystery, navigateTo]);
-
   const flowHandlers = useMemo(
     () =>
       createRunFlowHandlers({
@@ -217,29 +204,23 @@ export function useRunNavigation({
       wildwood.handleWildwoodRewardComplete,
     ],
   );
-
   function goToScreen(nextScreen: Screen) {
     clearCardHover();
     navigateTo(nextScreen);
   }
-
   function selectRewardChoice(id: string) {
     flowHandlers.selectRewardChoice(id);
     wildwood.selectRewardChoice(id);
   }
-
   function handleCorruptCard(cardIndex: number) {
     applyCorruptionToDeck(run.runDeck, cardIndex, rngRef.current, run.setRunDeck);
   }
-
   function handleCorruptionExit() {
     flowHandlers.advanceToNextDestination();
   }
-
   function handleMysteryContinue() {
     flowHandlers.advanceToNextDestination();
   }
-
   function resetRunState() {
     cancelPending();
     clearCardGhosts();
@@ -249,12 +230,10 @@ export function useRunNavigation({
       teardownRun();
     });
   }
-
   function continueFromRunEnd() {
     clearCardHover();
     resetRunState();
   }
-
   return {
     runPhase,
     rewardState,

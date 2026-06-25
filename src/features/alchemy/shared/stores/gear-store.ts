@@ -1,9 +1,7 @@
 import { create } from "zustand";
 import type { CharacterId } from "@/lib/game-data";
 import {
-  createEmptyGearInventories,
   createEmptyGearBoardPositionsByCharacter,
-  createEmptyGearLoadouts,
   createEmptyCurrencyBoardPositionsByCharacter,
   equipGear,
   flattenGearInventories,
@@ -12,65 +10,21 @@ import {
   unequipGear,
   type GearBoardPositions,
   type GearBoardPositionsByCharacter,
-  type GearInstance,
   type GearInventories,
   type GearLoadouts,
   type GearSlot,
-  type CraftingCurrencyId,
-  type CraftingCurrencyBoardPositionsByCharacter,
   canApplyCraftingCurrency,
   applyCraftingCurrency,
-  EMPTY_CRAFTING_CURRENCIES,
   addCraftingCurrencies,
   normalizeCraftingCurrencies,
   GEAR_CHARACTER_IDS,
-  type BoardItemRef,
   updateGearStateAndSync,
   moveBoardItemForState,
   sortBoardForCharacter,
 } from "@/lib/gear";
+import type { GearStore } from "./gear-store-types";
 
-interface GearStore {
-  inventories: GearInventories;
-  loadouts: GearLoadouts;
-  boardPositionsByCharacter: GearBoardPositionsByCharacter;
-  currencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
-  craftingCurrencies: Record<CraftingCurrencyId, number>;
-  initialize: (
-    inventories: GearInventories,
-    loadouts: GearLoadouts,
-    boardPositionsByCharacter?: GearBoardPositionsByCharacter,
-    craftingCurrencies?: Partial<Record<CraftingCurrencyId, number>>,
-    currencyBoardPositionsByCharacter?: CraftingCurrencyBoardPositionsByCharacter,
-  ) => void;
-  addInstance: (instance: GearInstance, characterId: CharacterId) => void;
-  transferToInventory: (instanceId: string, targetCharacterId: CharacterId) => boolean;
-  equip: (
-    characterId: CharacterId,
-    slot: GearSlot,
-    instance: GearInstance,
-    options?: { vacatedPlacement?: { col: number; row: number }; swapDisplaced?: boolean },
-  ) => void;
-  unequip: (characterId: CharacterId, slot: GearSlot) => void;
-  moveBoardItem: (characterId: CharacterId, item: BoardItemRef, col: number, row: number) => boolean;
-  syncBoardPositions: () => void;
-  sortBoard: (characterId: CharacterId) => void;
-  salvage: (
-    instanceId: string,
-    options?: { rng?: () => number },
-  ) => { inventories: GearInventories; yieldedCurrencies: Record<CraftingCurrencyId, number> } | null;
-  applyCurrency: (currencyId: CraftingCurrencyId, instanceId: string, options?: { rng?: () => number }) => boolean;
-  addCurrencies: (currencies: Partial<Record<CraftingCurrencyId, number>>) => void;
-  reset: () => void;
-}
-
-const initialState = {
-  inventories: createEmptyGearInventories(),
-  loadouts: createEmptyGearLoadouts(),
-  boardPositionsByCharacter: createEmptyGearBoardPositionsByCharacter(),
-  currencyBoardPositionsByCharacter: createEmptyCurrencyBoardPositionsByCharacter(),
-  craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
-};
+import { initialState } from "./gear-store-initial-state";
 
 function boardPositionRegistriesEqual(
   left: Record<string, Record<string, { col: number; row: number } | undefined>>,

@@ -1,5 +1,4 @@
 // Pure factory for shop actions and selectors. No React dependencies.
-import { computeTrinketManifest } from "@/lib/trinkets";
 import { appendUnique } from "@/lib/utils";
 import {
   appendCardToRunWithDiscovery,
@@ -12,18 +11,7 @@ import {
   spendRunGold,
 } from "@/features/alchemy/run-loop/shop-transactions";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
-import {
-  ALCHEMIST_MIX_PRICE,
-  ALCHEMIST_POTION_PRICE,
-  ALCHEMIST_REFRESH_PRICE,
-  SHOP_CARD_PRICE,
-  SHOP_REFRESH_PRICE,
-  SHOP_REMOVE_PRICE,
-  SHOP_CARDS_OFFERED,
-  ALCHEMIST_POTIONS_OFFERED,
-  TRINKET_SHOP_TRINKET_PRICE,
-  MIXED_POTION_CARD_ID,
-} from "@/lib/game-constants";
+import { SHOP_CARDS_OFFERED, ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import {
   createInitialShopState,
   createInitialAlchemistState,
@@ -36,72 +24,13 @@ import {
   type TrinketShopState,
   type EquipmentShopState,
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
-import {
-  computeShopRefreshPrice,
-  computeShopServicePrice,
-  getCardBuyTalentDiscounts,
-  getGenericBuyTalentDiscounts,
-  makeBuyPriceGetter,
-} from "@/features/alchemy/run-loop/shop/shop-pricing";
-import { getEquipmentShopPrice } from "@/features/alchemy/run-loop/shop/shop-gear-pricing";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import type { GearInstance } from "@/lib/gear";
-import type { RunStateController, TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
-
-interface ShopStates {
-  shopState: ShopState;
-  alchemistState: AlchemistState;
-  trinketShopState: TrinketShopState;
-  equipmentShopState: EquipmentShopState;
-}
-
-interface ShopSetters {
-  setShopState: (state: ShopState | ((prev: ShopState) => ShopState)) => void;
-  setAlchemistState: (state: AlchemistState | ((prev: AlchemistState) => AlchemistState)) => void;
-  setTrinketShopState: (state: TrinketShopState | ((prev: TrinketShopState) => TrinketShopState)) => void;
-  setEquipmentShopState: (state: EquipmentShopState | ((prev: EquipmentShopState) => EquipmentShopState)) => void;
-}
-
-export type CreateShopActionsDeps = {
-  run: RunStateController;
-  talents: TalentStateController;
-  homesteadEffects: HomesteadEffectManifest;
-  rng?: () => number;
-} & ShopStates &
-  ShopSetters;
-
-export interface ShopActions {
-  initShop: () => void;
-  initAlchemist: () => void;
-  initTrinketShop: () => void;
-  initEquipmentShop: () => void;
-  handleShopBuyCard: (card: BattleCard, slotKey: string) => boolean;
-  handleShopRemoveCard: (index: number) => void;
-  handleShopRefresh: () => void;
-  handleAlchemistBuyCard: (card: BattleCard, slotKey: string) => boolean;
-  handleAlchemistRefresh: () => void;
-  handleAlchemistMixPotions: (indexA: number, indexB: number) => BattleCard | null;
-  handleTrinketShopBuy: (trinket: TrinketEntry, slotKey: string) => boolean;
-  handleTrinketShopRefresh: () => void;
-  handleEquipmentShopBuy: (instance: GearInstance) => boolean;
-  handleEquipmentShopRefresh: () => void;
-  getMerchantCardBuyPrice: (card: BattleCard) => number;
-  getAlchemistPotionBuyPrice: (card: BattleCard) => number;
-  getTrinketBuyPrice: (_trinket: TrinketEntry) => number;
-  getGearBuyPrice: (instance: GearInstance) => number;
-  getShopRefreshPrice: (refreshesLeft: number) => number;
-  getAlchemistRefreshPrice: (refreshesLeft: number) => number;
-  getTrinketRefreshPrice: (refreshesLeft: number) => number;
-  getEquipmentRefreshPrice: (refreshesLeft: number) => number;
-  getRemoveCardPrice: () => number;
-  getMixPotionPrice: () => number;
-  shopCards: BattleCard[];
-  alchemistPotions: BattleCard[];
-}
+import type { CreateShopActionsDeps, ShopActions } from "./shop-action-types";
+import { createShopPriceSelectors } from "./shop-price-selectors";
 
 export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
   const {
@@ -299,54 +228,25 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
 
   // ======== Selectors ========
 
-  const merchantsFavorDiscount = computeTrinketManifest(run.runTrinkets).merchantsFavorDiscount;
-
-  const getMerchantCardBuyPrice = makeBuyPriceGetter<BattleCard>(
-    () => SHOP_CARD_PRICE,
-    (card) => getCardBuyTalentDiscounts(card, talents.talentEffects),
-    () => shopState.firstPurchaseUsed,
-    merchantsFavorDiscount,
-  );
-
-  const getAlchemistPotionBuyPrice = makeBuyPriceGetter<BattleCard>(
-    () => ALCHEMIST_POTION_PRICE,
-    (card) => getCardBuyTalentDiscounts(card, talents.talentEffects),
-    () => alchemistState.firstPurchaseUsed,
-    merchantsFavorDiscount,
-  );
-
-  const getTrinketBuyPrice = makeBuyPriceGetter<TrinketEntry>(
-    () => TRINKET_SHOP_TRINKET_PRICE,
-    () => getGenericBuyTalentDiscounts(talents.talentEffects),
-    () => trinketShopState.firstPurchaseUsed,
-    merchantsFavorDiscount,
-  );
-
-  const getGearBuyPrice = makeBuyPriceGetter<GearInstance>(
-    (instance) => getEquipmentShopPrice(instance),
-    () => getGenericBuyTalentDiscounts(talents.talentEffects),
-    () => equipmentShopState.firstPurchaseUsed,
-    merchantsFavorDiscount,
-  );
-
-  function getShopRefreshPrice(refreshesLeft: number): number {
-    return computeShopRefreshPrice(SHOP_REFRESH_PRICE, talents.talentEffects.shopFreeRefresh, refreshesLeft);
-  }
-
-  function getAlchemistRefreshPrice(refreshesLeft: number): number {
-    return computeShopRefreshPrice(ALCHEMIST_REFRESH_PRICE, talents.talentEffects.shopFreeRefresh, refreshesLeft);
-  }
-
-  function getRemoveCardPrice(): number {
-    return computeShopServicePrice(SHOP_REMOVE_PRICE, talents.talentEffects.removeCardDiscount);
-  }
-
-  function getMixPotionPrice(): number {
-    return computeShopServicePrice(ALCHEMIST_MIX_PRICE, talents.talentEffects.mixPotionDiscount);
-  }
-
-  const getTrinketRefreshPrice = getShopRefreshPrice;
-  const getEquipmentRefreshPrice = getShopRefreshPrice;
+  const {
+    getMerchantCardBuyPrice,
+    getAlchemistPotionBuyPrice,
+    getTrinketBuyPrice,
+    getGearBuyPrice,
+    getShopRefreshPrice,
+    getAlchemistRefreshPrice,
+    getTrinketRefreshPrice,
+    getEquipmentRefreshPrice,
+    getRemoveCardPrice,
+    getMixPotionPrice,
+  } = createShopPriceSelectors({
+    run,
+    talents,
+    shopState,
+    alchemistState,
+    trinketShopState,
+    equipmentShopState,
+  });
 
   return {
     initShop,

@@ -6,6 +6,8 @@ export { withSelectedBossForDestinations } from "./destination-flow";
 import { computeTalentEffects, getGoldMultiplier } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard, CharacterId, DifficultyId, UnlockedTalents, TalentEffectManifest } from "@/lib/game-data";
+import type { CommitVictoryRewardsDeps, VictoryRewardsInput, VictoryRewardsResult } from "./victory-flow-types";
+export type { CommitVictoryRewardsDeps, VictoryRewardsInput, VictoryRewardsResult } from "./victory-flow-types";
 import { getEnemyMaterialLoot, applyMaterialFindBonus } from "@/lib/homestead/loot";
 import { randomInt } from "@/lib/utils";
 import {
@@ -21,7 +23,6 @@ import {
 import { getGenerousGoldBonus } from "./reward-flow";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { CONSTANTS, type Destination } from "@/features/alchemy/shared/types";
 import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-transitions";
 import type { ContentSystemId } from "@/lib/content-systems/types";
@@ -38,11 +39,7 @@ import {
   shouldGrantCompanionReward,
   type RewardState,
 } from "./reward-flow";
-import {
-  sampleDestinationChoices,
-  withSelectedBossForDestinations,
-  type DestinationOfferState,
-} from "./destination-flow";
+import { sampleDestinationChoices, withSelectedBossForDestinations } from "./destination-flow";
 import { playGoldGain } from "@/lib/audio";
 
 interface VictoryGoldRoll {
@@ -80,47 +77,6 @@ function rollVictoryGold(
   const generousBonus = getGenerousGoldBonus(labyrinthRewardModifiers, gold);
 
   return { gold, eliteBonus, bossBonus, generousBonus, baseGold };
-}
-
-export interface VictoryRewardsInput {
-  characterId: CharacterId;
-  selectedDifficulty: DifficultyId | null;
-  unlockedTalents: UnlockedTalents;
-  runDeck: BattleCard[];
-  runTrinkets: string[];
-  contentSystemType: ContentSystemId;
-  activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
-  battleState: BattleState;
-  runGold: number;
-  runPlayerHealth: number;
-  runMaxHealth: number;
-  destinationIndexInAct: number;
-  completedDestinations: Destination[];
-  homesteadEffects: HomesteadEffectManifest;
-  getAvailableDestinations: (options?: {
-    currentHealth?: number;
-    currentGold?: number;
-    destinationIndexInAct?: number;
-    maxHealth?: number;
-  }) => Destination[];
-  bossEnemyId?: string | null | undefined;
-  destinationOfferState: DestinationOfferState;
-}
-
-export interface VictoryRewardsResult {
-  newGold: number;
-  rewardState: RewardState;
-  labyrinthRewardModifiers: EncounterRewardTraitId[];
-  destinations: Destination[];
-  materials: MaterialInventory;
-  goldEarned: number;
-  playerHealth: number;
-  maxHealthDelta: number;
-  baseGold: number;
-  eliteBonus: number;
-  bossBonus: number;
-  generousBonus: number;
-  destinationOfferState: DestinationOfferState;
 }
 
 export function createDestinationRewardState(destinations: Destination[], bossEnemyId?: string | null): RewardState {
@@ -294,18 +250,6 @@ export function computeVictoryRewards(
     generousBonus,
     destinationOfferState: sampled.offerState,
   };
-}
-
-export interface CommitVictoryRewardsDeps {
-  battleState: BattleState;
-  contentSystemType: ContentSystemId;
-  addHomesteadMaterials: (materials: MaterialInventory) => void;
-  addRunGold: (amount: number) => void;
-  setRunMaxHealth: (fn: (prev: number) => number) => void;
-  setRewardState: (state: RewardState) => void;
-  setCompanionRewardCards: (cards: BattleCard[] | null) => void;
-  setDestinationOfferState: (state: DestinationOfferState) => void;
-  clearCombatState: () => void;
 }
 
 export function commitVictoryRewards(result: VictoryRewardsResult, deps: CommitVictoryRewardsDeps) {

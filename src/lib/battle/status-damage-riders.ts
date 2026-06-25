@@ -1,7 +1,3 @@
-/**
- * Damage-type status riders applied when card damage lands on the enemy.
- * Depends on: ./status-stun-resolve, ./talent-effects, ./status-cc, ./status-helpers, ./types, ./combat-text.
- */
 import type { BattleCardEffect, DamageType } from "@/lib/game-data";
 import {
   addEnemyStatus,

@@ -1,0 +1,152 @@
+import type { BattleCard } from "../types";
+import {
+  antivenomPotion,
+  bloodOffering,
+  briarShield,
+  coldSnap,
+  darkPact,
+  faustianBargain,
+  judgment,
+  manaShield,
+  packTactics,
+  prayer,
+  raiseSkeletonCompanion,
+  serratedEdge,
+  smellingSalts,
+  smite,
+  sunderArmor,
+  thornMail,
+} from "../assets";
+import {
+  cleansePlayerStatusCard,
+  damageThenMultiplyEnemyStatusCard,
+  dualDamageCard,
+  loseHealthBenefitCard,
+  playerStatThenScaledDamageCard,
+  summonCompanionCard,
+} from "./card-builders";
+
+export const cardLibraryPart5: BattleCard[] = [
+  playerStatThenScaledDamageCard({
+    id: "briar-shield",
+    art: briarShield,
+    damageType: "nature",
+    scaleFrom: "block",
+    playerStat: { status: "block", amount: 3 },
+  }),
+  playerStatThenScaledDamageCard({
+    id: "thorn-mail",
+    art: thornMail,
+    damageType: "nature",
+    scaleFrom: "armor",
+    playerStat: { status: "armor", amount: 2 },
+  }),
+  {
+    id: "pack-tactics",
+    title: "Pack Tactics",
+    descriptionLines: ["Increase Companion damage by 1", "Deal 3 Nature damage"],
+    art: packTactics,
+    cost: 1,
+    effects: [
+      { kind: "buff-companion", amount: 1 },
+      { kind: "damage", damageType: "nature", amount: 3 },
+    ],
+  },
+  dualDamageCard({
+    id: "serrated-edge",
+    art: serratedEdge,
+    hits: [
+      { damageType: "bleed", amount: 1 },
+      { damageType: "physical", amount: 3 },
+    ],
+  }),
+  dualDamageCard({
+    id: "smite",
+    art: smite,
+    hits: [
+      { damageType: "holy", amount: 2 },
+      { damageType: "burn", amount: 2 },
+    ],
+  }),
+  cleansePlayerStatusCard({
+    id: "antivenom-potion",
+    art: antivenomPotion,
+    status: "poison",
+    cleanseLine: "Cleanse all Poison",
+    consume: true,
+  }),
+  damageThenMultiplyEnemyStatusCard({
+    id: "cold-snap",
+    art: coldSnap,
+    damageType: "freeze",
+    damageAmount: 1,
+    status: "freeze",
+    factor: 2,
+    multiplyLine: "Double enemy's Freeze build-up",
+  }),
+  loseHealthBenefitCard({ id: "blood-offering", art: bloodOffering, healthLoss: 1, draw: 2 }),
+  {
+    id: "sunder-armor",
+    title: "Sunder Armor",
+    descriptionLines: ["Deal 4 Physical damage", "Strip 2 enemy Armor"],
+    art: sunderArmor,
+    cost: 1,
+    effects: [
+      { kind: "damage", damageType: "physical", amount: 4 },
+      { kind: "remove-enemy-armor", amount: 2 },
+    ],
+  },
+  {
+    id: "mana-shield",
+    title: "Mana Shield",
+    descriptionLines: ["Gain 1 Block per Mana Crystal"],
+    art: manaShield,
+    cost: 1,
+    effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 1 }],
+  },
+  {
+    id: "prayer",
+    title: "Prayer",
+    descriptionLines: ["Wish 1", "Restore 3 Health"],
+    art: prayer,
+    cost: 1,
+    effects: [
+      { kind: "wish", amount: 1 },
+      { kind: "heal", amount: 3 },
+    ],
+  },
+  loseHealthBenefitCard({
+    id: "faustian-bargain",
+    art: faustianBargain,
+    healthLoss: 2,
+    wish: 2,
+    consume: true,
+  }),
+  dualDamageCard({
+    id: "judgment",
+    art: judgment,
+    hits: [
+      { damageType: "holy", amount: 3 },
+      { damageType: "stun", amount: 1 },
+    ],
+  }),
+  cleansePlayerStatusCard({
+    id: "smelling-salts",
+    art: smellingSalts,
+    status: "stun",
+    cleanseLine: "Cleanse Stun build-up",
+  }),
+  loseHealthBenefitCard({
+    id: "dark-pact",
+    art: darkPact,
+    healthLoss: 1,
+    wish: 1,
+    draw: 1,
+  }),
+  summonCompanionCard({
+    id: "skeleton-companion",
+    title: "Raise Skeleton",
+    art: raiseSkeletonCompanion,
+    companionId: "skeleton",
+  }),
+];

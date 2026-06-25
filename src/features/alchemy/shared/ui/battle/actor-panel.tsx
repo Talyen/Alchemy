@@ -4,16 +4,12 @@
 import type { Ref } from "react";
 
 import { Progress } from "@/components/ui/progress";
-import { ShineBorder } from "@/components/ui/shine-border";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { battleCardWidthClass, cardArtImageClass, cardSurfaceClass, SHINE_PALETTES } from "../../config";
+import { battleCardWidthClass, cardArtImageClass, cardSurfaceClass } from "../../config";
 import type { StatusChip } from "../../types";
-import { DescriptionLines } from "../card-description-ui";
-import { EnemyTooltip } from "../enemy-tooltip";
-import { TooltipPanel, TooltipHeader } from "../tooltip-panel";
 import { TiltSurface } from "../tilt-surface";
 import { PortraitHurtVfx } from "./portrait-hurt-vfx";
 import { useHurtPulse } from "./use-hurt-pulse";
@@ -132,41 +128,7 @@ export function ArtPanel({
   );
 }
 
-function ActorTooltip({
-  side,
-  title,
-  descriptionLines,
-  currentEnemy,
-  currentEnemyAttackEffects,
-  activeLabyrinthModifiers,
-}: {
-  side: "player" | "enemy";
-  title: string;
-  descriptionLines: string[] | undefined;
-  currentEnemy: BestiaryEntry | undefined;
-  currentEnemyAttackEffects: EnemyAttackEffect[] | undefined;
-  activeLabyrinthModifiers?: LabyrinthModifierKind[] | undefined;
-}) {
-  if (currentEnemy) {
-    return (
-      <EnemyTooltip
-        entry={currentEnemy}
-        attackEffects={currentEnemyAttackEffects}
-        labyrinthModifiers={activeLabyrinthModifiers ?? []}
-        align={side === "enemy" ? "left" : "right"}
-        className="opacity-0 transition-opacity duration-150 group-hover/art-wrapper:opacity-100"
-      />
-    );
-  }
-
-  if (!descriptionLines) return null;
-  return (
-    <TooltipPanel className="opacity-0 transition-opacity duration-150 group-hover/art-wrapper:opacity-100">
-      <TooltipHeader>{title}</TooltipHeader>
-      <DescriptionLines lines={descriptionLines} idPrefix={`enemy-${title}`} />
-    </TooltipPanel>
-  );
-}
+import { ActorTooltip, ArtDeathDoorBorder, StatsDeathDoorBorder } from "./actor-panel-helpers";
 
 function ActorArtFrame({
   side,
@@ -299,27 +261,5 @@ function ActorStatusRow({
         <StatusIcon key={`${title}-${status.id}-${status.value}`} chip={status} />
       ))}
     </div>
-  );
-}
-
-function ArtDeathDoorBorder() {
-  return (
-    <ShineBorder
-      borderWidth={ACTOR_PANEL_CONFIG.deathDoorArtBorderWidth}
-      duration={ACTOR_PANEL_CONFIG.deathDoorShineDurationSeconds}
-      shineColor={[...SHINE_PALETTES.deathsDoorArt]}
-      className="rounded-shell-hero"
-    />
-  );
-}
-
-function StatsDeathDoorBorder() {
-  return (
-    <ShineBorder
-      borderWidth={ACTOR_PANEL_CONFIG.deathDoorStatsBorderWidth}
-      duration={ACTOR_PANEL_CONFIG.deathDoorShineDurationSeconds}
-      shineColor={[...SHINE_PALETTES.deathsDoorStats]}
-      className="rounded-shell-inner"
-    />
   );
 }

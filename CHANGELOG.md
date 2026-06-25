@@ -6,6 +6,30 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Features
 
+- feat(armory): gear borders, astral shine, drag aliasing fix, cursor show, tab ring removal
+- feat(armory): increase inventory grid to 8 columns and tighten left panel
+  - INVENTORY_COLS: 7 -> 8 (source of truth in gear/constants.ts)
+  - Replace hardcoded 7 in CSS with --armory-inventory-cols custom property
+  - Round --armory-cell-size to nearest 1px to eliminate fractional sub-pixel drift
+  - Drop aspect-[6/7] from equipment board (redundant with explicit width/height calc)
+  - Reduce left panel padding (p-5 -> p-3), gap (gap-6 -> gap-4), character art padding (px-4 -> px-2)
+  - Shift workspace grid ratio from 3fr:2fr to 2.4fr:2fr for more inventory space
+  - Update tests and docs to match 8-column layout
+- feat(homestead): add 5 farm plot definitions with effects and card bonuses
+  - restore wheat-field, chicken-coop, pasture, orchard, crystal-garden as real farms
+  - wheat-field: Bread heal bonus (+2/4/6) + end-of-run Food yield
+  - chicken-coop: Max health bonus (+5/10/15) + end-of-run Food yield
+  - pasture: Freeze DR (-1/2/3) + end-of-run Food yield
+  - orchard: Apple heal bonus (+2/4/6) + end-of-run Food yield
+  - crystal-garden: 3-tier: Crystal yield / +startMana / +1 Mana Crystal
+  - herb-garden: replaced herbFind with Poison+Nature DR
+  - add runMaxHealthBonus, runMaxManaBonus, cardHealBonus, poisonDamageReduction to manifests
+  - wire bread/apple bonuses through applyHealEffect
+  - wire max health bonus through run-start snapshot
+  - add poison DR to applyPlayerCombatDamage
+  - fix slot-button.tsx react-compiler false positive by removing dead containerRef
+  - type safety audit: remove non-null assertions in enemy.ts, fix as unknown as casts,
+    add line-scoped reasons to 9 react-refresh disables, replace as Extract with switches
 - feat(assets): update Gambler's Shot art and add music element cache for battle track resume
   - Replace Gambler's Shot raw JPEG with compressed version
   - Rebuild optimized gamblers-shot.webp via asset pipeline
@@ -287,6 +311,55 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(audit): harden module boundaries, fix 7 pre-existing test failures, update agent safety docs
+  - S1: implement applyDestinationChoices on run-domain store, wire resume seam
+  - S2: short-circuit sampleDestinationChoices when pool <= DESTINATION_CHOICES
+  - S3: guard resolveEndTurn/resolveNormalEnemyTurn with isCurrentBattleSession
+  - S4: skip duplicate beginPointer for same item within activation distance
+  - S5: add cleanup symmetry in animateDiscardedHand on session loss
+  - S6: stabilize useArmoryTargetingEvents deps with ref pattern
+  - Fix readInventoryBoardMetrics to accept plain style objects (jsdom compat)
+  - Fix formatEnemyAttackLines multi-status attack line splitting
+  - Restore wheat-field as visible farm plot
+  - Update AGENTS.md: strengthen foreign-file recovery rules, add parallel agent worktree guidance
+- fix(armory): match flyover visual content to slot structure for pixel-perfect landing
+  Three changes that together eliminate the 1-2px perceived offset:
+  
+  1. Extract GearSlotArt to shared component (parts/gear-slot-art.tsx).
+     Use it in the drag visual portal for equipment-destination flyovers,
+     so the portal's children are structurally identical to the slot's
+     children (including the slot-specific textured background image).
+  
+  2. Animate position via transform:translate() instead of left/top.
+     The element's CSS left/top is always the dest position; the
+     animation interpolates a transform offset to identity. This
+     eliminates the style-vs-animate prop conflict that caused
+     re-render position snaps.
+  
+  3. Use raw (unrounded) dest.left/top from getBoundingClientRect()
+     so the flyover lands at the slot's exact fractional pixel
+     position, matching the slot's rendered position even under
+     fractional ancestor layouts.
+  
+  Also update the gear-drag-positions integer-pixel test (left/top
+  are now intentionally fractional for flyover matching) and the
+  gear-layout scroll test (57 items no longer overflows 8 visible rows).
+- fix(armory): animate drag flyover via transform for pixel-perfect landing
+  Animate transform: translate() instead of left/top for double-click
+  flyover and magnet settle/release animations. The element's CSS
+  left/top is always set to the final dest position (integer), while
+  the animation interpolates a transform offset to identity. This
+  eliminates sub-pixel left/top interpolation and style-vs-animate
+  prop conflicts that caused the flyover visual to land 1-3px off.
+  
+  Add E2E test (armory-flyover.spec.ts) asserting the flyover lands
+  within 0.5px of the equipment slot position after animation completes.
+- fix(homestead): trim companion name padding and stabilize shell height across tabs
+  Reduce companion art-card padding and name gap isolated to the
+  Companions tab. Pin outer shell min-height to match the Companions
+  tab so all four tabs share one container height with no visible
+  resize on switch. Add a regression test. Also mark the unreleased
+  Wheat Field farm plot as hidden.
 - fix(ui): constrain hamburger trigger to centered column on run-loop screens
 - fix(shops): gear tooltip parity, per-slot aspect ratio, armory gating, dedupe, label cleanup
   - Equipment Shop tooltips now use Armory's GearTooltipContent (shine on
@@ -703,6 +776,46 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(imports): eliminate all 23 circular dependencies, tighten efferent coupling
+- refactor(armory): split slot-button and inventory-tile into content sub-components, bundle drag-end effects
+- refactor(readability): extract armory reset effects, haste/enemy draw continuations, external dest match
+- refactor(complexity): reduce cyclomatic complexity of 12 functions to ≤ 10
+- refactor(armory): bundle drag-helper params, inline wrappers, tighten props
+  - use-board-drag: bundle 10 refs/callbacks into FsmDragRefs
+  - use-armory-gear-drag: collate shared callbacks into GearCommitEnv,
+    inline createGearOnCommit factory
+  - use-armory-currency-drag: drop useCallback wrappers for
+    movePointer/finishPointer
+  - armory-screen: replace raw setSalvageMode/setActiveCurrencyId
+    with onToggleSalvageMode callback
+  - armory-drag-visual-portal: extract buildDragPortalMotionProps
+  - armory-overlays: extract SalvageDialog + renderDragVisualPortal
+  - use-armory-targeting-events: extract isTargetingElement +
+    setupTargetingEventListeners
+  - add tests/use-armory-targeting-events.test.ts (6 tests)
+- refactor: rename PressableMotion to PressableSound
+  The component is a plain span that plays a hover sound — it has nothing
+  to do with Framer Motion. Rename to avoid confusion with AGENTS.md's
+  'no Framer hover scale' rule.
+- refactor(stores): fold homestead store into run domain store
+  - Merge useHomesteadStore into useRunDomainStore.progress slice
+  - Remove homesteadEffectsRef pattern; useHomesteadAdapter() instead
+  - Add pickActions helper to replace hand-rolled picker functions
+  - Unify save/reset/bootstrap paths under single domain store
+  - Add createEmptyTalentEffectManifest factory, reuse in homestead defaults
+  - Simplify useTalentChoices hook
+  - Clean up 3 test files and delete dead store + test
+- refactor(homestead): make mergeIntoManifest generic, eliminate type duplication
+  - HOMESTEAD_BATTLE_*_KEYS arrays (numeric/boolean/record) are the single
+    source of truth for which TalentEffectManifest fields homestead can affect.
+  - HomesteadEffectManifest = Pick<TalentEffectManifest, battle keys> &
+    HomesteadMetaEffects (5 run-level fields) — no type duplication.
+  - mergeIntoManifest now iterates the key arrays: numbers add, booleans OR,
+    Records merge-by-key. Adding a key to the arrays automatically makes it
+    mergeable; no per-field listing to maintain.
+  - applyTierEffects handles Records additively, eliminating the cardHealBonus
+    special-case and collectCards block (~20 lines removed).
+  - defaults.ts unchanged (same values, type-checked against the Pick).
 - refactor(assets): remove placeholder art stubs and expand audit
   - Delete boss-combat.webp stub (98 B) and source JPEG (343 B), replace fallback with normalEnemyBg
   
@@ -1361,6 +1474,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Tests
 
+- test(tests): add missing assertion, deduplicate gear-damage setup, remove contradictory enableFastMode
 - test(e2e): consolidate specs, add legacy save/preferences coverage, and stabilize tests
 - test(e2e): consolidate, expand, and retag E2E suite
   Phase 1 - Consolidation:
@@ -1487,6 +1601,24 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Docs
 
+- docs(prompts): expand PROMPTS.md audits and add single-use + audit-all scripts
+  - Add TODO/FIXME & runtime-warning audit (covers console.log leftovers,
+    silent catch blocks, bare markers)
+  - Add Accessibility audit (focus order, names, focus ring, reduced motion)
+  - Rewrite Single-use abstraction audit (#7) to use scripts/audit-single-use.mjs
+    (was prose; now exits non-zero on > 15% single-use ratio)
+  - Add scripts/audit-all.mjs and
+  pm run audit:all for periodic sweeps
+    (knip strict, single-use, madge, eslint complexity + max-lines,
+    change-amplification)
+  - Normalize 'When done' lines in measurable audits to include npm run typecheck
+  - Fix max-lines-per-function threshold off-by-one (#4) and add skipComments note
+  - Add npx cold-start preamble for madge/jscpd in the Measurable section
+  - Add .tmp-audit cleanup note + sample-size guard to Change amplification audit (#6)
+  - Note npm run test:ship:desktop in the verification tier block
+  - Drop stale @stryker-mutator/core reference in Coverage audit (#10) —
+    package was removed in 82155dc3 but the doc reference was not cleaned up
+  - Sync CHANGELOG.md (auto, by pre-push hook chain)
 - docs(quality): rewrite PROMPTS.md with measurable code-quality audit criteria
 - docs(agents): add balance:sim output path and pre-commit hook note
 - docs(agents): fix broken cross-references, add missing section links, reconcile policies
@@ -1521,6 +1653,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore(docs): sync PROMPTS.md audit format
 - chore(deps): remove stryker-mutator, finalize battle core test coverage
   - Drop @stryker-mutator/{core,typescript-checker,vitest-runner} devDeps
   

@@ -1,22 +1,13 @@
 // Unified run-flow handlers: battle victory/defeat, rewards, destinations, and run completion.
-import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
-import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {
   readActiveRunStore,
   readBattleStore,
   readRunSessionStore,
   awardMaterialsDuringRun,
 } from "../../shared/stores/run-session-facade";
-import {
-  setCompanionRewardCards,
-  setCorruptionResult,
-  setRewardState,
-  setRunEndMaterials,
-} from "../../shared/stores/run-session-facade";
+import { setCompanionRewardCards, setCorruptionResult, setRewardState } from "../../shared/stores/run-session-facade";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { playUISound, playVictory, stopAllSfx } from "@/lib/audio";
-import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/loot";
-import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { ACTS_PER_RUN, CAMPFIRE_HEAL_FRACTION, VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
 import { getBossEnemy, getBossById } from "@/features/alchemy/shared/config";
@@ -32,70 +23,12 @@ import {
   clearBattleUi,
   finalizeRunEndSession,
 } from "@/features/alchemy/shared/stores/run-transitions";
-import type { ScreenTransitionOptions } from "@/features/alchemy/shell/use-screen-transitions";
 import { applyAlchemistPotion, applyRewardSelection, routeDestinationChoice } from "./run-destination-handlers";
-import type { ContentSystemNavigationApi } from "@/features/alchemy/run-setup/run/content-system-navigation";
-import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
-import type { RunStateController, TalentStateController } from "../../shared/stores/run-session-facade";
-
-export interface RunFlowHandlerDeps {
-  run: RunStateController;
-  talents: TalentStateController;
-  navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
-  transition: (nextScreen: Screen, options?: ScreenTransitionOptions) => void;
-  onLabyrinthFailNode: () => void;
-  onLabyrinthClearNode: () => void;
-  onInitShop: () => void;
-  onInitAlchemist: () => void;
-  onInitTrinketShop: () => void;
-  onInitEquipmentShop: () => void;
-  onStartBattle: (deck?: BattleCard[], gold?: number, enemyType?: "normal" | "elite") => void;
-  onStartBossBattle: () => void;
-  onStartBossById: (bossId: string, modifiers?: DifficultyModifier[]) => boolean;
-  onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
-  onCommitWildwoodVictory: (result: VictoryRewardsResult) => void;
-  contentNav: Pick<ContentSystemNavigationApi, "createInitialDestinations">;
-  getAvailableDestinations: (options?: {
-    currentHealth?: number;
-    currentGold?: number;
-    destinationIndexInAct?: number;
-    maxHealth?: number;
-  }) => Destination[];
-  beginMysteryEvent: () => void;
-  clearMysteryCardChoices: () => void;
-  onWildwoodRewardComplete: () => void;
-}
-
-function getActiveRewardTraits(contentSystemType: RunStateController["contentSystemType"]): EncounterRewardTraitId[] {
-  const session = readRunSessionStore();
-  if (contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-    return session.wildwoodDraft?.currentRewardTraitIds ?? [];
-  }
-  return session.activeLabyrinthRewardModifiers as EncounterRewardTraitId[];
-}
+import { CONSTANTS, type Destination } from "../../shared/types";
+import { getActiveRewardTraits, type RunFlowHandlerDeps } from "./run-flow-handler-deps";
+import { awardRunEndMaterials, clearCombatState } from "./run-flow-session-helpers";
 
 export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
-  function clearCombatState() {
-    readBattleStore().setHasActiveBattle(false);
-    useUiStore.getState().clearCardHover();
-  }
-
-  function awardRunEndMaterials() {
-    const runState = readActiveRunStore();
-    if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-      runState.clearRunMaterialsEarned();
-      const none = emptyInventory();
-      setRunEndMaterials(none);
-      return none;
-    }
-    const runCollected = runState.runMaterialsEarned;
-    const homesteadBonus = applyEndOfRunHomesteadBonuses(emptyInventory(), runState.effects, runState.roomsEncountered);
-    runState.addMaterials(homesteadBonus);
-    setRunEndMaterials(addInventory(runCollected, homesteadBonus));
-    runState.clearRunMaterialsEarned();
-    return homesteadBonus;
-  }
-
   function computeVictoryResult() {
     const runState = readActiveRunStore();
     return computeVictoryRewards({

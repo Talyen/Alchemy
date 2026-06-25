@@ -1,5 +1,4 @@
 // Content-system entry: campaign, labyrinth, wildwood, character select, and run start.
-import type { RefObject } from "react";
 import { logError } from "@/lib/error-logger";
 import { playGoldGain } from "@/lib/audio";
 import { appendUniqueMany } from "@/lib/utils";
@@ -21,37 +20,16 @@ import {
 import { afterCampaignCharacterResolved } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
 import { createDestinationRewardState } from "@/features/alchemy/run-loop/navigation/victory-flow";
 import {
+  type DestinationOptionsInput,
   sampleDestinationChoices,
   restoreOrCreateDestinationRewardState,
-  type DestinationOptionsInput,
 } from "@/features/alchemy/run-loop/navigation/destination-flow";
+import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
 import { createRunStartSnapshot, type RunStartSnapshot } from "./run-start";
 import { getBossEnemy } from "@/features/alchemy/shared/config";
-import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
-import type { RunStateController, TalentStateController } from "../../shared/stores/run-session-facade";
+import { CONSTANTS } from "../../shared/types";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
-
-export interface ContentSystemNavigationDeps {
-  run: RunStateController;
-  talents: TalentStateController;
-  draftedDeckRef: RefObject<BattleCard[] | null>;
-  hasActiveRun: boolean;
-  hasActiveBattle: boolean;
-  pendingContentSystemType: ContentSystemId | null;
-  completedDifficulties: Record<string, DifficultyId[]>;
-  navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
-  returnToBattle: () => void;
-  onStartBattle: (
-    deck?: BattleCard[],
-    gold?: number,
-    enemyType?: "normal" | "elite",
-    modifiers?: ReturnType<typeof getDifficultyModifiers>,
-  ) => void;
-  getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
-  onResumeWildwood: () => void;
-  onStartNextWildwoodBoss: () => void;
-}
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
   function createInitialDestinations(options?: DestinationOptionsInput) {

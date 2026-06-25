@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import { playUISound } from "@/lib/audio";
 import type { CharacterId } from "@/lib/game-data";
 import {
   footprintForInstance,
@@ -13,22 +12,18 @@ import {
   type PackedInventory,
   type PackedInventoryItem,
 } from "@/lib/gear";
-import { overlaps } from "@/lib/gear/grid-packing";
 import { useBoardDrag } from "./use-board-drag";
 import type { DragDestination, DragPoint, DragRect } from "./drag-types";
-import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
 import {
-  findEquipSlotForDoubleClickedGear,
   resolveEquipmentSlotAtPointer,
-  getInventoryDragDestination,
   calculateSecondaryDisplacedItems,
   buildSecondaryDragVisuals,
 } from "./armory-drag-helpers";
-
+import { handleGearCommit, type GearCommitEnv } from "./armory-gear-commit";
+import { handleGearDoubleClickAction } from "./armory-gear-double-click";
 export type GearDragOrigin =
   | { kind: "inventory"; placement: { col: number; row: number } }
   | { kind: "equipment"; slot: GearSlot };
-
 export type GearPointerStart = (
   instance: GearInstance,
   origin: GearDragOrigin,
@@ -36,13 +31,9 @@ export type GearPointerStart = (
   pointer: { x: number; y: number },
   pointerId: number,
 ) => void;
-
 export type GearPointerMove = (pointer: { x: number; y: number }, pointerId: number) => void;
-
 export type GearPointerEnd = (pointer: { x: number; y: number }, pointerId: number, cancelled?: boolean) => void;
-
 import { DOUBLE_CLICK_FLYOVER_CLEAR_DELAY_MS, EQUIPMENT_SNAP_INSET_RATIO } from "./drag-constants";
-
 export interface GearDragVisual {
   instance: GearInstance | null;
   source: DragRect;
@@ -54,12 +45,10 @@ export interface GearDragVisual {
   releasing?: boolean | undefined;
   releaseRect?: DragRect | undefined;
 }
-
 interface GearDragItem {
   instance: GearInstance;
   origin: GearDragOrigin;
 }
-
 interface UseArmoryGearDragOptions {
   characterId: CharacterId;
   editable: boolean;
@@ -83,142 +72,6 @@ interface UseArmoryGearDragOptions {
     source: DragRect,
   ) => void;
 }
-
-interface GearCommitEnv {
-  characterId: CharacterId;
-  inventoryById: Map<string, GearInstance>;
-  packedInventoryRef: { current: PackedInventory };
-  packedCurrenciesRef: { current: PackedCurrencyItem[] };
-  inventoryBoardRef: { current: HTMLDivElement | null };
-  onEquip: UseArmoryGearDragOptions["onEquip"];
-  onUnequip: UseArmoryGearDragOptions["onUnequip"];
-  onMoveItem: UseArmoryGearDragOptions["onMoveItem"];
-  onHoldCurrency: UseArmoryGearDragOptions["onHoldCurrency"];
-  maybeLaunchSwapAnimations: (
-    instance: GearInstance,
-    slot: GearSlot,
-    slotRect: DragRect,
-    vacatedPlacement: InventoryPlacement,
-  ) => void;
-}
-
-function computeOccupantRect(
-  occupantInstance: GearInstance,
-  destRect: DragRect,
-  board: HTMLDivElement | null,
-): DragRect {
-  const sourceRect = destRect;
-  if (!board) return sourceRect;
-  const metrics = readInventoryBoardMetrics(board);
-  if (!metrics) return sourceRect;
-  const fprint = footprintForInstance(occupantInstance);
-  if (!fprint) return sourceRect;
-  const { cellSize, gap } = metrics;
-  const w = fprint.w;
-  const h = fprint.h;
-  const occupantWidth = cellSize * w + gap * (w - 1);
-  const occupantHeight = cellSize * h + gap * (h - 1);
-  const destCenterX = destRect.left + destRect.width / 2;
-  const destCenterY = destRect.top + destRect.height / 2;
-  return {
-    left: destCenterX - occupantWidth / 2,
-    top: destCenterY - occupantHeight / 2,
-    width: occupantWidth,
-    height: occupantHeight,
-  };
-}
-
-interface InventoryDestParams {
-  id: string;
-  origin: GearDragOrigin;
-  destination: { kind: "inventory"; placement: { col: number; row: number }; rect: DragRect };
-  instance: GearInstance;
-  env: GearCommitEnv;
-}
-
-function handleGearInventoryDestination(params: InventoryDestParams) {
-  const { id, origin, destination, instance, env } = params;
-  if (origin.kind === "equipment") {
-    env.onUnequip(env.characterId, origin.slot);
-    env.onMoveItem(id, destination.placement.col, destination.placement.row);
-    return undefined;
-  }
-  const unchanged =
-    origin.placement.col === destination.placement.col && origin.placement.row === destination.placement.row;
-  if (unchanged) return undefined;
-  const { inventoryById, packedInventoryRef, packedCurrenciesRef, inventoryBoardRef, onMoveItem, onHoldCurrency } = env;
-  const footprint = footprintForInstance(instance);
-  const packed = packedInventoryRef.current.items;
-  const occupant = footprint
-    ? packed.find(
-        (item) =>
-          item.item.instanceId !== id &&
-          overlaps(
-            { col: destination.placement.col, row: destination.placement.row, w: footprint.w, h: footprint.h },
-            { col: item.col, row: item.row, w: item.w, h: item.h },
-          ),
-      )
-    : undefined;
-  const occupantCurrency = footprint
-    ? packedCurrenciesRef.current.find((currency) =>
-        overlaps(
-          { col: destination.placement.col, row: destination.placement.row, w: footprint.w, h: footprint.h },
-          { col: currency.col, row: currency.row, w: currency.w, h: currency.h },
-        ),
-      )
-    : undefined;
-  onMoveItem(id, destination.placement.col, destination.placement.row);
-  if (occupant) {
-    const occupantInstance = inventoryById.get(occupant.item.instanceId);
-    if (occupantInstance) {
-      const occupantSourceRect = computeOccupantRect(occupantInstance, destination.rect, inventoryBoardRef.current);
-      return {
-        heldItem: {
-          item: {
-            instance: occupantInstance,
-            origin: { kind: "inventory" as const, placement: { col: occupant.col, row: occupant.row } },
-          },
-          source: occupantSourceRect,
-        },
-      };
-    }
-  } else if (occupantCurrency && onHoldCurrency) {
-    onHoldCurrency(
-      occupantCurrency.currencyId,
-      { kind: "inventory", placement: { col: occupantCurrency.col, row: occupantCurrency.row } },
-      destination.rect,
-    );
-  }
-  return undefined;
-}
-
-function handleGearCommit(params: {
-  id: string;
-  origin: GearDragOrigin;
-  destination: DragDestination;
-  instance: GearInstance;
-  env: GearCommitEnv;
-}) {
-  const { id, origin, destination, instance, env } = params;
-  if (destination.kind === "equipment") {
-    const slot = destination.slot as GearSlot;
-    const vacatedPlacement = origin.kind === "inventory" ? origin.placement : undefined;
-    if (vacatedPlacement) {
-      env.maybeLaunchSwapAnimations(instance, slot, destination.rect, vacatedPlacement);
-    }
-    env.onEquip(env.characterId, slot, instance, vacatedPlacement ? { vacatedPlacement } : undefined);
-  } else if (destination.kind === "inventory") {
-    return handleGearInventoryDestination({
-      id,
-      origin,
-      destination,
-      instance,
-      env,
-    });
-  }
-  return undefined;
-}
-
 export function useArmoryGearDrag({
   characterId,
   editable,
@@ -242,11 +95,9 @@ export function useArmoryGearDrag({
   useEffect(() => {
     packedCurrenciesRef.current = packedCurrencies;
   }, [packedCurrencies]);
-
   const [secondaryDragVisuals, setSecondaryDragVisuals] = useState<GearDragVisual[]>([]);
   const secondaryCleanupTimerRef = useRef<number | null>(null);
   const fsmClearDragRef = useRef<() => void>(() => {});
-
   const clearSecondaryDragState = useCallback(() => {
     if (secondaryCleanupTimerRef.current !== null) {
       window.clearTimeout(secondaryCleanupTimerRef.current);
@@ -254,7 +105,6 @@ export function useArmoryGearDrag({
     }
     setSecondaryDragVisuals([]);
   }, []);
-
   const launchSecondarySwapAnimations = useCallback(
     (displacedItems: Array<{ instance: GearInstance; source: DragRect; vacatedPlacement: InventoryPlacement }>) => {
       const board = inventoryBoardRef.current;
@@ -269,7 +119,6 @@ export function useArmoryGearDrag({
     },
     [clearSecondaryDragState, inventoryBoardRef],
   );
-
   const maybeLaunchSwapAnimations = useCallback(
     (instance: GearInstance, slot: GearSlot, slotRect: DragRect, vacatedPlacement: InventoryPlacement) => {
       const displacedItems = calculateSecondaryDisplacedItems({
@@ -285,7 +134,6 @@ export function useArmoryGearDrag({
     },
     [inventoryById, launchSecondarySwapAnimations, loadout, packedInventory.items],
   );
-
   const fsm = useBoardDrag<string, GearDragItem, GearDragOrigin>({
     itemLookup: undefined,
     getItemId: (item) => item.instance.instanceId,
@@ -329,15 +177,12 @@ export function useArmoryGearDrag({
     onClear: () => {},
   });
   const fsmClearDragState = fsm.clearDragState;
-
   useEffect(() => {
     fsmClearDragRef.current = fsmClearDragState;
   }, [fsmClearDragState]);
-
   useEffect(() => {
     if (!editable) fsmClearDragState();
   }, [editable, fsmClearDragState]);
-
   useEffect(() => {
     return () => {
       if (secondaryCleanupTimerRef.current !== null) {
@@ -345,7 +190,6 @@ export function useArmoryGearDrag({
       }
     };
   }, []);
-
   const fsmBeginPointer = fsm.beginPointer;
   const beginGearPointer = useCallback(
     (instance: GearInstance, origin: GearDragOrigin, source: DragRect, pointer: DragPoint, pointerId: number) => {
@@ -354,52 +198,25 @@ export function useArmoryGearDrag({
     },
     [editable, fsmBeginPointer],
   );
-
   const moveGearPointer = fsm.movePointer;
   const finishGearPointer = fsm.finishPointer;
-
   const handleGearDoubleClick = useCallback(
     (instance: GearInstance, origin: GearDragOrigin, _source: DragRect) => {
-      if (!editable) return;
-      const definition = gearDefinitions[instance.definitionId];
-      if (!definition) return;
-
-      if (origin.kind === "inventory") {
-        const slot = findEquipSlotForDoubleClickedGear(loadout, definition);
-        if (!slot) {
-          playUISound("error");
-          return;
-        }
-        const slotElement = document.querySelector<HTMLElement>(
-          `[data-testid='armory-equipment-slot'][data-slot='${slot}']`,
-        );
-        if (!slotElement) return;
-        const slotRect = slotElement.getBoundingClientRect();
-        fsm.flyoverTo(
-          { instance, origin },
-          { kind: "equipment", slot, rect: slotRect },
-          () => {
-            maybeLaunchSwapAnimations(instance, slot, slotRect, origin.placement);
-            onEquip(characterId, slot, instance, { vacatedPlacement: origin.placement });
-          },
-          _source,
-        );
-        return;
-      }
-
-      const board = inventoryBoardRef.current;
-      if (!board) return;
-      const destination = getInventoryDragDestination({ board, instance, boardObstacles });
-      if (!destination) return;
-      fsm.flyoverTo(
-        { instance, origin },
-        destination,
-        () => {
-          onMoveItem(instance.instanceId, destination.placement.col, destination.placement.row);
-          onUnequip(characterId, origin.slot);
-        },
-        _source,
-      );
+      handleGearDoubleClickAction({
+        editable,
+        instance,
+        origin,
+        source: _source,
+        characterId,
+        loadout,
+        boardObstacles,
+        inventoryBoard: inventoryBoardRef.current,
+        flyoverTo: fsm.flyoverTo,
+        onEquip,
+        onUnequip,
+        onMoveItem,
+        maybeLaunchSwapAnimations,
+      });
     },
     [
       editable,
@@ -414,9 +231,7 @@ export function useArmoryGearDrag({
       maybeLaunchSwapAnimations,
     ],
   );
-
   const draggedGear: GearInstance | null = fsm.dragVisual?.id ? (inventoryById.get(fsm.dragVisual.id) ?? null) : null;
-
   const dragVisual: GearDragVisual | null = fsm.dragVisual
     ? {
         instance: inventoryById.get(fsm.dragVisual.id) ?? null,
@@ -430,20 +245,16 @@ export function useArmoryGearDrag({
         releaseRect: fsm.dragVisual.releaseRect,
       }
     : null;
-
   const dragVisualIdRef = useRef<string | null>(null);
   const isFlyoverRef = useRef<boolean>(false);
-
   const clearDragState = useCallback(() => {
     fsmClearDragState();
   }, [fsmClearDragState]);
-
   useEffect(() => {
     activeIdRef.current = fsm.activeId;
     dragVisualIdRef.current = fsm.dragVisual?.id ?? null;
     isFlyoverRef.current = !!fsm.dragVisual?.flyover;
   }, [fsm.activeId, fsm.dragVisual?.id, fsm.dragVisual?.flyover]);
-
   const abortGearDragIfDragging = useCallback(
     (instanceId: string) => {
       if (isFlyoverRef.current) return;
@@ -453,7 +264,6 @@ export function useArmoryGearDrag({
     },
     [clearDragState],
   );
-
   return {
     draggedGear,
     dragVisual,
