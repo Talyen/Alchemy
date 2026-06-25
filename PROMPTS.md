@@ -196,7 +196,7 @@ rg -l 'catch\s*(\(\)\s*=>\s*\{\s*\}|{\s*\})' src --type ts
 
 **Check:**
 
-- `TODO` and `FIXME` markers must include a reason and a target — per [AGENTS.md — Hard NO's (Comments)](./AGENTS.md#hard-nos). Every hit must be paired with a `(reason: ...)` or `// because ...` clause; bare markers are violations
+- `TODO` and `FIXME` markers must include a reason and a target — per [AGENTS.md — Codebase rules](./AGENTS.md#codebase-rules). Every hit must be paired with a `(reason: ...)` or `// because ...` clause; bare markers are violations
 - `console.log` / `console.debug` calls in `src/**` (eslint `no-console` allows only `console.warn` / `console.error` per `eslint.config.js:74`). Strip before merging; surviving calls need a `// eslint-disable-next-line` with a reason
 - Swallowed errors: empty `catch {}` blocks or `.catch(() => {})` lambdas that drop the error. Every silent catch must log the error or document why silence is intentional
 - Unused `// @ts-expect-error` / `// @ts-ignore` — these should appear with a comment justifying the escape; bare ones are caught by [Type safety density audit](#1-type-safety-density-audit) but flag any without context here

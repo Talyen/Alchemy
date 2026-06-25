@@ -27,17 +27,17 @@ Install hooks once: `npm run prepare` (runs on `npm install`).
 
 First-time Playwright: `npx playwright install chromium`.
 
-**PowerShell command chaining:** use `; if ($?) { next-command }` — `;` alone ignores exit codes on Windows ([AGENTS.md](../AGENTS.md)).
+**PowerShell command chaining:** PowerShell 7 supports `&&` and `||`; prefer them for simple chains. Use `; if ($?) { next-command }` only when you need a conditional block; `;` alone ignores exit codes on Windows ([AGENTS.md](./AGENTS.md#environment)).
 
 ## Changelog and patch notes
 
-Agents push directly to `main`; there is no PR merge step. Commit messages feed an automated changelog:
+When explicitly asked to commit or push, agents work directly on `main`; there is no required PR merge step. Commit messages feed an automated changelog:
 
 - **Pre-push hook** syncs `CHANGELOG.md` ## [Unreleased] from git history since the latest `v*` tag
 - **Player-facing draft:** `npm run generate:patch-notes` → `release-notes/UNRELEASED.md`
 - **Drift guard:** `tests/architecture/changelog-sync.test.ts` (also in `npm run test:ship:unit`)
 
-Commit message rules: [AGENTS.md](../AGENTS.md#commit-messages-and-changelog). Release flow: [RELEASE.md](./docs/RELEASE.md).
+Commit message rules: [AGENTS.md](./AGENTS.md#branch-and-commit-policy). Release flow: [RELEASE.md](./docs/RELEASE.md).
 
 ## What to run when you change…
 
