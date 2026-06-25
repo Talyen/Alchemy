@@ -43,7 +43,7 @@ import {
   theLabyrinth,
   theWildwoods,
   type KeywordId,
-} from "@/lib/game-data";
+} from "@/features/alchemy/shared/config/game-data-catalog";
 
 import type { CollectionTab, Destination } from "../types";
 

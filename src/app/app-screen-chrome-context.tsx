@@ -1,6 +1,6 @@
 // App-level display values for screen routes (character art, layout mode).
 import { createContext, useContext, type ReactNode } from "react";
-import { characterArt, characters } from "@/lib/game-data";
+import { characterArt, characters } from "@/features/alchemy/shared/config/game-data-catalog";
 import { hasUnspentTalents } from "@/app/talent-affordability";
 import { hasAffordableHomesteadUpgrade } from "@/app/homestead-affordability";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";

@@ -1,5 +1,5 @@
 // Hex palettes for ShineBorder gradients and boss/map accent effects — keep full strings for Tailwind JIT safety.
-import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import { keywordDefinitions, type KeywordId } from "@/features/alchemy/shared/config/game-data-catalog";
 
 export const SHINE_PALETTES = {
   talentDefault: ["#fcd34d", "#d97706", "#fcd34d"],

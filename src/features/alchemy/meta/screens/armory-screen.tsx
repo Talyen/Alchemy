@@ -8,7 +8,11 @@ import {
   type InventoryPlacement,
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
-import { getRequiredPreviousCharacter, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
+import {
+  getRequiredPreviousCharacter,
+  isCharacterUnlocked,
+  type CharacterId,
+} from "@/features/alchemy/shared/config/game-data-catalog";
 import { PageLayout } from "../../shared/ui/shared-ui";
 import {
   useArmoryGearDrag,

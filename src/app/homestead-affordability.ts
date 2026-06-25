@@ -1,5 +1,5 @@
 // Whether homestead has an affordable upgrade for the menu badge.
-import { cardLibrary, type CompanionId } from "@/lib/game-data";
+import { cardLibrary, type CompanionId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { buildings, visibleFarmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
 import { canAfford } from "@/lib/homestead/inventory";

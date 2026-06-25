@@ -4,7 +4,7 @@
 // for images that are dynamically constructed or added after initial load.
 import { useEffect } from "react";
 
-import { pileDiscardArt, pileDrawArt } from "@/lib/game-data";
+import { pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { preloadImages } from "@/lib/image-preload";
 import type { Screen } from "@/features/alchemy/shared/types";
 

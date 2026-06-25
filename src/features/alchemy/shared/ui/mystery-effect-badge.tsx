@@ -2,7 +2,7 @@
 // Depends on utility libraries, Lucide icons, homestead material maps, and keyword definitions.
 // Consumed by tooltip builders and outcome summary screens.
 import { Coins } from "lucide-react";
-import { keywordDefinitions } from "@/lib/game-data";
+import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 import { materialLabels } from "@/lib/homestead/types";

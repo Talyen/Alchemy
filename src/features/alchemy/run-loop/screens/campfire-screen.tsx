@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { ScreenDescription, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { campfire, keywordDefinitions } from "@/lib/game-data";
+import { campfire, keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { CAMPFIRE_ANIMATION_MS, CAMPFIRE_CONTINUE_DELAY, CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 export function CampfireScreen({
   playerHealth,

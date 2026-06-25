@@ -1,5 +1,5 @@
 // Per-boss shine palettes derived from combat keywords — shared by boss title and destination button.
-import { keywordDefinitions, type BestiaryEntry } from "@/lib/game-data";
+import { keywordDefinitions, type BestiaryEntry } from "@/features/alchemy/shared/config/game-data-catalog";
 
 import { keywordAliases } from "./keywords";
 import { SHINE_PALETTES } from "./shine-palettes";

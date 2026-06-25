@@ -1,6 +1,6 @@
 import { memo, useEffect } from "react";
 import { Lock } from "lucide-react";
-import { characters, characterArt, type CharacterId } from "@/lib/game-data";
+import { characterArt, characters, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import type { CraftingCurrencyId, GearInstance, GearLoadouts, GearSlot } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";

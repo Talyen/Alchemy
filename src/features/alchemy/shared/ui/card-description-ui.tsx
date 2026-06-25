@@ -4,7 +4,8 @@
 /* eslint-disable react-refresh/only-export-components -- co-located card description components and bare-token utility */
 import { Fragment } from "react";
 
-import { keywordDefinitions, type BattleCard, type KeywordId } from "@/lib/game-data";
+import type { BattleCard, KeywordId } from "@/lib/game-data";
+import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
 import { tokenizeDescription } from "../utils";

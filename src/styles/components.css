@@ -1,0 +1,298 @@
+@layer components {
+  .alchemy-shell {
+    background-color: var(--color-shell-bg);
+    border-color: var(--color-shell-border);
+  }
+
+  .character-keyword-pill-tint {
+    background-color: color-mix(in srgb, currentColor 15%, transparent);
+  }
+
+  .button-primary-bloom:not(:disabled) {
+    box-shadow: 0 0 0 hsl(36 55% 56% / 0);
+    transition: box-shadow 200ms ease-in;
+  }
+
+  .button-primary-bloom:not(:disabled):hover {
+    animation: button-primary-bloom-puff 300ms ease-out forwards;
+  }
+
+  .card-face {
+    backface-visibility: hidden;
+  }
+
+  .card-face-back {
+    backface-visibility: hidden;
+    transform: rotateY(180deg);
+  }
+
+  .talent-node-glass {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background-color: color-mix(in srgb, var(--color-background) 30%, transparent);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05));
+  }
+
+  .talent-node-glass--bordered {
+    border: 3px solid var(--talent-glass-accent);
+    box-shadow:
+      inset 0 1.5px 1px rgba(255, 255, 255, 0.12),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.22),
+      0 0 0 2px rgba(0, 0, 0, 0.4),
+      0 4px 12px rgba(0, 0, 0, 0.45);
+  }
+
+  .talent-node-glass--choice {
+    border-width: 0;
+    box-shadow:
+      inset 0 1.5px 1px rgba(255, 255, 255, 0.25),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.3),
+      0 0 16px var(--talent-glass-accent),
+      0 4px 16px rgba(0, 0, 0, 0.6);
+  }
+
+  .tilt-surface {
+    transform: var(--card-base-transform, translate3d(0px, 0px, 0px)) perspective(900px)
+      rotateX(var(--tilt-rotate-x, 0deg)) rotateY(var(--tilt-rotate-y, 0deg));
+    transform-style: preserve-3d;
+    transition: transform 460ms var(--ease-out-expo);
+    backface-visibility: hidden;
+    isolation: isolate;
+  }
+
+  .card-shimmer-sweep {
+    position: absolute;
+    inset: -15%;
+    background: linear-gradient(
+      110deg,
+      transparent 22%,
+      rgba(255, 255, 255, 0.12) 36%,
+      rgba(255, 250, 225, 0.42) 49%,
+      rgba(255, 255, 255, 0.16) 60%,
+      transparent 76%
+    );
+    filter: blur(1px);
+    mix-blend-mode: screen;
+    transform: translateX(-165%) skewX(-18deg);
+    opacity: 0;
+  }
+
+  .card-shimmer-active .card-shimmer-sweep {
+    animation: cardShimmer 1800ms var(--ease-out-expo);
+  }
+
+  .hover-popup-panel {
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--color-background) 75%, transparent);
+    transition: transform 160ms var(--ease-out-expo);
+    will-change: transform;
+  }
+
+  .stagger-item:has(.hover-popup-panel[data-visible]),
+  [class*="group"]:has(.hover-popup-panel):is(:hover, :focus-within) {
+    position: relative;
+    z-index: 50;
+  }
+
+  .hover-popup-panel[data-placement="above"],
+  .hover-popup-panel:not([data-placement]) {
+    transform-origin: bottom center;
+    transform: translateX(-50%) translateY(6px);
+  }
+
+  .hover-popup-panel[data-placement="below"] {
+    transform-origin: top center;
+    transform: translateX(-50%) translateY(-6px);
+  }
+
+  .hover-popup-panel[data-placement^="side-"] {
+    transform-origin: left center;
+    transform: translateY(-50%);
+  }
+
+  [class*="group"]:is(:hover, :focus-within) > .hover-popup-panel,
+  .hover-popup-panel[data-visible] {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  [class*="group"]:is(:hover, :focus-within) > .hover-popup-panel[data-placement^="side-"],
+  .hover-popup-panel[data-placement^="side-"][data-visible] {
+    opacity: 1;
+    transform: translateY(-50%);
+  }
+
+  .tooltips-disabled .hover-popup-panel {
+    opacity: 0 !important;
+    pointer-events: none;
+  }
+
+  .card-ghost-overlay {
+    animation-fill-mode: both;
+    animation-timing-function: var(--ease-out-expo);
+    transform: rotate(var(--ghost-rotation, 0deg));
+    will-change: transform, opacity;
+  }
+
+  .card-ghost-overlay[data-variant="draw-in"] {
+    animation-duration: 520ms;
+    animation-name: cardGhostDrawIn;
+  }
+
+  .card-ghost-overlay[data-variant="discard-out"] {
+    animation-duration: 320ms;
+    animation-name: cardGhostDiscardOut;
+  }
+
+  .card-ghost-overlay[data-variant="activate"] {
+    animation-duration: 672ms;
+    animation-name: cardGhostActivate;
+  }
+
+  .card-ghost-overlay[data-variant="play-travel"] {
+    animation-duration: 528ms;
+    animation-name: cardGhostPlayTravel;
+  }
+
+  .motion-overlay {
+    animation: fadeIn 150ms ease-out both;
+  }
+
+  .wish-overlay-backdrop {
+    animation: fadeIn 260ms ease-out both;
+  }
+
+  .motion-panel,
+  .wish-overlay-panel,
+  .stagger-item,
+  .state-swap {
+    animation-name: slideUpIn;
+    animation-timing-function: var(--ease-out-expo);
+    animation-fill-mode: both;
+    will-change: opacity, transform;
+  }
+
+  .motion-panel {
+    animation-duration: 190ms;
+  }
+
+  .wish-overlay-panel {
+    animation-duration: 300ms;
+  }
+
+  .stagger-item {
+    animation-duration: 230ms;
+    animation-delay: calc(var(--stagger-index, 0) * 36ms);
+  }
+
+  .state-swap {
+    animation-duration: 170ms;
+  }
+
+  .page-enter {
+    animation: slideUpIn 240ms var(--ease-out-expo) both;
+  }
+
+  .state-fade {
+    animation: fadeIn 170ms var(--ease-out-expo) both;
+  }
+
+  .hp-number-pop {
+    animation: numberPop 280ms ease-out both;
+  }
+
+  .campfire-hp-progress > div {
+    transition-duration: 1250ms;
+    transition-timing-function: ease-out;
+  }
+
+  .mana-gem-active {
+    animation: manaGemSettle 260ms ease-out both;
+  }
+
+  .status-chip-pop {
+    animation: statusChipPop 220ms var(--ease-out-expo) both;
+  }
+
+  .companion-enter {
+    animation: companionEnter 360ms var(--ease-out-expo) both;
+    will-change: transform, opacity;
+  }
+
+  .talent-unlock-ring {
+    border: 2px solid var(--burst-color);
+    box-shadow:
+      0 0 18px var(--burst-color),
+      0 0 36px color-mix(in srgb, var(--burst-color) 45%, transparent);
+    opacity: 0.9;
+    animation: talentUnlockRing 620ms var(--ease-out-expo) forwards;
+    will-change: transform, opacity;
+  }
+
+  .talent-unlock-burst {
+    container-type: size;
+  }
+
+  .talent-unlock-spark {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 5px;
+    height: 5px;
+    margin-left: -2.5px;
+    margin-top: -2.5px;
+    border-radius: 9999px;
+    background-color: var(--burst-color);
+    box-shadow: 0 0 6px var(--burst-color);
+    animation: talentUnlockSpark var(--spark-duration, 620ms) cubic-bezier(0.22, 1, 0.36, 1) var(--spark-delay, 0ms)
+      forwards;
+    transform: rotate(var(--spark-angle)) translateY(calc(-50cqmin));
+    will-change: transform, opacity;
+  }
+
+  .talent-node-unlocking {
+    animation: talentUnlockPop 620ms var(--ease-out-expo) forwards;
+  }
+
+  .talent-node-unlocked-settle {
+    animation: talentUnlockedSettle 400ms var(--ease-out-expo) both;
+  }
+
+  .alchemy-startup-bar {
+    background: var(--color-primary);
+    animation: startupBarCycle 1200ms ease-in-out forwards;
+    transform-origin: left;
+  }
+
+  .alchemy-loading-fade {
+    animation: startupBlurFadeIn 320ms var(--ease-out-expo) both;
+  }
+
+  .motion-crossfade {
+    transition:
+      opacity 170ms var(--ease-out-expo),
+      transform 170ms var(--ease-out-expo);
+  }
+
+  .motion-crossfade-hidden {
+    transform: translateY(4px);
+  }
+}
+
+@utility surface-muted {
+  background: var(--color-surface-muted);
+}
+
+@utility page-exit {
+  animation: slideUpOut 120ms ease-in both;
+  pointer-events: none;
+}
+
+@utility image-rendering-pixelated {
+  image-rendering: pixelated;
+}
+
+@utility boss-title-shine {
+  animation: var(--animate-boss-title-shine);
+  will-change: background-position;
+}

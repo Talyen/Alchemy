@@ -1,6 +1,6 @@
 // Enemy selection helpers for alchemy run rooms and act bosses.
 // Depends on game-data enemies and shared random selection utilities.
-import { enemyBestiary, type BestiaryEntry, type EnemyType } from "@/lib/game-data";
+import { enemyBestiary, type BestiaryEntry, type EnemyType } from "@/features/alchemy/shared/config/game-data-catalog";
 import { pickRandom } from "@/lib/utils";
 
 // Picks an enemy for the current room. Room 0 of a run always starts with a

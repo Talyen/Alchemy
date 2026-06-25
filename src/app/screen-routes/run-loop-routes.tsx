@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import { cardLibrary, trinketLibrary } from "@/lib/game-data";
+import { cardLibrary, trinketLibrary } from "@/features/alchemy/shared/config/game-data-catalog";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import {
   AlchemistShopScreen,

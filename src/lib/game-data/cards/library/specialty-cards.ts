@@ -1,0 +1,272 @@
+// Ordered card definitions split from the public card library.
+import type { BattleCard } from "../../types";
+import * as assetRefs from "../../assets";
+import * as cardBuilders from "../card-builders";
+
+export const specialtyCards = [
+  cardBuilders.archeryDamageCard({
+    id: "concussive-shot",
+    art: assetRefs.concussiveShot,
+    damageType: "stun",
+    amount: 3,
+  }),
+  cardBuilders.archeryDamageCard({
+    id: "lightning-arrow",
+    art: assetRefs.lightningArrow,
+    damageType: "nature",
+    amount: 2,
+  }),
+  {
+    id: "tithe",
+    title: "Tithe",
+    descriptionLines: ["Deal Holy damage equal to 10% of your Gold"],
+    art: assetRefs.tithe,
+    cost: 1,
+    effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToGoldPercent: 10 }],
+  },
+  {
+    id: "exorcism",
+    title: "Exorcism",
+    descriptionLines: ["Cleanse all Burn on yourself", "Deal Holy damage equal to Burn removed"],
+    art: assetRefs.exorcism,
+    cost: 1,
+    effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy", removeAll: true }],
+  },
+  cardBuilders.damageThenMultiplyEnemyStatusCard({
+    id: "kindling",
+    art: assetRefs.kindling,
+    damageType: "burn",
+    damageAmount: 1,
+    status: "burn",
+    factor: 2,
+    multiplyLine: "Double enemy Burn stacks",
+    consume: true,
+  }),
+  {
+    id: "roulette",
+    title: "Roulette",
+    descriptionLines: ["Deal 3 Random damage or Gain 3 Gold"],
+    art: assetRefs.roulette,
+    cost: 1,
+    effects: [
+      {
+        kind: "chance",
+        probability: 0.5,
+        successEffects: [{ kind: "random-damage", minAmount: 3, maxAmount: 3 }],
+        failureEffects: [{ kind: "gain-gold", amount: 3 }],
+      },
+    ],
+  },
+  cardBuilders.damageCard({ id: "lightning-bolt", art: assetRefs.lightningBolt, damageType: "nature", amount: 4 }),
+  {
+    id: "wishing-well",
+    title: "Wishing Well",
+    descriptionLines: ["Wish 1", "Gain 1 Gold"],
+    art: assetRefs.wishingWell,
+    cost: 1,
+    effects: [
+      { kind: "wish", amount: 1 },
+      { kind: "gain-gold", amount: 1 },
+    ],
+  },
+  cardBuilders.dualDamageCard({
+    id: "hemorrhage",
+    art: assetRefs.hemorrhage,
+    hits: [
+      { damageType: "physical", amount: 2 },
+      { damageType: "bleed", amount: 1 },
+    ],
+  }),
+  {
+    id: "bounty-shot",
+    title: "Bounty Shot",
+    descriptionLines: ["Deal 2 Physical damage", "Gain 2 Gold", "Archery"],
+    art: assetRefs.bountyShot,
+    cost: 1,
+    tags: ["archery"],
+    effects: [
+      { kind: "damage", damageType: "physical", amount: 2 },
+      { kind: "gain-gold", amount: 2 },
+    ],
+  },
+  {
+    id: "sap-arrow",
+    title: "Sap Arrow",
+    descriptionLines: ["Deal 2 Nature damage", "Leech", "Archery"],
+    art: assetRefs.sapArrow,
+    cost: 1,
+    tags: ["archery"],
+    effects: [{ kind: "damage", damageType: "nature", amount: 2, lifesteal: true }],
+  },
+  {
+    id: "gamblers-shot",
+    title: "Gambler's Shot",
+    descriptionLines: ["Deal 1ΓÇô6 Random damage", "Archery"],
+    art: assetRefs.gamblersShot,
+    cost: 1,
+    tags: ["archery"],
+    effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 6 }],
+  },
+  {
+    id: "phoenix-feather",
+    title: "Phoenix Feather",
+    descriptionLines: ["Lose 1 Mana Crystal", "If you would die, instead restore 30% Health"],
+    art: assetRefs.phoenixFeather,
+    cost: 1,
+    effects: [
+      { kind: "lose-max-mana", amount: 1 },
+      { kind: "player-status", status: "phoenixFeather", amount: 1 },
+    ],
+  },
+  cardBuilders.summonCompanionCard({
+    id: "frost-whelp-companion",
+    art: assetRefs.frostWhelpCompanion,
+    companionId: "frost-whelp",
+  }),
+  cardBuilders.summonCompanionCard({ id: "bear-companion", art: assetRefs.bearCompanion, companionId: "bear" }),
+  cardBuilders.summonCompanionCard({
+    id: "panther-companion",
+    art: assetRefs.pantherCompanion,
+    companionId: "panther",
+  }),
+  cardBuilders.summonCompanionCard({
+    id: "phoenix-companion",
+    art: assetRefs.phoenixCompanion,
+    companionId: "phoenix",
+  }),
+  cardBuilders.playerStatusCard({ id: "plate-mail", art: assetRefs.plateMail, status: "armor", amount: 2 }),
+  cardBuilders.playerStatThenScaledDamageCard({
+    id: "sanctified-plate",
+    art: assetRefs.sanctifiedPlate,
+    damageType: "holy",
+    scaleFrom: "armor",
+    playerStat: { status: "armor", amount: 1 },
+  }),
+  {
+    id: "shield-bash",
+    title: "Shield Bash",
+    descriptionLines: ["Deal 2 Stun damage", "Gain 2 Block"],
+    art: assetRefs.shieldBash,
+    cost: 1,
+    effects: [
+      { kind: "damage", damageType: "stun", amount: 2 },
+      { kind: "player-status", status: "block", amount: 2 },
+    ],
+  },
+  {
+    id: "steal",
+    title: "Steal",
+    descriptionLines: ["Steal 4 Gold"],
+    art: assetRefs.steal,
+    cost: 1,
+    effects: [{ kind: "gain-gold", amount: 4 }],
+  },
+  cardBuilders.dualDamageCard({
+    id: "burning-blade",
+    art: assetRefs.burningBlade,
+    hits: [
+      { damageType: "physical", amount: 2 },
+      { damageType: "burn", amount: 2 },
+    ],
+  }),
+  // Effect order invariant: remove-harmful-status before self-damage (see card-effect-ordering.test.ts)
+  {
+    id: "cauterize",
+    title: "Cauterize",
+    descriptionLines: ["Remove 2 harmful status effects", "Receive 1 Burn damage"],
+    art: assetRefs.cauterize,
+    cost: 1,
+    effects: [
+      { kind: "remove-harmful-status", amount: 2 },
+      { kind: "self-damage", damageType: "burn", amount: 1 },
+    ],
+  },
+  {
+    id: "blackjack",
+    title: "Blackjack",
+    descriptionLines: ["Deal 2 Stun damage", "Steal 2 Gold"],
+    art: assetRefs.blackjack,
+    cost: 1,
+    effects: [
+      { kind: "damage", damageType: "stun", amount: 2 },
+      { kind: "gain-gold", amount: 2 },
+    ],
+  },
+  cardBuilders.healThenDamageCard({
+    id: "sunburst",
+    art: assetRefs.sunburst,
+    heal: 2,
+    damageType: "burn",
+    damage: 2,
+  }),
+  cardBuilders.healThenDamageCard({
+    id: "holy-radiance",
+    art: assetRefs.holyRadiance,
+    heal: 2,
+    damageType: "holy",
+    damage: 2,
+  }),
+  cardBuilders.damageCard({
+    id: "venom-fangs",
+    art: assetRefs.venomFangs,
+    damageType: "poison",
+    amount: 2,
+    lifesteal: true,
+  }),
+  cardBuilders.damageCard({
+    id: "bloodthorn",
+    art: assetRefs.bloodthorn,
+    damageType: "nature",
+    amount: 4,
+    lifesteal: true,
+  }),
+  cardBuilders.dualDamageCard({
+    id: "cinderbloom",
+    art: assetRefs.cinderbloom,
+    hits: [
+      { damageType: "nature", amount: 2 },
+      { damageType: "burn", amount: 2 },
+    ],
+  }),
+  cardBuilders.dualDamageCard({
+    id: "grasping-vines",
+    art: assetRefs.graspingVines,
+    hits: [
+      { damageType: "nature", amount: 2 },
+      { damageType: "stun", amount: 2 },
+    ],
+  }),
+  cardBuilders.playerStatThenScaledDamageCard({
+    id: "briar-shield",
+    art: assetRefs.briarShield,
+    damageType: "nature",
+    scaleFrom: "block",
+    playerStat: { status: "block", amount: 3 },
+  }),
+  cardBuilders.playerStatThenScaledDamageCard({
+    id: "thorn-mail",
+    art: assetRefs.thornMail,
+    damageType: "nature",
+    scaleFrom: "armor",
+    playerStat: { status: "armor", amount: 2 },
+  }),
+  {
+    id: "pack-tactics",
+    title: "Pack Tactics",
+    descriptionLines: ["Increase Companion damage by 1", "Deal 3 Nature damage"],
+    art: assetRefs.packTactics,
+    cost: 1,
+    effects: [
+      { kind: "buff-companion", amount: 1 },
+      { kind: "damage", damageType: "nature", amount: 3 },
+    ],
+  },
+  cardBuilders.dualDamageCard({
+    id: "serrated-edge",
+    art: assetRefs.serratedEdge,
+    hits: [
+      { damageType: "bleed", amount: 1 },
+      { damageType: "physical", amount: 3 },
+    ],
+  }),
+] satisfies BattleCard[];

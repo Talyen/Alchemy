@@ -4,24 +4,41 @@
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = new URL("..", import.meta.url).pathname;
-const TMP_DIR = `${ROOT}/.tmp-audit`;
+const currentFile = fileURLToPath(import.meta.url);
+const ROOT = path.resolve(path.dirname(currentFile), "..");
+const TMP_ROOT = path.join(ROOT, ".tmp-audit");
+const TMP_DIR = path.join(TMP_ROOT, String(process.pid));
 fs.mkdirSync(TMP_DIR, { recursive: true });
+
+function parseArgs(args) {
+  const sincePrefix = "--since=";
+  const sinceArg = args.find((arg) => arg.startsWith(sincePrefix));
+  return {
+    since: sinceArg ? sinceArg.slice(sincePrefix.length).replace(/^"|"$/g, "") : "3 months ago",
+  };
+}
+
+const { since } = parseArgs(process.argv.slice(2));
 
 function log(grep, out) {
   const r = spawnSync(
     "git",
-    ["log", "--since=3 months ago", `--grep=${grep}`, "--format=---%H|%s", "--name-only", "--no-merges"],
+    ["log", `--since=${since}`, `--grep=${grep}`, "--format=---%H|%s", "--name-only", "--no-merges"],
     { encoding: "buffer" },
   );
+  if (r.status !== 0) {
+    throw new Error(r.stderr.toString("utf8"));
+  }
   fs.writeFileSync(out, r.stdout);
 }
 
 const PATHS = [
-  ["feat", `${TMP_DIR}/feat.txt`],
-  ["fix", `${TMP_DIR}/fix.txt`],
-  ["balance", `${TMP_DIR}/balance.txt`],
+  ["feat", path.join(TMP_DIR, "feat.txt")],
+  ["fix", path.join(TMP_DIR, "fix.txt")],
+  ["balance", path.join(TMP_DIR, "balance.txt")],
 ];
 for (const [g, p] of PATHS) log(`^${g}`, p);
 
@@ -48,7 +65,20 @@ function parse(file, type) {
   return commits;
 }
 
-const commits = PATHS.flatMap(([t, p]) => parse(p, t));
+function dedupeCommits(commitsToDedupe) {
+  const byHash = new Map();
+  for (const commit of commitsToDedupe) {
+    if (!byHash.has(commit.hash)) {
+      byHash.set(commit.hash, {
+        ...commit,
+        files: [...new Set(commit.files)],
+      });
+    }
+  }
+  return [...byHash.values()];
+}
+
+const commits = dedupeCommits(PATHS.flatMap(([t, p]) => parse(p, t)));
 const NOISE = /^(Raw Assets\/|public\/sounds\/|src\/assets\/optimized\/)/;
 const EXTNOISE = /\.(ogg|wav|mp3|webp|jpeg|jpg|png|svg)$/;
 
@@ -97,6 +127,7 @@ function stats(arr) {
   };
 }
 
+console.log(`Since: ${since}`);
 console.log("Files-per-commit stats:");
 for (const [name, arr] of [
   ["raw", commits],
@@ -157,4 +188,9 @@ try {
   fs.rmdirSync(TMP_DIR);
 } catch {
   /* dir may not exist or non-empty */
+}
+try {
+  fs.rmdirSync(TMP_ROOT);
+} catch {
+  /* dir may not exist or another audit may still be running */
 }

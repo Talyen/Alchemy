@@ -4,7 +4,12 @@
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
-import { characters, characterArt, characterUnlockRequirements, type CharacterId } from "@/lib/game-data";
+import {
+  characterArt,
+  characters,
+  characterUnlockRequirements,
+  type CharacterId,
+} from "@/features/alchemy/shared/config/game-data-catalog";
 
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { renderColoredKeywords } from "../../shared/ui/card-description-ui";

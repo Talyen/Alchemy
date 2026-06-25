@@ -8,7 +8,7 @@ import {
   type InventoryPlacement,
   type PackedInventoryItem,
 } from "@/lib/gear";
-import { characters, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
+import { characters, isCharacterUnlocked, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { playUISound } from "@/lib/audio";
 import type { TransferMenuState } from "./armory-transfer-menu";
 import { resolveEquipSwap } from "./resolve-equip-swap";

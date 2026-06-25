@@ -3,7 +3,8 @@
 // Used by ArtPanel to keep actor layout separate from status tooltip details.
 import { Skull, Sparkles } from "lucide-react";
 
-import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import type { KeywordId } from "@/lib/game-data";
+import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
 import { keywordIcons } from "../../config";

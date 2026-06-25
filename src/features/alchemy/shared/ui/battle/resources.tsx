@@ -3,7 +3,7 @@
 // Used by BattleScreen controls.
 import { Coins, Gem } from "lucide-react";
 
-import { pileDiscardArt, pileDrawArt } from "@/lib/game-data";
+import { pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
 import { cardArtImageClass, cardSurfaceClass, pileCardWidthClass } from "../../config";

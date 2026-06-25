@@ -10,7 +10,13 @@ import {
   WandSparkles,
   type LucideIcon,
 } from "lucide-react";
-import { characters, isCharacterUnlocked, keywordDefinitions, type CharacterId, type KeywordId } from "@/lib/game-data";
+import {
+  characters,
+  isCharacterUnlocked,
+  keywordDefinitions,
+  type CharacterId,
+  type KeywordId,
+} from "@/features/alchemy/shared/config/game-data-catalog";
 import { TabBar } from "../../../shared/ui/shared-ui";
 
 const CHARACTER_ICONS: Record<CharacterId, LucideIcon> = {

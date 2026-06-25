@@ -1,0 +1,122 @@
+// Enemy compendium definitions. Kept separate so enemy content changes stay localized.
+import * as assetRefs from "../assets";
+import { defineEnemy, phys, playerStatus, poisonResistance, regeneration, trait } from "../compendium-builders";
+
+export const enemyBestiary = [
+  defineEnemy({
+    id: "forge-golem",
+    title: "The Forge Golem",
+    art: assetRefs.theForgeGolem,
+    enemyType: "boss",
+    traits: [
+      trait("rusting-carapace", "Rusting Carapace", "Gains Forge each turn"),
+      trait("starting-block", "Sturdy Plating", "Starts with 4 Block"),
+    ],
+    attackEffects: [phys(4), { kind: "damage", damageType: "stun", amount: 1 }],
+  }),
+  defineEnemy({
+    id: "frostwarden",
+    title: "The Frostwarden",
+    art: assetRefs.theFrostwarden,
+    enemyType: "boss",
+    traits: [
+      trait(
+        "glacial-shell",
+        "Glacial Shell",
+        "Receives half Freeze damage\nReceives double Burn damage\nGains Freeze damage each turn",
+      ),
+    ],
+    attackEffects: [phys(6), { kind: "damage", damageType: "freeze", amount: 1 }],
+  }),
+  defineEnemy({
+    id: "blight-treant",
+    title: "The Blight Treant",
+    art: assetRefs.theBlightTreant,
+    enemyType: "boss",
+    traits: [
+      regeneration("Rotting Regrowth"),
+      trait("burn-vulnerability", "Burn Vulnerability", "Receives double Burn damage"),
+    ],
+    attackEffects: [{ kind: "damage", damageType: "nature", amount: 3 }, playerStatus("poison", 1)],
+  }),
+  defineEnemy({
+    id: "skeleton",
+    title: "Skeleton",
+    art: assetRefs.skeleton,
+    enemyType: "normal",
+    traits: [trait("brittle-bones", "Brittle Bones", "Receives double Holy damage\nReceives double Stun damage")],
+    attackEffects: [phys(7)],
+  }),
+  defineEnemy({
+    id: "goblin",
+    title: "Goblin",
+    art: assetRefs.goblin,
+    enemyType: "normal",
+    traits: [trait("trinket-hoarder", "Trinket Hoarder", "Receives double Burn damage")],
+    attackEffects: [phys(7)],
+  }),
+  defineEnemy({
+    id: "imp",
+    title: "Imp",
+    art: assetRefs.imp,
+    enemyType: "normal",
+    traits: [trait("burn-resistance", "Burn Resistance", "Receives half Burn damage")],
+    attackEffects: [playerStatus("burn", 3)],
+  }),
+  defineEnemy({
+    id: "lizard-scout",
+    title: "Lizard Scout",
+    art: assetRefs.lizardScout,
+    enemyType: "normal",
+    traits: [poisonResistance],
+    attackEffects: [phys(2), playerStatus("poison", 1)],
+  }),
+  defineEnemy({
+    id: "mimic",
+    title: "Mimic",
+    art: assetRefs.mimic,
+    enemyType: "elite",
+    traits: [trait("gold-trove", "Gold Trove", "Drops Double Gold on Defeat")],
+    attackEffects: [phys(7), playerStatus("bleed", 1)],
+  }),
+  defineEnemy({
+    id: "mud-elemental",
+    title: "Mud Elemental",
+    art: assetRefs.mudElemental,
+    enemyType: "elite",
+    traits: [regeneration("Regeneration")],
+    attackEffects: [{ kind: "damage", damageType: "nature", amount: 2 }, playerStatus("poison", 1)],
+  }),
+  defineEnemy({
+    id: "necromancer",
+    title: "Necromancer",
+    art: assetRefs.necromancer,
+    enemyType: "elite",
+    traits: [trait("holy-vulnerability", "Holy Vulnerability", "Receives double Holy damage")],
+    attackEffects: [playerStatus("bleed", 4)],
+  }),
+  defineEnemy({
+    id: "plague-doctor",
+    title: "Plague Doctor",
+    art: assetRefs.plagueDoctor,
+    enemyType: "elite",
+    traits: [poisonResistance],
+    attackEffects: [playerStatus("bleed", 2), playerStatus("poison", 1)],
+  }),
+  defineEnemy({
+    id: "living-armor",
+    title: "Living Armor",
+    art: assetRefs.livingArmor,
+    enemyType: "elite",
+    traits: [trait("living-armor", "Living Armor", "Starts combat with Armor\nReceives half Bleed damage")],
+    attackEffects: [phys(3), { kind: "damage", damageType: "nature", amount: 3 }],
+  }),
+  defineEnemy({
+    id: "iron-bear",
+    title: "The Iron Bear",
+    art: assetRefs.ironBear,
+    enemyType: "boss",
+    traits: [trait("iron-hide", "Iron Hide", "Gains Armor, Forge, or Burn damage each turn")],
+    attackEffects: [phys(3), { kind: "damage", damageType: "burn", amount: 1 }],
+  }),
+];

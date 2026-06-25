@@ -2,7 +2,13 @@
 // Depends on game-data libraries, card description formatting, and collection page size tuning.
 // Used by collection UI layout and tests without owning rendering concerns.
 import { COLLECTION_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
-import { cardLibrary, enemyBestiary, trinketLibrary, type BestiaryEntry, type TrinketEntry } from "@/lib/game-data";
+import {
+  cardLibrary,
+  enemyBestiary,
+  trinketLibrary,
+  type BestiaryEntry,
+  type TrinketEntry,
+} from "@/features/alchemy/shared/config/game-data-catalog";
 
 import type { CollectionTab } from "../types";
 import { getEffectiveCardDescriptionLines } from "../utils/card-description";

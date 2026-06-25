@@ -2,7 +2,7 @@
 // Depends on keyword metadata, icon config, and class-name utilities.
 // Keep this small so keyword visual language stays consistent across the game UI.
 import type { KeywordId } from "@/lib/game-data";
-import { keywordDefinitions } from "@/lib/game-data";
+import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
 import { keywordIcons } from "../config";
