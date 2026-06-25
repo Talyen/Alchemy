@@ -598,11 +598,4 @@ export default tseslint.config(
     },
     rules: { "@typescript-eslint/no-require-imports": "off", "no-undef": "off" },
   },
-
-  // Screenshot scripts (browser env)
-  {
-    files: ["screenshot-script.*"],
-    languageOptions: { globals: { document: "readable", console: "readable", require: "readable" } },
-    rules: { "@typescript-eslint/no-require-imports": "off", "no-undef": "off" },
-  },
 );

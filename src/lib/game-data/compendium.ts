@@ -84,7 +84,7 @@ export const enemyBestiary = [
     art: skeleton,
     enemyType: "normal",
     traits: [trait("brittle-bones", "Brittle Bones", "Receives double Holy damage\nReceives double Stun damage")],
-    attackEffects: [phys(9)],
+    attackEffects: [phys(7)],
   }),
   defineEnemy({
     id: "goblin",
@@ -92,7 +92,7 @@ export const enemyBestiary = [
     art: goblin,
     enemyType: "normal",
     traits: [trait("trinket-hoarder", "Trinket Hoarder", "Receives double Burn damage")],
-    attackEffects: [phys(9)],
+    attackEffects: [phys(7)],
   }),
   defineEnemy({
     id: "imp",
@@ -100,7 +100,7 @@ export const enemyBestiary = [
     art: imp,
     enemyType: "normal",
     traits: [trait("burn-resistance", "Burn Resistance", "Receives half Burn damage")],
-    attackEffects: [playerStatus("burn", 4)],
+    attackEffects: [playerStatus("burn", 3)],
   }),
   defineEnemy({
     id: "lizard-scout",
@@ -116,7 +116,7 @@ export const enemyBestiary = [
     art: mimic,
     enemyType: "elite",
     traits: [trait("gold-trove", "Gold Trove", "Drops Double Gold on Defeat")],
-    attackEffects: [phys(7)],
+    attackEffects: [phys(7), playerStatus("bleed", 1)],
   }),
   defineEnemy({
     id: "mud-elemental",
@@ -124,7 +124,7 @@ export const enemyBestiary = [
     art: mudElemental,
     enemyType: "elite",
     traits: [regeneration("Regeneration")],
-    attackEffects: [{ kind: "damage", damageType: "stun", amount: 2 }, playerStatus("poison", 2)],
+    attackEffects: [{ kind: "damage", damageType: "nature", amount: 2 }, playerStatus("poison", 1)],
   }),
   defineEnemy({
     id: "necromancer",
