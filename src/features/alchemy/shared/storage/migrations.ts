@@ -17,7 +17,7 @@ export { getRawSaveSchemaVersion, migrateSaveDataToCurrent, isUnsupportedFutureS
 // Delegates to SaveDataSchema — the production load path in io.ts.
 // Any change to SaveDataSchema (field defaults, migration steps, clamping) is automatically
 // exercised by migrations.test.ts without needing a second implementation.
-// SaveDataSchema uses .catch() on every field, so this will not throw for any input.
+// SaveDataSchema uses .catch() on every field, so this will not throw for arbitrary input.
 export function normalizeSaveData(parsed: unknown): SaveData {
   return SaveDataSchema.parse(parsed) as SaveData;
 }

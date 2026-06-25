@@ -190,7 +190,7 @@ function executeCardPlayState(
 
   nextState = applyCardEffects(nextState, card, combatTexts);
 
-  // Deduct mana cost first so that any refunds aren't capped by maxMana prematurely.
+  // Deduct mana cost first so that refunds aren't capped by maxMana prematurely.
   nextState = { ...nextState, mana: Math.max(0, nextState.mana - effectiveCost) };
 
   if (cardHasDamageType(card, "nature") && state.gearEffects.manaOnNatureDamageChance > 0) {

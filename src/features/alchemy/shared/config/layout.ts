@@ -3,7 +3,7 @@
 // These clamp() CSS values size cards from the virtual stage rather than the
 // browser viewport so preview emulation and desktop scaling stay consistent.
 // Pixel bounds converted to cqh/cqw so the layout is resolution-independent
-// (the stage container may be 1080, 2160, or any other height in the future).
+// (the stage container may be 1080, 2160, or another height in the future).
 export const battleCardWidthClass = "w-[clamp(24.76cqh,25.16cqh,37.48cqh)]";
 export const handCardWidthClass = "w-[clamp(22.28cqh,22.64cqh,33.73cqh)]";
 export const viewCardWidthClass = "w-[clamp(17.5cqh,17.78cqh,26.48cqh)]";

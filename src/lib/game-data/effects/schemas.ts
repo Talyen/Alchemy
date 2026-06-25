@@ -4,14 +4,16 @@ import type { BattleCardEffect } from "../types";
 import { chanceEffectDefinition, createChanceEffectSchema } from "./chance/definition";
 import { TEMPLATE_EFFECT_DEFINITIONS } from "./template-definitions";
 
-const templateEffectSchemas = TEMPLATE_EFFECT_DEFINITIONS.map((def) => def.schema);
+type DiscriminableKindSchema = z.core.$ZodTypeDiscriminable<"kind">;
 
-const BattleCardEffectSchemaBase = z.discriminatedUnion(
-  "kind",
-  // Zod discriminatedUnion requires a non-empty tuple; the array is known to be non-empty at init.
-  // TS prevents direct array→tuple coercion without the `unknown` hop.
-  templateEffectSchemas as unknown as [z.ZodObject<{ kind: z.ZodType }>, ...Array<z.ZodObject<{ kind: z.ZodType }>>],
-);
+function getTemplateEffectSchemas(): [DiscriminableKindSchema, ...DiscriminableKindSchema[]] {
+  const [firstTemplateEffectDefinition, ...remainingTemplateEffectDefinitions] = TEMPLATE_EFFECT_DEFINITIONS;
+  return [firstTemplateEffectDefinition.schema, ...remainingTemplateEffectDefinitions.map((def) => def.schema)];
+}
+
+const templateEffectSchemas = getTemplateEffectSchemas();
+
+const BattleCardEffectSchemaBase = z.discriminatedUnion("kind", templateEffectSchemas);
 
 export const BattleCardEffectSchema: z.ZodType<BattleCardEffect> = z.lazy(() => {
   const ChanceEffectSchema = createChanceEffectSchema(() => BattleCardEffectSchema);

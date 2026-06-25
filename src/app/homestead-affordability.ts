@@ -1,4 +1,4 @@
-// Whether homestead has any affordable upgrade for the menu badge.
+// Whether homestead has an affordable upgrade for the menu badge.
 import { cardLibrary, type CompanionId } from "@/lib/game-data";
 import { buildings, visibleFarmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";

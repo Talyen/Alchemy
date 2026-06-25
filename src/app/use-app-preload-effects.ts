@@ -1,7 +1,7 @@
 // Screen-aware asset preloading for edge-case images not covered by upfront decode.
 // Depends on game-data assets, image preload helpers.
 // All main art is decoded during the startup loading screen — this is a safety net
-// for any images that are dynamically constructed or added after initial load.
+// for images that are dynamically constructed or added after initial load.
 import { useEffect } from "react";
 
 import { pileDiscardArt, pileDrawArt } from "@/lib/game-data";

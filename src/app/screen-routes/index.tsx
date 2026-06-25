@@ -7,6 +7,7 @@ import { runLoopScreenRoutes } from "./run-loop-routes";
 import { runEndScreenRoutes } from "./run-end-routes";
 import { withScreenBoundary } from "./with-screen-boundary";
 import type { ScreenRouteContext } from "./types";
+import type { Screen } from "@/lib/routing";
 
 export type { ScreenRouteContext } from "./types";
 export type ScreenRoute = (ctx: ScreenRouteContext) => ReactNode;
@@ -17,22 +18,14 @@ export type ScreenRoute = (ctx: ScreenRouteContext) => ReactNode;
  * `Record<Screen, ScreenRoute>`. A missing or duplicate key becomes a
  * compile error on `_exhaustive` below.
  */
-/* eslint-disable @typescript-eslint/no-duplicate-type-constituents --
-   composed from overlapping phase route tables; _exhaustive check below
-   guarantees no duplicates */
-type PhaseKeys =
-  | keyof typeof metaScreenRoutes
-  | keyof typeof runSetupScreenRoutes
-  | keyof typeof runLoopScreenRoutes
-  | keyof typeof runEndScreenRoutes
-  | "options";
-/* eslint-enable @typescript-eslint/no-duplicate-type-constituents */
+type PhaseRouteTables = typeof metaScreenRoutes &
+  typeof runSetupScreenRoutes &
+  typeof runLoopScreenRoutes &
+  typeof runEndScreenRoutes &
+  typeof optionsScreenRoutes;
+type PhaseKeys = keyof PhaseRouteTables;
 
-type _Exhaustive = [PhaseKeys] extends [import("@/lib/routing").Screen]
-  ? [import("@/lib/routing").Screen] extends [PhaseKeys]
-    ? true
-    : false
-  : false;
+type _Exhaustive = [PhaseKeys] extends [Screen] ? ([Screen] extends [PhaseKeys] ? true : false) : false;
 const _exhaustive: _Exhaustive = true;
 void _exhaustive;
 
@@ -45,6 +38,9 @@ const SCREEN_ROUTES = {
 };
 
 export function renderAlchemyScreenRoute(ctx: ScreenRouteContext): ReactNode {
-  const render = SCREEN_ROUTES[ctx.screen]!;
+  const render = SCREEN_ROUTES[ctx.screen];
+  if (!render) {
+    throw new Error(`Missing screen route for ${ctx.screen}`);
+  }
   return withScreenBoundary(ctx.screen, render(ctx));
 }

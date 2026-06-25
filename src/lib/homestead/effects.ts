@@ -4,6 +4,8 @@ import { HOMESTEAD_BATTLE_NUMERIC_KEYS, HOMESTEAD_BATTLE_BOOLEAN_KEYS, HOMESTEAD
 import { defaultHomesteadEffects } from "./defaults";
 import { buildings, farmPlots, researchUpgrades } from "./data";
 
+type HomesteadBattleRecordKey = (typeof HOMESTEAD_BATTLE_RECORD_KEYS)[number];
+
 function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<HomesteadEffectManifest>): void {
   if (!partial) return;
   for (const key of Object.keys(partial) as Array<keyof HomesteadEffectManifest>) {
@@ -25,10 +27,9 @@ function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<Homes
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-function applyItemTiers<I extends { id: string; tiers: Array<{ effects?: Partial<HomesteadEffectManifest> }> }>(
+function applyItemTiers(
   base: HomesteadEffectManifest,
-  items: I[],
+  items: Array<{ id: string; tiers: Array<{ effects?: Partial<HomesteadEffectManifest> }> }>,
   levels: Record<string, number>,
 ): void {
   for (const [id, level] of Object.entries(levels)) {
@@ -37,6 +38,17 @@ function applyItemTiers<I extends { id: string; tiers: Array<{ effects?: Partial
     for (let i = 0; i < level; i++) {
       applyTierEffects(base, item.tiers[i]?.effects);
     }
+  }
+}
+
+function mergeRecordEffect<K extends HomesteadBattleRecordKey>(
+  target: TalentEffectManifest,
+  source: HomesteadEffectManifest,
+  key: K,
+): void {
+  const sourceValue = source[key];
+  if (Object.keys(sourceValue).length > 0) {
+    target[key] = { ...target[key], ...sourceValue };
   }
 }
 
@@ -83,11 +95,7 @@ export function mergeIntoManifest(
   }
 
   for (const key of HOMESTEAD_BATTLE_RECORD_KEYS) {
-    const hv = homesteadEffects[key];
-    if (Object.keys(hv).length > 0) {
-      const mv = (merged as unknown as Record<string, unknown>)[key] as Record<string, unknown>;
-      (merged as unknown as Record<string, unknown>)[key] = { ...mv, ...(hv as Record<string, unknown>) };
-    }
+    mergeRecordEffect(merged, homesteadEffects, key);
   }
 
   return merged;

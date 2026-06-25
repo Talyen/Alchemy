@@ -73,7 +73,7 @@ export function stopAllSfx() {
 }
 
 // Plays a sound by name. Tries synchronous cache lookup first to bypass the Promise/microtask
-// delay of loadSoundBuffer, preventing any delay between user interaction and audio response.
+// delay of loadSoundBuffer, preventing lag between user interaction and audio response.
 function playBuffer(
   name: string,
   {

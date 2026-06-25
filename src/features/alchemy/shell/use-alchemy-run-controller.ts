@@ -102,7 +102,7 @@ export function useAlchemyRunController({
     onMarkDifficultyCompleted,
   });
 
-  // useLayoutEffect ensures refs are current before the browser paints, so any
+  // useLayoutEffect ensures refs are current before the browser paints, so
   // battle callbacks triggered by user interaction always see the latest nav state.
   useLayoutEffect(() => {
     onBattleVictoryRef.current = nav.handleBattleVictory;

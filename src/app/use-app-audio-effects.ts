@@ -76,7 +76,7 @@ export function useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackgrou
   const hasActiveBattle = useRunDomainStore((s) => s.battle.hasActiveBattle);
   const lastBattleActiveRef = useRef(hasActiveBattle);
   useEffect(() => {
-    // When a new battle starts (false → true), invalidate the cache for any battle
+    // When a new battle starts (false → true), invalidate the cache for the battle
     // or boss key so the track will be fresh, not a resume of the previous battle.
     if (hasActiveBattle && !lastBattleActiveRef.current) {
       const musicKey = pickMusicKey(screen);

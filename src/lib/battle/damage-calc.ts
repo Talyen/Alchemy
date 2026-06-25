@@ -38,7 +38,7 @@ function getPlayerBlockHalf(state: BattleState): number {
 }
 
 /**
- * Calculates raw base damage amount before any keyword specific modifiers are applied.
+ * Calculates raw base damage amount before keyword specific modifiers are applied.
  * Evaluates forge bonus and whether the damage scales on current block or armor.
  */
 function getForgeBonusForDamage(state: BattleState, damageType: DamageType): number {

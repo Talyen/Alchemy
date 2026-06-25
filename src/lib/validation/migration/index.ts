@@ -16,7 +16,7 @@ import {
 } from "./steps";
 import type { RawSaveData } from "./types";
 
-// Returns 0 for any invalid version so callers can treat missing-version saves as v0.
+// Returns 0 for invalid versions so callers can treat missing-version saves as v0.
 export function getRawSaveSchemaVersion(parsed: unknown): number {
   if (!parsed || typeof parsed !== "object") return 0;
   const version = (parsed as RawSaveData).saveSchemaVersion;

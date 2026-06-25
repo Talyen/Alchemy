@@ -58,7 +58,7 @@ function getSoundUrl(name: string): string {
   return import.meta.env.BASE_URL + BUFFER_CACHE_CONFIG.SOUNDS_BASE_PATH + name;
 }
 
-// Loads a sound once and shares any in-flight decode with concurrent play/preload calls.
+// Loads a sound once and shares the in-flight decode with concurrent play/preload calls.
 // This coalescence prevents double fetches if multiple identical cards or events trigger at once.
 export async function loadSoundBuffer(name: string): Promise<AudioBuffer | null> {
   if (soundCache.has(name)) {

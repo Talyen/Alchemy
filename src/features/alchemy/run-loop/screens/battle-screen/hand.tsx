@@ -69,8 +69,7 @@ function HandCardItem({
     const currentRefs = handCardRefs.current;
     currentRefs[cardKey] = el;
     return () => {
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative ref registry; Map has no behavior benefit
-      delete currentRefs[cardKey];
+      currentRefs[cardKey] = null;
     };
   }, [handCardRefs, cardKey]);
   /* eslint-enable react-compiler/react-compiler, react-hooks/immutability */

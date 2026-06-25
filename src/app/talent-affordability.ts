@@ -1,4 +1,4 @@
-// Whether any talent keyword has unspent XP for the menu badge.
+// Whether a talent keyword has unspent XP for the menu badge.
 import {
   countImplementedTalents,
   getTalentKeywordProgress,

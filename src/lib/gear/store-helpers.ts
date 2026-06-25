@@ -43,6 +43,10 @@ function positionsByCharacterEqual(left: CharacterPositionRegistry, right: Chara
   return Object.keys(left).every((charId) => positionsEqual(left[charId as CharacterId], right[charId as CharacterId]));
 }
 
+function omitGearPosition(positions: GearBoardPositions, instanceId: string): GearBoardPositions {
+  return Object.fromEntries(Object.entries(positions).filter(([id]) => id !== instanceId));
+}
+
 function buildBoardItemsForCharacter(state: BoardSourceState, characterId: CharacterId): BoardItem[] {
   const equippedInstanceIds = new Set(Object.values(state.loadouts[characterId]).filter(Boolean) as string[]);
   const availableInventory = state.inventories[characterId].filter((item) => !equippedInstanceIds.has(item.instanceId));
@@ -272,12 +276,11 @@ function moveEquippedOffBoard(
     const loadout = loadouts[characterId];
     const equippedIds = new Set(Object.values(loadout).filter(Boolean) as string[]);
     const gearPositions = nextBoardPositionsByCharacter[characterId];
-    const cleanGearPositions = { ...gearPositions };
+    let cleanGearPositions = gearPositions;
     let modified = false;
     for (const instanceId of Object.keys(gearPositions)) {
       if (equippedIds.has(instanceId)) {
-        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- imperative object-based registry
-        delete cleanGearPositions[instanceId];
+        cleanGearPositions = omitGearPosition(cleanGearPositions, instanceId);
         modified = true;
       }
     }

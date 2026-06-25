@@ -1,5 +1,5 @@
 // Homestead screen — persistent progression hub with free-order unlocking.
-// All nodes show in a 3-column grid; any uncompleted node can be built if
+// All nodes show in a 3-column grid; each uncompleted node can be built if
 // materials are sufficient. Completed nodes are dimmed with a checkmark.
 
 import { useState, useMemo } from "react";

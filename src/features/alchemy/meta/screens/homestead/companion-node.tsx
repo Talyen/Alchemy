@@ -17,6 +17,7 @@ function getCompanionFooter(
   isComplete: boolean,
   card: BattleCard,
   currentLevel: number,
+  bondCost: MaterialInventory,
   bondAffordable: boolean,
   onBond: (card: BattleCard) => void,
 ): ReactNode {
@@ -34,10 +35,7 @@ function getCompanionFooter(
       <DisabledTooltip show={!bondAffordable} message="Not Enough Resources">
         <Button variant="outline" disabled={!bondAffordable} onClick={() => onBond(card)}>
           {card.title}
-          <MaterialCost
-            material="food"
-            amount={COMPANION_BOND_TIERS[Math.min(currentLevel, COMPANION_MAX_TIER - 1)]!.food}
-          />
+          <MaterialCost material="food" amount={bondCost.food} />
         </Button>
       </DisabledTooltip>
       <StarRating current={currentLevel} max={COMPANION_MAX_TIER} />
@@ -91,11 +89,15 @@ export function CompanionCardNode({
   const companionId = companionEffect?.companionId ?? null;
   const currentLevel = companionId ? (bondedCompanions[companionId] ?? 0) : 0;
   const isComplete = currentLevel >= COMPANION_MAX_TIER;
-  const bondCost = COMPANION_BOND_TIERS[Math.min(currentLevel, COMPANION_MAX_TIER - 1)]!;
+  const bondTierIndex = Math.min(currentLevel, COMPANION_MAX_TIER - 1);
+  const bondCost = COMPANION_BOND_TIERS[bondTierIndex];
+  if (!bondCost) {
+    throw new Error(`Missing companion bond tier at index ${bondTierIndex}`);
+  }
   const bondAffordable = discovered && !isComplete && canAfford(materialInventory, bondCost);
 
   const detailTooltip = getCompanionTooltip(hoveredItemId, card, discovered, bondedCompanions);
-  const footer = getCompanionFooter(discovered, isComplete, card, currentLevel, bondAffordable, onBond);
+  const footer = getCompanionFooter(discovered, isComplete, card, currentLevel, bondCost, bondAffordable, onBond);
 
   return (
     <HomesteadTileFrame

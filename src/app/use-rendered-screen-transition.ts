@@ -12,7 +12,8 @@ export function useRenderedScreenTransition(controllerScreen: Screen, commitPend
   useEffect(() => {
     if (controllerScreen === renderedScreen) return;
     pendingScreenRef.current = controllerScreen;
-    setPagePhase("exit"); // eslint-disable-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- starts the exit animation when controller routing changes
+    setPagePhase("exit");
     const timeout = window.setTimeout(() => {
       commitPendingTransition();
       setRenderedScreen(pendingScreenRef.current);
@@ -22,7 +23,8 @@ export function useRenderedScreenTransition(controllerScreen: Screen, commitPend
   }, [controllerScreen, renderedScreen, commitPendingTransition]);
 
   useEffect(() => {
-    setTooltipBlocked(true); // eslint-disable-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets transient tooltip suppression after screen changes
+    setTooltipBlocked(true);
     const timer = window.setTimeout(() => setTooltipBlocked(false), 400);
     return () => window.clearTimeout(timer);
   }, [renderedScreen]);

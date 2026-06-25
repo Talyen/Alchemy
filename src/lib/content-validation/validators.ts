@@ -294,7 +294,7 @@ function validateGearAffixes(collector: ReturnType<typeof createCollector>): voi
     }
   }
   for (const key of GEAR_EFFECT_KEYS) {
-    if (!usedEffectKeys.has(key)) collector.error("gear", key, "Gear effect key is not referenced by any affix");
+    if (!usedEffectKeys.has(key)) collector.error("gear", key, "Gear effect key is not referenced by an affix");
   }
 }
 

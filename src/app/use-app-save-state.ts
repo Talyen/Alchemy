@@ -11,7 +11,7 @@ import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storag
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import type { Screen } from "@/lib/routing";
 
-// Persists the normalized App/controller snapshot whenever any saved field changes.
+// Persists the normalized App/controller snapshot whenever a saved field changes.
 export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: Screen | null = null) {
   const enabledRef = useRef(enabled);
   const runScreenOverrideRef = useRef(runScreenOverride);

@@ -21,7 +21,7 @@ export function getCurrentEnemy(enemyType?: EnemyType, encounteredEnemyIds: read
   return pickRandom(preferred.length > 0 ? preferred : available) ?? enemyBestiary[0]!;
 }
 
-// Returns a random boss enemy from the full boss pool. Any boss can appear in any act.
+// Returns a random boss enemy from the full boss pool. Each boss can appear in each act.
 export function getBossEnemy(encounteredEnemyIds: readonly string[] = []): BestiaryEntry {
   const pool = enemyBestiary.filter((e) => e.enemyType === "boss");
   const preferred = withoutEncountered(pool, encounteredEnemyIds);

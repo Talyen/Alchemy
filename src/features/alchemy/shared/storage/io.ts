@@ -35,7 +35,8 @@ const saveSessionState = new SaveSessionState();
 
 // Keeps storage failures readable without crashing gameplay when browsers block persistence.
 function logStorageFailure(message: string, error?: unknown) {
-  logError(message, "storage", error ? { error: String(error) } : undefined); // eslint-disable-line @typescript-eslint/no-base-to-string
+  // eslint-disable-next-line @typescript-eslint/no-base-to-string -- preserve readable browser storage errors from unknown throws
+  logError(message, "storage", error ? { error: String(error) } : undefined);
 }
 
 function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: SaveData): string[] {

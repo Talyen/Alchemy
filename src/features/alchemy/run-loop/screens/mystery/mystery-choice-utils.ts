@@ -12,7 +12,7 @@ const POSITIVE_MYSTERY_EFFECT_KINDS = new Set<MysteryEffect["kind"]>([
   "gainMaterial",
 ]);
 
-/** True when any mystery effect is a net positive (card gain, heal, gold, materials, etc). */
+/** True when a mystery effect is a net positive (card gain, heal, gold, materials, etc). */
 export function hasPositiveMysteryEffect(effects: MysteryEffect[]) {
   return effects.some((e) => POSITIVE_MYSTERY_EFFECT_KINDS.has(e.kind));
 }
