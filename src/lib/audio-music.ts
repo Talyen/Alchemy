@@ -27,6 +27,19 @@ const MUSIC_CONFIG = {
   VOLUME_MIN: 0,
 } as const;
 
+const BOSS_MUSIC_KEYS: ReadonlySet<string> = new Set([
+  MUSIC_KEYS.BOSS_FORGE_GOLEM,
+  MUSIC_KEYS.BOSS_FROSTWARDEN,
+  MUSIC_KEYS.BOSS_BLIGHT_TREANT,
+  MUSIC_KEYS.BOSS_IRON_BEAR,
+]);
+
+const BOSS_MUSIC_VOLUME_BOOST = 2;
+
+const BOSS_MUSIC_SKIP_TIMES: Record<string, number> = {
+  [MUSIC_KEYS.BOSS_IRON_BEAR]: 6,
+};
+
 // Maps a boss enemy id to its music key, falling back to undefined for non-boss or unknown ids.
 export function getBossMusicKey(bossId: string): string | undefined {
   switch (bossId) {
@@ -89,10 +102,12 @@ function replaceCurrentTrack(key: string, track: string, volume: number) {
     audioState.currentMusic = null;
   }
 
+  const boost = BOSS_MUSIC_KEYS.has(key) ? BOSS_MUSIC_VOLUME_BOOST : 1;
+  const effectiveVolume = volume * boost;
+
   const cached = musicCache.get(key);
   if (cached) {
-    // Resume cached element from its saved position.
-    cached.volume = volume;
+    cached.volume = effectiveVolume;
     cached.muted = audioState.muted;
     playElement(cached);
     audioState.currentMusic = cached;
@@ -101,8 +116,12 @@ function replaceCurrentTrack(key: string, track: string, volume: number) {
 
   const el = new Audio(musicBase + track);
   el.loop = true;
-  el.volume = volume;
+  el.volume = effectiveVolume;
   el.muted = audioState.muted;
+  const skipTime = BOSS_MUSIC_SKIP_TIMES[key];
+  if (skipTime) {
+    el.currentTime = skipTime;
+  }
   playElement(el);
   musicCache.set(key, el);
   audioState.currentMusic = el;
@@ -113,6 +132,7 @@ function replaceCurrentTrack(key: string, track: string, volume: number) {
 // Leverages requestAnimationFrame for smooth volume interpolation.
 function startTrack(key: string, track: string) {
   const el = replaceCurrentTrack(key, track, MUSIC_CONFIG.VOLUME_MIN);
+  const boost = BOSS_MUSIC_KEYS.has(key) ? BOSS_MUSIC_VOLUME_BOOST : 1;
   const startTime = performance.now();
 
   function fadeIn() {
@@ -123,7 +143,7 @@ function startTrack(key: string, track: string) {
     }
     const t = Math.min(1, (elapsed - FADE_IN_DELAY) / FADE_IN_DURATION);
     if (audioState.currentMusic === el) {
-      el.volume = audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * t;
+      el.volume = audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * t * boost;
     }
     if (t < 1) {
       requestAnimationFrame(fadeIn);
