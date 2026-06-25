@@ -46,32 +46,32 @@ export default tseslint.config(
   {
     files: ["src/**"],
     rules: {
-      "@typescript-eslint/no-non-null-assertion": "warn",
+      "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-confusing-void-expression": "off",
       "@typescript-eslint/restrict-template-expressions": "off",
-      "@typescript-eslint/no-unnecessary-condition": "warn",
-      "@typescript-eslint/no-deprecated": "warn",
-      "@typescript-eslint/no-unnecessary-type-assertion": "warn",
-      "@typescript-eslint/no-unnecessary-type-parameters": "warn",
-      "@typescript-eslint/no-redundant-type-constituents": "warn",
-      "@typescript-eslint/no-unnecessary-type-arguments": "warn",
-      "@typescript-eslint/no-invalid-void-type": "warn",
-      "@typescript-eslint/no-misused-spread": "warn",
-      "@typescript-eslint/no-base-to-string": "warn",
+      "@typescript-eslint/no-unnecessary-condition": "off",
+      "@typescript-eslint/no-deprecated": "off",
+      "@typescript-eslint/no-unnecessary-type-assertion": "error",
+      "@typescript-eslint/no-unnecessary-type-parameters": "off",
+      "@typescript-eslint/no-redundant-type-constituents": "off",
+      "@typescript-eslint/no-unnecessary-type-arguments": "off",
+      "@typescript-eslint/no-invalid-void-type": "off",
+      "@typescript-eslint/no-misused-spread": "error",
+      "@typescript-eslint/no-base-to-string": "error",
       "@typescript-eslint/no-floating-promises": "error",
-      "@typescript-eslint/no-dynamic-delete": "warn",
-      "@typescript-eslint/restrict-plus-operands": "warn",
-      "@typescript-eslint/no-unsafe-return": "warn",
-      "@typescript-eslint/no-unsafe-argument": "warn",
+      "@typescript-eslint/no-dynamic-delete": "error",
+      "@typescript-eslint/restrict-plus-operands": "error",
+      "@typescript-eslint/no-unsafe-return": "error",
+      "@typescript-eslint/no-unsafe-argument": "error",
       "@typescript-eslint/no-unsafe-member-access": "error",
-      "@typescript-eslint/no-duplicate-type-constituents": "warn",
+      "@typescript-eslint/no-duplicate-type-constituents": "off",
       "@typescript-eslint/use-unknown-in-catch-callback-variable": "error",
       "@typescript-eslint/no-misused-promises": "error",
-      "@typescript-eslint/unbound-method": "warn",
-      "@typescript-eslint/no-useless-default-assignment": "warn",
-      "@typescript-eslint/no-unsafe-assignment": "warn",
-      "@typescript-eslint/no-unnecessary-type-conversion": "warn",
-      "no-console": ["warn", { allow: ["warn", "error"] }],
+      "@typescript-eslint/unbound-method": "error",
+      "@typescript-eslint/no-useless-default-assignment": "off",
+      "@typescript-eslint/no-unsafe-assignment": "error",
+      "@typescript-eslint/no-unnecessary-type-conversion": "off",
+      "no-console": ["error", { allow: ["warn", "error"] }],
     },
   },
 
@@ -85,7 +85,7 @@ export default tseslint.config(
   {
     rules: {
       ...reactHooks.configs.flat.recommended.rules,
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
     },
     plugins: {
       "react-hooks": reactHooks,
@@ -118,8 +118,6 @@ export default tseslint.config(
   // Global style rules (no types needed)
   {
     rules: {
-      complexity: ["warn", 11],
-      "max-lines-per-function": ["warn", { max: 50, skipComments: true }],
       eqeqeq: ["error", "always", { null: "ignore" }],
       "@typescript-eslint/consistent-type-imports": [
         "error",
@@ -161,7 +159,12 @@ export default tseslint.config(
           patterns: [
             {
               group: ["@/lib/game-data/*"],
-              allowImportNames: ["hydrateCard", "getOfferableCardPool", "getStandardPotionPool", "isStandardPotionCard"],
+              allowImportNames: [
+                "hydrateCard",
+                "getOfferableCardPool",
+                "getStandardPotionPool",
+                "isStandardPotionCard",
+              ],
               message: "Import from @/lib/game-data (barrel) instead of deep paths.",
             },
             { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
@@ -478,7 +481,7 @@ export default tseslint.config(
   // Allow unused args prefixed with _
   {
     rules: {
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
     },
   },
 
@@ -487,7 +490,7 @@ export default tseslint.config(
     files: ["tests/**/*.ts", "tests/**/*.tsx"],
     rules: {
       "@typescript-eslint/no-unused-vars": [
-        "warn",
+        "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^(_|describe|it|expect|vi|beforeEach|afterEach)$" },
       ],
       "@typescript-eslint/no-explicit-any": "off",

@@ -3,6 +3,7 @@
 // Depended on by: useRunNavigation for sampling and getting available destinations.
 import {
   DEFAULT_DESTINATION_WEIGHT,
+  CORRUPTION_DESTINATION_WEIGHT,
   DESTINATION_CHOICES,
   DESTINATION_PITY_WEIGHT_CAP,
   DESTINATION_PITY_WEIGHT_PER_ROUND,
@@ -79,12 +80,14 @@ export function lastOfferedIncludesCombat(lastOfferedDestinations: Destination[]
 }
 
 export function computeDestinationWeight(destination: Destination, context: DestinationWeightContext): number {
+  const baseWeight =
+    destination === DESTINATIONS.CORRUPTION ? CORRUPTION_DESTINATION_WEIGHT : DEFAULT_DESTINATION_WEIGHT;
   const pityRounds = context.roundsSinceOffered[destination] ?? 0;
   const pity = Math.min(pityRounds * DESTINATION_PITY_WEIGHT_PER_ROUND, DESTINATION_PITY_WEIGHT_CAP);
   const wasLastOffered = context.lastOfferedDestinations.includes(destination);
-  const repeatMultiplier = wasLastOffered ? LAST_OFFERED_DESTINATION_WEIGHT / DEFAULT_DESTINATION_WEIGHT : 1;
+  const repeatMultiplier = wasLastOffered ? LAST_OFFERED_DESTINATION_WEIGHT / baseWeight : 1;
   const dampen = wasLastOffered ? DESTINATION_POST_OFFER_DAMPEN : 0;
-  return Math.max(1, (DEFAULT_DESTINATION_WEIGHT + pity) * repeatMultiplier - dampen);
+  return Math.max(1, (baseWeight + pity) * repeatMultiplier - dampen);
 }
 
 function weightedPick(pool: Destination[], context: DestinationWeightContext, rng: () => number): Destination | null {

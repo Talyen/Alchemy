@@ -3,7 +3,8 @@ import type { RawSaveData } from "./types";
 
 function remapEnemyTraits(traits: unknown): unknown {
   if (!Array.isArray(traits)) return traits;
-  return traits.map((trait) => {
+  const traitList: unknown[] = traits;
+  return traitList.map((trait) => {
     if (!trait || typeof trait !== "object") return trait;
     const t = trait as Record<string, unknown>;
     if (typeof t.id !== "string") return trait;

@@ -3,7 +3,8 @@ import type { RawSaveData } from "./types";
 
 function remapTraitIds(ids: unknown): unknown {
   if (!Array.isArray(ids)) return ids;
-  return ids.map((id) => (typeof id === "string" ? remapLegacyBoonContentId(id) : id));
+  const traitIds: unknown[] = ids;
+  return traitIds.map((id) => (typeof id === "string" ? remapLegacyBoonContentId(id) : id));
 }
 
 /** Remaps legacy wildwood draft enum values. Idempotent for already-migrated saves. */

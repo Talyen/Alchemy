@@ -4,20 +4,20 @@ Automation enforces release readiness — agents do not rely on manual checklist
 
 ## Commands
 
-| Command | When it runs |
-|---------|----------------|
-| `npm run check:ship` | Pre-push (`build:ship`), release workflow |
-| `npm run check:ship:ci` | CI `ship-gate` (unit + desktop compile; reuses `dist` artifact) |
-| `npm run check:ship:full` | Nightly + before tagging (`unit` + save E2E + Electron E2E) |
-| `npm run verify:release-version` | `release.yml` — tag must match `package.json` |
-| `npm run sync:version` | `prebuild` / `prebuild:desktop` — syncs `package.json` → `metadata.generated.ts` |
-| `npm run sync:steam-appid` | `prebuild:desktop` / release — writes `steam_appid.txt` from `STEAM_APP_ID` |
-| `npm run sync:changelog` | Rebuilds `CHANGELOG.md` ## [Unreleased] from git since latest `v*` tag |
-| `npm run sync:changelog:check` | CI drift guard — fails if `CHANGELOG.md` is stale |
-| `npm run generate:patch-notes` | Active dev → `release-notes/UNRELEASED.md`; tag CI → `release-notes/vX.Y.Z.md` |
-| `npm run dist:desktop` | Windows/Linux/Mac targets from [`steam/platforms.json`](../steam/platforms.json) |
-| `npm run steam:upload:dry-run` | Validates Steam VDF templates without credentials |
-| `npm run release` | Bumps version, promotes changelog, creates git tag |
+| Command                          | When it runs                                                                     |
+| -------------------------------- | -------------------------------------------------------------------------------- |
+| `npm run check:ship`             | Pre-push (`build:ship`), release workflow                                        |
+| `npm run check:ship:ci`          | CI `ship-gate` (unit + desktop compile; reuses `dist` artifact)                  |
+| `npm run check:ship:full`        | Nightly + before tagging (`unit` + save E2E + Electron E2E)                      |
+| `npm run verify:release-version` | `release.yml` — tag must match `package.json`                                    |
+| `npm run sync:version`           | `prebuild` / `prebuild:desktop` — syncs `package.json` → `metadata.generated.ts` |
+| `npm run sync:steam-appid`       | `prebuild:desktop` / release — writes `steam_appid.txt` from `STEAM_APP_ID`      |
+| `npm run sync:changelog`         | Rebuilds `CHANGELOG.md` ## [Unreleased] from git since latest `v*` tag           |
+| `npm run sync:changelog:check`   | CI drift guard — fails if `CHANGELOG.md` is stale                                |
+| `npm run generate:patch-notes`   | Active dev → `release-notes/UNRELEASED.md`; tag CI → `release-notes/vX.Y.Z.md`   |
+| `npm run dist:desktop`           | Windows/Linux/Mac targets from [`steam/platforms.json`](../steam/platforms.json) |
+| `npm run steam:upload:dry-run`   | Validates Steam VDF templates without credentials                                |
+| `npm run release`                | Bumps version, promotes changelog, creates git tag                               |
 
 ## Changelog automation (main-only)
 
@@ -35,12 +35,12 @@ Automation enforces release readiness — agents do not rely on manual checklist
 
 ## GitHub secrets (one-time setup)
 
-| Secret | Purpose |
-|--------|---------|
-| `STEAM_APP_ID` | Production Steam App ID |
-| `STEAM_DEPOT_ID` | Primary content depot |
-| `STEAM_USERNAME` / `STEAM_PASSWORD` | `steamcmd` upload |
-| `CSC_LINK` / `CSC_KEY_PASSWORD` | Optional Windows code signing |
+| Secret                              | Purpose                       |
+| ----------------------------------- | ----------------------------- |
+| `STEAM_APP_ID`                      | Production Steam App ID       |
+| `STEAM_DEPOT_ID`                    | Primary content depot         |
+| `STEAM_USERNAME` / `STEAM_PASSWORD` | `steamcmd` upload             |
+| `CSC_LINK` / `CSC_KEY_PASSWORD`     | Optional Windows code signing |
 
 ## System requirements (Windows)
 
@@ -51,12 +51,12 @@ Automation enforces release readiness — agents do not rely on manual checklist
 
 ## CI jobs
 
-| Job | Trigger |
-|-----|---------|
-| `e2e` (`@critical`) | Every push |
-| `ship-gate` | Every push (`check:ship:ci` after lint/test/build) |
-| `save-gate` | Push when save/migration paths change |
-| `active-run-gate` | Push when active-run paths change |
-| `desktop-build` | Push when desktop paths change (Windows installer artifact) |
-| `electron-e2e` | Push when desktop/Electron paths change |
-| `release` (incl. `e2e-full` 3-shard matrix) | Tag `v*` push |
+| Job                                         | Trigger                                                     |
+| ------------------------------------------- | ----------------------------------------------------------- |
+| `e2e` (`@critical`)                         | Every push                                                  |
+| `ship-gate`                                 | Every push (`check:ship:ci` after lint/test/build)          |
+| `save-gate`                                 | Push when save/migration paths change                       |
+| `active-run-gate`                           | Push when active-run paths change                           |
+| `desktop-build`                             | Push when desktop paths change (Windows installer artifact) |
+| `electron-e2e`                              | Push when desktop/Electron paths change                     |
+| `release` (incl. `e2e-full` 3-shard matrix) | Tag `v*` push                                               |

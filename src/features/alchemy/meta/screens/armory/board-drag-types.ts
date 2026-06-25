@@ -28,10 +28,7 @@ export interface PendingBoardDrag<TId extends string, TOrigin extends DragOrigin
   offset: DragPoint;
 }
 
-export type FootprintFn<TId extends string, TItem> = (
-  id: TId,
-  lookup: TItem | undefined,
-) => { w: number; h: number } | null;
+type FootprintFn<TId extends string, TItem> = (id: TId, lookup: TItem | undefined) => { w: number; h: number } | null;
 
 export type BoardDragCommitResult<TItem> = { heldItem?: { item: TItem; source: DragRect } } | undefined;
 

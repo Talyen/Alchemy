@@ -27,18 +27,18 @@ npm run dev
 
 ## Key Scripts
 
-| Command                 | Action                                                 |
-| ----------------------- | ------------------------------------------------------ |
-| `npm run dev`           | Start Vite dev server                                  |
-| `npm run build`         | TypeScript check, then production build |
-| `npm run preview`       | Preview the production build locally                   |
-| `npm test`              | Run Vitest unit tests                                  |
-| `npm run test:coverage` | Run Vitest with coverage                               |
-| `npm run test:e2e`      | Run Playwright end-to-end tests                        |
-| `npm run lint`          | Lint all source files                                  |
-| `npm run format`        | Format with Prettier                                   |
-| `npm run release`       | Bump version + generate changelog + create git tag     |
-| `npm run balance:sim`   | Run headless balance simulation report                 |
+| Command                 | Action                                             |
+| ----------------------- | -------------------------------------------------- |
+| `npm run dev`           | Start Vite dev server                              |
+| `npm run build`         | TypeScript check, then production build            |
+| `npm run preview`       | Preview the production build locally               |
+| `npm test`              | Run Vitest unit tests                              |
+| `npm run test:coverage` | Run Vitest with coverage                           |
+| `npm run test:e2e`      | Run Playwright end-to-end tests                    |
+| `npm run lint`          | Lint all source files                              |
+| `npm run format`        | Format with Prettier                               |
+| `npm run release`       | Bump version + generate changelog + create git tag |
+| `npm run balance:sim`   | Run headless balance simulation report             |
 
 > Full command reference: [`docs/REFERENCE.md`](./docs/REFERENCE.md#environment--commands). Agent/coding rules: [`AGENTS.md`](./AGENTS.md).
 
@@ -46,12 +46,12 @@ npm run dev
 
 The game also has an Electron shell for local desktop builds.
 
-| Command                 | Action                            |
-| ----------------------- | --------------------------------- |
-| `npm run dev:desktop`   | Run Vite and Electron together    |
+| Command                 | Action                                        |
+| ----------------------- | --------------------------------------------- |
+| `npm run dev:desktop`   | Run Vite and Electron together                |
 | `npm run build:desktop` | TypeScript check and desktop production build |
-| `npm run package:win`   | Create an unpacked Windows build  |
-| `npm run dist:win`      | Create a Windows installer        |
+| `npm run package:win`   | Create an unpacked Windows build              |
+| `npm run dist:win`      | Create a Windows installer                    |
 
 ## Testing
 
@@ -68,11 +68,11 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-| Tier | Command | When to use |
-| ---- | ------- | ----------- |
-| Unit | `npm test` | Fast feedback on logic and stores |
-| E2E prepush | `npm run test:e2e:prepush` | Local pre-push gate (`@prepush` tagged scenarios) |
-| E2E main gate | `npm run test:e2e:main-gate` | Full Playwright suite (CI main-branch gate) |
+| Tier          | Command                      | When to use                                       |
+| ------------- | ---------------------------- | ------------------------------------------------- |
+| Unit          | `npm test`                   | Fast feedback on logic and stores                 |
+| E2E prepush   | `npm run test:e2e:prepush`   | Local pre-push gate (`@prepush` tagged scenarios) |
+| E2E main gate | `npm run test:e2e:main-gate` | Full Playwright suite (CI main-branch gate)       |
 
 CI runs formatting, linting, unit tests, production build, and the critical Playwright suite. Path-specific tests and CI parity: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
@@ -161,11 +161,11 @@ tests/                   # Vitest unit tests and Playwright e2e specs
 
 Asset optimization runs automatically before development and production builds.
 
-| Command                   | Action                  |
-| ------------------------- | ----------------------- |
-| `npm run assets:optimize` | Optimize image assets   |
-| `npm run sounds:optimize` | Optimize sound effects  |
-| `npm run music:optimize`  | Optimize music assets   |
+| Command                   | Action                 |
+| ------------------------- | ---------------------- |
+| `npm run assets:optimize` | Optimize image assets  |
+| `npm run sounds:optimize` | Optimize sound effects |
+| `npm run music:optimize`  | Optimize music assets  |
 
 Optimized images are committed under `src/assets/optimized/`. Optimized sounds are output to `public/sounds/`.
 

@@ -34,8 +34,6 @@ export const DESTINATION_CHOICES = 3;
 export const DEFAULT_DESTINATION_WEIGHT = 10;
 // Semantic alias: corruption uses the same weight as normal routes; separate name documents intent at call sites.
 export const CORRUPTION_DESTINATION_WEIGHT = 10;
-/** @deprecated Use LAST_OFFERED_DESTINATION_WEIGHT — weights now use last offered screen, not last visited room. */
-export const PREVIOUS_DESTINATION_WEIGHT = 1;
 export const LAST_OFFERED_DESTINATION_WEIGHT = 3;
 export const DESTINATION_PITY_WEIGHT_PER_ROUND = 3;
 export const DESTINATION_PITY_WEIGHT_CAP = 30;

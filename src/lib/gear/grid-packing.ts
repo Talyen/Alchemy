@@ -214,7 +214,6 @@ export function packInventoryGridPreserving<T extends { id: string }>(
   }));
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- TKind constrains kind field relationship across items
 export function packMixedBoard<TKind extends string, TItem extends { id: string; kind: TKind }>(
   items: TItem[],
   cols: number,

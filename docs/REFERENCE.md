@@ -3,6 +3,7 @@
 Static reference for commands, glossary, battle rules, and file lookup. Strict coding rules: **[AGENTS.md](../AGENTS.md)**. Run state: [ARCHITECTURE.md](./ARCHITECTURE.md). How-to checklists: [WORKFLOWS.md](./WORKFLOWS.md). Hooks and tests: [CONTRIBUTING.md](../CONTRIBUTING.md). Audits: [PROMPTS.md](../PROMPTS.md).
 
 ## Quick Reference
+
 - [Environment & Commands](#environment--commands)
 - [Battle Implementation Rules](#battle-implementation-rules)
 - [Domain Glossary](#domain-glossary)
@@ -70,32 +71,32 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 
 Definitions of common terms used in the Alchemy codebase.
 
-| Term | Definition |
-|---|---|
-| **Block** | Damage absorption on player/enemy; halves at the start of the owner's next turn after one opposing attack window. |
-| **Burn** | DoT status; deals its stack as damage, then normally decays by half. |
-| **Death's Door** | At 0 HP, grace turn(s) before run ends; must heal above 0 before grace expires. |
-| **Homestead** | Between-run hub; spend **Materials** on permanent upgrades. |
-| **Mana** | Resource to play cards; resets to `maxMana` each turn (unspent lost unless Wellspring). |
-| **Materials** | Meta currency for homestead upgrades; in-run earnings via `awardMaterialsDuringRun()`. |
-| **Screen** | Route union (`menu`, `battle`, `rewards`, …) on `navigation.screen` — not a map node. |
-| **Combat Text** | Floating numbers merged per `(target, kind, stat)`. |
-| **Companion Bond** | Per-companion talent level; boosts companion damage each turn. |
-| **Content System** | `campaign`, `labyrinth`, or `wildwood` — map generation and encounter rules. |
-| **Corruption** | Altar event that mutates a card with a random harmful effect/tag. |
-| **Damage type** | `physical`, `stun`, `holy`, `burn`, `poison`, `bleed`, `freeze`, `nature` — enemies may resist or be vulnerable per type. |
-| **Potion** | Consumable with temporary effect from the Alchemist shop. |
-| **Regen / Regeneration** | Enemy trait: heal each turn at end of enemy phase. |
-| **Reward route** | Internal post-rewards destination (`REWARD_ROUTES`), not a `Screen` — see **Screen** above. Combat rewards: normal → card, elite → trinket, boss → gear; Wildwood rolls 1/3 card/trinket/gear. |
-| **Run materials earned** | `progress.runMaterialsEarned` — materials collected during the current run (combat, mysteries); persisted in `ActiveRunData`; cleared after run end. Shown on game-over / run-victory via `session.runEndMaterials` (includes homestead `endRun*PerRoom` bonuses). |
-| **StaggerGroup / StaggerItem** | Shared enter-animation wrappers (`shared-ui`); panel `state-swap` + per-child `.stagger-item` stagger. See [WORKFLOWS § Staggered screen enter](./WORKFLOWS.md#staggered-screen-enter-motion). |
-| **Status** | Temporary player/enemy effect with tick/expiry (Burn, Freeze, Poison, Stun, …). |
-| **TiltSurface** | Card/tile wrapper with tilt-on-hover, optional shimmer, and button/div modes (`shared/ui/tilt-surface.tsx`). |
-| **Summon** | Brings a companion into battle. |
-| **Talent Effect Manifest** | Active talent bonuses on `BattleState.talentEffects`. |
-| **Trinket Manifest** | Run-scoped Trinket bonuses on `BattleState.trinketEffects`. |
-| **Gear** | Permanent unique items stored in the Armory and equipped per character. Gear effects are snapshotted when battle begins. |
-| **Wish** | Card choices from full library; `wishQueue`. |
+| Term                           | Definition                                                                                                                                                                                                                                                         |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Block**                      | Damage absorption on player/enemy; halves at the start of the owner's next turn after one opposing attack window.                                                                                                                                                  |
+| **Burn**                       | DoT status; deals its stack as damage, then normally decays by half.                                                                                                                                                                                               |
+| **Death's Door**               | At 0 HP, grace turn(s) before run ends; must heal above 0 before grace expires.                                                                                                                                                                                    |
+| **Homestead**                  | Between-run hub; spend **Materials** on permanent upgrades.                                                                                                                                                                                                        |
+| **Mana**                       | Resource to play cards; resets to `maxMana` each turn (unspent lost unless Wellspring).                                                                                                                                                                            |
+| **Materials**                  | Meta currency for homestead upgrades; in-run earnings via `awardMaterialsDuringRun()`.                                                                                                                                                                             |
+| **Screen**                     | Route union (`menu`, `battle`, `rewards`, …) on `navigation.screen` — not a map node.                                                                                                                                                                              |
+| **Combat Text**                | Floating numbers merged per `(target, kind, stat)`.                                                                                                                                                                                                                |
+| **Companion Bond**             | Per-companion talent level; boosts companion damage each turn.                                                                                                                                                                                                     |
+| **Content System**             | `campaign`, `labyrinth`, or `wildwood` — map generation and encounter rules.                                                                                                                                                                                       |
+| **Corruption**                 | Altar event that mutates a card with a random harmful effect/tag.                                                                                                                                                                                                  |
+| **Damage type**                | `physical`, `stun`, `holy`, `burn`, `poison`, `bleed`, `freeze`, `nature` — enemies may resist or be vulnerable per type.                                                                                                                                          |
+| **Potion**                     | Consumable with temporary effect from the Alchemist shop.                                                                                                                                                                                                          |
+| **Regen / Regeneration**       | Enemy trait: heal each turn at end of enemy phase.                                                                                                                                                                                                                 |
+| **Reward route**               | Internal post-rewards destination (`REWARD_ROUTES`), not a `Screen` — see **Screen** above. Combat rewards: normal → card, elite → trinket, boss → gear; Wildwood rolls 1/3 card/trinket/gear.                                                                     |
+| **Run materials earned**       | `progress.runMaterialsEarned` — materials collected during the current run (combat, mysteries); persisted in `ActiveRunData`; cleared after run end. Shown on game-over / run-victory via `session.runEndMaterials` (includes homestead `endRun*PerRoom` bonuses). |
+| **StaggerGroup / StaggerItem** | Shared enter-animation wrappers (`shared-ui`); panel `state-swap` + per-child `.stagger-item` stagger. See [WORKFLOWS § Staggered screen enter](./WORKFLOWS.md#staggered-screen-enter-motion).                                                                     |
+| **Status**                     | Temporary player/enemy effect with tick/expiry (Burn, Freeze, Poison, Stun, …).                                                                                                                                                                                    |
+| **TiltSurface**                | Card/tile wrapper with tilt-on-hover, optional shimmer, and button/div modes (`shared/ui/tilt-surface.tsx`).                                                                                                                                                       |
+| **Summon**                     | Brings a companion into battle.                                                                                                                                                                                                                                    |
+| **Talent Effect Manifest**     | Active talent bonuses on `BattleState.talentEffects`.                                                                                                                                                                                                              |
+| **Trinket Manifest**           | Run-scoped Trinket bonuses on `BattleState.trinketEffects`.                                                                                                                                                                                                        |
+| **Gear**                       | Permanent unique items stored in the Armory and equipped per character. Gear effects are snapshotted when battle begins.                                                                                                                                           |
+| **Wish**                       | Card choices from full library; `wishQueue`.                                                                                                                                                                                                                       |
 
 ---
 
@@ -103,29 +104,29 @@ Definitions of common terms used in the Alchemy codebase.
 
 Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths are on-disk unless noted.
 
-| Need | Look in |
-|---|---|
-| App boot / screen registry | `src/app/screen-routes/`, `render-alchemy-screen.tsx` |
-| Audio (cache / music / SFX / volume) | `src/lib/audio-*.ts`, `src/lib/audio.ts` |
-| Cold-start loading gate | `use-initial-load-ready.ts`, `allGameArt` in `assets.ts` — see [ARCHITECTURE § Boot](./ARCHITECTURE.md#boot-and-loading) |
-| Balance simulation | `src/lib/balance/` |
-| Card corruption | `src/features/alchemy/run-loop/corruption.ts` |
-| Card library barrel | `src/lib/game-data/cards.ts` → `cards/combatCards.ts`, `supportCards.ts` |
-| Content systems (labyrinth / wildwood) | `src/lib/content-systems/` |
-| Effect handler registry doc | `src/lib/game-data/effects/BATTLE_HANDLERS.md` |
-| Feature config barrel | `src/features/alchemy/shared/config/` |
-| Game-data types | `src/lib/game-data/types.ts` |
-| Homestead data | `src/lib/homestead/` — **Detect Magic** (`masonry` research) shifts gear reward/shop Basic↔Astral rolls (+3% / +6% / +10% Astral at tiers 1–3). |
-| In-run material grants | `awardMaterialsDuringRun()` in `shared/stores/run-session-facade.ts` |
-| Motion UI (`StaggerGroup`, `StaggerItem`, `TiltSurface`, `PressableSound`) | `src/features/alchemy/shared/ui/` — enter tokens in `src/index.css` |
-| Image preload helper | `src/lib/image-preload.ts` |
-| Potion mixing | `src/features/alchemy/potion-mixer.ts` |
-| Platform / Steam | `src/lib/platform.ts`, `desktop/` |
-| Reward card sampling | `run-loop/reward-utils.ts` |
-| Run lifecycle / facade | `shared/stores/run-session-facade.ts`, `run-transitions.ts` |
-| Run screen taxonomy | `src/lib/routing/run-screen-router.ts` |
-| Save migrations doc | `shared/storage/MIGRATIONS.md` |
-| Sound ↔ card registry | `src/lib/sound-registry.ts` |
-| Startup validation | `src/lib/validate-startup.ts` |
-| Talent XP math vs talent data | `src/lib/game-data/talents/progression.ts` vs `src/lib/game-data/talents/` |
-| Tuning | `src/lib/game-constants.ts` |
+| Need                                                                       | Look in                                                                                                                                         |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| App boot / screen registry                                                 | `src/app/screen-routes/`, `render-alchemy-screen.tsx`                                                                                           |
+| Audio (cache / music / SFX / volume)                                       | `src/lib/audio-*.ts`, `src/lib/audio.ts`                                                                                                        |
+| Cold-start loading gate                                                    | `use-initial-load-ready.ts`, `allGameArt` in `assets.ts` — see [ARCHITECTURE § Boot](./ARCHITECTURE.md#boot-and-loading)                        |
+| Balance simulation                                                         | `src/lib/balance/`                                                                                                                              |
+| Card corruption                                                            | `src/features/alchemy/run-loop/corruption.ts`                                                                                                   |
+| Card library barrel                                                        | `src/lib/game-data/cards.ts` → `cards/combatCards.ts`, `supportCards.ts`                                                                        |
+| Content systems (labyrinth / wildwood)                                     | `src/lib/content-systems/`                                                                                                                      |
+| Effect handler registry doc                                                | `src/lib/game-data/effects/BATTLE_HANDLERS.md`                                                                                                  |
+| Feature config barrel                                                      | `src/features/alchemy/shared/config/`                                                                                                           |
+| Game-data types                                                            | `src/lib/game-data/types.ts`                                                                                                                    |
+| Homestead data                                                             | `src/lib/homestead/` — **Detect Magic** (`masonry` research) shifts gear reward/shop Basic↔Astral rolls (+3% / +6% / +10% Astral at tiers 1–3). |
+| In-run material grants                                                     | `awardMaterialsDuringRun()` in `shared/stores/run-session-facade.ts`                                                                            |
+| Motion UI (`StaggerGroup`, `StaggerItem`, `TiltSurface`, `PressableSound`) | `src/features/alchemy/shared/ui/` — enter tokens in `src/index.css`                                                                             |
+| Image preload helper                                                       | `src/lib/image-preload.ts`                                                                                                                      |
+| Potion mixing                                                              | `src/features/alchemy/potion-mixer.ts`                                                                                                          |
+| Platform / Steam                                                           | `src/lib/platform.ts`, `desktop/`                                                                                                               |
+| Reward card sampling                                                       | `run-loop/reward-utils.ts`                                                                                                                      |
+| Run lifecycle / facade                                                     | `shared/stores/run-session-facade.ts`, `run-transitions.ts`                                                                                     |
+| Run screen taxonomy                                                        | `src/lib/routing/run-screen-router.ts`                                                                                                          |
+| Save migrations doc                                                        | `shared/storage/MIGRATIONS.md`                                                                                                                  |
+| Sound ↔ card registry                                                      | `src/lib/sound-registry.ts`                                                                                                                     |
+| Startup validation                                                         | `src/lib/validate-startup.ts`                                                                                                                   |
+| Talent XP math vs talent data                                              | `src/lib/game-data/talents/progression.ts` vs `src/lib/game-data/talents/`                                                                      |
+| Tuning                                                                     | `src/lib/game-constants.ts`                                                                                                                     |

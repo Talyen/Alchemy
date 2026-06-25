@@ -45,7 +45,7 @@ export function setTiltFromEvent(event: MouseEvent<HTMLElement>) {
   });
 }
 
-export function clearTiltElement(target: HTMLElement) {
+function clearTiltElement(target: HTMLElement) {
   const frame = tiltFrames.get(target);
   if (frame?.rafId !== null && frame?.rafId !== undefined) cancelAnimationFrame(frame.rafId);
   tiltFrames.delete(target);

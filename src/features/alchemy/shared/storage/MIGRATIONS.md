@@ -11,6 +11,7 @@ This file documents how to change persisted save data without breaking player pr
 Increment `CURRENT_SAVE_SCHEMA_VERSION` when a change requires old saved payloads to be transformed before normal field cleanup can safely load them.
 
 Examples:
+
 - Renaming or moving saved fields.
 - Changing the shape of `activeRun`, homestead records, talents, or collection data.
 - Replacing array-shaped progress with record-shaped progress.
@@ -20,11 +21,11 @@ Do **not** increment for purely additive fields that can safely use defaults in 
 
 ## Single-responsibility rule
 
-| Change | Where |
-|--------|--------|
+| Change                                                      | Where                                                                                                                                                                                                      |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Renames, enum value changes, nested `activeRun` shape fixes | `src/lib/validation/migration/` helpers (`migrate-active-run.ts`, `migrate-battle-state.ts`, `migrate-wildwood-draft.ts`, `migrate-save-top-level.ts`) and the new `migrateVNToVNPlus1` step in `steps.ts` |
-| Additive fields with defaults | Zod `.default()` / `.catch()` and `defaults.ts` — no schema bump |
-| Deck / content-system soft fixes on already-valid shape | `normalize-active-run-data.ts` |
+| Additive fields with defaults                               | Zod `.default()` / `.catch()` and `defaults.ts` — no schema bump                                                                                                                                           |
+| Deck / content-system soft fixes on already-valid shape     | `normalize-active-run-data.ts`                                                                                                                                                                             |
 
 **Do not** put rename logic in `save-schemas/active-run.ts` transforms. Zod must only validate the current shape after preprocess migration.
 
@@ -92,13 +93,13 @@ Schema v4 renames persisted Trinket fields to Boon fields and introduces Gear in
 
 Schema v5 restores Trinket terminology in persisted saves:
 
-| v4 field | v5 field |
-|----------|----------|
-| `discoveredBoonIds` | `discoveredTrinketIds` |
-| `runBoons` | `runTrinkets` |
-| `boonEffects` | `trinketEffects` |
-| `flags.firstBurnBoonDoubledUsed` | `flags.firstBurnTrinketDoubledUsed` |
-| `wildwoodDraft.rewardType: "boon"` | `"trinket"` |
+| v4 field                           | v5 field                            |
+| ---------------------------------- | ----------------------------------- |
+| `discoveredBoonIds`                | `discoveredTrinketIds`              |
+| `runBoons`                         | `runTrinkets`                       |
+| `boonEffects`                      | `trinketEffects`                    |
+| `flags.firstBurnBoonDoubledUsed`   | `flags.firstBurnTrinketDoubledUsed` |
+| `wildwoodDraft.rewardType: "boon"` | `"trinket"`                         |
 
 Run-end discovery snapshots (`*AtRunStart` on `activeRun`) were removed with the discoveries screen; discovery is now immediate when items are earned during a run.
 
@@ -108,11 +109,11 @@ Implemented in `migrateV4ToV5` (`migrate-save-top-level-v5.ts`, updated `migrate
 
 `contentVersion` 2 remaps boon-era content IDs in `unlockedTalents`:
 
-| Legacy ID | Current ID |
-|-----------|------------|
-| `wish-boon` | `wish-trinket` |
+| Legacy ID           | Current ID             |
+| ------------------- | ---------------------- |
+| `wish-boon`         | `wish-trinket`         |
 | `leech-boon-siphon` | `leech-trinket-siphon` |
-| `boon-hoarder` | `trinket-hoarder` |
+| `boon-hoarder`      | `trinket-hoarder`      |
 
 Applied in `migrateContentV2` whenever `contentVersion < CURRENT_CONTENT_VERSION` after the schema migration chain completes.
 

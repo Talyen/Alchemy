@@ -31,7 +31,7 @@ function MenuScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
       onHomestead={() => run.goToScreen("homestead")}
       onTalents={() => run.goToScreen("talents")}
       onArmory={() => run.goToScreen("armory")}
-      {...(platform.canQuit ? { onQuit: platform.quit } : {})}
+      {...(platform.canQuit ? { onQuit: () => platform.quit() } : {})}
       logoSrc={menuLogo}
       logoSrcVariants={menuLogoVariants}
       hasUnspentTalents={hasUnspentTalents}

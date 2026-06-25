@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- overlay components and tiny route helpers are colocated here. */
 import { GameMenu, HamburgerTrigger } from "@/features/alchemy/shared/ui/shared-ui";
 import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-particles";
 import { flattenGearInventories } from "@/lib/gear";
@@ -48,7 +49,7 @@ export function AppHamburgerTrigger({
 }
 
 export function UnsupportedSaveOverlay() {
-  return <UnsupportedSaveVersionScreen canQuit={platform.canQuit} onQuit={platform.quit} />;
+  return <UnsupportedSaveVersionScreen canQuit={platform.canQuit} onQuit={() => platform.quit()} />;
 }
 
 export function useIsArmoryLocked() {

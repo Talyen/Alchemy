@@ -20,7 +20,7 @@ function buildAdjustedDOMRect(boardRect: DOMRect, inset: { l: number; t: number;
     x: boardRect.left + inset.l,
     y: boardRect.top + inset.t,
     toJSON: () => ({}),
-  } as DOMRect;
+  };
 }
 
 export function readInventoryBoardMetrics(board: HTMLElement): {

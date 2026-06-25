@@ -4,6 +4,7 @@ import { getOfferableCardPool } from "./game-data/cards/card-pools";
 import { companionLibrary, enemyBestiary, cardLibrary } from "./game-data";
 import { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./battle/enemy-turn-traits";
 import { logError } from "./error-logger";
+import { WISH_OVERLAY_Z_INDEX } from "./game-constants";
 
 export function runStartupValidation() {
   const checks: Array<{ name: string; ok: boolean }> = [];
@@ -20,7 +21,7 @@ export function runStartupValidation() {
   check("BASE_PLAYER_MANA >= 0", true);
   check("STARTING_TURN > 0", true);
   check("MIN_MAX_MANA_FLOOR > 0", true);
-  check("WISH_OVERLAY_Z_INDEX is 90", true);
+  check("WISH_OVERLAY_Z_INDEX is 90", WISH_OVERLAY_Z_INDEX === 90);
   check("enemyBestiary is non-empty", enemyBestiary.length > 0);
   check("cardLibrary is non-empty", cardLibrary.length > 0);
 

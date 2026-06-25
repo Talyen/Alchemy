@@ -21,25 +21,25 @@ Measurable audits live in [Measurable code-quality criteria](#measurable-code-qu
 
 ### Quick reference
 
-| Audit                                                                         | Trigger                                          | Speed          | Scope                              |
-| ----------------------------------------------------------------------------- | ------------------------------------------------ | -------------- | ---------------------------------- |
-| [Readability & clarity](#readability--clarity-audit)                          | Touching complex code; before opening a PR       | seconds        | top 5 complexity offenders or diff |
-| [Behavior hardening](#behavior-hardening-audit)                               | Touching async/store/IO/modal boundaries         | seconds        | handler/persist hits or diff        |
-| [Test quality](#test-quality-audit)                                           | Weak-test signals; before opening a PR           | seconds        | low-assertion files or diff         |
-| [UI interaction & feedback](#ui-interaction--feedback-audit)                  | Touching drag/modal/tooltip/portal surfaces      | minutes (manual) | hits or diff                      |
-| [Layout & visual containment](#layout--visual-containment-audit)              | Touching popover/stage/scroll layout             | minutes (manual) | hits or diff                      |
-| [TODO/FIXME & runtime warning](#todofixme--runtime-warning-audit)             | Before pushing; periodic sweep                   | seconds        | `src/**`                           |
-| [Accessibility](#accessibility-audit)                                         | Touching interactive screens                     | minutes (manual) | hits or diff                      |
-| [Type safety density](#1-type-safety-density-audit) (#1)                      | Before pushing                                   | seconds        | `src/**`                           |
-| [Cyclomatic complexity](#2-cyclomatic-complexity-audit) (#2)                  | Before pushing                                   | seconds        | `src/**`                           |
-| [Dead code ratio](#3-dead-code-ratio-audit) (#3)                              | Before pushing                                   | seconds        | `src/**`                           |
-| [Function & file length](#4-function--file-length-audit) (#4)                 | Before pushing                                   | seconds        | `src/**`                           |
-| [Import coupling & boundary](#5-import-coupling--boundary-audit) (#5)         | Before pushing                                   | seconds        | `src/**`                           |
-| [Side-effect surface](#8-side-effect-surface-audit) (#8)                      | Before pushing                                   | seconds        | `src/**`                           |
-| [Change amplification](#6-change-amplification-audit) (#6)                    | Nightly / post-milestone / pre-refactor          | minutes        | git history                        |
-| [Single-use abstraction](#7-single-use-abstraction-audit) (#7)                | Nightly / post-milestone / pre-refactor          | minutes        | `src/**`                           |
-| [Code duplication density](#9-code-duplication-density-audit) (#9)            | Nightly / post-milestone / pre-refactor          | minutes        | `src/**`                           |
-| [Meaningful test coverage](#10-meaningful-test-coverage-audit) (#10)          | Nightly / post-milestone / pre-refactor          | minutes        | `src/**`                           |
+| Audit                                                                 | Trigger                                     | Speed            | Scope                              |
+| --------------------------------------------------------------------- | ------------------------------------------- | ---------------- | ---------------------------------- |
+| [Readability & clarity](#readability--clarity-audit)                  | Touching complex code; before opening a PR  | seconds          | top 5 complexity offenders or diff |
+| [Behavior hardening](#behavior-hardening-audit)                       | Touching async/store/IO/modal boundaries    | seconds          | handler/persist hits or diff       |
+| [Test quality](#test-quality-audit)                                   | Weak-test signals; before opening a PR      | seconds          | low-assertion files or diff        |
+| [UI interaction & feedback](#ui-interaction--feedback-audit)          | Touching drag/modal/tooltip/portal surfaces | minutes (manual) | hits or diff                       |
+| [Layout & visual containment](#layout--visual-containment-audit)      | Touching popover/stage/scroll layout        | minutes (manual) | hits or diff                       |
+| [TODO/FIXME & runtime warning](#todofixme--runtime-warning-audit)     | Before pushing; periodic sweep              | seconds          | `src/**`                           |
+| [Accessibility](#accessibility-audit)                                 | Touching interactive screens                | minutes (manual) | hits or diff                       |
+| [Type safety density](#1-type-safety-density-audit) (#1)              | Before pushing                              | seconds          | `src/**`                           |
+| [Cyclomatic complexity](#2-cyclomatic-complexity-audit) (#2)          | Before pushing                              | seconds          | `src/**`                           |
+| [Dead code ratio](#3-dead-code-ratio-audit) (#3)                      | Before pushing                              | seconds          | `src/**`                           |
+| [Function & file length](#4-function--file-length-audit) (#4)         | Before pushing                              | seconds          | `src/**`                           |
+| [Import coupling & boundary](#5-import-coupling--boundary-audit) (#5) | Before pushing                              | seconds          | `src/**`                           |
+| [Side-effect surface](#8-side-effect-surface-audit) (#8)              | Before pushing                              | seconds          | `src/**`                           |
+| [Change amplification](#6-change-amplification-audit) (#6)            | Nightly / post-milestone / pre-refactor     | minutes          | git history                        |
+| [Single-use abstraction](#7-single-use-abstraction-audit) (#7)        | Nightly / post-milestone / pre-refactor     | minutes          | `src/**`                           |
+| [Code duplication density](#9-code-duplication-density-audit) (#9)    | Nightly / post-milestone / pre-refactor     | minutes          | `src/**`                           |
+| [Meaningful test coverage](#10-meaningful-test-coverage-audit) (#10)  | Nightly / post-milestone / pre-refactor     | minutes          | `src/**`                           |
 
 ---
 

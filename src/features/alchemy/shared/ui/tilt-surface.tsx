@@ -107,8 +107,9 @@ function TiltSurfaceButton({
   onMouseEnter,
   onMouseLeave,
   surfaceStyle,
+  tiltEnabled,
 }: TiltSurfaceInner) {
-  const canTilt = !disabled;
+  const canTilt = tiltEnabled !== false && !disabled;
   const buttonRef_ = useRef<HTMLButtonElement | null>(null);
   const { handleMouseMove, handleMouseLeave } = useTiltHandlers(canTilt, onMouseLeave);
   return (
@@ -165,9 +166,10 @@ function TiltSurfaceDiv({
   onMouseEnter,
   onMouseLeave,
   surfaceStyle,
+  tiltEnabled,
 }: TiltSurfaceInner) {
   const surfaceRef_ = useRef<HTMLDivElement | null>(null);
-  const { handleMouseMove, handleMouseLeave } = useTiltHandlers(true, onMouseLeave);
+  const { handleMouseMove, handleMouseLeave } = useTiltHandlers(tiltEnabled !== false, onMouseLeave);
   const handleDivKeyDown = onDivClick
     ? (e: KeyboardEvent<HTMLDivElement>) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -221,12 +223,12 @@ export function TiltSurface(props: TiltSurfaceProps) {
   const surfaceStyle = { "--card-base-transform": baseTransform ?? staticCardTransform, ...style } as CSSProperties;
   if (Component === "button")
     return (
-      <TiltSurfaceButton tiltStrength={tiltStrength} {...rest} surfaceStyle={surfaceStyle}>
+      <TiltSurfaceButton tiltEnabled={tiltEnabled} tiltStrength={tiltStrength} {...rest} surfaceStyle={surfaceStyle}>
         {children}
       </TiltSurfaceButton>
     );
   return (
-    <TiltSurfaceDiv tiltStrength={tiltStrength} {...rest} surfaceStyle={surfaceStyle}>
+    <TiltSurfaceDiv tiltEnabled={tiltEnabled} tiltStrength={tiltStrength} {...rest} surfaceStyle={surfaceStyle}>
       {children}
     </TiltSurfaceDiv>
   );

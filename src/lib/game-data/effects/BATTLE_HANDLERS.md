@@ -5,26 +5,26 @@ Effect **runtime handlers** live in [`src/lib/battle/effect-handlers/`](../../ba
 
 ## Schemas (`src/lib/game-data/effects/`)
 
-| Effect kind | Schema file |
-|-------------|-------------|
-| `damage`, `self-damage`, `random-damage`, `remove-enemy-armor` | [`damage-schemas.ts`](./damage-schemas.ts) |
-| `player-status`, `enemy-status`, `remove-harmful-status`, `remove-player-status`, `multiply-enemy-status`, `cleanse-player-status-to-damage` | [`status-schemas.ts`](./status-schemas.ts) |
-| `restore-mana`, `lose-mana`, `gain-max-mana`, `lose-max-mana`, `heal`, `lose-health` | [`mana-health-schemas.ts`](./mana-health-schemas.ts) |
-| `summon-companion`, `buff-companion` | [`companion-schemas.ts`](./companion-schemas.ts) |
-| `gain-gold`, `wish`, `draw-cards` | [`utility-schemas.ts`](./utility-schemas.ts) |
-| `chance` (recursive) | [`chance/definition.ts`](./chance/definition.ts) |
+| Effect kind                                                                                                                                  | Schema file                                          |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `damage`, `self-damage`, `random-damage`, `remove-enemy-armor`                                                                               | [`damage-schemas.ts`](./damage-schemas.ts)           |
+| `player-status`, `enemy-status`, `remove-harmful-status`, `remove-player-status`, `multiply-enemy-status`, `cleanse-player-status-to-damage` | [`status-schemas.ts`](./status-schemas.ts)           |
+| `restore-mana`, `lose-mana`, `gain-max-mana`, `lose-max-mana`, `heal`, `lose-health`                                                         | [`mana-health-schemas.ts`](./mana-health-schemas.ts) |
+| `summon-companion`, `buff-companion`                                                                                                         | [`companion-schemas.ts`](./companion-schemas.ts)     |
+| `gain-gold`, `wish`, `draw-cards`                                                                                                            | [`utility-schemas.ts`](./utility-schemas.ts)         |
+| `chance` (recursive)                                                                                                                         | [`chance/definition.ts`](./chance/definition.ts)     |
 
 The canonical kind list is [`BATTLE_CARD_EFFECT_KINDS`](./kinds.ts). All template definitions are aggregated in [`template-definitions.ts`](./template-definitions.ts).
 
 ## Runtime handlers (`src/lib/battle/effect-handlers/`)
 
-| Concern | File |
-|---------|------|
-| Damage (`damage`, `self-damage`, `random-damage`, `remove-enemy-armor`) | [`damage-handlers.ts`](../../battle/effect-handlers/damage-handlers.ts) |
-| Status (`player-status`, `enemy-status`, `remove-harmful-status`, `remove-player-status`, `multiply-enemy-status`, `cleanse-player-status-to-damage`) | [`status-handlers.ts`](../../battle/effect-handlers/status-handlers.ts) |
-| Mana & health (`restore-mana`, `lose-mana`, `gain-max-mana`, `lose-max-mana`, `heal`, `lose-health`) | [`mana-health-handlers.ts`](../../battle/effect-handlers/mana-health-handlers.ts) |
-| Companion (`summon-companion`, `buff-companion`) | [`companion-handlers.ts`](../../battle/effect-handlers/companion-handlers.ts) |
-| Utility (`gain-gold`, `wish`, `draw-cards`) | [`utility-handlers.ts`](../../battle/effect-handlers/utility-handlers.ts) |
+| Concern                                                                                                                                               | File                                                                              |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Damage (`damage`, `self-damage`, `random-damage`, `remove-enemy-armor`)                                                                               | [`damage-handlers.ts`](../../battle/effect-handlers/damage-handlers.ts)           |
+| Status (`player-status`, `enemy-status`, `remove-harmful-status`, `remove-player-status`, `multiply-enemy-status`, `cleanse-player-status-to-damage`) | [`status-handlers.ts`](../../battle/effect-handlers/status-handlers.ts)           |
+| Mana & health (`restore-mana`, `lose-mana`, `gain-max-mana`, `lose-max-mana`, `heal`, `lose-health`)                                                  | [`mana-health-handlers.ts`](../../battle/effect-handlers/mana-health-handlers.ts) |
+| Companion (`summon-companion`, `buff-companion`)                                                                                                      | [`companion-handlers.ts`](../../battle/effect-handlers/companion-handlers.ts)     |
+| Utility (`gain-gold`, `wish`, `draw-cards`)                                                                                                           | [`utility-handlers.ts`](../../battle/effect-handlers/utility-handlers.ts)         |
 
 The per-kind dispatch map lives in [`registry.ts`](../../battle/effect-handlers/registry.ts) (`EFFECT_APPLY_BY_KIND`).
 

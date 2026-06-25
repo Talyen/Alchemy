@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- armory tile helper components and handler builders are colocated. */
 import { useEffect, useRef, useState } from "react";
 import { type CraftingCurrencyId, type GearInstance } from "@/lib/gear";
 import { ShineBorder } from "@/components/ui/shine-border";

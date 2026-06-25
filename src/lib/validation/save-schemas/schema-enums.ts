@@ -151,7 +151,7 @@ function clampTierLevels<T extends string>(
   const result: Record<T, number> = {} as Record<T, number>;
   for (const id of validIds) {
     const maxTier = items.find((item) => item.id === id)?.tiers.length ?? 0;
-    result[id] = Math.min(maxTier, Math.max(0, data[id] ?? 0)) as number;
+    result[id] = Math.min(maxTier, Math.max(0, data[id] ?? 0));
   }
   return result;
 }

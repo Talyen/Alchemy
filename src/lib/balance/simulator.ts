@@ -37,7 +37,6 @@ import type {
   TalentPreset,
 } from "./simulator-types";
 export type {
-  BalanceBatchConfig,
   BalanceBatchResult,
   BalancePlayPolicy,
   BattleSimulationConfig,

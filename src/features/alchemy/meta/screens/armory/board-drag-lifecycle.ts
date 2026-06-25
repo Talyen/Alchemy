@@ -33,7 +33,7 @@ export function buildHeldDragVisual<TId extends string, TOrigin extends DragOrig
   };
 }
 
-export function buildRevertedDragVisual<TId extends string, TOrigin extends DragOrigin>(
+function buildRevertedDragVisual<TId extends string, TOrigin extends DragOrigin>(
   visual: BoardDragVisual<TId, TOrigin>,
   releaseRect: DragRect,
 ): BoardDragVisual<TId, TOrigin> {

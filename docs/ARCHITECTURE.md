@@ -6,13 +6,13 @@ Canonical reference for run state, store layout, and boot policy. Coding rules: 
 
 ## Directory layout (`src/features/alchemy/`)
 
-| Path | Role |
-|------|------|
-| `shared/` | `stores/`, `storage/`, `ui/`, `config/`, `utils/`, `types.ts`, `screens/index.ts` (barrel) |
-| `meta/` | Menu, collection, homestead, talents |
-| `run-setup/` | Character, difficulty, draft screens |
-| `run-loop/` | Battle glue, navigation, shop, in-run screens |
-| `shell/` | Controller hooks |
+| Path         | Role                                                                                       |
+| ------------ | ------------------------------------------------------------------------------------------ |
+| `shared/`    | `stores/`, `storage/`, `ui/`, `config/`, `utils/`, `types.ts`, `screens/index.ts` (barrel) |
+| `meta/`      | Menu, collection, homestead, talents                                                       |
+| `run-setup/` | Character, difficulty, draft screens                                                       |
+| `run-loop/`  | Battle glue, navigation, shop, in-run screens                                              |
+| `shell/`     | Controller hooks                                                                           |
 
 Import using on-disk paths (e.g. `@/features/alchemy/shared/stores/run-session-facade`). `src/lib/` stays React-free.
 
@@ -20,23 +20,23 @@ Import using on-disk paths (e.g. `@/features/alchemy/shared/stores/run-session-f
 
 A single **run** is owned by **`useRunDomainStore`** (`shared/stores/run-domain-store.ts`) with four slices: `progress`, `session`, `navigation`, and `battle`.
 
-| Concern | Owner | Notes |
-|---------|--------|--------|
-| Deck, gold, HP, acts, trinkets, talents | `progress` | Persisted with meta save |
-| Rewards, shops, labyrinth, mystery | `session` | Transient per run |
-| Current `Screen` | `navigation` | `useActiveRunScreen()` |
-| Combat snapshot + display overrides | `battle` | Synced during battle |
-| Battle VFX | `battle-presentation-store` | Not persisted |
-| Lifecycle | `run-transitions.ts` | Restore, snapshot, teardown, battle sync |
+| Concern                                 | Owner                       | Notes                                    |
+| --------------------------------------- | --------------------------- | ---------------------------------------- |
+| Deck, gold, HP, acts, trinkets, talents | `progress`                  | Persisted with meta save                 |
+| Rewards, shops, labyrinth, mystery      | `session`                   | Transient per run                        |
+| Current `Screen`                        | `navigation`                | `useActiveRunScreen()`                   |
+| Combat snapshot + display overrides     | `battle`                    | Synced during battle                     |
+| Battle VFX                              | `battle-presentation-store` | Not persisted                            |
+| Lifecycle                               | `run-transitions.ts`        | Restore, snapshot, teardown, battle sync |
 
 ### Persistence API
 
-| API | Role |
-|-----|------|
+| API                               | Role                                              |
+| --------------------------------- | ------------------------------------------------- |
 | `createActiveRunSnapshot(source)` | Serialize explicit fields → `ActiveRunData` (lib) |
-| `snapshotRun(screen?)` | Read domain store → `ActiveRunData` |
-| `restoreRun(…)` | Apply snapshot on boot/resume |
-| `parseActiveRun(raw)` | Validate JSON before hydrate |
+| `snapshotRun(screen?)`            | Read domain store → `ActiveRunData`               |
+| `restoreRun(…)`                   | Apply snapshot on boot/resume                     |
+| `parseActiveRun(raw)`             | Validate JSON before hydrate                      |
 
 ### Session facade (`run-session-facade.ts`)
 
@@ -70,13 +70,13 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 
 ## Controller entry points
 
-| Concern | Start here |
-|---------|------------|
-| Run lifecycle | `shell/use-alchemy-run-controller.ts`, `run-transitions.ts` |
-| Navigation / rewards | `shell/use-run-navigation.ts`, `run-loop/navigation/*` |
-| Battle | `shell/use-battle-controller.ts` → `lib/battle/*` |
-| Session reads/writes | `shared/stores/run-session-facade.ts` |
-| Screen routing | `shell/use-screen-navigation.ts`, `useActiveRunScreen()` |
+| Concern              | Start here                                                  |
+| -------------------- | ----------------------------------------------------------- |
+| Run lifecycle        | `shell/use-alchemy-run-controller.ts`, `run-transitions.ts` |
+| Navigation / rewards | `shell/use-run-navigation.ts`, `run-loop/navigation/*`      |
+| Battle               | `shell/use-battle-controller.ts` → `lib/battle/*`           |
+| Session reads/writes | `shared/stores/run-session-facade.ts`                       |
+| Screen routing       | `shell/use-screen-navigation.ts`, `useActiveRunScreen()`    |
 
 ## Meta compendium (`app-store`)
 
@@ -104,13 +104,13 @@ Enforced in `eslint.config.js`. **Agent-facing summary:** [AGENTS.md — Archite
 
 One loading experience at cold start, then instant navigation — no per-route "Loading …" fallbacks.
 
-| Layer | Where | Policy |
-|-------|--------|--------|
-| Images | `allGameArt` in `assets.ts` (eager `import.meta.glob`) | Decoded before menu via `useInitialLoadReady` |
-| Fonts | `use-initial-load-ready.ts` | With images at startup |
-| Screen JS | `src/app/screen-routes/` | Static imports — **no** `React.lazy()` |
-| Runtime extras | `use-app-preload-effects.ts` | Battle/rewards/shop warm-up only |
-| SFX | `use-app-audio-effects.ts` | Critical sounds eager; rest on idle |
+| Layer          | Where                                                  | Policy                                        |
+| -------------- | ------------------------------------------------------ | --------------------------------------------- |
+| Images         | `allGameArt` in `assets.ts` (eager `import.meta.glob`) | Decoded before menu via `useInitialLoadReady` |
+| Fonts          | `use-initial-load-ready.ts`                            | With images at startup                        |
+| Screen JS      | `src/app/screen-routes/`                               | Static imports — **no** `React.lazy()`        |
+| Runtime extras | `use-app-preload-effects.ts`                           | Battle/rewards/shop warm-up only              |
+| SFX            | `use-app-audio-effects.ts`                             | Critical sounds eager; rest on idle           |
 
 **Do not add:** `React.lazy()` on route screens; lazy game art; per-screen spinners for assets in `allGameArt`.
 
@@ -120,8 +120,8 @@ One loading experience at cold start, then instant navigation — no per-route "
 
 Path-specific commands: [CONTRIBUTING.md § What to run](../CONTRIBUTING.md#what-to-run-when-you-change). CI parity: [CONTRIBUTING.md § CI parity](../CONTRIBUTING.md#ci-parity).
 
-| Tier | Command |
-|------|---------|
-| Unit | `npm test` |
-| Pre-push | `npm run test:e2e:prepush` |
+| Tier      | Command                      |
+| --------- | ---------------------------- |
+| Unit      | `npm test`                   |
+| Pre-push  | `npm run test:e2e:prepush`   |
 | Full gate | `npm run test:e2e:main-gate` |

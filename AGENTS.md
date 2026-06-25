@@ -46,6 +46,7 @@ Some codebase rules are enforced by `eslint.config.js`, `lefthook`, and gate scr
 ## Parallel agents and shared worktree
 
 You may share a working tree with another active agent. Their unstaged edits, stash entries, and uncommitted branches are not stale — they are in-flight work.
+
 - **See a dirty tree at task start?** `git status --porcelain` to enumerate; `git diff <file>` to inspect unfamiliar hunks; `git stash list` for foreign stashes. Do not run formatters, `prettier --write`, or other repo-wide fixers that would rewrite the foreign files.
 - **Scope your edits.** Stage and commit only the files you touched. Avoid `git add -A` or `git add .` when the working tree contains uncommitted changes outside your task.
 - **Foreign changes intersect your task?** Stop. Confirm with the user before editing, stashing, or restoring them.
@@ -74,16 +75,16 @@ Change-to-test mapping: [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-run-when-you
 
 ## Where to look
 
-| If you are...                                 | Read first                                                                                                                                                                         | Verify with                                                                       |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Adding content (card, enemy, screen)          | [WORKFLOWS task index](./docs/WORKFLOWS.md#task-index)                                                                                                                             | Targeted tests from [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) |
-| Touching run state or stores                  | [ARCHITECTURE](./docs/ARCHITECTURE.md)                                                                                                                                             | `tests/features/stores/` and related integration tests                            |
-| Touching the Armory (gear, currencies, board) | [ARMORY](./docs/ARMORY.md)                                                                                                                                                         | `tests/lib/gear/`, `tests/features/screens/armory*`, `tests/architecture/gear-*`  |
-| Changing battle or card effects               | [REFERENCE battle rules](./docs/REFERENCE.md#battle-implementation-rules), [BATTLE_HANDLERS.md](./src/lib/game-data/effects/BATTLE_HANDLERS.md)                                    | `tests/lib/battle` and `descriptions-match-effects`                               |
-| Changing UI or motion                         | [WORKFLOWS stagger guidance](./docs/WORKFLOWS.md#staggered-screen-enter-motion); stuck on interaction/layout UX → [PROMPTS UI audits](./PROMPTS.md#ui-interaction--feedback-audit) | Targeted UI tests and `npm run lint:ci`                                           |
-| Changing saves or releases                    | [WORKFLOWS persistence guidance](./docs/WORKFLOWS.md#change-persisted-save-data), [MIGRATIONS.md](./src/features/alchemy/shared/storage/MIGRATIONS.md), [RELEASE.md](./docs/RELEASE.md)                                                                  | Ship checks from [CONTRIBUTING](./CONTRIBUTING.md)                                |
-| Tuning numbers or balance                     | `game-constants.ts`, `npm run balance:sim` (output: `reports/balance-report.html`)                                                                  | Targeted tests from [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) |
-| Desktop / Steam / Electron                    | [RELEASE.md](./docs/RELEASE.md), `desktop/` directory                                                                                                                                | `npm run check:ship:full`                         |
+| If you are...                                 | Read first                                                                                                                                                                              | Verify with                                                                       |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Adding content (card, enemy, screen)          | [WORKFLOWS task index](./docs/WORKFLOWS.md#task-index)                                                                                                                                  | Targeted tests from [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) |
+| Touching run state or stores                  | [ARCHITECTURE](./docs/ARCHITECTURE.md)                                                                                                                                                  | `tests/features/stores/` and related integration tests                            |
+| Touching the Armory (gear, currencies, board) | [ARMORY](./docs/ARMORY.md)                                                                                                                                                              | `tests/lib/gear/`, `tests/features/screens/armory*`, `tests/architecture/gear-*`  |
+| Changing battle or card effects               | [REFERENCE battle rules](./docs/REFERENCE.md#battle-implementation-rules), [BATTLE_HANDLERS.md](./src/lib/game-data/effects/BATTLE_HANDLERS.md)                                         | `tests/lib/battle` and `descriptions-match-effects`                               |
+| Changing UI or motion                         | [WORKFLOWS stagger guidance](./docs/WORKFLOWS.md#staggered-screen-enter-motion); stuck on interaction/layout UX → [PROMPTS UI audits](./PROMPTS.md#ui-interaction--feedback-audit)      | Targeted UI tests and `npm run lint:ci`                                           |
+| Changing saves or releases                    | [WORKFLOWS persistence guidance](./docs/WORKFLOWS.md#change-persisted-save-data), [MIGRATIONS.md](./src/features/alchemy/shared/storage/MIGRATIONS.md), [RELEASE.md](./docs/RELEASE.md) | Ship checks from [CONTRIBUTING](./CONTRIBUTING.md)                                |
+| Tuning numbers or balance                     | `game-constants.ts`, `npm run balance:sim` (output: `reports/balance-report.html`)                                                                                                      | Targeted tests from [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) |
+| Desktop / Steam / Electron                    | [RELEASE.md](./docs/RELEASE.md), `desktop/` directory                                                                                                                                   | `npm run check:ship:full`                                                         |
 
 ## Branch and commit policy
 
@@ -114,7 +115,9 @@ Change-to-test mapping: [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-run-when-you
 
   ```tsx
   type CardProps = { card: Card; onPlay: (id: string) => void };
-  function Card({ card, onPlay }: CardProps) { /* ... */ }
+  function Card({ card, onPlay }: CardProps) {
+    /* ... */
+  }
   ```
 
 - Build conditional Tailwind classes with `cn()` from `@/lib/utils`; no template literals in `className`.

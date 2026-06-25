@@ -55,7 +55,7 @@ export function formatCompanionTurnLineBase(effect: BattleCardEffect, amountOver
 export function expectedCompanionTurnLine(effect: BattleCardEffect): string {
   const line = companionTurnLine(effect);
   if (!line) {
-    throw new Error(`Unhandled companion turn-start effect: ${(effect as BattleCardEffect).kind}`);
+    throw new Error(`Unhandled companion turn-start effect: ${effect.kind}`);
   }
   return line;
 }

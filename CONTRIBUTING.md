@@ -16,6 +16,7 @@ GitHub branch protection is not available on this repo, so **local hooks are the
 **Before pushing to `main`**, also run `npm run test:e2e:prepush:full` (`@critical`, preview + CI flags). The pre-push hook only runs `@prepush`; CI on every push runs the `@critical` suite (which also includes `@prepush` tests). If using a PR branch, run the same before opening the PR.
 
 To analyze test performance and trace failures, you can run:
+
 - `npm run test:e2e:timings` — runs the E2E suite and exports a timing/stats JSON to `reports/e2e-results.json`.
 - `npm run test:e2e:audit` — runs the timing E2E suite and automatically compiles a diagnostic markdown report to `reports/e2e-audit-report.md`.
 
@@ -41,17 +42,17 @@ Commit message rules: [AGENTS.md](./AGENTS.md#branch-and-commit-policy). Release
 
 ## What to run when you change…
 
-| Area | Paths (examples) | Run locally |
-|------|------------------|-------------|
-| Active run / screen / bootstrap | `run-domain-store.ts`, `run-transitions.ts`, `shell/use-alchemy-run-controller.ts`, `hydrate.ts` | `npm test -- tests/features/stores/ tests/features/shell/ tests/lib/active-run-session/hydrate.test.ts tests/architecture/active-run-bootstrap.test.ts` then `npm run test:e2e:prepush` |
-| Save / persistence | `storage/`, `save-schemas/`, `active-run.ts` | `npm test -- tests/features/storage` + `tests/save-persistence.spec.ts` + `npm run test:e2e:prepush` |
-| Battle / cards | `src/lib/battle/`, `src/lib/game-data/` | `npm test -- tests/lib/battle` + `tests/lib/game-data/descriptions-match-effects.test.ts` |
-| Routing / destinations | `src/lib/routing/` | `npm test -- tests/lib/routing/destination-availability.test.ts` |
-| Gear | `src/lib/gear/`, Armory screens | `npm test -- tests/lib/gear tests/features/stores/gear-store.test.ts tests/features/stores/gear-crafting.test.ts tests/features/screens/armory-screen.test.tsx tests/features/screens/armory-resolve-equip-swap.test.ts tests/features/storage/gear-save.test.ts` + `npm run test:e2e -- tests/armory-crafting.spec.ts tests/gear-equip.spec.ts tests/gear-drag-positions.spec.ts` |
-| Integration-style unit tests | `run-domain.test.ts`, `storage.test.ts`, `reward-flow*.test.ts`, `shell/*-hook.test.ts` | `npm test -- tests/features/stores/run-domain.test.ts tests/features/storage tests/features/navigation/reward-flow tests/features/shell` |
-| Battle E2E helpers | `tests/pages/battle-page.ts`, `tests/helpers.ts` (`enableFastMode`) | `npm run test:e2e:prepush` (animation canary) + `npm run test:e2e:main-gate` before pushing to `main` |
-| UI flows | `screens/`, controllers | Relevant `tests/*.spec.ts` + `npm run test:e2e:prepush` |
-| Any push to `main` | — | Pre-push hook + `npm run test:e2e:main-gate` when battle/helpers change |
+| Area                            | Paths (examples)                                                                                 | Run locally                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Active run / screen / bootstrap | `run-domain-store.ts`, `run-transitions.ts`, `shell/use-alchemy-run-controller.ts`, `hydrate.ts` | `npm test -- tests/features/stores/ tests/features/shell/ tests/lib/active-run-session/hydrate.test.ts tests/architecture/active-run-bootstrap.test.ts` then `npm run test:e2e:prepush`                                                                                                                                                                                            |
+| Save / persistence              | `storage/`, `save-schemas/`, `active-run.ts`                                                     | `npm test -- tests/features/storage` + `tests/save-persistence.spec.ts` + `npm run test:e2e:prepush`                                                                                                                                                                                                                                                                               |
+| Battle / cards                  | `src/lib/battle/`, `src/lib/game-data/`                                                          | `npm test -- tests/lib/battle` + `tests/lib/game-data/descriptions-match-effects.test.ts`                                                                                                                                                                                                                                                                                          |
+| Routing / destinations          | `src/lib/routing/`                                                                               | `npm test -- tests/lib/routing/destination-availability.test.ts`                                                                                                                                                                                                                                                                                                                   |
+| Gear                            | `src/lib/gear/`, Armory screens                                                                  | `npm test -- tests/lib/gear tests/features/stores/gear-store.test.ts tests/features/stores/gear-crafting.test.ts tests/features/screens/armory-screen.test.tsx tests/features/screens/armory-resolve-equip-swap.test.ts tests/features/storage/gear-save.test.ts` + `npm run test:e2e -- tests/armory-crafting.spec.ts tests/gear-equip.spec.ts tests/gear-drag-positions.spec.ts` |
+| Integration-style unit tests    | `run-domain.test.ts`, `storage.test.ts`, `reward-flow*.test.ts`, `shell/*-hook.test.ts`          | `npm test -- tests/features/stores/run-domain.test.ts tests/features/storage tests/features/navigation/reward-flow tests/features/shell`                                                                                                                                                                                                                                           |
+| Battle E2E helpers              | `tests/pages/battle-page.ts`, `tests/helpers.ts` (`enableFastMode`)                              | `npm run test:e2e:prepush` (animation canary) + `npm run test:e2e:main-gate` before pushing to `main`                                                                                                                                                                                                                                                                              |
+| UI flows                        | `screens/`, controllers                                                                          | Relevant `tests/*.spec.ts` + `npm run test:e2e:prepush`                                                                                                                                                                                                                                                                                                                            |
+| Any push to `main`              | —                                                                                                | Pre-push hook + `npm run test:e2e:main-gate` when battle/helpers change                                                                                                                                                                                                                                                                                                            |
 
 ## E2E helpers
 
@@ -59,9 +60,9 @@ Layout: bootstrap helpers in [`tests/e2e/`](tests/e2e/) (`battle-setup.ts`, `arm
 
 ### When to use which test import
 
-| Import | Use for |
-|--------|---------|
-| `import { test } from "./fixtures/e2e"` | Most battle/flow specs — opt-in `fastBattle` + `runtimeErrors` fixtures |
+| Import                                    | Use for                                                                                                                                                      |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `import { test } from "./fixtures/e2e"`   | Most battle/flow specs — opt-in `fastBattle` + `runtimeErrors` fixtures                                                                                      |
 | `import { test } from "@playwright/test"` | Animation specs (`draw-discard-animations.spec.ts`, `battle-end-turn-canary.spec.ts`) — **no** fast mode; also boot-only smoke (`alchemy.spec.ts` uses both) |
 
 **Decision tree:**
@@ -114,16 +115,15 @@ Layout: bootstrap helpers in [`tests/e2e/`](tests/e2e/) (`battle-setup.ts`, `arm
 - **`@slow`** — intentionally slow specs (animation canaries, drag-and-drop, viewport loops). Runs in full E2E on release; can be run manually with `npm run test:e2e:slow`.
 - **`@armory`** — armory screen / gear interaction specs. Overlaps with `critical` and `slow` on a per-test basis.
 
-
 ## CI parity
 
-| Job | Local equivalent |
-|-----|------------------|
-| CI `ship-gate` | `npm run check:ship` |
-| CI `save-gate` / `active-run-gate` | `npm run test:ship:e2e` (path-filtered on PR) |
-| CI `desktop-build` / `electron-e2e` | `npm run dist:win` / `npm run test:ship:desktop` |
-| CI `e2e` (`@critical`, every push) | `npm run build && npm run test:e2e:prepush:full` |
-| Pre-push hook | `npm run build:ship && npm run test:e2e:prepush` |
+| Job                                         | Local equivalent                                             |
+| ------------------------------------------- | ------------------------------------------------------------ |
+| CI `ship-gate`                              | `npm run check:ship`                                         |
+| CI `save-gate` / `active-run-gate`          | `npm run test:ship:e2e` (path-filtered on PR)                |
+| CI `desktop-build` / `electron-e2e`         | `npm run dist:win` / `npm run test:ship:desktop`             |
+| CI `e2e` (`@critical`, every push)          | `npm run build && npm run test:e2e:prepush:full`             |
+| Pre-push hook                               | `npm run build:ship && npm run test:e2e:prepush`             |
 | Tag `v*` release (`e2e-full` + release job) | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md) |
 
 **Docs:** [AGENTS.md](./AGENTS.md) (rules) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [docs/REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [docs/RELEASE.md](./docs/RELEASE.md) (Steam) · [PROMPTS.md](./PROMPTS.md) (audits)

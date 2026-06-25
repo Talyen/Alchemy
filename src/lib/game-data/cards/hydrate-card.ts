@@ -15,7 +15,7 @@ function hydrateDescriptionLines(saved: SavedCard, libraryCard: BattleCard): str
 
 function hydrateEffects(saved: SavedCard, libraryCard: BattleCard): BattleCard["effects"] {
   if (Array.isArray(saved.effects) && saved.effectsFullyValid !== false)
-    return saved.effects.map((e) => (typeof e === "object" ? { ...e } : e)) as BattleCard["effects"];
+    return saved.effects.map((e) => (typeof e === "object" ? { ...e } : e));
   return libraryCard.effects.map((e) => ({ ...e }));
 }
 

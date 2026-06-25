@@ -37,8 +37,10 @@ export function ShineBorder({
   style,
   ...props
 }: ShineBorderProps) {
-  const colors = Array.isArray(shineColor) ? shineColor : [shineColor];
-  const fade = colorWithAlpha(colors[0], 0.5);
+  const colors: readonly string[] = Array.isArray(shineColor) ? shineColor : [shineColor];
+  const safeColors = colors.length > 0 ? colors : ["transparent"];
+  const firstColor = safeColors[0] ?? "transparent";
+  const fade = colorWithAlpha(firstColor, 0.5);
 
   return (
     <div
@@ -46,7 +48,7 @@ export function ShineBorder({
         {
           "--border-width": `${borderWidth}px`,
           "--duration": `${duration}s`,
-          backgroundImage: `radial-gradient(${fade},${fade}, ${colors.join(",")},${fade},${fade})`,
+          backgroundImage: `radial-gradient(${fade},${fade}, ${safeColors.join(",")},${fade},${fade})`,
           backgroundSize: "300% 300%",
           mask: `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,
           WebkitMask: `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,

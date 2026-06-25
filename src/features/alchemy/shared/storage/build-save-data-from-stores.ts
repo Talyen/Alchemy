@@ -49,7 +49,7 @@ export function buildAlchemySaveDataFromStores(
     gearBoardPositionsByCharacter: gear.boardPositionsByCharacter,
     craftingCurrencyBoardPositionsByCharacter: gear.currencyBoardPositionsByCharacter,
     craftingCurrencies: gear.craftingCurrencies,
-    talentXP: talentXP ?? ({} as TalentXP),
+    talentXP: talentXP ?? {},
     unlockedTalents: unlockedTalents ?? {},
     musicVolume: app.musicVol,
     sfxVolume: app.sfxVol,

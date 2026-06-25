@@ -122,13 +122,12 @@ export const HOMESTEAD_BATTLE_RECORD_KEYS = [
   "cardHealBonus",
 ] as const satisfies readonly RecordTalentKey[];
 
-const HOMESTEAD_BATTLE_KEYS = [
-  ...HOMESTEAD_BATTLE_NUMERIC_KEYS,
-  ...HOMESTEAD_BATTLE_BOOLEAN_KEYS,
-  ...HOMESTEAD_BATTLE_RECORD_KEYS,
-] as const;
+type HomesteadBattleKey =
+  | (typeof HOMESTEAD_BATTLE_NUMERIC_KEYS)[number]
+  | (typeof HOMESTEAD_BATTLE_BOOLEAN_KEYS)[number]
+  | (typeof HOMESTEAD_BATTLE_RECORD_KEYS)[number];
 
-type HomesteadBattleEffects = Pick<TalentEffectManifest, (typeof HOMESTEAD_BATTLE_KEYS)[number]>;
+type HomesteadBattleEffects = Pick<TalentEffectManifest, HomesteadBattleKey>;
 
 // Run-level homestead bonuses that never enter battle state.
 interface HomesteadMetaEffects {

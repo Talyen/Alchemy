@@ -16,11 +16,11 @@ function computeContentSystemType(data: Record<string, unknown>): string {
 }
 
 function readNumber(data: Record<string, unknown>, key: string, fallback: number): number {
-  return typeof data[key] === "number" ? (data[key] as number) : fallback;
+  return typeof data[key] === "number" ? data[key] : fallback;
 }
 
 function readString(data: Record<string, unknown>, key: string, fallback: string): string {
-  return typeof data[key] === "string" ? (data[key] as string) : fallback;
+  return typeof data[key] === "string" ? data[key] : fallback;
 }
 
 function readStringArray(data: Record<string, unknown>, key: string): string[] {
@@ -66,8 +66,8 @@ function normalizeActiveCombat(
   }
   return {
     ...combat,
-    activeLabyrinthModifiers: (combat.activeLabyrinthModifiers ?? []) as string[],
-    activeLabyrinthRewardModifiers: (combat.activeLabyrinthRewardModifiers ?? []) as string[],
+    activeLabyrinthModifiers: combat.activeLabyrinthModifiers ?? [],
+    activeLabyrinthRewardModifiers: combat.activeLabyrinthRewardModifiers ?? [],
   };
 }
 

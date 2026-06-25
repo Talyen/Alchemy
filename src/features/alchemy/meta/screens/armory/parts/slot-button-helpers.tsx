@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- armory slot helper components and compatibility helpers are colocated. */
 import { type FocusEvent } from "react";
 import {
   gearDefinitions,
@@ -134,7 +135,7 @@ export function buildSlotHandlers(ctx: SlotHandlerContext) {
     setShowTooltip(false);
     event.currentTarget.setPointerCapture(event.pointerId);
     onGearPointerStart(
-      instance!,
+      instance,
       { kind: "equipment", slot },
       event.currentTarget.getBoundingClientRect(),
       { x: event.clientX, y: event.clientY },
@@ -154,7 +155,7 @@ export function buildSlotHandlers(ctx: SlotHandlerContext) {
   const canInteract = editable && instance && !salvageMode && !activeCurrencyId && !isDraggingActive;
   const handleDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!canInteract) return;
-    onGearDoubleClick(instance!, { kind: "equipment", slot }, event.currentTarget.getBoundingClientRect());
+    onGearDoubleClick(instance, { kind: "equipment", slot }, event.currentTarget.getBoundingClientRect());
   };
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!editable || !instance) return;

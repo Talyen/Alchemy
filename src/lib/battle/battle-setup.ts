@@ -153,7 +153,6 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     rng: optionsRng,
   } = options;
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for required field
   if (!battleEnemy) {
     throw new Error("createBattleState requires currentEnemy; use defaultBattleState for inactive placeholder state.");
   }

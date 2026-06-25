@@ -135,7 +135,7 @@ test.describe("Save Persistence & Resume", () => {
       (data) => {
         try {
           localStorage.setItem(data.saveKey, JSON.stringify(data.save));
-        } catch (e) {
+        } catch {
           // Ignore opaque origin exceptions
         }
       },

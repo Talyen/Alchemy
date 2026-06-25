@@ -52,7 +52,6 @@ export function computeTalentPoints(xp: number): number {
 }
 
 export function computeTotalTalentPoints(talentXP: TalentXP): number {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Object.values on Partial<Record> returns V | undefined despite TS narrowing
   return Object.values(talentXP).reduce((sum, xp) => sum + computeTalentPoints(xp ?? 0), 0);
 }
 

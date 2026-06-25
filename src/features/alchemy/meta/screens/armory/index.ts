@@ -1,6 +1,3 @@
-export { CharacterAndEquipmentPanel } from "./character-panel";
-export { InventoryPanel } from "./inventory-panel";
-export { resolveEquipSwap } from "./resolve-equip-swap";
 export { useArmoryGearDrag } from "./use-armory-gear-drag";
 export { useArmoryCurrencyDrag } from "./use-armory-currency-drag";
 export { ArmoryCharacterTabs } from "./armory-character-tabs";
@@ -12,5 +9,3 @@ export { useArmoryResetEffects } from "./use-armory-reset-effects";
 export type { ArmoryCursorPoint, ArmoryScreenProps } from "./armory-screen-types";
 export type { TransferMenuState } from "./armory-transfer-menu";
 export type { DragRect } from "./drag-types";
-export type { GearPointerStart, GearPointerMove, GearPointerEnd, GearDragOrigin } from "./armory-gear-drag-types";
-export type { CurrencyPointerStart, CurrencyPointerMove, CurrencyPointerEnd } from "./use-armory-currency-drag";

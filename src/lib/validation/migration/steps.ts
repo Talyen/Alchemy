@@ -140,7 +140,8 @@ function migrateGearInstance(item: Record<string, unknown>): Record<string, unkn
   const affixes = item.affixes;
   if (!Array.isArray(affixes)) return item;
 
-  const migratedAffixes = affixes.map((affix) => {
+  const affixList: unknown[] = affixes;
+  const migratedAffixes = affixList.map((affix) => {
     if (!affix || typeof affix !== "object") return affix;
     const a = affix as Record<string, unknown>;
     const id = a.id;
@@ -162,7 +163,10 @@ function migrateGearInstance(item: Record<string, unknown>): Record<string, unkn
 
 function migrateGearArray(raw: unknown): unknown[] | undefined {
   if (!Array.isArray(raw)) return undefined;
-  return raw.map(migrateGearInstance);
+  const items: unknown[] = raw;
+  return items.map((item) =>
+    item && typeof item === "object" ? migrateGearInstance(item as Record<string, unknown>) : item,
+  );
 }
 
 function migrateActiveRunGear(activeRun: Record<string, unknown>): Record<string, unknown> {

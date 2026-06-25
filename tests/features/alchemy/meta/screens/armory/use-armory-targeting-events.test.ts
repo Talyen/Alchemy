@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useArmoryTargetingEvents } from "@/features/alchemy/meta/screens/armory/use-armory-targeting-events";
 
@@ -29,7 +29,7 @@ describe("useArmoryTargetingEvents", () => {
     renderHook(() =>
       useArmoryTargetingEvents({
         salvageMode: false,
-        activeCurrencyId: "ruby",
+        activeCurrencyId: "voidstone",
         salvageTarget: null,
         clearTargeting,
       }),
