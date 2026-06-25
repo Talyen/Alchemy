@@ -7,7 +7,7 @@ import { CardGhostOverlay } from "../../../shared/ui/card-ghost-overlay";
 import { CardTransferOverlay } from "./card-transfer-overlay";
 import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
-import { HamburgerTrigger, PageLayout, ScreenHeader } from "../../../shared/ui/shared-ui";
+import { HamburgerTrigger, PageLayout } from "../../../shared/ui/shared-ui";
 import { WishOverlay } from "./wish-overlay";
 import type {
   BattleActionsProps,
@@ -169,11 +169,8 @@ export function BattleScreen(props: BattleScreenProps) {
         </div>
 
         <div className="relative z-10 flex flex-1 flex-col">
-          <div className="relative flex w-full shrink-0 items-center justify-center">
-            <ScreenHeader title="Battle" />
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 z-30">
-              <HamburgerTrigger onClick={actions.onOpenMenu} label="Open battle menu" />
-            </div>
+          <div className="absolute right-0 top-0 z-30">
+            <HamburgerTrigger onClick={actions.onOpenMenu} label="Open battle menu" />
           </div>
 
           <div ref={sceneRef} data-testid="battle-scene" className="relative mt-2 flex-1 [container-type:size]">
