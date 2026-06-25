@@ -40,7 +40,9 @@ export type PlayerStatusId =
   | "freeze"
   | "stun";
 
-export type EnemyStatusId = "burn" | "poison" | "bleed" | "freeze" | "stun";
+export type EnemyStatusId = "burn" | "poison" | "bleed" | "freeze" | "stun" | "burnBonus" | "freezeBonus";
+/** Enemy status IDs that represent actual damage types (excludes augments like burnBonus). */
+export type EnemyStatusDamageId = Exclude<EnemyStatusId, "burnBonus" | "freezeBonus">;
 
 export type CompanionId =
   | "wolf"
@@ -84,7 +86,7 @@ export type BattleCardEffect =
       amount: number;
       perManaCrystal?: number;
     }
-  | { kind: "enemy-status"; status: EnemyStatusId; amount: number }
+  | { kind: "enemy-status"; status: EnemyStatusDamageId; amount: number }
   | { kind: "heal"; amount: number }
   | { kind: "restore-mana"; amount: number }
   | { kind: "lose-mana"; amount: number }
@@ -94,13 +96,13 @@ export type BattleCardEffect =
   | { kind: "wish"; amount: number }
   | { kind: "summon-companion"; companionId: CompanionId }
   | { kind: "remove-harmful-status"; amount: number }
-  | { kind: "remove-player-status"; status: EnemyStatusId }
-  | { kind: "self-damage"; damageType: EnemyStatusId; amount: number }
+  | { kind: "remove-player-status"; status: EnemyStatusDamageId }
+  | { kind: "self-damage"; damageType: EnemyStatusDamageId; amount: number }
   | { kind: "buff-companion"; amount: number }
   | { kind: "lose-health"; amount: number }
   | { kind: "draw-cards"; amount: number }
   | { kind: "remove-enemy-armor"; amount: number }
-  | { kind: "multiply-enemy-status"; status: EnemyStatusId; factor: number }
+  | { kind: "multiply-enemy-status"; status: EnemyStatusDamageId; factor: number }
   | {
       kind: "cleanse-player-status-to-damage";
       status: Extract<PlayerStatusId, "burn">;
@@ -189,4 +191,12 @@ export const PLAYER_STATUS_DISPLAY_ORDER: readonly PlayerStatusId[] = [
 ];
 
 /** UI chip order — keep aligned with EnemyStatusId union. */
-export const ENEMY_STATUS_DISPLAY_ORDER: readonly EnemyStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];
+export const ENEMY_STATUS_DISPLAY_ORDER: readonly EnemyStatusId[] = [
+  "burnBonus",
+  "freezeBonus",
+  "burn",
+  "poison",
+  "bleed",
+  "freeze",
+  "stun",
+];

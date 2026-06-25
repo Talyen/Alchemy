@@ -1,6 +1,6 @@
 import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import { capitalizeWord } from "@/lib/utils";
-import type { BattleCard, BattleCardEffect, DamageType, EnemyStatusId } from "../../types";
+import type { BattleCard, BattleCardEffect, DamageType, EnemyStatusDamageId } from "../../types";
 import { deriveTitle, playerStatusDescriptionLine, type CardBaseInput } from "./shared";
 
 type ScaleFromPlayerStat = "block" | "armor";
@@ -44,7 +44,7 @@ export function playerStatThenScaledDamageCard({
 type DamageThenMultiplyEnemyStatusCardInput = CardBaseInput & {
   damageType: DamageType;
   damageAmount: number;
-  status: EnemyStatusId;
+  status: EnemyStatusDamageId;
   factor: number;
   multiplyLine: string;
   consume?: boolean;
@@ -82,7 +82,7 @@ export function damageThenMultiplyEnemyStatusCard({
 }
 
 type CleansePlayerStatusCardInput = CardBaseInput & {
-  status: EnemyStatusId;
+  status: EnemyStatusDamageId;
   cleanseLine: string;
   consume?: boolean;
 };

@@ -14,24 +14,22 @@ import type {
 import type { GearEffectManifest } from "@/lib/gear";
 import type { MaterialInventory } from "@/lib/homestead/types";
 
-// Both player and enemy use status ID unions, but enemies never gain
-// block/armor/forge/haste — those are filtered out at the BattleCardEffect level.
+// Both player and enemy use status ID unions. Enemies can gain burnBonus and freezeBonus
+// from boss traits (e.g., Iron Bear, Frostwarden). block/armor/forge live in enemyMitigation.
 export type PlayerStatusValues = Record<PlayerStatusId, number>;
 export type EnemyStatusValues = Record<EnemyStatusId, number>;
 
 export type TurnPhase = "player" | "enemy";
 
 // Enemy mitigation lives outside enemyStatuses: armor reduces incoming damage,
-// forge adds physical attack bonus (decays per hit), freezeBonus adds freeze stacks from attacks.
+// forge adds physical attack bonus (decays per hit). Burn and freeze bonuses now live in enemyStatuses.
 export interface EnemyMitigation {
   armor: number;
   forge: number;
-  freezeBonus: number;
-  burnBonus: number;
   block: number;
 }
 
-export const EMPTY_ENEMY_MITIGATION: EnemyMitigation = { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 };
+export const EMPTY_ENEMY_MITIGATION: EnemyMitigation = { armor: 0, forge: 0, block: 0 };
 
 // Per-side CC state: skip-turn counters and immunity cooldown, grouped to prevent
 // update-site drift (was 6 top-level fields before the regroup).

@@ -51,8 +51,8 @@ const STATUS_ANOMALY_METRICS: StatusAnomalyMetric[] = [
   { key: "maxEnemyStun", label: "Stun on Enemy", read: (s) => s.enemyStatuses.stun },
   { key: "maxEnemyArmor", label: "Armor on Enemy", read: (s) => s.enemyMitigation.armor },
   { key: "maxEnemyForge", label: "Forge on Enemy", read: (s) => s.enemyMitigation.forge },
-  { key: "maxEnemyFreezeBonus", label: "FreezeBonus on Enemy", read: (s) => s.enemyMitigation.freezeBonus },
-  { key: "maxEnemyBurnBonus", label: "BurnBonus on Enemy", read: (s) => s.enemyMitigation.burnBonus },
+  { key: "maxEnemyFreezeBonus", label: "FreezeBonus on Enemy", read: (s) => s.enemyStatuses.freezeBonus },
+  { key: "maxEnemyBurnBonus", label: "BurnBonus on Enemy", read: (s) => s.enemyStatuses.burnBonus },
   { key: "maxEnemyBlock", label: "Block on Enemy", read: (s) => s.enemyMitigation.block },
 ];
 

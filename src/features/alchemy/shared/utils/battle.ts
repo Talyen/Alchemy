@@ -9,10 +9,15 @@ import {
   keywordDefinitions,
 } from "@/lib/game-data";
 import { combatTextIconClasses, keywordIcons } from "../config";
+import { augmentDefinitions } from "../augment-definitions";
 import type { StatusChip } from "../types";
+
+const ENEMY_MITIGATION_DISPLAY_ORDER: ReadonlyArray<keyof BattleState["enemyMitigation"]> = ["block", "armor", "forge"];
 
 export function getCombatTextColorClass(event: CombatTextEvent): string {
   if (event.kind === "heal") return "text-green-400";
+  const augment = augmentDefinitions[event.stat as keyof typeof augmentDefinitions];
+  if (augment) return augment.colorClass;
   const kw = keywordDefinitions[event.stat as KeywordId];
   if (kw) return kw.colorClass;
   if (event.stat === "haste") return "text-fuchsia-300";
@@ -21,6 +26,8 @@ export function getCombatTextColorClass(event: CombatTextEvent): string {
 
 export function getCombatTextIcon(event: CombatTextEvent) {
   if (event.kind === "heal") return keywordIcons.health;
+  const augment = augmentDefinitions[event.stat as keyof typeof augmentDefinitions];
+  if (augment) return augment.icon;
   const kw = keywordIcons[event.stat as KeywordId];
   if (kw) return kw;
   return combatTextIconClasses[event.stat];
@@ -45,5 +52,11 @@ export function getPlayerStatusChips(state: BattleState | null | undefined): Sta
 
 export function getEnemyStatusChips(state: BattleState | null | undefined): StatusChip[] {
   if (!state) return [];
-  return buildStatusChips(ENEMY_STATUS_DISPLAY_ORDER, state.enemyStatuses);
+  const mitigationChips: StatusChip[] = [];
+  for (const key of ENEMY_MITIGATION_DISPLAY_ORDER) {
+    const value = state.enemyMitigation[key];
+    if (value > 0) mitigationChips.push({ id: key, value });
+  }
+  const statusChips = buildStatusChips(ENEMY_STATUS_DISPLAY_ORDER, state.enemyStatuses);
+  return [...mitigationChips, ...statusChips];
 }

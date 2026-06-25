@@ -3,7 +3,7 @@ import { mergeCombatText } from "./combat-text";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";
-import { clampHealth, type BattleState, type CombatTextEvent, addEnemyMitigation } from "./types";
+import { clampHealth, type BattleState, type CombatTextEvent, addEnemyMitigation, addEnemyStatus } from "./types";
 import {
   DIFFICULTY_FORGE_PER_TURN,
   HALF_DIVISOR,
@@ -36,8 +36,9 @@ type EnemyTurnStartHandler = (
 ) => BattleState;
 
 const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
-  "rusting-carapace": (state) => {
+  "rusting-carapace": (state, combatTexts) => {
     const scaledForge = scaleByRoomMultiplier(state, TRAIT_FORGE_PER_TURN);
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: scaledForge });
     return addEnemyMitigation(state, "forge", scaledForge);
   },
   "iron-hide": (state, combatTexts, options) => {
@@ -60,15 +61,21 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
     }
     mergeCombatText(combatTexts, {
       target: "enemy",
-      kind: "notice",
-      stat: "burn",
-      text: `+${scaledBurn} Burn Dmg`,
+      kind: "status",
+      stat: "burnBonus",
+      amount: scaledBurn,
     });
-    return addEnemyMitigation(state, "burnBonus", scaledBurn);
+    return addEnemyStatus(state, "burnBonus", scaledBurn);
   },
-  "glacial-shell": (state) => {
+  "glacial-shell": (state, combatTexts) => {
     const scaledFreeze = scaleByRoomMultiplier(state, TRAIT_FREEZE_BONUS_PER_TURN);
-    return addEnemyMitigation(state, "freezeBonus", scaledFreeze);
+    mergeCombatText(combatTexts, {
+      target: "enemy",
+      kind: "status",
+      stat: "freezeBonus",
+      amount: scaledFreeze,
+    });
+    return addEnemyStatus(state, "freezeBonus", scaledFreeze);
   },
 };
 

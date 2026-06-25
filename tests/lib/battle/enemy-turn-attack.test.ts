@@ -95,7 +95,7 @@ describe("processEnemyAttack", () => {
     const state = createTestBattleState({
       playerHealth: 30,
       playerStatuses: { ...createTestBattleState().playerStatuses, block: 0 },
-      enemyMitigation: { ...createTestBattleState().enemyMitigation, burnBonus: 2 },
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, burnBonus: 2 },
       enemyAttackEffects: [{ kind: "damage", damageType: "burn", amount: 4 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -106,7 +106,7 @@ describe("processEnemyAttack", () => {
     const state = createTestBattleState({
       playerHealth: 30,
       playerStatuses: { ...createTestBattleState().playerStatuses, block: 0 },
-      enemyMitigation: { ...createTestBattleState().enemyMitigation, freezeBonus: 2 },
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, freezeBonus: 2 },
       enemyAttackEffects: [{ kind: "damage", damageType: "freeze", amount: 4 }],
     });
     const result = processEnemyAttack(state, makeTexts());

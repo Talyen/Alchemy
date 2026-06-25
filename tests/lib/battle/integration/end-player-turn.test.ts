@@ -385,12 +385,12 @@ describe("enemy traits via endPlayerTurn", () => {
 
     // Burn adds +1 to the bear's Burn damage (stacks each time chosen)
     const state3 = endPlayerTurn(state2.state, { traitRoll: 0.9 });
-    expect(state3.state.enemyMitigation.burnBonus).toBe(1);
+    expect(state3.state.enemyStatuses.burnBonus).toBe(1);
     expect(state3.combatTexts).toContainEqual({
       target: "enemy",
-      kind: "notice",
-      stat: "burn",
-      text: "+1 Burn Dmg",
+      kind: "status",
+      stat: "burnBonus",
+      amount: 1,
     });
   });
 
@@ -409,7 +409,7 @@ describe("enemy traits via endPlayerTurn", () => {
       },
     });
     const result = endPlayerTurn(state);
-    expect(result.state.enemyMitigation.freezeBonus).toBe(1);
+    expect(result.state.enemyStatuses.freezeBonus).toBe(1);
   });
 
   it("glacial-shell does NOT add freeze bonus when frozen and player has freezePreventsEnemyScaling talent", () => {
@@ -432,7 +432,7 @@ describe("enemy traits via endPlayerTurn", () => {
       },
     });
     const result = endPlayerTurn(state);
-    expect(result.state.enemyMitigation.freezeBonus).toBe(0);
+    expect(result.state.enemyStatuses.freezeBonus).toBe(0);
   });
 
   it("regeneration heals enemy at end of turn", () => {

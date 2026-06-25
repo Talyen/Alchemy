@@ -27,11 +27,11 @@ export function defaultPlayerStatusValues(overrides?: Partial<PlayerStatusValues
 }
 
 export function defaultEnemyStatusValues(overrides?: Partial<EnemyStatusValues>): EnemyStatusValues {
-  return { stun: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, ...overrides };
+  return { stun: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, burnBonus: 0, freezeBonus: 0, ...overrides };
 }
 
 export function defaultEnemyMitigation(overrides?: Partial<EnemyMitigation>): EnemyMitigation {
-  return { forge: 0, armor: 0, block: 0, burnBonus: 0, freezeBonus: 0, ...overrides };
+  return { forge: 0, armor: 0, block: 0, ...overrides };
 }
 
 export function defaultCcState(overrides?: Partial<CcState>): CcState {

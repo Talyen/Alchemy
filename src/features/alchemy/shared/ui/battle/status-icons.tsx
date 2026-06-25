@@ -7,6 +7,7 @@ import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { keywordIcons } from "../../config";
+import { augmentDefinitions } from "../../augment-definitions";
 import type { StatusChip } from "../../types";
 import { renderColoredKeywords } from "../card-description-ui";
 import { KeywordTag } from "../keyword-tag";
@@ -15,6 +16,12 @@ import { TooltipPanel, TooltipBody } from "../tooltip-panel";
 export function StatusIcon({ chip }: { chip: StatusChip }) {
   if (chip.id === "haste") {
     return <HasteStatusIcon value={chip.value} />;
+  }
+
+  // Check augment definitions first (burnBonus, freezeBonus, etc.)
+  const augment = augmentDefinitions[chip.id as keyof typeof augmentDefinitions];
+  if (augment) {
+    return <AugmentStatusIcon chip={chip} augment={augment} />;
   }
 
   const kw = chip.id as KeywordId;
@@ -43,6 +50,38 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
         </div>
         <TooltipBody>
           <p>{renderColoredKeywords(definition.description)}</p>
+        </TooltipBody>
+      </TooltipPanel>
+    </div>
+  );
+}
+
+function AugmentStatusIcon({
+  chip,
+  augment,
+}: {
+  chip: StatusChip;
+  augment: (typeof augmentDefinitions)[keyof typeof augmentDefinitions];
+}) {
+  const Icon = augment.icon;
+  return (
+    <div className="status-chip-pop group/status relative flex items-center justify-center">
+      <button
+        type="button"
+        className="relative flex h-7 w-7 items-center justify-center"
+        aria-label={`${augment.label} ${chip.value}`}
+      >
+        <Icon className={cn("h-[1.67cqh] w-[1.67cqh]", augment.colorClass)} />
+      </button>
+      <TooltipPanel className="pointer-events-none opacity-0 group-hover/status:opacity-100">
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-sans text-lg font-bold text-foreground">{augment.label}</span>
+          <span className="rounded-full bg-background px-2 py-0.5 text-xs font-semibold text-foreground">
+            {chip.value}
+          </span>
+        </div>
+        <TooltipBody>
+          <p>{augment.description}</p>
         </TooltipBody>
       </TooltipPanel>
     </div>

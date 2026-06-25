@@ -70,10 +70,10 @@ function calculateBlockAndArmorMitigation(
     remainingDamage = Math.max(0, remainingDamage - state.talentEffects.poisonReducesEnemyDamage);
   }
   if (effect.damageType === "burn") {
-    remainingDamage += state.enemyMitigation.burnBonus;
+    remainingDamage += state.enemyStatuses.burnBonus;
   }
   if (effect.damageType === "freeze") {
-    remainingDamage += state.enemyMitigation.freezeBonus;
+    remainingDamage += state.enemyStatuses.freezeBonus;
   }
   const effectiveBlock = computeEffectiveBlock(state, effect);
   const blockAbsorb = Math.min(remainingDamage, effectiveBlock);

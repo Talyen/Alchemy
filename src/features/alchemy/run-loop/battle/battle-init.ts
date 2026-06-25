@@ -1,5 +1,5 @@
 // Battle start helpers: enemy selection, state creation, and encounter tracking.
-import { createBattleState, getBattleStartPlayerHealth } from "@/lib/battle";
+import { createBattleState, getBattleStartPlayerHealth, type CombatTextEvent } from "@/lib/battle";
 export { getBattleStartPlayerHealth };
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
@@ -80,6 +80,27 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
     getStore().setHasActiveBattle(true);
     ctx.run.setEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
     useAppStore.getState().setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
+    // Emit floating combat text for starting enemy armor and block
+    const startingTexts: CombatTextEvent[] = [];
+    if (nextBattleState.enemyMitigation.armor > 0) {
+      startingTexts.push({
+        target: "enemy",
+        kind: "status",
+        stat: "armor",
+        amount: nextBattleState.enemyMitigation.armor,
+      });
+    }
+    if (nextBattleState.enemyMitigation.block > 0) {
+      startingTexts.push({
+        target: "enemy",
+        kind: "status",
+        stat: "block",
+        amount: nextBattleState.enemyMitigation.block,
+      });
+    }
+    if (startingTexts.length > 0) {
+      getPresentationStore().showCombatTexts(startingTexts);
+    }
   }
 
   function startBattle(

@@ -186,14 +186,19 @@ describe("processEnemyTraits", () => {
     const state = createTestBattleState({ currentEnemy: ironBear, roomScalingMultiplier: 1 });
     const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
     const result = processEnemyTraits(state, texts, { traitRoll: 0.9 });
-    expect(result.enemyMitigation.burnBonus).toBe(IRON_HIDE_BURN_BONUS_PER_TURN);
-    expect(texts.some((t) => t.kind === "notice" && t.stat === "burn")).toBe(true);
+    expect(result.enemyStatuses.burnBonus).toBe(IRON_HIDE_BURN_BONUS_PER_TURN);
+    expect(texts).toContainEqual({
+      target: "enemy",
+      kind: "status",
+      stat: "burnBonus",
+      amount: IRON_HIDE_BURN_BONUS_PER_TURN,
+    });
   });
 
   it("applies glacial-shell freeze bonus", () => {
     const state = createTestBattleState({ currentEnemy: frostwarden, roomScalingMultiplier: 1 });
     const result = processEnemyTraits(state, [], { traitRoll: 0 });
-    expect(result.enemyMitigation.freezeBonus).toBe(TRAIT_FREEZE_BONUS_PER_TURN);
+    expect(result.enemyStatuses.freezeBonus).toBe(TRAIT_FREEZE_BONUS_PER_TURN);
   });
 
   it("applies enemy-gains-forge-each-turn difficulty modifier", () => {
