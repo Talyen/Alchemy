@@ -12,7 +12,7 @@ import { COUNT_PARITY_RULES } from "./card-parity/count-rules";
 import { validateCardNumericParity } from "./card-parity/numeric-parity";
 
 export { validateEnemyTraitDescriptionParity } from "./card-parity/enemy-trait-parity";
-export { flattenEffects } from "./card-parity/helpers";
+export { flattenEffects, hasKind, hasLifesteal } from "./card-parity/helpers";
 
 function checkDamageParity(card: BattleCard): ContentValidationIssue | null {
   const { effects, descriptionLines } = card;

@@ -1,6 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "shell": "C:\\Users\\Talye\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe",
   "permission": {
     "bash": {
       "*": "allow",
