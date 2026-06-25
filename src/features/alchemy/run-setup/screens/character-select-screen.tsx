@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { characters, characterArt, characterUnlockRequirements, type CharacterId } from "@/lib/game-data";
 
 import { KeywordTag } from "../../shared/ui/keyword-tag";
+import { renderColoredKeywords } from "../../shared/ui/card-description-ui";
 import { ScreenHeader, ActionButtonRow, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import {
@@ -93,7 +94,7 @@ function CharacterCard({
             ) : (
               <>
                 <TooltipBody>
-                  <p>{char.description}</p>
+                  <p>{renderColoredKeywords(char.description)}</p>
                 </TooltipBody>
 
                 {char.startingDeck.length > 0 ? (
