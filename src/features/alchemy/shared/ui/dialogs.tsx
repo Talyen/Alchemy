@@ -1,7 +1,7 @@
 // Modal confirmation overlays for destructive or blocking game actions.
 // Depends on the shared Button primitive and Lucide icons.
 // Used by menus and screens that need explicit player confirmation.
-import { useEffect, type ComponentType } from "react";
+import { useEffect, type ComponentType, type ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,7 @@ export function ConfirmationDialog({
   onCancel,
 }: {
   title: React.ReactNode;
-  description?: string;
+  description?: ReactNode;
   confirmLabel: string;
   cancelLabel?: string;
   tone?: "danger" | "default";

@@ -1,3 +1,4 @@
+import { Lock } from "lucide-react";
 import type { Ref } from "react";
 import { TooltipBody, TooltipHeader, TooltipPanel, type TooltipPlacement } from "./tooltip-panel";
 
@@ -26,7 +27,12 @@ export function LockedFeatureTooltip({
       {...(panelRef ? { ref: panelRef } : {})}
       className={className ?? ""}
     >
-      <TooltipHeader>{title}</TooltipHeader>
+      <TooltipHeader>
+        <span className="inline-flex items-center gap-1.5 align-middle">
+          <Lock className="h-4 w-4" />
+          {title}
+        </span>
+      </TooltipHeader>
       <TooltipBody>
         <p>{message}</p>
       </TooltipBody>

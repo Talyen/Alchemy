@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader, TabBar } from "../../shared/ui/shared-ui";
-import { ErrorLogViewer } from "./error-log-viewer";
 import {
   AudioOptionsPanel,
   DisplayOptionsPanel,
@@ -47,14 +46,7 @@ export function OptionsScreen({
   dev: DevOptionsProps;
 }) {
   const [tab, setTab] = useState<OptionsTab>("display");
-  const [showErrorLog, setShowErrorLog] = useState(false);
   const tabPanelClass = "col-start-1 row-start-1 pt-6 text-left";
-
-  const devWithLog = { ...dev, onOpenErrorLog: dev.onOpenErrorLog ?? (() => setShowErrorLog(true)) };
-
-  if (showErrorLog) {
-    return <ErrorLogViewer onClose={() => setShowErrorLog(false)} />;
-  }
 
   return (
     <PageLayout>
@@ -96,7 +88,7 @@ export function OptionsScreen({
             className={cn(tabPanelClass, tab === "other" ? "state-fade" : "invisible pointer-events-none")}
             aria-hidden={tab !== "other"}
           >
-            <OtherOptionsPanel saveData={saveData} dev={devWithLog} />
+            <OtherOptionsPanel saveData={saveData} dev={dev} />
           </div>
         </div>
 
@@ -109,8 +101,14 @@ export function OptionsScreen({
 
       {saveData.showClearSaveConfirm ? (
         <ConfirmationDialog
-          title="Clear Save Data?"
-          description="This will reset your saved options, active run, and all discovered collection progress. This cannot be undone."
+          title="Clear Save Data"
+          description={
+            <>
+              Are you sure you wish to clear all Save Data?
+              <br />
+              This cannot be undone.
+            </>
+          }
           confirmLabel="Clear Save Data"
           dimBackground={false}
           onConfirm={saveData.onConfirmClearSave}

@@ -2,7 +2,6 @@
 import { BookOpen, Cog, House, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Fragment } from "react";
 import { cn } from "@/lib/utils";
-import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data/character-unlocks";
 import type { Screen } from "../types";
 import { LockedMenuItem } from "./locked-menu-item";
 
@@ -219,7 +218,11 @@ export function GameMenu({
         currentScreen,
       })}
       locks={{ talents: isTalentsLocked, homestead: isHomesteadLocked, armory: isArmoryLocked }}
-      messages={{ talents: KNIGHT_UNLOCK_MESSAGE, homestead: KNIGHT_UNLOCK_MESSAGE, armory: "Find Gear to unlock" }}
+      messages={{
+        talents: "Gain Experience to unlock",
+        homestead: "Collect Materials to unlock",
+        armory: "Find Equipment to unlock",
+      }}
     />
   );
 

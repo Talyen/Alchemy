@@ -43,7 +43,6 @@ export interface SaveDataOptionsProps {
 export interface DevOptionsProps {
   onClearSave?: () => void;
   onUnlockAll: () => void;
-  onOpenErrorLog?: () => void;
 }
 
 // Keeps slider rows consistent so volume settings read as one sound board.
@@ -167,30 +166,17 @@ export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptions
   return (
     <div className="space-y-4">
       {import.meta.env.DEV ? (
-        <>
-          <div className="surface-muted rounded-shell-panel border border-primary/40 p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Dev / QA Unlocks</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Unlock every compendium entry and grant every talent node for testing.
-                </p>
-              </div>
-              <Button onClick={dev.onUnlockAll}>Unlock All</Button>
+        <div className="surface-muted rounded-shell-panel border border-primary/40 p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Dev / QA Unlocks</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Unlock every compendium entry and grant every talent node for testing.
+              </p>
             </div>
+            <Button onClick={dev.onUnlockAll}>Unlock All</Button>
           </div>
-          <div className="surface-muted rounded-shell-panel border border-amber-600/40 p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Error Log</p>
-                <p className="mt-1 text-sm text-muted-foreground">View persisted crash logs — useful after a reload.</p>
-              </div>
-              <Button variant="outline" onClick={dev.onOpenErrorLog}>
-                View Log
-              </Button>
-            </div>
-          </div>
-        </>
+        </div>
       ) : null}
       <div className="surface-muted rounded-shell-panel border border-border/70 p-5">
         <div className="flex items-center justify-between gap-4">
@@ -209,9 +195,7 @@ export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptions
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-foreground">Save Data</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Clear discovered collection progress, saved options, and the active run.
-            </p>
+            <p className="mt-1 text-sm text-muted-foreground">Clear all existing save data and start fresh.</p>
           </div>
           <Button variant="destructive" onClick={saveData.onOpenClearSaveConfirm}>
             Clear Save Data
