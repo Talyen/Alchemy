@@ -123,7 +123,7 @@ describe("dealDamageToEnemy — edge cases", () => {
   it("handles zero damage gracefully", () => {
     const state = patchBattleState({
       enemyHealth: 30,
-      enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
+      enemyMitigation: { armor: 0, forge: 0, block: 0 },
     });
     const card = makeCard({ effects: [makeEffect("physical", 0)] });
     const texts = makeTexts();

@@ -1,5 +1,5 @@
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
-import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow-handlers";
+import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow-handler-deps";
 import { makeRunController, makeTalentController } from "./run-controller";
 
 export function makeFlowHandlerDeps(overrides: Partial<RunFlowHandlerDeps> = {}): RunFlowHandlerDeps {

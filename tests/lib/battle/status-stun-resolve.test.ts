@@ -249,7 +249,7 @@ describe("resolveStunTrigger", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, freezeBonus: 0 }),
+      enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0 }),
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
       talentEffects: { ...createTestBattleState().talentEffects, stunStripArmor: true },
@@ -262,7 +262,7 @@ describe("resolveStunTrigger", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyMitigation: defaultEnemyMitigation({ armor: 0, forge: 0, freezeBonus: 0 }),
+      enemyMitigation: defaultEnemyMitigation({ armor: 0, forge: 0 }),
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
       talentEffects: { ...createTestBattleState().talentEffects, stunStripArmor: true },

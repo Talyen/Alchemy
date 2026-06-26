@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   decayHalvedStatus,
   decayPoisonStacks,
@@ -104,7 +104,7 @@ describe("decayArmorAfterDamage", () => {
   describe("enemy armor decay", () => {
     it("decays enemy armor by ARMOR_DECAY_AMOUNT when damage > 0", () => {
       const state = createTestBattleState({
-        enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, freezeBonus: 0 }),
+        enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0 }),
       });
       const result = decayArmorAfterDamage(state, 3, "enemy");
       expect(result.enemyMitigation.armor).toBe(5 - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT);
@@ -112,7 +112,7 @@ describe("decayArmorAfterDamage", () => {
 
     it("does not decay enemy armor when damage is 0", () => {
       const state = createTestBattleState({
-        enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, freezeBonus: 0 }),
+        enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0 }),
       });
       const result = decayArmorAfterDamage(state, 0, "enemy");
       expect(result).toBe(state);
@@ -120,7 +120,7 @@ describe("decayArmorAfterDamage", () => {
 
     it("does not decay enemy armor when already 0", () => {
       const state = createTestBattleState({
-        enemyMitigation: defaultEnemyMitigation({ armor: 0, forge: 0, freezeBonus: 0 }),
+        enemyMitigation: defaultEnemyMitigation({ armor: 0, forge: 0 }),
       });
       const result = decayArmorAfterDamage(state, 3, "enemy");
       expect(result.enemyMitigation.armor).toBe(0);
@@ -128,7 +128,7 @@ describe("decayArmorAfterDamage", () => {
 
     it("clamps enemy armor to 0 (does not go negative)", () => {
       const state = createTestBattleState({
-        enemyMitigation: defaultEnemyMitigation({ armor: 1, forge: 0, freezeBonus: 0 }),
+        enemyMitigation: defaultEnemyMitigation({ armor: 1, forge: 0 }),
       });
       const result = decayArmorAfterDamage(state, 3, "enemy");
       expect(result.enemyMitigation.armor).toBe(0);
@@ -136,7 +136,7 @@ describe("decayArmorAfterDamage", () => {
 
     it("does not mutate original state for enemy decay", () => {
       const state = createTestBattleState({
-        enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, freezeBonus: 0 }),
+        enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0 }),
       });
       decayArmorAfterDamage(state, 3, "enemy");
       expect(state.enemyMitigation.armor).toBe(5);

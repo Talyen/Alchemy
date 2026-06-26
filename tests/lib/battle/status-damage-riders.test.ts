@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/status-damage-riders";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState, seededRng } from "./test-state";
@@ -24,7 +24,7 @@ describe("applyDamageStatuses", () => {
 
   it("burn removes enemy armor with burnRemovesEnemyArmor", () => {
     const state = createTestBattleState({
-      enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, freezeBonus: 0 }),
+      enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0 }),
       talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, burnRemovesEnemyArmor: true },
     });
     const effect = { kind: "damage" as const, damageType: "burn" as const, amount: 5 };
@@ -34,7 +34,7 @@ describe("applyDamageStatuses", () => {
 
   it("burn removes armor but not below 0", () => {
     const state = createTestBattleState({
-      enemyMitigation: defaultEnemyMitigation({ armor: 2, forge: 0, freezeBonus: 0 }),
+      enemyMitigation: defaultEnemyMitigation({ armor: 2, forge: 0 }),
       talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, burnRemovesEnemyArmor: true },
     });
     const effect = { kind: "damage" as const, damageType: "burn" as const, amount: 5 };
@@ -282,7 +282,7 @@ describe("applyPoisonTalentRiders", () => {
 
   it("strips one armor when poisonStripArmor is active", () => {
     const state = createTestBattleState({
-      enemyMitigation: defaultEnemyMitigation({ armor: 3, forge: 0, freezeBonus: 0 }),
+      enemyMitigation: defaultEnemyMitigation({ armor: 3, forge: 0 }),
       talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, poisonStripArmor: true },
       rng: seededRng(42),
     });

@@ -315,7 +315,7 @@ describe("endPlayerTurn", () => {
     const state = makeState({
       enemyAttackEffects: [],
       difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn" }] as DifficultyModifier[],
-      enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
+      enemyMitigation: { armor: 0, forge: 0, block: 0 },
     });
 
     const result = endPlayerTurn(state);
@@ -727,7 +727,7 @@ describe("endPlayerTurn — non-physical enemy damage", () => {
     const state = makeState({
       playerHealth: 30,
       playerStatuses: defaultPlayerStatusValues({}),
-      enemyMitigation: { armor: 4, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
+      enemyMitigation: { armor: 4, forge: 0, block: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 8 }],
       trinketEffects: { ...defaultTrinketEffects, sunderingArmorPiercing: 3 },
     });
@@ -838,7 +838,7 @@ describe("endPlayerTurn — enemy forge bonus only applies to physical", () => {
     const state = makeState({
       playerHealth: 30,
       playerStatuses: defaultPlayerStatusValues({}),
-      enemyMitigation: { armor: 0, forge: 5, freezeBonus: 0, burnBonus: 0, block: 0 },
+      enemyMitigation: { armor: 0, forge: 5, block: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 8 }],
     });
     const result = endPlayerTurn(state);

@@ -12,7 +12,7 @@ afterEach(() => {
 describe("dealDamageToEnemy — enemy armor", () => {
   it("physical damage is reduced by enemy armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = patchBattleState({ enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 } });
+    const state = patchBattleState({ enemyMitigation: { armor: 3, forge: 0, block: 0 } });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -27,7 +27,7 @@ describe("dealDamageToEnemy — enemy armor", () => {
   it("sunderingArmorPiercing removes enemy armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
-      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
+      enemyMitigation: { armor: 5, forge: 0, block: 0 },
       trinketEffects: defaultTrinketManifest({ sunderingArmorPiercing: 2 }),
     });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
@@ -44,7 +44,7 @@ describe("dealDamageToEnemy — enemy armor", () => {
 
   it("non-physical damage ignores enemy armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = patchBattleState({ enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 } });
+    const state = patchBattleState({ enemyMitigation: { armor: 5, forge: 0, block: 0 } });
     const card = makeCard({ effects: [makeEffect("burn", 10)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -61,7 +61,7 @@ describe("dealDamageToEnemy — boonSiphon siphoning", () => {
   it("steals armor and gains armor for the player when armor is siphoned", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
-      enemyMitigation: { armor: 5, block: 0, forge: 0, freezeBonus: 0, burnBonus: 0 },
+      enemyMitigation: { armor: 5, block: 0, forge: 0 },
       talentEffects: { ...defaultTalentEffects, trinketSiphonChance: 100 },
       rng: () => 0.1,
     });
@@ -80,7 +80,7 @@ describe("dealDamageToEnemy — boonSiphon siphoning", () => {
   it("steals forge and gains forge for the player when forge is siphoned", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
-      enemyMitigation: { armor: 0, block: 0, forge: 3, freezeBonus: 0, burnBonus: 0 },
+      enemyMitigation: { armor: 0, block: 0, forge: 3 },
       talentEffects: { ...defaultTalentEffects, trinketSiphonChance: 100 },
       rng: () => 0.0,
     });

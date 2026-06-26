@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { makeState, makeCard } from "./helpers";
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
 import { type CombatTextEvent } from "@/lib/battle/types";
@@ -227,7 +227,7 @@ describe("dealDamageToEnemy â€” armor decay and holy riders", () => {
     const state = makeState({
       mana: 10,
       enemyHealth: 50,
-      enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 }),
+      enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, block: 0 }),
     });
     const result = applyCardEffects(state, card, texts);
     // enemy with armor takes less damage
@@ -241,7 +241,7 @@ describe("dealDamageToEnemy â€” armor decay and holy riders", () => {
     const state = makeState({
       mana: 10,
       enemyHealth: 50,
-      enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 }),
+      enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, block: 0 }),
     });
     const result = applyCardEffects(state, card, texts);
     // burn ignores armor â†’ armor still decays from hit but not from damage reduction
@@ -308,7 +308,7 @@ describe("applyDamageStatuses â€” stun talent effects chain", () => {
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" })],
       hand: [],
       talentEffects,
-      enemyMitigation: defaultEnemyMitigation({ armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 }),
+      enemyMitigation: defaultEnemyMitigation({ armor: 3, forge: 0, block: 0 }),
     });
     const result = applyCardEffects(state, card, texts);
     // stun 20 damage - 3 armor = 17 â†’ health 13
@@ -432,7 +432,7 @@ describe("applyDamageStatuses â€” poison talent riders", () => {
       mana: 10,
       enemyHealth: 50,
       talentEffects,
-      enemyMitigation: defaultEnemyMitigation({ armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 }),
+      enemyMitigation: defaultEnemyMitigation({ armor: 3, forge: 0, block: 0 }),
     });
     const result = applyCardEffects(state, card, texts);
     // armor decays by 1 from hit, then poisonStripArmor strips 1 â†’ armor 1
@@ -480,7 +480,7 @@ describe("applyDamageStatuses â€” forge threshold bursts", () => {
         forgeBlockThreshold: 5,
         forgeBlockAmount: 3,
       },
-      enemyMitigation: defaultEnemyMitigation({ armor: 2, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 }),
+      enemyMitigation: defaultEnemyMitigation({ armor: 2, forge: 0, block: 0 }),
     });
     const result = applyCardEffects(state, card, texts);
     // forge: 2+4 = 6 â†’ crosses threshold 3 (burn burst), 4 (strip armor), 5 (block burst)

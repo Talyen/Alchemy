@@ -69,13 +69,13 @@ describe("applySummonCompanionEffect", () => {
 describe("applyBuffCompanionEffect", () => {
   it("returns state when kind is not buff-companion", () => {
     const state = createTestBattleState();
-    const result = applyBuffCompanionEffect(state, {} as never, { kind: "damage" } as never);
+    const result = applyBuffCompanionEffect(state, {} as never, { kind: "damage" } as never, 1, []);
     expect(result).toBe(state);
   });
 
   it("adds to companionDamageBuff", () => {
     const state = createTestBattleState({ companionDamageBuff: 3 });
-    const result = applyBuffCompanionEffect(state, {} as never, { kind: "buff-companion", amount: 2 } as never);
+    const result = applyBuffCompanionEffect(state, {} as never, { kind: "buff-companion", amount: 2 } as never, 1, []);
     expect(result.companionDamageBuff).toBe(5);
   });
 });
@@ -131,15 +131,21 @@ describe("applyRandomDamageEffect", () => {
 describe("applyRemoveEnemyArmorEffect", () => {
   it("returns state when kind is not remove-enemy-armor", () => {
     const state = createTestBattleState();
-    const result = applyRemoveEnemyArmorEffect(state, {} as never, { kind: "damage" } as never);
+    const result = applyRemoveEnemyArmorEffect(state, {} as never, { kind: "damage" } as never, 1, []);
     expect(result).toBe(state);
   });
 
   it("removes armor from enemy mitigation", () => {
     const state = createTestBattleState({
-      enemyMitigation: { forge: 0, armor: 5, block: 0, burnBonus: 0, freezeBonus: 0 },
+      enemyMitigation: { forge: 0, armor: 5, block: 0 },
     });
-    const result = applyRemoveEnemyArmorEffect(state, {} as never, { kind: "remove-enemy-armor", amount: 3 } as never);
+    const result = applyRemoveEnemyArmorEffect(
+      state,
+      {} as never,
+      { kind: "remove-enemy-armor", amount: 3 } as never,
+      1,
+      [],
+    );
     expect(result.enemyMitigation.armor).toBe(2);
   });
 });
@@ -480,14 +486,14 @@ describe("applyWishEffectHandler", () => {
 describe("applyDrawCardsEffect", () => {
   it("returns state when kind is not draw-cards", () => {
     const state = createTestBattleState();
-    const result = applyDrawCardsEffect(state, {} as never, { kind: "damage" } as never);
+    const result = applyDrawCardsEffect(state, {} as never, { kind: "damage" } as never, 1, []);
     expect(result).toBe(state);
   });
 
   it("draws cards from deck", () => {
     const cards = [{ id: "a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [] }];
     const state = createTestBattleState({ deck: cards });
-    const result = applyDrawCardsEffect(state, {} as never, { kind: "draw-cards", amount: 1 } as never);
+    const result = applyDrawCardsEffect(state, {} as never, { kind: "draw-cards", amount: 1 } as never, 1, []);
     expect(result.hand).toHaveLength(1);
   });
 });

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { makeState, makeCard } from "./helpers";
 import {
   applyCardEffects,
@@ -66,7 +66,7 @@ describe("Boon â€” Sundering Charm (ignore 2 enemy armor)", () => {
     const state = makeState({
       mana: 10,
       enemyHealth: 30,
-      enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 }),
+      enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0, block: 0 }),
       trinketEffects: manifest,
       hand: [card],
     });
@@ -432,7 +432,7 @@ describe("Boon â€” Thunderstone (6 nature damage on stun)", () => {
       mana: 10,
       enemyHealth: 3,
       enemyMaxHealth: 3,
-      enemyMitigation: defaultEnemyMitigation({ armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 }),
+      enemyMitigation: defaultEnemyMitigation({ armor: 3, forge: 0, block: 0 }),
       playerStatuses: defaultPlayerStatusValues({
         block: 0,
         armor: 0,

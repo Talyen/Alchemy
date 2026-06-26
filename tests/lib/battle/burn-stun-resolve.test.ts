@@ -85,7 +85,7 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
       mana: 10,
       enemyHealth: 20,
       enemyMaxHealth: 20,
-      enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 6, stun: 0 },
+      enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 6, stun: 0, burnBonus: 0, freezeBonus: 0 },
       hand: [card],
     });
 

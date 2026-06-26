@@ -3,7 +3,6 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
   getBattleStoreView,
@@ -53,7 +52,6 @@ describe("useAlchemyRunController", () => {
         initialUnlockedTalents: {},
         initialActiveRun: null,
         autoEndTurn: false,
-        homesteadEffects: defaultHomesteadEffects,
         onMarkDifficultyCompleted: vi.fn(),
       }),
     );

@@ -32,7 +32,15 @@ function baseEnemy(enemyId: string): BestiaryEntry {
   };
 }
 
-const emptyStatuses: EnemyStatusValues = { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 };
+const emptyStatuses: EnemyStatusValues = {
+  burn: 0,
+  poison: 0,
+  bleed: 0,
+  freeze: 0,
+  stun: 0,
+  burnBonus: 0,
+  freezeBonus: 0,
+};
 const emptyPlayerStatuses = defaultPlayerStatusValues();
 
 function battleState(overrides: Partial<BattleState> = {}): BattleState {
