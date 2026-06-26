@@ -22,10 +22,10 @@ export class DestinationPage {
   }
 
   async enterCombat(name: string) {
-    await this.pick(name);
     await this.page.evaluate(() => {
       window.disableForceDestination = true;
     });
+    await this.pick(name);
     await expect(this.page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
   }
 }

@@ -73,7 +73,7 @@ export const WOLF_COMPANION_CARD = {
 
 export function makeHighDamageCard(amount = 500) {
   return {
-    id: "boss-killer",
+    id: "fireball",
     title: "Boss Killer",
     descriptionLines: ["Deal massive damage"],
     art: "placeholder",

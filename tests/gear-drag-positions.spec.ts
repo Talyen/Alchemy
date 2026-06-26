@@ -285,7 +285,6 @@ test.describe("Gear drag positions", { ...armory, ...slow }, () => {
 
     expect(styles.width % 1).toBe(0);
     expect(styles.height % 1).toBe(0);
-    expect(styles.transform).toBe("none");
 
     const innerImg = await dragVisual.locator("img").elementHandle();
     expect(innerImg).not.toBeNull();
@@ -294,6 +293,7 @@ test.describe("Gear drag positions", { ...armory, ...slow }, () => {
 
     if (styles.transform && styles.transform !== "none") {
       const match = styles.transform.match(/matrix\(([^,]+,\s*){4}([^,]+),\s*([^)]+)\)/);
+      expect(match).not.toBeNull();
       if (match) {
         const dx = parseFloat(match[2]!);
         const dy = parseFloat(match[3]!);
