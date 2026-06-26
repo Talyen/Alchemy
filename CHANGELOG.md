@@ -6,6 +6,25 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Features
 
+- feat(battle): surface enemy armor/forge/burnBonus/freezeBonus as status chips with combat text
+  Move burnBonus/freezeBonus from EnemyMitigation into EnemyStatusId so they
+  render alongside existing enemy status chips (burn, poison, bleed, freeze, stun).
+  
+  - Extend EnemyStatusId with burnBonus/freezeBonus; add EnemyStatusDamageId
+    for card-effect contexts that exclude augment ids
+  - EnemyMitigation shrinks to { armor, forge, block }
+  - New augment-definitions.ts for non-keyword status effect icons/tooltips
+  - StatusIcon checks augment map first, then falls back to keyword map
+  - getEnemyStatusChips reads both enemyMitigation (block/armor/forge)
+    and enemyStatuses for the full chip row
+  - Iron Bear's +1 Burn Dmg notice replaced with a proper status event
+    (+1 with Burn icon and color)
+  - Rusting Carapace (Forge Golem) and Glacial Shell (Frostwarden) now
+    emit combat text (were previously silent)
+  - Starting enemy armor/block emits floating +N text at battle start
+  - update tests and test fixtures for the field relocation
+- feat(audio): 2x boss music volume boost and Iron Bear 6s intro skip
+- feat(characters): keyword-colored tooltip descriptions for all classes
 - feat(armory): gear borders, astral shine, drag aliasing fix, cursor show, tab ring removal
 - feat(armory): increase inventory grid to 8 columns and tighten left panel
   - INVENTORY_COLS: 7 -> 8 (source of truth in gear/constants.ts)
@@ -311,6 +330,27 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(ui): revise options text, locked tooltips, dropdown accent color
+  - Update clear save data dialog title and description
+  - Remove Error Log from options UI (code-only now)
+  - Change dropdown highlight to muted warm gray with light text
+  - Add lock icon to locked feature tooltips (Talents/Homestead/Armory)
+  - Update locked tooltip messages for clarity
+- fix(game-data): revert arbitrary data-file splits, restore single-file cards/affixes/items
+  The refactor in 7279ad86 split three pure-data files into
+  card-library-part-1..6, affix-rows-1..4, and base-item-group-1..3.
+  These were purely size-driven with no semantic boundary: the part-N
+  names encode no meaning, and the affix split broke a natural group
+  (resist-freeze in rows-3, resist-nature in rows-4).
+  
+  Reverting them to single files (678, 644, 359 lines respectively)
+  eliminates the navigational indirection for a reader looking up a
+  card/affix/item. The codebase tolerates much larger files
+  (e.g. status-damage-riders 11k, gear-art 11k) without issue.
+  
+  Also fixes a barrel regression: card-parity.ts split dropped
+  re-exports of hasKind and hasLifesteal that the test suite
+  depends on.
 - fix(audit): harden module boundaries, fix 7 pre-existing test failures, update agent safety docs
   - S1: implement applyDestinationChoices on run-domain store, wire resume seam
   - S2: short-circuit sampleDestinationChoices when pool <= DESTINATION_CHOICES
@@ -761,6 +801,10 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 - fix: format source files and add lefthook pre-commit hook
 - fix: correct playwright baseURL, add lefthook pre-commit hook and prepare script
 
+### Balance
+
+- balance: reduce early enemy damage, select bg tweak, remove screenshot eslint block
+
 ### Performance
 
 - perf(startup): defer image decode gate, music fetch, fonts, and non-critical work
@@ -776,6 +820,21 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(game-data): split cards and compendium into per-entry modules, extract styles and asset manifest
+- refactor(imports): remove coupling cycles
+- refactor(ui): remove redundant Battle header from battle screen
+- refactor: split oversized modules, add farm plots, armory polish, and type-safety fixes
+  - Split large files into focused sub-modules: game-constants/, battle/types/,
+    battle/damage-calc/, gear/affix-catalog/, gear/base-items/, cards/card-library-*,
+    cards/card-builders/, content-validation/card-parity/, balance/simulator-*,
+    armory/board-drag-*, armory/armory-screen-*, shop/shop-*, navigation/*-types
+  - feat(homestead): add 5 farm plot definitions (wheat-field, chicken-coop, pasture,
+    orchard, crystal-garden) with tier effects, card heal bonuses, and DR wiring
+  - feat(armory): 8-column inventory grid, gear borders, astral shine, drag aliasing fix
+  - fix(armory): animate drag flyover via transform:translate() for pixel-perfect landing
+  - fix(armory): match flyover visual content to slot structure
+  - chore(types): remove non-null assertions, fix unsafe casts, scope react-refresh disables
+- refactor(types): reduce unsafe typing escapes
 - refactor(imports): eliminate all 23 circular dependencies, tighten efferent coupling
 - refactor(armory): split slot-button and inventory-tile into content sub-components, bundle drag-end effects
 - refactor(readability): extract armory reset effects, haste/enemy draw continuations, external dest match
@@ -1601,6 +1660,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Docs
 
+- docs: clarify agent workflow guidance
 - docs(prompts): expand PROMPTS.md audits and add single-use + audit-all scripts
   - Add TODO/FIXME & runtime-warning audit (covers console.log leftovers,
     silent catch blocks, bare markers)
@@ -1653,6 +1713,8 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore(lint): harden quality gates
+- chore(config): set shell to pwsh
 - chore(docs): sync PROMPTS.md audit format
 - chore(deps): remove stryker-mutator, finalize battle core test coverage
   - Drop @stryker-mutator/{core,typescript-checker,vitest-runner} devDeps
@@ -1719,6 +1781,15 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Other
 
+- test(battle, gear): add branch-coverage tests for 6 core modules
+  - companion.ts: 12 tests for bleed/frozen/low-hp/mana/forge/leech branches
+  - wish.ts: 4 tests for crystal gold, mana, burn triggers
+  - damage-riders.ts: 4 tests for archery, nature leech, holy block, burn stun
+  - effect-handlers/*: 46-test file covering all 5 handlers' secondary branches
+  - gear/definitions.ts: 5 tests for gearInstanceRarity and rarity filter
+  - gear/display.ts, footprints.ts: 8 tests for tooltip entries and footprints
+  
+  Branch coverage: battle 89.91%, storage 86.74%, gear 66.86%
 - Abstract encounter traits across Labyrinth and Wildwood
 ## [0.1.0] (2026-06-11)
 
