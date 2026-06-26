@@ -1533,6 +1533,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Tests
 
+- test: update stale suite expectations
 - test(types): align battle tests with status model
 - test(e2e): stabilize prepush battle fixtures
 - test(tests): add missing assertion, deduplicate gear-damage setup, remove contradictory enableFastMode
