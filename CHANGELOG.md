@@ -1533,6 +1533,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Tests
 
+- test(e2e): stabilize prepush battle fixtures
 - test(tests): add missing assertion, deduplicate gear-damage setup, remove contradictory enableFastMode
 - test(e2e): consolidate specs, add legacy save/preferences coverage, and stabilize tests
 - test(e2e): consolidate, expand, and retag E2E suite
