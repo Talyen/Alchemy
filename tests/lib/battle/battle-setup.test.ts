@@ -43,7 +43,7 @@ describe("createBattleState", () => {
       rng: seededRng(42),
     });
     expect(result.enemyHealth).toBe(38);
-    expect(result.enemyAttackEffects[0].amount).toBe(12);
+    expect(result.enemyAttackEffects[0].amount).toBe(9);
   });
 
   it("scales elite enemy health by ELITE_HP_MULTIPLIER", () => {

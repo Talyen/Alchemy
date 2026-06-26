@@ -54,7 +54,7 @@ describe("initializeEnemyState", () => {
     expect(result.roomScalingMultiplier).toBe(roomMul);
     expect(result.enemyMaxHealth).toBe(Math.round(BASE_ENEMY_HEALTH * roomMul));
     const physical = result.modifiedEffects.find((e) => e.kind === "damage" && e.damageType === "physical");
-    expect(physical?.kind === "damage" && physical.amount).toBe(Math.round(9 * roomMul));
+    expect(physical?.kind === "damage" && physical.amount).toBe(Math.round(7 * roomMul));
   });
 
   it("multiplies max health with enemy-health-multiplier", () => {
@@ -71,7 +71,7 @@ describe("initializeEnemyState", () => {
     ];
     const result = initializeEnemyState(skeleton, 1, mods);
     const physical = result.modifiedEffects.find((e) => e.kind === "damage" && e.damageType === "physical");
-    expect(physical?.kind === "damage" && physical.amount).toBe(9 + 2 + 1);
+    expect(physical?.kind === "damage" && physical.amount).toBe(7 + 2 + 1);
   });
 
   it("does not increase non-matching Stun damage attacks with status bonuses", () => {

@@ -36,7 +36,10 @@ function rawActiveRun(fixture: Record<string, unknown>) {
 
 describe("save migration guard", () => {
   it("chains migration steps through CURRENT_SAVE_SCHEMA_VERSION", () => {
-    const migrationSource = read("src/lib/validation/migration/steps.ts");
+    const migrationSource = [
+      read("src/lib/validation/migration/steps.ts"),
+      read("src/lib/validation/migration/steps-gear-layout.ts"),
+    ].join("\n");
     expect(countMigrationSteps(migrationSource)).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
 
