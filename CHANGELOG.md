@@ -327,6 +327,97 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
     add descriptions-match-effects test
 - feat: remove experiments, add new music/assets, UI polish and audio improvements
 - feat: add comprehensive test suite, UI improvements, and storage validation
+- feat: Zustand integration, save validation overhaul, asset cleanup, and CI setup
+- feat: game mode select screen, labyrinth overhaul (entrance node, larger map, encounter/reward modifiers), new enemy traits (iron-hide, forge-regeneration, thick-hide), combat text stun/freeze notices, and test helper refactor
+- feat: add Labyrinth and Wildwood content systems, new enemy Iron Bear, battle modifiers, and menu rework
+  - Add Labyrinth content system with map generation, node navigation, modifiers (sturdy, null-field, burning-ground, leeching)
+  - Add Wildwood boss-select screen with Iron Bear boss enemy
+  - Add content-systems library with shared types and labyrinth/wildwood modules
+  - Add new enemy traits: iron-hide, forge-regeneration, thick-hide
+  - Refactor menu: replace Play with Campaign/Labyrinth/Wildwood buttons with Resume support
+  - Add labyrinth-null-field modifier that halves enemy status applications
+  - Add e2e and unit tests for all new systems
+- feat: homestead tier system, companion assets, card descriptions, and battle/homestead refinements
+- feat: add art assets for potions, nature cards, and trinkets
+- feat: aspect ratio system, nature cards, companion buffs, Wildkeeper deck, and Homestead optimization
+  - Replace resolution options with aspect ratio selector (standard/narrow/ultrawide)
+  - Block tooltips during screen transitions to prevent jarring popups
+  - Add Nature damage type with new cards (Bloodthorn, Cinderbloom, Grasping Vines, Briar Shield, Thorn Mail, Pack Tactics)
+  - Add companion damage buff mechanic and buff-companion card effect
+  - Add potion cards (Stoneskin, Acid, Luck, Wishing)
+  - Update Wildkeeper starting deck with new nature/companion cards
+  - Optimize Homestead screen with pre-computed items and pre-rendered tabs
+  - Rebalance cards: Slash 6 dmg, Stab Bleed 3 dmg, Poison Dagger pure poison, Blessed Aegis equalToBlock, equalToArmor support
+- feat: add Living Armor enemy asset, update Wishing Well Coin trinket, improve battle status effects and UI
+- feat: add self-damage effect, new cards (Shield Bash, Burning Blade, Cauterize, etc.), fix enemy status attacks; refactor: remove CardTemplate type
+- feat: add homestead buildings, new enemy assets, and update compendium/metadata
+  - Add 5 homestead buildings (Alchemy Lab, Crystal Garden, Hunter's Lodge, Orchard, Wheat Field) with optimized webp assets
+  - Add 3 new enemies (Blight Treant, Forge Golem, Frostwarden) with optimized webp assets
+  - Update compendium and asset registry for new content
+  - Polish homestead screen, collection UI, and corruption screen
+- feat: add difficulty select screen with talent scaling, improve draw logic, expand test coverage
+- feat: add corruption mechanic, background particles, card selection grid; polish battle system and UI across screens
+  New features:
+  - Corruption system with dedicated screen and state management
+  - Background particles (react component + lib animation module)
+  - Card selection grid component and tests
+  
+  Refinements:
+  - Battle system updates: effects, turns, draw logic, types
+  - UI polish across act-complete, alchemist-shop, battle, campfire, character-select, merchant, mystery, rewards screens
+  - Shared UI components updated (card-ui, actor-panel, animated-height, button, blur-fade)
+  - Updated navigation/destination-flow and run controller/battle controller
+  
+  Tests:
+  - New tests for corruption, card-selection-grid, shared-ui
+  - Updated existing e2e and unit tests
+  
+  Config:
+  - Updated game constants, compendium, game data types
+- feat: Death's Door mechanic, Armor/Forge consume on interaction, homestead overhaul, and system refactors
+  - Add Death's Door: one-time grace window at 0 HP, must heal before next enemy turn
+  - Armor now degrades by 1 per tick of player damage (burn/poison/bleed/stun/freeze) and enemy attacks
+  - Forge degrades by 1 per Physical/Stun damage dealt
+  - Homestead rework: new buildings with combat effects, farms with potion mana bonus, removed old buildings
+  - Apply player healing centralized into applyPlayerHealing function
+  - Add horror-sting sound for Death's Door activation
+  - Update keyword descriptions for Armor and Forge
+  - Add potionManaBonus to talent effect manifest
+  - Farm yields reset to 0 (replaced by benefit descriptions)
+- feat: boss title shine animation, player name in battle, trait line splitting, and test coverage expansion
+  - Add boss title shine animation on destination screen with keyword-colored gradient
+  - Pass player name to BattleScreen based on selected character
+  - Split multi-effect enemy trait descriptions across lines in tooltips
+  - Remove conditional formatting in formatEnemyAttackLines, one line per effect
+  - Add injectSaveState test helper for precise save state setup
+  - Add natural death test, shop card removal/refresh tests, boss/run tests
+  - Fix talent XP text assertion in core gameplay test
+- feat: redesign bosses with unique traits and mechanics; split stat multiplier into HP/attack
+- feat: enemy tooltip, compendium data restructure, and card text cleanup
+- feat: startup loading screen, talent tree layout, and build optimizations
+- feat: persistent run save/restore with full state; replace CSS combat text animations with framer-motion
+- feat: combat text animation variants with aurora color cycling; refactor boss act flow into destination choices; restore-mana overflow fix; consolidate tests
+- feat: alchemist shop, trinket art assets, mystery effect badges, mana overflow fix, and UI refinements
+- feat: mystery event UI improvements, homestead layout refinements, and particle burst effects
+- feat: homestead, mystery events, collection UI, and battle layout refinements
+- feat: add material-icons component, homestead art assets, and UI/storage refinements
+- feat: free-order homestead unlocking, new farm plots (orchard, crystal garden), and herb garden art with UI refinements
+- feat: homestead screen, gender-neutral character assets, and UI/tests refinements
+- feat: batched updates — test helpers/refactors, companion & enemy trait system, new screens (act-complete, run-victory), reward utils, cost module, and expanded test coverage
+- feat: rewards screen overhaul, run controller updates, companion assets, and test improvements
+- feat: UI fixes, run controller updates, and test additions
+- feat: UI improvements, talent pool enhancements, and cleanup of unused raw audio assets
+- feat: companions system, ranger characters, UI improvements, and audio enhancements
+- feat: add image preloader, UI polish pass, audio tweaks, and talent pool refactor
+- feat: add trinkets system, battle engine improvements, UI refinements, and expanded compendium
+- feat: overhaul SFX pipeline, add sound registry, and reorganize raw assets
+  - Add optimize-sounds.mjs script and src/lib/sound-registry.ts for centralized SFX management
+  - Replace and remap card/enemy SFX with new raw asset sounds (buff-pickup, swish-hit, strong-punch, energy-noise, gut-kick, bonus-regen-rate, sword-impact-hit-2)
+  - Remove button click sound and playUIClick API
+  - Temporarily wire Collection screen tile clicks to play card/enemy SFX for testing
+  - Reorganize raw assets from Raw Art Assets/ to Raw Assets/
+  - Update UI components, battle logic, and tests to align with latest changes
+  - Add ffmpeg-static dependency for sound conversion pipeline
 
 ### Bug Fixes
 
@@ -800,6 +891,8 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
   - Add tests for all persistence, validation, audio, and UI changes
 - fix: format source files and add lefthook pre-commit hook
 - fix: correct playwright baseURL, add lefthook pre-commit hook and prepare script
+- fix: card selection visuals, difficulty select screen polish, mystery intro layout, screen header styling
+- fix: holy damage calc, poison talent scaling, sound alias cleanup, and test infra
 
 ### Balance
 
@@ -820,6 +913,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(agents): streamline AGENTS.md and update Dark Pact, Hemorrhage, Kindling, Tithe card artwork
 - refactor(game-data): split cards and compendium into per-entry modules, extract styles and asset manifest
 - refactor(imports): remove coupling cycles
 - refactor(ui): remove redundant Battle header from battle screen
@@ -1530,6 +1624,54 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
   - Add null-safety to getPlayerStatusChips/getEnemyStatusChips
   - Add boot test for main menu rendering
 - refactor: zustand stores, modular save migration, commitlint/lefthook, and code cleanup
+- refactor: harden save migration, battle controller, and run initialization
+  - Add save metadata tracking (schema/build/content version)
+  - Add explicit save migration harness (migrateV0ToV1)
+  - Add field-level normalization for all persisted data
+  - Tighten active-run validation (finite HP/gold, labyrinth invariants)
+  - Whitelist saved card hydration to prevent stale-field leakage
+  - Add future-schema blocking UI with desktop Exit support
+  - Extract pure helpers for run-start snapshot and reward finalization
+  - Add timer cleanup and stale-state ref protection in battle controller
+  - Add legacy save fixtures, migration docs, and 89 new unit tests
+- refactor: overhaul tests, remove flaky E2E tests, add comprehensive unit tests, fix difficulty modifiers
+- refactor: consolidate battle submodules, add immutable helpers, data-drive homestead/trinket effects
+- refactor: extract run-state field setter, simplify battle ref sync, shorten variable names
+- refactor: extract battle submodules (apply-effects, card-play, combat-text, damage, enemy-turn, status-effects, status-ticks, trinket-utils, wish)
+- refactor: extract shared stun trigger, tickPlayerHarmfulStatus, finalizePlayerTurn; deduplicate first-card-free rules
+- refactor: merge runTalentXP into talentXP, add placeholder mystery art, extract SelectableShopCard, remove unused exports
+- refactor: reorganize talents into modular directory structure
+- refactor: extract mystery flow into hook, split storage migrations, and restructure run/mystery modules
+- refactor: rename ailment to harmful-status, remove ailment keyword, restructure deck/character data, add battle UI components
+- refactor: battle system cleanup, talents rework, and screen polish
+  - Refactor battle effects/turns modules for clarity
+  - Rework talent data structure and balance
+  - Polish multiple screens (homestead, victory, game-over, shops)
+  - Remove dead code (audio-volume, material-icons, mystery-events cleanup)
+  - Expand test coverage (talent-pool, homestead, config)
+  - Net -1000 lines across the codebase
+- refactor: centralize keyword visual data; rework armor to only mitigate burn and physical damage; add keyword-colored descriptions and shine-border indicators
+- refactor: extract audio into focused modules; consolidate state into single-object stores; reorganize config/navigation/storage into subdirectories; add utility helpers; remove dead styles
+- refactor: add module-level doc comments across codebase; extract mystery effects into dedicated function; add new game constants; clean up test imports
+- refactor: extract run navigation, battle/shop controllers from monolithic use-alchemy-run-controller; add ESLint, Prettier config, error boundary; migrate PostCSS to ESM
+- refactor: integrate mobile landscape into main battle layout with virtual-resolution stage
+- refactor: battle engine cleanup, audio overhaul, UI consolidation, and bug fixes
+  - Fix SFX volume slider (0-100 scale conversion in setSfxVolume)
+  - Fix gold-on-poison combat text not rendering (threaded combatTexts into applyDamageStatuses)
+  - Fix test mock data (makeState now matches current BattleState shape)
+  - Extract clampHealth utility, export shuffleCards, replace inline shuffles
+  - Split applyCardEffects, createBattleState, processEnemyAttack, endPlayerTurn
+  - Remove dead code: COMBAT_TEXT/EFFECT_KINDS/TURN_PHASES consts, ScreenHeader, isInitialized
+  - Replace magic numbers with named constants (ENEMY_HEAL_FRACTION, BLEED_EXECUTE_MULTIPLIER, etc.)
+  - Clear unused lucide-react imports and useCallback import
+  - Add shared PaginationControls and GoldCost components, replace 4 pagination duplicates
+  - Add unit tests for clamp, clampHealth, shuffleCards (137 total, all passing)
+  - Reorganize music tracks (Battle 1-4, single Menu 1), add auto-switching via screen state
+  - Add smooth 300ms crossfade between tracks with fade-out/fade-in
+  - Add music master gain (0.5) for volume headroom, reduce default volume
+  - Fix currentKey not persisting through startTrack (removed stopMusic call)
+  - Add playMusicImmediate for initial load (no fade), delayed-fade for transitions
+  - Music now auto-plays on main menu load, persists across non-combat screens
 
 ### Tests
 
@@ -1768,6 +1910,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 - chore: sync CHANGELOG.md with recent commits
 - chore: verify vercel git webhook after reconnect
 - chore: checkpoint draw discard experiment
+- chore: remove screenshot artifacts from tracking and add to .gitignore
+- chore: baseline before UI palette redesign
+- chore: reset repository to local workspace snapshot
 
 ### Style
 
@@ -1794,6 +1939,152 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
   
   Branch coverage: battle 89.91%, storage 86.74%, gear 66.86%
 - Abstract encounter traits across Labyrinth and Wildwood
+- Refresh saved card art on resume
+- Remove GitHub Pages deployment workflow; switch to Vercel
+- Refactored Battle, App, Run Nav, Reward structure
+- Phase 7: documentation — add top-of-file summaries, battle state machine lifecycle, fix stale comments, document key status effect functions
+- Phase 6: structural improvements — screen registry, useEffectEvent removal, battleStateRef leak fix
+  - 6a: Replace 18-way ternary-if screen routing in App.tsx with a switch-based
+    renderScreen() function (~200 lines to ~140 lines, single dispatch point)
+  - 6e: Replace experimental useEffectEvent with stable useRef pattern for
+    battle victory/defeat side effects
+  - 6d: Eliminate battleStateRef leak from battle controller to navigation
+    layer — pass currentEnemyType as concrete value instead
+- Phase 0-5: config centralization, error handling, naming, file splitting, duplication extraction, type fixes
+  - Phase 0: Move 17+ tuning values from scattered files into game-constants.ts
+  - Phase 1: Add console.error/warn to all 10 silent error paths; add startup validation
+  - Phase 2: Fix barrel bypass, rename misleading functions (enemy-damage→damage-to-enemy,
+    applyThreshold→applyHealthThresholdStatBonus, st→nextState), rename config/theme.ts
+    to combat-text-icons.ts, remove emoji from homestead icons
+  - Phase 3: Split shared-ui.tsx into 7 domain files; split hooks.ts; extract runtime code
+    from battle/types.ts, homestead/types.ts, storage/types.ts
+  - Phase 4: Extract shared getCardKeywords (keywords.ts) and generic shuffle<T> (utils.ts);
+    eliminate 3 duplicate implementations
+  - Phase 5: Fix unsafe Destination[] cast, inline EnemyStatusId subset, align forgeToBurn
+    type (boolean vs number)
+- Polish: UI refinements across screens, fix game-over layout, add game-import button to collection, expand test coverage
+- WIP on main: 72ad68a refactor: centralize keyword visual data; rework armor to only mitigate burn and physical damage; add keyword-colored descriptions and shine-border indicators
+- Feat: UI palette redesign with warm earthy tones, navigation debounce, and updated art assets
+  - Redesign CSS color palette from neutral grayscale to warm fantasy tones (hue 30-40 range)
+  - Add SVG noise texture overlay to background
+  - Make button styling more tactile (rounded-xl, shadows, active scale)
+  - Remove font-semibold from headings for cleaner typography
+  - Add 100ms debounce to screen navigation to prevent double-click issues
+  - Add useCallback import for navigateTo
+  - Update logo, draw pile, and discard pile art assets
+- Refactor: modularize codebase, standardize layout, add unit tests, fix shop, add e2e tests
+  Structural refactoring:
+  - Split meta-screens.tsx into 10 individual screen files with barrel index
+  - Split utils.ts into domain sub-modules (string/battle/random/dom)
+  - Extract useTalentState and useRunState sub-hooks from monolithic controller
+  - Remove dead code: PlaceholderScreen, unused barrel exports
+  - Fix dormant trinkets tab by adding to collectionTabMeta
+  - Create shared PageLayout component for consistent screen centering
+  - Move navigation buttons to bottom of Options, Talents, Collection screens
+  - Add justify-center to Merchant's Shop for proper vertical centering
+  
+  Gameplay:
+  - Destination color theming (red/purple/gold/green with white text)
+  - Remove hover transition wiggle on destination buttons
+  - Conditional destinations: Campfire only when HP < 80%, Shop only when gold >= 50
+  - Shop prices: cards 30g, remove 50g, refresh 20g
+  - All keywords have 8 talent nodes (placeholders added)
+  
+  Testing:
+  - 88 unit tests across 5 files covering all pure game logic
+  - Vitest configured with vite alias support
+  - E2E tests for shop screen and full run flow
+  - Test script added: npm test / npm run test:watch
+  
+  Refactoring standards enforced:
+  - Functions split at 30 lines, max 2 levels of nesting
+  - No dead code, unused imports, or unreachable logic
+  - Every function has 'why' comments for game mechanics
+  - Magic numbers extracted to game-constants.ts
+- Feat: Implement Campfire destination with rest animation and HP restore
+- Feat: Redesign talents system with inline choices, mechanical effects, and persistent XP; add game-over screen with talent progress; add e2e tests for core gameplay
+  Talents:
+  - Replace static talent tree with randomized 3-choice inline selection + confirm flow
+  - Add 8 Physical talents with mechanical effects (flat dmg, armor synergy, crit)
+  - Implement 5% global crit chance that doubles damage
+  - Remove talent names, show description-only nodes with keyword-colored text
+  - Add keyword icons, black background, keyword-colored borders
+  - Show undiscovered talents greyed out in the talent list
+  - Add Reset Talents button with confirmation dialog
+  - Add red dot notification on keywords with unspent talent points
+  - Choices persist per keyword via useRef cache (no reroll on tab switch)
+  
+  Battle:
+  - Add block consumption floating combat text (player-side damage/block)
+  - Add TalentEffectManifest to BattleState, injected from unlocked talents
+  - Remove inline defeat overlay from battle screen
+  
+  Screens:
+  - New GameOverScreen with animated talent progress bars and Return to Main Menu button
+  - Remove 2-second auto-navigate delay on defeat
+  - Remove centering wrapper from CollectionScreen
+  - Remove PlaceholderScreen from OptionsScreen for fixed header layout
+  - Options tabs no longer shift layout on switch
+  - Character select now has card-style containers around each character
+  
+  Testing:
+  - Add comprehensive e2e tests for menu, character select, battle mechanics,
+    full run flow, game over, options, talents, collection, resolution, navigation
+  
+  Persistence:
+  - Add unlockedTalents to save data (load/save/clear)
+  - Reset runTalentXP between runs via resetRunState
+- Remove duplicate deploy workflow
+- Overhaul: cleanup, features, and fixes
+  - Asset pipeline: restructured raw art into subfolders (Cards/Enemies/Logo/Misc/Player Characters), added gendered character art (male/female per class), new draw/discard pile art
+  - Character select: 3 classes (Knight/Rogue/Wizard) with unique starting decks, per-character gender toggle, tilt+shimmer effects, keyword tags
+  - Battle: sliding turn indicator, DoT damage triggers at enemy turn start, block absorbs and halves, Meteor reduces max mana, mana can exceed cap
+  - Talents: keyword-based XP system, pyramid talent tree with Physical +1 damage node
+  - Options: tabbed layout (Display/Sound/Other), music+SFX volume sliders, persist volumes in save data
+  - Music: class-specific tracks, menu music, fix autoplay via user gesture
+  - Combat text: shows keyword-appropriate colors/icons, positioned between characters, lasts longer
+  - End Run + defeat screen: end run from battle, defeat overlay with auto-return to menu, Resume Run on menu
+  - Codebase cleanup: removed 112 lines of dead sound functions, 8 unused files/folders (tooltip, entities/cards, shared/*), standardized shimmer via useShimmerController hook, unified keyword display with KeywordTag component, fixed tilt effect on character select
+- Feat: Add 7 new enemies and stat scaling system
+  - Add 7 new enemies to bestiary: Goblin, Imp, Lizard Scout, Mimic, Mud Elemental, Necromancer, Plague Doctor
+  - Add battle count tracking (battlesWon) in run state
+  - Add enemy health scaling: +2 HP per battle won (capped at +20)
+  - Update asset optimizer script with new enemy assets
+  - Reset battlesWon on new run
+- Fix: Handle duplicate cards in hand properly with unique refs
+  - Use card.id-index as key for handCardRefs instead of just card.id
+  - Update animateRemainingHandDiscard to use the same key format
+  - Fix commented-out draw animation code with correct key format
+  - Add e2e test for multiple copies of same card hover and play
+- Feat: Add enemy death animation before victory screen
+- Fix: Play sound only once based on combat result
+- Fix: Remove duplicate sound triggers and hover sounds
+- Refactor: Clean up legacy code and add keyword-based sound system
+  - Remove legacy battle/ features folder (HandFan, BattleScreen, etc.)
+  - Remove unused app providers and router
+  - Remove unused UI components (badge, card, hover-card, input, select, slider, tabs)
+  - Remove unused shared content files and hooks
+  - Remove unused feature folders (bestiary, campfire, character-select, collection, destination, main-menu, merchant-shop, mystery, options, run-end, talents, test-lab)
+  - Create src/lib/audio.ts with Web Audio API sound system
+  - Create src/shared/hooks/use-sound.ts hook
+  - Add keyword-based sound system with 10 variants per category (damage, beneficial, ui)
+  - Simplify to 3 categories: Damage (physical sounds), Beneficial (heal sounds), UI
+  - Integrate sounds into battle controller and Options screen testing UI
+  - Fix card draw animation by removing AnimatePresence
+  - Fix duplicate card issues using array index instead of card.id
+- Fix: Build game before deploying
+- Merge branch 'main' of https://github.com/Talyen/Alchemy
+- Trigger GitHub Actions deployment
+- Add GitHub Actions workflow for GitHub Pages deployment
+  This workflow automates the deployment of static content to GitHub Pages upon pushes to the main branch or manual triggers.
+- Fix: Override base path in GitHub Actions build
+- Restore missing index.html
+- Merge branch 'main' of https://github.com/Talyen/Alchemy
+- Add GitHub Actions deployment workflow
+- Fix GitHub Pages deployment and base path
+- Fix base path for GitHub Pages
+- Add dist folder for GitHub Pages
+- Resize destination buttons, change campfire to green, remove hover line feature
 ## [0.1.0] (2026-06-11)
 
 ### Features
