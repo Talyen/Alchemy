@@ -13,6 +13,7 @@ Goal: Make code scannable without changing behavior.
 Start here: `npx eslint --rule 'complexity: ["warn", 1]' --rule 'max-lines-per-function: ["warn", 30]' src`
 
 Check:
+
 - Names match domain vocabulary already used in the module
 - Functions do one obvious thing; extract only when it improves top-to-bottom reading
 - Prefer early returns over deep nesting (>3 levels)
@@ -29,6 +30,7 @@ Goal: Strengthen correctness at module boundaries.
 Start here: `rg -l 'async function|useEffect|onClick=|addEventListener|persist|hydrate|resume' src --type ts -g '!*.test.*'`
 
 Check:
+
 - Null/undefined/empty paths handled explicitly at module boundaries
 - State transitions are idempotent where re-entry is possible (resume, retry, double-click)
 - No swallowed errors — failures surface or log with context
@@ -44,6 +46,7 @@ Goal: Tests protect behavior without adding maintenance burden.
 Start here: `rg --no-filename -c -e '^\s*(expect|assert)' tests --type ts | sort -t: -k2 -n | head -50`
 
 Check:
+
 - Assert outcomes, not implementation details
 - No trivial assertions (e.g. "function exists", "returns defined")
 - Duplicate setup — extract shared fixtures/helpers
@@ -59,6 +62,7 @@ Goal: Find bugs desktop players feel but types miss — broken clicks, drag ghos
 Start here: `rg -l 'setPointerCapture|releasePointerCapture|onDrag|onPointerDown|modal|tooltip|portal' src --type tsx -g '!*.test.*'`
 
 Check:
+
 - Pointer/drag: every setPointerCapture has matching release on up, cancel, and unmount; cursor/body styles restore on exit; no ghost clicks after drag
 - One clear interaction mode at a time — drag, modal, targeting, scroll should not fight
 - Hover tooltips: show/hide cleanly; do not block clicks on underlying controls
@@ -74,11 +78,13 @@ Check:
 Goal: Drive unsafe typing escapes toward zero in non-test source.
 
 Start here:
+
 - `rg -n '\bany\b' src --type ts -g '!*.test.*' -g '!*.spec.*'` — target 0
 - `rg -n '@ts-ignore|@ts-expect-error|eslint-disable|as unknown as' src` — target trending to 0
 - `rg -n '!\.' src --type ts -g '!*.test.*'` — target ≤ 1 per ~500 LOC
 
 Check:
+
 - Replace `as` casts with type guards, narrowing, or discriminated unions
 - Replace `@ts-ignore` / `@ts-expect-error` by fixing the underlying type mismatch
 - Remove `eslint-disable` by fixing the violation; surviving disables must be line-scoped with reason
@@ -94,6 +100,7 @@ Goal: No function exceeds complexity 10; p90 ≤ 6.
 Start here: `npx eslint --rule 'complexity: ["warn", 11]' src`
 
 Check:
+
 - Extract branch-heavy logic into named helpers with a single responsibility
 - Replace nested if/else with early returns / guard clauses
 - Replace switch or chained if over a discriminant with a lookup table
@@ -109,6 +116,7 @@ Goal: Zero dead exports, imports, types, and files.
 Start here: `npm run deadcode:strict`
 
 Check:
+
 - Delete unused exports, types, and files outright
 - Inline single-use helpers where inlining reduces total LOC
 - Do not delete symbols referenced only from generated files without running sync/asset scripts
@@ -121,11 +129,13 @@ Check:
 Goal: Zero circular imports; efferent imports per module p90 ≤ 12, max ≤ 20; zero layer-boundary violations.
 
 Start here:
+
 - `npx -y madge --circular --extensions ts --ts-config tsconfig.json src` — target 0
 - `rg -c '^import ' src --type ts` — flag files with > 20
 - `npm run lint` — boundary violations, target 0
 
 Check:
+
 - Break cycles by inverting the dependency (extract a shared module, depend on interface not concrete store)
 - Reduce efferent coupling by depending on a barrel/facade instead of many deep modules
 - Move shared code to its owning layer rather than reaching across
@@ -140,6 +150,7 @@ Goal: Feature changes touch a small, predictable set of files — median ≤ 5 p
 Start here: `node scripts/audit-change-amplification.mjs`
 
 Check:
+
 - For the top 3 hotspots, identify the missing seam (facade, event, interface, colocated data)
 - For high co-edit pairs, look for a cross-layer facade that lets one side change without dragging the other
 - Remove duplicated responsibility that forces parallel edits across files
@@ -154,10 +165,12 @@ Check:
 Goal: Side effects (I/O, shared/global mutation, non-deterministic primitives) confined to designated seams; zero in pure logic and UI components.
 
 Start here:
+
 - `rg -n 'Math\.random|Date\.now|new Date\(\)|fetch\(|localStorage|sessionStorage' src --type ts -g '!**/stores/**' -g '!**/storage/**' -g '!**/rng*'`
 - `rg -n 'Math\.random' src/lib/battle` — target 0
 
 Check:
+
 - Inject the dependency (RNG, clock, store) as a parameter rather than calling the global
 - Push the effect to the seam (store/repository) and keep the function pure
 - For Math.random in battle, use state.rng / getBattleRng(state)
@@ -172,6 +185,7 @@ Goal: High test presence on exported domain logic; branch coverage ≥ 80% on co
 Start here: `npm run test:coverage`
 
 Check:
+
 - Review coverage/ for modules with < 80% branch coverage on src/lib/battle, src/lib/gear, src/features/alchemy/shared/storage
 - Add behavior-targeted tests for untested exports (assert outcomes, not implementation)
 - No trivial assertions ("function exists", "returns defined")
