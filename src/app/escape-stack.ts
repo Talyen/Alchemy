@@ -10,8 +10,6 @@ export const ESCAPE_PRIORITY = {
   APP_MENU: 0,
 } as const;
 
-export type EscapePriority = (typeof ESCAPE_PRIORITY)[keyof typeof ESCAPE_PRIORITY];
-
 export interface EscapeHandler {
   id: string;
   priority: number;
@@ -67,11 +65,6 @@ export function pushEscapeHandler(handler: EscapeHandler): () => void {
       maybeRemoveListener();
     }
   };
-}
-
-export function popEscapeHandler(id: string): void {
-  if (!handlers.delete(id)) return;
-  maybeRemoveListener();
 }
 
 /** Test-only: clear all handlers and the shared listener. */
