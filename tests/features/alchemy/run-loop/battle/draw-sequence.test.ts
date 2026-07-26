@@ -86,7 +86,7 @@ describe("runHandDrawSequence", () => {
     let sessionActive = true;
     const deps = makeDeps({
       isSessionActive: () => sessionActive,
-      runIfSessionActive: (session, action) => {
+      runIfSessionActive: (_session, action) => {
         if (sessionActive) action();
       },
       animateDrawnHand: vi.fn(async () => {
