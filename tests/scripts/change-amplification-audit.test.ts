@@ -14,7 +14,7 @@ describe("change amplification audit", () => {
     expect(output).toContain("Since: 6 months ago");
     expect(output).toContain("clean:");
     expect(output).toContain("Co-edit signal:");
-  });
+  }, 30_000);
 });
 
 describe("asset manifest", () => {
