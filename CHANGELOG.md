@@ -421,6 +421,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(app): drop unused escape-stack exports for knip
+  Remove popEscapeHandler and EscapePriority; callers unsubscribe via
+  pushEscapeHandler's return value.
 - fix(lint): sync escape refs in effects and strip hydrate flags
   Move callback ref updates out of render for the Escape stack helpers,
   and discard save-only validity flags without unused bindings.

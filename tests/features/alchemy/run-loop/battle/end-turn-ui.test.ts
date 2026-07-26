@@ -9,7 +9,9 @@ import { createTestBattleState } from "../../../../lib/battle/test-state";
 import { getBattleStoreView, resetRunBattleSlice } from "../../../../helpers/run-domain-store-test";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 
-const resolveEndTurnMock = vi.fn(() => false);
+const { resolveEndTurnMock } = vi.hoisted(() => ({
+  resolveEndTurnMock: vi.fn(() => false),
+}));
 
 vi.mock("@/features/alchemy/run-loop/battle/turn-orchestration", () => ({
   resolveEndTurn: resolveEndTurnMock,
