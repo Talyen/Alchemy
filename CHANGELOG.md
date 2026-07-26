@@ -421,6 +421,11 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(test): restore e2e decks and harden battle auto-end
+  Keep non-tombstoned custom deck cards on save load so E2E fixtures
+  remain drawable, disable auto-end in injected saves, and avoid ending
+  the turn during hand transfers. Also null-safe the change-amplification
+  audit on shallow checkouts and fetch full history in the CI test job.
 - fix(test): hoist end-turn mock for vitest factory
 - fix(app): drop unused escape-stack exports for knip
   Remove popEscapeHandler and EscapePriority; callers unsubscribe via
