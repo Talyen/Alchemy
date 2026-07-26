@@ -129,7 +129,7 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared
 | 1. Add route constant          | `src/features/alchemy/shared/types.ts` → `REWARD_ROUTES`, exported via `CONSTANTS`                                                                       |
 | 2. Compute route after rewards | `src/features/alchemy/run-loop/navigation/reward-flow.ts` (`finalizeRewardState` / related; import `@/features/alchemy/run-loop/navigation/reward-flow`) |
 | 3. Handle transition           | `reward-flow.ts` (`executeRewardRouteTransition`) and/or `shell/use-run-navigation.ts` (`routeAfterReward`)                                              |
-| 4. Tests                       | `tests/features/alchemy/run-loop/navigation/reward-flow.test.ts`; victory-flow tests if end-of-run                                                        |
+| 4. Tests                       | `tests/features/alchemy/run-loop/navigation/reward-flow.test.ts`; victory-flow tests if end-of-run                                                       |
 
 ---
 

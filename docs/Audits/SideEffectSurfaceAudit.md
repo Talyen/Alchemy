@@ -15,16 +15,16 @@ Confirm unexpected effect ownership and write a plan to fix all identified viola
 
 ## Allowlisted seams
 
-| Effect                                                      | Allowed locations                                                                 |
-| ----------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Effect                                                      | Allowed locations                                                                                        |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `localStorage` / save I/O / Zod parse                       | `shared/storage/`, `src/lib/validation/save-schemas/`, `src/lib/active-run-session/`, hydrate/boot paths |
-| Zustand store mutation                                      | `shared/stores/` (+ facade writes from controllers)                               |
-| Audio                                                       | `src/lib/audio*.ts`, app audio-effect hooks                                       |
-| Electron / Steam IPC                                        | `desktop/`, preload bridges, Steam helpers — not `src/lib/battle`                 |
-| Unseeded / wall-clock randomness                            | Outside battle rule code; battle uses injected RNG                                |
-| Seeded RNG                                                  | `state.rng` / `getBattleRng(state)` in battle + tests                             |
-| Session / presentation identity (`crypto.randomUUID`, etc.) | Ephemeral UI/session tokens outside battle entropy                                |
-| Persistence timestamps (`Date.now`)                         | Save metadata / storage / validation seams only                                   |
+| Zustand store mutation                                      | `shared/stores/` (+ facade writes from controllers)                                                      |
+| Audio                                                       | `src/lib/audio*.ts`, app audio-effect hooks                                                              |
+| Electron / Steam IPC                                        | `desktop/`, preload bridges, Steam helpers — not `src/lib/battle`                                        |
+| Unseeded / wall-clock randomness                            | Outside battle rule code; battle uses injected RNG                                                       |
+| Seeded RNG                                                  | `state.rng` / `getBattleRng(state)` in battle + tests                                                    |
+| Session / presentation identity (`crypto.randomUUID`, etc.) | Ephemeral UI/session tokens outside battle entropy                                                       |
+| Persistence timestamps (`Date.now`)                         | Save metadata / storage / validation seams only                                                          |
 
 ## Domain rules
 

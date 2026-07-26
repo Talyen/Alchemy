@@ -14,14 +14,14 @@ Alchemy is a fantasy roguelite deckbuilder.
 
 - For non-trivial work, discover relevant docs with `rg --files -g '*.md'` and `rg <topic>`. Read only what matches the task; prefer specific subsystem docs over broad assumptions.
 
-| Need | Read |
-| --- | --- |
-| Run state, controllers, import boundaries, boot | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) |
-| How-to (saves, cards, screens, materials, motion) | [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) |
-| Commands, battle rules glossary | [docs/REFERENCE.md](./docs/REFERENCE.md) |
-| Hooks, area → test commands, E2E helpers | [CONTRIBUTING.md](./CONTRIBUTING.md) |
-| Armory / gear | [docs/ARMORY.md](./docs/ARMORY.md) |
-| Audits (only when the user cites one) | [docs/Audits/README.md](./docs/Audits/README.md) |
+| Need                                              | Read                                             |
+| ------------------------------------------------- | ------------------------------------------------ |
+| Run state, controllers, import boundaries, boot   | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)   |
+| How-to (saves, cards, screens, materials, motion) | [docs/WORKFLOWS.md](./docs/WORKFLOWS.md)         |
+| Commands, battle rules glossary                   | [docs/REFERENCE.md](./docs/REFERENCE.md)         |
+| Hooks, area → test commands, E2E helpers          | [CONTRIBUTING.md](./CONTRIBUTING.md)             |
+| Armory / gear                                     | [docs/ARMORY.md](./docs/ARMORY.md)               |
+| Audits (only when the user cites one)             | [docs/Audits/README.md](./docs/Audits/README.md) |
 
 ## Verification
 

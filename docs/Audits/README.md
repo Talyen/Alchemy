@@ -79,13 +79,13 @@ Standing conventions: [CONTRIBUTING.md](../../CONTRIBUTING.md), [ARCHITECTURE.md
 
 ### Measurable sweep map (`npm run audit:all`)
 
-| Probe                                      | Interpret via                                           | Notes                                                                                          |
-| ------------------------------------------ | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `npm run deadcode:strict`                  | `DeadCodeRatioAudit.md`                                 | Confirm with `rg`; respect `knip.config.js` allowlists                                         |
-| `npm run audit:single-use`                 | `DeadCodeRatioAudit.md` (primary), `InelegantSlopAudit.md` (ceremony) | Supporting signal — not sole evidence                                                 |
-| madge circular (`audit:all` step)          | `ChangeLocalityContextEfficiencyAudit.md`               | Break cycles by inverting deps / extracting shared modules / facades; layer legality → ESLint |
-| ESLint complexity + max-lines-per-function | `InelegantSlopAudit.md`                                 | Prefer complexity ≤ 10; do not split clean ≤10 functions; p90 ≤ 6 is directional only         |
-| `node scripts/audit-change-amplification.mjs` | `ChangeLocalityContextEfficiencyAudit.md`            | Defaults: `--since=3 months ago`, subjects matching `^feat\|^fix\|^balance`                 |
+| Probe                                         | Interpret via                                                         | Notes                                                                                         |
+| --------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `npm run deadcode:strict`                     | `DeadCodeRatioAudit.md`                                               | Confirm with `rg`; respect `knip.config.js` allowlists                                        |
+| `npm run audit:single-use`                    | `DeadCodeRatioAudit.md` (primary), `InelegantSlopAudit.md` (ceremony) | Supporting signal — not sole evidence                                                         |
+| madge circular (`audit:all` step)             | `ChangeLocalityContextEfficiencyAudit.md`                             | Break cycles by inverting deps / extracting shared modules / facades; layer legality → ESLint |
+| ESLint complexity + max-lines-per-function    | `InelegantSlopAudit.md`                                               | Prefer complexity ≤ 10; do not split clean ≤10 functions; p90 ≤ 6 is directional only         |
+| `node scripts/audit-change-amplification.mjs` | `ChangeLocalityContextEfficiencyAudit.md`                             | Defaults: `--since=3 months ago`, subjects matching `^feat\|^fix\|^balance`                   |
 
 Do not invent standalone audits for complexity, single-use, or import coupling — those probes live in `audit:all` and the guides above.
 
@@ -93,11 +93,11 @@ Do not invent standalone audits for complexity, single-use, or import coupling �
 
 Local and CI expect **Node 24+**, Vitest, Playwright Chromium, and (for desktop paths) Electron tooling.
 
-| Available                  | Run                                                                                                      |
-| -------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Always                     | The cited audit’s static probes and relevant lightweight gates (`typecheck`, path-scoped Vitest, `knip`) |
+| Available                  | Run                                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Always                     | The cited audit’s static probes and relevant lightweight gates (`typecheck`, path-scoped Vitest, `knip`)      |
 | Browser / Electron present | Path-scoped Playwright (`test:e2e:prepush`, tagged specs); optional `test:e2e:electron` / `test:ship:desktop` |
-| Toolchain absent           | Correct source/docs fixes still land; state exactly which build/test checks were skipped and why         |
+| Toolchain absent           | Correct source/docs fixes still land; state exactly which build/test checks were skipped and why              |
 
 Do not fail an audit solely because Electron, Steam credentials, or a full ship build is unavailable.
 
