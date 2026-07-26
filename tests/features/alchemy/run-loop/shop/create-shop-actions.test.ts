@@ -115,6 +115,22 @@ describe("createShopActions", () => {
       expect(getRunProgressStoreView().runGold).toBe(0);
       expect(getRunProgressStoreView().runDeck.length).toBe(deckBefore);
     });
+
+    it("no-ops a second buy of the same slot without rebuilding actions (rapid re-entry)", () => {
+      setRunProgress({ runGold: 999 });
+      setShopState(createInitialShopState());
+      const actions = buildActions();
+      const card = getRunSessionStoreView().shopState.cards[0];
+      if (!card) return;
+
+      const deckBefore = getRunProgressStoreView().runDeck.length;
+      expect(actions.handleShopBuyCard(card, "slot-0")).toBe(true);
+      expect(actions.handleShopBuyCard(card, "slot-0")).toBe(false);
+
+      expect(getRunProgressStoreView().runGold).toBe(999 - SHOP_CARD_PRICE);
+      expect(getRunProgressStoreView().runDeck.length).toBe(deckBefore + 1);
+      expect(getRunSessionStoreView().shopState.purchasedSlotKeys).toEqual(["slot-0"]);
+    });
   });
 
   describe("merchant remove card", () => {
@@ -303,6 +319,21 @@ describe("createShopActions", () => {
       const second = secondActions.handleAlchemistMixPotions(0, 1);
       expect(second).toBeNull();
       expect(getRunProgressStoreView().runGold).toBe(999 - ALCHEMIST_MIX_PRICE);
+    });
+
+    it("no-ops a second mix on the same actions instance (stale mixUsed closure)", () => {
+      setRunProgress({
+        runGold: 999,
+        runDeck: [makeCard({ id: "a", title: "Potion A" }), makeCard({ id: "b", title: "Potion B" })],
+      });
+      setAlchemistState(createInitialAlchemistState());
+      // Stale closure still sees mixUsed: false after the first call mutates the store.
+      const actions = buildActions({ talentEffects: { potionMixPotency: 0 } });
+
+      expect(actions.handleAlchemistMixPotions(0, 1)).not.toBeNull();
+      expect(actions.handleAlchemistMixPotions(0, 1)).toBeNull();
+      expect(getRunProgressStoreView().runGold).toBe(999 - ALCHEMIST_MIX_PRICE);
+      expect(getRunSessionStoreView().alchemistState.mixUsed).toBe(true);
     });
   });
 

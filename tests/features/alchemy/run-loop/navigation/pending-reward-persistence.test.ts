@@ -52,4 +52,19 @@ describe("pending reward persistence", () => {
     expect(parsed?.rewardType).toBe("trinket");
     expect(parsed?.choices).toHaveLength(1);
   });
+
+  it("filters invalid destination labels on restore", () => {
+    const restored = restorePendingReward({
+      rewardType: "trinket",
+      choiceIds: ["bone-charm"],
+      selectedId: null,
+      gold: 0,
+      materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+      destinations: ["Campfire", "Not A Real Destination", "Mystery"],
+      selectedBossId: null,
+      lastVictoryEnemyType: null,
+      lastVictoryContentSystem: null,
+    });
+    expect(restored?.destinations).toEqual(["Campfire", "Mystery"]);
+  });
 });

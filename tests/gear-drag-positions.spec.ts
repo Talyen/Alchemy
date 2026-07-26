@@ -10,7 +10,7 @@ import {
   currencyLocator,
 } from "./e2e/armory";
 import { test } from "./fixtures/e2e";
-import { armory, prepush, slow } from "./playwright-tags";
+import { armory, slow } from "./playwright-tags";
 
 const beltGear: GearInstance = { instanceId: "gear-belt", definitionId: "leather-belt-basic", affixes: [] };
 const ringGear: GearInstance = { instanceId: "gear-ring", definitionId: "ruby-ring-basic", affixes: [] };
@@ -87,7 +87,7 @@ test.describe("Gear drag positions", { ...armory, ...slow }, () => {
     await expect(beltItem).toBeVisible();
   });
 
-  test("art does not change size during drag", prepush, async ({ page }) => {
+  test("art does not change size during drag", async ({ page }) => {
     await openArmory(page, [bodyGear]);
 
     const bodyItem = gearItemLocator(page, "Leather Armor");
@@ -132,7 +132,7 @@ test.describe("Gear drag positions", { ...armory, ...slow }, () => {
     expect(moved).toBe(true);
   });
 
-  test("drag visual does not snap back to origin during pointer movement", prepush, async ({ page }) => {
+  test("drag visual does not snap back to origin during pointer movement", async ({ page }) => {
     await openArmory(page, [bodyGear]);
 
     const bodyItem = gearItemLocator(page, "Leather Armor");
@@ -164,7 +164,7 @@ test.describe("Gear drag positions", { ...armory, ...slow }, () => {
     await page.mouse.up();
   });
 
-  test("drag visual does not snap to origin on release (settling)", prepush, async ({ page }) => {
+  test("drag visual does not snap to origin on release (settling)", async ({ page }) => {
     await openArmory(page, [bodyGear]);
 
     const bodyItem = gearItemLocator(page, "Leather Armor");
@@ -244,7 +244,7 @@ test.describe("Gear drag positions", { ...armory, ...slow }, () => {
     expect(parseFloat(paddingRight)).toBeGreaterThanOrEqual(8);
   });
 
-  test("drag visual uses integer pixel coordinates with matching gear compositing", prepush, async ({ page }) => {
+  test("drag visual uses integer pixel coordinates with matching gear compositing", async ({ page }) => {
     await openArmory(page, [bodyGear]);
 
     const bodyItem = gearItemLocator(page, "Leather Armor");
@@ -332,8 +332,6 @@ test.describe("Gear drag positions", { ...armory, ...slow }, () => {
     await expect(gear).toBeVisible();
 
     await pointerDrag(page, currency, gear);
-
-    await page.waitForTimeout(300);
 
     const dragVisual = page.getByTestId("armory-gear-drag-visual");
     await expect(dragVisual).toBeVisible();

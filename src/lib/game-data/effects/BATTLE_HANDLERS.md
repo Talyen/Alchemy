@@ -34,6 +34,6 @@ The per-kind dispatch map lives in [`registry.ts`](../../battle/effect-handlers/
 
 ## Tests
 
-- [`tests/lib/battle/effect-handlers-registry.test.ts`](../../../tests/lib/battle/effect-handlers-registry.test.ts) — every non-`chance` kind has a handler.
-- [`tests/lib/game-data/effects-registry.test.ts`](../../../tests/lib/game-data/effects-registry.test.ts) — every kind has a schema and they parse.
-- [`tests/lib/game-data/descriptions-match-effects.test.ts`](../../../tests/lib/game-data/descriptions-match-effects.test.ts) — card `descriptionLines` reflect their `effects`.
+- [`tests/lib/battle/effect-handlers-registry.test.ts`](../../../../tests/lib/battle/effect-handlers-registry.test.ts) — every non-`chance` kind has a handler.
+- [`tests/lib/game-data/effects-registry.test.ts`](../../../../tests/lib/game-data/effects-registry.test.ts) — every kind has a schema and they parse.
+- [`tests/lib/game-data/descriptions-match-effects.test.ts`](../../../../tests/lib/game-data/descriptions-match-effects.test.ts) — card `descriptionLines` reflect their `effects`.

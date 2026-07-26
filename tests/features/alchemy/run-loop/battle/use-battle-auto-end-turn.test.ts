@@ -74,4 +74,35 @@ describe("useBattleAutoEndTurn", () => {
 
     expect(onEndTurn).not.toHaveBeenCalled();
   });
+
+  it("clearAutoEndTurn cancels a pending auto-end timer", () => {
+    const onEndTurn = vi.fn();
+    const expensive = makeTestCard({
+      id: "meteor",
+      cost: 9,
+      effects: [{ kind: "damage", damageType: "burn", amount: 20 }],
+    });
+    const battleState = createTestBattleState({
+      hand: [{ ...expensive, uid: 1 }],
+      mana: 1,
+      turnPhase: "player",
+      enemyHealth: 20,
+    });
+
+    const { result } = renderHook(() =>
+      useBattleAutoEndTurn({
+        autoEndTurn: true,
+        screen: "battle",
+        battleState,
+        onEndTurn,
+      }),
+    );
+
+    act(() => {
+      result.current.clearAutoEndTurn();
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+    });
+
+    expect(onEndTurn).not.toHaveBeenCalled();
+  });
 });

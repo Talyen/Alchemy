@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { characters, isCharacterUnlocked, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
@@ -31,24 +32,20 @@ export function ArmoryTransferMenu({
   );
 
   useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        onClose();
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    }
-
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         onClose();
       }
     }
 
-    window.addEventListener("keydown", handleKeyDown, true);
+    const unsubscribeEscape = pushEscapeHandler({
+      id: "armory-transfer-menu",
+      priority: ESCAPE_PRIORITY.MODAL,
+      onEscape: () => onClose(),
+    });
     document.addEventListener("click", handleClickOutside);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown, true);
+      unsubscribeEscape();
       document.removeEventListener("click", handleClickOutside);
     };
   }, [transferMenu, onClose]);

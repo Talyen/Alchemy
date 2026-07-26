@@ -2,11 +2,9 @@
 import { z } from "zod";
 import {
   characters,
-  companionLibrary,
   DIFFICULTY_ORDER,
   normalizeUnlockedTalents,
   type CharacterId,
-  type CompanionId,
   type DifficultyId,
   type UnlockedTalents,
   DAMAGE_TYPES,
@@ -26,7 +24,6 @@ function toNonEmptyTuple<T extends string>(values: readonly T[], label: string):
 
 export const CHARACTER_IDS = toNonEmptyTuple(Object.keys(characters) as CharacterId[], "Character IDs");
 const DIFFICULTY_IDS = toNonEmptyTuple(DIFFICULTY_ORDER as readonly DifficultyId[], "Difficulty IDs");
-const COMPANION_IDS = toNonEmptyTuple(Object.keys(companionLibrary) as CompanionId[], "Companion IDs");
 
 export const MATERIAL_ZERO_INVENTORY = Object.fromEntries(MATERIAL_IDS.map((id) => [id, 0])) as Record<
   MaterialId,
@@ -51,7 +48,6 @@ const ENEMY_STATUS_IDS = toNonEmptyTuple(ENEMY_STATUS_DISPLAY_ORDER as EnemyStat
 export const DamageTypeSchema = z.enum(DAMAGE_TYPE_VALUES);
 export const PlayerStatusIdSchema = z.enum(PLAYER_STATUS_IDS);
 export const EnemyStatusIdSchema = z.enum(ENEMY_STATUS_IDS);
-export const CompanionIdSchema = z.enum(COMPANION_IDS);
 export const LabyrinthNodeTypeSchema = z.enum([
   "entrance",
   "combat",
@@ -115,7 +111,22 @@ export const UnlockedTalentsSchema = recordOfStringArraysSchema().transform((dat
   normalizeUnlockedTalents(data as UnlockedTalents),
 );
 
+const DIFFICULTY_ID_SET = new Set<string>(DIFFICULTY_IDS);
+
+function normalizeCompletedDifficulties(data: Record<string, string[]>): Record<CharacterId, DifficultyId[]> {
+  const result = {} as Record<CharacterId, DifficultyId[]>;
+  for (const characterId of CHARACTER_IDS) {
+    const raw = data[characterId] ?? [];
+    result[characterId] = [...new Set(raw.filter((id): id is DifficultyId => DIFFICULTY_ID_SET.has(id)))];
+  }
+  return result;
+}
+
 export const CompletedDifficultiesSchema = recordOfStringArraysSchema(() =>
+  Object.fromEntries(CHARACTER_IDS.map((id) => [id, [] as string[]])),
+).transform(normalizeCompletedDifficulties);
+
+export const EMPTY_COMPLETED_DIFFICULTIES: Record<CharacterId, DifficultyId[]> = normalizeCompletedDifficulties(
   Object.fromEntries(CHARACTER_IDS.map((id) => [id, []])),
 );
 

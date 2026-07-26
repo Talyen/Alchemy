@@ -2,10 +2,10 @@
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
-import { MATERIAL_IDS } from "@/lib/homestead/types";
+import { type MaterialId } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 
-import { GoldPill, MaterialPill } from "../../../shared/ui/material-icons";
+import { FoundResourcesRow } from "../../../shared/ui/found-resources-row";
 import { cardSurfaceClass, collectionTileWidthClass, viewCardWidthClass } from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEffect } from "@/lib/mystery";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";
@@ -138,7 +138,7 @@ export function MysteryRewardSummary({
     .filter((e): e is typeof e & { kind: "gainGold" } => e.kind === "gainGold")
     .reduce((sum, e) => sum + e.amount, 0);
 
-  const mats: Record<string, number> = {};
+  const mats: Partial<Record<MaterialId, number>> = {};
   for (const e of resourceEffects) {
     if (e.kind === "gainMaterial") {
       mats[e.material] = (mats[e.material] ?? 0) + e.amount;
@@ -159,13 +159,7 @@ export function MysteryRewardSummary({
 
       {resourceEffects.length > 0 ? (
         <StaggerItem index={otherEffects.length + 1}>
-          <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
-            Found
-            {totalGold > 0 ? <GoldPill amount={totalGold} /> : null}
-            {MATERIAL_IDS.filter((mat) => (mats[mat] ?? 0) > 0).map((mat) => (
-              <MaterialPill key={mat} material={mat} amount={mats[mat]!} />
-            ))}
-          </div>
+          <FoundResourcesRow gold={totalGold} materials={mats} />
         </StaggerItem>
       ) : null}
 

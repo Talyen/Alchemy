@@ -82,6 +82,8 @@ export function useLabyrinthController(_screen: Screen): LabyrinthController {
   }, []);
 
   const enterNode = useCallback((row: number, col: number, handlers: LabyrinthNodeHandlers): boolean => {
+    if (pendingNodeRef.current) return false;
+
     const map = readRunSessionStore().labyrinthMap;
     const node = map.grid[row]?.[col];
     if (!node || !canEnterLabyrinthNode(map, row, col)) return false;

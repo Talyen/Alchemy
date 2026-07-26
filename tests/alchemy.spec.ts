@@ -5,7 +5,7 @@ import { RewardPage } from "./pages/reward-page";
 import { test } from "./fixtures/e2e";
 import { critical, prepush, smoke } from "./playwright-tags";
 
-baseTest.describe("App Boot", { ...smoke, ...prepush }, () => {
+baseTest.describe("App Boot", { tag: [smoke.tag, ...prepush.tag] }, () => {
   baseTest("main menu renders without crashing on desktop", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
     await page.goto("/");

@@ -173,7 +173,7 @@ function ActorArtFrame({
       )}
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
-      shimmerRounded="rounded-[30px]"
+      shimmerRounded="rounded-shell-hero"
       onMouseEnter={() => onHoverShimmer(shimmerId)}
     >
       {deathsDoorActive ? <ArtDeathDoorBorder /> : null}

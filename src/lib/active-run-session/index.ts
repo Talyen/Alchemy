@@ -10,6 +10,7 @@ export type {
 export type { CardRewardState, GearRewardState, RewardState, TrinketRewardState } from "./reward-types";
 export { createActiveRunSnapshot } from "./snapshot";
 export { parseActiveRun } from "./parse";
+export { toActiveRunData } from "./to-active-run-data";
 export { hydrateActiveRunSession } from "./hydrate";
 export type { ActiveRunHydrationTargets } from "./hydrate";
 export {

@@ -1,7 +1,8 @@
 // Wish selection overlay for battle.
 import type { CSSProperties } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
 
@@ -52,13 +53,40 @@ function WishCardItem({
 export function WishOverlay({ battleState, actions }: { battleState: BattleScreenState; actions: BattleActionsProps }) {
   const { onWishChoice } = actions;
   const [wishSelectedCard, setWishSelectedCard] = useState<BattleCard | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
+  const resolvingRef = useRef(false);
+  const onWishChoiceRef = useRef(onWishChoice);
   const handWidthClass = handCardWidthClass;
+
+  onWishChoiceRef.current = onWishChoice;
 
   const descriptionContext = {
     ...battleState.talentEffects,
     companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
     companionDamageBuff: battleState.companionDamageBuff,
   };
+
+  function resolveWish(card: BattleCard | null) {
+    if (resolvingRef.current) return;
+    resolvingRef.current = true;
+    setIsResolving(true);
+    onWishChoiceRef.current(card);
+    setWishSelectedCard(null);
+  }
+
+  useEffect(() => {
+    return pushEscapeHandler({
+      id: "wish-overlay",
+      priority: ESCAPE_PRIORITY.MODAL,
+      onEscape: () => {
+        if (resolvingRef.current) return;
+        resolvingRef.current = true;
+        setIsResolving(true);
+        onWishChoiceRef.current(null);
+        setWishSelectedCard(null);
+      },
+    });
+  }, []);
 
   return (
     <div className="wish-overlay-backdrop z-[90] absolute inset-0 flex items-center justify-center bg-black/70 px-6">
@@ -74,31 +102,17 @@ export function WishOverlay({ battleState, actions }: { battleState: BattleScree
               index={index}
               handWidthClass={handWidthClass}
               selected={wishSelectedCard?.id === card.id}
-              onSelect={setWishSelectedCard}
+              onSelect={isResolving ? () => {} : setWishSelectedCard}
               descriptionContext={descriptionContext}
             />
           ))}
         </div>
 
         <div className="mt-6 flex justify-center gap-3">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => {
-              onWishChoice(null);
-              setWishSelectedCard(null);
-            }}
-          >
+          <Button variant="outline" size="lg" disabled={isResolving} onClick={() => resolveWish(null)}>
             Skip
           </Button>
-          <Button
-            size="lg"
-            disabled={!wishSelectedCard}
-            onClick={() => {
-              onWishChoice(wishSelectedCard);
-              setWishSelectedCard(null);
-            }}
-          >
+          <Button size="lg" disabled={isResolving || !wishSelectedCard} onClick={() => resolveWish(wishSelectedCard)}>
             Confirm
           </Button>
         </div>

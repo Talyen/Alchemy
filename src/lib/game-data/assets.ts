@@ -10,7 +10,7 @@ export const eliteEnemyBg = assetRefs.eliteEnemy;
 export const merchantShopBg = assetRefs.merchantShop;
 export const mysteryBg = assetRefs.mystery;
 export const normalEnemyBg = assetRefs.normalEnemy;
-export const pointerCursor = assetRefs.pointerCShaded;
+const pointerCursor = assetRefs.pointerCShaded;
 
 export const menuLogo = assetRefs.alchemyLogo;
 export const menuLogoVariants = [

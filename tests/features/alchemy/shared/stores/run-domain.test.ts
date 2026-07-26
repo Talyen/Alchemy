@@ -773,4 +773,32 @@ describe("session facade API", () => {
     expect(getRunSessionStoreView().rewardState.rewardType).toBe("gear");
     expect(getRunSessionStoreView().rewardState.choices).toEqual([instance]);
   });
+
+  it("warns when pending reward choices cannot be restored", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const activeRun: ActiveRunData = {
+      ...snapshotRun(ROUTE_SCREENS.REWARD),
+      destinationChoices: [],
+      pendingReward: {
+        rewardType: "card",
+        choiceIds: ["not-a-real-card-id"],
+        selectedId: null,
+        gold: 0,
+        materials: emptyInventory(),
+        destinations: [],
+        selectedBossId: null,
+        lastVictoryEnemyType: null,
+        lastVictoryContentSystem: null,
+      },
+    };
+
+    getRunSessionStoreView().setRewardState(createEmptyRewardState());
+    restoreRun(activeRun, {}, {});
+
+    expect(getRunSessionStoreView().rewardState.choices).toEqual([]);
+    expect(warn).toHaveBeenCalledWith("Pending reward could not be restored; reward choices were dropped", {
+      rewardType: "card",
+    });
+    warn.mockRestore();
+  });
 });

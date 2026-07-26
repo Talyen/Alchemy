@@ -19,7 +19,7 @@ export type DifficultyModifier =
   | { kind: "enemy-health-multiplier"; amount: number }
   | { kind: "enemy-damage-multiplier"; amount: number };
 
-export interface DifficultyDefinition {
+interface DifficultyDefinition {
   id: DifficultyId;
   name: string;
   description: string;
@@ -33,7 +33,7 @@ export interface ClassDifficultyConfig {
   difficulties: DifficultyDefinition[];
 }
 
-export const GLOBAL_DIFFICULTIES: DifficultyDefinition[] = [
+const GLOBAL_DIFFICULTIES: DifficultyDefinition[] = [
   {
     id: "difficulty-1",
     name: "Novice",

@@ -3,23 +3,18 @@ import { useMemo, useState } from "react";
 import { FlaskConical, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import { isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
 import { MIXED_POTION_CARD_ID, MIXED_POTION_TITLE, SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
+import { collectionTileWidthClass } from "@/features/alchemy/shared/config";
 
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { PurchasableCardItem, SelectableShopCard } from "../../shared/ui/shop-card-item";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
-import {
-  GoldDisplay,
-  ScreenDescription,
-  ScreenHeader,
-  ServiceButton,
-  StaggerGroup,
-  StaggerItem,
-} from "../../shared/ui/shared-ui";
-import { collectionTileWidthClass } from "@/features/alchemy/shared/config";
+import { ScreenDescription, ServiceButton, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
+import { useCaptureEscapeCancel } from "../../shared/ui/use-capture-escape-cancel";
+import { ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
+
 export function AlchemistShopScreen({
   gold,
   runDeck,
@@ -57,6 +52,17 @@ export function AlchemistShopScreen({
   const [mixPage, setMixPage] = useState(0);
   const [mixedCardHovered, setMixedCardHovered] = useState(false);
 
+  function cancelMix() {
+    setMixMode(false);
+    setMixStep(0);
+    setSelectedA(null);
+    setSelectedB(null);
+    setMixPage(0);
+  }
+
+  // Escape cancels potion selection only — not the mixed-card reveal (Continue).
+  useCaptureEscapeCancel(mixMode && !mixedCard ? cancelMix : undefined);
+
   function handleBuyCard(card: BattleCard, slotKey: string) {
     if (purchasedSlotKeys.includes(slotKey)) return;
     onBuyCard(card, slotKey);
@@ -65,13 +71,6 @@ export function AlchemistShopScreen({
   function startMix() {
     setMixMode(true);
     setMixStep(1);
-    setSelectedA(null);
-    setSelectedB(null);
-    setMixPage(0);
-  }
-  function cancelMix() {
-    setMixMode(false);
-    setMixStep(0);
     setSelectedA(null);
     setSelectedB(null);
     setMixPage(0);
@@ -113,10 +112,7 @@ export function AlchemistShopScreen({
   const mixDisabledMessage = hasEnoughPotionsToMix ? "Not Enough Gold" : "Not Enough Potions to Mix";
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
-      <ScreenHeader title="Alchemist's Shop" />
-      {!mixedCard ? <GoldDisplay gold={gold} /> : null}
-
+    <ShopBrowseShell title="Alchemist's Shop" gold={gold} showGold={!mixedCard}>
       {mixedCard ? (
         <StaggerGroup className="flex flex-col items-center gap-6">
           <StaggerItem index={0}>
@@ -149,55 +145,50 @@ export function AlchemistShopScreen({
           </StaggerItem>
         </StaggerGroup>
       ) : !mixMode ? (
-        <StaggerGroup className="flex flex-col items-center gap-6">
-          <StaggerGroup
-            swapKey={potionCards.map((card) => card.id).join("-")}
-            animate={false}
-            className="grid grid-cols-1 gap-4 sm:grid-cols-3"
-          >
-            {potionCards.map((card, i) => {
-              const slotKey = `${card.id}-${i}`;
-              return (
-                <PurchasableCardItem
-                  key={slotKey}
-                  card={card}
-                  price={getPotionPrice(card)}
-                  gold={gold}
-                  purchased={purchasedSlotKeys.includes(slotKey)}
-                  onBuy={() => handleBuyCard(card, slotKey)}
-                  staggerIndex={i}
-                />
-              );
-            })}
-          </StaggerGroup>
-
-          <div className="flex flex-wrap justify-center gap-4">
-            <ServiceButton
-              icon={FlaskConical}
-              label="Mix Potions"
-              cost={mixPrice}
-              disabled={mixDisabled}
-              disabledMessage={mixDisabledMessage}
-              used={mixUsed}
-              soldOutText="Mix Potions — Sold Out"
-              onClick={startMix}
-            />
-            <ServiceButton
-              icon={RefreshCw}
-              label="Refresh Shop"
-              cost={refreshPrice}
-              disabled={refreshesLeft <= 0 || gold < refreshPrice}
-              disabledMessage="Not Enough Gold"
-              used={refreshesLeft <= 0}
-              soldOutText="Refresh — Sold Out"
-              onClick={onRefresh}
-            />
-          </div>
-
-          <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
-            Leave
-          </Button>
-        </StaggerGroup>
+        <ShopBrowseOfferings
+          swapKey={potionCards.map((card) => card.id).join("-")}
+          onLeave={onContinue}
+          serviceClassName="gap-4"
+          services={
+            <>
+              <ServiceButton
+                icon={FlaskConical}
+                label="Mix Potions"
+                cost={mixPrice}
+                disabled={mixDisabled}
+                disabledMessage={mixDisabledMessage}
+                used={mixUsed}
+                soldOutText="Mix Potions — Sold Out"
+                onClick={startMix}
+              />
+              <ServiceButton
+                icon={RefreshCw}
+                label="Refresh Shop"
+                cost={refreshPrice}
+                disabled={refreshesLeft <= 0 || gold < refreshPrice}
+                disabledMessage="Not Enough Gold"
+                used={refreshesLeft <= 0}
+                soldOutText="Refresh — Sold Out"
+                onClick={onRefresh}
+              />
+            </>
+          }
+        >
+          {potionCards.map((card, i) => {
+            const slotKey = `${card.id}-${i}`;
+            return (
+              <PurchasableCardItem
+                key={slotKey}
+                card={card}
+                price={getPotionPrice(card)}
+                gold={gold}
+                purchased={purchasedSlotKeys.includes(slotKey)}
+                onBuy={() => handleBuyCard(card, slotKey)}
+                staggerIndex={i}
+              />
+            );
+          })}
+        </ShopBrowseOfferings>
       ) : (
         <StaggerGroup>
           <ScreenDescription className="mb-3">Select two Potions to Combine</ScreenDescription>
@@ -226,6 +217,6 @@ export function AlchemistShopScreen({
           </div>
         </StaggerGroup>
       )}
-    </div>
+    </ShopBrowseShell>
   );
 }

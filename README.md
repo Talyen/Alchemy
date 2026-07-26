@@ -129,6 +129,7 @@ All simulations use deterministic seeding for reproducible results.
 ```
 desktop/               # Electron main/preload entry points
 scripts/               # Build/optimization scripts
+public/                # Static assets (sounds, music, card art)
 src/
 ├── app/                  # App bootstrapping, startup screen, save-state, preload
 ├── lib/                  # Pure game logic (no React)
@@ -136,14 +137,14 @@ src/
 │   ├── balance/          # Balance simulation engine
 │   ├── battle/           # State machine, effects, draw
 │   ├── content-systems/  # Map and encounter generation
-│   ├── game-data/        # Cards, keywords, compendium (barrel: @/lib/game-data)
+│   ├── game-data/        # Cards, keywords, talents, compendium (barrel: @/lib/game-data)
+│   │   └── talents/      # Talent XP math and talent data
 │   ├── homestead/        # Between-run hub logic
 │   ├── ui/               # Utility UI logic
 │   ├── validation/       # Zod schemas and migrations
 │   ├── audio.ts          # Web Audio buffer playback
 │   ├── audio-*.ts        # SFX, music, volume, state, cache
 │   ├── game-constants.ts # All tuning knobs
-│   ├── talents.ts        # Talent XP math
 │   └── trinkets.ts       # Trinket definitions
 ├── features/alchemy/     # React UI
 │   ├── shared/           # stores, storage, ui, screens barrel, config
@@ -152,8 +153,7 @@ src/
 │   ├── run-loop/         # battle glue, navigation, shop, in-run screens
 │   └── shell/            # controller hooks
 ├── components/           # Shared UI primitives
-├── assets/optimized/     # Pre-optimized images
-└── public/               # Static assets (sounds, music, card art)
+└── assets/optimized/     # Pre-optimized images
 tests/                   # Vitest unit tests and Playwright e2e specs
 ```
 
@@ -179,4 +179,4 @@ React • TypeScript • Vite • Tailwind CSS • Zustand • Electron • Vite
 
 ## Development Guide
 
-**Docs:** [`AGENTS.md`](./AGENTS.md) (coding rules) · [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) (run state) · [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md) (how-to checklists) · [`docs/REFERENCE.md`](./docs/REFERENCE.md) (commands, glossary, battle rules) · [`CONTRIBUTING.md`](./CONTRIBUTING.md) (hooks & tests) · [`PROMPTS.md`](./PROMPTS.md) (agent audits)
+**Docs:** [`AGENTS.md`](./AGENTS.md) (coding rules) · [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) (run state) · [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md) (how-to checklists) · [`docs/REFERENCE.md`](./docs/REFERENCE.md) (commands, glossary, battle rules) · [`CONTRIBUTING.md`](./CONTRIBUTING.md) (hooks & tests) · [`docs/Audits`](./docs/Audits/README.md) (agent audits)

@@ -2,14 +2,12 @@
 import { useState } from "react";
 import { RefreshCw, Trash2 } from "lucide-react";
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import type { BattleCard } from "@/lib/game-data";
 
 import { PurchasableCardItem } from "../../shared/ui/shop-card-item";
 import { RemoveCardPanel } from "../../shared/ui/remove-card-panel";
-import { GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton, StaggerGroup } from "../../shared/ui/shared-ui";
+import { ScreenDescription, ServiceButton } from "../../shared/ui/shared-ui";
+import { ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
 
 export function MerchantShopScreen({
   gold,
@@ -48,61 +46,53 @@ export function MerchantShopScreen({
   }
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
-      <ScreenHeader title="Merchant's Shop" />
-      <GoldDisplay gold={gold} />
-
+    <ShopBrowseShell title="Merchant's Shop" gold={gold}>
       {!removeMode ? (
-        <StaggerGroup className="flex flex-col items-center gap-6">
-          <StaggerGroup
-            swapKey={shopCards.map((card) => card.id).join("-")}
-            animate={false}
-            className="grid grid-cols-1 gap-4 sm:grid-cols-3"
-          >
-            {shopCards.map((card, i) => {
-              const slotKey = `${card.id}-${i}`;
-              return (
-                <PurchasableCardItem
-                  key={slotKey}
-                  card={card}
-                  price={getCardPrice(card)}
-                  gold={gold}
-                  purchased={purchasedSlotKeys.includes(slotKey)}
-                  onBuy={() => handleBuyCard(card, slotKey)}
-                  staggerIndex={i}
-                />
-              );
-            })}
-          </StaggerGroup>
-
-          <div className="flex flex-wrap justify-center gap-3">
-            <ServiceButton
-              icon={Trash2}
-              label="Remove Card"
-              cost={removePrice}
-              disabled={gold < removePrice}
-              disabledMessage="Not Enough Gold"
-              used={removeUsed}
-              soldOutText="Remove Card — Sold Out"
-              onClick={() => {
-                setRemoveMode(true);
-              }}
-            />
-            <ServiceButton
-              icon={RefreshCw}
-              label="Refresh"
-              cost={refreshPrice}
-              disabled={refreshesLeft <= 0 || gold < refreshPrice}
-              disabledMessage="Not Enough Gold"
-              used={refreshesLeft <= 0}
-              soldOutText="Refresh — Sold Out"
-              onClick={onRefresh}
-            />
-          </div>
-          <Button size="lg" variant="primary" className={cn("mt-2", BUTTON_WIDTH_ACTION)} onClick={onContinue}>
-            Leave
-          </Button>
-        </StaggerGroup>
+        <ShopBrowseOfferings
+          swapKey={shopCards.map((card) => card.id).join("-")}
+          onLeave={onContinue}
+          services={
+            <>
+              <ServiceButton
+                icon={Trash2}
+                label="Remove Card"
+                cost={removePrice}
+                disabled={gold < removePrice}
+                disabledMessage="Not Enough Gold"
+                used={removeUsed}
+                soldOutText="Remove Card — Sold Out"
+                onClick={() => {
+                  setRemoveMode(true);
+                }}
+              />
+              <ServiceButton
+                icon={RefreshCw}
+                label="Refresh"
+                cost={refreshPrice}
+                disabled={refreshesLeft <= 0 || gold < refreshPrice}
+                disabledMessage="Not Enough Gold"
+                used={refreshesLeft <= 0}
+                soldOutText="Refresh — Sold Out"
+                onClick={onRefresh}
+              />
+            </>
+          }
+        >
+          {shopCards.map((card, i) => {
+            const slotKey = `${card.id}-${i}`;
+            return (
+              <PurchasableCardItem
+                key={slotKey}
+                card={card}
+                price={getCardPrice(card)}
+                gold={gold}
+                purchased={purchasedSlotKeys.includes(slotKey)}
+                onBuy={() => handleBuyCard(card, slotKey)}
+                staggerIndex={i}
+              />
+            );
+          })}
+        </ShopBrowseOfferings>
       ) : (
         <RemoveCardPanel
           runDeck={runDeck}
@@ -116,6 +106,6 @@ export function MerchantShopScreen({
           onCancel={() => setRemoveMode(false)}
         />
       )}
-    </div>
+    </ShopBrowseShell>
   );
 }

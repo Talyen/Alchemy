@@ -124,7 +124,8 @@ export const platform = {
       if (!getDesktopApi()?.steamCloudRead) return null;
       try {
         return await platform.cloud.read(DESKTOP_SAVE_FILENAME);
-      } catch {
+      } catch (error) {
+        console.warn("Steam Cloud read failed", error);
         return null;
       }
     },
@@ -150,7 +151,8 @@ export const platform = {
       if (window.alchemyDesktop?.steamCloudRead) {
         try {
           return await window.alchemyDesktop.steamCloudRead();
-        } catch {
+        } catch (error) {
+          console.warn("Steam Cloud read failed", error);
           return null;
         }
       }

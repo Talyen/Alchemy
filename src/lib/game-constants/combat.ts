@@ -62,6 +62,20 @@ export const CAMPFIRE_CONTINUE_DELAY = 400;
 // ============ Campfire ============
 export const CAMPFIRE_HEAL_FRACTION = 0.3; // Restores 30% of max Health — meaningful but not full recovery.
 
+/** Effective campfire heal fraction including talent bonus. */
+export function getCampfireHealFraction(campfireHealBonus = 0): number {
+  return CAMPFIRE_HEAL_FRACTION + campfireHealBonus;
+}
+
+/** Restored Health after a campfire rest, clamped to max. */
+export function getCampfireRestHealth(
+  currentHealth: number,
+  maxHealth: number,
+  healFraction: number = CAMPFIRE_HEAL_FRACTION,
+): number {
+  return Math.min(maxHealth, currentHealth + Math.floor(maxHealth * healFraction));
+}
+
 // ============ Talents / XP ============
 export const XP_BASE_PER_POINT = 10; // Point n costs n×10 XP (triangular total).
 export const XP_TRIANGULAR_MULTIPLIER = 5; // Total XP for n points: n(n+1)/2 × 5.

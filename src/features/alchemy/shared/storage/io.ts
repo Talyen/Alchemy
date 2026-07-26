@@ -11,13 +11,13 @@ import {
   getRawSaveSchemaVersion,
   isUnsupportedFutureContentData,
   isUnsupportedFutureSaveData,
+  type ParsedSaveData,
 } from "@/lib/validation";
 import type { SaveData } from "./types";
 import { logError } from "@/lib/error-logger";
 import { defaultSaveData } from "./defaults";
 import { cardLibrary } from "@/lib/game-data/cards";
-import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
-import type { BattleCard } from "@/lib/game-data/types";
+import { toActiveRunData } from "@/lib/active-run-session";
 
 class SaveSessionState {
   private writesDisabledForSession = false;
@@ -39,7 +39,7 @@ function logStorageFailure(message: string, error?: unknown) {
   logError(message, "storage", error ? { error: String(error) } : undefined);
 }
 
-function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: SaveData): string[] {
+function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSaveData): string[] {
   const warnings: string[] = [];
   if (raw.activeRun && !normalized.activeRun) {
     warnings.push("active run could not be restored");
@@ -59,22 +59,22 @@ export interface SaveLoadState {
 }
 
 // Silently drops deck cards whose IDs no longer exist in the catalog, then
-// eagerly hydrates remaining cards with library art/keywordIds. The run always
+// hydrates remaining cards into the runtime ActiveRunData contract. The run always
 // has a valid, drawable deck; no player-facing diagnostics.
-function hydrateActiveRunDeck(activeRun: SaveData["activeRun"]): SaveData["activeRun"] {
+function hydrateActiveRunDeck(activeRun: ParsedSaveData["activeRun"]): SaveData["activeRun"] {
   if (!activeRun) return null;
   const knownIds = new Set(cardLibrary.map((c) => c.id));
-  const keepCard = (card: BattleCard) => knownIds.has(card.id);
-  return {
+  const keepCard = (card: { id: string }) => knownIds.has(card.id);
+  return toActiveRunData({
     ...activeRun,
-    runDeck: activeRun.runDeck.filter(keepCard).map(hydrateCard),
+    runDeck: activeRun.runDeck.filter(keepCard),
     wildwoodDraft: activeRun.wildwoodDraft
       ? {
           ...activeRun.wildwoodDraft,
-          draftChoices: activeRun.wildwoodDraft.draftChoices.filter(keepCard).map(hydrateCard),
+          draftChoices: activeRun.wildwoodDraft.draftChoices.filter(keepCard),
         }
       : null,
-  };
+  });
 }
 
 async function readLocalRaw(key: string): Promise<string | null> {
@@ -128,8 +128,9 @@ function parseCandidates(candidates: string[]): Array<{ parsed: Partial<SaveData
   for (const c of candidates) {
     try {
       parsed.push({ parsed: JSON.parse(c) as Partial<SaveData> });
-    } catch {
+    } catch (error) {
       // Not valid JSON; try the next candidate.
+      logStorageFailure("Save candidate JSON parse failed, trying next candidate", error);
     }
   }
   return parsed;
@@ -174,12 +175,12 @@ function returnFirstValid(validCandidates: Array<{ parsed: Partial<SaveData> }>)
       logStorageFailure("Save candidate failed validation, trying next candidate", result.error);
       continue;
     }
-    const data = result.data as SaveData;
+    const data = result.data;
     const warnings = collectSaveRepairWarnings(c.parsed, data);
     for (const ve of result.errors) {
       warnings.push(`Field "${ve.path}" was corrupt: ${ve.message}`);
     }
-    const hydrated = { ...data, activeRun: hydrateActiveRunDeck(data.activeRun) };
+    const hydrated: SaveData = { ...data, activeRun: hydrateActiveRunDeck(data.activeRun) };
     if (warnings.length > 0) console.warn("Save data was normalized during load", warnings);
     return { data: hydrated, status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" } };
   }
@@ -228,6 +229,23 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
   return returnFirstValid(valid) ?? { data: defaultSaveData, status: { kind: "corrupt" } };
 }
 
+// Serializes overlapping saves so desktop IPC tmp writes never interleave.
+// Concurrent callers coalesce to the latest snapshot; each awaiter waits for
+// its place in the chain (which may write a newer snapshot than it submitted).
+let saveWriteChain: Promise<void> = Promise.resolve();
+let coalescedSave: SaveData | null = null;
+
+async function writeSaveSnapshot(data: SaveData): Promise<void> {
+  try {
+    const payload: SaveData = { ...data, lastSavedAt: Date.now() };
+    const result = await writeStorageItem(SAVE_KEY, JSON.stringify(payload));
+    if (result.ok) return;
+    logStorageFailure("Save data could not be written", result.error);
+  } catch (error) {
+    logStorageFailure("Save data could not be serialized", error);
+  }
+}
+
 // Writes the current save snapshot exactly as provided by App/controller state.
 export async function saveAlchemySaveData(data: SaveData) {
   if (typeof window === "undefined") {
@@ -235,15 +253,18 @@ export async function saveAlchemySaveData(data: SaveData) {
   }
   if (saveSessionState.isWritesDisabled()) return;
 
-  try {
-    const payload: SaveData = { ...data, lastSavedAt: Date.now() };
-    const result = await writeStorageItem(SAVE_KEY, JSON.stringify(payload));
-    if (result.ok) return;
-    logStorageFailure("Save data could not be written", result.error);
-    return;
-  } catch (error) {
-    logStorageFailure("Save data could not be serialized", error);
-  }
+  coalescedSave = data;
+  const run = saveWriteChain.then(async () => {
+    while (coalescedSave !== null) {
+      const snapshot = coalescedSave;
+      coalescedSave = null;
+      if (saveSessionState.isWritesDisabled()) return;
+      await writeSaveSnapshot(snapshot);
+    }
+  });
+  // Keep the chain alive even if a write logs-and-continues; never reject the gate.
+  saveWriteChain = run.catch(() => {});
+  await run;
 }
 
 // Removes the persisted save while leaving in-memory React state reset to callers.

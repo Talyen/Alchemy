@@ -28,18 +28,7 @@ import {
   type RunSessionStore,
 } from "./run-domain-store";
 import type { RunStateController, TalentStateController } from "./run-domain-store";
-import {
-  applyRunDefeatTeardown,
-  finalizeRunEndSession,
-  flushPersistedSave,
-  flushSaveAfterRunEnd,
-  resolveActiveRunForSave,
-  restoreRun,
-  snapshotRun,
-  syncBattleToRun,
-  syncRunToBattleStart,
-  teardownRun,
-} from "./run-transitions";
+import { restoreRun, snapshotRun } from "./run-transitions";
 
 export {
   getRunSession,
@@ -49,18 +38,7 @@ export {
   useRunSessionNavigationSlice,
   useRunSessionShopSlice,
 } from "./run-session-model";
-export {
-  applyRunDefeatTeardown,
-  finalizeRunEndSession,
-  flushPersistedSave,
-  flushSaveAfterRunEnd,
-  resolveActiveRunForSave,
-  restoreRun,
-  snapshotRun,
-  syncBattleToRun,
-  syncRunToBattleStart,
-  teardownRun,
-};
+export { restoreRun, snapshotRun };
 import { useRunScreenData } from "./use-run-screen-data";
 export { useRunAdapter, useTalentAdapter, useHomesteadAdapter, getRunDomainStore, useRunDomainStore, useRunScreenData };
 export type { RunStateController, TalentStateController, RunProgressStore, RunSessionStore };
@@ -160,11 +138,6 @@ export function setPendingContentSystemType(type: ContentSystemId) {
 
 export function setCompanionRewardCards(cards: BattleCard[] | null) {
   getRunDomainStore().setCompanionRewardCards(cards);
-}
-
-/** Subscribe to the run domain store for autosave or side effects. */
-export function subscribeRunDomain(listener: () => void): () => void {
-  return useRunDomainStore.subscribe(listener);
 }
 
 /** Current screen and setter (owned by run domain navigation slice). */

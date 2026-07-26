@@ -2,9 +2,9 @@
 
 Step-by-step checklists for adding or changing game content and wiring.
 
-For refactors and simplification passes on attached paths, use [PROMPTS.md](../PROMPTS.md) code-quality audits.
+For refactors and simplification passes on attached paths, use [docs/Audits](./Audits/README.md) when the user cites an audit.
 
-**Docs:** [AGENTS.md](../AGENTS.md) (rules) · [ARCHITECTURE.md](./ARCHITECTURE.md) (run state) · [REFERENCE.md](./REFERENCE.md) (commands, glossary, battle) · [CONTRIBUTING.md](../CONTRIBUTING.md) (hooks & tests) · [PROMPTS.md](../PROMPTS.md) (code-quality audits)
+**Docs:** [AGENTS.md](../AGENTS.md) (rules) · [ARCHITECTURE.md](./ARCHITECTURE.md) (run state) · [REFERENCE.md](./REFERENCE.md) (commands, glossary, battle) · [CONTRIBUTING.md](../CONTRIBUTING.md) (hooks & tests) · [Audits](./Audits/README.md) (code-quality audits)
 
 **Import paths:** only `@/*` → `src/*` in `tsconfig.json`. Use **on-disk** paths under `src/features/alchemy/` (e.g. `@/features/alchemy/shared/stores/run-session-facade`) — not legacy alias paths that skip `shared/`.
 
@@ -54,7 +54,7 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 2. Add the field to `RunStateFields` / hydration in `src/features/alchemy/run-setup/run/run-state-init.ts` (mirror `runTalentXP` / `runMaterialsEarned` pattern).
 3. Update `createActiveRunSnapshot()` in `src/lib/active-run-session/snapshot.ts` and `snapshotRun()` in `src/features/alchemy/shared/stores/run-transitions.ts`.
 4. Update hydration in `shell/use-alchemy-run-controller.ts` via `restoreRun` (restore `screen`, `destinationChoices`, combat, etc.).
-5. Run `tests/features/storage/active-run.test.ts`, `tests/features/stores/run-domain.test.ts` (snapshot parity), plus storage/migration tests.
+5. Run `tests/features/alchemy/shared/storage/active-run.test.ts`, `tests/features/alchemy/shared/stores/run-domain.test.ts` (snapshot parity), plus storage/migration tests.
 
 **Active-run helpers (do not confuse):**
 
@@ -74,7 +74,7 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 | 1. Call `awardMaterialsDuringRun(materials)`               | Mystery handlers: `run-loop/navigation/use-mystery-flow.ts`; combat: `run-flow-handlers.ts` (`finishRewards`, `commitVictoryRewards` via `addHomesteadMaterials` callback) |
 | 2. Apply homestead find bonus when appropriate             | `applyMaterialFindBonus()` from `@/lib/homestead/loot` before awarding (mystery/combat already do this)                                                                    |
 | 3. Run-end display (no change needed if step 1 is correct) | `run-flow-handlers.awardRunEndMaterials` merges `runMaterialsEarned` + `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`                                      |
-| 4. Tests                                                   | `tests/features/run/run-victory-handlers.test.ts`; mystery/reward-flow tests if adding a new source                                                                        |
+| 4. Tests                                                   | `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts`; mystery/reward-flow tests if adding a new source                                                       |
 
 **Do not** call `useHomesteadStore.addMaterials()` directly from run-loop or mystery code for player loot.
 
@@ -90,7 +90,7 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 | 4. Tab switch fade only | `state-fade` class instead of `state-swap` when restagger on tab change is undesirable (options tabs)                    |
 | 5. Absolute / map nodes | Skip `StaggerItem` when the node uses `-translate-x/y` for centering; use panel-level enter only                         |
 
-Motion tokens and keyframes live in `src/index.css`. Hover/tap rules: [AGENTS.md — UI conventions](../AGENTS.md#ui-conventions). Debugging pitfalls: [AGENTS.md — Debugging](../AGENTS.md#debugging).
+Motion tokens and keyframes live in `src/index.css`. Hover/tap rules: [Interactive button conventions](#interactive-button-conventions).
 
 ---
 
@@ -129,7 +129,7 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared
 | 1. Add route constant          | `src/features/alchemy/shared/types.ts` → `REWARD_ROUTES`, exported via `CONSTANTS`                                                                       |
 | 2. Compute route after rewards | `src/features/alchemy/run-loop/navigation/reward-flow.ts` (`finalizeRewardState` / related; import `@/features/alchemy/run-loop/navigation/reward-flow`) |
 | 3. Handle transition           | `reward-flow.ts` (`executeRewardRouteTransition`) and/or `shell/use-run-navigation.ts` (`routeAfterReward`)                                              |
-| 4. Tests                       | `tests/features/navigation/reward-flow.test.ts`; victory-flow tests if end-of-run                                                                        |
+| 4. Tests                       | `tests/features/alchemy/run-loop/navigation/reward-flow.test.ts`; victory-flow tests if end-of-run                                                        |
 
 ---
 
@@ -263,8 +263,7 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 | 3. Export from screens barrel                                                                                             | `src/features/alchemy/shared/screens/index.ts`                        |
 | 4. Add route handler in `meta-routes`, `run-setup-routes`, or `run-loop-routes` (wrapped in `ErrorBoundary` via registry) | `src/app/screen-routes/`                                              |
 | 5. Extend `RenderAlchemyScreenProps` / route context if new props needed                                                  | `src/app/render-screen-props.ts`, `src/app/render-alchemy-screen.tsx` |
-| 6. Add callbacks to `ControllerActions` if new handlers needed                                                            | `src/app/controller-actions.ts`                                       |
-| 7. Wire navigation trigger                                                                                                | caller of `goToScreen("<name>")`                                      |
+| 6. Wire navigation trigger                                                                                                | caller of `goToScreen("<name>")`                                      |
 
 ---
 

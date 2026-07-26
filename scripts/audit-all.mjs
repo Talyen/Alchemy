@@ -1,5 +1,6 @@
 /**
- * Run all measurable audits in PROMPTS.md as a periodic sweep.
+ * Run measurable audit probes (knip, single-use, madge, complexity, amplification)
+ * as a periodic sweep. Agent audit guides: docs/Audits/README.md.
  * Run: node scripts/audit-all.mjs
  *
  * Exits non-zero if any audit fails. Prints a summary at the end.
@@ -7,8 +8,11 @@
  * `npm run lint:ci` for that).
  */
 import { spawnSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = new URL("..", import.meta.url).pathname.replace(/^\//, "");
+const currentFile = fileURLToPath(import.meta.url);
+const ROOT = path.resolve(path.dirname(currentFile), "..");
 
 const STEPS = [
   { name: "knip (deadcode:strict)", cmd: "npm", args: ["run", "deadcode:strict"], timeout: 180_000 },

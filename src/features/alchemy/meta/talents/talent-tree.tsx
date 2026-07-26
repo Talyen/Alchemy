@@ -39,7 +39,7 @@ function TalentNodeTooltip({ talent }: { talent: TalentDefinition }) {
       style={dx !== 0 ? { marginLeft: dx } : undefined}
     >
       <div className="font-sans text-base font-bold text-amber-100/75">{talent.name ?? "Talent"}</div>
-      <TooltipBody className="max-w-[240px]">
+      <TooltipBody className="max-w-60">
         {descParts.map((part, i) =>
           part.keywordId ? (
             <span key={i} className={cn(keywordDefinitions[part.keywordId]?.colorClass, "font-semibold")}>

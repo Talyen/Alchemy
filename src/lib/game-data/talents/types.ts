@@ -7,7 +7,7 @@ import type { LucideIcon } from "lucide-react";
 import type { KeywordId } from "../types";
 import type { TalentEffectManifest } from "../talent-effect-manifest";
 
-export const TALENTS_CONFIG = {
+const TALENTS_CONFIG = {
   PLACEHOLDER_DESCRIPTION: "Placeholder talent (NYI)",
 } as const;
 

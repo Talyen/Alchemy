@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { platform } from "@/lib/platform";
 
 function createMockStorage() {
@@ -50,5 +50,28 @@ describe("platform.storage", () => {
     const read = await platform.storage.readLocal("test");
     expect(read.ok).toBe(true);
     if (read.ok) expect(read.data).toBe('{"web":true}');
+  });
+
+  it("warns when Steam Cloud read fails without throwing", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    window.alchemyDesktop = {
+      isDesktop: true,
+      setDisplayMode: async () => undefined,
+      quit: () => undefined,
+      listSaveCandidates: async () => [],
+      writeSave: async () => true,
+      clearSave: async () => true,
+      steamGetName: async () => null,
+      steamSetRichPresence: async () => false,
+      steamCloudRead: async () => {
+        throw new Error("cloud unavailable");
+      },
+      steamCloudWrite: async () => false,
+      steamCloudDelete: async () => false,
+    };
+
+    await expect(platform.cloud.read("save.json")).resolves.toBeNull();
+    expect(warn).toHaveBeenCalledWith("Steam Cloud read failed", expect.any(Error));
+    warn.mockRestore();
   });
 });

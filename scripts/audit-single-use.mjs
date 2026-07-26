@@ -6,13 +6,15 @@
  * then for each name counts non-definition references across the same tree.
  * Excludes generated, test, and declaration files.
  *
- * Counterweight to the complexity / file-length / coupling audits (#2, #4, #5 in
- * PROMPTS.md): only abstractions with ≥ 2 distinct call sites survive review.
+ * Counterweight to complexity / dead-code / change-locality audits in
+ * docs/Audits: only abstractions with ≥ 2 distinct call sites survive review.
  */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = new URL("..", import.meta.url).pathname.replace(/^\//, "");
+const currentFile = fileURLToPath(import.meta.url);
+const ROOT = path.resolve(path.dirname(currentFile), "..");
 const SRC = path.join(ROOT, "src");
 
 const SKIP_DIRS = new Set(["node_modules", "dist", "release-desktop", ".vite", "coverage", "reports"]);

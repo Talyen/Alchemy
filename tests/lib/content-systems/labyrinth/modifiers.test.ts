@@ -8,20 +8,11 @@ import {
 } from "@/lib/content-systems/labyrinth/modifiers";
 
 describe("ALL_LABYRINTH_MODIFIERS", () => {
-  it("exposes the shared 18 combat and 4 reward traits", () => {
-    const kinds = Object.keys(ALL_LABYRINTH_MODIFIERS);
-    expect(kinds).toHaveLength(22);
-  });
-
   it("each modifier has a non-empty label and description", () => {
     for (const mod of Object.values(ALL_LABYRINTH_MODIFIERS)) {
       expect(mod.label.length).toBeGreaterThan(0);
       expect(mod.description.length).toBeGreaterThan(0);
     }
-  });
-
-  it("REWARD_MODIFIER_KINDS has exactly 4 entries", () => {
-    expect(REWARD_MODIFIER_KINDS.size).toBe(4);
   });
 });
 

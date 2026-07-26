@@ -1,8 +1,8 @@
 // Runtime validation before hydration (returns ActiveRunData | null).
 // Save-file legacy fixes during load use normalizeActiveRunData in @/lib/validation.
-import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { ActiveRunDataSchema } from "@/lib/validation";
 
+import { toActiveRunData } from "./to-active-run-data";
 import type { ActiveRunData } from "./types";
 
 export function parseActiveRun(activeRun: unknown): ActiveRunData | null {
@@ -27,18 +27,5 @@ export function parseActiveRun(activeRun: unknown): ActiveRunData | null {
     return null;
   }
 
-  const data = result.data as unknown as ActiveRunData;
-
-  return {
-    ...data,
-    contentSystemType: data.contentSystemType,
-    runDeck: data.runDeck.map((card) => hydrateCard(card)),
-    wildwoodDraft: data.wildwoodDraft
-      ? {
-          ...data.wildwoodDraft,
-          draftChoices: data.wildwoodDraft.draftChoices.map((card) => hydrateCard(card)),
-        }
-      : null,
-    labyrinthMap: data.labyrinthMap,
-  };
+  return toActiveRunData(result.data);
 }

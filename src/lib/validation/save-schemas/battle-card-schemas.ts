@@ -55,8 +55,8 @@ export const BattleCardSchema = z
     const savedEffects = saved.effects ? parseSavedEffectList(saved.effects) : { effects: [], fullyValid: false };
     const corruptedValuePositions = Array.isArray(saved.corruptedValuePositions)
       ? saved.corruptedValuePositions.filter(
-          (p) =>
-            p &&
+          (p): p is { lineIndex: number; matchIndex: number } =>
+            p !== null &&
             typeof p === "object" &&
             Number.isInteger(p.lineIndex) &&
             Number.isInteger(p.matchIndex) &&
@@ -68,18 +68,17 @@ export const BattleCardSchema = z
       Number.isFinite(saved.cost) && Number.isInteger(saved.cost) && saved.cost >= 0 ? Math.floor(saved.cost) : -1;
     return {
       id: saved.id,
-      uid: saved.uid,
       title: saved.title,
       descriptionLines: savedDescriptionLines ?? [],
       art: saved.art,
       cost,
-      consume: saved.consume,
-      corrupted: saved.corrupted,
-      baseTitle: saved.baseTitle,
-      corruptedValuePositions:
-        corruptedValuePositions && corruptedValuePositions.length > 0 ? corruptedValuePositions : undefined,
       effects: savedEffects.effects,
       effectsFullyValid: savedEffects.fullyValid,
       descriptionLinesFullyValid: savedDescriptionLines !== null,
+      ...(saved.uid !== undefined ? { uid: saved.uid } : {}),
+      ...(saved.consume !== undefined ? { consume: saved.consume } : {}),
+      ...(saved.corrupted !== undefined ? { corrupted: saved.corrupted } : {}),
+      ...(saved.baseTitle !== undefined ? { baseTitle: saved.baseTitle } : {}),
+      ...(corruptedValuePositions && corruptedValuePositions.length > 0 ? { corruptedValuePositions } : {}),
     };
   });

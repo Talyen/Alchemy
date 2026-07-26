@@ -1,9 +1,13 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { useArmoryTargetingEvents } from "@/features/alchemy/meta/screens/armory/use-armory-targeting-events";
 
 describe("useArmoryTargetingEvents", () => {
+  afterEach(() => {
+    resetEscapeStackForTests();
+  });
   it("calls clearTargeting on Escape when salvageMode is active", async () => {
     const clearTargeting = vi.fn();
 
@@ -118,5 +122,46 @@ describe("useArmoryTargetingEvents", () => {
     });
 
     expect(clearTargeting).not.toHaveBeenCalled();
+  });
+
+  it("calls clearTargeting on window blur when targeting is armed", () => {
+    const clearTargeting = vi.fn();
+
+    renderHook(() =>
+      useArmoryTargetingEvents({
+        salvageMode: true,
+        activeCurrencyId: null,
+        salvageTarget: null,
+        clearTargeting,
+      }),
+    );
+
+    act(() => {
+      window.dispatchEvent(new Event("blur"));
+    });
+
+    expect(clearTargeting).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls clearTargeting on visibilitychange to hidden when targeting is armed", () => {
+    const clearTargeting = vi.fn();
+
+    renderHook(() =>
+      useArmoryTargetingEvents({
+        salvageMode: false,
+        activeCurrencyId: "voidstone",
+        salvageTarget: null,
+        clearTargeting,
+      }),
+    );
+
+    act(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+
+    expect(clearTargeting).toHaveBeenCalledTimes(1);
+
+    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "visible" });
   });
 });

@@ -1,10 +1,11 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
+import { createRunFlowHandlers, resetRunFlowClaimLocks } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { readActiveRunStore, useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import {
   getBattleStoreView,
+  getRunProgressStoreView,
   getRunSessionStoreView,
   resetRunBattleSlice,
   resetRunProgressSlice,
@@ -17,6 +18,7 @@ import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 vi.mock("@/lib/audio", () => ({
   playVictory: vi.fn(),
   stopAllSfx: vi.fn(),
+  playUISound: vi.fn(),
 }));
 
 vi.mock("@/features/alchemy/shared/stores/run-transitions", async (importOriginal) => {
@@ -31,6 +33,7 @@ import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-tra
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resetRunFlowClaimLocks();
   resetRunBattleSlice();
   resetRunProgressSlice();
   resetTransientRunUi();
@@ -190,5 +193,90 @@ describe("createRunFlowHandlers victory paths", () => {
 
     expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.REWARDS, expect.any(Function));
     expect(onWildwoodRewardComplete).not.toHaveBeenCalled();
+  });
+
+  it("finishRewards ignores a second call after claim surface is cleared", () => {
+    const card = {
+      id: "reward-card",
+      uid: 1,
+      title: "Reward Card",
+      descriptionLines: [],
+      art: "",
+      cost: 1,
+      effects: [],
+    };
+    setRunProgress({
+      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN,
+      runDeck: [],
+    });
+    setRunSession({
+      rewardState: {
+        choices: [card],
+        gold: 0,
+        materials: emptyInventory(),
+        selectedId: card.id,
+        destinations: [CONSTANTS.DESTINATIONS.NORMAL_COMBAT],
+        rewardType: "card",
+        selectedBossId: null,
+        lastVictoryEnemyType: "normal",
+        lastVictoryContentSystem: "campaign",
+      },
+      companionRewardCards: null,
+    });
+    const navigateTo = vi.fn();
+    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
+
+    handlers.finishRewards();
+    handlers.finishRewards();
+
+    expect(getRunProgressStoreView().runDeck).toHaveLength(1);
+    expect(navigateTo).toHaveBeenCalledTimes(1);
+    // Destinations remain until navigation commits (resume-safe mid-transition).
+    expect(getRunSessionStoreView().rewardState.destinations).toEqual([CONSTANTS.DESTINATIONS.NORMAL_COMBAT]);
+    expect(getRunSessionStoreView().rewardState.choices).toEqual([]);
+  });
+
+  it("handleDestinationChoice ignores a second call after destinations are cleared", () => {
+    setRunProgress({
+      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN,
+      completedDestinations: [],
+      destinationIndexInAct: 0,
+    });
+    setRunSession({
+      rewardState: {
+        choices: [],
+        gold: 0,
+        materials: emptyInventory(),
+        selectedId: null,
+        destinations: [CONSTANTS.DESTINATIONS.CAMPFIRE, CONSTANTS.DESTINATIONS.MERCHANT_SHOP],
+        rewardType: "card",
+        selectedBossId: null,
+        lastVictoryEnemyType: null,
+        lastVictoryContentSystem: null,
+      },
+    });
+    const navigateTo = vi.fn();
+    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
+
+    handlers.handleDestinationChoice(CONSTANTS.DESTINATIONS.CAMPFIRE);
+    handlers.handleDestinationChoice(CONSTANTS.DESTINATIONS.CAMPFIRE);
+    handlers.handleDestinationChoice(CONSTANTS.DESTINATIONS.MERCHANT_SHOP);
+
+    expect(navigateTo).toHaveBeenCalledTimes(1);
+    expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.CAMPFIRE, expect.any(Function));
+    // Progress commits only after the navigation callback runs.
+    expect(getRunProgressStoreView().completedDestinations).toEqual([]);
+    expect(getRunProgressStoreView().destinationIndexInAct).toBe(0);
+    expect(getRunSessionStoreView().rewardState.destinations).toEqual([
+      CONSTANTS.DESTINATIONS.CAMPFIRE,
+      CONSTANTS.DESTINATIONS.MERCHANT_SHOP,
+    ]);
+
+    const onCommit = navigateTo.mock.calls[0][1] as () => void;
+    onCommit();
+
+    expect(getRunProgressStoreView().completedDestinations).toEqual([CONSTANTS.DESTINATIONS.CAMPFIRE]);
+    expect(getRunProgressStoreView().destinationIndexInAct).toBe(1);
+    expect(getRunSessionStoreView().rewardState.destinations).toEqual([]);
   });
 });

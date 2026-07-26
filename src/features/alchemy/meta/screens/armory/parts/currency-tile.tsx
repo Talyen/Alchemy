@@ -7,6 +7,7 @@ import { TooltipBody, TooltipHeader, TooltipPanel } from "../../../../shared/ui/
 import { useArmoryPortaledTooltipPlacement } from "../armory-tooltip-placement";
 import { ARMORY_TOOLTIP_WIDTH } from "../gear-tooltip-content";
 import { packedItemStyle } from "./grid-styles";
+import { CURRENCY_COUNT_LABEL_CLASS } from "./currency-styles";
 import type { CurrencyPointerEnd, CurrencyPointerMove, CurrencyPointerStart } from "../use-armory-currency-drag";
 
 export const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
@@ -117,9 +118,7 @@ export const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
       >
         <span className="absolute inset-0 bg-black" aria-hidden />
         <img src={definition.art} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <span className="absolute top-1 left-1 text-xs font-bold leading-none text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-          {count}
-        </span>
+        <span className={CURRENCY_COUNT_LABEL_CLASS}>{count}</span>
       </div>
       {showTooltip
         ? createPortal(

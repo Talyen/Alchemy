@@ -48,11 +48,18 @@ describe("storage io", () => {
   });
 
   it("loadAlchemySaveState returns defaults on corrupt JSON", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = "not-json";
     const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
     const data = (await loadAlchemySaveState()).data;
     expect(data.selectedAspectRatio).toBe("auto");
     expect((await loadAlchemySaveState()).status.kind).toBe("corrupt");
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining("Save candidate JSON parse failed"),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+    );
   });
 
   it("loadAlchemySaveState loads valid save data", async () => {
@@ -284,5 +291,66 @@ describe("storage io", () => {
     const loaded = await loadAlchemySaveState();
 
     expect(loaded.status.kind).toBe("corrupt");
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining("Save candidate JSON parse failed"),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  it("coalesces overlapping saveAlchemySaveData writes to the latest snapshot", async () => {
+    let releaseFirstWrite: (() => void) | undefined;
+    const firstWriteGate = new Promise<void>((resolve) => {
+      releaseFirstWrite = resolve;
+    });
+    const writePayloads: string[] = [];
+    let inFlightWrites = 0;
+    let maxInFlightWrites = 0;
+
+    (globalWithWindow as { window?: object }).window = {
+      localStorage: {
+        getItem: () => null,
+        setItem: () => undefined,
+        removeItem: () => undefined,
+      } as unknown as Storage,
+      alchemyDesktop: {
+        isDesktop: true,
+        setDisplayMode: vi.fn(),
+        quit: vi.fn(),
+        listSaveCandidates: vi.fn().mockResolvedValue([]),
+        writeSave: vi.fn().mockImplementation(async (payload: string) => {
+          inFlightWrites += 1;
+          maxInFlightWrites = Math.max(maxInFlightWrites, inFlightWrites);
+          writePayloads.push(payload);
+          if (writePayloads.length === 1) await firstWriteGate;
+          inFlightWrites -= 1;
+          return true;
+        }),
+        clearSave: vi.fn(),
+        steamGetName: vi.fn().mockResolvedValue(null),
+        steamSetRichPresence: vi.fn(),
+        steamCloudRead: vi.fn().mockResolvedValue(null),
+        steamCloudWrite: vi.fn().mockResolvedValue(true),
+        steamCloudDelete: vi.fn(),
+      },
+    } as unknown as Window;
+
+    const { saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
+    const first = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["first"] });
+    // Let the first write enter writeSave and block on the gate.
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const second = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["second"] });
+    const third = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["third"] });
+
+    releaseFirstWrite?.();
+    await Promise.all([first, second, third]);
+
+    expect(maxInFlightWrites).toBe(1);
+    expect(writePayloads).toHaveLength(2);
+    expect(JSON.parse(writePayloads[0]).discoveredCardIds).toEqual(["first"]);
+    expect(JSON.parse(writePayloads[1]).discoveredCardIds).toEqual(["third"]);
   });
 });

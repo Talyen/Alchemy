@@ -2,7 +2,7 @@
 import type { BattleCard } from "../types";
 import { cardLibrary } from "../cards";
 
-type SavedCard = BattleCard & {
+export type SavedCard = BattleCard & {
   descriptionLinesFullyValid?: boolean;
   effectsFullyValid?: boolean;
 };
@@ -28,11 +28,14 @@ function pickOptionalField<T>(saved: SavedCard, key: keyof SavedCard): T | undef
   return saved[key] !== undefined ? (saved[key] as T) : undefined;
 }
 
-export function hydrateCard(savedCard: BattleCard): BattleCard {
+export function hydrateCard(savedCard: SavedCard): BattleCard {
   const libraryCard = cardLibrary.find((c) => c.id === savedCard.id);
-  if (!libraryCard) return savedCard;
+  if (!libraryCard) {
+    const { descriptionLinesFullyValid: _dl, effectsFullyValid: _ef, ...rest } = savedCard;
+    return rest;
+  }
 
-  const saved = savedCard as SavedCard;
+  const saved = savedCard;
   const corruptedValuePositions =
     Array.isArray(saved.corruptedValuePositions) && saved.corruptedValuePositions.length > 0
       ? saved.corruptedValuePositions

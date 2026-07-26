@@ -25,7 +25,7 @@ import {
 import { getPreviousDestination } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
 import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
 import { applyCorruptionToDeck } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
-import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
+import { createRunFlowHandlers, resetRunFlowClaimLocks } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import type { ScreenTransitionOptions } from "./use-screen-transitions";
 import { useWildwoodGauntletFlow } from "./use-wildwood-gauntlet-flow";
@@ -223,6 +223,7 @@ export function useRunNavigation({
   }
   function resetRunState() {
     cancelPending();
+    resetRunFlowClaimLocks();
     clearCardGhosts();
     clearCardHover();
     setHasActiveBattle(false);

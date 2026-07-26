@@ -2,12 +2,9 @@
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard } from "@/lib/game-data";
-import { cn } from "@/lib/utils";
 
-import { viewCardWidthClass } from "@/features/alchemy/shared/config";
 import { CardSelectionGrid, type CardSelectionGridItem } from "../../../shared/ui/card-selection-grid";
-import { BattleCardButton } from "../../../shared/ui/card-button";
-import { CardTitle, getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
+import { SelectableShopCard } from "../../../shared/ui/shop-card-item";
 import { ScreenHeader, StaggerGroup, StaggerItem } from "../../../shared/ui/shared-ui";
 
 function DeckCardSelectionFlow({
@@ -52,56 +49,6 @@ function DeckCardSelectionFlow({
   );
 }
 
-function SelectableCardTile({
-  card,
-  isSelected,
-  onClick,
-  showTitle = false,
-  isHovered,
-  onHoverStart,
-  onHoverEnd,
-}: {
-  card: BattleCard;
-  isSelected: boolean;
-  onClick: () => void;
-  showTitle?: boolean;
-  isHovered?: boolean;
-  onHoverStart?: () => void;
-  onHoverEnd?: () => void;
-}) {
-  const hovered = isHovered ?? isSelected;
-  const button = (
-    <BattleCardButton
-      card={card}
-      hovered={hovered}
-      onHoverStart={onHoverStart ?? (() => {})}
-      onHoverEnd={onHoverEnd ?? (() => {})}
-      onClick={onClick}
-      ariaLabel={`Select ${getCardDisplayTitle(card)}`}
-      shimmerActive={false}
-      shimmerToken={undefined}
-      className={viewCardWidthClass}
-      selected={isSelected}
-    />
-  );
-
-  if (!showTitle) return button;
-
-  return (
-    <div
-      className={cn(
-        "flex flex-col items-center gap-2 rounded-xl border-2 p-2 transition-colors",
-        isSelected ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-transparent hover:border-border",
-      )}
-    >
-      {button}
-      <p className="text-sm font-semibold text-foreground">
-        <CardTitle card={card} />
-      </p>
-    </div>
-  );
-}
-
 export function CardChoicePicker({ choices, onSelect }: { choices: BattleCard[]; onSelect: (cardId: string) => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -120,13 +67,14 @@ export function CardChoicePicker({ choices, onSelect }: { choices: BattleCard[];
       onPageChange={() => {}}
       pageSize={choices.length}
       renderItem={({ card }, _visualIndex) => (
-        <SelectableCardTile
+        <SelectableShopCard
           card={card}
+          chrome="deck"
           isSelected={selectedId === card.id}
           isHovered={hoveredId === card.id}
           onHoverStart={() => setHoveredId(card.id)}
           onHoverEnd={() => setHoveredId(null)}
-          onClick={() => setSelectedId(card.id)}
+          onSelect={() => setSelectedId(card.id)}
         />
       )}
       confirmLabel="Add Card"

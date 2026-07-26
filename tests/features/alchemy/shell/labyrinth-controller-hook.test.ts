@@ -60,6 +60,32 @@ describe("useLabyrinthController hook", () => {
     expect(getRunSessionStoreView().labyrinthMap.grid[target.row][target.col]?.state).toBe("current");
   });
 
+  it("enterNode rejects a second enter while a node is pending", () => {
+    const onStartBattle = vi.fn();
+    const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
+    const map = getRunSessionStoreView().labyrinthMap;
+    const target = map.grid[0][START_COL]!.connections[0];
+    const handlers = {
+      onStartBattleWithModifiers: onStartBattle,
+      onStartBossBattleWithModifiers: vi.fn(),
+      onStartRest: vi.fn(),
+      onStartMystery: vi.fn(),
+      onStartShop: vi.fn(),
+      onStartAlchemist: vi.fn(),
+    } as any;
+
+    let first = false;
+    let second = true;
+    act(() => {
+      first = result.current.enterNode(target.row, target.col, handlers);
+      second = result.current.enterNode(target.row, target.col, handlers);
+    });
+
+    expect(first).toBe(true);
+    expect(second).toBe(false);
+    expect(onStartBattle).toHaveBeenCalledOnce();
+  });
+
   it("resetMap clears pending state and regenerates the labyrinth", () => {
     const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
     const before = getRunSessionStoreView().labyrinthMap;

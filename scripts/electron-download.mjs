@@ -158,7 +158,7 @@ async function downloadElectronWithRetry() {
   }
 }
 
-export async function downloadElectronIfNeeded() {
+async function downloadElectronIfNeeded() {
   if (!isElectronInstalled()) {
     await downloadElectronWithRetry();
   }

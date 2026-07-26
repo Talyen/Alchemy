@@ -219,8 +219,9 @@ export const ActiveRunDataSchema = z
     labyrinthPendingNode: LabyrinthNodePositionSchema,
     wildwoodDraft: WildwoodDraftStateSchema.default(null),
     activeCombat: caught(ActiveCombatDataSchema, null, "activeRun.activeCombat").default(null),
-    runTalentXP: TalentXPSchema.optional(),
-    runMaterialsEarned: MaterialInventorySchema.optional(),
+    // Defaults match normalizeActiveRunData — required on Zod output without a post-cast.
+    runTalentXP: TalentXPSchema.default({}),
+    runMaterialsEarned: MaterialInventorySchema.default(emptyInventory()),
     currentScreen: caught(z.enum(ROUTE_SCREEN_VALUES).nullable(), null, "activeRun.currentScreen").default(null),
     destinationChoices: caught(z.array(z.string()), [], "activeRun.destinationChoices").default([]),
     pendingReward: caught(PersistedPendingRewardSchema, null, "activeRun.pendingReward").default(null),
@@ -251,3 +252,5 @@ export const ActiveRunDataSchema = z
   .refine((data) => data.contentSystemType !== "wildwood" || data.wildwoodDraft !== null, {
     message: "Wildwood Draft runs require versioned mode state",
   });
+
+export type ParsedActiveRunData = z.output<typeof ActiveRunDataSchema>;

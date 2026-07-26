@@ -1,16 +1,38 @@
 import { playUISound } from "@/lib/audio";
 import {
+  canEquipInOffHand,
   gearDefinitions,
+  isTwoHanded,
+  type GearDefinition,
   type GearInstance,
   type GearLoadout,
   type GearSlot,
   type InventoryPlacement,
+  type PackedInventoryItem,
 } from "@/lib/gear";
 import type { CharacterId } from "@/lib/game-data";
 import type { DragDestination, DragRect } from "./drag-types";
 import type { GearDragOrigin } from "./armory-gear-drag-types";
-import { findEquipSlotForDoubleClickedGear, getInventoryDragDestination } from "./armory-drag-helpers";
-import type { PackedInventoryItem } from "@/lib/gear";
+import { getInventoryDragDestination } from "./armory-drag-helpers";
+
+function findEquipSlotForDoubleClickedGear(loadout: GearLoadout, definition: GearDefinition): GearSlot | null {
+  const compatibleSlots = definition.compatibleSlots;
+  let slot = compatibleSlots.find((candidate) => !loadout[candidate]) ?? null;
+  if (!slot) {
+    if (
+      !isTwoHanded(definition) &&
+      !!loadout["main-hand"] &&
+      !loadout["off-hand"] &&
+      compatibleSlots.includes("off-hand") &&
+      canEquipInOffHand(definition)
+    ) {
+      slot = "off-hand";
+    } else {
+      slot = compatibleSlots[0] ?? null;
+    }
+  }
+  return slot;
+}
 
 type FlyoverTo = (
   item: { instance: GearInstance; origin: GearDragOrigin },

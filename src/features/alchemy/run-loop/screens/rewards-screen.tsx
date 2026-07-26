@@ -2,12 +2,11 @@
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import { gearDefinitions, getGearInstanceDescriptionLines, getGearInstanceTitle, type GearInstance } from "@/lib/gear";
 import { cn } from "@/lib/utils";
-import { MATERIAL_IDS } from "@/lib/homestead/types";
-import { GoldPill, MaterialPill } from "../../shared/ui/material-icons";
+import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 
-import { BattleCardButton } from "../../shared/ui/card-button";
-import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
 import { DetailPopup } from "../../shared/ui/card-popup";
+import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
+import { SelectableChoiceCard } from "../../shared/ui/selectable-choice-card";
 import { ActionButtonRow, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { cardSurfaceClass, collectionTileWidthClass } from "@/features/alchemy/shared/config";
@@ -50,10 +49,11 @@ function RewardChoiceItems({
             selected={selectedRewardId === choiceId}
           />
         ) : (
-          <RewardCardItem
+          <SelectableChoiceCard
             card={item as BattleCard}
             selected={selectedRewardId === choiceId}
-            onSelect={onSelectReward}
+            onSelect={() => onSelectReward(choiceId)}
+            interactionKey="reward"
           />
         )}
       </StaggerItem>
@@ -66,20 +66,13 @@ function RewardsFound({
   rewardMaterials,
 }: {
   rewardGold: number;
-  rewardMaterials: Record<string, number | undefined>;
+  rewardMaterials: Partial<Record<MaterialId, number>>;
 }) {
   const hasRewards = rewardGold > 0 || MATERIAL_IDS.some((mat) => (rewardMaterials[mat] ?? 0) > 0);
   if (!hasRewards) return null;
   return (
-    <StaggerItem
-      index={100}
-      className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground"
-    >
-      Found
-      {rewardGold > 0 ? <GoldPill amount={rewardGold} /> : null}
-      {MATERIAL_IDS.filter((mat) => (rewardMaterials[mat] ?? 0) > 0).map((mat) => (
-        <MaterialPill key={mat} material={mat} amount={rewardMaterials[mat] ?? 0} />
-      ))}
+    <StaggerItem index={100}>
+      <FoundResourcesRow gold={rewardGold} materials={rewardMaterials} />
     </StaggerItem>
   );
 }
@@ -170,34 +163,6 @@ function GearRewardButton({
   );
 }
 
-function RewardCardItem({
-  card,
-  selected,
-  onSelect,
-}: {
-  card: BattleCard;
-  selected: boolean;
-  onSelect: (id: string) => void;
-}) {
-  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("reward", card.id);
-
-  return (
-    <BattleCardButton
-      card={card}
-      hovered={isHovered}
-      onHoverStart={onHoverStart}
-      onHoverEnd={onHoverEnd}
-      onClick={() => onSelect(card.id)}
-      ariaLabel={`Select ${getCardDisplayTitle(card)}`}
-      shimmerActive={shimmerActive}
-      shimmerToken={shimmerToken}
-      className={collectionTileWidthClass}
-      wrapperClassName="relative flex justify-center"
-      selected={selected}
-    />
-  );
-}
-
 export function RewardsScreen({
   rewardState,
   onAddReward,
@@ -253,10 +218,19 @@ export function RewardsScreen({
         <ActionButtonRow
           className="mt-5"
           width="action"
-          {...((!isTrinket && !isGear) || allowTrinketSkip ? { secondary: { label: "Skip", onClick: onSkip } } : {})}
+          {...((!isTrinket && !isGear) || allowTrinketSkip
+            ? {
+                secondary: {
+                  label: "Skip",
+                  onClick: onSkip,
+                  // Disabled once claim surface is drained (finishRewards clears choices sync).
+                  disabled: rewardChoices.length === 0,
+                },
+              }
+            : {})}
           primary={{
             label: isGear ? "Take Gear" : isTrinket ? "Take Trinket" : "Add Card",
-            disabled: !selectedRewardItem,
+            disabled: !selectedRewardItem || rewardChoices.length === 0,
             onClick: onAddReward,
           }}
         />

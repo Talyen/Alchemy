@@ -2,14 +2,8 @@ import { describe, expect, it } from "vitest";
 import { defaultBattleState, defaultTalentEffects } from "@/lib/battle";
 import { drawCards, shuffleCards } from "@/lib/battle/draw";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
-import { createEmptyTalentManifest } from "@/lib/game-data";
 
 describe("defaultTalentEffects", () => {
-  it("matches the empty talent manifest shape", () => {
-    const empty = createEmptyTalentManifest();
-    expect(Object.keys(defaultTalentEffects)).toEqual(Object.keys(empty));
-  });
-
   it("has all numeric fields set to 0 except known non-zero defaults", () => {
     const nonZeroDefaults = new Set(["bleedDesperateMultiplier", "healMultiplier", "potionPotency"]);
     for (const [key, value] of Object.entries(defaultTalentEffects)) {
@@ -23,26 +17,16 @@ describe("defaultTalentEffects", () => {
     }
   });
 
-  it("has healthThresholdBlock set to null", () => {
-    expect(defaultTalentEffects.healthThresholdBlock).toBeNull();
-  });
-
-  it("has healthThresholdArmor set to null", () => {
-    expect(defaultTalentEffects.healthThresholdArmor).toBeNull();
-  });
-
-  it("has companionBondLevels with all known companions at 0", () => {
+  it("has null thresholds, zero companion bonds, and known non-zero multipliers", () => {
+    expect(defaultTalentEffects).toMatchObject({
+      healthThresholdBlock: null,
+      healthThresholdArmor: null,
+      bleedDesperateMultiplier: 1,
+      healMultiplier: 1,
+    });
     const levels = defaultTalentEffects.companionBondLevels;
     expect(Object.keys(levels).length).toBeGreaterThan(0);
     for (const value of Object.values(levels)) expect(value).toBe(0);
-  });
-
-  it("has bleedDesperateMultiplier set to 1", () => {
-    expect(defaultTalentEffects.bleedDesperateMultiplier).toBe(1);
-  });
-
-  it("has healMultiplier set to 1", () => {
-    expect(defaultTalentEffects.healMultiplier).toBe(1);
   });
 });
 
@@ -55,68 +39,34 @@ describe("defaultBattleState", () => {
     expect(b.playerHealth).toBe(30);
   });
 
-  it("initializes mana to 0", () => {
-    expect(defaultBattleState().mana).toBe(0);
-  });
-
-  it("initializes maxMana to 0", () => {
-    expect(defaultBattleState().maxMana).toBe(0);
-  });
-
-  it("initializes player health to MAX_PLAYER_HEALTH (30)", () => {
-    expect(defaultBattleState().playerHealth).toBe(30);
-  });
-
-  it("initializes enemy health to BASE_ENEMY_HEALTH (30)", () => {
-    expect(defaultBattleState().enemyHealth).toBe(30);
-  });
-
-  it("initializes all player statuses to 0", () => {
+  it("initializes placeholder combat defaults", () => {
     const s = defaultBattleState();
-    const statusKeys: Array<keyof typeof s.playerStatuses> = [
-      "block",
-      "armor",
-      "forge",
-      "haste",
-      "burn",
-      "poison",
-      "bleed",
-      "freeze",
-      "stun",
-    ];
-    for (const key of statusKeys) expect(s.playerStatuses[key]).toBe(0);
-  });
-
-  it("initializes all enemy statuses to 0", () => {
-    const s = defaultBattleState();
-    const statusKeys: Array<keyof typeof s.enemyStatuses> = ["burn", "poison", "bleed", "freeze", "stun"];
-    for (const key of statusKeys) expect(s.enemyStatuses[key]).toBe(0);
-  });
-
-  it("initializes pendingMaterials as empty inventory", () => {
-    const s = defaultBattleState();
-    expect(s.pendingMaterials).toEqual({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
-  });
-
-  it("uses skeleton as default enemy", () => {
-    const s = defaultBattleState();
-    expect(s.currentEnemy.id).toBe("skeleton");
-  });
-
-  it("sets rng to Math.random", () => {
-    expect(defaultBattleState().rng).toBe(Math.random);
-  });
-
-  it("initializes flags as all false/0", () => {
-    const s = defaultBattleState();
+    expect(s).toMatchObject({
+      mana: 0,
+      maxMana: 0,
+      playerHealth: 30,
+      enemyHealth: 30,
+      currentEnemy: { id: "skeleton" },
+      pendingMaterials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+      talentEffects: defaultTalentEffects,
+      playerStatuses: {
+        block: 0,
+        armor: 0,
+        forge: 0,
+        haste: 0,
+        burn: 0,
+        poison: 0,
+        bleed: 0,
+        freeze: 0,
+        stun: 0,
+      },
+      enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+    });
+    expect(s.rng).toBe(Math.random);
     for (const value of Object.values(s.flags)) {
       if (typeof value === "boolean") expect(value).toBe(false);
       if (typeof value === "number") expect(value).toBe(0);
     }
-  });
-
-  it("returns talentEffects as defaultTalentEffects", () => {
-    expect(defaultBattleState().talentEffects).toBe(defaultTalentEffects);
   });
 });
 

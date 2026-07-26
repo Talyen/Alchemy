@@ -1,13 +1,11 @@
 // Equipment Shop — buy gear or refresh offerings.
 import { RefreshCw } from "lucide-react";
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import type { GearInstance } from "@/lib/gear";
 
 import { PurchasableGearItem } from "../../shared/ui/purchasable-gear-item";
-import { GoldDisplay, ScreenHeader, ServiceButton, StaggerGroup } from "../../shared/ui/shared-ui";
+import { ServiceButton } from "../../shared/ui/shared-ui";
+import { ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
 
 export function EquipmentShopScreen({
   gold,
@@ -36,30 +34,11 @@ export function EquipmentShopScreen({
   }
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
-      <ScreenHeader title="Equipment Shop" />
-      <GoldDisplay gold={gold} />
-
-      <StaggerGroup className="flex flex-col items-center gap-6">
-        <StaggerGroup
-          swapKey={gear.map((g) => g.instanceId).join("-")}
-          animate={false}
-          className="grid grid-cols-1 gap-4 sm:grid-cols-3"
-        >
-          {gear.map((instance, i) => (
-            <PurchasableGearItem
-              key={instance.instanceId}
-              instance={instance}
-              price={getGearPrice(instance)}
-              gold={gold}
-              purchased={purchasedSlotKeys.includes(instance.instanceId)}
-              onBuy={() => handleBuy(instance)}
-              staggerIndex={i}
-            />
-          ))}
-        </StaggerGroup>
-
-        <div className="flex flex-wrap justify-center gap-3">
+    <ShopBrowseShell title="Equipment Shop" gold={gold}>
+      <ShopBrowseOfferings
+        swapKey={gear.map((g) => g.instanceId).join("-")}
+        onLeave={onContinue}
+        services={
           <ServiceButton
             icon={RefreshCw}
             label="Refresh"
@@ -70,11 +49,20 @@ export function EquipmentShopScreen({
             soldOutText="Refresh — Sold Out"
             onClick={onRefresh}
           />
-        </div>
-        <Button size="lg" variant="primary" className={cn("mt-2", BUTTON_WIDTH_ACTION)} onClick={onContinue}>
-          Leave
-        </Button>
-      </StaggerGroup>
-    </div>
+        }
+      >
+        {gear.map((instance, i) => (
+          <PurchasableGearItem
+            key={instance.instanceId}
+            instance={instance}
+            price={getGearPrice(instance)}
+            gold={gold}
+            purchased={purchasedSlotKeys.includes(instance.instanceId)}
+            onBuy={() => handleBuy(instance)}
+            staggerIndex={i}
+          />
+        ))}
+      </ShopBrowseOfferings>
+    </ShopBrowseShell>
   );
 }

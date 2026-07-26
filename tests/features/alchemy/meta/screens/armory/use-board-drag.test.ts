@@ -273,4 +273,105 @@ describe("useBoardDrag", () => {
     expect(commit).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });
+
+  it("clears held drag state on window blur", () => {
+    const inventoryBoardRef = { current: null };
+    const { result } = renderHook(() =>
+      useBoardDrag({
+        itemLookup: { id: "item-1" },
+        getItemId: (item) => item.id,
+        getOrigin: () => ({ kind: "inventory", placement: { col: 0, row: 0 } }),
+        getFootprint: () => ({ w: 1, h: 1 }),
+        inventoryBoardRef,
+        occupiedRows: 0,
+        onCommit: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      result.current.beginHeld({ id: "item-1" }, { left: 10, top: 20, width: 50, height: 50 });
+    });
+    expect(result.current.activeId).toBe("item-1");
+
+    act(() => {
+      window.dispatchEvent(new Event("blur"));
+    });
+
+    expect(result.current.activeId).toBeNull();
+    expect(result.current.dragVisual).toBeNull();
+  });
+
+  it("preserves flyover pendingCommit across window blur", () => {
+    vi.useFakeTimers();
+    const commit = vi.fn();
+    const inventoryBoardRef = { current: null };
+    const { result } = renderHook(() =>
+      useBoardDrag({
+        itemLookup: { id: "item-1" },
+        getItemId: (item) => item.id,
+        getOrigin: () => ({ kind: "inventory", placement: { col: 0, row: 0 } }),
+        getFootprint: () => ({ w: 1, h: 1 }),
+        inventoryBoardRef,
+        occupiedRows: 0,
+        onCommit: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      result.current.flyoverTo(
+        { id: "item-1" },
+        {
+          kind: "inventory",
+          placement: { col: 2, row: 1 },
+          rect: { left: 10, top: 10, width: 20, height: 20 },
+        },
+        commit,
+        { left: 0, top: 0, width: 20, height: 20 },
+        50,
+      );
+    });
+
+    act(() => {
+      window.dispatchEvent(new Event("blur"));
+    });
+
+    expect(result.current.activeId).toBe("item-1");
+    expect(result.current.dragVisual?.flyover).toBe(true);
+
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+
+    expect(commit).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it("clears drag state on visibilitychange to hidden", () => {
+    const inventoryBoardRef = { current: null };
+    const { result } = renderHook(() =>
+      useBoardDrag({
+        itemLookup: { id: "item-1" },
+        getItemId: (item) => item.id,
+        getOrigin: () => ({ kind: "inventory", placement: { col: 0, row: 0 } }),
+        getFootprint: () => ({ w: 1, h: 1 }),
+        inventoryBoardRef,
+        occupiedRows: 0,
+        onCommit: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      result.current.beginHeld({ id: "item-1" }, { left: 10, top: 20, width: 50, height: 50 });
+    });
+
+    act(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+
+    expect(result.current.activeId).toBeNull();
+    expect(result.current.dragVisual).toBeNull();
+
+    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "visible" });
+  });
 });

@@ -17,7 +17,7 @@ export function getTalentsForKeyword(keywordId: KeywordId): TalentDefinition[] {
   return talentPool.filter((t) => t.keywordId === keywordId);
 }
 
-export function getImplementedTalentsForKeyword(keywordId: KeywordId): TalentDefinition[] {
+function getImplementedTalentsForKeyword(keywordId: KeywordId): TalentDefinition[] {
   return getTalentsForKeyword(keywordId).filter((t) => !isTalentPlaceholder(t));
 }
 

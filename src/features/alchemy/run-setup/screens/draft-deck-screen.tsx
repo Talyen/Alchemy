@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_ACTION, collectionTileWidthClass } from "@/features/alchemy/shared/config";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
+import { SelectableChoiceCard } from "../../shared/ui/selectable-choice-card";
 import { ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
@@ -26,39 +27,6 @@ function DraftedCardItem({ card, index }: { card: BattleCard; index: number }) {
       ariaLabel={getCardDisplayTitle(card)}
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
-      className={collectionTileWidthClass}
-      wrapperClassName="relative flex justify-center"
-    />
-  );
-}
-
-function ChoiceCardItem({
-  card,
-  index,
-  selected,
-  onClick,
-}: {
-  card: BattleCard;
-  index: number;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
-    "draft-choice-" + String(index),
-    card.id,
-  );
-
-  return (
-    <BattleCardButton
-      card={card}
-      hovered={isHovered}
-      onHoverStart={onHoverStart}
-      onHoverEnd={onHoverEnd}
-      onClick={onClick}
-      ariaLabel={"Select " + getCardDisplayTitle(card)}
-      shimmerActive={shimmerActive}
-      shimmerToken={shimmerToken}
-      selected={selected}
       className={collectionTileWidthClass}
       wrapperClassName="relative flex justify-center"
     />
@@ -119,11 +87,11 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
           <StaggerGroup swapKey={round} className="mt-8 flex flex-wrap items-start justify-center gap-6">
             {choices.map((card, index) => (
               <StaggerItem key={"draft-choice-" + String(index) + "-" + card.id} index={index}>
-                <ChoiceCardItem
+                <SelectableChoiceCard
                   card={card}
-                  index={index}
                   selected={selectedIndex === index}
-                  onClick={() => setSelectedIndex(index)}
+                  onSelect={() => setSelectedIndex(index)}
+                  interactionKey={"draft-choice-" + String(index)}
                 />
               </StaggerItem>
             ))}

@@ -161,8 +161,8 @@ export interface BattleState {
 // Combat texts are emitted by battle functions and consumed by the floating-text
 // animation system. They're merged by (target, kind, stat) so rapid-fire damage
 // from multi-hit cards shows "-5" instead of "-2 -3".
-export type CombatTextTarget = "player" | "enemy";
-export type CombatTextKind = "damage" | "heal" | "status" | "multiply" | "notice";
+type CombatTextTarget = "player" | "enemy";
+type CombatTextKind = "damage" | "heal" | "status" | "multiply" | "notice";
 export type CombatTextStat = DamageType | PlayerStatusId | EnemyStatusId | "health" | "mana" | "gold" | "crystal";
 
 export interface NumericCombatTextEvent {
@@ -172,7 +172,7 @@ export interface NumericCombatTextEvent {
   amount: number;
 }
 
-export interface NoticeCombatTextEvent {
+interface NoticeCombatTextEvent {
   target: CombatTextTarget;
   kind: "notice";
   stat: CombatTextStat;

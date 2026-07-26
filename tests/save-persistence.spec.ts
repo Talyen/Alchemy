@@ -15,7 +15,7 @@ import { injectMidCombatSave } from "./e2e/mid-combat-save";
 import { BattlePage } from "./pages/battle-page";
 import { DestinationPage } from "./pages/destination-page";
 import { RewardPage } from "./pages/reward-page";
-import { critical, prepush } from "./playwright-tags";
+import { critical } from "./playwright-tags";
 import { legacyCampaignRunSave } from "./fixtures/legacy-saves";
 
 function getSavedRoomCount(page: import("@playwright/test").Page): Promise<number> {
@@ -64,7 +64,7 @@ test.describe("Save Persistence & Resume", () => {
     expect(savedAfter.runPlayerHealth).toBe(18);
   });
 
-  test("resume restores saved destination choices", prepush, async ({ page }) => {
+  test("resume restores saved destination choices", async ({ page }) => {
     await seedRandom(page, 42);
     await injectSaveState(page, {
       runPlayerHealth: 22,

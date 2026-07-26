@@ -1,7 +1,7 @@
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear/types";
-import type { Destination } from "@/lib/routing";
+import { DESTINATIONS, type Destination } from "@/lib/routing";
 import type { PersistedPendingReward } from "./types";
 import {
   createEmptyRewardState,
@@ -10,6 +10,12 @@ import {
   type RewardState,
   type TrinketRewardState,
 } from "./reward-types";
+
+const VALID_DESTINATIONS = new Set<string>(Object.values(DESTINATIONS));
+
+function filterValidDestinations(values: string[]): Destination[] {
+  return values.filter((destination): destination is Destination => VALID_DESTINATIONS.has(destination));
+}
 
 export function lookupTrinketEntries(ids: string[]): TrinketEntry[] {
   return ids.flatMap((id) => {
@@ -63,7 +69,7 @@ export function serializePendingReward(rewardState: RewardState): PersistedPendi
 
 export function restorePendingReward(persisted: PersistedPendingReward): RewardState | null {
   const shared = {
-    ...createEmptyRewardState(persisted.destinations as Destination[]),
+    ...createEmptyRewardState(filterValidDestinations(persisted.destinations)),
     selectedId: persisted.selectedId,
     gold: persisted.gold,
     materials: persisted.materials,

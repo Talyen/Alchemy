@@ -57,17 +57,4 @@ export function writeExecutablePathMarker(executablePath = resolveElectronExecut
   fs.writeFileSync(pathMarkerFile, executablePath, "utf8");
 }
 
-export function readExecutablePathMarker() {
-  if (!fs.existsSync(pathMarkerFile)) {
-    return null;
-  }
-
-  const executablePath = fs.readFileSync(pathMarkerFile, "utf8").trim();
-  if (!executablePath || !fs.existsSync(executablePath)) {
-    return null;
-  }
-
-  return executablePath;
-}
-
-export { electronRoot, MIN_BINARY_BYTES, pathMarkerFile, projectRoot };
+export { electronRoot, MIN_BINARY_BYTES, projectRoot };

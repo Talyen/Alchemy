@@ -89,6 +89,16 @@ describe("SaveDataSchema", () => {
       expect(result.data.selectedAspectRatio).toBe("21:9");
     }
   });
+
+  it("filters invalid finishedRunCharacters without wiping valid IDs", () => {
+    const result = SaveDataSchema.safeParse({
+      finishedRunCharacters: ["knight", "not-a-character", "rogue", "knight", 42],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.finishedRunCharacters).toEqual(["knight", "rogue"]);
+    }
+  });
 });
 
 describe("ActiveRunDataSchema", () => {

@@ -1,19 +1,21 @@
 // Zod schemas for labyrinth map persistence.
 import { z } from "zod";
 import { LABYRINTH_MIN_CONNECTIONS, LABYRINTH_MAX_CONNECTIONS } from "@/lib/game-constants";
+import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
+import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { LabyrinthNodeStateSchema, LabyrinthNodeTypeSchema } from "./schema-enums";
 import { sanitizeEncounterTraitIds } from "@/lib/content-systems/encounter-traits";
 
 export const EncounterCombatTraitArraySchema = z
   .array(z.string())
-  .transform((values) => sanitizeEncounterTraitIds(values, "combat"))
-  .catch([]);
+  .transform((values): EncounterCombatTraitId[] => sanitizeEncounterTraitIds(values, "combat"))
+  .catch([] as EncounterCombatTraitId[]);
 export const EncounterRewardTraitArraySchema = z
   .array(z.string())
-  .transform((values) => sanitizeEncounterTraitIds(values, "reward"))
-  .catch([]);
+  .transform((values): EncounterRewardTraitId[] => sanitizeEncounterTraitIds(values, "reward"))
+  .catch([] as EncounterRewardTraitId[]);
 
-export const LabyrinthNodeSchema = z
+const LabyrinthNodeSchema = z
   .object({
     type: LabyrinthNodeTypeSchema,
     modifiers: EncounterCombatTraitArraySchema,
@@ -28,6 +30,10 @@ export const LabyrinthNodeSchema = z
       .catch([]),
     state: LabyrinthNodeStateSchema,
     enemyId: z.string().optional(),
+  })
+  .transform((node): LabyrinthNode => {
+    const { enemyId, ...rest } = node;
+    return enemyId === undefined ? rest : { ...rest, enemyId };
   })
   .nullable()
   .catch(null);
@@ -113,5 +119,6 @@ export const LabyrinthMapSchema = z
       .catch({ row: 0, col: 0 }),
   })
   .refine(isValidLabyrinthMap, { message: "Invalid labyrinth map structure" })
+  .transform((map): LabyrinthMap => map)
   .nullable()
   .catch(null);

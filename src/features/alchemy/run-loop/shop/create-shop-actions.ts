@@ -57,13 +57,20 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     onAcquire: () => void,
   ): boolean {
     if (run.runGold < price) return false;
+    // Reserve the slot in live store state BEFORE spend/acquire so rapid re-entry cannot double-buy.
+    let reserved = false;
+    setState((p) => {
+      if (p.purchasedSlotKeys.includes(slotKey)) return p;
+      reserved = true;
+      return {
+        ...p,
+        firstPurchaseUsed: true,
+        purchasedSlotKeys: markSlotPurchased(p.purchasedSlotKeys, slotKey),
+      };
+    });
+    if (!reserved) return false;
     spendRunGold(price, run.setRunGold);
     onAcquire();
-    setState((p) => ({
-      ...p,
-      firstPurchaseUsed: true,
-      purchasedSlotKeys: markSlotPurchased(p.purchasedSlotKeys, slotKey),
-    }));
     return true;
   }
 
@@ -154,7 +161,6 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
   });
 
   function handleAlchemistMixPotions(indexA: number, indexB: number): BattleCard | null {
-    if (alchemistState.mixUsed) return null;
     const price = getMixPotionPrice();
     if (run.runGold < price) return null;
     const deck = run.runDeck;
@@ -162,9 +168,17 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     const cardA = deck[indexA];
     const cardB = deck[indexB];
 
-    // Any attempt consumes the one mix slot — even programmatic edge cases
+    // Reserve mix slot in live store BEFORE spend so a closed-over stale mixUsed cannot double-mix.
+    let reserved = false;
+    setAlchemistState((p) => {
+      if (p.mixUsed) return p;
+      reserved = true;
+      return { ...p, mixUsed: true };
+    });
+    if (!reserved) return null;
+
+    // Any reserved attempt consumes the one mix slot — even programmatic edge cases
     spendRunGold(price, run.setRunGold);
-    setAlchemistState((p) => ({ ...p, mixUsed: true }));
 
     const mixed = tryCreateMixedPotion(cardA, cardB, talents.talentEffects.potionMixPotency);
     if (mixed) {

@@ -2,8 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { type KeywordId, type TalentXP } from "@/lib/game-data";
 import { getTalentTreeKeywordIds } from "@/lib/game-data";
-import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
-import { MaterialPill } from "../../shared/ui/material-icons";
+import { type MaterialInventory } from "@/lib/homestead/types";
+import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
 import { StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { KeywordProgressCard } from "./keyword-progress-card";
 
@@ -25,7 +25,6 @@ export function RunEndProgressSection({
       ),
     [runEndTalentXP, visibleKeywords],
   );
-  const earnedMaterials = useMemo(() => MATERIAL_IDS.filter((mat) => runEndMaterials[mat] > 0), [runEndMaterials]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setAnimate(true));
@@ -51,16 +50,7 @@ export function RunEndProgressSection({
         </StaggerGroup>
       )}
 
-      {earnedMaterials.length > 0 && (
-        <StaggerGroup className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
-          <StaggerItem index={0}>Found</StaggerItem>
-          {earnedMaterials.map((mat, index) => (
-            <StaggerItem key={mat} index={index + 1}>
-              <MaterialPill material={mat} amount={runEndMaterials[mat]} />
-            </StaggerItem>
-          ))}
-        </StaggerGroup>
-      )}
+      <FoundResourcesRow materials={runEndMaterials} />
     </>
   );
 }

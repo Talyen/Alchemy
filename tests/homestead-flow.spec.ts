@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
 import { HomesteadPage } from "./pages/homestead-page";
-import { prepush } from "./playwright-tags";
 
 test.describe("Homestead Flow", () => {
   test.describe("with custom materials", () => {
@@ -10,7 +9,7 @@ test.describe("Homestead Flow", () => {
       });
     });
 
-    test("homestead screen shows injected materials count", prepush, async ({ page }) => {
+    test("homestead screen shows injected materials count", async ({ page }) => {
       const homestead = new HomesteadPage(page);
       await expect(homestead.materialPill("Wood", 100)).toBeVisible({ timeout: 3000 });
       await expect(homestead.materialPill("Iron", 50)).toBeVisible({ timeout: 3000 });

@@ -192,7 +192,7 @@ export function getVisibleKeywordIds(): KeywordId[] {
 }
 
 /** Keywords that earn in-run talent XP (excludes hidden trees until they ship). */
-export function getTalentXpKeywordIds(): KeywordId[] {
+function getTalentXpKeywordIds(): KeywordId[] {
   return getVisibleKeywordIds();
 }
 

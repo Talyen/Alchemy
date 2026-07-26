@@ -54,7 +54,22 @@ function restoreReward(store: ReturnType<typeof getRunDomainStore>, activeRun: A
     store.applyDestinationChoices(activeRun.destinationChoices);
   } else if (activeRun.pendingReward) {
     const restored = restorePendingReward(activeRun.pendingReward);
-    if (restored) store.setRewardState(restored);
+    if (restored) {
+      store.setRewardState(restored);
+    } else {
+      console.warn("Pending reward could not be restored; reward choices were dropped", {
+        rewardType: activeRun.pendingReward.rewardType,
+      });
+      // Recover destinations when card/trinket IDs are gone but the route forward remains valid.
+      if (activeRun.pendingReward.destinations.length > 0) {
+        store.applyDestinationChoices(activeRun.pendingReward.destinations);
+        store.setScreen("destination");
+      }
+    }
+  } else if (activeRun.currentScreen === "rewards" && activeRun.destinationChoices.length > 0) {
+    // Claim drained mid-transition; resume on destination pick with destinations intact.
+    store.applyDestinationChoices(activeRun.destinationChoices);
+    store.setScreen("destination");
   }
 }
 
@@ -224,7 +239,7 @@ export function teardownRun(): void {
 }
 
 /** Write the full save file immediately (bypasses autosave debounce). */
-export async function flushPersistedSave(activeRun: ActiveRunData | null): Promise<void> {
+async function flushPersistedSave(activeRun: ActiveRunData | null): Promise<void> {
   const p = getRunDomainStore().progress;
   await flushAlchemySaveNow(activeRun, p, p.talentXP, p.unlockedTalents);
 }

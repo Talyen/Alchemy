@@ -49,6 +49,10 @@ export function createBattleEndTurnUi(
       ctx.cardPlayInProgressRef.current
     )
       return;
+    // Claim single-flight before any await so empty-hand / missing-rect early returns
+    // and auto-end timer ticks cannot re-enter resolveEndTurn on the same snapshot.
+    ctx.clearAutoEndTurnRef.current?.();
+    ctx.cardPlayInProgressRef.current = true;
     session.clearBattleTimeoutsKeepCompanion();
     const sessionNum = ctx.battleSessionRef.current;
     void animateEndTurnThenResolve(currentState, sessionNum).catch((err: unknown) =>

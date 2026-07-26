@@ -7,12 +7,12 @@ import { Dices, MoveRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { corruptionAltar, type BattleCard } from "@/lib/game-data";
-import { cn } from "@/lib/utils";
 import type { CorruptionResult } from "../corruption";
 import { SHINE_PALETTES, viewCardWidthClass } from "@/features/alchemy/shared/config";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../shared/ui/card-description-ui";
+import { SelectableShopCard } from "../../shared/ui/shop-card-item";
 import {
   ScreenDescription,
   ScreenHeader,
@@ -20,32 +20,6 @@ import {
   StaggerGroup,
   StaggerItem,
 } from "../../shared/ui/shared-ui";
-
-function CorruptionDeckCard({
-  card,
-  isSelected,
-  onSelect,
-}: {
-  card: BattleCard;
-  isSelected: boolean;
-  onSelect: () => void;
-}) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <BattleCardButton
-      card={card}
-      hovered={hovered}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      onClick={onSelect}
-      ariaLabel={`Select ${getCardDisplayTitle(card)}`}
-      shimmerActive={false}
-      shimmerToken={undefined}
-      className={cn(viewCardWidthClass, isSelected && "ring-2 ring-red-500/70 ring-offset-4 ring-offset-background")}
-      selected={false}
-    />
-  );
-}
 
 function CorruptionDeckPicker({
   runDeck,
@@ -73,7 +47,12 @@ function CorruptionDeckPicker({
       pageSize={SELECTION_GRID_PAGE_SIZE}
       emptyMessage="No uncorrupted cards remain."
       renderItem={({ card, index }) => (
-        <CorruptionDeckCard card={card} isSelected={selectedIndex === index} onSelect={() => onSelect(index)} />
+        <SelectableShopCard
+          card={card}
+          chrome="corruption"
+          isSelected={selectedIndex === index}
+          onSelect={() => onSelect(index)}
+        />
       )}
     />
   );

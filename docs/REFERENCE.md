@@ -1,6 +1,6 @@
 # Alchemy — Developer Reference
 
-Static reference for commands, glossary, battle rules, and file lookup. Strict coding rules: **[AGENTS.md](../AGENTS.md)**. Run state: [ARCHITECTURE.md](./ARCHITECTURE.md). How-to checklists: [WORKFLOWS.md](./WORKFLOWS.md). Hooks and tests: [CONTRIBUTING.md](../CONTRIBUTING.md). Audits: [PROMPTS.md](../PROMPTS.md).
+Static reference for commands, glossary, battle rules, and file lookup. Strict coding rules: **[AGENTS.md](../AGENTS.md)**. Run state: [ARCHITECTURE.md](./ARCHITECTURE.md). How-to checklists: [WORKFLOWS.md](./WORKFLOWS.md). Hooks and tests: [CONTRIBUTING.md](../CONTRIBUTING.md). Audits: [Audits/README.md](./Audits/README.md).
 
 ## Quick Reference
 
@@ -120,9 +120,9 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 | In-run material grants                                                     | `awardMaterialsDuringRun()` in `shared/stores/run-session-facade.ts`                                                                            |
 | Motion UI (`StaggerGroup`, `StaggerItem`, `TiltSurface`, `PressableSound`) | `src/features/alchemy/shared/ui/` — enter tokens in `src/index.css`                                                                             |
 | Image preload helper                                                       | `src/lib/image-preload.ts`                                                                                                                      |
-| Potion mixing                                                              | `src/features/alchemy/potion-mixer.ts`                                                                                                          |
+| Potion mixing                                                              | `src/lib/alchemist/potion-mixer.ts`                                                                                                             |
 | Platform / Steam                                                           | `src/lib/platform.ts`, `desktop/`                                                                                                               |
-| Reward card sampling                                                       | `run-loop/reward-utils.ts`                                                                                                                      |
+| Reward card sampling                                                       | `run-loop/navigation/reward-flow.ts`                                                                                                            |
 | Run lifecycle / facade                                                     | `shared/stores/run-session-facade.ts`, `run-transitions.ts`                                                                                     |
 | Run screen taxonomy                                                        | `src/lib/routing/run-screen-router.ts`                                                                                                          |
 | Save migrations doc                                                        | `shared/storage/MIGRATIONS.md`                                                                                                                  |

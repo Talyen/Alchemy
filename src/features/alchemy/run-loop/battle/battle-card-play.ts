@@ -143,6 +143,7 @@ export function createBattleCardPlay(
 
   function handleWishChoice(cardOrNull: BattleCard | null) {
     const currentState = getStore().battleState;
+    if (!currentState.wishOptions) return;
     const newState = chooseWishCard(currentState, cardOrNull?.id ?? null);
     const sessionNum = ctx.battleSessionRef.current;
     if (cardOrNull) {

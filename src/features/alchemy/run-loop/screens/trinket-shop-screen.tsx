@@ -1,13 +1,11 @@
 // Trinket Shop — buy trinkets or refresh offerings.
 import { RefreshCw } from "lucide-react";
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import type { TrinketEntry } from "@/lib/game-data";
 
 import { PurchasableTrinketItem } from "../../shared/ui/purchasable-trinket-item";
-import { GoldDisplay, ScreenHeader, ServiceButton, StaggerGroup } from "../../shared/ui/shared-ui";
+import { ServiceButton } from "../../shared/ui/shared-ui";
+import { ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
 
 export function TrinketShopScreen({
   gold,
@@ -36,33 +34,11 @@ export function TrinketShopScreen({
   }
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
-      <ScreenHeader title="Trinket Shop" />
-      <GoldDisplay gold={gold} />
-
-      <StaggerGroup className="flex flex-col items-center gap-6">
-        <StaggerGroup
-          swapKey={trinkets.map((t) => t.id).join("-")}
-          animate={false}
-          className="grid grid-cols-1 gap-4 sm:grid-cols-3"
-        >
-          {trinkets.map((trinket, i) => {
-            const slotKey = `${trinket.id}-${i}`;
-            return (
-              <PurchasableTrinketItem
-                key={slotKey}
-                trinket={trinket}
-                price={getTrinketPrice(trinket)}
-                gold={gold}
-                purchased={purchasedSlotKeys.includes(slotKey)}
-                onBuy={() => handleBuy(trinket, slotKey)}
-                staggerIndex={i}
-              />
-            );
-          })}
-        </StaggerGroup>
-
-        <div className="flex flex-wrap justify-center gap-3">
+    <ShopBrowseShell title="Trinket Shop" gold={gold}>
+      <ShopBrowseOfferings
+        swapKey={trinkets.map((t) => t.id).join("-")}
+        onLeave={onContinue}
+        services={
           <ServiceButton
             icon={RefreshCw}
             label="Refresh"
@@ -73,11 +49,23 @@ export function TrinketShopScreen({
             soldOutText="Refresh — Sold Out"
             onClick={onRefresh}
           />
-        </div>
-        <Button size="lg" variant="primary" className={cn("mt-2", BUTTON_WIDTH_ACTION)} onClick={onContinue}>
-          Leave
-        </Button>
-      </StaggerGroup>
-    </div>
+        }
+      >
+        {trinkets.map((trinket, i) => {
+          const slotKey = `${trinket.id}-${i}`;
+          return (
+            <PurchasableTrinketItem
+              key={slotKey}
+              trinket={trinket}
+              price={getTrinketPrice(trinket)}
+              gold={gold}
+              purchased={purchasedSlotKeys.includes(slotKey)}
+              onBuy={() => handleBuy(trinket, slotKey)}
+              staggerIndex={i}
+            />
+          );
+        })}
+      </ShopBrowseOfferings>
+    </ShopBrowseShell>
   );
 }

@@ -685,7 +685,7 @@ describe("SaveDataSchema", () => {
     });
   });
 
-  it("normalizes completedDifficulties while preserving future string ids", () => {
+  it("normalizes completedDifficulties to known characters and difficulty ids", () => {
     const result = parseSave({
       completedDifficulties: {
         knight: ["difficulty-1", 3, "difficulty-future", "difficulty-1"],
@@ -694,7 +694,7 @@ describe("SaveDataSchema", () => {
     });
 
     expect(result.completedDifficulties).toEqual({
-      knight: ["difficulty-1", "difficulty-future"],
+      knight: ["difficulty-1"],
       rogue: [],
       wizard: [],
       ranger: [],
@@ -702,7 +702,6 @@ describe("SaveDataSchema", () => {
       warlock: [],
       druid: [],
       wildcard: [],
-      futureHero: ["difficulty-9"],
     });
   });
 

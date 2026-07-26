@@ -95,12 +95,30 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
     }
     heldCleanupRef.current?.();
     heldCleanupRef.current = null;
+    pendingDragRef.current = null;
     setActiveId(null);
     setDragVisual(null);
     activeDragRef.current = null;
     pendingCommitRef.current = null;
     onClear?.();
   }, [onClear]);
+  useEffect(() => {
+    function clearHeldDragOnBlur() {
+      // Flyovers schedule their real equip/unequip in pendingCommitRef; aborting
+      // them on alt-tab would silently drop the deferred mutation.
+      if (pendingCommitRef.current || activeDragRef.current?.flyover) return;
+      clearDragState();
+    }
+    function handleVisibilityChange() {
+      if (document.visibilityState === "hidden") clearHeldDragOnBlur();
+    }
+    window.addEventListener("blur", clearHeldDragOnBlur);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("blur", clearHeldDragOnBlur);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [clearDragState]);
   const completeDragAnimation = useCallback(() => {
     if (cleanupTimerRef.current !== null) {
       window.clearTimeout(cleanupTimerRef.current);

@@ -5,7 +5,6 @@ import { flattenGearInventories } from "@/lib/gear";
 import { platform } from "@/lib/platform";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
-import { resolveReturnToRunLabel, shouldShowReturnToRun } from "@/app/return-to-run-navigation";
 import type { useReturnToRunNavigation } from "@/app/use-return-to-run-navigation";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 
@@ -92,10 +91,10 @@ export function GameMenuOverlay({
       isTalentsLocked={!finishedRunCharacters.includes("knight")}
       isHomesteadLocked={!finishedRunCharacters.includes("knight")}
       isArmoryLocked={isArmoryLocked}
-      {...(nav.returnToRunTarget && shouldShowReturnToRun(nav.returnToRunTarget, currentScreen)
+      {...(nav.returnToRunTarget && nav.returnToRunTarget !== currentScreen
         ? {
             onReturnToRun: nav.returnToRun,
-            returnToRunLabel: resolveReturnToRunLabel(nav.returnToRunTarget),
+            returnToRunLabel: nav.returnToRunTarget === "battle" ? "Return to Battle" : "Return to Run",
           }
         : {})}
       {...(isRunLoopScreen(currentScreen) && onEndRun ? { onEndRun } : {})}

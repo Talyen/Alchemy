@@ -21,12 +21,12 @@ export const bossCardWidthClass = "w-[calc(clamp(24.76cqh,25.16cqh,37.48cqh)*1.3
 
 // Card and popup surfaces stay centralized so repeated game widgets share the
 // same tactile fantasy material treatment.
-export const cardSurfaceClass = "relative overflow-hidden rounded-[30px] bg-black";
-export const cardArtImageClass = "rounded-[30px] aspect-[3/4] object-cover";
-export const squareArtImageClass = "rounded-[30px] aspect-square object-cover";
+export const cardSurfaceClass = "relative overflow-hidden rounded-shell-hero bg-black";
+export const cardArtImageClass = "rounded-shell-hero aspect-[3/4] object-cover";
+export const squareArtImageClass = "rounded-shell-hero aspect-square object-cover";
 export const staticCardTransform = "translate3d(0px, 0px, 0px)";
 export const popupBaseClassName =
-  "absolute left-1/2 z-50 rounded-[20px] border border-border bg-card px-3 py-3 text-left";
+  "absolute left-1/2 z-50 rounded-shell-tooltip border border-border bg-card px-3 py-3 text-left";
 
 export const tooltipAnchorClassNames = {
   above: "bottom-full mb-4",

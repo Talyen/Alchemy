@@ -2,11 +2,13 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { ConfirmationDialog } from "@/features/alchemy/shared/ui/dialogs";
 
 describe("ConfirmationDialog", () => {
   afterEach(() => {
     cleanup();
+    resetEscapeStackForTests();
   });
 
   it("calls onCancel when Escape is pressed", async () => {

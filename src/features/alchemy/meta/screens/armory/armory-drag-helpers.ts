@@ -1,11 +1,9 @@
 import {
-  canEquipInOffHand,
   findFirstInventoryPlacement,
   footprintForInstance,
   INVENTORY_COLS,
   inventoryPlacementRect,
   isGearCompatibleWithLoadoutSlot,
-  isTwoHanded,
   gearDefinitions,
   type GearInstance,
   type GearLoadout,
@@ -49,25 +47,6 @@ function inventoryCellDragRect({
     width: localRect.width,
     height: localRect.height,
   };
-}
-
-export function findEquipSlotForDoubleClickedGear(loadout: GearLoadout, definition: GearDefinition): GearSlot | null {
-  const compatibleSlots = definition.compatibleSlots;
-  let slot = compatibleSlots.find((candidate) => !loadout[candidate]) ?? null;
-  if (!slot) {
-    if (
-      !isTwoHanded(definition) &&
-      !!loadout["main-hand"] &&
-      !loadout["off-hand"] &&
-      compatibleSlots.includes("off-hand") &&
-      canEquipInOffHand(definition)
-    ) {
-      slot = "off-hand";
-    } else {
-      slot = compatibleSlots[0] ?? null;
-    }
-  }
-  return slot;
 }
 
 function findSlotUnderPointer(

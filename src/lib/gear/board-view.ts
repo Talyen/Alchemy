@@ -1,6 +1,6 @@
 import { CRAFTING_CURRENCY_IDS, type CraftingCurrencyBoardPositions, type CraftingCurrencyId } from "./crafting";
 import { INVENTORY_COLS } from "./constants";
-import { GEAR_FOOTPRINT, type GearFootprint } from "./footprints";
+import { GEAR_FOOTPRINT } from "./footprints";
 import { packGridItems } from "./grid-packing";
 import type { PackedInventory, PackedInventoryItem } from "./inventory-placement";
 import { gearDefinitions } from "./definitions";
@@ -21,31 +21,6 @@ export interface ArmoryBoardView {
   packedCurrencies: PackedCurrencyItem[];
   boardObstacles: Array<PackedInventoryItem<{ instanceId: string }>>;
   occupiedRows: number;
-}
-
-export function packInventory<T>(
-  items: T[],
-  cols: number,
-  getFootprint: (item: T) => GearFootprint,
-): PackedInventory<T> {
-  const result = packGridItems(
-    items.map((item, idx) => {
-      const footprint = getFootprint(item);
-      return { id: String(idx), w: footprint.w, h: footprint.h, originalItem: item };
-    }),
-    cols,
-  );
-
-  return {
-    items: result.items.map((packed) => ({
-      item: packed.item.originalItem,
-      col: packed.col,
-      row: packed.row,
-      w: packed.w,
-      h: packed.h,
-    })),
-    occupiedRows: result.occupiedRows,
-  };
 }
 
 export function packInventoryWithPositions<T extends { definitionId: string; instanceId: string }>(
@@ -87,7 +62,7 @@ export function packInventoryWithPositions<T extends { definitionId: string; ins
   };
 }
 
-export function packCurrencyWithPositions(
+function packCurrencyWithPositions(
   currencyIds: CraftingCurrencyId[],
   cols: number,
   savedPositions: CraftingCurrencyBoardPositions,

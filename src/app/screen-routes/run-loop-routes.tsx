@@ -16,7 +16,12 @@ import {
   WildwoodRecoveryScreen,
   WildwoodRemovalScreen,
 } from "@/features/alchemy/shared/screens";
-import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import {
+  useRunDomainStore,
+  useRunScreenData,
+  useTalentAdapter,
+} from "@/features/alchemy/shared/stores/run-session-facade";
+import { getCampfireHealFraction } from "@/lib/game-constants";
 import type { ScreenRouteContext } from "./types";
 
 function BattleScreenRoute({
@@ -65,8 +70,6 @@ function BattleScreenRoute({
     />
   );
 }
-
-import { useRunScreenData } from "@/features/alchemy/shared/stores/run-session-facade";
 
 function LabyrinthMapScreenRoute({ run, onOpenBattleMenu }: Pick<ScreenRouteContext, "run" | "onOpenBattleMenu">) {
   const r = useRunScreenData("labyrinth-map");
@@ -128,10 +131,13 @@ function DestinationScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
 
 function CampfireScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   const r = useRunScreenData("campfire");
+  const { talentEffects } = useTalentAdapter();
+  const healFraction = getCampfireHealFraction(talentEffects.campfireHealBonus);
   return (
     <CampfireScreen
       playerHealth={r.runPlayerHealth}
       maxHealth={r.runMaxHealth}
+      healFraction={healFraction}
       onContinue={run.handleCampfireContinue}
     />
   );

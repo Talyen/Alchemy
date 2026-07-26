@@ -14,6 +14,7 @@ import { migrateSaveDataToCurrent } from "../migration";
 import {
   caught,
   CHARACTER_IDS,
+  CharacterIdSchema,
   deduplicatedStringArraySchema,
   MATERIAL_ZERO_INVENTORY,
   CRAFTING_CURRENCY_ZERO_INVENTORY,
@@ -26,6 +27,7 @@ import {
   TalentXPSchema,
   UiScaleSchema,
   UnlockedTalentsSchema,
+  EMPTY_COMPLETED_DIFFICULTIES,
 } from "./core";
 import { ActiveRunDataSchema } from "./active-run";
 import { GearInstanceArraySchema } from "./gear-schemas";
@@ -197,12 +199,16 @@ export const SaveDataSchema = z.preprocess(
         createEmptyTierRecord(companionTierItems),
         "bondedCompanions",
       ),
-      completedDifficulties: caught(
-        CompletedDifficultiesSchema,
-        Object.fromEntries(CHARACTER_IDS.map((id) => [id, []])),
-        "completedDifficulties",
+      completedDifficulties: caught(CompletedDifficultiesSchema, EMPTY_COMPLETED_DIFFICULTIES, "completedDifficulties"),
+      finishedRunCharacters: caught(
+        z.preprocess((val) => {
+          if (!Array.isArray(val)) return [];
+          const validIds = new Set<string>(CHARACTER_IDS);
+          return [...new Set(val.filter((id): id is string => typeof id === "string" && validIds.has(id)))];
+        }, z.array(CharacterIdSchema)),
+        [],
+        "finishedRunCharacters",
       ),
-      finishedRunCharacters: caught(z.array(z.string()), [], "finishedRunCharacters"),
       lastSavedAt: caught(z.number().int().nonnegative(), 0, "lastSavedAt"),
     })
     .transform((save) => {
@@ -222,3 +228,5 @@ export const SaveDataSchema = z.preprocess(
       };
     }),
 );
+
+export type ParsedSaveData = z.output<typeof SaveDataSchema>;

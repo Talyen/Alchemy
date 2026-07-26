@@ -99,6 +99,7 @@ export function useBattleController({
   );
 
   const scheduleAutoEndTurnRef = useRef<((state: BattleState) => void) | null>(null);
+  const clearAutoEndTurnRef = useRef<(() => void) | null>(null);
 
   // Initialize/Update the unified context
   const ctx = useBattleControllerContext({
@@ -113,6 +114,7 @@ export function useBattleController({
     measureElementRect,
     measureVisualCardRect,
     scheduleAutoEndTurnRef,
+    clearAutoEndTurnRef,
   });
 
   // Instantiate action handlers exactly once on mount
@@ -135,17 +137,18 @@ export function useBattleController({
   }, [ctx]);
 
   // Auto end turn hook
-  const { scheduleAutoEndTurn } = useBattleAutoEndTurn({
+  const { scheduleAutoEndTurn, clearAutoEndTurn } = useBattleAutoEndTurn({
     autoEndTurn,
     screen,
     battleState,
     onEndTurn: actions.endTurnUi.handleEndTurn,
   });
 
-  // Wire scheduleAutoEndTurn back into context so card play can call it
+  // Wire schedule/clear auto-end back into context for card play and end-turn
   useLayoutEffect(() => {
     scheduleAutoEndTurnRef.current = scheduleAutoEndTurn;
-  }, [scheduleAutoEndTurn]);
+    clearAutoEndTurnRef.current = clearAutoEndTurn;
+  }, [scheduleAutoEndTurn, clearAutoEndTurn]);
 
   // Playable hand card keys
   const hiddenHandCardKeys = useBattlePresentationStore((s) => s.hiddenHandCardKeys);

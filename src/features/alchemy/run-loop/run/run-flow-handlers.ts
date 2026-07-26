@@ -9,7 +9,12 @@ import { setCompanionRewardCards, setCorruptionResult, setRewardState } from "..
 import { useUiStore } from "../../shared/stores/ui-store";
 import { playUISound, playVictory, stopAllSfx } from "@/lib/audio";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { ACTS_PER_RUN, CAMPFIRE_HEAL_FRACTION, VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
+import {
+  ACTS_PER_RUN,
+  getCampfireHealFraction,
+  getCampfireRestHealth,
+  VICTORY_TRANSITION_DELAY,
+} from "@/lib/game-constants";
 import { getBossEnemy, getBossById } from "@/features/alchemy/shared/config";
 import { computeVictoryRewards, commitVictoryRewards, type VictoryRewardsResult } from "../navigation/victory-flow";
 import {
@@ -27,6 +32,16 @@ import { applyAlchemistPotion, applyRewardSelection, routeDestinationChoice } fr
 import { CONSTANTS, type Destination } from "../../shared/types";
 import { getActiveRewardTraits, type RunFlowHandlerDeps } from "./run-flow-handler-deps";
 import { awardRunEndMaterials, clearCombatState } from "./run-flow-session-helpers";
+
+// Survive createRunFlowHandlers rememoization so mid-transition re-entry stays locked.
+let rewardClaimInFlight = false;
+let destinationClaimInFlight = false;
+
+/** Clear in-flight claim locks (tests + run teardown). */
+export function resetRunFlowClaimLocks(): void {
+  rewardClaimInFlight = false;
+  destinationClaimInFlight = false;
+}
 
 export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
   function computeVictoryResult() {
@@ -179,7 +194,13 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
   }
 
   function finishRewards() {
+    if (rewardClaimInFlight) return;
     const session = readRunSessionStore();
+    // Re-entry guard: claim surface already drained (survives handler rememoization).
+    if (session.rewardState.choices.length === 0 && !session.companionRewardCards?.length) return;
+
+    rewardClaimInFlight = true;
+
     const grantAlchemistReward = shouldGrantAlchemistReward(
       getActiveRewardModifiersForContentSystem(
         deps.run.contentSystemType,
@@ -190,6 +211,16 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       rewardState: session.rewardState,
       companionRewardCards: session.companionRewardCards,
     });
+
+    // Apply the post-claim persistable surface immediately so autosave cannot
+    // snapshot an empty rewards screen. Companion route keeps choices (the
+    // companion offer); other routes keep destinations with choices cleared.
+    setRewardState(result.nextRewardState);
+    if (result.clearCompanionRewardCards) setCompanionRewardCards(null);
+
+    const releaseRewardClaim = () => {
+      rewardClaimInFlight = false;
+    };
 
     const isWildwood = deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD;
     if (!isWildwood) awardMaterialsDuringRun(result.materials);
@@ -209,7 +240,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
 
     useUiStore.getState().clearCardHover();
     if (isWildwood && result.route !== CONSTANTS.REWARD_ROUTES.COMPANION_REWARD) {
-      setRewardState(result.nextRewardState);
+      releaseRewardClaim();
       deps.onWildwoodRewardComplete();
       return;
     }
@@ -217,11 +248,24 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       result.route,
       result.materials,
       result.nextRewardState,
-      result.clearCompanionRewardCards,
+      false, // companion cards already cleared above when needed
       {
-        navigateTo: deps.navigateTo,
-        completeRunVictory,
-        handleActComplete,
+        navigateTo: (screen, onCommit) => {
+          deps.navigateTo(screen, () => {
+            releaseRewardClaim();
+            onCommit?.();
+          });
+        },
+        completeRunVictory: (materials, onCommit) => {
+          completeRunVictory(materials, () => {
+            releaseRewardClaim();
+            onCommit?.();
+          });
+        },
+        handleActComplete: (materials) => {
+          releaseRewardClaim();
+          handleActComplete(materials);
+        },
         onLabyrinthClearNode: deps.onLabyrinthClearNode,
         setCompanionRewardCards,
         setRewardState,
@@ -230,14 +274,30 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
   }
 
   function handleDestinationChoice(destination: Destination) {
-    const selectedBossId =
-      destination === CONSTANTS.DESTINATIONS.BOSS_COMBAT ? readRunSessionStore().rewardState.selectedBossId : null;
-    deps.run.setCompletedDestinations((prev) => [...prev, destination]);
-    deps.run.setDestinationIndexInAct((p) => p + 1);
+    if (destinationClaimInFlight) return;
+    const rewardState = readRunSessionStore().rewardState;
+    // Re-entry guard: destination already claimed this session.
+    if (!rewardState.destinations.includes(destination)) return;
+
+    destinationClaimInFlight = true;
+
+    const selectedBossId = destination === CONSTANTS.DESTINATIONS.BOSS_COMBAT ? rewardState.selectedBossId : null;
+
+    const commitDestinationProgress = () => {
+      setRewardState((prev) => ({ ...prev, destinations: [] }));
+      deps.run.setCompletedDestinations((prev) => [...prev, destination]);
+      deps.run.setDestinationIndexInAct((p) => p + 1);
+      destinationClaimInFlight = false;
+    };
+
     useUiStore.getState().clearCardHover();
     routeDestinationChoice(destination, {
-      navigateTo: deps.navigateTo,
-      beginMysteryEvent: deps.beginMysteryEvent,
+      navigateTo: (screen) => deps.navigateTo(screen, commitDestinationProgress),
+      beginMysteryEvent: () => {
+        // Mystery owns its navigateTo; commit the offer surface before starting.
+        commitDestinationProgress();
+        deps.beginMysteryEvent();
+      },
       resetCorruption: () => setCorruptionResult(null),
       startShop: deps.onInitShop,
       startAlchemist: deps.onInitAlchemist,
@@ -257,10 +317,8 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
   }
 
   function handleCampfireContinue() {
-    const healFraction = CAMPFIRE_HEAL_FRACTION + deps.talents.talentEffects.campfireHealBonus;
-    deps.run.setRunPlayerHealth((prev) =>
-      Math.min(deps.run.runMaxHealth, prev + Math.floor(deps.run.runMaxHealth * healFraction)),
-    );
+    const healFraction = getCampfireHealFraction(deps.talents.talentEffects.campfireHealBonus);
+    deps.run.setRunPlayerHealth((prev) => getCampfireRestHealth(prev, deps.run.runMaxHealth, healFraction));
     advanceToNextDestination();
   }
 

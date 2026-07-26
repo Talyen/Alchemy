@@ -1,6 +1,5 @@
 import {
   canApplyCraftingCurrency,
-  findGearInventoryOwner,
   type CraftingCurrencyId,
   type GearInstance,
   type GearLoadouts,
@@ -8,9 +7,8 @@ import {
   type InventoryPlacement,
   type PackedInventoryItem,
 } from "@/lib/gear";
-import { characters, isCharacterUnlocked, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
+import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { playUISound } from "@/lib/audio";
-import type { TransferMenuState } from "./armory-transfer-menu";
 import { resolveEquipSwap } from "./resolve-equip-swap";
 import type { ArmoryCursorPoint } from "./armory-screen-types";
 interface TargetingSetters {
@@ -29,35 +27,6 @@ export function resetArmoryTargeting({
   setActiveCurrencyId(null);
   setCursorPoint(null);
   setSalvageTarget?.(null);
-}
-export function blurActiveArmoryElement() {
-  if (document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur();
-  }
-}
-
-export function buildTransferMenuState({
-  inventories,
-  instance,
-  anchor,
-  finishedRunCharacters,
-}: {
-  inventories: Record<CharacterId, GearInstance[]>;
-  instance: GearInstance;
-  anchor: { x: number; y: number };
-  finishedRunCharacters: CharacterId[];
-}): TransferMenuState | null {
-  const owner = findGearInventoryOwner(inventories, instance.instanceId);
-  if (!owner) return null;
-  const recipients = (Object.keys(characters) as CharacterId[])
-    .filter((id) => id !== owner)
-    .filter((id) => isCharacterUnlocked(id, finishedRunCharacters));
-  if (recipients.length === 0) return null;
-  return {
-    instanceId: instance.instanceId,
-    sourceCharacterId: owner,
-    anchor,
-  };
 }
 
 export function applyCurrencyToGear({

@@ -1,4 +1,4 @@
-// Shared card-removal panel used by merchant shop and mystery event screens.
+// Shared card-removal panel used by merchant, mystery, and wildwood screens.
 import { useMemo, useState, type ReactNode } from "react";
 import { Trash2 } from "lucide-react";
 
@@ -9,6 +9,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { CardSelectionGrid } from "./card-selection-grid";
 import { GoldCost, StaggerGroup } from "./shared-ui";
 import { SelectableShopCard } from "./shop-card-item";
+import { useCaptureEscapeCancel } from "./use-capture-escape-cancel";
 
 export function RemoveCardPanel({
   runDeck,
@@ -17,6 +18,8 @@ export function RemoveCardPanel({
   removePrice,
   onConfirm,
   onCancel,
+  cancelLabel = "Cancel",
+  escapeCancels = true,
 }: {
   runDeck: BattleCard[];
   intro: ReactNode;
@@ -24,12 +27,17 @@ export function RemoveCardPanel({
   removePrice?: number;
   onConfirm: (index: number) => void;
   onCancel?: () => void;
+  cancelLabel?: string;
+  /** When false, Escape does not invoke onCancel (pause menu remains reachable). */
+  escapeCancels?: boolean;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const items = useMemo(() => runDeck.map((card, index) => ({ card, index })), [runDeck]);
   const hasCost = gold !== undefined && removePrice !== undefined;
   const confirmDisabled = selectedIndex === null || (hasCost && gold < removePrice);
+
+  useCaptureEscapeCancel(escapeCancels ? onCancel : undefined);
 
   function handleConfirm() {
     if (selectedIndex === null) return;
@@ -55,11 +63,11 @@ export function RemoveCardPanel({
         )}
       />
       <div className="mt-5 flex justify-center gap-3">
-        {onCancel && (
+        {onCancel ? (
           <Button variant="outline" onClick={onCancel}>
-            Cancel
+            {cancelLabel}
           </Button>
-        )}
+        ) : null}
         <Button variant="outline" disabled={confirmDisabled} onClick={handleConfirm}>
           <Trash2 className="h-4 w-4" /> Remove Card{removePrice !== undefined && <GoldCost amount={removePrice} />}
         </Button>

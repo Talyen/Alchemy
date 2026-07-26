@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
 
 interface UseArmoryTargetingEventsOptions {
@@ -22,13 +23,6 @@ function isTargetingElement(target: EventTarget | null): boolean {
 }
 
 function setupTargetingEventListeners(salvageMode: boolean, clearTargeting: () => void): () => void {
-  function handleKeyDown(event: KeyboardEvent) {
-    if (event.key !== "Escape") return;
-    clearTargeting();
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
   function handleClick(event: MouseEvent) {
     if (salvageMode) {
       if (
@@ -58,13 +52,29 @@ function setupTargetingEventListeners(salvageMode: boolean, clearTargeting: () =
     clearTargeting();
   }
 
-  window.addEventListener("keydown", handleKeyDown, true);
+  function handleBlur() {
+    clearTargeting();
+  }
+
+  function handleVisibilityChange() {
+    if (document.visibilityState === "hidden") clearTargeting();
+  }
+
+  const unsubscribeEscape = pushEscapeHandler({
+    id: "armory-targeting",
+    priority: ESCAPE_PRIORITY.ARMORY_TRANSIENT,
+    onEscape: () => clearTargeting(),
+  });
   document.addEventListener("click", handleClick);
   document.addEventListener("contextmenu", handleContextMenu);
+  window.addEventListener("blur", handleBlur);
+  document.addEventListener("visibilitychange", handleVisibilityChange);
   return () => {
-    window.removeEventListener("keydown", handleKeyDown, true);
+    unsubscribeEscape();
     document.removeEventListener("click", handleClick);
     document.removeEventListener("contextmenu", handleContextMenu);
+    window.removeEventListener("blur", handleBlur);
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
   };
 }
 

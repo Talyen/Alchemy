@@ -5,7 +5,7 @@ import { DestinationPage } from "./pages/destination-page";
 import { MysteryPage } from "./pages/mystery-page";
 import { CorruptionPage } from "./pages/corruption-page";
 import { MenuPage } from "./pages/menu-page";
-import { critical, prepush } from "./playwright-tags";
+import { critical } from "./playwright-tags";
 
 test.describe("Destination Progression", () => {
   test("destination screen shows available choices from the pool", critical, async ({ page }) => {
@@ -63,7 +63,7 @@ test.describe("Destination Progression", () => {
 });
 
 test.describe("Mystery Event Flow", () => {
-  test("mystery event screen shows with title and choices", prepush, async ({ page, runtimeErrors }) => {
+  test("mystery event screen shows with title and choices", async ({ page, runtimeErrors }) => {
     void runtimeErrors;
     await startAtDestination(page, {}, { forceDestination: "Mystery" });
     await page.getByRole("button", { name: "Mystery" }).click();
@@ -108,7 +108,7 @@ test.describe("Mystery Event Flow", () => {
 });
 
 test.describe("Corruption Full Flow", () => {
-  test("corruption destination shows altar screen with intro and leave works", prepush, async ({ page }) => {
+  test("corruption destination shows altar screen with intro and leave works", async ({ page }) => {
     const corruption = new CorruptionPage(page);
     await corruption.open();
     await corruption.stage.expectRunPhase("runLoop");

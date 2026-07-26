@@ -15,6 +15,7 @@ import { ConfirmationDialog } from "../../../shared/ui/shared-ui";
 import { GearItemTitle } from "../../../shared/ui/gear-item-title";
 import { DragVisualPortal } from "./armory-drag-visual-portal";
 import { GearSlotArt } from "./parts/gear-slot-art";
+import { CURRENCY_COUNT_LABEL_CLASS } from "./parts/currency-styles";
 import { ArmoryCurrencyCursor } from "./armory-currency-targeting";
 import { ArmoryTransferMenu, type TransferMenuState } from "./armory-transfer-menu";
 import { playUISound } from "@/lib/audio";
@@ -158,7 +159,7 @@ export function ArmoryOverlays(props: Props) {
               alt=""
               className="h-full w-full object-cover"
             />
-            <span className="absolute top-1 left-1 text-xs font-bold leading-none text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+            <span className={CURRENCY_COUNT_LABEL_CLASS}>
               {craftingCurrencies[props.currencyDragVisual.currencyId]}
             </span>
           </div>

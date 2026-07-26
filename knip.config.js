@@ -39,6 +39,10 @@ export default {
     "src/features/alchemy/meta/screens/armory/armory-panels.tsx": ["types"],
     "src/features/alchemy/meta/screens/armory/armory-targeting-state.ts": ["types"],
     "src/lib/validation/migration/tombstoned-content-ids.ts": ["exports", "types"],
+    // Generated asset catalog: re-exported via assets.ts (`export *`) for card/compendium
+    // `import * as assetRefs` + a few named imports. Do not hand-edit; regenerating sync owns it.
+    // Removing the barrel would break 30+ named import sites — leave export * and silence knip noise.
+    "src/lib/game-data/assets.generated.ts": ["exports"],
   },
   ignore: [
     "tests/environment.d.ts",
@@ -47,5 +51,17 @@ export default {
     // Dev-mode screen retained for error-log routing experiments; it is not mounted in normal builds.
     "src/features/alchemy/meta/screens/error-log-viewer.tsx",
   ],
-  ignoreDependencies: ["tailwindcss-animate"],
+  ignoreDependencies: [
+    "tailwindcss-animate",
+    // LIVE production deps: knip --strict misses them because UI/store graphs hang off
+    // non-entry modules that Vite bundles. Removing would break Switch + all Zustand stores.
+    "@radix-ui/react-switch",
+    "zustand",
+    // Kept in devDependencies by project packaging norms (Vite bundles react*; Electron is a
+    // desktop toolchain dep, not an end-user npm install). Knip reports them as unlisted from
+    // src/main.tsx + desktop/main.cjs — allowlist only; do not move into dependencies.
+    "react",
+    "react-dom",
+    "electron",
+  ],
 };

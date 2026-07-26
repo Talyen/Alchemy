@@ -38,6 +38,7 @@ export interface BattleControllerContext {
 
   // Mutable hooks & callbacks
   scheduleAutoEndTurnRef: RefObject<((state: BattleState) => void) | null>;
+  clearAutoEndTurnRef: RefObject<(() => void) | null>;
 }
 
 export interface BattleControllerContextProps {
@@ -52,6 +53,7 @@ export interface BattleControllerContextProps {
   measureElementRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   scheduleAutoEndTurnRef: RefObject<((state: BattleState) => void) | null>;
+  clearAutoEndTurnRef: RefObject<(() => void) | null>;
 }
 
 export function useBattleControllerContext(props: BattleControllerContextProps): BattleControllerContext {
@@ -125,6 +127,9 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
       },
       get scheduleAutoEndTurnRef() {
         return propsRef.current.scheduleAutoEndTurnRef;
+      },
+      get clearAutoEndTurnRef() {
+        return propsRef.current.clearAutoEndTurnRef;
       },
     };
   }, []);

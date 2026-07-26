@@ -1,3 +1,4 @@
+import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import type { DragDestination, DragPoint, DragRect } from "./drag-types";
 import { DRAG_POINTER_ACTIVATE_DISTANCE_PX } from "./drag-constants";
 import type {
@@ -117,21 +118,21 @@ export function setupHeldDragListeners<TId extends string, TOrigin extends DragO
 
   const onPointerDown = (event: PointerEvent) => handleHeldPointerDown(event, state);
 
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key !== "Escape") return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (onCancel) onCancel(id);
-    clearDragState();
-  };
+  const unsubscribeEscape = pushEscapeHandler({
+    id: "armory-board-drag",
+    priority: ESCAPE_PRIORITY.ARMORY_TRANSIENT,
+    onEscape: () => {
+      if (onCancel) onCancel(id);
+      clearDragState();
+    },
+  });
 
   document.addEventListener("pointermove", onPointerMove);
   document.addEventListener("pointerdown", onPointerDown, { capture: true });
-  document.addEventListener("keydown", onKeyDown, true);
   return () => {
+    unsubscribeEscape();
     document.removeEventListener("pointermove", onPointerMove);
     document.removeEventListener("pointerdown", onPointerDown, { capture: true });
-    document.removeEventListener("keydown", onKeyDown, true);
   };
 }
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   EMPTY_CRAFTING_CURRENCIES,
   buildArmoryBoardView,
+  findGearInventoryOwner,
   type CraftingCurrencyId,
   type GearInstance,
   type GearSlot,
@@ -9,6 +10,7 @@ import {
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import {
+  characters,
   getRequiredPreviousCharacter,
   isCharacterUnlocked,
   type CharacterId,
@@ -28,14 +30,38 @@ import {
   type ArmoryCursorPoint,
   type ArmoryScreenProps,
 } from "./armory";
-import {
-  applyCurrencyToGear,
-  blurActiveArmoryElement,
-  buildTransferMenuState,
-  equipWithArmorySwap,
-  resetArmoryTargeting,
-} from "./armory/armory-screen-actions";
+import { applyCurrencyToGear, equipWithArmorySwap, resetArmoryTargeting } from "./armory/armory-screen-actions";
 import "./armory/armory-screen.css";
+
+function blurActiveArmoryElement() {
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+}
+
+function buildTransferMenuState({
+  inventories,
+  instance,
+  anchor,
+  finishedRunCharacters,
+}: {
+  inventories: Record<CharacterId, GearInstance[]>;
+  instance: GearInstance;
+  anchor: { x: number; y: number };
+  finishedRunCharacters: CharacterId[];
+}): TransferMenuState | null {
+  const owner = findGearInventoryOwner(inventories, instance.instanceId);
+  if (!owner) return null;
+  const recipients = (Object.keys(characters) as CharacterId[])
+    .filter((id) => id !== owner)
+    .filter((id) => isCharacterUnlocked(id, finishedRunCharacters));
+  if (recipients.length === 0) return null;
+  return {
+    instanceId: instance.instanceId,
+    sourceCharacterId: owner,
+    anchor,
+  };
+}
 export function ArmoryScreen({
   inventories,
   loadouts,

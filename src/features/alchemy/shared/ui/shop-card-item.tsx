@@ -1,15 +1,15 @@
 // Shop card controls for purchasing and selecting cards.
 // Depends on card button/title rendering and shared gold/disabled controls.
-// Used by merchant and alchemist screens.
+// Used by merchant, alchemist, corruption, mystery, and remove panels.
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import type { BattleCard } from "@/lib/game-data";
+import { type BattleCard } from "@/lib/game-data";
+import { cn } from "@/lib/utils";
 
-import { collectionTileWidthClass } from "../config";
+import { collectionTileWidthClass, viewCardWidthClass } from "../config";
 import { BattleCardButton } from "./card-button";
 import { getCardDisplayTitle } from "./card-description-ui";
-import { DisabledTooltip, GoldCost, StaggerItem } from "./shared-ui";
+import { PurchasableShopTile } from "./purchasable-shop-tile";
 
 interface PurchasableCardItemProps {
   card: BattleCard;
@@ -25,94 +25,87 @@ export function PurchasableCardItem(props: PurchasableCardItemProps) {
   const { card, price, gold, purchased, onBuy, widthClass = collectionTileWidthClass, staggerIndex } = props;
   const [hovered, setHovered] = useState(false);
 
-  if (purchased) {
-    return (
-      <PurchasedCardItem
-        card={card}
-        widthClass={widthClass}
-        {...(staggerIndex !== undefined ? { staggerIndex } : {})}
-      />
-    );
-  }
-
-  const content = (
-    <div className="flex flex-col items-center gap-3 rounded-shell-card border border-border/70 bg-card/60 p-4 text-center">
-      <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-        <BattleCardButton
-          card={card}
-          hovered={hovered}
-          onHoverStart={() => setHovered(true)}
-          onHoverEnd={() => setHovered(false)}
-          ariaLabel={`Inspect ${getCardDisplayTitle(card)}`}
-          shimmerActive={false}
-          shimmerToken={undefined}
-          className={widthClass}
-        />
-      </div>
-      <DisabledTooltip show={gold < price} message="Not Enough Gold">
-        <Button variant="outline" disabled={gold < price} onClick={onBuy}>
-          Buy <GoldCost amount={price} />
-        </Button>
-      </DisabledTooltip>
-    </div>
-  );
-
-  if (staggerIndex !== undefined) {
-    return <StaggerItem index={staggerIndex}>{content}</StaggerItem>;
-  }
-  return content;
-}
-
-function PurchasedCardItem({
-  card,
-  widthClass,
-  staggerIndex,
-}: Pick<PurchasableCardItemProps, "card"> & { widthClass: string; staggerIndex?: number }) {
-  const content = (
-    <div className="flex flex-col items-center gap-3 rounded-shell-card border border-border/30 bg-card/30 p-4 text-center opacity-50">
+  const media = purchased ? (
+    <BattleCardButton
+      card={card}
+      hovered={false}
+      onHoverStart={() => {}}
+      onHoverEnd={() => {}}
+      ariaLabel={getCardDisplayTitle(card)}
+      shimmerActive={false}
+      shimmerToken={undefined}
+      className={widthClass}
+      disabled
+    />
+  ) : (
+    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
       <BattleCardButton
         card={card}
-        hovered={false}
-        onHoverStart={() => {}}
-        onHoverEnd={() => {}}
-        ariaLabel={getCardDisplayTitle(card)}
+        hovered={hovered}
+        onHoverStart={() => setHovered(true)}
+        onHoverEnd={() => setHovered(false)}
+        ariaLabel={`Inspect ${getCardDisplayTitle(card)}`}
         shimmerActive={false}
         shimmerToken={undefined}
         className={widthClass}
-        disabled
       />
-      <span className="text-xs font-semibold text-muted-foreground">Purchased</span>
     </div>
   );
 
-  if (staggerIndex !== undefined) {
-    return <StaggerItem index={staggerIndex}>{content}</StaggerItem>;
-  }
-  return content;
+  return (
+    <PurchasableShopTile
+      media={media}
+      price={price}
+      gold={gold}
+      purchased={purchased}
+      onBuy={onBuy}
+      {...(staggerIndex !== undefined ? { staggerIndex } : {})}
+    />
+  );
 }
+
+export type SelectableCardChrome = "shop" | "deck" | "corruption";
 
 export function SelectableShopCard({
   card,
   isSelected,
   onSelect,
+  chrome = "shop",
+  widthClass,
+  isHovered,
+  onHoverStart,
+  onHoverEnd,
 }: {
   card: BattleCard;
   isSelected: boolean;
   onSelect: () => void;
+  chrome?: SelectableCardChrome;
+  widthClass?: string;
+  isHovered?: boolean;
+  onHoverStart?: () => void;
+  onHoverEnd?: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
+  const [localHovered, setLocalHovered] = useState(false);
+  const resolvedWidth = widthClass ?? (chrome === "shop" ? collectionTileWidthClass : viewCardWidthClass);
+  const hovered = isHovered !== undefined ? isHovered : chrome === "deck" ? isSelected || localHovered : localHovered;
+  const handleHoverStart = onHoverStart ?? (() => setLocalHovered(true));
+  const handleHoverEnd = onHoverEnd ?? (() => setLocalHovered(false));
+
   return (
     <BattleCardButton
       card={card}
       hovered={hovered}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
+      onHoverStart={handleHoverStart}
+      onHoverEnd={handleHoverEnd}
       onClick={onSelect}
       ariaLabel={`Select ${getCardDisplayTitle(card)}`}
       shimmerActive={false}
       shimmerToken={undefined}
-      className={collectionTileWidthClass}
-      selected={isSelected}
+      className={cn(
+        resolvedWidth,
+        chrome === "corruption" && isSelected && "ring-2 ring-red-500/70 ring-offset-4 ring-offset-background",
+      )}
+      selected={chrome === "corruption" ? false : isSelected}
     />
   );
 }
