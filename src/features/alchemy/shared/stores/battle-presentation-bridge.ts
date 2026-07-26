@@ -1,8 +1,8 @@
 // Thin bridge so shared/stores lifecycle code can clear VFX without importing run-loop.
-type BattlePresentationBridge = {
+interface BattlePresentationBridge {
   clearCardGhosts: () => void;
   resetPresentation: () => void;
-};
+}
 
 const noopBridge: BattlePresentationBridge = {
   clearCardGhosts: () => {},

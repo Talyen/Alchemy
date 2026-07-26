@@ -17,7 +17,7 @@ import type { SaveData } from "./types";
 import { logError } from "@/lib/error-logger";
 import { defaultSaveData } from "./defaults";
 import { toActiveRunData } from "@/lib/active-run-session";
-import { isTombstonedCardId } from "@/lib/validation/migration/tombstoned-content-ids";
+import { isTombstonedCardId } from "@/lib/validation";
 
 class SaveSessionState {
   private writesDisabledForSession = false;

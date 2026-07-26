@@ -1,7 +1,6 @@
 // Shared shop price computation for purchases, services, and refreshes.
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
 import { isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
-import type { TalentEffectManifest } from "@/lib/game-data/talent-effect-manifest";
 
 export interface ShopBuyPriceInput {
   basePrice: number;

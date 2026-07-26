@@ -1,7 +1,7 @@
 // In-game navigation menu overlay and anchored popover.
 import { BookOpen, Cog, House, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Fragment } from "react";
-import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data/character-unlocks";
+import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { Screen } from "../types";
 import { LockedMenuItem } from "./locked-menu-item";

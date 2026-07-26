@@ -47,7 +47,12 @@ const BARREL_PATTERNS = [
   },
   {
     group: ["@/features/alchemy/shared/storage/*"],
-    allowImportNames: ["flushAlchemySaveNow", "buildAlchemySaveDataFromStores"],
+    allowImportNames: [
+      "flushAlchemySaveNow",
+      "buildAlchemySaveDataFromStores",
+      "bootstrapAlchemySaveState",
+      "applySaveDataToStores",
+    ],
     message: "Import from @/features/alchemy/shared/storage (barrel) instead of deep paths.",
   },
 ];
@@ -424,8 +429,10 @@ export default tseslint.config(
   },
 
   // Battle engine — no React, Zustand, features, Math.random, or Math.floor.
+  // rng.ts is the sole allowed Math.random binding site (unsafeNonSeededRng).
   {
     files: ["src/lib/battle/**/*.{ts,tsx}"],
+    ignores: ["src/lib/battle/rng.ts"],
     rules: {
       "no-restricted-imports": restrictedImports({
         paths: BATTLE_NO_FRAMEWORK_PATHS,
@@ -436,6 +443,19 @@ export default tseslint.config(
         ],
       }),
       "no-restricted-syntax": restrictedSyntax(...BATTLE_NO_MATH_RANDOM, BATTLE_NO_MATH_FLOOR),
+    },
+  },
+  {
+    files: ["src/lib/battle/rng.ts"],
+    rules: {
+      "no-restricted-imports": restrictedImports({
+        paths: BATTLE_NO_FRAMEWORK_PATHS,
+        patterns: [
+          { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
+          ...BATTLE_NO_FEATURES,
+          ...DOMAIN_STORE_PATTERNS,
+        ],
+      }),
     },
   },
 

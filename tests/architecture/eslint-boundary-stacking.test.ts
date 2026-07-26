@@ -1,12 +1,15 @@
 import { ESLint } from "eslint";
 import { describe, expect, it } from "vitest";
 
-type RestrictedImportsOpts = {
+interface RestrictedImportsOpts {
   paths?: Array<{ name?: string; importNames?: string[] }>;
   patterns?: Array<{ group?: string | string[]; message?: string }>;
-};
+}
 
-type RestrictedSyntaxEntry = { selector?: string; message?: string };
+interface RestrictedSyntaxEntry {
+  selector?: string;
+  message?: string;
+}
 
 function asRestrictedImports(rule: unknown): RestrictedImportsOpts | null {
   if (!Array.isArray(rule) || rule.length < 2) return null;

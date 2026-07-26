@@ -1,6 +1,6 @@
 import type { KeywordId } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { gearArtByDefinitionId } from "@/lib/game-data/gear-art";
+import { gearArtByDefinitionId } from "@/lib/game-data";
 import { gearBaseItems, type GearBaseItemDefinition, type GearBaseItemId } from "./base-items";
 import type { GearRarity, GearSlot } from "./types-core";
 import type { GearAffixId } from "./affix-ids";
