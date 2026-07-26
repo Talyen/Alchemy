@@ -1,14 +1,11 @@
 import { useShallow } from "zustand/react/shallow";
 import { platform } from "@/lib/platform";
-import { OptionsScreen } from "@/features/alchemy/shared/screens";
+import { OptionsScreen } from "@/features/alchemy/meta/screens";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useAppActions } from "@/features/alchemy/shared/stores/store-actions";
-import type { ScreenRouteContext } from "./types";
+import type { OptionsRouteCtx } from "./route-ctx";
 
-type OptionsScreenRouteProps = Pick<
-  ScreenRouteContext,
-  "onOpenBattleMenu" | "onClearSaveData" | "onUnlockAllDevMode" | "onBackFromOptions"
->;
+type OptionsScreenRouteProps = OptionsRouteCtx;
 
 export function OptionsScreenRoute({
   onOpenBattleMenu,

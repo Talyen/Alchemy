@@ -15,7 +15,11 @@ import {
   type InventoryPlacement,
 } from "@/lib/gear";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
-import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import {
+  useActiveRunCharacterId,
+  useHasActiveBattle,
+  useHasActiveRun,
+} from "@/features/alchemy/shared/stores/run-session-facade";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import {
@@ -24,7 +28,7 @@ import {
   syncRunMaxHealthFromGearMutation,
 } from "@/features/alchemy/shared/stores/run-transitions";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
-import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils/dev-mode";
+import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
 export interface ArmoryController {
   inventories: GearInventories;
@@ -70,9 +74,9 @@ export function useArmoryController(): ArmoryController {
     })),
   );
   const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
-  const hasActiveBattle = useRunDomainStore((s) => s.battle.hasActiveBattle);
-  const hasActiveRun = useRunDomainStore((s) => s.session.hasActiveRun);
-  const activeRunCharacterId = useRunDomainStore((s) => s.progress.characterId);
+  const hasActiveBattle = useHasActiveBattle();
+  const hasActiveRun = useHasActiveRun();
+  const activeRunCharacterId = useActiveRunCharacterId();
   const rngRef = useRef<() => number>(() => Math.random());
 
   const flush = useCallback(() => {

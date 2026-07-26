@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { useRunDomainStore } from "../../shared/stores/run-domain-store";
+import { getRunSession, readBattleStore } from "../../shared/stores/run-session-facade";
+import { registerBattlePresentationBridge } from "../../shared/stores/battle-presentation-bridge";
 import type { CombatTextEvent } from "@/lib/battle";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
@@ -54,8 +55,8 @@ let combatTextSequence = 0;
 
 function shouldShowFloatingCombatText(sequence: number): boolean {
   if (sequence !== combatTextSequence) return false;
-  const domain = useRunDomainStore.getState();
-  return domain.battle.hasActiveBattle && domain.navigation.screen === "battle";
+  const battle = readBattleStore();
+  return battle.hasActiveBattle && getRunSession().screen === "battle";
 }
 
 function invalidateCombatTextSequence() {
@@ -180,3 +181,8 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
     });
   },
 }));
+
+registerBattlePresentationBridge({
+  clearCardGhosts: () => useBattlePresentationStore.getState().clearCardGhosts(),
+  resetPresentation: () => useBattlePresentationStore.getState().resetPresentation(),
+});

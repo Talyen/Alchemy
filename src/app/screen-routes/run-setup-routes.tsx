@@ -1,17 +1,11 @@
 import type { ReactNode } from "react";
-import { useShallow } from "zustand/react/shallow";
-import { CharacterSelectScreen, DifficultySelectScreen, DraftDeckScreen } from "@/features/alchemy/shared/screens";
+import { CharacterSelectScreen, DifficultySelectScreen, DraftDeckScreen } from "@/features/alchemy/run-setup/screens";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
-import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
-import type { ScreenRouteContext } from "./types";
+import { useDifficultySelectSlice, useDraftDeckSlice } from "@/features/alchemy/shared/stores/run-session-facade";
+import type { RunSetupRouteCtx } from "./route-ctx";
 
-function DifficultySelectScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
-  const { pendingCharacterId, selectedDifficulty } = useRunDomainStore(
-    useShallow((s) => ({
-      pendingCharacterId: s.session.pendingCharacterId,
-      selectedDifficulty: s.progress.selectedDifficulty,
-    })),
-  );
+function DifficultySelectScreenRoute({ run }: Pick<RunSetupRouteCtx, "run">) {
+  const { pendingCharacterId, selectedDifficulty } = useDifficultySelectSlice();
   const characterId = pendingCharacterId ?? "knight";
   const completedDifficulties = useAppStore((s) => s.completedDifficulties[characterId]);
 
@@ -26,14 +20,8 @@ function DifficultySelectScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-function DraftDeckScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
-  const draft = useRunDomainStore(
-    useShallow((s) => ({
-      contentSystemType: s.progress.contentSystemType,
-      runDeck: s.progress.runDeck,
-      wildwoodDraft: s.session.wildwoodDraft,
-    })),
-  );
+function DraftDeckScreenRoute({ run }: Pick<RunSetupRouteCtx, "run">) {
+  const draft = useDraftDeckSlice();
   const isWildwoodDraft = draft.contentSystemType === "wildwood" && draft.wildwoodDraft?.phase === "draft";
   return (
     <DraftDeckScreen
@@ -49,9 +37,11 @@ function DraftDeckScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-export const runSetupScreenRoutes: Partial<
-  Record<import("@/lib/routing").Screen, (ctx: ScreenRouteContext) => ReactNode>
-> = {
+export const runSetupScreenRoutes: {
+  "character-select": (ctx: RunSetupRouteCtx) => ReactNode;
+  "draft-deck": (ctx: RunSetupRouteCtx) => ReactNode;
+  "difficulty-select": (ctx: RunSetupRouteCtx) => ReactNode;
+} = {
   "character-select": ({ run }) => (
     <CharacterSelectScreen onConfirm={run.handleCharacterSelect} onBack={() => run.goToScreen("game-mode-select")} />
   ),

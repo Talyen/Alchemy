@@ -266,3 +266,5 @@ export function useAlchemyRunController({
     continueFromRunEnd: nav.continueFromRunEnd,
   };
 }
+
+export type AlchemyRunController = ReturnType<typeof useAlchemyRunController>;

@@ -71,6 +71,8 @@ Each audit holds only its distinct scope, confirmation rules, and domain allowli
 | Misplaced logic in stores / controllers / mega-screens     | `StateGravityOwnershipAudit.md`           |
 | Change locality / amplification / agent context efficiency | `ChangeLocalityContextEfficiencyAudit.md` |
 
+Approved-only architecture proposals (not runnable audits): [ProgressLifetimeSplitProposal.md](./ProgressLifetimeSplitProposal.md).
+
 Layer import boundaries (`src/lib` ↔ `src/features`, facade-only store access) are continuously enforced by ESLint; they are not a user-invoked audit. Fix violations via `npm run lint` / `lint:ci`.
 
 Standing conventions: [CONTRIBUTING.md](../../CONTRIBUTING.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [AGENTS.md](../../AGENTS.md). Periodic measurable sweep: `npm run audit:all`.

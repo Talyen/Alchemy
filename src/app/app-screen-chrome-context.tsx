@@ -12,7 +12,7 @@ import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/compan
 import { canAfford } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
-import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useHomesteadProgressSlice } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { Screen } from "@/lib/routing";
 import type { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 
@@ -102,11 +102,8 @@ export function AppScreenChromeProvider({
   const playerName = characters[run.characterId].name;
   const hasUnspentTalentsBadge = hasUnspentTalents(run.talentXP, run.unlockedTalents);
 
-  const materialInventory = useRunDomainStore((s) => s.progress.materialInventory);
-  const constructedBuildings = useRunDomainStore((s) => s.progress.constructedBuildings);
-  const plantedFarms = useRunDomainStore((s) => s.progress.plantedFarms);
-  const completedResearch = useRunDomainStore((s) => s.progress.completedResearch);
-  const bondedCompanions = useRunDomainStore((s) => s.progress.bondedCompanions);
+  const { materialInventory, constructedBuildings, plantedFarms, completedResearch, bondedCompanions } =
+    useHomesteadProgressSlice();
   const discoveredCardIds = useAppStore((s) => s.discoveredCardIds);
   const hasAffordableHomestead = hasAffordableHomesteadUpgrade({
     materialInventory,

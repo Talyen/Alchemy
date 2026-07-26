@@ -41,13 +41,14 @@ describe("@/lib/validation barrel", () => {
   });
 });
 
-describe("@/features/alchemy/shared/screens barrel", () => {
-  it("exports known symbols", async () => {
-    const mod = await import("@/features/alchemy/shared/screens");
-    expect(mod.BattleScreen).toBeDefined();
-    expect(mod.MenuScreen).toBeDefined();
-    expect(mod.HomesteadScreen).toBeDefined();
-    expect(mod.RewardsScreen).toBeDefined();
+describe("@/features/alchemy phase screen barrels", () => {
+  it("exports known symbols from meta and run-loop barrels", async () => {
+    const meta = await import("@/features/alchemy/meta/screens");
+    const runLoop = await import("@/features/alchemy/run-loop/screens");
+    expect(meta.MenuScreen).toBeDefined();
+    expect(meta.HomesteadScreen).toBeDefined();
+    expect(runLoop.BattleScreen).toBeDefined();
+    expect(runLoop.RewardsScreen).toBeDefined();
   }, 15_000);
 });
 

@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createRunFlowHandlers, resetRunFlowClaimLocks } from "@/features/alchemy/run-loop/run/run-flow-handlers";
-import { readActiveRunStore, useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import {

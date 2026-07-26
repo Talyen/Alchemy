@@ -1,19 +1,18 @@
 import type { BattleCard, CharacterId, TalentXP } from "@/lib/game-data";
 import { defaultBattleState, type BattleState, type PlayerStatusValues, type TurnPhase } from "@/lib/battle";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { createEmptyRewardState, type RewardState } from "@/lib/active-run-session/reward-types";
-import type {
-  ShopState,
-  AlchemistState,
-  TrinketShopState,
-  EquipmentShopState,
-} from "@/features/alchemy/run-loop/shop/shop-state-init";
 import {
+  createEmptyRewardState,
   emptyAlchemistState,
   emptyEquipmentShopState,
   emptyShopState,
   emptyTrinketShopState,
-} from "@/features/alchemy/run-loop/shop/shop-state-init";
+  type AlchemistState,
+  type EquipmentShopState,
+  type RewardState,
+  type ShopState,
+  type TrinketShopState,
+} from "@/lib/active-run-session";
 import {
   createInitialRunState,
   createInitialTalentState,

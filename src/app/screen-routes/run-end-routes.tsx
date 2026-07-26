@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
-import { GameOverScreen, RunVictoryScreen } from "@/features/alchemy/shared/screens";
+import { GameOverScreen, RunVictoryScreen } from "@/features/alchemy/run-loop/screens";
 import { useRunScreenData } from "@/features/alchemy/shared/stores/run-session-facade";
-import type { ScreenRouteContext } from "./types";
+import type { RunEndRouteCtx } from "./route-ctx";
 
-function GameOverScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
+function GameOverScreenRoute({ run }: Pick<RunEndRouteCtx, "run">) {
   const r = useRunScreenData("game-over");
   return (
     <GameOverScreen
@@ -15,7 +15,7 @@ function GameOverScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-function RunVictoryScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
+function RunVictoryScreenRoute({ run }: Pick<RunEndRouteCtx, "run">) {
   const r = useRunScreenData("run-victory");
   return (
     <RunVictoryScreen
@@ -27,9 +27,10 @@ function RunVictoryScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-export const runEndScreenRoutes: Partial<
-  Record<import("@/lib/routing").Screen, (ctx: ScreenRouteContext) => ReactNode>
-> = {
+export const runEndScreenRoutes: {
+  "game-over": (ctx: RunEndRouteCtx) => ReactNode;
+  "run-victory": (ctx: RunEndRouteCtx) => ReactNode;
+} = {
   "game-over": ({ run }) => <GameOverScreenRoute run={run} />,
   "run-victory": ({ run }) => <RunVictoryScreenRoute run={run} />,
 };

@@ -76,7 +76,7 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 | 3. Run-end display (no change needed if step 1 is correct) | `run-flow-handlers.awardRunEndMaterials` merges `runMaterialsEarned` + `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`                                      |
 | 4. Tests                                                   | `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts`; mystery/reward-flow tests if adding a new source                                                       |
 
-**Do not** call `useHomesteadStore.addMaterials()` directly from run-loop or mystery code for player loot.
+**Do not** call `addMaterials()` on the progress store directly from run-loop or mystery code for player loot.
 
 ---
 
@@ -259,11 +259,10 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 | Step                                                                                                                      | File(s)                                                               |
 | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
 | 1. Add string to `Screen` union and `ROUTE_SCREENS`                                                                       | `src/lib/routing/screens.ts`                                          |
-| 2. Create component in `run-loop/screens/` or `meta/screens/` + barrel export                                             | `index.ts` (local screen index under that subdirectory)               |
-| 3. Export from screens barrel                                                                                             | `src/features/alchemy/shared/screens/index.ts`                        |
-| 4. Add route handler in `meta-routes`, `run-setup-routes`, or `run-loop-routes` (wrapped in `ErrorBoundary` via registry) | `src/app/screen-routes/`                                              |
-| 5. Extend `RenderAlchemyScreenProps` / route context if new props needed                                                  | `src/app/render-screen-props.ts`, `src/app/render-alchemy-screen.tsx` |
-| 6. Wire navigation trigger                                                                                                | caller of `goToScreen("<name>")`                                      |
+| 2. Create component in `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/` + barrel export                       | `index.ts` (local screen index under that subdirectory)               |
+| 3. Wire route handler in the matching phase table (`meta-routes`, `run-setup-routes`, `run-loop-routes`, …)              | `src/app/screen-routes/`                                              |
+| 4. Extend phase route ctx / `RenderAlchemyScreenProps` if new props needed                                                | `src/app/screen-routes/route-ctx.ts`, `src/app/render-screen-props.ts` |
+| 5. Wire navigation trigger                                                                                                | caller of `goToScreen("<name>")`                                      |
 
 ---
 

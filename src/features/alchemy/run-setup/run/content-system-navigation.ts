@@ -15,7 +15,7 @@ import {
   setRewardState,
   setWildwoodDraft,
   readRunSessionStore,
-  getRunDomainStore,
+  readActiveRunStore,
 } from "../../shared/stores/run-session-facade";
 import { afterCampaignCharacterResolved } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
 import { createDestinationRewardState } from "@/features/alchemy/run-loop/navigation/victory-flow";
@@ -106,7 +106,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
               flattenGearInventories(useGearStore.getState().inventories),
               useGearStore.getState().loadouts,
             ).maxHealth,
-            homesteadMaxHealthBonus: getRunDomainStore().progress.effects.runMaxHealthBonus,
+            homesteadMaxHealthBonus: readActiveRunStore().effects.runMaxHealthBonus,
           }
         : {
             ...baseInput,
@@ -115,7 +115,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
               flattenGearInventories(useGearStore.getState().inventories),
               useGearStore.getState().loadouts,
             ).maxHealth,
-            homesteadMaxHealthBonus: getRunDomainStore().progress.effects.runMaxHealthBonus,
+            homesteadMaxHealthBonus: readActiveRunStore().effects.runMaxHealthBonus,
           },
     );
   }

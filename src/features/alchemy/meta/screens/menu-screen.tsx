@@ -12,7 +12,7 @@ import { useAppStore } from "../../shared/stores/app-store";
 import { StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { LockedMenuItem } from "../../shared/ui/locked-menu-item";
 
-import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data/character-unlocks";
+import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data";
 
 export function MenuScreen({
   onPlay,

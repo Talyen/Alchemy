@@ -2,7 +2,7 @@
 // Depends on: saveAlchemySaveData (storage), isAnimationDisabled (game-constants).
 // Used by: App.tsx.
 import { useEffect, useRef } from "react";
-import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { readHasActiveRun, subscribeRunDomain } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-transitions";
@@ -36,11 +36,7 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
 
       isDirty = false;
 
-      const runDomainState = useRunDomainStore.getState();
-      const activeRun = resolveActiveRunForSave(
-        runDomainState.session.hasActiveRun,
-        runScreenOverrideRef.current ?? undefined,
-      );
+      const activeRun = resolveActiveRunForSave(readHasActiveRun(), runScreenOverrideRef.current ?? undefined);
 
       void saveAlchemySaveData(buildAlchemySaveDataFromStores(activeRun));
     };
@@ -59,7 +55,7 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
     };
 
     // Subscribe to state changes in all three stores
-    const unsubRun = useRunDomainStore.subscribe(triggerSave);
+    const unsubRun = subscribeRunDomain(triggerSave);
     const unsubApp = useAppStore.subscribe(triggerSave);
     const unsubGear = useGearStore.subscribe(triggerSave);
 

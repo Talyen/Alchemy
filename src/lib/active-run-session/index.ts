@@ -8,6 +8,15 @@ export type {
   PersistedEquipmentShopState,
 } from "./types";
 export type { CardRewardState, GearRewardState, RewardState, TrinketRewardState } from "./reward-types";
+export { createEmptyRewardState } from "./reward-types";
+export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState } from "./shop-session-types";
+export {
+  emptyAlchemistState,
+  emptyEquipmentShopState,
+  emptyShopState,
+  emptyTrinketShopState,
+} from "./shop-session-types";
+export { restoreWildwoodRewardState } from "./wildwood-reward-restore";
 export { createActiveRunSnapshot } from "./snapshot";
 export { parseActiveRun } from "./parse";
 export { toActiveRunData } from "./to-active-run-data";

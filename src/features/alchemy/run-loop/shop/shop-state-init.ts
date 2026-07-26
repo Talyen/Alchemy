@@ -6,20 +6,29 @@ import type {
   PersistedShopState,
   PersistedTrinketShopState,
 } from "@/lib/active-run-session";
+import {
+  emptyAlchemistState,
+  emptyEquipmentShopState,
+  emptyShopState,
+  emptyTrinketShopState,
+  type AlchemistState,
+  type EquipmentShopState,
+  type ShopState,
+  type TrinketShopState,
+} from "@/lib/active-run-session";
 import { lookupTrinketEntries } from "@/lib/active-run-session/pending-reward-persistence";
 import {
   SHOP_CARDS_OFFERED,
-  SHOP_REFRESHES,
   ALCHEMIST_POTIONS_OFFERED,
-  ALCHEMIST_REFRESHES,
   TRINKET_SHOP_OFFERED,
-  TRINKET_SHOP_REFRESHES,
   EQUIPMENT_SHOP_OFFERED,
-  EQUIPMENT_SHOP_REFRESHES,
 } from "@/lib/game-constants";
 import { generateGearRewardChoices, type GearInstance } from "@/lib/gear";
 import { trinketLibrary } from "@/lib/game-data";
 import { sampleItems } from "@/features/alchemy/shared/utils/random";
+
+export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState };
+export { emptyAlchemistState, emptyEquipmentShopState, emptyShopState, emptyTrinketShopState };
 
 interface RefreshableShopFields {
   refreshesLeft: number;
@@ -31,62 +40,6 @@ type RefreshablePersistedFields = Pick<
   RefreshableShopFields,
   "refreshesLeft" | "firstPurchaseUsed" | "purchasedSlotKeys"
 >;
-
-export type ShopState = RefreshableShopFields & {
-  cards: BattleCard[];
-  removeUsed: boolean;
-};
-
-export type AlchemistState = RefreshableShopFields & {
-  potions: BattleCard[];
-  mixUsed: boolean;
-};
-
-export type TrinketShopState = RefreshableShopFields & {
-  trinkets: TrinketEntry[];
-};
-
-export type EquipmentShopState = RefreshableShopFields & {
-  gear: GearInstance[];
-};
-
-function emptyRefreshableFields(refreshesLeft: number): RefreshableShopFields {
-  return {
-    refreshesLeft,
-    firstPurchaseUsed: false,
-    purchasedSlotKeys: [],
-  };
-}
-
-export function emptyShopState(): ShopState {
-  return {
-    cards: [],
-    removeUsed: false,
-    ...emptyRefreshableFields(SHOP_REFRESHES),
-  };
-}
-
-export function emptyAlchemistState(): AlchemistState {
-  return {
-    potions: [],
-    mixUsed: false,
-    ...emptyRefreshableFields(ALCHEMIST_REFRESHES),
-  };
-}
-
-export function emptyTrinketShopState(): TrinketShopState {
-  return {
-    trinkets: [],
-    ...emptyRefreshableFields(TRINKET_SHOP_REFRESHES),
-  };
-}
-
-export function emptyEquipmentShopState(): EquipmentShopState {
-  return {
-    gear: [],
-    ...emptyRefreshableFields(EQUIPMENT_SHOP_REFRESHES),
-  };
-}
 
 function serializeRefreshableFields(state: RefreshableShopFields): RefreshablePersistedFields {
   return {

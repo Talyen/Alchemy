@@ -1,20 +1,21 @@
 // Facade over run domain store — reads, writes, sync, snapshot, restore, and teardown.
 import { useShallow } from "zustand/react/shallow";
-import type { BattleCard, CharacterId } from "@/lib/game-data";
+import type { BattleCard, CharacterId, DifficultyId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib/content-systems/types";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryEvent } from "@/lib/mystery";
 import type { MaterialInventory } from "@/lib/homestead/types";
+import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { Screen } from "@/lib/routing";
-import type { RewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import type {
-  ShopState,
   AlchemistState,
-  TrinketShopState,
   EquipmentShopState,
-} from "@/features/alchemy/run-loop/shop/shop-state-init";
+  RewardState,
+  ShopState,
+  TrinketShopState,
+} from "@/lib/active-run-session";
 import {
   getRunDomainStore,
   getBattleStoreView,
@@ -28,6 +29,7 @@ import {
   type RunSessionStore,
 } from "./run-domain-store";
 import type { RunStateController, TalentStateController } from "./run-domain-store";
+import type { DisplayOverrides } from "./run-domain-types";
 import { restoreRun, snapshotRun } from "./run-transitions";
 
 export {
@@ -40,8 +42,8 @@ export {
 } from "./run-session-model";
 export { restoreRun, snapshotRun };
 import { useRunScreenData } from "./use-run-screen-data";
-export { useRunAdapter, useTalentAdapter, useHomesteadAdapter, getRunDomainStore, useRunDomainStore, useRunScreenData };
-export type { RunStateController, TalentStateController, RunProgressStore, RunSessionStore };
+export { useRunAdapter, useTalentAdapter, useHomesteadAdapter, useRunScreenData };
+export type { RunStateController, TalentStateController, RunProgressStore, RunSessionStore, DisplayOverrides };
 
 /** Imperative read of run progression fields (deck, gold, talents, initialized). */
 export function readActiveRunStore(): RunProgressStore {
@@ -148,4 +150,120 @@ export function useActiveRunScreen() {
 /** Subscribe to navigation screen only (autosave, routing). */
 export function useActiveRunScreenValue(): Screen {
   return useRunDomainStore((s) => s.navigation.screen);
+}
+
+export function useHasActiveBattle(): boolean {
+  return useRunDomainStore((s) => s.battle.hasActiveBattle);
+}
+
+export function useHasActiveRun(): boolean {
+  return useRunDomainStore((s) => s.session.hasActiveRun);
+}
+
+export function useDisplayOverrides(): DisplayOverrides {
+  return useRunDomainStore((s) => s.battle.displayOverrides);
+}
+
+export function useSetHasActiveBattle(): (active: boolean) => void {
+  return useRunDomainStore((s) => s.setHasActiveBattle);
+}
+
+export function useBondedCompanions() {
+  return useRunDomainStore((s) => s.progress.bondedCompanions);
+}
+
+export function useContentSystemType(): ContentSystemId {
+  return useRunDomainStore((s) => s.progress.contentSystemType);
+}
+
+export function useIsWildwoodRun(): boolean {
+  return useRunDomainStore((s) => s.progress.contentSystemType === "wildwood");
+}
+
+export function useHomesteadProgressSlice() {
+  return useRunDomainStore(
+    useShallow((s) => ({
+      materialInventory: s.progress.materialInventory,
+      constructedBuildings: s.progress.constructedBuildings,
+      plantedFarms: s.progress.plantedFarms,
+      completedResearch: s.progress.completedResearch,
+      bondedCompanions: s.progress.bondedCompanions,
+    })),
+  );
+}
+
+export function useTalentProgressSlice(): { talentXP: TalentXP; unlockedTalents: UnlockedTalents } {
+  return useRunDomainStore(
+    useShallow((s) => ({
+      talentXP: s.progress.talentXP,
+      unlockedTalents: s.progress.unlockedTalents,
+    })),
+  );
+}
+
+export function useDifficultySelectSlice(): {
+  pendingCharacterId: CharacterId | null;
+  selectedDifficulty: DifficultyId | null;
+} {
+  return useRunDomainStore(
+    useShallow((s) => ({
+      pendingCharacterId: s.session.pendingCharacterId,
+      selectedDifficulty: s.progress.selectedDifficulty,
+    })),
+  );
+}
+
+export function useDraftDeckSlice(): {
+  contentSystemType: ContentSystemId;
+  runDeck: BattleCard[];
+  wildwoodDraft: WildwoodDraftState | null;
+} {
+  return useRunDomainStore(
+    useShallow((s) => ({
+      contentSystemType: s.progress.contentSystemType,
+      runDeck: s.progress.runDeck,
+      wildwoodDraft: s.session.wildwoodDraft,
+    })),
+  );
+}
+
+export function useActiveRunCharacterId(): CharacterId {
+  return useRunDomainStore((s) => s.progress.characterId);
+}
+
+/** Dev / unlock-all: set homestead materials. */
+export function setMaterials(materials: MaterialInventory) {
+  getRunDomainStore().setMaterials(materials);
+}
+
+/** Persistence: subscribe to any run-domain mutation (autosave). */
+export function subscribeRunDomain(listener: () => void): () => void {
+  return useRunDomainStore.subscribe(listener);
+}
+
+/** Persistence: whether an active run should be snapshotted. */
+export function readHasActiveRun(): boolean {
+  return getRunDomainStore().session.hasActiveRun;
+}
+
+type HomesteadSaveFields = Pick<
+  RunProgressStore,
+  "materialInventory" | "constructedBuildings" | "plantedFarms" | "completedResearch" | "bondedCompanions"
+>;
+
+/** Persistence: hydrate permanent homestead fields from save data. */
+export function applyHomesteadSaveFields(homestead: HomesteadSaveFields): void {
+  useRunDomainStore.setState((state) => {
+    state.progress.materialInventory = homestead.materialInventory;
+    state.progress.constructedBuildings = homestead.constructedBuildings;
+    state.progress.plantedFarms = homestead.plantedFarms;
+    state.progress.completedResearch = homestead.completedResearch;
+    state.progress.bondedCompanions = homestead.bondedCompanions;
+    state.progress.effects = computeHomesteadEffects(
+      homestead.constructedBuildings,
+      homestead.plantedFarms,
+      homestead.completedResearch,
+      homestead.bondedCompanions,
+    );
+  });
 }

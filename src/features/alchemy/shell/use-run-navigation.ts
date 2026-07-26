@@ -6,13 +6,15 @@ import { useCallback, useRef, useMemo } from "react";
 import {
   useRunAdapter,
   useTalentAdapter,
-  useRunDomainStore,
+  useSetHasActiveBattle,
   useRunSessionNavigationSlice,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
+import { clearBattlePresentationCardGhosts } from "@/features/alchemy/shared/stores/battle-presentation-bridge";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+// Side-effect: registers presentation cleanup with the shared bridge.
+import "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { flattenGearInventories } from "@/lib/gear";
 import { type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
@@ -72,8 +74,7 @@ export function useRunNavigation({
 }) {
   const run = useRunAdapter();
   const talents = useTalentAdapter();
-  const setHasActiveBattle = useRunDomainStore((s) => s.setHasActiveBattle);
-  const clearCardGhosts = useBattlePresentationStore((s) => s.clearCardGhosts);
+  const setHasActiveBattle = useSetHasActiveBattle();
   const completedDifficulties = useAppStore((s) => s.completedDifficulties);
   const draftedDeckRef = useRef<BattleCard[] | null>(null);
   const rngRef = useRef<() => number>(() => Math.random());
@@ -224,7 +225,7 @@ export function useRunNavigation({
   function resetRunState() {
     cancelPending();
     resetRunFlowClaimLocks();
-    clearCardGhosts();
+    clearBattlePresentationCardGhosts();
     clearCardHover();
     setHasActiveBattle(false);
     navigateTo(CONSTANTS.SCREENS.MENU, () => {

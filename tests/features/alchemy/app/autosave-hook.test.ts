@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
-import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
 
 const mockStorage: Record<string, string> = {};
 

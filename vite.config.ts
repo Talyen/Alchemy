@@ -76,7 +76,9 @@ export default defineConfig(({ mode }) => ({
       exclude: [
         "src/**/types.ts",
         "src/**/assets.ts",
-        "src/features/alchemy/shared/screens/**",
+        "src/features/alchemy/meta/screens/**",
+        "src/features/alchemy/run-setup/screens/**",
+        "src/features/alchemy/run-loop/screens/**",
         "src/components/**",
         "tests/**",
         "**/*.md",

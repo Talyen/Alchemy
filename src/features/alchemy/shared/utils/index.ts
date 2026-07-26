@@ -13,3 +13,4 @@ export {
 } from "./dom";
 export { formatEnemyAttackLines } from "./enemy";
 export { formatCompanionTurnStartLine } from "./companion-turn-line";
+export { isAlchemyDevBuild } from "./dev-mode";

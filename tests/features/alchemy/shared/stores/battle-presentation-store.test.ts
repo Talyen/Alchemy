@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
 import {
   getBattleStoreView,
   getNavigationStoreView,
@@ -60,6 +61,19 @@ describe("battle-presentation-store", () => {
     const s = useBattlePresentationStore.getState();
     expect(s.playerHurtFlashToken).toBe(0);
     expect(s.cardGhosts).toEqual([]);
+  });
+
+  it("teardownRun clears card ghosts via the presentation bridge", () => {
+    useBattlePresentationStore.getState().spawnCardGhost({
+      art: "test.webp",
+      rect: { x: 0, y: 0, width: 10, height: 10 },
+      rotation: 0,
+      delay: 0,
+      variant: "activate",
+    });
+    expect(useBattlePresentationStore.getState().cardGhosts).toHaveLength(1);
+    teardownRun();
+    expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
   });
 
   it("clearFloatingCombatTexts invalidates pending showCombatTexts timers", async () => {

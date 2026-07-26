@@ -2,13 +2,13 @@ import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
-import type { RewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import type {
-  ShopState,
   AlchemistState,
-  TrinketShopState,
   EquipmentShopState,
-} from "@/features/alchemy/run-loop/shop/shop-state-init";
+  RewardState,
+  ShopState,
+  TrinketShopState,
+} from "@/lib/active-run-session";
 import { DESTINATIONS, type Destination } from "@/features/alchemy/shared/types";
 import { createEmptyRewardState } from "@/lib/active-run-session/reward-types";
 import { defineFieldSetter, type ImmerSet } from "./_field-setter";

@@ -63,7 +63,7 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 - **Battle RNG** — use `state.rng`, not `Math.random()` (`createBattleState` may pass explicit RNG in tests).
 - **Enemy status** — stack changes go through `addEnemyStatus()` / `setEnemyStatus()` in `src/lib/battle/types.ts`; `braced` enemy trait halves incoming stun.
 - **Static enemy actions** — `enemyAttackEffects` resolve sequentially every turn; no randomized intents.
-- **Run materials** — player loot via `awardMaterialsDuringRun()` only; not `useHomesteadStore.addMaterials()` from run-loop code ([WORKFLOWS § Grant materials](./WORKFLOWS.md#grant-materials-during-a-run)).
+- **Run materials** — player loot via `awardMaterialsDuringRun()` only; not progress `addMaterials()` from run-loop code ([WORKFLOWS § Grant materials](./WORKFLOWS.md#grant-materials-during-a-run)).
 
 ---
 

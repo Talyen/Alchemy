@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import { OptionsScreenRoute } from "./options-screen-route";
-import type { ScreenRouteContext } from "./types";
+import type { OptionsRouteCtx } from "./route-ctx";
 
-export const optionsScreenRoutes: Partial<
-  Record<import("@/lib/routing").Screen, (ctx: ScreenRouteContext) => ReactNode>
-> = {
+export const optionsScreenRoutes: {
+  options: (ctx: OptionsRouteCtx) => ReactNode;
+} = {
   options: (ctx) => <OptionsScreenRoute {...ctx} />,
 };

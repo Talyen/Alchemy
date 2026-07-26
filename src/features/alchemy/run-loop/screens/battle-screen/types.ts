@@ -2,7 +2,7 @@
 import type { MouseEvent, RefObject } from "react";
 
 import type { BattleState } from "@/lib/battle";
-import type { DisplayOverrides } from "../../../shared/stores/run-domain-types";
+import type { DisplayOverrides } from "../../../shared/stores/run-session-facade";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardGhost, FloatingCombatText, StatusChip } from "../../../shared/types";

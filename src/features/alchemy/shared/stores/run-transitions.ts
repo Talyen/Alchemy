@@ -7,8 +7,7 @@ import type { CharacterId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import { computeGearManifest, type GearInstance, type GearLoadouts } from "@/lib/gear";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { restoreWildwoodRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
-import { restorePendingReward, serializePendingReward } from "@/lib/active-run-session";
+import { restorePendingReward, restoreWildwoodRewardState, serializePendingReward } from "@/lib/active-run-session";
 import {
   hydrateAlchemistState,
   hydrateEquipmentShopState,
@@ -21,7 +20,7 @@ import {
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import { createInitialRunDomainData } from "./run-domain-types";
-import { useBattlePresentationStore } from "../../run-loop/battle/battle-presentation-store";
+import { clearBattlePresentationCardGhosts, resetBattlePresentation } from "./battle-presentation-bridge";
 import { useUiStore } from "./ui-store";
 import { useAppStore } from "./app-store";
 import { getRunSession } from "./run-session-model";
@@ -201,7 +200,7 @@ export function syncBattleToRun(options?: { playerHealth?: number }): void {
 export function clearBattleUi(): void {
   getRunDomainStore().setHasActiveBattle(false);
   useUiStore.getState().clearCardHover();
-  useBattlePresentationStore.getState().clearCardGhosts();
+  clearBattlePresentationCardGhosts();
 }
 
 /** Clear active combat, run progression, session UI, navigation, and presentation. */
@@ -234,7 +233,7 @@ export function teardownRun(): void {
     state.navigation = fresh.navigation;
     state.battle = fresh.battle;
   });
-  useBattlePresentationStore.getState().resetPresentation();
+  resetBattlePresentation();
   useUiStore.getState().clearCardHover();
 }
 

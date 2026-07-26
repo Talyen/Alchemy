@@ -37,7 +37,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
-import { useActiveRunScreenValue, useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useActiveRunScreenValue, useBondedCompanions } from "@/features/alchemy/shared/stores/run-session-facade";
 
 const appStore = useAppStore;
 
@@ -107,7 +107,7 @@ function AppMainContent({
   const dev = useDevShortcuts(run);
 
   const homesteadEffects = useHomesteadAdapter();
-  const homesteadBondedCompanions = useRunDomainStore((s) => s.progress.bondedCompanions);
+  const homesteadBondedCompanions = useBondedCompanions();
 
   const isBossBattle = renderedScreen === "battle" && run.battleState.currentEnemy.enemyType === "boss";
   const { particleColors, particleAlphaMultiplier } = useScreenParticleConfig(renderedScreen, isBossBattle);

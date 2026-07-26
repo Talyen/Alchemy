@@ -15,20 +15,16 @@ import {
   TrinketShopScreen,
   WildwoodRecoveryScreen,
   WildwoodRemovalScreen,
-} from "@/features/alchemy/shared/screens";
+} from "@/features/alchemy/run-loop/screens";
 import {
-  useRunDomainStore,
+  useIsWildwoodRun,
   useRunScreenData,
   useTalentAdapter,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { getCampfireHealFraction } from "@/lib/game-constants";
-import type { ScreenRouteContext } from "./types";
+import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
 
-function BattleScreenRoute({
-  run,
-  battleBindings,
-  onOpenBattleMenu,
-}: Pick<ScreenRouteContext, "run" | "battleBindings" | "onOpenBattleMenu">) {
+function BattleScreenRoute({ run, battleBindings, onOpenBattleMenu }: BattleRouteCtx) {
   const { heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
   const {
     battleScreenData,
@@ -71,7 +67,7 @@ function BattleScreenRoute({
   );
 }
 
-function LabyrinthMapScreenRoute({ run, onOpenBattleMenu }: Pick<ScreenRouteContext, "run" | "onOpenBattleMenu">) {
+function LabyrinthMapScreenRoute({ run, onOpenBattleMenu }: Pick<RunLoopRouteCtx, "run" | "onOpenBattleMenu">) {
   const r = useRunScreenData("labyrinth-map");
   return (
     <LabyrinthMapScreen
@@ -82,9 +78,9 @@ function LabyrinthMapScreenRoute({ run, onOpenBattleMenu }: Pick<ScreenRouteCont
   );
 }
 
-function RewardsScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
+function RewardsScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
   const r = useRunScreenData("rewards");
-  const isWildwood = useRunDomainStore((s) => s.progress.contentSystemType === "wildwood");
+  const isWildwood = useIsWildwoodRun();
   return (
     <RewardsScreen
       rewardState={r.rewardState}
@@ -96,7 +92,7 @@ function RewardsScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-function WildwoodRecoveryScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
+function WildwoodRecoveryScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
   const r = useRunScreenData("wildwood-recovery");
   return (
     <WildwoodRecoveryScreen
@@ -107,7 +103,7 @@ function WildwoodRecoveryScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-function WildwoodRemovalScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
+function WildwoodRemovalScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
   const r = useRunScreenData("wildwood-removal");
   return (
     <WildwoodRemovalScreen
@@ -118,7 +114,7 @@ function WildwoodRemovalScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-function DestinationScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
+function DestinationScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
   const r = useRunScreenData("destination");
   return (
     <DestinationScreen
@@ -129,7 +125,7 @@ function DestinationScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-function CampfireScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
+function CampfireScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
   const r = useRunScreenData("campfire");
   const { talentEffects } = useTalentAdapter();
   const healFraction = getCampfireHealFraction(talentEffects.campfireHealBonus);
@@ -143,7 +139,7 @@ function CampfireScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-function ShopScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
+function ShopScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
   const r = useRunScreenData("shop");
   return (
     <MerchantShopScreen
@@ -164,7 +160,7 @@ function ShopScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-function AlchemistScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
+function AlchemistScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
   const r = useRunScreenData("alchemist");
   return (
     <AlchemistShopScreen
@@ -185,7 +181,7 @@ function AlchemistScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-function TrinketShopScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
+function TrinketShopScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
   const r = useRunScreenData("trinket-shop");
   return (
     <TrinketShopScreen
@@ -202,7 +198,7 @@ function TrinketShopScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-function EquipmentShopScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
+function EquipmentShopScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
   const r = useRunScreenData("equipment-shop");
   return (
     <EquipmentShopScreen
@@ -219,7 +215,7 @@ function EquipmentShopScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-function MysteryScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
+function MysteryScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
   const r = useRunScreenData("mystery");
   const { handleMysteryContinue } = run;
 
@@ -248,7 +244,7 @@ function MysteryScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-function CorruptionScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
+function CorruptionScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
   const r = useRunScreenData("corruption");
   return (
     <CorruptionScreen
@@ -260,9 +256,21 @@ function CorruptionScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-export const runLoopScreenRoutes: Partial<
-  Record<import("@/lib/routing").Screen, (ctx: ScreenRouteContext) => ReactNode>
-> = {
+export const runLoopScreenRoutes: {
+  battle: (ctx: BattleRouteCtx) => ReactNode;
+  "labyrinth-map": (ctx: RunLoopRouteCtx) => ReactNode;
+  rewards: (ctx: RunLoopRouteCtx) => ReactNode;
+  "wildwood-recovery": (ctx: RunLoopRouteCtx) => ReactNode;
+  "wildwood-removal": (ctx: RunLoopRouteCtx) => ReactNode;
+  destination: (ctx: RunLoopRouteCtx) => ReactNode;
+  campfire: (ctx: RunLoopRouteCtx) => ReactNode;
+  shop: (ctx: RunLoopRouteCtx) => ReactNode;
+  alchemist: (ctx: RunLoopRouteCtx) => ReactNode;
+  "trinket-shop": (ctx: RunLoopRouteCtx) => ReactNode;
+  "equipment-shop": (ctx: RunLoopRouteCtx) => ReactNode;
+  mystery: (ctx: RunLoopRouteCtx) => ReactNode;
+  corruption: (ctx: RunLoopRouteCtx) => ReactNode;
+} = {
   battle: ({ run, battleBindings, onOpenBattleMenu }) => (
     <BattleScreenRoute run={run} battleBindings={battleBindings} onOpenBattleMenu={onOpenBattleMenu} />
   ),

@@ -5,6 +5,235 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import prettierConfig from "eslint-config-prettier";
 import reactCompiler from "eslint-plugin-react-compiler";
 
+// ── Restricted-import / syntax fragments ─────────────────────────────────────
+// Flat config replaces no-restricted-imports / no-restricted-syntax per block.
+// Compose unions explicitly so later layer blocks do not wipe earlier bans.
+
+/** @typedef {{ group: string | string[], message: string, allowImportNames?: string[] }} ImportPattern */
+/** @typedef {{ name: string, message: string, importNames?: string[] }} ImportPath */
+/** @typedef {{ selector: string, message: string }} SyntaxSelector */
+
+/**
+ * @param {{ paths?: ImportPath[], patterns?: ImportPattern[] }} opts
+ * @returns {["error", { paths?: ImportPath[], patterns?: ImportPattern[] }]}
+ */
+function restrictedImports({ paths = [], patterns = [] }) {
+  const opts = {};
+  if (paths.length > 0) opts.paths = paths;
+  if (patterns.length > 0) opts.patterns = patterns;
+  return ["error", opts];
+}
+
+/**
+ * @param {...SyntaxSelector} selectors
+ * @returns {["error", ...SyntaxSelector[]]}
+ */
+function restrictedSyntax(...selectors) {
+  return ["error", ...selectors];
+}
+
+/** @type {ImportPattern[]} */
+const BARREL_PATTERNS = [
+  {
+    group: ["@/lib/game-data/*"],
+    allowImportNames: ["hydrateCard", "getOfferableCardPool", "getStandardPotionPool", "isStandardPotionCard"],
+    message: "Import from @/lib/game-data (barrel) instead of deep paths.",
+  },
+  { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
+  { group: ["@/lib/validation/*"], message: "Import from @/lib/validation (barrel) instead of deep paths." },
+  {
+    group: ["@/features/alchemy/shared/utils/*"],
+    message: "Import from @/features/alchemy/shared/utils (barrel) instead of deep paths.",
+  },
+  {
+    group: ["@/features/alchemy/shared/storage/*"],
+    allowImportNames: ["flushAlchemySaveNow", "buildAlchemySaveDataFromStores"],
+    message: "Import from @/features/alchemy/shared/storage (barrel) instead of deep paths.",
+  },
+];
+
+/** @type {ImportPattern[]} */
+const LIB_NO_FEATURES = [
+  {
+    group: ["@/features/**", "**/features/**"],
+    message: "lib/ must not import from features/. Move shared types to lib/.",
+  },
+];
+
+/** @type {ImportPattern[]} */
+const LIB_BARREL_PATTERNS = [
+  {
+    group: ["@/lib/game-data/*"],
+    allowImportNames: ["hydrateCard", "getOfferableCardPool", "getStandardPotionPool", "isStandardPotionCard"],
+    message: "Import from @/lib/game-data (barrel) instead of deep paths.",
+  },
+  { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
+  { group: ["@/lib/validation/*"], message: "Import from @/lib/validation (barrel) instead of deep paths." },
+];
+
+/** @type {ImportPattern[]} */
+const GAME_DATA_NO_BATTLE = [
+  {
+    group: ["@/lib/battle", "@/lib/battle/**"],
+    message: "game-data must not import battle runtime. Handlers live in lib/battle/effect-handlers/.",
+  },
+];
+
+/** @type {ImportPath[]} */
+const BATTLE_NO_FRAMEWORK_PATHS = [
+  { name: "react", message: "lib/battle must stay framework-agnostic." },
+  { name: "zustand", message: "lib/battle must stay framework-agnostic." },
+];
+
+/** @type {ImportPattern[]} */
+const BATTLE_NO_FEATURES = [
+  {
+    group: ["@/features/**", "**/features/**"],
+    message: "lib/battle must not import from features/.",
+  },
+];
+
+/** @type {ImportPattern[]} */
+const DOMAIN_STORE_PATTERNS = [
+  {
+    group: [
+      "**/run-domain-store",
+      "@/features/alchemy/shared/stores/run-domain-store",
+      "**/run-progress-store",
+      "@/features/alchemy/shared/stores/run-progress-store",
+      "**/run-domain-types",
+      "**/run-session-store",
+      "@/features/alchemy/shared/stores/run-session-store",
+      "**/stores/battle-store",
+      "@/features/alchemy/shared/stores/battle-store",
+      "**/stores/store-access",
+      "@/features/alchemy/shared/stores/store-access",
+      "**/run-lifecycle-coordinator",
+      "@/features/alchemy/shared/stores/run-lifecycle-coordinator",
+      "**/run-store-sync",
+      "@/features/alchemy/shared/stores/run-store-sync",
+    ],
+    message:
+      "Import run-session-facade hooks, readRunSessionStore/readActiveRunStore/readBattleStore, or run-transitions instead of low-level store modules.",
+  },
+];
+
+/** @type {ImportPattern[]} */
+const ORCHESTRATION_NO_SCREENS = [
+  {
+    group: [
+      "@/features/alchemy/meta/screens",
+      "@/features/alchemy/meta/screens/*",
+      "@/features/alchemy/meta/screens/**",
+      "**/features/alchemy/meta/screens/**",
+      "@/features/alchemy/run-setup/screens",
+      "@/features/alchemy/run-setup/screens/*",
+      "@/features/alchemy/run-setup/screens/**",
+      "**/features/alchemy/run-setup/screens/**",
+      "@/features/alchemy/run-loop/screens",
+      "@/features/alchemy/run-loop/screens/*",
+      "@/features/alchemy/run-loop/screens/**",
+      "**/features/alchemy/run-loop/screens/**",
+      "**/features/alchemy/screens/**",
+    ],
+    message: "Orchestration must not import screen components. Wire screens from app/screen-routes.",
+  },
+];
+
+/** @type {ImportPattern[]} */
+const SCREENS_NO_ORCHESTRATION = [
+  {
+    group: [
+      "@/features/alchemy/run-loop/battle",
+      "@/features/alchemy/run-loop/battle/*",
+      "**/features/alchemy/run-loop/battle/**",
+    ],
+    message: "Screens must not import battle orchestration. Use controller props and @/lib/battle types.",
+  },
+  {
+    group: [
+      "@/features/alchemy/run-loop/navigation",
+      "@/features/alchemy/run-loop/navigation/*",
+      "**/features/alchemy/run-loop/navigation/**",
+    ],
+    message: "Screens must not import navigation flows. Wire handlers from app/screen-routes.",
+  },
+  {
+    group: [
+      "@/features/alchemy/run",
+      "@/features/alchemy/run/*",
+      "**/features/alchemy/run/**",
+      "**/features/alchemy/run-loop/run/**",
+      "**/features/alchemy/run-setup/run/**",
+    ],
+    message: "Screens must not import run orchestration. Pass data via controller props.",
+  },
+  {
+    group: ["@/features/alchemy/shared/stores/run-domain-store"],
+    message: "Screens must not mutate session state directly. Use controller callbacks.",
+  },
+];
+
+/** @type {ImportPattern[]} */
+const META_NO_RUN_LOOP = [
+  {
+    group: ["**/run-loop/**", "@/features/alchemy/run-loop/**"],
+    message: "Meta layer must not import run-loop. Import phase screen barrels or shared/ only.",
+  },
+  {
+    group: ["**/run-setup/**"],
+    message: "Meta layer must not import run-setup.",
+  },
+];
+
+/** @type {ImportPattern[]} */
+const UI_NO_SESSION_STORES = [
+  {
+    group: [
+      "**/stores/run-domain-store",
+      "**/stores/battle-store",
+      "**/stores/run-session-facade",
+      "**/stores/run-session-actions",
+      "**/stores/run-session-read",
+      "@/features/alchemy/shared/stores/run-domain-store",
+      "@/features/alchemy/shared/stores/battle-store",
+      "@/features/alchemy/shared/stores/run-session-facade",
+    ],
+    message: "UI widgets receive data via props. Only ui-store is allowed for ephemeral hover/shimmer.",
+  },
+];
+
+/** @type {SyntaxSelector[]} */
+const BATTLE_NO_MATH_RANDOM = [
+  {
+    selector: 'CallExpression[callee.object.name="Math"][callee.property.name="random"]',
+    message: "Use state.rng or getBattleRng(state) instead of Math.random() in battle engine code.",
+  },
+  {
+    selector: 'MemberExpression[object.name="Math"][property.name="random"]',
+    message:
+      "Reference to Math.random is not allowed in the battle engine. Use state.rng for seeded RNG during combat, or unsafeNonSeededRng from ./rng only in setup/defaults paths.",
+  },
+];
+
+/** @type {SyntaxSelector} */
+const BATTLE_NO_MATH_FLOOR = {
+  selector: 'CallExpression[callee.object.name="Math"][callee.property.name="floor"]',
+  message: "Use Math.round() instead of Math.floor() in battle engine code.",
+};
+
+/** @type {SyntaxSelector[]} */
+const CLASSNAME_NO_TEMPLATE = [
+  {
+    selector: 'JSXAttribute[name.name="className"][value.type="TemplateLiteral"]',
+    message: "Use cn() from @/lib/utils for class names instead of template literals.",
+  },
+  {
+    selector: 'JSXAttribute[name.name="className"][value.type="JSXExpressionContainer"] TemplateLiteral',
+    message: "Use cn() from @/lib/utils for class names instead of template literals.",
+  },
+];
+
 export default tseslint.config(
   {
     ignores: [
@@ -149,42 +378,23 @@ export default tseslint.config(
     },
   },
 
-  // Source files: enforce barrel imports instead of deep module paths.
+  // Source files: barrel imports + domain-store facade containment.
+  // Later layer blocks must re-include these patterns (flat config replaces the rule).
   {
     files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/features/alchemy/shared/stores/**"],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              group: ["@/lib/game-data/*"],
-              allowImportNames: [
-                "hydrateCard",
-                "getOfferableCardPool",
-                "getStandardPotionPool",
-                "isStandardPotionCard",
-              ],
-              message: "Import from @/lib/game-data (barrel) instead of deep paths.",
-            },
-            { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
-            { group: ["@/lib/validation/*"], message: "Import from @/lib/validation (barrel) instead of deep paths." },
-            {
-              group: ["@/features/alchemy/shared/screens/*"],
-              message: "Import from @/features/alchemy/shared/screens (barrel) instead of deep paths.",
-            },
-            {
-              group: ["@/features/alchemy/shared/utils/*"],
-              message: "Import from @/features/alchemy/shared/utils (barrel) instead of deep paths.",
-            },
-            {
-              group: ["@/features/alchemy/shared/storage/*"],
-              allowImportNames: ["flushAlchemySaveNow", "buildAlchemySaveDataFromStores"],
-              message: "Import from @/features/alchemy/shared/storage (barrel) instead of deep paths.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": restrictedImports({
+        patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS],
+      }),
+    },
+  },
+  {
+    files: ["src/features/alchemy/shared/stores/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": restrictedImports({
+        patterns: BARREL_PATTERNS,
+      }),
     },
   },
 
@@ -192,20 +402,9 @@ export default tseslint.config(
   {
     files: ["src/lib/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            { group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." },
-            { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
-            { group: ["@/lib/validation/*"], message: "Import from @/lib/validation (barrel) instead of deep paths." },
-            {
-              group: ["@/features/**", "**/features/**"],
-              message: "lib/ must not import from features/. Move shared types to lib/.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": restrictedImports({
+        patterns: [...LIB_BARREL_PATTERNS, ...LIB_NO_FEATURES, ...DOMAIN_STORE_PATTERNS],
+      }),
     },
   },
 
@@ -213,89 +412,30 @@ export default tseslint.config(
   {
     files: ["src/lib/game-data/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            { group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." },
-            {
-              group: ["@/lib/battle", "@/lib/battle/**"],
-              message: "game-data must not import battle runtime. Handlers live in lib/battle/effect-handlers/.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": restrictedImports({
+        patterns: [
+          { group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." },
+          ...GAME_DATA_NO_BATTLE,
+          ...LIB_NO_FEATURES,
+          ...DOMAIN_STORE_PATTERNS,
+        ],
+      }),
     },
   },
 
-  // Battle engine — no React, Zustand, or features.
+  // Battle engine — no React, Zustand, features, Math.random, or Math.floor.
   {
     files: ["src/lib/battle/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          paths: [
-            { name: "react", message: "lib/battle must stay framework-agnostic." },
-            { name: "zustand", message: "lib/battle must stay framework-agnostic." },
-          ],
-          patterns: [
-            { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
-            {
-              group: ["@/features/**", "**/features/**"],
-              message: "lib/battle must not import from features/.",
-            },
-          ],
-        },
-      ],
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: 'CallExpression[callee.object.name="Math"][callee.property.name="random"]',
-          message: "Use state.rng or getBattleRng(state) instead of Math.random() in battle engine code.",
-        },
-        {
-          selector: 'MemberExpression[object.name="Math"][property.name="random"]',
-          message:
-            "Reference to Math.random is not allowed in the battle engine. Use state.rng for seeded RNG during combat, or unsafeNonSeededRng from ./rng only in setup/defaults paths.",
-        },
-      ],
-    },
-  },
-
-  // Run domain store — only the stores layer may import useRunDomainStore directly.
-  {
-    files: ["src/**/*.{ts,tsx}"],
-    ignores: ["src/features/alchemy/shared/stores/**"],
-    rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              group: [
-                "**/run-domain-store",
-                "@/features/alchemy/shared/stores/run-domain-store",
-                "**/run-progress-store",
-                "@/features/alchemy/shared/stores/run-progress-store",
-                "**/run-domain-types",
-                "**/run-session-store",
-                "@/features/alchemy/shared/stores/run-session-store",
-                "**/stores/battle-store",
-                "@/features/alchemy/shared/stores/battle-store",
-                "**/stores/store-access",
-                "@/features/alchemy/shared/stores/store-access",
-                "**/run-lifecycle-coordinator",
-                "@/features/alchemy/shared/stores/run-lifecycle-coordinator",
-                "**/run-store-sync",
-                "@/features/alchemy/shared/stores/run-store-sync",
-              ],
-              message:
-                "Import run-session-facade hooks, readRunSessionStore/readActiveRunStore/readBattleStore, or run-transitions instead of low-level store modules.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": restrictedImports({
+        paths: BATTLE_NO_FRAMEWORK_PATHS,
+        patterns: [
+          { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
+          ...BATTLE_NO_FEATURES,
+          ...DOMAIN_STORE_PATTERNS,
+        ],
+      }),
+      "no-restricted-syntax": restrictedSyntax(...BATTLE_NO_MATH_RANDOM, BATTLE_NO_MATH_FLOOR),
     },
   },
 
@@ -303,41 +443,17 @@ export default tseslint.config(
   {
     files: ["src/features/alchemy/run-loop/battle/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              group: [
-                "@/features/alchemy/shared/screens",
-                "@/features/alchemy/shared/screens/*",
-                "**/features/alchemy/screens/**",
-              ],
-              message: "Battle orchestration must not import screen components. Pass data via controllers/stores.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": restrictedImports({
+        patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...ORCHESTRATION_NO_SCREENS],
+      }),
     },
   },
   {
     files: ["src/features/alchemy/run-loop/navigation/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              group: [
-                "@/features/alchemy/shared/screens",
-                "@/features/alchemy/shared/screens/*",
-                "**/features/alchemy/screens/**",
-              ],
-              message: "Navigation flows must not import screen components. Wire screens from app/screen-routes.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": restrictedImports({
+        patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...ORCHESTRATION_NO_SCREENS],
+      }),
     },
   },
   {
@@ -347,65 +463,26 @@ export default tseslint.config(
       "src/features/alchemy/run-loop/screens/**/*.{ts,tsx}",
     ],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              group: [
-                "@/features/alchemy/run-loop/battle",
-                "@/features/alchemy/run-loop/battle/*",
-                "**/features/alchemy/run-loop/battle/**",
-              ],
-              message: "Screens must not import battle orchestration. Use controller props and @/lib/battle types.",
-            },
-            {
-              group: [
-                "@/features/alchemy/run-loop/navigation",
-                "@/features/alchemy/run-loop/navigation/*",
-                "**/features/alchemy/run-loop/navigation/**",
-              ],
-              message: "Screens must not import navigation flows. Wire handlers from app/screen-routes.",
-            },
-            {
-              group: [
-                "@/features/alchemy/run",
-                "@/features/alchemy/run/*",
-                "**/features/alchemy/run/**",
-                "**/features/alchemy/run-loop/run/**",
-                "**/features/alchemy/run-setup/run/**",
-              ],
-              message: "Screens must not import run orchestration. Pass data via controller props.",
-            },
-            {
-              group: ["@/features/alchemy/shared/stores/run-domain-store"],
-              message: "Screens must not mutate session state directly. Use controller callbacks.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": restrictedImports({
+        patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...SCREENS_NO_ORCHESTRATION],
+      }),
     },
   },
 
   // Meta — menu/collection/homestead; must not depend on run-loop orchestration.
+  // Includes screen orchestration bans because meta/screens also match this glob
+  // and flat config replaces earlier screen-layer no-restricted-imports.
   {
     files: ["src/features/alchemy/meta/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              group: ["**/run-loop/**", "@/features/alchemy/run-loop/**"],
-              message: "Meta layer must not import run-loop. Use shared/ only.",
-            },
-            {
-              group: ["**/run-setup/**"],
-              message: "Meta layer must not import run-setup.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": restrictedImports({
+        patterns: [
+          ...BARREL_PATTERNS,
+          ...DOMAIN_STORE_PATTERNS,
+          ...META_NO_RUN_LOOP,
+          ...SCREENS_NO_ORCHESTRATION,
+        ],
+      }),
     },
   },
 
@@ -413,26 +490,9 @@ export default tseslint.config(
   {
     files: ["src/features/alchemy/shared/ui/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              group: [
-                "**/stores/run-domain-store",
-                "**/stores/battle-store",
-                "**/stores/run-session-facade",
-                "**/stores/run-session-actions",
-                "**/stores/run-session-read",
-                "@/features/alchemy/shared/stores/run-domain-store",
-                "@/features/alchemy/shared/stores/battle-store",
-                "@/features/alchemy/shared/stores/run-session-facade",
-              ],
-              message: "UI widgets receive data via props. Only ui-store is allowed for ephemeral hover/shimmer.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": restrictedImports({
+        patterns: [...BARREL_PATTERNS, ...UI_NO_SESSION_STORES],
+      }),
       "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
     },
   },
@@ -450,31 +510,15 @@ export default tseslint.config(
   {
     files: ["src/**/*.tsx"],
     rules: {
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: 'JSXAttribute[name.name="className"][value.type="TemplateLiteral"]',
-          message: "Use cn() from @/lib/utils for class names instead of template literals.",
-        },
-        {
-          selector: 'JSXAttribute[name.name="className"][value.type="JSXExpressionContainer"] TemplateLiteral',
-          message: "Use cn() from @/lib/utils for class names instead of template literals.",
-        },
-      ],
+      "no-restricted-syntax": restrictedSyntax(...CLASSNAME_NO_TEMPLATE),
     },
   },
 
-  // Battle engine rounding: use Math.round() instead of Math.floor() for all math.
+  // Battle .tsx files: keep Math.random/floor bans alongside className bans.
   {
-    files: ["src/lib/battle/**/*.ts"],
+    files: ["src/lib/battle/**/*.tsx"],
     rules: {
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: 'CallExpression[callee.object.name="Math"][callee.property.name="floor"]',
-          message: "Use Math.round() instead of Math.floor() in battle engine code.",
-        },
-      ],
+      "no-restricted-syntax": restrictedSyntax(...CLASSNAME_NO_TEMPLATE, ...BATTLE_NO_MATH_RANDOM, BATTLE_NO_MATH_FLOOR),
     },
   },
 
@@ -501,8 +545,7 @@ export default tseslint.config(
   {
     files: ["tests/**/*.spec.ts"],
     rules: {
-      "no-restricted-syntax": [
-        "error",
+      "no-restricted-syntax": restrictedSyntax(
         {
           selector: 'MemberExpression[property.name="skipCombatBtn"]',
           message:
@@ -520,7 +563,7 @@ export default tseslint.config(
           selector: 'Literal[value="Unlock All"]',
           message: "Unlock All is dev-only UI. Do not target it in e2e specs.",
         },
-      ],
+      ),
     },
   },
 
@@ -528,20 +571,16 @@ export default tseslint.config(
   {
     files: ["tests/draw-discard-animations.spec.ts", "tests/battle-end-turn-canary.spec.ts"],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          paths: [
-            {
-              name: "./fixtures/e2e",
-              message:
-                "Animation specs must use @playwright/test directly — fixtures/e2e enables fastBattle/enableFastMode.",
-            },
-          ],
-        },
-      ],
-      "no-restricted-syntax": [
-        "error",
+      "no-restricted-imports": restrictedImports({
+        paths: [
+          {
+            name: "./fixtures/e2e",
+            message:
+              "Animation specs must use @playwright/test directly — fixtures/e2e enables fastBattle/enableFastMode.",
+          },
+        ],
+      }),
+      "no-restricted-syntax": restrictedSyntax(
         {
           selector: 'CallExpression[callee.name="enableFastMode"]',
           message: "Do not call enableFastMode in animation-focused specs.",
@@ -550,26 +589,24 @@ export default tseslint.config(
           selector: 'ImportDeclaration[source.value="./fixtures/e2e"]',
           message: "Animation specs must use @playwright/test directly — fixtures/e2e enables fastBattle.",
         },
-      ],
+      ),
     },
   },
 
-  // Ban React.lazy on route screens.
+  // Ban React.lazy on route screens — keep barrel + facade bans.
   {
     files: ["src/app/screen-routes/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          paths: [
-            {
-              name: "react",
-              importNames: ["lazy"],
-              message: "Do not use React.lazy on route screens. All screen routes must be loaded statically upfront.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": restrictedImports({
+        paths: [
+          {
+            name: "react",
+            importNames: ["lazy"],
+            message: "Do not use React.lazy on route screens. All screen routes must be loaded statically upfront.",
+          },
+        ],
+        patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS],
+      }),
       "no-restricted-properties": [
         "error",
         {

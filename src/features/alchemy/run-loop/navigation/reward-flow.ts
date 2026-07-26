@@ -8,11 +8,6 @@ import { shuffle } from "@/lib/utils";
 import { CONSTANTS } from "../../shared/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { sampleItems } from "../../shared/utils/random";
-import {
-  resolveCardChoices,
-  resolveGearChoices,
-  resolveTrinketChoices,
-} from "@/lib/active-run-session/pending-reward-persistence";
 import { generateGearRewardChoices, type GearInstance } from "@/lib/gear";
 import {
   createEmptyRewardState,
@@ -231,23 +226,7 @@ export function createWildwoodRewardState(
   };
 }
 
-export function restoreWildwoodRewardState(
-  rewardType: "card" | "trinket" | "gear",
-  choiceIds: string[],
-  selectedId: string | null,
-  gearChoices: GearInstance[] = [],
-): CardRewardState | TrinketRewardState | GearRewardState {
-  if (rewardType === "gear") {
-    const choices = resolveGearChoices(gearChoices) ?? [];
-    return { ...createEmptyRewardState(), rewardType: "gear", choices, selectedId };
-  }
-  if (rewardType === "card") {
-    const choices = resolveCardChoices(choiceIds) ?? [];
-    return { ...createEmptyRewardState(), rewardType: "card", choices, selectedId };
-  }
-  const choices = resolveTrinketChoices(choiceIds) ?? [];
-  return { ...createEmptyRewardState(), rewardType: "trinket", choices, selectedId };
-}
+export { restoreWildwoodRewardState } from "@/lib/active-run-session";
 
 export function createCombatRewardState({
   battleState,

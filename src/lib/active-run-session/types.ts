@@ -6,7 +6,7 @@ import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
 import type { GearInstance } from "@/lib/gear";
-import type { PersistedPendingReward } from "@/lib/validation/save-schemas/active-run";
+import type { PersistedPendingReward } from "@/lib/validation";
 
 export type { PersistedPendingReward };
 

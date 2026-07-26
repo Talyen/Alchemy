@@ -18,7 +18,7 @@ import {
 import type { CardRect, Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { RunStateController, TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
-import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useDisplayOverrides } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-facade";
@@ -54,7 +54,7 @@ export function useBattleController({
     battle: { battleState, hasActiveBattle },
     activeLabyrinthModifiers,
   } = useRunSessionBattleContext(screen);
-  const displayOverrides = useRunDomainStore((s) => s.battle.displayOverrides);
+  const displayOverrides = useDisplayOverrides();
   const battlePresentation = useBattlePresentationStore(
     useShallow((s) => ({
       revealedCardKeys: s.revealedCardKeys,

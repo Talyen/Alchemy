@@ -28,4 +28,5 @@ export {
   type ParsedSaveData,
   type ParsedActiveRunData,
 } from "./save-schemas";
+export type { PersistedPendingReward } from "./save-schemas/active-run";
 export { normalizeActiveRunData } from "./normalize-active-run-data";

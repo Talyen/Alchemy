@@ -1,7 +1,7 @@
 // Stable action-only selectors for render paths (functions do not change between store updates).
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore } from "./app-store";
-import { getRunDomainStore } from "./run-session-facade";
+import { getRunDomainStore } from "./run-domain-store";
 
 const appActionKeys = [
   "setSelectedAspectRatio",

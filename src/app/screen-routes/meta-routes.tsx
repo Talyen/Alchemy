@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { platform } from "@/lib/platform";
 import { menuLogo, menuLogoVariants } from "@/lib/game-data";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
@@ -10,17 +9,24 @@ import {
   MenuScreen,
   TalentsScreen,
   ArmoryScreen,
-} from "@/features/alchemy/shared/screens";
+} from "@/features/alchemy/meta/screens";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 
 import { useAppActions, useHomesteadActions } from "@/features/alchemy/shared/stores/store-actions";
-import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
-import type { ScreenRouteContext } from "./types";
+import {
+  useBondedCompanions,
+  useContentSystemType,
+  useHasActiveRun,
+  useHomesteadProgressSlice,
+  useTalentProgressSlice,
+} from "@/features/alchemy/shared/stores/run-session-facade";
+import type { MetaRouteCtx } from "./route-ctx";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { flattenGearInventories } from "@/lib/gear";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
+import { useShallow } from "zustand/react/shallow";
 
-function MenuScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
+function MenuScreenRoute({ run }: Pick<MetaRouteCtx, "run">) {
   const { hasUnspentTalents, hasAffordableHomestead } = useAppScreenChrome();
   const isArmoryLocked = useGearStore((s) => flattenGearInventories(s.inventories).length === 0);
   return (
@@ -41,7 +47,7 @@ function MenuScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "onOpenBattleMenu">) {
+function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattleMenu">) {
   const controller = useArmoryController();
   return (
     <ArmoryScreen
@@ -65,9 +71,9 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "onOpe
   );
 }
 
-function GameModeSelectScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
-  const hasActiveRun = useRunDomainStore((s) => s.session.hasActiveRun);
-  const activeContentSystemType = useRunDomainStore((s) => s.progress.contentSystemType);
+function GameModeSelectScreenRoute({ run }: Pick<MetaRouteCtx, "run">) {
+  const hasActiveRun = useHasActiveRun();
+  const activeContentSystemType = useContentSystemType();
   return (
     <GameModeSelectScreen
       hasActiveRun={hasActiveRun}
@@ -80,7 +86,7 @@ function GameModeSelectScreenRoute({ run }: Pick<ScreenRouteContext, "run">) {
   );
 }
 
-function CollectionScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "onOpenBattleMenu">) {
+function CollectionScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattleMenu">) {
   const appValues = useAppStore(
     useShallow((s) => ({
       collectionTab: s.collectionTab,
@@ -91,7 +97,7 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "o
     })),
   );
   const appActions = useAppActions();
-  const bondedCompanions = useRunDomainStore((s) => s.progress.bondedCompanions);
+  const bondedCompanions = useBondedCompanions();
 
   return (
     <CollectionScreen
@@ -108,16 +114,8 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "o
   );
 }
 
-function HomesteadScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "onOpenBattleMenu">) {
-  const homesteadValues = useRunDomainStore(
-    useShallow((s) => ({
-      materialInventory: s.progress.materialInventory,
-      constructedBuildings: s.progress.constructedBuildings,
-      plantedFarms: s.progress.plantedFarms,
-      completedResearch: s.progress.completedResearch,
-      bondedCompanions: s.progress.bondedCompanions,
-    })),
-  );
+function HomesteadScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattleMenu">) {
+  const homesteadValues = useHomesteadProgressSlice();
   const discoveredCardIds = useAppStore((s) => s.discoveredCardIds);
   const homesteadActions = useHomesteadActions();
 
@@ -138,13 +136,8 @@ function HomesteadScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "on
   );
 }
 
-function TalentsScreenRoute({ run, onOpenBattleMenu }: Pick<ScreenRouteContext, "run" | "onOpenBattleMenu">) {
-  const { talentXP, unlockedTalents } = useRunDomainStore(
-    useShallow((s) => ({
-      talentXP: s.progress.talentXP,
-      unlockedTalents: s.progress.unlockedTalents,
-    })),
-  );
+function TalentsScreenRoute({ run, onOpenBattleMenu }: Pick<MetaRouteCtx, "run" | "onOpenBattleMenu">) {
+  const { talentXP, unlockedTalents } = useTalentProgressSlice();
 
   return (
     <TalentsScreen
@@ -157,12 +150,18 @@ function TalentsScreenRoute({ run, onOpenBattleMenu }: Pick<ScreenRouteContext, 
   );
 }
 
-export const metaScreenRoutes: Partial<Record<import("@/lib/routing").Screen, (ctx: ScreenRouteContext) => ReactNode>> =
-  {
-    menu: ({ run }) => <MenuScreenRoute run={run} />,
-    "game-mode-select": ({ run }) => <GameModeSelectScreenRoute run={run} />,
-    collection: ({ onOpenBattleMenu }) => <CollectionScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
-    homestead: ({ onOpenBattleMenu }) => <HomesteadScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
-    talents: ({ run, onOpenBattleMenu }) => <TalentsScreenRoute run={run} onOpenBattleMenu={onOpenBattleMenu} />,
-    armory: ({ onOpenBattleMenu }) => <ArmoryScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
-  };
+export const metaScreenRoutes: {
+  menu: (ctx: MetaRouteCtx) => ReactNode;
+  "game-mode-select": (ctx: MetaRouteCtx) => ReactNode;
+  collection: (ctx: MetaRouteCtx) => ReactNode;
+  homestead: (ctx: MetaRouteCtx) => ReactNode;
+  talents: (ctx: MetaRouteCtx) => ReactNode;
+  armory: (ctx: MetaRouteCtx) => ReactNode;
+} = {
+  menu: ({ run }) => <MenuScreenRoute run={run} />,
+  "game-mode-select": ({ run }) => <GameModeSelectScreenRoute run={run} />,
+  collection: ({ onOpenBattleMenu }) => <CollectionScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
+  homestead: ({ onOpenBattleMenu }) => <HomesteadScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
+  talents: ({ run, onOpenBattleMenu }) => <TalentsScreenRoute run={run} onOpenBattleMenu={onOpenBattleMenu} />,
+  armory: ({ onOpenBattleMenu }) => <ArmoryScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
+};
