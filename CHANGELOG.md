@@ -421,6 +421,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(test): silence unused session param in draw-sequence test
 - fix(test): restore e2e decks and harden battle auto-end
   Keep non-tombstoned custom deck cards on save load so E2E fixtures
   remain drawable, disable auto-end in injected saves, and avoid ending
