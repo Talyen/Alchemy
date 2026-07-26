@@ -28,7 +28,6 @@ import { trinketLibrary } from "@/lib/game-data";
 import { sampleItems } from "@/features/alchemy/shared/utils";
 
 export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState };
-export { emptyAlchemistState, emptyEquipmentShopState, emptyShopState, emptyTrinketShopState };
 
 interface RefreshableShopFields {
   refreshesLeft: number;
