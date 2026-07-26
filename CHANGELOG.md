@@ -421,6 +421,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(test): skip Death's Door in lethal defeat e2e
 - fix(ui): align battle menu lock tooltips with main menu
 - fix(test): silence unused session param in draw-sequence test
 - fix(test): restore e2e decks and harden battle auto-end
