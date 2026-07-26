@@ -421,6 +421,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(lint): sync escape refs in effects and strip hydrate flags
+  Move callback ref updates out of render for the Escape stack helpers,
+  and discard save-only validity flags without unused bindings.
 - fix(test): unblock typecheck:all for pre-push lint gate
   Make prepush tags mutable, align BattleCard fixtures and screen enums,
   and fix quit/mock typing so lint:ci passes.
