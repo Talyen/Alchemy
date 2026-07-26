@@ -421,6 +421,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(test): hoist end-turn mock for vitest factory
 - fix(app): drop unused escape-stack exports for knip
   Remove popEscapeHandler and EscapePriority; callers unsubscribe via
   pushEscapeHandler's return value.
