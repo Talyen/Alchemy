@@ -128,6 +128,9 @@ test.describe("Run Outcomes", () => {
         turnPhase: "player",
         playerHealth: 1,
         playerMaxHealth: 30,
+        // Knight Death's Door would otherwise absorb the lethal hit.
+        deathsDoorUsed: true,
+        deathsDoorActive: false,
         enemyHealth: 40,
         enemyMaxHealth: 40,
         currentEnemy: {
