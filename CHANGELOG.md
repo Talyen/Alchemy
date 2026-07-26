@@ -1924,6 +1924,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Style
 
+- style(docs): format markdown for prettier gate
 - style: fix Prettier formatting
 - style: fix import type annotations in battle test files
 - style: fix pre-existing formatting in 4 files
