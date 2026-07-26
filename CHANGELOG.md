@@ -1946,6 +1946,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Style
 
+- style: prettier-format docs and eslint config
 - style(docs): format markdown for prettier gate
 - style: fix Prettier formatting
 - style: fix import type annotations in battle test files
