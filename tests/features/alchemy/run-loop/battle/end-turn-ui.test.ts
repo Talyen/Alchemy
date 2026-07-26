@@ -12,7 +12,7 @@ import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/b
 const resolveEndTurnMock = vi.fn(() => false);
 
 vi.mock("@/features/alchemy/run-loop/battle/turn-orchestration", () => ({
-  resolveEndTurn: (...args: unknown[]) => resolveEndTurnMock(...args),
+  resolveEndTurn: resolveEndTurnMock,
 }));
 
 vi.mock("@/lib/animation/animation-prefs", () => ({

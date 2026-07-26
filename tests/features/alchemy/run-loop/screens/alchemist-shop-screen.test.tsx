@@ -68,9 +68,9 @@ vi.mock("@/lib/game-data/cards/card-pools", () => ({
 
 const potion = {
   id: "potion-1",
-  name: "Potion One",
-  type: "potion",
-  rarity: "common",
+  title: "Potion One",
+  descriptionLines: ["A potion."],
+  art: "potion",
   cost: 0,
   effects: [],
 } as BattleCard;
@@ -89,7 +89,7 @@ describe("AlchemistShopScreen mix Escape", () => {
     render(
       <AlchemistShopScreen
         gold={100}
-        runDeck={[potion, { ...potion, id: "potion-2", name: "Potion Two" }]}
+        runDeck={[potion, { ...potion, id: "potion-2", title: "Potion Two" }]}
         potionCards={[potion]}
         refreshesLeft={1}
         mixUsed={false}

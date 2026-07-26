@@ -27,9 +27,9 @@ vi.mock("@/features/alchemy/shared/ui/use-interactive-card", () => ({
 
 const wishCard = {
   id: "wish-card",
-  name: "Wish Card",
-  type: "attack",
-  rarity: "common",
+  title: "Wish Card",
+  descriptionLines: ["A wish."],
+  art: "wish",
   cost: 1,
   effects: [],
 } as BattleCard;

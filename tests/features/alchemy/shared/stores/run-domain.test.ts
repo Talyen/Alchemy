@@ -777,7 +777,7 @@ describe("session facade API", () => {
   it("warns when pending reward choices cannot be restored", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const activeRun: ActiveRunData = {
-      ...snapshotRun(ROUTE_SCREENS.REWARD),
+      ...snapshotRun(ROUTE_SCREENS.REWARDS),
       destinationChoices: [],
       pendingReward: {
         rewardType: "card",

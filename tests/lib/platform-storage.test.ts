@@ -57,7 +57,7 @@ describe("platform.storage", () => {
     window.alchemyDesktop = {
       isDesktop: true,
       setDisplayMode: async () => undefined,
-      quit: () => undefined,
+      quit: async () => undefined,
       listSaveCandidates: async () => [],
       writeSave: async () => true,
       clearSave: async () => true,

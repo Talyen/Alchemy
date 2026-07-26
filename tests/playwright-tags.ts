@@ -4,7 +4,7 @@ export const critical = { tag: "@critical" } as const;
  * Fast subset of @critical for lefthook pre-push (boot + one battle canary).
  * Always includes @critical so @prepush ⊆ @critical.
  */
-export const prepush = { tag: ["@critical", "@prepush"] } as const;
+export const prepush = { tag: ["@critical", "@prepush"] as string[] };
 /** Quick boot/menu checks (alchemy boot + electron boot). */
 export const smoke = { tag: "@smoke" } as const;
 /** Intentionally slow specs (drag, animation, viewport loops). Not excluded from full E2E; useful for filtering. */

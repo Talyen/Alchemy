@@ -17,9 +17,9 @@ vi.mock("@/features/alchemy/shared/ui/shop-card-item", () => ({
 const runDeck = [
   {
     id: "card-1",
-    name: "Card One",
-    type: "attack",
-    rarity: "common",
+    title: "Card One",
+    descriptionLines: ["A card."],
+    art: "card",
     cost: 1,
     effects: [],
   } as BattleCard,
