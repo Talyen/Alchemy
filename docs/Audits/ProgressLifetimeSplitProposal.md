@@ -7,10 +7,10 @@
 
 `run-domain-store` `progress` currently owns two lifetimes in one slice:
 
-| Lifetime | Fields |
-| -------- | ------ |
+| Lifetime       | Fields                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------- |
 | Permanent meta | `materialInventory`, buildings/farms/research/companions, `talentXP` / `unlockedTalents`, homestead `effects` |
-| Active run | deck, gold, HP, acts, trinkets, difficulty, content system, run-earned tallies |
+| Active run     | deck, gold, HP, acts, trinkets, difficulty, content system, run-earned tallies                                |
 
 That merge (see CHANGELOG: homestead store folded into progress) simplified persistence wiring, but it is the gravity well the ownership audit warns about: one mutation surface, one subscribe fan-out, and permanent meta changes re-render run consumers that only needed deck/HP.
 

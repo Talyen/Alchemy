@@ -476,12 +476,7 @@ export default tseslint.config(
     files: ["src/features/alchemy/meta/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": restrictedImports({
-        patterns: [
-          ...BARREL_PATTERNS,
-          ...DOMAIN_STORE_PATTERNS,
-          ...META_NO_RUN_LOOP,
-          ...SCREENS_NO_ORCHESTRATION,
-        ],
+        patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...META_NO_RUN_LOOP, ...SCREENS_NO_ORCHESTRATION],
       }),
     },
   },
@@ -518,7 +513,11 @@ export default tseslint.config(
   {
     files: ["src/lib/battle/**/*.tsx"],
     rules: {
-      "no-restricted-syntax": restrictedSyntax(...CLASSNAME_NO_TEMPLATE, ...BATTLE_NO_MATH_RANDOM, BATTLE_NO_MATH_FLOOR),
+      "no-restricted-syntax": restrictedSyntax(
+        ...CLASSNAME_NO_TEMPLATE,
+        ...BATTLE_NO_MATH_RANDOM,
+        BATTLE_NO_MATH_FLOOR,
+      ),
     },
   },
 

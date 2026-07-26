@@ -6,13 +6,13 @@ Canonical reference for run state, store layout, and boot policy. Coding rules: 
 
 ## Directory layout (`src/features/alchemy/`)
 
-| Path         | Role                                                                                       |
-| ------------ | ------------------------------------------------------------------------------------------ |
-| `shared/`    | `stores/`, `storage/`, `ui/`, `config/`, `utils/`, `types.ts`                               |
-| `meta/`      | Menu, collection, homestead, talents, armory screens                                       |
-| `run-setup/` | Character, difficulty, draft screens                                                       |
-| `run-loop/`  | Battle glue, navigation, shop, in-run screens                                              |
-| `shell/`     | Controller hooks                                                                           |
+| Path         | Role                                                          |
+| ------------ | ------------------------------------------------------------- |
+| `shared/`    | `stores/`, `storage/`, `ui/`, `config/`, `utils/`, `types.ts` |
+| `meta/`      | Menu, collection, homestead, talents, armory screens          |
+| `run-setup/` | Character, difficulty, draft screens                          |
+| `run-loop/`  | Battle glue, navigation, shop, in-run screens                 |
+| `shell/`     | Controller hooks                                              |
 
 Import using on-disk paths (e.g. `@/features/alchemy/shared/stores/run-session-facade`). `src/lib/` stays React-free.
 

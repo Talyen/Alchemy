@@ -256,13 +256,13 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 
 ## Adding a new screen
 
-| Step                                                                                                                      | File(s)                                                               |
-| ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| 1. Add string to `Screen` union and `ROUTE_SCREENS`                                                                       | `src/lib/routing/screens.ts`                                          |
-| 2. Create component in `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/` + barrel export                       | `index.ts` (local screen index under that subdirectory)               |
-| 3. Wire route handler in the matching phase table (`meta-routes`, `run-setup-routes`, `run-loop-routes`, …)              | `src/app/screen-routes/`                                              |
-| 4. Extend phase route ctx / `RenderAlchemyScreenProps` if new props needed                                                | `src/app/screen-routes/route-ctx.ts`, `src/app/render-screen-props.ts` |
-| 5. Wire navigation trigger                                                                                                | caller of `goToScreen("<name>")`                                      |
+| Step                                                                                                        | File(s)                                                                |
+| ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| 1. Add string to `Screen` union and `ROUTE_SCREENS`                                                         | `src/lib/routing/screens.ts`                                           |
+| 2. Create component in `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/` + barrel export        | `index.ts` (local screen index under that subdirectory)                |
+| 3. Wire route handler in the matching phase table (`meta-routes`, `run-setup-routes`, `run-loop-routes`, …) | `src/app/screen-routes/`                                               |
+| 4. Extend phase route ctx / `RenderAlchemyScreenProps` if new props needed                                  | `src/app/screen-routes/route-ctx.ts`, `src/app/render-screen-props.ts` |
+| 5. Wire navigation trigger                                                                                  | caller of `goToScreen("<name>")`                                       |
 
 ---
 
