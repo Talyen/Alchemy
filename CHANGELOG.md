@@ -916,6 +916,10 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor: share shop UI and escape stack, relocate audits, harden saves
+  Consolidate shop/choice surfaces and overlay Escape handling, move quality
+  audits under docs/Audits, tighten agent docs, and clean dead code while
+  expanding focused regression coverage.
 - refactor(prompts): simplify to focused prompt list, cut bottom-third audits
 - refactor(agents): streamline AGENTS.md and update Dark Pact, Hemorrhage, Kindling, Tithe card artwork
 - refactor(game-data): split cards and compendium into per-entry modules, extract styles and asset manifest
