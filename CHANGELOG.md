@@ -421,6 +421,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(test): raise change-amplification audit timeout
+  The audit script routinely exceeds the default 5s Vitest timeout under
+  load, which blocked pre-push even when the suite was otherwise green.
 - fix(ui): revise options text, locked tooltips, dropdown accent color
   - Update clear save data dialog title and description
   - Remove Error Log from options UI (code-only now)
