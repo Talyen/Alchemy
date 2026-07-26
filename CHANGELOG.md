@@ -421,6 +421,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(lint): drop unused shop empty-state re-exports
 - fix(lint): satisfy barrel imports after ESLint boundary stacking
   Route deep imports through barrels, allow bootstrap storage names, and
   exclude rng.ts from the Math.random member ban.
