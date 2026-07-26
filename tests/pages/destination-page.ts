@@ -26,6 +26,8 @@ export class DestinationPage {
       window.disableForceDestination = true;
     });
     await this.pick(name);
-    await expect(this.page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
+    await expect(this.page.getByTestId("battle-scene")).toBeVisible({ timeout: 10_000 });
+    await expect(this.page.getByRole("button", { name: "End Turn" })).toBeVisible({ timeout: 10_000 });
+    await expect(this.page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10_000 });
   }
 }

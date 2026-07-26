@@ -6,6 +6,14 @@ import { createTestBattleState } from "../../../../lib/battle/test-state";
 import { makeTestCard } from "../../../../fixtures/battle";
 import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
 
+const baseOptions = {
+  autoEndTurn: true,
+  screen: "battle" as const,
+  hasActiveBattle: true,
+  cardTransferInProgress: false,
+  hiddenHandCardKeys: new Set<string>(),
+};
+
 describe("useBattleAutoEndTurn", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -31,8 +39,7 @@ describe("useBattleAutoEndTurn", () => {
 
     renderHook(() =>
       useBattleAutoEndTurn({
-        autoEndTurn: true,
-        screen: "battle",
+        ...baseOptions,
         battleState,
         onEndTurn,
       }),
@@ -61,8 +68,7 @@ describe("useBattleAutoEndTurn", () => {
 
     renderHook(() =>
       useBattleAutoEndTurn({
-        autoEndTurn: true,
-        screen: "battle",
+        ...baseOptions,
         battleState,
         onEndTurn,
       }),
@@ -91,8 +97,7 @@ describe("useBattleAutoEndTurn", () => {
 
     const { result } = renderHook(() =>
       useBattleAutoEndTurn({
-        autoEndTurn: true,
-        screen: "battle",
+        ...baseOptions,
         battleState,
         onEndTurn,
       }),
@@ -100,6 +105,81 @@ describe("useBattleAutoEndTurn", () => {
 
     act(() => {
       result.current.clearAutoEndTurn();
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+    });
+
+    expect(onEndTurn).not.toHaveBeenCalled();
+  });
+
+  it("does not schedule while a hand transfer is in progress", () => {
+    const onEndTurn = vi.fn();
+    const battleState = createTestBattleState({
+      hand: [],
+      mana: 3,
+      turnPhase: "player",
+      enemyHealth: 20,
+    });
+
+    renderHook(() =>
+      useBattleAutoEndTurn({
+        ...baseOptions,
+        cardTransferInProgress: true,
+        battleState,
+        onEndTurn,
+      }),
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+    });
+
+    expect(onEndTurn).not.toHaveBeenCalled();
+  });
+
+  it("does not schedule while hand cards are still hidden from draw", () => {
+    const onEndTurn = vi.fn();
+    const battleState = createTestBattleState({
+      hand: [],
+      mana: 3,
+      turnPhase: "player",
+      enemyHealth: 20,
+    });
+
+    renderHook(() =>
+      useBattleAutoEndTurn({
+        ...baseOptions,
+        hiddenHandCardKeys: new Set(["slash-1"]),
+        battleState,
+        onEndTurn,
+      }),
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+    });
+
+    expect(onEndTurn).not.toHaveBeenCalled();
+  });
+
+  it("does not schedule when there is no active battle", () => {
+    const onEndTurn = vi.fn();
+    const battleState = createTestBattleState({
+      hand: [],
+      mana: 3,
+      turnPhase: "player",
+      enemyHealth: 20,
+    });
+
+    renderHook(() =>
+      useBattleAutoEndTurn({
+        ...baseOptions,
+        hasActiveBattle: false,
+        battleState,
+        onEndTurn,
+      }),
+    );
+
+    act(() => {
       vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
     });
 

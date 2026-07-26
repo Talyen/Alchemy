@@ -221,7 +221,7 @@ function ActorStatsPanel({
           value={healthPercent}
           className={cn("mt-1 h-2 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")}
         />
-        <ActorStatusRow title={title} statuses={statuses} deathsDoorActive={deathsDoorActive} />
+        <ActorStatusRow title={title} statuses={statuses} deathsDoorActive={deathsDoorActive} side={side} />
       </div>
     </div>
   );
@@ -253,9 +253,10 @@ function ActorStatusRow({
   title,
   statuses,
   deathsDoorActive,
-}: Pick<ArtPanelProps, "title" | "statuses"> & { deathsDoorActive: boolean | undefined }) {
+  side,
+}: Pick<ArtPanelProps, "title" | "statuses" | "side"> & { deathsDoorActive: boolean | undefined }) {
   return (
-    <div className="mt-2.5 flex min-h-7 items-center gap-1">
+    <div className="mt-2.5 flex min-h-7 items-center gap-1" data-testid={`${side}-statuses`}>
       {deathsDoorActive ? <DeathsDoorStatusIcon /> : null}
       {statuses.map((status) => (
         <StatusIcon key={`${title}-${status.id}-${status.value}`} chip={status} />

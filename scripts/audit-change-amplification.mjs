@@ -135,6 +135,10 @@ for (const [name, arr] of [
   ["clean", clean],
 ]) {
   const s = stats(arr);
+  if (!s) {
+    console.log(`  ${name}: n=0 (no commits in window)`);
+    continue;
+  }
   console.log(`  ${name}: n=${s.n} median=${s.median} mean=${s.mean} p90=${s.p90} max=${s.max}`);
   console.log(`    buckets:`, JSON.stringify(s.buckets));
 }
@@ -174,7 +178,7 @@ for (const c of clean) {
   if (hasGD && hasScreen) coedit++;
 }
 console.log(
-  `\nCo-edit signal: ${coedit}/${clean.length} (${((coedit / clean.length) * 100).toFixed(0)}%) CLEAN commits touch both src/lib/game-data/* and a screens/* file`,
+  `\nCo-edit signal: ${coedit}/${clean.length} (${clean.length ? ((coedit / clean.length) * 100).toFixed(0) : "0"}%) CLEAN commits touch both src/lib/game-data/* and a screens/* file`,
 );
 
 // Cleanup temp files

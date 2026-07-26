@@ -47,7 +47,7 @@ export async function runHandDrawSequence(
       await deps.animateDrawnHand(drawnCards, newState.hand, session);
     }
   } finally {
-    deps.runIfSessionActive(session, () => {
+    const clearHidden = () => {
       deps.setTransferInProgress(false);
       deps.setHiddenHandCardKeys((current) => {
         const next = new Set(current);
@@ -56,7 +56,13 @@ export async function runHandDrawSequence(
         }
         return next;
       });
-    });
+    };
+    // Always clear opacity-0 hand cards even if the battle session ended mid-draw.
+    if (deps.isSessionActive(session)) {
+      deps.runIfSessionActive(session, clearHidden);
+    } else {
+      clearHidden();
+    }
   }
   return deps.isSessionActive(session);
 }

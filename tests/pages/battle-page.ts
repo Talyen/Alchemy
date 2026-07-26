@@ -28,7 +28,8 @@ export class BattlePage {
     this.menuBtn = this.page.getByRole("button", { name: "Menu" });
     this.companionPanel = this.page.getByTestId("active-companion");
     this.deathsDoorIcon = this.page.getByLabel("Death's Door");
-    this.statusChip = (name: string) => this.page.getByRole("button", { name: new RegExp(`^${name} \\d+$`) });
+    this.statusChip = (name: string) =>
+      this.page.getByTestId("enemy-statuses").getByRole("button", { name: new RegExp(`^${name} \\d+$`) });
   }
 
   async mana(): Promise<number> {

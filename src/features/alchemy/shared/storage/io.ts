@@ -16,8 +16,8 @@ import {
 import type { SaveData } from "./types";
 import { logError } from "@/lib/error-logger";
 import { defaultSaveData } from "./defaults";
-import { cardLibrary } from "@/lib/game-data/cards";
 import { toActiveRunData } from "@/lib/active-run-session";
+import { isTombstonedCardId } from "@/lib/validation/migration/tombstoned-content-ids";
 
 class SaveSessionState {
   private writesDisabledForSession = false;
@@ -58,13 +58,12 @@ export interface SaveLoadState {
   status: SaveLoadStatus;
 }
 
-// Silently drops deck cards whose IDs no longer exist in the catalog, then
-// hydrates remaining cards into the runtime ActiveRunData contract. The run always
-// has a valid, drawable deck; no player-facing diagnostics.
+// Drops intentionally tombstoned card IDs, then hydrates remaining cards into the
+// runtime ActiveRunData contract. Unknown non-tombstoned IDs (e.g. E2E fixtures)
+// are kept so fully-specified saved cards remain drawable.
 function hydrateActiveRunDeck(activeRun: ParsedSaveData["activeRun"]): SaveData["activeRun"] {
   if (!activeRun) return null;
-  const knownIds = new Set(cardLibrary.map((c) => c.id));
-  const keepCard = (card: { id: string }) => knownIds.has(card.id);
+  const keepCard = (card: { id: string }) => !isTombstonedCardId(card.id);
   return toActiveRunData({
     ...activeRun,
     runDeck: activeRun.runDeck.filter(keepCard),

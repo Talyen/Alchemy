@@ -136,11 +136,18 @@ export function useBattleController({
     };
   }, [ctx]);
 
+  const hiddenHandCardKeys = useBattlePresentationStore((s) => s.hiddenHandCardKeys);
+  const cardTransfers = useBattlePresentationStore((s) => s.cardTransfers);
+  const cardTransferInProgress = useBattlePresentationStore((s) => s.cardTransferInProgress);
+
   // Auto end turn hook
   const { scheduleAutoEndTurn, clearAutoEndTurn } = useBattleAutoEndTurn({
     autoEndTurn,
     screen,
     battleState,
+    hasActiveBattle,
+    cardTransferInProgress,
+    hiddenHandCardKeys,
     onEndTurn: actions.endTurnUi.handleEndTurn,
   });
 
@@ -151,14 +158,10 @@ export function useBattleController({
   }, [scheduleAutoEndTurn, clearAutoEndTurn]);
 
   // Playable hand card keys
-  const hiddenHandCardKeys = useBattlePresentationStore((s) => s.hiddenHandCardKeys);
   const playableHandCardKeys = useMemo(
     () => getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys),
     [battleState, hiddenHandCardKeys],
   );
-
-  const cardTransfers = useBattlePresentationStore((s) => s.cardTransfers);
-  const cardTransferInProgress = useBattlePresentationStore((s) => s.cardTransferInProgress);
 
   const resetHandTransferUi = useBattlePresentationStore((s) => s.resetHandTransferUi);
 

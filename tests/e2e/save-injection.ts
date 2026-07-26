@@ -46,7 +46,8 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
       }
       sessionStorage.setItem("alchemy-injected-id", data.injectionId);
       const save = JSON.parse(localStorage.getItem(data.saveKey) || "{}");
-      const { discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, ...activeRunData } = data.payload;
+      const { discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, autoEndTurn, ...activeRunData } =
+        data.payload;
       save.activeRun = {
         characterId: "knight",
         runDeck: [],
@@ -60,6 +61,8 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
         runTrinkets: [],
         ...activeRunData,
       };
+      // E2E battles assert on a stable opening hand; auto-end races empty/mid-draw states.
+      save.autoEndTurn = autoEndTurn === true;
       if (Array.isArray(discoveredCardIds)) save.discoveredCardIds = discoveredCardIds;
       if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
       if (Array.isArray(discoveredTrinketIds)) save.discoveredTrinketIds = discoveredTrinketIds;

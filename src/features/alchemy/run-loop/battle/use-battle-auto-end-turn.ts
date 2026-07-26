@@ -11,11 +11,22 @@ interface AutoEndTurnOptions {
   autoEndTurn: boolean;
   screen: Screen;
   battleState: BattleState;
+  hasActiveBattle: boolean;
+  cardTransferInProgress: boolean;
+  hiddenHandCardKeys: Set<string>;
   onEndTurn: () => void;
 }
 
 // Schedules end turn only after the battle reaches a stable no-actions state.
-export function useBattleAutoEndTurn({ autoEndTurn, screen, battleState, onEndTurn }: AutoEndTurnOptions) {
+export function useBattleAutoEndTurn({
+  autoEndTurn,
+  screen,
+  battleState,
+  hasActiveBattle,
+  cardTransferInProgress,
+  hiddenHandCardKeys,
+  onEndTurn,
+}: AutoEndTurnOptions) {
   const onEndTurnRef = useRef(onEndTurn);
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -33,6 +44,9 @@ export function useBattleAutoEndTurn({ autoEndTurn, screen, battleState, onEndTu
       clearAutoEndTurn();
       if (
         !autoEndTurn ||
+        !hasActiveBattle ||
+        cardTransferInProgress ||
+        hiddenHandCardKeys.size > 0 ||
         screen !== "battle" ||
         state.turnPhase !== "player" ||
         state.enemyHealth <= 0 ||
@@ -44,7 +58,7 @@ export function useBattleAutoEndTurn({ autoEndTurn, screen, battleState, onEndTu
       if (hasPlayableCard) return;
       autoEndTimerRef.current = setTimeout(() => onEndTurnRef.current(), AUTO_END_TURN_DELAY);
     },
-    [autoEndTurn, battleState, clearAutoEndTurn, screen],
+    [autoEndTurn, battleState, cardTransferInProgress, clearAutoEndTurn, hasActiveBattle, hiddenHandCardKeys, screen],
   );
 
   const scheduleAutoEndTurnRef = useRef(scheduleAutoEndTurnRaw);

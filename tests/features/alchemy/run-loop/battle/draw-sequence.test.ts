@@ -77,4 +77,31 @@ describe("runHandDrawSequence", () => {
     expect(deps.setTransferInProgress).toHaveBeenLastCalledWith(false);
     expect(hiddenKeys.length).toBeGreaterThan(0);
   });
+
+  it("clears hidden keys even when the battle session ends mid-draw", async () => {
+    const oldHand = [makeCard(1)];
+    const newHand = [makeCard(1), makeCard(2, "block")];
+    const applyState = vi.fn();
+    const hiddenKeys: unknown[] = [];
+    let sessionActive = true;
+    const deps = makeDeps({
+      isSessionActive: () => sessionActive,
+      runIfSessionActive: (session, action) => {
+        if (sessionActive) action();
+      },
+      animateDrawnHand: vi.fn(async () => {
+        sessionActive = false;
+      }),
+      setHiddenHandCardKeys: (update) => {
+        hiddenKeys.push(typeof update === "function" ? update(new Set(["slash-1", "block-2"])) : update);
+      },
+    });
+
+    const result = await runHandDrawSequence(oldHand, { ...defaultBattleState(), hand: newHand }, applyState, 3, deps);
+
+    expect(result).toBe(false);
+    expect(deps.setTransferInProgress).toHaveBeenLastCalledWith(false);
+    const lastHidden = hiddenKeys[hiddenKeys.length - 1] as Set<string>;
+    expect(lastHidden.has("block-2")).toBe(false);
+  });
 });
