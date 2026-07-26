@@ -421,6 +421,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(lint): satisfy barrel imports after ESLint boundary stacking
+  Route deep imports through barrels, allow bootstrap storage names, and
+  exclude rng.ts from the Math.random member ban.
 - fix(test): skip Death's Door in lethal defeat e2e
 - fix(ui): align battle menu lock tooltips with main menu
 - fix(test): silence unused session param in draw-sequence test
