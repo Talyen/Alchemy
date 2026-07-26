@@ -4,9 +4,12 @@ import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 
 export function useCaptureEscapeCancel(onCancel: (() => void) | undefined) {
   const onCancelRef = useRef(onCancel);
-  onCancelRef.current = onCancel;
   const escapeId = useId();
   const enabled = onCancel !== undefined;
+
+  useEffect(() => {
+    onCancelRef.current = onCancel;
+  }, [onCancel]);
 
   useEffect(() => {
     if (!enabled) return;

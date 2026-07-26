@@ -58,7 +58,9 @@ export function WishOverlay({ battleState, actions }: { battleState: BattleScree
   const onWishChoiceRef = useRef(onWishChoice);
   const handWidthClass = handCardWidthClass;
 
-  onWishChoiceRef.current = onWishChoice;
+  useEffect(() => {
+    onWishChoiceRef.current = onWishChoice;
+  }, [onWishChoice]);
 
   const descriptionContext = {
     ...battleState.talentEffects,

@@ -31,7 +31,8 @@ function pickOptionalField<T>(saved: SavedCard, key: keyof SavedCard): T | undef
 export function hydrateCard(savedCard: SavedCard): BattleCard {
   const libraryCard = cardLibrary.find((c) => c.id === savedCard.id);
   if (!libraryCard) {
-    const { descriptionLinesFullyValid: _dl, effectsFullyValid: _ef, ...rest } = savedCard;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- strip save-only validity flags
+    const { descriptionLinesFullyValid, effectsFullyValid, ...rest } = savedCard;
     return rest;
   }
 
