@@ -934,6 +934,10 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(architecture): harden import boundaries and deepen run-session facade
+  Stack ESLint restricted-import layers correctly, move shop/reward session
+  types into lib, route via phase ctx, and document the progress-lifetime split
+  proposal.
 - refactor: share shop UI and escape stack, relocate audits, harden saves
   Consolidate shop/choice surfaces and overlay Escape handling, move quality
   audits under docs/Audits, tighten agent docs, and clean dead code while
