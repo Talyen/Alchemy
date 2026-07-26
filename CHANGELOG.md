@@ -421,6 +421,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(test): unblock typecheck:all for pre-push lint gate
+  Make prepush tags mutable, align BattleCard fixtures and screen enums,
+  and fix quit/mock typing so lint:ci passes.
 - fix(test): raise change-amplification audit timeout
   The audit script routinely exceeds the default 5s Vitest timeout under
   load, which blocked pre-push even when the suite was otherwise green.
