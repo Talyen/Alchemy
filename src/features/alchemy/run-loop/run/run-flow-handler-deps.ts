@@ -1,7 +1,8 @@
 import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import type { ScreenTransitionOptions } from "@/features/alchemy/shell/use-screen-transitions";
-import type { ContentSystemNavigationApi } from "@/features/alchemy/run-setup/run/content-system-navigation";
+import type { RewardState } from "@/lib/active-run-session";
+import type { DestinationOptionsInput } from "@/features/alchemy/shared/run-flow/destination-flow";
 import type { VictoryRewardsResult } from "../navigation/victory-flow";
 import {
   readRunSessionStore,
@@ -26,7 +27,9 @@ export interface RunFlowHandlerDeps {
   onStartBossById: (bossId: string, modifiers?: DifficultyModifier[]) => boolean;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
   onCommitWildwoodVictory: (result: VictoryRewardsResult) => void;
-  contentNav: Pick<ContentSystemNavigationApi, "createInitialDestinations">;
+  contentNav: {
+    createInitialDestinations: (options?: DestinationOptionsInput) => RewardState;
+  };
   getAvailableDestinations: (options?: {
     currentHealth?: number;
     currentGold?: number;

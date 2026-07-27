@@ -7,7 +7,7 @@ import { DEFAULT_BATTLE_ENEMY_TYPE, DRAFT_ROUNDS } from "@/lib/game-constants";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { useAppStore } from "../../shared/stores/app-store";
 import { useUiStore } from "../../shared/stores/ui-store";
-import { useGearStore } from "../../shared/stores/gear-store";
+import { readGearMaxHealthBonus } from "../../shared/stores/gear-read-port";
 import {
   setHasActiveRun,
   setPendingCharacterId,
@@ -17,19 +17,18 @@ import {
   readRunSessionStore,
   readActiveRunStore,
 } from "../../shared/stores/run-session-facade";
-import { afterCampaignCharacterResolved } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
-import { createDestinationRewardState } from "@/features/alchemy/run-loop/navigation/victory-flow";
+import { afterCampaignCharacterResolved } from "@/features/alchemy/shared/run-flow/campaign-start";
 import {
+  createDestinationRewardState,
   type DestinationOptionsInput,
   sampleDestinationChoices,
   restoreOrCreateDestinationRewardState,
-} from "@/features/alchemy/run-loop/navigation/destination-flow";
+} from "@/features/alchemy/shared/run-flow/destination-flow";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
 import { createRunStartSnapshot, type RunStartSnapshot } from "./run-start";
 import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { CONSTANTS } from "../../shared/types";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
   function createInitialDestinations(options?: DestinationOptionsInput) {
@@ -101,20 +100,12 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
         ? {
             ...baseInput,
             draftedDeck: resolvedDraft,
-            gearMaxHealthBonus: computeGearManifest(
-              characterId,
-              flattenGearInventories(useGearStore.getState().inventories),
-              useGearStore.getState().loadouts,
-            ).maxHealth,
+            gearMaxHealthBonus: readGearMaxHealthBonus(characterId),
             homesteadMaxHealthBonus: readActiveRunStore().effects.runMaxHealthBonus,
           }
         : {
             ...baseInput,
-            gearMaxHealthBonus: computeGearManifest(
-              characterId,
-              flattenGearInventories(useGearStore.getState().inventories),
-              useGearStore.getState().loadouts,
-            ).maxHealth,
+            gearMaxHealthBonus: readGearMaxHealthBonus(characterId),
             homesteadMaxHealthBonus: readActiveRunStore().effects.runMaxHealthBonus,
           },
     );

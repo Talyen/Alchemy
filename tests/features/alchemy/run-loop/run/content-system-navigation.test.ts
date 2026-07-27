@@ -18,8 +18,8 @@ vi.mock("@/lib/audio", () => ({
   playGoldGain: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/run-loop/navigation/run-navigation-helpers", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/run-loop/navigation/run-navigation-helpers")>();
+vi.mock("@/features/alchemy/shared/run-flow/campaign-start", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/run-flow/campaign-start")>();
   return {
     ...actual,
     afterCampaignCharacterResolved: vi.fn((_id, _deps, onContinue) => onContinue()),

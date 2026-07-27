@@ -14,86 +14,78 @@ import {
   type TalentXP,
 } from "@/lib/game-data";
 import {
-  createInitialRunState,
+  createInitialActiveRunFields,
+  createInitialPermanentFields,
   createInitialTalentState,
   runFieldsFromSnapshot,
-  type RunStateFields,
+  type ActiveRunProgressFields,
 } from "@/features/alchemy/run-setup/run/run-state-init";
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
-import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
-import { companionTierItems } from "@/lib/homestead/companions";
-import { computeHomesteadEffects } from "@/lib/homestead/effects";
-import { createEmptyTierRecord } from "@/lib/homestead/tiers";
-import { defineFieldSetter, type ImmerSet } from "./_field-setter";
+import { defineNestedFieldSetter, type ImmerSet } from "./_field-setter";
 import { createHomesteadProgressActions } from "./progress-homestead-actions";
 import type { RunDomainDataState } from "../run-domain-types";
 import type { ProgressActions } from "./progress-action-types";
 
 export function defineProgressActions(set: ImmerSet<RunDomainDataState>): ProgressActions {
-  const setField = defineFieldSetter<RunStateFields, RunDomainDataState>(set, "progress");
+  const setRunField = defineNestedFieldSetter<ActiveRunProgressFields, RunDomainDataState>(
+    set,
+    (state) => state.progress.run,
+  );
 
   return {
-    setRunDeck: setField("runDeck"),
-    setRunGold: setField("runGold"),
-    setRunPlayerHealth: setField("runPlayerHealth"),
-    setRunMaxHealth: setField("runMaxHealth"),
-    setRoomsEncountered: setField("roomsEncountered"),
-    setCurrentAct: setField("currentAct"),
-    setDestinationIndexInAct: setField("destinationIndexInAct"),
-    setCompletedDestinations: setField("completedDestinations"),
-    setLastOfferedDestinations: setField("lastOfferedDestinations"),
-    setDestinationRoundsSinceOffered: setField("destinationRoundsSinceOffered"),
+    setRunDeck: setRunField("runDeck"),
+    setRunGold: setRunField("runGold"),
+    setRunPlayerHealth: setRunField("runPlayerHealth"),
+    setRunMaxHealth: setRunField("runMaxHealth"),
+    setRoomsEncountered: setRunField("roomsEncountered"),
+    setCurrentAct: setRunField("currentAct"),
+    setDestinationIndexInAct: setRunField("destinationIndexInAct"),
+    setCompletedDestinations: setRunField("completedDestinations"),
+    setLastOfferedDestinations: setRunField("lastOfferedDestinations"),
+    setDestinationRoundsSinceOffered: setRunField("destinationRoundsSinceOffered"),
     setDestinationOfferState: (offerState) =>
       set((state) => {
-        state.progress.lastOfferedDestinations = [...offerState.lastOfferedDestinations];
-        state.progress.destinationRoundsSinceOffered = { ...offerState.roundsSinceOffered };
+        state.progress.run.lastOfferedDestinations = [...offerState.lastOfferedDestinations];
+        state.progress.run.destinationRoundsSinceOffered = { ...offerState.roundsSinceOffered };
       }),
-    setRunTrinkets: setField("runTrinkets"),
-    setEncounteredRunEnemyIds: setField("encounteredRunEnemyIds"),
-    setSelectedDifficulty: setField("selectedDifficulty"),
-    setContentSystemType: setField("contentSystemType"),
+    setRunTrinkets: setRunField("runTrinkets"),
+    setEncounteredRunEnemyIds: setRunField("encounteredRunEnemyIds"),
+    setSelectedDifficulty: setRunField("selectedDifficulty"),
+    setContentSystemType: setRunField("contentSystemType"),
 
     setCharacter: (selectedId) =>
       set((state) => {
-        state.progress.characterId = selectedId;
+        state.progress.run.characterId = selectedId;
       }),
 
     resetProgress: () =>
       set((state) => {
-        const characterId = state.progress.characterId;
-        const talentXP = state.progress.talentXP;
-        const unlockedTalents = state.progress.unlockedTalents;
-        const materialInventory = state.progress.materialInventory;
-        const constructedBuildings = state.progress.constructedBuildings;
-        const plantedFarms = state.progress.plantedFarms;
-        const completedResearch = state.progress.completedResearch;
-        const bondedCompanions = state.progress.bondedCompanions;
-        const effects = state.progress.effects;
-        Object.assign(state.progress, createInitialRunState(null, characterId), {
-          talentXP,
-          unlockedTalents,
+        const characterId = state.progress.run.characterId;
+        const permanent = state.progress.permanent;
+        state.progress.run = {
+          ...createInitialActiveRunFields(null, characterId),
           runTalentXP: {},
-          materialInventory,
-          constructedBuildings,
-          plantedFarms,
-          completedResearch,
-          bondedCompanions,
-          effects,
-          initialized: true,
-        });
+        };
+        state.progress.permanent = permanent;
+        state.progress.initialized = true;
       }),
 
     addRunGold: (amount) =>
       set((state) => {
-        const mult = getGoldMultiplier(state.progress.characterId, state.progress.selectedDifficulty);
-        state.progress.runGold += Math.floor(amount * mult);
+        const mult = getGoldMultiplier(state.progress.run.characterId, state.progress.run.selectedDifficulty);
+        state.progress.run.runGold += Math.floor(amount * mult);
       }),
 
     unlockTalent: (keywordId, talentId) =>
       set((state) => {
-        const result = tryUnlockTalent(keywordId, talentId, state.progress.talentXP, state.progress.unlockedTalents);
+        const result = tryUnlockTalent(
+          keywordId,
+          talentId,
+          state.progress.permanent.talentXP,
+          state.progress.permanent.unlockedTalents,
+        );
         if (result.unlockedTalents) {
-          state.progress.unlockedTalents = result.unlockedTalents;
+          state.progress.permanent.unlockedTalents = result.unlockedTalents;
         }
       }),
 
@@ -108,44 +100,33 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
             for (const [kw, ids] of Object.entries(next)) {
               xp[kw as KeywordId] = xpThresholdForPoints(ids.length);
             }
-            state.progress.unlockedTalents = next;
-            state.progress.talentXP = xp;
-            state.progress.runTalentXP = {};
+            state.progress.permanent.unlockedTalents = next;
+            state.progress.permanent.talentXP = xp;
+            state.progress.run.runTalentXP = {};
           })
       : () => {},
 
     resetUnlockedTalents: () =>
       set((state) => {
-        state.progress.unlockedTalents = {};
+        state.progress.permanent.unlockedTalents = {};
       }),
 
     resetRunXP: () =>
       set((state) => {
-        state.progress.runTalentXP = {};
+        state.progress.run.runTalentXP = {};
       }),
 
     clearPermanentData: () =>
       set((state) => {
-        state.progress.talentXP = {};
-        state.progress.runTalentXP = {};
-        state.progress.unlockedTalents = {};
-        state.progress.materialInventory = emptyInventory();
-        state.progress.constructedBuildings = createEmptyTierRecord(buildings);
-        state.progress.plantedFarms = createEmptyTierRecord(farmPlots);
-        state.progress.completedResearch = createEmptyTierRecord(researchUpgrades);
-        state.progress.bondedCompanions = createEmptyTierRecord(companionTierItems);
-        state.progress.effects = computeHomesteadEffects(
-          createEmptyTierRecord(buildings),
-          createEmptyTierRecord(farmPlots),
-          createEmptyTierRecord(researchUpgrades),
-        );
+        state.progress.permanent = createInitialPermanentFields();
+        state.progress.run.runTalentXP = {};
       }),
 
     awardCardXP: (card) => {
       const keywords = filterKeywordsForTalentXP(getCardKeywords(card));
       if (keywords.length === 0) return;
       set((state) => {
-        state.progress.runTalentXP = addTalentXP(state.progress.runTalentXP, keywords);
+        state.progress.run.runTalentXP = addTalentXP(state.progress.run.runTalentXP, keywords);
       });
     },
 
@@ -153,59 +134,51 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
       const keywords = filterKeywordsForTalentXP([keywordId]);
       if (keywords.length === 0) return;
       set((state) => {
-        state.progress.runTalentXP = addTalentXP(state.progress.runTalentXP, keywords, amount);
+        state.progress.run.runTalentXP = addTalentXP(state.progress.run.runTalentXP, keywords, amount);
       });
     },
 
     addRunMaterialsEarned: (materials) =>
       set((state) => {
-        state.progress.runMaterialsEarned = addInventory(state.progress.runMaterialsEarned, materials);
+        state.progress.run.runMaterialsEarned = addInventory(state.progress.run.runMaterialsEarned, materials);
       }),
 
     clearRunMaterialsEarned: () =>
       set((state) => {
-        state.progress.runMaterialsEarned = emptyInventory();
+        state.progress.run.runMaterialsEarned = emptyInventory();
       }),
 
     finalizeRunXP: () =>
       set((state) => {
-        if (Object.keys(state.progress.runTalentXP).length === 0) {
+        if (Object.keys(state.progress.run.runTalentXP).length === 0) {
           state.session.runEndTalentXP = {};
           return;
         }
-        const multiplier = getDifficultyXPMultiplier(state.progress.selectedDifficulty);
-        state.session.runEndTalentXP = computeRunEndTalentXPSnapshot(state.progress.runTalentXP, multiplier);
-        state.progress.talentXP = mergeRunTalentXPIntoPermanent(
-          state.progress.runTalentXP,
-          state.progress.talentXP,
+        const multiplier = getDifficultyXPMultiplier(state.progress.run.selectedDifficulty);
+        state.session.runEndTalentXP = computeRunEndTalentXPSnapshot(state.progress.run.runTalentXP, multiplier);
+        state.progress.permanent.talentXP = mergeRunTalentXPIntoPermanent(
+          state.progress.run.runTalentXP,
+          state.progress.permanent.talentXP,
           multiplier,
         );
-        state.progress.runTalentXP = {};
+        state.progress.run.runTalentXP = {};
       }),
 
     initialize: (activeRun, talentXP, unlockedTalents, fallbackCharacterId = "knight") =>
       set((state) => {
-        const existingHomestead = {
-          materialInventory: state.progress.materialInventory,
-          constructedBuildings: state.progress.constructedBuildings,
-          plantedFarms: state.progress.plantedFarms,
-          completedResearch: state.progress.completedResearch,
-          bondedCompanions: state.progress.bondedCompanions,
-          effects: state.progress.effects,
+        const existingPermanent = state.progress.permanent;
+        state.progress.run = createInitialActiveRunFields(activeRun, fallbackCharacterId);
+        state.progress.permanent = {
+          ...existingPermanent,
+          ...createInitialTalentState(talentXP, unlockedTalents),
         };
-        Object.assign(
-          state.progress,
-          createInitialRunState(activeRun, fallbackCharacterId),
-          createInitialTalentState(talentXP, unlockedTalents),
-          existingHomestead,
-          { initialized: true },
-        );
+        state.progress.initialized = true;
       }),
 
     hydrateFromSnapshot: (snapshot) =>
       set((state) => {
         state.session.runEndTalentXP = {};
-        Object.assign(state.progress, runFieldsFromSnapshot(snapshot), {
+        Object.assign(state.progress.run, runFieldsFromSnapshot(snapshot), {
           runTalentXP: {},
           runMaterialsEarned: emptyInventory(),
           lastOfferedDestinations: [],

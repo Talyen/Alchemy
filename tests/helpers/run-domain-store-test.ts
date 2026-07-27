@@ -12,6 +12,7 @@ import {
   createInitialSessionFields,
   createInitialBattleFields,
 } from "@/features/alchemy/shared/stores/run-domain-types";
+import { applyFlatProgressPartial, type RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
 
 export {
   getRunProgressStoreView,
@@ -45,10 +46,11 @@ export function resetRunBattleSlice() {
   });
 }
 
-export function setRunProgress(partial: Partial<ReturnType<typeof createInitialProgressFields>>, replace = false) {
+/** Apply flat progress fields (facade shape) onto the nested progress slice. */
+export function setRunProgress(partial: Partial<RunStateFields>, replace = false) {
   useRunDomainStore.setState((s) => {
-    if (replace) s.progress = { ...createInitialProgressFields(), ...partial };
-    else Object.assign(s.progress, partial);
+    if (replace) s.progress = createInitialProgressFields();
+    applyFlatProgressPartial(s.progress, partial);
   });
 }
 

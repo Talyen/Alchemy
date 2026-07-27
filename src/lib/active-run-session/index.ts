@@ -29,3 +29,13 @@ export {
   resolveGearChoices,
   resolveTrinketChoices,
 } from "./pending-reward-persistence";
+export {
+  serializeShopState,
+  hydrateShopState,
+  serializeAlchemistState,
+  hydrateAlchemistState,
+  serializeTrinketShopState,
+  hydrateTrinketShopState,
+  serializeEquipmentShopState,
+  hydrateEquipmentShopState,
+} from "./shop-persistence";

@@ -8,7 +8,7 @@ Canonical reference for run state, store layout, and boot policy. Coding rules: 
 
 | Path         | Role                                                          |
 | ------------ | ------------------------------------------------------------- |
-| `shared/`    | `stores/`, `storage/`, `ui/`, `config/`, `utils/`, `types.ts` |
+| `shared/`    | `stores/`, `storage/`, `ui/`, `config/`, `utils/`, `run-flow/`, `types.ts` |
 | `meta/`      | Menu, collection, homestead, talents, armory screens          |
 | `run-setup/` | Character, difficulty, draft screens                          |
 | `run-loop/`  | Battle glue, navigation, shop, in-run screens                 |
@@ -16,13 +16,25 @@ Canonical reference for run state, store layout, and boot policy. Coding rules: 
 
 Import using on-disk paths (e.g. `@/features/alchemy/shared/stores/run-session-facade`). `src/lib/` stays React-free.
 
+`shared/run-flow/` is the neutral seam for destination sampling and campaign-start helpers so `run-setup` and `run-loop` do not import each other (ESLint-enforced).
 ## Run state
 
 A single **run** is owned by **`useRunDomainStore`** (`shared/stores/run-domain-store.ts`) with four slices: `progress`, `session`, `navigation`, and `battle`.
 
+`progress` is nested by lifetime:
+
+| Subtree | Concern | Notes |
+| ------- | ------- | ----- |
+| `progress.run` | Deck, gold, HP, acts, trinkets, content system, run tallies | Active-run only |
+| `progress.permanent` | Homestead, talent XP / unlocks, derived `effects` | Meta lifetime; survives teardown |
+| `progress.initialized` | Hydration gate | Shared |
+
+Facade adapters (`useRunAdapter`, `useTalentAdapter`, `useHomesteadProgressSlice`, `readActiveRunStore`) project a **flat** view so feature code does not dig into the nest.
+
 | Concern                                 | Owner                       | Notes                                    |
 | --------------------------------------- | --------------------------- | ---------------------------------------- |
-| Deck, gold, HP, acts, trinkets, talents | `progress`                  | Persisted with meta save                 |
+| Deck, gold, HP, acts, trinkets          | `progress.run`              | Persisted inside `activeRun`             |
+| Homestead + permanent talents           | `progress.permanent`        | Persisted as top-level save fields       |
 | Rewards, shops, labyrinth, mystery      | `session`                   | Transient per run                        |
 | Current `Screen`                        | `navigation`                | `useActiveRunScreen()`                   |
 | Combat snapshot + display overrides     | `battle`                    | Synced during battle                     |
@@ -85,6 +97,8 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 ## Permanent Gear (`gear-store`)
 
 Owned Gear instances and per-character loadouts live in `shared/stores/gear-store.ts`. Definitions and pure equip/salvage/effect rules live under `src/lib/gear/`. Gear is permanent meta progression and is not copied into active-run data; battle creation snapshots the selected character's aggregate Gear effects into the immutable battle talent manifest.
+
+Run-loop / run-setup / shell read gear through `shared/stores/gear-read-port.ts` (`readGearManifestForCharacter`, `readHasAnyOwnedGear`, …) instead of reaching into the full store API. Mutations stay on `gear-store` / the armory controller.
 
 Each Gear instance may be equipped on at most one character at a time (one slot per loadout). Equipping moves the instance off any other character or slot. Armory editing is disabled while a battle is active. Autosave subscribes to the Gear store and uses the transient Return to Run screen when meta screens are opened during a run. See [ARMORY.md](./ARMORY.md) for the data model, state flow, board-packing rules, drag FSM, battle integration, and tests map.
 

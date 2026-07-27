@@ -48,14 +48,14 @@ describe("createRunFlowHandlers victory paths", () => {
   it("awardRunEndMaterials applies homestead end-of-run per-room bonuses", () => {
     setRunProgress({ roomsEncountered: 4, currentAct: 1 });
     useRunDomainStore.setState((s) => {
-      s.progress.effects.endRunHerbsPerRoom = 1;
+      s.progress.permanent.effects.endRunHerbsPerRoom = 1;
     });
-    const herbsBefore = useRunDomainStore.getState().progress.materialInventory.herbs;
+    const herbsBefore = useRunDomainStore.getState().progress.permanent.materialInventory.herbs;
 
     const mats = makeHandlers().awardRunEndMaterials();
 
     expect(mats.herbs).toBe(4);
-    expect(useRunDomainStore.getState().progress.materialInventory.herbs).toBe(herbsBefore + 4);
+    expect(useRunDomainStore.getState().progress.permanent.materialInventory.herbs).toBe(herbsBefore + 4);
     expect(getRunSessionStoreView().runEndMaterials.herbs).toBe(4);
   });
 
@@ -82,7 +82,7 @@ describe("createRunFlowHandlers victory paths", () => {
   it("Wildwood Draft run end grants no materials", () => {
     setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, roomsEncountered: 12 });
     useRunDomainStore.setState((s) => {
-      s.progress.effects.endRunHerbsPerRoom = 2;
+      s.progress.permanent.effects.endRunHerbsPerRoom = 2;
     });
     readActiveRunStore().addRunMaterialsEarned({ ...emptyInventory(), wood: 5 });
 

@@ -3,7 +3,7 @@ import { immer } from "zustand/middleware/immer";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { computeTalentEffects, type TalentEffectManifest } from "@/lib/game-data";
-import type { RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
+import { flattenProgressState, type RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
 import type { Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import {
@@ -144,7 +144,7 @@ export type NavigationStore = { screen: Screen } & ReturnType<typeof pickNavigat
 
 export function getRunProgressStoreView(): RunProgressStore {
   const state = useRunDomainStore.getState();
-  return { ...state.progress, ...pickProgressActions(state) };
+  return { ...flattenProgressState(state.progress), ...pickProgressActions(state) };
 }
 
 export function getRunSessionStoreView(): RunSessionStore {
@@ -231,20 +231,24 @@ export type TalentStateController = ReturnType<typeof selectTalentController> & 
 
 export function useRunAdapter(): RunStateController {
   return useRunDomainStore(
-    useShallow((state) => selectRunController({ ...state.progress, ...pickProgressActions(state) })),
+    useShallow((state) =>
+      selectRunController({ ...flattenProgressState(state.progress), ...pickProgressActions(state) }),
+    ),
   );
 }
 
 export function useTalentAdapter(): TalentStateController {
   const base = useRunDomainStore(
-    useShallow((state) => selectTalentController({ ...state.progress, ...pickProgressActions(state) })),
+    useShallow((state) =>
+      selectTalentController({ ...flattenProgressState(state.progress), ...pickProgressActions(state) }),
+    ),
   );
   const talentEffects = useMemo(() => computeTalentEffects(base.unlockedTalents), [base.unlockedTalents]);
   return useMemo(() => ({ ...base, talentEffects }), [base, talentEffects]);
 }
 
 export function useHomesteadAdapter(): HomesteadEffectManifest {
-  return useRunDomainStore((state) => state.progress.effects);
+  return useRunDomainStore((state) => state.progress.permanent.effects);
 }
 
 /** Reset all run domain slices to initial values (tests and full teardown). */

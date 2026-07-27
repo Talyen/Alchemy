@@ -1,11 +1,11 @@
 # Proposal: Split permanent progress from active-run progress
 
-**Status:** proposal only — do not implement without explicit approval  
+**Status:** implemented — `progress.run` / `progress.permanent` inside `useRunDomainStore`  
 **Related:** [StateGravityOwnershipAudit](./StateGravityOwnershipAudit.md), [ARCHITECTURE.md](../ARCHITECTURE.md)
 
 ## Problem
 
-`run-domain-store` `progress` currently owns two lifetimes in one slice:
+`run-domain-store` `progress` previously owned two lifetimes in one flat slice:
 
 | Lifetime       | Fields                                                                                                        |
 | -------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -51,6 +51,4 @@ Facade:
 3. Update snapshot/restore/`createInitialProgressFields` / architecture save tests.
 4. Delete aliases; confirm madge + facade boundary tests stay green.
 
-## Why wait
-
-This touches every progress selector, save bootstrap, and talent/homestead path. Phases 1–4 already deliver enforceable boundaries; this proposal should land as its own approved change, not as drive-by cleanup.
+**Landed:** nested `progress.run` / `progress.permanent` with flat facade projections; save JSON unchanged; autosave reads permanent progress from the domain store.

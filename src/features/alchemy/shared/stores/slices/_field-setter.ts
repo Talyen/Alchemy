@@ -11,3 +11,19 @@ export function defineFieldSetter<SliceState, State>(set: ImmerSet<State>, slice
             : action;
       });
 }
+
+/** Field setter for a nested slice (e.g. progress.run / progress.permanent). */
+export function defineNestedFieldSetter<SliceState, State>(
+  set: ImmerSet<State>,
+  getSlice: (state: State) => SliceState,
+) {
+  return <K extends keyof SliceState & string>(field: K) =>
+    (action: SliceState[K] | ((prev: SliceState[K]) => SliceState[K])) =>
+      set((draft) => {
+        const slice = getSlice(draft) as Record<string, unknown>;
+        slice[field] =
+          typeof action === "function"
+            ? (action as (prev: SliceState[K]) => SliceState[K])(slice[field] as SliceState[K])
+            : action;
+      });
+}

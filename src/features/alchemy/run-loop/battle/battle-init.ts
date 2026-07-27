@@ -11,8 +11,7 @@ import { useAppStore } from "../../shared/stores/app-store";
 import { syncRunToBattleStart } from "../../shared/stores/run-transitions";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits, type EncounterCombatTraitId } from "@/lib/content-systems/encounter-traits";
-import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
-import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { readGearManifestForCharacter } from "../../shared/stores/gear-read-port";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
 
@@ -28,12 +27,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
     roomsEncountered: number,
     modifiers?: DifficultyModifier[],
   ) {
-    const gear = useGearStore.getState();
-    const gearEffects = computeGearManifest(
-      ctx.run.characterId,
-      flattenGearInventories(gear.inventories),
-      gear.loadouts,
-    );
+    const gearEffects = readGearManifestForCharacter(ctx.run.characterId);
     const battleEffects = mergeIntoManifest(ctx.talents.talentEffects, ctx.homesteadEffects);
     const activeModifiers =
       modifiers ??

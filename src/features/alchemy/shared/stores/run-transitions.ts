@@ -1,84 +1,27 @@
 // Atomic run lifecycle transitions over the consolidated domain store.
 import { getBattleStartPlayerHealth } from "@/lib/battle";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
-import { createActiveRunSnapshot, type ActiveRunData } from "@/lib/active-run-session";
+import {
+  createActiveRunSnapshot,
+  serializeAlchemistState,
+  serializeEquipmentShopState,
+  serializePendingReward,
+  serializeShopState,
+  serializeTrinketShopState,
+  type ActiveRunData,
+} from "@/lib/active-run-session";
 import type { Screen } from "@/lib/routing";
 import type { CharacterId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import { computeGearManifest, type GearInstance, type GearLoadouts } from "@/lib/gear";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { restorePendingReward, restoreWildwoodRewardState, serializePendingReward } from "@/lib/active-run-session";
-import {
-  hydrateAlchemistState,
-  hydrateEquipmentShopState,
-  hydrateShopState,
-  hydrateTrinketShopState,
-  serializeAlchemistState,
-  serializeEquipmentShopState,
-  serializeShopState,
-  serializeTrinketShopState,
-} from "@/features/alchemy/run-loop/shop/shop-state-init";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import { createInitialRunDomainData } from "./run-domain-types";
 import { clearBattlePresentationCardGhosts, resetBattlePresentation } from "./battle-presentation-bridge";
 import { useUiStore } from "./ui-store";
 import { useAppStore } from "./app-store";
 import { getRunSession } from "./run-session-model";
-
-function restoreLabyrinth(store: ReturnType<typeof getRunDomainStore>, activeRun: ActiveRunData): void {
-  if (activeRun.labyrinthMap) store.setLabyrinthMap(activeRun.labyrinthMap);
-  if (activeRun.activeCombat) {
-    store.setActiveLabyrinthModifiers(activeRun.activeCombat.activeLabyrinthModifiers);
-    store.setActiveLabyrinthRewardModifiers(activeRun.activeCombat.activeLabyrinthRewardModifiers);
-  }
-  if (activeRun.labyrinthPendingNode) store.setActiveLabyrinthPendingNode(activeRun.labyrinthPendingNode);
-}
-
-function restoreWildwoodReward(store: ReturnType<typeof getRunDomainStore>, activeRun: ActiveRunData): void {
-  const wildwoodDraft = activeRun.wildwoodDraft;
-  if (!wildwoodDraft?.rewardType) return;
-  if (wildwoodDraft.phase !== "reward" && wildwoodDraft.phase !== "recovery") return;
-  store.setRewardState(
-    restoreWildwoodRewardState(
-      wildwoodDraft.rewardType,
-      wildwoodDraft.rewardChoiceIds,
-      wildwoodDraft.selectedRewardId,
-      wildwoodDraft.rewardGearChoices,
-    ),
-  );
-}
-
-function restoreReward(store: ReturnType<typeof getRunDomainStore>, activeRun: ActiveRunData): void {
-  if (activeRun.currentScreen === "destination" && activeRun.destinationChoices.length > 0) {
-    store.applyDestinationChoices(activeRun.destinationChoices);
-  } else if (activeRun.pendingReward) {
-    const restored = restorePendingReward(activeRun.pendingReward);
-    if (restored) {
-      store.setRewardState(restored);
-    } else {
-      console.warn("Pending reward could not be restored; reward choices were dropped", {
-        rewardType: activeRun.pendingReward.rewardType,
-      });
-      // Recover destinations when card/trinket IDs are gone but the route forward remains valid.
-      if (activeRun.pendingReward.destinations.length > 0) {
-        store.applyDestinationChoices(activeRun.pendingReward.destinations);
-        store.setScreen("destination");
-      }
-    }
-  } else if (activeRun.currentScreen === "rewards" && activeRun.destinationChoices.length > 0) {
-    // Claim drained mid-transition; resume on destination pick with destinations intact.
-    store.applyDestinationChoices(activeRun.destinationChoices);
-    store.setScreen("destination");
-  }
-}
-
-function restoreShops(store: ReturnType<typeof getRunDomainStore>, activeRun: ActiveRunData): void {
-  if (activeRun.shopState) store.setShopState(hydrateShopState(activeRun.shopState));
-  if (activeRun.alchemistState) store.setAlchemistState(hydrateAlchemistState(activeRun.alchemistState));
-  if (activeRun.trinketShopState) store.setTrinketShopState(hydrateTrinketShopState(activeRun.trinketShopState));
-  if (activeRun.equipmentShopState)
-    store.setEquipmentShopState(hydrateEquipmentShopState(activeRun.equipmentShopState));
-}
+import { restoreLabyrinth, restoreReward, restoreShops, restoreWildwoodReward } from "./restore-active-run-session";
 
 /** Apply persisted active-run data to the domain store atomically. */
 export function restoreRun(
@@ -174,9 +117,9 @@ export function syncRunMaxHealthFromGearMutation(
   if (delta === 0) return;
 
   const store = getRunDomainStore();
-  const nextMax = store.progress.runMaxHealth + delta;
+  const nextMax = store.progress.run.runMaxHealth + delta;
   store.setRunMaxHealth(nextMax);
-  store.setRunPlayerHealth(Math.min(nextMax, store.progress.runPlayerHealth));
+  store.setRunPlayerHealth(Math.min(nextMax, store.progress.run.runPlayerHealth));
 }
 
 /** Clamp run HP for battle entry and persist before creating BattleState. */
@@ -184,7 +127,11 @@ export function syncRunToBattleStart(playerHealth?: number): number {
   const store = getRunDomainStore();
   const startingHealth =
     playerHealth ??
-    getBattleStartPlayerHealth(store.progress.runPlayerHealth, store.progress.runMaxHealth, store.progress.runTrinkets);
+    getBattleStartPlayerHealth(
+      store.progress.run.runPlayerHealth,
+      store.progress.run.runMaxHealth,
+      store.progress.run.runTrinkets,
+    );
   store.setRunPlayerHealth(startingHealth);
   return startingHealth;
 }
@@ -206,27 +153,16 @@ export function clearBattleUi(): void {
 /** Clear active combat, run progression, session UI, navigation, and presentation. */
 export function teardownRun(): void {
   useRunDomainStore.setState((state) => {
-    const characterId = state.progress.characterId;
-    const talentXP = state.progress.talentXP;
-    const unlockedTalents = state.progress.unlockedTalents;
-    const materialInventory = state.progress.materialInventory;
-    const constructedBuildings = state.progress.constructedBuildings;
-    const plantedFarms = state.progress.plantedFarms;
-    const completedResearch = state.progress.completedResearch;
-    const bondedCompanions = state.progress.bondedCompanions;
-    const effects = state.progress.effects;
+    const characterId = state.progress.run.characterId;
+    const permanent = state.progress.permanent;
     const fresh = createInitialRunDomainData();
     state.progress = {
       ...fresh.progress,
-      characterId,
-      talentXP,
-      unlockedTalents,
-      materialInventory,
-      constructedBuildings,
-      plantedFarms,
-      completedResearch,
-      bondedCompanions,
-      effects,
+      run: {
+        ...fresh.progress.run,
+        characterId,
+      },
+      permanent,
       initialized: true,
     };
     state.session = { ...fresh.session, pendingContentSystemType: "campaign" };
@@ -239,7 +175,7 @@ export function teardownRun(): void {
 
 /** Write the full save file immediately (bypasses autosave debounce). */
 async function flushPersistedSave(activeRun: ActiveRunData | null): Promise<void> {
-  const p = getRunDomainStore().progress;
+  const p = getRunDomainStore().progress.permanent;
   await flushAlchemySaveNow(activeRun, p, p.talentXP, p.unlockedTalents);
 }
 
@@ -254,7 +190,7 @@ export function finalizeRunEndSession(options: {
   finalizeRunXP: () => void;
   displayMaterials?: MaterialInventory | null;
 }): MaterialInventory {
-  const activeChar = useRunDomainStore.getState().progress.characterId;
+  const activeChar = useRunDomainStore.getState().progress.run.characterId;
   useAppStore.getState().setFinishedRunCharacters((prev) => {
     if (prev.includes(activeChar)) return prev;
     return [...prev, activeChar];

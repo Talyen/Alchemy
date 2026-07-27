@@ -64,12 +64,12 @@ describe("resetActiveRunStores", () => {
   it("does not reset homestead or app options", () => {
     useRunDomainStore.getState().addMaterials({ wood: 5, iron: 0, herbs: 0, food: 0, crystal: 0 });
     useAppStore.getState().setMusicVol(0.25);
-    const homesteadBefore = useRunDomainStore.getState().progress.materialInventory.wood;
+    const homesteadBefore = useRunDomainStore.getState().progress.permanent.materialInventory.wood;
     const musicBefore = useAppStore.getState().musicVol;
 
     resetActiveRunStores();
 
-    expect(useRunDomainStore.getState().progress.materialInventory.wood).toBe(homesteadBefore);
+    expect(useRunDomainStore.getState().progress.permanent.materialInventory.wood).toBe(homesteadBefore);
     expect(useAppStore.getState().musicVol).toBe(musicBefore);
   });
 });
@@ -82,7 +82,7 @@ describe("clearAllPersistentGameData", () => {
 
     clearAllPersistentGameData();
 
-    expect(useRunDomainStore.getState().progress.materialInventory).toEqual({
+    expect(useRunDomainStore.getState().progress.permanent.materialInventory).toEqual({
       wood: 0,
       iron: 0,
       herbs: 0,

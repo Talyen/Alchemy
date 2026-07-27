@@ -16,32 +16,35 @@ export function createHomesteadProgressActions(
   return {
     addMaterials: (materials) =>
       set((state) => {
-        state.progress.materialInventory = addInventory(state.progress.materialInventory, materials);
+        state.progress.permanent.materialInventory = addInventory(
+          state.progress.permanent.materialInventory,
+          materials,
+        );
       }),
 
     setMaterials: (materials) =>
       set((state) => {
-        state.progress.materialInventory = materials;
+        state.progress.permanent.materialInventory = materials;
       }),
 
     constructBuilding: (id) => {
       let succeeded = false;
       set((state) => {
-        const currentLevel = state.progress.constructedBuildings[id] ?? 0;
+        const currentLevel = state.progress.permanent.constructedBuildings[id] ?? 0;
         const result = tryUpgradeTierItem(
           buildings.find((b) => b.id === id),
           currentLevel,
-          state.progress.materialInventory,
+          state.progress.permanent.materialInventory,
         );
         if (!result.ok) return;
         succeeded = true;
-        state.progress.materialInventory = result.inventory;
-        state.progress.constructedBuildings[id] = result.nextLevel;
-        state.progress.effects = computeHomesteadEffects(
-          state.progress.constructedBuildings,
-          state.progress.plantedFarms,
-          state.progress.completedResearch,
-          state.progress.bondedCompanions,
+        state.progress.permanent.materialInventory = result.inventory;
+        state.progress.permanent.constructedBuildings[id] = result.nextLevel;
+        state.progress.permanent.effects = computeHomesteadEffects(
+          state.progress.permanent.constructedBuildings,
+          state.progress.permanent.plantedFarms,
+          state.progress.permanent.completedResearch,
+          state.progress.permanent.bondedCompanions,
         );
       });
       return succeeded;
@@ -50,21 +53,21 @@ export function createHomesteadProgressActions(
     plantFarm: (id) => {
       let succeeded = false;
       set((state) => {
-        const currentLevel = state.progress.plantedFarms[id] ?? 0;
+        const currentLevel = state.progress.permanent.plantedFarms[id] ?? 0;
         const result = tryUpgradeTierItem(
           farmPlots.find((f) => f.id === id),
           currentLevel,
-          state.progress.materialInventory,
+          state.progress.permanent.materialInventory,
         );
         if (!result.ok) return;
         succeeded = true;
-        state.progress.materialInventory = result.inventory;
-        state.progress.plantedFarms[id] = result.nextLevel;
-        state.progress.effects = computeHomesteadEffects(
-          state.progress.constructedBuildings,
-          state.progress.plantedFarms,
-          state.progress.completedResearch,
-          state.progress.bondedCompanions,
+        state.progress.permanent.materialInventory = result.inventory;
+        state.progress.permanent.plantedFarms[id] = result.nextLevel;
+        state.progress.permanent.effects = computeHomesteadEffects(
+          state.progress.permanent.constructedBuildings,
+          state.progress.permanent.plantedFarms,
+          state.progress.permanent.completedResearch,
+          state.progress.permanent.bondedCompanions,
         );
       });
       return succeeded;
@@ -73,21 +76,21 @@ export function createHomesteadProgressActions(
     completeResearch: (id) => {
       let succeeded = false;
       set((state) => {
-        const currentLevel = state.progress.completedResearch[id] ?? 0;
+        const currentLevel = state.progress.permanent.completedResearch[id] ?? 0;
         const result = tryUpgradeTierItem(
           researchUpgrades.find((r) => r.id === id),
           currentLevel,
-          state.progress.materialInventory,
+          state.progress.permanent.materialInventory,
         );
         if (!result.ok) return;
         succeeded = true;
-        state.progress.materialInventory = result.inventory;
-        state.progress.completedResearch[id] = result.nextLevel;
-        state.progress.effects = computeHomesteadEffects(
-          state.progress.constructedBuildings,
-          state.progress.plantedFarms,
-          state.progress.completedResearch,
-          state.progress.bondedCompanions,
+        state.progress.permanent.materialInventory = result.inventory;
+        state.progress.permanent.completedResearch[id] = result.nextLevel;
+        state.progress.permanent.effects = computeHomesteadEffects(
+          state.progress.permanent.constructedBuildings,
+          state.progress.permanent.plantedFarms,
+          state.progress.permanent.completedResearch,
+          state.progress.permanent.bondedCompanions,
         );
       });
       return succeeded;
@@ -96,18 +99,21 @@ export function createHomesteadProgressActions(
     bondCompanion: (id) => {
       let succeeded = false;
       set((state) => {
-        const currentLevel = state.progress.bondedCompanions[id] ?? 0;
+        const currentLevel = state.progress.permanent.bondedCompanions[id] ?? 0;
         if (currentLevel >= COMPANION_MAX_TIER) return;
         const cost = COMPANION_BOND_TIERS[currentLevel]!;
-        if (!canAfford(state.progress.materialInventory, cost)) return;
+        if (!canAfford(state.progress.permanent.materialInventory, cost)) return;
         succeeded = true;
-        state.progress.materialInventory = subtractInventory(state.progress.materialInventory, cost);
-        state.progress.bondedCompanions[id] = currentLevel + 1;
-        state.progress.effects = computeHomesteadEffects(
-          state.progress.constructedBuildings,
-          state.progress.plantedFarms,
-          state.progress.completedResearch,
-          state.progress.bondedCompanions,
+        state.progress.permanent.materialInventory = subtractInventory(
+          state.progress.permanent.materialInventory,
+          cost,
+        );
+        state.progress.permanent.bondedCompanions[id] = currentLevel + 1;
+        state.progress.permanent.effects = computeHomesteadEffects(
+          state.progress.permanent.constructedBuildings,
+          state.progress.permanent.plantedFarms,
+          state.progress.permanent.completedResearch,
+          state.progress.permanent.bondedCompanions,
         );
       });
       return succeeded;

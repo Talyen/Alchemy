@@ -2,7 +2,7 @@ import type { ActiveRunData } from "@/lib/active-run-session";
 import type { BattleCard, CharacterId, CompanionId, KeywordId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import type { RunStartSnapshot } from "@/features/alchemy/run-setup/run/run-start";
-import type { RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
+import type { ActiveRunProgressFields } from "@/features/alchemy/run-setup/run/run-state-init";
 
 export interface ProgressActions {
   setRunDeck: (action: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
@@ -14,34 +14,38 @@ export interface ProgressActions {
   setDestinationIndexInAct: (action: number | ((prev: number) => number)) => void;
   setCompletedDestinations: (
     action:
-      | RunStateFields["completedDestinations"]
-      | ((prev: RunStateFields["completedDestinations"]) => RunStateFields["completedDestinations"]),
+      | ActiveRunProgressFields["completedDestinations"]
+      | ((prev: ActiveRunProgressFields["completedDestinations"]) => ActiveRunProgressFields["completedDestinations"]),
   ) => void;
   setLastOfferedDestinations: (
     action:
-      | RunStateFields["lastOfferedDestinations"]
-      | ((prev: RunStateFields["lastOfferedDestinations"]) => RunStateFields["lastOfferedDestinations"]),
+      | ActiveRunProgressFields["lastOfferedDestinations"]
+      | ((
+          prev: ActiveRunProgressFields["lastOfferedDestinations"],
+        ) => ActiveRunProgressFields["lastOfferedDestinations"]),
   ) => void;
   setDestinationRoundsSinceOffered: (
     action:
-      | RunStateFields["destinationRoundsSinceOffered"]
-      | ((prev: RunStateFields["destinationRoundsSinceOffered"]) => RunStateFields["destinationRoundsSinceOffered"]),
+      | ActiveRunProgressFields["destinationRoundsSinceOffered"]
+      | ((
+          prev: ActiveRunProgressFields["destinationRoundsSinceOffered"],
+        ) => ActiveRunProgressFields["destinationRoundsSinceOffered"]),
   ) => void;
   setDestinationOfferState: (state: {
-    lastOfferedDestinations: RunStateFields["lastOfferedDestinations"];
-    roundsSinceOffered: RunStateFields["destinationRoundsSinceOffered"];
+    lastOfferedDestinations: ActiveRunProgressFields["lastOfferedDestinations"];
+    roundsSinceOffered: ActiveRunProgressFields["destinationRoundsSinceOffered"];
   }) => void;
   setRunTrinkets: (action: string[] | ((prev: string[]) => string[])) => void;
   setEncounteredRunEnemyIds: (action: string[] | ((prev: string[]) => string[])) => void;
   setSelectedDifficulty: (
     action:
-      | RunStateFields["selectedDifficulty"]
-      | ((prev: RunStateFields["selectedDifficulty"]) => RunStateFields["selectedDifficulty"]),
+      | ActiveRunProgressFields["selectedDifficulty"]
+      | ((prev: ActiveRunProgressFields["selectedDifficulty"]) => ActiveRunProgressFields["selectedDifficulty"]),
   ) => void;
   setContentSystemType: (
     action:
-      | RunStateFields["contentSystemType"]
-      | ((prev: RunStateFields["contentSystemType"]) => RunStateFields["contentSystemType"]),
+      | ActiveRunProgressFields["contentSystemType"]
+      | ((prev: ActiveRunProgressFields["contentSystemType"]) => ActiveRunProgressFields["contentSystemType"]),
   ) => void;
   setCharacter: (selectedId: CharacterId) => void;
   resetProgress: () => void;

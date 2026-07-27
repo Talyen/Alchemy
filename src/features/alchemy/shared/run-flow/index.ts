@@ -1,4 +1,5 @@
-// Re-export from shared/run-flow — destination sampling lives in the neutral seam.
+// Neutral run-flow seam: destination sampling and campaign start helpers shared by
+// run-setup and run-loop without cross-phase imports.
 export {
   createEmptyDestinationOfferState,
   getRunAvailableDestinations,
@@ -13,4 +14,8 @@ export {
   type DestinationOfferState,
   type DestinationWeightContext,
   type SampleDestinationChoicesResult,
-} from "@/features/alchemy/shared/run-flow/destination-flow";
+} from "./destination-flow";
+
+export { getPreviousDestination, tryStartNoviceCampaignBattle, afterCampaignCharacterResolved } from "./campaign-start";
+
+export { resolveAvailableDestinations, type ResolveAvailableDestinationsInput } from "./resolve-available-destinations";

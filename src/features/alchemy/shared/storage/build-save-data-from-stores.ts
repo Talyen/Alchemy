@@ -1,6 +1,7 @@
 // Builds a SaveData snapshot from live app, run, and gear stores.
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { getRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { MaterialInventory, BuildingId, FarmId, ResearchId, HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { SaveData } from "./types";
@@ -16,6 +17,26 @@ interface ProgressSnapshot {
   effects: HomesteadEffectManifest;
 }
 
+function readPermanentProgressSnapshot(): {
+  progress: ProgressSnapshot;
+  talentXP: TalentXP;
+  unlockedTalents: UnlockedTalents;
+} {
+  const permanent = getRunDomainStore().progress.permanent;
+  return {
+    progress: {
+      materialInventory: permanent.materialInventory,
+      constructedBuildings: permanent.constructedBuildings,
+      plantedFarms: permanent.plantedFarms,
+      completedResearch: permanent.completedResearch,
+      bondedCompanions: permanent.bondedCompanions,
+      effects: permanent.effects,
+    },
+    talentXP: permanent.talentXP,
+    unlockedTalents: permanent.unlockedTalents,
+  };
+}
+
 export function buildAlchemySaveDataFromStores(
   activeRun: ActiveRunData | null,
   progress?: ProgressSnapshot,
@@ -23,14 +44,10 @@ export function buildAlchemySaveDataFromStores(
   unlockedTalents?: UnlockedTalents,
 ): SaveData {
   const app = useAppStore.getState();
-  const p = progress ?? {
-    materialInventory: {} as MaterialInventory,
-    constructedBuildings: {} as Record<BuildingId, number>,
-    plantedFarms: {} as Record<FarmId, number>,
-    completedResearch: {} as Record<ResearchId, number>,
-    bondedCompanions: {} as Record<CompanionId, number>,
-    effects: {} as HomesteadEffectManifest,
-  };
+  const fromStore = progress ? null : readPermanentProgressSnapshot();
+  const p = progress ?? fromStore!.progress;
+  const resolvedTalentXP = talentXP ?? fromStore?.talentXP ?? {};
+  const resolvedUnlockedTalents = unlockedTalents ?? fromStore?.unlockedTalents ?? {};
   const gear = useGearStore.getState();
 
   return {
@@ -49,8 +66,8 @@ export function buildAlchemySaveDataFromStores(
     gearBoardPositionsByCharacter: gear.boardPositionsByCharacter,
     craftingCurrencyBoardPositionsByCharacter: gear.currencyBoardPositionsByCharacter,
     craftingCurrencies: gear.craftingCurrencies,
-    talentXP: talentXP ?? {},
-    unlockedTalents: unlockedTalents ?? {},
+    talentXP: resolvedTalentXP,
+    unlockedTalents: resolvedUnlockedTalents,
     musicVolume: app.musicVol,
     sfxVolume: app.sfxVol,
     masterVolume: app.masterVol,

@@ -192,6 +192,24 @@ const META_NO_RUN_LOOP = [
 ];
 
 /** @type {ImportPattern[]} */
+const RUN_SETUP_NO_RUN_LOOP = [
+  {
+    group: ["**/run-loop/**", "@/features/alchemy/run-loop/**"],
+    message:
+      "run-setup must not import run-loop. Shared destination/campaign helpers live in shared/run-flow.",
+  },
+];
+
+/** @type {ImportPattern[]} */
+const RUN_LOOP_NO_RUN_SETUP = [
+  {
+    group: ["**/run-setup/**", "@/features/alchemy/run-setup/**"],
+    message:
+      "run-loop must not import run-setup. Depend on shared/run-flow contracts or shell-composed deps.",
+  },
+];
+
+/** @type {ImportPattern[]} */
 const UI_NO_SESSION_STORES = [
   {
     group: [
@@ -461,22 +479,6 @@ export default tseslint.config(
 
   // features/alchemy subfolder boundaries — keep orchestration out of screens and vice versa.
   {
-    files: ["src/features/alchemy/run-loop/battle/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": restrictedImports({
-        patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...ORCHESTRATION_NO_SCREENS],
-      }),
-    },
-  },
-  {
-    files: ["src/features/alchemy/run-loop/navigation/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": restrictedImports({
-        patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...ORCHESTRATION_NO_SCREENS],
-      }),
-    },
-  },
-  {
     files: [
       "src/features/alchemy/meta/screens/**/*.{ts,tsx}",
       "src/features/alchemy/run-setup/screens/**/*.{ts,tsx}",
@@ -485,6 +487,43 @@ export default tseslint.config(
     rules: {
       "no-restricted-imports": restrictedImports({
         patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...SCREENS_NO_ORCHESTRATION],
+      }),
+    },
+  },
+
+  // run-setup — character/difficulty/draft; must not import run-loop (use shared/run-flow).
+  {
+    files: ["src/features/alchemy/run-setup/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": restrictedImports({
+        patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...RUN_SETUP_NO_RUN_LOOP, ...SCREENS_NO_ORCHESTRATION],
+      }),
+    },
+  },
+
+  // run-loop (general) — must not import run-setup. More specific battle/navigation blocks below re-stack.
+  {
+    files: ["src/features/alchemy/run-loop/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": restrictedImports({
+        patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...RUN_LOOP_NO_RUN_SETUP, ...SCREENS_NO_ORCHESTRATION],
+      }),
+    },
+  },
+
+  {
+    files: ["src/features/alchemy/run-loop/battle/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": restrictedImports({
+        patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...ORCHESTRATION_NO_SCREENS, ...RUN_LOOP_NO_RUN_SETUP],
+      }),
+    },
+  },
+  {
+    files: ["src/features/alchemy/run-loop/navigation/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": restrictedImports({
+        patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...ORCHESTRATION_NO_SCREENS, ...RUN_LOOP_NO_RUN_SETUP],
       }),
     },
   },

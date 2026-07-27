@@ -2,7 +2,7 @@
 import type { BattleState } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { getRunPhase, type RunPhase } from "@/lib/routing";
-import type { RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
+import type { ProgressState, RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
 import type { RewardState } from "@/lib/active-run-session";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -88,27 +88,27 @@ function resolveScreen(screen?: Screen): Screen {
   return screen ?? getRunDomainStore().navigation.screen;
 }
 
-function pickRunSessionRunSlice(progress: RunStateFields): RunSessionRunSlice {
+function pickRunSessionRunSlice(progress: ProgressState): RunSessionRunSlice {
   return {
-    characterId: progress.characterId,
-    runDeck: progress.runDeck,
-    runGold: progress.runGold,
-    runPlayerHealth: progress.runPlayerHealth,
-    runMaxHealth: progress.runMaxHealth,
-    roomsEncountered: progress.roomsEncountered,
-    currentAct: progress.currentAct,
-    destinationIndexInAct: progress.destinationIndexInAct,
-    completedDestinations: progress.completedDestinations,
-    lastOfferedDestinations: progress.lastOfferedDestinations,
-    destinationRoundsSinceOffered: progress.destinationRoundsSinceOffered,
-    runTrinkets: progress.runTrinkets,
-    encounteredRunEnemyIds: progress.encounteredRunEnemyIds,
-    selectedDifficulty: progress.selectedDifficulty,
-    contentSystemType: progress.contentSystemType,
-    talentXP: progress.talentXP,
-    runTalentXP: progress.runTalentXP,
-    runMaterialsEarned: progress.runMaterialsEarned,
-    unlockedTalents: progress.unlockedTalents,
+    characterId: progress.run.characterId,
+    runDeck: progress.run.runDeck,
+    runGold: progress.run.runGold,
+    runPlayerHealth: progress.run.runPlayerHealth,
+    runMaxHealth: progress.run.runMaxHealth,
+    roomsEncountered: progress.run.roomsEncountered,
+    currentAct: progress.run.currentAct,
+    destinationIndexInAct: progress.run.destinationIndexInAct,
+    completedDestinations: progress.run.completedDestinations,
+    lastOfferedDestinations: progress.run.lastOfferedDestinations,
+    destinationRoundsSinceOffered: progress.run.destinationRoundsSinceOffered,
+    runTrinkets: progress.run.runTrinkets,
+    encounteredRunEnemyIds: progress.run.encounteredRunEnemyIds,
+    selectedDifficulty: progress.run.selectedDifficulty,
+    contentSystemType: progress.run.contentSystemType,
+    talentXP: progress.permanent.talentXP,
+    runTalentXP: progress.run.runTalentXP,
+    runMaterialsEarned: progress.run.runMaterialsEarned,
+    unlockedTalents: progress.permanent.unlockedTalents,
     initialized: progress.initialized,
   };
 }

@@ -18,19 +18,16 @@ vi.mock("@/lib/utils", async () => {
   return { ...actual, randomInt: vi.fn(() => 15) };
 });
 
-vi.mock("@/features/alchemy/run-loop/navigation/destination-flow", () => ({
-  sampleDestinationChoices: vi.fn((dests: Destination[]) => ({
-    choices: dests.slice(0, 3),
-    offerState: { lastOfferedDestinations: dests.slice(0, 3), roundsSinceOffered: {} },
-  })),
-  withSelectedBossForDestinations: vi.fn((destinations, reward, bossEnemyId) => ({
-    ...reward,
-    selectedBossId:
-      destinations.length === 1 && destinations[0] === "Boss Combat"
-        ? (reward.selectedBossId ?? bossEnemyId ?? null)
-        : null,
-  })),
-}));
+vi.mock("@/features/alchemy/shared/run-flow/destination-flow", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/run-flow/destination-flow")>();
+  return {
+    ...actual,
+    sampleDestinationChoices: vi.fn((dests: Destination[]) => ({
+      choices: dests.slice(0, 3),
+      offerState: { lastOfferedDestinations: dests.slice(0, 3), roundsSinceOffered: {} },
+    })),
+  };
+});
 
 vi.mock("@/lib/homestead/loot", () => ({
   getEnemyMaterialLoot: vi.fn(() => ({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 })),

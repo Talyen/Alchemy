@@ -14,9 +14,9 @@ import {
   type TrinketShopState,
 } from "@/lib/active-run-session";
 import {
-  createInitialRunState,
+  createInitialProgressState,
   createInitialTalentState,
-  type RunStateFields,
+  type ProgressState,
 } from "@/features/alchemy/run-setup/run/run-state-init";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import type { Screen } from "@/features/alchemy/shared/types";
@@ -41,7 +41,7 @@ export interface RunDomainBattleState {
 }
 
 export interface RunDomainDataState {
-  progress: RunStateFields;
+  progress: ProgressState;
   session: RunSessionFields;
   navigation: { screen: Screen };
   battle: RunDomainBattleState;
@@ -76,10 +76,14 @@ export function createInitialSessionFields(): RunSessionFields {
   };
 }
 
-export function createInitialProgressFields(): RunStateFields {
+export function createInitialProgressFields(): ProgressState {
+  const progress = createInitialProgressState(null);
   return {
-    ...createInitialRunState(null),
-    ...createInitialTalentState({}, {}),
+    ...progress,
+    permanent: {
+      ...progress.permanent,
+      ...createInitialTalentState({}, {}),
+    },
   };
 }
 

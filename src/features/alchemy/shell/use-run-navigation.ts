@@ -15,16 +15,11 @@ import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 // Side-effect: registers presentation cleanup with the shared bridge.
 import "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
-import { flattenGearInventories } from "@/lib/gear";
+import { readHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-read-port";
 import { type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
 import { CONSTANTS, type Destination, type Screen } from "@/features/alchemy/shared/types";
-import {
-  getRunAvailableDestinations,
-  type DestinationOptionsInput,
-} from "@/features/alchemy/run-loop/navigation/destination-flow";
-import { getPreviousDestination } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
+import { resolveAvailableDestinations, type DestinationOptionsInput } from "@/features/alchemy/shared/run-flow";
 import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
 import { applyCorruptionToDeck } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
 import { createRunFlowHandlers, resetRunFlowClaimLocks } from "@/features/alchemy/run-loop/run/run-flow-handlers";
@@ -89,19 +84,16 @@ export function useRunNavigation({
   const pendingCharacterId = nav.pendingCharacterId;
   const pendingContentSystemType = nav.pendingContentSystemType;
   const getAvailableDestinations = useCallback(
-    (options: DestinationOptionsInput = {}): Destination[] => {
-      const destinationIndexInAct = options.destinationIndexInAct ?? run.destinationIndexInAct;
-      const previousDestination = getPreviousDestination(destinationIndexInAct, run.completedDestinations);
-      return getRunAvailableDestinations({
-        destinationIndexInAct,
-        currentHealth: options.currentHealth ?? run.runPlayerHealth,
-        currentGold: options.currentGold ?? run.runGold,
-        maxHealth: options.maxHealth ?? run.runMaxHealth,
-        previousDestination,
-        hasAnyOwnedGear:
-          options.hasAnyOwnedGear ?? flattenGearInventories(useGearStore.getState().inventories).length > 0,
-      });
-    },
+    (options: DestinationOptionsInput = {}): Destination[] =>
+      resolveAvailableDestinations({
+        destinationIndexInAct: run.destinationIndexInAct,
+        completedDestinations: run.completedDestinations,
+        runPlayerHealth: run.runPlayerHealth,
+        runGold: run.runGold,
+        runMaxHealth: run.runMaxHealth,
+        hasAnyOwnedGear: readHasAnyOwnedGear(),
+        options,
+      }),
     [run.destinationIndexInAct, run.completedDestinations, run.runPlayerHealth, run.runGold, run.runMaxHealth],
   );
   const returnToBattle = useCallback(() => {

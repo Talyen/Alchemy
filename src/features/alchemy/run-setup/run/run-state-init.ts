@@ -20,7 +20,8 @@ import { companionTierItems } from "@/lib/homestead/companions";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import type { MaterialInventory, BuildingId, FarmId, ResearchId, HomesteadEffectManifest } from "@/lib/homestead/types";
 
-export interface RunStateFields {
+/** Active-run lifetime fields (deck, gold, HP, acts, run tallies). */
+export interface ActiveRunProgressFields {
   characterId: CharacterId;
   runDeck: BattleCard[];
   runGold: number;
@@ -36,9 +37,13 @@ export interface RunStateFields {
   encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
   contentSystemType: ContentSystemId;
-  talentXP: TalentXP;
   runTalentXP: TalentXP;
   runMaterialsEarned: MaterialInventory;
+}
+
+/** Permanent meta lifetime fields (homestead, talents, derived effects). */
+export interface PermanentProgressFields {
+  talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
   materialInventory: MaterialInventory;
   constructedBuildings: Record<BuildingId, number>;
@@ -46,7 +51,71 @@ export interface RunStateFields {
   completedResearch: Record<ResearchId, number>;
   bondedCompanions: Record<CompanionId, number>;
   effects: HomesteadEffectManifest;
+}
+
+/** Nested progress slice inside run-domain-store. */
+export interface ProgressState {
+  run: ActiveRunProgressFields;
+  permanent: PermanentProgressFields;
   initialized: boolean;
+}
+
+/** Flat facade / view projection of progress (run + permanent + initialized). */
+export type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
+
+export const ACTIVE_RUN_PROGRESS_KEYS = [
+  "characterId",
+  "runDeck",
+  "runGold",
+  "runPlayerHealth",
+  "runMaxHealth",
+  "roomsEncountered",
+  "currentAct",
+  "destinationIndexInAct",
+  "completedDestinations",
+  "lastOfferedDestinations",
+  "destinationRoundsSinceOffered",
+  "runTrinkets",
+  "encounteredRunEnemyIds",
+  "selectedDifficulty",
+  "contentSystemType",
+  "runTalentXP",
+  "runMaterialsEarned",
+] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
+
+export const PERMANENT_PROGRESS_KEYS = [
+  "talentXP",
+  "unlockedTalents",
+  "materialInventory",
+  "constructedBuildings",
+  "plantedFarms",
+  "completedResearch",
+  "bondedCompanions",
+  "effects",
+] as const satisfies ReadonlyArray<keyof PermanentProgressFields>;
+
+export function flattenProgressState(progress: ProgressState): RunStateFields {
+  return {
+    ...progress.run,
+    ...progress.permanent,
+    initialized: progress.initialized,
+  };
+}
+
+export function applyFlatProgressPartial(progress: ProgressState, partial: Partial<RunStateFields>): void {
+  for (const key of ACTIVE_RUN_PROGRESS_KEYS) {
+    if (key in partial && partial[key] !== undefined) {
+      (progress.run as unknown as Record<string, unknown>)[key] = partial[key];
+    }
+  }
+  for (const key of PERMANENT_PROGRESS_KEYS) {
+    if (key in partial && partial[key] !== undefined) {
+      (progress.permanent as unknown as Record<string, unknown>)[key] = partial[key];
+    }
+  }
+  if (partial.initialized !== undefined) {
+    progress.initialized = partial.initialized;
+  }
 }
 
 const VALID_DESTINATIONS = new Set<Destination>(Object.values(DESTINATIONS));
@@ -93,7 +162,7 @@ function hydrateDestinations(initialActiveRun: ActiveRunData | null): {
 function hydrateRunMeta(
   initialActiveRun: ActiveRunData | null,
 ): Pick<
-  RunStateFields,
+  ActiveRunProgressFields,
   | "runGold"
   | "runPlayerHealth"
   | "runMaxHealth"
@@ -133,10 +202,10 @@ function hydrateRunMeta(
   };
 }
 
-export function createInitialRunState(
+export function createInitialActiveRunFields(
   initialActiveRun: ActiveRunData | null,
   fallbackCharacterId: CharacterId = "knight",
-): RunStateFields {
+): ActiveRunProgressFields {
   const characterId = initialActiveRun?.characterId ?? fallbackCharacterId;
   const dest = hydrateDestinations(initialActiveRun);
   return {
@@ -144,35 +213,49 @@ export function createInitialRunState(
     runDeck: hydrateDeck(initialActiveRun, characterId),
     ...hydrateRunMeta(initialActiveRun),
     ...dest,
-    talentXP: {},
     runTalentXP: initialActiveRun?.runTalentXP ?? {},
     runMaterialsEarned: initialActiveRun?.runMaterialsEarned ?? emptyInventory(),
+  };
+}
+
+export function createInitialPermanentFields(): PermanentProgressFields {
+  const constructedBuildings = createEmptyTierRecord(buildings);
+  const plantedFarms = createEmptyTierRecord(farmPlots);
+  const completedResearch = createEmptyTierRecord(researchUpgrades);
+  return {
+    talentXP: {},
     unlockedTalents: {},
     materialInventory: emptyInventory(),
-    constructedBuildings: createEmptyTierRecord(buildings),
-    plantedFarms: createEmptyTierRecord(farmPlots),
-    completedResearch: createEmptyTierRecord(researchUpgrades),
+    constructedBuildings,
+    plantedFarms,
+    completedResearch,
     bondedCompanions: createEmptyTierRecord(companionTierItems),
-    effects: computeHomesteadEffects(
-      createEmptyTierRecord(buildings),
-      createEmptyTierRecord(farmPlots),
-      createEmptyTierRecord(researchUpgrades),
-    ),
-    initialized: false,
+    effects: computeHomesteadEffects(constructedBuildings, plantedFarms, completedResearch),
   };
 }
 
 export function createInitialTalentState(
   initialTalentXP: TalentXP,
   initialUnlockedTalents: UnlockedTalents,
-): Pick<RunStateFields, "talentXP" | "unlockedTalents"> {
+): Pick<PermanentProgressFields, "talentXP" | "unlockedTalents"> {
   return { talentXP: initialTalentXP, unlockedTalents: initialUnlockedTalents };
+}
+
+export function createInitialProgressState(
+  initialActiveRun: ActiveRunData | null = null,
+  fallbackCharacterId: CharacterId = "knight",
+): ProgressState {
+  return {
+    run: createInitialActiveRunFields(initialActiveRun, fallbackCharacterId),
+    permanent: createInitialPermanentFields(),
+    initialized: false,
+  };
 }
 
 export function runFieldsFromSnapshot(
   snapshot: RunStartSnapshot,
 ): Pick<
-  RunStateFields,
+  ActiveRunProgressFields,
   | "characterId"
   | "contentSystemType"
   | "runDeck"

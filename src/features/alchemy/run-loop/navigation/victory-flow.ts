@@ -1,7 +1,10 @@
 // Pure victory reward computation extracted from use-run-navigation.
 // Depends on: reward-flow, destination-flow, game data, game constants, homestead loot.
 // Depended on by: useRunNavigation for computing battle victory outcomes.
-export { withSelectedBossForDestinations } from "./destination-flow";
+export {
+  withSelectedBossForDestinations,
+  createDestinationRewardState,
+} from "@/features/alchemy/shared/run-flow/destination-flow";
 
 import { computeTalentEffects, getGoldMultiplier } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
@@ -33,13 +36,15 @@ import {
   computeVictoryGold,
   createCombatRewardState as createCombatRewardStateFromFlow,
   createBossRewardState as createBossRewardStateFromFlow,
-  createEmptyRewardState,
   createWildwoodRewardState,
   getCompanionCardChoices,
   shouldGrantCompanionReward,
   type RewardState,
 } from "./reward-flow";
-import { sampleDestinationChoices, withSelectedBossForDestinations } from "./destination-flow";
+import {
+  sampleDestinationChoices,
+  withSelectedBossForDestinations,
+} from "@/features/alchemy/shared/run-flow/destination-flow";
 import { playGoldGain } from "@/lib/audio";
 
 interface VictoryGoldRoll {
@@ -77,10 +82,6 @@ function rollVictoryGold(
   const generousBonus = getGenerousGoldBonus(labyrinthRewardModifiers, gold);
 
   return { gold, eliteBonus, bossBonus, generousBonus, baseGold };
-}
-
-export function createDestinationRewardState(destinations: Destination[], bossEnemyId?: string | null): RewardState {
-  return withSelectedBossForDestinations(destinations, createEmptyRewardState(destinations), bossEnemyId);
 }
 
 export function computeVictoryRewardState(

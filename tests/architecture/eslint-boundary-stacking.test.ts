@@ -109,4 +109,21 @@ describe("eslint architecture boundary stacking", () => {
     expect(imports?.paths?.some((p) => p.name === "react" && p.importNames?.includes("lazy"))).toBe(true);
     expect(hasGroupContaining(imports, "run-domain-store")).toBe(true);
   });
+
+  it("bans run-setup → run-loop and keeps facade bans", async () => {
+    const cfg = await eslint.calculateConfigForFile("src/features/alchemy/run-setup/run/content-system-navigation.ts");
+    const imports = asRestrictedImports(cfg.rules?.["no-restricted-imports"]);
+
+    expect(hasGroupContaining(imports, "run-loop")).toBe(true);
+    expect(hasGroupContaining(imports, "run-domain-store")).toBe(true);
+  });
+
+  it("bans run-loop → run-setup and keeps orchestration bans for battle", async () => {
+    const cfg = await eslint.calculateConfigForFile("src/features/alchemy/run-loop/battle/battle-init.ts");
+    const imports = asRestrictedImports(cfg.rules?.["no-restricted-imports"]);
+
+    expect(hasGroupContaining(imports, "run-setup")).toBe(true);
+    expect(hasGroupContaining(imports, "screens")).toBe(true);
+    expect(hasGroupContaining(imports, "run-domain-store")).toBe(true);
+  });
 });
