@@ -28,7 +28,7 @@ import {
   useScreenParticleConfig,
 } from "@/app/app-shell";
 import { gearDefinitions } from "@/lib/gear";
-import { useDevShortcuts } from "@/features/alchemy/shared/utils";
+import { useDevShortcuts } from "@/app/use-dev-shortcuts";
 import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { useHomesteadAdapter } from "@/features/alchemy/shared/stores/run-session-facade";

@@ -4,7 +4,7 @@ import type { BattleCard, CharacterId, DifficultyId, TalentXP, UnlockedTalents }
 import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib/content-systems/types";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryEvent } from "@/lib/mystery";
-import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
+import type { MaterialInventory } from "@/lib/homestead/types";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
@@ -31,6 +31,7 @@ import {
 import type { RunStateController, TalentStateController } from "./run-domain-store";
 import type { DisplayOverrides } from "./run-domain-types";
 import { restoreRun, snapshotRun } from "./run-transitions";
+import { readPermanentProgressForSave, type HomesteadSaveFields } from "./run-save-readers";
 
 export {
   getRunSession,
@@ -246,29 +247,8 @@ export function readHasActiveRun(): boolean {
   return getRunDomainStore().session.hasActiveRun;
 }
 
-type HomesteadSaveFields = Pick<
-  RunProgressStore,
-  "materialInventory" | "constructedBuildings" | "plantedFarms" | "completedResearch" | "bondedCompanions"
->;
-
-/** Persistence: permanent homestead + talent fields for save snapshots. */
-export function readPermanentProgressForSave(): HomesteadSaveFields & {
-  effects: HomesteadEffectManifest;
-  talentXP: TalentXP;
-  unlockedTalents: UnlockedTalents;
-} {
-  const permanent = getRunDomainStore().progress.permanent;
-  return {
-    materialInventory: permanent.materialInventory,
-    constructedBuildings: permanent.constructedBuildings,
-    plantedFarms: permanent.plantedFarms,
-    completedResearch: permanent.completedResearch,
-    bondedCompanions: permanent.bondedCompanions,
-    effects: permanent.effects,
-    talentXP: permanent.talentXP,
-    unlockedTalents: permanent.unlockedTalents,
-  };
-}
+export { readPermanentProgressForSave };
+export type { HomesteadSaveFields };
 
 /** Persistence: hydrate permanent homestead fields from save data. */
 export function applyHomesteadSaveFields(homestead: HomesteadSaveFields): void {
