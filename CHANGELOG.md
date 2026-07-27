@@ -421,6 +421,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(lint): restack run-loop screen bans and save via facade
+  Keep SCREENS_NO_ORCHESTRATION on screens only so shop can import
+  deck-mutations, and read permanent progress through the session facade.
 - fix(lint): drop unused shop empty-state re-exports
 - fix(lint): satisfy barrel imports after ESLint boundary stacking
   Route deep imports through barrels, allow bootstrap storage names, and
