@@ -1,10 +1,7 @@
 // Game over screen — shows defeat message and talent XP earned this run.
-import { Button } from "@/components/ui/button";
-import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import type { TalentXP } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { ScreenHeader } from "../../shared/ui/shared-ui";
-import { RunEndProgressSection } from "./run-end-progress-section";
+import { RunEndScreen } from "./run-end-screen";
 
 export function GameOverScreen({
   runEndTalentXP,
@@ -18,17 +15,13 @@ export function GameOverScreen({
   onContinue: () => void;
 }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
-      <div>
-        <ScreenHeader title="Defeat" />
-        <p className="mt-3 text-sm text-muted-foreground">Your run has ended.</p>
-      </div>
-
-      <RunEndProgressSection runEndTalentXP={runEndTalentXP} talentXP={talentXP} runEndMaterials={runEndMaterials} />
-
-      <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
-        Continue
-      </Button>
-    </div>
+    <RunEndScreen
+      title="Defeat"
+      subtitle="Your run has ended."
+      runEndTalentXP={runEndTalentXP}
+      talentXP={talentXP}
+      runEndMaterials={runEndMaterials}
+      onContinue={onContinue}
+    />
   );
 }

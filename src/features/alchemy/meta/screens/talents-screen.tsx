@@ -16,7 +16,13 @@ import {
 import { getTalentTreeKeywordIds } from "@/lib/game-data";
 
 import { TalentKeywordButton } from "../talents/talents-ui";
-import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader, ScreenShell } from "../../shared/ui/shared-ui";
+import {
+  ConfirmationDialog,
+  HamburgerTrigger,
+  PageLayout,
+  ScreenHeaderRow,
+  ScreenShell,
+} from "../../shared/ui/shared-ui";
 import { useTalentChoices } from "../talents/use-talent-choices";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
@@ -64,12 +70,10 @@ export function TalentsScreen({
   return (
     <PageLayout>
       <ScreenShell>
-        <div className="relative flex w-full items-center justify-center">
-          <ScreenHeader title="Talents" />
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            <HamburgerTrigger onClick={onOpenMenu} label="Open talents menu" />
-          </div>
-        </div>
+        <ScreenHeaderRow
+          title="Talents"
+          trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open talents menu" />}
+        />
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {keywordIds.map((kw) => {

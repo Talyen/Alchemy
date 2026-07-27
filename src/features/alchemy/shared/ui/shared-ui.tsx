@@ -4,7 +4,7 @@ export { DestinationChoices } from "./destination-choices";
 export { ShineAccentButton } from "./shine-accent-button";
 export { AspectRatioSelect, DisplayModeSelect, UiScaleSelect } from "./settings-controls";
 export { ConfirmationDialog } from "./dialogs";
-export { ScreenHeader, PageLayout, ScreenDescription, ScreenShell } from "./layout-components";
+export { ScreenHeader, ScreenHeaderRow, PageLayout, ScreenDescription, ScreenShell } from "./layout-components";
 export { staggerDelay } from "./shimmer";
 export { GoldCost, GoldDisplay } from "./display-elements";
 export { GameMenu } from "./game-menu";

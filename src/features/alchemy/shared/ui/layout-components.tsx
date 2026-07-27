@@ -14,6 +14,27 @@ export function ScreenHeader({ title, className }: { title: ReactNode; className
   );
 }
 
+export function ScreenHeaderRow({
+  title,
+  trailing,
+  className,
+  trailingClassName,
+}: {
+  title: ReactNode;
+  trailing?: ReactNode;
+  className?: string;
+  trailingClassName?: string;
+}) {
+  return (
+    <div className={cn("relative flex w-full items-center justify-center", className)}>
+      <ScreenHeader title={title} />
+      {trailing ? (
+        <div className={cn("absolute right-0 top-1/2 -translate-y-1/2", trailingClassName)}>{trailing}</div>
+      ) : null}
+    </div>
+  );
+}
+
 export function PageLayout({ children }: { children: ReactNode }) {
   return (
     <div className="game-page-scroll flex h-full w-full flex-col items-center justify-center overflow-x-hidden overflow-y-auto px-4 py-6">

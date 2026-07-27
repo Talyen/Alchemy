@@ -8,7 +8,7 @@ import {
   ConfirmationDialog,
   HamburgerTrigger,
   PageLayout,
-  ScreenHeader,
+  ScreenHeaderRow,
   ScreenShell,
   TabBar,
 } from "../../shared/ui/shared-ui";
@@ -58,12 +58,10 @@ export function OptionsScreen({
   return (
     <PageLayout>
       <ScreenShell maxWidthClass="max-w-3xl">
-        <div className="relative flex w-full items-center justify-center">
-          <ScreenHeader title="Options" />
-          <div className="absolute right-0 top-1/2 -translate-y-1/2">
-            <HamburgerTrigger onClick={onOpenMenu} label="Open options menu" />
-          </div>
-        </div>
+        <ScreenHeaderRow
+          title="Options"
+          trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open options menu" />}
+        />
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <TabBar tabs={optionsTabs} activeTab={tab} onSelectTab={setTab} />

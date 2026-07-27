@@ -2,7 +2,7 @@
 // All three tab grids are rendered simultaneously (preloaded) — only the active
 // one is visible, so switching tabs is instant with no image re-loading.
 import { cn } from "@/lib/utils";
-import { HamburgerTrigger, PageLayout, ScreenHeader, ScreenShell } from "../../shared/ui/shared-ui";
+import { HamburgerTrigger, PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/shared-ui";
 import {
   CollectionGrid,
   CollectionTabs,
@@ -44,12 +44,10 @@ export function CollectionScreen({
   return (
     <PageLayout>
       <ScreenShell maxWidthClass="max-w-6xl">
-        <div className="relative flex w-full items-center justify-center">
-          <ScreenHeader title="Collection" />
-          <div className="absolute right-0 top-1/2 -translate-y-1/2">
-            <HamburgerTrigger onClick={onOpenMenu} label="Open collection menu" />
-          </div>
-        </div>
+        <ScreenHeaderRow
+          title="Collection"
+          trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open collection menu" />}
+        />
         <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
 
         <div className="mt-6 flex min-h-[59.26cqh] flex-col items-center overflow-visible">
