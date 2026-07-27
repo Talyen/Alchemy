@@ -8,7 +8,7 @@ GitHub branch protection is not available on this repo, so **local hooks are the
 
 1. `node scripts/sync-changelog-commit.mjs` — sync `CHANGELOG.md` ## [Unreleased] from git and auto-commit when dirty
 2. `npm ci --dry-run`
-3. `npm run lint:ci` (format, TypeScript, ESLint, knip)
+3. `npm run lint:ci` (format, TypeScript, ESLint, phase boundaries via dependency-cruiser, architecture smoke, knip)
 4. `npm test` (Vitest)
 5. `npm run build:ship` (web + desktop compile)
 6. `npm run test:e2e:prepush` — fast **@prepush** subset (parallel preview build; includes one animation canary)
@@ -24,7 +24,19 @@ Manual full gate before **releasing**: `npm run release` (pre-flight gate includ
 
 Install hooks once: `npm run prepare` (runs on `npm install`).
 
-`lefthook` `pre-commit` runs `npm ci --dry-run`, `npm run typecheck`, and Prettier on staged `src/**` files.
+`lefthook` `pre-commit` runs `npm ci --dry-run`, `npm run typecheck`, and Prettier on **staged files** that match `scripts/prettier-paths.mjs` (same set as `npm run format` / `format:check`: `src`, `tests`, `scripts`, `desktop`, `docs`, plus root `*.{js,json,md,ts,yml,yaml}` and `.prettierrc`). Do not hand-duplicate those globs in lefthook.
+
+### Lint / format / dead-code commands
+
+| Command                           | Role                                                                |
+| --------------------------------- | ------------------------------------------------------------------- |
+| `npm run format` / `format:check` | Prettier via `scripts/run-prettier.mjs`                             |
+| `npm run lint`                    | ESLint (`eslint.config.js` + `eslint/`)                             |
+| `npm run lint:boundaries`         | dependency-cruiser phase / lib edges                                |
+| `npm run lint:architecture-smoke` | Cold ESLint lintFiles smoke (not in Vitest)                         |
+| `npm run deadcode`                | knip (CI / pre-push)                                                |
+| `npm run deadcode:strict`         | knip strict + entry exports (nightly)                               |
+| `npm run lint:ci`                 | format:check → typecheck:all → lint → boundaries → smoke → deadcode |
 
 First-time Playwright: `npx playwright install chromium`.
 
@@ -125,5 +137,7 @@ Layout: bootstrap helpers in [`tests/e2e/`](tests/e2e/) (`battle-setup.ts`, `arm
 | CI `e2e` (`@critical`, every push)          | `npm run build && npm run test:e2e:prepush:full`             |
 | Pre-push hook                               | `npm run build:ship && npm run test:e2e:prepush`             |
 | Tag `v*` release (`e2e-full` + release job) | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md) |
+
+CI surfaces failures via GitHub check annotations (Vitest `github-actions` / Playwright `github` reporters) and a short job Step Summary from `scripts/ci-summarize-*.mjs`. The `lint` job runs each `lint:ci` stage as its own step so the failed step name identifies format vs typecheck vs ESLint vs boundaries vs knip. Local/pre-push still use `npm run lint:ci`.
 
 **Docs:** [AGENTS.md](./AGENTS.md) (rules) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [docs/REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [docs/RELEASE.md](./docs/RELEASE.md) (Steam) · [docs/Audits](./docs/Audits/README.md) (audits)

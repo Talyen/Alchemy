@@ -109,11 +109,13 @@ Run domain types live in `run-domain-types.ts` / `run-domain-store.ts` (stores l
 
 ## Import boundaries
 
-Enforced in `eslint.config.js`. Summary:
+Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/boundaries.js`) and double-checked by `npm run lint:boundaries` (dependency-cruiser). Phase bans and flat-config stacking order live in those files; `tests/architecture/eslint-boundary-stacking.test.ts` asserts stacked `no-restricted-imports` fragments. Summary:
 
 - `src/lib/**` must not import `@/features/**`
 - Feature code outside `shared/stores/` uses `run-session-facade`, not `run-domain-store` directly
 - Screens must not import `run-loop/battle` or `run-loop/navigation` orchestration
+- `run-setup` ↛ `run-loop` and `run-loop` ↛ `run-setup` (shared helpers in `shared/run-flow/`)
+- `meta` ↛ `run-loop` / `run-setup`
 
 ## Boot and loading
 

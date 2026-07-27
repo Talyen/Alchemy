@@ -38,3 +38,13 @@ declare module "../../scripts/sync-changelog.mjs" {
   export function syncChangelog(root: { root: string }): string;
   export function computeSyncedChangelog(existingContent: string, rootDir?: string): string;
 }
+
+declare module "*/prettier-paths.mjs" {
+  export const PRETTIER_GLOBS: readonly string[];
+  export function filterPrettierPaths(paths: readonly string[]): string[];
+}
+
+declare module "../../scripts/prettier-paths.mjs" {
+  export const PRETTIER_GLOBS: readonly string[];
+  export function filterPrettierPaths(paths: readonly string[]): string[];
+}

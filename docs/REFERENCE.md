@@ -16,7 +16,7 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 - **Node.js `>=24`** — authoritative in `package.json` `engines`.
 - **npm 10+**
 - **Playwright:** `npx playwright install chromium` once before first `npm run test:e2e`.
-- **GitHub CLI (`gh`):** optional; PR/CI only when the user asks — do not run `gh auth login`.
+- **GitHub CLI (`gh`):** optional; PR/CI only when the user asks — do not run `gh auth login`. CI failures are easiest to read from check annotations and the job Step Summary (not the raw Vitest pass list).
 - **Git hooks:** lefthook `pre-push` — see [CONTRIBUTING.md](../CONTRIBUTING.md) (`lint:ci`, `test`, `build:ship`, `@prepush` e2e).
 - **Steam / ship gates:** [RELEASE.md](./RELEASE.md) — `check:ship`, `check:ship:full`, tag-triggered `release.yml`.
 - **Balance sim env vars:** `ALCHEMY_BALANCE_ITERATIONS`, `ALCHEMY_BALANCE_POLICY` (`random-playable`, `greedy-damage`, `defensive-random`).
@@ -29,7 +29,12 @@ npm run build               # tsc + vite build
 npm run typecheck           # tsc --noEmit (fast; also in lint:ci and pre-commit)
 npm test                    # Vitest
 npm test -- <path>          # Single test file
-npm run lint:ci             # format:check + typecheck + lint + deadcode (CI / pre-push)
+npm run lint:ci             # format:check + typecheck + lint + boundaries + architecture smoke + deadcode (local/pre-push; CI splits these into steps)
+npm run lint:boundaries     # dependency-cruiser phase / lib edges
+npm run lint:architecture-smoke  # cold ESLint lintFiles smoke (lint:ci)
+npm run deadcode            # knip (CI / pre-push)
+npm run deadcode:strict     # knip --strict (nightly)
+npm run format / format:check  # Prettier via scripts/run-prettier.mjs (shared globs)
 npm run check               # npm ci --dry-run + lint:ci + test + build
 npm run check:push          # check + test:e2e:prepush
 npm run check:ship          # lint:ci + ship unit tests + desktop compile

@@ -13,6 +13,7 @@ const isCi = !!process.env.CI && !isPrepush;
 const isFullE2eSuite = process.env.PLAYWRIGHT_E2E_FULL === "1";
 // Critical CI job: fail fast. Full suite (~100 tests): report up to 5 failures per run.
 const maxFailures = isFullE2eSuite ? 5 : isCi ? 1 : 0;
+const playwrightJsonOut = process.env.PLAYWRIGHT_JSON_OUTPUT_NAME ?? "reports/playwright-results.json";
 
 const prepushWorkers = Math.min(4, Math.max(2, os.cpus().length > 1 ? os.cpus().length - 1 : 2));
 
@@ -27,7 +28,12 @@ export default defineConfig({
   timeout: isCi ? 30_000 : 15_000,
   retries: isCi ? 1 : 0,
   forbidOnly: isCi,
-  reporter: isPrepush ? "line" : isCi ? [["github"], ["html"]] : "html",
+  // CI: github annotations + compact console + HTML artifact + JSON for step summary.
+  reporter: isPrepush
+    ? "line"
+    : isCi
+      ? [["github"], ["line"], ["html"], ["json", { outputFile: playwrightJsonOut }]]
+      : "html",
   use: {
     baseURL: "http://127.0.0.1:4173",
     trace: isPrepush ? "off" : "retain-on-failure",

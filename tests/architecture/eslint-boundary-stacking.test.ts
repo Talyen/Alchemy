@@ -84,13 +84,15 @@ describe("eslint architecture boundary stacking", () => {
     expect(hasGroupContaining(imports, "@/lib/battle/*")).toBe(true);
   });
 
-  it("meta screen files lint clean under stacked barrel rules", { timeout: 30_000 }, async () => {
-    const results = await eslint.lintFiles([
-      "src/features/alchemy/meta/screens/menu-screen.tsx",
-      "src/features/alchemy/meta/screens/armory/use-armory-controller.ts",
-    ]);
-    const errors = results.flatMap((r) => r.messages.filter((m) => m.severity === 2));
-    expect(errors).toEqual([]);
+  it("keeps screen→run bans on meta screens without applying them to non-screen meta", async () => {
+    const screenCfg = await eslint.calculateConfigForFile("src/features/alchemy/meta/screens/menu-screen.tsx");
+    const nonScreenCfg = await eslint.calculateConfigForFile("src/features/alchemy/meta/talents/talent-positions.ts");
+    const screenImports = asRestrictedImports(screenCfg.rules?.["no-restricted-imports"]);
+    const nonScreenImports = asRestrictedImports(nonScreenCfg.rules?.["no-restricted-imports"]);
+
+    expect(hasGroupContaining(screenImports, "run-loop/run")).toBe(true);
+    expect(hasGroupContaining(nonScreenImports, "run-loop")).toBe(true);
+    expect(hasGroupContaining(nonScreenImports, "run-loop/run")).toBe(false);
   });
 
   it("keeps barrel bans for shared/ui alongside ui-store isolation", async () => {

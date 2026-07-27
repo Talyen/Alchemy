@@ -28,7 +28,8 @@ Alchemy is a fantasy roguelite deckbuilder.
 - Start from an E2E-verifiable user flow whenever possible, then use focused tests to cover the implementation details.
 - Prefer path-scoped commands from [CONTRIBUTING.md § What to run when you change…](./CONTRIBUTING.md#what-to-run-when-you-change).
 - Treat lint failures, test failures, flaky tests, and React Compiler ESLint errors (`react-compiler/react-compiler`) as real quality problems, not noise.
-- Pre-push is expensive: changelog sync, `lint:ci`, unit tests, `build:ship`, and `@prepush` E2E. Details: [CONTRIBUTING.md § Before you push](./CONTRIBUTING.md#before-you-push).
+- Pre-push is expensive: changelog sync, `lint:ci` (format, typecheck, ESLint, dependency-cruiser boundaries, architecture smoke, knip), unit tests, `build:ship`, and `@prepush` E2E. Details: [CONTRIBUTING.md § Before you push](./CONTRIBUTING.md#before-you-push).
+- Pre-commit formats staged files via `scripts/run-prettier.mjs` (same globs as `format:check`, including `docs/` and root configs).
 - Before merging to `main`, or when battle E2E helpers change, also run the `@critical` / `test:e2e:main-gate` gate as CONTRIBUTING describes.
 - Animation and canary specs use raw `@playwright/test`; never `enableFastMode` / `fastBattle` in those specs. See [CONTRIBUTING.md § E2E helpers](./CONTRIBUTING.md#e2e-helpers).
 

@@ -95,10 +95,17 @@ jobs:
         timeout-minutes: 10
         run: npx playwright install chromium
 
+      - name: Prepare reports dir
+        run: mkdir -p reports
+
       - name: Run web e2e shard
         run: npm run test:e2e:nightly -- --shard=${{ matrix.shard }}/4
         env:
           CI: true
+
+      - name: Summarize web e2e shard
+        if: always()
+        run: node scripts/ci-summarize-playwright.mjs
 
       - name: Upload Playwright report
         if: failure()
@@ -108,6 +115,7 @@ jobs:
           path: |
             playwright-report/
             test-results/
+            reports/playwright-results.json
           retention-days: 3
 
   ship-gate-full:
@@ -148,3 +156,23 @@ jobs:
 
       - run: node scripts/sync-version-metadata.mjs
       - run: npm run check:ship:full
+
+  deadcode-strict:
+    name: Knip strict
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+        run: npm install -g npm@11 && npm ci --prefer-offline
+
+      - name: Knip strict (entry exports)
+        run: npm run deadcode:strict

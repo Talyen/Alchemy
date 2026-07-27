@@ -5,8 +5,8 @@ pre-commit:
     typecheck:
       run: npm run typecheck
     format:
-      glob: "{src,tests,scripts,desktop}/**/*.{ts,tsx,css,mjs,cjs}"
-      run: npx -y prettier --write {staged_files}
+      # Formats staged files that match scripts/prettier-paths.mjs (same set as format:check).
+      run: node scripts/run-prettier.mjs --write {staged_files}
       stage_fixed: true
 
 commit-msg:
