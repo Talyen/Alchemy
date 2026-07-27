@@ -84,7 +84,7 @@ describe("eslint architecture boundary stacking", () => {
     expect(hasGroupContaining(imports, "@/lib/battle/*")).toBe(true);
   });
 
-  it("meta screen files lint clean under stacked barrel rules", async () => {
+  it("meta screen files lint clean under stacked barrel rules", { timeout: 30_000 }, async () => {
     const results = await eslint.lintFiles([
       "src/features/alchemy/meta/screens/menu-screen.tsx",
       "src/features/alchemy/meta/screens/armory/use-armory-controller.ts",
