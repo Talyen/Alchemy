@@ -3,7 +3,7 @@ import {
   afterCampaignCharacterResolved,
   getPreviousDestination,
   tryStartNoviceCampaignBattle,
-} from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
+} from "@/features/alchemy/shared/run-flow/campaign-start";
 import { DEFAULT_BATTLE_ENEMY_TYPE, DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
 import { getStartingDeck } from "@/lib/game-data";
 

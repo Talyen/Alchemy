@@ -33,9 +33,6 @@ export const tooltipAnchorClassNames = {
   below: "top-full mt-4 bottom-auto",
 } as const;
 
-/** @deprecated Use popupBaseClassName + tooltipAnchorClassNames via TooltipPanel */
-export const popupClassName = `${popupBaseClassName} ${tooltipAnchorClassNames.above}`;
-
 export const battleActorSectionClass = {
   desktop:
     "absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 gap-[clamp(17.5cqw,20cqw,21.88cqw)]",

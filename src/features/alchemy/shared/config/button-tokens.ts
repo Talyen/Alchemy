@@ -17,7 +17,6 @@ export const BUTTON_WIDTH_DIALOG = "w-40";
 export const BUTTON_WIDTH_ACTION = "min-w-40";
 
 export const BUTTON_HEIGHT_DEFAULT = "h-11";
-export const BUTTON_HEIGHT_LG = "h-12";
 
 export { BUTTON_PRESS_OUTLINE as BUTTON_PRESS };
 export const BUTTON_HOVER_SOUND: UISound = "buttonHover";
