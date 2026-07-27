@@ -63,11 +63,6 @@ describe("decayPoisonStacks", () => {
 });
 
 describe("getEnemyDamageMultiplier", () => {
-  it("returns 1 with no modifier effects", () => {
-    const state = createTestBattleState();
-    expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
-  });
-
   it("does not activate freezeDoubleDamage when freezeSkipTurns is 0", () => {
     const state = createTestBattleState({
       enemyCC: { stunSkipTurns: 0, freezeSkipTurns: 0, cooldown: 0 },

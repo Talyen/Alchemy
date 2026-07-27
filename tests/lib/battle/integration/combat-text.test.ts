@@ -244,15 +244,4 @@ describe("combat number accuracy", () => {
     expect(result.enemyStatuses.burn).toBe(5);
     expect(texts).toEqual([{ target: "enemy", kind: "damage", stat: "burn", amount: 5 }]);
   });
-
-  it("does not trigger first-poison gold when enemy is immune", () => {
-    // Armor no longer blocks non-physical damage, so this tests a different scenario:
-    // Immunity through max health / damage threshold is tested in other poison tests.
-  });
-
-  it("does not trigger Cutpurse Knife when enemy is immune", () => {
-    // Armor no longer blocks non-physical damage (bleed), so immunity from
-    // armor is no longer applicable. The Cutpurse Knife bleed interaction
-    // is tested in the companion bleed test above.
-  });
 });
