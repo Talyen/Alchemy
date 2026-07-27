@@ -421,6 +421,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(test): include restore-active-run-session in snapshot parity
+  Restore helpers moved out of run-transitions; scan both modules for
+  ActiveRunData field coverage.
 - fix(lint): drop unused run-flow and shop persistence exports
   Trim knip-flagged barrel re-exports and internal progress key constants
   so deadcode checks pass after the progress split.
