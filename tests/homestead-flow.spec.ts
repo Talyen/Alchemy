@@ -42,8 +42,7 @@ test.describe("Homestead Flow", () => {
       await homestead.switchTab("Farm");
       await expect(page.getByRole("button", { name: /Herb Garden/ })).toBeVisible({ timeout: 3000 });
       await expect(page.getByRole("img", { name: "Herb Garden" })).toBeVisible();
-      // Placeholder farms (e.g. Wheat Field) are hidden until content ships.
-      await expect(page.getByText("Wheat Field")).toHaveCount(0);
+      await expect(page.getByRole("button", { name: /Wheat Field/ })).toBeVisible();
     });
 
     test("research tab shows all research options", async ({ page }) => {
