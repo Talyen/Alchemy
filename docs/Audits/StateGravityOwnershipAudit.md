@@ -4,7 +4,7 @@
 
 ## Intent
 
-Identify ownership-drift clusters and write a plan to restore them to existing owners (breaking into phases if the scope is large). Move, do not mirror: delete old forwarding APIs, parallel paths, and duplicate tests. New managers/stores must express a real lifetime boundary and replace more surface than they add. Significant moves remain proposals per [README.md](README.md).
+Identify ownership-drift clusters and restore them to existing owners. Move, do not mirror: delete old forwarding APIs, parallel paths, and duplicate tests. New managers/stores must express a real lifetime boundary and replace more surface than they add. Significant moves remain proposals per [README.md](README.md). Before shipping, confirm the code’s concern matches a different Architecture owner, real review/test cost from mixed jobs, and an existing home (not a greenfield layer). If the scope is large, phase the plan.
 
 ## What “state gravity” means here
 
@@ -28,21 +28,9 @@ Agentic coding often drops the next method on the nearest large module. Gravity 
 - Repair an obvious one-file ESLint boundary violation directly rather than expanding it into an ownership audit.
 - Feature code outside `shared/stores/` must not import `run-domain-store` directly — use the facade.
 
-## Confirm before fixing
+## Remedy preference
 
-1. **Wrong owner:** the code’s concern matches a different row in [ARCHITECTURE.md](../ARCHITECTURE.md).
-2. **Real cost:** the hub/screen is hard to test, review, or extend because unrelated jobs share its module.
-3. **Existing home:** the target owner already exists (lib handler, store slice, facade, shared UI, shell controller) — not a greenfield layer.
-4. **Plan scope:** write a plan to address all identified ownership drift; if the scope is large, break execution into phases.
-
-## Restoration order
-
-1. **Move** pure rules into `src/lib/battle` / `src/lib/gear` / `src/lib/game-data` / `src/lib/homestead` / `src/lib/content-systems` as appropriate; reuse or relocate the existing semantic test owner rather than duplicating it.
-2. **Move** persistence policy into `shared/storage` / `src/lib/validation/save-schemas` / migrations — keep stores thin.
-3. **Keep** run orchestration and cross-screen wiring on shell controllers + `run-session-facade` / `run-transitions.ts`.
-4. **Keep** battle presentation VFX in `battle-presentation-store`; global UI chrome in `ui-store`; meta discovery in `app-store`; permanent gear in `gear-store`.
-5. **Extract** presentation-only helpers into `shared/ui` or the feature folder; collapse duplicate shells via `DuplicateFeatureSurfaceAudit.md` when that is the bulk of the win.
-6. **Propose** hub splits or large store extractions when local moves would leave the same gravity well intact.
+Prefer moving pure rules into the matching `src/lib/*` owner and persistence policy into `shared/storage` / save-schemas / migrations, keeping stores thin. Keep run orchestration on shell controllers + `run-session-facade` / `run-transitions.ts`. Keep battle VFX in `battle-presentation-store`, global UI chrome in `ui-store`, meta discovery in `app-store`, permanent gear in `gear-store`. Extract presentation-only helpers into `shared/ui` or the feature folder; collapse duplicate shells via `DuplicateFeatureSurfaceAudit.md` when that is the bulk of the win. Propose hub splits when local moves would leave the same gravity well intact.
 
 ## Domain rules
 
@@ -68,10 +56,12 @@ Follow Architecture ownership:
 
 **Hub containment:** keep `run-domain-store` and persistence modules thin — new work goes to handlers, slices, facade methods, or controllers, not feature-specific methods on the hub.
 
-## Probe hints
+## Known signals
+
+Optional discovery aids — choose your own probes.
 
 - **Deep prop drilling:** battle/run props passed through ≥3 levels where a facade hook or controller binding already exists.
-- **Direct domain-store imports from screens:** `rg -n 'run-domain-store' src/features/alchemy -g '!**/stores/**'`
+- **Direct domain-store imports from screens:** `run-domain-store` imports under `src/features/alchemy` outside `**/stores/**`.
 - **Other store bypasses:** screens importing `gear-store` / `app-store` mutation APIs where a facade/controller already owns the write path.
 - **Transient UI in persistence types:** hover/selection/scroll fields on save shapes.
 - **Misplaced battle math in React:** damage/deck calculations inside `*.tsx` screens.

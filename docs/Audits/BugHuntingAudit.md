@@ -1,10 +1,10 @@
 # Strategic Bug Hunting Audit
 
-**Goal:** Find and fix real defects with targeted probes — no file-by-file browsing.
+**Goal:** Find and fix real defects — opportunistic hunt, not a sibling-audit re-run.
 
 ## Intent
 
-Confirm candidate defects and write a plan to fix all identified issues (breaking into phases if the scope is large). A pass with no confirmed defect is successful. Do not re-run sibling audits’ full suites; defer P4/P5 by default. Significant structural remedies are proposals per [README.md](README.md).
+Confirm candidate defects and fix them. A pass with no confirmed defect is successful. Do not re-run sibling audits’ full suites; defer P4/P5 by default. Significant structural remedies are proposals per [README.md](README.md). If the scope is large, phase the plan.
 
 This is an **opportunistic defect hunt**. When a hit is clearly owned by a sibling (idempotency → `BehaviorHardeningAudit.md`, lifetime/IPC → `AsyncRaceAudit.md`, unused API → `DeadCodeRatioAudit.md`), hand off rather than duplicating that audit’s full pass.
 
@@ -30,7 +30,9 @@ This is an **opportunistic defect hunt**. When a hit is clearly owned by a sibli
 | P4  | Maintainability (orphaned state)                         | Defer to `DeadCodeRatioAudit.md` |
 | P5  | Async / effect lifetime risk                             | Defer to `AsyncRaceAudit.md`     |
 
-## Probe hints
+## Known signals
+
+Optional discovery aids — choose your own probes.
 
 - **Collection bounds:** array index access in `src/lib/battle`, `src/lib/gear`, and stores without length/empty guards.
 - **Rapid tap & double-trigger:** `onClick` / pointer handlers for reward claim, shop buy, craft, start battle that lack disable/`isProcessing` guards during async work — if the gap is pure idempotency of grants, prefer `BehaviorHardeningAudit.md`.

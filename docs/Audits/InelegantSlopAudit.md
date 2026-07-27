@@ -4,7 +4,7 @@
 
 ## Intent
 
-Surface **confirmed** hotspots via capped size/structure probes. Write a plan to simplify all identified slop hotspots (breaking into phases if the scope is large) so authored LOC, declarations, indirection, or nesting decreases. Moving ceremony among files is not success. Prefer deleting/inlining; significant structural work remains a proposal per [README.md](README.md).
+Surface **confirmed** hotspots so authored LOC, declarations, indirection, or nesting decreases. Moving ceremony among files is not success. Prefer deleting/inlining; significant structural work remains a proposal per [README.md](README.md). A clean pass is valid. Before shipping a fix, confirm real reading/editing cost, no second need for the indirection, and a shorter local form that preserves behavior. If the fix scope is large, phase the plan.
 
 ## What “slop” means here
 
@@ -32,30 +32,19 @@ Elegant code here is usually: plain data, thin Zustand slices, pure `src/lib` ru
 - Do not turn this into a style-only rename sweep, docs rewrite, or mass delete of tests that encode real invariants.
 - Prefer the owning audit when the hit is primarily dead code, boundaries, async races, type-safety escapes, duplicate feature surfaces, or state-ownership drift.
 - Do not split a function that already reads cleanly at complexity ≤ 10. Complexity p90 ≤ 6 is directional via `npm run audit:all`, not a CI gate.
+- Skip load-bearing complexity (generated assets, damage pipeline, save wire format, intentional controller composition).
 
-## Confirm before fixing
+## Remedy preference
 
-1. **Cost:** real reading/editing cost (extra types, deep nesting, duplicated logic, or mixed jobs in one file).
-2. **No second need:** one call site / one implementer / no extension point in use.
-3. **Safer shape exists:** a shorter local form preserves behavior.
-4. **Plan scope:** write a plan covering all identified hotspots; if the scope is large, break execution into distinct phases.
+Prefer delete unused ceremony, then inline single-use wrappers, then collapse duplicates in-module. Extract only when a name removes nesting and has ≥2 call sites or clear domain meaning. Move shared chrome into `shared/ui` / `src/components/ui`, or rules into `src/lib` — never a new layer for one call site.
 
-Skip load-bearing complexity (generated assets, damage pipeline, save wire format, intentional controller composition).
+## Known signals
 
-## Simplification order
+Optional discovery aids — choose your own probes.
 
-1. **Delete** unused ceremony.
-2. **Inline** single-use wrappers.
-3. **Collapse** duplicates into one parameterized path in the same module.
-4. **Extract** only when a name removes nesting _and_ has ≥2 call sites or clear domain meaning.
-5. **Move** shared chrome into `shared/ui` / `src/components/ui`, or rules into `src/lib` — never a new layer for one call site.
-
-## Probe hints
-
-- **Complexity & length:** `npx eslint --rule 'complexity: ["warn", 11]' --rule 'max-lines-per-function: ["warn", 50, { "skipComments": true }]' src` (matches `audit:all`)
-- **Readability hotspots:** `npx eslint --rule 'complexity: ["warn", 1]' --rule 'max-lines-per-function: ["warn", 30]' src` (candidate discovery only)
-- **Ceremony naming:** `rg -n '(Manager|Helper|Coordinator|Wrapper|Factory)\b' src --type ts -g '!*.test.*'`
-- **Deep nesting:** prefer early returns; flag >3 nested levels in hot files.
+- **Complexity & length:** ESLint `complexity` / `max-lines-per-function` (also via `npm run audit:all`); do not split clean ≤10 functions.
+- **Ceremony naming:** `Manager` / `Helper` / `Coordinator` / `Wrapper` / `Factory` nouns around one function.
+- **Deep nesting:** >3 nested levels in hot files where early returns would suffice.
 - **Defensive cast stacks:** `as unknown as`, nested `??`, optional chains that paper over missing validation.
-- **Single-use abstractions:** `npm run audit:single-use` (primary ownership of unused API narrowing is `DeadCodeRatioAudit.md`)
+- **Single-use abstractions:** `npm run audit:single-use` (unused API narrowing primarily owned by `DeadCodeRatioAudit.md`).
 - **Names & React shape:** domain vocabulary already used in the module; explicit Props types; plain function components.

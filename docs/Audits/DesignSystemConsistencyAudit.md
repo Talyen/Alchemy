@@ -1,18 +1,17 @@
 # Design System Consistency Audit
 
-**Goal:** Find custom sizing, layout, typography, and color patterns that diverge from existing shared UI primitives and design tokens, then write a plan to migrate identified custom patterns toward those owners without losing justified game UI.
+**Goal:** Find custom sizing, layout, typography, and color patterns that diverge from existing shared UI primitives and design tokens, then migrate identified custom patterns toward those owners without losing justified game UI.
 
-Prereads: `src/components/ui/README.md`, `src/features/alchemy/shared/ui/README.md`, `src/styles/theme.css` (+ `src/index.css` / `src/styles/*.css` for CSS variables).
+Token / primitive owners: `src/components/ui/README.md`, `src/features/alchemy/shared/ui/README.md`, `src/styles/theme.css` (+ `src/index.css` / `src/styles/*.css` for CSS variables).
 
 ## Intent
 
-Inventory custom vs tokenized vs justified-custom, then write a plan to fix all identified issues (breaking into phases if the scope is large). Prefer existing shared primitives and CSS variables. Add a shared token/helper only for at least three current uses, and only when removing call-site surface outweighs the new API; otherwise simplify locally.
+Inventory custom vs tokenized vs justified-custom, then migrate confirmed drift toward existing shared primitives and CSS variables. Add a shared token/helper only for at least three current uses, and only when removing call-site surface outweighs the new API; otherwise simplify locally. If the scope is large, phase the plan.
 
 **Principles:** one spacing/color scale; delete parallel one-off systems; reuse `src/components/ui` and `shared/ui` before inventing new chrome; don’t invent a second visual language beside the established game UI.
 
 ## Hard stops
 
-- Plan scope: write a plan covering all identified issues; break into distinct phases if the scope is large, rather than attempting a single unstructured sweep or full-screen visual redesign.
 - Do not rewrite battle battlefield / hand layout unsupervised in one pass — include a scoped migration phase if that is part of the plan.
 - Do not replace intentional game juice: combat float text, card fan, Armory drag ghosts, Motion stagger recipes.
 - Do not hand-roll buttons/inputs that already exist in `src/components/ui`.
@@ -36,11 +35,13 @@ Inventory custom vs tokenized vs justified-custom, then write a plan to fix all 
 
 Prefer existing shadcn/Radix wrappers, CVA variants, and Tailwind theme variables already used in neighboring files. Surfaces that already pad should not stack double padding. Gesture-driven motion: 1:1 tracking during drag; settle with interruptible springs already used in the feature.
 
-## Probe hints
+## Known signals
 
-- **Hardcoded dimensions:** `rg -n 'w-\[[0-9]|h-\[[0-9]|p-\[[0-9]|m-\[[0-9]|text-\[[0-9]' src --type ts`
-- **Raw colors (TS/TSX):** `rg -n '#[0-9a-fA-F]{3,8}|rgb\(|hsl\(' src --type ts -g '!*.test.*'`
-- **Raw colors (CSS):** `rg -n '#[0-9a-fA-F]{3,8}|rgb\(|hsl\(' src/styles src/index.css`
+Optional discovery aids — choose your own probes.
+
+- **Hardcoded dimensions:** arbitrary Tailwind size literals (`w-[…]`, `h-[…]`, `p-[…]`, `m-[…]`, `text-[…]`) beside existing tokens.
+- **Raw colors (TS/TSX):** hex / `rgb(` / `hsl(` bypassing CSS variables.
+- **Raw colors (CSS):** same patterns under `src/styles` / `src/index.css`.
 - **Parallel button/card markup:** custom button-looking `div`/`button` stacks beside existing `Button` / card primitives.
 - **Duplicated empty-state / panel chrome:** copy-pasted panel shells — if structural twins dominate, also consider `DuplicateFeatureSurfaceAudit.md`.
 - **Inline shadow/border recipes:** repeated one-off shadow stacks where a shared class exists.

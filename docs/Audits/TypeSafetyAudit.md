@@ -4,12 +4,12 @@
 
 ## Intent
 
-Find unsafe escapes via TypeScript/ESLint output and targeted probes. Prefer one validation boundary (Zod) or an impossible-state model over repeated call-site guards and fallbacks. Write a plan to fix all identified unsafe typing escapes (breaking into phases if the scope is large); a clean pass is valid, and significant typing seams remain proposals.
+Find unsafe escapes and fix them. Prefer one validation boundary (Zod) or an impossible-state model over repeated call-site guards and fallbacks. A clean pass is valid; significant typing seams remain proposals. If the scope is large, phase the plan.
 
 ## Hard stops
 
 - Do not add net-new `eslint-disable` / `@ts-expect-error` without a minimal line-scoped reason.
-- Do not chase every `\bany\b` or every `!` — triage from probes and diagnostics.
+- Do not chase every `\bany\b` or every `!` — triage by risk and diagnostics.
 - Keep Zod/validation at save/load boundaries; do not replace boundary validation with scattered casts.
 - Casts on save paths: this audit owns the typing escape; silent failure / corrupt-save behavior belongs to `BehaviorHardeningAudit.md`.
 
@@ -31,10 +31,12 @@ Find unsafe escapes via TypeScript/ESLint output and targeted probes. Prefer one
 - `any` mainly at serialization edges; validate decoded saves via Zod schemas — not runtime casts after the fact.
 - Targets (directional, not absolute gates): `any` → 0 in non-test `src`; `@ts-expect-error` / `as unknown as` trending to 0; `!.` ≤ ~1 per 500 LOC.
 
-## Probe hints
+## Known signals
 
-- **`any`:** `rg -n '\bany\b' src --type ts -g '!*.test.*' -g '!*.spec.*'`
-- **Suppressions & double casts:** `rg -n '@ts-ignore|@ts-expect-error|eslint-disable|as unknown as' src`
-- **Non-null assertions:** `rg -n '!\.' src --type ts -g '!*.test.*'`
-- **Unsafe assertions on persistence/battle:** focus hits in `src/features/alchemy/shared/storage/`, `src/lib/validation/save-schemas/`, `run-transitions.ts`, `src/lib/battle`
-- **Raw enum / string decoding:** stringly unions without Zod or exhaustive checks at hydrate boundaries
+Optional discovery aids — choose your own probes.
+
+- **`any`:** `\bany\b` in non-test `src`.
+- **Suppressions & double casts:** `@ts-ignore` / `@ts-expect-error` / `eslint-disable` / `as unknown as`.
+- **Non-null assertions:** `!.` in non-test `src`.
+- **Unsafe assertions on persistence/battle:** hits in `shared/storage/`, `save-schemas/`, `run-transitions.ts`, `src/lib/battle`.
+- **Raw enum / string decoding:** stringly unions without Zod or exhaustive checks at hydrate boundaries.

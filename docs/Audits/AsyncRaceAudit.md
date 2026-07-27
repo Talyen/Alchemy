@@ -4,7 +4,7 @@
 
 ## Intent
 
-Investigate high-risk candidates via targeted probes. Do not add abort controllers, mutex helpers, or concurrency tests without a demonstrated lifetime/race issue. Write a plan to fix all identified async/race issues (breaking into phases if the scope is large); significant isolation or IPC redesigns are proposals per [README.md](README.md).
+Investigate high-risk candidates and fix confirmed lifetime/race issues. Do not add abort controllers, mutex helpers, or concurrency tests without a demonstrated lifetime/race issue. Significant isolation or IPC redesigns are proposals per [README.md](README.md). If the scope is large, phase the plan.
 
 ## Hard stops
 
@@ -30,12 +30,14 @@ Investigate high-risk candidates via targeted probes. Do not add abort controlle
 
 Presence of `async` / `Promise` / IPC is not itself a defect — confirm lifetime, cancellation, and single-flight assumptions.
 
-## Probe hints
+## Known signals
+
+Optional discovery aids — choose your own probes.
 
 - **Effects without cleanup:** `useEffect` that registers `addEventListener`, `setInterval`, or subscriptions without a teardown return.
-- **Zustand subscribe leaks:** `rg -n '\.subscribe\(' src --type ts -g '!*.test.*'` — confirm matching unsubscribe.
+- **Zustand subscribe leaks:** `.subscribe(` without matching unsubscribe.
 - **Double-submit:** click handlers that kick async work without a re-entrancy guard (`isProcessing`, disabled button, in-flight ref).
 - **Stale closures:** effects depending on unstable identities that re-fire expensive work unintentionally.
-- **Store writes after await:** `await` then `setState` / `useXStore.setState` without mounted/abort checks on long paths.
-- **Electron IPC races:** `desktop/main.cjs`, `desktop/preload.cjs` — search `ipcMain` / `ipcRenderer` / `contextBridge`; handlers that assume a single in-flight request; overlapping save/load IPC without sequencing; replies after window close.
+- **Store writes after await:** `await` then `setState` / store writes without mounted/abort checks on long paths.
+- **Electron IPC races:** `desktop/main.cjs`, `desktop/preload.cjs` — handlers that assume a single in-flight request; overlapping save/load IPC without sequencing; replies after window close.
 - **Strict Mode double effects:** mount-only persists or grants that fire twice in development and would double-apply in production under remount.

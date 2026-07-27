@@ -4,7 +4,7 @@
 
 ## Intent
 
-Use capped history and measurable amplification probes to identify repeated high-friction clusters and write a plan to simplify them through existing sources of truth or owners (breaking into phases if the scope is large). A successful fix reduces at least one stable proxy: authored touchpoints, required preread surface, duplicated declarations or policy, routed verification tiers, or routine command output. Do not use tokenizer-specific token counts, and treat a clean pass as valid.
+Identify repeated high-friction clusters and simplify them through existing sources of truth or owners. A successful fix reduces at least one stable proxy: authored touchpoints, required preread surface, duplicated declarations or policy, routed verification tiers, or routine command output. Do not use tokenizer-specific token counts. A clean pass is valid. Before shipping, confirm recurrence (or demonstrated drift), causality beyond co-change alone, excess avoidable surface, an existing home for the remedy, and a measurable before/after proxy with unchanged correctness coverage. If the scope is large, phase the plan.
 
 ## What counts as locality or context friction
 
@@ -28,21 +28,9 @@ Use capped history and measurable amplification probes to identify repeated high
 - Do not add routing metadata, a configuration framework, or an abstraction for an isolated task.
 - Treat the composition root (`App.tsx`, screen route tables) as expected fan-out, not a seam target by default.
 
-## Confirm before fixing
+## Remedy preference
 
-1. **Recurrence:** show at least three comparable instances, or two with demonstrated drift or an avoidable failure.
-2. **Causality:** inspect the relevant diffs or script output; co-change and size alone are not evidence.
-3. **Excess surface:** separate necessary behavior, tests, generated output, and verification from the avoidable portion.
-4. **Existing home:** identify the executable source of truth, existing semantic owner, or current facade that should absorb the remedy.
-5. **Measurable direction:** state the before/after proxy and show that correctness coverage and required context remain intact.
-
-## Simplification order
-
-1. **Delete** duplicated policy or commands and link consumers to the existing source of truth.
-2. **Narrow** verification routing or docs preread using evidence from representative paths.
-3. **Restore** repeated configuration or behavior to its existing semantic owner and remove the old copies.
-4. **Move or split** only when it restores an established owner and makes the selected concern independently reviewable; significant moves remain proposals per [README.md](README.md).
-5. **Parameterize / add a seam** only for confirmed repetition with at least three current uses, or propose the seam when non-obvious.
+Prefer delete duplicated policy or commands and link consumers to the existing source of truth. Narrow verification routing or docs preread using evidence from representative paths. Restore repeated configuration or behavior to its existing semantic owner and remove old copies. Move or split only when it restores an established owner and makes the selected concern independently reviewable; significant moves remain proposals per [README.md](README.md). Parameterize / add a seam only for confirmed repetition with at least three current uses, or propose the seam when non-obvious.
 
 ## Domain rules
 
@@ -54,17 +42,14 @@ Every shipped finding must report its before/after proxy and the unchanged corre
 
 ### Circular imports (madge)
 
-When `npm run audit:all` reports a madge cycle:
+When madge (via `npm run audit:all`) reports a cycle, legal remedies include inverting the dependency onto a narrower interface / shared types module, extracting a shared module both sides can import, or routing feature code through an existing facade. Layer-boundary violations remain ESLint failures — fix the import; do not widen the rule.
 
-1. Invert the dependency (depend on a narrower interface / shared types module, not the concrete store).
-2. Extract a shared module both sides can import.
-3. Route feature code through an existing facade instead of reaching across layers.
-4. Layer-boundary violations remain ESLint failures — fix the import; do not widen the rule.
+## Known signals
 
-## Probe hints
+Optional discovery aids — choose your own probes. See also the [measurable sweep map](README.md#measurable-sweep-map-npm-run-auditall).
 
-- **Change amplification:** `node scripts/audit-change-amplification.mjs` — defaults `--since=3 months ago` and commit subjects matching `^feat|^fix|^balance`. Inspect top hotspots and high co-edit pairs; identify missing seams before implementing. Empty stats usually mean the since-window or subject filters matched nothing.
-- **Authored co-change clusters:** capped `git log --name-only` / `--stat` sample, excluding `dist/`, assets, and generated files; confirm in diffs.
-- **Repeated policy and commands:** search `AGENTS.md`, `docs/`, `CONTRIBUTING.md`, and `scripts/` for duplicated rules, versions, flags, or command sequences that can link to one owner.
-- **Non-local review surface:** for a frequently changed authored owner, check whether comparable diffs repeatedly require unrelated sections; route genuine ownership drift to `StateGravityOwnershipAudit.md`.
+- **Change amplification:** `node scripts/audit-change-amplification.mjs` (defaults `--since=3 months ago`, subjects matching `^feat|^fix|^balance`). Empty stats usually mean the since-window or subject filters matched nothing.
+- **Authored co-change clusters:** capped history samples excluding `dist/`, assets, and generated files; confirm in diffs.
+- **Repeated policy and commands:** duplicated rules, versions, flags, or command sequences across `AGENTS.md`, `docs/`, `CONTRIBUTING.md`, and `scripts/` that can link to one owner.
+- **Non-local review surface:** frequently changed authored owners whose diffs repeatedly require unrelated sections; route genuine ownership drift to `StateGravityOwnershipAudit.md`.
 - **Single-use abstractions forcing fan-out:** `npm run audit:single-use` as a supporting signal (not sole evidence).

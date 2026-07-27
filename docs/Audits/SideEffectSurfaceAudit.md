@@ -4,7 +4,7 @@
 
 ## Intent
 
-Confirm unexpected effect ownership and write a plan to fix all identified violations using existing seams (breaking into phases if the scope is large). A clean pass is valid. A new seam requires repeated confirmed violations, at least three current uses or an enforced boundary, and proposal approval per [README.md](README.md).
+Confirm unexpected effect ownership and fix violations using existing seams. A clean pass is valid. A new seam requires repeated confirmed violations, at least three current uses or an enforced boundary, and proposal approval per [README.md](README.md). If the scope is large, phase the plan.
 
 ## Hard stops
 
@@ -34,11 +34,13 @@ Confirm unexpected effect ownership and write a plan to fix all identified viola
 - **UI:** decorative randomness must not re-roll every render — initialize lazily (`useState(() => …)`).
 - **Fetch / network:** not expected in core game loop; treat unexpected `fetch` in `src/lib` as a finding unless an existing allowlisted owner.
 
-## Probe hints
+## Known signals
 
-- **Unseeded entropy outside seams:** `rg -n 'Math\.random|Date\.now|new Date\(|fetch\(|localStorage|sessionStorage' src --type ts -g '!**/stores/**' -g '!**/storage/**' -g '!**/rng*' -g '!**/validation/**' -g '!**/active-run-session/**'`
-- **Battle entropy leaks:** `rg -n 'Math\.random|Date\.now|new Date\(|crypto\.randomUUID|performance\.now' src/lib/battle` — target 0
+Optional discovery aids — choose your own probes.
+
+- **Unseeded entropy outside seams:** `Math.random` / `Date.now` / `new Date(` / `fetch(` / `localStorage` / `sessionStorage` outside allowlisted owners.
+- **Battle entropy leaks:** unseeded entropy under `src/lib/battle` — target 0.
 - **Direct storage from screens:** `localStorage` / persist calls outside `shared/storage` and boot/hydrate.
-- **Global mutable access in pure logic:** `rg -n 'getState\(\)' src/lib --type ts -g '!*.test.*'` — prefer injected state in battle/effect handlers.
+- **Global mutable access in pure logic:** `getState()` inside `src/lib` rule handlers — prefer injected state.
 - **Desktop IPC in pure lib:** Electron/Steam APIs imported from `src/lib` battle/game-data paths.
 - **UI re-roll:** `Math.random` inside render bodies without lazy state init.

@@ -6,22 +6,22 @@ Conventions: [CONTRIBUTING.md](../../CONTRIBUTING.md). Architecture owners: [ARC
 
 ## Intent
 
-Confirm duplicate, weaker, implementation-detail, slow, or over-expanded cases with a stronger owner elsewhere. Write a plan to fix all identified test portfolio issues (breaking into phases if the scope is large). A clean pass is valid; do not add coverage to manufacture value.
+Confirm duplicate, weaker, implementation-detail, slow, or over-expanded cases with a stronger owner elsewhere, then fix them. A clean pass is valid; do not add coverage to manufacture value. If the scope is large, phase the plan.
 
 ## Hard stops
 
-- Do not invent coverage % CI gates unless already configured. `npm run test:coverage` is a discovery tool; prefer behavior-targeted tests over chasing line %.
+- Do not invent coverage % CI gates unless already configured. Coverage reports are discovery tools; prefer behavior-targeted tests over chasing line %.
 - Do not optimize declaration count alone: parameterized tables may hide more executed cases and runtime.
 - Preserve unique battle, persistence, migration, architecture-guard, and player-flow owners. Do not delete a failing journey merely to reduce the portfolio.
 - E2E portfolio and Playwright flake work belong in `E2ETestQualityAudit.md`.
 
 ## Fix priority
 
-**Tier 1:** same assertion owned twice; weaker feature-shell echoes of `src/lib` owners; exact catalog counts, pixel tables, plain-struct round trips, empty/commented tests, hidden soft failures, or multi-second waits.
+Prefer highest-impact portfolio waste first:
 
-**Tier 2:** merge sibling cases only when it reduces executed work or setup cost; reuse an existing fixture; inject short intervals; move an assertion to its cheaper semantic owner and delete the weaker copy.
-
-**Tier 3 (only if quick):** drop redundant assertions inside a kept test; naming/helper cleanup with demonstrated value.
+- **Highest:** same assertion owned twice; weaker feature-shell echoes of `src/lib` owners; exact catalog counts, pixel tables, plain-struct round trips, empty/commented tests, hidden soft failures, or multi-second waits.
+- **Next:** merge sibling cases only when it reduces executed work or setup cost; reuse an existing fixture; inject short intervals; move an assertion to its cheaper semantic owner and delete the weaker copy.
+- **Only if quick:** drop redundant assertions inside a kept test; naming/helper cleanup with demonstrated value.
 
 ## Domain rules
 
@@ -43,11 +43,13 @@ Track authored declarations and expanded executions separately. A merge is succe
 
 Directional coverage interest: branch coverage on `src/lib/battle`, `src/lib/gear`, `src/features/alchemy/shared/storage`, and `src/lib/validation` — add behavior-targeted tests for untested exports; do not pad with dead assertions.
 
-## Probe hints
+## Known signals
 
-- **Assertion density outliers:** `rg --no-filename -c -e '^\s*(expect|assert)' tests --type ts | sort -t: -k2 -n | head -50`
+Optional discovery aids — choose your own probes.
+
+- **Assertion density outliers:** unusually sparse or dense `expect`/`assert` counts across test files.
 - **Trivial / empty tests:** files with zero meaningful assertions or commented-out bodies.
-- **Wall-clock sleeps in unit tests:** `rg -n 'setTimeout|waitForTimeout|sleep\(' tests -g '*.test.ts' -g '*.test.tsx'`
+- **Wall-clock sleeps in unit tests:** `setTimeout` / `waitForTimeout` / `sleep(` in `*.test.ts(x)`.
 - **Duplicate tier ownership:** feature tests that only restate `tests/lib/battle` matrices.
 - **Coverage gaps (discovery):** `npm run test:coverage` — review weak branches on core `src/lib` modules.
 - **Fragile string matching:** assertions on error message text instead of typed error kinds / result shapes.

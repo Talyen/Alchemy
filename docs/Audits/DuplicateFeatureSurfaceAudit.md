@@ -4,7 +4,7 @@
 
 ## Intent
 
-Find all cohesive clusters of **confirmed** copy-paste feature surfaces and write a plan to collapse them under their existing owners (breaking into phases if the scope is large). Require three structural twins, or two with demonstrated drift/duplicate maintenance. A successful collapse removes the old paths and reduces net LOC/declarations; do not build a generic configuration surface for two callers.
+Find cohesive clusters of **confirmed** copy-paste feature surfaces and collapse them under their existing owners. Require three structural twins, or two with demonstrated drift/duplicate maintenance. A successful collapse removes the old paths and reduces net LOC/declarations; do not build a generic configuration surface for two callers. Before shipping, confirm structural twinship, maintenance cost across siblings, and a safer shared shape that preserves behavior. If the scope across features is large, phase the plan.
 
 ## What counts as a duplicate surface
 
@@ -26,20 +26,9 @@ Duplicate surfaces look like parallel product screens that differ mainly by labe
 - Do not move shared chrome into a feature folder when it already belongs in `shared/ui` or `src/components/ui`, or domain rules into screens.
 - Prefer the owning audit when the hit is primarily dead code, slop ceremony, token adoption, or state ownership.
 
-## Confirm before fixing
+## Remedy preference
 
-1. **Structural twin:** same section order / chrome / interaction pattern across ≥3 call sites, or two call sites with demonstrated drift (not merely similar names).
-2. **Maintenance cost:** a change would need to land in multiple siblings, or already has drifted.
-3. **Safer shared shape:** one parameterized component or helper in the existing owner preserves behavior.
-4. **Plan scope:** write a plan covering all identified clusters; if the scope across features is large, organize the plan into phases.
-
-## Simplification order
-
-1. **Delete** the weaker twin when one path is strictly redundant.
-2. **Parameterize** in place under the existing feature folder; avoid generic config/`children`-soup APIs when a small concrete prop is enough.
-3. **Move** shared product UI into `src/features/alchemy/shared/ui/` when ≥2 feature folders need it.
-4. **Adopt** shared UI primitives / tokens for chrome duplication — route pure token work through `DesignSystemConsistencyAudit.md` when that is the whole fix.
-5. **Propose** a larger shared shell or ownership move when local parameterization would leave the same twins nearby.
+Prefer delete the weaker twin when one path is strictly redundant, then parameterize in place under the existing feature folder. Move shared product UI into `src/features/alchemy/shared/ui/` when ≥2 feature folders need it. Adopt shared UI primitives / tokens for chrome duplication — route pure token work through `DesignSystemConsistencyAudit.md` when that is the whole fix. Propose a larger shared shell when local parameterization would leave the same twins nearby.
 
 ## Domain rules
 
@@ -54,9 +43,11 @@ Ownership follows [ARCHITECTURE.md](../ARCHITECTURE.md):
 
 Keep intentional product differences (mystery vs shop rules, labyrinth vs destination progression; battle hand vs Armory/collection card grids). Collapse only the **view scaffolding** and repeated presentation — do not force battle hand and collection grids into one component just because both show cards.
 
-## Probe hints
+## Known signals
 
-- **Parallel screen shells:** compare screens under `meta/`, `run-setup/`, and `run-loop/` for identical layout chrome with different data bindings.
+Optional discovery aids — choose your own probes.
+
+- **Parallel screen shells:** screens under `meta/`, `run-setup/`, and `run-loop/` with identical layout chrome and different data bindings.
 - **Empty-state duplication:** repeated empty collection/inventory/shop placeholders.
 - **Card / grid scaffolding:** near-identical card grids, pickers, and list wrappers across features.
 - **Modal / overlay twins:** duplicated confirm dialogs, portals, and backdrop dismiss patterns.

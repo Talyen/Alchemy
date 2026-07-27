@@ -4,7 +4,7 @@
 
 ## Intent
 
-Inventory confirmed persistence or transition issues and write a plan to fix all identified gaps (breaking into phases if the scope is large). A clean pass is valid; do not add guards, logs, seams, or tests solely to create work. Reuse the existing persistence/transition owner; a new seam requires repeated confirmed violations and the proposal bar in [README.md](README.md).
+Inventory confirmed persistence or transition issues and fix them. A clean pass is valid; do not add guards, logs, seams, or tests solely to create work. Reuse the existing persistence/transition owner; a new seam requires repeated confirmed violations and the proposal bar in [README.md](README.md). If the scope is large, phase the plan.
 
 ## Hard stops
 
@@ -21,7 +21,7 @@ Inventory confirmed persistence or transition issues and write a plan to fix all
 | P2       | Recovery hides a meaningful failure from both the player and diagnostics |
 | P3       | Style-only error handling churn                                          |
 
-Prioritize P0–P1 first; write a plan to cover all identified issues (phased if necessary).
+Prioritize P0–P1 by impact.
 
 ## Domain rules
 
@@ -34,13 +34,15 @@ Prioritize P0–P1 first; write a plan to cover all identified issues (phased if
 - Store load failure → default/in-memory recovery + log, not crash.
 - Prefer existing coverage. Add a regression only when fixing a confirmed gap; battle edges use seeded RNG; save edges reuse empty/partial/corrupt fixtures under `tests/features/alchemy/shared/storage` and save E2E specs.
 
-## Probe hints
+## Known signals
 
-- **Swallowed async errors:** `rg -n 'catch\s*\([^)]*\)\s*\{\s*\}|\.catch\(\s*\(\)\s*=>\s*\{\s*\}\)' src --type ts`
-- **Persistence & hydrate seams:** `rg -l 'persist|hydrate|resume|localStorage|parseActiveRun|snapshotRun|restoreRun' src --type ts -g '!*.test.*'`
+Optional discovery aids — choose your own probes.
+
+- **Swallowed async errors:** empty `catch` / no-op `.catch` on save, hydrate, resume, or battle outcome paths.
+- **Persistence & hydrate seams:** `persist` / `hydrate` / `resume` / `localStorage` / `parseActiveRun` / `snapshotRun` / `restoreRun` call sites.
 - **Schema & session owners:** `src/lib/validation/save-schemas/`, `src/lib/active-run-session/`, `shared/storage/`
 - **Cloud / backup edges:** merge and backup helpers under `shared/storage` — confirm conflict/merge failure surfaces errors.
-- **Non-atomic multi-step mutations:** multi-field store updates before a single persist without rollback on failure (`shared/storage/`, `run-transitions.ts`).
+- **Non-atomic multi-step mutations:** multi-field store updates before a single persist without rollback on failure.
 - **Silent decode / parse fallbacks:** Zod `.safeParse` or JSON parse paths that discard corrupt data without logging.
 - **Idempotency & re-entrancy:** reward claim, shop buy, craft, labyrinth/mystery completion handlers — verify guards before granting.
 - **Presentation cleanup:** modal/overlay dismiss that leaves transient run-session flags (`reward`, shop, targeting) uncleared.

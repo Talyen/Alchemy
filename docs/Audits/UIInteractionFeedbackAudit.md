@@ -4,7 +4,7 @@
 
 ## Intent
 
-Identify navigation/feedback/interaction defects across flows and write a plan to fix all identified issues (breaking into phases if the scope is large). Reuse existing UI coverage; do not add a test unless CONTRIBUTING identifies a unique shipping journey or safety invariant. Significant shared patterns remain proposals.
+Identify navigation/feedback/interaction defects and fix them. Reuse existing UI coverage; do not add a test unless CONTRIBUTING identifies a unique shipping journey or safety invariant. Significant shared patterns remain proposals. If the scope is large, phase the plan.
 
 This audit checks interactive clarity for a desktop web/Electron game; it is not a comprehensive WCAG audit.
 
@@ -27,9 +27,11 @@ This audit checks interactive clarity for a desktop web/Electron game; it is not
 
 **Edge cases:** rapid-tap debounce on reward claim / craft / shop buy / start battle; Electron window blur / deactivate should not leave stuck drag/target modes; empty states for empty collection/inventory/armory.
 
-## Probe hints
+## Known signals
 
-- **Pointer capture pairs:** `rg -l 'setPointerCapture|releasePointerCapture|onDrag|onPointerDown|modal|tooltip|portal' src --type ts -g '!*.test.*'`
+Optional discovery aids — choose your own probes.
+
+- **Pointer capture pairs:** `setPointerCapture` / `releasePointerCapture` / drag / modal / portal surfaces.
 - **Missing release / cleanup:** `setPointerCapture` without matching release on cancel/unmount paths.
 - **Mode conflicts:** overlapping drag + tooltip + modal handlers on the same surface.
 - **Tooltip blocking clicks:** hover tooltips that intercept pointer events on underlying controls.
