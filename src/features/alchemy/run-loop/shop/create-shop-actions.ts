@@ -210,7 +210,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     resample: () => resampleTrinketShopOfferings(activeRng),
     getMapState: (prev, trinkets) => ({
       ...prev,
-      trinkets: trinkets as TrinketEntry[],
+      trinkets,
       refreshesLeft: prev.refreshesLeft - 1,
       purchasedSlotKeys: [],
     }),
@@ -236,7 +236,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     resample: () => resampleEquipmentShopOfferings(activeRng, homesteadEffects.gearAstralChanceBonus),
     getMapState: (prev, gear) => ({
       ...prev,
-      gear: gear as GearInstance[],
+      gear,
       refreshesLeft: prev.refreshesLeft - 1,
       purchasedSlotKeys: [],
     }),

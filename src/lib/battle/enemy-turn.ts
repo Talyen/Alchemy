@@ -13,19 +13,19 @@ import {
   resolveDeathsDoorEndOfEnemyTurn,
 } from "./enemy-turn-utils";
 
-type EndPlayerTurnKind = "haste" | "skipped" | "standard";
-
-export interface EndPlayerTurnResolution {
-  kind: EndPlayerTurnKind;
+interface EndPlayerTurnResolutionBase {
   state: BattleState;
   combatTexts: CombatTextEvent[];
   playerTurnSkipped: boolean;
-  enemyTurnStartState?: BattleState;
   enemyTurnStartCombatTexts: CombatTextEvent[];
   enemyResolutionCombatTexts: CombatTextEvent[];
   enemyPerformedAttack: boolean;
   afterAttackState?: BattleState;
 }
+
+export type EndPlayerTurnResolution =
+  | (EndPlayerTurnResolutionBase & { kind: "haste" })
+  | (EndPlayerTurnResolutionBase & { kind: "skipped" | "standard"; enemyTurnStartState: BattleState });
 
 function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = applyIronwoodBuckler(state, combatTexts);

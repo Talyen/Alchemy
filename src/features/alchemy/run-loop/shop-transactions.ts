@@ -8,17 +8,17 @@ export function spendRunGold(price: number, setRunGold: (fn: (g: number) => numb
   setRunGold((g) => Math.max(0, g - price));
 }
 
-interface RefreshShopOfferingsInput<T> {
+interface RefreshShopOfferingsInput<T, TItem> {
   price: number;
   refreshesLeft: number;
   runGold: number;
   setRunGold: (fn: (g: number) => number) => void;
   setState: (fn: (prev: T) => T) => void;
-  mapState: (prev: T, newItems: unknown[]) => T;
-  resample: () => unknown[];
+  mapState: (prev: T, newItems: TItem[]) => T;
+  resample: () => TItem[];
 }
 
-function refreshShopOfferings<T>(input: RefreshShopOfferingsInput<T>): boolean {
+function refreshShopOfferings<T, TItem>(input: RefreshShopOfferingsInput<T, TItem>): boolean {
   if (input.refreshesLeft <= 0 || input.runGold < input.price) return false;
   spendRunGold(input.price, input.setRunGold);
   const newItems = input.resample();
@@ -73,14 +73,14 @@ export function makeCardRefreshHandler<T>(config: {
     });
 }
 
-export function makeShopRefreshHandler<T>(config: {
+export function makeShopRefreshHandler<TState, TItem>(config: {
   getPrice: () => number;
   getRefreshesLeft: () => number;
   getRunGold: () => number;
   setRunGold: (fn: (g: number) => number) => void;
-  setState: (fn: (prev: T) => T) => void;
-  resample: () => unknown[];
-  getMapState: (prev: T, items: unknown[]) => T;
+  setState: (fn: (prev: TState) => TState) => void;
+  resample: () => TItem[];
+  getMapState: (prev: TState, items: TItem[]) => TState;
 }): () => boolean {
   return () =>
     refreshShopOfferings({
@@ -95,13 +95,13 @@ export function makeShopRefreshHandler<T>(config: {
 }
 
 export function refreshOfferings<T>(input: RefreshOfferingsInput<T>): boolean {
-  return refreshShopOfferings<T>({
+  return refreshShopOfferings<T, BattleCard>({
     price: input.price,
     refreshesLeft: input.refreshesLeft,
     runGold: input.runGold,
     setRunGold: input.setRunGold,
     setState: input.setState,
-    mapState: (prev, newItems) => input.mapState(prev, newItems as BattleCard[]),
+    mapState: input.mapState,
     resample: () =>
       input.deck
         ? selectRewardCards(input.deck, input.pool, input.count, input.currentItems, input.rng)

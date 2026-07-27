@@ -44,10 +44,19 @@ export function buildAlchemySaveDataFromStores(
   unlockedTalents?: UnlockedTalents,
 ): SaveData {
   const app = useAppStore.getState();
-  const fromStore = progress ? null : readPermanentProgressSnapshot();
-  const p = progress ?? fromStore!.progress;
-  const resolvedTalentXP = talentXP ?? fromStore?.talentXP ?? {};
-  const resolvedUnlockedTalents = unlockedTalents ?? fromStore?.unlockedTalents ?? {};
+  let p: ProgressSnapshot;
+  let resolvedTalentXP: TalentXP;
+  let resolvedUnlockedTalents: UnlockedTalents;
+  if (progress !== undefined) {
+    p = progress;
+    resolvedTalentXP = talentXP ?? {};
+    resolvedUnlockedTalents = unlockedTalents ?? {};
+  } else {
+    const snapshot = readPermanentProgressSnapshot();
+    p = snapshot.progress;
+    resolvedTalentXP = talentXP ?? snapshot.talentXP;
+    resolvedUnlockedTalents = unlockedTalents ?? snapshot.unlockedTalents;
+  }
   const gear = useGearStore.getState();
 
   return {

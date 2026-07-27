@@ -158,7 +158,7 @@ function continueAfterHasteDraw(result: EndPlayerTurnResolution, session: number
 }
 
 export function resolveNormalEnemyTurn(
-  result: EndPlayerTurnResolution,
+  result: Extract<EndPlayerTurnResolution, { kind: "skipped" | "standard" }>,
   companionState: BattleState,
   companionTexts: CombatTextEvent[],
   session: number,
@@ -169,7 +169,7 @@ export function resolveNormalEnemyTurn(
   const enemyResolutionTexts = result.enemyResolutionCombatTexts;
 
   const store = deps.getStore();
-  store.setSyncedBattleState({ ...result.enemyTurnStartState!, turnPhase: "enemy" });
+  store.setSyncedBattleState({ ...result.enemyTurnStartState, turnPhase: "enemy" });
   store.setDisplayOverrides({
     hand: [],
     playerHealth: companionState.playerHealth,
