@@ -421,6 +421,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(test): declare types for CI summarize script imports
 - fix(test): raise ESLint stacking lintFiles timeout for CI
   Cold ESLint lintFiles on meta screens can exceed the default 5s under
   CI load; allow 30s for that coverage check.
