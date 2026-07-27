@@ -1813,6 +1813,10 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### CI
 
+- ci: split lint gate and add boundary plus report tooling
+  Make CI failures easier to diagnose by splitting lint:ci into named
+  steps, adding dependency-cruiser phase boundaries, shared Prettier
+  path scripts, and Vitest/Playwright summary reporters.
 - ci: reduce pipeline cost, add release automation, and rebalance E2E test tiers
   - Move full E2E suite off main-push to tag-push only (saves ~10 min per push)
   
