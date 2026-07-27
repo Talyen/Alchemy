@@ -14,6 +14,7 @@ import type { Screen } from "@/lib/routing";
 import type { CharacterId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import { computeGearManifest, type GearInstance, type GearLoadouts } from "@/lib/gear";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import { createInitialRunDomainData } from "./run-domain-types";
@@ -190,6 +191,12 @@ export function finalizeRunEndSession(options: {
   finalizeRunXP: () => void;
   displayMaterials?: MaterialInventory | null;
 }): MaterialInventory {
+  const store = getRunDomainStore();
+  // Re-entry guard: run-end rewards are granted once per active run (menu abandon, defeat, victory).
+  if (!store.session.hasActiveRun) {
+    return emptyInventory();
+  }
+
   const activeChar = useRunDomainStore.getState().progress.run.characterId;
   useAppStore.getState().setFinishedRunCharacters((prev) => {
     if (prev.includes(activeChar)) return prev;

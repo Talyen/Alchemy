@@ -615,6 +615,14 @@ describe("run transitions", () => {
     expect(getRunSessionStoreView().hasActiveRun).toBe(false);
   });
 
+  it("finalizeRunEndSession ignores a second call after hasActiveRun is cleared", () => {
+    getRunSessionStoreView().setHasActiveRun(true);
+    const awardRunEndMaterials = vi.fn(() => emptyInventory());
+    finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: vi.fn() });
+    finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: vi.fn() });
+    expect(awardRunEndMaterials).toHaveBeenCalledOnce();
+  });
+
   it("applyRunDefeatTeardown awards materials, finalizes XP, flushes, and clears combat", async () => {
     getRunSessionStoreView().setHasActiveRun(true);
     const awardRunEndMaterials = vi.fn(() => emptyInventory());
