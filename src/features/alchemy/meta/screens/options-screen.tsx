@@ -4,7 +4,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader, TabBar } from "../../shared/ui/shared-ui";
+import {
+  ConfirmationDialog,
+  HamburgerTrigger,
+  PageLayout,
+  ScreenHeader,
+  ScreenShell,
+  TabBar,
+} from "../../shared/ui/shared-ui";
 import {
   AudioOptionsPanel,
   DisplayOptionsPanel,
@@ -50,7 +57,7 @@ export function OptionsScreen({
 
   return (
     <PageLayout>
-      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-3xl flex-col rounded-shell-screen p-7">
+      <ScreenShell maxWidthClass="max-w-3xl">
         <div className="relative flex w-full items-center justify-center">
           <ScreenHeader title="Options" />
           <div className="absolute right-0 top-1/2 -translate-y-1/2">
@@ -97,7 +104,7 @@ export function OptionsScreen({
             Back
           </Button>
         </div>
-      </div>
+      </ScreenShell>
 
       {saveData.showClearSaveConfirm ? (
         <ConfirmationDialog

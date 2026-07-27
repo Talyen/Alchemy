@@ -16,7 +16,7 @@ import {
 import { getTalentTreeKeywordIds } from "@/lib/game-data";
 
 import { TalentKeywordButton } from "../talents/talents-ui";
-import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader } from "../../shared/ui/shared-ui";
+import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader, ScreenShell } from "../../shared/ui/shared-ui";
 import { useTalentChoices } from "../talents/use-talent-choices";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
@@ -63,7 +63,7 @@ export function TalentsScreen({
 
   return (
     <PageLayout>
-      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-5xl flex-col rounded-shell-screen p-7">
+      <ScreenShell>
         <div className="relative flex w-full items-center justify-center">
           <ScreenHeader title="Talents" />
           <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -142,7 +142,7 @@ export function TalentsScreen({
             onUnlockBegin={handleUnlockTalentBegin}
           />
         </div>
-      </div>
+      </ScreenShell>
 
       {showResetConfirm ? (
         <ConfirmationDialog

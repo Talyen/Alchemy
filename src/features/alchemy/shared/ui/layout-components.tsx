@@ -22,6 +22,31 @@ export function PageLayout({ children }: { children: ReactNode }) {
   );
 }
 
+export function ScreenShell({
+  children,
+  className,
+  maxWidthClass = "max-w-5xl",
+  minHeightClass = "min-h-[48.15cqh]",
+}: {
+  children: ReactNode;
+  className?: string;
+  maxWidthClass?: string;
+  minHeightClass?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "alchemy-shell flex w-full flex-col rounded-shell-screen p-7",
+        minHeightClass,
+        maxWidthClass,
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function ScreenDescription({
   children,
   className,

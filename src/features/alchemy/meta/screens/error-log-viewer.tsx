@@ -4,7 +4,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
-import { PageLayout, ScreenHeader } from "../../shared/ui/shared-ui";
+import { PageLayout, ScreenHeader, ScreenShell } from "../../shared/ui/shared-ui";
 
 export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
   const errors = useErrorLogStore((s) => s.errors);
@@ -23,7 +23,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
 
   return (
     <PageLayout>
-      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-4xl flex-col rounded-shell-screen p-7">
+      <ScreenShell maxWidthClass="max-w-4xl">
         <div className="relative flex w-full items-center justify-center">
           <ScreenHeader title="Error Log" />
           <div className="absolute right-0 top-1/2 -translate-y-1/2">
@@ -108,7 +108,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
             ))
           )}
         </div>
-      </div>
+      </ScreenShell>
     </PageLayout>
   );
 }

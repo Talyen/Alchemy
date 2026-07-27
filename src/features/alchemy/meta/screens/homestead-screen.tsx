@@ -11,6 +11,7 @@ import {
   PageLayout,
   PaginationControls,
   ScreenHeader,
+  ScreenShell,
   StaggerGroup,
 } from "../../shared/ui/shared-ui";
 import { playUISound } from "@/lib/audio";
@@ -77,12 +78,7 @@ export function HomesteadScreen({
 
   return (
     <PageLayout>
-      <div
-        className={cn(
-          "alchemy-shell relative flex w-full max-w-6xl flex-col rounded-shell-screen p-7",
-          HOMESTEAD_CONFIG.shellMinHeightClass,
-        )}
-      >
+      <ScreenShell maxWidthClass="max-w-6xl" minHeightClass={HOMESTEAD_CONFIG.shellMinHeightClass} className="relative">
         <div className="relative flex w-full items-center justify-center">
           <ScreenHeader title="Homestead" />
           <div className="absolute right-0 top-1/2 -translate-y-1/2">
@@ -186,7 +182,7 @@ export function HomesteadScreen({
             />
           )}
         </div>
-      </div>
+      </ScreenShell>
     </PageLayout>
   );
 }
