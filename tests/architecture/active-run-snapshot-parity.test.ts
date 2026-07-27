@@ -18,7 +18,10 @@ function extractActiveRunDataKeys(typeSource: string): string[] {
 describe("active run snapshot parity", () => {
   const typeKeys = extractActiveRunDataKeys(read("src/lib/active-run-session/types.ts"));
   const snapshotSource = read("src/lib/active-run-session/snapshot.ts");
-  const restoreSource = read("src/features/alchemy/shared/stores/run-transitions.ts");
+  const restoreSource = [
+    read("src/features/alchemy/shared/stores/run-transitions.ts"),
+    read("src/features/alchemy/shared/stores/restore-active-run-session.ts"),
+  ].join("\n");
 
   it("serializes every ActiveRunData field in createActiveRunSnapshot", () => {
     for (const key of typeKeys) {
