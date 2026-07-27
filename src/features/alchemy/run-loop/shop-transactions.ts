@@ -37,6 +37,7 @@ interface RefreshOfferingsInput<T> {
   setState: (fn: (prev: T) => T) => void;
   mapState: (prev: T, newItems: BattleCard[]) => T;
   deck?: BattleCard[];
+  rng?: () => number;
 }
 
 export function markSlotPurchased(keys: string[], slotKey: string): string[] {
@@ -54,6 +55,7 @@ export function makeCardRefreshHandler<T>(config: {
   setState: (fn: (prev: T) => T) => void;
   getDeck: () => BattleCard[];
   getMapState: (prev: T, items: BattleCard[]) => T;
+  rng?: () => number;
 }): () => boolean {
   return () =>
     refreshOfferings({
@@ -67,6 +69,7 @@ export function makeCardRefreshHandler<T>(config: {
       setState: config.setState,
       mapState: (prev, items) => config.getMapState(prev, items),
       deck: config.getDeck(),
+      ...(config.rng ? { rng: config.rng } : {}),
     });
 }
 
@@ -101,7 +104,7 @@ export function refreshOfferings<T>(input: RefreshOfferingsInput<T>): boolean {
     mapState: (prev, newItems) => input.mapState(prev, newItems as BattleCard[]),
     resample: () =>
       input.deck
-        ? selectRewardCards(input.deck, input.pool, input.count, input.currentItems)
-        : resampleItems(input.pool, input.currentItems, input.count),
+        ? selectRewardCards(input.deck, input.pool, input.count, input.currentItems, input.rng)
+        : resampleItems(input.pool, input.currentItems, input.count, input.rng),
   });
 }

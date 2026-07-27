@@ -440,5 +440,40 @@ describe("createShopActions", () => {
 
       expect(firstGear).toEqual(secondGear);
     });
+
+    it("supports deterministic rng for trinket shop init and refresh", () => {
+      const rng = () => 0.25;
+      setRunProgress({ runGold: 999 });
+      setTrinketShopState(createInitialTrinketShopState(rng));
+
+      const actions = buildActions({}, rng);
+      actions.initTrinketShop();
+      const firstTrinkets = getRunSessionStoreView().trinketShopState.trinkets.map((t) => t.id);
+
+      setTrinketShopState(createInitialTrinketShopState(rng));
+      const replayActions = buildActions({}, rng);
+      replayActions.initTrinketShop();
+      const secondTrinkets = getRunSessionStoreView().trinketShopState.trinkets.map((t) => t.id);
+
+      expect(firstTrinkets).toEqual(secondTrinkets);
+
+      setTrinketShopState({
+        ...createInitialTrinketShopState(rng),
+        refreshesLeft: 1,
+      });
+      const refreshActions = buildActions({}, rng);
+      refreshActions.handleTrinketShopRefresh();
+      const refreshedTrinkets = getRunSessionStoreView().trinketShopState.trinkets.map((t) => t.id);
+
+      setTrinketShopState({
+        ...createInitialTrinketShopState(rng),
+        refreshesLeft: 1,
+      });
+      const replayRefreshActions = buildActions({}, rng);
+      replayRefreshActions.handleTrinketShopRefresh();
+      const replayedTrinkets = getRunSessionStoreView().trinketShopState.trinkets.map((t) => t.id);
+
+      expect(refreshedTrinkets).toEqual(replayedTrinkets);
+    });
   });
 });

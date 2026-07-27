@@ -9,8 +9,8 @@ export function sampleItems<T>(items: T[], count: number, rng?: () => number): T
 
 // Samples from items ensuring none of the excluded values are chosen.
 // Returns as many unique items as are available up to count.
-export function resampleItems<T>(items: T[], exclude: T[], count: number): T[] {
+export function resampleItems<T>(items: T[], exclude: T[], count: number, rng?: () => number): T[] {
   const available = items.filter((item) => !exclude.includes(item));
   const pool = available.length > 0 ? available : items;
-  return sampleItems(pool, Math.min(count, pool.length));
+  return sampleItems(pool, Math.min(count, pool.length), rng);
 }

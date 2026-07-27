@@ -88,7 +88,7 @@ describe("refreshOfferings", () => {
     expect(refreshOfferings(input)).toBe(true);
     expect(playGoldSpend).toHaveBeenCalled();
     expect(setRunGold).toHaveBeenCalled();
-    expect(resampleItems).toHaveBeenCalledWith(input.pool, currentItems, 2);
+    expect(resampleItems).toHaveBeenCalledWith(input.pool, currentItems, 2, undefined);
     expect(setState).toHaveBeenCalled();
     const next = vi.mocked(setState).mock.calls[0][0](prev);
     expect(next.cards).toEqual(newItems);

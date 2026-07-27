@@ -77,15 +77,15 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
   // ======== Init ========
 
   function initShop(): void {
-    setShopState(createInitialShopState(run.runDeck));
+    setShopState(createInitialShopState(run.runDeck, activeRng));
   }
 
   function initAlchemist(): void {
-    setAlchemistState(createInitialAlchemistState(run.runDeck));
+    setAlchemistState(createInitialAlchemistState(run.runDeck, activeRng));
   }
 
   function initTrinketShop(): void {
-    setTrinketShopState(createInitialTrinketShopState());
+    setTrinketShopState(createInitialTrinketShopState(activeRng));
   }
 
   function initEquipmentShop(): void {
@@ -123,6 +123,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     count: SHOP_CARDS_OFFERED,
     setState: setShopState,
     getDeck: () => run.runDeck,
+    rng: activeRng,
     getMapState: (prev, cards) => ({
       ...prev,
       cards,
@@ -152,6 +153,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     count: ALCHEMIST_POTIONS_OFFERED,
     setState: setAlchemistState,
     getDeck: () => run.runDeck,
+    rng: activeRng,
     getMapState: (prev, potions) => ({
       ...prev,
       potions,
@@ -205,7 +207,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     getRunGold: () => run.runGold,
     setRunGold: run.setRunGold,
     setState: setTrinketShopState,
-    resample: () => resampleTrinketShopOfferings(),
+    resample: () => resampleTrinketShopOfferings(activeRng),
     getMapState: (prev, trinkets) => ({
       ...prev,
       trinkets: trinkets as TrinketEntry[],
