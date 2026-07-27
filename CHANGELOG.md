@@ -421,6 +421,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(test): raise ESLint stacking lintFiles timeout for CI
+  Cold ESLint lintFiles on meta screens can exceed the default 5s under
+  CI load; allow 30s for that coverage check.
 - fix(test): include restore-active-run-session in snapshot parity
   Restore helpers moved out of run-transitions; scan both modules for
   ActiveRunData field coverage.
