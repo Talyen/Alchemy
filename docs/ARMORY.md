@@ -2,7 +2,7 @@
 
 The Armory is the permanent meta-progression screen for managing **Gear** (per-character equipment with affix rolls) and **Crafting Currencies** (six material types used to upgrade gear). It is the primary surface for `useGearStore` and the gateway to in-battle gear effects.
 
-> **Related:** [ARCHITECTURE.md § Permanent Gear](./ARCHITECTURE.md#permanent-gear-gear-store), [REFERENCE.md § Gear glossary](./REFERENCE.md), [WORKFLOWS.md § Add a gear/currency/enemy](./WORKFLOWS.md).
+> **Related:** [ARCHITECTURE.md § Permanent Gear](./ARCHITECTURE.md#permanent-gear-gear-store), [REFERENCE.md § Domain Glossary](./REFERENCE.md#domain-glossary), [WORKFLOWS.md § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
 
 ## Layout (`src/features/alchemy/meta/screens/armory/`)
 
@@ -116,7 +116,7 @@ type CraftingCurrencyBoardPositionsByCharacter = Record<CharacterId, CraftingCur
    ▼           ▼             ▼                  ▼
  Armory    Meta-routes   App.tsx (isArmoryLocked, autosave)
  screen    (controller)  buildAlchemySaveDataFromStores
-   │                     useAlchemySaveState
+   │                     useAlchemyAutosaveFromStores
    │                     useGearStore.subscribe(triggerSave)
    │
    ▼
@@ -220,7 +220,7 @@ Migration steps are in `src/lib/validation/migration/steps.ts`. Notable steps:
 - **v8→v9** — splits the flat `gearInventory` into per-character `gearInventories` and per-character board positions.
 - **v9→v10** — `migrateV9ToV10` is a one-shot localStorage shim: reads `alchemy-armory-positions`, merges the positions into `gearBoardPositionsByCharacter.knight`, and removes the storage key. The shim previously lived in `gear-store.ts`; it now lives in the canonical migration pipeline.
 
-`useAppSaveState.ts` subscribes to the entire `useGearStore` and triggers an autosave on any change. The gear mutation callbacks in `useArmoryController` also call `flushAlchemySaveNow` after mutations during an active run.
+`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes to run domain, `app-store`, and `gear-store` changes and debounces autosave. The gear mutation callbacks in `useArmoryController` also call `flushAlchemySaveNow` after mutations during an active run.
 
 ## Tests
 

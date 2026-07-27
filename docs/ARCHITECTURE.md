@@ -89,7 +89,7 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 | Navigation / rewards | `shell/use-run-navigation.ts`, `run-loop/navigation/*`      |
 | Battle               | `shell/use-battle-controller.ts` → `lib/battle/*`           |
 | Session reads/writes | `shared/stores/run-session-facade.ts`                       |
-| Screen routing       | `shell/use-screen-navigation.ts`, `useActiveRunScreen()`    |
+| Screen routing       | `shell/use-screen-transitions.ts`, `useActiveRunScreen()`   |
 
 ## Meta compendium (`app-store`)
 
