@@ -31,7 +31,7 @@ import {
 import type { RunStateController, TalentStateController } from "./run-domain-store";
 import type { DisplayOverrides } from "./run-domain-types";
 import { restoreRun, snapshotRun } from "./run-transitions";
-import { readPermanentProgressForSave, type HomesteadSaveFields } from "./run-save-readers";
+import type { HomesteadSaveFields } from "./run-save-readers";
 
 export {
   getRunSession,
@@ -247,7 +247,6 @@ export function readHasActiveRun(): boolean {
   return getRunDomainStore().session.hasActiveRun;
 }
 
-export { readPermanentProgressForSave };
 export type { HomesteadSaveFields };
 
 /** Persistence: hydrate permanent homestead fields from save data. */

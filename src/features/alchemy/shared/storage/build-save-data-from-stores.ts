@@ -1,40 +1,25 @@
 // Builds a SaveData snapshot from live app, run, and gear stores.
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
-import { readPermanentProgressForSave } from "@/features/alchemy/shared/stores/run-save-readers";
+import {
+  readPermanentProgressForSave,
+  type HomesteadSaveFields,
+} from "@/features/alchemy/shared/stores/run-save-readers";
 import type { ActiveRunData } from "@/lib/active-run-session";
-import type { MaterialInventory, BuildingId, FarmId, ResearchId, HomesteadEffectManifest } from "@/lib/homestead/types";
+import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { SaveData } from "./types";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
-import type { CompanionId, TalentXP, UnlockedTalents } from "@/lib/game-data";
+import type { TalentXP, UnlockedTalents } from "@/lib/game-data";
 
-interface ProgressSnapshot {
-  materialInventory: MaterialInventory;
-  constructedBuildings: Record<BuildingId, number>;
-  plantedFarms: Record<FarmId, number>;
-  completedResearch: Record<ResearchId, number>;
-  bondedCompanions: Record<CompanionId, number>;
-  effects: HomesteadEffectManifest;
-}
+export type ProgressSnapshot = HomesteadSaveFields & { effects: HomesteadEffectManifest };
 
 function readPermanentProgressSnapshot(): {
   progress: ProgressSnapshot;
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
 } {
-  const permanent = readPermanentProgressForSave();
-  return {
-    progress: {
-      materialInventory: permanent.materialInventory,
-      constructedBuildings: permanent.constructedBuildings,
-      plantedFarms: permanent.plantedFarms,
-      completedResearch: permanent.completedResearch,
-      bondedCompanions: permanent.bondedCompanions,
-      effects: permanent.effects,
-    },
-    talentXP: permanent.talentXP,
-    unlockedTalents: permanent.unlockedTalents,
-  };
+  const { talentXP, unlockedTalents, ...progress } = readPermanentProgressForSave();
+  return { progress, talentXP, unlockedTalents };
 }
 
 export function buildAlchemySaveDataFromStores(
