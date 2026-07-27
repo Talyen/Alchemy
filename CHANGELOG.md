@@ -421,6 +421,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(lint): drop unused run-flow and shop persistence exports
+  Trim knip-flagged barrel re-exports and internal progress key constants
+  so deadcode checks pass after the progress split.
 - fix(lint): restack run-loop screen bans and save via facade
   Keep SCREENS_NO_ORCHESTRATION on screens only so shop can import
   deck-mutations, and read permanent progress through the session facade.
