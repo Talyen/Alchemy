@@ -1860,6 +1860,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Docs
 
+- docs(audits): let agents choose discovery and fix strategy
+  Make audit probes optional signals, have passes fix confirmed findings,
+  and point verification at CONTRIBUTING gates instead of restating them.
 - docs: clarify agent workflow guidance
 - docs(prompts): expand PROMPTS.md audits and add single-use + audit-all scripts
   - Add TODO/FIXME & runtime-warning audit (covers console.log leftovers,
