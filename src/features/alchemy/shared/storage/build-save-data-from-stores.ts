@@ -1,7 +1,7 @@
 // Builds a SaveData snapshot from live app, run, and gear stores.
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
-import { getRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
+import { readPermanentProgressForSave } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { MaterialInventory, BuildingId, FarmId, ResearchId, HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { SaveData } from "./types";
@@ -22,7 +22,7 @@ function readPermanentProgressSnapshot(): {
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
 } {
-  const permanent = getRunDomainStore().progress.permanent;
+  const permanent = readPermanentProgressForSave();
   return {
     progress: {
       materialInventory: permanent.materialInventory,

@@ -4,7 +4,7 @@ import type { BattleCard, CharacterId, DifficultyId, TalentXP, UnlockedTalents }
 import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib/content-systems/types";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryEvent } from "@/lib/mystery";
-import type { MaterialInventory } from "@/lib/homestead/types";
+import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
@@ -250,6 +250,25 @@ type HomesteadSaveFields = Pick<
   RunProgressStore,
   "materialInventory" | "constructedBuildings" | "plantedFarms" | "completedResearch" | "bondedCompanions"
 >;
+
+/** Persistence: permanent homestead + talent fields for save snapshots. */
+export function readPermanentProgressForSave(): HomesteadSaveFields & {
+  effects: HomesteadEffectManifest;
+  talentXP: TalentXP;
+  unlockedTalents: UnlockedTalents;
+} {
+  const permanent = getRunDomainStore().progress.permanent;
+  return {
+    materialInventory: permanent.materialInventory,
+    constructedBuildings: permanent.constructedBuildings,
+    plantedFarms: permanent.plantedFarms,
+    completedResearch: permanent.completedResearch,
+    bondedCompanions: permanent.bondedCompanions,
+    effects: permanent.effects,
+    talentXP: permanent.talentXP,
+    unlockedTalents: permanent.unlockedTalents,
+  };
+}
 
 /** Persistence: hydrate permanent homestead fields from save data. */
 export function applyHomesteadSaveFields(homestead: HomesteadSaveFields): void {

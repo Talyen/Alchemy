@@ -126,4 +126,17 @@ describe("eslint architecture boundary stacking", () => {
     expect(hasGroupContaining(imports, "screens")).toBe(true);
     expect(hasGroupContaining(imports, "run-domain-store")).toBe(true);
   });
+
+  it("keeps screen→run bans for run-loop screens without applying them to shop", async () => {
+    const screenCfg = await eslint.calculateConfigForFile(
+      "src/features/alchemy/run-loop/screens/destination-screen.tsx",
+    );
+    const shopCfg = await eslint.calculateConfigForFile("src/features/alchemy/run-loop/shop/create-shop-actions.ts");
+    const screenImports = asRestrictedImports(screenCfg.rules?.["no-restricted-imports"]);
+    const shopImports = asRestrictedImports(shopCfg.rules?.["no-restricted-imports"]);
+
+    expect(hasGroupContaining(screenImports, "run-loop/run")).toBe(true);
+    expect(hasGroupContaining(shopImports, "run-setup")).toBe(true);
+    expect(hasGroupContaining(shopImports, "run-loop/run")).toBe(false);
+  });
 });

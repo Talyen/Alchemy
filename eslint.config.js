@@ -490,8 +490,17 @@ export default tseslint.config(
   },
 
   // run-setup — character/difficulty/draft; must not import run-loop (use shared/run-flow).
+  // Screens restack below so non-screen setup code is not treated as a screen.
   {
     files: ["src/features/alchemy/run-setup/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": restrictedImports({
+        patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...RUN_SETUP_NO_RUN_LOOP],
+      }),
+    },
+  },
+  {
+    files: ["src/features/alchemy/run-setup/screens/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": restrictedImports({
         patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...RUN_SETUP_NO_RUN_LOOP, ...SCREENS_NO_ORCHESTRATION],
@@ -499,9 +508,17 @@ export default tseslint.config(
     },
   },
 
-  // run-loop (general) — must not import run-setup. More specific battle/navigation blocks below re-stack.
+  // run-loop (general) — must not import run-setup. Screens/battle/navigation restack below.
   {
     files: ["src/features/alchemy/run-loop/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": restrictedImports({
+        patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...RUN_LOOP_NO_RUN_SETUP],
+      }),
+    },
+  },
+  {
+    files: ["src/features/alchemy/run-loop/screens/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": restrictedImports({
         patterns: [...BARREL_PATTERNS, ...DOMAIN_STORE_PATTERNS, ...RUN_LOOP_NO_RUN_SETUP, ...SCREENS_NO_ORCHESTRATION],
