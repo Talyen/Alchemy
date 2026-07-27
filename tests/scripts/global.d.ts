@@ -48,3 +48,46 @@ declare module "../../scripts/prettier-paths.mjs" {
   export const PRETTIER_GLOBS: readonly string[];
   export function filterPrettierPaths(paths: readonly string[]): string[];
 }
+
+type VitestFailure = { file: string; title: string; message: string };
+type VitestSummary = {
+  numTotalTests: number;
+  numPassedTests: number;
+  numFailedTests: number;
+  numPendingTests: number;
+  failures: VitestFailure[];
+};
+
+declare module "*/ci-summarize-vitest.mjs" {
+  export function summarizeVitestReport(report: unknown, options?: { maxFailures?: number }): VitestSummary;
+  export function formatVitestSummaryMarkdown(summary: VitestSummary): string;
+  export function summarizeVitestFile(reportPath: string): VitestSummary;
+}
+
+declare module "../../scripts/ci-summarize-vitest.mjs" {
+  export function summarizeVitestReport(report: unknown, options?: { maxFailures?: number }): VitestSummary;
+  export function formatVitestSummaryMarkdown(summary: VitestSummary): string;
+  export function summarizeVitestFile(reportPath: string): VitestSummary;
+}
+
+type PlaywrightFailure = { file: string; title: string; message: string; status: string };
+type PlaywrightSummary = {
+  total: number;
+  expected: number;
+  unexpected: number;
+  flaky: number;
+  skipped: number;
+  failures: PlaywrightFailure[];
+};
+
+declare module "*/ci-summarize-playwright.mjs" {
+  export function summarizePlaywrightReport(report: unknown, options?: { maxFailures?: number }): PlaywrightSummary;
+  export function formatPlaywrightSummaryMarkdown(summary: PlaywrightSummary): string;
+  export function summarizePlaywrightFile(reportPath: string): PlaywrightSummary;
+}
+
+declare module "../../scripts/ci-summarize-playwright.mjs" {
+  export function summarizePlaywrightReport(report: unknown, options?: { maxFailures?: number }): PlaywrightSummary;
+  export function formatPlaywrightSummaryMarkdown(summary: PlaywrightSummary): string;
+  export function summarizePlaywrightFile(reportPath: string): PlaywrightSummary;
+}
