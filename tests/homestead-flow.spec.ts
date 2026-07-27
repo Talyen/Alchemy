@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 import { HomesteadPage } from "./pages/homestead-page";
 
 test.describe("Homestead Flow", () => {
@@ -117,10 +117,16 @@ test.describe("Homestead Flow", () => {
     test("homestead shell does not resize when switching between tabs", async ({ page }) => {
       const shell = page.locator(".alchemy-shell").first();
       const heights: number[] = [];
+      const tabAnchors: Record<"Buildings" | "Farm" | "Research" | "Companions", Locator> = {
+        Buildings: page.getByText("Blacksmith").first(),
+        Farm: page.getByRole("button", { name: /Herb Garden/ }),
+        Research: page.getByText("Leyline Energy").first(),
+        Companions: page.getByText("Undiscovered").first(),
+      };
 
       for (const tab of ["Buildings", "Farm", "Research", "Companions"] as const) {
         await homestead.switchTab(tab);
-        await page.waitForTimeout(300);
+        await expect(tabAnchors[tab]).toBeVisible({ timeout: 3000 });
         const box = await shell.boundingBox();
         expect(box).not.toBeNull();
         heights.push(box!.height);
