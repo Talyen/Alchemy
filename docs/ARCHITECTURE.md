@@ -6,40 +6,41 @@ Canonical reference for run state, store layout, and boot policy. Coding rules: 
 
 ## Directory layout (`src/features/alchemy/`)
 
-| Path         | Role                                                          |
-| ------------ | ------------------------------------------------------------- |
+| Path         | Role                                                                       |
+| ------------ | -------------------------------------------------------------------------- |
 | `shared/`    | `stores/`, `storage/`, `ui/`, `config/`, `utils/`, `run-flow/`, `types.ts` |
-| `meta/`      | Menu, collection, homestead, talents, armory screens          |
-| `run-setup/` | Character, difficulty, draft screens                          |
-| `run-loop/`  | Battle glue, navigation, shop, in-run screens                 |
-| `shell/`     | Controller hooks                                              |
+| `meta/`      | Menu, collection, homestead, talents, armory screens                       |
+| `run-setup/` | Character, difficulty, draft screens                                       |
+| `run-loop/`  | Battle glue, navigation, shop, in-run screens                              |
+| `shell/`     | Controller hooks                                                           |
 
 Import using on-disk paths (e.g. `@/features/alchemy/shared/stores/run-session-facade`). `src/lib/` stays React-free.
 
 `shared/run-flow/` is the neutral seam for destination sampling and campaign-start helpers so `run-setup` and `run-loop` do not import each other (ESLint-enforced).
+
 ## Run state
 
 A single **run** is owned by **`useRunDomainStore`** (`shared/stores/run-domain-store.ts`) with four slices: `progress`, `session`, `navigation`, and `battle`.
 
 `progress` is nested by lifetime:
 
-| Subtree | Concern | Notes |
-| ------- | ------- | ----- |
-| `progress.run` | Deck, gold, HP, acts, trinkets, content system, run tallies | Active-run only |
-| `progress.permanent` | Homestead, talent XP / unlocks, derived `effects` | Meta lifetime; survives teardown |
-| `progress.initialized` | Hydration gate | Shared |
+| Subtree                | Concern                                                     | Notes                            |
+| ---------------------- | ----------------------------------------------------------- | -------------------------------- |
+| `progress.run`         | Deck, gold, HP, acts, trinkets, content system, run tallies | Active-run only                  |
+| `progress.permanent`   | Homestead, talent XP / unlocks, derived `effects`           | Meta lifetime; survives teardown |
+| `progress.initialized` | Hydration gate                                              | Shared                           |
 
 Facade adapters (`useRunAdapter`, `useTalentAdapter`, `useHomesteadProgressSlice`, `readActiveRunStore`) project a **flat** view so feature code does not dig into the nest.
 
-| Concern                                 | Owner                       | Notes                                    |
-| --------------------------------------- | --------------------------- | ---------------------------------------- |
-| Deck, gold, HP, acts, trinkets          | `progress.run`              | Persisted inside `activeRun`             |
-| Homestead + permanent talents           | `progress.permanent`        | Persisted as top-level save fields       |
-| Rewards, shops, labyrinth, mystery      | `session`                   | Transient per run                        |
-| Current `Screen`                        | `navigation`                | `useActiveRunScreen()`                   |
-| Combat snapshot + display overrides     | `battle`                    | Synced during battle                     |
-| Battle VFX                              | `battle-presentation-store` | Not persisted                            |
-| Lifecycle                               | `run-transitions.ts`        | Restore, snapshot, teardown, battle sync |
+| Concern                             | Owner                       | Notes                                    |
+| ----------------------------------- | --------------------------- | ---------------------------------------- |
+| Deck, gold, HP, acts, trinkets      | `progress.run`              | Persisted inside `activeRun`             |
+| Homestead + permanent talents       | `progress.permanent`        | Persisted as top-level save fields       |
+| Rewards, shops, labyrinth, mystery  | `session`                   | Transient per run                        |
+| Current `Screen`                    | `navigation`                | `useActiveRunScreen()`                   |
+| Combat snapshot + display overrides | `battle`                    | Synced during battle                     |
+| Battle VFX                          | `battle-presentation-store` | Not persisted                            |
+| Lifecycle                           | `run-transitions.ts`        | Restore, snapshot, teardown, battle sync |
 
 ### Persistence API
 

@@ -195,8 +195,7 @@ const META_NO_RUN_LOOP = [
 const RUN_SETUP_NO_RUN_LOOP = [
   {
     group: ["**/run-loop/**", "@/features/alchemy/run-loop/**"],
-    message:
-      "run-setup must not import run-loop. Shared destination/campaign helpers live in shared/run-flow.",
+    message: "run-setup must not import run-loop. Shared destination/campaign helpers live in shared/run-flow.",
   },
 ];
 
@@ -204,8 +203,7 @@ const RUN_SETUP_NO_RUN_LOOP = [
 const RUN_LOOP_NO_RUN_SETUP = [
   {
     group: ["**/run-setup/**", "@/features/alchemy/run-setup/**"],
-    message:
-      "run-loop must not import run-setup. Depend on shared/run-flow contracts or shell-composed deps.",
+    message: "run-loop must not import run-setup. Depend on shared/run-flow contracts or shell-composed deps.",
   },
 ];
 
