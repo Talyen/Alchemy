@@ -49,14 +49,18 @@ declare module "../../scripts/prettier-paths.mjs" {
   export function filterPrettierPaths(paths: readonly string[]): string[];
 }
 
-type VitestFailure = { file: string; title: string; message: string };
-type VitestSummary = {
+interface VitestFailure {
+  file: string;
+  title: string;
+  message: string;
+}
+interface VitestSummary {
   numTotalTests: number;
   numPassedTests: number;
   numFailedTests: number;
   numPendingTests: number;
   failures: VitestFailure[];
-};
+}
 
 declare module "*/ci-summarize-vitest.mjs" {
   export function summarizeVitestReport(report: unknown, options?: { maxFailures?: number }): VitestSummary;
@@ -70,15 +74,20 @@ declare module "../../scripts/ci-summarize-vitest.mjs" {
   export function summarizeVitestFile(reportPath: string): VitestSummary;
 }
 
-type PlaywrightFailure = { file: string; title: string; message: string; status: string };
-type PlaywrightSummary = {
+interface PlaywrightFailure {
+  file: string;
+  title: string;
+  message: string;
+  status: string;
+}
+interface PlaywrightSummary {
   total: number;
   expected: number;
   unexpected: number;
   flaky: number;
   skipped: number;
   failures: PlaywrightFailure[];
-};
+}
 
 declare module "*/ci-summarize-playwright.mjs" {
   export function summarizePlaywrightReport(report: unknown, options?: { maxFailures?: number }): PlaywrightSummary;
