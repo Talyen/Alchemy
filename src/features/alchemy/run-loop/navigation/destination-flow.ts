@@ -9,8 +9,5 @@ export {
   restoreOrCreateDestinationRewardState,
   withSelectedBossForDestinations,
   createDestinationRewardState,
-  type DestinationOptionsInput,
   type DestinationOfferState,
-  type DestinationWeightContext,
-  type SampleDestinationChoicesResult,
 } from "@/features/alchemy/shared/run-flow/destination-flow";

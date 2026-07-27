@@ -63,7 +63,7 @@ export interface ProgressState {
 /** Flat facade / view projection of progress (run + permanent + initialized). */
 export type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
 
-export const ACTIVE_RUN_PROGRESS_KEYS = [
+const ACTIVE_RUN_PROGRESS_KEYS = [
   "characterId",
   "runDeck",
   "runGold",
@@ -83,7 +83,7 @@ export const ACTIVE_RUN_PROGRESS_KEYS = [
   "runMaterialsEarned",
 ] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
 
-export const PERMANENT_PROGRESS_KEYS = [
+const PERMANENT_PROGRESS_KEYS = [
   "talentXP",
   "unlockedTalents",
   "materialInventory",

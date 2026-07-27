@@ -282,5 +282,3 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     createInitialDestinations,
   };
 }
-
-export type ContentSystemNavigationApi = ReturnType<typeof createContentSystemNavigation>;

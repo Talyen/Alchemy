@@ -23,10 +23,6 @@ import { sampleItems } from "@/features/alchemy/shared/utils";
 export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState };
 
 export {
-  serializeShopState,
-  hydrateShopState,
-  serializeAlchemistState,
-  hydrateAlchemistState,
   serializeTrinketShopState,
   hydrateTrinketShopState,
   serializeEquipmentShopState,
