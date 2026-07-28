@@ -26,6 +26,9 @@ export function makeFlowHandlerDeps(overrides: Partial<RunFlowHandlerDeps> = {})
     beginMysteryEvent: () => {},
     clearMysteryCardChoices: () => {},
     onWildwoodRewardComplete: () => {},
+    rewardRng: () => 0.5,
+    destinationRng: () => 0.5,
+    worldRng: () => 0.5,
     ...overrides,
   };
 }

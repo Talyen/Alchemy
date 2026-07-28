@@ -34,6 +34,7 @@ interface UseWildwoodGauntletFlowOptions {
   ) => boolean;
   setHasActiveBattle: (active: boolean) => void;
   clearCardHover: () => void;
+  rng: () => number;
 }
 
 export function useWildwoodGauntletFlow({
@@ -42,13 +43,14 @@ export function useWildwoodGauntletFlow({
   onStartBossById,
   setHasActiveBattle,
   clearCardHover,
+  rng,
 }: UseWildwoodGauntletFlowOptions) {
   const startNextWildwoodBoss = useCallback(() => {
     const state = readRunSessionStore().wildwoodDraft;
     if (!state) return;
-    const draw = drawWildwoodBoss(state.remainingBossIds, state.currentBossId ?? state.previousBossId);
-    const modifierId = pickWildwoodModifier();
-    const rewardTraitId = pickWildwoodRewardTrait();
+    const draw = drawWildwoodBoss(state.remainingBossIds, state.currentBossId ?? state.previousBossId, rng);
+    const modifierId = pickWildwoodModifier(rng);
+    const rewardTraitId = pickWildwoodRewardTrait(rng);
     setWildwoodDraft({
       ...state,
       phase: "battle",
@@ -70,7 +72,7 @@ export function useWildwoodGauntletFlow({
     clearCardHover();
     setHasActiveBattle(true);
     navigateTo(CONSTANTS.SCREENS.BATTLE);
-  }, [clearCardHover, navigateTo, onStartBossById, setHasActiveBattle]);
+  }, [clearCardHover, navigateTo, onStartBossById, rng, setHasActiveBattle]);
 
   const resumeWildwoodRun = useCallback(() => {
     const state = readRunSessionStore().wildwoodDraft;
@@ -109,10 +111,10 @@ export function useWildwoodGauntletFlow({
       useProfileStore.getState().setDiscoveredCardIds((current) => appendUnique(current, card.id));
       setWildwoodDraft({
         ...state,
-        draftChoices: nextDeck.length >= DRAFT_ROUNDS ? [] : createWildwoodDraftChoices(run.characterId, nextDeck),
+        draftChoices: nextDeck.length >= DRAFT_ROUNDS ? [] : createWildwoodDraftChoices(run.characterId, nextDeck, rng),
       });
     },
-    [run],
+    [rng, run],
   );
 
   const handleDraftComplete = useCallback(

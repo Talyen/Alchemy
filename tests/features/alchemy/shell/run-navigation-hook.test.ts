@@ -47,6 +47,12 @@ describe("useRunNavigation", () => {
         onInitTrinketShop: vi.fn(),
         onInitEquipmentShop: vi.fn(),
         onMarkDifficultyCompleted: vi.fn(),
+        randomSources: {
+          rewards: () => 0.5,
+          destinations: () => 0.5,
+          events: () => 0.5,
+          world: () => 0.5,
+        },
       }),
     );
 

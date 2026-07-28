@@ -3,6 +3,7 @@ import type { BattleCard, CharacterId, CompanionId, KeywordId, TalentXP, Unlocke
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import type { RunStartSnapshot } from "@/features/alchemy/run-setup/run/run-start";
 import type { ActiveRunProgressFields } from "@/features/alchemy/run-setup/run/run-state-init";
+import type { RunRngStream } from "@/lib/run-rng";
 
 export interface ProgressActions {
   setRunDeck: (action: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
@@ -50,6 +51,7 @@ export interface ProgressActions {
   setCharacter: (selectedId: CharacterId) => void;
   resetProgress: () => void;
   addRunGold: (amount: number) => void;
+  nextRunRandom: (stream: RunRngStream) => number;
   unlockTalent: (keywordId: KeywordId, talentId: string) => void;
   unlockAllTalents: () => void;
   resetUnlockedTalents: () => void;

@@ -33,6 +33,12 @@ A single **run** is owned by **`useRunDomainStore`** (`shared/stores/run-domain-
 
 Facade adapters (`useRunAdapter`, `useTalentAdapter`, `useHomesteadProgressSlice`, `readActiveRunStore`) preserve focused feature-facing views.
 
+### Run randomness
+
+Run-level randomness is persisted in `activeRun.rng` as one seed plus counters for the named `rewards`, `destinations`, `events`, `shops`, and `world` streams. Feature orchestration obtains state-backed generators through `createRunRandomSource(stream)`. Advancing one stream cannot perturb another, and save/resume continues at the exact next draw. Battle randomness remains owned by immutable `BattleState.rng`.
+
+`Math.random()` is allowed only to create a fresh run seed or for cosmetic/meta-only effects. Run outcomes must use a named run stream; battle outcomes must use `BattleState.rng`.
+
 | Concern                             | Owner                       | Notes                                    |
 | ----------------------------------- | --------------------------- | ---------------------------------------- |
 | Deck, gold, HP, acts, trinkets      | `activeRun`                 | Persisted inside `activeRun`             |

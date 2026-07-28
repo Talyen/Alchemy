@@ -75,6 +75,7 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
     encounteredRunEnemyIds: run.encounteredRunEnemyIds,
     selectedDifficulty: run.selectedDifficulty,
     contentSystemType: run.contentSystemType,
+    rng: run.rng,
     labyrinthMap: session.labyrinthMap,
     hasActiveBattle: battle.hasActiveBattle,
     battleState: battle.battleState,

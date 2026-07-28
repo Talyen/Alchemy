@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { getStartingDeck } from "@/lib/game-data";
 import { createActiveRunSnapshot } from "@/lib/active-run-session";
+import { createRunRngState } from "@/lib/run-rng";
+
+const TEST_RNG = createRunRngState(() => 0.5);
 
 function makeSource(
   overrides: Partial<Parameters<typeof createActiveRunSnapshot>[0]> = {},
@@ -23,6 +26,7 @@ function makeSource(
     encounteredRunEnemyIds: ["goblin"],
     selectedDifficulty: null,
     contentSystemType: "campaign",
+    rng: TEST_RNG,
     labyrinthMap: null,
     hasActiveBattle: false,
     battleState: defaultBattleState(),
@@ -69,6 +73,7 @@ describe("createActiveRunSnapshot", () => {
       runTalentXP: {},
       selectedDifficulty: null,
       contentSystemType: "campaign",
+      rng: TEST_RNG,
       labyrinthMap: null,
       labyrinthPendingNode: null,
       activeCombat: null,

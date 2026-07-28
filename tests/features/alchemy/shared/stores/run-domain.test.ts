@@ -20,6 +20,7 @@ import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
+import { createRunRngState } from "@/lib/run-rng";
 
 vi.mock("@/features/alchemy/shared/storage/flush-save", () => ({
   flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
@@ -105,6 +106,7 @@ describe("initialize", () => {
       encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
+      rng: getRunProgressStoreView().rng,
       labyrinthMap: null,
       labyrinthPendingNode: null,
       activeCombat: null,
@@ -144,6 +146,7 @@ describe("initialize", () => {
       encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
+      rng: createRunRngState(() => 0.5),
       labyrinthMap: null,
       labyrinthPendingNode: null,
       activeCombat: null,
@@ -191,6 +194,7 @@ describe("initialize", () => {
       encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
+      rng: createRunRngState(() => 0.5),
       labyrinthMap: null,
       labyrinthPendingNode: null,
       activeCombat: null,
@@ -704,6 +708,7 @@ describe("session facade API", () => {
       encounteredRunEnemyIds: getRunProgressStoreView().encounteredRunEnemyIds,
       selectedDifficulty: getRunProgressStoreView().selectedDifficulty,
       contentSystemType: "campaign",
+      rng: getRunProgressStoreView().rng,
       labyrinthMap: getRunSessionStoreView().labyrinthMap,
       hasActiveBattle: getBattleStoreView().hasActiveBattle,
       battleState: getBattleStoreView().battleState,

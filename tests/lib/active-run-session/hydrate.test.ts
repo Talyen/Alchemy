@@ -3,6 +3,7 @@ import { defaultBattleState } from "@/lib/battle";
 import { hydrateActiveRunSession, type ActiveRunHydrationTargets } from "@/lib/active-run-session/hydrate";
 import { createActiveRunSnapshot } from "@/lib/active-run-session";
 import { ROUTE_SCREENS } from "@/lib/routing";
+import { createRunRngState } from "@/lib/run-rng";
 
 describe("hydrateActiveRunSession", () => {
   const runStore = { initialize: vi.fn() };
@@ -45,6 +46,7 @@ describe("hydrateActiveRunSession", () => {
       encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
+      rng: createRunRngState(() => 0.5),
       labyrinthMap: null,
       hasActiveBattle: false,
       battleState: defaultBattleState(),
@@ -86,6 +88,7 @@ describe("hydrateActiveRunSession", () => {
       encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
+      rng: createRunRngState(() => 0.5),
       labyrinthMap: null,
       hasActiveBattle: false,
       battleState: defaultBattleState(),

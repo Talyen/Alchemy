@@ -15,7 +15,11 @@ import { readGearManifestForCharacter } from "../../shared/stores/gear-read-port
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
 
-export function createBattleInit(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
+export function createBattleInit(
+  ctx: BattleControllerContext,
+  session: ReturnType<typeof createBattleSession>,
+  rng: () => number = Math.random,
+) {
   const getStore = () => readBattleStore();
   const getPresentationStore = () => useBattlePresentationStore.getState();
 
@@ -103,11 +107,11 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
     enemyType: "normal" | "elite" = "normal",
     modifiers?: DifficultyModifier[],
   ) {
-    beginBattle(getCurrentEnemy(enemyType, ctx.run.encounteredRunEnemyIds), deck, gold, modifiers);
+    beginBattle(getCurrentEnemy(enemyType, ctx.run.encounteredRunEnemyIds, rng), deck, gold, modifiers);
   }
 
   function startBossBattle(modifiers?: DifficultyModifier[]) {
-    beginBattle(getBossEnemy(ctx.run.encounteredRunEnemyIds), ctx.run.runDeck, ctx.run.runGold, modifiers);
+    beginBattle(getBossEnemy(ctx.run.encounteredRunEnemyIds, rng), ctx.run.runDeck, ctx.run.runGold, modifiers);
   }
 
   function startBossById(

@@ -32,12 +32,16 @@ import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
   function createInitialDestinations(options?: DestinationOptionsInput) {
-    const sampled = sampleDestinationChoices(deps.getAvailableDestinations(options), {
-      lastOfferedDestinations: deps.run.lastOfferedDestinations,
-      roundsSinceOffered: deps.run.destinationRoundsSinceOffered,
-    });
+    const sampled = sampleDestinationChoices(
+      deps.getAvailableDestinations(options),
+      {
+        lastOfferedDestinations: deps.run.lastOfferedDestinations,
+        roundsSinceOffered: deps.run.destinationRoundsSinceOffered,
+      },
+      deps.destinationRng,
+    );
     deps.run.setDestinationOfferState(sampled.offerState);
-    return createDestinationRewardState(sampled.choices, getBossEnemy().id);
+    return createDestinationRewardState(sampled.choices, getBossEnemy([], deps.worldRng).id);
   }
 
   function applyRunStartSnapshot(snapshot: RunStartSnapshot) {
@@ -136,7 +140,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
 
   function initializeWildwoodRun(characterId: CharacterId, initialDeck?: BattleCard[]) {
     const skipDraft = initialDeck !== undefined && initialDeck.length >= DRAFT_ROUNDS;
-    setWildwoodDraft(createInitialWildwoodDraftState(characterId));
+    setWildwoodDraft(createInitialWildwoodDraftState(characterId, deps.worldRng));
     if (skipDraft) {
       startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, {
         draftedDeck: initialDeck,
@@ -176,7 +180,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
                 lastOfferedDestinations: deps.run.lastOfferedDestinations,
                 roundsSinceOffered: deps.run.destinationRoundsSinceOffered,
               },
-              bossEnemyId: getBossEnemy().id,
+              bossEnemyId: getBossEnemy([], deps.worldRng).id,
               onSampled: (result) => deps.run.setDestinationOfferState(result.offerState),
             }),
           );

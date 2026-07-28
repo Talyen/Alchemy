@@ -7,6 +7,7 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
 import type { GearInstance } from "@/lib/gear";
 import type { PersistedPendingReward } from "@/lib/validation";
+import type { RunRngState } from "@/lib/run-rng";
 
 export type { PersistedPendingReward };
 
@@ -67,6 +68,7 @@ export interface ActiveRunData {
   encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
   contentSystemType: ContentSystemId;
+  rng: RunRngState;
   labyrinthMap: LabyrinthMap | null;
   labyrinthPendingNode: LabyrinthNodePosition | null;
   wildwoodDraft: WildwoodDraftState | null;

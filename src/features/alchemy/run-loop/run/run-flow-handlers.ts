@@ -41,44 +41,52 @@ import { awardRunEndMaterials, clearCombatState } from "./run-flow-session-helpe
 export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
   function computeVictoryResult() {
     const runState = readActiveRunStore();
-    return computeVictoryRewards({
-      characterId: runState.characterId,
-      selectedDifficulty: runState.selectedDifficulty,
-      unlockedTalents: runState.unlockedTalents,
-      runDeck: runState.runDeck,
-      runTrinkets: runState.runTrinkets,
-      contentSystemType: runState.contentSystemType,
-      activeLabyrinthRewardModifiers: getActiveRewardTraits(runState.contentSystemType),
-      battleState: readBattleStore().battleState,
-      runGold: runState.runGold,
-      runPlayerHealth: runState.runPlayerHealth,
-      runMaxHealth: runState.runMaxHealth,
-      destinationIndexInAct: runState.destinationIndexInAct,
-      completedDestinations: runState.completedDestinations,
-      homesteadEffects: runState.effects,
-      getAvailableDestinations: deps.getAvailableDestinations,
-      bossEnemyId: getBossEnemy().id,
-      destinationOfferState: {
-        lastOfferedDestinations: runState.lastOfferedDestinations,
-        roundsSinceOffered: runState.destinationRoundsSinceOffered,
+    return computeVictoryRewards(
+      {
+        characterId: runState.characterId,
+        selectedDifficulty: runState.selectedDifficulty,
+        unlockedTalents: runState.unlockedTalents,
+        runDeck: runState.runDeck,
+        runTrinkets: runState.runTrinkets,
+        contentSystemType: runState.contentSystemType,
+        activeLabyrinthRewardModifiers: getActiveRewardTraits(runState.contentSystemType),
+        battleState: readBattleStore().battleState,
+        runGold: runState.runGold,
+        runPlayerHealth: runState.runPlayerHealth,
+        runMaxHealth: runState.runMaxHealth,
+        destinationIndexInAct: runState.destinationIndexInAct,
+        completedDestinations: runState.completedDestinations,
+        homesteadEffects: runState.effects,
+        getAvailableDestinations: deps.getAvailableDestinations,
+        bossEnemyId: getBossEnemy([], deps.worldRng).id,
+        destinationOfferState: {
+          lastOfferedDestinations: runState.lastOfferedDestinations,
+          roundsSinceOffered: runState.destinationRoundsSinceOffered,
+        },
       },
-    });
+      deps.rewardRng,
+      deps.destinationRng,
+    );
   }
 
   function commitVictoryResult(result: VictoryRewardsResult) {
     const battleState = readBattleStore().battleState;
     const runState = readActiveRunStore();
-    commitVictoryRewards(result, {
-      battleState,
-      contentSystemType: runState.contentSystemType,
-      addHomesteadMaterials: awardMaterialsDuringRun,
-      addRunGold: runState.addRunGold,
-      setRunMaxHealth: runState.setRunMaxHealth,
-      setRewardState,
-      setCompanionRewardCards,
-      setDestinationOfferState: runState.setDestinationOfferState,
-      clearCombatState,
-    });
+    commitVictoryRewards(
+      result,
+      {
+        battleState,
+        contentSystemType: runState.contentSystemType,
+        addHomesteadMaterials: awardMaterialsDuringRun,
+        addRunGold: runState.addRunGold,
+        setRunMaxHealth: runState.setRunMaxHealth,
+        setRewardState,
+        setCompanionRewardCards,
+        setDestinationOfferState: runState.setDestinationOfferState,
+        clearCombatState,
+      },
+      deps.rewardRng,
+    );
     if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
       deps.onCommitWildwoodVictory(result);
     }
@@ -181,7 +189,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     const bossOnly = state.destinations.length === 1 && state.destinations[0] === CONSTANTS.DESTINATIONS.BOSS_COMBAT;
     if (!bossOnly) return;
     if (state.selectedBossId && getBossById(state.selectedBossId)) return;
-    setRewardState((prev) => ({ ...prev, selectedBossId: getBossEnemy().id }));
+    setRewardState((prev) => ({ ...prev, selectedBossId: getBossEnemy([], deps.worldRng).id }));
   }
 
   function selectRewardChoice(id: string) {
@@ -226,7 +234,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       playUISound("talentUnlock");
     }
     if (grantAlchemistReward) {
-      applyAlchemistPotion({ setRunDeck: deps.run.setRunDeck });
+      applyAlchemistPotion({ setRunDeck: deps.run.setRunDeck, rng: deps.rewardRng });
     }
 
     useUiStore.getState().clearCardHover();

@@ -14,10 +14,12 @@ export function useShopController({
   run,
   talents,
   homesteadEffects,
+  rng,
 }: {
   run: RunStateController;
   talents: TalentStateController;
   homesteadEffects: HomesteadEffectManifest;
+  rng: () => number;
 }) {
   const { shopState, alchemistState, trinketShopState, equipmentShopState } = useRunSessionShopSlice();
 
@@ -29,6 +31,7 @@ export function useShopController({
     alchemistState,
     trinketShopState,
     equipmentShopState,
+    rng,
     setShopState,
     setAlchemistState,
     setTrinketShopState,

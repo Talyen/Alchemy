@@ -124,3 +124,7 @@ Armory inventory tile positions persist in `gearBoardPositions: Record<instanceI
 ## Gear instances (`affixIds`)
 
 Gear inventory instances now persist rolled affixes as `affixIds: GearAffixId[]` instead of legacy `modifiers`. Save normalization in `save-data.ts` strips unknown affix ids and converts legacy `{ kind: "flatPhysicalDamage", value }` modifiers into repeated `flat-physical-1` affix ids when `affixIds` is absent. Placeholder definition IDs remain valid for older saves and tests.
+
+## Active-run RNG streams (`activeRun.rng`)
+
+Active runs persist a seed and counters for named run-outcome streams. This is an additive nested field, so it does not require a top-level schema-version bump: `ActiveRunDataSchema` creates a fresh seed with zero counters when loading a legacy active run. After that first load, the normal autosave writes the explicit RNG state and all subsequent resumes continue the same sequence.

@@ -108,7 +108,7 @@ function offerMysteryCardChoices(
   context: MysteryEffectContext,
 ): MysteryEffectResult {
   context.setMysteryCardChoices(
-    selectRewardCards(context.runDeck, getMysteryCardChoicePool(effect.tag), MYSTERY_CARD_CHOICES),
+    selectRewardCards(context.runDeck, getMysteryCardChoicePool(effect.tag), MYSTERY_CARD_CHOICES, [], context.rng),
   );
   return { followUp: "choose-card" };
 }
@@ -153,7 +153,7 @@ function gainMysteryTrinket(trinketId: string, context: MysteryEffectContext) {
 }
 
 function gainRandomMysteryTrinket(context: MysteryEffectContext) {
-  const randomBoon = sampleItems(trinketLibrary, 1)[0];
+  const randomBoon = sampleItems(trinketLibrary, 1, context.rng)[0];
   if (randomBoon) gainMysteryTrinket(randomBoon.id, context);
   return { followUp: null };
 }

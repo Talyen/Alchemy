@@ -33,6 +33,7 @@ import type { RunStateController, TalentStateController } from "./run-domain-sto
 import type { DisplayOverrides } from "./run-domain-types";
 import { restoreRun, snapshotRun } from "./run-transitions";
 import type { HomesteadSaveFields } from "./run-save-readers";
+import type { RunRngStream } from "@/lib/run-rng";
 
 export {
   getRunSession,
@@ -60,6 +61,10 @@ export function readRunSessionStore(): RunSessionStore {
 /** Imperative read of battle domain slice. */
 export function readBattleStore() {
   return getBattleStoreView();
+}
+
+export function createRunRandomSource(stream: RunRngStream): () => number {
+  return () => getRunDomainStore().nextRunRandom(stream);
 }
 
 export function setHasActiveRun(hasActiveRun: boolean) {

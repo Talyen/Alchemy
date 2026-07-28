@@ -81,7 +81,13 @@ export function applyRewardSelection({ choice, type, setRunDeck, setRunTrinkets 
   }
 }
 
-export function applyAlchemistPotion({ setRunDeck }: { setRunDeck: Dispatch<SetStateAction<BattleCard[]>> }) {
-  const potion = getRandomPotionCard();
+export function applyAlchemistPotion({
+  setRunDeck,
+  rng = Math.random,
+}: {
+  setRunDeck: Dispatch<SetStateAction<BattleCard[]>>;
+  rng?: () => number;
+}) {
+  const potion = getRandomPotionCard(rng);
   appendCardToRunWithDiscovery(potion, setRunDeck);
 }

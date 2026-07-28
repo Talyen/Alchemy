@@ -61,7 +61,7 @@ function rollVictoryGold(
   labyrinthRewardModifiers: EncounterRewardTraitId[],
   rng: () => number,
 ): VictoryGoldRoll {
-  const baseGold = randomInt(GOLD_REWARD_MIN, GOLD_REWARD_MAX);
+  const baseGold = randomInt(GOLD_REWARD_MIN, GOLD_REWARD_MAX, rng);
   let gold = Math.floor(baseGold * (1 + talentEffects.enemyGoldDropBonus));
 
   if (talentEffects.companionGoldFindActive && battleState.activeCompanion && rng() < COMPANION_GOLD_FIND_CHANCE) {
@@ -146,6 +146,7 @@ export function computeVictoryRewardState(
 export function computeVictoryRewards(
   input: VictoryRewardsInput,
   rng: () => number = Math.random,
+  destinationRng: () => number = rng,
 ): VictoryRewardsResult {
   const labyrinthRewardModifiers = getActiveRewardModifiersForContentSystem(
     input.contentSystemType,
@@ -210,7 +211,7 @@ export function computeVictoryRewards(
     destinationIndexInAct: input.destinationIndexInAct,
     maxHealth: input.runMaxHealth,
   });
-  const sampled = sampleDestinationChoices(eligibleDestinations, input.destinationOfferState);
+  const sampled = sampleDestinationChoices(eligibleDestinations, input.destinationOfferState, destinationRng);
   const destinations = sampled.choices;
 
   const rewardState = computeVictoryRewardState(
@@ -253,7 +254,11 @@ export function computeVictoryRewards(
   };
 }
 
-export function commitVictoryRewards(result: VictoryRewardsResult, deps: CommitVictoryRewardsDeps) {
+export function commitVictoryRewards(
+  result: VictoryRewardsResult,
+  deps: CommitVictoryRewardsDeps,
+  rng: () => number = Math.random,
+) {
   if (deps.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD && deps.battleState.pendingMaterials.crystal > 0) {
     deps.addHomesteadMaterials(deps.battleState.pendingMaterials);
   }
@@ -275,7 +280,7 @@ export function commitVictoryRewards(result: VictoryRewardsResult, deps: CommitV
   });
   deps.setDestinationOfferState(result.destinationOfferState);
   if (shouldGrantCompanionReward(result.labyrinthRewardModifiers)) {
-    deps.setCompanionRewardCards(getCompanionCardChoices());
+    deps.setCompanionRewardCards(getCompanionCardChoices(rng));
   } else {
     deps.setCompanionRewardCards(null);
   }

@@ -19,6 +19,7 @@ import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { companionTierItems } from "@/lib/homestead/companions";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import type { MaterialInventory, BuildingId, FarmId, ResearchId, HomesteadEffectManifest } from "@/lib/homestead/types";
+import { createRunRngState, type RunRngState } from "@/lib/run-rng";
 
 /** Active-run lifetime fields (deck, gold, HP, acts, run tallies). */
 export interface ActiveRunProgressFields {
@@ -37,6 +38,7 @@ export interface ActiveRunProgressFields {
   encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
   contentSystemType: ContentSystemId;
+  rng: RunRngState;
   runTalentXP: TalentXP;
   runMaterialsEarned: MaterialInventory;
 }
@@ -79,6 +81,7 @@ const ACTIVE_RUN_PROGRESS_KEYS = [
   "encounteredRunEnemyIds",
   "selectedDifficulty",
   "contentSystemType",
+  "rng",
   "runTalentXP",
   "runMaterialsEarned",
 ] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
@@ -198,6 +201,7 @@ function hydrateRunMeta(
   | "encounteredRunEnemyIds"
   | "selectedDifficulty"
   | "contentSystemType"
+  | "rng"
 > {
   const fallback = <T>(val: T | null | undefined, def: T): T => val ?? def;
   const copyIf = <T>(val: T[] | null | undefined): T[] => (val ? [...val] : []);
@@ -224,6 +228,7 @@ function hydrateRunMeta(
     encounteredRunEnemyIds,
     selectedDifficulty,
     contentSystemType,
+    rng: initialActiveRun?.rng ?? createRunRngState(),
   };
 }
 

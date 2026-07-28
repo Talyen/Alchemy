@@ -54,6 +54,7 @@ const progressActionKeys = [
   "setContentSystemType",
   "setCharacter",
   "addRunGold",
+  "nextRunRandom",
   "unlockTalent",
   "unlockAllTalents",
   "resetUnlockedTalents",

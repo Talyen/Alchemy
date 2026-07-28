@@ -39,6 +39,9 @@ export interface RunFlowHandlerDeps {
   beginMysteryEvent: () => void;
   clearMysteryCardChoices: () => void;
   onWildwoodRewardComplete: () => void;
+  rewardRng: () => number;
+  destinationRng: () => number;
+  worldRng: () => number;
 }
 
 export function getActiveRewardTraits(

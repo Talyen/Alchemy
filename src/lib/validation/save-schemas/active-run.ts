@@ -23,6 +23,18 @@ import {
   EncounterRewardTraitArraySchema,
   MaterialInventorySchema,
 } from "./core";
+import { createRunRngState } from "@/lib/run-rng";
+
+const RunRngStateSchema = z.object({
+  seed: z.number().int().nonnegative().max(0xffff_ffff),
+  counters: z.object({
+    rewards: z.number().int().nonnegative().catch(0).default(0),
+    destinations: z.number().int().nonnegative().catch(0).default(0),
+    events: z.number().int().nonnegative().catch(0).default(0),
+    shops: z.number().int().nonnegative().catch(0).default(0),
+    world: z.number().int().nonnegative().catch(0).default(0),
+  }),
+});
 
 const LabyrinthNodePositionSchema = z
   .object({ row: z.number().int().nonnegative(), col: z.number().int().nonnegative() })
@@ -215,6 +227,7 @@ export const ActiveRunDataSchema = z
     encounteredRunEnemyIds: deduplicatedStringArraySchema("activeRun.encounteredRunEnemyIds").default([]),
     selectedDifficulty: caught(DifficultyIdSchema.nullable(), null, "activeRun.selectedDifficulty").default(null),
     contentSystemType: caught(ContentSystemIdSchema, "campaign", "activeRun.contentSystemType"),
+    rng: RunRngStateSchema.default(() => createRunRngState()),
     labyrinthMap: caught(LabyrinthMapSchema.nullable(), null, "activeRun.labyrinthMap"),
     labyrinthPendingNode: LabyrinthNodePositionSchema,
     wildwoodDraft: WildwoodDraftStateSchema.default(null),

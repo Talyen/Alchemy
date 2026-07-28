@@ -31,6 +31,7 @@ type RunSessionRunSlice = Pick<
   | "encounteredRunEnemyIds"
   | "selectedDifficulty"
   | "contentSystemType"
+  | "rng"
   | "talentXP"
   | "runTalentXP"
   | "runMaterialsEarned"
@@ -105,6 +106,7 @@ function pickRunSessionRunSlice(state: RunDomainDataState): RunSessionRunSlice {
     encounteredRunEnemyIds: state.activeRun.encounteredRunEnemyIds,
     selectedDifficulty: state.activeRun.selectedDifficulty,
     contentSystemType: state.activeRun.contentSystemType,
+    rng: state.activeRun.rng,
     talentXP: state.profile.talentXP,
     runTalentXP: state.activeRun.runTalentXP,
     runMaterialsEarned: state.activeRun.runMaterialsEarned,

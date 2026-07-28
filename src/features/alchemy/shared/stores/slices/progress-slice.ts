@@ -25,6 +25,7 @@ import { defineNestedFieldSetter, type ImmerSet } from "./_field-setter";
 import { createHomesteadProgressActions } from "./progress-homestead-actions";
 import type { RunDomainDataState } from "../run-domain-types";
 import type { ProgressActions } from "./progress-action-types";
+import { nextRunRngValue } from "@/lib/run-rng";
 
 export function defineProgressActions(set: ImmerSet<RunDomainDataState>): ProgressActions {
   const setRunField = defineNestedFieldSetter<ActiveRunProgressFields, RunDomainDataState>(
@@ -75,6 +76,16 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
         const mult = getGoldMultiplier(state.activeRun.characterId, state.activeRun.selectedDifficulty);
         state.activeRun.runGold += Math.floor(amount * mult);
       }),
+
+    nextRunRandom: (stream) => {
+      let value = 0;
+      set((state) => {
+        const draw = nextRunRngValue(state.activeRun.rng, stream);
+        state.activeRun.rng.counters[stream] = draw.nextCounter;
+        value = draw.value;
+      });
+      return value;
+    },
 
     unlockTalent: (keywordId, talentId) =>
       set((state) => {

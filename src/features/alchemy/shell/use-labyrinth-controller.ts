@@ -67,7 +67,7 @@ function routeNodeInteraction(node: LabyrinthNode, handlers: LabyrinthNodeHandle
   NODE_ACTIONS[node.type]?.(node, handlers);
 }
 
-export function useLabyrinthController(_screen: Screen): LabyrinthController {
+export function useLabyrinthController(_screen: Screen, rng: () => number): LabyrinthController {
   const { labyrinthMap, activeLabyrinthPendingNode: pendingNode } = useRunSessionLabyrinthSlice();
   const pendingNodeRef = useRef(pendingNode);
 
@@ -78,8 +78,8 @@ export function useLabyrinthController(_screen: Screen): LabyrinthController {
   const resetMap = useCallback(() => {
     pendingNodeRef.current = null;
     setActiveLabyrinthPendingNode(null);
-    setLabyrinthMap(generateLabyrinthMap());
-  }, []);
+    setLabyrinthMap(generateLabyrinthMap(rng));
+  }, [rng]);
 
   const enterNode = useCallback((row: number, col: number, handlers: LabyrinthNodeHandlers): boolean => {
     if (pendingNodeRef.current) return false;

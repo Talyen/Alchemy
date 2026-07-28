@@ -44,6 +44,7 @@ export function useRunNavigation({
   onInitTrinketShop,
   onInitEquipmentShop,
   onMarkDifficultyCompleted,
+  randomSources,
 }: {
   screen: Screen;
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
@@ -68,13 +69,18 @@ export function useRunNavigation({
   onInitTrinketShop: () => void;
   onInitEquipmentShop: () => void;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
+  randomSources: {
+    rewards: () => number;
+    destinations: () => number;
+    events: () => number;
+    world: () => number;
+  };
 }) {
   const run = useRunAdapter();
   const talents = useTalentAdapter();
   const setHasActiveBattle = useSetHasActiveBattle();
   const completedDifficulties = useProfileStore((s) => s.completedDifficulties);
   const draftedDeckRef = useRef<BattleCard[] | null>(null);
-  const rngRef = useRef<() => number>(() => Math.random());
   const nav = useRunSessionNavigationSlice(screen);
   const clearCardHover = useUiStore((s) => s.clearCardHover);
   const runPhase = nav.phase;
@@ -107,6 +113,7 @@ export function useRunNavigation({
     onStartBossById,
     setHasActiveBattle,
     clearCardHover,
+    rng: randomSources.world,
   });
   const contentNav = useMemo(
     () =>
@@ -124,6 +131,8 @@ export function useRunNavigation({
         getAvailableDestinations,
         onResumeWildwood: wildwood.resumeWildwoodRun,
         onStartNextWildwoodBoss: wildwood.startNextWildwoodBoss,
+        destinationRng: randomSources.destinations,
+        worldRng: randomSources.world,
       }),
     [
       run,
@@ -138,6 +147,8 @@ export function useRunNavigation({
       getAvailableDestinations,
       wildwood.resumeWildwoodRun,
       wildwood.startNextWildwoodBoss,
+      randomSources.destinations,
+      randomSources.world,
     ],
   );
   function handleDraftComplete(draftedCards: BattleCard[]) {
@@ -147,7 +158,7 @@ export function useRunNavigation({
     }
     wildwood.handleDraftComplete(draftedCards);
   }
-  const mystery = useMysteryFlow();
+  const mystery = useMysteryFlow(randomSources.events);
   const beginMysteryEvent = useCallback(() => {
     mystery.beginMysteryEvent(() => navigateTo(CONSTANTS.SCREENS.MYSTERY));
     playUISound("musicBoxMystery");
@@ -175,6 +186,9 @@ export function useRunNavigation({
         beginMysteryEvent,
         clearMysteryCardChoices: mystery.clearCardChoices,
         onWildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
+        rewardRng: randomSources.rewards,
+        destinationRng: randomSources.destinations,
+        worldRng: randomSources.world,
       }),
     [
       run,
@@ -197,6 +211,9 @@ export function useRunNavigation({
       beginMysteryEvent,
       mystery.clearCardChoices,
       wildwood.handleWildwoodRewardComplete,
+      randomSources.rewards,
+      randomSources.destinations,
+      randomSources.world,
     ],
   );
   function goToScreen(nextScreen: Screen) {
@@ -208,7 +225,7 @@ export function useRunNavigation({
     wildwood.selectRewardChoice(id);
   }
   function handleCorruptCard(cardIndex: number) {
-    applyCorruptionToDeck(run.runDeck, cardIndex, rngRef.current, run.setRunDeck);
+    applyCorruptionToDeck(run.runDeck, cardIndex, randomSources.events, run.setRunDeck);
   }
   function handleCorruptionExit() {
     flowHandlers.advanceToNextDestination();

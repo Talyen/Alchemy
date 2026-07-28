@@ -51,6 +51,8 @@ function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNaviga
     getAvailableDestinations: () => [CONSTANTS.DESTINATIONS.NORMAL_COMBAT],
     onResumeWildwood: vi.fn(),
     onStartNextWildwoodBoss: vi.fn(),
+    destinationRng: () => 0.5,
+    worldRng: () => 0.5,
     ...overrides,
   };
 }

@@ -5,6 +5,7 @@ import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
+import type { RunRngState } from "@/lib/run-rng";
 
 import type {
   ActiveRunData,
@@ -32,6 +33,7 @@ export interface ActiveRunSnapshotSource {
   encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
   contentSystemType: ContentSystemId;
+  rng: RunRngState;
   labyrinthMap: LabyrinthMap | null;
   hasActiveBattle: boolean;
   battleState: BattleState;
@@ -77,6 +79,7 @@ export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): Active
     encounteredRunEnemyIds: source.encounteredRunEnemyIds,
     selectedDifficulty: source.selectedDifficulty,
     contentSystemType: source.contentSystemType,
+    rng: { seed: source.rng.seed, counters: { ...source.rng.counters } },
     labyrinthMap: source.contentSystemType === "labyrinth" ? source.labyrinthMap : null,
     labyrinthPendingNode: source.contentSystemType === "labyrinth" ? source.labyrinthPendingNode : null,
     wildwoodDraft: source.contentSystemType === "wildwood" ? source.wildwoodDraft : null,

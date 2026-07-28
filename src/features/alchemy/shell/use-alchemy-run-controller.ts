@@ -9,6 +9,7 @@ import {
   useRunAdapter,
   useTalentAdapter,
   useHomesteadAdapter,
+  createRunRandomSource,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import {
@@ -47,6 +48,16 @@ export function useAlchemyRunController({
   const run = useRunAdapter();
   const talents = useTalentAdapter();
   const homesteadEffects = useHomesteadAdapter();
+  const runRandom = useMemo(
+    () => ({
+      rewards: createRunRandomSource("rewards"),
+      destinations: createRunRandomSource("destinations"),
+      events: createRunRandomSource("events"),
+      shops: createRunRandomSource("shops"),
+      world: createRunRandomSource("world"),
+    }),
+    [],
+  );
 
   const { screen, setScreen } = useActiveRunScreen();
   const { navigateTo, transition, commitPendingTransition, cancelPending } = useScreenTransitions(screen, setScreen);
@@ -79,11 +90,12 @@ export function useAlchemyRunController({
     setHoveredCardId,
     onBattleVictory: () => onBattleVictoryRef.current(),
     onBattleDefeat: () => onBattleDefeatRef.current(),
+    rng: runRandom.world,
   });
 
-  const shop = useShopController({ run, talents, homesteadEffects });
+  const shop = useShopController({ run, talents, homesteadEffects, rng: runRandom.shops });
 
-  const labyrinth = useLabyrinthController(screen);
+  const labyrinth = useLabyrinthController(screen, runRandom.world);
 
   const nav = useRunNavigation({
     screen,
@@ -100,6 +112,7 @@ export function useAlchemyRunController({
     onInitTrinketShop: shop.initTrinketShop,
     onInitEquipmentShop: shop.initEquipmentShop,
     onMarkDifficultyCompleted,
+    randomSources: runRandom,
   });
 
   // useLayoutEffect ensures refs are current before the browser paints, so
