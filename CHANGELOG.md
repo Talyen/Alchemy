@@ -421,6 +421,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(desktop): install browser V8 snapshot
 - fix(desktop): verify packaged Sentry transport
 - fix(shop): thread injected RNG through all shop refresh paths
   Equipment already honored deps.rng; merchant, alchemist, and trinket
