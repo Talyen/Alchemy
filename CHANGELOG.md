@@ -1891,6 +1891,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Build
 
+- build(desktop): harden Steam release boundary
 - build: sync package-lock.json with package.json dependencies
 
 ### Docs
