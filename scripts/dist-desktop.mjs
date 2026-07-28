@@ -43,7 +43,8 @@ if (process.env.CI_RELEASE === "true" && configuredSentryUploadFields.length ===
   }
 }
 
-const builderArgs = ["cross-env", "NODE_OPTIONS=--no-deprecation", "electron-builder"];
+const builderCli = join(root, "node_modules", "electron-builder", "out", "cli", "cli.js");
+const builderArgs = [];
 for (const target of targets) {
   if (target === "win") builderArgs.push("--win");
   if (target === "linux") builderArgs.push("--linux");
@@ -78,12 +79,14 @@ if (process.env.REQUIRE_CODE_SIGNING === "true") {
   builderArgs.push("-c.forceCodeSigning=true");
 }
 
-const result = spawnSync(process.platform === "win32" ? "npx.cmd" : "npx", builderArgs, {
+const result = spawnSync(process.execPath, [builderCli, ...builderArgs], {
   cwd: root,
+  env: { ...process.env, NODE_OPTIONS: "--no-deprecation" },
   stdio: "inherit",
   shell: false,
 });
 
+if (result.error) throw result.error;
 if ((result.status ?? 1) !== 0) process.exit(result.status ?? 1);
 
 const verifyResult = spawnSync(process.execPath, ["scripts/verify-desktop-package.mjs"], {
@@ -92,4 +95,5 @@ const verifyResult = spawnSync(process.execPath, ["scripts/verify-desktop-packag
   stdio: "inherit",
   shell: false,
 });
+if (verifyResult.error) throw verifyResult.error;
 process.exit(verifyResult.status ?? 1);

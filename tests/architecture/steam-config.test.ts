@@ -48,6 +48,8 @@ describe("steam platform config", () => {
     const distDesktop = readFileSync(join(ROOT, "scripts/dist-desktop.mjs"), "utf8");
     expect(distDesktop).toContain("AZURE_CODE_SIGNING_ENDPOINT");
     expect(distDesktop).toContain("forceCodeSigning=true");
+    expect(distDesktop).toContain('"electron-builder", "out", "cli", "cli.js"');
+    expect(distDesktop).not.toContain('"npx.cmd"');
     expect(JSON.stringify(pkg.build)).not.toContain('"signAndEditExecutable":false');
   });
 });
