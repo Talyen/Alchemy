@@ -35,7 +35,7 @@ function executeSentryCrashTest(
   }
   if (mode === "renderer") {
     void window.webContents
-      .executeJavaScript('setTimeout(() => { throw new Error("Alchemy controlled Sentry renderer crash"); }, 0)', true)
+      .executeJavaScript('window.dispatchEvent(new Event("alchemy-sentry-crash-test"))', true)
       .catch(() => undefined);
     return;
   }

@@ -106,7 +106,10 @@ describe("Sentry packaged crash verification", () => {
     expect(raise).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining("main-process") }));
 
     crashTest.executeSentryCrashTest(window, "renderer");
-    expect(executeJavaScript).toHaveBeenCalledWith(expect.stringContaining("renderer crash"), true);
+    expect(executeJavaScript).toHaveBeenCalledWith(
+      'window.dispatchEvent(new Event("alchemy-sentry-crash-test"))',
+      true,
+    );
 
     crashTest.executeSentryCrashTest(window, "native-renderer");
     expect(forcefullyCrashRenderer).toHaveBeenCalledOnce();
