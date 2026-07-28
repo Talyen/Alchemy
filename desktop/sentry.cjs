@@ -37,24 +37,6 @@ function initializeMainSentry(app, injectedSentry, injectedMetadata) {
   }
 }
 
-async function flushSentryTestEvent(mode, injectedSentry) {
-  try {
-    const Sentry = injectedSentry ?? require("@sentry/electron/main");
-    const eventId = Sentry.withScope((scope) => {
-      scope.setTag("process", "main");
-      scope.setTag("source", `crash-test-${mode}`);
-      return Sentry.captureException(new Error("Alchemy controlled Sentry transport verification"));
-    });
-    return {
-      eventId: typeof eventId === "string" ? eventId : null,
-      flushed: (await Sentry.flush(5_000)) === true,
-    };
-  } catch {
-    return { eventId: null, flushed: false };
-  }
-}
-
 module.exports = {
-  flushSentryTestEvent,
   initializeMainSentry,
 };

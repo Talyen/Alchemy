@@ -19,8 +19,7 @@ const {
   parseDevServerUrl,
   resolveAppAssetPath,
 } = require("./security.cjs");
-const { flushSentryTestEvent, initializeMainSentry } = require("./sentry.cjs");
-const { armSentryCrashTest, resolveSentryCrashTestMode } = require("./sentry-crash-test.cjs");
+const { initializeMainSentry } = require("./sentry.cjs");
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -35,8 +34,6 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 const CRASH_REPORTING_ENABLED = initializeMainSentry(app);
-const SENTRY_CRASH_TEST_MODE = resolveSentryCrashTestMode(app, CRASH_REPORTING_ENABLED);
-const SENTRY_CRASH_TEST_STATUS_DIR = process.env.ALCHEMY_SENTRY_TEST_STATUS_DIR;
 
 const DEV_SERVER_URL = process.env.ELECTRON_RENDERER_URL ?? "http://127.0.0.1:5173";
 const USE_PACKAGED_RENDERER = app.isPackaged || process.env.ELECTRON_FORCE_PACKAGED_RENDERER === "1";
@@ -48,18 +45,6 @@ const SAVE_TMP_PATH = path.join(app.getPath("userData"), "save.json.tmp");
 const SAVE_BAK_PATHS = [1, 2, 3].map((i) => path.join(app.getPath("userData"), `save.json.bak.${i}`));
 let mainWindow = null;
 let steamClient = null;
-
-function writeSentryCrashTestStatus(stage, details = {}) {
-  if (!SENTRY_CRASH_TEST_MODE || !SENTRY_CRASH_TEST_STATUS_DIR) return;
-  try {
-    const statusPath = path.join(SENTRY_CRASH_TEST_STATUS_DIR, `alchemy-sentry-${SENTRY_CRASH_TEST_MODE}.json`);
-    fs.writeFileSync(statusPath, JSON.stringify({ stage, ...details }), { encoding: "utf8", mode: 0o600 });
-  } catch {
-    // Diagnostics must never interfere with the crash mechanism under test.
-  }
-}
-
-writeSentryCrashTestStatus("main-started", { crashReportingEnabled: CRASH_REPORTING_ENABLED });
 
 if (!USE_PACKAGED_RENDERER) parseDevServerUrl(DEV_SERVER_URL);
 
@@ -306,17 +291,10 @@ function createMainWindow() {
     mainWindow = null;
   });
   Menu.setApplicationMenu(null);
-  armSentryCrashTest(mainWindow, SENTRY_CRASH_TEST_MODE, setTimeout, async (mode) => {
-    writeSentryCrashTestStatus("renderer-loaded");
-    const result = await flushSentryTestEvent(mode);
-    writeSentryCrashTestStatus("transport-flushed", result);
-  });
-  writeSentryCrashTestStatus("window-created");
   void mainWindow.loadURL(USE_PACKAGED_RENDERER ? `${APP_ORIGIN}/` : DEV_SERVER_URL);
 }
 
 app.whenReady().then(async () => {
-  writeSentryCrashTestStatus("app-ready");
   await registerRendererProtocol();
   applySessionSecurity();
   registerIpcHandlers();

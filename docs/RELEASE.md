@@ -54,26 +54,6 @@ Release desktop builds create hidden source maps, upload them as `alchemy@<packa
 electron-builder assembles the application. The packaging verifier checks that maps and CI credentials are absent.
 Reporting failures and offline play never block startup, saves, gameplay, or quit.
 
-Before treating reporting as operational, run **Sentry Private Verification** from the GitHub Actions page. This
-manual workflow never tags a release, creates a GitHub release, or uploads a Steam depot. It produces a private
-Windows installer retained for three days and uploads source maps under an isolated
-`alchemy@<version>-sentry-test.<run number>` release.
-
-The Windows runner automatically launches all three controlled crash modes after packaging. Confirm their events
-appear in the matching isolated Sentry release and that the JavaScript stack traces are symbolicated. To repeat a
-specific test manually, install the artifact and run one of these commands from PowerShell, replacing the path if
-necessary:
-
-```powershell
-& "$env:LOCALAPPDATA\Programs\Alchemy\Alchemy.exe" --alchemy-sentry-test=renderer
-& "$env:LOCALAPPDATA\Programs\Alchemy\Alchemy.exe" --alchemy-sentry-test=main
-& "$env:LOCALAPPDATA\Programs\Alchemy\Alchemy.exe" --alchemy-sentry-test=native-renderer
-```
-
-Each launch waits for the packaged renderer to load, then produces exactly one controlled crash. The arguments are
-inert in development, ordinary local packages, and public release packages: the crash harness requires private-build
-metadata that only the manual workflow embeds.
-
 ## Windows signing readiness
 
 Unsigned Steam depots remain supported. To opt into Azure Trusted Signing, create the Trusted Signing account and
@@ -121,4 +101,3 @@ Windows release job.
 | `desktop-build`                             | Push when desktop paths change (Windows installer artifact) |
 | `electron-e2e`                              | Push when desktop/Electron paths change                     |
 | `release` (incl. `e2e-full` 3-shard matrix) | Tag `v*` push                                               |
-| `Sentry Private Verification`               | Manual only; private crash-test installer, no Steam upload  |

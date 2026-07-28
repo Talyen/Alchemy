@@ -10,7 +10,6 @@ const targets = config.targets ?? ["win"];
 const sentryDsn = process.env.SENTRY_DSN?.trim() ?? "";
 const releaseVersion = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
 const sentryRelease = process.env.SENTRY_RELEASE?.trim() || `alchemy@${releaseVersion}`;
-const sentryCrashTestBuild = process.env.SENTRY_CRASH_TEST_BUILD === "true";
 const sentryUploadFields = [
   process.env.SENTRY_AUTH_TOKEN?.trim(),
   process.env.SENTRY_ORG?.trim(),
@@ -25,9 +24,6 @@ if (
   Boolean(sentryDsn) !== (configuredSentryUploadFields.length === sentryUploadFields.length)
 ) {
   throw new Error("Production crash reporting requires both the public DSN and complete source-map upload settings.");
-}
-if (sentryCrashTestBuild && (process.env.CI_RELEASE !== "true" || !sentryDsn)) {
-  throw new Error("A Sentry crash-test package requires production crash reporting to be fully configured.");
 }
 if (process.env.CI_RELEASE === "true" && configuredSentryUploadFields.length === sentryUploadFields.length) {
   const pending = [join(root, "dist")];
@@ -60,8 +56,6 @@ if (process.env.CI_RELEASE === "true" && sentryDsn) {
     `-c.extraMetadata.sentryRelease=${sentryRelease}`,
   );
 }
-if (sentryCrashTestBuild) builderArgs.push("-c.extraMetadata.sentryCrashTestEnabled=true");
-
 const azureFields = {
   publisherName: process.env.AZURE_CODE_SIGNING_PUBLISHER_NAME?.trim(),
   endpoint: process.env.AZURE_CODE_SIGNING_ENDPOINT?.trim(),

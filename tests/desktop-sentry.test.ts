@@ -3,14 +3,6 @@ import { describe, expect, it, vi } from "vitest";
 
 const require = createRequire(import.meta.url);
 interface MainSentryModule {
-  flushSentryTestEvent: (
-    mode: string,
-    sentry: {
-      captureException: (error: Error) => string;
-      flush: (timeout: number) => Promise<boolean>;
-      withScope: (callback: (scope: { setTag: (key: string, value: string) => void }) => string) => string;
-    },
-  ) => Promise<{ eventId: string | null; flushed: boolean }>;
   initializeMainSentry: (
     app: { getAppPath: () => string; getVersion: () => string; isPackaged: boolean },
     sentry: { init: (options: Record<string, unknown>) => void },
@@ -60,21 +52,5 @@ describe("desktop crash reporting", () => {
         { sentryEnabled: true, sentryDsn: "https://public@example/1" },
       ),
     ).toBe(false);
-  });
-
-  it("flushes a tagged crash-test transport event", async () => {
-    const setTag = vi.fn();
-    const sentry = {
-      captureException: vi.fn(() => "event-id"),
-      flush: vi.fn(async () => true),
-      withScope: vi.fn((callback: (scope: { setTag: typeof setTag }) => string) => callback({ setTag })),
-    };
-
-    await expect(mainSentry.flushSentryTestEvent("renderer", sentry)).resolves.toEqual({
-      eventId: "event-id",
-      flushed: true,
-    });
-    expect(setTag).toHaveBeenCalledWith("source", "crash-test-renderer");
-    expect(sentry.flush).toHaveBeenCalledWith(5_000);
   });
 });
