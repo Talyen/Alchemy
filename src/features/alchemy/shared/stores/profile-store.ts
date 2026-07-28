@@ -38,7 +38,7 @@ export interface ProfileStore {
   resetToDefaults: () => void;
 }
 
-export function createDefaultProfileSaveFields(): ProfileSaveFields {
+function createDefaultProfileSaveFields(): ProfileSaveFields {
   return {
     discoveredCardIds: [],
     encounteredEnemyIds: [],

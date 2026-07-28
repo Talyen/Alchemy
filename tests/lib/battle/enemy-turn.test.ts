@@ -166,8 +166,10 @@ describe("endPlayerTurn â€” standard branch", () => {
     const held = makeCard({ id: "held" });
     const state = battleState({ hand: [held], discard: [] });
     const result = endPlayerTurn(state);
-    expect(result.enemyTurnStartState?.hand).toEqual([]);
-    expect(result.enemyTurnStartState?.discard.some((card) => card.id === "held")).toBe(true);
+    expect(result.kind).not.toBe("haste");
+    if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
+    expect(result.enemyTurnStartState.hand).toEqual([]);
+    expect(result.enemyTurnStartState.discard.some((card) => card.id === "held")).toBe(true);
   });
 
   it("turns over to player phase", () => {
@@ -187,7 +189,9 @@ describe("endPlayerTurn â€” tick order", () => {
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
     });
     const result = endPlayerTurn(state);
-    expect(result.enemyTurnStartState?.enemyHealth).toBe(40);
+    expect(result.kind).not.toBe("haste");
+    if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
+    expect(result.enemyTurnStartState.enemyHealth).toBe(40);
     expect(result.enemyPerformedAttack).toBe(true);
     expect(result.state.playerHealth).toBe(20);
   });

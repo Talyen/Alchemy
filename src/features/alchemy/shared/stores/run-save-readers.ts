@@ -33,7 +33,7 @@ function encodeRunProfileSnapshot(snapshot: RunProfileSnapshot): RunProfileSaveF
   };
 }
 
-export function createDefaultRunProfileSaveFields(): RunProfileSaveFields {
+function createDefaultRunProfileSaveFields(): RunProfileSaveFields {
   return encodeRunProfileSnapshot(createInitialPermanentFields());
 }
 

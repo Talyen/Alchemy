@@ -177,8 +177,10 @@ describe("endPlayerTurn", () => {
       pendingBleedLeechHealing: 4,
     });
     const result = endPlayerTurn(state);
-    expect(result.enemyTurnStartState?.enemyHealth).toBe(20);
-    expect(result.enemyTurnStartState?.playerHealth).toBe(22);
+    expect(result.kind).not.toBe("haste");
+    if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
+    expect(result.enemyTurnStartState.enemyHealth).toBe(20);
+    expect(result.enemyTurnStartState.playerHealth).toBe(22);
     expect(result.enemyTurnStartCombatTexts).toEqual([
       { target: "player", kind: "heal", stat: "health", amount: 2 },
       { target: "enemy", kind: "damage", stat: "bleed", amount: 10 },
@@ -209,8 +211,10 @@ describe("endPlayerTurn", () => {
 
     const result = endPlayerTurn(state);
 
-    expect(result.enemyTurnStartState?.enemyHealth).toBe(0);
-    expect(result.enemyTurnStartState?.playerHealth).toBe(22);
+    expect(result.kind).not.toBe("haste");
+    if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
+    expect(result.enemyTurnStartState.enemyHealth).toBe(0);
+    expect(result.enemyTurnStartState.playerHealth).toBe(22);
     expect(result.state.enemyHealth).toBe(0);
     expect(result.state.playerHealth).toBe(22);
     expect(result.enemyResolutionCombatTexts).toEqual([]);

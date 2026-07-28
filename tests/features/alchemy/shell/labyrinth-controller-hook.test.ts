@@ -8,6 +8,7 @@ import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { getRunSessionStoreView } from "../../../helpers/run-domain-store-test";
 
 const START_COL = Math.floor(LABYRINTH_COLS / 2);
+const TEST_RNG = () => 0.5;
 
 beforeEach(() => {
   resetTransientRunUi();
@@ -17,7 +18,7 @@ beforeEach(() => {
 describe("useLabyrinthController hook", () => {
   it("enterNode records a pending node and routes combat nodes", () => {
     const onStartBattle = vi.fn();
-    const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
+    const { result } = renderHook(() => useLabyrinthController("labyrinth-map", TEST_RNG));
     const map = getRunSessionStoreView().labyrinthMap;
     const target = map.grid[0][START_COL]!.connections[0];
 
@@ -39,7 +40,7 @@ describe("useLabyrinthController hook", () => {
   });
 
   it("onNodeCleared advances the map to the pending node", () => {
-    const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
+    const { result } = renderHook(() => useLabyrinthController("labyrinth-map", TEST_RNG));
     const map = getRunSessionStoreView().labyrinthMap;
     const target = map.grid[0][START_COL]!.connections[0];
 
@@ -62,7 +63,7 @@ describe("useLabyrinthController hook", () => {
 
   it("enterNode rejects a second enter while a node is pending", () => {
     const onStartBattle = vi.fn();
-    const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
+    const { result } = renderHook(() => useLabyrinthController("labyrinth-map", TEST_RNG));
     const map = getRunSessionStoreView().labyrinthMap;
     const target = map.grid[0][START_COL]!.connections[0];
     const handlers = {
@@ -87,7 +88,7 @@ describe("useLabyrinthController hook", () => {
   });
 
   it("resetMap clears pending state and regenerates the labyrinth", () => {
-    const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
+    const { result } = renderHook(() => useLabyrinthController("labyrinth-map", TEST_RNG));
     const before = getRunSessionStoreView().labyrinthMap;
 
     act(() => {

@@ -48,6 +48,7 @@ describe("active run snapshot parity", () => {
     encounteredRunEnemyIds: progressViaInitialize,
     selectedDifficulty: progressViaInitialize,
     contentSystemType: progressViaInitialize,
+    rng: progressViaInitialize,
     currentScreen: ["activeRun?.currentScreen", "activeRun.currentScreen"],
     labyrinthMap: ["activeRun.labyrinthMap"],
     labyrinthPendingNode: ["activeRun.labyrinthPendingNode"],

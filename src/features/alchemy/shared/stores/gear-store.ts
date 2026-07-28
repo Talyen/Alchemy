@@ -295,7 +295,7 @@ export const useGearStore = create<GearStore>((set, get) => ({
   reset: () => set(initialState),
 }));
 
-export function createDefaultGearSaveFields(): GearSaveFields {
+function createDefaultGearSaveFields(): GearSaveFields {
   return {
     gearInventories: createEmptyGearInventories(),
     gearLoadouts: createEmptyGearLoadouts(),

@@ -1,6 +1,4 @@
-export const RUN_RNG_STREAMS = ["rewards", "destinations", "events", "shops", "world"] as const;
-
-export type RunRngStream = (typeof RUN_RNG_STREAMS)[number];
+export type RunRngStream = "rewards" | "destinations" | "events" | "shops" | "world";
 
 export interface RunRngState {
   seed: number;

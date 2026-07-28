@@ -1,6 +1,5 @@
 // Battle start helpers: enemy selection, state creation, and encounter tracking.
-import { createBattleState, getBattleStartPlayerHealth, type CombatTextEvent } from "@/lib/battle";
-export { getBattleStartPlayerHealth };
+import { createBattleState, type CombatTextEvent } from "@/lib/battle";
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";

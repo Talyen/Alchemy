@@ -126,8 +126,11 @@ describe("resolveNormalEnemyTurn", () => {
   it("calls handleVictoryDefeat when the enemy is already dead", () => {
     const store = makeStore();
     const state = defaultBattleState();
+    const result = endPlayerTurn(state);
+    expect(result.kind).not.toBe("haste");
+    if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
     const deadResult = {
-      ...endPlayerTurn(state),
+      ...result,
       kind: "standard" as const,
       state: { ...state, enemyHealth: 0, turnPhase: "enemy" as const },
     };

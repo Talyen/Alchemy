@@ -289,5 +289,5 @@ export function useAlchemyRunController({
   };
 }
 
-export type AlchemyRunController = ReturnType<typeof useAlchemyRunController>;
+type AlchemyRunController = ReturnType<typeof useAlchemyRunController>;
 export type AlchemyRouteCommands = AlchemyRunController["routeCommands"];

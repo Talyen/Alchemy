@@ -97,14 +97,6 @@ const PERMANENT_PROGRESS_KEYS = [
   "effects",
 ] as const satisfies ReadonlyArray<keyof PermanentProgressFields>;
 
-export function flattenProgressState(progress: ProgressState): RunStateFields {
-  return {
-    ...progress.run,
-    ...progress.permanent,
-    initialized: progress.initialized,
-  };
-}
-
 export function flattenRunDomainProgress(
   activeRun: ActiveRunProgressFields,
   profile: PermanentProgressFields,
@@ -113,7 +105,7 @@ export function flattenRunDomainProgress(
   return { ...activeRun, ...profile, initialized };
 }
 
-export function applyFlatProgressPartial(progress: ProgressState, partial: Partial<RunStateFields>): void {
+function applyFlatProgressPartial(progress: ProgressState, partial: Partial<RunStateFields>): void {
   for (const key of ACTIVE_RUN_PROGRESS_KEYS) {
     if (key in partial && partial[key] !== undefined) {
       (progress.run as unknown as Record<string, unknown>)[key] = partial[key];

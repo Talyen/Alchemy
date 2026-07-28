@@ -14,8 +14,6 @@ import {
   type TrinketShopState,
 } from "@/lib/active-run-session";
 import {
-  createInitialActiveRunFields,
-  createInitialPermanentFields,
   createInitialProgressState,
   createInitialTalentState,
   type ActiveRunProgressFields,
@@ -114,12 +112,6 @@ export function createInitialRunDomainData(): RunDomainDataState {
     navigation: { screen: "menu" },
     battle: createInitialBattleFields(),
   };
-}
-
-export function resetRunDomainProgress(state: RunDomainDataState): void {
-  state.activeRun = createInitialActiveRunFields(null);
-  state.profile = createInitialPermanentFields();
-  state.initialized = false;
 }
 
 export interface RunSessionFields {

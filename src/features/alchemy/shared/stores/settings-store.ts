@@ -45,7 +45,7 @@ export interface SettingsStore {
   resetToDefaults: () => void;
 }
 
-export function createDefaultSettingsSaveFields(): SettingsSaveFields {
+function createDefaultSettingsSaveFields(): SettingsSaveFields {
   return {
     selectedAspectRatio: "auto",
     displayMode: "borderless-fullscreen",
