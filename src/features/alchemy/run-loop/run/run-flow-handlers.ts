@@ -4,6 +4,11 @@ import {
   readBattleStore,
   readRunSessionStore,
   awardMaterialsDuringRun,
+  beginDestinationClaim,
+  beginRewardClaim,
+  cancelDestinationClaim,
+  commitDestinationClaim,
+  releaseRewardClaim as releaseRewardClaimState,
 } from "../../shared/stores/run-session-facade";
 import { setCompanionRewardCards, setCorruptionResult, setRewardState } from "../../shared/stores/run-session-facade";
 import { useUiStore } from "../../shared/stores/ui-store";
@@ -32,16 +37,6 @@ import { applyAlchemistPotion, applyRewardSelection, routeDestinationChoice } fr
 import { CONSTANTS, type Destination } from "../../shared/types";
 import { getActiveRewardTraits, type RunFlowHandlerDeps } from "./run-flow-handler-deps";
 import { awardRunEndMaterials, clearCombatState } from "./run-flow-session-helpers";
-
-// Survive createRunFlowHandlers rememoization so mid-transition re-entry stays locked.
-let rewardClaimInFlight = false;
-let destinationClaimInFlight = false;
-
-/** Clear in-flight claim locks (tests + run teardown). */
-export function resetRunFlowClaimLocks(): void {
-  rewardClaimInFlight = false;
-  destinationClaimInFlight = false;
-}
 
 export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
   function computeVictoryResult() {
@@ -194,12 +189,8 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
   }
 
   function finishRewards() {
-    if (rewardClaimInFlight) return;
+    if (!beginRewardClaim()) return;
     const session = readRunSessionStore();
-    // Re-entry guard: claim surface already drained (survives handler rememoization).
-    if (session.rewardState.choices.length === 0 && !session.companionRewardCards?.length) return;
-
-    rewardClaimInFlight = true;
 
     const grantAlchemistReward = shouldGrantAlchemistReward(
       getActiveRewardModifiersForContentSystem(
@@ -219,7 +210,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     if (result.clearCompanionRewardCards) setCompanionRewardCards(null);
 
     const releaseRewardClaim = () => {
-      rewardClaimInFlight = false;
+      releaseRewardClaimState();
     };
 
     const isWildwood = deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD;
@@ -274,41 +265,39 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
   }
 
   function handleDestinationChoice(destination: Destination) {
-    if (destinationClaimInFlight) return;
+    if (!beginDestinationClaim(destination)) return;
     const rewardState = readRunSessionStore().rewardState;
-    // Re-entry guard: destination already claimed this session.
-    if (!rewardState.destinations.includes(destination)) return;
-
-    destinationClaimInFlight = true;
 
     const selectedBossId = destination === CONSTANTS.DESTINATIONS.BOSS_COMBAT ? rewardState.selectedBossId : null;
 
     const commitDestinationProgress = () => {
-      setRewardState((prev) => ({ ...prev, destinations: [] }));
-      deps.run.setCompletedDestinations((prev) => [...prev, destination]);
-      deps.run.setDestinationIndexInAct((p) => p + 1);
-      destinationClaimInFlight = false;
+      commitDestinationClaim(destination);
     };
 
-    useUiStore.getState().clearCardHover();
-    routeDestinationChoice(destination, {
-      navigateTo: (screen) => deps.navigateTo(screen, commitDestinationProgress),
-      beginMysteryEvent: () => {
-        // Mystery owns its navigateTo; commit the offer surface before starting.
-        commitDestinationProgress();
-        deps.beginMysteryEvent();
-      },
-      resetCorruption: () => setCorruptionResult(null),
-      startShop: deps.onInitShop,
-      startAlchemist: deps.onInitAlchemist,
-      startTrinketShop: deps.onInitTrinketShop,
-      startEquipmentShop: deps.onInitEquipmentShop,
-      startBattle: (enemyType) => deps.onStartBattle(undefined, undefined, enemyType),
-      startBossBattle: () => {
-        if (selectedBossId && deps.onStartBossById(selectedBossId)) return;
-        deps.onStartBossBattle();
-      },
-    });
+    try {
+      useUiStore.getState().clearCardHover();
+      routeDestinationChoice(destination, {
+        navigateTo: (screen) => deps.navigateTo(screen, commitDestinationProgress),
+        beginMysteryEvent: () => {
+          // Mystery owns its navigateTo; commit the offer surface before starting.
+          commitDestinationProgress();
+          deps.beginMysteryEvent();
+        },
+        resetCorruption: () => setCorruptionResult(null),
+        startShop: deps.onInitShop,
+        startAlchemist: deps.onInitAlchemist,
+        startTrinketShop: deps.onInitTrinketShop,
+        startEquipmentShop: deps.onInitEquipmentShop,
+        startBattle: (enemyType) => deps.onStartBattle(undefined, undefined, enemyType),
+        startBossBattle: () => {
+          if (selectedBossId && deps.onStartBossById(selectedBossId)) return;
+          deps.onStartBossBattle();
+        },
+      });
+    } catch (error) {
+      cancelDestinationClaim();
+      throw error;
+    }
   }
 
   function endLabyrinthRun() {

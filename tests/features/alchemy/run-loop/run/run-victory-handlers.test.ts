@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { createRunFlowHandlers, resetRunFlowClaimLocks } from "@/features/alchemy/run-loop/run/run-flow-handlers";
+import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
@@ -34,7 +34,6 @@ import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-tra
 
 beforeEach(() => {
   vi.clearAllMocks();
-  resetRunFlowClaimLocks();
   resetRunBattleSlice();
   resetRunProgressSlice();
   resetTransientRunUi();
@@ -228,13 +227,18 @@ describe("createRunFlowHandlers victory paths", () => {
     const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
 
     handlers.finishRewards();
-    handlers.finishRewards();
+    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).finishRewards();
 
     expect(getRunProgressStoreView().runDeck).toHaveLength(1);
     expect(navigateTo).toHaveBeenCalledTimes(1);
+    expect(getRunSessionStoreView().rewardClaimInFlight).toBe(true);
     // Destinations remain until navigation commits (resume-safe mid-transition).
     expect(getRunSessionStoreView().rewardState.destinations).toEqual([CONSTANTS.DESTINATIONS.NORMAL_COMBAT]);
     expect(getRunSessionStoreView().rewardState.choices).toEqual([]);
+
+    const onCommit = navigateTo.mock.calls[0][1] as () => void;
+    onCommit();
+    expect(getRunSessionStoreView().rewardClaimInFlight).toBe(false);
   });
 
   it("handleDestinationChoice ignores a second call after destinations are cleared", () => {
@@ -260,14 +264,16 @@ describe("createRunFlowHandlers victory paths", () => {
     const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
 
     handlers.handleDestinationChoice(CONSTANTS.DESTINATIONS.CAMPFIRE);
-    handlers.handleDestinationChoice(CONSTANTS.DESTINATIONS.CAMPFIRE);
-    handlers.handleDestinationChoice(CONSTANTS.DESTINATIONS.MERCHANT_SHOP);
+    const remountedHandlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
+    remountedHandlers.handleDestinationChoice(CONSTANTS.DESTINATIONS.CAMPFIRE);
+    remountedHandlers.handleDestinationChoice(CONSTANTS.DESTINATIONS.MERCHANT_SHOP);
 
     expect(navigateTo).toHaveBeenCalledTimes(1);
     expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.CAMPFIRE, expect.any(Function));
     // Progress commits only after the navigation callback runs.
     expect(getRunProgressStoreView().completedDestinations).toEqual([]);
     expect(getRunProgressStoreView().destinationIndexInAct).toBe(0);
+    expect(getRunSessionStoreView().pendingDestinationClaim).toBe(CONSTANTS.DESTINATIONS.CAMPFIRE);
     expect(getRunSessionStoreView().rewardState.destinations).toEqual([
       CONSTANTS.DESTINATIONS.CAMPFIRE,
       CONSTANTS.DESTINATIONS.MERCHANT_SHOP,
@@ -279,5 +285,6 @@ describe("createRunFlowHandlers victory paths", () => {
     expect(getRunProgressStoreView().completedDestinations).toEqual([CONSTANTS.DESTINATIONS.CAMPFIRE]);
     expect(getRunProgressStoreView().destinationIndexInAct).toBe(1);
     expect(getRunSessionStoreView().rewardState.destinations).toEqual([]);
+    expect(getRunSessionStoreView().pendingDestinationClaim).toBeNull();
   });
 });

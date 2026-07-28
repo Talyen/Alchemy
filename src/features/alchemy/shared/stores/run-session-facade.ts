@@ -9,6 +9,7 @@ import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { Screen } from "@/lib/routing";
+import type { Destination } from "@/features/alchemy/shared/types";
 import type {
   AlchemistState,
   EquipmentShopState,
@@ -63,6 +64,26 @@ export function readBattleStore() {
 
 export function setHasActiveRun(hasActiveRun: boolean) {
   getRunDomainStore().setHasActiveRun(hasActiveRun);
+}
+
+export function beginRewardClaim(): boolean {
+  return getRunDomainStore().beginRewardClaim();
+}
+
+export function releaseRewardClaim(): void {
+  getRunDomainStore().releaseRewardClaim();
+}
+
+export function beginDestinationClaim(destination: Destination): boolean {
+  return getRunDomainStore().beginDestinationClaim(destination);
+}
+
+export function commitDestinationClaim(destination: Destination): boolean {
+  return getRunDomainStore().commitDestinationClaim(destination);
+}
+
+export function cancelDestinationClaim(): void {
+  getRunDomainStore().cancelDestinationClaim();
 }
 
 export function setActiveLabyrinthModifiers(modifiers: LabyrinthModifierKind[]) {

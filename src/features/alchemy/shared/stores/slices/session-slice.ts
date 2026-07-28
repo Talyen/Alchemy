@@ -16,6 +16,11 @@ import { createInitialSessionFields, type RunSessionFields, type RunDomainDataSt
 
 export interface SessionActions {
   setHasActiveRun: (active: boolean) => void;
+  beginRewardClaim: () => boolean;
+  releaseRewardClaim: () => void;
+  beginDestinationClaim: (destination: Destination) => boolean;
+  commitDestinationClaim: (destination: Destination) => boolean;
+  cancelDestinationClaim: () => void;
   setActiveLabyrinthModifiers: (modifiers: LabyrinthModifierKind[]) => void;
   setActiveLabyrinthRewardModifiers: (modifiers: LabyrinthModifierKind[]) => void;
   setActiveLabyrinthPendingNode: (node: LabyrinthNodePosition | null) => void;
@@ -54,6 +59,52 @@ export function defineSessionActions(set: ImmerSet<RunDomainDataState>): Session
 
   return {
     setHasActiveRun: setField("hasActiveRun"),
+    beginRewardClaim: () => {
+      let claimed = false;
+      set((state) => {
+        if (state.session.rewardClaimInFlight) return;
+        if (state.session.rewardState.choices.length === 0 && !state.session.companionRewardCards?.length) {
+          return;
+        }
+        state.session.rewardClaimInFlight = true;
+        claimed = true;
+      });
+      return claimed;
+    },
+    releaseRewardClaim: () =>
+      set((state) => {
+        state.session.rewardClaimInFlight = false;
+      }),
+    beginDestinationClaim: (destination) => {
+      let claimed = false;
+      set((state) => {
+        if (state.session.pendingDestinationClaim !== null) return;
+        if (!state.session.rewardState.destinations.includes(destination)) return;
+        state.session.pendingDestinationClaim = destination;
+        claimed = true;
+      });
+      return claimed;
+    },
+    commitDestinationClaim: (destination) => {
+      let committed = false;
+      set((state) => {
+        if (state.session.pendingDestinationClaim !== destination) return;
+        if (!state.session.rewardState.destinations.includes(destination)) {
+          state.session.pendingDestinationClaim = null;
+          return;
+        }
+        state.session.rewardState.destinations = [];
+        state.progress.run.completedDestinations.push(destination);
+        state.progress.run.destinationIndexInAct += 1;
+        state.session.pendingDestinationClaim = null;
+        committed = true;
+      });
+      return committed;
+    },
+    cancelDestinationClaim: () =>
+      set((state) => {
+        state.session.pendingDestinationClaim = null;
+      }),
     setActiveLabyrinthModifiers: setField("activeLabyrinthModifiers"),
     setActiveLabyrinthRewardModifiers: setField("activeLabyrinthRewardModifiers"),
     setActiveLabyrinthPendingNode: setField("activeLabyrinthPendingNode"),

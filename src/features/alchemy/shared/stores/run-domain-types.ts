@@ -19,7 +19,7 @@ import {
   type ProgressState,
 } from "@/features/alchemy/run-setup/run/run-state-init";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
-import type { Screen } from "@/features/alchemy/shared/types";
+import type { Destination, Screen } from "@/features/alchemy/shared/types";
 import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { CorruptionResult } from "@/lib/corruption";
@@ -55,6 +55,8 @@ const emptyEquipmentShop: EquipmentShopState = emptyEquipmentShopState();
 export function createInitialSessionFields(): RunSessionFields {
   return {
     hasActiveRun: false,
+    rewardClaimInFlight: false,
+    pendingDestinationClaim: null,
     activeLabyrinthModifiers: [],
     activeLabyrinthRewardModifiers: [],
     activeLabyrinthPendingNode: null,
@@ -107,6 +109,8 @@ export function createInitialRunDomainData(): RunDomainDataState {
 
 export interface RunSessionFields {
   hasActiveRun: boolean;
+  rewardClaimInFlight: boolean;
+  pendingDestinationClaim: Destination | null;
   activeLabyrinthModifiers: LabyrinthModifierKind[];
   activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
   activeLabyrinthPendingNode: LabyrinthNodePosition | null;

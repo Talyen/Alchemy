@@ -76,6 +76,11 @@ const progressActionKeys = [
 
 const sessionActionKeys = [
   "setHasActiveRun",
+  "beginRewardClaim",
+  "releaseRewardClaim",
+  "beginDestinationClaim",
+  "commitDestinationClaim",
+  "cancelDestinationClaim",
   "setActiveLabyrinthModifiers",
   "setActiveLabyrinthRewardModifiers",
   "setActiveLabyrinthPendingNode",
