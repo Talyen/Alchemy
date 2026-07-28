@@ -48,6 +48,7 @@ export function scrubRendererEvent(event: Record<string, unknown>): Record<strin
         : undefined,
       level: event.level,
       platform: event.platform,
+      release: event.release,
       tags,
       timestamp: event.timestamp,
     };

@@ -42,10 +42,15 @@ function executeSentryCrashTest(
   if (mode === "native-renderer") window.webContents.forcefullyCrashRenderer();
 }
 
-function armSentryCrashTest(window, mode, scheduler = setTimeout) {
+function armSentryCrashTest(window, mode, scheduler = setTimeout, beforeCrash = () => undefined) {
   if (!mode) return false;
   window.webContents.once("did-finish-load", () => {
-    scheduler(() => executeSentryCrashTest(window, mode), 1_500);
+    scheduler(() => {
+      void Promise.resolve(beforeCrash(mode)).then(
+        () => scheduler(() => executeSentryCrashTest(window, mode), 0),
+        () => scheduler(() => executeSentryCrashTest(window, mode), 0),
+      );
+    }, 1_500);
   });
   return true;
 }

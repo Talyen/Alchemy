@@ -19,7 +19,7 @@ const {
   parseDevServerUrl,
   resolveAppAssetPath,
 } = require("./security.cjs");
-const { initializeMainSentry } = require("./sentry.cjs");
+const { flushSentryTestEvent, initializeMainSentry } = require("./sentry.cjs");
 const { armSentryCrashTest, resolveSentryCrashTestMode } = require("./sentry-crash-test.cjs");
 
 protocol.registerSchemesAsPrivileged([
@@ -293,7 +293,14 @@ function createMainWindow() {
     mainWindow = null;
   });
   Menu.setApplicationMenu(null);
-  armSentryCrashTest(mainWindow, SENTRY_CRASH_TEST_MODE);
+  armSentryCrashTest(mainWindow, SENTRY_CRASH_TEST_MODE, setTimeout, async (mode) => {
+    const result = await flushSentryTestEvent(mode);
+    const statusDirectory = process.env.ALCHEMY_SENTRY_TEST_STATUS_DIR;
+    if (statusDirectory) {
+      const statusPath = path.join(statusDirectory, `alchemy-sentry-${mode}.json`);
+      fs.writeFileSync(statusPath, JSON.stringify(result), { encoding: "utf8", mode: 0o600 });
+    }
+  });
   void mainWindow.loadURL(USE_PACKAGED_RENDERER ? `${APP_ORIGIN}/` : DEV_SERVER_URL);
 }
 

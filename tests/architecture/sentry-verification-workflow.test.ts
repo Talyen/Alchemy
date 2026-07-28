@@ -24,5 +24,7 @@ describe("private Sentry verification workflow", () => {
       expect(workflow).toContain(`"${mode}"`);
     }
     expect(workflow).toContain("--alchemy-sentry-test=$mode");
+    expect(workflow).toContain("Sentry transport confirmed for ${mode}");
+    expect(workflow).toContain("ALCHEMY_SENTRY_TEST_STATUS_DIR");
   });
 });

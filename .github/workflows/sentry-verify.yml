@@ -58,12 +58,27 @@ jobs:
 
       - name: Emit controlled Electron crashes
         shell: pwsh
+        env:
+          ALCHEMY_SENTRY_TEST_STATUS_DIR: ${{ runner.temp }}
         run: |
           $executable = (Resolve-Path "release-desktop/win-unpacked/Alchemy.exe").Path
           foreach ($mode in @("renderer", "main", "native-renderer")) {
+            $statusPath = Join-Path $env:ALCHEMY_SENTRY_TEST_STATUS_DIR "alchemy-sentry-$mode.json"
+            Remove-Item -LiteralPath $statusPath -Force -ErrorAction SilentlyContinue
             Write-Host "Launching controlled Sentry crash: $mode"
             $process = Start-Process -FilePath $executable -ArgumentList "--alchemy-sentry-test=$mode" -WorkingDirectory (Split-Path $executable) -PassThru
-            Start-Sleep -Seconds 12
+            for ($attempt = 0; $attempt -lt 12 -and -not (Test-Path -LiteralPath $statusPath); $attempt++) {
+              Start-Sleep -Seconds 1
+            }
+            if (-not (Test-Path -LiteralPath $statusPath)) {
+              throw "Packaged Sentry SDK did not produce transport status for $mode"
+            }
+            $status = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
+            if ($status.flushed -ne $true -or [string]::IsNullOrWhiteSpace($status.eventId)) {
+              throw "Packaged Sentry SDK could not flush the $mode verification event"
+            }
+            Write-Host "Sentry transport confirmed for ${mode}: $($status.eventId)"
+            Start-Sleep -Seconds 5
             if (-not $process.HasExited) {
               & taskkill.exe /PID $process.Id /T /F 2>$null | Out-Null
             }

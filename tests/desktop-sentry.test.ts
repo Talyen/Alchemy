@@ -5,6 +5,14 @@ import { scrubRendererEvent } from "@/lib/crash-reporting";
 
 const require = createRequire(import.meta.url);
 interface MainSentryModule {
+  flushSentryTestEvent: (
+    mode: string,
+    sentry: {
+      captureException: (error: Error) => string;
+      flush: (timeout: number) => Promise<boolean>;
+      withScope: (callback: (scope: { setTag: (key: string, value: string) => void }) => string) => string;
+    },
+  ) => Promise<{ eventId: string | null; flushed: boolean }>;
   initializeMainSentry: (
     app: { getAppPath: () => string; getVersion: () => string; isPackaged: boolean },
     sentry: { init: (options: Record<string, unknown>) => void },
@@ -62,6 +70,22 @@ describe("desktop crash reporting", () => {
     ).toBe(false);
   });
 
+  it("flushes a tagged crash-test transport event", async () => {
+    const setTag = vi.fn();
+    const sentry = {
+      captureException: vi.fn(() => "event-id"),
+      flush: vi.fn(async () => true),
+      withScope: vi.fn((callback: (scope: { setTag: typeof setTag }) => string) => callback({ setTag })),
+    };
+
+    await expect(mainSentry.flushSentryTestEvent("renderer", sentry)).resolves.toEqual({
+      eventId: "event-id",
+      flushed: true,
+    });
+    expect(setTag).toHaveBeenCalledWith("source", "crash-test-renderer");
+    expect(sentry.flush).toHaveBeenCalledWith(5_000);
+  });
+
   it("removes PII fields and absolute paths from renderer events", () => {
     const scrubbed = scrubRendererEvent({
       user: { id: "steam-id" },
@@ -80,6 +104,7 @@ describe("desktop crash reporting", () => {
     expect(scrubbed).not.toHaveProperty("user");
     expect(scrubbed).not.toHaveProperty("request");
     expect(scrubbed?.tags).toEqual({ source: "react" });
+    expect(scrubRendererEvent({ release: "alchemy@1.2.3" })?.release).toBe("alchemy@1.2.3");
     expect(JSON.stringify(scrubbed)).not.toContain("player");
   });
 });

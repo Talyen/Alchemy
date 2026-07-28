@@ -7,6 +7,7 @@ interface CrashTestModule {
     window: { webContents: { once: (event: string, callback: () => void) => void } },
     mode: string | null,
     scheduler?: (callback: () => void, delay: number) => void,
+    beforeCrash?: (mode: string) => Promise<void>,
   ) => boolean;
   executeSentryCrashTest: (
     window: {
@@ -69,9 +70,13 @@ describe("Sentry packaged crash verification", () => {
     ).toBeNull();
   });
 
-  it("arms only an explicit mode after the renderer finishes loading", () => {
+  it("arms only an explicit mode after the renderer finishes loading and transport flush", async () => {
     let onLoad: (() => void) | undefined;
-    const scheduler = vi.fn();
+    const scheduled: Array<() => void> = [];
+    const scheduler = vi.fn((callback: () => void) => {
+      scheduled.push(callback);
+    });
+    const beforeCrash = vi.fn(async () => undefined);
     const window = {
       webContents: {
         once: vi.fn((_event: string, callback: () => void) => {
@@ -81,10 +86,14 @@ describe("Sentry packaged crash verification", () => {
     };
     expect(crashTest.armSentryCrashTest(window, null, scheduler)).toBe(false);
     expect(window.webContents.once).not.toHaveBeenCalled();
-    expect(crashTest.armSentryCrashTest(window, "main", scheduler)).toBe(true);
+    expect(crashTest.armSentryCrashTest(window, "main", scheduler, beforeCrash)).toBe(true);
     expect(window.webContents.once).toHaveBeenCalledWith("did-finish-load", expect.any(Function));
     onLoad?.();
     expect(scheduler).toHaveBeenCalledWith(expect.any(Function), 1_500);
+    scheduled.shift()?.();
+    await Promise.resolve();
+    expect(beforeCrash).toHaveBeenCalledWith("main");
+    expect(scheduler).toHaveBeenLastCalledWith(expect.any(Function), 0);
   });
 
   it("keeps the three crash mechanisms distinct", async () => {
