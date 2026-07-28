@@ -111,10 +111,6 @@ export function useAlchemyRunController({
 
   useSteamRichPresence(screen, nav.runPhase, run.characterId);
 
-  function clearPermanentData() {
-    talents.clearPermanentData();
-  }
-
   function handleBeginLabyrinth() {
     if (
       !(nav.activeRunData && run.contentSystemType === "labyrinth") &&
@@ -147,6 +143,76 @@ export function useAlchemyRunController({
     }
     nav.handleAbandonRun();
   }
+
+  const routeCommands = {
+    meta: {
+      goToScreen: nav.goToScreen,
+      beginCampaign: nav.beginCampaign,
+      beginLabyrinth: handleBeginLabyrinth,
+      beginWildwood: nav.beginWildwood,
+      unlockTalent: talents.unlockTalent,
+      resetUnlockedTalents: talents.resetUnlockedTalents,
+    },
+    runSetup: {
+      goToScreen: nav.goToScreen,
+      handleCharacterSelect: nav.handleCharacterSelect,
+      handleDraftComplete: nav.handleDraftComplete,
+      handleDraftPick: nav.handleDraftPick,
+      handleDifficultySelect: nav.handleDifficultySelect,
+      handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,
+    },
+    runLoop: {
+      handleLabyrinthNodeEnter,
+      finishRewards: nav.finishRewards,
+      selectRewardChoice: nav.selectRewardChoice,
+      prepareDestinationScreen: nav.prepareDestinationScreen,
+      handleDestinationChoice: nav.handleDestinationChoice,
+      handleCampfireContinue: nav.handleCampfireContinue,
+      handleWildwoodRecoveryComplete: nav.handleWildwoodRecoveryComplete,
+      handleWildwoodRemoveCard: nav.handleWildwoodRemoveCard,
+      handleWildwoodSkipRemoval: nav.handleWildwoodSkipRemoval,
+      handleShopBuyCard: shop.handleShopBuyCard,
+      handleShopRemoveCard: shop.handleShopRemoveCard,
+      handleShopRefresh: shop.handleShopRefresh,
+      handleShopContinue: nav.advanceToNextDestination,
+      handleAlchemistBuyCard: shop.handleAlchemistBuyCard,
+      handleAlchemistRefresh: shop.handleAlchemistRefresh,
+      handleAlchemistMixPotions: shop.handleAlchemistMixPotions,
+      handleAlchemistContinue: nav.advanceToNextDestination,
+      handleTrinketShopBuy: shop.handleTrinketShopBuy,
+      handleTrinketShopRefresh: shop.handleTrinketShopRefresh,
+      handleTrinketShopContinue: nav.advanceToNextDestination,
+      handleEquipmentShopBuy: shop.handleEquipmentShopBuy,
+      handleEquipmentShopRefresh: shop.handleEquipmentShopRefresh,
+      handleEquipmentShopContinue: nav.advanceToNextDestination,
+      getMerchantCardBuyPrice: shop.getMerchantCardBuyPrice,
+      getAlchemistPotionBuyPrice: shop.getAlchemistPotionBuyPrice,
+      getTrinketBuyPrice: shop.getTrinketBuyPrice,
+      getGearBuyPrice: shop.getGearBuyPrice,
+      getShopRefreshPrice: shop.getShopRefreshPrice,
+      getAlchemistRefreshPrice: shop.getAlchemistRefreshPrice,
+      getTrinketRefreshPrice: shop.getTrinketRefreshPrice,
+      getEquipmentRefreshPrice: shop.getEquipmentRefreshPrice,
+      getRemoveCardPrice: shop.getRemoveCardPrice,
+      getMixPotionPrice: shop.getMixPotionPrice,
+      handleMysteryChoice: nav.handleMysteryChoice,
+      handleMysteryChooseCard: nav.handleMysteryChooseCard,
+      handleMysteryRemoveCard: nav.handleMysteryRemoveCard,
+      handleMysteryContinue: nav.handleMysteryContinue,
+      handleCorruptCard: nav.handleCorruptCard,
+      handleCorruptionExit: nav.handleCorruptionExit,
+    },
+    battle: {
+      handleCardClick: battle.handleCardClick,
+      handleWishChoice: battle.handleWishChoice,
+      handleEndTurn: battle.handleEndTurn,
+      skipCombatDevMode: battle.skipCombatDevMode,
+      removeCardGhost: battle.removeCardGhost,
+    },
+    runEnd: {
+      continueFromRunEnd: nav.continueFromRunEnd,
+    },
+  };
 
   const battleBindings = useMemo<BattleControllerBindings>(
     () => ({
@@ -181,6 +247,7 @@ export function useAlchemyRunController({
     screen,
     runPhase: nav.runPhase,
     commitPendingTransition,
+    routeCommands,
     battleBindings,
     battleState: battle.battleState,
     hasActiveBattle: battle.hasActiveBattle,
@@ -188,10 +255,7 @@ export function useAlchemyRunController({
     contentSystemType: run.contentSystemType,
     talentXP: talents.talentXP,
     unlockedTalents: talents.unlockedTalents,
-    unlockTalent: talents.unlockTalent,
     unlockAllTalents: talents.unlockAllTalents,
-    resetUnlockedTalents: talents.resetUnlockedTalents,
-    clearPermanentData,
     rewardState: nav.rewardState,
     get shopCards() {
       return shop.shopCards;
@@ -205,66 +269,12 @@ export function useAlchemyRunController({
     get activeRunData() {
       return nav.activeRunData;
     },
-    beginCampaign: nav.beginCampaign,
-    beginLabyrinth: handleBeginLabyrinth,
-    beginWildwood: nav.beginWildwood,
-    handleLabyrinthNodeEnter,
-    handleLabyrinthEndRun: nav.endLabyrinthRun,
-    handleCharacterSelect: nav.handleCharacterSelect,
-    handleDraftComplete: nav.handleDraftComplete,
-    handleDraftPick: nav.handleDraftPick,
-    handleDifficultySelect: nav.handleDifficultySelect,
-    handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,
     returnToBattle: nav.returnToBattle,
     goToScreen: nav.goToScreen,
-    handleCardClick: battle.handleCardClick,
-    handleWishChoice: battle.handleWishChoice,
-    finishRewards: nav.finishRewards,
-    selectRewardChoice: nav.selectRewardChoice,
-    prepareDestinationScreen: nav.prepareDestinationScreen,
-    handleDestinationChoice: nav.handleDestinationChoice,
-    handleCampfireContinue: nav.handleCampfireContinue,
-    handleWildwoodRecoveryComplete: nav.handleWildwoodRecoveryComplete,
-    handleWildwoodRemoveCard: nav.handleWildwoodRemoveCard,
-    handleWildwoodSkipRemoval: nav.handleWildwoodSkipRemoval,
-    handleShopBuyCard: shop.handleShopBuyCard,
-    handleShopRemoveCard: shop.handleShopRemoveCard,
-    handleShopRefresh: shop.handleShopRefresh,
-    handleShopContinue: nav.advanceToNextDestination,
-    handleAlchemistBuyCard: shop.handleAlchemistBuyCard,
-    handleAlchemistRefresh: shop.handleAlchemistRefresh,
-    handleAlchemistMixPotions: shop.handleAlchemistMixPotions,
-    handleAlchemistContinue: nav.advanceToNextDestination,
-    handleTrinketShopBuy: shop.handleTrinketShopBuy,
-    handleTrinketShopRefresh: shop.handleTrinketShopRefresh,
-    handleTrinketShopContinue: nav.advanceToNextDestination,
-    handleEquipmentShopBuy: shop.handleEquipmentShopBuy,
-    handleEquipmentShopRefresh: shop.handleEquipmentShopRefresh,
-    handleEquipmentShopContinue: nav.advanceToNextDestination,
-    getMerchantCardBuyPrice: shop.getMerchantCardBuyPrice,
-    getAlchemistPotionBuyPrice: shop.getAlchemistPotionBuyPrice,
-    getTrinketBuyPrice: shop.getTrinketBuyPrice,
-    getGearBuyPrice: shop.getGearBuyPrice,
-    getShopRefreshPrice: shop.getShopRefreshPrice,
-    getAlchemistRefreshPrice: shop.getAlchemistRefreshPrice,
-    getTrinketRefreshPrice: shop.getTrinketRefreshPrice,
-    getEquipmentRefreshPrice: shop.getEquipmentRefreshPrice,
-    getRemoveCardPrice: shop.getRemoveCardPrice,
-    getMixPotionPrice: shop.getMixPotionPrice,
-    handleMysteryChoice: nav.handleMysteryChoice,
-    handleMysteryChooseCard: nav.handleMysteryChooseCard,
-    handleMysteryRemoveCard: nav.handleMysteryRemoveCard,
-    handleMysteryContinue: nav.handleMysteryContinue,
-    handleCorruptCard: nav.handleCorruptCard,
-    handleCorruptionExit: nav.handleCorruptionExit,
-    handleActComplete: nav.handleActComplete,
-    handleEndTurn: battle.handleEndTurn,
     handleEndRun,
-    skipCombatDevMode: battle.skipCombatDevMode,
-    removeCardGhost: battle.removeCardGhost,
     resetRunState: nav.resetRunState,
-    continueFromRunEnd: nav.continueFromRunEnd,
   };
 }
 
 export type AlchemyRunController = ReturnType<typeof useAlchemyRunController>;
+export type AlchemyRouteCommands = AlchemyRunController["routeCommands"];

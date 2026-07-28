@@ -24,7 +24,8 @@ import {
 import { getCampfireHealFraction } from "@/lib/game-constants";
 import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
 
-function BattleScreenRoute({ run, battleBindings, onOpenBattleMenu }: BattleRouteCtx) {
+function BattleScreenRoute({ routeCommands, battleBindings, onOpenBattleMenu }: BattleRouteCtx) {
+  const commands = routeCommands.battle;
   const { heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
   const {
     battleScreenData,
@@ -53,12 +54,12 @@ function BattleScreenRoute({ run, battleBindings, onOpenBattleMenu }: BattleRout
       battleSceneRef={battleSceneRef}
       playerPanelRef={playerPanelRef}
       enemyPanelRef={enemyPanelRef}
-      onCardClick={run.handleCardClick}
+      onCardClick={commands.handleCardClick}
       onOpenMenu={onOpenBattleMenu}
-      onWishChoice={run.handleWishChoice}
-      onRemoveCardGhost={run.removeCardGhost}
-      onSkipCombatDevMode={run.skipCombatDevMode}
-      onEndTurn={run.handleEndTurn}
+      onWishChoice={commands.handleWishChoice}
+      onRemoveCardGhost={commands.removeCardGhost}
+      onSkipCombatDevMode={commands.skipCombatDevMode}
+      onEndTurn={commands.handleEndTurn}
       cardTransfers={cardTransfers}
       hiddenHandCardKeys={hiddenHandCardKeys}
       cardTransferInProgress={cardTransferInProgress}
@@ -67,65 +68,73 @@ function BattleScreenRoute({ run, battleBindings, onOpenBattleMenu }: BattleRout
   );
 }
 
-function LabyrinthMapScreenRoute({ run, onOpenBattleMenu }: Pick<RunLoopRouteCtx, "run" | "onOpenBattleMenu">) {
+type RunLoopCommands = RunLoopRouteCtx["routeCommands"]["runLoop"];
+
+function LabyrinthMapScreenRoute({
+  commands,
+  onOpenBattleMenu,
+}: {
+  commands: RunLoopCommands;
+  onOpenBattleMenu: RunLoopRouteCtx["onOpenBattleMenu"];
+}) {
   const r = useRunScreenData("labyrinth-map");
   return (
     <LabyrinthMapScreen
       labyrinthMap={r.labyrinthMap}
-      onNodeClick={run.handleLabyrinthNodeEnter}
+      onNodeClick={commands.handleLabyrinthNodeEnter}
       onOpenMenu={onOpenBattleMenu}
     />
   );
 }
 
-function RewardsScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
+function RewardsScreenRoute({ commands }: { commands: RunLoopCommands }) {
   const r = useRunScreenData("rewards");
   const isWildwood = useIsWildwoodRun();
   return (
     <RewardsScreen
       rewardState={r.rewardState}
-      onAddReward={run.finishRewards}
-      onSkip={run.finishRewards}
-      onSelectReward={run.selectRewardChoice}
+      onAddReward={commands.finishRewards}
+      onSkip={commands.finishRewards}
+      onSelectReward={commands.selectRewardChoice}
       allowTrinketSkip={isWildwood}
     />
   );
 }
 
-function WildwoodRecoveryScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
+function WildwoodRecoveryScreenRoute({ commands }: { commands: RunLoopCommands }) {
   const r = useRunScreenData("wildwood-recovery");
   return (
     <WildwoodRecoveryScreen
       playerHealth={r.runPlayerHealth}
       maxHealth={r.runMaxHealth}
-      onComplete={run.handleWildwoodRecoveryComplete}
+      onComplete={commands.handleWildwoodRecoveryComplete}
     />
   );
 }
 
-function WildwoodRemovalScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
+function WildwoodRemovalScreenRoute({ commands }: { commands: RunLoopCommands }) {
   const r = useRunScreenData("wildwood-removal");
   return (
     <WildwoodRemovalScreen
       runDeck={r.runDeck}
-      onRemove={run.handleWildwoodRemoveCard}
-      onSkip={run.handleWildwoodSkipRemoval}
+      onRemove={commands.handleWildwoodRemoveCard}
+      onSkip={commands.handleWildwoodSkipRemoval}
     />
   );
 }
 
-function DestinationScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
+function DestinationScreenRoute({ commands }: { commands: RunLoopCommands }) {
   const r = useRunScreenData("destination");
   return (
     <DestinationScreen
       rewardState={r.rewardState}
-      onChoose={run.handleDestinationChoice}
-      onPrepare={run.prepareDestinationScreen}
+      onChoose={commands.handleDestinationChoice}
+      onPrepare={commands.prepareDestinationScreen}
     />
   );
 }
 
-function CampfireScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
+function CampfireScreenRoute({ commands }: { commands: RunLoopCommands }) {
   const r = useRunScreenData("campfire");
   const { talentEffects } = useTalentAdapter();
   const healFraction = getCampfireHealFraction(talentEffects.campfireHealBonus);
@@ -134,12 +143,12 @@ function CampfireScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
       playerHealth={r.runPlayerHealth}
       maxHealth={r.runMaxHealth}
       healFraction={healFraction}
-      onContinue={run.handleCampfireContinue}
+      onContinue={commands.handleCampfireContinue}
     />
   );
 }
 
-function ShopScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
+function ShopScreenRoute({ commands }: { commands: RunLoopCommands }) {
   const r = useRunScreenData("shop");
   return (
     <MerchantShopScreen
@@ -149,18 +158,18 @@ function ShopScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
       refreshesLeft={r.shopState.refreshesLeft}
       removeUsed={r.shopState.removeUsed}
       purchasedSlotKeys={r.shopState.purchasedSlotKeys}
-      getCardPrice={run.getMerchantCardBuyPrice}
-      removePrice={run.getRemoveCardPrice()}
-      refreshPrice={run.getShopRefreshPrice(r.shopState.refreshesLeft)}
-      onBuyCard={run.handleShopBuyCard}
-      onRemoveCard={run.handleShopRemoveCard}
-      onRefresh={run.handleShopRefresh}
-      onContinue={run.handleShopContinue}
+      getCardPrice={commands.getMerchantCardBuyPrice}
+      removePrice={commands.getRemoveCardPrice()}
+      refreshPrice={commands.getShopRefreshPrice(r.shopState.refreshesLeft)}
+      onBuyCard={commands.handleShopBuyCard}
+      onRemoveCard={commands.handleShopRemoveCard}
+      onRefresh={commands.handleShopRefresh}
+      onContinue={commands.handleShopContinue}
     />
   );
 }
 
-function AlchemistScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
+function AlchemistScreenRoute({ commands }: { commands: RunLoopCommands }) {
   const r = useRunScreenData("alchemist");
   return (
     <AlchemistShopScreen
@@ -170,18 +179,18 @@ function AlchemistScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
       refreshesLeft={r.alchemistState.refreshesLeft}
       mixUsed={r.alchemistState.mixUsed}
       purchasedSlotKeys={r.alchemistState.purchasedSlotKeys}
-      getPotionPrice={run.getAlchemistPotionBuyPrice}
-      mixPrice={run.getMixPotionPrice()}
-      refreshPrice={run.getAlchemistRefreshPrice(r.alchemistState.refreshesLeft)}
-      onBuyCard={run.handleAlchemistBuyCard}
-      onRefresh={run.handleAlchemistRefresh}
-      onMixPotions={run.handleAlchemistMixPotions}
-      onContinue={run.handleAlchemistContinue}
+      getPotionPrice={commands.getAlchemistPotionBuyPrice}
+      mixPrice={commands.getMixPotionPrice()}
+      refreshPrice={commands.getAlchemistRefreshPrice(r.alchemistState.refreshesLeft)}
+      onBuyCard={commands.handleAlchemistBuyCard}
+      onRefresh={commands.handleAlchemistRefresh}
+      onMixPotions={commands.handleAlchemistMixPotions}
+      onContinue={commands.handleAlchemistContinue}
     />
   );
 }
 
-function TrinketShopScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
+function TrinketShopScreenRoute({ commands }: { commands: RunLoopCommands }) {
   const r = useRunScreenData("trinket-shop");
   return (
     <TrinketShopScreen
@@ -189,16 +198,16 @@ function TrinketShopScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
       trinkets={r.trinketShopState.trinkets}
       refreshesLeft={r.trinketShopState.refreshesLeft}
       purchasedSlotKeys={r.trinketShopState.purchasedSlotKeys}
-      getTrinketPrice={run.getTrinketBuyPrice}
-      refreshPrice={run.getTrinketRefreshPrice(r.trinketShopState.refreshesLeft)}
-      onBuyTrinket={run.handleTrinketShopBuy}
-      onRefresh={run.handleTrinketShopRefresh}
-      onContinue={run.handleTrinketShopContinue}
+      getTrinketPrice={commands.getTrinketBuyPrice}
+      refreshPrice={commands.getTrinketRefreshPrice(r.trinketShopState.refreshesLeft)}
+      onBuyTrinket={commands.handleTrinketShopBuy}
+      onRefresh={commands.handleTrinketShopRefresh}
+      onContinue={commands.handleTrinketShopContinue}
     />
   );
 }
 
-function EquipmentShopScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
+function EquipmentShopScreenRoute({ commands }: { commands: RunLoopCommands }) {
   const r = useRunScreenData("equipment-shop");
   return (
     <EquipmentShopScreen
@@ -206,18 +215,18 @@ function EquipmentShopScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
       gear={r.equipmentShopState.gear}
       refreshesLeft={r.equipmentShopState.refreshesLeft}
       purchasedSlotKeys={r.equipmentShopState.purchasedSlotKeys}
-      getGearPrice={run.getGearBuyPrice}
-      refreshPrice={run.getEquipmentRefreshPrice(r.equipmentShopState.refreshesLeft)}
-      onBuyGear={run.handleEquipmentShopBuy}
-      onRefresh={run.handleEquipmentShopRefresh}
-      onContinue={run.handleEquipmentShopContinue}
+      getGearPrice={commands.getGearBuyPrice}
+      refreshPrice={commands.getEquipmentRefreshPrice(r.equipmentShopState.refreshesLeft)}
+      onBuyGear={commands.handleEquipmentShopBuy}
+      onRefresh={commands.handleEquipmentShopRefresh}
+      onContinue={commands.handleEquipmentShopContinue}
     />
   );
 }
 
-function MysteryScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
+function MysteryScreenRoute({ commands }: { commands: RunLoopCommands }) {
   const r = useRunScreenData("mystery");
-  const { handleMysteryContinue } = run;
+  const { handleMysteryContinue } = commands;
 
   useEffect(() => {
     if (!r.mysteryEvent) {
@@ -234,24 +243,24 @@ function MysteryScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
       event={r.mysteryEvent}
       runDeck={r.runDeck}
       mysteryCardChoices={r.mysteryCardChoices}
-      onChoose={run.handleMysteryChoice}
-      onChooseCard={run.handleMysteryChooseCard}
-      onRemoveCard={run.handleMysteryRemoveCard}
-      onContinue={run.handleMysteryContinue}
+      onChoose={commands.handleMysteryChoice}
+      onChooseCard={commands.handleMysteryChooseCard}
+      onRemoveCard={commands.handleMysteryRemoveCard}
+      onContinue={commands.handleMysteryContinue}
       findCard={(id) => cardLibrary.find((c) => c.id === id)}
       findTrinket={(id) => trinketLibrary.find((t) => t.id === id)}
     />
   );
 }
 
-function CorruptionScreenRoute({ run }: Pick<RunLoopRouteCtx, "run">) {
+function CorruptionScreenRoute({ commands }: { commands: RunLoopCommands }) {
   const r = useRunScreenData("corruption");
   return (
     <CorruptionScreen
       runDeck={r.runDeck}
       result={r.corruptionResult}
-      onCorrupt={run.handleCorruptCard}
-      onExit={run.handleCorruptionExit}
+      onCorrupt={commands.handleCorruptCard}
+      onExit={commands.handleCorruptionExit}
     />
   );
 }
@@ -271,21 +280,25 @@ export const runLoopScreenRoutes: {
   mystery: (ctx: RunLoopRouteCtx) => ReactNode;
   corruption: (ctx: RunLoopRouteCtx) => ReactNode;
 } = {
-  battle: ({ run, battleBindings, onOpenBattleMenu }) => (
-    <BattleScreenRoute run={run} battleBindings={battleBindings} onOpenBattleMenu={onOpenBattleMenu} />
+  battle: ({ routeCommands, battleBindings, onOpenBattleMenu }) => (
+    <BattleScreenRoute
+      routeCommands={routeCommands}
+      battleBindings={battleBindings}
+      onOpenBattleMenu={onOpenBattleMenu}
+    />
   ),
-  "labyrinth-map": ({ run, onOpenBattleMenu }) => (
-    <LabyrinthMapScreenRoute run={run} onOpenBattleMenu={onOpenBattleMenu} />
+  "labyrinth-map": ({ routeCommands, onOpenBattleMenu }) => (
+    <LabyrinthMapScreenRoute commands={routeCommands.runLoop} onOpenBattleMenu={onOpenBattleMenu} />
   ),
-  rewards: ({ run }) => <RewardsScreenRoute run={run} />,
-  "wildwood-recovery": ({ run }) => <WildwoodRecoveryScreenRoute run={run} />,
-  "wildwood-removal": ({ run }) => <WildwoodRemovalScreenRoute run={run} />,
-  destination: ({ run }) => <DestinationScreenRoute run={run} />,
-  campfire: ({ run }) => <CampfireScreenRoute run={run} />,
-  shop: ({ run }) => <ShopScreenRoute run={run} />,
-  alchemist: ({ run }) => <AlchemistScreenRoute run={run} />,
-  "trinket-shop": ({ run }) => <TrinketShopScreenRoute run={run} />,
-  "equipment-shop": ({ run }) => <EquipmentShopScreenRoute run={run} />,
-  mystery: ({ run }) => <MysteryScreenRoute run={run} />,
-  corruption: ({ run }) => <CorruptionScreenRoute run={run} />,
+  rewards: ({ routeCommands }) => <RewardsScreenRoute commands={routeCommands.runLoop} />,
+  "wildwood-recovery": ({ routeCommands }) => <WildwoodRecoveryScreenRoute commands={routeCommands.runLoop} />,
+  "wildwood-removal": ({ routeCommands }) => <WildwoodRemovalScreenRoute commands={routeCommands.runLoop} />,
+  destination: ({ routeCommands }) => <DestinationScreenRoute commands={routeCommands.runLoop} />,
+  campfire: ({ routeCommands }) => <CampfireScreenRoute commands={routeCommands.runLoop} />,
+  shop: ({ routeCommands }) => <ShopScreenRoute commands={routeCommands.runLoop} />,
+  alchemist: ({ routeCommands }) => <AlchemistScreenRoute commands={routeCommands.runLoop} />,
+  "trinket-shop": ({ routeCommands }) => <TrinketShopScreenRoute commands={routeCommands.runLoop} />,
+  "equipment-shop": ({ routeCommands }) => <EquipmentShopScreenRoute commands={routeCommands.runLoop} />,
+  mystery: ({ routeCommands }) => <MysteryScreenRoute commands={routeCommands.runLoop} />,
+  corruption: ({ routeCommands }) => <CorruptionScreenRoute commands={routeCommands.runLoop} />,
 };

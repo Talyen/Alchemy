@@ -26,17 +26,17 @@ import { flattenGearInventories } from "@/lib/gear";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 import { useShallow } from "zustand/react/shallow";
 
-function MenuScreenRoute({ run }: Pick<MetaRouteCtx, "run">) {
+function MenuScreenRoute({ commands }: { commands: MetaRouteCtx["routeCommands"]["meta"] }) {
   const { hasUnspentTalents, hasAffordableHomestead } = useAppScreenChrome();
   const isArmoryLocked = useGearStore((s) => flattenGearInventories(s.inventories).length === 0);
   return (
     <MenuScreen
-      onPlay={() => run.goToScreen("game-mode-select")}
-      onCollection={() => run.goToScreen("collection")}
-      onOptions={() => run.goToScreen("options")}
-      onHomestead={() => run.goToScreen("homestead")}
-      onTalents={() => run.goToScreen("talents")}
-      onArmory={() => run.goToScreen("armory")}
+      onPlay={() => commands.goToScreen("game-mode-select")}
+      onCollection={() => commands.goToScreen("collection")}
+      onOptions={() => commands.goToScreen("options")}
+      onHomestead={() => commands.goToScreen("homestead")}
+      onTalents={() => commands.goToScreen("talents")}
+      onArmory={() => commands.goToScreen("armory")}
       {...(platform.canQuit ? { onQuit: () => platform.quit() } : {})}
       logoSrc={menuLogo}
       logoSrcVariants={menuLogoVariants}
@@ -71,17 +71,17 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattl
   );
 }
 
-function GameModeSelectScreenRoute({ run }: Pick<MetaRouteCtx, "run">) {
+function GameModeSelectScreenRoute({ commands }: { commands: MetaRouteCtx["routeCommands"]["meta"] }) {
   const hasActiveRun = useHasActiveRun();
   const activeContentSystemType = useContentSystemType();
   return (
     <GameModeSelectScreen
       hasActiveRun={hasActiveRun}
       activeContentSystemType={activeContentSystemType}
-      onSelectCampaign={run.beginCampaign}
-      onSelectLabyrinth={run.beginLabyrinth}
-      onSelectWildwood={run.beginWildwood}
-      onBack={() => run.goToScreen("menu")}
+      onSelectCampaign={commands.beginCampaign}
+      onSelectLabyrinth={commands.beginLabyrinth}
+      onSelectWildwood={commands.beginWildwood}
+      onBack={() => commands.goToScreen("menu")}
     />
   );
 }
@@ -136,7 +136,13 @@ function HomesteadScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBa
   );
 }
 
-function TalentsScreenRoute({ run, onOpenBattleMenu }: Pick<MetaRouteCtx, "run" | "onOpenBattleMenu">) {
+function TalentsScreenRoute({
+  commands,
+  onOpenBattleMenu,
+}: {
+  commands: MetaRouteCtx["routeCommands"]["meta"];
+  onOpenBattleMenu: MetaRouteCtx["onOpenBattleMenu"];
+}) {
   const { talentXP, unlockedTalents } = useTalentProgressSlice();
 
   return (
@@ -144,8 +150,8 @@ function TalentsScreenRoute({ run, onOpenBattleMenu }: Pick<MetaRouteCtx, "run" 
       talentXP={talentXP}
       unlockedTalents={unlockedTalents}
       onOpenMenu={onOpenBattleMenu}
-      onUnlockTalent={run.unlockTalent}
-      onResetTalents={run.resetUnlockedTalents}
+      onUnlockTalent={commands.unlockTalent}
+      onResetTalents={commands.resetUnlockedTalents}
     />
   );
 }
@@ -158,10 +164,12 @@ export const metaScreenRoutes: {
   talents: (ctx: MetaRouteCtx) => ReactNode;
   armory: (ctx: MetaRouteCtx) => ReactNode;
 } = {
-  menu: ({ run }) => <MenuScreenRoute run={run} />,
-  "game-mode-select": ({ run }) => <GameModeSelectScreenRoute run={run} />,
+  menu: ({ routeCommands }) => <MenuScreenRoute commands={routeCommands.meta} />,
+  "game-mode-select": ({ routeCommands }) => <GameModeSelectScreenRoute commands={routeCommands.meta} />,
   collection: ({ onOpenBattleMenu }) => <CollectionScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
   homestead: ({ onOpenBattleMenu }) => <HomesteadScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
-  talents: ({ run, onOpenBattleMenu }) => <TalentsScreenRoute run={run} onOpenBattleMenu={onOpenBattleMenu} />,
+  talents: ({ routeCommands, onOpenBattleMenu }) => (
+    <TalentsScreenRoute commands={routeCommands.meta} onOpenBattleMenu={onOpenBattleMenu} />
+  ),
   armory: ({ onOpenBattleMenu }) => <ArmoryScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
 };

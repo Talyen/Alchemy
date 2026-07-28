@@ -135,7 +135,7 @@ function AppMainContent({
         >
           <RenderAlchemyScreen
             screen={renderedScreen}
-            run={run}
+            routeCommands={run.routeCommands}
             battleBindings={run.battleBindings}
             onOpenBattleMenu={gameMenu.openBattleMenu}
             onClearSaveData={dev.clearSaveData}
