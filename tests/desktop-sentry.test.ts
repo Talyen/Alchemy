@@ -91,6 +91,16 @@ describe("desktop crash reporting", () => {
       user: { id: "steam-id" },
       request: { url: "https://example.invalid/?token=secret" },
       tags: { source: "react", steamName: "Player" },
+      debug_meta: {
+        images: [
+          {
+            code_file: "C:\\Users\\player\\assets\\index.js",
+            debug_id: "source-map-debug-id",
+            image_addr: "secret",
+            type: "sourcemap",
+          },
+        ],
+      },
       exception: {
         values: [
           {
@@ -104,6 +114,15 @@ describe("desktop crash reporting", () => {
     expect(scrubbed).not.toHaveProperty("user");
     expect(scrubbed).not.toHaveProperty("request");
     expect(scrubbed?.tags).toEqual({ source: "react" });
+    expect(scrubbed?.debug_meta).toEqual({
+      images: [
+        {
+          code_file: "[local-path]",
+          debug_id: "source-map-debug-id",
+          type: "sourcemap",
+        },
+      ],
+    });
     expect(scrubRendererEvent({ release: "alchemy@1.2.3" })?.release).toBe("alchemy@1.2.3");
     expect(JSON.stringify(scrubbed)).not.toContain("player");
   });

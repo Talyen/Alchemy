@@ -9,6 +9,22 @@ function scrubText(value: unknown): unknown {
   return typeof value === "string" ? value.replace(ABSOLUTE_PATH_PATTERN, "[local-path]") : value;
 }
 
+function scrubDebugMeta(debugMeta: unknown): Record<string, unknown> | undefined {
+  if (!debugMeta || typeof debugMeta !== "object") return undefined;
+  const images = (debugMeta as { images?: unknown }).images;
+  if (!Array.isArray(images)) return undefined;
+  return {
+    images: images.map((image) => {
+      const candidate = image && typeof image === "object" ? (image as Record<string, unknown>) : {};
+      return {
+        code_file: scrubText(candidate.code_file),
+        debug_id: typeof candidate.debug_id === "string" ? candidate.debug_id : undefined,
+        type: typeof candidate.type === "string" ? candidate.type : undefined,
+      };
+    }),
+  };
+}
+
 export function scrubRendererEvent(event: Record<string, unknown>): Record<string, unknown> | null {
   try {
     const originalTags = (event.tags ?? {}) as Record<string, unknown>;
@@ -27,6 +43,7 @@ export function scrubRendererEvent(event: Record<string, unknown>): Record<strin
         }
       | undefined;
     return {
+      debug_meta: scrubDebugMeta(event.debug_meta),
       event_id: event.event_id,
       exception: exception
         ? {
