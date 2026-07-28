@@ -106,7 +106,15 @@ describe("desktop crash reporting", () => {
           {
             type: "Error",
             value: "failed at /Users/player/save.json",
-            stacktrace: { frames: [{ filename: "C:\\Users\\player\\game.js", lineno: 10 }] },
+            stacktrace: {
+              frames: [
+                {
+                  debug_id: "source-map-debug-id",
+                  filename: "C:\\Users\\player\\game.js",
+                  lineno: 10,
+                },
+              ],
+            },
           },
         ],
       },
@@ -122,6 +130,20 @@ describe("desktop crash reporting", () => {
           type: "sourcemap",
         },
       ],
+    });
+    expect(
+      (
+        scrubbed?.exception as {
+          values?: Array<{ stacktrace?: { frames?: Array<Record<string, unknown>> } }>;
+        }
+      ).values?.[0]?.stacktrace?.frames?.[0],
+    ).toEqual({
+      colno: undefined,
+      debug_id: "source-map-debug-id",
+      filename: "[local-path]",
+      function: undefined,
+      in_app: undefined,
+      lineno: 10,
     });
     expect(scrubRendererEvent({ release: "alchemy@1.2.3" })?.release).toBe("alchemy@1.2.3");
     expect(JSON.stringify(scrubbed)).not.toContain("player");

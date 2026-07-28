@@ -53,6 +53,7 @@ export function scrubRendererEvent(event: Record<string, unknown>): Record<strin
                 ? {
                     frames: value.stacktrace.frames?.map((frame) => ({
                       colno: frame.colno,
+                      debug_id: typeof frame.debug_id === "string" ? frame.debug_id : undefined,
                       filename: scrubText(frame.filename),
                       function: frame.function,
                       in_app: frame.in_app,
