@@ -1895,6 +1895,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Docs
 
+- docs(audits): add orchestration skill
 - docs: correct stale navigation, autosave, and materials paths
   Fix ARCHITECTURE screen-transition module name, ARMORY autosave
   API/file claims, and WORKFLOWS run-flow-handlers paths.
