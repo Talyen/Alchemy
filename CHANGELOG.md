@@ -1754,6 +1754,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Tests
 
+- test(desktop): symbolicate renderer crash probe
 - test(desktop): expose Sentry startup checkpoints
 - test(desktop): automate Sentry crash verification
 - test(e2e): expect Wheat Field as a visible homestead farm plot
