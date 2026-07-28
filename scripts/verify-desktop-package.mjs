@@ -24,6 +24,31 @@ const executable =
       : join(appDirectory, "alchemy");
 if (!existsSync(executable)) throw new Error(`Packaged executable is missing: ${executable}`);
 
+const snapshotDirectories =
+  artifactPlatform === "darwin"
+    ? [
+        join(
+          appDirectory,
+          "Alchemy.app",
+          "Contents",
+          "Frameworks",
+          "Electron Framework.framework",
+          "Versions",
+          "A",
+          "Resources",
+        ),
+      ]
+    : [appDirectory];
+if (
+  !snapshotDirectories.some(
+    (directory) =>
+      existsSync(directory) &&
+      readdirSync(directory).some((name) => name.startsWith("browser_v8_context_snapshot") && name.endsWith(".bin")),
+  )
+) {
+  throw new Error("The browser-process V8 snapshot required by the enabled fuse is missing.");
+}
+
 const wire = await getCurrentFuseWire(executable);
 const requiredFuses = new Map([
   [FuseV1Options.RunAsNode, FuseState.DISABLE],

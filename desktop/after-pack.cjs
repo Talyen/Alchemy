@@ -1,4 +1,6 @@
 const path = require("node:path");
+const { copyFile } = require("node:fs/promises");
+const { glob } = require("node:fs/promises");
 const { flipFuses, FuseV1Options, FuseVersion } = require("@electron/fuses");
 
 module.exports = async function hardenElectronAfterPack(context) {
@@ -17,6 +19,18 @@ module.exports = async function hardenElectronAfterPack(context) {
           context.packager.appInfo.productFilename,
         )
       : path.join(context.appOutDir, executableName);
+
+  // Electron does not ship a browser-specific snapshot. Enabling the fuse
+  // without installing one makes the executable abort before JavaScript starts.
+  for await (const defaultSnapshot of glob("**/v8_context_snapshot*.bin", {
+    cwd: context.appOutDir,
+  })) {
+    const snapshotDirectory = path.dirname(defaultSnapshot);
+    await copyFile(
+      path.join(context.appOutDir, defaultSnapshot),
+      path.join(context.appOutDir, snapshotDirectory, "browser_v8_context_snapshot.bin"),
+    );
+  }
 
   await flipFuses(executablePath, {
     version: FuseVersion.V1,
