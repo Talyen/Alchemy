@@ -1757,6 +1757,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Tests
 
+- test(desktop): remove Sentry crash harness
 - test(desktop): symbolicate renderer crash probe
 - test(desktop): expose Sentry startup checkpoints
 - test(desktop): automate Sentry crash verification
