@@ -1,0 +1,4 @@
+interface:
+  display_name: "Run Alchemy Audits"
+  short_description: "Orchestrate evidence-led Alchemy audit passes"
+  default_prompt: "Use $run-audits to run the cited Alchemy audits and implement confirmed findings."
