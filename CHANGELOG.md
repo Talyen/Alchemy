@@ -421,6 +421,12 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(shop): thread injected RNG through all shop refresh paths
+  Equipment already honored deps.rng; merchant, alchemist, and trinket
+  init/refresh still fell back to Math.random.
+- fix(persistence): guard finalizeRunEndSession against double material grant
+  Re-entry on run end could award homestead materials twice; return early
+  when hasActiveRun is already cleared.
 - fix(test): use interfaces for CI summarize script types
 - fix(test): declare types for CI summarize script imports
 - fix(test): raise ESLint stacking lintFiles timeout for CI
@@ -952,6 +958,26 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(save): compose domain persistence codecs
+- refactor(run): persist deterministic rng streams
+- refactor(state): separate runtime ownership by lifetime
+- refactor(shell): scope commands by route phase
+- refactor(run-flow): scope transition claims to run state
+- refactor(persistence): dedupe ProgressSnapshot and drop unused re-export
+  Share one ProgressSnapshot type across save flush/build and remove the
+  facade re-export of readPermanentProgressForSave.
+- refactor(imports): break save and utils circular dependency cycles
+  Extract run-save-readers for persistence snapshots and move
+  useDevShortcuts to the app layer so madge reports zero cycles.
+- refactor(ui): share ScreenHeaderRow and RunEndScreen shells
+  Collapse six meta header twins and the victory/defeat run-end markup
+  into shared primitives while keeping thin route wrappers.
+- refactor(ui): extract ScreenShell and tokenize armory transfer menu
+  Collapse duplicated meta-screen shell chrome into a shared primitive
+  and replace stone color literals with theme tokens.
+- refactor(types): remove hot-path casts on shop, save, and enemy turn
+  Generic shop refresh, explicit save progress branching, and a
+  discriminated EndPlayerTurnResolution replace unsafe escapes.
 - refactor(architecture): nest progress lifetimes and extract shared/run-flow
   Split progress into run vs permanent subtrees, move destination/campaign
   helpers to shared/run-flow, and enforce run-setup/run-loop boundaries.
@@ -1726,6 +1752,15 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Tests
 
+- test(e2e): expect Wheat Field as a visible homestead farm plot
+  Product already restored wheat-field; the E2E assertion still treated
+  it as a hidden placeholder.
+- test(e2e): replace homestead tab layout waitForTimeout with anchors
+  Wait on tab-specific content instead of a fixed 300ms delay before
+  measuring shell height.
+- test(unit): drop redundant and empty battle coverage
+  Remove a feature-shell echo of start-health, comment-only combat-text
+  cases, and a duplicate getEnemyDamageMultiplier baseline.
 - test: update stale suite expectations
 - test(types): align battle tests with status model
 - test(e2e): stabilize prepush battle fixtures
@@ -1860,6 +1895,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Docs
 
+- docs: correct stale navigation, autosave, and materials paths
+  Fix ARCHITECTURE screen-transition module name, ARMORY autosave
+  API/file claims, and WORKFLOWS run-flow-handlers paths.
 - docs(audits): let agents choose discovery and fix strategy
   Make audit probes optional signals, have passes fix confirmed findings,
   and point verification at CONTRIBUTING gates instead of restating them.
@@ -1916,6 +1954,10 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore(architecture): align strict integration contracts
+- chore(dead-code): remove unused shim and UI token exports
+  Delete the test-only run-navigation-helpers re-export plus unused
+  popupClassName and BUTTON_HEIGHT_LG.
 - chore(lint): harden quality gates
 - chore(config): set shell to pwsh
 - chore(docs): sync PROMPTS.md audit format
