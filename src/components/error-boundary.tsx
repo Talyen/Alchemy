@@ -30,6 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
       label ? { screen: label } : undefined,
       error.stack ?? undefined,
       info.componentStack ?? undefined,
+      error,
     );
     this.props.onError?.(error, info);
   }

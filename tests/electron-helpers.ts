@@ -45,7 +45,7 @@ function getElectronExecutablePath(): string {
   return executablePath;
 }
 
-export async function launchElectronApp(): Promise<ElectronApplication> {
+export async function launchElectronApp(options: { packagedRenderer?: boolean } = {}): Promise<ElectronApplication> {
   const args = process.env.CI ? [".", "--no-sandbox", "--disable-gpu"] : ["."];
 
   return electron.launch({
@@ -55,6 +55,7 @@ export async function launchElectronApp(): Promise<ElectronApplication> {
     env: {
       ...process.env,
       ELECTRON_RENDERER_URL: rendererUrl,
+      ...(options.packagedRenderer ? { ELECTRON_FORCE_PACKAGED_RENDERER: "1" } : {}),
     },
   });
 }

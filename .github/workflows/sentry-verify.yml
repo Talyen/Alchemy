@@ -1,0 +1,65 @@
+name: Sentry Private Verification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sentry-private-verification
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build private Windows crash-test package
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm install -g npm@11 && npm ci
+
+      - name: Require complete Sentry configuration
+        shell: pwsh
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          $names = @("SENTRY_DSN", "SENTRY_AUTH_TOKEN", "SENTRY_ORG", "SENTRY_PROJECT")
+          foreach ($name in $names) {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+              throw "Required GitHub Actions secret is missing: $name"
+            }
+          }
+
+      - name: Choose isolated Sentry release
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          "SENTRY_RELEASE=alchemy@$version-sentry-test.${{ github.run_number }}" >> $env:GITHUB_ENV
+
+      - name: Build hardened crash-test installer
+        run: npm run dist:desktop
+        env:
+          CI_RELEASE: "true"
+          SENTRY_CRASH_TEST_BUILD: "true"
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+
+      - name: Upload private installer
+        uses: actions/upload-artifact@v5
+        with:
+          name: alchemy-sentry-crash-test-${{ github.run_number }}
+          path: release-desktop/*.exe
+          if-no-files-found: error
+          retention-days: 3

@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const electronRoot = path.join(projectRoot, "node_modules", "electron");
 const pathMarkerFile = path.join(projectRoot, "test-results", ".electron-executable-path");
-const MIN_BINARY_BYTES = 10_000_000;
+// macOS Electron uses a small Mach-O launcher; the Chromium binary lives in
+// Electron Framework.framework. Windows/Linux keep the larger direct binary.
+const MIN_BINARY_BYTES = process.platform === "darwin" ? 20_000 : 10_000_000;
 
 export function platformPath() {
   switch (process.platform) {

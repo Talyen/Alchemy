@@ -7,6 +7,9 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { cursorArt } from "./lib/game-data/assets";
+import { initializeRendererCrashReporting } from "./lib/crash-reporting";
+
+initializeRendererCrashReporting();
 
 // Use pointer_c_shaded for all cursor variants — no special effects.
 // Same image throughout; different CSS fallbacks if the image fails.

@@ -1,53 +1,69 @@
-// Electron main process for the Windows desktop build. It owns the native window
-// and loads either the Vite dev server or the packaged renderer files.
-const { app, BrowserWindow, ipcMain, Menu } = require("electron");
-const path = require("node:path");
+// Electron main process for the Windows desktop build. It owns the native
+// security boundary and loads either loopback Vite or the packaged renderer.
+const { app, BrowserWindow, ipcMain, Menu, net, protocol, session } = require("electron");
 const fs = require("node:fs");
+const path = require("node:path");
+const { pathToFileURL } = require("node:url");
 
-// Enable Steam overlay in Electron if steamworks.js is available
-const STEAM_APP_ID = Number.parseInt(process.env.STEAM_APP_ID ?? "480", 10);
-let steamClient = null;
-try {
-  const steamworks = require("steamworks.js");
-  steamworks.electronEnableSteamOverlay();
-  steamClient = steamworks.init(STEAM_APP_ID);
-  console.log("Steamworks initialized successfully. Player name:", steamClient.localplayer.getName());
-} catch (error) {
-  console.warn("Failed to initialize Steamworks (Steam might not be running):", error.message);
-}
+const {
+  APP_ORIGIN,
+  APP_PROTOCOL,
+  MAX_SAVE_PAYLOAD_BYTES,
+  PACKAGED_CSP,
+  assertAuthorizedIpcEvent,
+  isAllowedRendererUrl,
+  isDisplayMode,
+  isRichPresenceKey,
+  isRichPresenceValue,
+  isSavePayload,
+  parseDevServerUrl,
+  resolveAppAssetPath,
+} = require("./security.cjs");
+const { initializeMainSentry } = require("./sentry.cjs");
+const { armSentryCrashTest, resolveSentryCrashTestMode } = require("./sentry-crash-test.cjs");
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: APP_PROTOCOL,
+    privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+      stream: true,
+    },
+  },
+]);
+
+const CRASH_REPORTING_ENABLED = initializeMainSentry(app);
+const SENTRY_CRASH_TEST_MODE = resolveSentryCrashTestMode(app, CRASH_REPORTING_ENABLED);
 
 const DEV_SERVER_URL = process.env.ELECTRON_RENDERER_URL ?? "http://127.0.0.1:5173";
+const USE_PACKAGED_RENDERER = app.isPackaged || process.env.ELECTRON_FORCE_PACKAGED_RENDERER === "1";
+const RENDERER_POLICY = { packaged: USE_PACKAGED_RENDERER, devServerUrl: DEV_SERVER_URL };
+const RENDERER_ROOT = path.join(__dirname, "..", "dist");
 const WINDOWED_SIZE = { width: 1280, height: 720 };
 const SAVE_FILE_PATH = path.join(app.getPath("userData"), "save.json");
 const SAVE_TMP_PATH = path.join(app.getPath("userData"), "save.json.tmp");
 const SAVE_BAK_PATHS = [1, 2, 3].map((i) => path.join(app.getPath("userData"), `save.json.bak.${i}`));
+let mainWindow = null;
+let steamClient = null;
 
-function isDisplayMode(value) {
-  return value === "windowed" || value === "borderless-fullscreen" || value === "fullscreen";
+if (!USE_PACKAGED_RENDERER) parseDevServerUrl(DEV_SERVER_URL);
+
+function initializeSteamworks() {
+  const steamAppId = Number.parseInt(process.env.STEAM_APP_ID ?? "480", 10);
+  try {
+    const steamworks = require("steamworks.js");
+    steamworks.electronEnableSteamOverlay();
+    steamClient = steamworks.init(steamAppId);
+    console.log("Steamworks initialized successfully.");
+  } catch (error) {
+    console.warn("Failed to initialize Steamworks (Steam might not be running):", error.message);
+  }
 }
 
-const MAX_SAVE_PAYLOAD_BYTES = 4 * 1024 * 1024;
-const MAX_RICH_PRESENCE_KEY_LEN = 64;
-const MAX_RICH_PRESENCE_VALUE_LEN = 256;
-
-function assertSavePayload(data) {
-  return typeof data === "string" && Buffer.byteLength(data, "utf8") <= MAX_SAVE_PAYLOAD_BYTES;
-}
-
-function assertRichPresenceKey(key) {
-  return typeof key === "string" && key.length > 0 && key.length <= MAX_RICH_PRESENCE_KEY_LEN;
-}
-
-function assertRichPresenceValue(value) {
-  return typeof value === "string" && value.length <= MAX_RICH_PRESENCE_VALUE_LEN;
-}
-
-function getMainWindow() {
-  return BrowserWindow.getAllWindows()[0];
-}
-
-function setRendererFullscreen(mainWindow, enabled) {
-  return mainWindow.webContents
+function setRendererFullscreen(window, enabled) {
+  return window.webContents
     .executeJavaScript(
       enabled
         ? "document.fullscreenElement || document.documentElement.requestFullscreen?.()"
@@ -57,23 +73,192 @@ function setRendererFullscreen(mainWindow, enabled) {
     .catch(() => undefined);
 }
 
-function applyDisplayMode(mainWindow, mode) {
+function applyDisplayMode(window, mode) {
   if (mode === "windowed") {
-    setRendererFullscreen(mainWindow, false);
-    mainWindow.setFullScreen(false);
-    mainWindow.setResizable(true);
-    mainWindow.setSize(WINDOWED_SIZE.width, WINDOWED_SIZE.height);
-    mainWindow.center();
+    setRendererFullscreen(window, false);
+    window.setFullScreen(false);
+    window.setResizable(true);
+    window.setSize(WINDOWED_SIZE.width, WINDOWED_SIZE.height);
+    window.center();
     return;
   }
+  window.setResizable(true);
+  window.setFullScreen(true);
+  setRendererFullscreen(window, mode === "fullscreen");
+}
 
-  mainWindow.setResizable(true);
-  mainWindow.setFullScreen(true);
-  setRendererFullscreen(mainWindow, mode === "fullscreen");
+function authorize(event) {
+  assertAuthorizedIpcEvent(event, mainWindow, RENDERER_POLICY);
+}
+
+function handleAuthorized(channel, handler) {
+  ipcMain.handle(channel, (event, ...args) => {
+    authorize(event);
+    return handler(...args);
+  });
+}
+
+function registerIpcHandlers() {
+  handleAuthorized("alchemy:quit", () => app.quit());
+  handleAuthorized("alchemy:set-display-mode", (mode) => {
+    if (isDisplayMode(mode) && mainWindow) applyDisplayMode(mainWindow, mode);
+  });
+
+  handleAuthorized("alchemy:list-save-candidates", async () => {
+    const candidates = [];
+    for (const filePath of [SAVE_FILE_PATH, ...SAVE_BAK_PATHS]) {
+      try {
+        const data = await fs.promises.readFile(filePath, "utf8");
+        if (isSavePayload(data)) candidates.push(data);
+      } catch (error) {
+        if (error?.code === "ENOENT") continue;
+        console.error(`Error reading save candidate ${filePath}:`, error);
+      }
+    }
+    return candidates;
+  });
+
+  handleAuthorized("alchemy:write-save", async (data) => {
+    if (!isSavePayload(data)) return false;
+    try {
+      await fs.promises.mkdir(path.dirname(SAVE_FILE_PATH), { recursive: true });
+      const handle = await fs.promises.open(SAVE_TMP_PATH, "w");
+      try {
+        await handle.writeFile(data, "utf8");
+        await handle.datasync();
+      } finally {
+        await handle.close();
+      }
+      for (let index = SAVE_BAK_PATHS.length - 1; index >= 0; index -= 1) {
+        const to = SAVE_BAK_PATHS[index];
+        const from = index === 0 ? SAVE_FILE_PATH : SAVE_BAK_PATHS[index - 1];
+        try {
+          await fs.promises.access(from, fs.constants.F_OK);
+        } catch (error) {
+          if (error?.code === "ENOENT") continue;
+          throw error;
+        }
+        if (index === SAVE_BAK_PATHS.length - 1) {
+          await fs.promises.unlink(to).catch((error) => {
+            if (error?.code !== "ENOENT") throw error;
+          });
+        }
+        await fs.promises.rename(from, to);
+      }
+      await fs.promises.rename(SAVE_TMP_PATH, SAVE_FILE_PATH);
+      return true;
+    } catch (error) {
+      await fs.promises.unlink(SAVE_TMP_PATH).catch((cleanupError) => {
+        if (cleanupError?.code !== "ENOENT") console.error("Error cleaning up temp save file:", cleanupError);
+      });
+      console.error("Error writing save file:", error);
+      return false;
+    }
+  });
+
+  handleAuthorized("alchemy:clear-save", async () => {
+    try {
+      await fs.promises.unlink(SAVE_FILE_PATH);
+      return true;
+    } catch (error) {
+      if (error?.code === "ENOENT") return true;
+      console.error("Error clearing save file:", error);
+      return false;
+    }
+  });
+
+  handleAuthorized("alchemy:steam-cloud-read", async () => {
+    if (!steamClient) return null;
+    try {
+      if (!steamClient.cloud.fileExists("save.json")) return null;
+      const buffer = await steamClient.cloud.readFile("save.json");
+      if (buffer && buffer.length > MAX_SAVE_PAYLOAD_BYTES) {
+        console.error(`Steam Cloud save exceeds ${MAX_SAVE_PAYLOAD_BYTES} bytes; ignoring.`);
+        return null;
+      }
+      return buffer ? buffer.toString("utf8") : null;
+    } catch (error) {
+      console.error("Error reading Steam Cloud save:", error);
+      return null;
+    }
+  });
+
+  handleAuthorized("alchemy:steam-cloud-write", async (data) => {
+    if (!steamClient || !isSavePayload(data)) return false;
+    try {
+      return steamClient.cloud.writeFile("save.json", data);
+    } catch (error) {
+      console.error("Error writing Steam Cloud save:", error);
+      return false;
+    }
+  });
+
+  handleAuthorized("alchemy:steam-cloud-delete", async () => {
+    if (!steamClient) return false;
+    try {
+      return steamClient.cloud.fileExists("save.json") ? steamClient.cloud.deleteFile("save.json") : true;
+    } catch (error) {
+      console.error("Error deleting Steam Cloud save:", error);
+      return false;
+    }
+  });
+
+  handleAuthorized("alchemy:steam-get-name", () => {
+    try {
+      return steamClient?.localplayer.getName() ?? null;
+    } catch (error) {
+      console.error("Error getting Steam name:", error);
+      return null;
+    }
+  });
+
+  handleAuthorized("alchemy:steam-set-rich-presence", (key, value) => {
+    if (!isRichPresenceKey(key) || !isRichPresenceValue(value) || !steamClient) return false;
+    try {
+      return steamClient.localplayer.setRichPresence(key, value);
+    } catch (error) {
+      console.error("Error setting Steam rich presence:", error);
+      return false;
+    }
+  });
+}
+
+async function registerRendererProtocol() {
+  if (!USE_PACKAGED_RENDERER) return;
+  await protocol.handle(APP_PROTOCOL, async (request) => {
+    const assetPath = resolveAppAssetPath(RENDERER_ROOT, request.url);
+    if (!assetPath) return new Response("Not found", { status: 404 });
+    try {
+      const stats = await fs.promises.stat(assetPath);
+      if (!stats.isFile()) return new Response("Not found", { status: 404 });
+      return net.fetch(pathToFileURL(assetPath).toString());
+    } catch {
+      return new Response("Not found", { status: 404 });
+    }
+  });
+}
+
+function applySessionSecurity() {
+  const activeSession = session.defaultSession;
+  activeSession.setPermissionCheckHandler(() => false);
+  activeSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
+  activeSession.on("will-download", (event) => event.preventDefault());
+  activeSession.webRequest.onHeadersReceived((details, callback) => {
+    if (!USE_PACKAGED_RENDERER || !details.url.startsWith(`${APP_ORIGIN}/`)) {
+      callback({ responseHeaders: details.responseHeaders });
+      return;
+    }
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        "Content-Security-Policy": [PACKAGED_CSP],
+      },
+    });
+  });
 }
 
 function createMainWindow() {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: WINDOWED_SIZE.width,
     height: WINDOWED_SIZE.height,
     minWidth: 960,
@@ -82,224 +267,58 @@ function createMainWindow() {
     backgroundColor: "#120d0a",
     show: false,
     webPreferences: {
-      preload: path.join(__dirname, "preload.cjs"),
+      allowRunningInsecureContent: false,
       contextIsolation: true,
+      devTools: !USE_PACKAGED_RENDERER,
+      experimentalFeatures: false,
       nodeIntegration: false,
+      additionalArguments: CRASH_REPORTING_ENABLED ? ["--alchemy-crash-reporting-enabled"] : [],
+      preload: path.join(__dirname, "preload.cjs"),
       sandbox: true,
+      webSecurity: true,
+      webviewTag: false,
     },
   });
 
-  mainWindow.once("ready-to-show", () => mainWindow.show());
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (!isAllowedRendererUrl(url, RENDERER_POLICY)) event.preventDefault();
+  });
+  mainWindow.webContents.on("will-frame-navigate", (event, details) => {
+    if (!details.isMainFrame || !isAllowedRendererUrl(details.url, RENDERER_POLICY)) event.preventDefault();
+  });
+  mainWindow.webContents.on("will-redirect", (event) => event.preventDefault());
+  mainWindow.once("ready-to-show", () => mainWindow?.show());
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
   Menu.setApplicationMenu(null);
-
-  if (app.isPackaged) {
-    mainWindow.loadFile(path.join(__dirname, "..", "dist", "index.html"));
-  } else {
-    mainWindow.loadURL(DEV_SERVER_URL);
-  }
+  armSentryCrashTest(mainWindow, SENTRY_CRASH_TEST_MODE);
+  void mainWindow.loadURL(USE_PACKAGED_RENDERER ? `${APP_ORIGIN}/` : DEV_SERVER_URL);
 }
 
-app.whenReady().then(() => {
-  ipcMain.handle("alchemy:quit", () => app.quit());
-  ipcMain.handle("alchemy:set-display-mode", (_event, mode) => {
-    if (!isDisplayMode(mode)) {
-      return;
-    }
+app.whenReady().then(async () => {
+  await registerRendererProtocol();
+  applySessionSecurity();
+  registerIpcHandlers();
+  initializeSteamworks();
 
-    const mainWindow = getMainWindow();
-    if (mainWindow) {
-      applyDisplayMode(mainWindow, mode);
-    }
-  });
-
-  // Asynchronous Save/Load handlers
-
-  // Returns every save candidate the renderer can walk, in preference order
-  // (local, bak.1, bak.2, bak.3). Each string is a raw file payload that the
-  // renderer parses and validates; this handler only does cheap I/O and size
-  // filtering.
-  ipcMain.handle("alchemy:list-save-candidates", async () => {
-    const candidates = [];
-    const localPaths = [SAVE_FILE_PATH, ...SAVE_BAK_PATHS];
-    for (const filePath of localPaths) {
-      try {
-        const data = await fs.promises.readFile(filePath, "utf8");
-        if (typeof data === "string" && Buffer.byteLength(data, "utf8") <= MAX_SAVE_PAYLOAD_BYTES) {
-          candidates.push(data);
-        }
-      } catch (err) {
-        if (err && err.code === "ENOENT") continue;
-        console.error(`Error reading save candidate ${filePath}:`, err);
-      }
-    }
-    return candidates;
-  });
-
-  ipcMain.handle("alchemy:write-save", async (_event, data) => {
-    if (!assertSavePayload(data)) {
-      return false;
-    }
-    try {
-      const dir = path.dirname(SAVE_FILE_PATH);
-      if (!fs.existsSync(dir)) {
-        await fs.promises.mkdir(dir, { recursive: true });
-      }
-
-      // 1. Write to save.json.tmp in the same directory (required for Windows
-      //    MoveFileEx replace semantics to be atomic across volumes).
-      const handle = await fs.promises.open(SAVE_TMP_PATH, "w");
-      try {
-        await handle.writeFile(data, "utf8");
-        await handle.fdatasync();
-      } finally {
-        await handle.close();
-      }
-
-      // 2. Rotate backups: save.json -> bak.1 -> bak.2 -> bak.3 (delete oldest).
-      //    Iterate from highest index down so we never clobber a slot we still need.
-      for (let i = SAVE_BAK_PATHS.length - 1; i >= 0; i -= 1) {
-        const to = SAVE_BAK_PATHS[i];
-        const from = i === 0 ? SAVE_FILE_PATH : SAVE_BAK_PATHS[i - 1];
-        try {
-          await fs.promises.access(from, fs.constants.F_OK);
-        } catch (err) {
-          if (err && err.code === "ENOENT") continue;
-          throw err;
-        }
-        if (i === SAVE_BAK_PATHS.length - 1) {
-          try {
-            await fs.promises.unlink(to);
-          } catch (err) {
-            if (!err || err.code !== "ENOENT") throw err;
-          }
-        }
-        await fs.promises.rename(from, to, { overwrite: true });
-      }
-
-      // 3. Final atomic swap.
-      await fs.promises.rename(SAVE_TMP_PATH, SAVE_FILE_PATH, { overwrite: true });
-      return true;
-    } catch (error) {
-      // Best-effort cleanup of partial temp file.
-      try {
-        await fs.promises.unlink(SAVE_TMP_PATH);
-      } catch (err) {
-        if (!err || err.code !== "ENOENT") {
-          console.error("Error cleaning up temp save file:", err);
-        }
-      }
-      console.error("Error writing save file:", error);
-      return false;
-    }
-  });
-
-  ipcMain.handle("alchemy:clear-save", async () => {
-    try {
-      await fs.promises.unlink(SAVE_FILE_PATH);
-      return true;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        return true;
-      }
-      console.error("Error clearing save file:", error);
-      return false;
-    }
-  });
-
-  // Steam Cloud Save Handlers
-  ipcMain.handle("alchemy:steam-cloud-read", async () => {
-    if (!steamClient) return null;
-    try {
-      if (steamClient.cloud.fileExists("save.json")) {
-        const buf = await steamClient.cloud.readFile("save.json");
-        // Reject oversized cloud blobs before they hit the renderer.
-        if (buf && buf.length > MAX_SAVE_PAYLOAD_BYTES) {
-          console.error(`Steam Cloud save exceeds ${MAX_SAVE_PAYLOAD_BYTES} bytes (got ${buf.length}); ignoring.`);
-          return null;
-        }
-        return buf ? buf.toString("utf8") : null;
-      }
-    } catch (err) {
-      console.error("Error reading Steam Cloud save:", err);
-    }
-    return null;
-  });
-
-  ipcMain.handle("alchemy:steam-cloud-write", async (_event, data) => {
-    if (!steamClient) return false;
-    if (!assertSavePayload(data)) {
-      return false;
-    }
-    try {
-      return steamClient.cloud.writeFile("save.json", data);
-    } catch (err) {
-      console.error("Error writing Steam Cloud save:", err);
-      return false;
-    }
-  });
-
-  ipcMain.handle("alchemy:steam-cloud-delete", async () => {
-    if (!steamClient) return false;
-    try {
-      if (steamClient.cloud.fileExists("save.json")) {
-        return steamClient.cloud.deleteFile("save.json");
-      }
-      return true;
-    } catch (err) {
-      console.error("Error deleting Steam Cloud save:", err);
-      return false;
-    }
-  });
-
-  // Steam API Handlers
-  ipcMain.handle("alchemy:steam-get-name", () => {
-    if (steamClient) {
-      try {
-        return steamClient.localplayer.getName();
-      } catch (err) {
-        console.error("Error getting Steam name:", err);
-      }
-    }
-    return null;
-  });
-
-  ipcMain.handle("alchemy:steam-set-rich-presence", (_event, key, value) => {
-    if (!assertRichPresenceKey(key) || !assertRichPresenceValue(value)) {
-      return false;
-    }
-    if (steamClient) {
-      try {
-        console.log(`Setting Steam rich presence: ${key} = ${value}`);
-        return steamClient.localplayer.setRichPresence(key, value);
-      } catch (err) {
-        console.error(`Error setting rich presence ${key}:`, err);
-      }
-    }
-    return false;
-  });
-
-  // Keep Steam callbacks firing if steamworks client exists
-  if (steamClient && steamClient.callback) {
+  if (steamClient?.callback) {
     setInterval(() => {
       try {
         steamClient.callback.runCallbacks();
-      } catch (err) {
-        console.error("Error running Steam callbacks:", err);
+      } catch (error) {
+        console.error("Error running Steam callbacks:", error);
       }
     }, 50);
   }
 
   createMainWindow();
-
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createMainWindow();
-    }
+    if (!mainWindow) createMainWindow();
   });
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
+  if (process.platform !== "darwin") app.quit();
 });

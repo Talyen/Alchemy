@@ -1,6 +1,7 @@
 interface Window {
   alchemyDesktop?: {
     isDesktop: boolean;
+    crashReportingEnabled?: boolean;
     setDisplayMode: (mode: "windowed" | "borderless-fullscreen" | "fullscreen") => Promise<void>;
     quit: () => Promise<void>;
     listSaveCandidates: () => Promise<string[]>;

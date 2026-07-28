@@ -1,5 +1,5 @@
 // Runs electron-builder for each target declared in steam/platforms.json.
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
@@ -7,6 +7,41 @@ import { spawnSync } from "node:child_process";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const config = JSON.parse(readFileSync(join(root, "steam/platforms.json"), "utf8"));
 const targets = config.targets ?? ["win"];
+const sentryDsn = process.env.SENTRY_DSN?.trim() ?? "";
+const releaseVersion = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
+const sentryRelease = process.env.SENTRY_RELEASE?.trim() || `alchemy@${releaseVersion}`;
+const sentryCrashTestBuild = process.env.SENTRY_CRASH_TEST_BUILD === "true";
+const sentryUploadFields = [
+  process.env.SENTRY_AUTH_TOKEN?.trim(),
+  process.env.SENTRY_ORG?.trim(),
+  process.env.SENTRY_PROJECT?.trim(),
+];
+const configuredSentryUploadFields = sentryUploadFields.filter(Boolean);
+if (configuredSentryUploadFields.length > 0 && configuredSentryUploadFields.length !== sentryUploadFields.length) {
+  throw new Error("Sentry source-map configuration is partial; configure token, organization, and project together.");
+}
+if (
+  process.env.CI_RELEASE === "true" &&
+  Boolean(sentryDsn) !== (configuredSentryUploadFields.length === sentryUploadFields.length)
+) {
+  throw new Error("Production crash reporting requires both the public DSN and complete source-map upload settings.");
+}
+if (sentryCrashTestBuild && (process.env.CI_RELEASE !== "true" || !sentryDsn)) {
+  throw new Error("A Sentry crash-test package requires production crash reporting to be fully configured.");
+}
+if (process.env.CI_RELEASE === "true" && configuredSentryUploadFields.length === sentryUploadFields.length) {
+  const pending = [join(root, "dist")];
+  while (pending.length > 0) {
+    const directory = pending.pop();
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const entryPath = join(directory, entry.name);
+      if (entry.isDirectory()) pending.push(entryPath);
+      if (entry.isFile() && entry.name.endsWith(".map")) {
+        throw new Error(`Sentry upload completed but a source map was not removed: ${entryPath}`);
+      }
+    }
+  }
+}
 
 const builderArgs = ["cross-env", "NODE_OPTIONS=--no-deprecation", "electron-builder"];
 for (const target of targets) {
@@ -15,14 +50,46 @@ for (const target of targets) {
   if (target === "mac") builderArgs.push("--mac");
 }
 
-if (process.env.CI_RELEASE === "true") {
-  builderArgs.push("-c.win.signAndEditExecutable=true");
+if (process.env.CI_RELEASE === "true" && sentryDsn) {
+  builderArgs.push(
+    "-c.extraMetadata.sentryEnabled=true",
+    `-c.extraMetadata.sentryDsn=${sentryDsn}`,
+    `-c.extraMetadata.sentryRelease=${sentryRelease}`,
+  );
+}
+if (sentryCrashTestBuild) builderArgs.push("-c.extraMetadata.sentryCrashTestEnabled=true");
+
+const azureFields = {
+  publisherName: process.env.AZURE_CODE_SIGNING_PUBLISHER_NAME?.trim(),
+  endpoint: process.env.AZURE_CODE_SIGNING_ENDPOINT?.trim(),
+  codeSigningAccountName: process.env.AZURE_CODE_SIGNING_ACCOUNT_NAME?.trim(),
+  certificateProfileName: process.env.AZURE_CODE_SIGNING_CERTIFICATE_PROFILE_NAME?.trim(),
+};
+const configuredAzureFields = Object.values(azureFields).filter(Boolean);
+if (configuredAzureFields.length > 0 && configuredAzureFields.length !== Object.keys(azureFields).length) {
+  throw new Error("Azure Trusted Signing configuration is partial; configure all four public signing values.");
+}
+if (configuredAzureFields.length > 0) {
+  for (const [key, value] of Object.entries(azureFields)) {
+    builderArgs.push(`-c.win.azureSignOptions.${key}=${value}`);
+  }
+}
+if (process.env.REQUIRE_CODE_SIGNING === "true") {
+  builderArgs.push("-c.forceCodeSigning=true");
 }
 
-const result = spawnSync("npx", builderArgs, {
+const result = spawnSync(process.platform === "win32" ? "npx.cmd" : "npx", builderArgs, {
   cwd: root,
   stdio: "inherit",
-  shell: true,
+  shell: false,
 });
 
-process.exit(result.status ?? 1);
+if ((result.status ?? 1) !== 0) process.exit(result.status ?? 1);
+
+const verifyResult = spawnSync(process.execPath, ["scripts/verify-desktop-package.mjs"], {
+  cwd: root,
+  env: process.env,
+  stdio: "inherit",
+  shell: false,
+});
+process.exit(verifyResult.status ?? 1);

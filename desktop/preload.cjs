@@ -4,6 +4,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("alchemyDesktop", {
   isDesktop: true,
+  crashReportingEnabled: process.argv.includes("--alchemy-crash-reporting-enabled"),
   setDisplayMode: (mode) => ipcRenderer.invoke("alchemy:set-display-mode", mode),
   quit: () => ipcRenderer.invoke("alchemy:quit"),
   listSaveCandidates: () => ipcRenderer.invoke("alchemy:list-save-candidates"),

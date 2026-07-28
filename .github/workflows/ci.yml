@@ -358,7 +358,7 @@ jobs:
           else
             FILES=$(git diff --name-only HEAD~1 HEAD || true)
           fi
-          if echo "$FILES" | grep -Eq '^(desktop/|src/lib/platform.ts|src/features/alchemy/shared/storage/|vite.config.ts|package.json|steam/|scripts/dist-desktop|scripts/sync-steam-appid)'; then
+          if echo "$FILES" | grep -Eq '^(desktop/|index.html|src/main.tsx|src/lib/(platform|crash-reporting).ts|src/features/alchemy/shared/storage/|vite.config.ts|package.json|steam/|scripts/(dist-desktop|verify-desktop-package|sync-steam-appid))'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
@@ -402,7 +402,7 @@ jobs:
           else
             FILES=$(git diff --name-only HEAD~1 HEAD || true)
           fi
-          if echo "$FILES" | grep -Eq '^(desktop/|src/lib/platform.ts|src/features/alchemy/shared/storage/|tests/electron-|playwright.electron|package.json)'; then
+          if echo "$FILES" | grep -Eq '^(desktop/|index.html|src/main.tsx|src/lib/(platform|crash-reporting).ts|src/features/alchemy/shared/storage/|tests/electron-|playwright.electron|package.json|scripts/electron-path)'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"

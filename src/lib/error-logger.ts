@@ -20,6 +20,7 @@ export interface LogEntry {
   stack?: string | undefined;
   context?: Record<string, unknown> | undefined;
   componentStack?: string | undefined;
+  cause?: unknown;
 }
 
 type LogSink = (entry: LogEntry) => void;
@@ -37,10 +38,11 @@ export function logError(
   context?: Record<string, unknown>,
   stack?: string,
   componentStack?: string,
+  cause?: unknown,
 ): void {
   if (logging) return;
   logging = true;
-  const entry: LogEntry = { message, source, stack, context, componentStack };
+  const entry: LogEntry = { message, source, stack, context, componentStack, cause };
   try {
     console.error(`[${source}] ${message}`, context ?? "", stack ?? "", componentStack ?? "");
     for (const sink of sinks) {

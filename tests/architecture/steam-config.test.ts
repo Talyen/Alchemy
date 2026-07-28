@@ -44,9 +44,10 @@ describe("steam platform config", () => {
     expect(mainSource).not.toMatch(/steamworks\.init\(480\)/);
   });
 
-  it("enables code signing via dist-desktop when CI_RELEASE is set", () => {
+  it("supports optional Azure signing and future fail-closed releases", () => {
     const distDesktop = readFileSync(join(ROOT, "scripts/dist-desktop.mjs"), "utf8");
-    expect(distDesktop).toContain("CI_RELEASE");
-    expect(distDesktop).toContain("signAndEditExecutable=true");
+    expect(distDesktop).toContain("AZURE_CODE_SIGNING_ENDPOINT");
+    expect(distDesktop).toContain("forceCodeSigning=true");
+    expect(JSON.stringify(pkg.build)).not.toContain('"signAndEditExecutable":false');
   });
 });

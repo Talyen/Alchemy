@@ -4,11 +4,13 @@ import { fileURLToPath, URL } from "node:url";
 import tailwind from "@tailwindcss/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { defineConfig } from "vite";
 import checker from "vite-plugin-checker";
 import { visualizer } from "rollup-plugin-visualizer";
 
 const devPort = Number.parseInt(process.env.ALCHEMY_DEV_PORT ?? "5173", 10);
+const sentryRelease = process.env.SENTRY_RELEASE?.trim() || `alchemy@${process.env.npm_package_version ?? "0.0.0"}`;
 
 if (!Number.isInteger(devPort) || devPort <= 0) {
   throw new Error(`Invalid ALCHEMY_DEV_PORT: ${process.env.ALCHEMY_DEV_PORT}`);
@@ -37,9 +39,36 @@ export default defineConfig(({ mode }) => ({
         brotliSize: true,
         filename: "reports/bundle-analysis.html",
       }),
+    mode === "desktop" &&
+      process.env.CI_RELEASE === "true" &&
+      process.env.SENTRY_AUTH_TOKEN &&
+      process.env.SENTRY_ORG &&
+      process.env.SENTRY_PROJECT &&
+      process.env.SENTRY_DSN &&
+      sentryVitePlugin({
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        org: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT,
+        release: {
+          name: sentryRelease,
+        },
+        sourcemaps: {
+          filesToDeleteAfterUpload: ["./dist/**/*.map"],
+        },
+        telemetry: false,
+      }),
   ].filter(Boolean),
   build: {
     assetsInlineLimit: 4096,
+    sourcemap:
+      mode === "desktop" &&
+      process.env.CI_RELEASE === "true" &&
+      !!process.env.SENTRY_AUTH_TOKEN &&
+      !!process.env.SENTRY_ORG &&
+      !!process.env.SENTRY_PROJECT &&
+      !!process.env.SENTRY_DSN
+        ? "hidden"
+        : false,
     rollupOptions: {
       output: {
         manualChunks(id) {
