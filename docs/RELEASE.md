@@ -58,7 +58,10 @@ manual workflow never tags a release, creates a GitHub release, or uploads a Ste
 Windows installer retained for three days and uploads source maps under an isolated
 `alchemy@<version>-sentry-test.<run number>` release.
 
-Install that artifact and run each command from PowerShell, replacing the path if necessary:
+The Windows runner automatically launches all three controlled crash modes after packaging. Confirm their events
+appear in the matching isolated Sentry release and that the JavaScript stack traces are symbolicated. To repeat a
+specific test manually, install the artifact and run one of these commands from PowerShell, replacing the path if
+necessary:
 
 ```powershell
 & "$env:LOCALAPPDATA\Programs\Alchemy\Alchemy.exe" --alchemy-sentry-test=renderer
@@ -66,10 +69,9 @@ Install that artifact and run each command from PowerShell, replacing the path i
 & "$env:LOCALAPPDATA\Programs\Alchemy\Alchemy.exe" --alchemy-sentry-test=native-renderer
 ```
 
-Each launch waits for the packaged renderer to load, then produces exactly one controlled crash. Confirm all three
-events appear in the matching isolated Sentry release and that the JavaScript stack traces are symbolicated. The
-arguments are inert in development, ordinary local packages, and public release packages: the crash harness requires
-private-build metadata that only the manual workflow embeds.
+Each launch waits for the packaged renderer to load, then produces exactly one controlled crash. The arguments are
+inert in development, ordinary local packages, and public release packages: the crash harness requires private-build
+metadata that only the manual workflow embeds.
 
 ## Windows signing readiness
 

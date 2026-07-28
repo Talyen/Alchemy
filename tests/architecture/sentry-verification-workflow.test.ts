@@ -20,5 +20,9 @@ describe("private Sentry verification workflow", () => {
     }
     expect(workflow).toContain('SENTRY_CRASH_TEST_BUILD: "true"');
     expect(workflow).toContain("SENTRY_RELEASE=alchemy@$version-sentry-test.");
+    for (const mode of ["renderer", "main", "native-renderer"]) {
+      expect(workflow).toContain(`"${mode}"`);
+    }
+    expect(workflow).toContain("--alchemy-sentry-test=$mode");
   });
 });
