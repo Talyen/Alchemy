@@ -4,7 +4,7 @@ import { gameModeMeta } from "@/features/alchemy/shared/config";
 import { PressableSound } from "../../shared/ui/pressable-sound";
 import { ActionButtonRow, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
-import { useAppStore } from "../../shared/stores/app-store";
+import { useProfileStore } from "../../shared/stores/profile-store";
 import { playUISound } from "@/lib/audio";
 import { TooltipBody, TooltipHeader, TooltipPanel } from "../../shared/ui/tooltip-panel";
 
@@ -36,7 +36,7 @@ export function GameModeSelectScreen({
 }) {
   const [selectedModeId, setSelectedModeId] = useState<GameModeId | null>(null);
   const [hoveredModeId, setHoveredModeId] = useState<GameModeId | null>(null);
-  const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
+  const finishedRunCharacters = useProfileStore((s) => s.finishedRunCharacters);
 
   const handlers: Record<GameModeId, () => void> = {
     campaign: onSelectCampaign,

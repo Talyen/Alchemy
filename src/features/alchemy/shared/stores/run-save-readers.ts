@@ -15,7 +15,7 @@ export function readPermanentProgressForSave(): HomesteadSaveFields & {
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
 } {
-  const permanent = getRunDomainStore().progress.permanent;
+  const permanent = getRunDomainStore().profile;
   return {
     materialInventory: permanent.materialInventory,
     constructedBuildings: permanent.constructedBuildings,

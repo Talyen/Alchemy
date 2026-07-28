@@ -5,8 +5,8 @@ import { cardLibrary, getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import * as cardPools from "@/lib/game-data/cards/card-pools";
 
-vi.mock("@/features/alchemy/shared/stores/app-store", () => ({
-  useAppStore: {
+vi.mock("@/features/alchemy/shared/stores/profile-store", () => ({
+  useProfileStore: {
     getState: () => ({
       setDiscoveredCardIds: vi.fn(),
       setDiscoveredTrinketIds: vi.fn(),

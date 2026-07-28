@@ -13,7 +13,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
 import { clearBattlePresentationCardGhosts } from "@/features/alchemy/shared/stores/battle-presentation-bridge";
-import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 // Side-effect: registers presentation cleanup with the shared bridge.
 import "@/features/alchemy/run-loop/battle/battle-presentation-store";
@@ -72,7 +72,7 @@ export function useRunNavigation({
   const run = useRunAdapter();
   const talents = useTalentAdapter();
   const setHasActiveBattle = useSetHasActiveBattle();
-  const completedDifficulties = useAppStore((s) => s.completedDifficulties);
+  const completedDifficulties = useProfileStore((s) => s.completedDifficulties);
   const draftedDeckRef = useRef<BattleCard[] | null>(null);
   const rngRef = useRef<() => number>(() => Math.random());
   const nav = useRunSessionNavigationSlice(screen);

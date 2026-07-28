@@ -8,7 +8,7 @@ import { BUTTON_WIDTH_MENU } from "@/features/alchemy/shared/config";
 import { CardFlip } from "../../shared/ui/card-flip";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { cn } from "@/lib/utils";
-import { useAppStore } from "../../shared/stores/app-store";
+import { useProfileStore } from "../../shared/stores/profile-store";
 import { StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { LockedMenuItem } from "../../shared/ui/locked-menu-item";
 
@@ -45,7 +45,7 @@ export function MenuScreen({
   const [variantIdx, setVariantIdx] = useState(1);
   const [flipped, setFlipped] = useState(false);
 
-  const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
+  const finishedRunCharacters = useProfileStore((s) => s.finishedRunCharacters);
   const isKnightGatedLocked = !finishedRunCharacters.includes("knight");
 
   const handleLogoClick = useCallback(() => {

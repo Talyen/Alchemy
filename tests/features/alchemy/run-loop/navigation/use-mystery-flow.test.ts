@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
@@ -13,7 +13,7 @@ import {
 beforeEach(() => {
   resetTransientRunUi();
   resetRunProgressSlice();
-  useAppStore.setState(useAppStore.getInitialState());
+  useProfileStore.setState(useProfileStore.getInitialState());
 });
 
 describe("useMysteryFlow", () => {

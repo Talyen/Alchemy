@@ -7,7 +7,7 @@ import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/s
 import { readBattleStore, readRunSessionStore } from "../../shared/stores/run-session-facade";
 import { useBattlePresentationStore } from "./battle-presentation-store";
 import { appendUnique } from "@/lib/utils";
-import { useAppStore } from "../../shared/stores/app-store";
+import { useProfileStore } from "../../shared/stores/profile-store";
 import { syncRunToBattleStart } from "../../shared/stores/run-transitions";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits, type EncounterCombatTraitId } from "@/lib/content-systems/encounter-traits";
@@ -39,7 +39,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
       currentEnemy: enemy,
       playerHealth,
       talentEffects: battleEffects,
-      discoveredCardIds: useAppStore.getState().discoveredCardIds,
+      discoveredCardIds: useProfileStore.getState().discoveredCardIds,
       maxHealth: ctx.run.runMaxHealth,
       trinketIds: ctx.run.runTrinkets,
       gearEffects,
@@ -73,7 +73,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
     getStore().setBattleStartState(nextBattleState);
     getStore().setHasActiveBattle(true);
     ctx.run.setEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
-    useAppStore.getState().setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
+    useProfileStore.getState().setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
     // Emit floating combat text for starting enemy armor and block
     const startingTexts: CombatTextEvent[] = [];
     if (nextBattleState.enemyMitigation.armor > 0) {

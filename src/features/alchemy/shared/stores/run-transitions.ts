@@ -20,7 +20,7 @@ import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import { createInitialRunDomainData } from "./run-domain-types";
 import { clearBattlePresentationCardGhosts, resetBattlePresentation } from "./battle-presentation-bridge";
 import { useUiStore } from "./ui-store";
-import { useAppStore } from "./app-store";
+import { useProfileStore } from "./profile-store";
 import { getRunSession } from "./run-session-model";
 import { restoreLabyrinth, restoreReward, restoreShops, restoreWildwoodReward } from "./restore-active-run-session";
 
@@ -118,9 +118,9 @@ export function syncRunMaxHealthFromGearMutation(
   if (delta === 0) return;
 
   const store = getRunDomainStore();
-  const nextMax = store.progress.run.runMaxHealth + delta;
+  const nextMax = store.activeRun.runMaxHealth + delta;
   store.setRunMaxHealth(nextMax);
-  store.setRunPlayerHealth(Math.min(nextMax, store.progress.run.runPlayerHealth));
+  store.setRunPlayerHealth(Math.min(nextMax, store.activeRun.runPlayerHealth));
 }
 
 /** Clamp run HP for battle entry and persist before creating BattleState. */
@@ -129,9 +129,9 @@ export function syncRunToBattleStart(playerHealth?: number): number {
   const startingHealth =
     playerHealth ??
     getBattleStartPlayerHealth(
-      store.progress.run.runPlayerHealth,
-      store.progress.run.runMaxHealth,
-      store.progress.run.runTrinkets,
+      store.activeRun.runPlayerHealth,
+      store.activeRun.runMaxHealth,
+      store.activeRun.runTrinkets,
     );
   store.setRunPlayerHealth(startingHealth);
   return startingHealth;
@@ -154,18 +154,15 @@ export function clearBattleUi(): void {
 /** Clear active combat, run progression, session UI, navigation, and presentation. */
 export function teardownRun(): void {
   useRunDomainStore.setState((state) => {
-    const characterId = state.progress.run.characterId;
-    const permanent = state.progress.permanent;
+    const characterId = state.activeRun.characterId;
+    const profile = state.profile;
     const fresh = createInitialRunDomainData();
-    state.progress = {
-      ...fresh.progress,
-      run: {
-        ...fresh.progress.run,
-        characterId,
-      },
-      permanent,
-      initialized: true,
+    state.activeRun = {
+      ...fresh.activeRun,
+      characterId,
     };
+    state.profile = profile;
+    state.initialized = true;
     state.session = { ...fresh.session, pendingContentSystemType: "campaign" };
     state.navigation = fresh.navigation;
     state.battle = fresh.battle;
@@ -176,7 +173,7 @@ export function teardownRun(): void {
 
 /** Write the full save file immediately (bypasses autosave debounce). */
 async function flushPersistedSave(activeRun: ActiveRunData | null): Promise<void> {
-  const p = getRunDomainStore().progress.permanent;
+  const p = getRunDomainStore().profile;
   await flushAlchemySaveNow(activeRun, p, p.talentXP, p.unlockedTalents);
 }
 
@@ -197,8 +194,8 @@ export function finalizeRunEndSession(options: {
     return emptyInventory();
   }
 
-  const activeChar = useRunDomainStore.getState().progress.run.characterId;
-  useAppStore.getState().setFinishedRunCharacters((prev) => {
+  const activeChar = useRunDomainStore.getState().activeRun.characterId;
+  useProfileStore.getState().setFinishedRunCharacters((prev) => {
     if (prev.includes(activeChar)) return prev;
     return [...prev, activeChar];
   });

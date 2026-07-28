@@ -1,8 +1,8 @@
 import { useShallow } from "zustand/react/shallow";
 import { platform } from "@/lib/platform";
 import { OptionsScreen } from "@/features/alchemy/meta/screens";
-import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
-import { useAppActions } from "@/features/alchemy/shared/stores/store-actions";
+import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { useSettingsActions } from "@/features/alchemy/shared/stores/store-actions";
 import type { OptionsRouteCtx } from "./route-ctx";
 
 type OptionsScreenRouteProps = OptionsRouteCtx;
@@ -13,7 +13,7 @@ export function OptionsScreenRoute({
   onUnlockAllDevMode,
   onBackFromOptions,
 }: OptionsScreenRouteProps) {
-  const appValues = useAppStore(
+  const settings = useSettingsStore(
     useShallow((s) => ({
       selectedAspectRatio: s.selectedAspectRatio,
       displayMode: s.displayMode,
@@ -27,40 +27,40 @@ export function OptionsScreenRoute({
       showClearSaveConfirm: s.showClearSaveConfirm,
     })),
   );
-  const appActions = useAppActions();
+  const actions = useSettingsActions();
 
   return (
     <OptionsScreen
       onOpenMenu={onOpenBattleMenu}
       onBack={onBackFromOptions}
       display={{
-        selectedAspectRatio: appValues.selectedAspectRatio,
-        onAspectRatioChange: appActions.setSelectedAspectRatio,
-        displayMode: appValues.displayMode,
-        onDisplayModeChange: appActions.setDisplayMode,
+        selectedAspectRatio: settings.selectedAspectRatio,
+        onAspectRatioChange: actions.setSelectedAspectRatio,
+        displayMode: settings.displayMode,
+        onDisplayModeChange: actions.setDisplayMode,
         showDisplayMode: platform.isDesktop,
-        uiScale: appValues.uiScale,
-        onUiScaleChange: appActions.setUiScale,
-        brightness: appValues.brightness,
-        onBrightnessChange: appActions.setBrightness,
+        uiScale: settings.uiScale,
+        onUiScaleChange: actions.setUiScale,
+        brightness: settings.brightness,
+        onBrightnessChange: actions.setBrightness,
       }}
       audio={{
-        masterVol: appValues.masterVol,
-        musicVol: appValues.musicVol,
-        sfxVol: appValues.sfxVol,
-        onMasterVolChange: appActions.setMasterVol,
-        onMusicVolChange: appActions.setMusicVol,
-        onSfxVolChange: appActions.setSfxVol,
-        muteInBackground: appValues.muteInBackground,
-        onMuteInBackgroundChange: appActions.setMuteInBackground,
+        masterVol: settings.masterVol,
+        musicVol: settings.musicVol,
+        sfxVol: settings.sfxVol,
+        onMasterVolChange: actions.setMasterVol,
+        onMusicVolChange: actions.setMusicVol,
+        onSfxVolChange: actions.setSfxVol,
+        muteInBackground: settings.muteInBackground,
+        onMuteInBackgroundChange: actions.setMuteInBackground,
       }}
-      gameplay={{ autoEndTurn: appValues.autoEndTurn, onAutoEndTurnChange: appActions.setAutoEndTurn }}
+      gameplay={{ autoEndTurn: settings.autoEndTurn, onAutoEndTurnChange: actions.setAutoEndTurn }}
       saveData={{
-        showClearSaveConfirm: appValues.showClearSaveConfirm,
-        onOpenClearSaveConfirm: () => appActions.setShowClearSaveConfirm(true),
-        onCloseClearSaveConfirm: () => appActions.setShowClearSaveConfirm(false),
+        showClearSaveConfirm: settings.showClearSaveConfirm,
+        onOpenClearSaveConfirm: () => actions.setShowClearSaveConfirm(true),
+        onCloseClearSaveConfirm: () => actions.setShowClearSaveConfirm(false),
         onConfirmClearSave: onClearSaveData,
-        onResetOptions: appActions.resetOptionsToDefault,
+        onResetOptions: actions.resetToDefaults,
       }}
       dev={{ onUnlockAll: onUnlockAllDevMode }}
     />

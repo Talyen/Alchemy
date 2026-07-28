@@ -5,7 +5,7 @@ import { appendUniqueMany } from "@/lib/utils";
 import { getDifficultyModifiers, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import { DEFAULT_BATTLE_ENEMY_TYPE, DRAFT_ROUNDS } from "@/lib/game-constants";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import { useAppStore } from "../../shared/stores/app-store";
+import { useProfileStore } from "../../shared/stores/profile-store";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { readGearMaxHealthBonus } from "../../shared/stores/gear-read-port";
 import {
@@ -62,7 +62,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       playGoldGain();
     }
     if (options.discoverStarterDeck || characterId === "wildcard") {
-      useAppStore.getState().setDiscoveredCardIds((current) =>
+      useProfileStore.getState().setDiscoveredCardIds((current) =>
         appendUniqueMany(
           current,
           snapshot.freshDeck.map((c) => c.id),
@@ -70,7 +70,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       );
     }
     if (options.resetEncounteredEnemies) {
-      useAppStore.getState().setEncounteredEnemyIds([]);
+      useProfileStore.getState().setEncounteredEnemyIds([]);
     }
     useUiStore.getState().clearCardHover();
     return snapshot;

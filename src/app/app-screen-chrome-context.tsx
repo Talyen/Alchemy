@@ -11,7 +11,7 @@ import { buildings, visibleFarmPlots, researchUpgrades } from "@/lib/homestead/d
 import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
 import { canAfford } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { useHomesteadProgressSlice } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { Screen } from "@/lib/routing";
 import type { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
@@ -104,7 +104,7 @@ export function AppScreenChromeProvider({
 
   const { materialInventory, constructedBuildings, plantedFarms, completedResearch, bondedCompanions } =
     useHomesteadProgressSlice();
-  const discoveredCardIds = useAppStore((s) => s.discoveredCardIds);
+  const discoveredCardIds = useProfileStore((s) => s.discoveredCardIds);
   const hasAffordableHomestead = hasAffordableHomesteadUpgrade({
     materialInventory,
     constructedBuildings,

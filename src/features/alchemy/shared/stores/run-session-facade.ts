@@ -191,25 +191,25 @@ export function useSetHasActiveBattle(): (active: boolean) => void {
 }
 
 export function useBondedCompanions() {
-  return useRunDomainStore((s) => s.progress.permanent.bondedCompanions);
+  return useRunDomainStore((s) => s.profile.bondedCompanions);
 }
 
 export function useContentSystemType(): ContentSystemId {
-  return useRunDomainStore((s) => s.progress.run.contentSystemType);
+  return useRunDomainStore((s) => s.activeRun.contentSystemType);
 }
 
 export function useIsWildwoodRun(): boolean {
-  return useRunDomainStore((s) => s.progress.run.contentSystemType === "wildwood");
+  return useRunDomainStore((s) => s.activeRun.contentSystemType === "wildwood");
 }
 
 export function useHomesteadProgressSlice() {
   return useRunDomainStore(
     useShallow((s) => ({
-      materialInventory: s.progress.permanent.materialInventory,
-      constructedBuildings: s.progress.permanent.constructedBuildings,
-      plantedFarms: s.progress.permanent.plantedFarms,
-      completedResearch: s.progress.permanent.completedResearch,
-      bondedCompanions: s.progress.permanent.bondedCompanions,
+      materialInventory: s.profile.materialInventory,
+      constructedBuildings: s.profile.constructedBuildings,
+      plantedFarms: s.profile.plantedFarms,
+      completedResearch: s.profile.completedResearch,
+      bondedCompanions: s.profile.bondedCompanions,
     })),
   );
 }
@@ -217,8 +217,8 @@ export function useHomesteadProgressSlice() {
 export function useTalentProgressSlice(): { talentXP: TalentXP; unlockedTalents: UnlockedTalents } {
   return useRunDomainStore(
     useShallow((s) => ({
-      talentXP: s.progress.permanent.talentXP,
-      unlockedTalents: s.progress.permanent.unlockedTalents,
+      talentXP: s.profile.talentXP,
+      unlockedTalents: s.profile.unlockedTalents,
     })),
   );
 }
@@ -230,7 +230,7 @@ export function useDifficultySelectSlice(): {
   return useRunDomainStore(
     useShallow((s) => ({
       pendingCharacterId: s.session.pendingCharacterId,
-      selectedDifficulty: s.progress.run.selectedDifficulty,
+      selectedDifficulty: s.activeRun.selectedDifficulty,
     })),
   );
 }
@@ -242,15 +242,15 @@ export function useDraftDeckSlice(): {
 } {
   return useRunDomainStore(
     useShallow((s) => ({
-      contentSystemType: s.progress.run.contentSystemType,
-      runDeck: s.progress.run.runDeck,
+      contentSystemType: s.activeRun.contentSystemType,
+      runDeck: s.activeRun.runDeck,
       wildwoodDraft: s.session.wildwoodDraft,
     })),
   );
 }
 
 export function useActiveRunCharacterId(): CharacterId {
-  return useRunDomainStore((s) => s.progress.run.characterId);
+  return useRunDomainStore((s) => s.activeRun.characterId);
 }
 
 /** Dev / unlock-all: set homestead materials. */
@@ -273,12 +273,12 @@ export type { HomesteadSaveFields };
 /** Persistence: hydrate permanent homestead fields from save data. */
 export function applyHomesteadSaveFields(homestead: HomesteadSaveFields): void {
   useRunDomainStore.setState((state) => {
-    state.progress.permanent.materialInventory = homestead.materialInventory;
-    state.progress.permanent.constructedBuildings = homestead.constructedBuildings;
-    state.progress.permanent.plantedFarms = homestead.plantedFarms;
-    state.progress.permanent.completedResearch = homestead.completedResearch;
-    state.progress.permanent.bondedCompanions = homestead.bondedCompanions;
-    state.progress.permanent.effects = computeHomesteadEffects(
+    state.profile.materialInventory = homestead.materialInventory;
+    state.profile.constructedBuildings = homestead.constructedBuildings;
+    state.profile.plantedFarms = homestead.plantedFarms;
+    state.profile.completedResearch = homestead.completedResearch;
+    state.profile.bondedCompanions = homestead.bondedCompanions;
+    state.profile.effects = computeHomesteadEffects(
       homestead.constructedBuildings,
       homestead.plantedFarms,
       homestead.completedResearch,

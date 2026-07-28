@@ -102,6 +102,14 @@ export function flattenProgressState(progress: ProgressState): RunStateFields {
   };
 }
 
+export function flattenRunDomainProgress(
+  activeRun: ActiveRunProgressFields,
+  profile: PermanentProgressFields,
+  initialized: boolean,
+): RunStateFields {
+  return { ...activeRun, ...profile, initialized };
+}
+
 export function applyFlatProgressPartial(progress: ProgressState, partial: Partial<RunStateFields>): void {
   for (const key of ACTIVE_RUN_PROGRESS_KEYS) {
     if (key in partial && partial[key] !== undefined) {
@@ -116,6 +124,23 @@ export function applyFlatProgressPartial(progress: ProgressState, partial: Parti
   if (partial.initialized !== undefined) {
     progress.initialized = partial.initialized;
   }
+}
+
+export function applyFlatRunDomainProgressPartial(
+  state: {
+    activeRun: ActiveRunProgressFields;
+    profile: PermanentProgressFields;
+    initialized: boolean;
+  },
+  partial: Partial<RunStateFields>,
+): void {
+  const progress: ProgressState = {
+    run: state.activeRun,
+    permanent: state.profile,
+    initialized: state.initialized,
+  };
+  applyFlatProgressPartial(progress, partial);
+  state.initialized = progress.initialized;
 }
 
 const VALID_DESTINATIONS = new Set<Destination>(Object.values(DESTINATIONS));

@@ -20,7 +20,7 @@ import {
   useHasActiveBattle,
   useHasActiveRun,
 } from "@/features/alchemy/shared/stores/run-session-facade";
-import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import {
   resolveActiveRunForSave,
@@ -73,7 +73,7 @@ export function useArmoryController(): ArmoryController {
       sortBoard: s.sortBoard,
     })),
   );
-  const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
+  const finishedRunCharacters = useProfileStore((s) => s.finishedRunCharacters);
   const hasActiveBattle = useHasActiveBattle();
   const hasActiveRun = useHasActiveRun();
   const activeRunCharacterId = useActiveRunCharacterId();

@@ -61,7 +61,7 @@ describe("resolveActiveRunForSave", () => {
 });
 
 describe("buildAlchemySaveDataFromStores permanent progress", () => {
-  it("reads materialInventory and talentXP from progress.permanent when args are omitted", () => {
+  it("reads materialInventory and talentXP from the run-domain profile when args are omitted", () => {
     setRunProgress({
       materialInventory: { wood: 12, iron: 3, herbs: 1, food: 0, crystal: 2 },
       talentXP: { burn: 40 },

@@ -2,7 +2,8 @@
 import { platform } from "@/lib/platform";
 import { loadAlchemySaveState, type SaveLoadState } from "./io";
 import type { SaveData } from "./types";
-import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { applyHomesteadSaveFields } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 
@@ -14,7 +15,8 @@ export async function bootstrapAlchemySaveState(): Promise<SaveLoadState> {
 }
 
 export function applySaveDataToStores(data: SaveData) {
-  useAppStore.getState().initialize(data);
+  useSettingsStore.getState().initialize(data);
+  useProfileStore.getState().initialize(data);
   applyHomesteadSaveFields({
     materialInventory: data.materialInventory,
     constructedBuildings: data.constructedBuildings,

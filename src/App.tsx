@@ -35,11 +35,11 @@ import { useHomesteadAdapter } from "@/features/alchemy/shared/stores/run-sessio
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { ErrorBoundary } from "@/components/error-boundary";
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
-import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
 import { useActiveRunScreenValue, useBondedCompanions } from "@/features/alchemy/shared/stores/run-session-facade";
 
-const appStore = useAppStore;
+const profileStore = useProfileStore;
 
 function AppMainContent({
   saveBlockedByNewerVersion,
@@ -58,7 +58,7 @@ function AppMainContent({
   aspectMode: "standard" | "narrow" | "ultrawide";
   run: ReturnType<typeof useAlchemyRunController>;
 }) {
-  const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
+  const finishedRunCharacters = useProfileStore((s) => s.finishedRunCharacters);
   const isArmoryLocked = useIsArmoryLocked();
   const { screen: controllerScreen, commitPendingTransition } = run;
   const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(
@@ -198,10 +198,10 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   useGlobalErrorHandlers();
 
   function handleMarkDifficultyCompleted(characterId: CharacterId, difficultyId: DifficultyId) {
-    const prev = appStore.getState().completedDifficulties;
+    const prev = profileStore.getState().completedDifficulties;
     const current = prev[characterId];
     if (current.includes(difficultyId)) return;
-    appStore.getState().setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
+    profileStore.getState().setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
   }
 
   const { frameStyle, stageStyle, aspectMode, stagePixelRatio } = useVirtualResolution(

@@ -20,22 +20,23 @@ Import using on-disk paths (e.g. `@/features/alchemy/shared/stores/run-session-f
 
 ## Run state
 
-A single **run** is owned by **`useRunDomainStore`** (`shared/stores/run-domain-store.ts`) with four slices: `progress`, `session`, `navigation`, and `battle`.
+A single **run** is owned by **`useRunDomainStore`** (`shared/stores/run-domain-store.ts`). Its state is split by lifetime at the store root:
 
-`progress` is nested by lifetime:
+| Subtree       | Concern                                                     | Notes                            |
+| ------------- | ----------------------------------------------------------- | -------------------------------- |
+| `activeRun`   | Deck, gold, HP, acts, trinkets, content system, run tallies | Reset by run teardown            |
+| `profile`     | Homestead, talent XP / unlocks, derived `effects`           | Meta lifetime; survives teardown |
+| `initialized` | Hydration gate                                              | Boot lifetime                    |
+| `session`     | Rewards, shops, labyrinth, mystery, run-flow claims         | Transient per run                |
+| `navigation`  | Current screen                                              | Transient                        |
+| `battle`      | Combat snapshot and display overrides                       | Transient per battle             |
 
-| Subtree                | Concern                                                     | Notes                            |
-| ---------------------- | ----------------------------------------------------------- | -------------------------------- |
-| `progress.run`         | Deck, gold, HP, acts, trinkets, content system, run tallies | Active-run only                  |
-| `progress.permanent`   | Homestead, talent XP / unlocks, derived `effects`           | Meta lifetime; survives teardown |
-| `progress.initialized` | Hydration gate                                              | Shared                           |
-
-Facade adapters (`useRunAdapter`, `useTalentAdapter`, `useHomesteadProgressSlice`, `readActiveRunStore`) project a **flat** view so feature code does not dig into the nest.
+Facade adapters (`useRunAdapter`, `useTalentAdapter`, `useHomesteadProgressSlice`, `readActiveRunStore`) preserve focused feature-facing views.
 
 | Concern                             | Owner                       | Notes                                    |
 | ----------------------------------- | --------------------------- | ---------------------------------------- |
-| Deck, gold, HP, acts, trinkets      | `progress.run`              | Persisted inside `activeRun`             |
-| Homestead + permanent talents       | `progress.permanent`        | Persisted as top-level save fields       |
+| Deck, gold, HP, acts, trinkets      | `activeRun`                 | Persisted inside `activeRun`             |
+| Homestead + permanent talents       | `profile`                   | Persisted as top-level save fields       |
 | Rewards, shops, labyrinth, mystery  | `session`                   | Transient per run                        |
 | Current `Screen`                    | `navigation`                | `useActiveRunScreen()`                   |
 | Combat snapshot + display overrides | `battle`                    | Synced during battle                     |
@@ -91,9 +92,14 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 | Session reads/writes | `shared/stores/run-session-facade.ts`                       |
 | Screen routing       | `shell/use-screen-transitions.ts`, `useActiveRunScreen()`   |
 
-## Meta compendium (`app-store`)
+## Settings and meta profile
 
-`discoveredCardIds`, `encounteredEnemyIds`, and `discoveredTrinketIds` live in `app-store` (persisted with save data). Run controllers read/write via `useAppStore.getState()` — not props from `App.tsx`.
+- `settings-store` owns display, audio, and gameplay preferences. It does not contain gameplay progression.
+- `profile-store` owns compendium discoveries, completed difficulties, finished-run characters, and transient collection browsing state.
+- Run-domain `profile` owns homestead and talent progression because those mutations participate directly in run reward finalization.
+- `gear-store` owns the permanent Gear subdomain and its invariants.
+
+Hydration and save snapshot composition cross these owners only in `shared/storage/`; feature code uses the owning store or its focused read/action port.
 
 ## Permanent Gear (`gear-store`)
 

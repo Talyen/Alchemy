@@ -12,7 +12,7 @@ export function defineFieldSetter<SliceState, State>(set: ImmerSet<State>, slice
       });
 }
 
-/** Field setter for a nested slice (e.g. progress.run / progress.permanent). */
+/** Field setter for a nested domain object. */
 export function defineNestedFieldSetter<SliceState, State>(
   set: ImmerSet<State>,
   getSlice: (state: State) => SliceState,

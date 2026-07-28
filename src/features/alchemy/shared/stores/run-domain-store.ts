@@ -3,7 +3,7 @@ import { immer } from "zustand/middleware/immer";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { computeTalentEffects, type TalentEffectManifest } from "@/lib/game-data";
-import { flattenProgressState, type RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
+import { flattenRunDomainProgress, type RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
 import type { Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import {
@@ -149,7 +149,10 @@ export type NavigationStore = { screen: Screen } & ReturnType<typeof pickNavigat
 
 export function getRunProgressStoreView(): RunProgressStore {
   const state = useRunDomainStore.getState();
-  return { ...flattenProgressState(state.progress), ...pickProgressActions(state) };
+  return {
+    ...flattenRunDomainProgress(state.activeRun, state.profile, state.initialized),
+    ...pickProgressActions(state),
+  };
 }
 
 export function getRunSessionStoreView(): RunSessionStore {
@@ -237,7 +240,10 @@ export type TalentStateController = ReturnType<typeof selectTalentController> & 
 export function useRunAdapter(): RunStateController {
   return useRunDomainStore(
     useShallow((state) =>
-      selectRunController({ ...flattenProgressState(state.progress), ...pickProgressActions(state) }),
+      selectRunController({
+        ...flattenRunDomainProgress(state.activeRun, state.profile, state.initialized),
+        ...pickProgressActions(state),
+      }),
     ),
   );
 }
@@ -245,7 +251,10 @@ export function useRunAdapter(): RunStateController {
 export function useTalentAdapter(): TalentStateController {
   const base = useRunDomainStore(
     useShallow((state) =>
-      selectTalentController({ ...flattenProgressState(state.progress), ...pickProgressActions(state) }),
+      selectTalentController({
+        ...flattenRunDomainProgress(state.activeRun, state.profile, state.initialized),
+        ...pickProgressActions(state),
+      }),
     ),
   );
   const talentEffects = useMemo(() => computeTalentEffects(base.unlockedTalents), [base.unlockedTalents]);
@@ -253,14 +262,16 @@ export function useTalentAdapter(): TalentStateController {
 }
 
 export function useHomesteadAdapter(): HomesteadEffectManifest {
-  return useRunDomainStore((state) => state.progress.permanent.effects);
+  return useRunDomainStore((state) => state.profile.effects);
 }
 
 /** Reset all run domain slices to initial values (tests and full teardown). */
 export function resetRunDomainStore(): void {
   const initial = createInitialRunDomainData();
   useRunDomainStore.setState((state) => {
-    state.progress = initial.progress;
+    state.activeRun = initial.activeRun;
+    state.profile = initial.profile;
+    state.initialized = initial.initialized;
     state.session = initial.session;
     state.navigation = initial.navigation;
     state.battle = initial.battle;

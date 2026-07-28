@@ -94,8 +94,8 @@ export function defineSessionActions(set: ImmerSet<RunDomainDataState>): Session
           return;
         }
         state.session.rewardState.destinations = [];
-        state.progress.run.completedDestinations.push(destination);
-        state.progress.run.destinationIndexInAct += 1;
+        state.activeRun.completedDestinations.push(destination);
+        state.activeRun.destinationIndexInAct += 1;
         state.session.pendingDestinationClaim = null;
         committed = true;
       });

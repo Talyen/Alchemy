@@ -28,7 +28,7 @@ import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import type { GearInstance } from "@/lib/gear";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
-import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import type { CreateShopActionsDeps, ShopActions } from "./shop-action-types";
 import { createShopPriceSelectors } from "./shop-price-selectors";
 
@@ -185,7 +185,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     const mixed = tryCreateMixedPotion(cardA, cardB, talents.talentEffects.potionMixPotency);
     if (mixed) {
       run.setRunDeck((p) => applyMixToDeck(p, indexA, indexB, mixed));
-      useAppStore.getState().setDiscoveredCardIds((cur) => appendUnique(cur, MIXED_POTION_CARD_ID));
+      useProfileStore.getState().setDiscoveredCardIds((cur) => appendUnique(cur, MIXED_POTION_CARD_ID));
     }
     return mixed;
   }

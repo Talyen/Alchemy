@@ -2,7 +2,7 @@
 import type { BattleState } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { getRunPhase, type RunPhase } from "@/lib/routing";
-import type { ProgressState, RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
+import type { RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
 import type { RewardState } from "@/lib/active-run-session";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -11,7 +11,7 @@ import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-import type { RunSessionFields } from "./run-domain-types";
+import type { RunDomainDataState, RunSessionFields } from "./run-domain-types";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 
 type RunSessionRunSlice = Pick<
@@ -88,28 +88,28 @@ function resolveScreen(screen?: Screen): Screen {
   return screen ?? getRunDomainStore().navigation.screen;
 }
 
-function pickRunSessionRunSlice(progress: ProgressState): RunSessionRunSlice {
+function pickRunSessionRunSlice(state: RunDomainDataState): RunSessionRunSlice {
   return {
-    characterId: progress.run.characterId,
-    runDeck: progress.run.runDeck,
-    runGold: progress.run.runGold,
-    runPlayerHealth: progress.run.runPlayerHealth,
-    runMaxHealth: progress.run.runMaxHealth,
-    roomsEncountered: progress.run.roomsEncountered,
-    currentAct: progress.run.currentAct,
-    destinationIndexInAct: progress.run.destinationIndexInAct,
-    completedDestinations: progress.run.completedDestinations,
-    lastOfferedDestinations: progress.run.lastOfferedDestinations,
-    destinationRoundsSinceOffered: progress.run.destinationRoundsSinceOffered,
-    runTrinkets: progress.run.runTrinkets,
-    encounteredRunEnemyIds: progress.run.encounteredRunEnemyIds,
-    selectedDifficulty: progress.run.selectedDifficulty,
-    contentSystemType: progress.run.contentSystemType,
-    talentXP: progress.permanent.talentXP,
-    runTalentXP: progress.run.runTalentXP,
-    runMaterialsEarned: progress.run.runMaterialsEarned,
-    unlockedTalents: progress.permanent.unlockedTalents,
-    initialized: progress.initialized,
+    characterId: state.activeRun.characterId,
+    runDeck: state.activeRun.runDeck,
+    runGold: state.activeRun.runGold,
+    runPlayerHealth: state.activeRun.runPlayerHealth,
+    runMaxHealth: state.activeRun.runMaxHealth,
+    roomsEncountered: state.activeRun.roomsEncountered,
+    currentAct: state.activeRun.currentAct,
+    destinationIndexInAct: state.activeRun.destinationIndexInAct,
+    completedDestinations: state.activeRun.completedDestinations,
+    lastOfferedDestinations: state.activeRun.lastOfferedDestinations,
+    destinationRoundsSinceOffered: state.activeRun.destinationRoundsSinceOffered,
+    runTrinkets: state.activeRun.runTrinkets,
+    encounteredRunEnemyIds: state.activeRun.encounteredRunEnemyIds,
+    selectedDifficulty: state.activeRun.selectedDifficulty,
+    contentSystemType: state.activeRun.contentSystemType,
+    talentXP: state.profile.talentXP,
+    runTalentXP: state.activeRun.runTalentXP,
+    runMaterialsEarned: state.activeRun.runMaterialsEarned,
+    unlockedTalents: state.profile.unlockedTalents,
+    initialized: state.initialized,
   };
 }
 
@@ -223,7 +223,7 @@ export function getRunSession(screen?: Screen): RunSession {
   return {
     screen: resolvedScreen,
     phase: getRunPhase(resolvedScreen, battle.hasActiveBattle),
-    run: pickRunSessionRunSlice(state.progress),
+    run: pickRunSessionRunSlice(state),
     session: pickRunSessionTransientSlice(state.session),
     battle,
   };

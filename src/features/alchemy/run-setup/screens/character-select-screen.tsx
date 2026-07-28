@@ -24,7 +24,7 @@ import {
 } from "../../shared/ui/tooltip-panel";
 import { cardSurfaceClass } from "@/features/alchemy/shared/config";
 import { useUiStore } from "../../shared/stores/ui-store";
-import { useAppStore } from "../../shared/stores/app-store";
+import { useProfileStore } from "../../shared/stores/profile-store";
 import { playUISound } from "@/lib/audio";
 
 const charCardWidthClass = "w-[clamp(18vh,20.5vh,28vh)]";
@@ -153,7 +153,7 @@ export function CharacterSelectScreen({
   const [selectedId, setSelectedId] = useState<CharacterId | null>(null);
   const shimmerState = useUiStore((s) => s.shimmerState);
   const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
-  const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
+  const finishedRunCharacters = useProfileStore((s) => s.finishedRunCharacters);
 
   const charIds = Object.keys(characters) as CharacterId[];
   const selectedChar = selectedId ? characters[selectedId] : null;

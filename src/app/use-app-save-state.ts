@@ -3,7 +3,8 @@
 // Used by: App.tsx.
 import { useEffect, useRef } from "react";
 import { readHasActiveRun, subscribeRunDomain } from "@/features/alchemy/shared/stores/run-session-facade";
-import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-transitions";
 import { saveAlchemySaveData } from "@/features/alchemy/shared/storage";
@@ -54,9 +55,10 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
       );
     };
 
-    // Subscribe to state changes in all three stores
+    // Subscribe to state changes in each persistence owner.
     const unsubRun = subscribeRunDomain(triggerSave);
-    const unsubApp = useAppStore.subscribe(triggerSave);
+    const unsubProfile = useProfileStore.subscribe(triggerSave);
+    const unsubSettings = useSettingsStore.subscribe(triggerSave);
     const unsubGear = useGearStore.subscribe(triggerSave);
 
     const handleBeforeUnload = () => {
@@ -67,7 +69,8 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
 
     return () => {
       unsubRun();
-      unsubApp();
+      unsubProfile();
+      unsubSettings();
       unsubGear();
       window.removeEventListener("beforeunload", handleBeforeUnload);
       flush();

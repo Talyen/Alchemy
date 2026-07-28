@@ -7,7 +7,7 @@ import {
   type RunStateController,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
-import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { type BattleCard, type DifficultyModifier } from "@/lib/game-data";
 import { logError } from "@/lib/error-logger";
 import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
@@ -106,7 +106,7 @@ export function useWildwoodGauntletFlow({
       if (run.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD || state?.phase !== "draft") return;
       const nextDeck = [...run.runDeck, card];
       run.setRunDeck(nextDeck);
-      useAppStore.getState().setDiscoveredCardIds((current) => appendUnique(current, card.id));
+      useProfileStore.getState().setDiscoveredCardIds((current) => appendUnique(current, card.id));
       setWildwoodDraft({
         ...state,
         draftChoices: nextDeck.length >= DRAFT_ROUNDS ? [] : createWildwoodDraftChoices(run.characterId, nextDeck),

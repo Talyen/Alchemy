@@ -9,7 +9,7 @@ function uniqueMatches(source: string, pattern: RegExp) {
 }
 
 function appStateReads() {
-  const directReads = uniqueMatches(renderSource, /useAppStore\.getState\(\)\.(\w+)/g);
+  const directReads = uniqueMatches(renderSource, /useProfileStore\.getState\(\)\.(\w+)/g);
   const snapshotReads = uniqueMatches(renderSource, /appState\.(\w+)/g).filter((field) => !isAppStoreAction(field));
   return [...new Set([...directReads, ...snapshotReads])].sort();
 }
@@ -19,14 +19,14 @@ function isAppStoreAction(field: string) {
 }
 
 describe("render-alchemy-screen store subscription contract", () => {
-  it("subscribes in App.tsx to every app-store state field read by render-alchemy-screen.tsx", () => {
-    const subscribedFields = uniqueMatches(appSource, /useAppStore\(\(s\) => s\.(\w+)/g);
+  it("subscribes in App.tsx to every profile state field read by render-alchemy-screen.tsx", () => {
+    const subscribedFields = uniqueMatches(appSource, /useProfileStore\(\(s\) => s\.(\w+)/g);
     const missing = appStateReads().filter((field) => !subscribedFields.includes(field));
 
     expect(
       missing,
       [
-        "Fields read via useAppStore.getState() or appState in render-alchemy-screen.tsx",
+        "Profile fields read imperatively in render-alchemy-screen.tsx",
         "but not subscribed in App.tsx:",
         ...missing,
       ].join("\n  "),

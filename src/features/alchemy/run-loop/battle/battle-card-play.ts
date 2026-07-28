@@ -11,7 +11,7 @@ import {
 import type { BattleCard } from "@/lib/game-data";
 import { playCardSound, playGoldGain, playUISound } from "@/lib/audio";
 import { appendUnique } from "@/lib/utils";
-import { useAppStore } from "../../shared/stores/app-store";
+import { useProfileStore } from "../../shared/stores/profile-store";
 import { CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
 import { animateCardActivation } from "./card-transfer-animations";
 import { getCardRect, getHoverId } from "../../shared/utils";
@@ -147,7 +147,7 @@ export function createBattleCardPlay(
     const newState = chooseWishCard(currentState, cardOrNull?.id ?? null);
     const sessionNum = ctx.battleSessionRef.current;
     if (cardOrNull) {
-      useAppStore.getState().setDiscoveredCardIds((current) => appendUnique(current, cardOrNull.id));
+      useProfileStore.getState().setDiscoveredCardIds((current) => appendUnique(current, cardOrNull.id));
     }
     runDrawSequenceAndFinalize(
       currentState.hand,

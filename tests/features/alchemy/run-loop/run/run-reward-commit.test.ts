@@ -8,8 +8,8 @@ const discoveryMocks = vi.hoisted(() => ({
   setDiscoveredTrinketIds: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/shared/stores/app-store", () => ({
-  useAppStore: {
+vi.mock("@/features/alchemy/shared/stores/profile-store", () => ({
+  useProfileStore: {
     getState: () => ({
       setDiscoveredCardIds: discoveryMocks.setDiscoveredCardIds,
       setDiscoveredTrinketIds: discoveryMocks.setDiscoveredTrinketIds,

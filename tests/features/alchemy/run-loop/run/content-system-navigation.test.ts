@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { makeRunController, makeTalentController } from "../../../../helpers/run-controller";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID, DRAFT_ROUNDS } from "@/lib/game-constants";
@@ -29,7 +29,7 @@ vi.mock("@/features/alchemy/shared/run-flow/campaign-start", async (importOrigin
 beforeEach(() => {
   resetTransientRunUi();
   resetRunProgressSlice();
-  useAppStore.setState({ discoveredCardIds: [], discoveredTrinketIds: [] });
+  useProfileStore.setState({ discoveredCardIds: [], discoveredTrinketIds: [] });
 });
 
 function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNavigation>[0]> = {}) {
@@ -109,7 +109,7 @@ describe("createContentSystemNavigation", () => {
 
     nav.initializeRunForDifficulty("knight", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
 
-    expect(useAppStore.getState().discoveredCardIds).toEqual(knightStarterIds);
+    expect(useProfileStore.getState().discoveredCardIds).toEqual(knightStarterIds);
   });
 
   it("initializeWildwoodRun does not discover the normal starter deck", () => {
@@ -118,7 +118,7 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("knight");
 
-    expect(useAppStore.getState().discoveredCardIds).toEqual([]);
+    expect(useProfileStore.getState().discoveredCardIds).toEqual([]);
   });
 
   it("routes wildcard draft to draft-deck screen", () => {

@@ -10,9 +10,9 @@ import {
   TalentsScreen,
   ArmoryScreen,
 } from "@/features/alchemy/meta/screens";
-import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 
-import { useAppActions, useHomesteadActions } from "@/features/alchemy/shared/stores/store-actions";
+import { useCollectionActions, useHomesteadActions } from "@/features/alchemy/shared/stores/store-actions";
 import {
   useBondedCompanions,
   useContentSystemType,
@@ -87,7 +87,7 @@ function GameModeSelectScreenRoute({ commands }: { commands: MetaRouteCtx["route
 }
 
 function CollectionScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattleMenu">) {
-  const appValues = useAppStore(
+  const profile = useProfileStore(
     useShallow((s) => ({
       collectionTab: s.collectionTab,
       discoveredCardIds: s.discoveredCardIds,
@@ -96,27 +96,27 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenB
       collectionPages: s.collectionPages,
     })),
   );
-  const appActions = useAppActions();
+  const collectionActions = useCollectionActions();
   const bondedCompanions = useBondedCompanions();
 
   return (
     <CollectionScreen
       onOpenMenu={onOpenBattleMenu}
-      collectionTab={appValues.collectionTab}
-      onSelectTab={appActions.handleCollectionTabChange}
-      onPageChange={appActions.setCollectionPage}
+      collectionTab={profile.collectionTab}
+      onSelectTab={collectionActions.handleCollectionTabChange}
+      onPageChange={collectionActions.setCollectionPage}
       bondedCompanions={bondedCompanions}
-      discoveredCardIds={appValues.discoveredCardIds}
-      encounteredEnemyIds={appValues.encounteredEnemyIds}
-      discoveredTrinketIds={appValues.discoveredTrinketIds}
-      collectionPages={appValues.collectionPages}
+      discoveredCardIds={profile.discoveredCardIds}
+      encounteredEnemyIds={profile.encounteredEnemyIds}
+      discoveredTrinketIds={profile.discoveredTrinketIds}
+      collectionPages={profile.collectionPages}
     />
   );
 }
 
 function HomesteadScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattleMenu">) {
   const homesteadValues = useHomesteadProgressSlice();
-  const discoveredCardIds = useAppStore((s) => s.discoveredCardIds);
+  const discoveredCardIds = useProfileStore((s) => s.discoveredCardIds);
   const homesteadActions = useHomesteadActions();
 
   return (
