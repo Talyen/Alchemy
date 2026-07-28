@@ -421,6 +421,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(desktop): retain Sentry frame debug IDs
 - fix(desktop): preserve Sentry source map metadata
 - fix(desktop): install browser V8 snapshot
 - fix(desktop): verify packaged Sentry transport
@@ -961,6 +962,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(desktop): simplify Sentry reporting
 - refactor(save): compose domain persistence codecs
 - refactor(run): persist deterministic rng streams
 - refactor(state): separate runtime ownership by lifetime
