@@ -35,9 +35,10 @@ Automation enforces release readiness — agents do not rely on manual checklist
 
 ## Desktop crash reporting (one-time setup)
 
-Alchemy uses Sentry only for anonymous crashes from packaged production desktop releases. Browser development,
-tests, and ordinary local packages do not initialize reporting. No performance traces, replay, analytics,
-continuous logs, gameplay breadcrumbs, saves, Steam identity, or player-entered content are sent.
+Alchemy uses Sentry for error reporting from packaged production desktop releases. Browser development, tests, and
+ordinary local packages do not initialize reporting. Performance traces and continuous logs are disabled, and the
+SDK is configured with `sendDefaultPii: false`. Alchemy does not set a Sentry user or deliberately attach Steam
+identity or save data. Otherwise, events use Sentry's standard Electron error context and breadcrumbs.
 
 1. Create an Electron project in Sentry and copy its public DSN.
 2. Add `SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` as GitHub Actions secrets. Scope the
@@ -45,9 +46,9 @@ continuous logs, gameplay breadcrumbs, saves, Steam identity, or player-entered 
 3. In Sentry, create an email alert for new and regressed issues. The initial free tier is quota limited; when the
    quota is exhausted the game continues normally and events are dropped.
 4. Add this disclosure to the Steam privacy notice before enabling the secrets:
-   “Alchemy automatically sends anonymous technical crash reports, including the game version, operating system,
-   Electron version, crash location, and non-identifying screen label, to Sentry. Reports do not include Steam
-   identity, save data, gameplay state, or user-entered content.”
+   “Alchemy automatically sends technical error reports to Sentry. Reports can include the game version, operating
+   system, Electron version, crash location, screen label, and diagnostic context collected by Sentry's Electron
+   SDK. Alchemy does not deliberately attach Steam identity or save data.”
 
 Release desktop builds create hidden source maps, upload them as `alchemy@<package version>`, and delete them before
 electron-builder assembles the application. The packaging verifier checks that maps and CI credentials are absent.

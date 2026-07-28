@@ -1,8 +1,6 @@
 import { createRequire } from "node:module";
 import { describe, expect, it, vi } from "vitest";
 
-import { scrubRendererEvent } from "@/lib/crash-reporting";
-
 const require = createRequire(import.meta.url);
 interface MainSentryModule {
   flushSentryTestEvent: (
@@ -31,28 +29,22 @@ describe("desktop crash reporting", () => {
     expect(init).not.toHaveBeenCalled();
   });
 
-  it("initializes non-fatally and installs a fail-closed scrubber", () => {
+  it("initializes non-fatally with basic error reporting", () => {
     const init = vi.fn();
     const app = { getAppPath: () => ".", getVersion: () => "1.2.3", isPackaged: true };
     expect(
       mainSentry.initializeMainSentry(app, { init }, { sentryEnabled: true, sentryDsn: "https://public@example/1" }),
     ).toBe(true);
     const options = init.mock.calls[0]?.[0] as {
-      beforeSend: (event: Record<string, unknown>) => Record<string, unknown> | null;
+      autoSessionTracking: boolean;
       sendDefaultPii: boolean;
       tracesSampleRate: number;
     };
+    expect(options.autoSessionTracking).toBe(false);
     expect(options.sendDefaultPii).toBe(false);
     expect(options.tracesSampleRate).toBe(0);
-    expect(options.beforeSend({ user: { id: "steam-id" }, request: { headers: { secret: "x" } } })).toEqual({
-      event_id: undefined,
-      exception: undefined,
-      level: undefined,
-      platform: undefined,
-      release: undefined,
-      tags: {},
-      timestamp: undefined,
-    });
+    expect(options).not.toHaveProperty("beforeSend");
+    expect(options).not.toHaveProperty("integrations");
 
     expect(mainSentry.initializeMainSentry(app, { init: () => void 0 }, { sentryEnabled: true, sentryDsn: "" })).toBe(
       false,
@@ -84,68 +76,5 @@ describe("desktop crash reporting", () => {
     });
     expect(setTag).toHaveBeenCalledWith("source", "crash-test-renderer");
     expect(sentry.flush).toHaveBeenCalledWith(5_000);
-  });
-
-  it("removes PII fields and absolute paths from renderer events", () => {
-    const scrubbed = scrubRendererEvent({
-      user: { id: "steam-id" },
-      request: { url: "https://example.invalid/?token=secret" },
-      tags: { source: "react", steamName: "Player" },
-      debug_meta: {
-        images: [
-          {
-            code_file: "C:\\Users\\player\\assets\\index.js",
-            debug_id: "source-map-debug-id",
-            image_addr: "secret",
-            type: "sourcemap",
-          },
-        ],
-      },
-      exception: {
-        values: [
-          {
-            type: "Error",
-            value: "failed at /Users/player/save.json",
-            stacktrace: {
-              frames: [
-                {
-                  debug_id: "source-map-debug-id",
-                  filename: "C:\\Users\\player\\game.js",
-                  lineno: 10,
-                },
-              ],
-            },
-          },
-        ],
-      },
-    });
-    expect(scrubbed).not.toHaveProperty("user");
-    expect(scrubbed).not.toHaveProperty("request");
-    expect(scrubbed?.tags).toEqual({ source: "react" });
-    expect(scrubbed?.debug_meta).toEqual({
-      images: [
-        {
-          code_file: "[local-path]",
-          debug_id: "source-map-debug-id",
-          type: "sourcemap",
-        },
-      ],
-    });
-    expect(
-      (
-        scrubbed?.exception as {
-          values?: Array<{ stacktrace?: { frames?: Array<Record<string, unknown>> } }>;
-        }
-      ).values?.[0]?.stacktrace?.frames?.[0],
-    ).toEqual({
-      colno: undefined,
-      debug_id: "source-map-debug-id",
-      filename: "[local-path]",
-      function: undefined,
-      in_app: undefined,
-      lineno: 10,
-    });
-    expect(scrubRendererEvent({ release: "alchemy@1.2.3" })?.release).toBe("alchemy@1.2.3");
-    expect(JSON.stringify(scrubbed)).not.toContain("player");
   });
 });

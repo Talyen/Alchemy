@@ -421,7 +421,6 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
-- fix(desktop): retain Sentry frame debug IDs
 - fix(desktop): preserve Sentry source map metadata
 - fix(desktop): install browser V8 snapshot
 - fix(desktop): verify packaged Sentry transport
