@@ -2,10 +2,7 @@
 import { platform } from "@/lib/platform";
 import { loadAlchemySaveState, type SaveLoadState } from "./io";
 import type { SaveData } from "./types";
-import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { applyHomesteadSaveFields } from "@/features/alchemy/shared/stores/run-session-facade";
-import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { hydrateAlchemyPersistenceFields } from "./persistence-coordinator";
 
 export async function bootstrapAlchemySaveState(): Promise<SaveLoadState> {
   if (platform.isDesktop) {
@@ -15,22 +12,5 @@ export async function bootstrapAlchemySaveState(): Promise<SaveLoadState> {
 }
 
 export function applySaveDataToStores(data: SaveData) {
-  useSettingsStore.getState().initialize(data);
-  useProfileStore.getState().initialize(data);
-  applyHomesteadSaveFields({
-    materialInventory: data.materialInventory,
-    constructedBuildings: data.constructedBuildings,
-    plantedFarms: data.plantedFarms,
-    completedResearch: data.completedResearch,
-    bondedCompanions: data.bondedCompanions,
-  });
-  useGearStore
-    .getState()
-    .initialize(
-      data.gearInventories,
-      data.gearLoadouts,
-      data.gearBoardPositionsByCharacter,
-      data.craftingCurrencies,
-      data.craftingCurrencyBoardPositionsByCharacter,
-    );
+  hydrateAlchemyPersistenceFields(data);
 }

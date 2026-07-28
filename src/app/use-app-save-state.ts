@@ -2,12 +2,9 @@
 // Depends on: saveAlchemySaveData (storage), isAnimationDisabled (game-constants).
 // Used by: App.tsx.
 import { useEffect, useRef } from "react";
-import { readHasActiveRun, subscribeRunDomain } from "@/features/alchemy/shared/stores/run-session-facade";
-import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { readHasActiveRun } from "@/features/alchemy/shared/stores/run-session-facade";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-transitions";
-import { saveAlchemySaveData } from "@/features/alchemy/shared/storage";
+import { saveAlchemySaveData, subscribeAlchemyPersistence } from "@/features/alchemy/shared/storage";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import type { Screen } from "@/lib/routing";
@@ -55,11 +52,7 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
       );
     };
 
-    // Subscribe to state changes in each persistence owner.
-    const unsubRun = subscribeRunDomain(triggerSave);
-    const unsubProfile = useProfileStore.subscribe(triggerSave);
-    const unsubSettings = useSettingsStore.subscribe(triggerSave);
-    const unsubGear = useGearStore.subscribe(triggerSave);
+    const unsubscribePersistence = subscribeAlchemyPersistence(triggerSave);
 
     const handleBeforeUnload = () => {
       flush();
@@ -68,10 +61,7 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
     window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
-      unsubRun();
-      unsubProfile();
-      unsubSettings();
-      unsubGear();
+      unsubscribePersistence();
       window.removeEventListener("beforeunload", handleBeforeUnload);
       flush();
     };

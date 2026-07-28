@@ -10,6 +10,14 @@ import type {
   GearSlot,
 } from "@/lib/gear";
 
+export interface GearSaveFields {
+  gearInventories: GearInventories;
+  gearLoadouts: GearLoadouts;
+  gearBoardPositionsByCharacter: GearBoardPositionsByCharacter;
+  craftingCurrencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
+  craftingCurrencies: Record<CraftingCurrencyId, number>;
+}
+
 export interface GearStore {
   inventories: GearInventories;
   loadouts: GearLoadouts;

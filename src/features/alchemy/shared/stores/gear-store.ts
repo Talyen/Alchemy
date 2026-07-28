@@ -21,10 +21,14 @@ import {
   updateGearStateAndSync,
   moveBoardItemForState,
   sortBoardForCharacter,
+  createEmptyGearInventories,
+  createEmptyGearLoadouts,
+  EMPTY_CRAFTING_CURRENCIES,
 } from "@/lib/gear";
-import type { GearStore } from "./gear-store-types";
+import type { GearSaveFields, GearStore } from "./gear-store-types";
 
 import { initialState } from "./gear-store-initial-state";
+import type { PersistenceCodec } from "./persistence-codec";
 
 function boardPositionRegistriesEqual(
   left: Record<string, Record<string, { col: number; row: number } | undefined>>,
@@ -290,3 +294,39 @@ export const useGearStore = create<GearStore>((set, get) => ({
     }),
   reset: () => set(initialState),
 }));
+
+export function createDefaultGearSaveFields(): GearSaveFields {
+  return {
+    gearInventories: createEmptyGearInventories(),
+    gearLoadouts: createEmptyGearLoadouts(),
+    gearBoardPositionsByCharacter: createEmptyGearBoardPositionsByCharacter(),
+    craftingCurrencyBoardPositionsByCharacter: createEmptyCurrencyBoardPositionsByCharacter(),
+    craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
+  };
+}
+
+export const gearPersistenceCodec: PersistenceCodec<GearSaveFields> = {
+  createDefault: createDefaultGearSaveFields,
+  encode: () => {
+    const state = useGearStore.getState();
+    return {
+      gearInventories: state.inventories,
+      gearLoadouts: state.loadouts,
+      gearBoardPositionsByCharacter: state.boardPositionsByCharacter,
+      craftingCurrencyBoardPositionsByCharacter: state.currencyBoardPositionsByCharacter,
+      craftingCurrencies: state.craftingCurrencies,
+    };
+  },
+  hydrate: (fields) => {
+    useGearStore
+      .getState()
+      .initialize(
+        fields.gearInventories,
+        fields.gearLoadouts,
+        fields.gearBoardPositionsByCharacter,
+        fields.craftingCurrencies,
+        fields.craftingCurrencyBoardPositionsByCharacter,
+      );
+  },
+  subscribe: (listener) => useGearStore.subscribe(listener),
+};

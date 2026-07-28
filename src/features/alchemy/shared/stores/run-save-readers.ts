@@ -1,29 +1,66 @@
-// Persistence read helpers for save snapshots — kept separate from run-session-facade
-// so storage/build-save-data-from-stores does not pull run-transitions into the graph.
-import type { TalentXP, UnlockedTalents } from "@/lib/game-data";
+// Store-owned codec for permanent run-domain progression save fields.
+import type { CompanionId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import { getRunDomainStore, type RunProgressStore } from "./run-domain-store";
+import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
+import { computeHomesteadEffects } from "@/lib/homestead/effects";
+import { createInitialPermanentFields } from "@/features/alchemy/run-setup/run/run-state-init";
+import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
+import type { PersistenceCodec } from "./persistence-codec";
 
-export type HomesteadSaveFields = Pick<
-  RunProgressStore,
-  "materialInventory" | "constructedBuildings" | "plantedFarms" | "completedResearch" | "bondedCompanions"
->;
-
-/** Persistence: permanent homestead + talent fields for save snapshots. */
-export function readPermanentProgressForSave(): HomesteadSaveFields & {
-  effects: HomesteadEffectManifest;
+export interface RunProfileSaveFields {
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
-} {
-  const permanent = getRunDomainStore().profile;
+  materialInventory: MaterialInventory;
+  constructedBuildings: Record<BuildingId, number>;
+  plantedFarms: Record<FarmId, number>;
+  completedResearch: Record<ResearchId, number>;
+  bondedCompanions: Record<CompanionId, number>;
+}
+
+type RunProfileSnapshot = RunProfileSaveFields & {
+  effects: HomesteadEffectManifest;
+};
+
+function encodeRunProfileSnapshot(snapshot: RunProfileSnapshot): RunProfileSaveFields {
   return {
-    materialInventory: permanent.materialInventory,
-    constructedBuildings: permanent.constructedBuildings,
-    plantedFarms: permanent.plantedFarms,
-    completedResearch: permanent.completedResearch,
-    bondedCompanions: permanent.bondedCompanions,
-    effects: permanent.effects,
-    talentXP: permanent.talentXP,
-    unlockedTalents: permanent.unlockedTalents,
+    talentXP: snapshot.talentXP,
+    unlockedTalents: snapshot.unlockedTalents,
+    materialInventory: snapshot.materialInventory,
+    constructedBuildings: snapshot.constructedBuildings,
+    plantedFarms: snapshot.plantedFarms,
+    completedResearch: snapshot.completedResearch,
+    bondedCompanions: snapshot.bondedCompanions,
   };
 }
+
+export function createDefaultRunProfileSaveFields(): RunProfileSaveFields {
+  return encodeRunProfileSnapshot(createInitialPermanentFields());
+}
+
+/** Persistence: permanent homestead + talent fields for save snapshots. */
+function readPermanentProgressForSave(): RunProfileSnapshot {
+  return getRunDomainStore().profile;
+}
+
+export const runProfilePersistenceCodec: PersistenceCodec<RunProfileSaveFields> = {
+  createDefault: createDefaultRunProfileSaveFields,
+  encode: () => encodeRunProfileSnapshot(readPermanentProgressForSave()),
+  hydrate: (fields) => {
+    useRunDomainStore.setState((state) => {
+      state.profile.talentXP = fields.talentXP;
+      state.profile.unlockedTalents = fields.unlockedTalents;
+      state.profile.materialInventory = fields.materialInventory;
+      state.profile.constructedBuildings = fields.constructedBuildings;
+      state.profile.plantedFarms = fields.plantedFarms;
+      state.profile.completedResearch = fields.completedResearch;
+      state.profile.bondedCompanions = fields.bondedCompanions;
+      state.profile.effects = computeHomesteadEffects(
+        fields.constructedBuildings,
+        fields.plantedFarms,
+        fields.completedResearch,
+        fields.bondedCompanions,
+      );
+    });
+  },
+  subscribe: (listener) => useRunDomainStore.subscribe(listener),
+};

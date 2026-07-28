@@ -5,7 +5,6 @@ import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryEvent } from "@/lib/mystery";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { Screen } from "@/lib/routing";
@@ -32,7 +31,6 @@ import {
 import type { RunStateController, TalentStateController } from "./run-domain-store";
 import type { DisplayOverrides } from "./run-domain-types";
 import { restoreRun, snapshotRun } from "./run-transitions";
-import type { HomesteadSaveFields } from "./run-save-readers";
 import type { RunRngStream } from "@/lib/run-rng";
 
 export {
@@ -263,31 +261,7 @@ export function setMaterials(materials: MaterialInventory) {
   getRunDomainStore().setMaterials(materials);
 }
 
-/** Persistence: subscribe to any run-domain mutation (autosave). */
-export function subscribeRunDomain(listener: () => void): () => void {
-  return useRunDomainStore.subscribe(listener);
-}
-
 /** Persistence: whether an active run should be snapshotted. */
 export function readHasActiveRun(): boolean {
   return getRunDomainStore().session.hasActiveRun;
-}
-
-export type { HomesteadSaveFields };
-
-/** Persistence: hydrate permanent homestead fields from save data. */
-export function applyHomesteadSaveFields(homestead: HomesteadSaveFields): void {
-  useRunDomainStore.setState((state) => {
-    state.profile.materialInventory = homestead.materialInventory;
-    state.profile.constructedBuildings = homestead.constructedBuildings;
-    state.profile.plantedFarms = homestead.plantedFarms;
-    state.profile.completedResearch = homestead.completedResearch;
-    state.profile.bondedCompanions = homestead.bondedCompanions;
-    state.profile.effects = computeHomesteadEffects(
-      homestead.constructedBuildings,
-      homestead.plantedFarms,
-      homestead.completedResearch,
-      homestead.bondedCompanions,
-    );
-  });
 }

@@ -1,17 +1,35 @@
 import { create } from "zustand";
 import type { AspectRatioOption, DisplayMode, UiScale } from "@/features/alchemy/shared/types";
-import { defaultSaveData, type SaveData } from "@/features/alchemy/shared/storage";
+import {
+  DEFAULT_BRIGHTNESS_PCT,
+  DEFAULT_MASTER_VOLUME_PCT,
+  DEFAULT_MUSIC_VOLUME_PCT,
+  DEFAULT_SFX_VOLUME_PCT,
+} from "@/lib/game-constants";
+import type { PersistenceCodec } from "./persistence-codec";
 
-export interface SettingsStore {
+export interface SettingsSaveFields {
   selectedAspectRatio: AspectRatioOption;
   displayMode: DisplayMode;
   uiScale: UiScale;
   brightness: number;
-  musicVol: number;
-  sfxVol: number;
-  masterVol: number;
+  musicVolume: number;
+  sfxVolume: number;
+  masterVolume: number;
   muteInBackground: boolean;
   autoEndTurn: boolean;
+}
+
+export interface SettingsStore {
+  selectedAspectRatio: SettingsSaveFields["selectedAspectRatio"];
+  displayMode: SettingsSaveFields["displayMode"];
+  uiScale: SettingsSaveFields["uiScale"];
+  brightness: SettingsSaveFields["brightness"];
+  musicVol: SettingsSaveFields["musicVolume"];
+  sfxVol: SettingsSaveFields["sfxVolume"];
+  masterVol: SettingsSaveFields["masterVolume"];
+  muteInBackground: SettingsSaveFields["muteInBackground"];
+  autoEndTurn: SettingsSaveFields["autoEndTurn"];
   showClearSaveConfirm: boolean;
 
   setSelectedAspectRatio: (value: AspectRatioOption) => void;
@@ -25,25 +43,38 @@ export interface SettingsStore {
   setAutoEndTurn: (value: boolean) => void;
   setShowClearSaveConfirm: (value: boolean) => void;
   resetToDefaults: () => void;
-  initialize: (save: SaveData) => void;
 }
 
-function savedSettings(save: SaveData) {
+export function createDefaultSettingsSaveFields(): SettingsSaveFields {
   return {
-    selectedAspectRatio: save.selectedAspectRatio,
-    displayMode: save.displayMode,
-    uiScale: save.uiScale,
-    brightness: save.brightness,
-    musicVol: save.musicVolume,
-    sfxVol: save.sfxVolume,
-    masterVol: save.masterVolume,
-    muteInBackground: save.muteInBackground,
-    autoEndTurn: save.autoEndTurn,
+    selectedAspectRatio: "auto",
+    displayMode: "borderless-fullscreen",
+    uiScale: "100",
+    brightness: DEFAULT_BRIGHTNESS_PCT,
+    musicVolume: DEFAULT_MUSIC_VOLUME_PCT,
+    sfxVolume: DEFAULT_SFX_VOLUME_PCT,
+    masterVolume: DEFAULT_MASTER_VOLUME_PCT,
+    muteInBackground: true,
+    autoEndTurn: true,
+  };
+}
+
+function settingsStoreFields(fields: SettingsSaveFields) {
+  return {
+    selectedAspectRatio: fields.selectedAspectRatio,
+    displayMode: fields.displayMode,
+    uiScale: fields.uiScale,
+    brightness: fields.brightness,
+    musicVol: fields.musicVolume,
+    sfxVol: fields.sfxVolume,
+    masterVol: fields.masterVolume,
+    muteInBackground: fields.muteInBackground,
+    autoEndTurn: fields.autoEndTurn,
   };
 }
 
 export const useSettingsStore = create<SettingsStore>()((set) => ({
-  ...savedSettings(defaultSaveData),
+  ...settingsStoreFields(createDefaultSettingsSaveFields()),
   showClearSaveConfirm: false,
 
   setSelectedAspectRatio: (selectedAspectRatio) => set({ selectedAspectRatio }),
@@ -56,6 +87,28 @@ export const useSettingsStore = create<SettingsStore>()((set) => ({
   setMuteInBackground: (muteInBackground) => set({ muteInBackground }),
   setAutoEndTurn: (autoEndTurn) => set({ autoEndTurn }),
   setShowClearSaveConfirm: (showClearSaveConfirm) => set({ showClearSaveConfirm }),
-  resetToDefaults: () => set({ ...savedSettings(defaultSaveData), showClearSaveConfirm: false }),
-  initialize: (save) => set(savedSettings(save)),
+  resetToDefaults: () =>
+    set({ ...settingsStoreFields(createDefaultSettingsSaveFields()), showClearSaveConfirm: false }),
 }));
+
+export const settingsPersistenceCodec: PersistenceCodec<SettingsSaveFields> = {
+  createDefault: createDefaultSettingsSaveFields,
+  encode: () => {
+    const state = useSettingsStore.getState();
+    return {
+      selectedAspectRatio: state.selectedAspectRatio,
+      displayMode: state.displayMode,
+      uiScale: state.uiScale,
+      brightness: state.brightness,
+      musicVolume: state.musicVol,
+      sfxVolume: state.sfxVol,
+      masterVolume: state.masterVol,
+      muteInBackground: state.muteInBackground,
+      autoEndTurn: state.autoEndTurn,
+    };
+  },
+  hydrate: (fields) => {
+    useSettingsStore.setState(settingsStoreFields(fields));
+  },
+  subscribe: (listener) => useSettingsStore.subscribe(listener),
+};

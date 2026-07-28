@@ -1,47 +1,14 @@
-// Save-data types for settings, collection, run, talents, and homestead state.
-// Depends on character game data plus talent, homestead, run, and option type contracts.
-import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
-import type { CompanionId, CharacterId, DifficultyId, UnlockedTalents, TalentXP } from "@/lib/game-data";
+// Save envelope composed from store-owned persistence field contracts.
 import type { ActiveRunData } from "@/lib/active-run-session";
-import type {
-  GearInventories,
-  GearLoadouts,
-  GearBoardPositionsByCharacter,
-  CraftingCurrencyId,
-  CraftingCurrencyBoardPositionsByCharacter,
-} from "@/lib/gear";
-import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
+import type { GearSaveFields } from "../stores/gear-store-types";
+import type { ProfileSaveFields } from "../stores/profile-store";
+import type { RunProfileSaveFields } from "../stores/run-save-readers";
+import type { SettingsSaveFields } from "../stores/settings-store";
 
-export interface SaveData {
+export interface SaveData extends SettingsSaveFields, ProfileSaveFields, GearSaveFields, RunProfileSaveFields {
   saveSchemaVersion: number;
   gameBuildVersion: string;
   contentVersion: number;
-  selectedAspectRatio: AspectRatioOption;
-  displayMode: DisplayMode;
-  uiScale: UiScale;
-  brightness: number;
-  discoveredCardIds: string[];
-  encounteredEnemyIds: string[];
-  discoveredTrinketIds: string[];
-  gearInventories: GearInventories;
-  gearLoadouts: GearLoadouts;
-  gearBoardPositionsByCharacter: GearBoardPositionsByCharacter;
-  craftingCurrencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
-  craftingCurrencies: Record<CraftingCurrencyId, number>;
-  talentXP: TalentXP;
-  unlockedTalents: UnlockedTalents;
-  musicVolume: number;
-  sfxVolume: number;
-  masterVolume: number;
-  muteInBackground: boolean;
-  autoEndTurn: boolean;
   activeRun: ActiveRunData | null;
-  materialInventory: MaterialInventory;
-  constructedBuildings: Record<BuildingId, number>;
-  plantedFarms: Record<FarmId, number>;
-  completedResearch: Record<ResearchId, number>;
-  bondedCompanions: Record<CompanionId, number>;
-  completedDifficulties: Record<CharacterId, DifficultyId[]>;
-  finishedRunCharacters: CharacterId[];
   lastSavedAt: number;
 }

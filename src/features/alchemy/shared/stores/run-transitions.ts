@@ -174,8 +174,7 @@ export function teardownRun(): void {
 
 /** Write the full save file immediately (bypasses autosave debounce). */
 async function flushPersistedSave(activeRun: ActiveRunData | null): Promise<void> {
-  const p = getRunDomainStore().profile;
-  await flushAlchemySaveNow(activeRun, p, p.talentXP, p.unlockedTalents);
+  await flushAlchemySaveNow(activeRun);
 }
 
 /** Persist meta/talent progress after a run ends with no resumable active run. */

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { profilePersistenceCodec, useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { settingsPersistenceCodec, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { defaultSaveData, type SaveData } from "@/features/alchemy/shared/storage";
 
 function makeSave(overrides: Partial<SaveData> = {}): SaveData {
@@ -23,7 +23,7 @@ describe("profile store", () => {
   });
 
   it("hydrates only profile fields from save data", () => {
-    useProfileStore.getState().initialize(
+    profilePersistenceCodec.hydrate(
       makeSave({
         discoveredCardIds: ["card-a"],
         encounteredEnemyIds: ["goblin"],
@@ -74,7 +74,7 @@ describe("settings store", () => {
   });
 
   it("hydrates only settings fields from save data", () => {
-    useSettingsStore.getState().initialize(
+    settingsPersistenceCodec.hydrate(
       makeSave({
         selectedAspectRatio: "16:9",
         displayMode: "windowed",

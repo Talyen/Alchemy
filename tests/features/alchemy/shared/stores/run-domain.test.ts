@@ -601,12 +601,7 @@ describe("run transitions", () => {
   it("flushSaveAfterRunEnd persists with no active run", async () => {
     flushSaveAfterRunEnd();
     await vi.waitFor(() => {
-      expect(flushAlchemySaveNow).toHaveBeenCalledWith(
-        null,
-        expect.objectContaining({ materialInventory: expect.any(Object) }),
-        {},
-        {},
-      );
+      expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
     });
   });
 
@@ -636,12 +631,7 @@ describe("run transitions", () => {
     expect(awardRunEndMaterials).toHaveBeenCalledOnce();
     expect(finalizeRunXP).toHaveBeenCalledOnce();
     await vi.waitFor(() => {
-      expect(flushAlchemySaveNow).toHaveBeenCalledWith(
-        null,
-        expect.objectContaining({ materialInventory: expect.any(Object) }),
-        {},
-        {},
-      );
+      expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
     });
     expect(clearCombatState).toHaveBeenCalledOnce();
     expect(getRunSessionStoreView().hasActiveRun).toBe(false);

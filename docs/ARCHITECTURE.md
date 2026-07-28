@@ -57,6 +57,8 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 | `snapshotRun(screen?)`            | Read domain store → `ActiveRunData`               |
 | `restoreRun(…)`                   | Apply snapshot on boot/resume                     |
 | `parseActiveRun(raw)`             | Validate JSON before hydrate                      |
+| Domain persistence codecs         | Own defaults, encode, hydrate, and subscriptions  |
+| Persistence coordinator           | Compose domain fields into the versioned envelope |
 
 ### Session facade (`run-session-facade.ts`)
 
@@ -105,7 +107,7 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 - Run-domain `profile` owns homestead and talent progression because those mutations participate directly in run reward finalization.
 - `gear-store` owns the permanent Gear subdomain and its invariants.
 
-Hydration and save snapshot composition cross these owners only in `shared/storage/`; feature code uses the owning store or its focused read/action port.
+Each persistence owner exposes a codec beside its store. The codec owns that domain's save-field contract, defaults, encoding, hydration, and subscription. `shared/storage/persistence-coordinator.ts` only composes those codecs; it contains no field-by-field store mapping. Feature code uses the owning store or its focused read/action port.
 
 ## Permanent Gear (`gear-store`)
 
