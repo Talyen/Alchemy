@@ -44,7 +44,9 @@ if (process.env.CI_RELEASE === "true" && configuredSentryUploadFields.length ===
 }
 
 const builderCli = join(root, "node_modules", "electron-builder", "out", "cli", "cli.js");
-const builderArgs = [];
+// Publishing is an explicit release-workflow responsibility. electron-builder
+// otherwise infers publishing from CI environment variables.
+const builderArgs = ["--publish", "never"];
 for (const target of targets) {
   if (target === "win") builderArgs.push("--win");
   if (target === "linux") builderArgs.push("--linux");

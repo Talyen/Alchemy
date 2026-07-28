@@ -49,6 +49,7 @@ describe("steam platform config", () => {
     expect(distDesktop).toContain("AZURE_CODE_SIGNING_ENDPOINT");
     expect(distDesktop).toContain("forceCodeSigning=true");
     expect(distDesktop).toContain('"electron-builder", "out", "cli", "cli.js"');
+    expect(distDesktop).toContain('["--publish", "never"]');
     expect(distDesktop).not.toContain('"npx.cmd"');
     expect(JSON.stringify(pkg.build)).not.toContain('"signAndEditExecutable":false');
   });
