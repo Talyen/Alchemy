@@ -83,7 +83,7 @@ function CharacterCard({
             alt={char.name}
             className={cn(
               cardSurfaceClass,
-              "w-full rounded-shell-tooltip aspect-[3/4]",
+              "aspect-[3/4] w-full rounded-shell-tooltip",
               isLocked && "opacity-45 grayscale-[50%]",
             )}
           />
@@ -126,7 +126,7 @@ function CharacterCard({
                   </div>
                 ) : (
                   <div className="mt-2 flex">
-                    <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold leading-none text-amber-100/90">
+                    <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm leading-none font-semibold text-amber-100/90">
                       All Keywords
                     </span>
                   </div>
@@ -136,7 +136,7 @@ function CharacterCard({
           </TooltipPanel>
         ) : null}
       </div>
-      <p className={cn("font-sans text-lg font-bold text-amber-100/90 mt-1", isLocked && "text-muted-foreground/60")}>
+      <p className={cn("mt-1 font-sans text-lg font-bold text-amber-100/90", isLocked && "text-muted-foreground/60")}>
         {char.name}
       </p>
     </div>

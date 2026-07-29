@@ -92,7 +92,7 @@ function HandCardItem({
       className={cn(handWidthClass, !canPlay && "cursor-default grayscale")}
       tiltEnabled={canPlay}
       dragging={hiddenHandCardKeys.has(cardKey)}
-      wrapperClassName={cn(shouldStagger && "stagger-item", "relative flex justify-center -mx-5 sm:-mx-6")}
+      wrapperClassName={cn(shouldStagger && "stagger-item", "relative -mx-5 flex justify-center sm:-mx-6")}
       wrapperDataCardKey={cardKey}
       wrapperStyle={
         {

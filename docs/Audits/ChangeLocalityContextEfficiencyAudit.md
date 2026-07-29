@@ -8,16 +8,25 @@ Identify repeated high-friction clusters and simplify them through existing sour
 
 ## What counts as locality or context friction
 
+This audit owns two distinct concerns; a run may scope to either.
+
+### Change amplification (authored edits)
+
+| Tell                                                                         | Why it is a finding candidate                 |
+| ---------------------------------------------------------------------------- | --------------------------------------------- |
+| Comparable changes repeatedly co-touch unrelated authored owners             | The behavior may lack one source of truth     |
+| A frequently changed owner requires unrelated code to understand one concern | The semantic change is not locally reviewable |
+| Feature median file touch count is high (amplification hotspots)             | Missing facade/seam forces parallel edits     |
+
+### Context & tool-output cost (agent working set)
+
 | Tell                                                                                     | Why it is a finding candidate                          |
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | One policy or command is maintained in several authored sources                          | Every change risks drift and consumes repeated context |
-| Comparable changes repeatedly co-touch unrelated authored owners                         | The behavior may lack one source of truth              |
 | A local path forces unrelated docs/scripts into the working set                          | Routine work pays avoidable reading or execution cost  |
 | Routine successful commands emit repetitive output, or failures require opening raw logs | Useful signal is buried in avoidable tool output       |
-| A frequently changed owner requires unrelated code to understand one concern             | The semantic change is not locally reviewable          |
-| Feature median file touch count is high (amplification hotspots)                         | Missing facade/seam forces parallel edits              |
 
-**Not this audit:** import legality → ESLint boundaries; wrong semantic ownership → `StateGravityOwnershipAudit.md`; local ceremony → `InelegantSlopAudit.md`; duplicate UI → `DuplicateFeatureSurfaceAudit.md`; unit/E2E portfolio → `UnitTestAudit.md` / `E2ETestQualityAudit.md`; retrospective file/folder mass without recurring co-touch → `AuthoredMassHotspotAudit.md`; reachable dual paths / shims → `DualPathRetentionAudit.md`. Single-use export cleanup without fan-out evidence → `DeadCodeRatioAudit.md`.
+**Not this audit:** import legality → ESLint boundaries; wrong semantic ownership → `StateGravityOwnershipAudit.md`; local ceremony or file/folder mass without recurring co-touch → `InelegantSlopAudit.md`; duplicate UI → `DuplicateFeatureSurfaceAudit.md`; unit/E2E portfolio → `UnitTestAudit.md` / `E2ETestQualityAudit.md`; reachable dual paths / shims → `DualPathRetentionAudit.md`. Single-use export cleanup without fan-out evidence → `DeadCodeAudit.md`.
 
 ## Hard stops
 
@@ -48,7 +57,7 @@ When madge (via `npm run audit:all`) reports a cycle, legal remedies include inv
 
 Optional discovery aids — choose your own probes. See also the [measurable sweep map](README.md#measurable-sweep-map-npm-run-auditall).
 
-- **Change amplification:** `node scripts/audit-change-amplification.mjs` (defaults `--since=3 months ago`, subjects matching `^feat|^fix|^balance`). Empty stats usually mean the since-window or subject filters matched nothing.
+- **Change amplification:** `node scripts/audit-change-amplification.mjs` (defaults `--since=3 months ago`, subjects matching `^feat|^fix|^balance`). Empty stats usually mean the since-window or subject filters matched nothing. On repeat runs, prefer `--since` the last dispositioned audit pass over the fixed default, and skip clusters already recorded in [decisions.md](decisions.md).
 - **Authored co-change clusters:** capped history samples excluding `dist/`, assets, and generated files; confirm in diffs.
 - **Repeated policy and commands:** duplicated rules, versions, flags, or command sequences across `AGENTS.md`, `docs/`, `CONTRIBUTING.md`, and `scripts/` that can link to one owner.
 - **Non-local review surface:** frequently changed authored owners whose diffs repeatedly require unrelated sections; route genuine ownership drift to `StateGravityOwnershipAudit.md`.

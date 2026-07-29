@@ -62,6 +62,6 @@ export function ParticleBurst({ imageUrl }: { imageUrl: string }) {
   }, [imageUrl]);
 
   return (
-    <canvas ref={canvasRef} className="pointer-events-none absolute z-10 h-[200%] w-[200%] -left-[50%] -top-[50%]" />
+    <canvas ref={canvasRef} className="pointer-events-none absolute -top-[50%] -left-[50%] z-10 h-[200%] w-[200%]" />
   );
 }

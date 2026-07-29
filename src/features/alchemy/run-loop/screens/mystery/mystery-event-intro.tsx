@@ -44,7 +44,7 @@ function MysteryEventChoiceButton({
       </Button>
       <TooltipPanel
         width="w-[23.7cqh]"
-        className="pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+        className="pointer-events-none opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
       >
         <MysteryEffectList
           effects={choice.effects}

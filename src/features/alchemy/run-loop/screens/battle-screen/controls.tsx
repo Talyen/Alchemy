@@ -64,7 +64,7 @@ function BattleControls({
         </Button>
 
         {isDevMode ? (
-          <Button variant="outline" size="sm" className="w-full text-amber-200 text-xs" onClick={onSkipCombatDevMode}>
+          <Button variant="outline" size="sm" className="w-full text-xs text-amber-200" onClick={onSkipCombatDevMode}>
             <Coins className="h-3.5 w-3.5" /> Skip Combat
           </Button>
         ) : null}

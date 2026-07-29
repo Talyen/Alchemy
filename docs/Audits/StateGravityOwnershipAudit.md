@@ -19,7 +19,7 @@ Agentic coding often drops the next method on the nearest large module. Gravity 
 | Mega-screen that orchestrates rewards, catalog lookups, and mutations | Screen owns too many jobs; extract controller/facade or shared UI |
 | New `*Manager` / parallel store beside existing owners for one flow   | Invented gravity well instead of an extension on the real owner   |
 
-**Not this audit:** import-gate failures alone → fix via ESLint; unused APIs → `DeadCodeRatioAudit.md`; verbose ceremony with correct ownership → `InelegantSlopAudit.md`; correct owner with leftover twin / shim → `DualPathRetentionAudit.md`; live mass on a single path without ownership drift → `AuthoredMassHotspotAudit.md`; duplicate screens with correct owners → `DuplicateFeatureSurfaceAudit.md`; silent save bugs without ownership drift → `BehaviorHardeningAudit.md`.
+**Not this audit:** import-gate failures alone → fix via ESLint; unused APIs → `DeadCodeAudit.md`; verbose ceremony or live mass with correct ownership → `InelegantSlopAudit.md`; correct owner with leftover twin / shim → `DualPathRetentionAudit.md`; duplicate screens with correct owners → `DuplicateFeatureSurfaceAudit.md`; silent save bugs without ownership drift → `BehaviorHardeningAudit.md`.
 
 ## Hard stops
 
@@ -34,27 +34,10 @@ Prefer moving pure rules into the matching `src/lib/*` owner and persistence pol
 
 ## Domain rules
 
-Follow Architecture ownership:
+Ownership is defined by [ARCHITECTURE.md](../ARCHITECTURE.md) (store layout, controllers, session facade, `src/lib` owners) — read the relevant sections there rather than relying on a copied table here. Deltas this audit adds on top:
 
-| Concern                     | Owner                                               |
-| --------------------------- | --------------------------------------------------- |
-| Battle rules / effects      | `src/lib/battle`, effect handlers                   |
-| Content definitions         | `src/lib/game-data`                                 |
-| Gear rules                  | `src/lib/gear`                                      |
-| Homestead / content systems | `src/lib/homestead`, `src/lib/content-systems`      |
-| Save graph, Zod, migrations | `shared/storage`, `src/lib/validation/save-schemas` |
-| Run domain slices           | `run-domain-store` (stores layer only)              |
-| Permanent gear inventory    | `gear-store`                                        |
-| Meta discovery / compendium | `app-store`                                         |
-| Battle VFX (ephemeral)      | `battle-presentation-store`                         |
-| Global UI chrome            | `ui-store`                                          |
-| Feature read/write API      | `run-session-facade`                                |
-| Lifecycle                   | `run-transitions.ts`                                |
-| Controllers                 | `shell/use-*-controller.ts`                         |
-| Product screens             | `meta/`, `run-setup/`, `run-loop/`                  |
-| Shared chrome               | `shared/ui`, `src/components/ui`                    |
-
-**Hub containment:** keep `run-domain-store` and persistence modules thin — new work goes to handlers, slices, facade methods, or controllers, not feature-specific methods on the hub.
+- **Hub containment:** keep `run-domain-store` and persistence modules thin — new work goes to handlers, slices, facade methods, or controllers, not feature-specific methods on the hub.
+- **Presentation split:** product screens stay in `meta/` / `run-setup/` / `run-loop/`; shared chrome belongs in `shared/ui` / `src/components/ui`; nothing React lands in `src/lib`.
 
 ## Known signals
 

@@ -1,8 +1,8 @@
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { BattleCard, CharacterId, CompanionId, KeywordId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
-import type { RunStartSnapshot } from "@/features/alchemy/run-setup/run/run-start";
-import type { ActiveRunProgressFields } from "@/features/alchemy/run-setup/run/run-state-init";
+import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
+import type { ActiveRunProgressFields } from "@/features/alchemy/shared/stores/run-state-init";
 import type { RunRngStream } from "@/lib/run-rng";
 
 export interface ProgressActions {

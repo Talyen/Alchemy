@@ -19,7 +19,7 @@ import {
   createInitialTalentState,
   runFieldsFromSnapshot,
   type ActiveRunProgressFields,
-} from "@/features/alchemy/run-setup/run/run-state-init";
+} from "@/features/alchemy/shared/stores/run-state-init";
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import { defineNestedFieldSetter, type ImmerSet } from "./_field-setter";
 import { createHomesteadProgressActions } from "./progress-homestead-actions";

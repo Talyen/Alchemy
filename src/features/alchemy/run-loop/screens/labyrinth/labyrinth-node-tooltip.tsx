@@ -6,8 +6,8 @@ import type {
   EncounterTraitId,
   LabyrinthNodeType,
 } from "@/lib/content-systems/types";
+import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { NODE_TYPE_LABELS, NODE_TYPE_TOOLTIPS } from "@/lib/content-systems/labyrinth/data";
-import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifiers";
 import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +27,7 @@ interface Props {
 }
 
 function ModifierTooltipCard({ modifier, variant }: { modifier: EncounterTraitId; variant: "enemy" | "reward" }) {
-  const definition = ALL_LABYRINTH_MODIFIERS[modifier];
+  const definition = ENCOUNTER_TRAITS[modifier];
   return (
     <div
       className={cn(

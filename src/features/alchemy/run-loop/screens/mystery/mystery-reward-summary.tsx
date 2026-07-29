@@ -90,7 +90,7 @@ function MysteryRewardEffectItem({
               <img
                 src={boon.art}
                 alt={boon.title}
-                className="block w-full rounded-shell-hero aspect-square"
+                className="block aspect-square w-full rounded-shell-hero"
                 loading="eager"
               />
             </TiltSurface>

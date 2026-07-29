@@ -35,6 +35,7 @@ Find unsafe escapes and fix them. Prefer one validation boundary (Zod) or an imp
 
 Optional discovery aids — choose your own probes.
 
+- **Trend counts:** `node scripts/audit-type-escapes.mjs` (also via `npm run audit:all`) — per-category counts and top files; compare against the previous run to keep the directional targets ratcheting downward. Never a gate.
 - **`any`:** `\bany\b` in non-test `src`.
 - **Suppressions & double casts:** `@ts-ignore` / `@ts-expect-error` / `eslint-disable` / `as unknown as`.
 - **Non-null assertions:** `!.` in non-test `src`.

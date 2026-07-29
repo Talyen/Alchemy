@@ -4,6 +4,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import prettierConfig from "eslint-config-prettier";
 import reactCompiler from "eslint-plugin-react-compiler";
+import playwright from "eslint-plugin-playwright";
 import { BOUNDARY_CONFIGS } from "./eslint/boundaries.js";
 import {
   BATTLE_NO_MATH_FLOOR,
@@ -50,7 +51,9 @@ export default tseslint.config(
     files: ["src/**"],
   })),
 
-  // Tune strictTypeChecked overrides — disable noisy rules that conflict with intentional patterns
+  // Tune strictTypeChecked — only actual deviations from the preset live here.
+  // Everything else (no-floating-promises, no-unsafe-*, unbound-method, …) is
+  // already "error" in strictTypeChecked; do not restate preset defaults.
   {
     files: ["src/**"],
     rules: {
@@ -58,27 +61,17 @@ export default tseslint.config(
       "@typescript-eslint/no-confusing-void-expression": "off",
       "@typescript-eslint/restrict-template-expressions": "off",
       "@typescript-eslint/no-unnecessary-condition": "off",
-      "@typescript-eslint/no-deprecated": "off",
-      "@typescript-eslint/no-unnecessary-type-assertion": "error",
       "@typescript-eslint/no-unnecessary-type-parameters": "off",
       "@typescript-eslint/no-redundant-type-constituents": "off",
       "@typescript-eslint/no-unnecessary-type-arguments": "off",
       "@typescript-eslint/no-invalid-void-type": "off",
-      "@typescript-eslint/no-misused-spread": "error",
-      "@typescript-eslint/no-base-to-string": "error",
-      "@typescript-eslint/no-floating-promises": "error",
-      "@typescript-eslint/no-dynamic-delete": "error",
-      "@typescript-eslint/restrict-plus-operands": "error",
-      "@typescript-eslint/no-unsafe-return": "error",
-      "@typescript-eslint/no-unsafe-argument": "error",
-      "@typescript-eslint/no-unsafe-member-access": "error",
       "@typescript-eslint/no-duplicate-type-constituents": "off",
-      "@typescript-eslint/use-unknown-in-catch-callback-variable": "error",
-      "@typescript-eslint/no-misused-promises": "error",
-      "@typescript-eslint/unbound-method": "error",
       "@typescript-eslint/no-useless-default-assignment": "off",
-      "@typescript-eslint/no-unsafe-assignment": "error",
       "@typescript-eslint/no-unnecessary-type-conversion": "off",
+      // Additions beyond the preset — type-aware bug catchers.
+      "@typescript-eslint/no-deprecated": "error",
+      "@typescript-eslint/switch-exhaustiveness-check": ["error", { considerDefaultExhaustiveForUnions: true }],
+      "@typescript-eslint/prefer-nullish-coalescing": "error",
       "no-console": ["error", { allow: ["warn", "error"] }],
     },
   },
@@ -200,11 +193,25 @@ export default tseslint.config(
   {
     files: ["tests/**/*.ts", "tests/**/*.tsx"],
     rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^(_|describe|it|expect|vi|beforeEach|afterEach)$" },
-      ],
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
       "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+
+  // Playwright specs — flake prevention without type-aware linting.
+  // missing-playwright-await catches unawaited expect()/locator actions,
+  // the most common source of flaky e2e tests.
+  {
+    ...playwright.configs["flat/recommended"],
+    files: ["tests/**/*.spec.ts"],
+    rules: {
+      ...playwright.configs["flat/recommended"].rules,
+      // This suite intentionally uses conditional flows (save-state probing),
+      // structural no-assert smoke tests, and force-clicks on dev-gated UI.
+      "playwright/no-conditional-in-test": "off",
+      "playwright/no-conditional-expect": "off",
+      "playwright/expect-expect": "off",
+      "playwright/no-force-option": "off",
     },
   },
 

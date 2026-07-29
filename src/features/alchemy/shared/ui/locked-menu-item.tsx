@@ -42,7 +42,7 @@ export function LockedMenuItem({
       <Button
         variant={variant}
         size={size}
-        className={cn(locked && "opacity-50 cursor-not-allowed", className)}
+        className={cn(locked && "cursor-not-allowed opacity-50", className)}
         {...(locked ? { hoverSound: false as const } : {})}
         onClick={() => {
           if (locked) {

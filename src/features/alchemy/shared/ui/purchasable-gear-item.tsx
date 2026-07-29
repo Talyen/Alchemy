@@ -43,7 +43,7 @@ export function PurchasableGearItem({
       selected={false}
       ariaLabel={title}
     >
-      <img src={art} alt={title} className="absolute inset-0 h-full w-full object-cover rounded-shell-hero" />
+      <img src={art} alt={title} className="absolute inset-0 h-full w-full rounded-shell-hero object-cover" />
     </TiltSurface>
   ) : (
     <div onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
@@ -56,7 +56,7 @@ export function PurchasableGearItem({
         selected={false}
         ariaLabel={title}
       >
-        <img src={art} alt={title} className="absolute inset-0 h-full w-full object-cover rounded-shell-hero" />
+        <img src={art} alt={title} className="absolute inset-0 h-full w-full rounded-shell-hero object-cover" />
       </TiltSurface>
     </div>
   );

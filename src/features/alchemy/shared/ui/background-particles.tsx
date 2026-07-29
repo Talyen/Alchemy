@@ -22,5 +22,5 @@ export function BackgroundParticles({
     return () => stop();
   }, [variant, colors, alphaMultiplier]);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none" />;
+  return <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 z-0" />;
 }

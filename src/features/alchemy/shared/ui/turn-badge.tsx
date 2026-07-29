@@ -13,9 +13,9 @@ export function TurnBadge({
   return (
     <div
       className={cn(
-        "absolute left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm transition-all",
+        "absolute left-1/2 z-20 rounded-md px-3 py-1 text-sm whitespace-nowrap transition-all",
         urgentHide ? "duration-150" : "duration-500",
-        show ? "opacity-100" : "opacity-0 pointer-events-none",
+        show ? "opacity-100" : "pointer-events-none opacity-0",
         variant === "player" ? "bg-emerald-900/70 text-emerald-300" : "bg-rose-900/70 text-rose-300",
       )}
       style={{

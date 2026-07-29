@@ -51,7 +51,7 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 ## Change mid-run resume (`ActiveRunData`)
 
 1. Extend `ActiveRunData` in `src/lib/active-run-session/types.ts` and Zod schema in `src/lib/validation/save-schemas/active-run.ts` (optional fields with defaults in `normalize-active-run-data.ts` often avoid a schema bump).
-2. Add the field to `RunStateFields` / hydration in `src/features/alchemy/run-setup/run/run-state-init.ts` (mirror `runTalentXP` / `runMaterialsEarned` pattern).
+2. Add the field to `RunStateFields` / hydration in `src/features/alchemy/shared/stores/run-state-init.ts` (mirror `runTalentXP` / `runMaterialsEarned` pattern).
 3. Update `createActiveRunSnapshot()` in `src/lib/active-run-session/snapshot.ts` and `snapshotRun()` in `src/features/alchemy/shared/stores/run-transitions.ts`.
 4. Update hydration in `shell/use-alchemy-run-controller.ts` via `restoreRun` (restore `screen`, `destinationChoices`, combat, etc.).
 5. Run `tests/features/alchemy/shared/storage/active-run.test.ts`, `tests/features/alchemy/shared/stores/run-domain.test.ts` (snapshot parity), plus storage/migration tests.

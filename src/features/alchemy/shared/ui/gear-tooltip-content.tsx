@@ -46,7 +46,7 @@ export function GearTooltipContent({
               <div key={entry.key}>
                 {gradient ? (
                   <TooltipSubheader
-                    className="boss-title-shine bg-clip-text text-transparent [background-size:300%_300%]"
+                    className="boss-title-shine [background-size:300%_300%] bg-clip-text text-transparent"
                     style={{ backgroundImage: gradient }}
                   >
                     {entry.name}
@@ -54,7 +54,7 @@ export function GearTooltipContent({
                 ) : (
                   <TooltipSubheader>{entry.name}</TooltipSubheader>
                 )}
-                <p className="whitespace-nowrap pl-3 text-sm leading-6 text-muted-foreground">
+                <p className="pl-3 text-sm leading-6 whitespace-nowrap text-muted-foreground">
                   {renderColoredKeywords(entry.text)}
                 </p>
               </div>

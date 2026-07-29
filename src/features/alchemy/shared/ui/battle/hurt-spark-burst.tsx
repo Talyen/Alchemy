@@ -57,7 +57,7 @@ export function HurtSparkBurst({ flashToken }: { flashToken: number }) {
     <canvas
       ref={canvasRef}
       aria-hidden
-      className="pointer-events-none absolute z-30 h-[200%] w-[200%] -left-[50%] -top-[50%]"
+      className="pointer-events-none absolute -top-[50%] -left-[50%] z-30 h-[200%] w-[200%]"
     />
   );
 }

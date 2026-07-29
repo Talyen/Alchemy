@@ -39,7 +39,7 @@ export function AppHamburgerTrigger({
   return (
     <div className="pointer-events-none absolute inset-0 z-50 flex justify-center">
       <div className="pointer-events-none relative w-full max-w-6xl">
-        <div className="pointer-events-auto absolute right-4 top-4">
+        <div className="pointer-events-auto absolute top-4 right-4">
           <HamburgerTrigger onClick={onOpenMenu} label={`Open ${renderedScreen} menu`} />
         </div>
       </div>

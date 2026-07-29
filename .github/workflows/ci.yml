@@ -7,28 +7,69 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  install:
+  changes:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
+    outputs:
+      save: ${{ steps.filter.outputs.save }}
+      desktop: ${{ steps.filter.outputs.desktop }}
+      electron: ${{ steps.filter.outputs.electron }}
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v6
+      # workflow_dispatch has no diff base; gated jobs run unconditionally there.
+      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        if: github.event_name != 'workflow_dispatch'
+        id: filter
         with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci --prefer-offline
+          filters: |
+            save:
+              - "src/lib/validation/**"
+              - "src/features/alchemy/shared/storage/**"
+              - "src/lib/active-run-session/**"
+              - "src/lib/platform.ts"
+              - "src/features/alchemy/shared/stores/run-transitions*"
+              - "src/features/alchemy/shared/stores/run-domain-store*"
+              - "src/features/alchemy/shell/use-alchemy-run-controller*"
+              - "tests/fixtures/legacy-saves*"
+              - "tests/e2e/mid-combat-save*"
+              - "tests/save-*"
+            desktop:
+              - "desktop/**"
+              - "index.html"
+              - "src/main.tsx"
+              - "src/lib/platform.ts"
+              - "src/lib/crash-reporting.ts"
+              - "src/features/alchemy/shared/storage/**"
+              - "vite.config.ts"
+              - "package.json"
+              - "steam/**"
+              - "scripts/dist-desktop*"
+              - "scripts/verify-desktop-package*"
+              - "scripts/sync-steam-appid*"
+            electron:
+              - "desktop/**"
+              - "index.html"
+              - "src/main.tsx"
+              - "src/lib/platform.ts"
+              - "src/lib/crash-reporting.ts"
+              - "src/features/alchemy/shared/storage/**"
+              - "tests/electron-*"
+              - "playwright.electron*"
+              - "package.json"
+              - "scripts/electron-path*"
 
   lint:
-    needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -36,12 +77,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci --prefer-offline
+      - uses: ./.github/actions/setup
       - if: github.event_name == 'pull_request'
         run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.sha }} --verbose
 
@@ -60,20 +96,12 @@ jobs:
         run: npm run deadcode
 
   test:
-    needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci --prefer-offline
+      - uses: ./.github/actions/setup
       - run: mkdir -p reports
       - name: Unit tests
         run: npx vitest run --reporter=github-actions --reporter=json --outputFile=reports/vitest-timings.json
@@ -90,25 +118,12 @@ jobs:
           if-no-files-found: ignore
 
   build:
-    needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci --prefer-offline
-      - name: Cache optimized assets
-        uses: actions/cache@v5
-        id: asset-cache
-        with:
-          path: src/assets/optimized/
-          key: assets-${{ runner.os }}-${{ hashFiles('src/assets/**', 'Raw Assets/**', 'scripts/optimize-assets.mjs', 'scripts/optimize-sounds.mjs', 'scripts/optimize-music.mjs', 'scripts/sync-gear-art.mjs') }}
-
+      - uses: ./.github/actions/setup
       - run: npm run build
 
       - name: Smoke test production build
@@ -134,12 +149,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci --prefer-offline
+      - uses: ./.github/actions/setup
       - uses: actions/download-artifact@v5
         with:
           name: dist
@@ -193,63 +203,32 @@ jobs:
           retention-days: 3
 
   ship-gate:
-    needs: [lint, test, build]
+    needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci --prefer-offline
-      - uses: actions/download-artifact@v5
-        with:
-          name: dist
-          path: dist/
-
+      - uses: ./.github/actions/setup
       - run: node scripts/sync-version-metadata.mjs
-      - run: npm run check:ship:ci
+      - name: Build desktop renderer
+        run: npm run build:desktop:no-sync
 
   save-gate:
-    needs: [install, build]
+    needs: [changes, build]
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.save == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci --prefer-offline
+      - uses: ./.github/actions/setup
       - uses: actions/download-artifact@v5
         with:
           name: dist
           path: dist/
 
-      - name: Detect save-related changes
-        id: changes
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            FILES=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}")
-          else
-            FILES=$(git diff --name-only HEAD~1 HEAD || true)
-          fi
-          echo "$FILES"
-          if echo "$FILES" | grep -Eq '^(src/lib/validation/|src/features/alchemy/shared/storage/|src/lib/active-run-session/|src/lib/platform.ts|tests/fixtures/legacy-saves|tests/e2e/mid-combat-save|tests/save-)'; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Cache Playwright browsers
-        if: steps.changes.outputs.run == 'true'
         uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
@@ -258,118 +237,43 @@ jobs:
             playwright-${{ runner.os }}-
 
       - name: Install Playwright Chromium
-        if: steps.changes.outputs.run == 'true'
         run: npx playwright install chromium
 
-      - name: Prepare reports dir
-        if: steps.changes.outputs.run == 'true'
-        run: mkdir -p reports
+      - run: mkdir -p reports
 
       - name: Run save persistence e2e
-        if: steps.changes.outputs.run == 'true'
         run: npm run test:ship:e2e
         env:
           PLAYWRIGHT_VITE_MODE: preview
 
       - name: Summarize save e2e
-        if: always() && steps.changes.outputs.run == 'true'
+        if: always()
         run: node scripts/ci-summarize-playwright.mjs
 
-  active-run-gate:
-    needs: [install, build]
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v5
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v5
         with:
-          fetch-depth: 0
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci --prefer-offline
-      - uses: actions/download-artifact@v5
-        with:
-          name: dist
-          path: dist/
-
-      - name: Detect active-run changes
-        id: changes
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            FILES=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}")
-          else
-            FILES=$(git diff --name-only HEAD~1 HEAD || true)
-          fi
-          if echo "$FILES" | grep -Eq '^(src/lib/active-run-session/|src/features/alchemy/shared/stores/run-transitions|src/features/alchemy/shared/stores/run-domain-store|src/features/alchemy/shell/use-alchemy-run-controller|src/lib/validation/save-schemas/active-run|tests/save-mid-combat|tests/e2e/mid-combat-save)'; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Cache Playwright browsers
-        if: steps.changes.outputs.run == 'true'
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-
-      - name: Install Playwright Chromium
-        if: steps.changes.outputs.run == 'true'
-        run: npx playwright install chromium
-
-      - name: Prepare reports dir
-        if: steps.changes.outputs.run == 'true'
-        run: mkdir -p reports
-
-      - name: Run mid-combat resume e2e
-        if: steps.changes.outputs.run == 'true'
-        run: npx playwright test tests/save-mid-combat-resume.spec.ts --project chromium
-        env:
-          PLAYWRIGHT_VITE_MODE: preview
-
-      - name: Summarize mid-combat e2e
-        if: always() && steps.changes.outputs.run == 'true'
-        run: node scripts/ci-summarize-playwright.mjs
+          name: playwright-report-save-gate
+          path: |
+            playwright-report/
+            test-results/
+            reports/playwright-results.json
+          retention-days: 3
 
   desktop-build:
-    needs: install
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop == 'true'
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci --prefer-offline
-      - name: Detect desktop changes
-        id: changes
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            FILES=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}")
-          else
-            FILES=$(git diff --name-only HEAD~1 HEAD || true)
-          fi
-          if echo "$FILES" | grep -Eq '^(desktop/|index.html|src/main.tsx|src/lib/(platform|crash-reporting).ts|src/features/alchemy/shared/storage/|vite.config.ts|package.json|steam/|scripts/(dist-desktop|verify-desktop-package|sync-steam-appid))'; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          fi
-
+      - uses: ./.github/actions/setup
       - name: Build Windows installer
-        if: steps.changes.outputs.run == 'true'
         run: npm run dist:win
 
       - name: Upload desktop artifact
-        if: steps.changes.outputs.run == 'true'
         uses: actions/upload-artifact@v5
         with:
           name: release-desktop-win
@@ -377,39 +281,18 @@ jobs:
           retention-days: 3
 
   electron-e2e:
-    needs: install
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.electron == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/setup
         with:
-          fetch-depth: 0
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
-        run: npm install -g npm@11 && npm ci --prefer-offline
-
-      - name: Detect desktop changes
-        id: changes
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            FILES=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}")
-          else
-            FILES=$(git diff --name-only HEAD~1 HEAD || true)
-          fi
-          if echo "$FILES" | grep -Eq '^(desktop/|index.html|src/main.tsx|src/lib/(platform|crash-reporting).ts|src/features/alchemy/shared/storage/|tests/electron-|playwright.electron|package.json|scripts/electron-path)'; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          fi
+          skip-electron-download: "true"
 
       - uses: actions/cache/restore@v5
-        if: steps.changes.outputs.run == 'true'
         id: electron-binary-cache
         with:
           path: |
@@ -421,23 +304,38 @@ jobs:
             electron-${{ runner.os }}-
 
       - name: Ensure Electron binary
-        if: steps.changes.outputs.run == 'true'
         run: node scripts/ensure-electron.mjs
 
-      - name: Compile desktop renderer
-        if: steps.changes.outputs.run == 'true'
-        run: npm run compile:desktop
+      - name: Build desktop renderer
+        run: npm run build:desktop:no-sync
 
-      - name: Prepare reports dir
-        if: steps.changes.outputs.run == 'true'
-        run: mkdir -p reports
+      - run: mkdir -p reports
 
       - name: Run Electron e2e
-        if: steps.changes.outputs.run == 'true'
         run: xvfb-run --auto-servernum -- npm run test:ship:desktop
         env:
           CI: true
 
       - name: Summarize Electron e2e
-        if: always() && steps.changes.outputs.run == 'true'
+        if: always()
         run: node scripts/ci-summarize-playwright.mjs
+
+  # Aggregate status check: require this single job in branch protection.
+  ci-ok:
+    name: CI OK
+    needs: [changes, lint, test, build, e2e, ship-gate, save-gate, desktop-build, electron-e2e]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify all jobs succeeded or were skipped
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for result in $RESULTS; do
+            if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
+              echo "::error::A required job failed or was cancelled."
+              exit 1
+            fi
+          done

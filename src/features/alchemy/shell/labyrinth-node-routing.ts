@@ -1,5 +1,4 @@
 // Labyrinth map node entry: apply modifiers, run screen init, then navigate.
-import { labyrinthModifiersToDifficulty } from "@/lib/content-systems/labyrinth/modifiers";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
 import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
 import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
@@ -44,7 +43,7 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
         enterLabyrinthNodeScreen(
           CONSTANTS.SCREENS.BATTLE,
           () => {
-            deps.battle.startBattle(undefined, undefined, enemyType, labyrinthModifiersToDifficulty());
+            deps.battle.startBattle(undefined, undefined, enemyType, []);
           },
           modifiers,
           rewardModifiers,
@@ -54,7 +53,7 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
         enterLabyrinthNodeScreen(
           CONSTANTS.SCREENS.BATTLE,
           () => {
-            deps.battle.startBossBattle(labyrinthModifiersToDifficulty());
+            deps.battle.startBossBattle([]);
           },
           modifiers,
           rewardModifiers,

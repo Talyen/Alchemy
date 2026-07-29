@@ -104,7 +104,7 @@ export function TalentsScreen({
         </div>
 
         <div className="relative mt-6 aspect-[4/3]">
-          <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-0">
+          <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-0">
             <defs>
               <filter id={BLUR_ID}>
                 <feGaussianBlur stdDeviation="24" />
@@ -122,7 +122,7 @@ export function TalentsScreen({
                 key={kw}
                 className={cn(
                   "absolute inset-0 overflow-hidden transition-opacity duration-300 ease-in-out",
-                  isSelected ? "opacity-100" : "opacity-0 pointer-events-none",
+                  isSelected ? "opacity-100" : "pointer-events-none opacity-0",
                 )}
                 style={{
                   backgroundImage: `url(${art})`,

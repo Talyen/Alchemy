@@ -112,7 +112,7 @@ export const InventoryGearTile = memo(function InventoryGearTile({
       ref={tileRef}
       className={cn(
         "armory-salvage-tile absolute z-10 min-h-0 min-w-0 overflow-hidden rounded-xl",
-        targetingMode ? "cursor-default" : "cursor-grab active:cursor-grabbing bg-background/60",
+        targetingMode ? "cursor-default" : "cursor-grab bg-background/60 active:cursor-grabbing",
         hideTile && "opacity-0",
         !isAstral && "border border-stone-500/40",
       )}

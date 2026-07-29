@@ -25,7 +25,7 @@ import {
   restoreOrCreateDestinationRewardState,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
-import { createRunStartSnapshot, type RunStartSnapshot } from "./run-start";
+import { createRunStartSnapshot, type RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { CONSTANTS } from "../../shared/types";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
@@ -94,11 +94,8 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       talentXP: deps.talents.talentXP,
     };
     const resolvedDraft =
-      draftedDeck !== undefined
-        ? draftedDeck
-        : characterId === "wildcard" && deps.draftedDeckRef.current
-          ? deps.draftedDeckRef.current
-          : undefined;
+      draftedDeck ??
+      (characterId === "wildcard" && deps.draftedDeckRef.current ? deps.draftedDeckRef.current : undefined);
     return createRunStartSnapshot(
       resolvedDraft !== undefined
         ? {

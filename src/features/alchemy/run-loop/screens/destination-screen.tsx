@@ -41,7 +41,7 @@ export function DestinationScreen({
         <ScreenHeader
           title={
             <span
-              className="boss-title-shine bg-clip-text text-transparent [background-size:300%_300%]"
+              className="boss-title-shine [background-size:300%_300%] bg-clip-text text-transparent"
               style={{ backgroundImage: bossTextGradient }}
             >
               {bossForShine?.title ?? getBossEnemy().title}

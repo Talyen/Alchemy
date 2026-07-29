@@ -96,14 +96,14 @@ export const InventoryPanel = memo(function InventoryPanel({
       className="armory-inventory-panel alchemy-shell relative flex min-w-0 flex-col items-center rounded-shell-dialog border border-border/80 p-4"
     >
       <h2 className="text-center font-sans text-lg text-amber-100">Inventory</h2>
-      <div className="absolute right-4 top-3 z-20 isolate flex items-center gap-1.5">
+      <div className="absolute top-3 right-4 isolate z-20 flex items-center gap-1.5">
         {import.meta.env.DEV && onSpawnDevGear ? (
           <Button
             type="button"
             size="icon"
             variant="outline"
             hoverSound={false}
-            className="h-8 w-8 border-amber-600/50 text-amber-200/80 hover:border-amber-500/70 hover:bg-amber-950/25 hover:text-amber-100 cursor-pointer"
+            className="h-8 w-8 cursor-pointer border-amber-600/50 text-amber-200/80 hover:border-amber-500/70 hover:bg-amber-950/25 hover:text-amber-100"
             aria-label="Spawn random gear"
             onClick={onSpawnDevGear}
           >
@@ -116,7 +116,7 @@ export const InventoryPanel = memo(function InventoryPanel({
           variant="outline"
           disabled={!editable || (packedItems.length === 0 && packedCurrencies.length === 0)}
           data-testid="armory-sort-button"
-          className="h-8 w-8 border-border/60 text-muted-foreground/70 hover:border-amber-500/50 hover:bg-amber-950/20 hover:text-amber-200 disabled:border-border/40 disabled:text-muted-foreground/45 cursor-pointer"
+          className="h-8 w-8 cursor-pointer border-border/60 text-muted-foreground/70 hover:border-amber-500/50 hover:bg-amber-950/20 hover:text-amber-200 disabled:border-border/40 disabled:text-muted-foreground/45"
           aria-label="Sort inventory"
           onClick={(event) => {
             event.stopPropagation();
@@ -132,7 +132,7 @@ export const InventoryPanel = memo(function InventoryPanel({
           disabled={!hasSalvageableGear}
           data-testid="armory-salvage-toggle"
           className={cn(
-            "h-8 w-8 border-red-950/60 text-red-400/65 hover:border-red-900/70 hover:bg-red-950/25 hover:text-red-300 disabled:border-border/40 disabled:text-muted-foreground/45 cursor-pointer",
+            "h-8 w-8 cursor-pointer border-red-950/60 text-red-400/65 hover:border-red-900/70 hover:bg-red-950/25 hover:text-red-300 disabled:border-border/40 disabled:text-muted-foreground/45",
             salvageMode && "border-red-700/70 bg-red-950/35 text-red-300",
           )}
           aria-label={salvageMode ? "Cancel salvage" : "Salvage Gear"}
@@ -155,7 +155,7 @@ export const InventoryPanel = memo(function InventoryPanel({
         data-testid="armory-inventory-board"
         data-scrollable={canScroll ? "true" : "false"}
         className={cn(
-          "armory-inventory-board relative mt-4 overflow-x-hidden overscroll-contain touch-pan-y select-none",
+          "armory-inventory-board relative mt-4 touch-pan-y overflow-x-hidden overscroll-contain select-none",
           canScroll ? "overflow-y-auto" : "overflow-y-hidden",
           dragging && "cursor-grabbing",
         )}
@@ -190,7 +190,7 @@ export const InventoryPanel = memo(function InventoryPanel({
                 <div
                   key={index}
                   data-armory-inventory-cell={`${cIdx + 1}-${rIdx + 1}`}
-                  className="absolute bg-background/10 rounded-xl"
+                  className="absolute rounded-xl bg-background/10"
                   style={{
                     ...packedItemStyle({ col: cIdx + 1, row: rIdx + 1, w: 1, h: 1 }),
                     boxShadow: "inset 0 0 0 1px rgba(255, 253, 245, 0.06)",

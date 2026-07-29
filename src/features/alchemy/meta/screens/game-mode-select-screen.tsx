@@ -78,7 +78,7 @@ export function GameModeSelectScreen({
                   onMouseEnter={() => setHoveredModeId(modeId)}
                   onMouseLeave={() => setHoveredModeId(null)}
                   className={cn(
-                    "flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-8 pb-7 pt-6 text-left",
+                    "flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-8 pt-6 pb-7 text-left",
                     isSelected && "ring-2 ring-primary",
                     isLocked && "cursor-not-allowed opacity-50 grayscale-[30%]",
                   )}

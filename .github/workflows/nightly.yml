@@ -5,6 +5,9 @@ on:
     - cron: "0 6 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: nightly-${{ github.workflow }}
   cancel-in-progress: true
@@ -17,15 +20,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup
         with:
-          node-version: 24
-          cache: npm
+          skip-electron-download: "true"
 
-      - name: Install dependencies
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
-        run: npm install -g npm@11 && npm ci --prefer-offline
       - name: Cache Electron binary
         uses: actions/cache@v5
         id: electron-binary-cache
@@ -39,8 +37,6 @@ jobs:
       - name: Ensure Electron binary
         timeout-minutes: 15
         run: node scripts/ensure-electron.mjs
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: ""
 
       - run: npm run build
 
@@ -64,15 +60,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup
         with:
-          node-version: 24
-          cache: npm
+          skip-electron-download: "true"
 
-      - name: Install dependencies
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
-        run: npm install -g npm@11 && npm ci --prefer-offline
       - uses: actions/download-artifact@v5
         with:
           name: dist
@@ -84,6 +75,8 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
 
       - name: Install Playwright Chromium (with system deps)
         if: steps.playwright-cache.outputs.cache-hit != 'true'
@@ -128,19 +121,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup
         with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
-        run: npm install -g npm@11 && npm ci --prefer-offline
-      - uses: actions/download-artifact@v5
-        with:
-          name: dist
-          path: dist/
+          skip-electron-download: "true"
 
       - uses: actions/cache/restore@v5
         id: electron-binary-cache
@@ -164,15 +147,35 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup
         with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
-        run: npm install -g npm@11 && npm ci --prefer-offline
+          skip-electron-download: "true"
 
       - name: Knip strict (entry exports)
         run: npm run deadcode:strict
+
+  notify-failure:
+    name: Notify on failure
+    needs: [e2e-web, ship-gate-full, deadcode-strict]
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update nightly-failure issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create nightly-failure --color B60205 --description "Nightly workflow failed" --force
+          existing=$(gh issue list --label nightly-failure --state open --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Nightly run failed again: $RUN_URL"
+          else
+            gh issue create \
+              --title "Nightly Production E2E failed" \
+              --label nightly-failure \
+              --body "Nightly run failed: $RUN_URL"
+          fi

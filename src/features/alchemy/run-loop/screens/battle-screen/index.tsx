@@ -164,16 +164,16 @@ export function BattleScreen(props: BattleScreenProps) {
   return (
     <PageLayout>
       <div className="alchemy-shell relative flex w-full max-w-[100rem] flex-1 flex-col rounded-shell-screen border border-border/80 p-7 pb-1">
-        <div className="absolute inset-0 overflow-hidden rounded-shell-screen pointer-events-none">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-shell-screen">
           <BackgroundParticles variant="embers" colors={particleColors} alphaMultiplier={particleAlpha} />
         </div>
 
         <div className="relative z-10 flex flex-1 flex-col">
-          <div className="absolute right-0 top-0 z-30">
+          <div className="absolute top-0 right-0 z-30">
             <HamburgerTrigger onClick={actions.onOpenMenu} label="Open battle menu" />
           </div>
 
-          <div ref={sceneRef} data-testid="battle-scene" className="relative mt-2 flex-1 [container-type:size]">
+          <div ref={sceneRef} data-testid="battle-scene" className="[container-type:size] relative mt-2 flex-1">
             <BattleActors view={requiredView} hover={hover} feedback={feedback} refs={refs} />
 
             <BattleBottomBar view={requiredView} refs={refs} actions={actions} />

@@ -26,6 +26,7 @@ pre-push:
     test:
       run: npm test
     build:
-      run: npm run build:ship
+      # Web build only; desktop bundle is covered by CI ship-gate / desktop jobs.
+      run: npm run build
     e2e-critical:
       run: npm run test:e2e:prepush

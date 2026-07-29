@@ -55,7 +55,7 @@ test.describe("Damage-over-Time Status Effects", critical, () => {
       }).toPass({ timeout: 5000 });
 
       if ("chipGoneAfterTick" in statusCase && statusCase.chipGoneAfterTick) {
-        await expect(battle.statusChip(title)).not.toBeVisible();
+        await expect(battle.statusChip(title)).toBeHidden();
       } else if (statusCase.chipVisibleAfterTick) {
         await expect(battle.statusChip(title)).toBeVisible();
       }

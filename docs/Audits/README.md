@@ -2,6 +2,8 @@
 
 Re-runnable one-shot guides for coding agents. An audit is neither a project tracker nor standing product requirements. Run one only when the user cites it; do not treat uncited audits as backlog.
 
+Past dispositions live in [decisions.md](decisions.md). Check it before confirming a candidate; do not re-propose a dispositioned item unless the evidence has changed.
+
 ## Shared contract
 
 Every finding must state:
@@ -34,7 +36,27 @@ Prefer the smallest remedy that removes the confirmed cause. Related hits may ju
 
 ### Pass outcomes
 
-Inventory confirmed findings and address them per the right-size policy. If the fix scope is large, break work into distinct phases. Record outcomes in the handoff/commit/PR, never in an audit. Do not append run logs, Done tables, or dated status to these guides.
+Inventory confirmed findings and address them per the right-size policy. If the fix scope is large, break work into distinct phases. Record outcomes in the handoff/commit/PR, never in an audit guide. Do not append run logs, Done tables, or dated status to these guides. The one durable exception is [decisions.md](decisions.md): when a pass ends with a rejected or deferred proposal, or a borderline candidate is intentionally kept, add one ledger row so future passes do not re-litigate it.
+
+### Repeat runs
+
+These audits are designed to be re-run every few days. To keep repeat passes cheap and non-repetitive:
+
+- **Check the ledger first.** Skip candidates already dispositioned in [decisions.md](decisions.md) unless evidence changed (new callers, new drift, changed ownership).
+- **Scope discovery incrementally.** On a repeat run, prefer scanning paths touched since the last audit pass (`git diff --name-only <last-audit-ref>...HEAD`, or the last few days of commits) over a whole-repo sweep. Do a full-repo pass periodically (roughly monthly) or when a cheap mechanical probe (`npm run audit:all`) already covers the repo.
+- **Match cadence to yield.** Not every audit earns a run every few days:
+
+| Tier                                          | Audits                                                                                                                                                       |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Frequent** (mechanical, greppable, cheap)   | `DeadCodeAudit`, `TypeSafetyAudit`, `SideEffectSurfaceAudit`, `DesignSystemConsistencyAudit`, `DocumentationStalenessAudit`, `BugHuntingAudit` (diff-scoped) |
+| **Occasional** (judgment or runtime needed)   | `UnitTestAudit`, `E2ETestQualityAudit`, `BehaviorHardeningAudit`, `AsyncRaceAudit`, `UIInteractionFeedbackAudit`, `InelegantSlopAudit`, `PerformanceAudit`   |
+| **Rare** (structural, expensive, slow-moving) | `DuplicateFeatureSurfaceAudit`, `StateGravityOwnershipAudit`, `DualPathRetentionAudit`, `ChangeLocalityContextEfficiencyAudit`                               |
+
+The tiers are guidance, not gates — a user citing an audit always runs it.
+
+### Promote stable checks to lint gates
+
+When a class of finding is fully mechanical (expressible as an ESLint rule or `no-restricted-syntax`/import pattern) and has stayed clean for several consecutive passes, propose promoting it to a lint gate and deleting the corresponding signal from the audit. Enforced boundaries belong in `eslint.config.js`, not in re-run prose. This is how the audit pack should shrink over time.
 
 ### Orchestrated runs
 
@@ -65,9 +87,8 @@ Each audit holds only its distinct scope, confirmation rules, and domain allowli
 
 | Concern                                                    | Owner audit                               |
 | ---------------------------------------------------------- | ----------------------------------------- |
-| Dead / unused symbols                                      | `DeadCodeRatioAudit.md`                   |
+| Dead / unused symbols                                      | `DeadCodeAudit.md`                        |
 | Live dual paths / retained compatibility shims             | `DualPathRetentionAudit.md`               |
-| Authored mass hotspots (retrospective)                     | `AuthoredMassHotspotAudit.md`             |
 | RNG / I/O seams                                            | `SideEffectSurfaceAudit.md`               |
 | Persistence / idempotency / swallowed errors               | `BehaviorHardeningAudit.md`               |
 | Async races / IPC / effect lifetime                        | `AsyncRaceAudit.md`                       |
@@ -79,6 +100,8 @@ Each audit holds only its distinct scope, confirmation rules, and domain allowli
 | UI interaction / feedback / keyboard                       | `UIInteractionFeedbackAudit.md`           |
 | Design tokens / shared UI chrome                           | `DesignSystemConsistencyAudit.md`         |
 | Over-engineered / verbose / inelegant agent slop           | `InelegantSlopAudit.md`                   |
+| Authored mass hotspots (file / folder, mixed jobs)         | `InelegantSlopAudit.md`                   |
+| Render churn / frame cost / bundle & asset weight          | `PerformanceAudit.md`                     |
 | Copy-paste feature screens / shells                        | `DuplicateFeatureSurfaceAudit.md`         |
 | Misplaced logic in stores / controllers / mega-screens     | `StateGravityOwnershipAudit.md`           |
 | Change locality / amplification / agent context efficiency | `ChangeLocalityContextEfficiencyAudit.md` |
@@ -93,13 +116,14 @@ Standing conventions: [CONTRIBUTING.md](../../CONTRIBUTING.md), [ARCHITECTURE.md
 
 Optional instrumentation. Interpret hits through the owning audit — not a mandated first step.
 
-| Probe                                         | Interpret via                                                                                           | Notes                                                                                                                              |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run deadcode:strict`                     | `DeadCodeRatioAudit.md`                                                                                 | Confirm with call-site evidence; respect `knip.config.js` allowlists                                                               |
-| `npm run audit:single-use`                    | `DeadCodeRatioAudit.md` (primary), `InelegantSlopAudit.md` (ceremony)                                   | Supporting signal — not sole evidence                                                                                              |
-| madge circular (`audit:all` step)             | `ChangeLocalityContextEfficiencyAudit.md`                                                               | Invert deps / extract shared modules / facades; layer legality → ESLint                                                            |
-| ESLint complexity + max-lines-per-function    | `InelegantSlopAudit.md` (ceremony / complexity); `AuthoredMassHotspotAudit.md` (file mass + mixed jobs) | Prefer complexity ≤ 10; do not split clean ≤10 functions; p90 ≤ 6 is directional only; length alone is not an AuthoredMass finding |
-| `node scripts/audit-change-amplification.mjs` | `ChangeLocalityContextEfficiencyAudit.md`                                                               | Defaults: `--since=3 months ago`, subjects matching `^feat\|^fix\|^balance`                                                        |
+| Probe                                         | Interpret via                                                            | Notes                                                                                                                     |
+| --------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `npm run deadcode:strict`                     | `DeadCodeAudit.md`                                                       | Confirm with call-site evidence; respect `knip.config.js` allowlists                                                      |
+| `npm run audit:single-use`                    | `DeadCodeAudit.md` (primary), `InelegantSlopAudit.md` (ceremony)         | Supporting signal — not sole evidence                                                                                     |
+| madge circular (`audit:all` step)             | `ChangeLocalityContextEfficiencyAudit.md`                                | Invert deps / extract shared modules / facades; layer legality → ESLint                                                   |
+| ESLint complexity + max-lines-per-function    | `InelegantSlopAudit.md` (ceremony / complexity / file mass + mixed jobs) | Prefer complexity ≤ 10; do not split clean ≤10 functions; p90 ≤ 6 is directional only; length alone is not a mass finding |
+| `node scripts/audit-type-escapes.mjs`         | `TypeSafetyAudit.md`                                                     | Trend counts (`any`, `as unknown as`, suppressions, `!.`); compare run-over-run, never a gate                             |
+| `node scripts/audit-change-amplification.mjs` | `ChangeLocalityContextEfficiencyAudit.md`                                | Defaults: `--since=3 months ago`, subjects matching `^feat\|^fix\|^balance`                                               |
 
 Do not invent standalone audits for complexity, single-use, or import coupling — those probes live in `audit:all` and the guides above.
 

@@ -21,8 +21,8 @@ test.describe("Progression Locks", critical, () => {
 
     // Clicking it does not navigate to Talents
     await talentsBtn.click({ force: true });
-    await expect(page.getByText("Choose Your Adventure")).not.toBeVisible();
-    await expect(page.getByRole("heading", { name: "Talents" })).not.toBeVisible();
+    await expect(page.getByText("Choose Your Adventure")).toBeHidden();
+    await expect(page.getByRole("heading", { name: "Talents" })).toBeHidden();
 
     // 3. Verify Homestead button is locked and shows tooltip on hover
     const homesteadBtn = page.getByRole("button", { name: "Homestead" });
@@ -33,7 +33,7 @@ test.describe("Progression Locks", critical, () => {
 
     // Clicking it does not navigate to Homestead
     await homesteadBtn.click({ force: true });
-    await expect(page.getByRole("heading", { name: "Homestead" })).not.toBeVisible();
+    await expect(page.getByRole("heading", { name: "Homestead" })).toBeHidden();
 
     // 4. Verify Armory button is locked and shows tooltip on hover
     const armoryBtn = page.getByRole("button", { name: "Armory" });
@@ -43,7 +43,7 @@ test.describe("Progression Locks", critical, () => {
     await expect(page.getByText("Find Gear to unlock")).toBeVisible();
 
     await armoryBtn.click({ force: true });
-    await expect(page.getByRole("heading", { name: "Armory" })).not.toBeVisible();
+    await expect(page.getByRole("heading", { name: "Armory" })).toBeHidden();
 
     // 5. Click Play and verify Labyrinth and Wildwood are locked
     await page.getByRole("button", { name: "Play" }).click();

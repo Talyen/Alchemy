@@ -8,11 +8,7 @@ import {
   useTalentAdapter,
   useSetHasActiveBattle,
   useRunSessionNavigationSlice,
-  cancelDestinationClaim,
-  releaseRewardClaim,
 } from "@/features/alchemy/shared/stores/run-session-facade";
-import { teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
-import { clearBattlePresentationCardGhosts } from "@/features/alchemy/shared/stores/battle-presentation-bridge";
 import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 // Side-effect: registers presentation cleanup with the shared bridge.
@@ -20,15 +16,17 @@ import "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { readHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-read-port";
 import { type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
-import { CONSTANTS, type Destination, type Screen } from "@/features/alchemy/shared/types";
-import { resolveAvailableDestinations, type DestinationOptionsInput } from "@/features/alchemy/shared/run-flow";
+import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
+import { bindAvailableDestinationsResolver } from "@/features/alchemy/shared/run-flow";
 import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
-import { applyCorruptionToDeck } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
+import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
+import { createRunTeardown } from "@/features/alchemy/run-loop/run/create-run-teardown";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import type { ScreenTransitionOptions } from "./use-screen-transitions";
 import { useWildwoodGauntletFlow } from "./use-wildwood-gauntlet-flow";
 import type { WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
+
 export function useRunNavigation({
   screen,
   navigateTo,
@@ -91,22 +89,24 @@ export function useRunNavigation({
   const corruptionResult = nav.corruptionResult;
   const pendingCharacterId = nav.pendingCharacterId;
   const pendingContentSystemType = nav.pendingContentSystemType;
-  const getAvailableDestinations = useCallback(
-    (options: DestinationOptionsInput = {}): Destination[] =>
-      resolveAvailableDestinations({
+
+  const getAvailableDestinations = useMemo(
+    () =>
+      bindAvailableDestinationsResolver(() => ({
         destinationIndexInAct: run.destinationIndexInAct,
         completedDestinations: run.completedDestinations,
         runPlayerHealth: run.runPlayerHealth,
         runGold: run.runGold,
         runMaxHealth: run.runMaxHealth,
         hasAnyOwnedGear: readHasAnyOwnedGear(),
-        options,
-      }),
+      })),
     [run.destinationIndexInAct, run.completedDestinations, run.runPlayerHealth, run.runGold, run.runMaxHealth],
   );
+
   const returnToBattle = useCallback(() => {
     if (hasActiveBattle) navigateTo(CONSTANTS.SCREENS.BATTLE);
   }, [hasActiveBattle, navigateTo]);
+
   const wildwood = useWildwoodGauntletFlow({
     run,
     navigateTo,
@@ -115,6 +115,7 @@ export function useRunNavigation({
     clearCardHover,
     rng: randomSources.world,
   });
+
   const contentNav = useMemo(
     () =>
       createContentSystemNavigation({
@@ -151,6 +152,7 @@ export function useRunNavigation({
       randomSources.world,
     ],
   );
+
   function handleDraftComplete(draftedCards: BattleCard[]) {
     if (run.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
       contentNav.handleDraftComplete(draftedCards);
@@ -158,11 +160,13 @@ export function useRunNavigation({
     }
     wildwood.handleDraftComplete(draftedCards);
   }
+
   const mystery = useMysteryFlow(randomSources.events);
   const beginMysteryEvent = useCallback(() => {
     mystery.beginMysteryEvent(() => navigateTo(CONSTANTS.SCREENS.MYSTERY));
     playUISound("musicBoxMystery");
   }, [mystery, navigateTo]);
+
   const flowHandlers = useMemo(
     () =>
       createRunFlowHandlers({
@@ -186,6 +190,7 @@ export function useRunNavigation({
         beginMysteryEvent,
         clearMysteryCardChoices: mystery.clearCardChoices,
         onWildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
+        onSelectRewardChoice: wildwood.selectRewardChoice,
         rewardRng: randomSources.rewards,
         destinationRng: randomSources.destinations,
         worldRng: randomSources.world,
@@ -211,43 +216,44 @@ export function useRunNavigation({
       beginMysteryEvent,
       mystery.clearCardChoices,
       wildwood.handleWildwoodRewardComplete,
+      wildwood.selectRewardChoice,
       randomSources.rewards,
       randomSources.destinations,
       randomSources.world,
     ],
   );
+
+  const corruption = useMemo(
+    () =>
+      createCorruptionFlowHandlers({
+        getRunDeck: () => run.runDeck,
+        setRunDeck: run.setRunDeck,
+        eventsRng: randomSources.events,
+        advanceToNextDestination: flowHandlers.advanceToNextDestination,
+      }),
+    [run.runDeck, run.setRunDeck, randomSources.events, flowHandlers.advanceToNextDestination],
+  );
+
+  const teardown = useMemo(
+    () =>
+      createRunTeardown({
+        cancelPending,
+        setHasActiveBattle,
+        clearCardHover,
+        navigateTo,
+      }),
+    [cancelPending, setHasActiveBattle, clearCardHover, navigateTo],
+  );
+
   function goToScreen(nextScreen: Screen) {
     clearCardHover();
     navigateTo(nextScreen);
   }
-  function selectRewardChoice(id: string) {
-    flowHandlers.selectRewardChoice(id);
-    wildwood.selectRewardChoice(id);
-  }
-  function handleCorruptCard(cardIndex: number) {
-    applyCorruptionToDeck(run.runDeck, cardIndex, randomSources.events, run.setRunDeck);
-  }
-  function handleCorruptionExit() {
-    flowHandlers.advanceToNextDestination();
-  }
+
   function handleMysteryContinue() {
     flowHandlers.advanceToNextDestination();
   }
-  function resetRunState() {
-    cancelPending();
-    cancelDestinationClaim();
-    releaseRewardClaim();
-    clearBattlePresentationCardGhosts();
-    clearCardHover();
-    setHasActiveBattle(false);
-    navigateTo(CONSTANTS.SCREENS.MENU, () => {
-      teardownRun();
-    });
-  }
-  function continueFromRunEnd() {
-    clearCardHover();
-    resetRunState();
-  }
+
   return {
     runPhase,
     rewardState,
@@ -287,20 +293,20 @@ export function useRunNavigation({
     handleDestinationChoice: flowHandlers.handleDestinationChoice,
     handleActComplete: flowHandlers.handleActComplete,
     finishRewards: flowHandlers.finishRewards,
-    selectRewardChoice,
+    selectRewardChoice: flowHandlers.selectRewardChoice,
     handleWildwoodRecoveryComplete: wildwood.handleWildwoodRecoveryComplete,
     handleWildwoodRemoveCard: wildwood.handleWildwoodRemoveCard,
     handleWildwoodSkipRemoval: wildwood.handleWildwoodSkipRemoval,
     prepareDestinationScreen: flowHandlers.prepareDestinationScreen,
     handleCampfireContinue: flowHandlers.handleCampfireContinue,
-    handleCorruptCard,
-    handleCorruptionExit,
+    handleCorruptCard: corruption.handleCorruptCard,
+    handleCorruptionExit: corruption.handleCorruptionExit,
     handleMysteryChoice: mystery.handleMysteryChoice,
     handleMysteryChooseCard: mystery.handleMysteryChooseCard,
     handleMysteryRemoveCard: mystery.handleMysteryRemoveCard,
     handleMysteryContinue,
-    resetRunState,
-    continueFromRunEnd,
+    resetRunState: teardown.resetRunState,
+    continueFromRunEnd: teardown.continueFromRunEnd,
     handleBattleVictory: flowHandlers.handleBattleVictory,
     handleBattleDefeat: flowHandlers.handleBattleDefeat,
   };

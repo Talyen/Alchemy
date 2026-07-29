@@ -59,7 +59,7 @@ export function MaterialPill({ material, amount }: { material: MaterialId; amoun
 
 export function GoldPill({ amount }: { amount: number }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-yellow-300/15 text-yellow-300">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-300/15 px-3 py-1 text-xs font-semibold text-yellow-300">
       <Coins className="h-4 w-4" />
       {amount} Gold
     </span>

@@ -1,0 +1,21 @@
+name: Setup Node and install dependencies
+description: setup-node 24 with the npm cache, then npm ci.
+
+inputs:
+  skip-electron-download:
+    description: Set to "true" to skip downloading the Electron binary during npm ci.
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v6
+      with:
+        node-version: 24
+        cache: npm
+
+    - run: npm ci --prefer-offline
+      shell: bash
+      env:
+        ELECTRON_SKIP_BINARY_DOWNLOAD: ${{ inputs.skip-electron-download == 'true' && '1' || '' }}

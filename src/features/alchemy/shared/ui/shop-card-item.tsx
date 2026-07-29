@@ -87,7 +87,7 @@ export function SelectableShopCard({
 }) {
   const [localHovered, setLocalHovered] = useState(false);
   const resolvedWidth = widthClass ?? (chrome === "shop" ? collectionTileWidthClass : viewCardWidthClass);
-  const hovered = isHovered !== undefined ? isHovered : chrome === "deck" ? isSelected || localHovered : localHovered;
+  const hovered = isHovered ?? (chrome === "deck" ? isSelected || localHovered : localHovered);
   const handleHoverStart = onHoverStart ?? (() => setLocalHovered(true));
   const handleHoverEnd = onHoverEnd ?? (() => setLocalHovered(false));
 

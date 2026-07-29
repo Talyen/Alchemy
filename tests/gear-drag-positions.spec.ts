@@ -70,7 +70,7 @@ test.describe("Gear drag positions", { ...armory, ...slow }, () => {
 
     await expect(helmSlot.locator("img")).toHaveCount(2);
     // Both helms should be accounted for: one equipped, one in inventory
-    expect(await gearItemLocator(page, "Leather Helm").count()).toBe(1);
+    await expect(gearItemLocator(page, "Leather Helm")).toHaveCount(1);
   });
 
   test("items remain in inventory after switching characters with no auto-sort", async ({ page }) => {

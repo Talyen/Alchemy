@@ -3,7 +3,7 @@ import { immer } from "zustand/middleware/immer";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { computeTalentEffects, type TalentEffectManifest } from "@/lib/game-data";
-import { flattenRunDomainProgress, type RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
+import { flattenRunDomainProgress, type RunStateFields } from "@/features/alchemy/shared/stores/run-state-init";
 import type { Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import {

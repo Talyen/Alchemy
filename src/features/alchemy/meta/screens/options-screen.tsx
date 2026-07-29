@@ -69,28 +69,28 @@ export function OptionsScreen({
 
         <div className="grid">
           <div
-            className={cn(tabPanelClass, tab === "display" ? "state-fade" : "invisible pointer-events-none")}
+            className={cn(tabPanelClass, tab === "display" ? "state-fade" : "pointer-events-none invisible")}
             aria-hidden={tab !== "display"}
           >
             <DisplayOptionsPanel display={display} />
           </div>
 
           <div
-            className={cn(tabPanelClass, tab === "sound" ? "state-fade" : "invisible pointer-events-none")}
+            className={cn(tabPanelClass, tab === "sound" ? "state-fade" : "pointer-events-none invisible")}
             aria-hidden={tab !== "sound"}
           >
             <AudioOptionsPanel audio={audio} />
           </div>
 
           <div
-            className={cn(tabPanelClass, tab === "gameplay" ? "state-fade" : "invisible pointer-events-none")}
+            className={cn(tabPanelClass, tab === "gameplay" ? "state-fade" : "pointer-events-none invisible")}
             aria-hidden={tab !== "gameplay"}
           >
             <GameplayOptionsPanel gameplay={gameplay} />
           </div>
 
           <div
-            className={cn(tabPanelClass, tab === "other" ? "state-fade" : "invisible pointer-events-none")}
+            className={cn(tabPanelClass, tab === "other" ? "state-fade" : "pointer-events-none invisible")}
             aria-hidden={tab !== "other"}
           >
             <OtherOptionsPanel saveData={saveData} dev={dev} />

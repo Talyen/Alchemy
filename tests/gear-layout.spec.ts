@@ -60,7 +60,7 @@ test.describe("Gear layout", { ...armory, ...slow }, () => {
 
     const board = page.getByTestId("armory-inventory-board");
     await expect(board).toHaveAttribute("data-scrollable", "true");
-    expect(await gearItemLocator(page, "Ruby Ring").count()).toBe(65);
+    await expect(gearItemLocator(page, "Ruby Ring")).toHaveCount(65);
     await board.hover();
     await page.mouse.wheel(0, 500);
 

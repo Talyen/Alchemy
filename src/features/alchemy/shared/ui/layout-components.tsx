@@ -8,7 +8,7 @@ import { TextAnimate } from "@/components/ui/text-animate";
 export function ScreenHeader({ title, className }: { title: ReactNode; className?: string }) {
   return (
     <div className={cn("flex flex-col items-center text-center", className)}>
-      <h1 className="font-sans text-lg font-black uppercase tracking-[0.15em] text-amber-100/75 sm:text-xl">{title}</h1>
+      <h1 className="font-sans text-lg font-black tracking-[0.15em] text-amber-100/75 uppercase sm:text-xl">{title}</h1>
       <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-amber-100/75 to-transparent" />
     </div>
   );
@@ -29,7 +29,7 @@ export function ScreenHeaderRow({
     <div className={cn("relative flex w-full items-center justify-center", className)}>
       <ScreenHeader title={title} />
       {trailing ? (
-        <div className={cn("absolute right-0 top-1/2 -translate-y-1/2", trailingClassName)}>{trailing}</div>
+        <div className={cn("absolute top-1/2 right-0 -translate-y-1/2", trailingClassName)}>{trailing}</div>
       ) : null}
     </div>
   );

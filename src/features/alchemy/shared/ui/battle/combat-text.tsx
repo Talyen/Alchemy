@@ -40,7 +40,7 @@ function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "p
   return (
     <motion.div
       className={cn(
-        "absolute whitespace-nowrap inline-flex items-center gap-2 text-[2.96cqh] font-semibold",
+        "absolute inline-flex items-center gap-2 text-[2.96cqh] font-semibold whitespace-nowrap",
         colorClass,
         side === "player" ? "left-0" : "right-0",
       )}

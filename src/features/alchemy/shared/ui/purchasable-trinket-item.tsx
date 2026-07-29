@@ -39,7 +39,7 @@ export function PurchasableTrinketItem({
       <img
         src={trinket.art || undefined}
         alt={trinket.title}
-        className="absolute inset-0 h-full w-full object-cover rounded-shell-hero"
+        className="absolute inset-0 h-full w-full rounded-shell-hero object-cover"
       />
     </TiltSurface>
   ) : (
@@ -63,7 +63,7 @@ export function PurchasableTrinketItem({
         <img
           src={trinket.art || undefined}
           alt={trinket.title}
-          className="absolute inset-0 h-full w-full object-cover rounded-shell-hero"
+          className="absolute inset-0 h-full w-full rounded-shell-hero object-cover"
         />
       </TiltSurface>
     </div>

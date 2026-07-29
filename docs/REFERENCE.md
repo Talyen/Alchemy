@@ -14,10 +14,10 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 ## Environment & Commands
 
 - **Node.js `>=24`** — authoritative in `package.json` `engines`.
-- **npm 10+**
+- **npm `>=11`** — authoritative in `package.json` `engines` (Node 24 bundles npm 11).
 - **Playwright:** `npx playwright install chromium` once before first `npm run test:e2e`.
 - **GitHub CLI (`gh`):** optional; PR/CI only when the user asks — do not run `gh auth login`. CI failures are easiest to read from check annotations and the job Step Summary (not the raw Vitest pass list).
-- **Git hooks:** lefthook `pre-push` — see [CONTRIBUTING.md](../CONTRIBUTING.md) (`lint:ci`, `test`, `build:ship`, `@prepush` e2e).
+- **Git hooks:** lefthook `pre-push` — see [CONTRIBUTING.md](../CONTRIBUTING.md) (`lint:ci`, `test`, `build`, `@prepush` e2e).
 - **Steam / ship gates:** [RELEASE.md](./RELEASE.md) — `check:ship`, `check:ship:full`, tag-triggered `release.yml`.
 - **Balance sim env vars:** `ALCHEMY_BALANCE_ITERATIONS`, `ALCHEMY_BALANCE_POLICY` (`random-playable`, `greedy-damage`, `defensive-random`).
 
@@ -26,6 +26,8 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 ```sh
 npm run dev                 # Vite dev server
 npm run build               # tsc + vite build
+npm run build:desktop       # tsc + vite desktop build (runs prebuild:desktop sync)
+npm run build:desktop:no-sync  # vite desktop build only (no typecheck / sync)
 npm run typecheck           # tsc --noEmit (fast; also in lint:ci and pre-commit)
 npm test                    # Vitest
 npm test -- <path>          # Single test file
@@ -33,11 +35,12 @@ npm run lint:ci             # format:check + typecheck + lint + boundaries + arc
 npm run lint:boundaries     # dependency-cruiser phase / lib edges
 npm run lint:architecture-smoke  # cold ESLint lintFiles smoke (lint:ci)
 npm run deadcode            # knip (CI / pre-push)
-npm run deadcode:strict     # knip --strict (nightly)
+npm run deadcode:strict     # knip --strict, entry exports, deps excluded (nightly)
 npm run format / format:check  # Prettier via scripts/run-prettier.mjs (shared globs)
 npm run check               # npm ci --dry-run + lint:ci + test + build
 npm run check:push          # check + test:e2e:prepush
-npm run check:ship          # lint:ci + ship unit tests + desktop compile
+npm run check:ship          # lint:ci + ship unit tests + build:ship
+npm run check:ship:ci       # ship unit tests + build:desktop:no-sync (CI)
 npm run check:ship:full     # check:ship + save E2E + Electron E2E
 npm run sync:version        # package.json → metadata.generated.ts
 npm run sync:changelog      # git log → CHANGELOG.md ## [Unreleased]
@@ -47,7 +50,7 @@ npm run dist:desktop        # electron-builder per steam/platforms.json
 npm run test:e2e:prepush    # Fast @prepush subset (pre-push hook)
 npm run test:e2e:prepush:full  # @critical on preview (CI e2e job)
 npm run test:e2e:main-gate  # Full suite on preview (push to main)
-npm run balance:sim         # Balance simulator report
+npm run balance:sim         # Balance simulator report (opens via scripts/open-report.mjs)
 ```
 
 Full script list: `package.json` / [README.md](../README.md).

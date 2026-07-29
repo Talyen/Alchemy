@@ -60,7 +60,7 @@ export function MenuScreen({
   }, [flipped, variantIdx, variants.length]);
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center text-center gap-8">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-8 text-center">
       <TiltSurface
         className="relative w-full max-w-[39.81cqh] cursor-pointer"
         onDivClick={handleLogoClick}
@@ -69,7 +69,7 @@ export function MenuScreen({
         <CardFlip
           flipped={flipped}
           transition="transform 800ms cubic-bezier(0.16, 1, 0.3, 1)"
-          className="w-full aspect-square"
+          className="aspect-square w-full"
           front={<img src={variants[0]} alt="Alchemy logo" className="w-full object-contain" loading="eager" />}
           back={<img src={variants[variantIdx]} alt="Alchemy logo" className="w-full object-contain" loading="eager" />}
         />

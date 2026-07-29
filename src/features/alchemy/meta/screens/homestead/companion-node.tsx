@@ -114,7 +114,7 @@ export function CompanionCardNode({
       )}
       imageSrc={card.art}
       imageAlt={card.title}
-      imageClassName={cn("h-full w-full object-cover", !discovered && "grayscale opacity-45")}
+      imageClassName={cn("h-full w-full object-cover", !discovered && "opacity-45 grayscale")}
       footer={footer}
     />
   );

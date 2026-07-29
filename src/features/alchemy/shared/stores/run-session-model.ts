@@ -2,7 +2,7 @@
 import type { BattleState } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { getRunPhase, type RunPhase } from "@/lib/routing";
-import type { RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
+import type { RunStateFields } from "@/features/alchemy/shared/stores/run-state-init";
 import type { RewardState } from "@/lib/active-run-session";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MaterialInventory } from "@/lib/homestead/types";

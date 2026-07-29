@@ -39,6 +39,8 @@ export interface RunFlowHandlerDeps {
   beginMysteryEvent: () => void;
   clearMysteryCardChoices: () => void;
   onWildwoodRewardComplete: () => void;
+  /** Extra reward-choice side effects (e.g. Wildwood draft selection tracking). */
+  onSelectRewardChoice?: (id: string) => void;
   rewardRng: () => number;
   destinationRng: () => number;
   worldRng: () => number;

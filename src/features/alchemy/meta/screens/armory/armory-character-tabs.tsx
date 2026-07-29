@@ -51,7 +51,7 @@ export function ArmoryCharacterTabs({
   onSelectTab: (id: CharacterId) => void;
 }) {
   return (
-    <div data-testid="armory-character-selector" className="mt-4 w-full overflow-x-auto py-2 [scrollbar-width:none]">
+    <div data-testid="armory-character-selector" className="mt-4 w-full [scrollbar-width:none] overflow-x-auto py-2">
       <div className="mx-auto w-max min-w-full px-1">
         <TabBar
           tabs={(Object.keys(characters) as CharacterId[]).map((id) => {

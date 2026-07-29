@@ -6,7 +6,9 @@
 
 Confirm candidate defects and fix them. A pass with no confirmed defect is successful. Do not re-run sibling audits’ full suites; defer P4/P5 by default. Significant structural remedies are proposals per [README.md](README.md). If the scope is large, phase the plan.
 
-This is an **opportunistic defect hunt**. When a hit is clearly owned by a sibling (idempotency → `BehaviorHardeningAudit.md`, lifetime/IPC → `AsyncRaceAudit.md`, unused API → `DeadCodeRatioAudit.md`), hand off rather than duplicating that audit’s full pass.
+**Default discovery mode:** hunt the diff. On a repeat cadence, review commits since the last pass (`git log`/`git diff` on authored paths) for defects introduced or exposed by recent work — that is the highest-yield surface. Whole-repo signal greps are the secondary, periodic mode.
+
+This is an **opportunistic defect hunt**. When a hit is clearly owned by a sibling (idempotency → `BehaviorHardeningAudit.md`, lifetime/IPC → `AsyncRaceAudit.md`, unused API → `DeadCodeAudit.md`), hand off rather than duplicating that audit’s full pass.
 
 ## Hard stops
 
@@ -21,14 +23,14 @@ This is an **opportunistic defect hunt**. When a hit is clearly owned by a sibli
 
 ## Severity
 
-| Sev | Criteria                                                 | Default disposition              |
-| --- | -------------------------------------------------------- | -------------------------------- |
-| P0  | Crash / data loss / double reward / save corruption      | Fix now                          |
-| P1  | Wrong battle/progress/UI state                           | Fix now                          |
-| P2  | Degraded UX (stuck spinner, missing dismiss, ghost drag) | Fix when confirmed and scoped    |
-| P3  | Recoverable failure without appropriate diagnostics      | Fix only if trivial              |
-| P4  | Maintainability (orphaned state)                         | Defer to `DeadCodeRatioAudit.md` |
-| P5  | Async / effect lifetime risk                             | Defer to `AsyncRaceAudit.md`     |
+| Sev | Criteria                                                 | Default disposition           |
+| --- | -------------------------------------------------------- | ----------------------------- |
+| P0  | Crash / data loss / double reward / save corruption      | Fix now                       |
+| P1  | Wrong battle/progress/UI state                           | Fix now                       |
+| P2  | Degraded UX (stuck spinner, missing dismiss, ghost drag) | Fix when confirmed and scoped |
+| P3  | Recoverable failure without appropriate diagnostics      | Fix only if trivial           |
+| P4  | Maintainability (orphaned state)                         | Defer to `DeadCodeAudit.md`   |
+| P5  | Async / effect lifetime risk                             | Defer to `AsyncRaceAudit.md`  |
 
 ## Known signals
 

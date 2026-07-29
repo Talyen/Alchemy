@@ -41,7 +41,9 @@ Prefer highest-impact portfolio waste first:
 
 Track authored declarations and expanded executions separately. A merge is successful only when it reduces duplication, runtime/setup, or maintenance surface—not merely the number of `it`/`test` calls.
 
-Directional coverage interest: branch coverage on `src/lib/battle`, `src/lib/gear`, `src/features/alchemy/shared/storage`, and `src/lib/validation` — add behavior-targeted tests for untested exports; do not pad with dead assertions.
+**Reduction vs addition:** the reduction goal applies to _redundant_ coverage — duplicated owners, weaker echoes, over-expanded cases. It is not a license to whittle unique coverage across repeat runs. Adding tests is allowed only for confirmed behavioral gaps in the core modules below; everywhere else, prefer extending an existing semantic owner.
+
+Directional coverage interest: branch coverage on `src/lib/battle`, `src/lib/gear`, `src/features/alchemy/shared/storage`, and `src/lib/validation` — add behavior-targeted tests for untested exports there; do not pad with dead assertions.
 
 ## Known signals
 

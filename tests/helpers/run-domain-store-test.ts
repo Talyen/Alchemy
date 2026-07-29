@@ -15,7 +15,7 @@ import {
 import {
   applyFlatRunDomainProgressPartial,
   type RunStateFields,
-} from "@/features/alchemy/run-setup/run/run-state-init";
+} from "@/features/alchemy/shared/stores/run-state-init";
 
 export {
   getRunProgressStoreView,

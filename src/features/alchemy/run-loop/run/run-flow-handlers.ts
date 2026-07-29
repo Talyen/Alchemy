@@ -194,6 +194,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
 
   function selectRewardChoice(id: string) {
     setRewardState((prev) => ({ ...prev, selectedId: id }));
+    deps.onSelectRewardChoice?.(id);
   }
 
   function finishRewards() {

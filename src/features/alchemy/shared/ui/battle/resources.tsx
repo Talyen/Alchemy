@@ -33,7 +33,7 @@ export function PilePanel({
         data-testid={`${type}-pile`}
         data-count={count}
       >
-        <span className="font-semibold uppercase tracking-wider">{label}</span>
+        <span className="font-semibold tracking-wider uppercase">{label}</span>
         <span className="font-medium text-foreground">{count}</span>
       </div>
     );

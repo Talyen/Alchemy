@@ -10,7 +10,7 @@ GitHub branch protection is not available on this repo, so **local hooks are the
 2. `npm ci --dry-run`
 3. `npm run lint:ci` (format, TypeScript, ESLint, phase boundaries via dependency-cruiser, architecture smoke, knip)
 4. `npm test` (Vitest)
-5. `npm run build:ship` (web + desktop compile)
+5. `npm run build` (web production build; desktop is covered by CI ship-gate / desktop jobs)
 6. `npm run test:e2e:prepush` — fast **@prepush** subset (parallel preview build; includes one animation canary)
 
 **Before pushing to `main`**, also run `npm run test:e2e:prepush:full` (`@critical`, preview + CI flags). The pre-push hook only runs `@prepush`; CI on every push runs the `@critical` suite (which also includes `@prepush` tests). If using a PR branch, run the same before opening the PR.
@@ -35,7 +35,7 @@ Install hooks once: `npm run prepare` (runs on `npm install`).
 | `npm run lint:boundaries`         | dependency-cruiser phase / lib edges                                |
 | `npm run lint:architecture-smoke` | Cold ESLint lintFiles smoke (not in Vitest)                         |
 | `npm run deadcode`                | knip (CI / pre-push)                                                |
-| `npm run deadcode:strict`         | knip strict + entry exports (nightly)                               |
+| `npm run deadcode:strict`         | knip strict + entry exports, deps excluded (nightly)                |
 | `npm run lint:ci`                 | format:check → typecheck:all → lint → boundaries → smoke → deadcode |
 
 First-time Playwright: `npx playwright install chromium`.
@@ -131,13 +131,15 @@ Layout: bootstrap helpers in [`tests/e2e/`](tests/e2e/) (`battle-setup.ts`, `arm
 
 | Job                                         | Local equivalent                                             |
 | ------------------------------------------- | ------------------------------------------------------------ |
-| CI `ship-gate`                              | `npm run check:ship`                                         |
-| CI `save-gate` / `active-run-gate`          | `npm run test:ship:e2e` (path-filtered on PR)                |
+| CI `ship-gate`                              | `npm run build:desktop:no-sync` (after unit tests pass)      |
+| CI `save-gate`                              | `npm run test:ship:e2e` (path-filtered)                      |
 | CI `desktop-build` / `electron-e2e`         | `npm run dist:win` / `npm run test:ship:desktop`             |
 | CI `e2e` (`@critical`, every push)          | `npm run build && npm run test:e2e:prepush:full`             |
-| Pre-push hook                               | `npm run build:ship && npm run test:e2e:prepush`             |
+| Pre-push hook                               | `npm run build && npm run test:e2e:prepush`                  |
 | Tag `v*` release (`e2e-full` + release job) | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md) |
 
 CI surfaces failures via GitHub check annotations (Vitest `github-actions` / Playwright `github` reporters) and a short job Step Summary from `scripts/ci-summarize-*.mjs`. The `lint` job runs each `lint:ci` stage as its own step so the failed step name identifies format vs typecheck vs ESLint vs boundaries vs knip. Local/pre-push still use `npm run lint:ci`.
+
+Path-filtered jobs (`save-gate`, `desktop-build`, `electron-e2e`) are gated by the `changes` job (`dorny/paths-filter`); on `workflow_dispatch` they always run. The `ci-ok` job aggregates every CI job into a single status check — use it as the sole required check in branch protection. Shared job setup (Node + `npm ci`) lives in the composite action `.github/actions/setup`. Nightly failures open or update a GitHub issue labeled `nightly-failure`.
 
 **Docs:** [AGENTS.md](./AGENTS.md) (rules) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [docs/REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [docs/RELEASE.md](./docs/RELEASE.md) (Steam) · [docs/Audits](./docs/Audits/README.md) (audits)

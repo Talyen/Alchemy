@@ -83,7 +83,7 @@ function CollectionTileMedia({ item, flipped }: { item: CollectionTileItem; flip
     return (
       <CardFlip
         flipped={flipped}
-        className="w-full aspect-[3/4]"
+        className="aspect-[3/4] w-full"
         front={<TileImage item={item} className={cn("h-full", cardArtImageClass)} />}
         back={<img src={cardBack} alt="" aria-hidden="true" className={cn("block h-full w-full", cardArtImageClass)} />}
       />
@@ -103,7 +103,7 @@ function TileImage({ item, className }: { item: CollectionTileItem; className: s
       className={cn(
         "block w-full transition duration-300",
         className,
-        item.discovered ? "opacity-100" : "grayscale opacity-45",
+        item.discovered ? "opacity-100" : "opacity-45 grayscale",
       )}
       loading="eager"
     />

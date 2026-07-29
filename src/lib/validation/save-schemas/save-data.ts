@@ -58,7 +58,7 @@ const GearInventorySchema = GearInstanceArraySchema;
 const emptyGearInventories = createEmptyGearInventories();
 const emptyGearBoardPositionsByCharacter = createEmptyGearBoardPositionsByCharacter();
 const emptyCurrencyBoardPositionsByCharacter = createEmptyCurrencyBoardPositionsByCharacter();
-const gearInventoriesShape: Record<string, z.ZodTypeAny> = {};
+const gearInventoriesShape: Record<string, z.ZodType> = {};
 for (const id of CHARACTER_IDS) {
   gearInventoriesShape[id] = GearInventorySchema.catch([]);
 }
@@ -93,7 +93,7 @@ const CraftingCurrencyBoardPositionsSchema = z
   .catch({})
   .transform((positions) => positions as CraftingCurrencyBoardPositions);
 
-const gearBoardPositionsShape: Record<string, z.ZodTypeAny> = {};
+const gearBoardPositionsShape: Record<string, z.ZodType> = {};
 for (const id of CHARACTER_IDS) {
   gearBoardPositionsShape[id] = GearBoardPositionsSchema.catch({});
 }
@@ -102,7 +102,7 @@ const GearBoardPositionsByCharacterSchema = z
   .catch(emptyGearBoardPositionsByCharacter)
   .transform((positions) => positions as GearBoardPositionsByCharacter);
 
-const craftingCurrencyBoardPositionsShape: Record<string, z.ZodTypeAny> = {};
+const craftingCurrencyBoardPositionsShape: Record<string, z.ZodType> = {};
 for (const id of CHARACTER_IDS) {
   craftingCurrencyBoardPositionsShape[id] = CraftingCurrencyBoardPositionsSchema.catch({});
 }
@@ -111,7 +111,7 @@ const CraftingCurrencyBoardPositionsByCharacterSchema = z
   .catch(emptyCurrencyBoardPositionsByCharacter)
   .transform((positions) => positions as CraftingCurrencyBoardPositionsByCharacter);
 
-const gearLoadoutsShape: Record<string, z.ZodTypeAny> = {};
+const gearLoadoutsShape: Record<string, z.ZodType> = {};
 for (const id of CHARACTER_IDS) {
   gearLoadoutsShape[id] = GearLoadoutSchema.catch(emptyGearLoadouts[id]);
 }

@@ -5,11 +5,12 @@ Alchemy is a fantasy roguelite deckbuilder.
 ## Working Style
 
 - Treat an existing dirty tree as in-flight work: understand it before editing, preserve user intent, and improve it when it intersects with the task.
-- Optimize for quality, simplicity, robustness, scalability, and maintainability. Development cost is secondary.
+- Optimize for simplicity first, then robustness, then maintainability. Development cost is secondary.
 - Prefer honest judgment over compliance. Challenge weak ideas, including user requests, and recommend the strongest architecture or product direction you see.
 - If the same approach fails three times, stop, reassess with the relevant docs or audits, and ask rather than continuing speculative fixes.
 - Run a code-quality audit only when the user cites one under [docs/Audits](./docs/Audits/README.md). Uncited audits are not backlog.
 - Choose your own discovery and fix strategy. Do not invent work to fill a quota.
+- When a change alters an invariant, workflow, or command documented in `docs/`, `CONTRIBUTING.md`, or this file, update that doc in the same change.
 
 ## Docs
 
@@ -22,7 +23,8 @@ For non-trivial work, find and read only the docs that match the task; prefer sp
 | Commands, battle rules glossary                   | [docs/REFERENCE.md](./docs/REFERENCE.md)         |
 | Hooks, area → test commands, E2E helpers          | [CONTRIBUTING.md](./CONTRIBUTING.md)             |
 | Armory / gear                                     | [docs/ARMORY.md](./docs/ARMORY.md)               |
-| Audits (only when the user cites one)             | [docs/Audits/README.md](./docs/Audits/README.md) |
+| Steam release process                             | [docs/RELEASE.md](./docs/RELEASE.md)             |
+| Audits                                            | [docs/Audits/README.md](./docs/Audits/README.md) |
 
 ## Verification
 
@@ -33,7 +35,7 @@ For non-trivial work, find and read only the docs that match the task; prefer sp
 
 ## Branch and commit policy
 
-- Trunk-based. When the user explicitly asks for a commit, commit on the current `main`; do not create PR branches unless asked.
+- Trunk-based. When the user explicitly asks for a commit, commit directly to `main`; do not create PR or feature branches unless asked.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `type(scope): description`.
 - Type → audience mapping: player-facing patch notes get `feat`, `fix`, `balance`, `perf`. Dev-only (`CHANGELOG.md`) get `refactor`, `test`, `chore`, `ci`, `build`, `docs`, `style`.
 - Hooks, commitlint, and changelog / patch-note rules: [CONTRIBUTING.md § Changelog and patch notes](./CONTRIBUTING.md#changelog-and-patch-notes) and [Before you push](./CONTRIBUTING.md#before-you-push).
@@ -46,17 +48,21 @@ For non-trivial work, find and read only the docs that match the task; prefer sp
 - **Content:** card `descriptionLines` must match effects. Run-earned materials flow through `awardMaterialsDuringRun()` — do not call progress `addMaterials()` directly for run-loop loot. See [WORKFLOWS § Grant materials](./docs/WORKFLOWS.md#grant-materials-during-a-run).
 - **Persistence:** update schemas, migrations or normalization, defaults, hydration/snapshots, and legacy fixtures together as applicable. Checklist: [WORKFLOWS § Change persisted save data](./docs/WORKFLOWS.md#change-persisted-save-data) and [MIGRATIONS.md](./src/features/alchemy/shared/storage/MIGRATIONS.md).
 - **Routes:** route screens are statically imported through `screen-routes/`; no `React.lazy()`. Game art is eagerly loaded at boot.
-- **Imports:** use the established barrels for game data, battle, validation, phase screens (`meta/screens`, `run-setup/screens`, `run-loop/screens`), shared utilities, and shared storage. Validation schemas stay imported from `@/lib/validation`. Only `@/*` maps to `src/*` in `tsconfig.json`; use on-disk paths under `src/features/alchemy/`. Import-boundary rules are enforced by `eslint.config.js` — it wins if this summary disagrees. Highest-cost layers ([ARCHITECTURE § Import boundaries](./docs/ARCHITECTURE.md#import-boundaries)):
-  - `src/lib/**` must not import `@/features/**`
-  - `src/lib/game-data/**` must not import `@/lib/battle`
-  - screens must not import `run-loop/battle` or `run-loop/navigation` (wire via controller props)
-  - `meta/**` must not import `run-loop/**` or `run-setup/**`
-  - `shared/ui/**` may use `ui-store` only; no session/run/battle stores
+- **Imports:** import-boundary rules are enforced by `eslint.config.js` — it wins if this summary disagrees.
+  - Use the established barrels for game data, battle, validation, phase screens (`meta/screens`, `run-setup/screens`, `run-loop/screens`), shared utilities, and shared storage.
+  - Validation schemas stay imported from `@/lib/validation`.
+  - Only `@/*` maps to `src/*` in `tsconfig.json`; use on-disk paths under `src/features/alchemy/`.
+  - Highest-cost layers ([ARCHITECTURE § Import boundaries](./docs/ARCHITECTURE.md#import-boundaries)):
+    - `src/lib/**` must not import `@/features/**`
+    - `src/lib/game-data/**` must not import `@/lib/battle`
+    - screens must not import `run-loop/battle` or `run-loop/navigation` (wire via controller props)
+    - `meta/**` must not import `run-loop/**` or `run-setup/**`
+    - `shared/ui/**` may use `ui-store` only; no session/run/battle stores
 - **Purity:** keep pure logic out of screens and side effects out of pure modules. Push I/O, storage, clocks, RNG, and shared mutation to the owning seam.
 
 ## UI
 
-- Be exacting about UI/UX polish: native feel, smooth motion, visual balance, spacing, alignment, and responsive behavior. If something looks off, fix it before calling the work done. Aim for crafted, artisanal software: every interaction should feel intentional.
+- Be exacting about UI/UX polish: native feel, smooth motion, visual balance, spacing, alignment, and responsive behavior. If something looks off, fix it before calling the work done.
 - Use plain function components with explicit `Props` types, not `React.FC`. Build conditional Tailwind classes with `cn()` from `@/lib/utils`; no template literals in `className`.
 - Keep reusable `shared/ui` components isolated from run, battle, and session stores (`ui-store` is the allowed exception); pass domain data through props.
 - Use CSS `active:` for press feedback on buttons; no Framer hover scale. Hover uses background lift from `src/lib/ui/button-hover.ts` plus sound via `Button` or `PressableSound`.
@@ -66,8 +72,9 @@ For non-trivial work, find and read only the docs that match the task; prefer sp
 ## Environment
 
 - Node + npm versions: see `package.json` `engines`; install via `npm ci`. First-time Playwright setup: `npx playwright install chromium`.
+- Run the game with `npm run dev` (Vite, port 5173 with `strictPort`; override via `ALCHEMY_DEV_PORT`).
 - `predev` and `prebuild` run asset optimization and version sync; the first build is slow. Don't try to skip them.
-- Do not `cd` inside commands — use the `workdir` parameter.
+- Don't chain `cd` into commands — set your tool's working-directory option instead.
 - Windows / PowerShell 7 shell details: [CONTRIBUTING.md](./CONTRIBUTING.md#before-you-push).
 
 ## Debugging

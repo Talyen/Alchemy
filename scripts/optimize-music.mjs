@@ -1,20 +1,24 @@
-import { mkdir, copyFile, stat } from "node:fs/promises";
+import { mkdir, copyFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import {
+  computeContentHash,
+  isOutputFresh,
+  loadManifest,
+  writeManifestIfChanged,
+} from "./lib/asset-manifest-cache.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const rootDir = path.resolve(path.dirname(currentFile), "..");
 const sourceDir = path.join(rootDir, "Raw Assets", "Music");
 const outputDir = path.join(rootDir, "public", "Music");
+const manifestPath = path.join(outputDir, ".asset-hashes.json");
 
-async function fileIsFresh(sourcePath, outputPath) {
-  try {
-    const [sourceInfo, outputInfo] = await Promise.all([stat(sourcePath), stat(outputPath)]);
-    return outputInfo.mtimeMs >= sourceInfo.mtimeMs;
-  } catch {
-    return false;
-  }
-}
+/** Bump when copy pipeline settings or hash inputs change. */
+const SCHEMA_VERSION = 1;
+
+const MUSIC_SETTINGS = { mode: "copy" };
 
 async function main() {
   await mkdir(outputDir, { recursive: true });
@@ -35,6 +39,9 @@ async function main() {
     "The Iron Bear.mp3",
   ];
 
+  const previousManifest = await loadManifest(manifestPath);
+  /** @type {Record<string, string>} */
+  const nextManifest = {};
   const results = [];
   let failed = false;
   for (const file of files) {
@@ -42,18 +49,23 @@ async function main() {
     const outputPath = path.join(outputDir, file);
 
     try {
-      const isFresh = await fileIsFresh(sourcePath, outputPath);
+      const expectedHash = await computeContentHash(sourcePath, MUSIC_SETTINGS, SCHEMA_VERSION);
+      const isFresh = await isOutputFresh(outputPath, previousManifest[file], expectedHash);
       if (isFresh) {
         results.push(`${file} already up to date`);
+        nextManifest[file] = expectedHash;
         continue;
       }
       await copyFile(sourcePath, outputPath);
+      nextManifest[file] = expectedHash;
       results.push(`${file} copied`);
     } catch (error) {
       failed = true;
       results.push(`FAILED ${file}: ${error.message}`);
     }
   }
+
+  await writeManifestIfChanged(manifestPath, nextManifest);
 
   console.log(`Processed ${results.length} music files.`);
   if (failed) {

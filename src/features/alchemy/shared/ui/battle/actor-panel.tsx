@@ -82,7 +82,7 @@ export function ArtPanel({
   const healthToken = useChangeToken(health);
   const healthPercent = maxHealth > 0 ? (health / maxHealth) * ACTOR_PANEL_CONFIG.fullHealthPercent : 0;
 
-  const artWrapClass = cn(isBoss && "scale-[1.3] origin-bottom");
+  const artWrapClass = cn(isBoss && "origin-bottom scale-[1.3]");
 
   return (
     <div className={cn("relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
@@ -169,7 +169,7 @@ function ActorArtFrame({
         cardSurfaceClass,
         cardWidthClass ?? battleCardWidthClass,
         sparksOverflow && "overflow-visible",
-        isDead && "overflow-visible animate-frame-fade !bg-transparent",
+        isDead && "animate-frame-fade overflow-visible !bg-transparent",
       )}
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
@@ -208,7 +208,7 @@ function ActorStatsPanel({
   return (
     <div
       className={cn(
-        "surface-muted rounded-shell-inner px-4 py-3 relative",
+        "relative rounded-shell-inner px-4 py-3 surface-muted",
         cardWidthClass,
         deathsDoorActive && "shadow-deaths-door-glow",
         isDead && "animate-frame-fade !bg-transparent",

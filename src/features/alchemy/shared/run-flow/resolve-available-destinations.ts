@@ -27,3 +27,11 @@ export function resolveAvailableDestinations(input: ResolveAvailableDestinations
     hasAnyOwnedGear: options.hasAnyOwnedGear ?? input.hasAnyOwnedGear,
   });
 }
+
+type AvailableDestinationsBase = Omit<ResolveAvailableDestinationsInput, "options">;
+
+/** Bind a live run-progress reader to the pure destination resolver. */
+export function bindAvailableDestinationsResolver(getBase: () => AvailableDestinationsBase) {
+  return (options: DestinationOptionsInput = {}): Destination[] =>
+    resolveAvailableDestinations({ ...getBase(), options });
+}

@@ -64,7 +64,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
-      <div className="alchemy-shell w-full max-w-6xl flex flex-col items-center rounded-shell-hero border border-border/80 p-7">
+      <div className="alchemy-shell flex w-full max-w-6xl flex-col items-center rounded-shell-hero border border-border/80 p-7">
         <ScreenHeader title={isComplete ? "Draft Complete" : "Draft a Deck"} />
         <p className="mt-3 text-base text-muted-foreground">
           {isComplete

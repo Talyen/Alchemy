@@ -63,7 +63,7 @@ export function ConfirmationDialog({
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/15 text-amber-200">
           <Icon className="h-6 w-6" />
         </div>
-        <h2 className="font-sans mt-4 text-base font-bold text-amber-100/75">{title}</h2>
+        <h2 className="mt-4 font-sans text-base font-bold text-amber-100/75">{title}</h2>
         {description && <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>}
         <div className="mt-6 flex justify-center gap-3">
           <Button variant="outline" onClick={onCancel}>

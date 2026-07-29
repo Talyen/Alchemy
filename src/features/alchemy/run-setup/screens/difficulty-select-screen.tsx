@@ -82,7 +82,7 @@ function DifficultyCard({
   const diffArt = DIFFICULTY_ART[difficultyId] ?? difficulty3Art;
 
   return (
-    <div className="relative group flex flex-col items-center">
+    <div className="group relative flex flex-col items-center">
       <PressableSound {...(locked ? { hoverSound: false as const } : {})}>
         <button
           type="button"
@@ -91,14 +91,14 @@ function DifficultyCard({
           aria-pressed={isSelected}
           onClick={() => onSelect(difficultyId)}
           className={cn(
-            "relative flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pb-6 pt-5 text-center transition-all disabled:cursor-default",
-            locked && "grayscale border-muted/40",
+            "relative flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6 text-center transition-all disabled:cursor-default",
+            locked && "border-muted/40 grayscale",
             isSelected && "ring-2 ring-primary",
           )}
         >
           {showTilt ? (
             <TiltSurface
-              className={cn("relative overflow-hidden rounded-shell-panel aspect-[5/6]", battleCardWidthClass)}
+              className={cn("relative aspect-[5/6] overflow-hidden rounded-shell-panel", battleCardWidthClass)}
               shimmerActive={isShimmer}
               shimmerToken={shimmerToken}
               shimmerRounded="rounded-shell-panel"
@@ -106,28 +106,28 @@ function DifficultyCard({
             >
               <img src={diffArt} alt="" className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover")} />
               {completed && (
-                <div className="absolute right-2 top-2 rounded-md bg-emerald-600/90 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-emerald-100">
+                <div className="absolute top-2 right-2 rounded-md bg-emerald-600/90 px-2 py-0.5 text-xs font-bold tracking-wide text-emerald-100 uppercase">
                   Completed
                 </div>
               )}
             </TiltSurface>
           ) : (
-            <div className={cn("relative overflow-hidden rounded-shell-panel aspect-[5/6]", battleCardWidthClass)}>
+            <div className={cn("relative aspect-[5/6] overflow-hidden rounded-shell-panel", battleCardWidthClass)}>
               <img
                 src={diffArt}
                 alt=""
                 className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover", "grayscale")}
               />
               <div className="absolute inset-0 flex items-center justify-center rounded-shell-panel bg-black/60">
-                <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Locked</span>
+                <span className="text-sm font-bold tracking-wider text-muted-foreground uppercase">Locked</span>
               </div>
             </div>
           )}
           <p className={cn("font-sans text-base font-bold text-amber-100/75", locked && "text-muted-foreground")}>
             {name}
           </p>
-          <div className="flex flex-col justify-center min-h-[5.56cqh]">
-            <div className="text-center text-sm leading-relaxed text-muted-foreground max-w-[20.37cqh]">
+          <div className="flex min-h-[5.56cqh] flex-col justify-center">
+            <div className="max-w-[20.37cqh] text-center text-sm leading-relaxed text-muted-foreground">
               {renderDescription(fullDescription)}
             </div>
           </div>
@@ -182,10 +182,10 @@ export function DifficultySelectScreen({
       <StaggerGroup className="flex flex-wrap items-start justify-center gap-6">
         <StaggerItem
           index={0}
-          className="flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pb-6 pt-5"
+          className="flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6"
         >
           <TiltSurface
-            className={cn("relative overflow-hidden rounded-shell-panel aspect-[3/4]", battleCardWidthClass)}
+            className={cn("relative aspect-[3/4] overflow-hidden rounded-shell-panel", battleCardWidthClass)}
             shimmerActive={shimmerState?.cardId === "character"}
             shimmerToken={shimmerState?.token}
             shimmerRounded="rounded-shell-panel"
@@ -194,7 +194,7 @@ export function DifficultySelectScreen({
             <img
               src={art}
               alt={char.name}
-              className={cn(cardSurfaceClass, "w-full h-full rounded-shell-panel object-cover")}
+              className={cn(cardSurfaceClass, "h-full w-full rounded-shell-panel object-cover")}
             />
           </TiltSurface>
           <p className="font-sans text-base font-bold text-amber-100/75">{char.name}</p>
@@ -205,10 +205,10 @@ export function DifficultySelectScreen({
           </div>
         </StaggerItem>
 
-        <StaggerItem index={1} className="hidden lg:flex flex-col items-center self-stretch shrink-0">
-          <div className="flex-1 w-px bg-gradient-to-b from-transparent via-amber-100/75 to-transparent" />
-          <Swords className="h-4 w-4 text-amber-100/75 my-1" aria-hidden="true" />
-          <div className="flex-1 w-px bg-gradient-to-b from-transparent via-amber-100/75 to-transparent" />
+        <StaggerItem index={1} className="hidden shrink-0 flex-col items-center self-stretch lg:flex">
+          <div className="w-px flex-1 bg-gradient-to-b from-transparent via-amber-100/75 to-transparent" />
+          <Swords className="my-1 h-4 w-4 text-amber-100/75" aria-hidden="true" />
+          <div className="w-px flex-1 bg-gradient-to-b from-transparent via-amber-100/75 to-transparent" />
         </StaggerItem>
 
         <div className="flex flex-wrap items-start justify-center gap-6">

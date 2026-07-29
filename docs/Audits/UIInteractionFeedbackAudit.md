@@ -8,6 +8,8 @@ Identify navigation/feedback/interaction defects and fix them. Reuse existing UI
 
 This audit checks interactive clarity for a desktop web/Electron game; it is not a comprehensive WCAG audit.
 
+**Flow rotation:** confirmation needs a running app, so each pass selects one flow to verify live (Playwright or manual probe) — e.g. Armory drag, battle targeting, shop/reward overlays, run navigation, victory/defeat dismissal — and rotates across passes rather than re-walking the whole app every run. Grep signals may still span the repo.
+
 ## Hard stops
 
 - Do not restyle unrelated chrome or expand into token/typography migrations (`DesignSystemConsistencyAudit.md` owns those).

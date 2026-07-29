@@ -5,11 +5,21 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 import { staticAssets } from "./assets/asset-manifest.mjs";
+import {
+  computeContentHash,
+  isOutputFresh,
+  loadManifest,
+  writeManifestIfChanged,
+} from "./lib/asset-manifest-cache.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const rootDir = path.resolve(path.dirname(currentFile), "..");
 const sourceDir = path.join(rootDir, "Raw Assets");
 const outputDir = path.join(rootDir, "src", "assets", "optimized");
+const manifestPath = path.join(outputDir, ".asset-hashes.json");
+
+/** Bump when sharp pipeline settings or hash inputs change. */
+const SCHEMA_VERSION = 1;
 
 const gearAssetWidth = 420;
 const gearAssetQuality = 82;
@@ -120,28 +130,33 @@ async function discoverGearSlotBackgrounds() {
   return discovered;
 }
 
-async function fileIsFresh(sourcePath, outputPath) {
-  try {
-    const [sourceInfo, outputInfo] = await Promise.all([stat(sourcePath), stat(outputPath)]);
-    return outputInfo.mtimeMs >= sourceInfo.mtimeMs;
-  } catch {
-    return false;
-  }
+function artTransformSettings({ width, quality }) {
+  return {
+    width,
+    quality,
+    alphaQuality: 90,
+    effort: 6,
+    fit: "inside",
+    withoutEnlargement: true,
+    format: "webp",
+  };
 }
 
-async function optimizeAsset({ source, target, width, quality }) {
+async function optimizeAsset({ source, target, width, quality }, storedHash) {
   const sourcePath = path.join(sourceDir, source);
   const outputPath = path.join(outputDir, target);
 
   try {
     await stat(sourcePath);
   } catch {
-    return `${target} skipped (missing source)`;
+    return { message: `${target} skipped (missing source)`, hash: null };
   }
 
-  const isFresh = await fileIsFresh(sourcePath, outputPath);
+  const settings = artTransformSettings({ width, quality });
+  const expectedHash = await computeContentHash(sourcePath, settings, SCHEMA_VERSION);
+  const isFresh = await isOutputFresh(outputPath, storedHash, expectedHash);
   if (isFresh) {
-    return `${target} already up to date`;
+    return { message: `${target} already up to date`, hash: expectedHash };
   }
 
   await sharp(sourcePath)
@@ -149,7 +164,7 @@ async function optimizeAsset({ source, target, width, quality }) {
     .webp({ quality, alphaQuality: 90, effort: 6 })
     .toFile(outputPath);
 
-  return `${target} optimized`;
+  return { message: `${target} optimized`, hash: expectedHash };
 }
 
 function validateAssetTargets(assetEntries) {
@@ -173,10 +188,20 @@ async function main() {
   const allAssets = [...staticAssets, ...gearAssets, ...gearSlotBackgrounds];
   validateAssetTargets(allAssets);
 
+  const previousManifest = await loadManifest(manifestPath);
+  /** @type {Record<string, string>} */
+  const nextManifest = {};
   const results = [];
+
   for (const asset of allAssets) {
-    results.push(await optimizeAsset(asset));
+    const { message, hash } = await optimizeAsset(asset, previousManifest[asset.target]);
+    results.push(message);
+    if (hash) {
+      nextManifest[asset.target] = hash;
+    }
   }
+
+  await writeManifestIfChanged(manifestPath, nextManifest);
 
   console.log(
     `Optimized ${results.length} art assets (${gearAssets.length} gear, ${gearSlotBackgrounds.length} gear slot backgrounds).`,

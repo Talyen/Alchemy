@@ -321,7 +321,7 @@ test.describe("Wildwood Traits", slow, () => {
       const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
       return save.activeRun?.wildwoodDraft?.currentCombatTraitIds ?? [];
     }, SAVE_KEY);
-    expect(traits.length).toBe(1);
+    expect(traits).toHaveLength(1);
     expect(VALID_COMBAT_TRAITS).toContain(traits[0]);
   });
 
@@ -362,9 +362,9 @@ test.describe("Wildwood Traits", slow, () => {
         rewardTraits: draft?.currentRewardTraitIds ?? [],
       };
     }, SAVE_KEY);
-    expect(saveState.combatTraits.length).toBe(1);
+    expect(saveState.combatTraits).toHaveLength(1);
     expect(VALID_COMBAT_TRAITS).toContain(saveState.combatTraits[0]);
-    expect(saveState.rewardTraits.length).toBe(1);
+    expect(saveState.rewardTraits).toHaveLength(1);
     expect(["generous", "alchemist", "scavenger", "companion"]).toContain(saveState.rewardTraits[0]);
   });
 

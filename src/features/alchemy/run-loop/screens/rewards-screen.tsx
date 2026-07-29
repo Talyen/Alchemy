@@ -112,7 +112,7 @@ function TrinketRewardButton({
         <img
           src={trinket.art || undefined}
           alt={trinket.title}
-          className="block w-full rounded-shell-hero aspect-square"
+          className="block aspect-square w-full rounded-shell-hero"
         />
       </TiltSurface>
     </div>

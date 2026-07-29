@@ -52,7 +52,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
             [...errors].reverse().map((e) => (
               <div
                 key={e.id}
-                className="surface-muted cursor-pointer rounded-shell-card border border-border/70 p-4 text-left"
+                className="cursor-pointer rounded-shell-card border border-border/70 p-4 text-left surface-muted"
                 onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -81,7 +81,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
                     {e.stack ? (
                       <div>
                         <p className="text-xs font-semibold text-muted-foreground">Stack:</p>
-                        <pre className="mt-1 whitespace-pre-wrap break-all rounded-lg bg-black/30 p-2 text-xs text-foreground/80">
+                        <pre className="mt-1 rounded-lg bg-black/30 p-2 text-xs break-all whitespace-pre-wrap text-foreground/80">
                           {e.stack}
                         </pre>
                       </div>
@@ -89,7 +89,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
                     {e.componentStack ? (
                       <div>
                         <p className="text-xs font-semibold text-muted-foreground">Component Stack:</p>
-                        <pre className="mt-1 whitespace-pre-wrap break-all rounded-lg bg-black/30 p-2 text-xs text-foreground/80">
+                        <pre className="mt-1 rounded-lg bg-black/30 p-2 text-xs break-all whitespace-pre-wrap text-foreground/80">
                           {e.componentStack}
                         </pre>
                       </div>
@@ -97,7 +97,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
                     {e.context ? (
                       <div>
                         <p className="text-xs font-semibold text-muted-foreground">Context:</p>
-                        <pre className="mt-1 whitespace-pre-wrap break-all rounded-lg bg-black/30 p-2 text-xs text-foreground/80">
+                        <pre className="mt-1 rounded-lg bg-black/30 p-2 text-xs break-all whitespace-pre-wrap text-foreground/80">
                           {JSON.stringify(e.context, null, 2)}
                         </pre>
                       </div>

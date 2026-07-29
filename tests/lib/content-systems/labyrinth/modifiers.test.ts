@@ -1,15 +1,15 @@
 // Unit tests for labyrinth modifier definitions and encounter-type selection.
 import { describe, expect, it } from "vitest";
+import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import {
-  ALL_LABYRINTH_MODIFIERS,
   getEnemyModifiersForNodeType,
   getRewardModifiersForNodeType,
   REWARD_MODIFIER_KINDS,
 } from "@/lib/content-systems/labyrinth/modifiers";
 
-describe("ALL_LABYRINTH_MODIFIERS", () => {
+describe("ENCOUNTER_TRAITS", () => {
   it("each modifier has a non-empty label and description", () => {
-    for (const mod of Object.values(ALL_LABYRINTH_MODIFIERS)) {
+    for (const mod of Object.values(ENCOUNTER_TRAITS)) {
       expect(mod.label.length).toBeGreaterThan(0);
       expect(mod.description.length).toBeGreaterThan(0);
     }

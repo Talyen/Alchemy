@@ -59,7 +59,7 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
   return (
     <section
       data-testid="armory-left-panel"
-      className="alchemy-shell relative flex min-w-0 flex-col md:flex-row items-center justify-center gap-4 rounded-shell-dialog border border-border/80 p-3"
+      className="alchemy-shell relative flex min-w-0 flex-col items-center justify-center gap-4 rounded-shell-dialog border border-border/80 p-3 md:flex-row"
     >
       <div data-testid="armory-character-panel" className="flex min-w-0 flex-col items-center justify-center px-2 py-2">
         <h2 className="text-center font-sans text-lg text-amber-100">{characters[characterId].name}</h2>
@@ -78,7 +78,7 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
           <img
             src={characterArt[characterId]}
             alt={characters[characterId].name}
-            className={cn("h-full w-full object-cover", locked && "grayscale opacity-40")}
+            className={cn("h-full w-full object-cover", locked && "opacity-40 grayscale")}
           />
         </TiltSurface>
       </div>

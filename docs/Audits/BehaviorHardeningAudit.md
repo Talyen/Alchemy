@@ -1,4 +1,4 @@
-# Persistence & Transition Correctness Audit
+# Behavior Hardening Audit
 
 **Goal:** Strengthen confirmed correctness gaps at persistence and player-state transition boundaries.
 

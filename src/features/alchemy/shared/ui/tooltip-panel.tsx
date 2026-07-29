@@ -212,7 +212,7 @@ export function useTooltipPlacementWithSideFallback(side: "left" | "right", padd
 }
 
 export function TooltipHeader({ children }: { children: ReactNode }) {
-  return <p className="font-sans text-lg font-bold text-foreground mb-1">{children}</p>;
+  return <p className="mb-1 font-sans text-lg font-bold text-foreground">{children}</p>;
 }
 
 export function TooltipSubheader({
@@ -226,7 +226,7 @@ export function TooltipSubheader({
 }) {
   return (
     <p
-      className={cn("mt-3 mb-1 text-xs font-semibold uppercase tracking-widest text-amber-100/80", className)}
+      className={cn("mt-3 mb-1 text-xs font-semibold tracking-widest text-amber-100/80 uppercase", className)}
       style={style}
     >
       {children}

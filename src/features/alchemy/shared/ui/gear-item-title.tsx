@@ -14,7 +14,7 @@ export function GearItemTitle({ instance, className }: Props) {
     return (
       <span
         className={cn(
-          "boss-title-shine whitespace-nowrap bg-clip-text text-transparent [background-size:300%_300%]",
+          "boss-title-shine [background-size:300%_300%] bg-clip-text whitespace-nowrap text-transparent",
           className,
         )}
         style={{ backgroundImage: gradient }}

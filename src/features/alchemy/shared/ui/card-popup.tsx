@@ -28,7 +28,7 @@ export function DetailPopup({
   return (
     <TooltipPanel ref={ref} flip={flip} width="w-full" className="pointer-events-auto rounded-shell-tooltip">
       <TooltipHeader>{title}</TooltipHeader>
-      {subtitle ? <p className="mt-1 text-xs uppercase tracking-widest text-amber-100/80">{subtitle}</p> : null}
+      {subtitle ? <p className="mt-1 text-xs tracking-widest text-amber-100/80 uppercase">{subtitle}</p> : null}
       <DescriptionLines lines={descriptionLines} idPrefix={idPrefix} {...(card ? { card } : {})} />
       {descriptionNodes?.map((node, i) => (
         <TooltipBody key={i}>{node}</TooltipBody>

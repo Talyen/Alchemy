@@ -19,7 +19,7 @@ import {
   type ActiveRunProgressFields,
   type PermanentProgressFields,
   type ProgressState,
-} from "@/features/alchemy/run-setup/run/run-state-init";
+} from "@/features/alchemy/shared/stores/run-state-init";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import type { Destination, Screen } from "@/features/alchemy/shared/types";
 import type {

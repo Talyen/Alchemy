@@ -3,7 +3,7 @@ import type { CompanionId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
-import { createInitialPermanentFields } from "@/features/alchemy/run-setup/run/run-state-init";
+import { createInitialPermanentFields } from "@/features/alchemy/shared/stores/run-state-init";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import type { PersistenceCodec } from "./persistence-codec";
 

@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdir, stat, copyFile } from "node:fs/promises";
+import { mkdir, copyFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -8,12 +8,26 @@ import { promisify } from "node:util";
 // on system installation. We use it to normalize volume and convert WAVs to OGG.
 import ffmpegPath from "ffmpeg-static";
 
+import {
+  computeContentHash,
+  isOutputFresh,
+  loadManifest,
+  writeManifestIfChanged,
+} from "./lib/asset-manifest-cache.mjs";
+
 const execFileAsync = promisify(execFile);
 
 const currentFile = fileURLToPath(import.meta.url);
 const rootDir = path.resolve(path.dirname(currentFile), "..");
 const sourceDir = path.join(rootDir, "Raw Assets", "Sound Effects");
 const outputDir = path.join(rootDir, "public", "sounds");
+const manifestPath = path.join(outputDir, ".asset-hashes.json");
+
+/** Bump when ffmpeg args or hash inputs change. */
+const SCHEMA_VERSION = 1;
+
+const LOUDNORM_FILTER = "loudnorm=I=-16:TP=-1.5:LRA=11";
+const VORBIS_QUALITY = "4";
 
 // Each entry maps a raw asset (relative to "Raw Assets/Sound Effects/") to an
 // output name in public/sounds/. The script converts WAV → OGG and copies OGG
@@ -84,30 +98,34 @@ const sounds = [
   { source: "Chopping and Mining/mine 2.ogg", target: "mine-2.ogg" },
 ];
 
-async function fileIsFresh(sourcePath, outputPath) {
-  try {
-    const [sourceInfo, outputInfo] = await Promise.all([stat(sourcePath), stat(outputPath)]);
-    return outputInfo.mtimeMs >= sourceInfo.mtimeMs;
-  } catch {
-    return false;
+function soundTransformSettings(sourceExt) {
+  if (sourceExt === ".ogg") {
+    return { mode: "copy" };
   }
+  return {
+    mode: "convert",
+    codec: "libvorbis",
+    quality: VORBIS_QUALITY,
+    af: LOUDNORM_FILTER,
+    stripVideo: true,
+  };
 }
 
-async function optimizeSound({ source, target }) {
+async function optimizeSound({ source, target }, storedHash) {
   const sourcePath = path.join(sourceDir, source);
   const outputPath = path.join(outputDir, target);
-
-  const isFresh = await fileIsFresh(sourcePath, outputPath);
-  if (isFresh) {
-    return `${target} already up to date`;
-  }
-
   const ext = path.extname(source).toLowerCase();
+  const settings = soundTransformSettings(ext);
+  const expectedHash = await computeContentHash(sourcePath, settings, SCHEMA_VERSION);
+  const isFresh = await isOutputFresh(outputPath, storedHash, expectedHash);
+  if (isFresh) {
+    return { message: `${target} already up to date`, hash: expectedHash };
+  }
 
   if (ext === ".ogg") {
     // Already OGG — copy through unchanged.
     await copyFile(sourcePath, outputPath);
-    return `${target} copied`;
+    return { message: `${target} copied`, hash: expectedHash };
   }
 
   // Convert WAV (or anything else) to OGG Vorbis with gentle loudness normalization
@@ -118,16 +136,16 @@ async function optimizeSound({ source, target }) {
     "-i",
     sourcePath,
     "-af",
-    "loudnorm=I=-16:TP=-1.5:LRA=11",
+    LOUDNORM_FILTER,
     "-c:a",
     "libvorbis",
     "-q:a",
-    "4",
+    VORBIS_QUALITY,
     "-vn",
     outputPath,
   ]);
 
-  return `${target} converted`;
+  return { message: `${target} converted`, hash: expectedHash };
 }
 
 async function main() {
@@ -139,16 +157,25 @@ async function main() {
 
   await mkdir(outputDir, { recursive: true });
 
+  const previousManifest = await loadManifest(manifestPath);
+  /** @type {Record<string, string>} */
+  const nextManifest = {};
   const results = [];
   let failed = false;
   for (const sound of sounds) {
     try {
-      results.push(await optimizeSound(sound));
+      const { message, hash } = await optimizeSound(sound, previousManifest[sound.target]);
+      results.push(message);
+      if (hash) {
+        nextManifest[sound.target] = hash;
+      }
     } catch (error) {
       failed = true;
       results.push(`FAILED ${sound.target}: ${error.message}`);
     }
   }
+
+  await writeManifestIfChanged(manifestPath, nextManifest);
 
   console.log(`Processed ${results.length} sounds.`);
   if (failed) {

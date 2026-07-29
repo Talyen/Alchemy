@@ -24,7 +24,7 @@ function TargetingOverlay({
   return (
     <div
       className={cn(
-        "absolute inset-0 z-20 pointer-events-none rounded-xl transition-[box-shadow] duration-150",
+        "pointer-events-none absolute inset-0 z-20 rounded-xl transition-[box-shadow] duration-150",
         salvageRing && [SALVAGE_TARGET_RING, SALVAGE_TARGET_SHADOW],
         craftRing && [VALID_TARGET_RING, VALID_TARGET_SHADOW],
       )}
@@ -62,7 +62,7 @@ export function TileContent({
         craftRing={!!(activeCurrencyId && canCraft)}
       />
       {shineColors.length > 0 ? <ShineBorder shineColor={shineColors} borderWidth={1} /> : null}
-      {flash ? <div className="absolute inset-0 pointer-events-none rounded-xl craft-flash-overlay z-30" /> : null}
+      {flash ? <div className="craft-flash-overlay pointer-events-none absolute inset-0 z-30 rounded-xl" /> : null}
     </>
   );
 }

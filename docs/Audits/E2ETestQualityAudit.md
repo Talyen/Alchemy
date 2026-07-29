@@ -8,6 +8,8 @@ Conventions: [CONTRIBUTING.md](../../CONTRIBUTING.md) (E2E helpers, tags, CI par
 
 Confirm P0–P2 candidates across suites and address them, preferring delete → merge → move to a cheaper tier → shorten. Add page-object or harness surface only when at least three current uses become shorter or one enforced test boundary requires it. If the scope is large, phase the plan.
 
+Prefer CI run history and `npm run test:e2e:audit` timing/flake reports as the primary discovery input — do not re-run full suites solely to hunt for flakes. Re-run only the suspect spec(s) when confirming a candidate.
+
 ## Hard stops
 
 - Do not invent wall-clock budgets that conflict with CONTRIBUTING / lefthook tiers.

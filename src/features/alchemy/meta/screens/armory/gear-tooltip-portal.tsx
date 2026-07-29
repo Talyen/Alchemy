@@ -24,7 +24,7 @@ export function GearTooltipPortal({ triggerRef, visible, definition, instance }:
       width={ARMORY_TOOLTIP_WIDTH}
       visible
       flip={placeBelow}
-      className="armory-inventory-tooltip pointer-events-none fixed bottom-auto top-auto z-[100] mb-0 mt-0 !shadow-none"
+      className="armory-inventory-tooltip pointer-events-none fixed top-auto bottom-auto z-[100] mt-0 mb-0 !shadow-none"
       style={tooltipStyle}
     >
       <GearTooltipContent definition={definition} {...(instance ? { instance } : {})} />

@@ -6,7 +6,7 @@ import { corruptDeckCard } from "@/lib/corruption";
 import { setCorruptionResult } from "../../shared/stores/run-session-facade";
 import { useProfileStore } from "../../shared/stores/profile-store";
 
-export function applyCorruptionToDeck(
+function applyCorruptionToDeck(
   runDeck: BattleCard[],
   cardIndex: number,
   rng: () => number,
@@ -17,4 +17,24 @@ export function applyCorruptionToDeck(
   setCorruptionResult(result);
   useProfileStore.getState().setDiscoveredCardIds((current) => appendUnique(current, result.corruptedCard.id));
   playUISound("musicBoxMystery");
+}
+
+export interface CorruptionFlowDeps {
+  getRunDeck: () => BattleCard[];
+  setRunDeck: (deck: BattleCard[]) => void;
+  eventsRng: () => number;
+  advanceToNextDestination: () => void;
+}
+
+/** Corruption screen commands: apply a corrupt pick, then advance when exiting. */
+export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps) {
+  function handleCorruptCard(cardIndex: number) {
+    applyCorruptionToDeck(deps.getRunDeck(), cardIndex, deps.eventsRng, deps.setRunDeck);
+  }
+
+  function handleCorruptionExit() {
+    deps.advanceToNextDestination();
+  }
+
+  return { handleCorruptCard, handleCorruptionExit };
 }

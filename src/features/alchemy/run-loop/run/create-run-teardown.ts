@@ -1,0 +1,34 @@
+// Run teardown / return-to-menu policy extracted from shell navigation wiring.
+import { cancelDestinationClaim, releaseRewardClaim } from "@/features/alchemy/shared/stores/run-session-facade";
+import { teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
+import { clearBattlePresentationCardGhosts } from "@/features/alchemy/shared/stores/battle-presentation-bridge";
+import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
+
+export interface RunTeardownDeps {
+  cancelPending: () => void;
+  setHasActiveBattle: (active: boolean) => void;
+  clearCardHover: () => void;
+  navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
+}
+
+/** Cancel in-flight claims, clear presentation, tear down the run, and land on menu. */
+export function createRunTeardown(deps: RunTeardownDeps) {
+  function resetRunState() {
+    deps.cancelPending();
+    cancelDestinationClaim();
+    releaseRewardClaim();
+    clearBattlePresentationCardGhosts();
+    deps.clearCardHover();
+    deps.setHasActiveBattle(false);
+    deps.navigateTo(CONSTANTS.SCREENS.MENU, () => {
+      teardownRun();
+    });
+  }
+
+  function continueFromRunEnd() {
+    deps.clearCardHover();
+    resetRunState();
+  }
+
+  return { resetRunState, continueFromRunEnd };
+}

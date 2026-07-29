@@ -24,6 +24,7 @@ Identify confirmed unused internal symbols and unnecessary APIs, then clean them
 - Delete empty / fully commented-out test files; keep intentional cross-cutting suites.
 - Inline single-use helpers when inlining reduces total LOC (ceremony-only single-use → also see `InelegantSlopAudit.md`).
 - Read `knip.config.js` before treating an “unused” facade export as dead.
+- After deletions, run `npm run deadcode` to confirm the pass introduced no new hits (removals often orphan their own helpers).
 
 ## Known signals
 

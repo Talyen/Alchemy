@@ -17,7 +17,7 @@ const SelectTrigger = ({
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex w-full items-center justify-between rounded-2xl border border-border/80 bg-background px-4 py-3 text-base text-foreground outline-none transition-colors focus:border-primary data-[placeholder]:text-muted-foreground [&>span]:line-clamp-1",
+      "flex w-full items-center justify-between rounded-2xl border border-border/80 bg-background px-4 py-3 text-base text-foreground transition-colors outline-none focus:border-primary data-[placeholder]:text-muted-foreground [&>span]:line-clamp-1",
       className,
     )}
     {...props}
@@ -64,7 +64,7 @@ const SelectItem = ({ className, children, ref, ...props }: React.ComponentProps
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-xl py-2.5 pl-10 pr-4 text-sm text-foreground outline-none transition-colors data-[highlighted]:bg-muted/80 focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex w-full cursor-default items-center rounded-xl py-2.5 pr-4 pl-10 text-sm text-foreground transition-colors outline-none select-none focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-muted/80",
       className,
     )}
     {...props}

@@ -164,7 +164,7 @@ test.describe("Options Screen", () => {
     await expect(page.getByRole("heading", { name: "Clear Save Data" })).toBeVisible({ timeout: 3000 });
 
     await page.getByRole("button", { name: "Cancel" }).click();
-    await expect(page.getByRole("heading", { name: "Clear Save Data" })).not.toBeVisible();
+    await expect(page.getByRole("heading", { name: "Clear Save Data" })).toBeHidden();
   });
 
   test("volume modifications persist in localStorage", async ({ page }) => {

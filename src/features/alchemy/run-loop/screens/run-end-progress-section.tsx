@@ -37,7 +37,7 @@ export function RunEndProgressSection({
         <StaggerGroup className="w-full max-w-2xl">
           <div className="flex flex-wrap justify-center gap-2">
             {keywordIds.map((kw, index) => (
-              <StaggerItem key={kw} index={index} className="flex-none w-[19.44cqh]">
+              <StaggerItem key={kw} index={index} className="w-[19.44cqh] flex-none">
                 <KeywordProgressCard
                   kw={kw}
                   runXP={runEndTalentXP[kw] ?? 0}

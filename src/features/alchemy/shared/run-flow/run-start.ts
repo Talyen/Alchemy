@@ -1,5 +1,6 @@
 // Pure run-start snapshot builder for campaign, labyrinth, and wildwood entry points.
-// Depends on character starter decks and Health constants; React controllers apply the snapshot.
+// Lives in shared/run-flow so run-setup and shared/stores can both consume it without
+// a phase → stores ownership inversion.
 import {
   computeStartingMaxHealth,
   getStartingDeck,
@@ -9,7 +10,7 @@ import {
   type TalentXP,
 } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import type { Destination } from "../../shared/types";
+import type { Destination } from "@/features/alchemy/shared/types";
 
 export interface RunStartSnapshot {
   characterId: CharacterId;

@@ -46,7 +46,7 @@ function CompatibilityOverlay({
   return (
     <div
       className={cn(
-        "absolute inset-0 z-20 pointer-events-none rounded-xl transition-[box-shadow] duration-150",
+        "pointer-events-none absolute inset-0 z-20 rounded-xl transition-[box-shadow] duration-150",
         isCompatible && VALID_TARGET_SHADOW,
         craftRing,
         salvageRing,

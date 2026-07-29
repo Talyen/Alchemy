@@ -30,7 +30,7 @@ export function KeywordTag({
   const tag = (
     <span
       className={cn(
-        "inline-flex items-baseline gap-1 font-semibold text-sm leading-none",
+        "inline-flex items-baseline gap-1 text-sm leading-none font-semibold",
         def.colorClass,
         pill && "character-keyword-pill-tint rounded-full px-2.5 py-1",
         className,

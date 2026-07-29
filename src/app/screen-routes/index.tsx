@@ -6,11 +6,10 @@ import { runSetupScreenRoutes } from "./run-setup-routes";
 import { runLoopScreenRoutes } from "./run-loop-routes";
 import { runEndScreenRoutes } from "./run-end-routes";
 import { withScreenBoundary } from "./with-screen-boundary";
-import type { ScreenRouteContext } from "./types";
+import type { RenderAlchemyScreenProps } from "@/app/render-screen-props";
 import type { Screen } from "@/lib/routing";
 
-export type { ScreenRouteContext } from "./types";
-export type ScreenRoute = (ctx: ScreenRouteContext) => ReactNode;
+export type ScreenRoute = (ctx: RenderAlchemyScreenProps) => ReactNode;
 
 /**
  * Compose phase-scoped route tables. Each input covers a disjoint subset of
@@ -37,7 +36,7 @@ const SCREEN_ROUTES = {
   ...optionsScreenRoutes,
 };
 
-export function renderAlchemyScreenRoute(ctx: ScreenRouteContext): ReactNode {
+export function renderAlchemyScreenRoute(ctx: RenderAlchemyScreenProps): ReactNode {
   const render = SCREEN_ROUTES[ctx.screen];
   if (!render) {
     throw new Error(`Missing screen route for ${ctx.screen}`);

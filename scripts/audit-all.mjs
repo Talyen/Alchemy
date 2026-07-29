@@ -36,6 +36,7 @@ const STEPS = [
     ],
     timeout: 180_000,
   },
+  { name: "type-escape trend counts", cmd: "node", args: ["scripts/audit-type-escapes.mjs"], timeout: 60_000 },
   { name: "change amplification", cmd: "node", args: ["scripts/audit-change-amplification.mjs"], timeout: 60_000 },
 ];
 

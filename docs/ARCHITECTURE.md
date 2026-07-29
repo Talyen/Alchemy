@@ -119,7 +119,7 @@ Each Gear instance may be equipped on at most one character at a time (one slot 
 
 ## Types
 
-Run domain types live in `run-domain-types.ts` / `run-domain-store.ts` (stores layer only). Feature code imports `useRunAdapter`, `useTalentAdapter`, reads, writes, and lifecycle via `run-session-facade`.
+Run domain types live in `run-domain-types.ts` / `run-domain-store.ts` (stores layer only). Active-run field init and flatten helpers live in `shared/stores/run-state-init.ts`. Fresh-run snapshots live in `shared/run-flow/run-start.ts` (consumed by run-setup and stores). Feature code imports `useRunAdapter`, `useTalentAdapter`, reads, writes, and lifecycle via `run-session-facade`.
 
 ## Import boundaries
 

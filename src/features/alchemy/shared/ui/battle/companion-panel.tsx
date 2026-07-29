@@ -46,7 +46,7 @@ export function CompanionPanel({
         <img
           src={companion.art}
           alt={companion.title}
-          className="block w-full rounded-shell-hero aspect-[3/4]"
+          className="block aspect-[3/4] w-full rounded-shell-hero"
           loading="eager"
         />
       </TiltSurface>

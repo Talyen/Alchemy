@@ -155,7 +155,7 @@ function AppMainContent({
         data-run-phase={run.runPhase}
         data-stage-pixel-ratio={stagePixelRatio}
         className={cn(
-          "absolute left-0 top-0 overflow-hidden bg-background [container-type:size]",
+          "[container-type:size] absolute top-0 left-0 overflow-hidden bg-background",
           tooltipBlocked && "tooltips-disabled",
         )}
         style={stageStyle}
@@ -241,7 +241,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
             aspectMode={aspectMode}
             run={run}
           />
-          <div id="tooltip-root" className="absolute inset-0 pointer-events-none z-30" />
+          <div id="tooltip-root" className="pointer-events-none absolute inset-0 z-30" />
         </div>
       </div>
     </ErrorBoundary>

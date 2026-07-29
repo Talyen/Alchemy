@@ -7,8 +7,8 @@ import type { BattleCard, KeywordId } from "./types";
 
 function buildKeywordFrequency(deck: BattleCard[], seedKeywords: KeywordId[]): Record<string, number> {
   const freq: Record<string, number> = {};
-  for (const keyword of seedKeywords) freq[keyword] = (freq[keyword] || 0) + 1;
-  for (const card of deck) for (const kw of getCardKeywords(card)) freq[kw] = (freq[kw] || 0) + 1;
+  for (const keyword of seedKeywords) freq[keyword] = (freq[keyword] ?? 0) + 1;
+  for (const card of deck) for (const kw of getCardKeywords(card)) freq[kw] = (freq[kw] ?? 0) + 1;
   return freq;
 }
 
@@ -23,7 +23,7 @@ function buildAffinityPool(
   const shuffledCandidates = shuffle(candidates, activeRng);
   const scored = shuffledCandidates.map((card) => {
     let score = 0;
-    for (const kw of getCardKeywords(card)) score += freq[kw] || 0;
+    for (const kw of getCardKeywords(card)) score += freq[kw] ?? 0;
     if (!deckIds.has(card.id)) score += REWARD_SELECTION_CONFIG.newCardScoreBonus;
     return { card, score };
   });

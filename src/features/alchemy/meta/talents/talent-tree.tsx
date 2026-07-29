@@ -75,7 +75,7 @@ function getTalentNodeClassName(
   isUnlocked: boolean,
 ): string {
   return cn(
-    "talent-node-glass relative select-none w-full h-full transition-[filter,box-shadow] duration-200 outline-none rounded-full state-fade",
+    "talent-node-glass state-fade relative h-full w-full rounded-full transition-[filter,box-shadow] duration-200 outline-none select-none",
     canInteract && "cursor-pointer",
     isChoice && !isUnlocking ? "talent-node-glass--choice" : "talent-node-glass--bordered",
     isUnlocking && "talent-node-unlocking",
@@ -145,7 +145,7 @@ function TalentNode({
       aria-label={getTalentAriaLabel(isChoice, talent)}
     >
       <TalentNodeVisual isChoice={isChoice} isUnlocking={isUnlocking} shineColors={shineColors} />
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+      <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
         <TalentNodeIcon revealed={revealed} keywordColor={def?.colorClass} Icon={Icon} />
       </div>
     </div>
@@ -210,7 +210,7 @@ export function TalentTree({
           return (
             <div
               key={talent.id}
-              className={cn("absolute w-[8.64%] h-[8.64%]", (hoveredTalentId === talent.id || isUnlocking) && "z-[60]")}
+              className={cn("absolute h-[8.64%] w-[8.64%]", (hoveredTalentId === talent.id || isUnlocking) && "z-[60]")}
               style={talentNodePositionStyle(pos.left, pos.top)}
               onPointerEnter={() => {
                 if (!unlockingTalentId) setHoveredTalentId(talent.id);
@@ -233,7 +233,7 @@ export function TalentTree({
         {hoveredTalent && hoveredPos && !unlockingTalentId ? (
           <div
             key={hoveredTalent.id}
-            className="pointer-events-none absolute z-[70] w-[8.64%] h-[8.64%]"
+            className="pointer-events-none absolute z-[70] h-[8.64%] w-[8.64%]"
             style={talentNodePositionStyle(hoveredPos.left, hoveredPos.top)}
           >
             <TalentNodeTooltip talent={hoveredTalent} />

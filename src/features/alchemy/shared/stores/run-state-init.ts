@@ -10,7 +10,7 @@ import {
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { DESTINATIONS, type Destination } from "@/features/alchemy/shared/types";
 import type { ActiveRunData } from "@/lib/active-run-session";
-import type { RunStartSnapshot } from "./run-start";
+import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { DifficultyId, TalentXP } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";

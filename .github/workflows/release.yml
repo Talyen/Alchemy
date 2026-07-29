@@ -5,28 +5,15 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+
 concurrency:
   group: release-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  install:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci --prefer-offline
-
   lint:
-    needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -34,29 +21,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci --prefer-offline
-      - run: npx commitlint --from $(git tag --list "v*" --sort=-v:refname | head -1) --to HEAD --verbose || true
+      - uses: ./.github/actions/setup
+      - run: npx commitlint --from $(git tag --list "v*" --sort=-v:refname | head -1) --to HEAD --verbose
 
       - run: npm run lint:ci
 
   test:
-    needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci --prefer-offline
+      - uses: ./.github/actions/setup
       - run: mkdir -p reports
       - run: npx vitest run --reporter=default --reporter=json --outputFile=reports/vitest-timings.json
 
@@ -68,31 +44,12 @@ jobs:
           if-no-files-found: ignore
 
   build:
-    needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci --prefer-offline
-      - name: Cache optimized assets
-        uses: actions/cache@v5
-        id: asset-cache
-        with:
-          path: src/assets/optimized/
-          key: assets-${{ runner.os }}-${{ hashFiles('src/assets/**', 'Raw Assets/**', 'scripts/optimize-assets.mjs', 'scripts/optimize-sounds.mjs', 'scripts/optimize-music.mjs', 'scripts/sync-gear-art.mjs') }}
-
-      - name: Clear optimized assets (force rebuild on cache miss)
-        if: steps.asset-cache.outputs.cache-hit != 'true'
-        run: |
-          rm -rf src/assets/optimized/
-          mkdir -p src/assets/optimized/
-
+      - uses: ./.github/actions/setup
       - run: npm run build
 
       - name: Smoke test production build
@@ -123,12 +80,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci --prefer-offline
+      - uses: ./.github/actions/setup
       - uses: actions/download-artifact@v5
         with:
           name: dist
@@ -169,20 +121,17 @@ jobs:
           retention-days: 3
 
   release:
-    needs: [e2e-full]
+    needs: [lint, test, e2e-full]
     runs-on: windows-latest
     timeout-minutes: 60
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11 && npm ci
+      - uses: ./.github/actions/setup
 
       - name: Verify release tag matches package.json
         run: node scripts/verify-release-version.mjs
@@ -230,16 +179,22 @@ jobs:
           STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
           STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
           STEAM_DEPOT_ID: ${{ secrets.STEAM_DEPOT_ID }}
+          ALLOW_STEAM_DRY_RUN: ${{ vars.ALLOW_STEAM_DRY_RUN }}
         run: |
           if [ -z "$STEAM_USERNAME" ] || [ -z "$STEAM_PASSWORD" ] || [ -z "$STEAM_APP_ID" ] || [ -z "$STEAM_DEPOT_ID" ]; then
-            echo "Steam credentials not configured — running dry-run validation"
-            npm run steam:upload:dry-run
+            if [ "$ALLOW_STEAM_DRY_RUN" = "true" ]; then
+              echo "Steam credentials not configured — ALLOW_STEAM_DRY_RUN=true, running dry-run validation"
+              npm run steam:upload:dry-run
+            else
+              echo "::error::Steam credentials are not configured. Set the STEAM_* secrets, or set repository variable ALLOW_STEAM_DRY_RUN=true to release without a Steam upload."
+              exit 1
+            fi
           else
             node scripts/steam-upload.mjs
           fi
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: |
             release-desktop/**

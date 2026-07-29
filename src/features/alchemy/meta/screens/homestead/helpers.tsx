@@ -87,7 +87,7 @@ export function MaterialCost({ material, amount }: { material: MaterialId; amoun
       <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden">
         <MaterialIcon material={material} />
       </span>
-      <span className={cn("tabular-nums leading-none", matTextColor[material])}>{amount}</span>
+      <span className={cn("leading-none tabular-nums", matTextColor[material])}>{amount}</span>
     </span>
   );
 }
@@ -114,7 +114,7 @@ export function renderTextWithMaterials(text: string): ReactNode {
             <span
               key={result.length}
               className={cn(
-                "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold align-middle",
+                "inline-flex items-center gap-1 rounded-full px-3 py-1 align-middle text-xs font-semibold",
                 matPillStyle[mat],
                 matTextColor[mat],
               )}

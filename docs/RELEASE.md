@@ -4,20 +4,21 @@ Automation enforces release readiness — agents do not rely on manual checklist
 
 ## Commands
 
-| Command                          | When it runs                                                                      |
-| -------------------------------- | --------------------------------------------------------------------------------- |
-| `npm run check:ship`             | Pre-push (`build:ship`), release workflow                                         |
-| `npm run check:ship:ci`          | CI `ship-gate` (unit + desktop compile; reuses `dist` artifact)                   |
-| `npm run check:ship:full`        | Nightly + before tagging (`unit` + save E2E + Electron E2E)                       |
-| `npm run verify:release-version` | `release.yml` — tag must match `package.json`                                     |
-| `npm run sync:version`           | `prebuild` / `prebuild:desktop` — syncs `package.json` → `metadata.generated.ts`  |
-| `npm run sync:steam-appid`       | `prebuild:desktop` / release — writes `steam_appid.txt` from `STEAM_APP_ID`       |
-| `npm run sync:changelog`         | Rebuilds `CHANGELOG.md` ## [Unreleased] from git since latest `v*` tag            |
-| `npm run sync:changelog:check`   | CI drift guard — fails if `CHANGELOG.md` is stale                                 |
-| `npm run generate:patch-notes`   | Active dev → `release-notes/UNRELEASED.md`; tag CI → `release-notes/vX.Y.Z.md`    |
-| `npm run dist:desktop`           | Hardened, verified targets from [`steam/platforms.json`](../steam/platforms.json) |
-| `npm run steam:upload:dry-run`   | Validates Steam VDF templates without credentials                                 |
-| `npm run release`                | Bumps version, promotes changelog, creates git tag                                |
+| Command                          | When it runs                                                                                                      |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `npm run check:ship`             | Local ship gate / release workflow (`lint:ci` + ship unit + `build:ship`)                                         |
+| `npm run check:ship:ci`          | CI ship-gate slice (`test:ship:unit` + `build:desktop:no-sync`)                                                   |
+| `npm run check:ship:full`        | Nightly + before tagging (`unit` + save E2E + Electron E2E)                                                       |
+| `npm run build:desktop:no-sync`  | Vite desktop build only — no typecheck, no version/steam/asset sync; sync runs via `prebuild:desktop` or CI steps |
+| `npm run verify:release-version` | `release.yml` — tag must match `package.json`                                                                     |
+| `npm run sync:version`           | `prebuild` / `prebuild:desktop` — syncs `package.json` → `metadata.generated.ts`                                  |
+| `npm run sync:steam-appid`       | `prebuild:desktop` / release — writes `steam_appid.txt` from `STEAM_APP_ID`                                       |
+| `npm run sync:changelog`         | Rebuilds `CHANGELOG.md` ## [Unreleased] from git since latest `v*` tag                                            |
+| `npm run sync:changelog:check`   | CI drift guard — fails if `CHANGELOG.md` is stale                                                                 |
+| `npm run generate:patch-notes`   | Active dev → `release-notes/UNRELEASED.md`; tag CI → `release-notes/vX.Y.Z.md`                                    |
+| `npm run dist:desktop`           | Hardened, verified targets from [`steam/platforms.json`](../steam/platforms.json)                                 |
+| `npm run steam:upload:dry-run`   | Validates Steam VDF templates without credentials                                                                 |
+| `npm run release`                | Bumps version, promotes changelog, creates git tag                                                                |
 
 ## Changelog automation (main-only)
 
@@ -31,7 +32,7 @@ Automation enforces release readiness — agents do not rely on manual checklist
 1. Ensure your working tree is clean and you're on `main`.
 2. Run **`npm run release`** — runs `check:ship:full`, bumps version (inferred from commits via `commit-and-tag-version`), creates the release commit + `vX.Y.Z` tag, pushes both to origin, and watches the release workflow.
 3. For urgent hotfixes: **`npm run release:hotfix`** — lighter gate (`check:ship` + `prepush` E2E), forces a patch bump.
-4. [`.github/workflows/release.yml`](../.github/workflows/release.yml) runs `lint` → `test` → `build` → `e2e-full` (3-shard full E2E matrix) → `release` (builds installers, generates patch notes, uploads Steam depots when secrets exist, creates a GitHub Release). **The release job is blocked until the full E2E suite passes.**
+4. [`.github/workflows/release.yml`](../.github/workflows/release.yml) runs `lint`, `test`, and `build` → `e2e-full` (3-shard full E2E matrix) → `release` (builds installers, generates patch notes, uploads Steam depots, creates a GitHub Release). **The release job is blocked until lint, unit tests, and the full E2E suite all pass.** If Steam secrets are missing, the release fails unless the repository variable `ALLOW_STEAM_DRY_RUN=true` explicitly permits a dry-run.
 
 ## Desktop crash reporting (one-time setup)
 
@@ -95,9 +96,9 @@ Windows release job.
 | Job                                         | Trigger                                                     |
 | ------------------------------------------- | ----------------------------------------------------------- |
 | `e2e` (`@critical`)                         | Every push                                                  |
-| `ship-gate`                                 | Every push (`check:ship:ci` after lint/test/build)          |
-| `save-gate`                                 | Push when save/migration paths change                       |
-| `active-run-gate`                           | Push when active-run paths change                           |
+| `ship-gate`                                 | Every push (desktop compile after unit tests)               |
+| `save-gate`                                 | Push when save/migration/active-run paths change            |
 | `desktop-build`                             | Push when desktop paths change (Windows installer artifact) |
 | `electron-e2e`                              | Push when desktop/Electron paths change                     |
+| `ci-ok`                                     | Aggregate status check over all CI jobs                     |
 | `release` (incl. `e2e-full` 3-shard matrix) | Tag `v*` push                                               |

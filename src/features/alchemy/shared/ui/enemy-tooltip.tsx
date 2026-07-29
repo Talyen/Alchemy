@@ -3,7 +3,7 @@
 // Used by ArtPanel (battle) and CompendiumTile (collection) to show attacks and traits.
 import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
-import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifiers";
+import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { cn } from "@/lib/utils";
 import type React from "react";
 
@@ -25,7 +25,7 @@ function EnemyTooltipModifiers({ modifiers }: { modifiers: EncounterCombatTraitI
       <TooltipSeparator />
       <TooltipSection label="Special Modifiers">
         {modifiers.map((modifier) => {
-          const def = ALL_LABYRINTH_MODIFIERS[modifier];
+          const def = ENCOUNTER_TRAITS[modifier];
           return def ? (
             <p key={modifier}>
               <span className="font-semibold text-amber-100">{def.label}:</span> {def.description}
@@ -40,9 +40,9 @@ function EnemyTooltipModifiers({ modifiers }: { modifiers: EncounterCombatTraitI
 function getEnemyTooltipClass(isSide: boolean, align: "left" | "right", className: string | undefined): string {
   if (!isSide) return cn("rounded-shell-tooltip", className);
   if (align === "left") {
-    return cn("rounded-shell-tooltip", "absolute right-[calc(100%+1.11cqh)] top-0 bottom-auto left-auto", className);
+    return cn("rounded-shell-tooltip", "absolute top-0 right-[calc(100%+1.11cqh)] bottom-auto left-auto", className);
   }
-  return cn("rounded-shell-tooltip", "absolute left-[calc(100%+1.11cqh)] top-0 bottom-auto right-auto", className);
+  return cn("rounded-shell-tooltip", "absolute top-0 right-auto bottom-auto left-[calc(100%+1.11cqh)]", className);
 }
 
 function getEnemyTooltipStyle(isSide: boolean, dx: number): React.CSSProperties {

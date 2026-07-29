@@ -60,7 +60,7 @@ function SliderOption({
   max?: number;
 }) {
   return (
-    <div className="surface-muted rounded-shell-panel border border-border/70 p-5">
+    <div className="rounded-shell-panel border border-border/70 p-5 surface-muted">
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm font-semibold text-foreground">{label}</p>
         <p className="text-sm font-semibold text-primary">{value}%</p>
@@ -90,7 +90,7 @@ function ToggleOption({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="surface-muted rounded-shell-panel border border-border/70 p-5">
+    <div className="rounded-shell-panel border border-border/70 p-5 surface-muted">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-foreground">{label}</p>
@@ -166,7 +166,7 @@ export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptions
   return (
     <div className="space-y-4">
       {import.meta.env.DEV ? (
-        <div className="surface-muted rounded-shell-panel border border-primary/40 p-5">
+        <div className="rounded-shell-panel border border-primary/40 p-5 surface-muted">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-foreground">Dev / QA Unlocks</p>
@@ -178,7 +178,7 @@ export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptions
           </div>
         </div>
       ) : null}
-      <div className="surface-muted rounded-shell-panel border border-border/70 p-5">
+      <div className="rounded-shell-panel border border-border/70 p-5 surface-muted">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-foreground">Options</p>
@@ -191,7 +191,7 @@ export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptions
           </Button>
         </div>
       </div>
-      <div className="surface-muted rounded-shell-panel border border-border/70 p-5">
+      <div className="rounded-shell-panel border border-border/70 p-5 surface-muted">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-foreground">Save Data</p>

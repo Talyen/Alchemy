@@ -44,7 +44,7 @@ function buildDragPortalMotionProps(visual: DragVisualBase, completeOnFlyover: b
     width: Math.round(visual.rect.width),
     height: Math.round(visual.rect.height),
   };
-  const arrow = visual.settling || (completeOnFlyover && visual.flyover);
+  const arrow = visual.settling === true || (completeOnFlyover && visual.flyover === true);
   let initialTransform: { x: number; y: number } | false = false;
   if (!isDrag) {
     const origin = computeTransformOrigin(visual, startRect, release);

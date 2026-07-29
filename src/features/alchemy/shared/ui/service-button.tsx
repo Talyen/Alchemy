@@ -9,7 +9,7 @@ import { TooltipPanel } from "./tooltip-panel";
 export function DisabledTooltip({ show, message, children }: { show: boolean; message: string; children: ReactNode }) {
   if (!show) return <>{children}</>;
   return (
-    <div className="relative group">
+    <div className="group relative">
       {children}
       <TooltipPanel width="w-auto" className="pointer-events-none whitespace-nowrap opacity-0 group-hover:opacity-100">
         <p className="text-xs leading-none text-foreground">{message}</p>
