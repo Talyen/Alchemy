@@ -421,6 +421,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(lint): drive session core picker from ACTIVE_RUN_SESSION_CORE_KEYS
+  Use the key list as a value in pickActiveRunSessionCoreFields so eslint
+  no longer treats it as type-only dead assignment.
 - fix(lint): unexport knip-flagged run-flow and route-command symbols
   Keep route-command helpers and session core keys module-private, and drop
   unused BattleRunPort barrel re-exports so deadcode gates pass.
