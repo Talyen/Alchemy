@@ -421,6 +421,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(scripts): stop exporting internal asset-manifest helpers
+  Knip flagged pathExists and sortManifest as unused exports; they are
+  only used within the manifest cache module.
 - fix(desktop): retain Sentry frame debug IDs
 - fix(desktop): preserve Sentry source map metadata
 - fix(desktop): install browser V8 snapshot
