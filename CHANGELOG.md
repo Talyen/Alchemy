@@ -962,6 +962,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(run): collapse battle cost/effects shims and share run gold
+  Retarget callers to effect-handlers and card-play, extract spendRunGold,
+  tighten labyrinth encounter trait types, and add dual-path audits.
 - refactor(desktop): simplify Sentry reporting
 - refactor(save): compose domain persistence codecs
 - refactor(run): persist deterministic rng streams
