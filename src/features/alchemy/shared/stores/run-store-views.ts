@@ -6,6 +6,7 @@ import { computeTalentEffects, type KeywordId, type TalentEffectManifest, type T
 import type { BattleCard, UnlockedTalents } from "@/lib/game-data";
 import {
   flattenRunDomainProgress,
+  pickActiveRunSessionCoreFields,
   type PermanentProgressFields,
   type RunStateFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
@@ -178,21 +179,7 @@ export function getBattleStoreView(): BattleStoreView {
 /** Run controller projection — active-run fields and setters only (no permanent progression). */
 export function selectRunController(s: RunDomainStore) {
   return {
-    characterId: s.activeRun.characterId,
-    runDeck: s.activeRun.runDeck,
-    runGold: s.activeRun.runGold,
-    runPlayerHealth: s.activeRun.runPlayerHealth,
-    runMaxHealth: s.activeRun.runMaxHealth,
-    roomsEncountered: s.activeRun.roomsEncountered,
-    currentAct: s.activeRun.currentAct,
-    destinationIndexInAct: s.activeRun.destinationIndexInAct,
-    completedDestinations: s.activeRun.completedDestinations,
-    lastOfferedDestinations: s.activeRun.lastOfferedDestinations,
-    destinationRoundsSinceOffered: s.activeRun.destinationRoundsSinceOffered,
-    runTrinkets: s.activeRun.runTrinkets,
-    encounteredRunEnemyIds: s.activeRun.encounteredRunEnemyIds,
-    selectedDifficulty: s.activeRun.selectedDifficulty,
-    contentSystemType: s.activeRun.contentSystemType,
+    ...pickActiveRunSessionCoreFields(s.activeRun),
     setRunDeck: s.setRunDeck,
     setRunGold: s.setRunGold,
     setRunPlayerHealth: s.setRunPlayerHealth,

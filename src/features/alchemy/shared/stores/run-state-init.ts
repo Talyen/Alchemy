@@ -79,6 +79,48 @@ const ACTIVE_RUN_PROGRESS_KEYS = [
   "runMaterialsEarned",
 ] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
 
+/** Active-run fields shared by `selectRunController` and `pickRunSessionRunSlice` (sans rng / run XP / materials). */
+export const ACTIVE_RUN_SESSION_CORE_KEYS = [
+  "characterId",
+  "runDeck",
+  "runGold",
+  "runPlayerHealth",
+  "runMaxHealth",
+  "roomsEncountered",
+  "currentAct",
+  "destinationIndexInAct",
+  "completedDestinations",
+  "lastOfferedDestinations",
+  "destinationRoundsSinceOffered",
+  "runTrinkets",
+  "encounteredRunEnemyIds",
+  "selectedDifficulty",
+  "contentSystemType",
+] as const satisfies ReadonlyArray<(typeof ACTIVE_RUN_PROGRESS_KEYS)[number]>;
+
+export type ActiveRunSessionCoreFields = Pick<ActiveRunProgressFields, (typeof ACTIVE_RUN_SESSION_CORE_KEYS)[number]>;
+
+/** Shared picker for the active-run core block used by controller + session read models. */
+export function pickActiveRunSessionCoreFields(activeRun: ActiveRunProgressFields): ActiveRunSessionCoreFields {
+  return {
+    characterId: activeRun.characterId,
+    runDeck: activeRun.runDeck,
+    runGold: activeRun.runGold,
+    runPlayerHealth: activeRun.runPlayerHealth,
+    runMaxHealth: activeRun.runMaxHealth,
+    roomsEncountered: activeRun.roomsEncountered,
+    currentAct: activeRun.currentAct,
+    destinationIndexInAct: activeRun.destinationIndexInAct,
+    completedDestinations: activeRun.completedDestinations,
+    lastOfferedDestinations: activeRun.lastOfferedDestinations,
+    destinationRoundsSinceOffered: activeRun.destinationRoundsSinceOffered,
+    runTrinkets: activeRun.runTrinkets,
+    encounteredRunEnemyIds: activeRun.encounteredRunEnemyIds,
+    selectedDifficulty: activeRun.selectedDifficulty,
+    contentSystemType: activeRun.contentSystemType,
+  };
+}
+
 const PERMANENT_PROGRESS_KEYS = [
   "talentXP",
   "unlockedTalents",

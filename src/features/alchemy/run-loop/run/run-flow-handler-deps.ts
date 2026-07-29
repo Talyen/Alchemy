@@ -1,32 +1,17 @@
-import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-import type { ScreenTransitionOptions } from "@/features/alchemy/shell/use-screen-transitions";
+import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { RewardState } from "@/lib/active-run-session";
 import type { DestinationOptionsInput } from "@/features/alchemy/shared/run-flow/destination-flow";
-import type { VictoryRewardsResult } from "../navigation/victory-flow";
-import {
-  readRunSessionStore,
-  type RunStateController,
-  type TalentStateController,
-} from "../../shared/stores/run-session-facade";
-import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
+import { readRunSessionStore } from "../../shared/stores/run-session-facade";
+import { CONSTANTS, type Destination } from "../../shared/types";
+import type { RunFlowDispatch } from "./run-flow-intents";
+import type { RunFlowRunPort, RunFlowTalentPort } from "./run-flow-ports";
 
 export interface RunFlowHandlerDeps {
-  run: RunStateController;
-  talents: TalentStateController;
-  navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
-  transition: (nextScreen: Screen, options?: ScreenTransitionOptions) => void;
-  onLabyrinthFailNode: () => void;
-  onLabyrinthClearNode: () => void;
-  onInitShop: () => void;
-  onInitAlchemist: () => void;
-  onInitTrinketShop: () => void;
-  onInitEquipmentShop: () => void;
-  onStartBattle: (deck?: BattleCard[], gold?: number, enemyType?: "normal" | "elite") => void;
-  onStartBossBattle: () => void;
-  onStartBossById: (bossId: string, modifiers?: DifficultyModifier[]) => boolean;
-  onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
-  onCommitWildwoodVictory: (result: VictoryRewardsResult) => void;
+  run: RunFlowRunPort;
+  talents: RunFlowTalentPort;
+  /** Shell-executed side effects (navigate, shops, battle starts, content hooks). */
+  dispatch: RunFlowDispatch;
   contentNav: {
     createInitialDestinations: (options?: DestinationOptionsInput) => RewardState;
   };
@@ -36,19 +21,12 @@ export interface RunFlowHandlerDeps {
     destinationIndexInAct?: number;
     maxHealth?: number;
   }) => Destination[];
-  beginMysteryEvent: () => void;
-  clearMysteryCardChoices: () => void;
-  onWildwoodRewardComplete: () => void;
-  /** Extra reward-choice side effects (e.g. Wildwood draft selection tracking). */
-  onSelectRewardChoice?: (id: string) => void;
   rewardRng: () => number;
   destinationRng: () => number;
   worldRng: () => number;
 }
 
-export function getActiveRewardTraits(
-  contentSystemType: RunStateController["contentSystemType"],
-): EncounterRewardTraitId[] {
+export function getActiveRewardTraits(contentSystemType: ContentSystemId): EncounterRewardTraitId[] {
   const session = readRunSessionStore();
   if (contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
     return session.wildwoodDraft?.currentRewardTraitIds ?? [];

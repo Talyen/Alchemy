@@ -3,6 +3,7 @@ import type { BattleState } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { getRunPhase, type RunPhase } from "@/lib/routing";
 import type { RunStateFields } from "@/features/alchemy/shared/stores/run-state-init";
+import { pickActiveRunSessionCoreFields } from "@/features/alchemy/shared/stores/run-state-init";
 import type { CharacterId } from "@/lib/game-data";
 import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { useMemo } from "react";
@@ -75,21 +76,7 @@ function resolveScreen(screen?: Screen): Screen {
 
 function pickRunSessionRunSlice(state: RunDomainStore, profile: RunProfileStore): RunSessionRunSlice {
   return {
-    characterId: state.activeRun.characterId,
-    runDeck: state.activeRun.runDeck,
-    runGold: state.activeRun.runGold,
-    runPlayerHealth: state.activeRun.runPlayerHealth,
-    runMaxHealth: state.activeRun.runMaxHealth,
-    roomsEncountered: state.activeRun.roomsEncountered,
-    currentAct: state.activeRun.currentAct,
-    destinationIndexInAct: state.activeRun.destinationIndexInAct,
-    completedDestinations: state.activeRun.completedDestinations,
-    lastOfferedDestinations: state.activeRun.lastOfferedDestinations,
-    destinationRoundsSinceOffered: state.activeRun.destinationRoundsSinceOffered,
-    runTrinkets: state.activeRun.runTrinkets,
-    encounteredRunEnemyIds: state.activeRun.encounteredRunEnemyIds,
-    selectedDifficulty: state.activeRun.selectedDifficulty,
-    contentSystemType: state.activeRun.contentSystemType,
+    ...pickActiveRunSessionCoreFields(state.activeRun),
     rng: state.activeRun.rng,
     talentXP: profile.talentXP,
     runTalentXP: state.activeRun.runTalentXP,

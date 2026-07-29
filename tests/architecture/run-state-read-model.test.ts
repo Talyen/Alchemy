@@ -131,4 +131,44 @@ describe("run-state read model", () => {
     expect(context).toContain("BattleTalentPort");
     expect(context).not.toContain("RunStateController");
   });
+
+  it("run-flow handlers take RunFlowRunPort / RunFlowTalentPort and dispatch intents", () => {
+    const deps = read("src/features/alchemy/run-loop/run/run-flow-handler-deps.ts");
+    expect(deps).toContain("RunFlowRunPort");
+    expect(deps).toContain("RunFlowTalentPort");
+    expect(deps).toContain("dispatch: RunFlowDispatch");
+    expect(deps).not.toContain("RunStateController");
+    expect(deps).not.toContain("TalentStateController");
+    expect(deps).not.toContain("onInitShop");
+    expect(deps).not.toContain("onStartBattle");
+    expect(deps).not.toContain("navigateTo:");
+
+    const ports = read("src/features/alchemy/run-loop/run/run-flow-ports.ts");
+    expect(ports).toContain("export interface RunFlowRunPort");
+    expect(ports).toContain("export interface RunFlowTalentPort");
+
+    const intents = read("src/features/alchemy/run-loop/run/run-flow-intents.ts");
+    expect(intents).toContain("export type RunFlowIntent");
+  });
+
+  it("shell executes run-flow intents via createRunFlowIntentExecutor", () => {
+    const executor = read("src/features/alchemy/shell/create-run-flow-intent-executor.ts");
+    expect(executor).toContain("export function createRunFlowIntentExecutor");
+
+    const nav = read("src/features/alchemy/shell/use-run-navigation.ts");
+    expect(nav).toContain("createRunFlowIntentExecutor");
+    expect(nav).toContain("dispatch");
+  });
+
+  it("selectRunController and pickRunSessionRunSlice share pickActiveRunSessionCoreFields", () => {
+    const init = read("src/features/alchemy/shared/stores/run-state-init.ts");
+    expect(init).toContain("export function pickActiveRunSessionCoreFields");
+    expect(init).toContain("export const ACTIVE_RUN_SESSION_CORE_KEYS");
+
+    const views = read("src/features/alchemy/shared/stores/run-store-views.ts");
+    expect(views).toContain("pickActiveRunSessionCoreFields");
+
+    const model = read("src/features/alchemy/shared/stores/run-session-model.ts");
+    expect(model).toContain("pickActiveRunSessionCoreFields");
+  });
 });

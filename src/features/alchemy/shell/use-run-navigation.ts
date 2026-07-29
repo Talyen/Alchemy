@@ -19,9 +19,11 @@ import type { WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet
 import { useRunDestinationWiring } from "./use-run-destination-wiring";
 import { useContentSystemNavigation } from "./use-content-system-navigation";
 import { useMysteryEventNavigation } from "./use-mystery-event-navigation";
+import { useMemo } from "react";
 import { useRunFlowHandlers } from "./use-run-flow-handlers";
 import { useRunCorruptionFlow } from "./use-run-corruption-flow";
 import { useRunTeardown } from "./use-run-teardown";
+import { createRunFlowIntentExecutor } from "./create-run-flow-intent-executor";
 
 export function useRunNavigation({
   screen,
@@ -128,28 +130,54 @@ export function useRunNavigation({
     eventsRng: randomSources.events,
   });
 
+  const dispatch = useMemo(
+    () =>
+      createRunFlowIntentExecutor({
+        navigateTo,
+        transition,
+        onLabyrinthFailNode,
+        onLabyrinthClearNode,
+        onInitShop,
+        onInitAlchemist,
+        onInitTrinketShop,
+        onInitEquipmentShop,
+        onStartBattle,
+        onStartBossBattle,
+        onStartBossById,
+        onMarkDifficultyCompleted,
+        onCommitWildwoodVictory: wildwood.commitWildwoodVictory,
+        beginMysteryEvent: mystery.beginMysteryEvent,
+        clearMysteryCardChoices: mystery.clearCardChoices,
+        onWildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
+        onSelectRewardChoice: wildwood.selectRewardChoice,
+      }),
+    [
+      navigateTo,
+      transition,
+      onLabyrinthFailNode,
+      onLabyrinthClearNode,
+      onInitShop,
+      onInitAlchemist,
+      onInitTrinketShop,
+      onInitEquipmentShop,
+      onStartBattle,
+      onStartBossBattle,
+      onStartBossById,
+      onMarkDifficultyCompleted,
+      wildwood.commitWildwoodVictory,
+      mystery.beginMysteryEvent,
+      mystery.clearCardChoices,
+      wildwood.handleWildwoodRewardComplete,
+      wildwood.selectRewardChoice,
+    ],
+  );
+
   const flowHandlers = useRunFlowHandlers({
     run,
     talents,
-    navigateTo,
-    transition,
-    onLabyrinthFailNode,
-    onLabyrinthClearNode,
-    onInitShop,
-    onInitAlchemist,
-    onInitTrinketShop,
-    onInitEquipmentShop,
-    onStartBattle,
-    onStartBossBattle,
-    onStartBossById,
-    onMarkDifficultyCompleted,
-    onCommitWildwoodVictory: wildwood.commitWildwoodVictory,
+    dispatch,
     contentNav,
     getAvailableDestinations: destinations.getAvailableDestinations,
-    beginMysteryEvent: mystery.beginMysteryEvent,
-    clearMysteryCardChoices: mystery.clearCardChoices,
-    onWildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
-    onSelectRewardChoice: wildwood.selectRewardChoice,
     rewardRng: randomSources.rewards,
     destinationRng: randomSources.destinations,
     worldRng: randomSources.world,
