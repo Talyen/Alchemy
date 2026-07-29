@@ -421,6 +421,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(lint): unexport knip-flagged run-flow and route-command symbols
+  Keep route-command helpers and session core keys module-private, and drop
+  unused BattleRunPort barrel re-exports so deadcode gates pass.
 - fix(scripts): stop exporting internal asset-manifest helpers
   Knip flagged pathExists and sortManifest as unused exports; they are
   only used within the manifest cache module.
