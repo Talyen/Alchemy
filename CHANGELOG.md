@@ -965,6 +965,10 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(build): consolidate asset prep and harden Steam release pipeline
+  Unify predev/prebuild asset work in prepare-assets.mjs with shared script helpers
+  and richer manifest caching. Simplify ship gates, fix release CI (SteamCMD,
+  commitlint, artifact uploads), and bake packaged Steam app ID into desktop builds.
 - refactor: consolidate run lifecycle, streamline CI, and add asset caches
   Move run init/teardown into shared modules, restructure run-loop controller
   bindings, add path-filtered CI jobs with a composite setup action, cache
