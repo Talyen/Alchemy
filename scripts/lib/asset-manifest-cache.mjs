@@ -44,7 +44,7 @@ export async function computeContentHash(sourcePath, settings, schemaVersion) {
  * @param {string} filePath
  * @returns {Promise<boolean>}
  */
-export async function pathExists(filePath) {
+async function pathExists(filePath) {
   try {
     await access(filePath);
     return true;
@@ -95,7 +95,7 @@ export async function isOutputFresh(outputPath, storedHash, expectedHash) {
  * @param {Record<string, string>} entries
  * @returns {Record<string, string>}
  */
-export function sortManifest(entries) {
+function sortManifest(entries) {
   /** @type {Record<string, string>} */
   const sorted = {};
   for (const key of Object.keys(entries).sort()) {
