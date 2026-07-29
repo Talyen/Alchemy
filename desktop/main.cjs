@@ -48,13 +48,31 @@ let steamClient = null;
 
 if (!USE_PACKAGED_RENDERER) parseDevServerUrl(DEV_SERVER_URL);
 
+function readPackagedSteamAppId() {
+  try {
+    const metadata = require(path.join(app.getAppPath(), "package.json"));
+    const raw = metadata?.steamAppId;
+    if (raw == null || raw === "") return null;
+    const parsed = Number.parseInt(String(raw), 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveSteamAppId() {
+  // Packaged CI builds bake steamAppId via electron-builder extraMetadata.
+  // Dev falls back to STEAM_APP_ID (from sync-steam-appid / env) then Spacewar 480.
+  return readPackagedSteamAppId() ?? Number.parseInt(process.env.STEAM_APP_ID ?? "480", 10);
+}
+
 function initializeSteamworks() {
-  const steamAppId = Number.parseInt(process.env.STEAM_APP_ID ?? "480", 10);
+  const steamAppId = resolveSteamAppId();
   try {
     const steamworks = require("steamworks.js");
     steamworks.electronEnableSteamOverlay();
     steamClient = steamworks.init(steamAppId);
-    console.log("Steamworks initialized successfully.");
+    console.log(`Steamworks initialized successfully (App ID ${steamAppId}).`);
   } catch (error) {
     console.warn("Failed to initialize Steamworks (Steam might not be running):", error.message);
   }

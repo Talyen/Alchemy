@@ -25,13 +25,13 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 
 ```sh
 npm run dev                 # Vite dev server
-npm run build               # tsc + vite build
-npm run build:desktop       # tsc + vite desktop build (runs prebuild:desktop sync)
+npm run build               # vite build (typecheck is a separate gate; Vercel runs typecheck && build)
+npm run build:desktop       # vite desktop build (runs prebuild:desktop sync)
 npm run build:desktop:no-sync  # vite desktop build only (no typecheck / sync)
 npm run typecheck           # tsc --noEmit (fast; also in lint:ci and pre-commit)
 npm test                    # Vitest
 npm test -- <path>          # Single test file
-npm run lint:ci             # format:check + typecheck + lint + boundaries + architecture smoke + deadcode (local/pre-push; CI splits these into steps)
+npm run lint:ci             # format:check + typecheck:all + lint + boundaries + architecture smoke + deadcode (local/pre-push; CI splits these into steps)
 npm run lint:boundaries     # dependency-cruiser phase / lib edges
 npm run lint:architecture-smoke  # cold ESLint lintFiles smoke (lint:ci)
 npm run deadcode            # knip (CI / pre-push)
@@ -39,12 +39,11 @@ npm run deadcode:strict     # knip --strict, entry exports, deps excluded (night
 npm run format / format:check  # Prettier via scripts/run-prettier.mjs (shared globs)
 npm run check               # npm ci --dry-run + lint:ci + test + build
 npm run check:push          # check + test:e2e:prepush
-npm run check:ship          # lint:ci + ship unit tests + build:ship
-npm run check:ship:ci       # ship unit tests + build:desktop:no-sync (CI)
+npm run check:ship          # lint:ci + ship unit tests + build:desktop:no-sync
 npm run check:ship:full     # check:ship + save E2E + Electron E2E
 npm run sync:version        # package.json → metadata.generated.ts
 npm run sync:changelog      # git log → CHANGELOG.md ## [Unreleased]
-npm run sync:changelog:check  # fail if CHANGELOG unreleased is stale
+npm run sync:changelog:check  # local drift check (CI uses changelog-sync.test.ts)
 npm run generate:patch-notes    # CHANGELOG → release-notes/UNRELEASED.md (or vX.Y.Z on tag)
 npm run dist:desktop        # electron-builder per steam/platforms.json
 npm run test:e2e:prepush    # Fast @prepush subset (pre-push hook)

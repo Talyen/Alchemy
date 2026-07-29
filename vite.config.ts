@@ -16,7 +16,7 @@ if (!Number.isInteger(devPort) || devPort <= 0) {
   throw new Error(`Invalid ALCHEMY_DEV_PORT: ${process.env.ALCHEMY_DEV_PORT}`);
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   const sentryEnabled =
     mode === "desktop" &&
     process.env.CI_RELEASE === "true" &&
@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => {
     !!process.env.SENTRY_DSN;
 
   return {
-    base: process.env.VERCEL ? "/" : mode === "desktop" ? "./" : "/",
+    base: mode === "desktop" ? "./" : "/",
     server: { open: mode !== "desktop", port: devPort, strictPort: true },
     plugins: [
       tailwind(),
@@ -34,7 +34,7 @@ export default defineConfig(({ mode }) => {
       babel({
         presets: [reactCompilerPreset()],
       }),
-      mode === "development" &&
+      command === "serve" &&
         checker({
           typescript: { tsconfigPath: "./tsconfig.json" },
         }),
@@ -64,23 +64,36 @@ export default defineConfig(({ mode }) => {
       sourcemap: sentryEnabled ? "hidden" : false,
       rollupOptions: {
         output: {
-          manualChunks(id) {
-            // Keep gameplay screens eagerly loaded while letting the browser cache and parse
-            // stable vendor libraries separately from frequently changed app code.
-            if (!id.includes("node_modules")) return undefined;
-            if (
-              id.includes("/node_modules/react/") ||
-              id.includes("/node_modules/react-dom/") ||
-              id.includes("/node_modules/scheduler/")
-            ) {
-              return "react-vendor";
-            }
-            if (id.includes("/node_modules/motion/") || id.includes("/node_modules/framer-motion/")) {
-              return "motion-vendor";
-            }
-            if (id.includes("/node_modules/lucide-react/")) return "icons-vendor";
-            if (id.includes("/node_modules/@radix-ui/")) return "radix-vendor";
-            return "vendor";
+          // Keep gameplay screens eagerly loaded while letting the browser cache and parse
+          // stable vendor libraries separately from frequently changed app code.
+          codeSplitting: {
+            groups: [
+              {
+                name: "react-vendor",
+                test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+                priority: 40,
+              },
+              {
+                name: "motion-vendor",
+                test: /[\\/]node_modules[\\/](motion|framer-motion)[\\/]/,
+                priority: 30,
+              },
+              {
+                name: "icons-vendor",
+                test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
+                priority: 20,
+              },
+              {
+                name: "radix-vendor",
+                test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
+                priority: 20,
+              },
+              {
+                name: "vendor",
+                test: /[\\/]node_modules[\\/]/,
+                priority: 10,
+              },
+            ],
           },
         },
       },

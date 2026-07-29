@@ -14,11 +14,12 @@ declare module "*/patch-notes-core.mjs" {
 }
 
 declare module "*/steam-vdf.mjs" {
+  export function resolveSteamContentRoot(root: string): string;
   export function substituteSteamVdf(template: string, values: Record<string, string>): string;
   export function writeSteamBuildVdfs(
     root: string,
     env: { STEAM_APP_ID: string; STEAM_DEPOT_ID: string; [key: string]: string },
-  ): { appPath: string; depotPath: string; buildDir: string };
+  ): { appPath: string; depotPath: string; buildDir: string; contentRoot: string };
 }
 
 declare module "*/sync-changelog.mjs" {
@@ -27,11 +28,12 @@ declare module "*/sync-changelog.mjs" {
 }
 
 declare module "../../scripts/lib/steam-vdf.mjs" {
+  export function resolveSteamContentRoot(root: string): string;
   export function substituteSteamVdf(template: string, values: Record<string, string>): string;
   export function writeSteamBuildVdfs(
     root: string,
     env: { STEAM_APP_ID: string; STEAM_DEPOT_ID: string; [key: string]: string },
-  ): { appPath: string; depotPath: string; buildDir: string };
+  ): { appPath: string; depotPath: string; buildDir: string; contentRoot: string };
 }
 
 declare module "../../scripts/sync-changelog.mjs" {
@@ -47,6 +49,51 @@ declare module "*/prettier-paths.mjs" {
 declare module "../../scripts/prettier-paths.mjs" {
   export const PRETTIER_GLOBS: readonly string[];
   export function filterPrettierPaths(paths: readonly string[]): string[];
+}
+
+declare module "*/asset-manifest-cache.mjs" {
+  export interface ManifestEntry {
+    hash: string;
+    mtimeMs: number;
+    size: number;
+  }
+  export function computeContentHash(
+    sourcePath: string,
+    settings: Record<string, unknown>,
+    schemaVersion: string | number,
+  ): Promise<string>;
+  export function resolveSourceHash(
+    sourcePath: string,
+    settings: Record<string, unknown>,
+    schemaVersion: string | number,
+    storedEntry: ManifestEntry | undefined,
+  ): Promise<ManifestEntry>;
+  export function loadManifest(manifestPath: string): Promise<Record<string, ManifestEntry>>;
+  export function isOutputFresh(
+    outputPath: string,
+    storedEntry: ManifestEntry | string | undefined,
+    expectedHash: string,
+  ): Promise<boolean>;
+  export function writeManifestIfChanged(
+    manifestPath: string,
+    entries: Record<string, ManifestEntry>,
+  ): Promise<boolean>;
+}
+
+declare module "*/map-pool.mjs" {
+  export function mapPool<T, R>(
+    items: readonly T[],
+    concurrency: number,
+    mapper: (item: T, index: number) => Promise<R>,
+  ): Promise<R[]>;
+}
+
+declare module "*/write-text-if-changed.mjs" {
+  export function writeTextIfChanged(filePath: string, content: string): Promise<boolean>;
+}
+
+declare module "*/kebab-to-camel.mjs" {
+  export function kebabToCamel(name: string): string;
 }
 
 interface VitestFailure {

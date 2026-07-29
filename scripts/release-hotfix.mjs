@@ -75,7 +75,7 @@ try {
     await new Promise((r) => setTimeout(r, 5000));
     try {
       runId = capture(
-        `gh run list --workflow release.yml --limit 1 --json databaseId,headBranch --jq '.[0] | select(.headBranch == "main") | .databaseId'`,
+        `gh run list --workflow release.yml --branch ${tag} --limit 1 --json databaseId --jq '.[0].databaseId'`,
       );
       if (runId) break;
     } catch {

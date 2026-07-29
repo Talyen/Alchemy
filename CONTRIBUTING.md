@@ -129,14 +129,14 @@ Layout: bootstrap helpers in [`tests/e2e/`](tests/e2e/) (`battle-setup.ts`, `arm
 
 ## CI parity
 
-| Job                                         | Local equivalent                                             |
-| ------------------------------------------- | ------------------------------------------------------------ |
-| CI `ship-gate`                              | `npm run build:desktop:no-sync` (after unit tests pass)      |
-| CI `save-gate`                              | `npm run test:ship:e2e` (path-filtered)                      |
-| CI `desktop-build` / `electron-e2e`         | `npm run dist:win` / `npm run test:ship:desktop`             |
-| CI `e2e` (`@critical`, every push)          | `npm run build && npm run test:e2e:prepush:full`             |
-| Pre-push hook                               | `npm run build && npm run test:e2e:prepush`                  |
-| Tag `v*` release (`e2e-full` + release job) | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md) |
+| Job                                         | Local equivalent                                                                                                             |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| CI `ship-gate`                              | `npm run build:desktop:no-sync` (after unit tests pass)                                                                      |
+| CI `save-gate`                              | `npm run test:ship:e2e` (path-filtered)                                                                                      |
+| CI `desktop-build` / `electron-e2e`         | `npm run dist:win` / `npm run test:ship:desktop`                                                                             |
+| CI `e2e` (`@critical`, every push)          | `npm run build && npm run test:e2e:prepush:full`                                                                             |
+| Pre-push hook                               | `npm run build && npm run test:e2e:prepush`                                                                                  |
+| Tag `v*` release (`e2e-full` + release job) | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md); release job runs `dist:desktop` once (no `check:ship` rebuild) |
 
 CI surfaces failures via GitHub check annotations (Vitest `github-actions` / Playwright `github` reporters) and a short job Step Summary from `scripts/ci-summarize-*.mjs`. The `lint` job runs each `lint:ci` stage as its own step so the failed step name identifies format vs typecheck vs ESLint vs boundaries vs knip. Local/pre-push still use `npm run lint:ci`.
 

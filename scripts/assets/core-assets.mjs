@@ -45,10 +45,4 @@ export const coreAssets = [
   { source: "Player Characters/Warlock.jpeg", target: "warlock.webp", width: characterWidth, quality: 82 },
   { source: "Player Characters/Druid.jpeg", target: "druid.webp", width: characterWidth, quality: 82 },
   { source: "Player Characters/Wildcard.jpeg", target: "wildcard.webp", width: characterWidth, quality: 82 },
-  {
-    source: "Player Characters/Placeholder Class.png",
-    target: "placeholder-class.webp",
-    width: characterWidth,
-    quality: 82,
-  },
 ];

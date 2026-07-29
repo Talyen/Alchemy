@@ -34,7 +34,6 @@ export const contentAssets = [
   { source: "Destinations/Normal Enemy.png", target: "normal-enemy.webp", width: 900, quality: 84 },
   { source: "Destinations/Mystery.jpeg", target: "mystery.webp", width: 900, quality: 84 },
   { source: "Destinations/Corruption Altar.jpeg", target: "corruption-altar.webp", width: 900, quality: 84 },
-  { source: "Destinations/Boss Enemy.jpeg", target: "boss-combat.webp", width: 900, quality: 84 },
   {
     source: "Destinations/Placeholder Destination.png",
     target: "placeholder-destination.webp",

@@ -4,7 +4,6 @@ import {
   gearArtByDefinitionId,
   mysteryEventArt,
   placeholderCard,
-  placeholderClass,
   placeholderDestination,
   placeholderDifficulty,
   placeholderEnemy,
@@ -18,7 +17,6 @@ import type { ContentValidationArea, ContentValidationIssue, ContentValidationSe
 const knownArt = new Set([...allGameArt, ...Object.values(mysteryEventArt), ...Object.values(gearArtByDefinitionId)]);
 const placeholderArt = new Set([
   placeholderCard,
-  placeholderClass,
   placeholderDestination,
   placeholderDifficulty,
   placeholderEnemy,

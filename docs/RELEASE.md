@@ -6,18 +6,17 @@ Automation enforces release readiness — agents do not rely on manual checklist
 
 | Command                          | When it runs                                                                                                      |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `npm run check:ship`             | Local ship gate / release workflow (`lint:ci` + ship unit + `build:ship`)                                         |
-| `npm run check:ship:ci`          | CI ship-gate slice (`test:ship:unit` + `build:desktop:no-sync`)                                                   |
+| `npm run check:ship`             | Local ship gate (`lint:ci` + ship unit + `build:desktop:no-sync`); also used by `release:hotfix`                  |
 | `npm run check:ship:full`        | Nightly + before tagging (`unit` + save E2E + Electron E2E)                                                       |
 | `npm run build:desktop:no-sync`  | Vite desktop build only — no typecheck, no version/steam/asset sync; sync runs via `prebuild:desktop` or CI steps |
 | `npm run verify:release-version` | `release.yml` — tag must match `package.json`                                                                     |
 | `npm run sync:version`           | `prebuild` / `prebuild:desktop` — syncs `package.json` → `metadata.generated.ts`                                  |
 | `npm run sync:steam-appid`       | `prebuild:desktop` / release — writes `steam_appid.txt` from `STEAM_APP_ID`                                       |
 | `npm run sync:changelog`         | Rebuilds `CHANGELOG.md` ## [Unreleased] from git since latest `v*` tag                                            |
-| `npm run sync:changelog:check`   | CI drift guard — fails if `CHANGELOG.md` is stale                                                                 |
+| `npm run sync:changelog:check`   | Local drift check — fails if `CHANGELOG.md` is stale (CI uses `tests/architecture/changelog-sync.test.ts`)        |
 | `npm run generate:patch-notes`   | Active dev → `release-notes/UNRELEASED.md`; tag CI → `release-notes/vX.Y.Z.md`                                    |
 | `npm run dist:desktop`           | Hardened, verified targets from [`steam/platforms.json`](../steam/platforms.json)                                 |
-| `npm run steam:upload:dry-run`   | Validates Steam VDF templates without credentials                                                                 |
+| `npm run steam:upload:dry-run`   | Validates Steam VDF templates + contentroot (`release-desktop/win-unpacked`) without credentials                  |
 | `npm run release`                | Bumps version, promotes changelog, creates git tag                                                                |
 
 ## Changelog automation (main-only)
@@ -30,9 +29,16 @@ Automation enforces release readiness — agents do not rely on manual checklist
 ## Agent release flow
 
 1. Ensure your working tree is clean and you're on `main`.
-2. Run **`npm run release`** — runs `check:ship:full`, bumps version (inferred from commits via `commit-and-tag-version`), creates the release commit + `vX.Y.Z` tag, pushes both to origin, and watches the release workflow.
+2. Run **`npm run release`** — runs `check:ship:full`, bumps version (inferred from commits via `commit-and-tag-version`), creates the release commit + `vX.Y.Z` tag, pushes both to origin, and watches the release workflow (matched by the tag name, not `main`).
 3. For urgent hotfixes: **`npm run release:hotfix`** — lighter gate (`check:ship` + `prepush` E2E), forces a patch bump.
-4. [`.github/workflows/release.yml`](../.github/workflows/release.yml) runs `lint`, `test`, and `build` → `e2e-full` (3-shard full E2E matrix) → `release` (builds installers, generates patch notes, uploads Steam depots, creates a GitHub Release). **The release job is blocked until lint, unit tests, and the full E2E suite all pass.** If Steam secrets are missing, the release fails unless the repository variable `ALLOW_STEAM_DRY_RUN=true` explicitly permits a dry-run.
+4. [`.github/workflows/release.yml`](../.github/workflows/release.yml) runs `lint`, `test`, and `build` → `e2e-full` (3-shard full E2E matrix) → `release` (builds installers once via `dist:desktop`, generates patch notes, uploads Steam depots, creates a GitHub Release). **The release job is blocked until lint, unit tests, and the full E2E suite all pass.** It does not re-run `check:ship` (that would rebuild desktop); `dist:desktop` with `CI_RELEASE=true` is the sole desktop compile. If Steam secrets are missing, the release fails unless the repository variable `ALLOW_STEAM_DRY_RUN=true` explicitly permits a dry-run.
+5. After a successful Steam upload, **manually promote** the new build to the live branch in Steamworks (`setlive` is empty so uploads do not auto-publish).
+
+## Steam depot and App ID
+
+- **Depot contentroot** is `release-desktop/win-unpacked` (the unpacked app), not the whole `release-desktop/` tree. That keeps the NSIS installer, `.blockmap`, and `builder-debug.yml` out of the depot. `steam:upload` (including dry-run) asserts the contentroot exists, contains `Alchemy.exe`, and has no `*Setup*.exe` / `builder-debug.yml`.
+- **Runtime Steam App ID** is baked into packaged `package.json` via electron-builder `extraMetadata.steamAppId` when `CI_RELEASE=true` (same pattern as Sentry metadata). `desktop/main.cjs` resolves: packaged metadata → `STEAM_APP_ID` env (dev) → `480` (Spacewar / local). Canonical source for the ID file used by Steamworks locally is `STEAM_APP_ID` / `steam/platforms.json` `devAppId` via `npm run sync:steam-appid`. The package verifier fails CI release builds that bake `480` or omit the ID.
+- **SteamCMD** is installed in `release.yml` with `CyberAndrii/setup-steamcmd@v1.3.0` (pinned version tag). `scripts/steam-upload.mjs` fails fast if `steamcmd` is not on `PATH`, and passes credentials as argv with `shell: false` (never logged). Configure Steam Guard for the build account per [Valve's SteamCMD / CI guidance](https://partner.steamgames.com/doc/sdk/uploading).
 
 ## Desktop crash reporting (one-time setup)
 

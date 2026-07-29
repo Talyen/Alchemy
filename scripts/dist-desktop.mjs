@@ -56,6 +56,14 @@ if (process.env.CI_RELEASE === "true" && sentryDsn) {
     `-c.extraMetadata.sentryRelease=${sentryRelease}`,
   );
 }
+
+const steamAppId = process.env.STEAM_APP_ID?.trim();
+if (process.env.CI_RELEASE === "true") {
+  if (!steamAppId || steamAppId === "480") {
+    throw new Error("CI_RELEASE builds require STEAM_APP_ID to be set to the production Steam App ID (not 480).");
+  }
+  builderArgs.push(`-c.extraMetadata.steamAppId=${steamAppId}`);
+}
 const azureFields = {
   publisherName: process.env.AZURE_CODE_SIGNING_PUBLISHER_NAME?.trim(),
   endpoint: process.env.AZURE_CODE_SIGNING_ENDPOINT?.trim(),

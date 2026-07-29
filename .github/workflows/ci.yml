@@ -68,6 +68,9 @@ jobs:
               - "playwright.electron*"
               - "package.json"
               - "scripts/electron-path*"
+              - "scripts/ensure-electron*"
+              - "scripts/electron-download*"
+              - "scripts/verify-desktop-package*"
 
   lint:
     runs-on: ubuntu-latest
@@ -292,7 +295,8 @@ jobs:
         with:
           skip-electron-download: "true"
 
-      - uses: actions/cache/restore@v5
+      - name: Cache Electron binary
+        uses: actions/cache@v5
         id: electron-binary-cache
         with:
           path: |

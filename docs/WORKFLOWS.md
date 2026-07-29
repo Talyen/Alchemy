@@ -28,11 +28,9 @@ For refactors and simplification passes on attached paths, use [docs/Audits](./A
 
 ## Assets
 
-**Add a new raw asset:** edit `scripts/optimize-assets.mjs` → `npm run assets:optimize` → import from `@/assets/optimized/` in `src/lib/game-data/assets.ts`.
+**Add a new raw asset:** register it in `scripts/assets/` (core/content/card manifests) → `npm run assets:optimize` (or `node scripts/prepare-assets.mjs`) → import from `@/assets/optimized/` in `src/lib/game-data/assets.ts`. `sync:assets` regenerates `assets.generated.ts` from the art manifest targets.
 
-**Gear art:** place files in `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg` → `npm run assets:optimize` → `npm run sync:gear-art` (regenerates `src/lib/game-data/gear-art.ts`). `predev` / `prebuild` run both automatically after optimize.
-
-**Add new art:** place in `public/assets/card-art/` or `public/assets/templates/frames/` → add entry in `scripts/optimize-art.mjs` → `node scripts/optimize-art.mjs`.
+**Gear art:** place files in `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg` → `npm run assets:optimize` → `npm run sync:gear-art` (regenerates `src/lib/game-data/gear-art.ts`). `predev` / `prebuild` run the full pipeline via `scripts/prepare-assets.mjs` (art → sync assets → sync gear art → sounds → music). Set `ALCHEMY_SKIP_ASSETS=1` to skip that prep.
 
 ---
 

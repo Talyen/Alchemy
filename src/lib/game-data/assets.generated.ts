@@ -225,7 +225,6 @@ export { default as phoenixCompanion } from "@/assets/optimized/phoenix-companio
 export { default as phoenixFeather } from "@/assets/optimized/phoenix-feather.webp";
 export { default as pixieCompanion } from "@/assets/optimized/pixie-companion.webp";
 export { default as placeholderCard } from "@/assets/optimized/placeholder-card.webp";
-export { default as placeholderClass } from "@/assets/optimized/placeholder-class.webp";
 export { default as placeholderDestination } from "@/assets/optimized/placeholder-destination.webp";
 export { default as placeholderDifficulty } from "@/assets/optimized/placeholder-difficulty.webp";
 export { default as placeholderEnemy } from "@/assets/optimized/placeholder-enemy.webp";

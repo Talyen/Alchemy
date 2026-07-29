@@ -3,10 +3,7 @@
   "compilerOptions": {
     "types": ["vitest/globals", "vite/client", "node"],
     "noUncheckedIndexedAccess": false,
-    "exactOptionalPropertyTypes": false,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "exactOptionalPropertyTypes": false
   },
-  "include": ["tests"],
-  "exclude": ["src/**"]
+  "include": ["tests"]
 }

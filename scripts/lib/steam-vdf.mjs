@@ -2,12 +2,18 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+export function resolveSteamContentRoot(root) {
+  return join(root, "release-desktop", "win-unpacked");
+}
+
 export function substituteSteamVdf(template, env) {
   const buildOutput = (env.BUILD_OUTPUT ?? "").replaceAll("\\", "/");
+  const contentRoot = (env.CONTENT_ROOT ?? "").replaceAll("\\", "/");
   return template
     .replaceAll("${STEAM_APP_ID}", env.STEAM_APP_ID ?? "0")
     .replaceAll("${STEAM_DEPOT_ID}", env.STEAM_DEPOT_ID ?? "0")
-    .replaceAll("${BUILD_OUTPUT}", buildOutput);
+    .replaceAll("${BUILD_OUTPUT}", buildOutput)
+    .replaceAll("${CONTENT_ROOT}", contentRoot);
 }
 
 export function writeSteamBuildVdfs(root, env) {
@@ -15,10 +21,12 @@ export function writeSteamBuildVdfs(root, env) {
   mkdirSync(buildDir, { recursive: true });
 
   const buildOutput = join(root, "release-desktop");
+  const contentRoot = resolveSteamContentRoot(root);
   const resolvedEnv = {
     STEAM_APP_ID: env.STEAM_APP_ID ?? "0",
     STEAM_DEPOT_ID: env.STEAM_DEPOT_ID ?? "0",
     BUILD_OUTPUT: buildOutput,
+    CONTENT_ROOT: contentRoot,
   };
 
   const depotTemplate = readFileSync(join(root, "steam", "depot_build.vdf"), "utf8");
@@ -37,5 +45,5 @@ export function writeSteamBuildVdfs(root, env) {
     "utf8",
   );
 
-  return { appPath, depotPath, buildDir };
+  return { appPath, depotPath, buildDir, contentRoot };
 }

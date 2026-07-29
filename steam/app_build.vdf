@@ -3,8 +3,8 @@
   "appid" "${STEAM_APP_ID}"
   "desc" "Alchemy automated build"
   "buildoutput" "${BUILD_OUTPUT}"
-  "contentroot" "${BUILD_OUTPUT}"
-  "setlive" "default"
+  "contentroot" "${CONTENT_ROOT}"
+  "setlive" ""
   "depots"
   {
     "${STEAM_DEPOT_ID}" "steam/depot_build.vdf"

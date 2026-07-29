@@ -27,18 +27,18 @@ npm run dev
 
 ## Key Scripts
 
-| Command                 | Action                                             |
-| ----------------------- | -------------------------------------------------- |
-| `npm run dev`           | Start Vite dev server                              |
-| `npm run build`         | TypeScript check, then production build            |
-| `npm run preview`       | Preview the production build locally               |
-| `npm test`              | Run Vitest unit tests                              |
-| `npm run test:coverage` | Run Vitest with coverage                           |
-| `npm run test:e2e`      | Run Playwright end-to-end tests                    |
-| `npm run lint`          | Lint all source files                              |
-| `npm run format`        | Format with Prettier                               |
-| `npm run release`       | Bump version + generate changelog + create git tag |
-| `npm run balance:sim`   | Run headless balance simulation report             |
+| Command                 | Action                                                |
+| ----------------------- | ----------------------------------------------------- |
+| `npm run dev`           | Start Vite dev server                                 |
+| `npm run build`         | Production build (Vite; typecheck is a separate gate) |
+| `npm run preview`       | Preview the production build locally                  |
+| `npm test`              | Run Vitest unit tests                                 |
+| `npm run test:coverage` | Run Vitest with coverage                              |
+| `npm run test:e2e`      | Run Playwright end-to-end tests                       |
+| `npm run lint`          | Lint all source files                                 |
+| `npm run format`        | Format with Prettier                                  |
+| `npm run release`       | Bump version + generate changelog + create git tag    |
+| `npm run balance:sim`   | Run headless balance simulation report                |
 
 > Full command reference: [`docs/REFERENCE.md`](./docs/REFERENCE.md#environment--commands). Agent/coding rules: [`AGENTS.md`](./AGENTS.md).
 
@@ -46,12 +46,12 @@ npm run dev
 
 The game also has an Electron shell for local desktop builds.
 
-| Command                 | Action                                        |
-| ----------------------- | --------------------------------------------- |
-| `npm run dev:desktop`   | Run Vite and Electron together                |
-| `npm run build:desktop` | TypeScript check and desktop production build |
-| `npm run package:win`   | Create an unpacked Windows build              |
-| `npm run dist:win`      | Create a Windows installer                    |
+| Command                 | Action                                           |
+| ----------------------- | ------------------------------------------------ |
+| `npm run dev:desktop`   | Run Vite and Electron together                   |
+| `npm run build:desktop` | Desktop production build (Vite `--mode desktop`) |
+| `npm run package:win`   | Create an unpacked Windows build                 |
+| `npm run dist:win`      | Create a Windows installer                       |
 
 ## Testing
 
@@ -159,13 +159,15 @@ tests/                   # Vitest unit tests and Playwright e2e specs
 
 ## Assets
 
-Asset optimization runs automatically before development and production builds.
+Asset preparation runs automatically before development and production builds via `scripts/prepare-assets.mjs` (`predev` / `prebuild`). Set `ALCHEMY_SKIP_ASSETS=1` to skip.
 
-| Command                   | Action                 |
-| ------------------------- | ---------------------- |
-| `npm run assets:optimize` | Optimize image assets  |
-| `npm run sounds:optimize` | Optimize sound effects |
-| `npm run music:optimize`  | Optimize music assets  |
+| Command                   | Action                           |
+| ------------------------- | -------------------------------- |
+| `npm run assets:optimize` | Optimize image assets            |
+| `npm run sync:assets`     | Regenerate `assets.generated.ts` |
+| `npm run sync:gear-art`   | Regenerate `gear-art.ts`         |
+| `npm run sounds:optimize` | Optimize sound effects           |
+| `npm run music:optimize`  | Optimize music assets            |
 
 Optimized images are committed under `src/assets/optimized/`. Optimized sounds are output to `public/sounds/`.
 

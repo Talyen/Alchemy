@@ -69,13 +69,13 @@ try {
   const match = remoteUrl.match(/github\.com[/:](.+?)\/(.+?)(?:\.git)?$/);
   const repoPath = match ? `${match[1]}/${match[2]}` : null;
 
-  // Poll for the workflow run
+  // Poll for the workflow run (tag pushes set head_branch to the tag name)
   let runId = null;
   for (let i = 0; i < 6; i++) {
     await new Promise((r) => setTimeout(r, 5000));
     try {
       runId = capture(
-        `gh run list --workflow release.yml --limit 1 --json databaseId,headBranch --jq '.[0] | select(.headBranch == "main") | .databaseId'`,
+        `gh run list --workflow release.yml --branch ${tag} --limit 1 --json databaseId --jq '.[0].databaseId'`,
       );
       if (runId) break;
     } catch {

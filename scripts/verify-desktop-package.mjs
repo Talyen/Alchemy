@@ -1,8 +1,12 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 
 import { FuseState, FuseV1Options, getCurrentFuseWire } from "@electron/fuses";
+
+const require = createRequire(import.meta.url);
+const asar = require("@electron/asar");
 
 const outputRoot = resolve("release-desktop");
 const unpackedDirectory = readdirSync(outputRoot, { withFileTypes: true }).find(
@@ -77,6 +81,48 @@ for (const secretName of ["SENTRY_AUTH_TOKEN", "AZURE_CLIENT_SECRET"]) {
   }
 }
 
+const packagedMetadata = JSON.parse(asar.extractFile(packagedAsar, "package.json").toString("utf8"));
+if (process.env.CI_RELEASE === "true") {
+  const bakedAppId = packagedMetadata.steamAppId;
+  const parsedAppId = Number.parseInt(String(bakedAppId ?? ""), 10);
+  if (!Number.isFinite(parsedAppId) || parsedAppId <= 0) {
+    throw new Error("CI_RELEASE package is missing baked steamAppId metadata.");
+  }
+  if (parsedAppId === 480) {
+    throw new Error("CI_RELEASE package must not use Steam App ID 480 (Spacewar).");
+  }
+}
+
+const asarUnpackedRoot = join(appDirectory, "resources", "app.asar.unpacked");
+if (artifactPlatform === "win32") {
+  const steamworksWin64 = join(asarUnpackedRoot, "node_modules", "steamworks.js", "dist", "win64");
+  const requiredNatives = [
+    join(steamworksWin64, "steamworksjs.win32-x64-msvc.node"),
+    join(steamworksWin64, "steam_api64.dll"),
+  ];
+  for (const nativePath of requiredNatives) {
+    if (!existsSync(nativePath)) {
+      throw new Error(`Steamworks native module is missing from app.asar.unpacked: ${nativePath}`);
+    }
+  }
+} else if (artifactPlatform === "linux") {
+  const steamworksLinux = join(asarUnpackedRoot, "node_modules", "steamworks.js", "dist", "linux64");
+  if (
+    !existsSync(steamworksLinux) ||
+    !readdirSync(steamworksLinux).some((name) => name.endsWith(".node") || name.endsWith(".so"))
+  ) {
+    throw new Error(`Steamworks native module is missing from app.asar.unpacked under ${steamworksLinux}`);
+  }
+} else if (artifactPlatform === "darwin") {
+  const steamworksOsx = join(asarUnpackedRoot, "node_modules", "steamworks.js", "dist", "osx");
+  if (
+    !existsSync(steamworksOsx) ||
+    !readdirSync(steamworksOsx).some((name) => name.endsWith(".node") || name.endsWith(".dylib"))
+  ) {
+    throw new Error(`Steamworks native module is missing from app.asar.unpacked under ${steamworksOsx}`);
+  }
+}
+
 if (artifactPlatform === "win32" && process.platform === "win32" && process.env.AZURE_CODE_SIGNING_ENDPOINT) {
   execFileSync(
     "powershell.exe",
@@ -90,4 +136,6 @@ if (artifactPlatform === "win32" && process.platform === "win32" && process.env.
   );
 }
 
-console.log("Packaged Electron fuses, ASAR boundary, source maps, secrets, and signing state verified.");
+console.log(
+  "Packaged Electron fuses, ASAR boundary, Steamworks natives, source maps, secrets, and signing state verified.",
+);

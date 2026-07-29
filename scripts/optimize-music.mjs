@@ -2,12 +2,8 @@ import { mkdir, copyFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-  computeContentHash,
-  isOutputFresh,
-  loadManifest,
-  writeManifestIfChanged,
-} from "./lib/asset-manifest-cache.mjs";
+import { isOutputFresh, loadManifest, resolveSourceHash, writeManifestIfChanged } from "./lib/asset-manifest-cache.mjs";
+import { isMainModule } from "./lib/is-main-module.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const rootDir = path.resolve(path.dirname(currentFile), "..");
@@ -15,12 +11,12 @@ const sourceDir = path.join(rootDir, "Raw Assets", "Music");
 const outputDir = path.join(rootDir, "public", "Music");
 const manifestPath = path.join(outputDir, ".asset-hashes.json");
 
-/** Bump when copy pipeline settings or hash inputs change. */
-const SCHEMA_VERSION = 1;
+/** Bump when copy pipeline settings, hash inputs, or manifest entry shape change. */
+const SCHEMA_VERSION = 2;
 
 const MUSIC_SETTINGS = { mode: "copy" };
 
-async function main() {
+export async function optimizeMusic() {
   await mkdir(outputDir, { recursive: true });
 
   const files = [
@@ -40,7 +36,7 @@ async function main() {
   ];
 
   const previousManifest = await loadManifest(manifestPath);
-  /** @type {Record<string, string>} */
+  /** @type {Record<string, import("./lib/asset-manifest-cache.mjs").ManifestEntry>} */
   const nextManifest = {};
   const results = [];
   let failed = false;
@@ -49,19 +45,21 @@ async function main() {
     const outputPath = path.join(outputDir, file);
 
     try {
-      const expectedHash = await computeContentHash(sourcePath, MUSIC_SETTINGS, SCHEMA_VERSION);
-      const isFresh = await isOutputFresh(outputPath, previousManifest[file], expectedHash);
+      const sourceEntry = await resolveSourceHash(sourcePath, MUSIC_SETTINGS, SCHEMA_VERSION, previousManifest[file]);
+      const isFresh = await isOutputFresh(outputPath, previousManifest[file], sourceEntry.hash);
       if (isFresh) {
         results.push(`${file} already up to date`);
-        nextManifest[file] = expectedHash;
+        nextManifest[file] = sourceEntry;
         continue;
       }
       await copyFile(sourcePath, outputPath);
-      nextManifest[file] = expectedHash;
+      nextManifest[file] = sourceEntry;
       results.push(`${file} copied`);
     } catch (error) {
       failed = true;
-      results.push(`FAILED ${file}: ${error.message}`);
+      const detail = error instanceof Error ? error.message : String(error);
+      console.error(`FAILED ${file}: ${detail}`);
+      results.push(`FAILED ${file}: ${detail}`);
     }
   }
 
@@ -73,8 +71,10 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error("Music optimization failed.");
-  console.error(error);
-  process.exitCode = 1;
-});
+if (isMainModule(import.meta.url)) {
+  optimizeMusic().catch((error) => {
+    console.error("Music optimization failed.");
+    console.error(error);
+    process.exitCode = 1;
+  });
+}

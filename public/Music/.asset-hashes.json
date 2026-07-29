@@ -1,15 +1,67 @@
 {
-  "Battle 1.mp3": "53982ef95c694b34",
-  "Battle 2.mp3": "5a45d255f83468a5",
-  "Battle 3.mp3": "92ec4b4d9fde7a6d",
-  "Battle 4.mp3": "3b46815f75a8e59a",
-  "Battle 5.mp3": "cb98d0ff42b92ca9",
-  "Menu 1.mp3": "b7ade221ef5a378d",
-  "Menu 2.mp3": "a4d19cca1d4607d0",
-  "Menu 3.mp3": "5b7d930f86b07f75",
-  "Menu 4.mp3": "15ba9b4b88b594b8",
-  "The Blight Treant.mp3": "702c2f840edd8e7c",
-  "The Forge Golem.mp3": "64de91eb2c3e4119",
-  "The Frostwarden.mp3": "7e8a403178abf733",
-  "The Iron Bear.mp3": "e1b1e61ba6187c71"
+  "Battle 1.mp3": {
+    "hash": "3968aac42fb72f53",
+    "mtimeMs": 1782421242075.4739,
+    "size": 5427237
+  },
+  "Battle 2.mp3": {
+    "hash": "ea5b6eb98c3dd750",
+    "mtimeMs": 1782421242086.1309,
+    "size": 3936041
+  },
+  "Battle 3.mp3": {
+    "hash": "d02e65edf0541c4c",
+    "mtimeMs": 1782421242107.1501,
+    "size": 5131218
+  },
+  "Battle 4.mp3": {
+    "hash": "b8f8d7ff7bed9bbc",
+    "mtimeMs": 1782421242118.9275,
+    "size": 4578233
+  },
+  "Battle 5.mp3": {
+    "hash": "feca596141cd265e",
+    "mtimeMs": 1782421242137.001,
+    "size": 4554176
+  },
+  "Menu 1.mp3": {
+    "hash": "502b1a15039389f5",
+    "mtimeMs": 1782421242163.4368,
+    "size": 7867487
+  },
+  "Menu 2.mp3": {
+    "hash": "f345bc6c5d9dc262",
+    "mtimeMs": 1782421242182.4714,
+    "size": 4315535
+  },
+  "Menu 3.mp3": {
+    "hash": "220d29c337c84134",
+    "mtimeMs": 1782421242196.686,
+    "size": 4024193
+  },
+  "Menu 4.mp3": {
+    "hash": "160dbd015f979979",
+    "mtimeMs": 1782421242208.1755,
+    "size": 5160160
+  },
+  "The Blight Treant.mp3": {
+    "hash": "3069d6960acd2097",
+    "mtimeMs": 1782421242237.4436,
+    "size": 8347166
+  },
+  "The Forge Golem.mp3": {
+    "hash": "ec83c50b5c63089a",
+    "mtimeMs": 1782421242260.8853,
+    "size": 5068455
+  },
+  "The Frostwarden.mp3": {
+    "hash": "06c4402139c93e89",
+    "mtimeMs": 1782421242279.4465,
+    "size": 7995000
+  },
+  "The Iron Bear.mp3": {
+    "hash": "42450a22b1411a4e",
+    "mtimeMs": 1782421242304.6184,
+    "size": 7131446
+  }
 }

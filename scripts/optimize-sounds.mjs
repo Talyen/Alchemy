@@ -8,12 +8,9 @@ import { promisify } from "node:util";
 // on system installation. We use it to normalize volume and convert WAVs to OGG.
 import ffmpegPath from "ffmpeg-static";
 
-import {
-  computeContentHash,
-  isOutputFresh,
-  loadManifest,
-  writeManifestIfChanged,
-} from "./lib/asset-manifest-cache.mjs";
+import { isOutputFresh, loadManifest, resolveSourceHash, writeManifestIfChanged } from "./lib/asset-manifest-cache.mjs";
+import { isMainModule } from "./lib/is-main-module.mjs";
+import { mapPool } from "./lib/map-pool.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -23,8 +20,9 @@ const sourceDir = path.join(rootDir, "Raw Assets", "Sound Effects");
 const outputDir = path.join(rootDir, "public", "sounds");
 const manifestPath = path.join(outputDir, ".asset-hashes.json");
 
-/** Bump when ffmpeg args or hash inputs change. */
-const SCHEMA_VERSION = 1;
+/** Bump when ffmpeg args, hash inputs, or manifest entry shape change. */
+const SCHEMA_VERSION = 2;
+const TRANSFORM_CONCURRENCY = 6;
 
 const LOUDNORM_FILTER = "loudnorm=I=-16:TP=-1.5:LRA=11";
 const VORBIS_QUALITY = "4";
@@ -111,21 +109,21 @@ function soundTransformSettings(sourceExt) {
   };
 }
 
-async function optimizeSound({ source, target }, storedHash) {
+async function optimizeSound({ source, target }, storedEntry) {
   const sourcePath = path.join(sourceDir, source);
   const outputPath = path.join(outputDir, target);
   const ext = path.extname(source).toLowerCase();
   const settings = soundTransformSettings(ext);
-  const expectedHash = await computeContentHash(sourcePath, settings, SCHEMA_VERSION);
-  const isFresh = await isOutputFresh(outputPath, storedHash, expectedHash);
+  const sourceEntry = await resolveSourceHash(sourcePath, settings, SCHEMA_VERSION, storedEntry);
+  const isFresh = await isOutputFresh(outputPath, storedEntry, sourceEntry.hash);
   if (isFresh) {
-    return { message: `${target} already up to date`, hash: expectedHash };
+    return { message: `${target} already up to date`, entry: sourceEntry };
   }
 
   if (ext === ".ogg") {
     // Already OGG — copy through unchanged.
     await copyFile(sourcePath, outputPath);
-    return { message: `${target} copied`, hash: expectedHash };
+    return { message: `${target} copied`, entry: sourceEntry };
   }
 
   // Convert WAV (or anything else) to OGG Vorbis with gentle loudness normalization
@@ -145,10 +143,10 @@ async function optimizeSound({ source, target }, storedHash) {
     outputPath,
   ]);
 
-  return { message: `${target} converted`, hash: expectedHash };
+  return { message: `${target} converted`, entry: sourceEntry };
 }
 
-async function main() {
+export async function optimizeSounds() {
   if (!ffmpegPath) {
     console.error("ffmpeg-static binary not found. Run: npm install");
     process.exitCode = 1;
@@ -158,20 +156,28 @@ async function main() {
   await mkdir(outputDir, { recursive: true });
 
   const previousManifest = await loadManifest(manifestPath);
-  /** @type {Record<string, string>} */
-  const nextManifest = {};
-  const results = [];
-  let failed = false;
-  for (const sound of sounds) {
+
+  const results = await mapPool(sounds, TRANSFORM_CONCURRENCY, async (sound) => {
     try {
-      const { message, hash } = await optimizeSound(sound, previousManifest[sound.target]);
-      results.push(message);
-      if (hash) {
-        nextManifest[sound.target] = hash;
-      }
+      const { message, entry } = await optimizeSound(sound, previousManifest[sound.target]);
+      return { sound, message, entry, failed: false };
     } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      console.error(`FAILED ${sound.target}: ${detail}`);
+      return { sound, message: `FAILED ${sound.target}: ${detail}`, entry: null, failed: true };
+    }
+  });
+
+  /** @type {Record<string, import("./lib/asset-manifest-cache.mjs").ManifestEntry>} */
+  const nextManifest = {};
+  let failed = false;
+  for (const result of results) {
+    if (result.failed) {
       failed = true;
-      results.push(`FAILED ${sound.target}: ${error.message}`);
+      continue;
+    }
+    if (result.entry) {
+      nextManifest[result.sound.target] = result.entry;
     }
   }
 
@@ -183,8 +189,10 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error("Sound optimization failed.");
-  console.error(error);
-  process.exitCode = 1;
-});
+if (isMainModule(import.meta.url)) {
+  optimizeSounds().catch((error) => {
+    console.error("Sound optimization failed.");
+    console.error(error);
+    process.exitCode = 1;
+  });
+}

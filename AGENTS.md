@@ -73,7 +73,7 @@ For non-trivial work, find and read only the docs that match the task; prefer sp
 
 - Node + npm versions: see `package.json` `engines`; install via `npm ci`. First-time Playwright setup: `npx playwright install chromium`.
 - Run the game with `npm run dev` (Vite, port 5173 with `strictPort`; override via `ALCHEMY_DEV_PORT`).
-- `predev` and `prebuild` run asset optimization and version sync; the first build is slow. Don't try to skip them.
+- `predev` and `prebuild` run `scripts/prepare-assets.mjs` (and version sync on prebuild); the first build is slow. Escape hatch: `ALCHEMY_SKIP_ASSETS=1`.
 - Don't chain `cd` into commands — set your tool's working-directory option instead.
 - Windows / PowerShell 7 shell details: [CONTRIBUTING.md](./CONTRIBUTING.md#before-you-push).
 

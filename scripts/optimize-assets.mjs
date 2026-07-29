@@ -1,25 +1,24 @@
-import { mkdir, readdir, stat } from "node:fs/promises";
+import { mkdir, readdir, unlink } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import sharp from "sharp";
 
 import { staticAssets } from "./assets/asset-manifest.mjs";
-import {
-  computeContentHash,
-  isOutputFresh,
-  loadManifest,
-  writeManifestIfChanged,
-} from "./lib/asset-manifest-cache.mjs";
+import { isOutputFresh, loadManifest, resolveSourceHash, writeManifestIfChanged } from "./lib/asset-manifest-cache.mjs";
+import { isMainModule } from "./lib/is-main-module.mjs";
+import { mapPool } from "./lib/map-pool.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const rootDir = path.resolve(path.dirname(currentFile), "..");
 const sourceDir = path.join(rootDir, "Raw Assets");
 const outputDir = path.join(rootDir, "src", "assets", "optimized");
 const manifestPath = path.join(outputDir, ".asset-hashes.json");
+const MANIFEST_BASENAME = ".asset-hashes.json";
 
-/** Bump when sharp pipeline settings or hash inputs change. */
-const SCHEMA_VERSION = 1;
+/** Bump when sharp pipeline settings, hash inputs, or manifest entry shape change. */
+const SCHEMA_VERSION = 2;
+const TRANSFORM_CONCURRENCY = 6;
 
 const gearAssetWidth = 420;
 const gearAssetQuality = 82;
@@ -142,29 +141,40 @@ function artTransformSettings({ width, quality }) {
   };
 }
 
-async function optimizeAsset({ source, target, width, quality }, storedHash) {
-  const sourcePath = path.join(sourceDir, source);
-  const outputPath = path.join(outputDir, target);
+/**
+ * @param {{ source: string, target: string, width: number, quality: number }} asset
+ * @param {import("./lib/asset-manifest-cache.mjs").ManifestEntry | undefined} storedEntry
+ */
+async function optimizeAsset(asset, storedEntry) {
+  const sourcePath = path.join(sourceDir, asset.source);
+  const outputPath = path.join(outputDir, asset.target);
 
+  let sourceEntry;
   try {
-    await stat(sourcePath);
-  } catch {
-    return { message: `${target} skipped (missing source)`, hash: null };
+    sourceEntry = await resolveSourceHash(
+      sourcePath,
+      artTransformSettings({ width: asset.width, quality: asset.quality }),
+      SCHEMA_VERSION,
+      storedEntry,
+    );
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      return { message: `${asset.target} missing source`, hash: null, missing: true };
+    }
+    throw error;
   }
 
-  const settings = artTransformSettings({ width, quality });
-  const expectedHash = await computeContentHash(sourcePath, settings, SCHEMA_VERSION);
-  const isFresh = await isOutputFresh(outputPath, storedHash, expectedHash);
+  const isFresh = await isOutputFresh(outputPath, storedEntry, sourceEntry.hash);
   if (isFresh) {
-    return { message: `${target} already up to date`, hash: expectedHash };
+    return { message: `${asset.target} already up to date`, entry: sourceEntry, missing: false };
   }
 
   await sharp(sourcePath)
-    .resize({ width, fit: "inside", withoutEnlargement: true })
-    .webp({ quality, alphaQuality: 90, effort: 6 })
+    .resize({ width: asset.width, fit: "inside", withoutEnlargement: true })
+    .webp({ quality: asset.quality, alphaQuality: 90, effort: 6 })
     .toFile(outputPath);
 
-  return { message: `${target} optimized`, hash: expectedHash };
+  return { message: `${asset.target} optimized`, entry: sourceEntry, missing: false };
 }
 
 function validateAssetTargets(assetEntries) {
@@ -180,7 +190,30 @@ function validateAssetTargets(assetEntries) {
   }
 }
 
-async function main() {
+/**
+ * Delete files in the managed output directory that are not manifest targets.
+ * @param {Set<string>} targetNames
+ */
+async function removeOrphanOutputs(targetNames) {
+  let entries;
+  try {
+    entries = await readdir(outputDir);
+  } catch {
+    return 0;
+  }
+
+  let removed = 0;
+  for (const name of entries) {
+    if (name === MANIFEST_BASENAME) continue;
+    if (targetNames.has(name)) continue;
+    await unlink(path.join(outputDir, name));
+    removed += 1;
+    console.log(`Removed orphan optimized asset: ${name}`);
+  }
+  return removed;
+}
+
+export async function optimizeAssets() {
   await mkdir(outputDir, { recursive: true });
 
   const gearAssets = await discoverGearAssets();
@@ -189,27 +222,46 @@ async function main() {
   validateAssetTargets(allAssets);
 
   const previousManifest = await loadManifest(manifestPath);
-  /** @type {Record<string, string>} */
-  const nextManifest = {};
-  const results = [];
 
-  for (const asset of allAssets) {
-    const { message, hash } = await optimizeAsset(asset, previousManifest[asset.target]);
-    results.push(message);
-    if (hash) {
-      nextManifest[asset.target] = hash;
+  const results = await mapPool(allAssets, TRANSFORM_CONCURRENCY, async (asset) => {
+    const result = await optimizeAsset(asset, previousManifest[asset.target]);
+    if (result.missing) {
+      console.error(`Missing art source for ${asset.target}: ${asset.source}`);
+    }
+    return { asset, ...result };
+  });
+
+  /** @type {Record<string, import("./lib/asset-manifest-cache.mjs").ManifestEntry>} */
+  const nextManifest = {};
+  let missingCount = 0;
+  for (const result of results) {
+    if (result.missing) {
+      missingCount += 1;
+      continue;
+    }
+    if (result.entry) {
+      nextManifest[result.asset.target] = result.entry;
     }
   }
 
+  // Single manifest write after the parallel pass.
   await writeManifestIfChanged(manifestPath, nextManifest);
+
+  if (missingCount === 0) {
+    await removeOrphanOutputs(new Set(Object.keys(nextManifest)));
+  } else {
+    process.exitCode = 1;
+  }
 
   console.log(
     `Optimized ${results.length} art assets (${gearAssets.length} gear, ${gearSlotBackgrounds.length} gear slot backgrounds).`,
   );
 }
 
-main().catch((error) => {
-  console.error("Asset optimization failed.");
-  console.error(error);
-  process.exitCode = 1;
-});
+if (isMainModule(import.meta.url)) {
+  optimizeAssets().catch((error) => {
+    console.error("Asset optimization failed.");
+    console.error(error);
+    process.exitCode = 1;
+  });
+}

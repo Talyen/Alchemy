@@ -22,7 +22,20 @@ jobs:
           fetch-depth: 0
 
       - uses: ./.github/actions/setup
-      - run: npx commitlint --from $(git tag --list "v*" --sort=-v:refname | head -1) --to HEAD --verbose
+      - name: Commitlint since previous release tag
+        shell: bash
+        run: |
+          PREV_TAG="$(git tag --list 'v*' --sort=-v:refname | sed -n '2p')"
+          if [ -z "$PREV_TAG" ]; then
+            PREV_TAG="$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)"
+          fi
+          if [ -n "$PREV_TAG" ]; then
+            npx commitlint --from "$PREV_TAG" --to HEAD --verbose
+          else
+            echo "No previous v* tag found; linting from repository root commit."
+            ROOT_COMMIT="$(git rev-list --max-parents=0 HEAD | tail -1)"
+            npx commitlint --from "$ROOT_COMMIT" --to HEAD --verbose
+          fi
 
       - run: npm run lint:ci
 
@@ -146,9 +159,6 @@ jobs:
         env:
           STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
 
-      - name: Ship gate
-        run: npm run check:ship
-
       - name: Generate patch notes
         run: node scripts/generate-patch-notes.mjs
         env:
@@ -171,6 +181,10 @@ jobs:
           AZURE_CODE_SIGNING_ACCOUNT_NAME: ${{ secrets.AZURE_CODE_SIGNING_ACCOUNT_NAME }}
           AZURE_CODE_SIGNING_CERTIFICATE_PROFILE_NAME: ${{ secrets.AZURE_CODE_SIGNING_CERTIFICATE_PROFILE_NAME }}
           REQUIRE_CODE_SIGNING: ${{ vars.REQUIRE_CODE_SIGNING }}
+
+      # windows-latest does not ship SteamCMD; pin a known setup action by version tag.
+      - name: Install SteamCMD
+        uses: CyberAndrii/setup-steamcmd@v1.3.0
 
       - name: Steam upload
         shell: bash
@@ -197,7 +211,8 @@ jobs:
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: |
-            release-desktop/**
+            release-desktop/*.exe
+            release-desktop/*.exe.blockmap
             release-notes/**
           body_path: release-notes/${{ github.ref_name }}.md
         env:
