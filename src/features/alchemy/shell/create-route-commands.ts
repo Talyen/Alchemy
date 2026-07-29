@@ -42,7 +42,7 @@ export interface AlchemyRouteCommandDeps {
   continueFromRunEnd: () => void;
 }
 
-export function createMetaRouteCommands(
+function createMetaRouteCommands(
   deps: Pick<
     AlchemyRouteCommandDeps,
     "goToScreen" | "beginCampaign" | "beginLabyrinth" | "beginWildwood" | "unlockTalent" | "resetUnlockedTalents"
@@ -58,7 +58,7 @@ export function createMetaRouteCommands(
   };
 }
 
-export function createRunSetupRouteCommands(
+function createRunSetupRouteCommands(
   deps: Pick<
     AlchemyRouteCommandDeps,
     | "goToScreen"
@@ -79,7 +79,7 @@ export function createRunSetupRouteCommands(
   };
 }
 
-export function createRunLoopRouteCommands(
+function createRunLoopRouteCommands(
   deps: Pick<
     AlchemyRouteCommandDeps,
     | "handleLabyrinthNodeEnter"
@@ -167,7 +167,7 @@ export function createRunLoopRouteCommands(
   };
 }
 
-export function createBattleRouteCommands(
+function createBattleRouteCommands(
   deps: Pick<
     AlchemyRouteCommandDeps,
     "handleCardClick" | "handleWishChoice" | "handleEndTurn" | "skipCombatDevMode" | "removeCardGhost"
@@ -182,7 +182,7 @@ export function createBattleRouteCommands(
   };
 }
 
-export function createRunEndRouteCommands(deps: Pick<AlchemyRouteCommandDeps, "continueFromRunEnd">) {
+function createRunEndRouteCommands(deps: Pick<AlchemyRouteCommandDeps, "continueFromRunEnd">) {
   return {
     continueFromRunEnd: deps.continueFromRunEnd,
   };

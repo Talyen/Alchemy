@@ -102,7 +102,7 @@ describe("run-state read model", () => {
     expect(controller).not.toMatch(/routeCommands\s*=\s*\{/);
     const factory = read("src/features/alchemy/shell/create-route-commands.ts");
     expect(factory).toContain("export function createAlchemyRouteCommands");
-    expect(factory).toContain("export function createRunLoopRouteCommands");
+    expect(factory).toContain("function createRunLoopRouteCommands");
   });
 
   it("splits run navigation into concern hooks rather than inlining factories", () => {
@@ -163,7 +163,7 @@ describe("run-state read model", () => {
   it("selectRunController and pickRunSessionRunSlice share pickActiveRunSessionCoreFields", () => {
     const init = read("src/features/alchemy/shared/stores/run-state-init.ts");
     expect(init).toContain("export function pickActiveRunSessionCoreFields");
-    expect(init).toContain("export const ACTIVE_RUN_SESSION_CORE_KEYS");
+    expect(init).toContain("const ACTIVE_RUN_SESSION_CORE_KEYS");
 
     const views = read("src/features/alchemy/shared/stores/run-store-views.ts");
     expect(views).toContain("pickActiveRunSessionCoreFields");

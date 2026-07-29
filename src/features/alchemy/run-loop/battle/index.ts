@@ -10,4 +10,3 @@ export { createBattleCardPlay } from "./battle-card-play";
 export { createBattleDevOutcomes } from "./battle-dev-outcomes";
 export { isVictoryGraceActive } from "./battle-victory-grace";
 export { useBattleControllerContext } from "./battle-context";
-export type { BattleRunPort, BattleTalentPort } from "./battle-run-port";

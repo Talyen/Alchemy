@@ -80,7 +80,7 @@ const ACTIVE_RUN_PROGRESS_KEYS = [
 ] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
 
 /** Active-run fields shared by `selectRunController` and `pickRunSessionRunSlice` (sans rng / run XP / materials). */
-export const ACTIVE_RUN_SESSION_CORE_KEYS = [
+const ACTIVE_RUN_SESSION_CORE_KEYS = [
   "characterId",
   "runDeck",
   "runGold",
