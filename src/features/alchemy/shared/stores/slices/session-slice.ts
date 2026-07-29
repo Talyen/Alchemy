@@ -11,15 +11,14 @@ import type {
 } from "@/lib/active-run-session";
 import { DESTINATIONS, type Destination } from "@/features/alchemy/shared/types";
 import { createEmptyRewardState } from "@/lib/active-run-session/reward-types";
-import { defineFieldSetter, type ImmerSet } from "./_field-setter";
-import { createInitialSessionFields, type RunSessionFields, type RunDomainDataState } from "../run-domain-types";
+import { defineNestedFieldSetter, type ImmerSet } from "./_field-setter";
+import { createInitialSessionFields, type RunSessionFields } from "../run-domain-types";
 
 export interface SessionActions {
   setHasActiveRun: (active: boolean) => void;
   beginRewardClaim: () => boolean;
   releaseRewardClaim: () => void;
   beginDestinationClaim: (destination: Destination) => boolean;
-  commitDestinationClaim: (destination: Destination) => boolean;
   cancelDestinationClaim: () => void;
   setActiveLabyrinthModifiers: (modifiers: EncounterCombatTraitId[]) => void;
   setActiveLabyrinthRewardModifiers: (modifiers: EncounterRewardTraitId[]) => void;
@@ -54,56 +53,41 @@ export interface SessionActions {
   applyDestinationChoices: (choices: string[]) => void;
 }
 
-export function defineSessionActions(set: ImmerSet<RunDomainDataState>): SessionActions {
-  const setField = defineFieldSetter<RunSessionFields, RunDomainDataState>(set, "session");
+/** Transient run-session actions over root-level {@link RunSessionFields}. */
+export function defineSessionActions(set: ImmerSet<RunSessionFields>): SessionActions {
+  const setField = defineNestedFieldSetter<RunSessionFields, RunSessionFields>(set, (state) => state);
 
   return {
     setHasActiveRun: setField("hasActiveRun"),
     beginRewardClaim: () => {
       let claimed = false;
       set((state) => {
-        if (state.session.rewardClaimInFlight) return;
-        if (state.session.rewardState.choices.length === 0 && !state.session.companionRewardCards?.length) {
+        if (state.rewardClaimInFlight) return;
+        if (state.rewardState.choices.length === 0 && !state.companionRewardCards?.length) {
           return;
         }
-        state.session.rewardClaimInFlight = true;
+        state.rewardClaimInFlight = true;
         claimed = true;
       });
       return claimed;
     },
     releaseRewardClaim: () =>
       set((state) => {
-        state.session.rewardClaimInFlight = false;
+        state.rewardClaimInFlight = false;
       }),
     beginDestinationClaim: (destination) => {
       let claimed = false;
       set((state) => {
-        if (state.session.pendingDestinationClaim !== null) return;
-        if (!state.session.rewardState.destinations.includes(destination)) return;
-        state.session.pendingDestinationClaim = destination;
+        if (state.pendingDestinationClaim !== null) return;
+        if (!state.rewardState.destinations.includes(destination)) return;
+        state.pendingDestinationClaim = destination;
         claimed = true;
       });
       return claimed;
     },
-    commitDestinationClaim: (destination) => {
-      let committed = false;
-      set((state) => {
-        if (state.session.pendingDestinationClaim !== destination) return;
-        if (!state.session.rewardState.destinations.includes(destination)) {
-          state.session.pendingDestinationClaim = null;
-          return;
-        }
-        state.session.rewardState.destinations = [];
-        state.activeRun.completedDestinations.push(destination);
-        state.activeRun.destinationIndexInAct += 1;
-        state.session.pendingDestinationClaim = null;
-        committed = true;
-      });
-      return committed;
-    },
     cancelDestinationClaim: () =>
       set((state) => {
-        state.session.pendingDestinationClaim = null;
+        state.pendingDestinationClaim = null;
       }),
     setActiveLabyrinthModifiers: setField("activeLabyrinthModifiers"),
     setActiveLabyrinthRewardModifiers: setField("activeLabyrinthRewardModifiers"),
@@ -124,20 +108,19 @@ export function defineSessionActions(set: ImmerSet<RunDomainDataState>): Session
     setMysteryEvent: setField("mysteryEvent"),
     setMysteryCardChoices: (choices) =>
       set((state) => {
-        state.session.mysteryCardChoices =
-          typeof choices === "function" ? choices(state.session.mysteryCardChoices) : choices;
+        state.mysteryCardChoices = typeof choices === "function" ? choices(state.mysteryCardChoices) : choices;
       }),
 
     clearTransientSession: () =>
       set((state) => {
-        state.session = { ...createInitialSessionFields(), pendingContentSystemType: "campaign" };
+        Object.assign(state, createInitialSessionFields());
       }),
 
     applyDestinationChoices: (choices) =>
       set((state) => {
         const validDestinations = new Set<string>(Object.values(DESTINATIONS));
         const filtered = choices.filter((c): c is Destination => validDestinations.has(c));
-        state.session.rewardState = { ...createEmptyRewardState(), destinations: filtered };
+        state.rewardState = { ...createEmptyRewardState(), destinations: filtered };
       }),
   };
 }

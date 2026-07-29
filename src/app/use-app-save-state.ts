@@ -2,8 +2,7 @@
 // Depends on: saveAlchemySaveData (storage), isAnimationDisabled (game-constants).
 // Used by: App.tsx.
 import { useEffect, useRef } from "react";
-import { readHasActiveRun } from "@/features/alchemy/shared/stores/run-session-facade";
-import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-transitions";
+import { readHasActiveRun, resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-facade";
 import { saveAlchemySaveData, subscribeAlchemyPersistence } from "@/features/alchemy/shared/storage";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";

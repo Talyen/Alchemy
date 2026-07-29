@@ -23,7 +23,7 @@ import { useLabyrinthController } from "./use-labyrinth-controller";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
 import { useScreenTransitions } from "./use-screen-transitions";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
-import { restoreRun, useActiveRunScreen } from "@/features/alchemy/shared/stores/run-session-facade";
+import { restoreRun, unlockAllTalents, useActiveRunScreen } from "@/features/alchemy/shared/stores/run-session-facade";
 import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { shouldSurrenderBattleOnEndRun } from "./end-run-policy";
@@ -290,7 +290,7 @@ export function useAlchemyRunController({
     contentSystemType: run.contentSystemType,
     talentXP: talents.talentXP,
     unlockedTalents: talents.unlockedTalents,
-    unlockAllTalents: talents.unlockAllTalents,
+    unlockAllTalents,
     rewardState: nav.rewardState,
     get shopCards() {
       return shop.shopCards;

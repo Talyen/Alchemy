@@ -1,42 +1,56 @@
+// Active-run domain store (activeRun + initialized + navigation) plus the composed
+// views that flatten it together with the profile / transient / battle stores.
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { computeTalentEffects, type TalentEffectManifest } from "@/lib/game-data";
-import { flattenRunDomainProgress, type RunStateFields } from "@/features/alchemy/shared/stores/run-state-init";
+import { computeTalentEffects, type KeywordId, type TalentEffectManifest, type TalentXP } from "@/lib/game-data";
+import type { BattleCard, UnlockedTalents } from "@/lib/game-data";
+import {
+  flattenRunDomainProgress,
+  type PermanentProgressFields,
+  type RunStateFields,
+} from "@/features/alchemy/shared/stores/run-state-init";
 import type { Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import {
-  createInitialRunDomainData,
-  type RunDomainDataState,
-  type RunDomainBattleState,
-  type RunSessionFields,
-} from "./run-domain-types";
+import { createInitialRunDomainData, type RunDomainDataState } from "./run-domain-types";
 import { type ProgressActions, defineProgressActions } from "./slices/progress-slice";
-import { type SessionActions, defineSessionActions } from "./slices/session-slice";
 import { type NavigationActions, defineNavigationActions } from "./slices/navigation-slice";
-import { type BattleActions, defineBattleActions } from "./slices/battle-slice";
+import {
+  readRunProfileFields,
+  resetRunProfileStore,
+  useRunProfileStore,
+  type RunProfileActions,
+  type RunProfileStore,
+} from "./run-profile-store";
+import { resetRunTransientStore, useRunTransientStore, type RunTransientStore } from "./run-transient-store";
+import {
+  resetRunBattleDomainStore,
+  useRunBattleDomainStore,
+  type RunBattleDomainStore,
+} from "./run-battle-domain-store";
+import type { RunSessionFields, RunDomainBattleState } from "./run-domain-types";
+import type { SessionActions } from "./slices/session-slice";
+import type { BattleActions } from "./slices/battle-slice";
 
-export type RunDomainStore = RunDomainDataState & ProgressActions & SessionActions & NavigationActions & BattleActions;
+export type RunDomainStore = RunDomainDataState & ProgressActions & NavigationActions;
 
 export const useRunDomainStore = create<RunDomainStore>()(
   immer((set) => ({
     ...createInitialRunDomainData(),
     ...defineProgressActions(set),
-    ...defineSessionActions(set),
     ...defineNavigationActions(set),
-    ...defineBattleActions(set),
   })),
 );
 
-/** Imperative access to the full domain store API. */
+/** Imperative access to the active-run domain store API. */
 export function getRunDomainStore(): RunDomainStore {
   return useRunDomainStore.getState();
 }
 
 // -------- Picker helpers (key arrays + generic picker) --------
 
-const progressActionKeys = [
+const runProgressActionKeys = [
   "setRunDeck",
   "setRunGold",
   "setRunPlayerHealth",
@@ -55,32 +69,33 @@ const progressActionKeys = [
   "setCharacter",
   "addRunGold",
   "nextRunRandom",
-  "unlockTalent",
-  "unlockAllTalents",
-  "resetUnlockedTalents",
   "resetRunXP",
-  "clearPermanentData",
   "awardCardXP",
   "awardMysteryXP",
   "addRunMaterialsEarned",
   "clearRunMaterialsEarned",
-  "finalizeRunXP",
   "initialize",
   "hydrateFromSnapshot",
+] as const satisfies ReadonlyArray<keyof RunDomainStore>;
+
+const profileActionKeys = [
+  "unlockTalent",
+  "resetUnlockedTalents",
+  "clearPermanentData",
+  "applyTalentState",
   "addMaterials",
   "setMaterials",
   "constructBuilding",
   "plantFarm",
   "completeResearch",
   "bondCompanion",
-] as const satisfies ReadonlyArray<keyof RunDomainStore>;
+] as const satisfies ReadonlyArray<keyof RunProfileActions>;
 
 const sessionActionKeys = [
   "setHasActiveRun",
   "beginRewardClaim",
   "releaseRewardClaim",
   "beginDestinationClaim",
-  "commitDestinationClaim",
   "cancelDestinationClaim",
   "setActiveLabyrinthModifiers",
   "setActiveLabyrinthRewardModifiers",
@@ -102,7 +117,7 @@ const sessionActionKeys = [
   "setMysteryCardChoices",
   "clearTransientSession",
   "applyDestinationChoices",
-] as const satisfies ReadonlyArray<keyof RunDomainStore>;
+] as const satisfies ReadonlyArray<keyof SessionActions>;
 
 const navigationActionKeys = ["setScreen"] as const satisfies ReadonlyArray<keyof RunDomainStore>;
 
@@ -113,24 +128,25 @@ const battleActionKeys = [
   "setBattleStartState",
   "setHasActiveBattle",
   "initializeActiveBattle",
-] as const satisfies ReadonlyArray<keyof RunDomainStore>;
+] as const satisfies ReadonlyArray<keyof BattleActions>;
 
-function mapActions<K extends keyof RunDomainStore>(
-  state: RunDomainStore,
-  keys: readonly K[],
-): Pick<RunDomainStore, K> {
-  const result = {} as Pick<RunDomainStore, K>;
+function mapActions<State extends object, K extends keyof State>(state: State, keys: readonly K[]): Pick<State, K> {
+  const result = {} as Pick<State, K>;
   for (const key of keys) {
     result[key] = state[key];
   }
   return result;
 }
 
-function pickProgressActions(state: RunDomainStore) {
-  return { ...mapActions(state, progressActionKeys), reset: state.resetProgress };
+function pickProgressActions(state: RunDomainStore, profile: RunProfileStore) {
+  return {
+    ...mapActions(state, runProgressActionKeys),
+    ...mapActions(profile, profileActionKeys),
+    reset: state.resetProgress,
+  };
 }
 
-function pickSessionActions(state: RunDomainStore) {
+function pickSessionActions(state: RunTransientStore) {
   return mapActions(state, sessionActionKeys);
 }
 
@@ -138,7 +154,7 @@ function pickNavigationActions(state: RunDomainStore) {
   return { ...mapActions(state, navigationActionKeys), reset: state.resetNavigation };
 }
 
-function pickBattleActions(state: RunDomainStore) {
+function pickBattleActions(state: RunBattleDomainStore) {
   return mapActions(state, battleActionKeys);
 }
 
@@ -148,17 +164,19 @@ export type RunProgressStore = RunStateFields & ReturnType<typeof pickProgressAc
 export type RunSessionStore = RunSessionFields & ReturnType<typeof pickSessionActions>;
 export type NavigationStore = { screen: Screen } & ReturnType<typeof pickNavigationActions>;
 
+function flattenProgressFields(state: RunDomainStore, profile: PermanentProgressFields): RunStateFields {
+  return flattenRunDomainProgress(state.activeRun, readRunProfileFields(profile), state.initialized);
+}
+
 export function getRunProgressStoreView(): RunProgressStore {
   const state = useRunDomainStore.getState();
-  return {
-    ...flattenRunDomainProgress(state.activeRun, state.profile, state.initialized),
-    ...pickProgressActions(state),
-  };
+  const profile = useRunProfileStore.getState();
+  return { ...flattenProgressFields(state, profile), ...pickProgressActions(state, profile) };
 }
 
 export function getRunSessionStoreView(): RunSessionStore {
-  const state = useRunDomainStore.getState();
-  return { ...state.session, ...pickSessionActions(state) };
+  const state = useRunTransientStore.getState();
+  return { ...state, ...pickSessionActions(state) };
 }
 
 export function getNavigationStoreView(): NavigationStore {
@@ -169,29 +187,36 @@ export function getNavigationStoreView(): NavigationStore {
 export type BattleStoreView = RunDomainBattleState & ReturnType<typeof pickBattleActions>;
 
 export function getBattleStoreView(): BattleStoreView {
-  const state = useRunDomainStore.getState();
-  return { ...state.battle, ...pickBattleActions(state) };
+  const state = useRunBattleDomainStore.getState();
+  return {
+    battleState: state.battleState,
+    displayOverrides: state.displayOverrides,
+    battleStartState: state.battleStartState,
+    hasActiveBattle: state.hasActiveBattle,
+    ...pickBattleActions(state),
+  };
 }
 
 // -------- Controller projections --------
 
-export function selectRunController(s: RunProgressStore) {
+/** Run controller projection — active-run fields and setters only (no permanent progression). */
+export function selectRunController(s: RunDomainStore) {
   return {
-    characterId: s.characterId,
-    runDeck: s.runDeck,
-    runGold: s.runGold,
-    runPlayerHealth: s.runPlayerHealth,
-    runMaxHealth: s.runMaxHealth,
-    roomsEncountered: s.roomsEncountered,
-    currentAct: s.currentAct,
-    destinationIndexInAct: s.destinationIndexInAct,
-    completedDestinations: s.completedDestinations,
-    lastOfferedDestinations: s.lastOfferedDestinations,
-    destinationRoundsSinceOffered: s.destinationRoundsSinceOffered,
-    runTrinkets: s.runTrinkets,
-    encounteredRunEnemyIds: s.encounteredRunEnemyIds,
-    selectedDifficulty: s.selectedDifficulty,
-    contentSystemType: s.contentSystemType,
+    characterId: s.activeRun.characterId,
+    runDeck: s.activeRun.runDeck,
+    runGold: s.activeRun.runGold,
+    runPlayerHealth: s.activeRun.runPlayerHealth,
+    runMaxHealth: s.activeRun.runMaxHealth,
+    roomsEncountered: s.activeRun.roomsEncountered,
+    currentAct: s.activeRun.currentAct,
+    destinationIndexInAct: s.activeRun.destinationIndexInAct,
+    completedDestinations: s.activeRun.completedDestinations,
+    lastOfferedDestinations: s.activeRun.lastOfferedDestinations,
+    destinationRoundsSinceOffered: s.activeRun.destinationRoundsSinceOffered,
+    runTrinkets: s.activeRun.runTrinkets,
+    encounteredRunEnemyIds: s.activeRun.encounteredRunEnemyIds,
+    selectedDifficulty: s.activeRun.selectedDifficulty,
+    contentSystemType: s.activeRun.contentSystemType,
     setRunDeck: s.setRunDeck,
     setRunGold: s.setRunGold,
     setRunPlayerHealth: s.setRunPlayerHealth,
@@ -208,73 +233,80 @@ export function selectRunController(s: RunProgressStore) {
     setSelectedDifficulty: s.setSelectedDifficulty,
     setContentSystemType: s.setContentSystemType,
     setCharacter: s.setCharacter,
-    reset: s.reset,
+    reset: s.resetProgress,
     addRunGold: s.addRunGold,
-    hydrateFromSnapshot: s.hydrateFromSnapshot,
   };
 }
 
 export type RunStateController = ReturnType<typeof selectRunController>;
 
-export function selectTalentController(s: RunProgressStore) {
+/** Talent controller surface — run XP lives on the domain store, permanent XP on the profile store. */
+export interface TalentControllerFields {
+  talentXP: TalentXP;
+  runTalentXP: TalentXP;
+  unlockedTalents: UnlockedTalents;
+  awardCardXP: (card: BattleCard) => void;
+  awardMysteryXP: (keywordId: KeywordId, amount: number) => void;
+  resetRunXP: () => void;
+  unlockTalent: (keywordId: KeywordId, talentId: string) => void;
+  resetUnlockedTalents: () => void;
+}
+
+export function selectTalentController(s: RunProgressStore): TalentControllerFields {
   return {
     talentXP: s.talentXP,
     runTalentXP: s.runTalentXP,
     unlockedTalents: s.unlockedTalents,
     awardCardXP: s.awardCardXP,
-    unlockTalent: s.unlockTalent,
-    unlockAllTalents: s.unlockAllTalents,
-    resetUnlockedTalents: s.resetUnlockedTalents,
-    resetRunXP: s.resetRunXP,
-    clearPermanentData: s.clearPermanentData,
     awardMysteryXP: s.awardMysteryXP,
-    finalizeRunXP: s.finalizeRunXP,
+    resetRunXP: s.resetRunXP,
+    unlockTalent: s.unlockTalent,
+    resetUnlockedTalents: s.resetUnlockedTalents,
   };
 }
 
-export type TalentStateController = ReturnType<typeof selectTalentController> & {
+export type TalentStateController = TalentControllerFields & {
   talentEffects: TalentEffectManifest;
 };
 
 // -------- Adapter hooks --------
 
 export function useRunAdapter(): RunStateController {
-  return useRunDomainStore(
-    useShallow((state) =>
-      selectRunController({
-        ...flattenRunDomainProgress(state.activeRun, state.profile, state.initialized),
-        ...pickProgressActions(state),
-      }),
-    ),
-  );
+  return useRunDomainStore(useShallow(selectRunController));
 }
 
 export function useTalentAdapter(): TalentStateController {
-  const base = useRunDomainStore(
-    useShallow((state) =>
-      selectTalentController({
-        ...flattenRunDomainProgress(state.activeRun, state.profile, state.initialized),
-        ...pickProgressActions(state),
-      }),
-    ),
+  const runSlice = useRunDomainStore(
+    useShallow((state) => ({
+      runTalentXP: state.activeRun.runTalentXP,
+      awardCardXP: state.awardCardXP,
+      awardMysteryXP: state.awardMysteryXP,
+      resetRunXP: state.resetRunXP,
+    })),
   );
-  const talentEffects = useMemo(() => computeTalentEffects(base.unlockedTalents), [base.unlockedTalents]);
-  return useMemo(() => ({ ...base, talentEffects }), [base, talentEffects]);
+  const profileSlice = useRunProfileStore(
+    useShallow((profile) => ({
+      talentXP: profile.talentXP,
+      unlockedTalents: profile.unlockedTalents,
+      unlockTalent: profile.unlockTalent,
+      resetUnlockedTalents: profile.resetUnlockedTalents,
+    })),
+  );
+  const talentEffects = useMemo(
+    () => computeTalentEffects(profileSlice.unlockedTalents),
+    [profileSlice.unlockedTalents],
+  );
+  return useMemo(() => ({ ...runSlice, ...profileSlice, talentEffects }), [runSlice, profileSlice, talentEffects]);
 }
 
 export function useHomesteadAdapter(): HomesteadEffectManifest {
-  return useRunDomainStore((state) => state.profile.effects);
+  return useRunProfileStore((profile) => profile.effects);
 }
 
-/** Reset all run domain slices to initial values (tests and full teardown). */
+/** Reset every run-domain lifetime store to initial values (tests and full teardown). */
 export function resetRunDomainStore(): void {
-  const initial = createInitialRunDomainData();
-  useRunDomainStore.setState((state) => {
-    state.activeRun = initial.activeRun;
-    state.profile = initial.profile;
-    state.initialized = initial.initialized;
-    state.session = initial.session;
-    state.navigation = initial.navigation;
-    state.battle = initial.battle;
-  });
+  useRunDomainStore.setState(createInitialRunDomainData());
+  resetRunProfileStore();
+  resetRunTransientStore();
+  resetRunBattleDomainStore();
 }

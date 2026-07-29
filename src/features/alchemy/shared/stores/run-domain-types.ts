@@ -14,11 +14,8 @@ import {
   type TrinketShopState,
 } from "@/lib/active-run-session";
 import {
-  createInitialProgressState,
-  createInitialTalentState,
+  createInitialActiveRunFields,
   type ActiveRunProgressFields,
-  type PermanentProgressFields,
-  type ProgressState,
 } from "@/features/alchemy/shared/stores/run-state-init";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import type { Destination, Screen } from "@/features/alchemy/shared/types";
@@ -47,13 +44,11 @@ export interface RunDomainBattleState {
   hasActiveBattle: boolean;
 }
 
+/** Active-run lifetime state owned by run-domain-store (profile / session / battle live in sibling stores). */
 export interface RunDomainDataState {
   activeRun: ActiveRunProgressFields;
-  profile: PermanentProgressFields;
   initialized: boolean;
-  session: RunSessionFields;
   navigation: { screen: Screen };
-  battle: RunDomainBattleState;
 }
 
 const emptyShop: ShopState = emptyShopState();
@@ -87,17 +82,6 @@ export function createInitialSessionFields(): RunSessionFields {
   };
 }
 
-export function createInitialProgressFields(): ProgressState {
-  const progress = createInitialProgressState(null);
-  return {
-    ...progress,
-    permanent: {
-      ...progress.permanent,
-      ...createInitialTalentState({}, {}),
-    },
-  };
-}
-
 export function createInitialBattleFields(): RunDomainBattleState {
   return {
     battleState: defaultBattleState(),
@@ -108,14 +92,10 @@ export function createInitialBattleFields(): RunDomainBattleState {
 }
 
 export function createInitialRunDomainData(): RunDomainDataState {
-  const progress = createInitialProgressFields();
   return {
-    activeRun: progress.run,
-    profile: progress.permanent,
-    initialized: progress.initialized,
-    session: createInitialSessionFields(),
+    activeRun: createInitialActiveRunFields(null),
+    initialized: false,
     navigation: { screen: "menu" },
-    battle: createInitialBattleFields(),
   };
 }
 

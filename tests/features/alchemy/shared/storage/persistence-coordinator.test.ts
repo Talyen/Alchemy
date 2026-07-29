@@ -8,13 +8,13 @@ import { defaultSaveData } from "@/features/alchemy/shared/storage";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
-import { getRunDomainStore, useRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
+import { getRunProfileStore, useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
 
 beforeEach(() => {
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
   useProfileStore.setState(useProfileStore.getInitialState(), true);
   useGearStore.setState(useGearStore.getInitialState(), true);
-  useRunDomainStore.setState(useRunDomainStore.getInitialState(), true);
+  useRunProfileStore.setState(useRunProfileStore.getInitialState(), true);
 });
 
 describe("persistence coordinator", () => {
@@ -49,7 +49,7 @@ describe("persistence coordinator", () => {
       },
     });
 
-    expect(getRunDomainStore().profile.effects.flatPhysicalDamage).toBeGreaterThan(0);
+    expect(getRunProfileStore().effects.flatPhysicalDamage).toBeGreaterThan(0);
   });
 
   it("subscribes to every persistence owner through one cleanup", () => {
@@ -59,7 +59,7 @@ describe("persistence coordinator", () => {
     useSettingsStore.getState().setMusicVol(42);
     useProfileStore.getState().setDiscoveredCardIds(["slash"]);
     useGearStore.getState().addCurrencies({ voidstone: 1 });
-    getRunDomainStore().setMaterials({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
+    getRunProfileStore().setMaterials({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
 
     expect(listener).toHaveBeenCalledTimes(4);
 

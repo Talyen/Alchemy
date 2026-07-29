@@ -1,8 +1,7 @@
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import type { BattleState } from "@/lib/battle";
-import { createInitialBattleFields, type DisplayOverrides } from "../run-domain-types";
-import { defineFieldSetter, type ImmerSet } from "./_field-setter";
-import type { RunDomainDataState } from "../run-domain-types";
+import { createInitialBattleFields, type DisplayOverrides, type RunDomainBattleState } from "../run-domain-types";
+import { defineNestedFieldSetter, type ImmerSet } from "./_field-setter";
 
 function hydrateBattleState(battleState: BattleState): BattleState {
   return {
@@ -22,29 +21,25 @@ export interface BattleActions {
   clearDisplayOverrides: () => void;
   setBattleStartState: (state: BattleState | null) => void;
   setHasActiveBattle: (active: boolean | ((prev: boolean) => boolean)) => void;
+  /** Hydrate and start a battle, or clear combat state entirely when passed `null`. */
   initializeActiveBattle: (battleState: BattleState | null) => void;
 }
 
-export function defineBattleActions(set: ImmerSet<RunDomainDataState>): BattleActions & { resetBattle: () => void } {
-  interface BattleStateFields {
-    battleState: BattleState;
-    displayOverrides: DisplayOverrides;
-    battleStartState: BattleState | null;
-    hasActiveBattle: boolean;
-  }
-  const setField = defineFieldSetter<BattleStateFields, RunDomainDataState>(set, "battle");
+/** Active-combat actions over root-level {@link RunDomainBattleState}. */
+export function defineBattleActions(set: ImmerSet<RunDomainBattleState>): BattleActions {
+  const setField = defineNestedFieldSetter<RunDomainBattleState, RunDomainBattleState>(set, (state) => state);
 
   return {
     setSyncedBattleState: (action) =>
       set((state) => {
-        state.battle.battleState = typeof action === "function" ? action(state.battle.battleState) : action;
-        state.battle.displayOverrides = {};
+        state.battleState = typeof action === "function" ? action(state.battleState) : action;
+        state.displayOverrides = {};
       }),
 
     setDisplayOverrides: setField("displayOverrides"),
     clearDisplayOverrides: () =>
       set((state) => {
-        state.battle.displayOverrides = {};
+        state.displayOverrides = {};
       }),
 
     setBattleStartState: setField("battleStartState"),
@@ -54,18 +49,13 @@ export function defineBattleActions(set: ImmerSet<RunDomainDataState>): BattleAc
       set((state) => {
         if (battleState) {
           const hydrated = hydrateBattleState(battleState);
-          state.battle.battleState = hydrated;
-          state.battle.displayOverrides = {};
-          state.battle.battleStartState = hydrated;
-          state.battle.hasActiveBattle = true;
+          state.battleState = hydrated;
+          state.displayOverrides = {};
+          state.battleStartState = hydrated;
+          state.hasActiveBattle = true;
         } else {
-          state.battle = createInitialBattleFields();
+          Object.assign(state, createInitialBattleFields());
         }
-      }),
-
-    resetBattle: () =>
-      set((state) => {
-        state.battle = createInitialBattleFields();
       }),
   };
 }

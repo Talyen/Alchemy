@@ -27,7 +27,7 @@ import { getGenerousGoldBonus } from "./reward-flow";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { CONSTANTS, type Destination } from "@/features/alchemy/shared/types";
-import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-transitions";
+import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {

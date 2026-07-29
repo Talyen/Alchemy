@@ -65,16 +65,16 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 
 ## Grant materials during a run
 
-Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-session-facade.ts`) so homestead inventory and `progress.runMaterialsEarned` stay aligned for the run-end summary.
+Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-session-facade.ts`, implemented in `stores/ports/run-profile-write-port.ts`) so homestead inventory and `activeRun.runMaterialsEarned` stay aligned for the run-end summary.
 
-| Step                                                       | File(s)                                                                                                                                                                                 |
-| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Call `awardMaterialsDuringRun(materials)`               | Mystery handlers: `run-loop/navigation/use-mystery-flow.ts`; combat: `run-loop/run/run-flow-handlers.ts` (`finishRewards`, `commitVictoryRewards` via `addHomesteadMaterials` callback) |
-| 2. Apply homestead find bonus when appropriate             | `applyMaterialFindBonus()` from `@/lib/homestead/loot` before awarding (mystery/combat already do this)                                                                                 |
-| 3. Run-end display (no change needed if step 1 is correct) | `run-flow-handlers.awardRunEndMaterials` in `run-loop/run/run-flow-handlers.ts` merges `runMaterialsEarned` + `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`            |
-| 4. Tests                                                   | `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts`; mystery/reward-flow tests if adding a new source                                                                    |
+| Step                                                       | File(s)                                                                                                                                                                                    |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1. Call `awardMaterialsDuringRun(materials)`               | Mystery handlers: `run-loop/navigation/use-mystery-flow.ts`; combat: `run-loop/run/run-flow-handlers.ts` (`finishRewards`, `commitVictoryRewards` via `addHomesteadMaterials` callback)    |
+| 2. Apply homestead find bonus when appropriate             | `applyMaterialFindBonus()` from `@/lib/homestead/loot` before awarding (mystery/combat already do this)                                                                                    |
+| 3. Run-end display (no change needed if step 1 is correct) | `run-flow-handlers.awardRunEndMaterials` in `run-loop/run/run-flow-handlers.ts` merges `runMaterialsEarned` + `applyEndOfRunHomesteadBonuses` into the transient store's `runEndMaterials` |
+| 4. Tests                                                   | `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts`; mystery/reward-flow tests if adding a new source                                                                       |
 
-**Do not** call `addMaterials()` on the progress store directly from run-loop or mystery code for player loot.
+**Do not** call `addMaterials()` on the run profile store directly from run-loop or mystery code for player loot.
 
 ---
 

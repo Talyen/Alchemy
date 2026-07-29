@@ -1,5 +1,6 @@
 // Test helpers — build run/talent controller shapes from the live run store.
 import {
+  getRunDomainStore,
   selectRunController,
   selectTalentController,
   type TalentStateController,
@@ -8,7 +9,7 @@ import { computeTalentEffects } from "@/lib/game-data";
 import { getRunProgressStoreView } from "./run-domain-store-test";
 
 export function makeRunController() {
-  return selectRunController(getRunProgressStoreView());
+  return selectRunController(getRunDomainStore());
 }
 
 export function makeTalentController(): TalentStateController {

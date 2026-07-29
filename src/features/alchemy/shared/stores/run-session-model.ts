@@ -1,4 +1,4 @@
-// Typed read model over the consolidated run domain store.
+// Typed read model composed from the run-domain, profile, transient, and battle stores.
 import type { BattleState } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { getRunPhase, type RunPhase } from "@/lib/routing";
@@ -16,8 +16,11 @@ import type {
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-import type { RunDomainDataState, RunSessionFields } from "./run-domain-types";
-import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
+import type { RunSessionFields } from "./run-domain-types";
+import { getRunDomainStore, type RunDomainStore } from "./run-domain-store";
+import { getRunProfileStore, type RunProfileStore } from "./run-profile-store";
+import { getRunTransientStore, readRunSessionFields, useRunTransientStore } from "./run-transient-store";
+import { getRunBattleDomainStore, useRunBattleDomainStore } from "./run-battle-domain-store";
 
 type RunSessionRunSlice = Pick<
   RunStateFields,
@@ -94,7 +97,7 @@ function resolveScreen(screen?: Screen): Screen {
   return screen ?? getRunDomainStore().navigation.screen;
 }
 
-function pickRunSessionRunSlice(state: RunDomainDataState): RunSessionRunSlice {
+function pickRunSessionRunSlice(state: RunDomainStore, profile: RunProfileStore): RunSessionRunSlice {
   return {
     characterId: state.activeRun.characterId,
     runDeck: state.activeRun.runDeck,
@@ -112,16 +115,12 @@ function pickRunSessionRunSlice(state: RunDomainDataState): RunSessionRunSlice {
     selectedDifficulty: state.activeRun.selectedDifficulty,
     contentSystemType: state.activeRun.contentSystemType,
     rng: state.activeRun.rng,
-    talentXP: state.profile.talentXP,
+    talentXP: profile.talentXP,
     runTalentXP: state.activeRun.runTalentXP,
     runMaterialsEarned: state.activeRun.runMaterialsEarned,
-    unlockedTalents: state.profile.unlockedTalents,
+    unlockedTalents: profile.unlockedTalents,
     initialized: state.initialized,
   };
-}
-
-function pickRunSessionTransientSlice(session: RunSessionFields): RunSessionTransientSlice {
-  return { ...session };
 }
 
 function pickRunSessionBattleSlice(battle: {
@@ -135,13 +134,13 @@ function pickRunSessionBattleSlice(battle: {
 }
 
 function useRunSessionBattleSlice(): RunSessionBattleSlice {
-  return useRunDomainStore(useShallow((s) => pickRunSessionBattleSlice(s.battle)));
+  return useRunBattleDomainStore(useShallow(pickRunSessionBattleSlice));
 }
 
 /** Battle screen: combat state + labyrinth modifiers only (avoids run/shop subscriptions). */
 export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleContext {
   const battle = useRunSessionBattleSlice();
-  const activeLabyrinthModifiers = useRunDomainStore((s) => s.session.activeLabyrinthModifiers);
+  const activeLabyrinthModifiers = useRunTransientStore((s) => s.activeLabyrinthModifiers);
   const resolvedScreen = resolveScreen(screen);
   return useMemo(
     () => ({
@@ -155,32 +154,32 @@ export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleCon
 
 /** Shop / alchemist screens: offer state only. */
 export function useRunSessionShopSlice(): RunSessionShopSlice {
-  return useRunDomainStore(
+  return useRunTransientStore(
     useShallow((s) => ({
-      shopState: s.session.shopState,
-      alchemistState: s.session.alchemistState,
-      trinketShopState: s.session.trinketShopState,
-      equipmentShopState: s.session.equipmentShopState,
+      shopState: s.shopState,
+      alchemistState: s.alchemistState,
+      trinketShopState: s.trinketShopState,
+      equipmentShopState: s.equipmentShopState,
     })),
   );
 }
 
 /** Mystery screen: event + card picker state only. */
 export function useRunSessionMysterySlice(): RunSessionMysterySlice {
-  return useRunDomainStore(
+  return useRunTransientStore(
     useShallow((s) => ({
-      mysteryEvent: s.session.mysteryEvent,
-      mysteryCardChoices: s.session.mysteryCardChoices,
+      mysteryEvent: s.mysteryEvent,
+      mysteryCardChoices: s.mysteryCardChoices,
     })),
   );
 }
 
 /** Labyrinth map: grid + pending node only. */
 export function useRunSessionLabyrinthSlice(): RunSessionLabyrinthSlice {
-  return useRunDomainStore(
+  return useRunTransientStore(
     useShallow((s) => ({
-      labyrinthMap: s.session.labyrinthMap,
-      activeLabyrinthPendingNode: s.session.activeLabyrinthPendingNode,
+      labyrinthMap: s.labyrinthMap,
+      activeLabyrinthPendingNode: s.activeLabyrinthPendingNode,
     })),
   );
 }
@@ -188,21 +187,21 @@ export function useRunSessionLabyrinthSlice(): RunSessionLabyrinthSlice {
 /** Run navigation: session fields used by useRunNavigation (no full run/battle state). */
 export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigationSlice {
   const resolvedScreen = resolveScreen(screen);
-  const session = useRunDomainStore(
+  const session = useRunTransientStore(
     useShallow((s) => ({
-      hasActiveRun: s.session.hasActiveRun,
-      labyrinthMap: s.session.labyrinthMap,
-      activeLabyrinthPendingNode: s.session.activeLabyrinthPendingNode,
-      activeLabyrinthModifiers: s.session.activeLabyrinthModifiers,
-      activeLabyrinthRewardModifiers: s.session.activeLabyrinthRewardModifiers,
-      rewardState: s.session.rewardState,
-      runEndMaterials: s.session.runEndMaterials,
-      corruptionResult: s.session.corruptionResult,
-      pendingCharacterId: s.session.pendingCharacterId,
-      pendingContentSystemType: s.session.pendingContentSystemType,
+      hasActiveRun: s.hasActiveRun,
+      labyrinthMap: s.labyrinthMap,
+      activeLabyrinthPendingNode: s.activeLabyrinthPendingNode,
+      activeLabyrinthModifiers: s.activeLabyrinthModifiers,
+      activeLabyrinthRewardModifiers: s.activeLabyrinthRewardModifiers,
+      rewardState: s.rewardState,
+      runEndMaterials: s.runEndMaterials,
+      corruptionResult: s.corruptionResult,
+      pendingCharacterId: s.pendingCharacterId,
+      pendingContentSystemType: s.pendingContentSystemType,
     })),
   );
-  const hasActiveBattle = useRunDomainStore((s) => s.battle.hasActiveBattle);
+  const hasActiveBattle = useRunBattleDomainStore((s) => s.hasActiveBattle);
   return useMemo(
     () => ({
       phase: getRunPhase(resolvedScreen, hasActiveBattle),
@@ -224,14 +223,13 @@ export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigat
 
 /** Imperative snapshot of run + session + battle for the current screen. */
 export function getRunSession(screen?: Screen): RunSession {
-  const state = getRunDomainStore();
   const resolvedScreen = resolveScreen(screen);
-  const battle = pickRunSessionBattleSlice(state.battle);
+  const battle = pickRunSessionBattleSlice(getRunBattleDomainStore());
   return {
     screen: resolvedScreen,
     phase: getRunPhase(resolvedScreen, battle.hasActiveBattle),
-    run: pickRunSessionRunSlice(state),
-    session: pickRunSessionTransientSlice(state.session),
+    run: pickRunSessionRunSlice(getRunDomainStore(), getRunProfileStore()),
+    session: readRunSessionFields(getRunTransientStore()),
     battle,
   };
 }

@@ -4,9 +4,9 @@ import {
   readActiveRunStore,
   setWildwoodDraft,
   setPendingCharacterId,
+  teardownRun,
   type RunStateController,
 } from "@/features/alchemy/shared/stores/run-session-facade";
-import { teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
 import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { type BattleCard, type DifficultyModifier } from "@/lib/game-data";
 import { logError } from "@/lib/error-logger";

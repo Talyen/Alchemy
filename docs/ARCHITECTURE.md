@@ -20,18 +20,16 @@ Import using on-disk paths (e.g. `@/features/alchemy/shared/stores/run-session-f
 
 ## Run state
 
-A single **run** is owned by **`useRunDomainStore`** (`shared/stores/run-domain-store.ts`). Its state is split by lifetime at the store root:
+Run state is split across four **lifetime-matched stores** in `shared/stores/`. Each store owns its fields at the root; there are no nested subtrees.
 
-| Subtree       | Concern                                                     | Notes                            |
-| ------------- | ----------------------------------------------------------- | -------------------------------- |
-| `activeRun`   | Deck, gold, HP, acts, trinkets, content system, run tallies | Reset by run teardown            |
-| `profile`     | Homestead, talent XP / unlocks, derived `effects`           | Meta lifetime; survives teardown |
-| `initialized` | Hydration gate                                              | Boot lifetime                    |
-| `session`     | Rewards, shops, labyrinth, mystery, run-flow claims         | Transient per run                |
-| `navigation`  | Current screen                                              | Transient                        |
-| `battle`      | Combat snapshot and display overrides                       | Transient per battle             |
+| Store                     | Concern                                                                                 | Lifetime                                            |
+| ------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `run-domain-store`        | `activeRun` (deck, gold, HP, acts, trinkets, RNG, tallies), `navigation`, `initialized` | Reset by run teardown; `initialized` is boot-scoped |
+| `run-profile-store`       | Homestead, talent XP / unlocks, derived `effects`                                       | Meta lifetime; survives teardown                    |
+| `run-transient-store`     | Rewards, shops, labyrinth, mystery, pending selections, run-flow claims                 | Transient per run                                   |
+| `run-battle-domain-store` | Combat snapshot, battle-start state, display overrides                                  | Transient per battle                                |
 
-Facade adapters (`useRunAdapter`, `useTalentAdapter`, `useHomesteadProgressSlice`, `readActiveRunStore`) preserve focused feature-facing views.
+Cross-store writes go through ports in `shared/stores/ports/` (`run-profile-write-port`, `run-session-setup-port`, reward / shop / labyrinth / mystery ports); multi-store lifecycle orchestration lives in `run-transitions.ts`. Facade adapters (`useRunAdapter`, `useTalentAdapter`, `useHomesteadProgressSlice`, `readActiveRunStore`) preserve focused feature-facing views.
 
 ### Run randomness
 
@@ -39,22 +37,22 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 
 `Math.random()` is allowed only to create a fresh run seed or for cosmetic/meta-only effects. Run outcomes must use a named run stream; battle outcomes must use `BattleState.rng`.
 
-| Concern                             | Owner                       | Notes                                    |
-| ----------------------------------- | --------------------------- | ---------------------------------------- |
-| Deck, gold, HP, acts, trinkets      | `activeRun`                 | Persisted inside `activeRun`             |
-| Homestead + permanent talents       | `profile`                   | Persisted as top-level save fields       |
-| Rewards, shops, labyrinth, mystery  | `session`                   | Transient per run                        |
-| Current `Screen`                    | `navigation`                | `useActiveRunScreen()`                   |
-| Combat snapshot + display overrides | `battle`                    | Synced during battle                     |
-| Battle VFX                          | `battle-presentation-store` | Not persisted                            |
-| Lifecycle                           | `run-transitions.ts`        | Restore, snapshot, teardown, battle sync |
+| Concern                             | Owner                                       | Notes                                    |
+| ----------------------------------- | ------------------------------------------- | ---------------------------------------- |
+| Deck, gold, HP, acts, trinkets      | `run-domain-store.activeRun`                | Persisted inside `activeRun`             |
+| Homestead + permanent talents       | `run-profile-store`                         | Persisted as top-level save fields       |
+| Rewards, shops, labyrinth, mystery  | `run-transient-store`                       | Transient per run                        |
+| Current `Screen`                    | `run-domain-store.navigation`               | `useActiveRunScreen()`                   |
+| Combat snapshot + display overrides | `run-battle-domain-store`                   | Synced during battle                     |
+| Battle VFX                          | `battle-presentation-store`                 | Not persisted                            |
+| Lifecycle                           | `run-session-facade` → `run-transitions.ts` | Restore, snapshot, teardown, battle sync |
 
 ### Persistence API
 
 | API                               | Role                                              |
 | --------------------------------- | ------------------------------------------------- |
 | `createActiveRunSnapshot(source)` | Serialize explicit fields → `ActiveRunData` (lib) |
-| `snapshotRun(screen?)`            | Read domain store → `ActiveRunData`               |
+| `snapshotRun(screen?)`            | Read run-lifetime stores → `ActiveRunData`        |
 | `restoreRun(…)`                   | Apply snapshot on boot/resume                     |
 | `parseActiveRun(raw)`             | Validate JSON before hydrate                      |
 | Domain persistence codecs         | Own defaults, encode, hydrate, and subscriptions  |
@@ -65,7 +63,8 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 - **Reads:** `readActiveRunStore()`, `readRunSessionStore()`, `readBattleStore()`
 - **Writes:** `setRewardState`, `setShopState`, labyrinth/mystery setters, etc.
 - **Hooks:** `useRunSession*Slice()`, `useActiveRunScreen()`, `useRunScreenData(screen)`
-- **Lifecycle:** re-exports `teardownRun`, `syncRunToBattleStart`, `syncBattleToRun` from `run-transitions.ts`
+- **Lifecycle:** re-exports `restoreRun`, `snapshotRun`, `teardownRun`, `syncRunToBattleStart`, `syncBattleToRun`, `finalizeRunEndSession` and friends from `run-transitions.ts`
+- **Ports:** re-exports the reward / shop / labyrinth / mystery setters plus `awardMaterialsDuringRun`, `finalizeRunXP`, and run-setup writers
 
 Boot: [`use-alchemy-run-controller.ts`](../src/features/alchemy/shell/use-alchemy-run-controller.ts) calls `restoreRun` in `useLayoutEffect`.
 
@@ -92,19 +91,19 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 
 ## Controller entry points
 
-| Concern              | Start here                                                  |
-| -------------------- | ----------------------------------------------------------- |
-| Run lifecycle        | `shell/use-alchemy-run-controller.ts`, `run-transitions.ts` |
-| Navigation / rewards | `shell/use-run-navigation.ts`, `run-loop/navigation/*`      |
-| Battle               | `shell/use-battle-controller.ts` → `lib/battle/*`           |
-| Session reads/writes | `shared/stores/run-session-facade.ts`                       |
-| Screen routing       | `shell/use-screen-transitions.ts`, `useActiveRunScreen()`   |
+| Concern              | Start here                                                                 |
+| -------------------- | -------------------------------------------------------------------------- |
+| Run lifecycle        | `shell/use-alchemy-run-controller.ts`, `run-session-facade` lifecycle APIs |
+| Navigation / rewards | `shell/use-run-navigation.ts`, `run-loop/navigation/*`                     |
+| Battle               | `shell/use-battle-controller.ts` → `lib/battle/*`                          |
+| Session reads/writes | `shared/stores/run-session-facade.ts`                                      |
+| Screen routing       | `shell/use-screen-transitions.ts`, `useActiveRunScreen()`                  |
 
 ## Settings and meta profile
 
 - `settings-store` owns display, audio, and gameplay preferences. It does not contain gameplay progression.
 - `profile-store` owns compendium discoveries, completed difficulties, finished-run characters, and transient collection browsing state.
-- Run-domain `profile` owns homestead and talent progression because those mutations participate directly in run reward finalization.
+- `run-profile-store` owns homestead and talent progression. Run reward finalization writes through `run-profile-write-port` / facade lifecycle helpers — do not merge this into `profile-store`.
 - `gear-store` owns the permanent Gear subdomain and its invariants.
 
 Each persistence owner exposes a codec beside its store. The codec owns that domain's save-field contract, defaults, encoding, hydration, and subscription. `shared/storage/persistence-coordinator.ts` only composes those codecs; it contains no field-by-field store mapping. Feature code uses the owning store or its focused read/action port.
@@ -119,14 +118,14 @@ Each Gear instance may be equipped on at most one character at a time (one slot 
 
 ## Types
 
-Run domain types live in `run-domain-types.ts` / `run-domain-store.ts` (stores layer only). Active-run field init and flatten helpers live in `shared/stores/run-state-init.ts`. Fresh-run snapshots live in `shared/run-flow/run-start.ts` (consumed by run-setup and stores). Feature code imports `useRunAdapter`, `useTalentAdapter`, reads, writes, and lifecycle via `run-session-facade`.
+Run domain types live in `run-domain-types.ts` / `run-domain-store.ts` (stores layer only); permanent-profile fields are typed in `run-state-init.ts`. Active-run field init and flatten helpers live in `shared/stores/run-state-init.ts`. Fresh-run snapshots live in `shared/run-flow/run-start.ts` (consumed by run-setup and stores). Feature code imports `useRunAdapter`, `useTalentAdapter`, reads, writes, and lifecycle via `run-session-facade`.
 
 ## Import boundaries
 
 Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/boundaries.js`) and double-checked by `npm run lint:boundaries` (dependency-cruiser). Phase bans and flat-config stacking order live in those files; `tests/architecture/eslint-boundary-stacking.test.ts` asserts stacked `no-restricted-imports` fragments. Summary:
 
 - `src/lib/**` must not import `@/features/**`
-- Feature code outside `shared/stores/` uses `run-session-facade`, not `run-domain-store` directly
+- Feature code outside `shared/stores/` uses `run-session-facade` only (not run stores, ports, or `run-transitions`)
 - Screens must not import `run-loop/battle` or `run-loop/navigation` orchestration
 - `run-setup` ↛ `run-loop` and `run-loop` ↛ `run-setup` (shared helpers in `shared/run-flow/`)
 - `meta` ↛ `run-loop` / `run-setup`

@@ -1,14 +1,22 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useRunDomainStore, resetRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
+import { useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
+import { useRunTransientStore } from "@/features/alchemy/shared/stores/run-transient-store";
+import { useRunBattleDomainStore } from "@/features/alchemy/shared/stores/run-battle-domain-store";
 
 beforeEach(() => {
   resetRunDomainStore();
 });
 
+function expectActions(actions: object, names: string[]) {
+  for (const name of names) {
+    expect(typeof (actions as any)[name]).toBe("function");
+  }
+}
+
 describe("run domain slice dispatch", () => {
-  it("exposes all expected progress actions from the composed store", () => {
-    const actions = useRunDomainStore.getState();
-    const expected = [
+  it("exposes all expected active-run progress actions from the domain store", () => {
+    expectActions(useRunDomainStore.getState(), [
       "setRunDeck",
       "setRunGold",
       "setRunPlayerHealth",
@@ -27,27 +35,40 @@ describe("run domain slice dispatch", () => {
       "setCharacter",
       "resetProgress",
       "addRunGold",
-      "unlockTalent",
-      "resetUnlockedTalents",
       "resetRunXP",
-      "clearPermanentData",
       "awardCardXP",
       "awardMysteryXP",
       "addRunMaterialsEarned",
       "clearRunMaterialsEarned",
-      "finalizeRunXP",
       "initialize",
       "hydrateFromSnapshot",
-    ];
-    for (const name of expected) {
-      expect(typeof (actions as any)[name]).toBe("function");
-    }
+    ]);
   });
 
-  it("exposes all expected session actions from the composed store", () => {
-    const actions = useRunDomainStore.getState();
-    const expected = [
+  it("exposes permanent progression actions from the profile store", () => {
+    expectActions(useRunProfileStore.getState(), [
+      "unlockTalent",
+      "unlockAllTalents",
+      "resetUnlockedTalents",
+      "clearPermanentData",
+      "applyTalentState",
+      "mergeRunTalentXPIntoProfile",
+      "addMaterials",
+      "setMaterials",
+      "constructBuilding",
+      "plantFarm",
+      "completeResearch",
+      "bondCompanion",
+    ]);
+  });
+
+  it("exposes all expected session actions from the transient store", () => {
+    expectActions(useRunTransientStore.getState(), [
       "setHasActiveRun",
+      "beginRewardClaim",
+      "releaseRewardClaim",
+      "beginDestinationClaim",
+      "cancelDestinationClaim",
       "setActiveLabyrinthModifiers",
       "setActiveLabyrinthRewardModifiers",
       "setActiveLabyrinthPendingNode",
@@ -67,31 +88,31 @@ describe("run domain slice dispatch", () => {
       "setMysteryEvent",
       "setMysteryCardChoices",
       "clearTransientSession",
-    ];
-    for (const name of expected) {
-      expect(typeof (actions as any)[name]).toBe("function");
-    }
+      "applyDestinationChoices",
+    ]);
   });
 
-  it("exposes navigation actions from the composed store", () => {
+  it("exposes navigation actions from the domain store", () => {
     const actions = useRunDomainStore.getState();
     expect(typeof actions.setScreen).toBe("function");
     expect(typeof actions.resetNavigation).toBe("function");
   });
 
-  it("exposes battle actions from the composed store", () => {
-    const actions = useRunDomainStore.getState();
-    const expected = [
+  it("exposes battle actions from the battle domain store", () => {
+    expectActions(useRunBattleDomainStore.getState(), [
       "setSyncedBattleState",
       "setDisplayOverrides",
       "clearDisplayOverrides",
       "setBattleStartState",
       "setHasActiveBattle",
       "initializeActiveBattle",
-      "resetBattle",
-    ];
-    for (const name of expected) {
-      expect(typeof (actions as any)[name]).toBe("function");
-    }
+    ]);
+  });
+
+  it("keeps permanent, session, and battle state off the domain store", () => {
+    const state = useRunDomainStore.getState() as unknown as Record<string, unknown>;
+    expect(state.profile).toBeUndefined();
+    expect(state.session).toBeUndefined();
+    expect(state.battle).toBeUndefined();
   });
 });

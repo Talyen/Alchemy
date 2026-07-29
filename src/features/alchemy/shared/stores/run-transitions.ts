@@ -1,4 +1,4 @@
-// Atomic run lifecycle transitions over the consolidated domain store.
+// Atomic run lifecycle transitions across the run-domain, profile, transient, and battle stores.
 import { getBattleStartPlayerHealth } from "@/lib/battle";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
 import {
@@ -17,6 +17,9 @@ import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-sav
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
+import { getRunProfileStore } from "./run-profile-store";
+import { getRunTransientStore, resetRunTransientStore } from "./run-transient-store";
+import { getRunBattleDomainStore, resetRunBattleDomainStore } from "./run-battle-domain-store";
 import { createInitialRunDomainData } from "./run-domain-types";
 import { clearBattlePresentationCardGhosts, resetBattlePresentation } from "./battle-presentation-bridge";
 import { useUiStore } from "./ui-store";
@@ -24,25 +27,27 @@ import { useProfileStore } from "./profile-store";
 import { getRunSession } from "./run-session-model";
 import { restoreLabyrinth, restoreReward, restoreShops, restoreWildwoodReward } from "./restore-active-run-session";
 
-/** Apply persisted active-run data to the domain store atomically. */
+/** Apply persisted active-run data across the run-lifetime stores atomically. */
 export function restoreRun(
   activeRun: ActiveRunData | null,
   talentXP: TalentXP,
   unlockedTalents: UnlockedTalents,
 ): void {
   const store = getRunDomainStore();
-  store.initialize(activeRun, talentXP, unlockedTalents);
-  store.initializeActiveBattle(activeRun?.activeCombat?.battleState ?? null);
+  store.initialize(activeRun);
+  getRunProfileStore().applyTalentState(talentXP, unlockedTalents);
+  getRunBattleDomainStore().initializeActiveBattle(activeRun?.activeCombat?.battleState ?? null);
 
   if (activeRun?.currentScreen) store.setScreen(activeRun.currentScreen);
   if (!activeRun) return;
 
-  store.setHasActiveRun(true);
-  store.setWildwoodDraft(activeRun.wildwoodDraft);
-  restoreLabyrinth(store, activeRun);
-  restoreWildwoodReward(store, activeRun);
-  restoreReward(store, activeRun);
-  restoreShops(store, activeRun);
+  const session = getRunTransientStore();
+  session.setHasActiveRun(true);
+  session.setWildwoodDraft(activeRun.wildwoodDraft);
+  restoreLabyrinth(session, activeRun);
+  restoreWildwoodReward(session, activeRun);
+  restoreReward(session, activeRun, store.setScreen);
+  restoreShops(session, activeRun);
 }
 
 /** Active-run snapshot for autosave — null when the run has ended. */
@@ -50,7 +55,7 @@ export function resolveActiveRunForSave(hasActiveRun: boolean, screen?: Screen):
   return hasActiveRun ? snapshotRun(screen) : null;
 }
 
-/** Serialize domain store into persisted ActiveRunData. */
+/** Serialize the run-lifetime stores into persisted ActiveRunData. */
 export function snapshotRun(screen?: Screen): ActiveRunData {
   const { run, session, battle } = getRunSession(screen);
   const currentScreen = screen ?? getRunDomainStore().navigation.screen;
@@ -140,34 +145,27 @@ export function syncRunToBattleStart(playerHealth?: number): number {
 
 /** Persist combat HP to run progress after victory or when leaving battle. */
 export function syncBattleToRun(options?: { playerHealth?: number }): void {
-  const store = getRunDomainStore();
-  const health = options?.playerHealth ?? store.battle.battleState.playerHealth;
-  store.setRunPlayerHealth(health);
+  const health = options?.playerHealth ?? getRunBattleDomainStore().battleState.playerHealth;
+  getRunDomainStore().setRunPlayerHealth(health);
 }
 
 /** Clear the battle-active flag and battle-related presentation state. */
 export function clearBattleUi(): void {
-  getRunDomainStore().setHasActiveBattle(false);
+  getRunBattleDomainStore().setHasActiveBattle(false);
   useUiStore.getState().clearCardHover();
   clearBattlePresentationCardGhosts();
 }
 
-/** Clear active combat, run progression, session UI, navigation, and presentation. */
+/** Clear active combat, run progression, session UI, navigation, and presentation (profile survives). */
 export function teardownRun(): void {
   useRunDomainStore.setState((state) => {
-    const characterId = state.activeRun.characterId;
-    const profile = state.profile;
     const fresh = createInitialRunDomainData();
-    state.activeRun = {
-      ...fresh.activeRun,
-      characterId,
-    };
-    state.profile = profile;
+    state.activeRun = { ...fresh.activeRun, characterId: state.activeRun.characterId };
     state.initialized = true;
-    state.session = { ...fresh.session, pendingContentSystemType: "campaign" };
     state.navigation = fresh.navigation;
-    state.battle = fresh.battle;
   });
+  resetRunTransientStore();
+  resetRunBattleDomainStore();
   resetBattlePresentation();
   useUiStore.getState().clearCardHover();
 }
@@ -188,13 +186,13 @@ export function finalizeRunEndSession(options: {
   finalizeRunXP: () => void;
   displayMaterials?: MaterialInventory | null;
 }): MaterialInventory {
-  const store = getRunDomainStore();
+  const session = getRunTransientStore();
   // Re-entry guard: run-end rewards are granted once per active run (menu abandon, defeat, victory).
-  if (!store.session.hasActiveRun) {
+  if (!session.hasActiveRun) {
     return emptyInventory();
   }
 
-  const activeChar = useRunDomainStore.getState().activeRun.characterId;
+  const activeChar = getRunDomainStore().activeRun.characterId;
   useProfileStore.getState().setFinishedRunCharacters((prev) => {
     if (prev.includes(activeChar)) return prev;
     return [...prev, activeChar];
@@ -204,7 +202,7 @@ export function finalizeRunEndSession(options: {
   options.finalizeRunXP();
 
   flushSaveAfterRunEnd();
-  getRunDomainStore().setHasActiveRun(false);
+  getRunTransientStore().setHasActiveRun(false);
   return materials;
 }
 

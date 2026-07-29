@@ -1,10 +1,11 @@
 import type { ActiveRunData } from "@/lib/active-run-session";
-import type { BattleCard, CharacterId, CompanionId, KeywordId, TalentXP, UnlockedTalents } from "@/lib/game-data";
-import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
+import type { BattleCard, CharacterId, KeywordId } from "@/lib/game-data";
+import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import type { ActiveRunProgressFields } from "@/features/alchemy/shared/stores/run-state-init";
 import type { RunRngStream } from "@/lib/run-rng";
 
+/** Active-run scoped progression actions. Permanent progression lives on run-profile-store. */
 export interface ProgressActions {
   setRunDeck: (action: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
   setRunGold: (action: number | ((prev: number) => number)) => void;
@@ -52,27 +53,11 @@ export interface ProgressActions {
   resetProgress: () => void;
   addRunGold: (amount: number) => void;
   nextRunRandom: (stream: RunRngStream) => number;
-  unlockTalent: (keywordId: KeywordId, talentId: string) => void;
-  unlockAllTalents: () => void;
-  resetUnlockedTalents: () => void;
   resetRunXP: () => void;
-  clearPermanentData: () => void;
   awardCardXP: (card: BattleCard) => void;
   awardMysteryXP: (keywordId: KeywordId, amount: number) => void;
   addRunMaterialsEarned: (materials: MaterialInventory) => void;
   clearRunMaterialsEarned: () => void;
-  finalizeRunXP: () => void;
-  initialize: (
-    activeRun: ActiveRunData | null,
-    talentXP: TalentXP,
-    unlockedTalents: UnlockedTalents,
-    fallbackCharacterId?: CharacterId,
-  ) => void;
+  initialize: (activeRun: ActiveRunData | null, fallbackCharacterId?: CharacterId) => void;
   hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void;
-  addMaterials: (materials: MaterialInventory) => void;
-  setMaterials: (materials: MaterialInventory) => void;
-  constructBuilding: (id: BuildingId) => boolean;
-  plantFarm: (id: FarmId) => boolean;
-  completeResearch: (id: ResearchId) => boolean;
-  bondCompanion: (id: CompanionId) => boolean;
 }

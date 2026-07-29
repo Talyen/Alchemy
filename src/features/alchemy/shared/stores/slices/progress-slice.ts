@@ -1,32 +1,16 @@
-import {
-  getGoldMultiplier,
-  getCardKeywords,
-  getDifficultyXPMultiplier,
-  talentPool,
-  addTalentXP,
-  computeRunEndTalentXPSnapshot,
-  mergeRunTalentXPIntoPermanent,
-  tryUnlockTalent,
-  filterKeywordsForTalentXP,
-  xpThresholdForPoints,
-  type KeywordId,
-  type UnlockedTalents,
-  type TalentXP,
-} from "@/lib/game-data";
+import { getGoldMultiplier, getCardKeywords, addTalentXP, filterKeywordsForTalentXP } from "@/lib/game-data";
 import {
   createInitialActiveRunFields,
-  createInitialPermanentFields,
-  createInitialTalentState,
   runFieldsFromSnapshot,
   type ActiveRunProgressFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import { defineNestedFieldSetter, type ImmerSet } from "./_field-setter";
-import { createHomesteadProgressActions } from "./progress-homestead-actions";
 import type { RunDomainDataState } from "../run-domain-types";
 import type { ProgressActions } from "./progress-action-types";
 import { nextRunRngValue } from "@/lib/run-rng";
 
+/** Active-run progression actions (deck, gold, HP, acts, run tallies, RNG). */
 export function defineProgressActions(set: ImmerSet<RunDomainDataState>): ProgressActions {
   const setRunField = defineNestedFieldSetter<ActiveRunProgressFields, RunDomainDataState>(
     set,
@@ -61,13 +45,10 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
 
     resetProgress: () =>
       set((state) => {
-        const characterId = state.activeRun.characterId;
-        const profile = state.profile;
         state.activeRun = {
-          ...createInitialActiveRunFields(null, characterId),
+          ...createInitialActiveRunFields(null, state.activeRun.characterId),
           runTalentXP: {},
         };
-        state.profile = profile;
         state.initialized = true;
       }),
 
@@ -87,44 +68,8 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
       return value;
     },
 
-    unlockTalent: (keywordId, talentId) =>
-      set((state) => {
-        const result = tryUnlockTalent(keywordId, talentId, state.profile.talentXP, state.profile.unlockedTalents);
-        if (result.unlockedTalents) {
-          state.profile.unlockedTalents = result.unlockedTalents;
-        }
-      }),
-
-    unlockAllTalents: import.meta.env.DEV
-      ? () =>
-          set((state) => {
-            const next: UnlockedTalents = {};
-            const xp: TalentXP = {};
-            for (const talent of talentPool) {
-              next[talent.keywordId] = [...(next[talent.keywordId] ?? []), talent.id];
-            }
-            for (const [kw, ids] of Object.entries(next)) {
-              xp[kw as KeywordId] = xpThresholdForPoints(ids.length);
-            }
-            state.profile.unlockedTalents = next;
-            state.profile.talentXP = xp;
-            state.activeRun.runTalentXP = {};
-          })
-      : () => {},
-
-    resetUnlockedTalents: () =>
-      set((state) => {
-        state.profile.unlockedTalents = {};
-      }),
-
     resetRunXP: () =>
       set((state) => {
-        state.activeRun.runTalentXP = {};
-      }),
-
-    clearPermanentData: () =>
-      set((state) => {
-        state.profile = createInitialPermanentFields();
         state.activeRun.runTalentXP = {};
       }),
 
@@ -154,36 +99,14 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
         state.activeRun.runMaterialsEarned = emptyInventory();
       }),
 
-    finalizeRunXP: () =>
+    initialize: (activeRun, fallbackCharacterId = "knight") =>
       set((state) => {
-        if (Object.keys(state.activeRun.runTalentXP).length === 0) {
-          state.session.runEndTalentXP = {};
-          return;
-        }
-        const multiplier = getDifficultyXPMultiplier(state.activeRun.selectedDifficulty);
-        state.session.runEndTalentXP = computeRunEndTalentXPSnapshot(state.activeRun.runTalentXP, multiplier);
-        state.profile.talentXP = mergeRunTalentXPIntoPermanent(
-          state.activeRun.runTalentXP,
-          state.profile.talentXP,
-          multiplier,
-        );
-        state.activeRun.runTalentXP = {};
-      }),
-
-    initialize: (activeRun, talentXP, unlockedTalents, fallbackCharacterId = "knight") =>
-      set((state) => {
-        const existingProfile = state.profile;
         state.activeRun = createInitialActiveRunFields(activeRun, fallbackCharacterId);
-        state.profile = {
-          ...existingProfile,
-          ...createInitialTalentState(talentXP, unlockedTalents),
-        };
         state.initialized = true;
       }),
 
     hydrateFromSnapshot: (snapshot) =>
       set((state) => {
-        state.session.runEndTalentXP = {};
         Object.assign(state.activeRun, runFieldsFromSnapshot(snapshot), {
           runTalentXP: {},
           runMaterialsEarned: emptyInventory(),
@@ -191,8 +114,6 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
           destinationRoundsSinceOffered: {},
         });
       }),
-
-    ...createHomesteadProgressActions(set),
   };
 }
 

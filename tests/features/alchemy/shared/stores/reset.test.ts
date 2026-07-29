@@ -26,7 +26,7 @@ import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-stor
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { defaultSaveData } from "@/features/alchemy/shared/storage";
-import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
+import { useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
 import {
   getBattleStoreView,
   getRunProgressStoreView,
@@ -64,27 +64,27 @@ describe("resetActiveRunStores", () => {
   });
 
   it("does not reset homestead or app options", () => {
-    useRunDomainStore.getState().addMaterials({ wood: 5, iron: 0, herbs: 0, food: 0, crystal: 0 });
+    useRunProfileStore.getState().addMaterials({ wood: 5, iron: 0, herbs: 0, food: 0, crystal: 0 });
     useSettingsStore.getState().setMusicVol(0.25);
-    const homesteadBefore = useRunDomainStore.getState().profile.materialInventory.wood;
+    const homesteadBefore = useRunProfileStore.getState().materialInventory.wood;
     const musicBefore = useSettingsStore.getState().musicVol;
 
     resetActiveRunStores();
 
-    expect(useRunDomainStore.getState().profile.materialInventory.wood).toBe(homesteadBefore);
+    expect(useRunProfileStore.getState().materialInventory.wood).toBe(homesteadBefore);
     expect(useSettingsStore.getState().musicVol).toBe(musicBefore);
   });
 });
 
 describe("clearAllPersistentGameData", () => {
   it("wipes app, run permanent data, and homestead", () => {
-    useRunDomainStore.getState().addMaterials({ wood: 10, iron: 0, herbs: 0, food: 0, crystal: 0 });
+    useRunProfileStore.getState().addMaterials({ wood: 10, iron: 0, herbs: 0, food: 0, crystal: 0 });
     setRunProgress({ unlockedTalents: { physical: ["test-talent"] } });
     useProfileStore.getState().setDiscoveredCardIds(["card-a"]);
 
     clearAllPersistentGameData();
 
-    expect(useRunDomainStore.getState().profile.materialInventory).toEqual({
+    expect(useRunProfileStore.getState().materialInventory).toEqual({
       wood: 0,
       iron: 0,
       herbs: 0,

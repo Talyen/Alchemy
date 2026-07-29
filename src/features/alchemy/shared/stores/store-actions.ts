@@ -2,7 +2,7 @@
 import { useShallow } from "zustand/react/shallow";
 import { useProfileStore } from "./profile-store";
 import { useSettingsStore, type SettingsStore } from "./settings-store";
-import { getRunDomainStore } from "./run-domain-store";
+import { getRunProfileStore } from "./run-profile-store";
 
 const settingsActionKeys = [
   "setSelectedAspectRatio",
@@ -47,7 +47,7 @@ export function useCollectionActions(): CollectionActions {
 }
 
 export function useHomesteadActions() {
-  const store = getRunDomainStore();
+  const store = getRunProfileStore();
   return {
     constructBuilding: store.constructBuilding,
     plantFarm: store.plantFarm,

@@ -1,4 +1,4 @@
-// Test helpers for run domain store — slice reads/writes without legacy shims.
+// Test helpers for the run-lifetime stores — slice reads/writes without legacy shims.
 import {
   useRunDomainStore,
   getRunProgressStoreView,
@@ -7,13 +7,18 @@ import {
   getBattleStoreView,
   resetRunDomainStore,
 } from "@/features/alchemy/shared/stores/run-domain-store";
+import { useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
+import { useRunTransientStore } from "@/features/alchemy/shared/stores/run-transient-store";
+import { useRunBattleDomainStore } from "@/features/alchemy/shared/stores/run-battle-domain-store";
 import {
-  createInitialProgressFields,
   createInitialSessionFields,
   createInitialBattleFields,
 } from "@/features/alchemy/shared/stores/run-domain-types";
 import {
-  applyFlatRunDomainProgressPartial,
+  applyActiveRunProgressPartial,
+  applyPermanentProgressPartial,
+  createInitialActiveRunFields,
+  createInitialPermanentFields,
   type RunStateFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
 
@@ -27,17 +32,14 @@ export {
 
 export function resetRunProgressSlice() {
   useRunDomainStore.setState((s) => {
-    const progress = createInitialProgressFields();
-    s.activeRun = progress.run;
-    s.profile = progress.permanent;
-    s.initialized = progress.initialized;
+    s.activeRun = createInitialActiveRunFields(null);
+    s.initialized = false;
   });
+  useRunProfileStore.setState(createInitialPermanentFields());
 }
 
 export function resetRunSessionSlice() {
-  useRunDomainStore.setState((s) => {
-    s.session = createInitialSessionFields();
-  });
+  useRunTransientStore.setState(createInitialSessionFields());
 }
 
 export function resetRunNavigationSlice() {
@@ -47,27 +49,26 @@ export function resetRunNavigationSlice() {
 }
 
 export function resetRunBattleSlice() {
-  useRunDomainStore.setState((s) => {
-    s.battle = createInitialBattleFields();
-  });
+  useRunBattleDomainStore.setState(createInitialBattleFields());
 }
 
-/** Apply flat progress fields (facade shape) onto the nested progress slice. */
+/** Apply flat progress fields (facade shape) onto the run-domain and profile stores. */
 export function setRunProgress(partial: Partial<RunStateFields>, replace = false) {
+  if (replace) {
+    resetRunProgressSlice();
+  }
   useRunDomainStore.setState((s) => {
-    if (replace) {
-      const progress = createInitialProgressFields();
-      s.activeRun = progress.run;
-      s.profile = progress.permanent;
-      s.initialized = progress.initialized;
-    }
-    applyFlatRunDomainProgressPartial(s, partial);
+    applyActiveRunProgressPartial(s, partial);
+  });
+  useRunProfileStore.setState((profile) => {
+    applyPermanentProgressPartial(profile, partial);
   });
 }
 
 export function setRunSession(partial: Partial<ReturnType<typeof createInitialSessionFields>>, replace = false) {
-  useRunDomainStore.setState((s) => {
-    if (replace) s.session = { ...createInitialSessionFields(), ...partial };
-    else Object.assign(s.session, partial);
-  });
+  if (replace) {
+    useRunTransientStore.setState({ ...createInitialSessionFields(), ...partial });
+    return;
+  }
+  useRunTransientStore.setState(partial);
 }

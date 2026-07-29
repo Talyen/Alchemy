@@ -65,6 +65,8 @@ describe("eslint architecture boundary stacking", () => {
     const imports = asRestrictedImports(cfg.rules?.["no-restricted-imports"]);
 
     expect(hasGroupContaining(imports, "run-domain-store")).toBe(true);
+    expect(hasGroupContaining(imports, "run-transitions")).toBe(true);
+    expect(hasGroupContaining(imports, "run-profile-store")).toBe(true);
     expect(hasGroupContaining(imports, "screens")).toBe(true);
     expect(patternGroups(imports)).toEqual(
       expect.arrayContaining([

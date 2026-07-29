@@ -8,6 +8,7 @@ import {
   beginRewardClaim,
   cancelDestinationClaim,
   commitDestinationClaim,
+  finalizeRunXP,
   releaseRewardClaim as releaseRewardClaimState,
 } from "../../shared/stores/run-session-facade";
 import { setCompanionRewardCards, setCorruptionResult, setRewardState } from "../../shared/stores/run-session-facade";
@@ -28,11 +29,7 @@ import {
   shouldGrantAlchemistReward,
   executeRewardRouteTransition,
 } from "../navigation/reward-flow";
-import {
-  applyRunDefeatTeardown,
-  clearBattleUi,
-  finalizeRunEndSession,
-} from "@/features/alchemy/shared/stores/run-transitions";
+import { applyRunDefeatTeardown, clearBattleUi, finalizeRunEndSession } from "../../shared/stores/run-session-facade";
 import { applyAlchemistPotion, applyRewardSelection, routeDestinationChoice } from "./run-destination-handlers";
 import { CONSTANTS, type Destination } from "../../shared/types";
 import { getActiveRewardTraits, type RunFlowHandlerDeps } from "./run-flow-handler-deps";
@@ -111,7 +108,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
   function endRunAndShowGameOver() {
     applyRunDefeatTeardown({
       awardRunEndMaterials,
-      finalizeRunXP: deps.talents.finalizeRunXP,
+      finalizeRunXP,
       clearCombatState,
     });
     deps.transition(CONSTANTS.SCREENS.GAME_OVER, { immediate: true });
@@ -165,7 +162,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     clearBattleUi();
     finalizeRunEndSession({
       awardRunEndMaterials,
-      finalizeRunXP: deps.talents.finalizeRunXP,
+      finalizeRunXP,
       displayMaterials,
     });
     deps.navigateTo(CONSTANTS.SCREENS.RUN_VICTORY, onRenderedScreenCommit);

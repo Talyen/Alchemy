@@ -108,6 +108,16 @@ export const DOMAIN_STORE_PATTERNS = [
       "@/features/alchemy/shared/stores/run-domain-store",
       "**/run-progress-store",
       "@/features/alchemy/shared/stores/run-progress-store",
+      "**/run-profile-store",
+      "@/features/alchemy/shared/stores/run-profile-store",
+      "**/run-transient-store",
+      "@/features/alchemy/shared/stores/run-transient-store",
+      "**/run-battle-domain-store",
+      "@/features/alchemy/shared/stores/run-battle-domain-store",
+      "**/run-transitions",
+      "@/features/alchemy/shared/stores/run-transitions",
+      "**/stores/ports/*",
+      "@/features/alchemy/shared/stores/ports/*",
       "**/run-domain-types",
       "**/run-session-store",
       "@/features/alchemy/shared/stores/run-session-store",
@@ -121,7 +131,7 @@ export const DOMAIN_STORE_PATTERNS = [
       "@/features/alchemy/shared/stores/run-store-sync",
     ],
     message:
-      "Import run-session-facade hooks, readRunSessionStore/readActiveRunStore/readBattleStore, or run-transitions instead of low-level store modules.",
+      "Import run-session-facade (hooks, readers, ports, and lifecycle) instead of low-level run stores, ports, or run-transitions.",
   },
 ];
 

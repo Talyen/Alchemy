@@ -965,6 +965,12 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(state): split run-domain hub into lifetime-matched stores
+  Extract permanent progression (`run-profile-store`), transient session
+  (`run-transient-store`), and battle snapshot (`run-battle-domain-store`)
+  from the mixed-lifetime run-domain hub. Group session writes into ports,
+  route all external lifecycle through `run-session-facade`, and ban direct
+  `run-transitions` / store / port imports outside `shared/stores/`.
 - refactor(build): consolidate asset prep and harden Steam release pipeline
   Unify predev/prebuild asset work in prepare-assets.mjs with shared script helpers
   and richer manifest caching. Simplify ship gates, fix release CI (SteamCMD,

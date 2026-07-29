@@ -55,13 +55,6 @@ export interface PermanentProgressFields {
   effects: HomesteadEffectManifest;
 }
 
-/** Nested progress slice inside run-domain-store. */
-export interface ProgressState {
-  run: ActiveRunProgressFields;
-  permanent: PermanentProgressFields;
-  initialized: boolean;
-}
-
 /** Flat facade / view projection of progress (run + permanent + initialized). */
 export type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
 
@@ -105,37 +98,31 @@ export function flattenRunDomainProgress(
   return { ...activeRun, ...profile, initialized };
 }
 
-function applyFlatProgressPartial(progress: ProgressState, partial: Partial<RunStateFields>): void {
+/** Apply the active-run subset of a flat progress partial onto run-domain state. */
+export function applyActiveRunProgressPartial(
+  state: { activeRun: ActiveRunProgressFields; initialized: boolean },
+  partial: Partial<RunStateFields>,
+): void {
   for (const key of ACTIVE_RUN_PROGRESS_KEYS) {
     if (key in partial && partial[key] !== undefined) {
-      (progress.run as unknown as Record<string, unknown>)[key] = partial[key];
-    }
-  }
-  for (const key of PERMANENT_PROGRESS_KEYS) {
-    if (key in partial && partial[key] !== undefined) {
-      (progress.permanent as unknown as Record<string, unknown>)[key] = partial[key];
+      (state.activeRun as unknown as Record<string, unknown>)[key] = partial[key];
     }
   }
   if (partial.initialized !== undefined) {
-    progress.initialized = partial.initialized;
+    state.initialized = partial.initialized;
   }
 }
 
-export function applyFlatRunDomainProgressPartial(
-  state: {
-    activeRun: ActiveRunProgressFields;
-    profile: PermanentProgressFields;
-    initialized: boolean;
-  },
+/** Apply the permanent subset of a flat progress partial onto profile state. */
+export function applyPermanentProgressPartial(
+  profile: PermanentProgressFields,
   partial: Partial<RunStateFields>,
 ): void {
-  const progress: ProgressState = {
-    run: state.activeRun,
-    permanent: state.profile,
-    initialized: state.initialized,
-  };
-  applyFlatProgressPartial(progress, partial);
-  state.initialized = progress.initialized;
+  for (const key of PERMANENT_PROGRESS_KEYS) {
+    if (key in partial && partial[key] !== undefined) {
+      (profile as unknown as Record<string, unknown>)[key] = partial[key];
+    }
+  }
 }
 
 const VALID_DESTINATIONS = new Set<Destination>(Object.values(DESTINATIONS));
@@ -261,17 +248,6 @@ export function createInitialTalentState(
   initialUnlockedTalents: UnlockedTalents,
 ): Pick<PermanentProgressFields, "talentXP" | "unlockedTalents"> {
   return { talentXP: initialTalentXP, unlockedTalents: initialUnlockedTalents };
-}
-
-export function createInitialProgressState(
-  initialActiveRun: ActiveRunData | null = null,
-  fallbackCharacterId: CharacterId = "knight",
-): ProgressState {
-  return {
-    run: createInitialActiveRunFields(initialActiveRun, fallbackCharacterId),
-    permanent: createInitialPermanentFields(),
-    initialized: false,
-  };
 }
 
 export function runFieldsFromSnapshot(

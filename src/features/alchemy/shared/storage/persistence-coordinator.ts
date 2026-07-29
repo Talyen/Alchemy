@@ -5,6 +5,7 @@ import { gearPersistenceCodec } from "@/features/alchemy/shared/stores/gear-stor
 import type { GearSaveFields } from "@/features/alchemy/shared/stores/gear-store-types";
 import {
   runProfilePersistenceCodec,
+  subscribeActiveRunSave,
   type RunProfileSaveFields,
 } from "@/features/alchemy/shared/stores/run-save-readers";
 
@@ -32,6 +33,7 @@ export function subscribeAlchemyPersistence(listener: () => void): () => void {
     profilePersistenceCodec.subscribe(listener),
     gearPersistenceCodec.subscribe(listener),
     runProfilePersistenceCodec.subscribe(listener),
+    subscribeActiveRunSave(listener),
   ];
   return () => {
     for (const unsubscribe of unsubscribers) unsubscribe();

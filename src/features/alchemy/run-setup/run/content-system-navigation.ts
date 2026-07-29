@@ -9,7 +9,7 @@ import { useProfileStore } from "../../shared/stores/profile-store";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { readGearMaxHealthBonus } from "../../shared/stores/gear-read-port";
 import {
-  setHasActiveRun,
+  applyRunStartSnapshot,
   setPendingCharacterId,
   setPendingContentSystemType,
   setRewardState,
@@ -25,7 +25,7 @@ import {
   restoreOrCreateDestinationRewardState,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
-import { createRunStartSnapshot, type RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
+import { createRunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { CONSTANTS } from "../../shared/types";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
@@ -42,11 +42,6 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     );
     deps.run.setDestinationOfferState(sampled.offerState);
     return createDestinationRewardState(sampled.choices, getBossEnemy([], deps.worldRng).id);
-  }
-
-  function applyRunStartSnapshot(snapshot: RunStartSnapshot) {
-    deps.run.hydrateFromSnapshot(snapshot);
-    setHasActiveRun(snapshot.hasActiveRun);
   }
 
   function startRun(

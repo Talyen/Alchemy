@@ -42,7 +42,7 @@ For non-trivial work, find and read only the docs that match the task; prefer sp
 
 ## Architectural invariants
 
-- **Run state:** feature code outside `shared/stores/` accesses run state through `run-session-facade` hooks/readers and transition APIs, not `run-domain-store` directly.
+- **Run state:** feature code outside `shared/stores/` accesses run state through `run-session-facade` hooks, readers, ports, and lifecycle APIs — not `run-domain-store`, `run-profile-store`, `run-transient-store`, `run-battle-domain-store`, ports, or `run-transitions` directly.
 - **Controllers:** screens receive run/battle data via controller props from `screen-routes/` / shell controllers — no React context for those bindings. See [ARCHITECTURE § Data flow](./docs/ARCHITECTURE.md#data-flow).
 - **Battle:** treat `BattleState` as immutable; use `state.rng` and `Math.round()` (never `Math.random()` / `Math.floor()`); keep tuning in `src/lib/game-constants/` (barrel at `game-constants.ts`; edit the topical file under that folder).
 - **Content:** card `descriptionLines` must match effects. Run-earned materials flow through `awardMaterialsDuringRun()` — do not call progress `addMaterials()` directly for run-loop loot. See [WORKFLOWS § Grant materials](./docs/WORKFLOWS.md#grant-materials-during-a-run).

@@ -16,17 +16,15 @@ import {
 } from "@/lib/gear";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import {
+  resolveActiveRunForSave,
+  syncRunMaxHealthFromGear,
+  syncRunMaxHealthFromGearMutation,
   useActiveRunCharacterId,
   useHasActiveBattle,
   useHasActiveRun,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
-import {
-  resolveActiveRunForSave,
-  syncRunMaxHealthFromGear,
-  syncRunMaxHealthFromGearMutation,
-} from "@/features/alchemy/shared/stores/run-transitions";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 

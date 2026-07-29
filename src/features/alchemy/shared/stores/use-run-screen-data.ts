@@ -1,14 +1,19 @@
 // Selective run/session fields for screens — each screen subscribes only to the
 // fields it uses so unrelated state changes do not cause re-renders.
+import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { Screen } from "@/lib/routing";
-import { getRunPhase } from "@/lib/routing";
-import { useRunDomainStore } from "./run-domain-store";
+import { useRunDomainStore, type RunDomainStore } from "./run-domain-store";
+import { useRunProfileStore, type RunProfileStore } from "./run-profile-store";
+import { useRunTransientStore, type RunTransientStore } from "./run-transient-store";
+import { useRunBattleDomainStore, type RunBattleDomainStore } from "./run-battle-domain-store";
 import type { RunScreenData } from "./run-screen-data";
 
 export type { RunScreenData } from "./run-screen-data";
 
-const SCREEN_FIELDS: Record<Screen, Array<keyof RunScreenData>> = {
+type ScreenField = keyof RunScreenData;
+
+const SCREEN_FIELDS: Record<Screen, ScreenField[]> = {
   campfire: ["runPlayerHealth", "runMaxHealth"],
   shop: ["runGold", "runDeck", "shopState"],
   alchemist: ["runGold", "runDeck", "alchemistState"],
@@ -37,44 +42,64 @@ const SCREEN_FIELDS: Record<Screen, Array<keyof RunScreenData>> = {
   talents: [],
 };
 
-type State = ReturnType<typeof useRunDomainStore.getState>;
+type FieldGetters<State> = Partial<{ [K in ScreenField]: (state: State) => RunScreenData[K] }>;
 
-const FIELD_GETTERS: { [K in keyof RunScreenData]: (state: State) => RunScreenData[K] } = {
-  phase: (state) => getRunPhase(state.navigation.screen, state.battle.hasActiveBattle),
+const DOMAIN_FIELDS: FieldGetters<RunDomainStore> = {
   runPlayerHealth: (state) => state.activeRun.runPlayerHealth,
   runMaxHealth: (state) => state.activeRun.runMaxHealth,
   runGold: (state) => state.activeRun.runGold,
   runDeck: (state) => state.activeRun.runDeck,
   selectedDifficulty: (state) => state.activeRun.selectedDifficulty,
-  talentXP: (state) => state.profile.talentXP,
-  unlockedTalents: (state) => state.profile.unlockedTalents,
   runTalentXP: (state) => state.activeRun.runTalentXP,
-  runEndTalentXP: (state) => state.session.runEndTalentXP,
-  hasActiveRun: (state) => state.session.hasActiveRun,
-  hasActiveBattle: (state) => state.battle.hasActiveBattle,
-  battleState: (state) => state.battle.battleState,
-  rewardState: (state) => state.session.rewardState,
-  labyrinthMap: (state) => state.session.labyrinthMap,
-  mysteryEvent: (state) => state.session.mysteryEvent,
-  mysteryCardChoices: (state) => state.session.mysteryCardChoices,
-  corruptionResult: (state) => state.session.corruptionResult,
-  shopState: (state) => state.session.shopState,
-  alchemistState: (state) => state.session.alchemistState,
-  trinketShopState: (state) => state.session.trinketShopState,
-  equipmentShopState: (state) => state.session.equipmentShopState,
-  runEndMaterials: (state) => state.session.runEndMaterials,
-  pendingCharacterId: (state) => state.session.pendingCharacterId,
 };
 
+const PROFILE_FIELDS: FieldGetters<RunProfileStore> = {
+  talentXP: (profile) => profile.talentXP,
+  unlockedTalents: (profile) => profile.unlockedTalents,
+};
+
+const TRANSIENT_FIELDS: FieldGetters<RunTransientStore> = {
+  runEndTalentXP: (session) => session.runEndTalentXP,
+  hasActiveRun: (session) => session.hasActiveRun,
+  rewardState: (session) => session.rewardState,
+  labyrinthMap: (session) => session.labyrinthMap,
+  mysteryEvent: (session) => session.mysteryEvent,
+  mysteryCardChoices: (session) => session.mysteryCardChoices,
+  corruptionResult: (session) => session.corruptionResult,
+  shopState: (session) => session.shopState,
+  alchemistState: (session) => session.alchemistState,
+  trinketShopState: (session) => session.trinketShopState,
+  equipmentShopState: (session) => session.equipmentShopState,
+  runEndMaterials: (session) => session.runEndMaterials,
+  pendingCharacterId: (session) => session.pendingCharacterId,
+};
+
+const BATTLE_FIELDS: FieldGetters<RunBattleDomainStore> = {
+  hasActiveBattle: (battle) => battle.hasActiveBattle,
+  battleState: (battle) => battle.battleState,
+};
+
+function pickScreenFields<State>(
+  state: State,
+  fields: readonly ScreenField[],
+  getters: FieldGetters<State>,
+): Partial<RunScreenData> {
+  const data: Record<string, unknown> = {};
+  for (const field of fields) {
+    const read = getters[field] as ((source: State) => unknown) | undefined;
+    if (read) data[field] = read(state);
+  }
+  return data;
+}
+
 export function useRunScreenData(screen: Screen): RunScreenData {
-  return useRunDomainStore(
-    useShallow((state) => {
-      const fields = SCREEN_FIELDS[screen] ?? [];
-      const data: Partial<RunScreenData> = {};
-      for (const field of fields) {
-        (data as Record<string, unknown>)[field] = FIELD_GETTERS[field](state);
-      }
-      return data as RunScreenData;
-    }),
+  const fields = SCREEN_FIELDS[screen] ?? [];
+  const run = useRunDomainStore(useShallow((state) => pickScreenFields(state, fields, DOMAIN_FIELDS)));
+  const profile = useRunProfileStore(useShallow((state) => pickScreenFields(state, fields, PROFILE_FIELDS)));
+  const session = useRunTransientStore(useShallow((state) => pickScreenFields(state, fields, TRANSIENT_FIELDS)));
+  const battle = useRunBattleDomainStore(useShallow((state) => pickScreenFields(state, fields, BATTLE_FIELDS)));
+  return useMemo(
+    () => ({ ...run, ...profile, ...session, ...battle }) as RunScreenData,
+    [run, profile, session, battle],
   );
 }

@@ -30,13 +30,13 @@ Agentic coding often drops the next method on the nearest large module. Gravity 
 
 ## Remedy preference
 
-Prefer moving pure rules into the matching `src/lib/*` owner and persistence policy into `shared/storage` / save-schemas / migrations, keeping stores thin. Keep run orchestration on shell controllers + `run-session-facade` / `run-transitions.ts`. Keep battle VFX in `battle-presentation-store`, global UI chrome in `ui-store`, meta discovery in `app-store`, permanent gear in `gear-store`. Extract presentation-only helpers into `shared/ui` or the feature folder; collapse duplicate shells via `DuplicateFeatureSurfaceAudit.md` when that is the bulk of the win. Propose hub splits when local moves would leave the same gravity well intact.
+Prefer moving pure rules into the matching `src/lib/*` owner and persistence policy into `shared/storage` / save-schemas / migrations, keeping stores thin. Keep run orchestration on shell controllers + `run-session-facade` (lifecycle implemented in `run-transitions.ts`). Keep battle VFX in `battle-presentation-store`, global UI chrome in `ui-store`, meta discovery in `app-store`, permanent gear in `gear-store`, homestead/talents in `run-profile-store`. Extract presentation-only helpers into `shared/ui` or the feature folder; collapse duplicate shells via `DuplicateFeatureSurfaceAudit.md` when that is the bulk of the win. Propose hub splits when local moves would leave the same gravity well intact.
 
 ## Domain rules
 
 Ownership is defined by [ARCHITECTURE.md](../ARCHITECTURE.md) (store layout, controllers, session facade, `src/lib` owners) — read the relevant sections there rather than relying on a copied table here. Deltas this audit adds on top:
 
-- **Hub containment:** keep `run-domain-store` and persistence modules thin — new work goes to handlers, slices, facade methods, or controllers, not feature-specific methods on the hub.
+- **Hub containment:** keep run-lifetime stores and persistence modules thin — new work goes to handlers, ports, facade methods, or controllers, not feature-specific methods on a mixed-lifetime hub.
 - **Presentation split:** product screens stay in `meta/` / `run-setup/` / `run-loop/`; shared chrome belongs in `shared/ui` / `src/components/ui`; nothing React lands in `src/lib`.
 
 ## Known signals

@@ -27,7 +27,7 @@ Prioritize P0–P1 by impact.
 
 - Critical save fields validated via Zod schemas under `src/lib/validation/save-schemas/`; corrupt saves fail cleanly or fall back with logging — not silent invalid game state (`parseActiveRun`, migrations under `shared/storage` / `src/lib/validation/migration`).
 - Persistence surfaces write failures; silent save failure is data loss. Prefer existing storage owners under `src/features/alchemy/shared/storage/` (including backup and Steam/cloud merge paths such as `storage-io-cloud-merge` / backup helpers).
-- Run lifecycle mutations go through `run-transitions.ts` / `run-session-facade` — not ad-hoc `localStorage` writes from screens.
+- Run lifecycle mutations go through `run-session-facade` (implemented in `run-transitions.ts`) — not ad-hoc `localStorage` writes from screens.
 - Active-run session helpers live under `src/lib/active-run-session/`.
 - Stage completion / reward grant / shop purchase / craft: double-click or re-entry must not double-grant; completion flags or idempotent transitions before mutations.
 - Suspect empty `catch` / swallowed Promise rejections on save, hydrate, resume, or battle outcome paths. **Allowlist:** non-fatal audio (`src/lib/audio*.ts`, app audio effects).
