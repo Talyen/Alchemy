@@ -1,5 +1,5 @@
 import type { BattleState } from "@/lib/battle";
-import { getEffectiveCost } from "@/lib/battle";
+import { computeEffectiveCost } from "@/lib/battle";
 
 export function getPlayableHandCardKeys(
   battleState: Pick<
@@ -15,7 +15,7 @@ export function getPlayableHandCardKeys(
   };
   return new Set(
     battleState.hand
-      .filter((card) => battleState.mana >= getEffectiveCost(costState, card))
+      .filter((card) => battleState.mana >= computeEffectiveCost(costState, card).effectiveCost)
       .map((card) => `${card.id}-${card.uid}`),
   );
 }

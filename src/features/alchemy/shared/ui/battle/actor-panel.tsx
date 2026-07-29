@@ -4,7 +4,7 @@
 import type { Ref } from "react";
 
 import { Progress } from "@/components/ui/progress";
-import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +42,7 @@ interface ArtPanelProps {
   descriptionLines?: string[];
   currentEnemy?: BestiaryEntry;
   currentEnemyAttackEffects?: EnemyAttackEffect[];
-  activeLabyrinthModifiers?: LabyrinthModifierKind[];
+  activeLabyrinthModifiers?: EncounterCombatTraitId[];
   deathsDoorActive?: boolean;
   isBoss?: boolean;
   statsCardWidthClass?: string | undefined;

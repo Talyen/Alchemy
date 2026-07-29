@@ -1,4 +1,4 @@
-import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
@@ -21,8 +21,8 @@ export interface SessionActions {
   beginDestinationClaim: (destination: Destination) => boolean;
   commitDestinationClaim: (destination: Destination) => boolean;
   cancelDestinationClaim: () => void;
-  setActiveLabyrinthModifiers: (modifiers: LabyrinthModifierKind[]) => void;
-  setActiveLabyrinthRewardModifiers: (modifiers: LabyrinthModifierKind[]) => void;
+  setActiveLabyrinthModifiers: (modifiers: EncounterCombatTraitId[]) => void;
+  setActiveLabyrinthRewardModifiers: (modifiers: EncounterRewardTraitId[]) => void;
   setActiveLabyrinthPendingNode: (node: LabyrinthNodePosition | null) => void;
   setRewardState: (action: RewardState | ((prev: RewardState) => RewardState)) => void;
   setCompanionRewardCards: (cards: RunSessionFields["companionRewardCards"]) => void;

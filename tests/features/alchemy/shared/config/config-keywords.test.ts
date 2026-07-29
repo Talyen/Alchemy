@@ -39,13 +39,6 @@ describe("keywordPattern", () => {
     expect(matches!.length).toBe(3);
   });
 
-  it("matches 'HP' as health (backward compat alias)", () => {
-    const text = "Heal 5 HP";
-    const matches = text.match(keywordPattern);
-    expect(matches).not.toBeNull();
-    expect(matches!.some((m) => m === "HP")).toBe(true);
-  });
-
   it("matches multiple distinct keywords in one string", () => {
     const text = "Burn deals 5 damage and applies Poison";
     const matches = text.match(keywordPattern);

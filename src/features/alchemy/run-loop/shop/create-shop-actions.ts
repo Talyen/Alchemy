@@ -8,8 +8,8 @@ import {
   makeCardRefreshHandler,
   makeShopRefreshHandler,
   markSlotPurchased,
-  spendRunGold,
 } from "@/features/alchemy/run-loop/shop-transactions";
+import { spendRunGold } from "@/features/alchemy/run-loop/run-gold";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import { SHOP_CARDS_OFFERED, ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import {

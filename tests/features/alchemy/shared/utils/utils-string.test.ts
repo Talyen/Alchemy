@@ -21,12 +21,6 @@ describe("tokenizeDescription", () => {
     expect(keywordIds).toContain("armor");
   });
 
-  it('maps "HP" to the health keyword', () => {
-    const result = tokenizeDescription("Heal 5 HP");
-    const hp = result.find((p) => p.text === "HP");
-    expect(hp?.keywordId).toBe("health");
-  });
-
   it("handles an empty string", () => {
     const result = tokenizeDescription("");
     expect(result).toEqual([{ text: "" }]);

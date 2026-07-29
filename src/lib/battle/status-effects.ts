@@ -1,6 +1,6 @@
 /**
  * Status effect barrel: trait multipliers and re-exports from split status modules.
- * Depended on by: ./apply-effects, ./damage, ./status-ticks, ./damage-riders.
+ * Depended on by: ./effect-handlers, ./damage, ./status-ticks, ./damage-riders.
  */
 export { applyDamageStatuses, applyPoisonTalentRiders, tryTriggerEnemyFreeze } from "./status-damage-riders";
 export { resolveStunTrigger } from "./status-stun-resolve";

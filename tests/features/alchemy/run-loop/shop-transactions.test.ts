@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { refreshOfferings, spendRunGold } from "@/features/alchemy/run-loop/shop-transactions";
+import { refreshOfferings } from "@/features/alchemy/run-loop/shop-transactions";
 import type { BattleCard } from "@/lib/game-data";
 
 vi.mock("@/lib/audio", () => ({
@@ -26,25 +26,6 @@ function makeCard(id: string): BattleCard {
 
 beforeEach(() => {
   vi.clearAllMocks();
-});
-
-describe("spendRunGold", () => {
-  it("calls playGoldSpend only when price > 0", () => {
-    const setRunGold = vi.fn();
-    spendRunGold(0, setRunGold);
-    expect(playGoldSpend).not.toHaveBeenCalled();
-
-    spendRunGold(5, setRunGold);
-    expect(playGoldSpend).toHaveBeenCalledOnce();
-  });
-
-  it("clamps gold at 0", () => {
-    let gold = 3;
-    spendRunGold(10, (fn) => {
-      gold = fn(gold);
-    });
-    expect(gold).toBe(0);
-  });
 });
 
 describe("refreshOfferings", () => {

@@ -51,5 +51,5 @@ export function getActiveRewardTraits(
   if (contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
     return session.wildwoodDraft?.currentRewardTraitIds ?? [];
   }
-  return session.activeLabyrinthRewardModifiers as EncounterRewardTraitId[];
+  return session.activeLabyrinthRewardModifiers;
 }

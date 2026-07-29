@@ -8,7 +8,6 @@ import {
   findGearInventoryOwner,
   salvageGear,
   unequipGear,
-  type GearBoardPositions,
   type GearBoardPositionsByCharacter,
   type GearInventories,
   type GearLoadouts,
@@ -24,6 +23,7 @@ import {
   createEmptyGearInventories,
   createEmptyGearLoadouts,
   EMPTY_CRAFTING_CURRENCIES,
+  omitGearPosition,
 } from "@/lib/gear";
 import type { GearSaveFields, GearStore } from "./gear-store-types";
 
@@ -46,10 +46,6 @@ function boardPositionRegistriesEqual(
     }
   }
   return true;
-}
-
-function omitGearPosition(positions: GearBoardPositions, instanceId: string): GearBoardPositions {
-  return Object.fromEntries(Object.entries(positions).filter(([id]) => id !== instanceId));
 }
 
 function extractInstanceFromOtherOwner(

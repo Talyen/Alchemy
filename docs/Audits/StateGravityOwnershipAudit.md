@@ -19,7 +19,7 @@ Agentic coding often drops the next method on the nearest large module. Gravity 
 | Mega-screen that orchestrates rewards, catalog lookups, and mutations | Screen owns too many jobs; extract controller/facade or shared UI |
 | New `*Manager` / parallel store beside existing owners for one flow   | Invented gravity well instead of an extension on the real owner   |
 
-**Not this audit:** import-gate failures alone → fix via ESLint; unused APIs → `DeadCodeRatioAudit.md`; verbose ceremony with correct ownership → `InelegantSlopAudit.md`; duplicate screens with correct owners → `DuplicateFeatureSurfaceAudit.md`; silent save bugs without ownership drift → `BehaviorHardeningAudit.md`.
+**Not this audit:** import-gate failures alone → fix via ESLint; unused APIs → `DeadCodeRatioAudit.md`; verbose ceremony with correct ownership → `InelegantSlopAudit.md`; correct owner with leftover twin / shim → `DualPathRetentionAudit.md`; live mass on a single path without ownership drift → `AuthoredMassHotspotAudit.md`; duplicate screens with correct owners → `DuplicateFeatureSurfaceAudit.md`; silent save bugs without ownership drift → `BehaviorHardeningAudit.md`.
 
 ## Hard stops
 

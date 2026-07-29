@@ -2,7 +2,12 @@
 import { Star } from "lucide-react";
 
 import { ShineBorder } from "@/components/ui/shine-border";
-import type { LabyrinthMap, LabyrinthModifierKind, LabyrinthNodeType } from "@/lib/content-systems/types";
+import type {
+  EncounterCombatTraitId,
+  EncounterRewardTraitId,
+  LabyrinthMap,
+  LabyrinthNodeType,
+} from "@/lib/content-systems/types";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-generation";
 import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
 import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
@@ -15,8 +20,8 @@ export interface HoveredLabyrinthNode {
   row: number;
   col: number;
   type: LabyrinthNodeType;
-  modifiers: LabyrinthModifierKind[];
-  rewardModifiers: LabyrinthModifierKind[];
+  modifiers: EncounterCombatTraitId[];
+  rewardModifiers: EncounterRewardTraitId[];
 }
 
 interface Props {

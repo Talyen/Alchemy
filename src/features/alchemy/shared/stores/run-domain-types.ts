@@ -22,7 +22,12 @@ import {
 } from "@/features/alchemy/run-setup/run/run-state-init";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import type { Destination, Screen } from "@/features/alchemy/shared/types";
-import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type {
+  ContentSystemId,
+  EncounterCombatTraitId,
+  EncounterRewardTraitId,
+  LabyrinthMap,
+} from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryEvent } from "@/lib/mystery";
@@ -118,8 +123,8 @@ export interface RunSessionFields {
   hasActiveRun: boolean;
   rewardClaimInFlight: boolean;
   pendingDestinationClaim: Destination | null;
-  activeLabyrinthModifiers: LabyrinthModifierKind[];
-  activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
+  activeLabyrinthModifiers: EncounterCombatTraitId[];
+  activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   activeLabyrinthPendingNode: LabyrinthNodePosition | null;
   rewardState: RewardState;
   companionRewardCards: BattleCard[] | null;

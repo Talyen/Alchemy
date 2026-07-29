@@ -4,7 +4,7 @@
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import type { BattleControllerBindings } from "./battle-bindings";
 import type { CharacterId, DifficultyId, UnlockedTalents, TalentXP } from "@/lib/game-data";
-import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
 import {
   useRunAdapter,
   useTalentAdapter,
@@ -67,10 +67,10 @@ export function useAlchemyRunController({
     const store = useUiStore.getState();
     store.setHoveredCardId(typeof id === "function" ? id(store.hoveredCardId) : id);
   }, []);
-  const applyLabyrinthBattleModifiers = useCallback((modifiers: LabyrinthModifierKind[]) => {
+  const applyLabyrinthBattleModifiers = useCallback((modifiers: EncounterCombatTraitId[]) => {
     setActiveLabyrinthModifiers(modifiers);
   }, []);
-  const applyLabyrinthRewardModifiers = useCallback((modifiers: LabyrinthModifierKind[]) => {
+  const applyLabyrinthRewardModifiers = useCallback((modifiers: EncounterRewardTraitId[]) => {
     setActiveLabyrinthRewardModifiers(modifiers);
   }, []);
 

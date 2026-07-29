@@ -4,14 +4,13 @@
 export * from "./types";
 export * from "./draw";
 export * from "./battle-setup";
-export { applyCardEffects } from "./apply-effects";
+export { applyCardEffects } from "./effect-handlers";
 export { mergeCombatText } from "./combat-text";
 export { getEnemyDamageMultiplier } from "./status-effects";
-export { canPlayCard, playBattleCardResolved, type CardPlayOptions } from "./card-play";
+export { canPlayCard, playBattleCardResolved, computeEffectiveCost, type CardPlayOptions } from "./card-play";
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 export { chooseWishCard } from "./wish";
 export { processCompanionTurnStart } from "./companion";
 export { endPlayerTurn, type EndPlayerTurnResolution } from "./enemy-turn";
 export { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./enemy-turn-traits";
 export { getBattleStartPlayerHealth } from "./start-health";
-export * from "./cost";

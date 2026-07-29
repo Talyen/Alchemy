@@ -10,18 +10,18 @@ Surface **confirmed** hotspots so authored LOC, declarations, indirection, or ne
 
 Slop looks industrious but fails a pragmatism test: more types, indirection, comments, or branches than the problem warrants.
 
-| Tell                                                                  | Why it is slop                                                         |
-| --------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Interface + single implementer + factory                              | Indirection with no second implementation                              |
-| `*Manager` / `*Helper` / `*Coordinator` / `*Wrapper` for one function | Noun theater around a free function or method                          |
-| Narrating comments / restated docs                                    | Rephrases the signature instead of encoding non-obvious intent         |
-| Boolean parameter soup                                                | Combinatorial call sites that should be an enum or two functions       |
-| Deep nesting / giant component / god file                             | Complexity that should be extracted _or_ collapsed, not both layered   |
-| Pass-through wrappers / rename-only type aliases                      | Extra names that do not add a boundary                                 |
-| Premature DI / config objects for 2–3 fields                          | Framework cosplay for a local call                                     |
-| Defensive `??` / `as` / `any` stacks without a real failure mode      | Ceremony that hides the real invariant                                 |
-| Near-duplicate blocks with tiny diffs                                 | Copy-paste growth instead of one parameterized path                    |
-| Complexity > 10 with no domain reason                                 | Branch soup that should be early returns, lookups, or named predicates |
+| Tell                                                                  | Why it is slop                                                                                                                          |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Interface + single implementer + factory                              | Indirection with no second implementation                                                                                               |
+| `*Manager` / `*Helper` / `*Coordinator` / `*Wrapper` for one function | Noun theater around a free function or method                                                                                           |
+| Narrating comments / restated docs                                    | Rephrases the signature instead of encoding non-obvious intent                                                                          |
+| Boolean parameter soup                                                | Combinatorial call sites that should be an enum or two functions                                                                        |
+| Deep nesting / giant component                                        | Complexity that should be extracted _or_ collapsed, not both layered — file/folder mass with mixed jobs → `AuthoredMassHotspotAudit.md` |
+| Pass-through wrappers / rename-only type aliases                      | Extra names that do not add a boundary — reachable twin / no-op shim callers can retarget → `DualPathRetentionAudit.md`                 |
+| Premature DI / config objects for 2–3 fields                          | Framework cosplay for a local call                                                                                                      |
+| Defensive `??` / `as` / `any` stacks without a real failure mode      | Ceremony that hides the real invariant                                                                                                  |
+| Near-duplicate blocks with tiny diffs                                 | Copy-paste growth instead of one parameterized path                                                                                     |
+| Complexity > 10 with no domain reason                                 | Branch soup that should be early returns, lookups, or named predicates                                                                  |
 
 Elegant code here is usually: plain data, thin Zustand slices, pure `src/lib` rules, shared UI chrome, discriminated unions, and direct call sites.
 
@@ -30,7 +30,7 @@ Elegant code here is usually: plain data, thin Zustand slices, pure `src/lib` ru
 - Do not collapse intentional seams: battle RNG injection, persistence write coalescing, design-system tokens, asset/codegen boundaries, or ESLint import rules.
 - Do not rewrite battle pipeline math “for clarity” without tests proving equivalence.
 - Do not turn this into a style-only rename sweep, docs rewrite, or mass delete of tests that encode real invariants.
-- Prefer the owning audit when the hit is primarily dead code, boundaries, async races, type-safety escapes, duplicate feature surfaces, or state-ownership drift.
+- Prefer the owning audit when the hit is primarily dead code, reachable dual paths / shims (`DualPathRetentionAudit.md`), authored file mass with mixed jobs (`AuthoredMassHotspotAudit.md`), boundaries, async races, type-safety escapes, duplicate feature surfaces, or state-ownership drift.
 - Do not split a function that already reads cleanly at complexity ≤ 10. Complexity p90 ≤ 6 is directional via `npm run audit:all`, not a CI gate.
 - Skip load-bearing complexity (generated assets, damage pipeline, save wire format, intentional controller composition).
 

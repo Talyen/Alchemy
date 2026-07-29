@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyCardEffects } from "@/lib/battle/apply-effects";
+import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { applyPlayerCombatDamage, isPlayerDefeated } from "@/lib/battle/types";

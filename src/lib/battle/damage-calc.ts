@@ -1,7 +1,7 @@
 /**
  * Player damage calculation: modifiers, crit, block, and armor mitigation, critical strikes, armor mitigation, and status riders.
  * Depends on: ./status-effects, ./combat-text, ./trinket-effects, ./wish, ./types, ../game-constants.
- * Depended on by: ./apply-effects.
+ * Depended on by: ./damage, ./damage-riders.
  */
 import { getEnemyDamageMultiplier } from "./status-effects";
 import { gearFrozenDamageMultiplier } from "./gear-effects";

@@ -1,13 +1,13 @@
 // Labyrinth map node entry: apply modifiers, run screen init, then navigate.
 import { labyrinthModifiersToDifficulty } from "@/lib/content-systems/labyrinth/modifiers";
-import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
 import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
 import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
 import type { LabyrinthNodeHandlers } from "./use-labyrinth-controller";
 
 interface LabyrinthNodeRoutingDeps {
-  applyLabyrinthBattleModifiers: (modifiers: LabyrinthModifierKind[]) => void;
-  applyLabyrinthRewardModifiers: (modifiers: LabyrinthModifierKind[]) => void;
+  applyLabyrinthBattleModifiers: (modifiers: EncounterCombatTraitId[]) => void;
+  applyLabyrinthRewardModifiers: (modifiers: EncounterRewardTraitId[]) => void;
   navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
   labyrinth: {
     enterNode: (row: number, col: number, handlers: LabyrinthNodeHandlers) => boolean;
@@ -29,8 +29,8 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
   function enterLabyrinthNodeScreen(
     screen: Screen,
     init?: () => void,
-    battleModifiers?: LabyrinthModifierKind[],
-    rewardModifiers?: LabyrinthModifierKind[],
+    battleModifiers?: EncounterCombatTraitId[],
+    rewardModifiers?: EncounterRewardTraitId[],
   ) {
     deps.applyLabyrinthBattleModifiers(battleModifiers ?? []);
     deps.applyLabyrinthRewardModifiers(rewardModifiers ?? []);

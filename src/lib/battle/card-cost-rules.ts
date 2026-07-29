@@ -63,7 +63,7 @@ function checkTrinketFreePotion(state: CardCostState, card: BattleCard): boolean
 }
 
 /**
- * Pure cost computation shared by UI (getEffectiveCost) and card play (resolveCardPlayCost).
+ * Pure cost computation shared by UI playability checks and card play (resolveCardPlayCost).
  * Returns the effective cost and which one-shot free-card flags were consumed.
  * When cost is already 0 (e.g. from nextCardCostReduction), free-card flags
  * are intentionally NOT consumed so they remain available for the next meaningful card.

@@ -1,5 +1,5 @@
 import { ShineBorder } from "@/components/ui/shine-border";
-import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
 import { SHINE_PALETTES } from "../../config";
 import { DescriptionLines } from "../card-description-ui";
@@ -25,7 +25,7 @@ export function ActorTooltip({
   descriptionLines: string[] | undefined;
   currentEnemy: BestiaryEntry | undefined;
   currentEnemyAttackEffects: EnemyAttackEffect[] | undefined;
-  activeLabyrinthModifiers?: LabyrinthModifierKind[] | undefined;
+  activeLabyrinthModifiers?: EncounterCombatTraitId[] | undefined;
 }) {
   if (currentEnemy) {
     return (

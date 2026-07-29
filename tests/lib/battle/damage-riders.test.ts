@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyCardEffects } from "@/lib/battle/apply-effects";
+import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { applyDamageRiders } from "@/lib/battle/damage-riders";
 import { defaultTalentEffects } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";

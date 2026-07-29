@@ -18,7 +18,7 @@ Duplicate surfaces look like parallel product screens that differ mainly by labe
 | Same modal / overlay scaffolding in 3+ files                 | Layout ownership belongs in one helper, not N call sites     |
 | Diverged twins that used to match                            | Copy-paste drift — bugs get fixed in one sibling only        |
 
-**Not this audit:** single-file ceremony → `InelegantSlopAudit.md`; raw spacing/color literals → `DesignSystemConsistencyAudit.md`; unused symbols → `DeadCodeRatioAudit.md`; logic living in the wrong layer → `StateGravityOwnershipAudit.md`.
+**Not this audit:** single-file ceremony → `InelegantSlopAudit.md`; raw spacing/color literals → `DesignSystemConsistencyAudit.md`; unused symbols → `DeadCodeRatioAudit.md`; logic living in the wrong layer → `StateGravityOwnershipAudit.md`; retained parallel live implementations outside product UI → `DualPathRetentionAudit.md`; single-path authored mass → `AuthoredMassHotspotAudit.md`.
 
 ## Hard stops
 

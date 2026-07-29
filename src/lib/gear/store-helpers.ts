@@ -172,5 +172,5 @@ export function moveBoardItemForState(
   };
 }
 
-export { updateGearStateAndSync } from "./store-sync";
+export { updateGearStateAndSync, omitGearPosition } from "./store-sync";
 export type { BoardSourceState } from "./store-state";

@@ -66,6 +66,8 @@ Each audit holds only its distinct scope, confirmation rules, and domain allowli
 | Concern                                                    | Owner audit                               |
 | ---------------------------------------------------------- | ----------------------------------------- |
 | Dead / unused symbols                                      | `DeadCodeRatioAudit.md`                   |
+| Live dual paths / retained compatibility shims             | `DualPathRetentionAudit.md`               |
+| Authored mass hotspots (retrospective)                     | `AuthoredMassHotspotAudit.md`             |
 | RNG / I/O seams                                            | `SideEffectSurfaceAudit.md`               |
 | Persistence / idempotency / swallowed errors               | `BehaviorHardeningAudit.md`               |
 | Async races / IPC / effect lifetime                        | `AsyncRaceAudit.md`                       |
@@ -91,13 +93,13 @@ Standing conventions: [CONTRIBUTING.md](../../CONTRIBUTING.md), [ARCHITECTURE.md
 
 Optional instrumentation. Interpret hits through the owning audit — not a mandated first step.
 
-| Probe                                         | Interpret via                                                         | Notes                                                                                 |
-| --------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `npm run deadcode:strict`                     | `DeadCodeRatioAudit.md`                                               | Confirm with call-site evidence; respect `knip.config.js` allowlists                  |
-| `npm run audit:single-use`                    | `DeadCodeRatioAudit.md` (primary), `InelegantSlopAudit.md` (ceremony) | Supporting signal — not sole evidence                                                 |
-| madge circular (`audit:all` step)             | `ChangeLocalityContextEfficiencyAudit.md`                             | Invert deps / extract shared modules / facades; layer legality → ESLint               |
-| ESLint complexity + max-lines-per-function    | `InelegantSlopAudit.md`                                               | Prefer complexity ≤ 10; do not split clean ≤10 functions; p90 ≤ 6 is directional only |
-| `node scripts/audit-change-amplification.mjs` | `ChangeLocalityContextEfficiencyAudit.md`                             | Defaults: `--since=3 months ago`, subjects matching `^feat\|^fix\|^balance`           |
+| Probe                                         | Interpret via                                                                                           | Notes                                                                                                                              |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run deadcode:strict`                     | `DeadCodeRatioAudit.md`                                                                                 | Confirm with call-site evidence; respect `knip.config.js` allowlists                                                               |
+| `npm run audit:single-use`                    | `DeadCodeRatioAudit.md` (primary), `InelegantSlopAudit.md` (ceremony)                                   | Supporting signal — not sole evidence                                                                                              |
+| madge circular (`audit:all` step)             | `ChangeLocalityContextEfficiencyAudit.md`                                                               | Invert deps / extract shared modules / facades; layer legality → ESLint                                                            |
+| ESLint complexity + max-lines-per-function    | `InelegantSlopAudit.md` (ceremony / complexity); `AuthoredMassHotspotAudit.md` (file mass + mixed jobs) | Prefer complexity ≤ 10; do not split clean ≤10 functions; p90 ≤ 6 is directional only; length alone is not an AuthoredMass finding |
+| `node scripts/audit-change-amplification.mjs` | `ChangeLocalityContextEfficiencyAudit.md`                                                               | Defaults: `--since=3 months ago`, subjects matching `^feat\|^fix\|^balance`                                                        |
 
 Do not invent standalone audits for complexity, single-use, or import coupling — those probes live in `audit:all` and the guides above.
 

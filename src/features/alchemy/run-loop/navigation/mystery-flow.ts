@@ -10,7 +10,7 @@ import {
   type BattleCard,
   type KeywordId,
 } from "@/lib/game-data";
-import { playGoldGain, playGoldSpend } from "@/lib/audio";
+import { playGoldGain } from "@/lib/audio";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "../run/deck-mutations";
 import type { MaterialId, MaterialInventory } from "@/lib/homestead/types";
@@ -19,6 +19,7 @@ import type { Dispatch, SetStateAction } from "react";
 
 import type { MysteryEffect } from "@/lib/mystery";
 import { sampleItems } from "../../shared/utils";
+import { spendRunGold } from "../run-gold";
 
 export interface MysteryEffectResult {
   /**
@@ -131,8 +132,7 @@ function gainMysteryGold(amount: number, context: MysteryEffectContext) {
 }
 
 function loseMysteryGold(amount: number, context: MysteryEffectContext) {
-  if (amount > 0) playGoldSpend();
-  context.setRunGold((p) => Math.max(0, p - amount));
+  spendRunGold(amount, context.setRunGold);
   return { followUp: null };
 }
 

@@ -2,7 +2,7 @@
 // Depends on battle cost prediction, React timers, and screen/turn state.
 import { useCallback, useEffect, useRef } from "react";
 
-import { getEffectiveCost, type BattleState } from "@/lib/battle";
+import { computeEffectiveCost, type BattleState } from "@/lib/battle";
 import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
 
 import type { Screen } from "../../shared/types";
@@ -54,7 +54,7 @@ export function useBattleAutoEndTurn({
         state.wishOptions
       )
         return;
-      const hasPlayableCard = state.hand.some((card) => state.mana >= getEffectiveCost(state, card));
+      const hasPlayableCard = state.hand.some((card) => state.mana >= computeEffectiveCost(state, card).effectiveCost);
       if (hasPlayableCard) return;
       autoEndTimerRef.current = setTimeout(() => onEndTurnRef.current(), AUTO_END_TURN_DELAY);
     },

@@ -9,7 +9,7 @@ import { appendUnique } from "@/lib/utils";
 import { useProfileStore } from "../../shared/stores/profile-store";
 import { syncRunToBattleStart } from "../../shared/stores/run-transitions";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
-import { appendEncounterTraits, type EncounterCombatTraitId } from "@/lib/content-systems/encounter-traits";
+import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
 import { readGearManifestForCharacter } from "../../shared/stores/gear-read-port";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
@@ -60,9 +60,7 @@ export function createBattleInit(
     ctx.run.setRoomsEncountered(nextRoomsEncountered);
     getPresentationStore().clearCardGhosts();
     const encounterTraitIds =
-      ctx.run.contentSystemType === "labyrinth"
-        ? (readRunSessionStore().activeLabyrinthModifiers as EncounterCombatTraitId[])
-        : [];
+      ctx.run.contentSystemType === "labyrinth" ? readRunSessionStore().activeLabyrinthModifiers : [];
     const battleEnemy = encounterTraitIds.length > 0 ? appendEncounterTraits(enemy, encounterTraitIds) : enemy;
     const nextBattleState = createBattleForEnemy(
       battleEnemy,

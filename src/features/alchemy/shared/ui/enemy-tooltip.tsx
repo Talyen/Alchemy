@@ -2,7 +2,7 @@
 // Depends on enemy formatting utilities and the shared tooltip panel.
 // Used by ArtPanel (battle) and CompendiumTile (collection) to show attacks and traits.
 import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
-import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifiers";
 import { cn } from "@/lib/utils";
 import type React from "react";
@@ -18,7 +18,7 @@ import {
   useTooltipPlacementWithSideFallback,
 } from "./tooltip-panel";
 
-function EnemyTooltipModifiers({ modifiers }: { modifiers: LabyrinthModifierKind[] }) {
+function EnemyTooltipModifiers({ modifiers }: { modifiers: EncounterCombatTraitId[] }) {
   if (modifiers.length === 0) return null;
   return (
     <>
@@ -63,7 +63,7 @@ export function EnemyTooltip({
   entry: BestiaryEntry;
   discovered?: boolean;
   attackEffects?: EnemyAttackEffect[] | undefined;
-  labyrinthModifiers?: LabyrinthModifierKind[];
+  labyrinthModifiers?: EncounterCombatTraitId[];
   align?: "left" | "right";
   className?: string;
 }) {

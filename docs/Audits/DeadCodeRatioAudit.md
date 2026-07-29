@@ -4,7 +4,7 @@
 
 ## Intent
 
-Identify confirmed unused internal symbols and unnecessary APIs, then clean them up. A clean pass is valid. Prefer narrowing exports (module-private) when the API remains useful inside its folder. A successful fix must report authored LOC, declarations, files, or exported API removed; moving the same surface is not dead-code reduction. If the scope is large, phase the plan.
+Identify confirmed unused internal symbols and unnecessary APIs, then clean them up. A clean pass is valid. Prefer narrowing exports (module-private) when the API remains useful inside its folder. A successful fix must report authored LOC, declarations, files, or exported API removed; moving the same surface is not dead-code reduction. Reachable twins / no-op shims with live callers belong to `DualPathRetentionAudit.md`. If the scope is large, phase the plan.
 
 ## Hard stops
 

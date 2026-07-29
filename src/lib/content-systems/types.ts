@@ -19,8 +19,7 @@ export type LabyrinthNodeType =
 
 import type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId } from "./encounter-trait-ids";
 
-/** @deprecated Prefer category-specific encounter trait IDs. */
-export type LabyrinthModifierKind = EncounterTraitId;
+export type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId };
 
 type LabyrinthNodeState = "hidden" | "visible" | "current" | "cleared" | "failed";
 

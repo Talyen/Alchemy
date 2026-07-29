@@ -1,10 +1,10 @@
 /**
  * Resolves card play validation, cost reduction, and effect application during combat.
- * Depends on: ./draw, ./apply-effects, ./combat-text, ../game-constants, @/lib/game-data, ./types.
- * Depended on by: ./cost, features/alchemy controllers.
+ * Depends on: ./draw, ./effect-handlers, ./combat-text, ../game-constants, @/lib/game-data, ./types.
+ * Depended on by: features/alchemy controllers.
  */
 import { drawFromState } from "./draw";
-import { applyCardEffects } from "./apply-effects";
+import { applyCardEffects } from "./effect-handlers";
 import { mergeCombatText } from "./combat-text";
 import { type BattleCard } from "@/lib/game-data";
 import {

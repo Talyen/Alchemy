@@ -1,6 +1,11 @@
 // Hover tooltip for a labyrinth map node, including modifier breakdown.
 
-import type { LabyrinthModifierKind, LabyrinthNodeType } from "@/lib/content-systems/types";
+import type {
+  EncounterCombatTraitId,
+  EncounterRewardTraitId,
+  EncounterTraitId,
+  LabyrinthNodeType,
+} from "@/lib/content-systems/types";
 import { NODE_TYPE_LABELS, NODE_TYPE_TOOLTIPS } from "@/lib/content-systems/labyrinth/data";
 import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifiers";
 import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
@@ -17,11 +22,11 @@ import {
 
 interface Props {
   type: LabyrinthNodeType;
-  modifiers: LabyrinthModifierKind[];
-  rewardModifiers: LabyrinthModifierKind[];
+  modifiers: EncounterCombatTraitId[];
+  rewardModifiers: EncounterRewardTraitId[];
 }
 
-function ModifierTooltipCard({ modifier, variant }: { modifier: LabyrinthModifierKind; variant: "enemy" | "reward" }) {
+function ModifierTooltipCard({ modifier, variant }: { modifier: EncounterTraitId; variant: "enemy" | "reward" }) {
   const definition = ALL_LABYRINTH_MODIFIERS[modifier];
   return (
     <div

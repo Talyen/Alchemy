@@ -11,7 +11,12 @@ import {
   withFailedNode,
   generateLabyrinthMap,
 } from "@/lib/content-systems/labyrinth/map-generation";
-import type { LabyrinthMap, LabyrinthNode, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type {
+  EncounterCombatTraitId,
+  EncounterRewardTraitId,
+  LabyrinthMap,
+  LabyrinthNode,
+} from "@/lib/content-systems/types";
 import { useRunSessionLabyrinthSlice } from "@/features/alchemy/shared/stores/run-session-facade";
 import { setActiveLabyrinthPendingNode, setLabyrinthMap } from "@/features/alchemy/shared/stores/run-session-facade";
 import { readRunSessionStore } from "@/features/alchemy/shared/stores/run-session-facade";
@@ -30,12 +35,12 @@ export interface LabyrinthController {
 export interface LabyrinthNodeHandlers {
   onStartBattleWithModifiers: (
     enemyType: "normal" | "elite",
-    modifiers: LabyrinthModifierKind[],
-    rewardModifiers: LabyrinthModifierKind[],
+    modifiers: EncounterCombatTraitId[],
+    rewardModifiers: EncounterRewardTraitId[],
   ) => void;
   onStartBossBattleWithModifiers: (
-    modifiers: LabyrinthModifierKind[],
-    rewardModifiers: LabyrinthModifierKind[],
+    modifiers: EncounterCombatTraitId[],
+    rewardModifiers: EncounterRewardTraitId[],
   ) => void;
   onStartRest: () => void;
   onStartMystery: () => void;

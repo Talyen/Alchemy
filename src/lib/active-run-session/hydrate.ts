@@ -1,6 +1,6 @@
 // Applies a validated active-run snapshot to runtime stores on bootstrap/resume.
 import type { BattleState } from "@/lib/battle";
-import type { LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { UnlockedTalents, TalentXP } from "@/lib/game-data";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 
@@ -16,8 +16,8 @@ export interface ActiveRunHydrationTargets {
   screenStore: {
     setHasActiveRun: (hasActiveRun: boolean) => void;
     setLabyrinthMap: (map: LabyrinthMap) => void;
-    setActiveLabyrinthModifiers: (modifiers: LabyrinthModifierKind[]) => void;
-    setActiveLabyrinthRewardModifiers: (modifiers: LabyrinthModifierKind[]) => void;
+    setActiveLabyrinthModifiers: (modifiers: EncounterCombatTraitId[]) => void;
+    setActiveLabyrinthRewardModifiers: (modifiers: EncounterRewardTraitId[]) => void;
     setActiveLabyrinthPendingNode: (node: LabyrinthNodePosition) => void;
     setWildwoodDraft?: (state: WildwoodDraftState | null) => void;
     applyDestinationChoices: (choices: string[]) => void;

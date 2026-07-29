@@ -17,7 +17,7 @@ Identify repeated high-friction clusters and simplify them through existing sour
 | A frequently changed owner requires unrelated code to understand one concern             | The semantic change is not locally reviewable          |
 | Feature median file touch count is high (amplification hotspots)                         | Missing facade/seam forces parallel edits              |
 
-**Not this audit:** import legality → ESLint boundaries; wrong semantic ownership → `StateGravityOwnershipAudit.md`; local ceremony → `InelegantSlopAudit.md`; duplicate UI → `DuplicateFeatureSurfaceAudit.md`; unit/E2E portfolio → `UnitTestAudit.md` / `E2ETestQualityAudit.md`. Single-use export cleanup without fan-out evidence → `DeadCodeRatioAudit.md`.
+**Not this audit:** import legality → ESLint boundaries; wrong semantic ownership → `StateGravityOwnershipAudit.md`; local ceremony → `InelegantSlopAudit.md`; duplicate UI → `DuplicateFeatureSurfaceAudit.md`; unit/E2E portfolio → `UnitTestAudit.md` / `E2ETestQualityAudit.md`; retrospective file/folder mass without recurring co-touch → `AuthoredMassHotspotAudit.md`; reachable dual paths / shims → `DualPathRetentionAudit.md`. Single-use export cleanup without fan-out evidence → `DeadCodeRatioAudit.md`.
 
 ## Hard stops
 

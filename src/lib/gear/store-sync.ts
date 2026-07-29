@@ -22,7 +22,7 @@ function positionsByCharacterEqual(left: CharacterPositionRegistry, right: Chara
   return Object.keys(left).every((charId) => positionsEqual(left[charId as CharacterId], right[charId as CharacterId]));
 }
 
-function omitGearPosition(positions: GearBoardPositions, instanceId: string): GearBoardPositions {
+export function omitGearPosition(positions: GearBoardPositions, instanceId: string): GearBoardPositions {
   return Object.fromEntries(Object.entries(positions).filter(([id]) => id !== instanceId));
 }
 

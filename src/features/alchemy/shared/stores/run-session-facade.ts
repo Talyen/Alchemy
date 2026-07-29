@@ -1,7 +1,12 @@
 // Facade over run domain store — reads, writes, sync, snapshot, restore, and teardown.
 import { useShallow } from "zustand/react/shallow";
 import type { BattleCard, CharacterId, DifficultyId, TalentXP, UnlockedTalents } from "@/lib/game-data";
-import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib/content-systems/types";
+import type {
+  ContentSystemId,
+  EncounterCombatTraitId,
+  EncounterRewardTraitId,
+  LabyrinthMap,
+} from "@/lib/content-systems/types";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryEvent } from "@/lib/mystery";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -89,11 +94,11 @@ export function cancelDestinationClaim(): void {
   getRunDomainStore().cancelDestinationClaim();
 }
 
-export function setActiveLabyrinthModifiers(modifiers: LabyrinthModifierKind[]) {
+export function setActiveLabyrinthModifiers(modifiers: EncounterCombatTraitId[]) {
   getRunDomainStore().setActiveLabyrinthModifiers(modifiers);
 }
 
-export function setActiveLabyrinthRewardModifiers(modifiers: LabyrinthModifierKind[]) {
+export function setActiveLabyrinthRewardModifiers(modifiers: EncounterRewardTraitId[]) {
   getRunDomainStore().setActiveLabyrinthRewardModifiers(modifiers);
 }
 

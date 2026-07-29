@@ -7,7 +7,12 @@ import type { RewardState } from "@/lib/active-run-session";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { CharacterId } from "@/lib/game-data";
-import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib/content-systems/types";
+import type {
+  ContentSystemId,
+  EncounterCombatTraitId,
+  EncounterRewardTraitId,
+  LabyrinthMap,
+} from "@/lib/content-systems/types";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -58,7 +63,7 @@ export interface RunSession {
 export interface RunSessionBattleContext {
   phase: RunPhase;
   battle: RunSessionBattleSlice;
-  activeLabyrinthModifiers: LabyrinthModifierKind[];
+  activeLabyrinthModifiers: EncounterCombatTraitId[];
 }
 
 export type RunSessionShopSlice = Pick<
@@ -76,8 +81,8 @@ export interface RunSessionNavigationSlice {
   hasActiveRun: boolean;
   labyrinthMap: LabyrinthMap;
   labyrinthPendingNode: LabyrinthNodePosition | null;
-  activeLabyrinthModifiers: LabyrinthModifierKind[];
-  activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
+  activeLabyrinthModifiers: EncounterCombatTraitId[];
+  activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   rewardState: RewardState;
   runEndMaterials: MaterialInventory;
   corruptionResult: CorruptionResult | null;

@@ -1,12 +1,7 @@
-// Shared merchant/alchemist gold spend and refresh helpers.
-import { playGoldSpend } from "@/lib/audio";
+// Shared merchant/alchemist refresh helpers.
 import { selectRewardCards, type BattleCard } from "@/lib/game-data";
 import { resampleItems } from "@/features/alchemy/shared/utils";
-
-export function spendRunGold(price: number, setRunGold: (fn: (g: number) => number) => void): void {
-  if (price > 0) playGoldSpend();
-  setRunGold((g) => Math.max(0, g - price));
-}
+import { spendRunGold } from "./run-gold";
 
 interface RefreshShopOfferingsInput<T, TItem> {
   price: number;
