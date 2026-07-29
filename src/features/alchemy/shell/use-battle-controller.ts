@@ -17,7 +17,7 @@ import {
 } from "@/features/alchemy/run-loop/battle";
 import type { CardRect, Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import type { RunStateController, TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
+import type { BattleRunPort, BattleTalentPort } from "@/features/alchemy/run-loop/battle/battle-run-port";
 import { useDisplayOverrides } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
@@ -26,8 +26,8 @@ import type { BattleState } from "@/lib/battle";
 import type { BattleScreenData } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 
 interface UseBattleControllerProps {
-  run: RunStateController;
-  talents: TalentStateController;
+  run: BattleRunPort;
+  talents: BattleTalentPort;
   autoEndTurn: boolean;
   homesteadEffects: HomesteadEffectManifest;
   screen: Screen;

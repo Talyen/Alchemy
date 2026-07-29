@@ -22,7 +22,6 @@ import {
   snapshotRun,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
-import { flattenRunSessionForScreens } from "@/features/alchemy/shared/stores/run-screen-data";
 import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -658,13 +657,13 @@ describe("session facade API", () => {
     getRunSessionStoreView().setHasActiveRun(true);
   });
 
-  it("flattenRunSessionForScreens aggregates run, battle, and session fields", () => {
-    const flat = flattenRunSessionForScreens(getRunSession(ROUTE_SCREENS.MENU));
-    expect(flat.runPlayerHealth).toBe(18);
-    expect(flat.runGold).toBe(40);
-    expect(flat.battleState.playerHealth).toBe(10);
-    expect(flat.hasActiveRun).toBe(true);
-    expect(flat.phase).toBe("meta");
+  it("getRunSession aggregates run, battle, and session fields for orchestration", () => {
+    const session = getRunSession(ROUTE_SCREENS.MENU);
+    expect(session.run.runPlayerHealth).toBe(18);
+    expect(session.run.runGold).toBe(40);
+    expect(session.battle.battleState.playerHealth).toBe(10);
+    expect(session.session.hasActiveRun).toBe(true);
+    expect(session.phase).toBe("meta");
   });
 
   it("getCombinedRunGold sums map and combat gold", () => {

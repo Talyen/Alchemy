@@ -89,4 +89,46 @@ describe("run-state read model", () => {
     expect(views).toContain("export function useRunAdapter");
     expect(views).toContain("export function selectRunController");
   });
+
+  it("does not keep a production flatten twin beside useRunScreenData", () => {
+    const screenData = read("src/features/alchemy/shared/stores/run-screen-data.ts");
+    expect(screenData).not.toContain("flattenRunSessionForScreens");
+    expect(screenData).toContain("export interface RunScreenData");
+  });
+
+  it("assembles routeCommands via createAlchemyRouteCommands, not an inline mega-tree", () => {
+    const controller = read("src/features/alchemy/shell/use-alchemy-run-controller.ts");
+    expect(controller).toContain("createAlchemyRouteCommands");
+    expect(controller).not.toMatch(/routeCommands\s*=\s*\{/);
+    const factory = read("src/features/alchemy/shell/create-route-commands.ts");
+    expect(factory).toContain("export function createAlchemyRouteCommands");
+    expect(factory).toContain("export function createRunLoopRouteCommands");
+  });
+
+  it("splits run navigation into concern hooks rather than inlining factories", () => {
+    const nav = read("src/features/alchemy/shell/use-run-navigation.ts");
+    expect(nav).toContain("useRunDestinationWiring");
+    expect(nav).toContain("useContentSystemNavigation");
+    expect(nav).toContain("useRunFlowHandlers");
+    expect(nav).toContain("useRunCorruptionFlow");
+    expect(nav).toContain("useRunTeardown");
+    expect(nav).toContain("useMysteryEventNavigation");
+    expect(nav).not.toContain("createRunFlowHandlers(");
+    expect(nav).not.toContain("createCorruptionFlowHandlers(");
+    expect(nav).not.toContain("createRunTeardown(");
+    expect(nav).not.toContain("createContentSystemNavigation(");
+  });
+
+  it("battle controller takes BattleRunPort / BattleTalentPort, not RunStateController", () => {
+    const battleController = read("src/features/alchemy/shell/use-battle-controller.ts");
+    expect(battleController).toContain("BattleRunPort");
+    expect(battleController).toContain("BattleTalentPort");
+    expect(battleController).not.toContain("run: RunStateController");
+    expect(battleController).not.toContain("talents: TalentStateController");
+
+    const context = read("src/features/alchemy/run-loop/battle/battle-context.ts");
+    expect(context).toContain("BattleRunPort");
+    expect(context).toContain("BattleTalentPort");
+    expect(context).not.toContain("RunStateController");
+  });
 });

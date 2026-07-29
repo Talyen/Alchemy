@@ -1,8 +1,6 @@
 // Run-flow controller for routing, rewards, mysteries, campfires, act transitions, and reset.
-/* eslint-disable react-hooks/refs -- flow handler factories receive draft refs */
 // Depends on: run-session/ui stores, battle system, game constants, audio registry, and navigation flow helpers.
 // Depended on by: useAlchemyRunController for managing the overall flow of a run.
-import { useCallback, useRef, useMemo } from "react";
 import {
   useRunAdapter,
   useTalentAdapter,
@@ -13,19 +11,17 @@ import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store"
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 // Side-effect: registers presentation cleanup with the shared bridge.
 import "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import { readHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-read-port";
 import { type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
-import { playUISound } from "@/lib/audio";
 import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
-import { bindAvailableDestinationsResolver } from "@/features/alchemy/shared/run-flow";
-import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
-import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
-import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
-import { createRunTeardown } from "@/features/alchemy/run-loop/run/create-run-teardown";
-import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import type { ScreenTransitionOptions } from "./use-screen-transitions";
 import { useWildwoodGauntletFlow } from "./use-wildwood-gauntlet-flow";
 import type { WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
+import { useRunDestinationWiring } from "./use-run-destination-wiring";
+import { useContentSystemNavigation } from "./use-content-system-navigation";
+import { useMysteryEventNavigation } from "./use-mystery-event-navigation";
+import { useRunFlowHandlers } from "./use-run-flow-handlers";
+import { useRunCorruptionFlow } from "./use-run-corruption-flow";
+import { useRunTeardown } from "./use-run-teardown";
 
 export function useRunNavigation({
   screen,
@@ -78,7 +74,6 @@ export function useRunNavigation({
   const talents = useTalentAdapter();
   const setHasActiveBattle = useSetHasActiveBattle();
   const completedDifficulties = useProfileStore((s) => s.completedDifficulties);
-  const draftedDeckRef = useRef<BattleCard[] | null>(null);
   const nav = useRunSessionNavigationSlice(screen);
   const clearCardHover = useUiStore((s) => s.clearCardHover);
   const runPhase = nav.phase;
@@ -87,22 +82,12 @@ export function useRunNavigation({
   const pendingCharacterId = nav.pendingCharacterId;
   const pendingContentSystemType = nav.pendingContentSystemType;
 
-  const getAvailableDestinations = useMemo(
-    () =>
-      bindAvailableDestinationsResolver(() => ({
-        destinationIndexInAct: run.destinationIndexInAct,
-        completedDestinations: run.completedDestinations,
-        runPlayerHealth: run.runPlayerHealth,
-        runGold: run.runGold,
-        runMaxHealth: run.runMaxHealth,
-        hasAnyOwnedGear: readHasAnyOwnedGear(),
-      })),
-    [run.destinationIndexInAct, run.completedDestinations, run.runPlayerHealth, run.runGold, run.runMaxHealth],
-  );
-
-  const returnToBattle = useCallback(() => {
-    if (hasActiveBattle) navigateTo(CONSTANTS.SCREENS.BATTLE);
-  }, [hasActiveBattle, navigateTo]);
+  const destinations = useRunDestinationWiring({
+    run,
+    hasActiveBattle,
+    navigateTo,
+    clearCardHover,
+  });
 
   const wildwood = useWildwoodGauntletFlow({
     run,
@@ -113,42 +98,22 @@ export function useRunNavigation({
     rng: randomSources.world,
   });
 
-  const contentNav = useMemo(
-    () =>
-      createContentSystemNavigation({
-        run,
-        talents,
-        draftedDeckRef,
-        hasActiveRun,
-        hasActiveBattle,
-        pendingContentSystemType,
-        completedDifficulties,
-        navigateTo,
-        returnToBattle,
-        onStartBattle,
-        getAvailableDestinations,
-        onResumeWildwood: wildwood.resumeWildwoodRun,
-        onStartNextWildwoodBoss: wildwood.startNextWildwoodBoss,
-        destinationRng: randomSources.destinations,
-        worldRng: randomSources.world,
-      }),
-    [
-      run,
-      talents,
-      hasActiveRun,
-      hasActiveBattle,
-      pendingContentSystemType,
-      completedDifficulties,
-      navigateTo,
-      returnToBattle,
-      onStartBattle,
-      getAvailableDestinations,
-      wildwood.resumeWildwoodRun,
-      wildwood.startNextWildwoodBoss,
-      randomSources.destinations,
-      randomSources.world,
-    ],
-  );
+  const contentNav = useContentSystemNavigation({
+    run,
+    talents,
+    hasActiveRun,
+    hasActiveBattle,
+    pendingContentSystemType,
+    completedDifficulties,
+    navigateTo,
+    returnToBattle: destinations.returnToBattle,
+    onStartBattle,
+    getAvailableDestinations: destinations.getAvailableDestinations,
+    onResumeWildwood: wildwood.resumeWildwoodRun,
+    onStartNextWildwoodBoss: wildwood.startNextWildwoodBoss,
+    destinationRng: randomSources.destinations,
+    worldRng: randomSources.world,
+  });
 
   function handleDraftComplete(draftedCards: BattleCard[]) {
     if (run.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
@@ -158,94 +123,51 @@ export function useRunNavigation({
     wildwood.handleDraftComplete(draftedCards);
   }
 
-  const mystery = useMysteryFlow(randomSources.events);
-  const beginMysteryEvent = useCallback(() => {
-    mystery.beginMysteryEvent(() => navigateTo(CONSTANTS.SCREENS.MYSTERY));
-    playUISound("musicBoxMystery");
-  }, [mystery, navigateTo]);
+  const mystery = useMysteryEventNavigation({
+    navigateTo,
+    eventsRng: randomSources.events,
+  });
 
-  const flowHandlers = useMemo(
-    () =>
-      createRunFlowHandlers({
-        run,
-        talents,
-        navigateTo,
-        transition,
-        onLabyrinthFailNode,
-        onLabyrinthClearNode,
-        onInitShop,
-        onInitAlchemist,
-        onInitTrinketShop,
-        onInitEquipmentShop,
-        onStartBattle,
-        onStartBossBattle,
-        onStartBossById,
-        onMarkDifficultyCompleted,
-        onCommitWildwoodVictory: wildwood.commitWildwoodVictory,
-        contentNav,
-        getAvailableDestinations,
-        beginMysteryEvent,
-        clearMysteryCardChoices: mystery.clearCardChoices,
-        onWildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
-        onSelectRewardChoice: wildwood.selectRewardChoice,
-        rewardRng: randomSources.rewards,
-        destinationRng: randomSources.destinations,
-        worldRng: randomSources.world,
-      }),
-    [
-      run,
-      talents,
-      navigateTo,
-      transition,
-      onLabyrinthFailNode,
-      onLabyrinthClearNode,
-      onInitShop,
-      onInitAlchemist,
-      onInitTrinketShop,
-      onInitEquipmentShop,
-      onStartBattle,
-      onStartBossBattle,
-      onStartBossById,
-      onMarkDifficultyCompleted,
-      wildwood.commitWildwoodVictory,
-      contentNav,
-      getAvailableDestinations,
-      beginMysteryEvent,
-      mystery.clearCardChoices,
-      wildwood.handleWildwoodRewardComplete,
-      wildwood.selectRewardChoice,
-      randomSources.rewards,
-      randomSources.destinations,
-      randomSources.world,
-    ],
-  );
+  const flowHandlers = useRunFlowHandlers({
+    run,
+    talents,
+    navigateTo,
+    transition,
+    onLabyrinthFailNode,
+    onLabyrinthClearNode,
+    onInitShop,
+    onInitAlchemist,
+    onInitTrinketShop,
+    onInitEquipmentShop,
+    onStartBattle,
+    onStartBossBattle,
+    onStartBossById,
+    onMarkDifficultyCompleted,
+    onCommitWildwoodVictory: wildwood.commitWildwoodVictory,
+    contentNav,
+    getAvailableDestinations: destinations.getAvailableDestinations,
+    beginMysteryEvent: mystery.beginMysteryEvent,
+    clearMysteryCardChoices: mystery.clearCardChoices,
+    onWildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
+    onSelectRewardChoice: wildwood.selectRewardChoice,
+    rewardRng: randomSources.rewards,
+    destinationRng: randomSources.destinations,
+    worldRng: randomSources.world,
+  });
 
-  const corruption = useMemo(
-    () =>
-      createCorruptionFlowHandlers({
-        getRunDeck: () => run.runDeck,
-        setRunDeck: run.setRunDeck,
-        eventsRng: randomSources.events,
-        advanceToNextDestination: flowHandlers.advanceToNextDestination,
-      }),
-    [run.runDeck, run.setRunDeck, randomSources.events, flowHandlers.advanceToNextDestination],
-  );
+  const corruption = useRunCorruptionFlow({
+    getRunDeck: () => run.runDeck,
+    setRunDeck: run.setRunDeck,
+    eventsRng: randomSources.events,
+    advanceToNextDestination: flowHandlers.advanceToNextDestination,
+  });
 
-  const teardown = useMemo(
-    () =>
-      createRunTeardown({
-        cancelPending,
-        setHasActiveBattle,
-        clearCardHover,
-        navigateTo,
-      }),
-    [cancelPending, setHasActiveBattle, clearCardHover, navigateTo],
-  );
-
-  function goToScreen(nextScreen: Screen) {
-    clearCardHover();
-    navigateTo(nextScreen);
-  }
+  const teardown = useRunTeardown({
+    cancelPending,
+    setHasActiveBattle,
+    clearCardHover,
+    navigateTo,
+  });
 
   function handleMysteryContinue() {
     flowHandlers.advanceToNextDestination();
@@ -259,12 +181,12 @@ export function useRunNavigation({
     get pendingCharacterId() {
       return pendingCharacterId;
     },
-    getAvailableDestinations,
+    getAvailableDestinations: destinations.getAvailableDestinations,
     advanceToNextDestination: flowHandlers.advanceToNextDestination,
     beginCampaign: contentNav.beginCampaign,
     beginLabyrinth: contentNav.beginLabyrinth,
     beginWildwood: contentNav.beginWildwood,
-    beginMysteryEvent,
+    beginMysteryEvent: mystery.beginMysteryEvent,
     endLabyrinthRun: flowHandlers.endLabyrinthRun,
     handleAbandonRun: flowHandlers.handleAbandonRun,
     handleCharacterSelect: contentNav.handleCharacterSelect,
@@ -272,8 +194,8 @@ export function useRunNavigation({
     handleDraftPick: wildwood.handleDraftPick,
     handleDifficultySelect: contentNav.handleDifficultySelect,
     handleBackFromDifficultySelect: contentNav.handleBackFromDifficultySelect,
-    returnToBattle,
-    goToScreen,
+    returnToBattle: destinations.returnToBattle,
+    goToScreen: destinations.goToScreen,
     handleDestinationChoice: flowHandlers.handleDestinationChoice,
     handleActComplete: flowHandlers.handleActComplete,
     finishRewards: flowHandlers.finishRewards,

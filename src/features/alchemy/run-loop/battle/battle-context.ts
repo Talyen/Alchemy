@@ -2,14 +2,14 @@ import { useRef, useMemo, useLayoutEffect, type RefObject } from "react";
 import type { BattleState } from "@/lib/battle";
 import type { CardRect, Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import type { RunStateController, TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
+import type { BattleRunPort, BattleTalentPort } from "./battle-run-port";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { createTransferCancelRegistry, type TransferCancelRegistry } from "./card-transfer-animations";
 
 export interface BattleControllerContext {
   // State from props / parent
-  run: RunStateController;
-  talents: TalentStateController;
+  run: BattleRunPort;
+  talents: BattleTalentPort;
   autoEndTurn: boolean;
   homesteadEffects: HomesteadEffectManifest;
   screen: Screen;
@@ -42,8 +42,8 @@ export interface BattleControllerContext {
 }
 
 export interface BattleControllerContextProps {
-  run: RunStateController;
-  talents: TalentStateController;
+  run: BattleRunPort;
+  talents: BattleTalentPort;
   autoEndTurn: boolean;
   homesteadEffects: HomesteadEffectManifest;
   screen: Screen;

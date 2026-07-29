@@ -27,6 +27,7 @@ import { restoreRun, unlockAllTalents, useActiveRunScreen } from "@/features/alc
 import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { shouldSurrenderBattleOnEndRun } from "./end-run-policy";
+import { createAlchemyRouteCommands, type AlchemyRouteCommands } from "./create-route-commands";
 
 export function useAlchemyRunController({
   initialTalentXP,
@@ -62,7 +63,6 @@ export function useAlchemyRunController({
   const { screen, setScreen } = useActiveRunScreen();
   const { navigateTo, transition, commitPendingTransition, cancelPending } = useScreenTransitions(screen, setScreen);
 
-  // ============ Store-backed Setters ============
   const setHoveredCardId = useCallback((id: string | null | ((prev: string | null) => string | null)) => {
     const store = useUiStore.getState();
     store.setHoveredCardId(typeof id === "function" ? id(store.hoveredCardId) : id);
@@ -74,12 +74,8 @@ export function useAlchemyRunController({
     setActiveLabyrinthRewardModifiers(modifiers);
   }, []);
 
-  // ============ Domain Controllers ============
   const onBattleVictoryRef = useRef<() => void>(() => {});
   const onBattleDefeatRef = useRef<() => void>(() => {});
-
-  // Refs updated synchronously during render so the latest callbacks are always available
-  // for the next user interaction.  Defined before battle because battle depends on these refs.
 
   const battle = useBattleController({
     run,
@@ -115,8 +111,6 @@ export function useAlchemyRunController({
     randomSources: runRandom,
   });
 
-  // useLayoutEffect ensures refs are current before the browser paints, so
-  // battle callbacks triggered by user interaction always see the latest nav state.
   useLayoutEffect(() => {
     onBattleVictoryRef.current = nav.handleBattleVictory;
     onBattleDefeatRef.current = nav.handleBattleDefeat;
@@ -147,7 +141,6 @@ export function useAlchemyRunController({
       }),
     [applyLabyrinthBattleModifiers, applyLabyrinthRewardModifiers, navigateTo, labyrinth, battle, nav, shop],
   );
-  const { handleLabyrinthNodeEnter } = nodeRouting;
 
   function handleEndRun() {
     if (shouldSurrenderBattleOnEndRun(screen, battle.hasActiveBattle, run.contentSystemType)) {
@@ -157,97 +150,42 @@ export function useAlchemyRunController({
     nav.handleAbandonRun();
   }
 
-  const routeCommands = {
-    meta: {
-      goToScreen: nav.goToScreen,
-      beginCampaign: nav.beginCampaign,
-      beginLabyrinth: handleBeginLabyrinth,
-      beginWildwood: nav.beginWildwood,
-      unlockTalent: talents.unlockTalent,
-      resetUnlockedTalents: talents.resetUnlockedTalents,
-    },
-    runSetup: {
-      goToScreen: nav.goToScreen,
-      handleCharacterSelect: nav.handleCharacterSelect,
-      handleDraftComplete: nav.handleDraftComplete,
-      handleDraftPick: nav.handleDraftPick,
-      handleDifficultySelect: nav.handleDifficultySelect,
-      handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,
-    },
-    runLoop: {
-      labyrinth: {
-        handleNodeEnter: handleLabyrinthNodeEnter,
-      },
-      rewards: {
-        finish: nav.finishRewards,
-        selectChoice: nav.selectRewardChoice,
-      },
-      destinations: {
-        prepare: nav.prepareDestinationScreen,
-        choose: nav.handleDestinationChoice,
-        continueCampfire: nav.handleCampfireContinue,
-      },
-      wildwood: {
-        completeRecovery: nav.handleWildwoodRecoveryComplete,
-        removeCard: nav.handleWildwoodRemoveCard,
-        skipRemoval: nav.handleWildwoodSkipRemoval,
-      },
-      shop: {
-        merchant: {
-          handleBuyCard: shop.handleShopBuyCard,
-          handleRemoveCard: shop.handleShopRemoveCard,
-          handleRefresh: shop.handleShopRefresh,
-          handleContinue: nav.advanceToNextDestination,
-          getCardBuyPrice: shop.getMerchantCardBuyPrice,
-          getRemoveCardPrice: shop.getRemoveCardPrice,
-          getRefreshPrice: shop.getShopRefreshPrice,
-        },
-        alchemist: {
-          handleBuyCard: shop.handleAlchemistBuyCard,
-          handleRefresh: shop.handleAlchemistRefresh,
-          handleMixPotions: shop.handleAlchemistMixPotions,
-          handleContinue: nav.advanceToNextDestination,
-          getPotionBuyPrice: shop.getAlchemistPotionBuyPrice,
-          getMixPrice: shop.getMixPotionPrice,
-          getRefreshPrice: shop.getAlchemistRefreshPrice,
-        },
-        trinket: {
-          handleBuy: shop.handleTrinketShopBuy,
-          handleRefresh: shop.handleTrinketShopRefresh,
-          handleContinue: nav.advanceToNextDestination,
-          getBuyPrice: shop.getTrinketBuyPrice,
-          getRefreshPrice: shop.getTrinketRefreshPrice,
-        },
-        equipment: {
-          handleBuy: shop.handleEquipmentShopBuy,
-          handleRefresh: shop.handleEquipmentShopRefresh,
-          handleContinue: nav.advanceToNextDestination,
-          getBuyPrice: shop.getGearBuyPrice,
-          getRefreshPrice: shop.getEquipmentRefreshPrice,
-        },
-      },
-      mystery: {
-        handleChoice: nav.handleMysteryChoice,
-        handleChooseCard: nav.handleMysteryChooseCard,
-        handleRemoveCard: nav.handleMysteryRemoveCard,
-        handleContinue: nav.handleMysteryContinue,
-      },
-      corruption: {
-        handleCorruptCard: nav.handleCorruptCard,
-        handleExit: nav.handleCorruptionExit,
-      },
-    },
-    battle: {
-      handleCardClick: battle.handleCardClick,
-      handleWishChoice: battle.handleWishChoice,
-      handleEndTurn: battle.handleEndTurn,
-      skipCombatDevMode: battle.skipCombatDevMode,
-      removeCardGhost: battle.removeCardGhost,
-    },
-    runEnd: {
-      continueFromRunEnd: nav.continueFromRunEnd,
-    },
-  };
+  const routeCommands = createAlchemyRouteCommands({
+    goToScreen: nav.goToScreen,
+    beginCampaign: nav.beginCampaign,
+    beginLabyrinth: handleBeginLabyrinth,
+    beginWildwood: nav.beginWildwood,
+    unlockTalent: talents.unlockTalent,
+    resetUnlockedTalents: talents.resetUnlockedTalents,
+    handleCharacterSelect: nav.handleCharacterSelect,
+    handleDraftComplete: nav.handleDraftComplete,
+    handleDraftPick: nav.handleDraftPick,
+    handleDifficultySelect: nav.handleDifficultySelect,
+    handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,
+    handleLabyrinthNodeEnter: nodeRouting.handleLabyrinthNodeEnter,
+    finishRewards: nav.finishRewards,
+    selectRewardChoice: nav.selectRewardChoice,
+    prepareDestinationScreen: nav.prepareDestinationScreen,
+    handleDestinationChoice: nav.handleDestinationChoice,
+    handleCampfireContinue: nav.handleCampfireContinue,
+    handleWildwoodRecoveryComplete: nav.handleWildwoodRecoveryComplete,
+    handleWildwoodRemoveCard: nav.handleWildwoodRemoveCard,
+    handleWildwoodSkipRemoval: nav.handleWildwoodSkipRemoval,
+    advanceToNextDestination: nav.advanceToNextDestination,
+    shop,
+    handleMysteryChoice: nav.handleMysteryChoice,
+    handleMysteryChooseCard: nav.handleMysteryChooseCard,
+    handleMysteryRemoveCard: nav.handleMysteryRemoveCard,
+    handleMysteryContinue: nav.handleMysteryContinue,
+    handleCorruptCard: nav.handleCorruptCard,
+    handleCorruptionExit: nav.handleCorruptionExit,
+    handleCardClick: battle.handleCardClick,
+    handleWishChoice: battle.handleWishChoice,
+    handleEndTurn: battle.handleEndTurn,
+    skipCombatDevMode: battle.skipCombatDevMode,
+    removeCardGhost: battle.removeCardGhost,
+    continueFromRunEnd: nav.continueFromRunEnd,
+  });
 
   const battleBindings = useMemo<BattleControllerBindings>(
     () => ({
@@ -292,5 +230,5 @@ export function useAlchemyRunController({
 }
 
 type AlchemyRunController = ReturnType<typeof useAlchemyRunController>;
-export type AlchemyRouteCommands = AlchemyRunController["routeCommands"];
+export type { AlchemyRouteCommands };
 export type AlchemyRunCommands = AlchemyRunController;
