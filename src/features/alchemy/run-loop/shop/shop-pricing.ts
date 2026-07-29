@@ -48,7 +48,7 @@ export function makeBuyPriceGetter<Item>(
   getBasePrice: (item: Item) => number,
   getDiscounts: (item: Item) => { haggleDiscount: number; apothecaryDiscount: number },
   getFirstPurchaseUsed: () => boolean,
-  merchantsFavorDiscount: number,
+  getMerchantsFavorDiscount: () => number,
 ): (item: Item) => number {
   return (item) => {
     const base = getBasePrice(item);
@@ -57,7 +57,7 @@ export function makeBuyPriceGetter<Item>(
       basePrice: base,
       haggleDiscount,
       apothecaryDiscount,
-      merchantsFavorDiscount,
+      merchantsFavorDiscount: getMerchantsFavorDiscount(),
       firstPurchaseUsed: getFirstPurchaseUsed(),
     });
   };

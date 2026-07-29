@@ -6,10 +6,9 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 import {
   useRunSessionBattleContext,
   useRunSessionNavigationSlice,
-  useRunSessionShopSlice,
 } from "@/features/alchemy/shared/stores/run-session-model";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import { getBattleStoreView, getRunSessionStoreView } from "../../../../helpers/run-domain-store-test";
+import { getBattleStoreView } from "../../../../helpers/run-domain-store-test";
 
 beforeEach(() => {
   resetTransientRunUi();
@@ -29,12 +28,5 @@ describe("run-session-model narrow hooks", () => {
     const { result } = renderHook(() => useRunSessionNavigationSlice(ROUTE_SCREENS.MENU));
     expect(result.current.phase).toBe("meta");
     expect(result.current.hasActiveBattle).toBe(false);
-  });
-
-  it("useRunSessionShopSlice exposes shop and alchemist state", () => {
-    getRunSessionStoreView().setShopState((prev) => ({ ...prev, cards: [] }));
-    const { result } = renderHook(() => useRunSessionShopSlice());
-    expect(result.current.shopState.cards).toEqual([]);
-    expect(result.current.alchemistState.potions).toEqual([]);
   });
 });

@@ -5,14 +5,11 @@ import { cardLibrary } from "@/lib/game-data";
 import { pickMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "../run/deck-mutations";
 import { applyMysteryEffect } from "./mystery-flow";
-import { useRunSessionMysterySlice } from "../../shared/stores/run-session-facade";
 import { setMysteryCardChoices, setMysteryEvent } from "../../shared/stores/run-session-facade";
 import { readActiveRunStore, awardMaterialsDuringRun } from "../../shared/stores/run-session-facade";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 
 export function useMysteryFlow(rng: () => number) {
-  const { mysteryEvent, mysteryCardChoices } = useRunSessionMysterySlice();
-
   function beginMysteryEvent(navigateToMystery: () => void) {
     setMysteryEvent(pickMysteryEvent(rng));
     setMysteryCardChoices(null);
@@ -57,8 +54,6 @@ export function useMysteryFlow(rng: () => number) {
   }
 
   return {
-    mysteryEvent,
-    mysteryCardChoices,
     beginMysteryEvent,
     handleMysteryChoice,
     handleMysteryChooseCard,

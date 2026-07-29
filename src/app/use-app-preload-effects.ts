@@ -1,5 +1,5 @@
 // Screen-aware asset preloading for edge-case images not covered by upfront decode.
-// Depends on game-data assets, image preload helpers.
+// Depends on game-data assets, image preload helpers, and run-session-facade reads.
 // All main art is decoded during the startup loading screen — this is a safety net
 // for images that are dynamically constructed or added after initial load.
 import { useEffect } from "react";
@@ -7,39 +7,48 @@ import { useEffect } from "react";
 import { pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { preloadImages } from "@/lib/image-preload";
 import type { Screen } from "@/features/alchemy/shared/types";
+import { gearDefinitions } from "@/lib/gear";
+import { useRunScreenData, useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-facade";
 
 interface ScreenAssetPreloadOptions {
   heroArt: string;
   screen: Screen;
-  battleEnemyArt: string;
-  battleHand: Array<{ art: string }>;
-  rewardChoices: Array<{ art: string }>;
-  shopCards: Array<{ art: string }>;
-  alchemistPotions: Array<{ art: string }>;
-  mysteryEvent: { art?: string } | null;
 }
 
 // Preloads only assets for the current or imminent screen so card/enemy art does not
 // pop in, without forcing the entire collection into memory on startup.
-export function useScreenAssetPreloadEffects({
-  heroArt,
-  screen,
-  battleEnemyArt,
-  battleHand,
-  rewardChoices,
-  shopCards,
-  alchemistPotions,
-  mysteryEvent,
-}: ScreenAssetPreloadOptions) {
+export function useScreenAssetPreloadEffects({ heroArt, screen }: ScreenAssetPreloadOptions) {
+  const data = useRunScreenData(screen);
+  const { battle } = useRunSessionBattleContext(screen);
+
   useEffect(() => {
     const priorityImages = [heroArt];
     if (screen === "battle") {
-      priorityImages.push(battleEnemyArt, pileDrawArt, pileDiscardArt, ...battleHand.map((card) => card.art));
+      priorityImages.push(
+        battle.battleState.currentEnemy.art,
+        pileDrawArt,
+        pileDiscardArt,
+        ...battle.battleState.hand.map((card) => card.art),
+      );
     }
-    if (screen === "rewards") priorityImages.push(...rewardChoices.map((card) => card.art));
-    if (screen === "shop") priorityImages.push(...shopCards.map((card) => card.art));
-    if (screen === "alchemist") priorityImages.push(...alchemistPotions.map((card) => card.art));
-    if (screen === "mystery" && mysteryEvent?.art) priorityImages.push(mysteryEvent.art);
+    if (screen === "rewards" && data.rewardState) {
+      const rewardChoices =
+        data.rewardState.rewardType === "gear"
+          ? data.rewardState.choices.map((choice) => ({
+              art: gearDefinitions[choice.definitionId]?.art ?? "",
+            }))
+          : data.rewardState.choices.map((choice) => ({ art: choice.art }));
+      priorityImages.push(...rewardChoices.map((choice) => choice.art));
+    }
+    if (screen === "shop" && data.shopState) {
+      priorityImages.push(...data.shopState.cards.map((card) => card.art));
+    }
+    if (screen === "alchemist" && data.alchemistState) {
+      priorityImages.push(...data.alchemistState.potions.map((card) => card.art));
+    }
+    if (screen === "mystery" && data.mysteryEvent?.art) {
+      priorityImages.push(data.mysteryEvent.art);
+    }
     preloadImages(priorityImages);
-  }, [heroArt, screen, battleEnemyArt, battleHand, rewardChoices, shopCards, alchemistPotions, mysteryEvent]);
+  }, [heroArt, screen, data, battle]);
 }

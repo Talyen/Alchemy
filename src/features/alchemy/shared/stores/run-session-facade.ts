@@ -6,32 +6,25 @@ import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { Screen } from "@/lib/routing";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import {
-  getRunDomainStore,
   getBattleStoreView,
   getRunProgressStoreView,
   getRunSessionStoreView,
   useRunAdapter,
-  useRunDomainStore,
   useTalentAdapter,
   useHomesteadAdapter,
   type RunProgressStore,
   type RunSessionStore,
-} from "./run-domain-store";
-import type { RunStateController, TalentStateController } from "./run-domain-store";
+  type RunStateController,
+  type TalentStateController,
+} from "./run-store-views";
+import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import { useRunProfileStore } from "./run-profile-store";
 import { useRunTransientStore } from "./run-transient-store";
 import { useRunBattleDomainStore } from "./run-battle-domain-store";
 import type { DisplayOverrides } from "./run-domain-types";
 import type { RunRngStream } from "@/lib/run-rng";
 
-export {
-  getRunSession,
-  useRunSessionBattleContext,
-  useRunSessionLabyrinthSlice,
-  useRunSessionMysterySlice,
-  useRunSessionNavigationSlice,
-  useRunSessionShopSlice,
-} from "./run-session-model";
+export { getRunSession, useRunSessionBattleContext, useRunSessionNavigationSlice } from "./run-session-model";
 
 // Run lifecycle transitions.
 export {

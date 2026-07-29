@@ -31,7 +31,7 @@ const STEPS = [
       "--rule",
       'complexity:["warn",11]',
       "--rule",
-      'max-lines-per-function:["warn",50,{skipComments:true}]',
+      'max-lines-per-function:["warn",{"max":50,"skipComments":true}]',
       "src",
     ],
     timeout: 180_000,

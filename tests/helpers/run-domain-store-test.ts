@@ -1,12 +1,11 @@
 // Test helpers for the run-lifetime stores — slice reads/writes without legacy shims.
+import { useRunDomainStore, resetRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
 import {
-  useRunDomainStore,
   getRunProgressStoreView,
   getRunSessionStoreView,
   getNavigationStoreView,
   getBattleStoreView,
-  resetRunDomainStore,
-} from "@/features/alchemy/shared/stores/run-domain-store";
+} from "@/features/alchemy/shared/stores/run-store-views";
 import { useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
 import { useRunTransientStore } from "@/features/alchemy/shared/stores/run-transient-store";
 import { useRunBattleDomainStore } from "@/features/alchemy/shared/stores/run-battle-domain-store";

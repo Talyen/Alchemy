@@ -93,7 +93,7 @@ export function useAlchemyRunController({
     rng: runRandom.world,
   });
 
-  const shop = useShopController({ run, talents, homesteadEffects, rng: runRandom.shops });
+  const shop = useShopController({ talents, homesteadEffects, rng: runRandom.shops });
 
   const labyrinth = useLabyrinthController(screen, runRandom.world);
 
@@ -280,30 +280,10 @@ export function useAlchemyRunController({
 
   return {
     screen,
-    runPhase: nav.runPhase,
     commitPendingTransition,
     routeCommands,
     battleBindings,
-    battleState: battle.battleState,
-    hasActiveBattle: battle.hasActiveBattle,
-    characterId: run.characterId,
-    contentSystemType: run.contentSystemType,
-    talentXP: talents.talentXP,
-    unlockedTalents: talents.unlockedTalents,
     unlockAllTalents,
-    rewardState: nav.rewardState,
-    get shopCards() {
-      return shop.shopCards;
-    },
-    get alchemistPotions() {
-      return shop.alchemistPotions;
-    },
-    get mysteryEvent() {
-      return nav.mysteryEvent;
-    },
-    get activeRunData() {
-      return nav.activeRunData;
-    },
     returnToBattle: nav.returnToBattle,
     goToScreen: nav.goToScreen,
     handleEndRun,
@@ -313,3 +293,4 @@ export function useAlchemyRunController({
 
 type AlchemyRunController = ReturnType<typeof useAlchemyRunController>;
 export type AlchemyRouteCommands = AlchemyRunController["routeCommands"];
+export type AlchemyRunCommands = AlchemyRunController;

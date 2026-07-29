@@ -27,7 +27,6 @@ import {
   useScreenAssetPreloadEffects,
   useScreenParticleConfig,
 } from "@/app/app-shell";
-import { gearDefinitions } from "@/lib/gear";
 import { useDevShortcuts } from "@/app/use-dev-shortcuts";
 import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
@@ -37,7 +36,16 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
 import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
-import { useActiveRunScreenValue, useBondedCompanions } from "@/features/alchemy/shared/stores/run-session-facade";
+import {
+  useActiveRunCharacterId,
+  useActiveRunScreenValue,
+  useBondedCompanions,
+  useContentSystemType,
+  useRunScreenData,
+  useRunSessionBattleContext,
+  useRunSessionNavigationSlice,
+} from "@/features/alchemy/shared/stores/run-session-facade";
+import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 
 const profileStore = useProfileStore;
 
@@ -56,7 +64,7 @@ function AppMainContent({
   stagePixelRatio: number;
   stageStyle: React.CSSProperties;
   aspectMode: "standard" | "narrow" | "ultrawide";
-  run: ReturnType<typeof useAlchemyRunController>;
+  run: AlchemyRunCommands;
 }) {
   const finishedRunCharacters = useProfileStore((s) => s.finishedRunCharacters);
   const isArmoryLocked = useIsArmoryLocked();
@@ -65,6 +73,9 @@ function AppMainContent({
     controllerScreen,
     commitPendingTransition,
   );
+  const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
+  const { battle } = useRunSessionBattleContext(controllerScreen);
+  const characterId = useActiveRunCharacterId();
 
   const gameMenu = useGameMenuState();
   useAppKeyboardShortcuts({
@@ -75,28 +86,19 @@ function AppMainContent({
   });
   const nav = useReturnToRunNavigation({ run, renderedScreen });
 
-  const heroArt = characterArt[run.characterId];
+  const heroArt = characterArt[characterId];
+  const contentSystemType = useContentSystemType();
+  const rewardsData = useRunScreenData("rewards");
 
   useScreenAssetPreloadEffects({
     heroArt,
     screen: run.screen,
-    battleEnemyArt: run.battleState.currentEnemy.art,
-    battleHand: run.battleState.hand,
-    rewardChoices:
-      run.rewardState.rewardType === "gear"
-        ? run.rewardState.choices.map((choice) => ({
-            art: gearDefinitions[choice.definitionId]?.art ?? "",
-          }))
-        : run.rewardState.choices.map((choice) => ({ art: choice.art })),
-    shopCards: run.shopCards,
-    alchemistPotions: run.alchemistPotions,
-    mysteryEvent: run.mysteryEvent,
   });
 
   const isAutosaveAllowed = (): boolean => {
-    if (run.runPhase === "runEnd") return false;
-    if (run.runPhase === "battle" && run.battleState.enemyHealth <= 0) return false;
-    if (run.screen === "rewards" && run.contentSystemType !== "wildwood" && run.rewardState.choices.length === 0)
+    if (runPhase === "runEnd") return false;
+    if (runPhase === "battle" && battle.battleState.enemyHealth <= 0) return false;
+    if (run.screen === "rewards" && contentSystemType !== "wildwood" && rewardsData.rewardState.choices.length === 0)
       return false;
     return true;
   };
@@ -109,7 +111,7 @@ function AppMainContent({
   const homesteadEffects = useHomesteadAdapter();
   const homesteadBondedCompanions = useBondedCompanions();
 
-  const isBossBattle = renderedScreen === "battle" && run.battleState.currentEnemy.enemyType === "boss";
+  const isBossBattle = renderedScreen === "battle" && battle.battleState.currentEnemy.enemyType === "boss";
   const { particleColors, particleAlphaMultiplier } = useScreenParticleConfig(renderedScreen, isBossBattle);
 
   const pagePhaseClass = pagePhase === "exit" ? "page-exit" : "page-enter";
@@ -128,7 +130,6 @@ function AppMainContent({
         }}
       >
         <AppScreenChromeProvider
-          run={run}
           aspectMode={aspectMode}
           stagePixelRatio={stagePixelRatio}
           returnToRunScreen={nav.returnToRunScreen}
@@ -152,7 +153,7 @@ function AppMainContent({
       <div
         ref={vrStageRef}
         data-testid="vr-stage"
-        data-run-phase={run.runPhase}
+        data-run-phase={runPhase}
         data-stage-pixel-ratio={stagePixelRatio}
         className={cn(
           "[container-type:size] absolute top-0 left-0 overflow-hidden bg-background",

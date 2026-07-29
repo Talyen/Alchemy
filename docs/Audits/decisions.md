@@ -13,5 +13,8 @@ Dispositions: **keep** (intentional — do not re-flag), **rejected** (proposal 
 
 ## Ledger
 
-| Date | Audit | Subject (path / symbol) | Disposition | Reason |
-| ---- | ----- | ----------------------- | ----------- | ------ |
+| Date       | Audit                           | Subject (path / symbol)                                         | Disposition | Reason                                                                                 |
+| ---------- | ------------------------------- | --------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------- |
+| 2026-07-29 | ChangeLocalityContextEfficiency | `src/lib/game-data/*` ↔ screens co-edit hotspot                 | keep        | Content catalogs are SOT; screen co-touch is inherent to authoring, not a missing seam |
+| 2026-07-29 | TypeSafety                      | `run-state-init.ts` `as unknown as` in progress partial helpers | keep        | Test/helper keyed partial-apply seam; not on live Zod hydrate paths                    |
+| 2026-07-29 | SideEffectSurface               | `create-shop-actions.ts` `deps.rng ?? Math.random`              | keep        | Fallback only; controllers always inject seeded `runRandom.shops`                      |

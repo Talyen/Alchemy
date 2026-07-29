@@ -1,10 +1,10 @@
 // Test helpers — build run/talent controller shapes from the live run store.
+import { getRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
 import {
-  getRunDomainStore,
   selectRunController,
   selectTalentController,
   type TalentStateController,
-} from "@/features/alchemy/shared/stores/run-domain-store";
+} from "@/features/alchemy/shared/stores/run-store-views";
 import { computeTalentEffects } from "@/lib/game-data";
 import { getRunProgressStoreView } from "./run-domain-store-test";
 

@@ -63,18 +63,11 @@ function buildActions(
     getRunProgressStoreView().setRunTrinkets(() => overrides.trinketIds!);
   }
   // Read fresh state after any mutations above
-  const run = getRunProgressStoreView();
-  const shopStates = getRunSessionStoreView();
   const talentEffects = { ...defaultTalentEffects, ...overrides?.talentEffects } as TalentEffectManifest;
   return createShopActions({
-    run,
-    talents: { talentEffects } as any,
+    talentEffects,
     rng,
     homesteadEffects: { ...defaultHomesteadEffects, gearAstralChanceBonus: overrides?.gearAstralChanceBonus ?? 0 },
-    shopState: shopStates.shopState,
-    alchemistState: shopStates.alchemistState,
-    trinketShopState: shopStates.trinketShopState,
-    equipmentShopState: shopStates.equipmentShopState,
     setShopState,
     setAlchemistState,
     setTrinketShopState,
@@ -209,9 +202,8 @@ describe("createShopActions", () => {
       const discountPrice = SHOP_CARD_PRICE - 7;
       const goldAfterFirst = 999 - discountPrice;
 
-      // Rebuild actions with fresh snapshot (firstPurchaseUsed is now true in store)
-      const secondActions = buildActions({ trinketIds: ["merchants-favor"] });
-      const result = secondActions.handleShopBuyCard(cards[1], "slot-1");
+      // Imperative store reads pick up firstPurchaseUsed without rebuilding actions
+      const result = firstActions.handleShopBuyCard(cards[1], "slot-1");
       expect(result).toBe(true);
       expect(getRunProgressStoreView().runGold).toBe(goldAfterFirst - SHOP_CARD_PRICE);
     });

@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { resolveReturnToRunTarget, shouldClearReturnToRunOnMainMenu } from "@/app/return-to-run-navigation";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
-import type { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
+import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-facade";
+import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 
 export function useReturnToRunNavigation({
   run,
   renderedScreen,
 }: {
-  run: ReturnType<typeof useAlchemyRunController>;
+  run: Pick<AlchemyRunCommands, "goToScreen" | "returnToBattle">;
   renderedScreen: Screen;
 }) {
   const [returnToRunScreen, setReturnToRunScreen] = useState<Screen | null>(null);
   const [optionsReturnScreen, setOptionsReturnScreen] = useState<Screen>("menu");
-  const hasActiveBattle = run.hasActiveBattle;
+  const hasActiveBattle = useHasActiveBattle();
   const returnToRunTarget = resolveReturnToRunTarget(returnToRunScreen, hasActiveBattle);
 
   function navigateToMeta(screen: Extract<Screen, "collection" | "talents" | "homestead" | "options" | "armory">) {

@@ -29,7 +29,7 @@ Run state is split across four **lifetime-matched stores** in `shared/stores/`. 
 | `run-transient-store`     | Rewards, shops, labyrinth, mystery, pending selections, run-flow claims                 | Transient per run                                   |
 | `run-battle-domain-store` | Combat snapshot, battle-start state, display overrides                                  | Transient per battle                                |
 
-Cross-store writes go through ports in `shared/stores/ports/` (`run-profile-write-port`, `run-session-setup-port`, reward / shop / labyrinth / mystery ports); multi-store lifecycle orchestration lives in `run-transitions.ts`. Facade adapters (`useRunAdapter`, `useTalentAdapter`, `useHomesteadProgressSlice`, `readActiveRunStore`) preserve focused feature-facing views.
+Cross-store writes go through ports in `shared/stores/ports/` (`run-profile-write-port`, `run-session-setup-port`, reward / shop / labyrinth / mystery ports); multi-store lifecycle orchestration lives in `run-transitions.ts`. Composed flatteners and React adapters live in `run-store-views.ts` (not on the domain store). Facade adapters (`useRunAdapter`, `useTalentAdapter`, `useHomesteadProgressSlice`, `readActiveRunStore`) preserve focused feature-facing views.
 
 ### Run randomness
 
@@ -60,11 +60,17 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 
 ### Session facade (`run-session-facade.ts`)
 
-- **Reads:** `readActiveRunStore()`, `readRunSessionStore()`, `readBattleStore()`
+- **Reads (imperative):** `readActiveRunStore()`, `readRunSessionStore()`, `readBattleStore()` — for handlers, lifecycle, and non-React code
+- **Reads (React, screen-scoped):** `useRunScreenData(screen)` — **sole** subscription path for run-loop / run-end screen display fields
+- **Reads (React, orchestration):** `useRunSessionNavigationSlice(screen)`, `useRunSessionBattleContext(screen)` — cross-screen shell/nav only; do not mirror screen display fields
+- **Reads (React, meta/setup):** focused facade one-offs (`useHomesteadProgressSlice`, `useTalentProgressSlice`, `useDraftDeckSlice`, …) and adapters (`useRunAdapter`, `useTalentAdapter`) where a screen map does not apply
 - **Writes:** `setRewardState`, `setShopState`, labyrinth/mystery setters, etc.
-- **Hooks:** `useRunSession*Slice()`, `useActiveRunScreen()`, `useRunScreenData(screen)`
+- **Hooks:** `useActiveRunScreen()`, `useRunScreenData(screen)`, navigation/battle context slices above
 - **Lifecycle:** re-exports `restoreRun`, `snapshotRun`, `teardownRun`, `syncRunToBattleStart`, `syncBattleToRun`, `finalizeRunEndSession` and friends from `run-transitions.ts`
 - **Ports:** re-exports the reward / shop / labyrinth / mystery setters plus `awardMaterialsDuringRun`, `finalizeRunXP`, and run-setup writers
+- **Composed views:** `run-store-views.ts` owns `getRunProgressStoreView` / session / battle flatteners and `useRunAdapter` / talent / homestead adapters — `run-domain-store` owns only domain fields + lifetime reset
+
+**Do not add** parallel React read hooks that re-subscribe to the same fields `useRunScreenData` already owns for a screen (shop / labyrinth / mystery / rewards twins). Controllers own **commands**; screen routes own **display data** via `useRunScreenData`. App chrome / autosave / particles read via facade hooks (`useActiveRunCharacterId`, `useTalentProgressSlice`, `useRunSessionBattleContext`, …), not controller display re-exports. Imperative shop handlers read via `readActiveRunStore` / `readRunSessionStore` at call time — they do not take a `RunStateController` data bus. Battle uses controller `battleBindings` props (intentional exception).
 
 Boot: [`use-alchemy-run-controller.ts`](../src/features/alchemy/shell/use-alchemy-run-controller.ts) calls `restoreRun` in `useLayoutEffect`.
 
@@ -88,6 +94,8 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 - **Card play:** UI → `useBattleController.playCard()` → `playBattleCardResolved()` → `applyCardEffects()` → new `BattleState` → store.
 - **Enemy turn:** `endPlayerTurn()` → enemy resolution → status ticks → new `BattleState`.
 - **Screen transition:** `navigateTo` → `navigation.screen` → `renderAlchemyScreenRoute()`.
+- **Run-loop screens:** `screen-routes` call `useRunScreenData(screen)` for display props; `routeCommands` from the shell controller for actions — no second data bus through `useAlchemyRunController` for shop/rewards/mystery/labyrinth fields.
+- **Shell preload / autosave:** App reads needed fields via the facade (`useRunScreenData`, battle context), not controller state re-exports.
 
 ## Controller entry points
 
@@ -118,7 +126,7 @@ Each Gear instance may be equipped on at most one character at a time (one slot 
 
 ## Types
 
-Run domain types live in `run-domain-types.ts` / `run-domain-store.ts` (stores layer only); permanent-profile fields are typed in `run-state-init.ts`. Active-run field init and flatten helpers live in `shared/stores/run-state-init.ts`. Fresh-run snapshots live in `shared/run-flow/run-start.ts` (consumed by run-setup and stores). Feature code imports `useRunAdapter`, `useTalentAdapter`, reads, writes, and lifecycle via `run-session-facade`.
+Run domain types live in `run-domain-types.ts` / `run-domain-store.ts` (stores layer only); permanent-profile fields are typed in `run-state-init.ts`. Composed progress/session/battle views and adapters live in `run-store-views.ts`. Active-run field init and flatten helpers live in `shared/stores/run-state-init.ts`. Fresh-run snapshots live in `shared/run-flow/run-start.ts` (consumed by run-setup and stores). Feature code imports `useRunAdapter`, `useTalentAdapter`, reads, writes, and lifecycle via `run-session-facade`.
 
 ## Import boundaries
 

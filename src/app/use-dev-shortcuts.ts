@@ -4,10 +4,10 @@ import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
 import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { setMaterials } from "@/features/alchemy/shared/stores/run-session-facade";
 import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
-import type { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
+import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
-export function useDevShortcuts(run: ReturnType<typeof useAlchemyRunController>) {
+export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | "unlockAllTalents">) {
   const clearSaveData = useCallback(() => {
     clearAllPersistentGameData();
     run.resetRunState();

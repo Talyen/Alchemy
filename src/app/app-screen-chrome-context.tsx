@@ -12,9 +12,12 @@ import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/compan
 import { canAfford } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { useHomesteadProgressSlice } from "@/features/alchemy/shared/stores/run-session-facade";
+import {
+  useActiveRunCharacterId,
+  useHomesteadProgressSlice,
+  useTalentProgressSlice,
+} from "@/features/alchemy/shared/stores/run-session-facade";
 import type { Screen } from "@/lib/routing";
-import type { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 
 function hasAffordableHomesteadUpgrade(input: {
   materialInventory: MaterialInventory;
@@ -86,21 +89,21 @@ export interface AppScreenChrome {
 const AppScreenChromeContext = createContext<AppScreenChrome | null>(null);
 
 export function AppScreenChromeProvider({
-  run,
   aspectMode,
   stagePixelRatio,
   returnToRunScreen,
   children,
 }: {
-  run: ReturnType<typeof useAlchemyRunController>;
   aspectMode: "standard" | "narrow" | "ultrawide";
   stagePixelRatio: number;
   returnToRunScreen: Screen | null;
   children: ReactNode;
 }) {
-  const heroArt = characterArt[run.characterId];
-  const playerName = characters[run.characterId].name;
-  const hasUnspentTalentsBadge = hasUnspentTalents(run.talentXP, run.unlockedTalents);
+  const characterId = useActiveRunCharacterId();
+  const { talentXP, unlockedTalents } = useTalentProgressSlice();
+  const heroArt = characterArt[characterId];
+  const playerName = characters[characterId].name;
+  const hasUnspentTalentsBadge = hasUnspentTalents(talentXP, unlockedTalents);
 
   const { materialInventory, constructedBuildings, plantedFarms, completedResearch, bondedCompanions } =
     useHomesteadProgressSlice();

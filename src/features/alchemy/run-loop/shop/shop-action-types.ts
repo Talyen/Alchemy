@@ -1,15 +1,7 @@
-import type { BattleCard, TrinketEntry } from "@/lib/game-data";
+import type { BattleCard, TrinketEntry, TalentEffectManifest } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import type { RunStateController, TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState } from "./shop-state-init";
-
-interface ShopStates {
-  shopState: ShopState;
-  alchemistState: AlchemistState;
-  trinketShopState: TrinketShopState;
-  equipmentShopState: EquipmentShopState;
-}
 
 interface ShopSetters {
   setShopState: (state: ShopState | ((prev: ShopState) => ShopState)) => void;
@@ -18,13 +10,12 @@ interface ShopSetters {
   setEquipmentShopState: (state: EquipmentShopState | ((prev: EquipmentShopState) => EquipmentShopState)) => void;
 }
 
+/** Shop command deps — run fields are read imperatively via readActiveRunStore at call time. */
 export type CreateShopActionsDeps = {
-  run: RunStateController;
-  talents: TalentStateController;
+  talentEffects: TalentEffectManifest;
   homesteadEffects: HomesteadEffectManifest;
   rng?: () => number;
-} & ShopStates &
-  ShopSetters;
+} & ShopSetters;
 
 export interface ShopActions {
   initShop: () => void;
@@ -51,6 +42,4 @@ export interface ShopActions {
   getEquipmentRefreshPrice: (refreshesLeft: number) => number;
   getRemoveCardPrice: () => number;
   getMixPotionPrice: () => number;
-  shopCards: BattleCard[];
-  alchemistPotions: BattleCard[];
 }

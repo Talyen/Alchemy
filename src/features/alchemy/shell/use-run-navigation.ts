@@ -84,9 +84,6 @@ export function useRunNavigation({
   const runPhase = nav.phase;
   const hasActiveBattle = nav.hasActiveBattle;
   const hasActiveRun = nav.hasActiveRun;
-  const rewardState = nav.rewardState;
-  const runEndMaterials = nav.runEndMaterials;
-  const corruptionResult = nav.corruptionResult;
   const pendingCharacterId = nav.pendingCharacterId;
   const pendingContentSystemType = nav.pendingContentSystemType;
 
@@ -256,19 +253,6 @@ export function useRunNavigation({
 
   return {
     runPhase,
-    rewardState,
-    get runEndMaterials() {
-      return runEndMaterials;
-    },
-    get mysteryEvent() {
-      return mystery.mysteryEvent;
-    },
-    get mysteryCardChoices() {
-      return mystery.mysteryCardChoices;
-    },
-    get corruptionResult() {
-      return corruptionResult;
-    },
     get activeRunData(): boolean {
       return hasActiveRun;
     },

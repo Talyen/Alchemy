@@ -87,6 +87,38 @@ describe("useLabyrinthController hook", () => {
     expect(onStartBattle).toHaveBeenCalledOnce();
   });
 
+  it("enterNode trusts store pending after a store-only clear (e.g. teardown)", () => {
+    const onStartBattle = vi.fn();
+    const { result } = renderHook(() => useLabyrinthController("labyrinth-map", TEST_RNG));
+    const map = getRunSessionStoreView().labyrinthMap;
+    const firstTarget = map.grid[0][START_COL]!.connections[0];
+    const handlers = {
+      onStartBattleWithModifiers: onStartBattle,
+      onStartBossBattleWithModifiers: vi.fn(),
+      onStartRest: vi.fn(),
+      onStartMystery: vi.fn(),
+      onStartShop: vi.fn(),
+      onStartAlchemist: vi.fn(),
+    } as any;
+
+    act(() => {
+      result.current.enterNode(firstTarget.row, firstTarget.col, handlers);
+      // Simulate teardown / clearTransientSession without going through resetMap.
+      getRunSessionStoreView().setActiveLabyrinthPendingNode(null);
+    });
+
+    const mapAfterClear = getRunSessionStoreView().labyrinthMap;
+    const secondTarget = mapAfterClear.grid[0][START_COL]!.connections[0];
+    let reentered = false;
+    act(() => {
+      reentered = result.current.enterNode(secondTarget.row, secondTarget.col, handlers);
+    });
+
+    expect(reentered).toBe(true);
+    expect(getRunSessionStoreView().activeLabyrinthPendingNode).toEqual(secondTarget);
+    expect(onStartBattle).toHaveBeenCalledTimes(2);
+  });
+
   it("resetMap clears pending state and regenerates the labyrinth", () => {
     const { result } = renderHook(() => useLabyrinthController("labyrinth-map", TEST_RNG));
     const before = getRunSessionStoreView().labyrinthMap;

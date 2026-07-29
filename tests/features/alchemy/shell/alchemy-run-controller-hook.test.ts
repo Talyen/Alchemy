@@ -57,11 +57,12 @@ describe("useAlchemyRunController", () => {
     );
   }
 
-  it("exposes menu screen and meta run phase after bootstrap", () => {
+  it("exposes menu screen after bootstrap", () => {
     const { result } = renderController();
 
     expect(result.current.screen).toBe(ROUTE_SCREENS.MENU);
-    expect(result.current.runPhase).toBe("meta");
+    expect(result.current.routeCommands).toBeDefined();
+    expect(result.current.battleBindings).toBeDefined();
   });
 
   it("resetRunState tears down run stores when navigating to menu", () => {

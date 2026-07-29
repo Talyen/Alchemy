@@ -3,17 +3,8 @@ import type { BattleState } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { getRunPhase, type RunPhase } from "@/lib/routing";
 import type { RunStateFields } from "@/features/alchemy/shared/stores/run-state-init";
-import type { RewardState } from "@/lib/active-run-session";
-import type { CorruptionResult } from "@/lib/corruption";
-import type { MaterialInventory } from "@/lib/homestead/types";
 import type { CharacterId } from "@/lib/game-data";
-import type {
-  ContentSystemId,
-  EncounterCombatTraitId,
-  EncounterRewardTraitId,
-  LabyrinthMap,
-} from "@/lib/content-systems/types";
-import type { LabyrinthNodePosition } from "@/lib/active-run-session";
+import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { RunSessionFields } from "./run-domain-types";
@@ -69,26 +60,11 @@ export interface RunSessionBattleContext {
   activeLabyrinthModifiers: EncounterCombatTraitId[];
 }
 
-export type RunSessionShopSlice = Pick<
-  RunSessionTransientSlice,
-  "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState"
->;
-
-export type RunSessionMysterySlice = Pick<RunSessionTransientSlice, "mysteryEvent" | "mysteryCardChoices">;
-
-export type RunSessionLabyrinthSlice = Pick<RunSessionTransientSlice, "labyrinthMap" | "activeLabyrinthPendingNode">;
-
+/** Cross-screen orchestration fields for useRunNavigation (not screen display data). */
 export interface RunSessionNavigationSlice {
   phase: RunPhase;
   hasActiveBattle: boolean;
   hasActiveRun: boolean;
-  labyrinthMap: LabyrinthMap;
-  labyrinthPendingNode: LabyrinthNodePosition | null;
-  activeLabyrinthModifiers: EncounterCombatTraitId[];
-  activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
-  rewardState: RewardState;
-  runEndMaterials: MaterialInventory;
-  corruptionResult: CorruptionResult | null;
   pendingCharacterId: CharacterId | null;
   pendingContentSystemType: ContentSystemId;
 }
@@ -152,51 +128,12 @@ export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleCon
   );
 }
 
-/** Shop / alchemist screens: offer state only. */
-export function useRunSessionShopSlice(): RunSessionShopSlice {
-  return useRunTransientStore(
-    useShallow((s) => ({
-      shopState: s.shopState,
-      alchemistState: s.alchemistState,
-      trinketShopState: s.trinketShopState,
-      equipmentShopState: s.equipmentShopState,
-    })),
-  );
-}
-
-/** Mystery screen: event + card picker state only. */
-export function useRunSessionMysterySlice(): RunSessionMysterySlice {
-  return useRunTransientStore(
-    useShallow((s) => ({
-      mysteryEvent: s.mysteryEvent,
-      mysteryCardChoices: s.mysteryCardChoices,
-    })),
-  );
-}
-
-/** Labyrinth map: grid + pending node only. */
-export function useRunSessionLabyrinthSlice(): RunSessionLabyrinthSlice {
-  return useRunTransientStore(
-    useShallow((s) => ({
-      labyrinthMap: s.labyrinthMap,
-      activeLabyrinthPendingNode: s.activeLabyrinthPendingNode,
-    })),
-  );
-}
-
-/** Run navigation: session fields used by useRunNavigation (no full run/battle state). */
+/** Run navigation: session fields used by useRunNavigation (no screen-display twins). */
 export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigationSlice {
   const resolvedScreen = resolveScreen(screen);
   const session = useRunTransientStore(
     useShallow((s) => ({
       hasActiveRun: s.hasActiveRun,
-      labyrinthMap: s.labyrinthMap,
-      activeLabyrinthPendingNode: s.activeLabyrinthPendingNode,
-      activeLabyrinthModifiers: s.activeLabyrinthModifiers,
-      activeLabyrinthRewardModifiers: s.activeLabyrinthRewardModifiers,
-      rewardState: s.rewardState,
-      runEndMaterials: s.runEndMaterials,
-      corruptionResult: s.corruptionResult,
       pendingCharacterId: s.pendingCharacterId,
       pendingContentSystemType: s.pendingContentSystemType,
     })),
@@ -207,13 +144,6 @@ export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigat
       phase: getRunPhase(resolvedScreen, hasActiveBattle),
       hasActiveBattle,
       hasActiveRun: session.hasActiveRun,
-      labyrinthMap: session.labyrinthMap,
-      labyrinthPendingNode: session.activeLabyrinthPendingNode,
-      activeLabyrinthModifiers: session.activeLabyrinthModifiers,
-      activeLabyrinthRewardModifiers: session.activeLabyrinthRewardModifiers,
-      rewardState: session.rewardState,
-      runEndMaterials: session.runEndMaterials,
-      corruptionResult: session.corruptionResult,
       pendingCharacterId: session.pendingCharacterId,
       pendingContentSystemType: session.pendingContentSystemType,
     }),
