@@ -965,6 +965,13 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(state): split run-flow into ports, intents, and concern modules
+  Narrow handlers behind RunFlowRunPort/TalentPort and shell-executed
+  RunFlowIntent dispatch, and share active-run core field picks for session reads.
+- refactor(state): split run shell into concern hooks and narrow battle ports
+  Thin the mega-controller into route-command assembly and navigation concern
+  hooks, replace the screen flatten twin with RunScreenData, and give battle
+  BattleRunPort/BattleTalentPort instead of full adapters.
 - refactor(state): extract run-store-views and drop controller display bus
   Route run-loop display reads through useRunScreenData and composed store
   views so controllers own commands only, and shop handlers read live
