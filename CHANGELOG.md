@@ -962,6 +962,10 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor: consolidate run lifecycle, streamline CI, and add asset caches
+  Move run init/teardown into shared modules, restructure run-loop controller
+  bindings, add path-filtered CI jobs with a composite setup action, cache
+  optimized asset hashes, and refresh audits, tooling, and docs.
 - refactor(run): collapse battle cost/effects shims and share run gold
   Retarget callers to effect-handlers and card-play, extract spendRunGold,
   tighten labyrinth encounter trait types, and add dual-path audits.
