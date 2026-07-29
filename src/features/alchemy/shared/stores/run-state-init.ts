@@ -102,23 +102,11 @@ export type ActiveRunSessionCoreFields = Pick<ActiveRunProgressFields, (typeof A
 
 /** Shared picker for the active-run core block used by controller + session read models. */
 export function pickActiveRunSessionCoreFields(activeRun: ActiveRunProgressFields): ActiveRunSessionCoreFields {
-  return {
-    characterId: activeRun.characterId,
-    runDeck: activeRun.runDeck,
-    runGold: activeRun.runGold,
-    runPlayerHealth: activeRun.runPlayerHealth,
-    runMaxHealth: activeRun.runMaxHealth,
-    roomsEncountered: activeRun.roomsEncountered,
-    currentAct: activeRun.currentAct,
-    destinationIndexInAct: activeRun.destinationIndexInAct,
-    completedDestinations: activeRun.completedDestinations,
-    lastOfferedDestinations: activeRun.lastOfferedDestinations,
-    destinationRoundsSinceOffered: activeRun.destinationRoundsSinceOffered,
-    runTrinkets: activeRun.runTrinkets,
-    encounteredRunEnemyIds: activeRun.encounteredRunEnemyIds,
-    selectedDifficulty: activeRun.selectedDifficulty,
-    contentSystemType: activeRun.contentSystemType,
-  };
+  const picked = {} as ActiveRunSessionCoreFields;
+  for (const key of ACTIVE_RUN_SESSION_CORE_KEYS) {
+    picked[key] = activeRun[key] as never;
+  }
+  return picked;
 }
 
 const PERMANENT_PROGRESS_KEYS = [
