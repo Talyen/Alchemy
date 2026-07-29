@@ -965,6 +965,10 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(state): extract run-store-views and drop controller display bus
+  Route run-loop display reads through useRunScreenData and composed store
+  views so controllers own commands only, and shop handlers read live
+  facade state at call time.
 - refactor(state): split run-domain hub into lifetime-matched stores
   Extract permanent progression, transient session, and battle snapshot
   into lifetime-matched stores with ports, and route external lifecycle
