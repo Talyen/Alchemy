@@ -30,7 +30,7 @@
     "build:desktop": "vite build --mode desktop",
     "package:win": "npm run build:desktop:no-sync && cross-env NODE_OPTIONS=--no-deprecation electron-builder --win --dir",
     "package:win:full": "npm run build:desktop && cross-env NODE_OPTIONS=--no-deprecation electron-builder --win --dir",
-    "dist:win": "npm run build:desktop && cross-env NODE_OPTIONS=--no-deprecation electron-builder --win && npm run verify:desktop-package",
+    "dist:win": "npm run build:desktop && cross-env NODE_OPTIONS=--no-deprecation electron-builder --win --publish never && npm run verify:desktop-package",
     "dist:desktop": "npm run build:desktop && node scripts/dist-desktop.mjs",
     "verify:desktop-package": "node scripts/verify-desktop-package.mjs",
     "generate:patch-notes": "node scripts/generate-patch-notes.mjs",
