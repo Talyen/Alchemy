@@ -971,6 +971,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(state): publish atomic run-session updates
 - refactor(state): split run-flow into ports, intents, and concern modules
   Narrow handlers behind RunFlowRunPort/TalentPort and shell-executed
   RunFlowIntent dispatch, and share active-run core field picks for session reads.
