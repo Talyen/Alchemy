@@ -8,7 +8,10 @@ import { pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/ga
 import { preloadImages } from "@/lib/image-preload";
 import type { Screen } from "@/features/alchemy/shared/types";
 import { gearDefinitions } from "@/lib/gear";
-import { useRunScreenData, useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-facade";
+import {
+  useRunSessionBattleContext,
+  useScreenAssetPreloadData,
+} from "@/features/alchemy/shared/stores/run-session-facade";
 
 interface ScreenAssetPreloadOptions {
   heroArt: string;
@@ -18,7 +21,7 @@ interface ScreenAssetPreloadOptions {
 // Preloads only assets for the current or imminent screen so card/enemy art does not
 // pop in, without forcing the entire collection into memory on startup.
 export function useScreenAssetPreloadEffects({ heroArt, screen }: ScreenAssetPreloadOptions) {
-  const data = useRunScreenData(screen);
+  const data = useScreenAssetPreloadData(screen);
   const { battle } = useRunSessionBattleContext(screen);
 
   useEffect(() => {
@@ -31,7 +34,7 @@ export function useScreenAssetPreloadEffects({ heroArt, screen }: ScreenAssetPre
         ...battle.battleState.hand.map((card) => card.art),
       );
     }
-    if (screen === "rewards" && data.rewardState) {
+    if (data.rewardState) {
       const rewardChoices =
         data.rewardState.rewardType === "gear"
           ? data.rewardState.choices.map((choice) => ({
@@ -40,13 +43,13 @@ export function useScreenAssetPreloadEffects({ heroArt, screen }: ScreenAssetPre
           : data.rewardState.choices.map((choice) => ({ art: choice.art }));
       priorityImages.push(...rewardChoices.map((choice) => choice.art));
     }
-    if (screen === "shop" && data.shopState) {
+    if (data.shopState) {
       priorityImages.push(...data.shopState.cards.map((card) => card.art));
     }
-    if (screen === "alchemist" && data.alchemistState) {
+    if (data.alchemistState) {
       priorityImages.push(...data.alchemistState.potions.map((card) => card.art));
     }
-    if (screen === "mystery" && data.mysteryEvent?.art) {
+    if (data.mysteryEvent?.art) {
       priorityImages.push(data.mysteryEvent.art);
     }
     preloadImages(priorityImages);

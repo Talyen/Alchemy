@@ -10,7 +10,6 @@ import {
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
-import { playGoldGain } from "@/lib/audio";
 import type { Destination } from "@/features/alchemy/shared/types";
 
 vi.mock("@/lib/utils", async () => {
@@ -33,11 +32,6 @@ vi.mock("@/lib/homestead/loot", () => ({
   getEnemyMaterialLoot: vi.fn(() => ({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 })),
   applyMaterialFindBonus: vi.fn((mats: unknown) => mats),
 }));
-
-vi.mock("@/lib/audio", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/audio")>("@/lib/audio");
-  return { ...actual, playGoldGain: vi.fn() };
-});
 
 function baseBattleState(overrides: Record<string, unknown> = {}) {
   return {
@@ -427,21 +421,17 @@ describe("commitVictoryRewards", () => {
       setRewardState: vi.fn(),
       setCompanionRewardCards: vi.fn(),
       setDestinationOfferState: vi.fn(),
-      clearCombatState: vi.fn(),
+      setHasActiveBattle: vi.fn(),
       ...overrides,
     };
   }
 
-  it("plays gold gain when post-reward gold exceeds battle gold", () => {
-    vi.mocked(playGoldGain).mockClear();
-    commitVictoryRewards(victoryResult(), commitDeps());
-    expect(playGoldGain).toHaveBeenCalled();
+  it("reports gold gain when post-reward gold exceeds battle gold", () => {
+    expect(commitVictoryRewards(victoryResult(), commitDeps())).toBe(true);
   });
 
-  it("does not play gold gain when gold did not increase", () => {
-    vi.mocked(playGoldGain).mockClear();
-    commitVictoryRewards(victoryResult({ newGold: 5, goldEarned: 0 }), commitDeps());
-    expect(playGoldGain).not.toHaveBeenCalled();
+  it("reports no gold gain when gold did not increase", () => {
+    expect(commitVictoryRewards(victoryResult({ newGold: 5, goldEarned: 0 }), commitDeps())).toBe(false);
   });
 
   it("adds pending crystal materials to homestead", () => {

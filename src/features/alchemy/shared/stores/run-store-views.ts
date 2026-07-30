@@ -21,6 +21,7 @@ import {
 } from "./run-profile-store";
 import { useRunTransientStore, type RunTransientStore } from "./run-transient-store";
 import { useRunBattleDomainStore, type RunBattleDomainStore } from "./run-battle-domain-store";
+import { useRunSessionCommitStore } from "./run-session-transaction";
 import type { RunSessionFields, RunDomainBattleState } from "./run-domain-types";
 import type { SessionActions } from "./slices/session-slice";
 import type { BattleActions } from "./slices/battle-slice";
@@ -235,33 +236,26 @@ export type TalentStateController = TalentControllerFields & {
 // -------- Adapter hooks --------
 
 export function useRunAdapter(): RunStateController {
-  return useRunDomainStore(useShallow(selectRunController));
+  return useRunSessionCommitStore(useShallow(({ snapshot }) => selectRunController(snapshot.domain)));
 }
 
 export function useTalentAdapter(): TalentStateController {
-  const runSlice = useRunDomainStore(
-    useShallow((state) => ({
-      runTalentXP: state.activeRun.runTalentXP,
-      awardCardXP: state.awardCardXP,
-      awardMysteryXP: state.awardMysteryXP,
-      resetRunXP: state.resetRunXP,
+  const slices = useRunSessionCommitStore(
+    useShallow(({ snapshot }) => ({
+      runTalentXP: snapshot.domain.activeRun.runTalentXP,
+      awardCardXP: snapshot.domain.awardCardXP,
+      awardMysteryXP: snapshot.domain.awardMysteryXP,
+      resetRunXP: snapshot.domain.resetRunXP,
+      talentXP: snapshot.runProfile.talentXP,
+      unlockedTalents: snapshot.runProfile.unlockedTalents,
+      unlockTalent: snapshot.runProfile.unlockTalent,
+      resetUnlockedTalents: snapshot.runProfile.resetUnlockedTalents,
     })),
   );
-  const profileSlice = useRunProfileStore(
-    useShallow((profile) => ({
-      talentXP: profile.talentXP,
-      unlockedTalents: profile.unlockedTalents,
-      unlockTalent: profile.unlockTalent,
-      resetUnlockedTalents: profile.resetUnlockedTalents,
-    })),
-  );
-  const talentEffects = useMemo(
-    () => computeTalentEffects(profileSlice.unlockedTalents),
-    [profileSlice.unlockedTalents],
-  );
-  return useMemo(() => ({ ...runSlice, ...profileSlice, talentEffects }), [runSlice, profileSlice, talentEffects]);
+  const talentEffects = useMemo(() => computeTalentEffects(slices.unlockedTalents), [slices.unlockedTalents]);
+  return useMemo(() => ({ ...slices, talentEffects }), [slices, talentEffects]);
 }
 
 export function useHomesteadAdapter(): HomesteadEffectManifest {
-  return useRunProfileStore((profile) => profile.effects);
+  return useRunSessionCommitStore((state) => state.snapshot.runProfile.effects);
 }

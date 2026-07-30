@@ -2,6 +2,7 @@
 import { selectRewardCards, type BattleCard } from "@/lib/game-data";
 import { resampleItems } from "@/features/alchemy/shared/utils";
 import { spendRunGold } from "./run-gold";
+import { runSessionTransaction } from "../shared/stores/run-session-facade";
 
 interface RefreshShopOfferingsInput<T, TItem> {
   price: number;
@@ -14,11 +15,13 @@ interface RefreshShopOfferingsInput<T, TItem> {
 }
 
 function refreshShopOfferings<T, TItem>(input: RefreshShopOfferingsInput<T, TItem>): boolean {
-  if (input.refreshesLeft <= 0 || input.runGold < input.price) return false;
-  spendRunGold(input.price, input.setRunGold);
-  const newItems = input.resample();
-  input.setState((prev) => input.mapState(prev, newItems));
-  return true;
+  return runSessionTransaction(() => {
+    if (input.refreshesLeft <= 0 || input.runGold < input.price) return false;
+    spendRunGold(input.price, input.setRunGold);
+    const newItems = input.resample();
+    input.setState((prev) => input.mapState(prev, newItems));
+    return true;
+  });
 }
 
 interface RefreshOfferingsInput<T> {

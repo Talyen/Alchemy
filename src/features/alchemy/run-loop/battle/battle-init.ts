@@ -3,7 +3,12 @@ import { createBattleState, type CombatTextEvent } from "@/lib/battle";
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";
-import { readBattleStore, readRunSessionStore, syncRunToBattleStart } from "../../shared/stores/run-session-facade";
+import {
+  readBattleStore,
+  readRunSessionStore,
+  runSessionTransaction,
+  syncRunToBattleStart,
+} from "../../shared/stores/run-session-facade";
 import { useBattlePresentationStore } from "./battle-presentation-store";
 import { appendUnique } from "@/lib/utils";
 import { useProfileStore } from "../../shared/stores/profile-store";
@@ -19,7 +24,6 @@ export function createBattleInit(
   rng: () => number = Math.random,
 ) {
   const getStore = () => readBattleStore();
-  const getPresentationStore = () => useBattlePresentationStore.getState();
 
   function createBattleForEnemy(
     enemy: BestiaryEntry,
@@ -50,51 +54,63 @@ export function createBattleInit(
   }
 
   function beginBattle(enemy: BestiaryEntry, deck: BattleCard[], gold: number, modifiers?: DifficultyModifier[]) {
-    const presentationStore = useBattlePresentationStore.getState();
-    session.resetBattleSession();
-    presentationStore.resetCardTransfers();
-    presentationStore.resetHandTransferUi();
-    const startingHealth = syncRunToBattleStart();
-    const nextRoomsEncountered = ctx.run.roomsEncountered + 1;
-    ctx.run.setRoomsEncountered(nextRoomsEncountered);
-    getPresentationStore().clearCardGhosts();
-    const encounterTraitIds =
-      ctx.run.contentSystemType === "labyrinth" ? readRunSessionStore().activeLabyrinthModifiers : [];
-    const battleEnemy = encounterTraitIds.length > 0 ? appendEncounterTraits(enemy, encounterTraitIds) : enemy;
-    const nextBattleState = createBattleForEnemy(
-      battleEnemy,
-      deck,
-      gold,
-      startingHealth,
-      nextRoomsEncountered,
-      modifiers,
+    runSessionTransaction(
+      () => {
+        const startingHealth = syncRunToBattleStart();
+        const nextRoomsEncountered = ctx.run.roomsEncountered + 1;
+        ctx.run.setRoomsEncountered(nextRoomsEncountered);
+        const encounterTraitIds =
+          ctx.run.contentSystemType === "labyrinth" ? readRunSessionStore().activeLabyrinthModifiers : [];
+        const battleEnemy = encounterTraitIds.length > 0 ? appendEncounterTraits(enemy, encounterTraitIds) : enemy;
+        const nextBattleState = createBattleForEnemy(
+          battleEnemy,
+          deck,
+          gold,
+          startingHealth,
+          nextRoomsEncountered,
+          modifiers,
+        );
+        getStore().setSyncedBattleState(nextBattleState);
+        getStore().setBattleStartState(nextBattleState);
+        getStore().setHasActiveBattle(true);
+        ctx.run.setEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
+        useProfileStore.getState().setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
+
+        const startingTexts: CombatTextEvent[] = [];
+        if (nextBattleState.enemyMitigation.armor > 0) {
+          startingTexts.push({
+            target: "enemy",
+            kind: "status",
+            stat: "armor",
+            amount: nextBattleState.enemyMitigation.armor,
+          });
+        }
+        if (nextBattleState.enemyMitigation.block > 0) {
+          startingTexts.push({
+            target: "enemy",
+            kind: "status",
+            stat: "block",
+            amount: nextBattleState.enemyMitigation.block,
+          });
+        }
+        return startingTexts;
+      },
+      {
+        afterCommit: (startingTexts) => {
+          if (typeof session.prepareBattleSessionForStart === "function") {
+            session.prepareBattleSessionForStart();
+          } else {
+            // Legacy test doubles may only expose the original reset helper.
+            session.resetBattleSession();
+          }
+          const presentationStore = useBattlePresentationStore.getState();
+          presentationStore.resetCardTransfers();
+          presentationStore.resetHandTransferUi();
+          presentationStore.clearCardGhosts();
+          if (startingTexts.length > 0) presentationStore.showCombatTexts(startingTexts);
+        },
+      },
     );
-    getStore().setSyncedBattleState(nextBattleState);
-    getStore().setBattleStartState(nextBattleState);
-    getStore().setHasActiveBattle(true);
-    ctx.run.setEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
-    useProfileStore.getState().setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
-    // Emit floating combat text for starting enemy armor and block
-    const startingTexts: CombatTextEvent[] = [];
-    if (nextBattleState.enemyMitigation.armor > 0) {
-      startingTexts.push({
-        target: "enemy",
-        kind: "status",
-        stat: "armor",
-        amount: nextBattleState.enemyMitigation.armor,
-      });
-    }
-    if (nextBattleState.enemyMitigation.block > 0) {
-      startingTexts.push({
-        target: "enemy",
-        kind: "status",
-        stat: "block",
-        amount: nextBattleState.enemyMitigation.block,
-      });
-    }
-    if (startingTexts.length > 0) {
-      getPresentationStore().showCombatTexts(startingTexts);
-    }
   }
 
   function startBattle(

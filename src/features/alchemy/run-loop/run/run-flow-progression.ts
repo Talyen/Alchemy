@@ -1,5 +1,9 @@
-import { setRewardState, clearBattleUi } from "../../shared/stores/run-session-facade";
-import { useUiStore } from "../../shared/stores/ui-store";
+import {
+  readBattleStore,
+  runSessionTransaction,
+  setRewardState,
+  clearBattlePresentationUi,
+} from "../../shared/stores/run-session-facade";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
 import { CONSTANTS } from "../../shared/types";
@@ -21,35 +25,59 @@ export function createProgressionHandlers(ctx: RunFlowContext) {
   }
 
   function handleActComplete(displayMaterials?: MaterialInventory) {
-    clearBattleUi();
-    if (deps.run.currentAct >= ACTS_PER_RUN) {
-      if (deps.run.selectedDifficulty) {
-        deps.dispatch({
-          type: "mark-difficulty-completed",
-          characterId: deps.run.characterId,
-          difficultyId: deps.run.selectedDifficulty,
-        });
-      }
-      ctx.completeRunVictory(displayMaterials);
-      return;
-    }
-    deps.run.setCurrentAct((p) => p + 1);
-    deps.run.setDestinationIndexInAct(0);
-    deps.run.setCompletedDestinations([]);
-    prepareNextDestination(0);
+    runSessionTransaction(
+      () => {
+        readBattleStore().setHasActiveBattle(false);
+        if (deps.run.currentAct >= ACTS_PER_RUN) {
+          if (deps.run.selectedDifficulty) {
+            deps.dispatch({
+              type: "mark-difficulty-completed",
+              characterId: deps.run.characterId,
+              difficultyId: deps.run.selectedDifficulty,
+            });
+          }
+          return true;
+        }
+        deps.run.setCurrentAct((p) => p + 1);
+        deps.run.setDestinationIndexInAct(0);
+        deps.run.setCompletedDestinations([]);
+        return false;
+      },
+      {
+        afterCommit: (runComplete) => {
+          clearBattlePresentationUi();
+          if (runComplete) {
+            ctx.completeRunVictory(displayMaterials);
+          } else {
+            prepareNextDestination(0);
+          }
+        },
+      },
+    );
   }
 
   function advanceToNextDestination() {
-    deps.run.setRoomsEncountered((p) => p + 1);
-    if (deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
-      deps.dispatch({ type: "labyrinth-clear-node" });
-      useUiStore.getState().clearCardHover();
-      deps.dispatch({ type: "navigate", screen: CONSTANTS.SCREENS.LABYRINTH_MAP });
-      return;
-    }
-    useUiStore.getState().clearCardHover();
-    deps.dispatch({ type: "clear-mystery-card-choices" });
-    prepareNextDestination();
+    runSessionTransaction(
+      () => {
+        deps.run.setRoomsEncountered((p) => p + 1);
+        if (deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
+          deps.dispatch({ type: "labyrinth-clear-node" });
+          return true;
+        }
+        deps.dispatch({ type: "clear-mystery-card-choices" });
+        return false;
+      },
+      {
+        afterCommit: (labyrinth) => {
+          clearBattlePresentationUi();
+          if (labyrinth) {
+            deps.dispatch({ type: "navigate", screen: CONSTANTS.SCREENS.LABYRINTH_MAP });
+          } else {
+            prepareNextDestination();
+          }
+        },
+      },
+    );
   }
 
   return {

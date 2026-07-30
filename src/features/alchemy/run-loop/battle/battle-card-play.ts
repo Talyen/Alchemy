@@ -23,6 +23,7 @@ import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import { logError } from "@/lib/error-logger";
 import { useBattlePresentationStore } from "./battle-presentation-store";
+import { readBattleStore, runSessionTransaction } from "../../shared/stores/run-session-facade";
 
 const BATTLE_CARD_PLAY_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
 
@@ -118,16 +119,24 @@ export function createBattleCardPlay(
     animatePlayedCard(card, index, sourceRect);
     playCardSound(card.id);
     const resolution = playBattleCardResolved(currentState, card.id, index, BATTLE_CARD_PLAY_OPTIONS);
-    playCardResolutionFeedback(card, currentState, resolution.state, resolution.combatTexts);
     ctx.setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${card.uid}`) ? null : current));
-    ctx.talents.awardCardXP(card);
 
     runDrawSequenceAndFinalize(
       currentState.hand,
       resolution.state,
       () => {
-        getStore().setSyncedBattleState(resolution.state);
-        if (resolution.combatTexts.length > 0) getStore().showCombatTexts(resolution.combatTexts);
+        runSessionTransaction(
+          () => {
+            readBattleStore().setSyncedBattleState(resolution.state);
+            ctx.talents.awardCardXP(card);
+          },
+          {
+            afterCommit: () => {
+              playCardResolutionFeedback(card, currentState, resolution.state, resolution.combatTexts);
+              if (resolution.combatTexts.length > 0) getStore().showCombatTexts(resolution.combatTexts);
+            },
+          },
+        );
       },
       sessionNum,
       "play card",
@@ -146,14 +155,16 @@ export function createBattleCardPlay(
     if (!currentState.wishOptions) return;
     const newState = chooseWishCard(currentState, cardOrNull?.id ?? null);
     const sessionNum = ctx.battleSessionRef.current;
-    if (cardOrNull) {
-      useProfileStore.getState().setDiscoveredCardIds((current) => appendUnique(current, cardOrNull.id));
-    }
     runDrawSequenceAndFinalize(
       currentState.hand,
       newState,
       () => {
-        getStore().setSyncedBattleState(newState);
+        runSessionTransaction(() => {
+          readBattleStore().setSyncedBattleState(newState);
+          if (cardOrNull) {
+            useProfileStore.getState().setDiscoveredCardIds((current) => appendUnique(current, cardOrNull.id));
+          }
+        });
       },
       sessionNum,
       "wish choice",

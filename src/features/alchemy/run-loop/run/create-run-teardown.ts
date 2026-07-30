@@ -2,6 +2,7 @@
 import {
   cancelDestinationClaim,
   releaseRewardClaim,
+  runSessionTransaction,
   teardownRun,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { clearBattlePresentationCardGhosts } from "@/features/alchemy/shared/stores/battle-presentation-bridge";
@@ -17,15 +18,23 @@ export interface RunTeardownDeps {
 /** Cancel in-flight claims, clear presentation, tear down the run, and land on menu. */
 export function createRunTeardown(deps: RunTeardownDeps) {
   function resetRunState() {
-    deps.cancelPending();
-    cancelDestinationClaim();
-    releaseRewardClaim();
-    clearBattlePresentationCardGhosts();
-    deps.clearCardHover();
-    deps.setHasActiveBattle(false);
-    deps.navigateTo(CONSTANTS.SCREENS.MENU, () => {
-      teardownRun();
-    });
+    runSessionTransaction(
+      () => {
+        cancelDestinationClaim();
+        releaseRewardClaim();
+        deps.setHasActiveBattle(false);
+      },
+      {
+        afterCommit: () => {
+          deps.cancelPending();
+          clearBattlePresentationCardGhosts();
+          deps.clearCardHover();
+          deps.navigateTo(CONSTANTS.SCREENS.MENU, () => {
+            teardownRun();
+          });
+        },
+      },
+    );
   }
 
   function continueFromRunEnd() {

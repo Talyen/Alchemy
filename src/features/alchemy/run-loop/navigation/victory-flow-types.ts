@@ -58,5 +58,5 @@ export interface CommitVictoryRewardsDeps {
   setRewardState: (state: RewardState) => void;
   setCompanionRewardCards: (cards: BattleCard[] | null) => void;
   setDestinationOfferState: (state: DestinationOfferState) => void;
-  clearCombatState: () => void;
+  setHasActiveBattle: (active: boolean) => void;
 }

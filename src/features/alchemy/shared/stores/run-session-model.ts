@@ -11,8 +11,9 @@ import { useShallow } from "zustand/react/shallow";
 import type { RunSessionFields } from "./run-domain-types";
 import { getRunDomainStore, type RunDomainStore } from "./run-domain-store";
 import { getRunProfileStore, type RunProfileStore } from "./run-profile-store";
-import { getRunTransientStore, readRunSessionFields, useRunTransientStore } from "./run-transient-store";
-import { getRunBattleDomainStore, useRunBattleDomainStore } from "./run-battle-domain-store";
+import { getRunTransientStore, readRunSessionFields } from "./run-transient-store";
+import { getRunBattleDomainStore } from "./run-battle-domain-store";
+import { getCommittedRunSessionSnapshot, useRunSessionCommitStore } from "./run-session-transaction";
 
 type RunSessionRunSlice = Pick<
   RunStateFields,
@@ -70,10 +71,6 @@ export interface RunSessionNavigationSlice {
   pendingContentSystemType: ContentSystemId;
 }
 
-function resolveScreen(screen?: Screen): Screen {
-  return screen ?? getRunDomainStore().navigation.screen;
-}
-
 function pickRunSessionRunSlice(state: RunDomainStore, profile: RunProfileStore): RunSessionRunSlice {
   return {
     ...pickActiveRunSessionCoreFields(state.activeRun),
@@ -97,14 +94,17 @@ function pickRunSessionBattleSlice(battle: {
 }
 
 function useRunSessionBattleSlice(): RunSessionBattleSlice {
-  return useRunBattleDomainStore(useShallow(pickRunSessionBattleSlice));
+  return useRunSessionCommitStore(useShallow(({ snapshot }) => pickRunSessionBattleSlice(snapshot.battle)));
 }
 
 /** Battle screen: combat state + labyrinth modifiers only (avoids run/shop subscriptions). */
 export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleContext {
   const battle = useRunSessionBattleSlice();
-  const activeLabyrinthModifiers = useRunTransientStore((s) => s.activeLabyrinthModifiers);
-  const resolvedScreen = resolveScreen(screen);
+  const activeLabyrinthModifiers = useRunSessionCommitStore(
+    (state) => state.snapshot.transient.activeLabyrinthModifiers,
+  );
+  const committedScreen = useRunSessionCommitStore((state) => state.snapshot.domain.navigation.screen);
+  const resolvedScreen = screen ?? committedScreen;
   return useMemo(
     () => ({
       phase: getRunPhase(resolvedScreen, battle.hasActiveBattle),
@@ -117,36 +117,51 @@ export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleCon
 
 /** Run navigation: session fields used by useRunNavigation (no screen-display twins). */
 export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigationSlice {
-  const resolvedScreen = resolveScreen(screen);
-  const session = useRunTransientStore(
-    useShallow((s) => ({
-      hasActiveRun: s.hasActiveRun,
-      pendingCharacterId: s.pendingCharacterId,
-      pendingContentSystemType: s.pendingContentSystemType,
+  const session = useRunSessionCommitStore(
+    useShallow(({ snapshot }) => ({
+      screen: snapshot.domain.navigation.screen,
+      hasActiveBattle: snapshot.battle.hasActiveBattle,
+      hasActiveRun: snapshot.transient.hasActiveRun,
+      pendingCharacterId: snapshot.transient.pendingCharacterId,
+      pendingContentSystemType: snapshot.transient.pendingContentSystemType,
     })),
   );
-  const hasActiveBattle = useRunBattleDomainStore((s) => s.hasActiveBattle);
+  const resolvedScreen = screen ?? session.screen;
   return useMemo(
     () => ({
-      phase: getRunPhase(resolvedScreen, hasActiveBattle),
-      hasActiveBattle,
+      phase: getRunPhase(resolvedScreen, session.hasActiveBattle),
+      hasActiveBattle: session.hasActiveBattle,
       hasActiveRun: session.hasActiveRun,
       pendingCharacterId: session.pendingCharacterId,
       pendingContentSystemType: session.pendingContentSystemType,
     }),
-    [resolvedScreen, hasActiveBattle, session],
+    [resolvedScreen, session],
   );
 }
 
 /** Imperative snapshot of run + session + battle for the current screen. */
 export function getRunSession(screen?: Screen): RunSession {
-  const resolvedScreen = resolveScreen(screen);
+  const resolvedScreen = screen ?? getRunDomainStore().navigation.screen;
   const battle = pickRunSessionBattleSlice(getRunBattleDomainStore());
   return {
     screen: resolvedScreen,
     phase: getRunPhase(resolvedScreen, battle.hasActiveBattle),
     run: pickRunSessionRunSlice(getRunDomainStore(), getRunProfileStore()),
     session: readRunSessionFields(getRunTransientStore()),
+    battle,
+  };
+}
+
+/** Imperative snapshot of the last committed run + session + battle state. */
+export function getCommittedRunSession(screen?: Screen): RunSession {
+  const snapshot = getCommittedRunSessionSnapshot();
+  const resolvedScreen = screen ?? snapshot.domain.navigation.screen;
+  const battle = pickRunSessionBattleSlice(snapshot.battle);
+  return {
+    screen: resolvedScreen,
+    phase: getRunPhase(resolvedScreen, battle.hasActiveBattle),
+    run: pickRunSessionRunSlice(snapshot.domain, snapshot.runProfile),
+    session: readRunSessionFields(snapshot.transient),
     battle,
   };
 }

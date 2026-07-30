@@ -3,15 +3,16 @@ import {
   readBattleStore,
   readRunSessionStore,
   awardMaterialsDuringRun,
+  runSessionTransaction,
 } from "../../shared/stores/run-session-facade";
 import { setCompanionRewardCards, setRewardState } from "../../shared/stores/run-session-facade";
-import { playVictory, stopAllSfx } from "@/lib/audio";
+import { playGoldGain, playVictory, stopAllSfx } from "@/lib/audio";
 import { VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
 import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { computeVictoryRewards, commitVictoryRewards, type VictoryRewardsResult } from "../navigation/victory-flow";
 import { CONSTANTS } from "../../shared/types";
 import { getActiveRewardTraits } from "./run-flow-handler-deps";
-import { clearCombatState } from "./run-flow-session-helpers";
+import { clearCombatPresentation } from "./run-flow-session-helpers";
 import type { RunFlowContext } from "./run-flow-context";
 
 export function createVictoryHandlers(ctx: RunFlowContext) {
@@ -48,26 +49,37 @@ export function createVictoryHandlers(ctx: RunFlowContext) {
   }
 
   function commitVictoryResult(result: VictoryRewardsResult) {
-    const battleState = readBattleStore().battleState;
-    const runState = readActiveRunStore();
-    commitVictoryRewards(
-      result,
-      {
-        battleState,
-        contentSystemType: runState.contentSystemType,
-        addHomesteadMaterials: awardMaterialsDuringRun,
-        addRunGold: runState.addRunGold,
-        setRunMaxHealth: runState.setRunMaxHealth,
-        setRewardState,
-        setCompanionRewardCards,
-        setDestinationOfferState: runState.setDestinationOfferState,
-        clearCombatState,
+    let goldGained = false;
+    runSessionTransaction(
+      () => {
+        const battleState = readBattleStore().battleState;
+        const runState = readActiveRunStore();
+        goldGained = commitVictoryRewards(
+          result,
+          {
+            battleState,
+            contentSystemType: runState.contentSystemType,
+            addHomesteadMaterials: awardMaterialsDuringRun,
+            addRunGold: runState.addRunGold,
+            setRunMaxHealth: runState.setRunMaxHealth,
+            setRewardState,
+            setCompanionRewardCards,
+            setDestinationOfferState: runState.setDestinationOfferState,
+            setHasActiveBattle: (active) => readBattleStore().setHasActiveBattle(active),
+          },
+          deps.rewardRng,
+        );
+        if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+          deps.dispatch({ type: "commit-wildwood-victory", result });
+        }
       },
-      deps.rewardRng,
+      {
+        afterCommit: () => {
+          if (goldGained) playGoldGain();
+          clearCombatPresentation();
+        },
+      },
     );
-    if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-      deps.dispatch({ type: "commit-wildwood-victory", result });
-    }
   }
 
   function handleBattleVictory() {

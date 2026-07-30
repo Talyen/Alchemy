@@ -1,5 +1,4 @@
 // Facade over the run-lifetime stores — reads, ports, lifecycle transitions, and hooks.
-import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { BattleCard, CharacterId, DifficultyId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
@@ -9,22 +8,24 @@ import {
   getBattleStoreView,
   getRunProgressStoreView,
   getRunSessionStoreView,
-  useRunAdapter,
-  useTalentAdapter,
-  useHomesteadAdapter,
   type RunProgressStore,
   type RunSessionStore,
   type RunStateController,
   type TalentStateController,
 } from "./run-store-views";
-import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
-import { useRunProfileStore } from "./run-profile-store";
+import { getRunDomainStore } from "./run-domain-store";
 import { useRunTransientStore } from "./run-transient-store";
-import { useRunBattleDomainStore } from "./run-battle-domain-store";
 import type { DisplayOverrides } from "./run-domain-types";
 import type { RunRngStream } from "@/lib/run-rng";
+import { useRunSessionCommitStore } from "./run-session-transaction";
 
-export { getRunSession, useRunSessionBattleContext, useRunSessionNavigationSlice } from "./run-session-model";
+export {
+  getCommittedRunSession,
+  getRunSession,
+  useRunSessionBattleContext,
+  useRunSessionNavigationSlice,
+} from "./run-session-model";
+export { runSessionTransaction } from "./run-session-transaction";
 
 // Run lifecycle transitions.
 export {
@@ -34,11 +35,11 @@ export {
   syncRunToBattleStart,
   syncBattleToRun,
   clearBattleUi,
+  clearBattlePresentationUi,
   finalizeRunEndSession,
   applyRunDefeatTeardown,
   resolveActiveRunForSave,
   flushSaveAfterRunEnd,
-  syncRunMaxHealthFromGear,
   syncRunMaxHealthFromGearMutation,
 } from "./run-transitions";
 
@@ -76,8 +77,24 @@ export {
   applyRunStartSnapshot,
 } from "./ports/run-session-setup-port";
 
-import { useRunScreenData } from "./use-run-screen-data";
-export { useRunAdapter, useTalentAdapter, useHomesteadAdapter, useRunScreenData };
+export {
+  useAlchemistScreenData,
+  useCampfireScreenData,
+  useCorruptionScreenData,
+  useDestinationScreenData,
+  useEquipmentShopScreenData,
+  useGameOverScreenData,
+  useLabyrinthMapScreenData,
+  useMysteryScreenData,
+  useRewardsScreenData,
+  useRunVictoryScreenData,
+  useScreenAssetPreloadData,
+  useShopScreenData,
+  useTrinketShopScreenData,
+  useWildwoodRecoveryScreenData,
+  useWildwoodRemovalScreenData,
+} from "./use-run-screen-data";
+export { useRunAdapter, useTalentAdapter, useHomesteadAdapter } from "./run-store-views";
 export type { RunStateController, TalentStateController, RunProgressStore, RunSessionStore, DisplayOverrides };
 
 /** Imperative read of run progression fields (deck, gold, talents, initialized). */
@@ -101,59 +118,64 @@ export function createRunRandomSource(stream: RunRngStream): () => number {
 
 /** Current screen and setter (owned by run domain navigation slice). */
 export function useActiveRunScreen() {
-  return useRunDomainStore(useShallow((s) => ({ screen: s.navigation.screen, setScreen: s.setScreen })));
+  return useRunSessionCommitStore(
+    useShallow(({ snapshot }) => ({
+      screen: snapshot.domain.navigation.screen,
+      setScreen: snapshot.domain.setScreen,
+    })),
+  );
 }
 
 /** Subscribe to navigation screen only (autosave, routing). */
 export function useActiveRunScreenValue(): Screen {
-  return useRunDomainStore((s) => s.navigation.screen);
+  return useRunSessionCommitStore((state) => state.snapshot.domain.navigation.screen);
 }
 
 export function useHasActiveBattle(): boolean {
-  return useRunBattleDomainStore((s) => s.hasActiveBattle);
+  return useRunSessionCommitStore((state) => state.snapshot.battle.hasActiveBattle);
 }
 
 export function useHasActiveRun(): boolean {
-  return useRunTransientStore((s) => s.hasActiveRun);
+  return useRunSessionCommitStore((state) => state.snapshot.transient.hasActiveRun);
 }
 
 export function useDisplayOverrides(): DisplayOverrides {
-  return useRunBattleDomainStore((s) => s.displayOverrides);
+  return useRunSessionCommitStore((state) => state.snapshot.battle.displayOverrides);
 }
 
 export function useSetHasActiveBattle(): (active: boolean) => void {
-  return useRunBattleDomainStore((s) => s.setHasActiveBattle);
+  return useRunSessionCommitStore((state) => state.snapshot.battle.setHasActiveBattle);
 }
 
 export function useBondedCompanions() {
-  return useRunProfileStore((s) => s.bondedCompanions);
+  return useRunSessionCommitStore((state) => state.snapshot.runProfile.bondedCompanions);
 }
 
 export function useContentSystemType(): ContentSystemId {
-  return useRunDomainStore((s) => s.activeRun.contentSystemType);
+  return useRunSessionCommitStore((state) => state.snapshot.domain.activeRun.contentSystemType);
 }
 
 export function useIsWildwoodRun(): boolean {
-  return useRunDomainStore((s) => s.activeRun.contentSystemType === "wildwood");
+  return useRunSessionCommitStore((state) => state.snapshot.domain.activeRun.contentSystemType === "wildwood");
 }
 
 export function useHomesteadProgressSlice() {
-  return useRunProfileStore(
-    useShallow((s) => ({
-      materialInventory: s.materialInventory,
-      constructedBuildings: s.constructedBuildings,
-      plantedFarms: s.plantedFarms,
-      completedResearch: s.completedResearch,
-      bondedCompanions: s.bondedCompanions,
+  return useRunSessionCommitStore(
+    useShallow(({ snapshot }) => ({
+      materialInventory: snapshot.runProfile.materialInventory,
+      constructedBuildings: snapshot.runProfile.constructedBuildings,
+      plantedFarms: snapshot.runProfile.plantedFarms,
+      completedResearch: snapshot.runProfile.completedResearch,
+      bondedCompanions: snapshot.runProfile.bondedCompanions,
     })),
   );
 }
 
 export function useTalentProgressSlice(): { talentXP: TalentXP; unlockedTalents: UnlockedTalents } {
-  return useRunProfileStore(
-    useShallow((s) => ({
-      talentXP: s.talentXP,
-      unlockedTalents: s.unlockedTalents,
+  return useRunSessionCommitStore(
+    useShallow(({ snapshot }) => ({
+      talentXP: snapshot.runProfile.talentXP,
+      unlockedTalents: snapshot.runProfile.unlockedTalents,
     })),
   );
 }
@@ -162,9 +184,12 @@ export function useDifficultySelectSlice(): {
   pendingCharacterId: CharacterId | null;
   selectedDifficulty: DifficultyId | null;
 } {
-  const pendingCharacterId = useRunTransientStore((s) => s.pendingCharacterId);
-  const selectedDifficulty = useRunDomainStore((s) => s.activeRun.selectedDifficulty);
-  return useMemo(() => ({ pendingCharacterId, selectedDifficulty }), [pendingCharacterId, selectedDifficulty]);
+  return useRunSessionCommitStore(
+    useShallow(({ snapshot }) => ({
+      pendingCharacterId: snapshot.transient.pendingCharacterId,
+      selectedDifficulty: snapshot.domain.activeRun.selectedDifficulty,
+    })),
+  );
 }
 
 export function useDraftDeckSlice(): {
@@ -172,18 +197,17 @@ export function useDraftDeckSlice(): {
   runDeck: BattleCard[];
   wildwoodDraft: WildwoodDraftState | null;
 } {
-  const run = useRunDomainStore(
-    useShallow((s) => ({
-      contentSystemType: s.activeRun.contentSystemType,
-      runDeck: s.activeRun.runDeck,
+  return useRunSessionCommitStore(
+    useShallow(({ snapshot }) => ({
+      contentSystemType: snapshot.domain.activeRun.contentSystemType,
+      runDeck: snapshot.domain.activeRun.runDeck,
+      wildwoodDraft: snapshot.transient.wildwoodDraft,
     })),
   );
-  const wildwoodDraft = useRunTransientStore((s) => s.wildwoodDraft);
-  return useMemo(() => ({ ...run, wildwoodDraft }), [run, wildwoodDraft]);
 }
 
 export function useActiveRunCharacterId(): CharacterId {
-  return useRunDomainStore((s) => s.activeRun.characterId);
+  return useRunSessionCommitStore((state) => state.snapshot.domain.activeRun.characterId);
 }
 
 /** Persistence: whether an active run should be snapshotted. */

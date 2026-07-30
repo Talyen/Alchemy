@@ -9,7 +9,7 @@ import { useUiStore } from "../../shared/stores/ui-store";
 import { stopAllSfx } from "@/lib/audio";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { CONSTANTS } from "../../shared/types";
-import { awardRunEndMaterials, clearCombatState } from "./run-flow-session-helpers";
+import { awardRunEndMaterials, clearCombatPresentation, clearCombatState } from "./run-flow-session-helpers";
 import type { RunFlowContext } from "./run-flow-context";
 
 export function createDefeatHandlers(ctx: RunFlowContext) {
@@ -20,6 +20,7 @@ export function createDefeatHandlers(ctx: RunFlowContext) {
       awardRunEndMaterials,
       finalizeRunXP,
       clearCombatState,
+      clearCombatPresentation,
     });
     deps.dispatch({
       type: "transition",
@@ -33,6 +34,7 @@ export function createDefeatHandlers(ctx: RunFlowContext) {
     if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
       stopAllSfx();
       clearCombatState();
+      clearCombatPresentation();
       deps.dispatch({ type: "labyrinth-fail-node" });
       deps.dispatch({ type: "navigate", screen: CONSTANTS.SCREENS.LABYRINTH_MAP });
       return;

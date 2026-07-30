@@ -9,6 +9,9 @@ import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-stor
 import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { getRunProfileStore, useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
+import { getRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
+import { getRunTransientStore } from "@/features/alchemy/shared/stores/run-transient-store";
+import { runSessionTransaction } from "@/features/alchemy/shared/stores/run-session-transaction";
 
 beforeEach(() => {
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
@@ -66,5 +69,34 @@ describe("persistence coordinator", () => {
     unsubscribe();
     useSettingsStore.getState().setMusicVol(43);
     expect(listener).toHaveBeenCalledTimes(4);
+  });
+
+  it("emits one active-run persistence signal for a multi-store transaction", () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeAlchemyPersistence(listener);
+
+    runSessionTransaction(() => {
+      getRunDomainStore().setRunGold(42);
+      getRunTransientStore().setHasActiveRun(true);
+    });
+
+    expect(listener).toHaveBeenCalledOnce();
+    unsubscribe();
+  });
+
+  it("coalesces every gameplay persistence owner into one session signal", () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeAlchemyPersistence(listener);
+
+    runSessionTransaction(() => {
+      getRunDomainStore().setRunGold(42);
+      getRunTransientStore().setHasActiveRun(true);
+      useProfileStore.getState().setDiscoveredCardIds(["slash"]);
+      useGearStore.getState().addCurrencies({ voidstone: 1 });
+      getRunProfileStore().setMaterials({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
+    });
+
+    expect(listener).toHaveBeenCalledOnce();
+    unsubscribe();
   });
 });

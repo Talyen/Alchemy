@@ -45,7 +45,6 @@ import {
   sampleDestinationChoices,
   withSelectedBossForDestinations,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { playGoldGain } from "@/lib/audio";
 
 interface VictoryGoldRoll {
   gold: number;
@@ -258,7 +257,7 @@ export function commitVictoryRewards(
   result: VictoryRewardsResult,
   deps: CommitVictoryRewardsDeps,
   rng: () => number = Math.random,
-) {
+): boolean {
   if (deps.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD && deps.battleState.pendingMaterials.crystal > 0) {
     deps.addHomesteadMaterials(deps.battleState.pendingMaterials);
   }
@@ -267,10 +266,6 @@ export function commitVictoryRewards(
   syncBattleToRun({ playerHealth: result.playerHealth });
   if (result.maxHealthDelta > 0) {
     deps.setRunMaxHealth((prev) => prev + result.maxHealthDelta);
-  }
-
-  if (result.newGold > deps.battleState.gold) {
-    playGoldGain();
   }
 
   deps.setRewardState({
@@ -284,5 +279,6 @@ export function commitVictoryRewards(
   } else {
     deps.setCompanionRewardCards(null);
   }
-  deps.clearCombatState();
+  deps.setHasActiveBattle(false);
+  return result.newGold > deps.battleState.gold;
 }

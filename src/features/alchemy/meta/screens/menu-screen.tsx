@@ -41,15 +41,15 @@ export function MenuScreen({
   hasAffordableHomestead?: boolean;
   isArmoryLocked?: boolean;
 }) {
-  const variants = logoSrcVariants ?? [logoSrc];
-  const [variantIdx, setVariantIdx] = useState(1);
+  const variants = logoSrcVariants?.length ? logoSrcVariants : [logoSrc];
+  const [variantIdx, setVariantIdx] = useState(() => Math.min(1, variants.length - 1));
   const [flipped, setFlipped] = useState(false);
 
   const finishedRunCharacters = useProfileStore((s) => s.finishedRunCharacters);
   const isKnightGatedLocked = !finishedRunCharacters.includes("knight");
 
   const handleLogoClick = useCallback(() => {
-    if (!flipped) {
+    if (!flipped && variants.length > 2) {
       let next: number;
       do {
         next = 1 + Math.floor(Math.random() * (variants.length - 1));

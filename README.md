@@ -12,7 +12,7 @@
 ## Prerequisites
 
 - Node.js 24+ (see `engines` in `package.json`)
-- npm 10+
+- npm 11+
 
 ## Quick Start
 
@@ -147,7 +147,7 @@ src/
 │   ├── game-constants.ts # All tuning knobs
 │   └── trinkets.ts       # Trinket definitions
 ├── features/alchemy/     # React UI
-│   ├── shared/           # stores, storage, ui, screens barrel, config
+│   ├── shared/           # stores, storage, ui, config
 │   ├── meta/             # menu, collection, homestead, talents
 │   ├── run-setup/        # character, difficulty, draft screens
 │   ├── run-loop/         # battle glue, navigation, shop, in-run screens

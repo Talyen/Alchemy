@@ -5,14 +5,19 @@ import { cardLibrary, getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import * as cardPools from "@/lib/game-data/cards/card-pools";
 
-vi.mock("@/features/alchemy/shared/stores/profile-store", () => ({
-  useProfileStore: {
-    getState: () => ({
-      setDiscoveredCardIds: vi.fn(),
-      setDiscoveredTrinketIds: vi.fn(),
-    }),
-  },
-}));
+vi.mock("@/features/alchemy/shared/stores/profile-store", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/profile-store")>();
+  return {
+    ...actual,
+    useProfileStore: {
+      ...actual.useProfileStore,
+      getState: () => ({
+        setDiscoveredCardIds: vi.fn(),
+        setDiscoveredTrinketIds: vi.fn(),
+      }),
+    },
+  };
+});
 
 function minimalContext(overrides: { runDeck?: BattleCard[] } = {}) {
   return {

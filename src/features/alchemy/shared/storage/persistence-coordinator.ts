@@ -5,9 +5,9 @@ import { gearPersistenceCodec } from "@/features/alchemy/shared/stores/gear-stor
 import type { GearSaveFields } from "@/features/alchemy/shared/stores/gear-store-types";
 import {
   runProfilePersistenceCodec,
-  subscribeActiveRunSave,
   type RunProfileSaveFields,
 } from "@/features/alchemy/shared/stores/run-save-readers";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-transaction";
 
 export type AlchemyPersistenceFields = SettingsSaveFields & ProfileSaveFields & GearSaveFields & RunProfileSaveFields;
 
@@ -28,13 +28,7 @@ export function hydrateAlchemyPersistenceFields(fields: AlchemyPersistenceFields
 }
 
 export function subscribeAlchemyPersistence(listener: () => void): () => void {
-  const unsubscribers = [
-    settingsPersistenceCodec.subscribe(listener),
-    profilePersistenceCodec.subscribe(listener),
-    gearPersistenceCodec.subscribe(listener),
-    runProfilePersistenceCodec.subscribe(listener),
-    subscribeActiveRunSave(listener),
-  ];
+  const unsubscribers = [settingsPersistenceCodec.subscribe(listener), subscribeRunSessionCommits(() => listener())];
   return () => {
     for (const unsubscribe of unsubscribers) unsubscribe();
   };

@@ -112,12 +112,10 @@ type CraftingCurrencyBoardPositionsByCharacter = Record<CharacterId, CraftingCur
 │           addCurrencies / reset                           │
 └──────────────┬───────────────────────────────────────────┘
                │ subscriptions + selectors
-   ┌───────────┼─────────────┬──────────────────┐
-   ▼           ▼             ▼                  ▼
- Armory    Meta-routes   App.tsx (isArmoryLocked, autosave)
- screen    (controller)  buildAlchemySaveDataFromStores
-   │                     useAlchemyAutosaveFromStores
-   │                     useGearStore.subscribe(triggerSave)
+   ┌───────────┼─────────────┬──────────────────────────────┐
+   ▼           ▼             ▼                              ▼
+ Armory    Meta-routes   App.tsx (isArmoryLocked)   subscribeAlchemyPersistence
+ screen    (controller)  useAlchemyAutosaveFromStores  (store-owned codecs)
    │
    ▼
  armory-screen.tsx + armory/* (panels, drag hooks, tooltips)
@@ -153,7 +151,7 @@ The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not call `useGe
 
 - Reads `inventories`, `loadouts`, `craftingCurrencies` from the store.
 - Reads per-character gear/currency board positions and exposes `onMoveBoardItem` so the screen does not mutate `useGearStore` directly.
-- Wraps `equip`/`unequip` with `syncRunMaxHealthFromGear` (HP-sync side effect).
+- Wraps `equip`/`unequip` with `syncRunMaxHealthFromGearMutation` (HP-sync side effect).
 - Wraps `salvage`/`applyCurrency` with `syncRunMaxHealthFromGearMutation` + `flushAlchemySaveNow`.
 - Provides a dev-only `onSpawnDevGear` that calls `generateDevRandomGearInstance` + `addInstance` + `flushAlchemySaveNow`.
 - Reports `browseOnly = hasActiveBattle` and `finishedRunCharacters` for the screen.
@@ -220,7 +218,7 @@ Migration steps are in `src/lib/validation/migration/steps.ts`. Notable steps:
 - **v8→v9** — splits the flat `gearInventory` into per-character `gearInventories` and per-character board positions.
 - **v9→v10** — `migrateV9ToV10` is a one-shot localStorage shim: reads `alchemy-armory-positions`, merges the positions into `gearBoardPositionsByCharacter.knight`, and removes the storage key. The shim previously lived in `gear-store.ts`; it now lives in the canonical migration pipeline.
 
-`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes to run domain, `app-store`, and `gear-store` changes and debounces autosave. The gear mutation callbacks in `useArmoryController` also call `flushAlchemySaveNow` after mutations during an active run.
+`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes through `subscribeAlchemyPersistence`, which combines settings changes with the committed gameplay-session signal (run domain, transient/battle state, run profile, profile, and gear); changes are debounced before writing. `buildAlchemySaveDataFromStores` assembles the snapshot through `encodeAlchemyPersistenceFields`. The gear mutation callbacks in `useArmoryController` also call `flushAlchemySaveNow` after mutations during an active run.
 
 ## Tests
 

@@ -29,7 +29,11 @@ import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/car
 import type { GearInstance } from "@/lib/gear";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { readActiveRunStore, readRunSessionStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import {
+  readActiveRunStore,
+  readRunSessionStore,
+  runSessionTransaction,
+} from "@/features/alchemy/shared/stores/run-session-facade";
 import type { CreateShopActionsDeps, ShopActions } from "./shop-action-types";
 import { createShopPriceSelectors } from "./shop-price-selectors";
 
@@ -53,23 +57,25 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     slotKey: string,
     onAcquire: () => void,
   ): boolean {
-    const run = readActiveRunStore();
-    if (run.runGold < price) return false;
-    // Reserve the slot in live store state BEFORE spend/acquire so rapid re-entry cannot double-buy.
-    let reserved = false;
-    setState((p) => {
-      if (p.purchasedSlotKeys.includes(slotKey)) return p;
-      reserved = true;
-      return {
-        ...p,
-        firstPurchaseUsed: true,
-        purchasedSlotKeys: markSlotPurchased(p.purchasedSlotKeys, slotKey),
-      };
+    return runSessionTransaction(() => {
+      const run = readActiveRunStore();
+      if (run.runGold < price) return false;
+      // Reserve the slot in live store state BEFORE spend/acquire so rapid re-entry cannot double-buy.
+      let reserved = false;
+      setState((p) => {
+        if (p.purchasedSlotKeys.includes(slotKey)) return p;
+        reserved = true;
+        return {
+          ...p,
+          firstPurchaseUsed: true,
+          purchasedSlotKeys: markSlotPurchased(p.purchasedSlotKeys, slotKey),
+        };
+      });
+      if (!reserved) return false;
+      spendRunGold(price, run.setRunGold);
+      onAcquire();
+      return true;
     });
-    if (!reserved) return false;
-    spendRunGold(price, run.setRunGold);
-    onAcquire();
-    return true;
   }
 
   // ======== Init ========
@@ -102,15 +108,17 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
   }
 
   function handleShopRemoveCard(index: number): void {
-    const shopState = readRunSessionStore().shopState;
-    if (shopState.removeUsed) return;
-    const run = readActiveRunStore();
-    if (index < 0 || index >= run.runDeck.length) return;
-    const price = getRemoveCardPrice();
-    if (run.runGold < price) return;
-    spendRunGold(price, run.setRunGold);
-    run.setRunDeck((p) => p.filter((_, i) => i !== index));
-    setShopState((p) => ({ ...p, removeUsed: true }));
+    runSessionTransaction(() => {
+      const shopState = readRunSessionStore().shopState;
+      if (shopState.removeUsed) return;
+      const run = readActiveRunStore();
+      if (index < 0 || index >= run.runDeck.length) return;
+      const price = getRemoveCardPrice();
+      if (run.runGold < price) return;
+      spendRunGold(price, run.setRunGold);
+      run.setRunDeck((p) => p.filter((_, i) => i !== index));
+      setShopState((p) => ({ ...p, removeUsed: true }));
+    });
   }
 
   const handleShopRefresh = makeCardRefreshHandler({
@@ -163,32 +171,34 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
   });
 
   function handleAlchemistMixPotions(indexA: number, indexB: number): BattleCard | null {
-    const price = getMixPotionPrice();
-    const run = readActiveRunStore();
-    if (run.runGold < price) return null;
-    const deck = run.runDeck;
-    if (indexA < 0 || indexB < 0 || indexA >= deck.length || indexB >= deck.length || indexA === indexB) return null;
-    const cardA = deck[indexA];
-    const cardB = deck[indexB];
+    return runSessionTransaction(() => {
+      const price = getMixPotionPrice();
+      const run = readActiveRunStore();
+      if (run.runGold < price) return null;
+      const deck = run.runDeck;
+      if (indexA < 0 || indexB < 0 || indexA >= deck.length || indexB >= deck.length || indexA === indexB) return null;
+      const cardA = deck[indexA];
+      const cardB = deck[indexB];
 
-    // Reserve mix slot in live store state BEFORE spend so a closed-over stale mixUsed cannot double-mix.
-    let reserved = false;
-    setAlchemistState((p) => {
-      if (p.mixUsed) return p;
-      reserved = true;
-      return { ...p, mixUsed: true };
+      // Reserve mix slot in live store state BEFORE spend so a closed-over stale mixUsed cannot double-mix.
+      let reserved = false;
+      setAlchemistState((p) => {
+        if (p.mixUsed) return p;
+        reserved = true;
+        return { ...p, mixUsed: true };
+      });
+      if (!reserved) return null;
+
+      // Any reserved attempt consumes the one mix slot — even programmatic edge cases
+      spendRunGold(price, run.setRunGold);
+
+      const mixed = tryCreateMixedPotion(cardA, cardB, talentEffects.potionMixPotency);
+      if (mixed) {
+        run.setRunDeck((p) => applyMixToDeck(p, indexA, indexB, mixed));
+        useProfileStore.getState().setDiscoveredCardIds((cur) => appendUnique(cur, MIXED_POTION_CARD_ID));
+      }
+      return mixed;
     });
-    if (!reserved) return null;
-
-    // Any reserved attempt consumes the one mix slot — even programmatic edge cases
-    spendRunGold(price, run.setRunGold);
-
-    const mixed = tryCreateMixedPotion(cardA, cardB, talentEffects.potionMixPotency);
-    if (mixed) {
-      run.setRunDeck((p) => applyMixToDeck(p, indexA, indexB, mixed));
-      useProfileStore.getState().setDiscoveredCardIds((cur) => appendUnique(cur, MIXED_POTION_CARD_ID));
-    }
-    return mixed;
   }
 
   // ======== Trinket Shop ========

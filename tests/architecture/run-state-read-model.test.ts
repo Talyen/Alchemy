@@ -18,11 +18,30 @@ describe("run-state read model", () => {
     }
   });
 
-  it("keeps useRunScreenData as the screen-scoped React read surface", () => {
+  it("keeps exact screen-specific hooks as the screen-scoped React read surface", () => {
     const facade = read("src/features/alchemy/shared/stores/run-session-facade.ts");
-    expect(facade).toContain("useRunScreenData");
+    expect(facade).toContain("useRewardsScreenData");
+    expect(facade).toContain("useShopScreenData");
+    expect(facade).not.toContain("useRunScreenData");
     const routes = read("src/app/screen-routes/run-loop-routes.tsx");
-    expect(routes).toContain("useRunScreenData");
+    expect(routes).toContain("useRewardsScreenData");
+    expect(routes).toContain("useShopScreenData");
+    expect(routes).not.toContain("useRunScreenData");
+  });
+
+  it("routes cross-store React reads through the committed session projection", () => {
+    const facade = read("src/features/alchemy/shared/stores/run-session-facade.ts");
+    const model = read("src/features/alchemy/shared/stores/run-session-model.ts");
+    const screenHooks = read("src/features/alchemy/shared/stores/use-run-screen-data.ts");
+    const adapters = read("src/features/alchemy/shared/stores/run-store-views.ts");
+
+    for (const source of [facade, model, screenHooks, adapters]) {
+      expect(source).toContain("useRunSessionCommitStore");
+      expect(source).not.toContain("useRunDomainStore(");
+      expect(source).not.toContain("useRunTransientStore(");
+      expect(source).not.toContain("useRunBattleDomainStore(");
+      expect(source).not.toContain("useRunProfileStore(");
+    }
   });
 
   it("does not re-export shop/rewards/mystery display state from the mega-controller", () => {
@@ -90,10 +109,13 @@ describe("run-state read model", () => {
     expect(views).toContain("export function selectRunController");
   });
 
-  it("does not keep a production flatten twin beside useRunScreenData", () => {
+  it("keeps exact screen contracts without a broad field bag or unchecked cast", () => {
     const screenData = read("src/features/alchemy/shared/stores/run-screen-data.ts");
-    expect(screenData).not.toContain("flattenRunSessionForScreens");
-    expect(screenData).toContain("export interface RunScreenData");
+    const hooks = read("src/features/alchemy/shared/stores/use-run-screen-data.ts");
+    expect(screenData).toContain("RunScreenDataByScreen");
+    expect(screenData).not.toContain("interface RunScreenData {");
+    expect(hooks).not.toContain("SCREEN_FIELDS");
+    expect(hooks).not.toContain("as RunScreenData");
   });
 
   it("assembles routeCommands via createAlchemyRouteCommands, not an inline mega-tree", () => {

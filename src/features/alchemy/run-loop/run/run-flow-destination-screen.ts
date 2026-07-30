@@ -3,6 +3,7 @@ import {
   beginDestinationClaim,
   cancelDestinationClaim,
   commitDestinationClaim,
+  runSessionTransaction,
   setCorruptionResult,
   setRewardState,
 } from "../../shared/stores/run-session-facade";
@@ -25,17 +26,18 @@ export function createDestinationScreenHandlers(ctx: RunFlowContext) {
   }
 
   function handleDestinationChoice(destination: Destination) {
-    if (!beginDestinationClaim(destination)) return;
-    const rewardState = readRunSessionStore().rewardState;
-
-    const selectedBossId = destination === CONSTANTS.DESTINATIONS.BOSS_COMBAT ? rewardState.selectedBossId : null;
-
-    const commitDestinationProgress = () => {
-      commitDestinationClaim(destination);
-    };
-
     try {
+      const choice = runSessionTransaction(() => {
+        if (!beginDestinationClaim(destination)) return null;
+        const rewardState = readRunSessionStore().rewardState;
+        const selectedBossId = destination === CONSTANTS.DESTINATIONS.BOSS_COMBAT ? rewardState.selectedBossId : null;
+        return { selectedBossId };
+      });
+      if (!choice) return;
       useUiStore.getState().clearCardHover();
+      const commitDestinationProgress = () => {
+        commitDestinationClaim(destination);
+      };
       routeDestinationChoice(destination, {
         navigateTo: (screen) =>
           deps.dispatch({
@@ -54,18 +56,22 @@ export function createDestinationScreenHandlers(ctx: RunFlowContext) {
         startTrinketShop: () => deps.dispatch({ type: "init-trinket-shop" }),
         startEquipmentShop: () => deps.dispatch({ type: "init-equipment-shop" }),
         startBattle: (enemyType) => deps.dispatch({ type: "start-battle", enemyType }),
-        startBossBattle: () => deps.dispatch({ type: "start-boss", bossId: selectedBossId }),
+        startBossBattle: () => deps.dispatch({ type: "start-boss", bossId: choice.selectedBossId }),
       });
     } catch (error) {
-      cancelDestinationClaim();
+      runSessionTransaction(() => cancelDestinationClaim());
       throw error;
     }
   }
 
   function handleCampfireContinue() {
-    const healFraction = getCampfireHealFraction(deps.talents.talentEffects.campfireHealBonus);
-    deps.run.setRunPlayerHealth((prev) => getCampfireRestHealth(prev, deps.run.runMaxHealth, healFraction));
-    ctx.advanceToNextDestination();
+    runSessionTransaction(
+      () => {
+        const healFraction = getCampfireHealFraction(deps.talents.talentEffects.campfireHealBonus);
+        deps.run.setRunPlayerHealth((prev) => getCampfireRestHealth(prev, deps.run.runMaxHealth, healFraction));
+      },
+      { afterCommit: () => ctx.advanceToNextDestination() },
+    );
   }
 
   return {

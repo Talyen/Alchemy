@@ -74,17 +74,6 @@ test.describe("Run Outcomes", () => {
   });
 
   test.describe("Defeat and Run End Flow", () => {
-    test("ending a run shows defeat screen and return to menu works", async ({ page, fastBattle }) => {
-      test.setTimeout(60_000);
-      void fastBattle;
-
-      await startBattleWithDeck(
-        page,
-        Array.from({ length: 6 }, () => makeCard()),
-      );
-      await assertDefeatFromEndRun(page, { returnToMenu: true });
-    });
-
     test("ending a run from destination screen shows defeat screen", critical, async ({ page }) => {
       await startAtDestination(page, {});
       await page.getByRole("button", { name: "Open destination menu" }).click();

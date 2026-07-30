@@ -6,6 +6,7 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import type { CorruptionResult } from "@/lib/corruption";
 import { getRunTransientStore } from "../run-transient-store";
 import { getRunDomainStore } from "../run-domain-store";
+import { runSessionTransaction } from "../run-session-transaction";
 
 export function setRewardState(state: RewardState | ((prev: RewardState) => RewardState)) {
   getRunTransientStore().setRewardState(state);
@@ -29,18 +30,20 @@ export function beginDestinationClaim(destination: Destination): boolean {
 
 /** Commit destination claim across session + active-run progress (cross-lifetime). */
 export function commitDestinationClaim(destination: Destination): boolean {
-  const transient = getRunTransientStore();
-  if (transient.pendingDestinationClaim !== destination) return false;
-  if (!transient.rewardState.destinations.includes(destination)) {
+  return runSessionTransaction(() => {
+    const transient = getRunTransientStore();
+    if (transient.pendingDestinationClaim !== destination) return false;
+    if (!transient.rewardState.destinations.includes(destination)) {
+      transient.cancelDestinationClaim();
+      return false;
+    }
+    transient.setRewardState((prev) => ({ ...prev, destinations: [] }));
     transient.cancelDestinationClaim();
-    return false;
-  }
-  transient.setRewardState((prev) => ({ ...prev, destinations: [] }));
-  transient.cancelDestinationClaim();
-  const run = getRunDomainStore();
-  run.setCompletedDestinations((prev) => [...prev, destination]);
-  run.setDestinationIndexInAct((prev) => prev + 1);
-  return true;
+    const run = getRunDomainStore();
+    run.setCompletedDestinations((prev) => [...prev, destination]);
+    run.setDestinationIndexInAct((prev) => prev + 1);
+    return true;
+  });
 }
 
 export function cancelDestinationClaim(): void {

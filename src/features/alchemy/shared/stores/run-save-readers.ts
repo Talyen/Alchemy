@@ -5,9 +5,6 @@ import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/ho
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { createInitialPermanentFields } from "@/features/alchemy/shared/stores/run-state-init";
 import { getRunProfileStore, useRunProfileStore } from "./run-profile-store";
-import { useRunDomainStore } from "./run-domain-store";
-import { useRunTransientStore } from "./run-transient-store";
-import { useRunBattleDomainStore } from "./run-battle-domain-store";
 import type { PersistenceCodec } from "./persistence-codec";
 
 export interface RunProfileSaveFields {
@@ -61,18 +58,3 @@ export const runProfilePersistenceCodec: PersistenceCodec<RunProfileSaveFields> 
   },
   subscribe: (listener) => useRunProfileStore.subscribe(listener),
 };
-
-/**
- * Autosave dirty signal for `ActiveRunData`. The snapshot spans every run-lifetime
- * store, so all three must be watched — the profile codec only covers permanent fields.
- */
-export function subscribeActiveRunSave(listener: () => void): () => void {
-  const unsubscribers = [
-    useRunDomainStore.subscribe(listener),
-    useRunTransientStore.subscribe(listener),
-    useRunBattleDomainStore.subscribe(listener),
-  ];
-  return () => {
-    for (const unsubscribe of unsubscribers) unsubscribe();
-  };
-}

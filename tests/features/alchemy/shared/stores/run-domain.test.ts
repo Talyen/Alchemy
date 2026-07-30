@@ -22,6 +22,7 @@ import {
   snapshotRun,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-transaction";
 import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -630,19 +631,38 @@ describe("run transitions", () => {
     expect(awardRunEndMaterials).toHaveBeenCalledOnce();
   });
 
-  it("applyRunDefeatTeardown awards materials, finalizes XP, flushes, and clears combat", async () => {
+  it("applyRunDefeatTeardown commits run and combat teardown together", async () => {
     getRunSessionStoreView().setHasActiveRun(true);
+    getBattleStoreView().setHasActiveBattle(true);
     const awardRunEndMaterials = vi.fn(() => emptyInventory());
     const finalizeRunXP = vi.fn();
-    const clearCombatState = vi.fn();
-    applyRunDefeatTeardown({ awardRunEndMaterials, finalizeRunXP, clearCombatState });
+    const clearCombatState = () => getBattleStoreView().setHasActiveBattle(false);
+    const clearCombatPresentation = vi.fn();
+    const commits: Array<{ hasActiveRun: boolean; hasActiveBattle: boolean }> = [];
+    const unsubscribe = subscribeRunSessionCommits(() => {
+      commits.push({
+        hasActiveRun: getRunSessionStoreView().hasActiveRun,
+        hasActiveBattle: getBattleStoreView().hasActiveBattle,
+      });
+    });
+
+    applyRunDefeatTeardown({
+      awardRunEndMaterials,
+      finalizeRunXP,
+      clearCombatState,
+      clearCombatPresentation,
+    });
+    unsubscribe();
+
     expect(awardRunEndMaterials).toHaveBeenCalledOnce();
     expect(finalizeRunXP).toHaveBeenCalledOnce();
     await vi.waitFor(() => {
       expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
     });
-    expect(clearCombatState).toHaveBeenCalledOnce();
+    expect(commits).toEqual([{ hasActiveRun: false, hasActiveBattle: false }]);
+    expect(clearCombatPresentation).toHaveBeenCalledOnce();
     expect(getRunSessionStoreView().hasActiveRun).toBe(false);
+    expect(getBattleStoreView().hasActiveBattle).toBe(false);
     expect(stopAllSfx).toHaveBeenCalledOnce();
     expect(playDefeat).toHaveBeenCalledOnce();
   });

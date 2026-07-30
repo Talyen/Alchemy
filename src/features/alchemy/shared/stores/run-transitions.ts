@@ -24,8 +24,9 @@ import { createInitialRunDomainData } from "./run-domain-types";
 import { clearBattlePresentationCardGhosts, resetBattlePresentation } from "./battle-presentation-bridge";
 import { useUiStore } from "./ui-store";
 import { useProfileStore } from "./profile-store";
-import { getRunSession } from "./run-session-model";
+import { getCommittedRunSession } from "./run-session-model";
 import { restoreLabyrinth, restoreReward, restoreShops, restoreWildwoodReward } from "./restore-active-run-session";
+import { runSessionTransaction } from "./run-session-transaction";
 
 /** Apply persisted active-run data across the run-lifetime stores atomically. */
 export function restoreRun(
@@ -33,21 +34,23 @@ export function restoreRun(
   talentXP: TalentXP,
   unlockedTalents: UnlockedTalents,
 ): void {
-  const store = getRunDomainStore();
-  store.initialize(activeRun);
-  getRunProfileStore().applyTalentState(talentXP, unlockedTalents);
-  getRunBattleDomainStore().initializeActiveBattle(activeRun?.activeCombat?.battleState ?? null);
+  runSessionTransaction(() => {
+    const store = getRunDomainStore();
+    store.initialize(activeRun);
+    getRunProfileStore().applyTalentState(talentXP, unlockedTalents);
+    getRunBattleDomainStore().initializeActiveBattle(activeRun?.activeCombat?.battleState ?? null);
 
-  if (activeRun?.currentScreen) store.setScreen(activeRun.currentScreen);
-  if (!activeRun) return;
+    if (activeRun?.currentScreen) store.setScreen(activeRun.currentScreen);
+    if (!activeRun) return;
 
-  const session = getRunTransientStore();
-  session.setHasActiveRun(true);
-  session.setWildwoodDraft(activeRun.wildwoodDraft);
-  restoreLabyrinth(session, activeRun);
-  restoreWildwoodReward(session, activeRun);
-  restoreReward(session, activeRun, store.setScreen);
-  restoreShops(session, activeRun);
+    const session = getRunTransientStore();
+    session.setHasActiveRun(true);
+    session.setWildwoodDraft(activeRun.wildwoodDraft);
+    restoreLabyrinth(session, activeRun);
+    restoreWildwoodReward(session, activeRun);
+    restoreReward(session, activeRun, store.setScreen);
+    restoreShops(session, activeRun);
+  });
 }
 
 /** Active-run snapshot for autosave — null when the run has ended. */
@@ -57,7 +60,7 @@ export function resolveActiveRunForSave(hasActiveRun: boolean, screen?: Screen):
 
 /** Serialize the run-lifetime stores into persisted ActiveRunData. */
 export function snapshotRun(screen?: Screen): ActiveRunData {
-  const { run, session, battle } = getRunSession(screen);
+  const { run, session, battle } = getCommittedRunSession(screen);
   const currentScreen = screen ?? getRunDomainStore().navigation.screen;
   const pendingReward = session.rewardState.choices.length > 0 ? serializePendingReward(session.rewardState) : null;
   const persistShop = currentScreen === "shop" || session.shopState.cards.length > 0;
@@ -98,16 +101,6 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
     trinketShopState: persistTrinketShop ? serializeTrinketShopState(session.trinketShopState) : null,
     equipmentShopState: persistEquipmentShop ? serializeEquipmentShopState(session.equipmentShopState) : null,
   });
-}
-
-/** Apply gear max-health bonus delta after armory equip/unequip during an active run. */
-export function syncRunMaxHealthFromGear(
-  characterId: CharacterId,
-  inventory: GearInstance[],
-  loadoutsBefore: GearLoadouts,
-  loadoutsAfter: GearLoadouts,
-): void {
-  syncRunMaxHealthFromGearMutation(characterId, inventory, loadoutsBefore, inventory, loadoutsAfter);
 }
 
 /** Apply gear max-health bonus delta after armory gear inventory/loadout mutations during an active run. */
@@ -152,20 +145,27 @@ export function syncBattleToRun(options?: { playerHealth?: number }): void {
 /** Clear the battle-active flag and battle-related presentation state. */
 export function clearBattleUi(): void {
   getRunBattleDomainStore().setHasActiveBattle(false);
+  clearBattlePresentationUi();
+}
+
+/** Clear battle presentation after the gameplay commit that ended combat. */
+export function clearBattlePresentationUi(): void {
   useUiStore.getState().clearCardHover();
   clearBattlePresentationCardGhosts();
 }
 
 /** Clear active combat, run progression, session UI, navigation, and presentation (profile survives). */
 export function teardownRun(): void {
-  useRunDomainStore.setState((state) => {
-    const fresh = createInitialRunDomainData();
-    state.activeRun = { ...fresh.activeRun, characterId: state.activeRun.characterId };
-    state.initialized = true;
-    state.navigation = fresh.navigation;
+  runSessionTransaction(() => {
+    useRunDomainStore.setState((state) => {
+      const fresh = createInitialRunDomainData();
+      state.activeRun = { ...fresh.activeRun, characterId: state.activeRun.characterId };
+      state.initialized = true;
+      state.navigation = fresh.navigation;
+    });
+    resetRunTransientStore();
+    resetRunBattleDomainStore();
   });
-  resetRunTransientStore();
-  resetRunBattleDomainStore();
   resetBattlePresentation();
   useUiStore.getState().clearCardHover();
 }
@@ -180,8 +180,8 @@ export function flushSaveAfterRunEnd(): void {
   void flushPersistedSave(null);
 }
 
-/** Shared run-end bookkeeping: materials, XP, save flush, and clear active-run flag. */
-export function finalizeRunEndSession(options: {
+/** Apply run-end bookkeeping mutations without opening or flushing a transaction. */
+function finalizeRunEndSessionState(options: {
   awardRunEndMaterials: (displayMaterials?: MaterialInventory | null) => MaterialInventory;
   finalizeRunXP: () => void;
   displayMaterials?: MaterialInventory | null;
@@ -201,22 +201,37 @@ export function finalizeRunEndSession(options: {
   const materials = options.awardRunEndMaterials(options.displayMaterials);
   options.finalizeRunXP();
 
-  flushSaveAfterRunEnd();
   getRunTransientStore().setHasActiveRun(false);
   return materials;
 }
 
-/** Defeat flow: finalize rewards/XP, persist, audio, and clear combat state. */
+/** Shared run-end bookkeeping: materials, XP, save flush, and clear active-run flag. */
+export function finalizeRunEndSession(options: {
+  awardRunEndMaterials: (displayMaterials?: MaterialInventory | null) => MaterialInventory;
+  finalizeRunXP: () => void;
+  displayMaterials?: MaterialInventory | null;
+}): MaterialInventory {
+  const materials = runSessionTransaction(() => finalizeRunEndSessionState(options));
+  flushSaveAfterRunEnd();
+  return materials;
+}
+
+/** Defeat flow: finalize rewards/XP and combat state in one commit, then run side effects. */
 export function applyRunDefeatTeardown(options: {
   awardRunEndMaterials: (displayMaterials?: MaterialInventory | null) => MaterialInventory;
   finalizeRunXP: () => void;
   clearCombatState: () => void;
+  clearCombatPresentation?: () => void;
 }): void {
-  finalizeRunEndSession({
-    awardRunEndMaterials: options.awardRunEndMaterials,
-    finalizeRunXP: options.finalizeRunXP,
+  runSessionTransaction(() => {
+    finalizeRunEndSessionState({
+      awardRunEndMaterials: options.awardRunEndMaterials,
+      finalizeRunXP: options.finalizeRunXP,
+    });
+    options.clearCombatState();
   });
+  flushSaveAfterRunEnd();
   stopAllSfx();
   playDefeat();
-  options.clearCombatState();
+  options.clearCombatPresentation?.();
 }

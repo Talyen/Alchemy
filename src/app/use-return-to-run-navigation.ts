@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { resolveReturnToRunTarget, shouldClearReturnToRunOnMainMenu } from "@/app/return-to-run-navigation";
+import { resolveReturnToRunTarget } from "@/app/return-to-run-navigation";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
 import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
@@ -36,7 +36,7 @@ export function useReturnToRunNavigation({
   }
 
   function handleMainMenu() {
-    if (shouldClearReturnToRunOnMainMenu(hasActiveBattle)) {
+    if (!hasActiveBattle) {
       setReturnToRunScreen(null);
     }
     run.goToScreen("menu");

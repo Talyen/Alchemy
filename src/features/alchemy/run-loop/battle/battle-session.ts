@@ -76,6 +76,12 @@ export function createBattleSession(ctx: BattleControllerContext) {
   }
 
   function resetBattleSession() {
+    prepareBattleSessionForStart();
+    getStore().setBattleStartState(null);
+  }
+
+  /** Reset session identity/presentation after the new battle state commits. */
+  function prepareBattleSessionForStart() {
     ctx.battleSessionRef.current += 1;
     ctx.battleTimerGroupRef.current.clearAll();
     clearTransferHandles();
@@ -84,7 +90,6 @@ export function createBattleSession(ctx: BattleControllerContext) {
     ctx.victoryDefeatHandledRef.current = false;
     ctx.companionScheduledRef.current = false;
     getPresentationStore().clearRevealedCardKeys();
-    getStore().setBattleStartState(null);
     getPresentationStore().resetPortraitHurtTokens();
     getPresentationStore().clearFloatingCombatTexts();
   }
@@ -110,6 +115,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
     clearAllBattleTimeouts,
     clearBattleTimeoutsKeepCompanion,
     resetBattleSession,
+    prepareBattleSessionForStart,
     finishDrawSequence,
   };
 }

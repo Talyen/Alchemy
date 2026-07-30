@@ -12,8 +12,12 @@ import {
   generateLabyrinthMap,
 } from "@/lib/content-systems/labyrinth/map-generation";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthNode } from "@/lib/content-systems/types";
-import { setActiveLabyrinthPendingNode, setLabyrinthMap } from "@/features/alchemy/shared/stores/run-session-facade";
-import { readRunSessionStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import {
+  readRunSessionStore,
+  runSessionTransaction,
+  setActiveLabyrinthPendingNode,
+  setLabyrinthMap,
+} from "@/features/alchemy/shared/stores/run-session-facade";
 import type { Screen } from "@/features/alchemy/shared/types";
 
 export interface LabyrinthController {
@@ -71,15 +75,24 @@ export function useLabyrinthController(_screen: Screen, rng: () => number): Laby
   }, [rng]);
 
   const enterNode = useCallback((row: number, col: number, handlers: LabyrinthNodeHandlers): boolean => {
-    const session = readRunSessionStore();
-    if (session.activeLabyrinthPendingNode) return false;
+    const node = runSessionTransaction(() => {
+      const session = readRunSessionStore();
+      if (session.activeLabyrinthPendingNode) return null;
 
-    const map = session.labyrinthMap;
-    const node = map.grid[row]?.[col];
-    if (!node || !canEnterLabyrinthNode(map, row, col)) return false;
+      const map = session.labyrinthMap;
+      const node = map.grid[row]?.[col];
+      if (!node || !canEnterLabyrinthNode(map, row, col)) return null;
 
-    setActiveLabyrinthPendingNode({ row, col });
-    routeNodeInteraction(node, handlers);
+      setActiveLabyrinthPendingNode({ row, col });
+      return node;
+    });
+    if (!node) return false;
+    try {
+      routeNodeInteraction(node, handlers);
+    } catch (error) {
+      runSessionTransaction(() => setActiveLabyrinthPendingNode(null));
+      throw error;
+    }
     return true;
   }, []);
 

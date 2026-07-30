@@ -1,7 +1,7 @@
-// Screen-scoped display field bag for run-loop / run-end routes.
-// Production reads use selective store picks via useRunScreenData — this type is the shared field contract.
-import type { BattleState } from "@/lib/battle";
-import type { BattleCard, CharacterId, DifficultyId, TalentXP, UnlockedTalents } from "@/lib/game-data";
+// Exact display contracts for run-loop and run-end screens.
+// Each screen owns the smallest read model it needs; there is intentionally no
+// all-screens field bag because absent fields must be a type error, not undefined.
+import type { BattleCard, TalentXP } from "@/lib/game-data";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryEvent } from "@/lib/mystery";
@@ -14,28 +14,84 @@ import type {
   TrinketShopState,
 } from "@/lib/active-run-session";
 
-export interface RunScreenData {
+interface CampfireScreenData {
   runPlayerHealth: number;
   runMaxHealth: number;
+}
+
+interface ShopScreenData {
   runGold: number;
   runDeck: BattleCard[];
-  selectedDifficulty: DifficultyId | null;
-  talentXP: TalentXP;
-  unlockedTalents: UnlockedTalents;
-  runTalentXP: TalentXP;
-  runEndTalentXP: TalentXP;
-  hasActiveRun: boolean;
-  hasActiveBattle: boolean;
-  battleState: BattleState;
-  rewardState: RewardState;
+  shopState: ShopState;
+}
+
+interface AlchemistScreenData {
+  runGold: number;
+  runDeck: BattleCard[];
+  alchemistState: AlchemistState;
+}
+
+interface TrinketShopScreenData {
+  runGold: number;
+  trinketShopState: TrinketShopState;
+}
+
+interface EquipmentShopScreenData {
+  runGold: number;
+  equipmentShopState: EquipmentShopState;
+}
+
+interface LabyrinthMapScreenData {
   labyrinthMap: LabyrinthMap;
+}
+
+interface RewardsScreenData {
+  rewardState: RewardState;
+}
+
+interface DestinationScreenData {
+  rewardState: RewardState;
+}
+
+interface MysteryScreenData {
   mysteryEvent: MysteryEvent | null;
   mysteryCardChoices: BattleCard[] | null;
-  corruptionResult: CorruptionResult | null;
-  shopState: ShopState;
-  alchemistState: AlchemistState;
-  trinketShopState: TrinketShopState;
-  equipmentShopState: EquipmentShopState;
-  runEndMaterials: MaterialInventory;
-  pendingCharacterId: CharacterId | null;
+  runDeck: BattleCard[];
 }
+
+interface CorruptionScreenData {
+  runDeck: BattleCard[];
+  corruptionResult: CorruptionResult | null;
+}
+
+interface RunEndScreenData {
+  runEndTalentXP: TalentXP;
+  talentXP: TalentXP;
+  runEndMaterials: MaterialInventory;
+}
+
+type WildwoodRecoveryScreenData = CampfireScreenData;
+
+interface WildwoodRemovalScreenData {
+  runDeck: BattleCard[];
+}
+
+/** Exact screen-to-data mapping used by typed route read hooks. */
+export interface RunScreenDataByScreen {
+  campfire: CampfireScreenData;
+  shop: ShopScreenData;
+  alchemist: AlchemistScreenData;
+  "trinket-shop": TrinketShopScreenData;
+  "equipment-shop": EquipmentShopScreenData;
+  "labyrinth-map": LabyrinthMapScreenData;
+  rewards: RewardsScreenData;
+  destination: DestinationScreenData;
+  mystery: MysteryScreenData;
+  corruption: CorruptionScreenData;
+  "game-over": RunEndScreenData;
+  "run-victory": RunEndScreenData;
+  "wildwood-recovery": WildwoodRecoveryScreenData;
+  "wildwood-removal": WildwoodRemovalScreenData;
+}
+
+export type RunDataScreen = keyof RunScreenDataByScreen;

@@ -6,47 +6,61 @@ import { pickMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "../run/deck-mutations";
 import { applyMysteryEffect } from "./mystery-flow";
 import { setMysteryCardChoices, setMysteryEvent } from "../../shared/stores/run-session-facade";
-import { readActiveRunStore, awardMaterialsDuringRun } from "../../shared/stores/run-session-facade";
+import {
+  readActiveRunStore,
+  awardMaterialsDuringRun,
+  runSessionTransaction,
+} from "../../shared/stores/run-session-facade";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 
 export function useMysteryFlow(rng: () => number) {
   function beginMysteryEvent(navigateToMystery: () => void) {
-    setMysteryEvent(pickMysteryEvent(rng));
-    setMysteryCardChoices(null);
-    navigateToMystery();
+    runSessionTransaction(
+      () => {
+        setMysteryEvent(pickMysteryEvent(rng));
+        setMysteryCardChoices(null);
+      },
+      { afterCommit: navigateToMystery },
+    );
   }
 
   function handleMysteryChoice(choice: MysteryChoice) {
-    const runStore = readActiveRunStore();
+    runSessionTransaction(() => {
+      const runStore = readActiveRunStore();
 
-    for (const effect of choice.effects) {
-      const result = applyMysteryEffect(effect, {
-        runDeck: runStore.runDeck,
-        runMaxHealth: runStore.runMaxHealth,
-        rng,
-        setRunDeck: runStore.setRunDeck,
-        setRunGold: runStore.setRunGold,
-        setRunPlayerHealth: runStore.setRunPlayerHealth,
-        setRunTrinkets: runStore.setRunTrinkets,
-        setMysteryCardChoices,
-        awardMysteryXP: runStore.awardMysteryXP,
-        onAddMaterials: (materials) => awardMaterialsDuringRun(applyMaterialFindBonus(materials, runStore.effects)),
-        onAwardGold: runStore.addRunGold,
-      });
-      if (result.followUp) return;
-    }
+      for (const effect of choice.effects) {
+        const result = applyMysteryEffect(effect, {
+          runDeck: runStore.runDeck,
+          runMaxHealth: runStore.runMaxHealth,
+          rng,
+          setRunDeck: runStore.setRunDeck,
+          setRunGold: runStore.setRunGold,
+          setRunPlayerHealth: runStore.setRunPlayerHealth,
+          setRunTrinkets: runStore.setRunTrinkets,
+          setMysteryCardChoices,
+          awardMysteryXP: runStore.awardMysteryXP,
+          onAddMaterials: (materials) => awardMaterialsDuringRun(applyMaterialFindBonus(materials, runStore.effects)),
+          onAwardGold: runStore.addRunGold,
+        });
+        if (result.followUp) return;
+      }
+    });
   }
 
   function handleMysteryChooseCard(cardId: string) {
-    const card = cardLibrary.find((c) => c.id === cardId);
-    if (card) {
-      appendCardToRunWithDiscovery(card, readActiveRunStore().setRunDeck);
-    }
-    setMysteryCardChoices(null);
+    runSessionTransaction(() => {
+      const card = cardLibrary.find((c) => c.id === cardId);
+      if (card) {
+        appendCardToRunWithDiscovery(card, readActiveRunStore().setRunDeck);
+      }
+      setMysteryCardChoices(null);
+    });
   }
 
   function handleMysteryRemoveCard(index: number) {
-    readActiveRunStore().setRunDeck((p) => p.filter((_, i) => i !== index));
+    runSessionTransaction(() => {
+      readActiveRunStore().setRunDeck((p) => p.filter((_, i) => i !== index));
+    });
   }
 
   function clearCardChoices() {

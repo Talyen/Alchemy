@@ -16,6 +16,7 @@ import {
   setWildwoodDraft,
   readRunSessionStore,
   readActiveRunStore,
+  runSessionTransaction,
 } from "../../shared/stores/run-session-facade";
 import { afterCampaignCharacterResolved } from "@/features/alchemy/shared/run-flow/campaign-start";
 import {
@@ -55,24 +56,30 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       draftedDeck?: BattleCard[];
     } = {},
   ) {
-    const snapshot = createStartSnapshot(characterId, contentSystemType, options.difficultyId, options.draftedDeck);
-    applyRunStartSnapshot(snapshot);
-    if (options.playStartGoldSound && snapshot.runGold > 0) {
-      playGoldGain();
-    }
-    if (options.discoverStarterDeck || characterId === "wildcard") {
-      useProfileStore.getState().setDiscoveredCardIds((current) =>
-        appendUniqueMany(
-          current,
-          snapshot.freshDeck.map((c) => c.id),
-        ),
-      );
-    }
-    if (options.resetEncounteredEnemies) {
-      useProfileStore.getState().setEncounteredEnemyIds([]);
-    }
-    useUiStore.getState().clearCardHover();
-    return snapshot;
+    return runSessionTransaction(
+      () => {
+        const snapshot = createStartSnapshot(characterId, contentSystemType, options.difficultyId, options.draftedDeck);
+        applyRunStartSnapshot(snapshot);
+        if (options.discoverStarterDeck || characterId === "wildcard") {
+          useProfileStore.getState().setDiscoveredCardIds((current) =>
+            appendUniqueMany(
+              current,
+              snapshot.freshDeck.map((c) => c.id),
+            ),
+          );
+        }
+        if (options.resetEncounteredEnemies) {
+          useProfileStore.getState().setEncounteredEnemyIds([]);
+        }
+        return snapshot;
+      },
+      {
+        afterCommit: (snapshot) => {
+          if (options.playStartGoldSound && snapshot.runGold > 0) playGoldGain();
+          useUiStore.getState().clearCardHover();
+        },
+      },
+    );
   }
 
   function createStartSnapshot(
@@ -108,21 +115,23 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
-    const snapshot = startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN, {
-      difficultyId,
-      discoverStarterDeck: true,
-      playStartGoldSound: true,
-      resetEncounteredEnemies: true,
+    return runSessionTransaction(() => {
+      const snapshot = startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN, {
+        difficultyId,
+        discoverStarterDeck: true,
+        playStartGoldSound: true,
+        resetEncounteredEnemies: true,
+      });
+      setRewardState(
+        createInitialDestinations({
+          currentHealth: snapshot.runMaxHealth,
+          currentGold: snapshot.runGold,
+          destinationIndexInAct: 0,
+          maxHealth: snapshot.runMaxHealth,
+        }),
+      );
+      return { freshDeck: snapshot.freshDeck, totalStartGold: snapshot.runGold };
     });
-    setRewardState(
-      createInitialDestinations({
-        currentHealth: snapshot.runMaxHealth,
-        currentGold: snapshot.runGold,
-        destinationIndexInAct: 0,
-        maxHealth: snapshot.runMaxHealth,
-      }),
-    );
-    return { freshDeck: snapshot.freshDeck, totalStartGold: snapshot.runGold };
   }
 
   function initializeLabyrinthRun(characterId: CharacterId) {
@@ -131,20 +140,32 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function initializeWildwoodRun(characterId: CharacterId, initialDeck?: BattleCard[]) {
-    const skipDraft = initialDeck !== undefined && initialDeck.length >= DRAFT_ROUNDS;
-    setWildwoodDraft(createInitialWildwoodDraftState(characterId, deps.worldRng));
-    if (skipDraft) {
-      startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, {
-        draftedDeck: initialDeck,
-        discoverStarterDeck: true,
-      });
-      setPendingCharacterId(null);
-      deps.onStartNextWildwoodBoss();
-      return;
-    }
-    startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, { draftedDeck: [] });
-    setPendingCharacterId(characterId);
-    deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
+    runSessionTransaction(
+      () => {
+        const skipDraft = initialDeck !== undefined && initialDeck.length >= DRAFT_ROUNDS;
+        setWildwoodDraft(createInitialWildwoodDraftState(characterId, deps.worldRng));
+        if (skipDraft) {
+          startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, {
+            draftedDeck: initialDeck,
+            discoverStarterDeck: true,
+          });
+          setPendingCharacterId(null);
+          return true;
+        }
+        startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, { draftedDeck: [] });
+        setPendingCharacterId(characterId);
+        return false;
+      },
+      {
+        afterCommit: (skipDraft) => {
+          if (skipDraft) {
+            deps.onStartNextWildwoodBoss();
+          } else {
+            deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
+          }
+        },
+      },
+    );
   }
 
   const noviceCampaignDeps = () => ({
@@ -165,17 +186,19 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
         deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
       } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
         deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
-          setRewardState((prev) =>
-            restoreOrCreateDestinationRewardState(prev, {
-              availableDestinations: deps.getAvailableDestinations(),
-              offerState: {
-                lastOfferedDestinations: deps.run.lastOfferedDestinations,
-                roundsSinceOffered: deps.run.destinationRoundsSinceOffered,
-              },
-              bossEnemyId: getBossEnemy([], deps.worldRng).id,
-              onSampled: (result) => deps.run.setDestinationOfferState(result.offerState),
-            }),
-          );
+          runSessionTransaction(() => {
+            setRewardState((prev) =>
+              restoreOrCreateDestinationRewardState(prev, {
+                availableDestinations: deps.getAvailableDestinations(),
+                offerState: {
+                  lastOfferedDestinations: deps.run.lastOfferedDestinations,
+                  roundsSinceOffered: deps.run.destinationRoundsSinceOffered,
+                },
+                bossEnemyId: getBossEnemy([], deps.worldRng).id,
+                onSampled: (result) => deps.run.setDestinationOfferState(result.offerState),
+              }),
+            );
+          });
         });
       } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
         deps.onResumeWildwood();

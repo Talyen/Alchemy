@@ -41,7 +41,7 @@ import {
   useActiveRunScreenValue,
   useBondedCompanions,
   useContentSystemType,
-  useRunScreenData,
+  useRewardsScreenData,
   useRunSessionBattleContext,
   useRunSessionNavigationSlice,
 } from "@/features/alchemy/shared/stores/run-session-facade";
@@ -88,7 +88,7 @@ function AppMainContent({
 
   const heroArt = characterArt[characterId];
   const contentSystemType = useContentSystemType();
-  const rewardsData = useRunScreenData("rewards");
+  const rewardsData = useRewardsScreenData();
 
   useScreenAssetPreloadEffects({
     heroArt,

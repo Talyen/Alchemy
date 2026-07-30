@@ -51,7 +51,7 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 1. Extend `ActiveRunData` in `src/lib/active-run-session/types.ts` and Zod schema in `src/lib/validation/save-schemas/active-run.ts` (optional fields with defaults in `normalize-active-run-data.ts` often avoid a schema bump).
 2. Add the field to `RunStateFields` / hydration in `src/features/alchemy/shared/stores/run-state-init.ts` (mirror `runTalentXP` / `runMaterialsEarned` pattern).
 3. Update `createActiveRunSnapshot()` in `src/lib/active-run-session/snapshot.ts` and `snapshotRun()` in `src/features/alchemy/shared/stores/run-transitions.ts`.
-4. Update hydration in `shell/use-alchemy-run-controller.ts` via `restoreRun` (restore `screen`, `destinationChoices`, combat, etc.).
+4. Update the canonical hydration path in `shared/stores/run-transitions.ts` via `restoreRun` (restore `screen`, `destinationChoices`, combat, etc.). Keep the operation inside `runSessionTransaction()` so boot/resume is published as one committed session state; defer navigation, audio, and presentation work with `afterCommit` or after the transaction returns.
 5. Run `tests/features/alchemy/shared/storage/active-run.test.ts`, `tests/features/alchemy/shared/stores/run-domain.test.ts` (snapshot parity), plus storage/migration tests.
 
 **Active-run helpers (do not confuse):**
@@ -154,14 +154,14 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared
 
 ## Add a new card
 
-| Step                                                                      | File(s)                                                        |
-| ------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| 1. Define card in `cardLibrary` (`src/lib/game-data/cards.ts`)            | one entry in the `cardLibrary` array                           |
-| 2. Add effects (discriminated union on `kind`)                            | same entry, `effects: [...]`                                   |
-| 3. Add art reference                                                      | `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP) |
-| 4. (Optional) Register card sound                                         | `src/lib/sound-registry.ts` (`cardSounds` record)              |
-| 5. Update `descriptionLines` to match effects                             | same card entry                                                |
-| 6. Cover through `tests/lib/game-data/descriptions-match-effects.test.ts` |                                                                |
+| Step                                                                      | File(s)                                                                          |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 1. Define card in the appropriate library array                           | `src/lib/game-data/cards/library/{core-cards,specialty-cards,advanced-cards}.ts` |
+| 2. Add effects (discriminated union on `kind`)                            | same card entry, `effects: [...]`                                                |
+| 3. Add art reference                                                      | `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)                   |
+| 4. (Optional) Register card sound                                         | `src/lib/sound-registry.ts` (`cardSounds` record)                                |
+| 5. Update `descriptionLines` to match effects                             | same card entry                                                                  |
+| 6. Cover through `tests/lib/game-data/descriptions-match-effects.test.ts` |                                                                                  |
 
 Cards in `cardLibrary` are automatically included in merchant shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration (only `mixed-potion` is excluded).
 
@@ -196,7 +196,7 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 | Step                                                  | File(s)                                           |
 | ----------------------------------------------------- | ------------------------------------------------- |
 | 1. Add enemy ID to `EnemyId` union                    | `src/lib/game-data/types.ts`                      |
-| 2. Define entry in `enemyBestiary` array              | `src/lib/game-data/compendium.ts`                 |
+| 2. Define entry in `enemyBestiary` array              | `src/lib/game-data/compendium/enemies.ts`         |
 | 3. Set `enemyType` (`normal`/`elite`/`boss`)          | same file                                         |
 | 4. Add traits as `{ id, title, description }` objects | same file (logic lives in battle system)          |
 | 5. (Optional) Register attack sound                   | `src/lib/sound-registry.ts` (`enemyAttackSounds`) |
@@ -207,7 +207,7 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 
 | Step                                      | File(s)                                                                   |
 | ----------------------------------------- | ------------------------------------------------------------------------- |
-| 1. Define entry in `trinketLibrary` array | `src/lib/game-data/compendium.ts`                                         |
+| 1. Define entry in `trinketLibrary` array | `src/lib/game-data/compendium/trinkets.ts`                                |
 | 2. Implement effect logic                 | `src/lib/trinkets.ts` — extend `TrinketManifest` and apply in battle init |
 | 3. Add art reference                      | `src/lib/game-data/assets.ts`                                             |
 

@@ -5,6 +5,7 @@ import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import { getRunTransientStore } from "../run-transient-store";
 import { getRunDomainStore } from "../run-domain-store";
+import { runSessionTransaction } from "../run-session-transaction";
 
 export function setHasActiveRun(hasActiveRun: boolean) {
   getRunTransientStore().setHasActiveRun(hasActiveRun);
@@ -26,8 +27,10 @@ export function setWildwoodDraft(
 
 /** Start a fresh run: seed active-run progress, drop the previous run-end XP snapshot, flag the run active. */
 export function applyRunStartSnapshot(snapshot: RunStartSnapshot): void {
-  getRunDomainStore().hydrateFromSnapshot(snapshot);
-  const transient = getRunTransientStore();
-  transient.setRunEndTalentXP({});
-  transient.setHasActiveRun(snapshot.hasActiveRun);
+  runSessionTransaction(() => {
+    getRunDomainStore().hydrateFromSnapshot(snapshot);
+    const transient = getRunTransientStore();
+    transient.setRunEndTalentXP({});
+    transient.setHasActiveRun(snapshot.hasActiveRun);
+  });
 }

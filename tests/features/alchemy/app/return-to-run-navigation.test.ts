@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveReturnToRunTarget, shouldClearReturnToRunOnMainMenu } from "@/app/return-to-run-navigation";
+import { resolveReturnToRunTarget } from "@/app/return-to-run-navigation";
 
 describe("return-to-run navigation", () => {
   it("prefers an explicit return screen when set", () => {
@@ -13,10 +13,5 @@ describe("return-to-run navigation", () => {
 
   it("returns null when there is no return target", () => {
     expect(resolveReturnToRunTarget(null, false)).toBeNull();
-  });
-
-  it("keeps return state when main menu is opened during paused combat", () => {
-    expect(shouldClearReturnToRunOnMainMenu(true)).toBe(false);
-    expect(shouldClearReturnToRunOnMainMenu(false)).toBe(true);
   });
 });

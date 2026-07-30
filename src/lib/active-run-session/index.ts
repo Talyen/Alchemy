@@ -20,8 +20,6 @@ export { restoreWildwoodRewardState } from "./wildwood-reward-restore";
 export { createActiveRunSnapshot } from "./snapshot";
 export { parseActiveRun } from "./parse";
 export { toActiveRunData } from "./to-active-run-data";
-export { hydrateActiveRunSession } from "./hydrate";
-export type { ActiveRunHydrationTargets } from "./hydrate";
 export {
   restorePendingReward,
   serializePendingReward,

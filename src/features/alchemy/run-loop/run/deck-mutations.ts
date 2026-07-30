@@ -4,19 +4,24 @@ import type { BattleCard } from "@/lib/game-data";
 import { appendUnique } from "@/lib/utils";
 import type { Dispatch, SetStateAction } from "react";
 import { useProfileStore } from "../../shared/stores/profile-store";
+import { runSessionTransaction } from "../../shared/stores/run-session-facade";
 
 export function appendCardToRunWithDiscovery(
   card: BattleCard,
   setRunDeck: Dispatch<SetStateAction<BattleCard[]>>,
 ): void {
-  setRunDeck((p) => [...p, card]);
-  useProfileStore.getState().setDiscoveredCardIds((cur) => appendUnique(cur, card.id));
+  runSessionTransaction(() => {
+    setRunDeck((p) => [...p, card]);
+    useProfileStore.getState().setDiscoveredCardIds((cur) => appendUnique(cur, card.id));
+  });
 }
 
 export function appendTrinketToRunWithDiscovery(
   trinketId: string,
   setRunTrinkets: Dispatch<SetStateAction<string[]>>,
 ): void {
-  setRunTrinkets((p) => [...p, trinketId]);
-  useProfileStore.getState().setDiscoveredTrinketIds((cur) => appendUnique(cur, trinketId));
+  runSessionTransaction(() => {
+    setRunTrinkets((p) => [...p, trinketId]);
+    useProfileStore.getState().setDiscoveredTrinketIds((cur) => appendUnique(cur, trinketId));
+  });
 }

@@ -17,9 +17,20 @@ import {
   WildwoodRemovalScreen,
 } from "@/features/alchemy/run-loop/screens";
 import {
+  useAlchemistScreenData,
+  useCampfireScreenData,
+  useCorruptionScreenData,
+  useDestinationScreenData,
+  useEquipmentShopScreenData,
   useIsWildwoodRun,
-  useRunScreenData,
+  useLabyrinthMapScreenData,
+  useMysteryScreenData,
+  useRewardsScreenData,
+  useShopScreenData,
   useTalentAdapter,
+  useTrinketShopScreenData,
+  useWildwoodRecoveryScreenData,
+  useWildwoodRemovalScreenData,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { getCampfireHealFraction } from "@/lib/game-constants";
 import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
@@ -77,7 +88,7 @@ function LabyrinthMapScreenRoute({
   commands: RunLoopCommands["labyrinth"];
   onOpenBattleMenu: RunLoopRouteCtx["onOpenBattleMenu"];
 }) {
-  const r = useRunScreenData("labyrinth-map");
+  const r = useLabyrinthMapScreenData();
   return (
     <LabyrinthMapScreen
       labyrinthMap={r.labyrinthMap}
@@ -88,7 +99,7 @@ function LabyrinthMapScreenRoute({
 }
 
 function RewardsScreenRoute({ commands }: { commands: RunLoopCommands["rewards"] }) {
-  const r = useRunScreenData("rewards");
+  const r = useRewardsScreenData();
   const isWildwood = useIsWildwoodRun();
   return (
     <RewardsScreen
@@ -102,7 +113,7 @@ function RewardsScreenRoute({ commands }: { commands: RunLoopCommands["rewards"]
 }
 
 function WildwoodRecoveryScreenRoute({ commands }: { commands: RunLoopCommands["wildwood"] }) {
-  const r = useRunScreenData("wildwood-recovery");
+  const r = useWildwoodRecoveryScreenData();
   return (
     <WildwoodRecoveryScreen
       playerHealth={r.runPlayerHealth}
@@ -113,17 +124,17 @@ function WildwoodRecoveryScreenRoute({ commands }: { commands: RunLoopCommands["
 }
 
 function WildwoodRemovalScreenRoute({ commands }: { commands: RunLoopCommands["wildwood"] }) {
-  const r = useRunScreenData("wildwood-removal");
+  const r = useWildwoodRemovalScreenData();
   return <WildwoodRemovalScreen runDeck={r.runDeck} onRemove={commands.removeCard} onSkip={commands.skipRemoval} />;
 }
 
 function DestinationScreenRoute({ commands }: { commands: RunLoopCommands["destinations"] }) {
-  const r = useRunScreenData("destination");
+  const r = useDestinationScreenData();
   return <DestinationScreen rewardState={r.rewardState} onChoose={commands.choose} onPrepare={commands.prepare} />;
 }
 
 function CampfireScreenRoute({ commands }: { commands: RunLoopCommands["destinations"] }) {
-  const r = useRunScreenData("campfire");
+  const r = useCampfireScreenData();
   const { talentEffects } = useTalentAdapter();
   const healFraction = getCampfireHealFraction(talentEffects.campfireHealBonus);
   return (
@@ -137,7 +148,7 @@ function CampfireScreenRoute({ commands }: { commands: RunLoopCommands["destinat
 }
 
 function ShopScreenRoute({ commands }: { commands: RunLoopCommands["shop"]["merchant"] }) {
-  const r = useRunScreenData("shop");
+  const r = useShopScreenData();
   return (
     <MerchantShopScreen
       gold={r.runGold}
@@ -158,7 +169,7 @@ function ShopScreenRoute({ commands }: { commands: RunLoopCommands["shop"]["merc
 }
 
 function AlchemistScreenRoute({ commands }: { commands: RunLoopCommands["shop"]["alchemist"] }) {
-  const r = useRunScreenData("alchemist");
+  const r = useAlchemistScreenData();
   return (
     <AlchemistShopScreen
       gold={r.runGold}
@@ -179,7 +190,7 @@ function AlchemistScreenRoute({ commands }: { commands: RunLoopCommands["shop"][
 }
 
 function TrinketShopScreenRoute({ commands }: { commands: RunLoopCommands["shop"]["trinket"] }) {
-  const r = useRunScreenData("trinket-shop");
+  const r = useTrinketShopScreenData();
   return (
     <TrinketShopScreen
       gold={r.runGold}
@@ -196,7 +207,7 @@ function TrinketShopScreenRoute({ commands }: { commands: RunLoopCommands["shop"
 }
 
 function EquipmentShopScreenRoute({ commands }: { commands: RunLoopCommands["shop"]["equipment"] }) {
-  const r = useRunScreenData("equipment-shop");
+  const r = useEquipmentShopScreenData();
   return (
     <EquipmentShopScreen
       gold={r.runGold}
@@ -213,7 +224,7 @@ function EquipmentShopScreenRoute({ commands }: { commands: RunLoopCommands["sho
 }
 
 function MysteryScreenRoute({ commands }: { commands: RunLoopCommands["mystery"] }) {
-  const r = useRunScreenData("mystery");
+  const r = useMysteryScreenData();
   const { handleContinue } = commands;
 
   useEffect(() => {
@@ -242,7 +253,7 @@ function MysteryScreenRoute({ commands }: { commands: RunLoopCommands["mystery"]
 }
 
 function CorruptionScreenRoute({ commands }: { commands: RunLoopCommands["corruption"] }) {
-  const r = useRunScreenData("corruption");
+  const r = useCorruptionScreenData();
   return (
     <CorruptionScreen
       runDeck={r.runDeck}
