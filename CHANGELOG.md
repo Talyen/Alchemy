@@ -421,6 +421,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix: consolidate runtime helpers and changelog guard
 - fix(ci): disable implicit desktop publishing
 - fix(lint): drive session core picker from ACTIVE_RUN_SESSION_CORE_KEYS
   Use the key list as a value in pickActiveRunSessionCoreFields so eslint
