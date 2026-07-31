@@ -8,7 +8,7 @@ Find contradictions between live docs and sources of truth. Discover markdown me
 
 ## Hard stops
 
-- Do not hand-edit `CHANGELOG.md` for release history (owned by sync/release scripts and pre-push).
+- Do not hand-edit `CHANGELOG.md` for release history (owned by sync/release scripts, post-commit automation, and the pre-push guard).
 - Do not treat dated “Last execution” / Done tables inside audits as source of truth — **delete** those tracker sections when found.
 - Do not rewrite design prose for style-only preferences or turn this into a repo-wide docs rewrite.
 - Historical mentions of deleted docs (e.g. old `PROMPTS.md` in `CHANGELOG.md`) are fine — fix live links only.

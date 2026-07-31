@@ -22,9 +22,10 @@ Automation enforces release readiness — agents do not rely on manual checklist
 ## Changelog automation (main-only)
 
 1. When explicitly asked to commit, agents commit to `main` with [Conventional Commits](https://www.conventionalcommits.org/) headers.
-2. **Pre-push hook** runs `sync-changelog-commit.mjs` — verifies `CHANGELOG.md` ## [Unreleased] against git history without mutating git state. If it is stale, run `npm run sync:changelog`, stage `CHANGELOG.md`, commit, and retry the push.
-3. During development: `npm run generate:patch-notes` writes player-facing `release-notes/UNRELEASED.md` from the changelog.
-4. `tests/architecture/changelog-sync.test.ts` fails CI if the unreleased section drifts from git.
+2. **Post-commit hook** runs `sync-changelog-post-commit.mjs` — regenerates `CHANGELOG.md` ## [Unreleased] and amends it into the commit just created. If `CHANGELOG.md` has separate uncommitted edits, the hook skips them.
+3. **Pre-push hook** runs `sync-changelog-commit.mjs` — verifies `CHANGELOG.md` ## [Unreleased] against git history without mutating git state. If the post-commit hook skipped because of separate changelog edits, run `npm run sync:changelog`, stage `CHANGELOG.md`, commit, and retry the push.
+4. During development: `npm run generate:patch-notes` writes player-facing `release-notes/UNRELEASED.md` from the changelog.
+5. `tests/architecture/changelog-sync.test.ts` fails CI if the unreleased section drifts from git.
 
 ## Agent release flow
 

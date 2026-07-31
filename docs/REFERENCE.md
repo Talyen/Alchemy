@@ -17,7 +17,7 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 - **npm `>=11`** — authoritative in `package.json` `engines` (Node 24 bundles npm 11).
 - **Playwright:** `npx playwright install chromium` once before first `npm run test:e2e`.
 - **GitHub CLI (`gh`):** optional; PR/CI only when the user asks — do not run `gh auth login`. CI failures are easiest to read from check annotations and the job Step Summary (not the raw Vitest pass list).
-- **Git hooks:** lefthook `pre-push` — see [CONTRIBUTING.md](../CONTRIBUTING.md) (`lint:ci`, `test`, `build`, `@prepush` e2e).
+- **Git hooks:** lefthook `post-commit` changelog sync plus `pre-push` gates — see [CONTRIBUTING.md](../CONTRIBUTING.md) (`lint:ci`, `test`, `build`, `@prepush` e2e).
 - **Steam / ship gates:** [RELEASE.md](./RELEASE.md) — `check:ship`, `check:ship:full`, tag-triggered `release.yml`.
 - **Balance sim env vars:** `ALCHEMY_BALANCE_ITERATIONS`, `ALCHEMY_BALANCE_POLICY` (`random-playable`, `greedy-damage`, `defensive-random`).
 

@@ -34,4 +34,15 @@ describe("changelog sync guard", () => {
     expect(hook).not.toContain("git commit");
     expect(syncModule).toContain("isMainModule(import.meta.url)");
   });
+
+  it("automates changelog sync after commits without weakening the pre-push guard", () => {
+    const hookConfig = readFileSync(join(ROOT, "lefthook.yml"), "utf8");
+    const postCommitHook = readFileSync(join(ROOT, "scripts/sync-changelog-post-commit.mjs"), "utf8");
+
+    expect(hookConfig).toContain("post-commit:");
+    expect(hookConfig).toContain("scripts/sync-changelog-post-commit.mjs");
+    expect(postCommitHook).toContain("computeSyncedChangelog");
+    expect(postCommitHook).toContain('"--amend", "--no-edit", "--no-verify"');
+    expect(postCommitHook).toContain("hasUncommittedChangelog");
+  });
 });

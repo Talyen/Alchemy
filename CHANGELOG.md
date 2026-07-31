@@ -2007,6 +2007,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore(tooling): automate changelog sync after commits
 - chore(architecture): align strict integration contracts
 - chore(dead-code): remove unused shim and UI token exports
   Delete the test-only run-navigation-helpers re-export plus unused

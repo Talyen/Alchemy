@@ -4,6 +4,8 @@
 
 GitHub branch protection is not available on this repo, so **local hooks are the main gate**.
 
+`lefthook` `post-commit` automatically regenerates the unreleased changelog and amends it into the commit just created. It skips when `CHANGELOG.md` has separate uncommitted edits; the pre-push guard remains the final check.
+
 `lefthook` `pre-push` runs sequentially (`piped: true`):
 
 1. `node scripts/sync-changelog-commit.mjs` — verify `CHANGELOG.md` ## [Unreleased] matches git history without mutating the push; if stale, run `npm run sync:changelog`, stage `CHANGELOG.md`, commit, and retry the push
@@ -46,7 +48,8 @@ First-time Playwright: `npx playwright install chromium`.
 
 When explicitly asked to commit or push, agents work directly on `main`; there is no required PR merge step. Commit messages feed an automated changelog:
 
-- **Pre-push hook** verifies `CHANGELOG.md` ## [Unreleased] against git history since the latest `v*` tag without mutating git state. If it is stale, run `npm run sync:changelog`, stage `CHANGELOG.md`, commit, and retry the push.
+- **Post-commit hook:** regenerates `CHANGELOG.md` ## [Unreleased] and amends it into the commit just created, so normal commits do not need a follow-up sync commit.
+- **Pre-push hook** verifies `CHANGELOG.md` ## [Unreleased] against git history since the latest `v*` tag without mutating git state. If the post-commit hook skipped because `CHANGELOG.md` had separate edits, run `npm run sync:changelog`, stage `CHANGELOG.md`, commit, and retry the push.
 - **Player-facing draft:** `npm run generate:patch-notes` → `release-notes/UNRELEASED.md`
 - **Drift guard:** `tests/architecture/changelog-sync.test.ts` (also in `npm run test:ship:unit`)
 
