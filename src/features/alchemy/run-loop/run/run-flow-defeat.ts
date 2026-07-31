@@ -1,10 +1,10 @@
-import { readActiveRunStore } from "../../shared/stores/run-session-facade";
+import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
   applyRunDefeatTeardown,
   clearBattleUi,
   finalizeRunEndSession,
-  finalizeRunXP,
-} from "../../shared/stores/run-session-facade";
+} from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { finalizeRunXP } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { stopAllSfx } from "@/lib/audio";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -30,7 +30,7 @@ export function createDefeatHandlers(ctx: RunFlowContext) {
   }
 
   function handleBattleDefeat() {
-    const runState = readActiveRunStore();
+    const runState = readActiveRun();
     if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
       stopAllSfx();
       clearCombatState();

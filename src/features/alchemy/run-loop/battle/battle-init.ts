@@ -3,15 +3,12 @@ import { createBattleState, type CombatTextEvent } from "@/lib/battle";
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";
-import {
-  readBattleStore,
-  readRunSessionStore,
-  dispatchRunSessionCommand,
-  syncRunToBattleStart,
-} from "../../shared/stores/run-session-facade";
+import { readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { syncRunToBattleStart } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { useBattlePresentationStore } from "./battle-presentation-store";
 import { appendUnique } from "@/lib/utils";
-import { useProfileStore } from "../../shared/stores/profile-store";
+import { readProfileStore, setEncounteredEnemyIds } from "../../shared/stores/profile-port";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
 import { readGearManifestForCharacter } from "../../shared/stores/gear-read-port";
@@ -23,7 +20,7 @@ export function createBattleInit(
   session: ReturnType<typeof createBattleSession>,
   rng: () => number = Math.random,
 ) {
-  const getStore = () => readBattleStore();
+  const getStore = () => readBattle();
 
   function createBattleForEnemy(
     enemy: BestiaryEntry,
@@ -45,7 +42,7 @@ export function createBattleInit(
       currentEnemy: enemy,
       playerHealth,
       talentEffects: battleEffects,
-      discoveredCardIds: useProfileStore.getState().discoveredCardIds,
+      discoveredCardIds: readProfileStore().discoveredCardIds,
       maxHealth: ctx.run.runMaxHealth,
       trinketIds: ctx.run.runTrinkets,
       gearEffects,
@@ -60,7 +57,7 @@ export function createBattleInit(
         const nextRoomsEncountered = ctx.run.roomsEncountered + 1;
         ctx.run.setRoomsEncountered(nextRoomsEncountered);
         const encounterTraitIds =
-          ctx.run.contentSystemType === "labyrinth" ? readRunSessionStore().activeLabyrinthModifiers : [];
+          ctx.run.contentSystemType === "labyrinth" ? readRunSession().activeLabyrinthModifiers : [];
         const battleEnemy = encounterTraitIds.length > 0 ? appendEncounterTraits(enemy, encounterTraitIds) : enemy;
         const nextBattleState = createBattleForEnemy(
           battleEnemy,
@@ -74,7 +71,7 @@ export function createBattleInit(
         getStore().setBattleStartState(nextBattleState);
         getStore().setHasActiveBattle(true);
         ctx.run.setEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
-        useProfileStore.getState().setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
+        setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
 
         const startingTexts: CombatTextEvent[] = [];
         if (nextBattleState.enemyMitigation.armor > 0) {

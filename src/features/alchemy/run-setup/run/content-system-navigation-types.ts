@@ -3,11 +3,11 @@ import type { BattleCard, DifficultyId, getDifficultyModifiers } from "@/lib/gam
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { Destination, Screen } from "@/features/alchemy/shared/types";
 import type { DestinationOptionsInput } from "@/features/alchemy/shared/run-flow/destination-flow";
-import type { RunStateController, TalentStateController } from "../../shared/stores/run-session-facade";
+import type { ContentNavigationRunPort, ContentNavigationTalentPort } from "../../shared/stores/run-port-types";
 
 export interface ContentSystemNavigationDeps {
-  run: RunStateController;
-  talents: TalentStateController;
+  run: ContentNavigationRunPort;
+  talents: ContentNavigationTalentPort;
   draftedDeckRef: RefObject<BattleCard[] | null>;
   hasActiveRun: boolean;
   hasActiveBattle: boolean;

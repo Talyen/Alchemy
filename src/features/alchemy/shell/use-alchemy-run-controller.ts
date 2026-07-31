@@ -5,17 +5,12 @@ import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import type { BattleControllerBindings } from "./battle-bindings";
 import type { CharacterId, DifficultyId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
-import {
-  useRunAdapter,
-  useTalentAdapter,
-  useHomesteadAdapter,
-  createRunRandomSource,
-} from "@/features/alchemy/shared/stores/run-session-facade";
+import { createRunRandomSource } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import {
   setActiveLabyrinthModifiers,
   setActiveLabyrinthRewardModifiers,
-} from "@/features/alchemy/shared/stores/run-session-facade";
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useBattleController } from "./use-battle-controller";
 import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
@@ -23,8 +18,18 @@ import { useLabyrinthController } from "./use-labyrinth-controller";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
 import { useScreenTransitions } from "./use-screen-transitions";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
-import { restoreRun, unlockAllTalents, useActiveRunScreen } from "@/features/alchemy/shared/stores/run-session-facade";
-import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { unlockAllTalents } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { useActiveRunScreen } from "@/features/alchemy/shared/stores/run-session-react-ports";
+import {
+  useActiveRunCharacterId,
+  useBattleRunPort,
+  useBattleTalentPort,
+  useContentSystemType,
+  useHomesteadEffects,
+  useTalentCommandPort,
+} from "@/features/alchemy/shared/stores/run-session-react-ports";
+import { readRunInitialized } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { shouldSurrenderBattleOnEndRun } from "./end-run-policy";
 import { createAlchemyRouteCommands, type AlchemyRouteCommands } from "./create-route-commands";
@@ -43,12 +48,15 @@ export function useAlchemyRunController({
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
 }) {
   useLayoutEffect(() => {
-    if (readActiveRunStore().initialized) return;
+    if (readRunInitialized()) return;
     restoreRun(initialActiveRun, initialTalentXP, initialUnlockedTalents);
   }, [initialActiveRun, initialTalentXP, initialUnlockedTalents]);
-  const run = useRunAdapter();
-  const talents = useTalentAdapter();
-  const homesteadEffects = useHomesteadAdapter();
+  const homesteadEffects = useHomesteadEffects();
+  const battleRun = useBattleRunPort();
+  const battleTalents = useBattleTalentPort();
+  const talentCommands = useTalentCommandPort();
+  const contentSystemType = useContentSystemType();
+  const characterId = useActiveRunCharacterId();
   const runRandom = useMemo(
     () => ({
       rewards: createRunRandomSource("rewards"),
@@ -78,8 +86,8 @@ export function useAlchemyRunController({
   const onBattleDefeatRef = useRef<() => void>(() => {});
 
   const battle = useBattleController({
-    run,
-    talents,
+    run: battleRun,
+    talents: battleTalents,
     autoEndTurn,
     homesteadEffects,
     screen,
@@ -89,7 +97,11 @@ export function useAlchemyRunController({
     rng: runRandom.world,
   });
 
-  const shop = useShopController({ talents, homesteadEffects, rng: runRandom.shops });
+  const shop = useShopController({
+    talentEffects: battleTalents.talentEffects,
+    homesteadEffects,
+    rng: runRandom.shops,
+  });
 
   const labyrinth = useLabyrinthController(screen, runRandom.world);
 
@@ -116,12 +128,12 @@ export function useAlchemyRunController({
     onBattleDefeatRef.current = nav.handleBattleDefeat;
   });
 
-  useSteamRichPresence(screen, nav.runPhase, run.characterId);
+  useSteamRichPresence(screen, nav.runPhase, characterId);
 
   function handleBeginLabyrinth() {
     if (
-      !(nav.activeRunData && run.contentSystemType === "labyrinth") &&
-      !(battle.hasActiveBattle && run.contentSystemType === "labyrinth")
+      !(nav.activeRunData && contentSystemType === "labyrinth") &&
+      !(battle.hasActiveBattle && contentSystemType === "labyrinth")
     ) {
       labyrinth.resetMap();
     }
@@ -143,7 +155,7 @@ export function useAlchemyRunController({
   );
 
   function handleEndRun() {
-    if (shouldSurrenderBattleOnEndRun(screen, battle.hasActiveBattle, run.contentSystemType)) {
+    if (shouldSurrenderBattleOnEndRun(screen, battle.hasActiveBattle, contentSystemType)) {
       battle.handleEndRun();
       return;
     }
@@ -155,8 +167,8 @@ export function useAlchemyRunController({
     beginCampaign: nav.beginCampaign,
     beginLabyrinth: handleBeginLabyrinth,
     beginWildwood: nav.beginWildwood,
-    unlockTalent: talents.unlockTalent,
-    resetUnlockedTalents: talents.resetUnlockedTalents,
+    unlockTalent: talentCommands.unlockTalent,
+    resetUnlockedTalents: talentCommands.resetUnlockedTalents,
     handleCharacterSelect: nav.handleCharacterSelect,
     handleDraftComplete: nav.handleDraftComplete,
     handleDraftPick: nav.handleDraftPick,

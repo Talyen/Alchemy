@@ -1,25 +1,24 @@
-// React hook wrapper around the pure shop-actions factory.
-import type { TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
 import {
   setShopState,
   setAlchemistState,
   setTrinketShopState,
   setEquipmentShopState,
-} from "@/features/alchemy/shared/stores/run-session-facade";
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
+import type { TalentEffectManifest } from "@/lib/game-data";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 
 export function useShopController({
-  talents,
+  talentEffects,
   homesteadEffects,
   rng,
 }: {
-  talents: TalentStateController;
+  talentEffects: TalentEffectManifest;
   homesteadEffects: HomesteadEffectManifest;
   rng: () => number;
 }) {
   return createShopActions({
-    talentEffects: talents.talentEffects,
+    talentEffects,
     homesteadEffects,
     rng,
     setShopState,

@@ -22,16 +22,15 @@ import {
   useCorruptionScreenData,
   useDestinationScreenData,
   useEquipmentShopScreenData,
-  useIsWildwoodRun,
   useLabyrinthMapScreenData,
   useMysteryScreenData,
   useRewardsScreenData,
   useShopScreenData,
-  useTalentAdapter,
   useTrinketShopScreenData,
   useWildwoodRecoveryScreenData,
   useWildwoodRemovalScreenData,
-} from "@/features/alchemy/shared/stores/run-session-facade";
+} from "@/features/alchemy/shared/stores/use-run-screen-data";
+import { useIsWildwoodRun, useTalentEffects } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { getCampfireHealFraction } from "@/lib/game-constants";
 import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
 
@@ -119,7 +118,7 @@ function DestinationScreenRoute({ commands }: { commands: RunLoopCommands["desti
 
 function CampfireScreenRoute({ commands }: { commands: RunLoopCommands["destinations"] }) {
   const r = useCampfireScreenData();
-  const { talentEffects } = useTalentAdapter();
+  const talentEffects = useTalentEffects();
   const healFraction = getCampfireHealFraction(talentEffects.campfireHealBonus);
   return (
     <CampfireScreen

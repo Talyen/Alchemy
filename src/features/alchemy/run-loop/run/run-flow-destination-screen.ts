@@ -1,12 +1,12 @@
+import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
-  readRunSessionStore,
   beginDestinationClaim,
   cancelDestinationClaim,
   commitDestinationClaim,
-  dispatchRunSessionCommand,
   setCorruptionResult,
   setRewardState,
-} from "../../shared/stores/run-session-facade";
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { getCampfireHealFraction, getCampfireRestHealth } from "@/lib/game-constants";
 import { getBossEnemy, getBossById } from "@/features/alchemy/shared/config";
@@ -18,7 +18,7 @@ export function createDestinationScreenHandlers(ctx: RunFlowContext) {
   const { deps } = ctx;
 
   function prepareDestinationScreen() {
-    const state = readRunSessionStore().rewardState;
+    const state = readRunSession().rewardState;
     const bossOnly = state.destinations.length === 1 && state.destinations[0] === CONSTANTS.DESTINATIONS.BOSS_COMBAT;
     if (!bossOnly) return;
     if (state.selectedBossId && getBossById(state.selectedBossId)) return;
@@ -29,7 +29,7 @@ export function createDestinationScreenHandlers(ctx: RunFlowContext) {
     try {
       const choice = dispatchRunSessionCommand(() => {
         if (!beginDestinationClaim(destination)) return null;
-        const rewardState = readRunSessionStore().rewardState;
+        const rewardState = readRunSession().rewardState;
         const selectedBossId = destination === CONSTANTS.DESTINATIONS.BOSS_COMBAT ? rewardState.selectedBossId : null;
         return { selectedBossId };
       });

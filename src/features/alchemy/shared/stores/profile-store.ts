@@ -3,6 +3,13 @@ import type { CollectionTab } from "@/features/alchemy/shared/types";
 import type { PersistenceCodec } from "./persistence-codec";
 import { createSliceStore } from "./slice-store-adapter";
 import { createDefaultProfileSaveFields, type ProfileSaveFields } from "./profile-store-types";
+import {
+  applyGameplayStateUpdate,
+  readGameplayState,
+  subscribeGameplayCommits,
+  type GameplayState,
+  type ProfileStateFields,
+} from "./gameplay-state-store";
 
 export type { ProfileSaveFields } from "./profile-store-types";
 
@@ -43,10 +50,30 @@ const PROFILE_KEYS = [
   "resetToDefaults",
 ] as const satisfies ReadonlyArray<keyof ProfileStore>;
 
-const useProfileStore = createSliceStore<ProfileStore>((state) => {
-  const profile = state as unknown as ProfileStore;
-  return profile;
-}, PROFILE_KEYS);
+const profileActionKeys = new Set<string>([
+  "setDiscoveredCardIds",
+  "setEncounteredEnemyIds",
+  "setDiscoveredTrinketIds",
+  "setCompletedDifficulties",
+  "setFinishedRunCharacters",
+  "setCollectionPage",
+  "handleCollectionTabChange",
+  "resetToDefaults",
+]);
+
+function pickProfileStore(state: GameplayState): ProfileStore {
+  return { ...state.profile, ...state.profileActions };
+}
+
+function writeProfileKey(state: GameplayState, key: keyof ProfileStore, value: unknown): void {
+  if (profileActionKeys.has(String(key))) {
+    (state.profileActions as unknown as Record<string, unknown>)[String(key)] = value;
+    return;
+  }
+  state.profile[key as keyof ProfileStateFields] = value as never;
+}
+
+const useProfileStore = createSliceStore<ProfileStore>(pickProfileStore, PROFILE_KEYS, {}, writeProfileKey);
 
 export { useProfileStore };
 
@@ -67,7 +94,10 @@ function cloneProfileSaveFields(fields: ProfileSaveFields): ProfileSaveFields {
 
 export const profilePersistenceCodec: PersistenceCodec<ProfileSaveFields> = {
   createDefault: createDefaultProfileSaveFields,
-  encode: () => cloneProfileSaveFields(useProfileStore.getState()),
-  hydrate: (fields) => useProfileStore.setState(cloneProfileSaveFields(fields)),
-  subscribe: (listener) => useProfileStore.subscribe(() => listener()),
+  encode: () => cloneProfileSaveFields(readGameplayState().profile),
+  hydrate: (fields) =>
+    applyGameplayStateUpdate((state) => {
+      Object.assign(state.profile, cloneProfileSaveFields(fields));
+    }),
+  subscribe: (listener) => subscribeGameplayCommits(() => listener()),
 };

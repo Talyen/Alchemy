@@ -1,7 +1,7 @@
 import type { PersistenceCodec } from "./persistence-codec";
 import type { GearSaveFields, GearStore } from "./gear-store-types";
 import { createSliceStore } from "./slice-store-adapter";
-import type { GameplayState } from "./gameplay-state-store";
+import { readGameplayState, subscribeGameplayCommits, type GameplayState } from "./gameplay-state-store";
 import {
   createEmptyCurrencyBoardPositionsByCharacter,
   createEmptyGearBoardPositionsByCharacter,
@@ -45,31 +45,36 @@ const gearActionKeyMap = {
   applyCurrency: "gearApplyCurrency",
   addCurrencies: "gearAddCurrencies",
   reset: "gearReset",
-} as const satisfies Partial<Record<keyof GearStore, keyof GameplayState>>;
+} as const satisfies Partial<Record<keyof GearStore, keyof GameplayState["gearActions"]>>;
 
 function pickGearStore(state: GameplayState): GearStore {
   return {
-    inventories: state.inventories,
-    loadouts: state.loadouts,
-    boardPositionsByCharacter: state.boardPositionsByCharacter,
-    currencyBoardPositionsByCharacter: state.currencyBoardPositionsByCharacter,
-    craftingCurrencies: state.craftingCurrencies,
-    initialize: state.gearInitialize,
-    addInstance: state.gearAddInstance,
-    transferToInventory: state.gearTransferToInventory,
-    equip: state.gearEquip,
-    unequip: state.gearUnequip,
-    moveBoardItem: state.gearMoveBoardItem,
-    syncBoardPositions: state.gearSyncBoardPositions,
-    sortBoard: state.gearSortBoard,
-    salvage: state.gearSalvage,
-    applyCurrency: state.gearApplyCurrency,
-    addCurrencies: state.gearAddCurrencies,
-    reset: state.gearReset,
+    ...state.gear,
+    initialize: state.gearActions.gearInitialize,
+    addInstance: state.gearActions.gearAddInstance,
+    transferToInventory: state.gearActions.gearTransferToInventory,
+    equip: state.gearActions.gearEquip,
+    unequip: state.gearActions.gearUnequip,
+    moveBoardItem: state.gearActions.gearMoveBoardItem,
+    syncBoardPositions: state.gearActions.gearSyncBoardPositions,
+    sortBoard: state.gearActions.gearSortBoard,
+    salvage: state.gearActions.gearSalvage,
+    applyCurrency: state.gearActions.gearApplyCurrency,
+    addCurrencies: state.gearActions.gearAddCurrencies,
+    reset: state.gearActions.gearReset,
   };
 }
 
-export const useGearStore = createSliceStore<GearStore>(pickGearStore, GEAR_KEYS, gearActionKeyMap);
+function writeGearKey(state: GameplayState, key: keyof GearStore, value: unknown): void {
+  const mappedKey = gearActionKeyMap[key as keyof typeof gearActionKeyMap];
+  if (mappedKey) {
+    (state.gearActions as unknown as Record<string, unknown>)[mappedKey] = value;
+    return;
+  }
+  (state.gear as unknown as Record<string, unknown>)[String(key)] = value;
+}
+
+export const useGearStore = createSliceStore<GearStore>(pickGearStore, GEAR_KEYS, {}, writeGearKey);
 
 export const gearPersistenceCodec: PersistenceCodec<GearSaveFields> = {
   createDefault: () => ({
@@ -80,7 +85,7 @@ export const gearPersistenceCodec: PersistenceCodec<GearSaveFields> = {
     craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
   }),
   encode: () => {
-    const state = useGearStore.getState();
+    const state = readGameplayState().gear;
     return {
       gearInventories: state.inventories,
       gearLoadouts: state.loadouts,
@@ -90,14 +95,12 @@ export const gearPersistenceCodec: PersistenceCodec<GearSaveFields> = {
     };
   },
   hydrate: (fields) =>
-    useGearStore
-      .getState()
-      .initialize(
-        fields.gearInventories,
-        fields.gearLoadouts,
-        fields.gearBoardPositionsByCharacter,
-        fields.craftingCurrencies,
-        fields.craftingCurrencyBoardPositionsByCharacter,
-      ),
-  subscribe: (listener) => useGearStore.subscribe(() => listener()),
+    readGameplayState().gearActions.gearInitialize(
+      fields.gearInventories,
+      fields.gearLoadouts,
+      fields.gearBoardPositionsByCharacter,
+      fields.craftingCurrencies,
+      fields.craftingCurrencyBoardPositionsByCharacter,
+    ),
+  subscribe: (listener) => subscribeGameplayCommits(() => listener()),
 };

@@ -976,6 +976,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(state): split run session capability ports
 - refactor(run): centralize session commands and resume codec
 - refactor(state): publish atomic run-session updates
 - refactor(state): split run-flow into ports, intents, and concern modules

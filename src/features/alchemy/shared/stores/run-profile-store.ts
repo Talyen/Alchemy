@@ -4,6 +4,7 @@ import type { HomesteadProfileActions } from "./slices/progress-homestead-action
 import type { TalentActions } from "./gameplay-state-store";
 import { createSliceStore } from "./slice-store-adapter";
 import { createInitialPermanentFields } from "./run-state-init";
+import type { GameplayState } from "./gameplay-state-store";
 
 export interface RunProfileActions extends HomesteadProfileActions, TalentActions {
   unlockTalent: (keywordId: KeywordId, talentId: string) => void;
@@ -39,7 +40,39 @@ const PROFILE_KEYS = [
   "mergeRunTalentXPIntoProfile",
 ] as const satisfies ReadonlyArray<keyof RunProfileStore>;
 
-export const useRunProfileStore = createSliceStore<RunProfileStore>((state) => state, PROFILE_KEYS);
+const runProfileActionKeys = new Set<string>([
+  "addMaterials",
+  "setMaterials",
+  "constructBuilding",
+  "plantFarm",
+  "completeResearch",
+  "bondCompanion",
+  "unlockTalent",
+  "unlockAllTalents",
+  "resetUnlockedTalents",
+  "clearPermanentData",
+  "applyTalentState",
+  "mergeRunTalentXPIntoProfile",
+]);
+
+function pickRunProfileStore(state: GameplayState): RunProfileStore {
+  return { ...state.runProfile, ...state.runProfileActions };
+}
+
+function writeRunProfileKey(state: GameplayState, key: keyof RunProfileStore, value: unknown): void {
+  if (runProfileActionKeys.has(String(key))) {
+    (state.runProfileActions as unknown as Record<string, unknown>)[String(key)] = value;
+    return;
+  }
+  (state.runProfile as unknown as Record<string, unknown>)[String(key)] = value;
+}
+
+export const useRunProfileStore = createSliceStore<RunProfileStore>(
+  pickRunProfileStore,
+  PROFILE_KEYS,
+  {},
+  writeRunProfileKey,
+);
 
 export function getRunProfileStore(): RunProfileStore {
   return useRunProfileStore.getState();
@@ -47,17 +80,4 @@ export function getRunProfileStore(): RunProfileStore {
 
 export function resetRunProfileStore(): void {
   useRunProfileStore.setState(createInitialPermanentFields(), false);
-}
-
-export function readRunProfileFields(profile: PermanentProgressFields): PermanentProgressFields {
-  return {
-    talentXP: profile.talentXP,
-    unlockedTalents: profile.unlockedTalents,
-    materialInventory: profile.materialInventory,
-    constructedBuildings: profile.constructedBuildings,
-    plantedFarms: profile.plantedFarms,
-    completedResearch: profile.completedResearch,
-    bondedCompanions: profile.bondedCompanions,
-    effects: profile.effects,
-  };
 }

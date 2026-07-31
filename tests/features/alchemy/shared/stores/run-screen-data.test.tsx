@@ -5,7 +5,7 @@ import {
   useRewardsScreenData,
   useScreenAssetPreloadData,
   useShopScreenData,
-} from "@/features/alchemy/shared/stores/run-session-facade";
+} from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
   getRunSessionStoreView,

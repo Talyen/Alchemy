@@ -2,7 +2,6 @@
 // Depends on character game data, shared alchemy UI, and hover shimmer hooks.
 // Used when beginning a fresh run before destination routing starts.
 import { useState } from "react";
-
 import { cn } from "@/lib/utils";
 import {
   characterArt,
@@ -10,7 +9,6 @@ import {
   characterUnlockRequirements,
   type CharacterId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
-
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { renderColoredKeywords } from "../../shared/ui/card-description-ui";
 import { ScreenHeader, ActionButtonRow, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
@@ -24,7 +22,7 @@ import {
 } from "../../shared/ui/tooltip-panel";
 import { cardSurfaceClass } from "@/features/alchemy/shared/config";
 import { useUiStore } from "../../shared/stores/ui-store";
-import { useProfileStore } from "../../shared/stores/profile-store";
+import { useFinishedRunCharacters } from "../../shared/stores/profile-port";
 import { playUISound } from "@/lib/audio";
 
 const charCardWidthClass = "w-[clamp(18vh,20.5vh,28vh)]";
@@ -153,7 +151,7 @@ export function CharacterSelectScreen({
   const [selectedId, setSelectedId] = useState<CharacterId | null>(null);
   const shimmerState = useUiStore((s) => s.shimmerState);
   const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
-  const finishedRunCharacters = useProfileStore((s) => s.finishedRunCharacters);
+  const finishedRunCharacters = useFinishedRunCharacters();
 
   const charIds = Object.keys(characters) as CharacterId[];
   const selectedChar = selectedId ? characters[selectedId] : null;

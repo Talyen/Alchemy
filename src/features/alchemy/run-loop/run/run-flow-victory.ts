@@ -1,11 +1,12 @@
 import {
-  readActiveRunStore,
-  readBattleStore,
-  readRunSessionStore,
-  awardMaterialsDuringRun,
-  dispatchRunSessionCommand,
-} from "../../shared/stores/run-session-facade";
-import { setCompanionRewardCards, setRewardState } from "../../shared/stores/run-session-facade";
+  readActiveRun,
+  readBattle,
+  readRunProfile,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/run-session-read-port";
+import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setCompanionRewardCards, setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { playGoldGain, playVictory, stopAllSfx } from "@/lib/audio";
 import { VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
 import { getBossEnemy } from "@/features/alchemy/shared/config";
@@ -19,23 +20,23 @@ export function createVictoryHandlers(ctx: RunFlowContext) {
   const { deps } = ctx;
 
   function computeVictoryResult() {
-    const runState = readActiveRunStore();
+    const runState = readActiveRun();
     return computeVictoryRewards(
       {
         characterId: runState.characterId,
         selectedDifficulty: runState.selectedDifficulty,
-        unlockedTalents: runState.unlockedTalents,
+        unlockedTalents: readRunProfile().unlockedTalents,
         runDeck: runState.runDeck,
         runTrinkets: runState.runTrinkets,
         contentSystemType: runState.contentSystemType,
         activeLabyrinthRewardModifiers: getActiveRewardTraits(runState.contentSystemType),
-        battleState: readBattleStore().battleState,
+        battleState: readBattle().battleState,
         runGold: runState.runGold,
         runPlayerHealth: runState.runPlayerHealth,
         runMaxHealth: runState.runMaxHealth,
         destinationIndexInAct: runState.destinationIndexInAct,
         completedDestinations: runState.completedDestinations,
-        homesteadEffects: runState.effects,
+        homesteadEffects: readRunProfile().effects,
         getAvailableDestinations: deps.getAvailableDestinations,
         bossEnemyId: getBossEnemy([], deps.worldRng).id,
         destinationOfferState: {
@@ -52,8 +53,8 @@ export function createVictoryHandlers(ctx: RunFlowContext) {
     let goldGained = false;
     dispatchRunSessionCommand(
       () => {
-        const battleState = readBattleStore().battleState;
-        const runState = readActiveRunStore();
+        const battleState = readBattle().battleState;
+        const runState = readActiveRun();
         goldGained = commitVictoryRewards(
           result,
           {
@@ -65,7 +66,7 @@ export function createVictoryHandlers(ctx: RunFlowContext) {
             setRewardState,
             setCompanionRewardCards,
             setDestinationOfferState: runState.setDestinationOfferState,
-            setHasActiveBattle: (active) => readBattleStore().setHasActiveBattle(active),
+            setHasActiveBattle: (active) => readBattle().setHasActiveBattle(active),
           },
           deps.rewardRng,
         );
@@ -86,9 +87,9 @@ export function createVictoryHandlers(ctx: RunFlowContext) {
     commitVictoryResult(computeVictoryResult());
     stopAllSfx();
     playVictory();
-    if (readRunSessionStore().hasActiveRun) {
+    if (readRunSession().hasActiveRun) {
       const nextScreen =
-        readActiveRunStore().contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
+        readActiveRun().contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
           ? CONSTANTS.SCREENS.WILDWOOD_RECOVERY
           : CONSTANTS.SCREENS.REWARDS;
       deps.dispatch({
@@ -96,7 +97,7 @@ export function createVictoryHandlers(ctx: RunFlowContext) {
         screen: nextScreen,
         options: {
           delayMs: VICTORY_TRANSITION_DELAY,
-          guard: () => readRunSessionStore().hasActiveRun,
+          guard: () => readRunSession().hasActiveRun,
         },
       });
     }

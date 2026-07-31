@@ -1,7 +1,6 @@
 // Root-level audio preference and screen music side effects.
 // Depends on the audio facade, music constants, and screen type from alchemy.
 import { useEffect, useRef } from "react";
-
 import { MUSIC_KEYS } from "@/lib/game-constants";
 import {
   playMusic,
@@ -15,7 +14,8 @@ import {
 } from "@/lib/audio";
 import { audioState } from "@/lib/audio-state";
 import { getBossMusicKey, invalidateCacheForKey } from "@/lib/audio-music";
-import { useHasActiveBattle, readBattleStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-react-ports";
+import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { Screen } from "@/features/alchemy/shared/types";
 
 interface AppAudioEffectsOptions {
@@ -28,7 +28,7 @@ interface AppAudioEffectsOptions {
 
 function pickMusicKey(screen: Screen): string {
   if (screen !== "battle") return MUSIC_KEYS.MENU;
-  const battleStore = readBattleStore();
+  const battleStore = readBattle();
   if (!battleStore.hasActiveBattle) return MUSIC_KEYS.BATTLE;
   const enemy = battleStore.battleState.currentEnemy;
   if (enemy.enemyType !== "boss") return MUSIC_KEYS.BATTLE;

@@ -1,11 +1,3 @@
-// Pure victory reward computation extracted from use-run-navigation.
-// Depends on: reward-flow, destination-flow, game data, game constants, homestead loot.
-// Depended on by: useRunNavigation for computing battle victory outcomes.
-export {
-  withSelectedBossForDestinations,
-  createDestinationRewardState,
-} from "@/features/alchemy/shared/run-flow/destination-flow";
-
 import { computeTalentEffects, getGoldMultiplier } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard, CharacterId, DifficultyId, UnlockedTalents, TalentEffectManifest } from "@/lib/game-data";
@@ -27,7 +19,7 @@ import { getGenerousGoldBonus } from "./reward-flow";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { CONSTANTS, type Destination } from "@/features/alchemy/shared/types";
-import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-session-facade";
+import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {
@@ -44,6 +36,14 @@ import {
 import {
   sampleDestinationChoices,
   withSelectedBossForDestinations,
+} from "@/features/alchemy/shared/run-flow/destination-flow";
+
+// Pure victory reward computation extracted from use-run-navigation.
+// Depends on: reward-flow, destination-flow, game data, game constants, homestead loot.
+// Depended on by: useRunNavigation for computing battle victory outcomes.
+export {
+  withSelectedBossForDestinations,
+  createDestinationRewardState,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
 
 interface VictoryGoldRoll {

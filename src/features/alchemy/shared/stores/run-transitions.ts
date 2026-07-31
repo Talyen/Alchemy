@@ -8,18 +8,13 @@ import { computeGearManifest, type GearInstance, type GearLoadouts } from "@/lib
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
-import { getRunProfileStore } from "./run-profile-store";
-import { getRunTransientStore, resetRunTransientStore } from "./run-transient-store";
-import { getRunBattleDomainStore, resetRunBattleDomainStore } from "./run-battle-domain-store";
-import { createInitialRunDomainData } from "./run-domain-types";
 import { clearBattlePresentationCardGhosts, resetBattlePresentation } from "./battle-presentation-bridge";
 import { useUiStore } from "./ui-store";
-import { useProfileStore } from "./profile-store";
 import { getCommittedRunSession } from "./run-session-model";
 import { restoreRunSession } from "./restore-active-run-session";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "./run-resume-codec";
 import { dispatchRunSessionCommand } from "./run-session-command";
+import { createRunSessionStoreSnapshot } from "./run-session-queries";
 
 /** Apply persisted active-run data across the run-lifetime stores atomically. */
 export function restoreRun(
@@ -29,21 +24,21 @@ export function restoreRun(
 ): void {
   const decoded = activeRun ? decodeRunResumeSnapshot(activeRun) : null;
   dispatchRunSessionCommand(() => {
-    const store = getRunDomainStore();
-    if (decoded) store.initializeFromResumeSnapshot(decoded.progress);
-    else store.initialize(null);
-    getRunProfileStore().applyTalentState(talentXP, unlockedTalents);
-    getRunBattleDomainStore().initializeActiveBattle(activeRun?.activeCombat?.battleState ?? null);
+    const session = createRunSessionStoreSnapshot();
+    if (decoded) session.domain.initializeFromResumeSnapshot(decoded.progress);
+    else session.domain.initialize(null);
+    session.runProfile.applyTalentState(talentXP, unlockedTalents);
+    session.battle.initializeActiveBattle(activeRun?.activeCombat?.battleState ?? null);
 
-    if (decoded?.screen) store.setScreen(decoded.screen);
+    if (decoded?.screen) session.domain.setScreen(decoded.screen);
     if (!activeRun) return;
 
-    const session = getRunTransientStore();
+    const transient = session.transient;
     // A resume is a full replacement of transient run state. Clearing first
     // prevents an in-process restore from leaking stale rewards or shop offers.
-    session.clearTransientSession();
-    session.setHasActiveRun(true);
-    if (decoded) restoreRunSession(session, decoded.session);
+    transient.clearTransientSession();
+    transient.setHasActiveRun(true);
+    if (decoded) restoreRunSession(transient, decoded.session);
   });
 }
 
@@ -70,7 +65,7 @@ export function syncRunMaxHealthFromGearMutation(
   const delta = newBonus - oldBonus;
   if (delta === 0) return;
 
-  const store = getRunDomainStore();
+  const store = createRunSessionStoreSnapshot().domain;
   const nextMax = store.activeRun.runMaxHealth + delta;
   store.setRunMaxHealth(nextMax);
   store.setRunPlayerHealth(Math.min(nextMax, store.activeRun.runPlayerHealth));
@@ -78,7 +73,7 @@ export function syncRunMaxHealthFromGearMutation(
 
 /** Clamp run HP for battle entry and persist before creating BattleState. */
 export function syncRunToBattleStart(playerHealth?: number): number {
-  const store = getRunDomainStore();
+  const store = createRunSessionStoreSnapshot().domain;
   const startingHealth =
     playerHealth ??
     getBattleStartPlayerHealth(
@@ -92,13 +87,14 @@ export function syncRunToBattleStart(playerHealth?: number): number {
 
 /** Persist combat HP to run progress after victory or when leaving battle. */
 export function syncBattleToRun(options?: { playerHealth?: number }): void {
-  const health = options?.playerHealth ?? getRunBattleDomainStore().battleState.playerHealth;
-  getRunDomainStore().setRunPlayerHealth(health);
+  const session = createRunSessionStoreSnapshot();
+  const health = options?.playerHealth ?? session.battle.battleState.playerHealth;
+  session.domain.setRunPlayerHealth(health);
 }
 
 /** Clear the battle-active flag and battle-related presentation state. */
 export function clearBattleUi(): void {
-  getRunBattleDomainStore().setHasActiveBattle(false);
+  createRunSessionStoreSnapshot().battle.setHasActiveBattle(false);
   clearBattlePresentationUi();
 }
 
@@ -111,14 +107,11 @@ export function clearBattlePresentationUi(): void {
 /** Clear active combat, run progression, session UI, navigation, and presentation (profile survives). */
 export function teardownRun(): void {
   dispatchRunSessionCommand(() => {
-    useRunDomainStore.setState((state) => {
-      const fresh = createInitialRunDomainData();
-      state.activeRun = { ...fresh.activeRun, characterId: state.activeRun.characterId };
-      state.initialized = true;
-      state.navigation = fresh.navigation;
-    });
-    resetRunTransientStore();
-    resetRunBattleDomainStore();
+    const session = createRunSessionStoreSnapshot();
+    session.domain.resetProgress();
+    session.domain.resetNavigation();
+    session.transient.clearTransientSession();
+    session.battle.initializeActiveBattle(null);
   });
   resetBattlePresentation();
   useUiStore.getState().clearCardHover();
@@ -140,14 +133,15 @@ function finalizeRunEndSessionState(options: {
   finalizeRunXP: () => void;
   displayMaterials?: MaterialInventory | null;
 }): MaterialInventory {
-  const session = getRunTransientStore();
+  const aggregate = createRunSessionStoreSnapshot();
+  const session = aggregate.transient;
   // Re-entry guard: run-end rewards are granted once per active run (menu abandon, defeat, victory).
   if (!session.hasActiveRun) {
     return emptyInventory();
   }
 
-  const activeChar = getRunDomainStore().activeRun.characterId;
-  useProfileStore.getState().setFinishedRunCharacters((prev) => {
+  const activeChar = aggregate.domain.activeRun.characterId;
+  aggregate.profile.setFinishedRunCharacters((prev) => {
     if (prev.includes(activeChar)) return prev;
     return [...prev, activeChar];
   });
@@ -155,7 +149,7 @@ function finalizeRunEndSessionState(options: {
   const materials = options.awardRunEndMaterials(options.displayMaterials);
   options.finalizeRunXP();
 
-  getRunTransientStore().setHasActiveRun(false);
+  session.setHasActiveRun(false);
   return materials;
 }
 

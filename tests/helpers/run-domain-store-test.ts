@@ -1,11 +1,12 @@
 // Test helpers for the run-lifetime stores — slice reads/writes without legacy shims.
 import { useRunDomainStore, resetRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
 import {
-  getRunProgressStoreView,
+  getActiveRunStoreView,
+  getRunProfileStoreView,
   getRunSessionStoreView,
   getNavigationStoreView,
   getBattleStoreView,
-} from "@/features/alchemy/shared/stores/run-store-views";
+} from "@/features/alchemy/shared/stores/run-session-queries";
 import { useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
 import { useRunTransientStore } from "@/features/alchemy/shared/stores/run-transient-store";
 import { useRunBattleDomainStore } from "@/features/alchemy/shared/stores/run-battle-domain-store";
@@ -21,13 +22,11 @@ import {
   type RunStateFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
 
-export {
-  getRunProgressStoreView,
-  getRunSessionStoreView,
-  getNavigationStoreView,
-  getBattleStoreView,
-  resetRunDomainStore,
-};
+export { getRunSessionStoreView, getNavigationStoreView, getBattleStoreView, resetRunDomainStore };
+
+export function getRunProgressStoreView() {
+  return { ...getActiveRunStoreView(), ...getRunProfileStoreView() };
+}
 
 export function resetRunProgressSlice() {
   useRunDomainStore.setState((s) => {

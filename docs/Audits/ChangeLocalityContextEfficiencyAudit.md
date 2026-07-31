@@ -45,7 +45,7 @@ Prefer delete duplicated policy or commands and link consumers to the existing s
 
 Executable scripts and checked-in configuration own tool behavior; [ARCHITECTURE.md](../ARCHITECTURE.md) and [CONTRIBUTING.md](../../CONTRIBUTING.md) own architecture and testing policy; [AGENTS.md](../../AGENTS.md) owns repository-wide guardrails. Prefer links over copied policy.
 
-Mine history only as a capped discovery tool, then confirm the strongest candidates in their diffs. Count authored inputs separately from generated outputs and assets. For amplification hotspots, prefer an existing facade (`run-session-facade`, asset barrels, screen-content owners) over a new framework.
+Mine history only as a capped discovery tool, then confirm the strongest candidates in their diffs. Count authored inputs separately from generated outputs and assets. For amplification hotspots, prefer an existing capability port, asset barrel, or screen-content owner over a new framework.
 
 Every shipped finding must report its before/after proxy and the unchanged correctness signal (same lint gate, semantic test owner, or E2E journey).
 

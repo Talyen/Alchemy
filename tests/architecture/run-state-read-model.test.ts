@@ -9,8 +9,8 @@ function read(path: string): string {
 }
 
 describe("run-state read model", () => {
-  it("does not export deleted screen-twin session slices from the facade", () => {
-    const facade = read("src/features/alchemy/shared/stores/run-session-facade.ts");
+  it("does not export deleted screen-twin session slices from capability ports", () => {
+    const facade = read("src/features/alchemy/shared/stores/run-session-react-ports.ts");
     const model = read("src/features/alchemy/shared/stores/run-session-model.ts");
     for (const name of ["useRunSessionShopSlice", "useRunSessionMysterySlice", "useRunSessionLabyrinthSlice"]) {
       expect(facade).not.toContain(name);
@@ -19,7 +19,7 @@ describe("run-state read model", () => {
   });
 
   it("keeps exact screen-specific hooks as the screen-scoped React read surface", () => {
-    const facade = read("src/features/alchemy/shared/stores/run-session-facade.ts");
+    const facade = read("src/features/alchemy/shared/stores/use-run-screen-data.ts");
     expect(facade).toContain("useRewardsScreenData");
     expect(facade).toContain("useShopScreenData");
     expect(facade).not.toContain("useRunScreenData");
@@ -30,18 +30,22 @@ describe("run-state read model", () => {
   });
 
   it("routes cross-store React reads through the committed session projection", () => {
-    const facade = read("src/features/alchemy/shared/stores/run-session-facade.ts");
+    const facade = read("src/features/alchemy/shared/stores/run-session-react-ports.ts");
     const model = read("src/features/alchemy/shared/stores/run-session-model.ts");
     const screenHooks = read("src/features/alchemy/shared/stores/use-run-screen-data.ts");
-    const adapters = read("src/features/alchemy/shared/stores/run-store-views.ts");
+    const adapters = read("src/features/alchemy/shared/stores/run-session-queries.ts");
 
-    for (const source of [facade, model, screenHooks, adapters]) {
+    for (const source of [facade, model, screenHooks]) {
       expect(source).toContain("useRunSessionCommitStore");
       expect(source).not.toContain("useRunDomainStore(");
       expect(source).not.toContain("useRunTransientStore(");
       expect(source).not.toContain("useRunBattleDomainStore(");
       expect(source).not.toContain("useRunProfileStore(");
     }
+    expect(adapters).not.toContain("useRunSessionCommitStore");
+    expect(adapters).toContain("getActiveRunStoreView");
+    expect(adapters).toContain("getRunProfileStoreView");
+    expect(adapters).not.toMatch(/import \{[^}]*useRun(?:Domain|Profile|Transient|BattleDomain)Store/);
   });
 
   it("does not re-export shop/rewards/mystery display state from the mega-controller", () => {
@@ -89,24 +93,26 @@ describe("run-state read model", () => {
     expect(types).toContain("talentEffects: TalentEffectManifest");
 
     const actions = read("src/features/alchemy/run-loop/shop/create-shop-actions.ts");
-    expect(actions).toContain("readActiveRunStore");
-    expect(actions).toContain("readRunSessionStore");
+    expect(actions).toContain("readActiveRun");
+    expect(actions).toContain("readRunSession");
 
     const shopController = read("src/features/alchemy/shell/use-shop-controller.ts");
     expect(shopController).not.toContain("run: RunStateController");
     expect(shopController).not.toMatch(/\brun,\s*talents/);
   });
 
-  it("keeps composed views and adapters in run-store-views, not the domain store", () => {
+  it("keeps imperative compatibility views separate from the domain store", () => {
     const domain = read("src/features/alchemy/shared/stores/run-domain-store.ts");
     expect(domain).not.toContain("export function getRunProgressStoreView");
     expect(domain).not.toContain("export function useRunAdapter");
     expect(domain).not.toContain("export function selectRunController");
 
-    const views = read("src/features/alchemy/shared/stores/run-store-views.ts");
-    expect(views).toContain("export function getRunProgressStoreView");
-    expect(views).toContain("export function useRunAdapter");
-    expect(views).toContain("export function selectRunController");
+    const views = read("src/features/alchemy/shared/stores/run-session-queries.ts");
+    expect(views).toContain("export function getActiveRunStoreView");
+    expect(views).toContain("export function getRunProfileStoreView");
+    expect(views).not.toContain("export function useRunAdapter");
+    expect(views).not.toContain("export function useTalentAdapter");
+    expect(views).not.toContain("export function selectRunController");
   });
 
   it("keeps exact screen contracts without a broad field bag or unchecked cast", () => {
@@ -166,8 +172,11 @@ describe("run-state read model", () => {
     expect(deps).not.toContain("navigateTo:");
 
     const ports = read("src/features/alchemy/run-loop/run/run-flow-ports.ts");
-    expect(ports).toContain("export interface RunFlowRunPort");
-    expect(ports).toContain("export interface RunFlowTalentPort");
+    expect(ports).toContain("RunFlowRunPort");
+    expect(ports).toContain("RunFlowTalentPort");
+    const sharedPorts = read("src/features/alchemy/shared/stores/run-port-types.ts");
+    expect(sharedPorts).toContain("export interface RunFlowRunPort");
+    expect(sharedPorts).toContain("export interface RunFlowTalentPort");
 
     const intents = read("src/features/alchemy/run-loop/run/run-flow-intents.ts");
     expect(intents).toContain("export type RunFlowIntent");
@@ -182,15 +191,37 @@ describe("run-state read model", () => {
     expect(nav).toContain("dispatch");
   });
 
-  it("selectRunController and pickRunSessionRunSlice share pickActiveRunSessionCoreFields", () => {
+  it("the committed run session model shares the canonical active-run core picker", () => {
     const init = read("src/features/alchemy/shared/stores/run-state-init.ts");
     expect(init).toContain("export function pickActiveRunSessionCoreFields");
     expect(init).toContain("const ACTIVE_RUN_SESSION_CORE_KEYS");
 
-    const views = read("src/features/alchemy/shared/stores/run-store-views.ts");
-    expect(views).toContain("pickActiveRunSessionCoreFields");
+    const views = read("src/features/alchemy/shared/stores/run-session-queries.ts");
+    expect(views).not.toContain("pickActiveRunSessionCoreFields");
 
     const model = read("src/features/alchemy/shared/stores/run-session-model.ts");
     expect(model).toContain("pickActiveRunSessionCoreFields");
+  });
+
+  it("exposes narrow orchestration ports instead of broad React adapters", () => {
+    const facade = read("src/features/alchemy/shared/stores/run-session-react-ports.ts");
+    for (const hook of [
+      "useRunFlowRunPort",
+      "useRunFlowTalentPort",
+      "useBattleRunPort",
+      "useBattleTalentPort",
+      "useContentNavigationRunPort",
+      "useContentNavigationTalentPort",
+      "useDestinationRunPort",
+      "useWildwoodRunPort",
+      "useCorruptionRunPort",
+      "useTalentCommandPort",
+      "useHomesteadEffects",
+    ]) {
+      expect(facade).toContain(`export function ${hook}`);
+    }
+    expect(facade).not.toContain("useRunAdapter");
+    expect(facade).not.toContain("useTalentAdapter");
+    expect(facade).not.toContain("useHomesteadAdapter");
   });
 });

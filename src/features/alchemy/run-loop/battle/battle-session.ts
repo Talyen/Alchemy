@@ -1,17 +1,17 @@
 // Battle session identity, victory/defeat guards, and timeout/transfer cleanup.
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import { stopAllSfx } from "@/lib/audio";
-import { readBattleStore } from "../../shared/stores/run-session-facade";
+import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { useBattlePresentationStore } from "./battle-presentation-store";
 import type { BattleControllerContext } from "./battle-context";
 
 /** Domain battle state plus presentation VFX actions used by turn/card-play orchestration. */
 export function getBattleSessionStore() {
-  return { ...readBattleStore(), ...useBattlePresentationStore.getState() };
+  return { ...readBattle(), ...useBattlePresentationStore.getState() };
 }
 
 export function createBattleSession(ctx: BattleControllerContext) {
-  const getStore = () => readBattleStore();
+  const getStore = () => readBattle();
   const getPresentationStore = () => useBattlePresentationStore.getState();
 
   function isBattleSessionActive(session: number) {

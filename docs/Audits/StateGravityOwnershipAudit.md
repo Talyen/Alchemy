@@ -15,7 +15,7 @@ Agentic coding often drops the next method on the nearest large module. Gravity 
 | Combat rules / damage / deck math in screens or controllers           | Belongs in `src/lib/battle`                                       |
 | Save mutation or schema policy in screens                             | Belongs in `shared/storage` / `src/lib/validation/save-schemas`   |
 | Feature navigation and screen-only UI state on persistence types      | Presentation leaked downward                                      |
-| `run-domain-store` growing feature-specific APIs used outside stores  | Violates facade containment — use `run-session-facade`            |
+| `run-domain-store` growing feature-specific APIs used outside stores  | Violates capability containment — use the owning run-session port |
 | Mega-screen that orchestrates rewards, catalog lookups, and mutations | Screen owns too many jobs; extract controller/facade or shared UI |
 | New `*Manager` / parallel store beside existing owners for one flow   | Invented gravity well instead of an extension on the real owner   |
 
@@ -30,7 +30,7 @@ Agentic coding often drops the next method on the nearest large module. Gravity 
 
 ## Remedy preference
 
-Prefer moving pure rules into the matching `src/lib/*` owner and persistence policy into `shared/storage` / save-schemas / migrations, keeping stores thin. Keep run orchestration on shell controllers + `run-session-facade` (lifecycle implemented in `run-transitions.ts`). Keep battle VFX in `battle-presentation-store`, global UI chrome in `ui-store`, meta discovery in `app-store`, permanent gear in `gear-store`, homestead/talents in `run-profile-store`. Extract presentation-only helpers into `shared/ui` or the feature folder; collapse duplicate shells via `DuplicateFeatureSurfaceAudit.md` when that is the bulk of the win. Propose hub splits when local moves would leave the same gravity well intact.
+Prefer moving pure rules into the matching `src/lib/*` owner and persistence policy into `shared/storage` / save-schemas / migrations, keeping stores thin. Keep run orchestration on shell controllers plus capability-specific run-session ports (lifecycle implemented in `run-transitions.ts`). Keep battle VFX in `battle-presentation-store`, global UI chrome in `ui-store`, meta discovery in `app-store`, permanent gear in `gear-store`, homestead/talents in `run-profile-store`. Extract presentation-only helpers into `shared/ui` or the feature folder; collapse duplicate shells via `DuplicateFeatureSurfaceAudit.md` when that is the bulk of the win. Propose hub splits when local moves would leave the same gravity well intact.
 
 ## Domain rules
 

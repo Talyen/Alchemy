@@ -11,7 +11,7 @@ import {
 import type { BattleCard } from "@/lib/game-data";
 import { playCardSound, playGoldGain, playUISound } from "@/lib/audio";
 import { appendUnique } from "@/lib/utils";
-import { useProfileStore } from "../../shared/stores/profile-store";
+import { setDiscoveredCardIds } from "../../shared/stores/profile-port";
 import { CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
 import { animateCardActivation } from "./card-transfer-animations";
 import { getCardRect, getHoverId } from "../../shared/utils";
@@ -23,7 +23,8 @@ import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import { logError } from "@/lib/error-logger";
 import { useBattlePresentationStore } from "./battle-presentation-store";
-import { readBattleStore, dispatchRunSessionCommand } from "../../shared/stores/run-session-facade";
+import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 const BATTLE_CARD_PLAY_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
 
@@ -127,7 +128,7 @@ export function createBattleCardPlay(
       () => {
         dispatchRunSessionCommand(
           () => {
-            readBattleStore().setSyncedBattleState(resolution.state);
+            readBattle().setSyncedBattleState(resolution.state);
             ctx.talents.awardCardXP(card);
           },
           {
@@ -160,9 +161,9 @@ export function createBattleCardPlay(
       newState,
       () => {
         dispatchRunSessionCommand(() => {
-          readBattleStore().setSyncedBattleState(newState);
+          readBattle().setSyncedBattleState(newState);
           if (cardOrNull) {
-            useProfileStore.getState().setDiscoveredCardIds((current) => appendUnique(current, cardOrNull.id));
+            setDiscoveredCardIds((current) => appendUnique(current, cardOrNull.id));
           }
         });
       },

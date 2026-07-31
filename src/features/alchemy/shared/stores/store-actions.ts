@@ -1,8 +1,8 @@
 // Stable action-only selectors for render paths (functions do not change between store updates).
 import { useShallow } from "zustand/react/shallow";
-import { useProfileStore } from "./profile-store";
 import { useSettingsStore, type SettingsStore } from "./settings-store";
-import { getRunProfileStore } from "./run-profile-store";
+import { useGameplayStateStore } from "./gameplay-state-store";
+import type { ProfileStore } from "./profile-store";
 
 const settingsActionKeys = [
   "setSelectedAspectRatio",
@@ -21,10 +21,7 @@ const settingsActionKeys = [
 const collectionActionKeys = ["setCollectionPage", "handleCollectionTabChange"] as const;
 
 export type SettingsActions = Pick<SettingsStore, (typeof settingsActionKeys)[number]>;
-export type CollectionActions = Pick<
-  ReturnType<typeof useProfileStore.getState>,
-  (typeof collectionActionKeys)[number]
->;
+export type CollectionActions = Pick<ProfileStore, (typeof collectionActionKeys)[number]>;
 
 function pickActions<T extends object, K extends keyof T>(state: T, keys: readonly K[]): Pick<T, K> {
   const out = {} as Pick<T, K>;
@@ -43,11 +40,13 @@ export function useSettingsActions(): SettingsActions {
 }
 
 export function useCollectionActions(): CollectionActions {
-  return useProfileStore(useShallow((state) => pickActions(state, collectionActionKeys)));
+  return useGameplayStateStore(
+    useShallow((state) => pickActions({ ...state.profile, ...state.profileActions }, collectionActionKeys)),
+  );
 }
 
 export function useHomesteadActions() {
-  const store = getRunProfileStore();
+  const store = useGameplayStateStore((state) => state.runProfileActions);
   return {
     constructBuilding: store.constructBuilding,
     plantFarm: store.plantFarm,

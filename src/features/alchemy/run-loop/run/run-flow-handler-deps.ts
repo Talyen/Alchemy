@@ -2,7 +2,7 @@ import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-tra
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { RewardState } from "@/lib/active-run-session";
 import type { DestinationOptionsInput } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { readRunSessionStore } from "../../shared/stores/run-session-facade";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { CONSTANTS, type Destination } from "../../shared/types";
 import type { RunFlowDispatch } from "./run-flow-intents";
 import type { RunFlowRunPort, RunFlowTalentPort } from "./run-flow-ports";
@@ -27,7 +27,7 @@ export interface RunFlowHandlerDeps {
 }
 
 export function getActiveRewardTraits(contentSystemType: ContentSystemId): EncounterRewardTraitId[] {
-  const session = readRunSessionStore();
+  const session = readRunSession();
   if (contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
     return session.wildwoodDraft?.currentRewardTraitIds ?? [];
   }

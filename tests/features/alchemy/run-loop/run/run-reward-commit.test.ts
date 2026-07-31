@@ -8,16 +8,12 @@ const discoveryMocks = vi.hoisted(() => ({
   setDiscoveredTrinketIds: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/shared/stores/profile-store", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/profile-store")>();
+vi.mock("@/features/alchemy/shared/stores/profile-port", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/profile-port")>();
   return {
     ...actual,
-    useProfileStore: {
-      getState: () => ({
-        setDiscoveredCardIds: discoveryMocks.setDiscoveredCardIds,
-        setDiscoveredTrinketIds: discoveryMocks.setDiscoveredTrinketIds,
-      }),
-    },
+    setDiscoveredCardIds: discoveryMocks.setDiscoveredCardIds,
+    setDiscoveredTrinketIds: discoveryMocks.setDiscoveredTrinketIds,
   };
 });
 

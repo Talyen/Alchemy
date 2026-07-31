@@ -34,11 +34,10 @@ describe("run-session command boundary", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("exports the command API from the facade without leaking the coordinator", () => {
-    const facade = read("src/features/alchemy/shared/stores/run-session-facade.ts");
-    expect(facade).toContain("export { dispatchRunSessionCommand");
-    expect(facade).toContain('from "./run-session-command"');
-    expect(facade).not.toContain("runSessionTransaction");
+  it("exports the command API without leaking the coordinator", () => {
+    const command = read("src/features/alchemy/shared/stores/run-session-command.ts");
+    expect(command).toContain("export function dispatchRunSessionCommand");
+    expect(command).toContain('from "./run-session-transaction"');
   });
 
   it("keeps focused session write ports inside the same command boundary", () => {

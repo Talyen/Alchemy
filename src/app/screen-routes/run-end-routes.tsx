@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { GameOverScreen, RunVictoryScreen } from "@/features/alchemy/run-loop/screens";
-import { useGameOverScreenData, useRunVictoryScreenData } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useGameOverScreenData, useRunVictoryScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import type { RunEndRouteCtx } from "./route-ctx";
 
 function GameOverScreenRoute({ commands }: { commands: RunEndRouteCtx["routeCommands"]["runEnd"] }) {

@@ -10,7 +10,7 @@ import {
 } from "@/lib/game-constants";
 import { type BattleCard, type TalentEffectManifest, type TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
-import { readActiveRunStore, readRunSessionStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
   computeShopRefreshPrice,
   computeShopServicePrice,
@@ -25,34 +25,33 @@ interface ShopPriceSelectorDeps {
 }
 
 export function createShopPriceSelectors({ getTalentEffects }: ShopPriceSelectorDeps) {
-  const getMerchantsFavorDiscount = () =>
-    computeTrinketManifest(readActiveRunStore().runTrinkets).merchantsFavorDiscount;
+  const getMerchantsFavorDiscount = () => computeTrinketManifest(readActiveRun().runTrinkets).merchantsFavorDiscount;
 
   const getMerchantCardBuyPrice = makeBuyPriceGetter<BattleCard>(
     () => SHOP_CARD_PRICE,
     (card) => getCardBuyTalentDiscounts(card, getTalentEffects()),
-    () => readRunSessionStore().shopState.firstPurchaseUsed,
+    () => readRunSession().shopState.firstPurchaseUsed,
     getMerchantsFavorDiscount,
   );
 
   const getAlchemistPotionBuyPrice = makeBuyPriceGetter<BattleCard>(
     () => ALCHEMIST_POTION_PRICE,
     (card) => getCardBuyTalentDiscounts(card, getTalentEffects()),
-    () => readRunSessionStore().alchemistState.firstPurchaseUsed,
+    () => readRunSession().alchemistState.firstPurchaseUsed,
     getMerchantsFavorDiscount,
   );
 
   const getTrinketBuyPrice = makeBuyPriceGetter<TrinketEntry>(
     () => TRINKET_SHOP_TRINKET_PRICE,
     () => getGenericBuyTalentDiscounts(getTalentEffects()),
-    () => readRunSessionStore().trinketShopState.firstPurchaseUsed,
+    () => readRunSession().trinketShopState.firstPurchaseUsed,
     getMerchantsFavorDiscount,
   );
 
   const getGearBuyPrice = makeBuyPriceGetter<GearInstance>(
     (instance) => getEquipmentShopPrice(instance),
     () => getGenericBuyTalentDiscounts(getTalentEffects()),
-    () => readRunSessionStore().equipmentShopState.firstPurchaseUsed,
+    () => readRunSession().equipmentShopState.firstPurchaseUsed,
     getMerchantsFavorDiscount,
   );
 

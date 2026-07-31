@@ -79,7 +79,7 @@ const ACTIVE_RUN_PROGRESS_KEYS = [
   "runMaterialsEarned",
 ] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
 
-/** Active-run fields shared by `selectRunController` and `pickRunSessionRunSlice` (sans rng / run XP / materials). */
+/** Active-run fields shared by committed session reads (sans rng / run XP / materials). */
 const ACTIVE_RUN_SESSION_CORE_KEYS = [
   "characterId",
   "runDeck",
@@ -119,14 +119,6 @@ const PERMANENT_PROGRESS_KEYS = [
   "bondedCompanions",
   "effects",
 ] as const satisfies ReadonlyArray<keyof PermanentProgressFields>;
-
-export function flattenRunDomainProgress(
-  activeRun: ActiveRunProgressFields,
-  profile: PermanentProgressFields,
-  initialized: boolean,
-): RunStateFields {
-  return { ...activeRun, ...profile, initialized };
-}
 
 /** Apply the active-run subset of a flat progress partial onto run-domain state. */
 export function applyActiveRunProgressPartial(

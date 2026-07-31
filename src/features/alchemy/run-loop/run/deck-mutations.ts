@@ -3,8 +3,8 @@
 import type { BattleCard } from "@/lib/game-data";
 import { appendUnique } from "@/lib/utils";
 import type { Dispatch, SetStateAction } from "react";
-import { useProfileStore } from "../../shared/stores/profile-store";
-import { dispatchRunSessionCommand } from "../../shared/stores/run-session-facade";
+import { setDiscoveredCardIds, setDiscoveredTrinketIds } from "../../shared/stores/profile-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 export function appendCardToRunWithDiscovery(
   card: BattleCard,
@@ -12,7 +12,7 @@ export function appendCardToRunWithDiscovery(
 ): void {
   dispatchRunSessionCommand(() => {
     setRunDeck((p) => [...p, card]);
-    useProfileStore.getState().setDiscoveredCardIds((cur) => appendUnique(cur, card.id));
+    setDiscoveredCardIds((cur) => appendUnique(cur, card.id));
   });
 }
 
@@ -22,6 +22,6 @@ export function appendTrinketToRunWithDiscovery(
 ): void {
   dispatchRunSessionCommand(() => {
     setRunTrinkets((p) => [...p, trinketId]);
-    useProfileStore.getState().setDiscoveredTrinketIds((cur) => appendUnique(cur, trinketId));
+    setDiscoveredTrinketIds((cur) => appendUnique(cur, trinketId));
   });
 }

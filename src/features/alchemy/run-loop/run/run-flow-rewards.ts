@@ -1,11 +1,11 @@
+import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
-  readRunSessionStore,
-  awardMaterialsDuringRun,
   beginRewardClaim,
   releaseRewardClaim as releaseRewardClaimState,
-  dispatchRunSessionCommand,
-} from "../../shared/stores/run-session-facade";
-import { setCompanionRewardCards, setRewardState } from "../../shared/stores/run-session-facade";
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setCompanionRewardCards, setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { playUISound } from "@/lib/audio";
 import {
@@ -31,7 +31,7 @@ export function createRewardHandlers(ctx: RunFlowContext) {
     dispatchRunSessionCommand(
       () => {
         if (!beginRewardClaim()) return null;
-        const session = readRunSessionStore();
+        const session = readRunSession();
 
         const grantAlchemistReward = shouldGrantAlchemistReward(
           getActiveRewardModifiersForContentSystem(

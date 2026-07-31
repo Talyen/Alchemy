@@ -6,7 +6,7 @@ For refactors and simplification passes on attached paths, use [docs/Audits](./A
 
 **Docs:** [AGENTS.md](../AGENTS.md) (rules) · [ARCHITECTURE.md](./ARCHITECTURE.md) (run state) · [REFERENCE.md](./REFERENCE.md) (commands, glossary, battle) · [CONTRIBUTING.md](../CONTRIBUTING.md) (hooks & tests) · [Audits](./Audits/README.md) (code-quality audits)
 
-**Import paths:** only `@/*` → `src/*` in `tsconfig.json`. Use **on-disk** paths under `src/features/alchemy/` (e.g. `@/features/alchemy/shared/stores/run-session-facade`) — not legacy alias paths that skip `shared/`.
+**Import paths:** only `@/*` → `src/*` in `tsconfig.json`. Use **on-disk** capability paths under `src/features/alchemy/` (for example `@/features/alchemy/shared/stores/run-session-read-port`) — not legacy alias paths that skip `shared/`.
 
 ## Task index
 
@@ -66,7 +66,7 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 
 ## Grant materials during a run
 
-Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-session-facade.ts`, implemented in `stores/ports/run-profile-write-port.ts`) so homestead inventory and `activeRun.runMaterialsEarned` stay aligned for the run-end summary.
+Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-session-write-port.ts`, implemented in `stores/ports/run-profile-write-port.ts`) so homestead inventory and `activeRun.runMaterialsEarned` stay aligned for the run-end summary.
 
 | Step                                                       | File(s)                                                                                                                                                                                    |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -141,7 +141,7 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared
 
 ## Gameplay command boundary
 
-Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-session-facade.ts`.
+Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-session-command.ts`.
 
 1. Keep the command synchronous; do not cross an `await` while mutating run state.
 2. Put audio, navigation, timers, and presentation cleanup in `afterCommit` so failed commands cannot leak non-rollbackable effects.

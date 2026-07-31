@@ -5,12 +5,10 @@ import { cardLibrary } from "@/lib/game-data";
 import { pickMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "../run/deck-mutations";
 import { applyMysteryEffect } from "./mystery-flow";
-import { setMysteryCardChoices, setMysteryEvent } from "../../shared/stores/run-session-facade";
-import {
-  readActiveRunStore,
-  awardMaterialsDuringRun,
-  dispatchRunSessionCommand,
-} from "../../shared/stores/run-session-facade";
+import { setMysteryCardChoices, setMysteryEvent } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 
 export function useMysteryFlow(rng: () => number) {
@@ -26,7 +24,7 @@ export function useMysteryFlow(rng: () => number) {
 
   function handleMysteryChoice(choice: MysteryChoice) {
     dispatchRunSessionCommand(() => {
-      const runStore = readActiveRunStore();
+      const runStore = readActiveRun();
 
       for (const effect of choice.effects) {
         const result = applyMysteryEffect(effect, {
@@ -39,7 +37,8 @@ export function useMysteryFlow(rng: () => number) {
           setRunTrinkets: runStore.setRunTrinkets,
           setMysteryCardChoices,
           awardMysteryXP: runStore.awardMysteryXP,
-          onAddMaterials: (materials) => awardMaterialsDuringRun(applyMaterialFindBonus(materials, runStore.effects)),
+          onAddMaterials: (materials) =>
+            awardMaterialsDuringRun(applyMaterialFindBonus(materials, readRunProfile().effects)),
           onAwardGold: runStore.addRunGold,
         });
         if (result.followUp) return;
@@ -51,7 +50,7 @@ export function useMysteryFlow(rng: () => number) {
     dispatchRunSessionCommand(() => {
       const card = cardLibrary.find((c) => c.id === cardId);
       if (card) {
-        appendCardToRunWithDiscovery(card, readActiveRunStore().setRunDeck);
+        appendCardToRunWithDiscovery(card, readActiveRun().setRunDeck);
       }
       setMysteryCardChoices(null);
     });
@@ -59,7 +58,7 @@ export function useMysteryFlow(rng: () => number) {
 
   function handleMysteryRemoveCard(index: number) {
     dispatchRunSessionCommand(() => {
-      readActiveRunStore().setRunDeck((p) => p.filter((_, i) => i !== index));
+      readActiveRun().setRunDeck((p) => p.filter((_, i) => i !== index));
     });
   }
 

@@ -4,9 +4,9 @@
 import type { CharacterId } from "@/lib/game-data";
 import { flattenGearInventories, type GearInstance, type GearLoadouts } from "@/lib/gear";
 import type { GearStore } from "./gear-store-types";
-import { useGearStore } from "./gear-store";
-import { getRunTransientStore } from "./run-transient-store";
+import { readGameplayState } from "./gameplay-state-store";
 import { dispatchRunSessionCommand } from "./run-session-command";
+import { createRunSessionStoreSnapshot } from "./run-session-queries";
 import { syncRunMaxHealthFromGearMutation } from "./run-transitions";
 
 export interface GearHealthSnapshot {
@@ -14,8 +14,8 @@ export interface GearHealthSnapshot {
   loadouts: GearLoadouts;
 }
 
-export function snapshotGearHealth(
-  state: Pick<GearStore, "inventories" | "loadouts"> = useGearStore.getState(),
+function snapshotGearHealth(
+  state: Pick<GearStore, "inventories" | "loadouts"> = createRunSessionStoreSnapshot().gear,
 ): GearHealthSnapshot {
   return {
     // Flattening creates a stable array before the command starts. Gear
@@ -35,8 +35,8 @@ export function dispatchGearMutationWithRunHealthSync<T>(options: {
 }): T {
   return dispatchRunSessionCommand(() => {
     const before = options.before ?? snapshotGearHealth();
-    const result = options.mutate(useGearStore.getState());
-    if (options.syncRunHealth ?? getRunTransientStore().hasActiveRun) {
+    const result = options.mutate(createRunSessionStoreSnapshot().gear);
+    if (options.syncRunHealth ?? readGameplayState().session.hasActiveRun) {
       const after = snapshotGearHealth();
       syncRunMaxHealthFromGearMutation(
         options.characterId,

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { resolveReturnToRunTarget } from "@/app/return-to-run-navigation";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
-import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 
 export function useReturnToRunNavigation({

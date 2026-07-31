@@ -131,7 +131,7 @@ export const DOMAIN_STORE_PATTERNS = [
       "@/features/alchemy/shared/stores/run-store-sync",
     ],
     message:
-      "Import run-session-facade (hooks, readers, ports, and lifecycle) instead of low-level run stores, ports, or run-transitions.",
+      "Import a capability-specific run-session port instead of low-level run stores, ports, or run-transitions.",
   },
 ];
 

@@ -1,6 +1,6 @@
 /**
  * Hook for managing Labyrinth map navigation, state mutations, and node entry.
- * Depends on: map-generation.ts, run-session-facade, src/lib/content-systems/types.ts
+ * Depends on: map-generation.ts, run-session-read-port, src/lib/content-systems/types.ts
  * Depended on by: use-alchemy-run-controller.ts, tests
  */
 
@@ -12,12 +12,12 @@ import {
   generateLabyrinthMap,
 } from "@/lib/content-systems/labyrinth/map-generation";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthNode } from "@/lib/content-systems/types";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
-  readRunSessionStore,
-  dispatchRunSessionCommand,
   setActiveLabyrinthPendingNode,
   setLabyrinthMap,
-} from "@/features/alchemy/shared/stores/run-session-facade";
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { Screen } from "@/features/alchemy/shared/types";
 
 export interface LabyrinthController {
@@ -76,7 +76,7 @@ export function useLabyrinthController(_screen: Screen, rng: () => number): Laby
 
   const enterNode = useCallback((row: number, col: number, handlers: LabyrinthNodeHandlers): boolean => {
     const node = dispatchRunSessionCommand(() => {
-      const session = readRunSessionStore();
+      const session = readRunSession();
       if (session.activeLabyrinthPendingNode) return null;
 
       const map = session.labyrinthMap;
@@ -97,7 +97,7 @@ export function useLabyrinthController(_screen: Screen, rng: () => number): Laby
   }, []);
 
   const onNodeCleared = useCallback(() => {
-    const pending = readRunSessionStore().activeLabyrinthPendingNode;
+    const pending = readRunSession().activeLabyrinthPendingNode;
     setActiveLabyrinthPendingNode(null);
     if (!pending) {
       console.warn("[useLabyrinthController] onNodeCleared called without a pending node");
@@ -107,13 +107,13 @@ export function useLabyrinthController(_screen: Screen, rng: () => number): Laby
   }, []);
 
   const onNodeFailed = useCallback(() => {
-    const pending = readRunSessionStore().activeLabyrinthPendingNode;
+    const pending = readRunSession().activeLabyrinthPendingNode;
     setActiveLabyrinthPendingNode(null);
     if (!pending) {
       console.warn("[useLabyrinthController] onNodeFailed called without a pending node");
       return;
     }
-    setLabyrinthMap(withFailedNode(readRunSessionStore().labyrinthMap, pending));
+    setLabyrinthMap(withFailedNode(readRunSession().labyrinthMap, pending));
   }, []);
 
   return { enterNode, onNodeCleared, onNodeFailed, resetMap };

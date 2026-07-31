@@ -5,19 +5,18 @@ import { appendUniqueMany } from "@/lib/utils";
 import { getDifficultyModifiers, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import { DEFAULT_BATTLE_ENEMY_TYPE, DRAFT_ROUNDS } from "@/lib/game-constants";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import { useProfileStore } from "../../shared/stores/profile-store";
+import { setDiscoveredCardIds, setEncounteredEnemyIds } from "../../shared/stores/profile-port";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { readGearMaxHealthBonus } from "../../shared/stores/gear-read-port";
 import {
   applyRunStartSnapshot,
   setPendingCharacterId,
   setPendingContentSystemType,
-  setRewardState,
   setWildwoodDraft,
-  readRunSessionStore,
-  readActiveRunStore,
-  dispatchRunSessionCommand,
-} from "../../shared/stores/run-session-facade";
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readRunSession, readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { afterCampaignCharacterResolved } from "@/features/alchemy/shared/run-flow/campaign-start";
 import {
   createDestinationRewardState,
@@ -61,7 +60,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
         const snapshot = createStartSnapshot(characterId, contentSystemType, options.difficultyId, options.draftedDeck);
         applyRunStartSnapshot(snapshot);
         if (options.discoverStarterDeck || characterId === "wildcard") {
-          useProfileStore.getState().setDiscoveredCardIds((current) =>
+          setDiscoveredCardIds((current) =>
             appendUniqueMany(
               current,
               snapshot.freshDeck.map((c) => c.id),
@@ -69,7 +68,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
           );
         }
         if (options.resetEncounteredEnemies) {
-          useProfileStore.getState().setEncounteredEnemyIds([]);
+          setEncounteredEnemyIds([]);
         }
         return snapshot;
       },
@@ -104,12 +103,12 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
             ...baseInput,
             draftedDeck: resolvedDraft,
             gearMaxHealthBonus: readGearMaxHealthBonus(characterId),
-            homesteadMaxHealthBonus: readActiveRunStore().effects.runMaxHealthBonus,
+            homesteadMaxHealthBonus: readRunProfile().effects.runMaxHealthBonus,
           }
         : {
             ...baseInput,
             gearMaxHealthBonus: readGearMaxHealthBonus(characterId),
-            homesteadMaxHealthBonus: readActiveRunStore().effects.runMaxHealthBonus,
+            homesteadMaxHealthBonus: readRunProfile().effects.runMaxHealthBonus,
           },
     );
   }
@@ -271,7 +270,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function handleDifficultySelect(difficultyId: DifficultyId) {
-    const pendingCharacterId = readRunSessionStore().pendingCharacterId;
+    const pendingCharacterId = readRunSession().pendingCharacterId;
     if (!pendingCharacterId) {
       logError("[useRunNavigation] handleDifficultySelect: no pending character", "other");
       deps.navigateTo(CONSTANTS.SCREENS.MENU);

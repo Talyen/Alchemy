@@ -1,14 +1,10 @@
 import { useCallback } from "react";
-import {
-  readRunSessionStore,
-  readActiveRunStore,
-  setWildwoodDraft,
-  setPendingCharacterId,
-  teardownRun,
-  dispatchRunSessionCommand,
-  type RunStateController,
-} from "@/features/alchemy/shared/stores/run-session-facade";
-import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { readRunSession, readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { setWildwoodDraft, setPendingCharacterId } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/profile-port";
+import type { WildwoodRunPort } from "@/features/alchemy/shared/stores/run-port-types";
 import { type BattleCard, type DifficultyModifier } from "@/lib/game-data";
 import { logError } from "@/lib/error-logger";
 import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
@@ -26,7 +22,7 @@ import {
 import type { VictoryRewardsResult } from "@/features/alchemy/run-loop/navigation/victory-flow";
 
 interface UseWildwoodGauntletFlowOptions {
-  run: RunStateController;
+  run: WildwoodRunPort;
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
   onStartBossById: (
     bossId: string,
@@ -49,7 +45,7 @@ export function useWildwoodGauntletFlow({
   const startNextWildwoodBoss = useCallback(() => {
     dispatchRunSessionCommand(
       () => {
-        const state = readRunSessionStore().wildwoodDraft;
+        const state = readRunSession().wildwoodDraft;
         if (!state) return null;
         const draw = drawWildwoodBoss(state.remainingBossIds, state.currentBossId ?? state.previousBossId, rng);
         const modifierId = pickWildwoodModifier(rng);
@@ -87,7 +83,7 @@ export function useWildwoodGauntletFlow({
   }, [clearCardHover, navigateTo, onStartBossById, rng, setHasActiveBattle]);
 
   const resumeWildwoodRun = useCallback(() => {
-    const state = readRunSessionStore().wildwoodDraft;
+    const state = readRunSession().wildwoodDraft;
     if (!state) {
       navigateTo(CONSTANTS.SCREENS.MENU, teardownRun);
       return;
@@ -117,11 +113,11 @@ export function useWildwoodGauntletFlow({
   const handleDraftPick = useCallback(
     (card: BattleCard) => {
       dispatchRunSessionCommand(() => {
-        const state = readRunSessionStore().wildwoodDraft;
+        const state = readRunSession().wildwoodDraft;
         if (run.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD || state?.phase !== "draft") return;
         const nextDeck = [...run.runDeck, card];
         run.setRunDeck(nextDeck);
-        useProfileStore.getState().setDiscoveredCardIds((current) => appendUnique(current, card.id));
+        setDiscoveredCardIds((current) => appendUnique(current, card.id));
         setWildwoodDraft({
           ...state,
           draftChoices:
@@ -147,9 +143,9 @@ export function useWildwoodGauntletFlow({
   const handleWildwoodRecoveryComplete = useCallback(() => {
     dispatchRunSessionCommand(
       () => {
-        const wildwood = readRunSessionStore().wildwoodDraft;
+        const wildwood = readRunSession().wildwoodDraft;
         if (wildwood?.phase !== "recovery") return false;
-        const { runPlayerHealth, runMaxHealth, setRunPlayerHealth } = readActiveRunStore();
+        const { runPlayerHealth, runMaxHealth, setRunPlayerHealth } = readActiveRun();
         setRunPlayerHealth(getWildwoodRecoveryHealth(runPlayerHealth, runMaxHealth));
         setWildwoodDraft({ ...wildwood, phase: "reward" });
         return true;
@@ -159,9 +155,9 @@ export function useWildwoodGauntletFlow({
   }, [navigateTo]);
 
   const handleWildwoodRewardComplete = useCallback(() => {
-    const state = readRunSessionStore().wildwoodDraft;
+    const state = readRunSession().wildwoodDraft;
     if (!state) return;
-    if (canOfferWildwoodRemoval(readActiveRunStore().runDeck.length)) {
+    if (canOfferWildwoodRemoval(readActiveRun().runDeck.length)) {
       setWildwoodDraft({
         ...state,
         phase: "removal",
@@ -192,7 +188,7 @@ export function useWildwoodGauntletFlow({
 
   const selectRewardChoice = useCallback(
     (id: string) => {
-      const state = readRunSessionStore().wildwoodDraft;
+      const state = readRunSession().wildwoodDraft;
       if (run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD && state) {
         setWildwoodDraft({ ...state, selectedRewardId: id });
       }
@@ -201,7 +197,7 @@ export function useWildwoodGauntletFlow({
   );
 
   const commitWildwoodVictory = useCallback((result: VictoryRewardsResult) => {
-    const wildwood = readRunSessionStore().wildwoodDraft;
+    const wildwood = readRunSession().wildwoodDraft;
     if (!wildwood) return;
     const rewardType = result.rewardState.rewardType;
     setWildwoodDraft({

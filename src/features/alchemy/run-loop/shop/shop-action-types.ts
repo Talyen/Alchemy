@@ -10,7 +10,7 @@ interface ShopSetters {
   setEquipmentShopState: (state: EquipmentShopState | ((prev: EquipmentShopState) => EquipmentShopState)) => void;
 }
 
-/** Shop command deps — run fields are read imperatively via readActiveRunStore at call time. */
+/** Shop command deps — run fields are read imperatively via readActiveRun at call time. */
 export type CreateShopActionsDeps = {
   talentEffects: TalentEffectManifest;
   homesteadEffects: HomesteadEffectManifest;

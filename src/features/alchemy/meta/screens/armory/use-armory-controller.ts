@@ -1,5 +1,4 @@
 import { useCallback, useRef } from "react";
-import { useShallow } from "zustand/react/shallow";
 import type { CharacterId } from "@/lib/game-data";
 import {
   generateDevRandomGearInstance,
@@ -13,16 +12,16 @@ import {
   type GearSlot,
   type InventoryPlacement,
 } from "@/lib/gear";
-import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {
-  resolveActiveRunForSave,
-  dispatchRunSessionCommand,
-  dispatchGearMutationWithRunHealthSync,
   useActiveRunCharacterId,
   useHasActiveBattle,
   useHasActiveRun,
-} from "@/features/alchemy/shared/stores/run-session-facade";
-import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+} from "@/features/alchemy/shared/stores/run-session-react-ports";
+import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-port";
+import { useGearArmorySlice } from "@/features/alchemy/shared/stores/gear-read-port";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
@@ -53,24 +52,8 @@ export interface ArmoryController {
 
 export function useArmoryController(): ArmoryController {
   const { returnToRunScreen } = useAppScreenChrome();
-  const gear = useGearStore(
-    useShallow((s) => ({
-      inventories: s.inventories,
-      loadouts: s.loadouts,
-      gearBoardPositionsByCharacter: s.boardPositionsByCharacter,
-      currencyBoardPositionsByCharacter: s.currencyBoardPositionsByCharacter,
-      craftingCurrencies: s.craftingCurrencies,
-      equip: s.equip,
-      unequip: s.unequip,
-      salvage: s.salvage,
-      addInstance: s.addInstance,
-      applyCurrency: s.applyCurrency,
-      transferToInventory: s.transferToInventory,
-      moveBoardItem: s.moveBoardItem,
-      sortBoard: s.sortBoard,
-    })),
-  );
-  const finishedRunCharacters = useProfileStore((s) => s.finishedRunCharacters);
+  const gear = useGearArmorySlice();
+  const finishedRunCharacters = useFinishedRunCharacters();
   const hasActiveBattle = useHasActiveBattle();
   const hasActiveRun = useHasActiveRun();
   const activeRunCharacterId = useActiveRunCharacterId();
@@ -181,7 +164,7 @@ export function useArmoryController(): ArmoryController {
   const controller: ArmoryController = {
     inventories: gear.inventories,
     loadouts: gear.loadouts,
-    gearBoardPositionsByCharacter: gear.gearBoardPositionsByCharacter,
+    gearBoardPositionsByCharacter: gear.boardPositionsByCharacter,
     currencyBoardPositionsByCharacter: gear.currencyBoardPositionsByCharacter,
     craftingCurrencies: gear.craftingCurrencies,
     finishedRunCharacters,

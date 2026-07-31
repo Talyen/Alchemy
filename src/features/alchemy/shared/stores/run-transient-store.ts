@@ -1,6 +1,7 @@
 import { createInitialSessionFields, type RunSessionFields } from "./run-domain-types";
 import type { SessionActions } from "./slices/session-slice";
 import { createSliceStore } from "./slice-store-adapter";
+import type { GameplayState } from "./gameplay-state-store";
 
 export type RunTransientStore = RunSessionFields & SessionActions;
 
@@ -53,7 +54,52 @@ const SESSION_KEYS = [
   "applyDestinationChoices",
 ] as const satisfies ReadonlyArray<keyof RunTransientStore>;
 
-export const useRunTransientStore = createSliceStore<RunTransientStore>((state) => state, SESSION_KEYS);
+const sessionActionKeys = new Set<string>([
+  "setHasActiveRun",
+  "beginRewardClaim",
+  "releaseRewardClaim",
+  "beginDestinationClaim",
+  "cancelDestinationClaim",
+  "setActiveLabyrinthModifiers",
+  "setActiveLabyrinthRewardModifiers",
+  "setActiveLabyrinthPendingNode",
+  "setRewardState",
+  "setCompanionRewardCards",
+  "setRunEndMaterials",
+  "setRunEndTalentXP",
+  "setCorruptionResult",
+  "setPendingCharacterId",
+  "setPendingContentSystemType",
+  "setLabyrinthMap",
+  "setWildwoodDraft",
+  "setShopState",
+  "setAlchemistState",
+  "setTrinketShopState",
+  "setEquipmentShopState",
+  "setMysteryEvent",
+  "setMysteryCardChoices",
+  "clearTransientSession",
+  "applyDestinationChoices",
+]);
+
+function pickRunTransientStore(state: GameplayState): RunTransientStore {
+  return { ...state.session, ...state.sessionActions };
+}
+
+function writeRunTransientKey(state: GameplayState, key: keyof RunTransientStore, value: unknown): void {
+  if (sessionActionKeys.has(String(key))) {
+    (state.sessionActions as unknown as Record<string, unknown>)[String(key)] = value;
+    return;
+  }
+  (state.session as unknown as Record<string, unknown>)[String(key)] = value;
+}
+
+export const useRunTransientStore = createSliceStore<RunTransientStore>(
+  pickRunTransientStore,
+  SESSION_KEYS,
+  {},
+  writeRunTransientKey,
+);
 
 export function getRunTransientStore(): RunTransientStore {
   return useRunTransientStore.getState();

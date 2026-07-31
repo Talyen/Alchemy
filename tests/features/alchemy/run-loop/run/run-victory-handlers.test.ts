@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
-import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
@@ -60,13 +60,13 @@ describe("createRunFlowHandlers victory paths", () => {
 
   it("awardRunEndMaterials includes materials collected during the run on the summary", () => {
     setRunProgress({ roomsEncountered: 2, currentAct: 1 });
-    readActiveRunStore().addRunMaterialsEarned({ ...emptyInventory(), wood: 5, herbs: 2 });
+    readActiveRun().addRunMaterialsEarned({ ...emptyInventory(), wood: 5, herbs: 2 });
 
     makeHandlers().awardRunEndMaterials();
 
     expect(getRunSessionStoreView().runEndMaterials.wood).toBe(5);
     expect(getRunSessionStoreView().runEndMaterials.herbs).toBe(2);
-    expect(readActiveRunStore().runMaterialsEarned).toEqual(emptyInventory());
+    expect(readActiveRun().runMaterialsEarned).toEqual(emptyInventory());
   });
 
   it("awardRunEndMaterials adds no homestead bonus with default effects", () => {
@@ -83,12 +83,12 @@ describe("createRunFlowHandlers victory paths", () => {
     useRunProfileStore.setState((profile) => {
       profile.effects.endRunHerbsPerRoom = 2;
     });
-    readActiveRunStore().addRunMaterialsEarned({ ...emptyInventory(), wood: 5 });
+    readActiveRun().addRunMaterialsEarned({ ...emptyInventory(), wood: 5 });
 
     const materials = makeHandlers().awardRunEndMaterials();
 
     expect(materials).toEqual(emptyInventory());
-    expect(readActiveRunStore().runMaterialsEarned).toEqual(emptyInventory());
+    expect(readActiveRun().runMaterialsEarned).toEqual(emptyInventory());
   });
 
   it("clearCombatState clears battle flag", () => {

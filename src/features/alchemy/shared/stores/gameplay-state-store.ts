@@ -64,20 +64,26 @@ interface GearAggregateActions {
   gearReset: GearStore["reset"];
 }
 
-export type GameplayState = { revision: number } & RunDomainDataState &
-  RunSessionFields &
-  RunDomainBattleState &
-  PermanentProgressFields &
-  ProfileStateFields &
-  GearStateFields &
-  ProgressActions &
-  SessionActions &
-  BattleActions &
-  NavigationActions &
-  HomesteadProfileActions &
-  TalentActions &
-  ProfileActions &
-  GearAggregateActions;
+/**
+ * The committed gameplay aggregate is deliberately nested by lifetime/domain.
+ * Commands remain on the root for the compatibility facades, but persisted and
+ * read state is no longer a flat bag where every slice can see every field.
+ */
+export interface GameplayState {
+  revision: number;
+  run: RunDomainDataState;
+  session: RunSessionFields;
+  battle: RunDomainBattleState;
+  runProfile: PermanentProgressFields;
+  profile: ProfileStateFields;
+  gear: GearStateFields;
+  runActions: ProgressActions & NavigationActions;
+  sessionActions: SessionActions;
+  battleActions: BattleActions;
+  runProfileActions: HomesteadProfileActions & TalentActions;
+  profileActions: ProfileActions;
+  gearActions: GearAggregateActions;
+}
 
 export interface TalentActions {
   unlockTalent: (keywordId: KeywordId, talentId: string) => void;
@@ -133,7 +139,7 @@ function createInitialProfileState(): ProfileStateFields {
   };
 }
 
-function createTalentActions(set: RootSet): TalentActions {
+function createTalentActions(set: (fn: (state: PermanentProgressFields) => void) => void): TalentActions {
   return {
     unlockTalent: (keywordId, talentId) =>
       set((state) => {
@@ -178,7 +184,7 @@ function createTalentActions(set: RootSet): TalentActions {
   };
 }
 
-function createProfileActions(set: RootSet): ProfileActions {
+function createProfileActions(set: (fn: (state: ProfileStateFields) => void) => void): ProfileActions {
   const update = <T>(key: keyof ProfileStateFields, value: T | ((previous: T) => T)) =>
     set((state) => {
       const previous = state[key] as T;
@@ -234,35 +240,68 @@ export const useGameplayStateStore = create<GameplayState>()(
     const profile = createInitialPermanentFields();
     const collection = createInitialProfileState();
     const gear = initialGearState;
-    const gearActions = createGearActions(rootSet, rootGet);
+    const createNestedSet =
+      <T extends object>(select: (state: GameplayState) => T) =>
+      (partial: T | Partial<T> | ((state: T) => unknown), replace = false): void => {
+        rootSet((state) => {
+          const slice = select(state);
+          const next = typeof partial === "function" ? partial(slice) : partial;
+          if (!next || typeof next !== "object" || next === slice) return;
+          // Slice setters historically accept a `replace` flag, but nested
+          // domain setters only ever receive partial domain updates. Keeping
+          // the existing fields avoids dynamically deleting keys from a draft.
+          void replace;
+          Object.assign(slice, next);
+        });
+      };
+    const setRun = createNestedSet((state) => state.run);
+    const setSession = createNestedSet((state) => state.session);
+    const setBattle = createNestedSet((state) => state.battle);
+    const setRunProfile = createNestedSet((state) => state.runProfile);
+    const setProfile = createNestedSet((state) => state.profile);
+    const getGear = () => rootGet().gear;
+    const setGear = createNestedSet((state) => state.gear);
+
+    const runActions = {
+      ...defineProgressActions(setRun),
+      ...defineNavigationActions(setRun),
+    };
+    const sessionActions = defineSessionActions(setSession);
+    const battleActions = defineBattleActions(setBattle);
+    const runProfileActions = {
+      ...createHomesteadProfileActions(setRunProfile),
+      ...createTalentActions(setRunProfile),
+    };
+    const profileActions = createProfileActions(setProfile);
+    const gearActions = createGearActions(setGear, getGear);
 
     return {
       revision: 0,
-      ...runDomain,
-      ...session,
-      ...battle,
-      ...profile,
-      ...collection,
-      ...gear,
-      ...defineProgressActions(rootSet),
-      ...defineSessionActions(rootSet),
-      ...defineBattleActions(rootSet),
-      ...defineNavigationActions(rootSet),
-      ...createHomesteadProfileActions(rootSet),
-      ...createTalentActions(rootSet),
-      ...createProfileActions(rootSet),
-      gearInitialize: gearActions.initialize,
-      gearAddInstance: gearActions.addInstance,
-      gearTransferToInventory: gearActions.transferToInventory,
-      gearEquip: gearActions.equip,
-      gearUnequip: gearActions.unequip,
-      gearMoveBoardItem: gearActions.moveBoardItem,
-      gearSyncBoardPositions: gearActions.syncBoardPositions,
-      gearSortBoard: gearActions.sortBoard,
-      gearSalvage: gearActions.salvage,
-      gearApplyCurrency: gearActions.applyCurrency,
-      gearAddCurrencies: gearActions.addCurrencies,
-      gearReset: gearActions.reset,
+      run: runDomain,
+      session,
+      battle,
+      runProfile: profile,
+      profile: collection,
+      gear,
+      runActions,
+      sessionActions,
+      battleActions,
+      runProfileActions,
+      profileActions,
+      gearActions: {
+        gearInitialize: gearActions.initialize,
+        gearAddInstance: gearActions.addInstance,
+        gearTransferToInventory: gearActions.transferToInventory,
+        gearEquip: gearActions.equip,
+        gearUnequip: gearActions.unequip,
+        gearMoveBoardItem: gearActions.moveBoardItem,
+        gearSyncBoardPositions: gearActions.syncBoardPositions,
+        gearSortBoard: gearActions.sortBoard,
+        gearSalvage: gearActions.salvage,
+        gearApplyCurrency: gearActions.applyCurrency,
+        gearAddCurrencies: gearActions.addCurrencies,
+        gearReset: gearActions.reset,
+      },
     };
   }),
 );

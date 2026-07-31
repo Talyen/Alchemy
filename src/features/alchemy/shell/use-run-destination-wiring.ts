@@ -1,6 +1,6 @@
 // Destination / screen navigation helpers for run-flow shell wiring.
 import { useCallback, useMemo } from "react";
-import type { RunStateController } from "@/features/alchemy/shared/stores/run-session-facade";
+import type { DestinationRunPort } from "@/features/alchemy/shared/stores/run-port-types";
 import { readHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-read-port";
 import { bindAvailableDestinationsResolver } from "@/features/alchemy/shared/run-flow";
 import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
@@ -11,7 +11,7 @@ export function useRunDestinationWiring({
   navigateTo,
   clearCardHover,
 }: {
-  run: RunStateController;
+  run: DestinationRunPort;
   hasActiveBattle: boolean;
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
   clearCardHover: () => void;

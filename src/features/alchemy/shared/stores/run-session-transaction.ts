@@ -11,26 +11,12 @@ import {
   useGameplayStateStore,
   type GameplayState,
 } from "./gameplay-state-store";
-import type { RunDomainStore } from "./run-domain-store";
-import type { RunTransientStore } from "./run-transient-store";
-import type { RunBattleDomainStore } from "./run-battle-domain-store";
-import type { RunProfileStore } from "./run-profile-store";
-import type { ProfileStore } from "./profile-store";
-import type { GearStore } from "./gear-store-types";
+import { createRunSessionStoreSnapshot, type RunSessionStoreSnapshot } from "./run-session-queries";
 
 type RunSessionCommitListener = (revision: number) => void;
 
 export interface RunSessionTransactionOptions<T> {
   afterCommit?: (result: T) => void;
-}
-
-export interface RunSessionStoreSnapshot {
-  domain: RunDomainStore;
-  transient: RunTransientStore;
-  battle: RunBattleDomainStore;
-  runProfile: RunProfileStore;
-  profile: ProfileStore;
-  gear: GearStore;
 }
 
 export interface RunSessionCommitState {
@@ -50,40 +36,11 @@ interface CommitStoreHook {
   getInitialState: () => RunSessionCommitState;
 }
 
-function createSnapshot(state: GameplayState): RunSessionStoreSnapshot {
-  return {
-    domain: state,
-    transient: state,
-    battle: state,
-    runProfile: state,
-    profile: state,
-    gear: {
-      inventories: state.inventories,
-      loadouts: state.loadouts,
-      boardPositionsByCharacter: state.boardPositionsByCharacter,
-      currencyBoardPositionsByCharacter: state.currencyBoardPositionsByCharacter,
-      craftingCurrencies: state.craftingCurrencies,
-      initialize: state.gearInitialize,
-      addInstance: state.gearAddInstance,
-      transferToInventory: state.gearTransferToInventory,
-      equip: state.gearEquip,
-      unequip: state.gearUnequip,
-      moveBoardItem: state.gearMoveBoardItem,
-      syncBoardPositions: state.gearSyncBoardPositions,
-      sortBoard: state.gearSortBoard,
-      salvage: state.gearSalvage,
-      applyCurrency: state.gearApplyCurrency,
-      addCurrencies: state.gearAddCurrencies,
-      reset: state.gearReset,
-    },
-  };
-}
-
 function getCommitState(): RunSessionCommitState {
   const root = useGameplayStateStore.getState();
   if (root === cachedRoot && cachedCommitState) return cachedCommitState;
   cachedRoot = root;
-  cachedCommitState = { revision: root.revision, snapshot: createSnapshot(root) };
+  cachedCommitState = { revision: root.revision, snapshot: createRunSessionStoreSnapshot(root) };
   return cachedCommitState;
 }
 
@@ -97,7 +54,7 @@ export const useRunSessionCommitStore = ((selector?: (state: RunSessionCommitSta
 useRunSessionCommitStore.getState = getCommitState;
 useRunSessionCommitStore.getInitialState = () => {
   const initial = useGameplayStateStore.getInitialState();
-  return { revision: initial.revision, snapshot: createSnapshot(initial) };
+  return { revision: initial.revision, snapshot: createRunSessionStoreSnapshot(initial) };
 };
 
 /** Execute synchronous mutations as one aggregate commit. */

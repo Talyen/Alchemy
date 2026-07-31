@@ -2,7 +2,6 @@
 // Depends on alchemy controllers, homestead state, screen modules, assets, and platform/audio helpers.
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-
 import { characterArt, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import {
   AppBackgroundParticles,
@@ -30,24 +29,25 @@ import {
 import { useDevShortcuts } from "@/app/use-dev-shortcuts";
 import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import { useHomesteadAdapter } from "@/features/alchemy/shared/stores/run-session-facade";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { ErrorBoundary } from "@/components/error-boundary";
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
-import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { readProfileStore, setCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-port";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
 import {
   useActiveRunCharacterId,
   useActiveRunScreenValue,
   useBondedCompanions,
   useContentSystemType,
-  useRewardsScreenData,
+  useHomesteadEffects,
+} from "@/features/alchemy/shared/stores/run-session-react-ports";
+import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-port";
+import { useRewardsScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
+import {
   useRunSessionBattleContext,
   useRunSessionNavigationSlice,
-} from "@/features/alchemy/shared/stores/run-session-facade";
+} from "@/features/alchemy/shared/stores/run-session-model";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
-
-const profileStore = useProfileStore;
 
 function AppMainContent({
   saveBlockedByNewerVersion,
@@ -66,7 +66,7 @@ function AppMainContent({
   aspectMode: "standard" | "narrow" | "ultrawide";
   run: AlchemyRunCommands;
 }) {
-  const finishedRunCharacters = useProfileStore((s) => s.finishedRunCharacters);
+  const finishedRunCharacters = useFinishedRunCharacters();
   const isArmoryLocked = useIsArmoryLocked();
   const { screen: controllerScreen, commitPendingTransition } = run;
   const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(
@@ -108,7 +108,7 @@ function AppMainContent({
 
   const dev = useDevShortcuts(run);
 
-  const homesteadEffects = useHomesteadAdapter();
+  const homesteadEffects = useHomesteadEffects();
   const homesteadBondedCompanions = useBondedCompanions();
 
   const isBossBattle = renderedScreen === "battle" && battle.battleState.currentEnemy.enemyType === "boss";
@@ -199,10 +199,10 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   useGlobalErrorHandlers();
 
   function handleMarkDifficultyCompleted(characterId: CharacterId, difficultyId: DifficultyId) {
-    const prev = profileStore.getState().completedDifficulties;
+    const prev = readProfileStore().completedDifficulties;
     const current = prev[characterId];
     if (current.includes(difficultyId)) return;
-    profileStore.getState().setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
+    setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
   }
 
   const { frameStyle, stageStyle, aspectMode, stagePixelRatio } = useVirtualResolution(

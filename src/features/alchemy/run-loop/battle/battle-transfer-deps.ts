@@ -8,7 +8,7 @@ import { animateDiscardedHand, animateDrawnHand, type CardTransferAnimationDeps 
 import type { HandDrawSequenceDeps } from "./draw-sequence";
 import type { StableHandCardRectDeps } from "./hand-card-layout";
 import { useBattlePresentationStore } from "./battle-presentation-store";
-import { readBattleStore } from "../../shared/stores/run-session-facade";
+import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { BattleControllerContext } from "./battle-context";
 
 export function createBattleTransferDeps(
@@ -26,7 +26,7 @@ export function createBattleTransferDeps(
   }
 
   function playTransferSound(delayMs = 0) {
-    const hasActiveBattle = readBattleStore().hasActiveBattle;
+    const hasActiveBattle = readBattle().hasActiveBattle;
     if (!hasActiveBattle) return;
     playBattleEvent("drawTransfer", { volume: CARD_TRANSFER_CONFIG.soundVolume, delay: delayMs });
   }

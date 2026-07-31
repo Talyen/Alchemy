@@ -2,7 +2,7 @@
 import type { MouseEvent } from "react";
 
 import type { BattleState } from "@/lib/battle";
-import type { DisplayOverrides } from "../../../shared/stores/run-session-facade";
+import type { DisplayOverrides } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardGhost, FloatingCombatText, StatusChip } from "../../../shared/types";

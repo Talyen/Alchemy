@@ -1,11 +1,11 @@
 import type { Screen } from "@/lib/routing";
 import { getRunSession } from "@/features/alchemy/shared/stores/run-session-model";
-import { readActiveRunStore, readBattleStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { readActiveRun, readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 
 /** Map-layer gold plus in-combat gold (test helper). */
 export function getCombinedRunGold(runGold?: number, battleGold?: number): number {
-  const run = runGold ?? readActiveRunStore().runGold;
-  const battle = battleGold ?? readBattleStore().battleState.gold;
+  const run = runGold ?? readActiveRun().runGold;
+  const battle = battleGold ?? readBattle().battleState.gold;
   return run + battle;
 }
 

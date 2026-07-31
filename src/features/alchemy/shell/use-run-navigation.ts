@@ -1,13 +1,15 @@
-// Run-flow controller for routing, rewards, mysteries, campfires, act transitions, and reset.
-// Depends on: run-session/ui stores, battle system, game constants, audio registry, and navigation flow helpers.
-// Depended on by: useAlchemyRunController for managing the overall flow of a run.
+import { useSetHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-react-ports";
+import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-session-model";
 import {
-  useRunAdapter,
-  useTalentAdapter,
-  useSetHasActiveBattle,
-  useRunSessionNavigationSlice,
-} from "@/features/alchemy/shared/stores/run-session-facade";
-import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+  useContentNavigationRunPort,
+  useContentNavigationTalentPort,
+  useCorruptionRunPort,
+  useDestinationRunPort,
+  useRunFlowRunPort,
+  useRunFlowTalentPort,
+  useWildwoodRunPort,
+} from "@/features/alchemy/shared/stores/run-session-react-ports";
+import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-port";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 // Side-effect: registers presentation cleanup with the shared bridge.
 import "@/features/alchemy/run-loop/battle/battle-presentation-store";
@@ -72,10 +74,15 @@ export function useRunNavigation({
     world: () => number;
   };
 }) {
-  const run = useRunAdapter();
-  const talents = useTalentAdapter();
+  const runFlow = useRunFlowRunPort();
+  const runFlowTalents = useRunFlowTalentPort();
+  const contentRun = useContentNavigationRunPort();
+  const contentTalents = useContentNavigationTalentPort();
+  const destinationRun = useDestinationRunPort();
+  const wildwoodRun = useWildwoodRunPort();
+  const corruptionRun = useCorruptionRunPort();
   const setHasActiveBattle = useSetHasActiveBattle();
-  const completedDifficulties = useProfileStore((s) => s.completedDifficulties);
+  const completedDifficulties = useCompletedDifficulties();
   const nav = useRunSessionNavigationSlice(screen);
   const clearCardHover = useUiStore((s) => s.clearCardHover);
   const runPhase = nav.phase;
@@ -85,14 +92,14 @@ export function useRunNavigation({
   const pendingContentSystemType = nav.pendingContentSystemType;
 
   const destinations = useRunDestinationWiring({
-    run,
+    run: destinationRun,
     hasActiveBattle,
     navigateTo,
     clearCardHover,
   });
 
   const wildwood = useWildwoodGauntletFlow({
-    run,
+    run: wildwoodRun,
     navigateTo,
     onStartBossById,
     setHasActiveBattle,
@@ -101,8 +108,8 @@ export function useRunNavigation({
   });
 
   const contentNav = useContentSystemNavigation({
-    run,
-    talents,
+    run: contentRun,
+    talents: contentTalents,
     hasActiveRun,
     hasActiveBattle,
     pendingContentSystemType,
@@ -118,7 +125,7 @@ export function useRunNavigation({
   });
 
   function handleDraftComplete(draftedCards: BattleCard[]) {
-    if (run.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+    if (wildwoodRun.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
       contentNav.handleDraftComplete(draftedCards);
       return;
     }
@@ -173,8 +180,8 @@ export function useRunNavigation({
   );
 
   const flowHandlers = useRunFlowHandlers({
-    run,
-    talents,
+    run: runFlow,
+    talents: runFlowTalents,
     dispatch,
     contentNav,
     getAvailableDestinations: destinations.getAvailableDestinations,
@@ -184,8 +191,8 @@ export function useRunNavigation({
   });
 
   const corruption = useRunCorruptionFlow({
-    getRunDeck: () => run.runDeck,
-    setRunDeck: run.setRunDeck,
+    getRunDeck: () => corruptionRun.runDeck,
+    setRunDeck: corruptionRun.setRunDeck,
     eventsRng: randomSources.events,
     advanceToNextDestination: flowHandlers.advanceToNextDestination,
   });

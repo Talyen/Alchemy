@@ -1,17 +1,14 @@
 // Screen-aware asset preloading for edge-case images not covered by upfront decode.
-// Depends on game-data assets, image preload helpers, and run-session-facade reads.
+// Depends on game-data assets, image preload helpers, and run-session capability reads.
 // All main art is decoded during the startup loading screen — this is a safety net
 // for images that are dynamically constructed or added after initial load.
 import { useEffect } from "react";
-
 import { pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { preloadImages } from "@/lib/image-preload";
 import type { Screen } from "@/features/alchemy/shared/types";
 import { gearDefinitions } from "@/lib/gear";
-import {
-  useRunSessionBattleContext,
-  useScreenAssetPreloadData,
-} from "@/features/alchemy/shared/stores/run-session-facade";
+import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-model";
+import { useScreenAssetPreloadData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 
 interface ScreenAssetPreloadOptions {
   heroArt: string;

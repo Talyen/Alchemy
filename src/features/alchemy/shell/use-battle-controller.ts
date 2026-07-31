@@ -18,10 +18,10 @@ import {
 import type { CardRect, Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { BattleRunPort, BattleTalentPort } from "@/features/alchemy/run-loop/battle/battle-run-port";
-import { useDisplayOverrides } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useDisplayOverrides } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-model";
 import type { BattleState } from "@/lib/battle";
 import type { BattleScreenData } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 

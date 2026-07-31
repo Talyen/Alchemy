@@ -13,6 +13,7 @@ import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store"
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-transitions";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 
 beforeEach(() => {
@@ -22,6 +23,20 @@ beforeEach(() => {
 });
 
 describe("run-session transaction coordinator", () => {
+  it("keeps the root nested while exposing domain-shaped compatibility projections", () => {
+    const root = readGameplayState();
+    const snapshot = useRunSessionCommitStore.getState().snapshot;
+
+    expect(root).not.toHaveProperty("activeRun");
+    expect(root.run).toHaveProperty("activeRun");
+    expect(snapshot.domain).not.toBe(root);
+    expect(snapshot.transient).not.toBe(root);
+    expect(snapshot.battle).not.toBe(root);
+    expect(snapshot.runProfile).not.toBe(root);
+    expect(snapshot.profile).not.toBe(root);
+    expect(snapshot.gear).not.toBe(root);
+  });
+
   it("executes the public command boundary and runs its effect after commit", () => {
     const effect = vi.fn((gold: number) => {
       expect(useRunSessionCommitStore.getState().snapshot.domain.activeRun.runGold).toBe(gold);

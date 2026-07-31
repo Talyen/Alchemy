@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import { CharacterSelectScreen, DifficultySelectScreen, DraftDeckScreen } from "@/features/alchemy/run-setup/screens";
-import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { useDifficultySelectSlice, useDraftDeckSlice } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-port";
+import { useDifficultySelectSlice, useDraftDeckSlice } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import type { RunSetupRouteCtx } from "./route-ctx";
 
 function DifficultySelectScreenRoute({ commands }: { commands: RunSetupRouteCtx["routeCommands"]["runSetup"] }) {
   const { pendingCharacterId, selectedDifficulty } = useDifficultySelectSlice();
   const characterId = pendingCharacterId ?? "knight";
-  const completedDifficulties = useProfileStore((s) => s.completedDifficulties[characterId]);
+  const completedDifficulties = useCompletedDifficulties()[characterId];
 
   return (
     <DifficultySelectScreen

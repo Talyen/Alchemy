@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { getRunSession, readBattleStore } from "../../shared/stores/run-session-facade";
+import { getRunSession } from "@/features/alchemy/shared/stores/run-session-model";
+import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { registerBattlePresentationBridge } from "../../shared/stores/battle-presentation-bridge";
 import type { CombatTextEvent } from "@/lib/battle";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
@@ -55,7 +56,7 @@ let combatTextSequence = 0;
 
 function shouldShowFloatingCombatText(sequence: number): boolean {
   if (sequence !== combatTextSequence) return false;
-  const battle = readBattleStore();
+  const battle = readBattle();
   return battle.hasActiveBattle && getRunSession().screen === "battle";
 }
 

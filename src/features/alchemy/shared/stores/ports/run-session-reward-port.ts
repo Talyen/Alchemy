@@ -4,34 +4,34 @@ import type { RewardState } from "@/lib/active-run-session";
 import type { Destination } from "@/features/alchemy/shared/types";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { CorruptionResult } from "@/lib/corruption";
-import { getRunTransientStore } from "../run-transient-store";
-import { getRunDomainStore } from "../run-domain-store";
 import { dispatchRunSessionCommand } from "../run-session-command";
+import { createRunSessionStoreSnapshot } from "../run-session-queries";
 
 export function setRewardState(state: RewardState | ((prev: RewardState) => RewardState)) {
-  return dispatchRunSessionCommand(() => getRunTransientStore().setRewardState(state));
+  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setRewardState(state));
 }
 
 export function setCompanionRewardCards(cards: BattleCard[] | null) {
-  return dispatchRunSessionCommand(() => getRunTransientStore().setCompanionRewardCards(cards));
+  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setCompanionRewardCards(cards));
 }
 
 export function beginRewardClaim(): boolean {
-  return dispatchRunSessionCommand(() => getRunTransientStore().beginRewardClaim());
+  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.beginRewardClaim());
 }
 
 export function releaseRewardClaim(): void {
-  dispatchRunSessionCommand(() => getRunTransientStore().releaseRewardClaim());
+  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.releaseRewardClaim());
 }
 
 export function beginDestinationClaim(destination: Destination): boolean {
-  return dispatchRunSessionCommand(() => getRunTransientStore().beginDestinationClaim(destination));
+  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.beginDestinationClaim(destination));
 }
 
 /** Commit destination claim across session + active-run progress (cross-lifetime). */
 export function commitDestinationClaim(destination: Destination): boolean {
   return dispatchRunSessionCommand(() => {
-    const transient = getRunTransientStore();
+    const session = createRunSessionStoreSnapshot();
+    const transient = session.transient;
     if (transient.pendingDestinationClaim !== destination) return false;
     if (!transient.rewardState.destinations.includes(destination)) {
       transient.cancelDestinationClaim();
@@ -39,7 +39,7 @@ export function commitDestinationClaim(destination: Destination): boolean {
     }
     transient.setRewardState((prev) => ({ ...prev, destinations: [] }));
     transient.cancelDestinationClaim();
-    const run = getRunDomainStore();
+    const run = session.domain;
     run.setCompletedDestinations((prev) => [...prev, destination]);
     run.setDestinationIndexInAct((prev) => prev + 1);
     return true;
@@ -47,13 +47,13 @@ export function commitDestinationClaim(destination: Destination): boolean {
 }
 
 export function cancelDestinationClaim(): void {
-  dispatchRunSessionCommand(() => getRunTransientStore().cancelDestinationClaim());
+  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.cancelDestinationClaim());
 }
 
 export function setRunEndMaterials(materials: MaterialInventory) {
-  return dispatchRunSessionCommand(() => getRunTransientStore().setRunEndMaterials(materials));
+  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setRunEndMaterials(materials));
 }
 
 export function setCorruptionResult(result: CorruptionResult | null) {
-  return dispatchRunSessionCommand(() => getRunTransientStore().setCorruptionResult(result));
+  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setCorruptionResult(result));
 }

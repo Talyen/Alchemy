@@ -10,8 +10,7 @@ import {
   TalentsScreen,
   ArmoryScreen,
 } from "@/features/alchemy/meta/screens";
-import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-
+import { useProfileCollectionSlice, useProfileDiscoverySlice } from "@/features/alchemy/shared/stores/profile-port";
 import { useCollectionActions, useHomesteadActions } from "@/features/alchemy/shared/stores/store-actions";
 import {
   useBondedCompanions,
@@ -19,11 +18,10 @@ import {
   useHasActiveRun,
   useHomesteadProgressSlice,
   useTalentProgressSlice,
-} from "@/features/alchemy/shared/stores/run-session-facade";
+} from "@/features/alchemy/shared/stores/run-session-react-ports";
 import type { MetaRouteCtx } from "./route-ctx";
 import { useHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-read-port";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
-import { useShallow } from "zustand/react/shallow";
 
 function MenuScreenRoute({ commands }: { commands: MetaRouteCtx["routeCommands"]["meta"] }) {
   const { hasUnspentTalents, hasAffordableHomestead } = useAppScreenChrome();
@@ -86,15 +84,7 @@ function GameModeSelectScreenRoute({ commands }: { commands: MetaRouteCtx["route
 }
 
 function CollectionScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattleMenu">) {
-  const profile = useProfileStore(
-    useShallow((s) => ({
-      collectionTab: s.collectionTab,
-      discoveredCardIds: s.discoveredCardIds,
-      encounteredEnemyIds: s.encounteredEnemyIds,
-      discoveredTrinketIds: s.discoveredTrinketIds,
-      collectionPages: s.collectionPages,
-    })),
-  );
+  const profile = useProfileCollectionSlice();
   const collectionActions = useCollectionActions();
   const bondedCompanions = useBondedCompanions();
 
@@ -115,7 +105,7 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenB
 
 function HomesteadScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattleMenu">) {
   const homesteadValues = useHomesteadProgressSlice();
-  const discoveredCardIds = useProfileStore((s) => s.discoveredCardIds);
+  const { discoveredCardIds } = useProfileDiscoverySlice();
   const homesteadActions = useHomesteadActions();
 
   return (

@@ -14,13 +14,10 @@ import {
   teardownRun,
 } from "@/features/alchemy/shared/stores/run-transitions";
 import { getCombinedRunGold, getCurrentRunPhase } from "../../../../helpers/run-session-assertions";
-import {
-  applyRunStartSnapshot,
-  finalizeRunXP,
-  unlockAllTalents,
-  getRunSession,
-  snapshotRun,
-} from "@/features/alchemy/shared/stores/run-session-facade";
+import { applyRunStartSnapshot } from "@/features/alchemy/shared/stores/ports/run-session-setup-port";
+import { finalizeRunXP, unlockAllTalents } from "@/features/alchemy/shared/stores/ports/run-profile-write-port";
+import { getRunSession } from "@/features/alchemy/shared/stores/run-session-model";
+import { snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-transaction";
 import { cardLibrary, computeTalentPoints, type BattleCard } from "@/lib/game-data";

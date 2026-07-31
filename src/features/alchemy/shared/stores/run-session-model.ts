@@ -1,4 +1,4 @@
-// Typed read model composed from the run-domain, profile, transient, and battle stores.
+// Typed read model composed from the canonical gameplay aggregate projection.
 import type { BattleState } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { getRunPhase, type RunPhase } from "@/lib/routing";
@@ -9,11 +9,11 @@ import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-syst
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { RunSessionFields } from "./run-domain-types";
-import { getRunDomainStore, type RunDomainStore } from "./run-domain-store";
-import { getRunProfileStore, type RunProfileStore } from "./run-profile-store";
-import { getRunTransientStore, readRunSessionFields } from "./run-transient-store";
-import { getRunBattleDomainStore } from "./run-battle-domain-store";
 import { getCommittedRunSessionSnapshot, useRunSessionCommitStore } from "./run-session-transaction";
+import { createRunSessionStoreSnapshot, type RunSessionStoreSnapshot } from "./run-session-queries";
+import type { RunDomainStore } from "./run-domain-store";
+import type { RunProfileStore } from "./run-profile-store";
+import { readRunSessionFields } from "./run-transient-store";
 
 type RunSessionRunSlice = Pick<
   RunStateFields,
@@ -139,22 +139,7 @@ export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigat
   );
 }
 
-/** Imperative snapshot of run + session + battle for the current screen. */
-export function getRunSession(screen?: Screen): RunSession {
-  const resolvedScreen = screen ?? getRunDomainStore().navigation.screen;
-  const battle = pickRunSessionBattleSlice(getRunBattleDomainStore());
-  return {
-    screen: resolvedScreen,
-    phase: getRunPhase(resolvedScreen, battle.hasActiveBattle),
-    run: pickRunSessionRunSlice(getRunDomainStore(), getRunProfileStore()),
-    session: readRunSessionFields(getRunTransientStore()),
-    battle,
-  };
-}
-
-/** Imperative snapshot of the last committed run + session + battle state. */
-export function getCommittedRunSession(screen?: Screen): RunSession {
-  const snapshot = getCommittedRunSessionSnapshot();
+function toRunSession(snapshot: RunSessionStoreSnapshot, screen?: Screen): RunSession {
   const resolvedScreen = screen ?? snapshot.domain.navigation.screen;
   const battle = pickRunSessionBattleSlice(snapshot.battle);
   return {
@@ -164,4 +149,14 @@ export function getCommittedRunSession(screen?: Screen): RunSession {
     session: readRunSessionFields(snapshot.transient),
     battle,
   };
+}
+
+/** Imperative snapshot of run + session + battle for the current screen. */
+export function getRunSession(screen?: Screen): RunSession {
+  return toRunSession(createRunSessionStoreSnapshot(), screen);
+}
+
+/** Imperative snapshot of the last committed run + session + battle state. */
+export function getCommittedRunSession(screen?: Screen): RunSession {
+  return toRunSession(getCommittedRunSessionSnapshot(), screen);
 }

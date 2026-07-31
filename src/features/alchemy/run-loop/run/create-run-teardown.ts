@@ -1,10 +1,6 @@
-// Run teardown / return-to-menu policy extracted from shell navigation wiring.
-import {
-  cancelDestinationClaim,
-  releaseRewardClaim,
-  dispatchRunSessionCommand,
-  teardownRun,
-} from "@/features/alchemy/shared/stores/run-session-facade";
+import { cancelDestinationClaim, releaseRewardClaim } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { clearBattlePresentationCardGhosts } from "@/features/alchemy/shared/stores/battle-presentation-bridge";
 import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
 

@@ -1,17 +1,15 @@
 // Main menu screen with logo and navigation buttons. Entry point for all other screens.
 import { useCallback, useState } from "react";
 import { BookOpen, Cog, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { BUTTON_WIDTH_MENU } from "@/features/alchemy/shared/config";
 import { CardFlip } from "../../shared/ui/card-flip";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { cn } from "@/lib/utils";
-import { useProfileStore } from "../../shared/stores/profile-store";
+import { useFinishedRunCharacters } from "../../shared/stores/profile-port";
 import { StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { LockedMenuItem } from "../../shared/ui/locked-menu-item";
-
 import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data";
 
 export function MenuScreen({
@@ -45,7 +43,7 @@ export function MenuScreen({
   const [variantIdx, setVariantIdx] = useState(() => Math.min(1, variants.length - 1));
   const [flipped, setFlipped] = useState(false);
 
-  const finishedRunCharacters = useProfileStore((s) => s.finishedRunCharacters);
+  const finishedRunCharacters = useFinishedRunCharacters();
   const isKnightGatedLocked = !finishedRunCharacters.includes("knight");
 
   const handleLogoClick = useCallback(() => {

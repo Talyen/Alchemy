@@ -3,8 +3,9 @@ import { appendUnique } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { corruptDeckCard } from "@/lib/corruption";
-import { dispatchRunSessionCommand, setCorruptionResult } from "../../shared/stores/run-session-facade";
-import { useProfileStore } from "../../shared/stores/profile-store";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setCorruptionResult } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setDiscoveredCardIds } from "../../shared/stores/profile-port";
 
 function applyCorruptionToDeck(
   runDeck: BattleCard[],
@@ -17,7 +18,7 @@ function applyCorruptionToDeck(
       const { deck, result } = corruptDeckCard(runDeck, cardIndex, cardLibrary, rng);
       setRunDeck(deck);
       setCorruptionResult(result);
-      useProfileStore.getState().setDiscoveredCardIds((current) => appendUnique(current, result.corruptedCard.id));
+      setDiscoveredCardIds((current) => appendUnique(current, result.corruptedCard.id));
       return result;
     },
     { afterCommit: () => playUISound("musicBoxMystery") },

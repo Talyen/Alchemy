@@ -3,33 +3,29 @@ import type { CharacterId } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
-import { getRunTransientStore } from "../run-transient-store";
-import { getRunDomainStore } from "../run-domain-store";
 import { dispatchRunSessionCommand } from "../run-session-command";
-
-export function setHasActiveRun(hasActiveRun: boolean) {
-  return dispatchRunSessionCommand(() => getRunTransientStore().setHasActiveRun(hasActiveRun));
-}
+import { createRunSessionStoreSnapshot } from "../run-session-queries";
 
 export function setPendingCharacterId(id: CharacterId | null) {
-  return dispatchRunSessionCommand(() => getRunTransientStore().setPendingCharacterId(id));
+  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setPendingCharacterId(id));
 }
 
 export function setPendingContentSystemType(type: ContentSystemId) {
-  return dispatchRunSessionCommand(() => getRunTransientStore().setPendingContentSystemType(type));
+  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setPendingContentSystemType(type));
 }
 
 export function setWildwoodDraft(
   state: WildwoodDraftState | null | ((prev: WildwoodDraftState | null) => WildwoodDraftState | null),
 ) {
-  return dispatchRunSessionCommand(() => getRunTransientStore().setWildwoodDraft(state));
+  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setWildwoodDraft(state));
 }
 
 /** Start a fresh run: seed active-run progress, drop the previous run-end XP snapshot, flag the run active. */
 export function applyRunStartSnapshot(snapshot: RunStartSnapshot): void {
   dispatchRunSessionCommand(() => {
-    getRunDomainStore().hydrateFromSnapshot(snapshot);
-    const transient = getRunTransientStore();
+    const session = createRunSessionStoreSnapshot();
+    session.domain.hydrateFromSnapshot(snapshot);
+    const transient = session.transient;
     transient.setRunEndTalentXP({});
     transient.setHasActiveRun(snapshot.hasActiveRun);
   });

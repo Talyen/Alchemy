@@ -2,7 +2,9 @@
 import { selectRewardCards, type BattleCard } from "@/lib/game-data";
 import { resampleItems } from "@/features/alchemy/shared/utils";
 import { spendRunGold } from "./run-gold";
-import { dispatchRunSessionCommand } from "../shared/stores/run-session-facade";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+
+// Shared merchant/alchemist refresh helpers.
 
 interface RefreshShopOfferingsInput<T, TItem> {
   price: number;
