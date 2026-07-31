@@ -7,9 +7,11 @@ import {
   computeContentHash,
   isOutputFresh,
   loadManifest,
+  processManifestEntries,
   resolveSourceHash,
   writeManifestIfChanged,
 } from "../../scripts/lib/asset-manifest-cache.mjs";
+import type { ManifestEntry } from "../../scripts/lib/asset-manifest-cache.mjs";
 import { mapPool } from "../../scripts/lib/map-pool.mjs";
 import { writeTextIfChanged } from "../../scripts/lib/write-text-if-changed.mjs";
 import { kebabToCamel } from "../../scripts/lib/kebab-to-camel.mjs";
@@ -101,6 +103,29 @@ describe("asset-manifest-cache", () => {
     expect(await isOutputFresh(path.join(dir, "missing.webp"), { hash: "abc", mtimeMs: 1, size: 1 }, "abc")).toBe(
       false,
     );
+  });
+
+  it("processes entries, preserves successful manifests, and normalizes failures", async () => {
+    const dir = await makeTempDir();
+    const manifestPath = path.join(dir, ".asset-hashes.json");
+
+    const result = await processManifestEntries({
+      entries: [{ target: "ok.webp" }, { target: "bad.webp" }],
+      manifestPath,
+      processEntry: async ({ target }): Promise<{ entry: ManifestEntry | null; message: string }> => {
+        if (target === "bad.webp") throw new Error("broken transform");
+        return { entry: { hash: "ok", mtimeMs: 1, size: 2 }, message: "ok" };
+      },
+      handleError: (_entry, error) => ({
+        entry: null,
+        message: error instanceof Error ? error.message : String(error),
+      }),
+    });
+
+    expect(result.failed).toBe(true);
+    expect(result.results).toHaveLength(2);
+    expect(result.nextManifest).toEqual({ "ok.webp": { hash: "ok", mtimeMs: 1, size: 2 } });
+    expect(await loadManifest(manifestPath)).toEqual(result.nextManifest);
   });
 
   it("does not treat equal mtime with different size as a fast-path hit", async () => {

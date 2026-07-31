@@ -12,3 +12,7 @@ export function makeTestCard(overrides: Partial<BattleCard> = {}): BattleCard {
     ...overrides,
   };
 }
+
+export function makeTestCardWithId(id: string, overrides: Partial<BattleCard> = {}): BattleCard {
+  return makeTestCard({ id, title: id, ...overrides });
+}

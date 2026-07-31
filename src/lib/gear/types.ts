@@ -1,6 +1,6 @@
 import { characters, type CharacterId, type KeywordId } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { GearAffixId } from "./affix-ids";
+import type { GearAffixId } from "./affix-catalog";
 import type { GearBaseItemId } from "./base-items";
 import type { GearDefinitionId } from "./definitions";
 import { GEAR_SLOTS, type GearSlot, type GearRarity, GEAR_RARITIES } from "./types-core";
@@ -15,7 +15,7 @@ export type { GearSlot, GearRarity };
 
 export const GEAR_CHARACTER_IDS = Object.keys(characters) as GearCharacterId[];
 
-export type { GearAffixId } from "./affix-ids";
+export type { GearAffixId } from "./affix-catalog";
 
 export interface GearAffixRoll {
   id: GearAffixId;

@@ -11,16 +11,12 @@ import {
 import { defaultTalentEffects } from "@/lib/battle";
 import { FREE_CARD_SENTINEL } from "@/lib/game-constants";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { createTestBattleState } from "./test-state";
-
-function makeCard(id: string) {
-  return { id, title: id, descriptionLines: [""], art: "", cost: 1, effects: [] };
-}
+import { makeTestBattleState, makeTestCardWithId } from "../../fixtures/battle";
 
 describe("applyStunDrawTalent", () => {
   it("no-ops when drawOnStun is 0", () => {
-    const state = createTestBattleState({
-      deck: [makeCard("d1"), makeCard("d2")],
+    const state = makeTestBattleState({
+      deck: [makeTestCardWithId("d1"), makeTestCardWithId("d2")],
       hand: [],
       discard: [],
     });
@@ -30,8 +26,8 @@ describe("applyStunDrawTalent", () => {
   });
 
   it("draws N cards when drawOnStun > 0", () => {
-    const state = createTestBattleState({
-      deck: [makeCard("d1"), makeCard("d2"), makeCard("d3")],
+    const state = makeTestBattleState({
+      deck: [makeTestCardWithId("d1"), makeTestCardWithId("d2"), makeTestCardWithId("d3")],
       hand: [],
       discard: [],
       talentEffects: { ...defaultTalentEffects, drawOnStun: 2 },
@@ -45,7 +41,7 @@ describe("applyStunDrawTalent", () => {
 
 describe("applyStunFreeCardTalent", () => {
   it("sets FREE_CARD_SENTINEL when talent active", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       talentEffects: { ...defaultTalentEffects, nextCardFreeOnStun: true },
     });
     const result = applyStunFreeCardTalent(state);
@@ -53,7 +49,7 @@ describe("applyStunFreeCardTalent", () => {
   });
 
   it("no-ops when nextCardFreeOnStun is false", () => {
-    const state = createTestBattleState();
+    const state = makeTestBattleState();
     const result = applyStunFreeCardTalent(state);
     expect(result.flags.nextCardCostReduction).toBe(0);
   });
@@ -61,7 +57,7 @@ describe("applyStunFreeCardTalent", () => {
 
 describe("applyStunBlockTalent", () => {
   it("adds block and merges combat text", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       talentEffects: { ...defaultTalentEffects, blockOnStun: 4 },
     });
     const texts: CombatTextEvent[] = [];
@@ -71,7 +67,7 @@ describe("applyStunBlockTalent", () => {
   });
 
   it("no-ops when amount is 0", () => {
-    const state = createTestBattleState({ playerStatuses: { ...createTestBattleState().playerStatuses, block: 2 } });
+    const state = makeTestBattleState({ playerStatuses: { ...makeTestBattleState().playerStatuses, block: 2 } });
     const result = applyStunBlockTalent(state);
     expect(result.playerStatuses.block).toBe(2);
   });
@@ -79,7 +75,7 @@ describe("applyStunBlockTalent", () => {
 
 describe("applyFreezeBlockTalent", () => {
   it("adds block and merges combat text", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       talentEffects: { ...defaultTalentEffects, blockOnFreeze: 3 },
     });
     const texts: CombatTextEvent[] = [];
@@ -91,16 +87,16 @@ describe("applyFreezeBlockTalent", () => {
 
 describe("applyStunStripArmorTalent", () => {
   it("zeros enemy armor when active", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       talentEffects: { ...defaultTalentEffects, stunStripArmor: true },
-      enemyMitigation: { ...createTestBattleState().enemyMitigation, armor: 5 },
+      enemyMitigation: { ...makeTestBattleState().enemyMitigation, armor: 5 },
     });
     const result = applyStunStripArmorTalent(state);
     expect(result.enemyMitigation.armor).toBe(0);
   });
 
   it("no-ops when armor already 0", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       talentEffects: { ...defaultTalentEffects, stunStripArmor: true },
     });
     const result = applyStunStripArmorTalent(state);
@@ -110,9 +106,9 @@ describe("applyStunStripArmorTalent", () => {
 
 describe("applyFreezeStripArmorTalent", () => {
   it("zeros enemy armor when active", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       talentEffects: { ...defaultTalentEffects, freezeStripArmor: true },
-      enemyMitigation: { ...createTestBattleState().enemyMitigation, armor: 8 },
+      enemyMitigation: { ...makeTestBattleState().enemyMitigation, armor: 8 },
     });
     const result = applyFreezeStripArmorTalent(state);
     expect(result.enemyMitigation.armor).toBe(0);
@@ -121,7 +117,7 @@ describe("applyFreezeStripArmorTalent", () => {
 
 describe("applyStunManaTalent", () => {
   it("restores mana and emits combat text", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       mana: 1,
       talentEffects: { ...defaultTalentEffects, manaOnStun: 2 },
     });
@@ -132,7 +128,7 @@ describe("applyStunManaTalent", () => {
   });
 
   it("no-ops when manaOnStun is 0", () => {
-    const state = createTestBattleState({ mana: 2 });
+    const state = makeTestBattleState({ mana: 2 });
     const result = applyStunManaTalent(state);
     expect(result.mana).toBe(2);
   });

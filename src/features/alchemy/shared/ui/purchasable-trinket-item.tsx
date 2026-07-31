@@ -1,12 +1,10 @@
 // Shop trinket tile with buy button and sold-out state.
 import type { TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-
 import { cardSurfaceClass, collectionTileWidthClass } from "../config";
 import { DetailPopup } from "./card-popup";
+import { InteractiveArtTile } from "./interactive-art-tile";
 import { PurchasableShopTile } from "./purchasable-shop-tile";
-import { TiltSurface } from "./tilt-surface";
-import { useInteractiveCard } from "./use-interactive-card";
 
 interface PurchasableTrinketItemProps {
   trinket: TrinketEntry;
@@ -25,48 +23,24 @@ export function PurchasableTrinketItem({
   onBuy,
   staggerIndex,
 }: PurchasableTrinketItemProps) {
-  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("shop", trinket.id);
-
-  const media = purchased ? (
-    <TiltSurface
-      as="div"
-      className={cn(cardSurfaceClass, collectionTileWidthClass, "group", "aspect-square")}
-      shimmerActive={false}
-      shimmerToken={undefined}
-      selected={false}
-      ariaLabel={trinket.title}
-    >
-      <img
-        src={trinket.art || undefined}
-        alt={trinket.title}
-        className="absolute inset-0 h-full w-full rounded-shell-hero object-cover"
-      />
-    </TiltSurface>
-  ) : (
-    <div onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
-      {isHovered ? (
+  const media = (
+    <InteractiveArtTile
+      id={trinket.id}
+      interactionKey="shop"
+      title={trinket.title}
+      art={trinket.art}
+      className={cn(cardSurfaceClass, collectionTileWidthClass, "aspect-square")}
+      imageClassName="absolute inset-0 h-full w-full rounded-shell-hero object-cover"
+      interactive={!purchased}
+      popup={
         <DetailPopup
           idPrefix={trinket.id}
           title={trinket.title}
           subtitle={undefined}
           descriptionLines={trinket.descriptionLines}
         />
-      ) : null}
-      <TiltSurface
-        as="div"
-        className={cn(cardSurfaceClass, collectionTileWidthClass, "group", "aspect-square")}
-        shimmerActive={shimmerActive}
-        shimmerToken={shimmerToken}
-        selected={false}
-        ariaLabel={trinket.title}
-      >
-        <img
-          src={trinket.art || undefined}
-          alt={trinket.title}
-          className="absolute inset-0 h-full w-full rounded-shell-hero object-cover"
-        />
-      </TiltSurface>
-    </div>
+      }
+    />
   );
 
   return (

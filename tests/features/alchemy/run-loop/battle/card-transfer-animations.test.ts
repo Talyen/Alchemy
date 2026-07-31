@@ -1,11 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { animateDiscardedHand, animateDrawnHand } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
-import type { BattleCard } from "@/lib/game-data";
 import type { CardTransferAnimationDeps } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
-
-function makeCard(uid: number, id = "slash"): BattleCard {
-  return { id, title: id, descriptionLines: [""], art: "", cost: 1, effects: [], uid };
-}
+import { makeTestCardWithId } from "../../../../fixtures/battle";
 
 const pileRect = { x: 0, y: 0, width: 40, height: 60 };
 const handRect = { x: 100, y: 200, width: 80, height: 120 };
@@ -46,13 +42,21 @@ describe("animateDiscardedHand", () => {
   });
   it("returns early when discard pile is missing", async () => {
     const deps = makeDeps({ measureDiscardPile: () => null });
-    await animateDiscardedHand([makeCard(1), makeCard(2)], 1, deps);
+    await animateDiscardedHand(
+      [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("slash", { uid: 2 })],
+      1,
+      deps,
+    );
     expect(deps.runCardTransfer).not.toHaveBeenCalled();
   });
 
   it("discards from the end of the hand first", async () => {
     const deps = makeDeps();
-    const cards = [makeCard(1, "a"), makeCard(2, "b"), makeCard(3, "c")];
+    const cards = [
+      makeTestCardWithId("a", { uid: 1 }),
+      makeTestCardWithId("b", { uid: 2 }),
+      makeTestCardWithId("c", { uid: 3 }),
+    ];
     await animateDiscardedHand(cards, 1, deps);
 
     const transferred = vi.mocked(deps.runCardTransfer).mock.calls.map((call) => call[0].card.id);
@@ -67,7 +71,15 @@ describe("animateDiscardedHand", () => {
         active = false;
       }),
     });
-    await animateDiscardedHand([makeCard(1), makeCard(2), makeCard(3)], 1, deps);
+    await animateDiscardedHand(
+      [
+        makeTestCardWithId("slash", { uid: 1 }),
+        makeTestCardWithId("slash", { uid: 2 }),
+        makeTestCardWithId("slash", { uid: 3 }),
+      ],
+      1,
+      deps,
+    );
     expect(deps.runCardTransfer).toHaveBeenCalledTimes(1);
   });
 });
@@ -92,8 +104,8 @@ describe("animateDrawnHand", () => {
         onComplete?.();
       }),
     });
-    const drawn = [makeCard(2, "block")];
-    const hand = [makeCard(1), ...drawn];
+    const drawn = [makeTestCardWithId("block", { uid: 2 })];
+    const hand = [makeTestCardWithId("slash", { uid: 1 }), ...drawn];
 
     await animateDrawnHand(drawn, hand, 1, deps);
 

@@ -201,19 +201,9 @@ describe("ActiveRunDataSchema", () => {
     expect(result?.runDeck[0].effects).toEqual([{ kind: "heal", amount: 4 }]);
   });
 
-  it("passes through valid ranger characterId", () => {
-    const result = parseActiveRun(makeMinimalActiveRunInput({ characterId: "ranger" }));
-    expect(result?.characterId).toBe("ranger");
-  });
-
-  it("passes through valid rogue characterId", () => {
-    const result = parseActiveRun(makeMinimalActiveRunInput({ characterId: "rogue" }));
-    expect(result?.characterId).toBe("rogue");
-  });
-
-  it("passes through valid wizard characterId", () => {
-    const result = parseActiveRun(makeMinimalActiveRunInput({ characterId: "wizard" }));
-    expect(result?.characterId).toBe("wizard");
+  it.each(["ranger", "rogue", "wizard"] as const)("passes through valid %s characterId", (characterId) => {
+    const result = parseActiveRun(makeMinimalActiveRunInput({ characterId }));
+    expect(result?.characterId).toBe(characterId);
   });
 
   it("returns null for unknown characterId", () => {
@@ -374,68 +364,33 @@ describe("ActiveRunDataSchema", () => {
 describe("DisplayModeSchema", () => {
   const parse = (val: unknown) => DisplayModeSchema.catch("borderless-fullscreen").parse(val);
 
-  it("passes through windowed", () => {
-    expect(parse("windowed")).toBe("windowed");
-  });
-
-  it("passes through borderless-fullscreen", () => {
-    expect(parse("borderless-fullscreen")).toBe("borderless-fullscreen");
-  });
-
-  it("passes through fullscreen", () => {
-    expect(parse("fullscreen")).toBe("fullscreen");
-  });
-
-  it("falls back to default for null", () => {
-    expect(parse(null)).toBe("borderless-fullscreen");
-  });
-
-  it("falls back to default for undefined", () => {
-    expect(parse(undefined)).toBe("borderless-fullscreen");
-  });
-
-  it("falls back to default for invalid string", () => {
-    expect(parse("fake-mode")).toBe("borderless-fullscreen");
-  });
-
-  it("falls back to default for number", () => {
-    expect(parse(42)).toBe("borderless-fullscreen");
+  it.each([
+    ["windowed", "windowed"],
+    ["borderless-fullscreen", "borderless-fullscreen"],
+    ["fullscreen", "fullscreen"],
+    [null, "borderless-fullscreen"],
+    [undefined, "borderless-fullscreen"],
+    ["fake-mode", "borderless-fullscreen"],
+    [42, "borderless-fullscreen"],
+  ])("parses %s", (input, expected) => {
+    expect(parse(input)).toBe(expected);
   });
 });
 
 describe("UiScaleSchema", () => {
   const parse = (val: unknown) => UiScaleSchema.catch("100").parse(val);
 
-  it("passes through 90", () => {
-    expect(parse("90")).toBe("90");
-  });
-
-  it("passes through 100", () => {
-    expect(parse("100")).toBe("100");
-  });
-
-  it("passes through 110", () => {
-    expect(parse("110")).toBe("110");
-  });
-
-  it("passes through 120", () => {
-    expect(parse("120")).toBe("120");
-  });
-
-  it("falls back to default for null", () => {
-    expect(parse(null)).toBe("100");
-  });
-
-  it("falls back to default for undefined", () => {
-    expect(parse(undefined)).toBe("100");
-  });
-
-  it("falls back to default for invalid value", () => {
-    expect(parse("200")).toBe("100");
-  });
-
-  it("falls back to default for number", () => {
-    expect(parse(90)).toBe("100");
+  it.each([
+    ["90", "90"],
+    ["100", "100"],
+    ["110", "110"],
+    ["120", "120"],
+    [null, "100"],
+    [undefined, "100"],
+    ["200", "100"],
+    [90, "100"],
+  ])("parses %s", (input, expected) => {
+    expect(parse(input)).toBe(expected);
   });
 });
 

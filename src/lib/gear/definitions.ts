@@ -3,7 +3,7 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import { gearArtByDefinitionId } from "@/lib/game-data";
 import { gearBaseItems, type GearBaseItemDefinition, type GearBaseItemId } from "./base-items";
 import type { GearRarity, GearSlot } from "./types-core";
-import type { GearAffixId } from "./affix-ids";
+import type { GearAffixId } from "./affix-catalog";
 
 interface GearAffixRoll {
   id: GearAffixId;

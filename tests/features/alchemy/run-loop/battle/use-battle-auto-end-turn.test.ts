@@ -2,7 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useBattleAutoEndTurn } from "@/features/alchemy/run-loop/battle/use-battle-auto-end-turn";
-import { createTestBattleState } from "../../../../lib/battle/test-state";
+import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/battle";
 import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
 
@@ -30,7 +30,7 @@ describe("useBattleAutoEndTurn", () => {
       cost: 9,
       effects: [{ kind: "damage", damageType: "burn", amount: 20 }],
     });
-    const battleState = createTestBattleState({
+    const battleState = makeTestBattleState({
       hand: [{ ...expensive, uid: 1 }],
       mana: 1,
       turnPhase: "player",
@@ -59,7 +59,7 @@ describe("useBattleAutoEndTurn", () => {
       cost: 1,
       effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
-    const battleState = createTestBattleState({
+    const battleState = makeTestBattleState({
       hand: [{ ...slash, uid: 2 }],
       mana: 3,
       turnPhase: "player",
@@ -88,7 +88,7 @@ describe("useBattleAutoEndTurn", () => {
       cost: 9,
       effects: [{ kind: "damage", damageType: "burn", amount: 20 }],
     });
-    const battleState = createTestBattleState({
+    const battleState = makeTestBattleState({
       hand: [{ ...expensive, uid: 1 }],
       mana: 1,
       turnPhase: "player",
@@ -113,7 +113,7 @@ describe("useBattleAutoEndTurn", () => {
 
   it("does not schedule while a hand transfer is in progress", () => {
     const onEndTurn = vi.fn();
-    const battleState = createTestBattleState({
+    const battleState = makeTestBattleState({
       hand: [],
       mana: 3,
       turnPhase: "player",
@@ -138,7 +138,7 @@ describe("useBattleAutoEndTurn", () => {
 
   it("does not schedule while hand cards are still hidden from draw", () => {
     const onEndTurn = vi.fn();
-    const battleState = createTestBattleState({
+    const battleState = makeTestBattleState({
       hand: [],
       mana: 3,
       turnPhase: "player",
@@ -163,7 +163,7 @@ describe("useBattleAutoEndTurn", () => {
 
   it("does not schedule when there is no active battle", () => {
     const onEndTurn = vi.fn();
-    const battleState = createTestBattleState({
+    const battleState = makeTestBattleState({
       hand: [],
       mana: 3,
       turnPhase: "player",

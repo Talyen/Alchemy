@@ -1,6 +1,6 @@
 // Alchemist's Shop screen — buy potions, refresh, or mix two potions from your deck.
 import { useMemo, useState } from "react";
-import { FlaskConical, RefreshCw } from "lucide-react";
+import { FlaskConical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
@@ -13,7 +13,7 @@ import { PurchasableCardItem, SelectableShopCard } from "../../shared/ui/shop-ca
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { ScreenDescription, ServiceButton, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { useCaptureEscapeCancel } from "../../shared/ui/use-capture-escape-cancel";
-import { ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
+import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
 
 export function AlchemistShopScreen({
   gold,
@@ -62,11 +62,6 @@ export function AlchemistShopScreen({
 
   // Escape cancels potion selection only — not the mixed-card reveal (Continue).
   useCaptureEscapeCancel(mixMode && !mixedCard ? cancelMix : undefined);
-
-  function handleBuyCard(card: BattleCard, slotKey: string) {
-    if (purchasedSlotKeys.includes(slotKey)) return;
-    onBuyCard(card, slotKey);
-  }
 
   function startMix() {
     setMixMode(true);
@@ -161,15 +156,12 @@ export function AlchemistShopScreen({
                 soldOutText="Mix Potions — Sold Out"
                 onClick={startMix}
               />
-              <ServiceButton
-                icon={RefreshCw}
+              <RefreshShopServiceButton
+                gold={gold}
+                refreshesLeft={refreshesLeft}
+                refreshPrice={refreshPrice}
+                onRefresh={onRefresh}
                 label="Refresh Shop"
-                cost={refreshPrice}
-                disabled={refreshesLeft <= 0 || gold < refreshPrice}
-                disabledMessage="Not Enough Gold"
-                used={refreshesLeft <= 0}
-                soldOutText="Refresh — Sold Out"
-                onClick={onRefresh}
               />
             </>
           }
@@ -183,7 +175,7 @@ export function AlchemistShopScreen({
                 price={getPotionPrice(card)}
                 gold={gold}
                 purchased={purchasedSlotKeys.includes(slotKey)}
-                onBuy={() => handleBuyCard(card, slotKey)}
+                onBuy={() => onBuyCard(card, slotKey)}
                 staggerIndex={i}
               />
             );

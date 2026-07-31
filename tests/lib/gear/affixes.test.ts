@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
-import { GEAR_AFFIX_IDS } from "@/lib/gear/affix-ids";
+import { GEAR_AFFIX_IDS, gearAffixCatalog } from "@/lib/gear/affix-catalog";
 import { defaultGearEffects, normalizeAffixRolls, resolveAffixEffects } from "@/lib/gear";
 
 describe("gear affixes", () => {

@@ -1,7 +1,7 @@
 // Shared feature-level UI/controller types for screens, routes, ghosts, combat text, and options.
 // Depends on React style types plus battle/game-data contracts.
 // Used across alchemy controllers, hooks, screens, and reusable UI widgets.
-import type { CSSProperties } from "react";
+import type { CSSProperties, RefObject } from "react";
 
 import type { BattleCard, EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle";
@@ -44,6 +44,15 @@ export interface CardTransfer {
   toRotation: number;
   rotateY: number[];
   duration: number;
+}
+
+export interface BattleRefs {
+  handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
+  drawPileRef: RefObject<HTMLDivElement | null>;
+  discardPileRef: RefObject<HTMLDivElement | null>;
+  battleSceneRef: RefObject<HTMLDivElement | null>;
+  playerPanelRef: RefObject<HTMLDivElement | null>;
+  enemyPanelRef: RefObject<HTMLDivElement | null>;
 }
 
 export type FloatingCombatText = CombatTextEvent & {

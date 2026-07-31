@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
+import { useLatestRef } from "../../../shared/hooks";
 
 interface UseArmoryTargetingEventsOptions {
   salvageMode: boolean;
@@ -84,14 +85,11 @@ export function useArmoryTargetingEvents({
   salvageTarget,
   clearTargeting,
 }: UseArmoryTargetingEventsOptions) {
-  const clearTargetingRef = useRef(clearTargeting);
-  useEffect(() => {
-    clearTargetingRef.current = clearTargeting;
-  });
+  const clearTargetingRef = useLatestRef(clearTargeting);
 
   useEffect(() => {
     if (!salvageMode && !activeCurrencyId) return;
     if (salvageTarget) return;
     return setupTargetingEventListeners(salvageMode, () => clearTargetingRef.current());
-  }, [activeCurrencyId, salvageMode, salvageTarget]);
+  }, [activeCurrencyId, clearTargetingRef, salvageMode, salvageTarget]);
 }

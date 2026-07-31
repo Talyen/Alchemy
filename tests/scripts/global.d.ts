@@ -78,6 +78,19 @@ declare module "*/asset-manifest-cache.mjs" {
     manifestPath: string,
     entries: Record<string, ManifestEntry>,
   ): Promise<boolean>;
+  export function processManifestEntries<T, R extends { entry?: ManifestEntry | null }>(options: {
+    entries: T[];
+    manifestPath: string;
+    concurrency?: number;
+    keyOf?: (entry: T) => string;
+    processEntry: (entry: T, storedEntry: ManifestEntry | undefined) => Promise<R>;
+    handleError?: (entry: T, error: unknown) => R;
+  }): Promise<{
+    previousManifest: Record<string, ManifestEntry>;
+    results: Array<R & { item: T; key: string; failed: boolean }>;
+    nextManifest: Record<string, ManifestEntry>;
+    failed: boolean;
+  }>;
 }
 
 declare module "*/map-pool.mjs" {

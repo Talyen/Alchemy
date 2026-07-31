@@ -2,18 +2,14 @@ import { describe, expect, it } from "vitest";
 import { defaultGearEffects } from "@/lib/gear";
 import { createBattleState } from "@/lib/battle/battle-setup";
 import { enemyBestiary, computeTalentEffects } from "@/lib/game-data";
-import type { BattleCard, BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
+import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import { BASE_PLAYER_MANA, BOSS_HEALTH_MULTIPLIER, ELITE_HP_MULTIPLIER, MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { defaultTrinketEffects } from "@/lib/trinkets";
-import { makeTestCard, seededRng } from "./test-state";
-
-function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return makeTestCard(overrides);
-}
+import { makeTestCard, seededRng } from "../../fixtures/battle";
 
 describe("createBattleState", () => {
   const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
-  const battleDeck = [makeCard({ id: "slash" }), makeCard({ id: "block" })];
+  const battleDeck = [makeTestCard({ id: "slash" }), makeTestCard({ id: "block" })];
 
   it("creates a valid battle state with starting hand", () => {
     const result = createBattleState({

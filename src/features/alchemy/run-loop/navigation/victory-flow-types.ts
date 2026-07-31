@@ -5,7 +5,7 @@ import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import type { Destination } from "@/features/alchemy/shared/types";
-import type { DestinationOfferState } from "./destination-flow";
+import type { DestinationOfferState } from "@/features/alchemy/shared/run-flow/destination-flow";
 import type { RewardState } from "./reward-flow";
 
 export interface VictoryRewardsInput {

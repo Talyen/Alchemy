@@ -190,12 +190,7 @@ export function useAlchemyRunController({
   const battleBindings = useMemo<BattleControllerBindings>(
     () => ({
       battleScreenData: battle.battleScreenData,
-      handCardRefs: battle.handCardRefs,
-      drawPileRef: battle.drawPileRef,
-      discardPileRef: battle.discardPileRef,
-      battleSceneRef: battle.battleSceneRef,
-      playerPanelRef: battle.playerPanelRef,
-      enemyPanelRef: battle.enemyPanelRef,
+      refs: battle.refs,
       cardTransfers: battle.cardTransfers,
       hiddenHandCardKeys: battle.hiddenHandCardKeys,
       cardTransferInProgress: battle.cardTransferInProgress,
@@ -207,12 +202,7 @@ export function useAlchemyRunController({
       battle.hiddenHandCardKeys,
       battle.cardTransferInProgress,
       battle.playableHandCardKeys,
-      battle.handCardRefs,
-      battle.drawPileRef,
-      battle.discardPileRef,
-      battle.battleSceneRef,
-      battle.playerPanelRef,
-      battle.enemyPanelRef,
+      battle.refs,
     ],
   );
 

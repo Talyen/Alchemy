@@ -5,9 +5,8 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 import { staticAssets } from "./assets/asset-manifest.mjs";
-import { isOutputFresh, loadManifest, resolveSourceHash, writeManifestIfChanged } from "./lib/asset-manifest-cache.mjs";
+import { isOutputFresh, processManifestEntries, resolveSourceHash } from "./lib/asset-manifest-cache.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { mapPool } from "./lib/map-pool.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const rootDir = path.resolve(path.dirname(currentFile), "..");
@@ -221,31 +220,20 @@ export async function optimizeAssets() {
   const allAssets = [...staticAssets, ...gearAssets, ...gearSlotBackgrounds];
   validateAssetTargets(allAssets);
 
-  const previousManifest = await loadManifest(manifestPath);
-
-  const results = await mapPool(allAssets, TRANSFORM_CONCURRENCY, async (asset) => {
-    const result = await optimizeAsset(asset, previousManifest[asset.target]);
-    if (result.missing) {
-      console.error(`Missing art source for ${asset.target}: ${asset.source}`);
-    }
-    return { asset, ...result };
+  const { results, nextManifest } = await processManifestEntries({
+    entries: allAssets,
+    manifestPath,
+    concurrency: TRANSFORM_CONCURRENCY,
+    processEntry: optimizeAsset,
   });
 
-  /** @type {Record<string, import("./lib/asset-manifest-cache.mjs").ManifestEntry>} */
-  const nextManifest = {};
   let missingCount = 0;
   for (const result of results) {
     if (result.missing) {
       missingCount += 1;
-      continue;
-    }
-    if (result.entry) {
-      nextManifest[result.asset.target] = result.entry;
+      console.error(`Missing art source for ${result.item.target}: ${result.item.source}`);
     }
   }
-
-  // Single manifest write after the parallel pass.
-  await writeManifestIfChanged(manifestPath, nextManifest);
 
   if (missingCount === 0) {
     await removeOrphanOutputs(new Set(Object.keys(nextManifest)));

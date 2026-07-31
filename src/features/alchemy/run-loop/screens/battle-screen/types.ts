@@ -1,11 +1,12 @@
 // Prop contracts shared by the focused battle screen view modules.
-import type { MouseEvent, RefObject } from "react";
+import type { MouseEvent } from "react";
 
 import type { BattleState } from "@/lib/battle";
 import type { DisplayOverrides } from "../../../shared/stores/run-session-facade";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardGhost, FloatingCombatText, StatusChip } from "../../../shared/types";
+import type { BattleRefs } from "../../../shared/types";
 
 export type BattleScreenState = Pick<
   BattleState,
@@ -59,14 +60,7 @@ export interface BattleFeedbackProps {
   activeLabyrinthModifiers: EncounterCombatTraitId[];
 }
 
-export interface BattleRefsProps {
-  handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
-  drawPileRef: RefObject<HTMLDivElement | null>;
-  discardPileRef: RefObject<HTMLDivElement | null>;
-  battleSceneRef: RefObject<HTMLDivElement | null>;
-  playerPanelRef: RefObject<HTMLDivElement | null>;
-  enemyPanelRef: RefObject<HTMLDivElement | null>;
-}
+export type BattleRefsProps = BattleRefs;
 
 export interface BattleActionsProps {
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;

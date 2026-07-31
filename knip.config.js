@@ -36,8 +36,6 @@ export default {
     "src/lib/gear/types.ts": ["exports", "types"],
     "scripts/lib/git-release.mjs": ["exports"],
     "scripts/lib/patch-notes-core.mjs": ["exports"],
-    // Compatibility re-export shim for tests still importing the run-loop path.
-    "src/features/alchemy/run-loop/navigation/destination-flow.ts": ["exports"],
     "src/lib/routing/destinations.ts": ["exports"],
     "src/lib/routing/index.ts": ["exports"],
     "src/features/alchemy/meta/screens/armory/parts/grid-styles.ts": ["exports"],

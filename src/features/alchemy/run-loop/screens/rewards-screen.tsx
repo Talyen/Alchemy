@@ -6,9 +6,9 @@ import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 
 import { DetailPopup } from "../../shared/ui/card-popup";
 import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
+import { InteractiveArtTile } from "../../shared/ui/interactive-art-tile";
 import { SelectableChoiceCard } from "../../shared/ui/selectable-choice-card";
 import { ActionButtonRow, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
-import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { cardSurfaceClass, collectionTileWidthClass } from "@/features/alchemy/shared/config";
 import { gearInstanceAspectClass } from "@/features/alchemy/shared/ui/gear-aspect";
 import {
@@ -17,7 +17,6 @@ import {
   type GearRewardState,
   type TrinketRewardState,
 } from "../navigation/reward-flow";
-import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
 function RewardChoiceItems({
   choices,
@@ -86,36 +85,27 @@ function TrinketRewardButton({
   onClick: () => void;
   selected: boolean;
 }) {
-  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("reward", trinket.id);
-
   return (
-    <div className="relative" onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
-      {isHovered ? (
+    <InteractiveArtTile
+      id={trinket.id}
+      interactionKey="reward"
+      title={trinket.title}
+      art={trinket.art}
+      className={cn(cardSurfaceClass, collectionTileWidthClass)}
+      imageClassName="block aspect-square w-full rounded-shell-hero"
+      selected={selected}
+      onClick={onClick}
+      ariaLabel={`Select ${trinket.title}`}
+      popup={
         <DetailPopup
           idPrefix={trinket.id}
           title={trinket.title}
           subtitle={undefined}
           descriptionLines={trinket.descriptionLines}
         />
-      ) : null}
-      <TiltSurface
-        as="button"
-        className={cn(cardSurfaceClass, collectionTileWidthClass, "group")}
-        shimmerActive={shimmerActive}
-        shimmerToken={shimmerToken}
-        selected={selected}
-        onClick={onClick}
-        ariaLabel={`Select ${trinket.title}`}
-        onFocus={onHoverStart}
-        onBlur={onHoverEnd}
-      >
-        <img
-          src={trinket.art || undefined}
-          alt={trinket.title}
-          className="block aspect-square w-full rounded-shell-hero"
-        />
-      </TiltSurface>
-    </div>
+      }
+      as="button"
+    />
   );
 }
 
@@ -132,34 +122,27 @@ function GearRewardButton({
   const title = getGearInstanceTitle(instance);
   const art = definition?.art ?? "";
   const descriptionLines = getGearInstanceDescriptionLines(instance);
-  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
-    "reward",
-    instance.instanceId,
-  );
   return (
-    <div className="relative" onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
-      {isHovered ? (
+    <InteractiveArtTile
+      id={instance.instanceId}
+      interactionKey="reward"
+      title={title}
+      art={art}
+      className={cn(cardSurfaceClass, collectionTileWidthClass, gearInstanceAspectClass(definition))}
+      imageClassName="block w-full rounded-shell-hero"
+      selected={selected}
+      onClick={onClick}
+      ariaLabel={`Select ${title}`}
+      popup={
         <DetailPopup
           idPrefix={instance.instanceId}
           title={title}
           subtitle="Permanent Gear"
           descriptionLines={descriptionLines}
         />
-      ) : null}
-      <TiltSurface
-        as="button"
-        className={cn(cardSurfaceClass, collectionTileWidthClass, "group", gearInstanceAspectClass(definition))}
-        shimmerActive={shimmerActive}
-        shimmerToken={shimmerToken}
-        selected={selected}
-        onClick={onClick}
-        ariaLabel={`Select ${title}`}
-        onFocus={onHoverStart}
-        onBlur={onHoverEnd}
-      >
-        <img src={art} alt={title} className="block w-full rounded-shell-hero" />
-      </TiltSurface>
-    </div>
+      }
+      as="button"
+    />
   );
 }
 

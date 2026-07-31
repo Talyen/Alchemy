@@ -1,4 +1,4 @@
-import type { GearAffixId } from "./affix-ids";
+import type { GearAffixId } from "./affix-catalog";
 
 export interface GearAffixNameParts {
   prefix?: string;

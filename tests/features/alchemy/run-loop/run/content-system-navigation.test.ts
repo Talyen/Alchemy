@@ -6,6 +6,7 @@ import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { makeRunController, makeTalentController } from "../../../../helpers/run-controller";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID, DRAFT_ROUNDS } from "@/lib/game-constants";
 import { getStartingDeck, type BattleCard } from "@/lib/game-data";
+import { makeTestCard } from "../../../../fixtures/battle";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
@@ -55,10 +56,6 @@ function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNaviga
     worldRng: () => 0.5,
     ...overrides,
   };
-}
-
-function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return { id: "test-card", title: "Test", descriptionLines: [""], art: "", cost: 1, effects: [], ...overrides };
 }
 
 describe("createContentSystemNavigation", () => {
@@ -140,7 +137,7 @@ describe("createContentSystemNavigation", () => {
     });
     const nav = createContentSystemNavigation(deps);
     const draftedCards = Array.from({ length: DRAFT_ROUNDS }, (_, index) =>
-      makeCard({ id: `wildcard-draft-${index}` }),
+      makeTestCard({ id: `wildcard-draft-${index}` }),
     );
 
     nav.handleDraftComplete(draftedCards);

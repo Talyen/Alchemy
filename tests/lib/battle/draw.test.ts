@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { defaultBattleState, defaultTalentEffects } from "@/lib/battle";
 import { drawCards, shuffleCards } from "@/lib/battle/draw";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
+import { makeTestCardWithId } from "../../fixtures/battle";
+
+const makeCard = makeTestCardWithId;
 
 describe("defaultTalentEffects", () => {
   it("has all numeric fields set to 0 except known non-zero defaults", () => {
@@ -115,13 +118,9 @@ describe("shuffleCards", () => {
 });
 
 describe("drawCards — edge cases", () => {
-  function makeCard(id: string) {
-    return { id, title: id, descriptionLines: [""], art: "", cost: 1, effects: [] };
-  }
-
   it("mid-draw reshuffles discard when deck runs out", () => {
-    const deck = [makeCard("d1")];
-    const discard = [makeCard("d2"), makeCard("d3"), makeCard("d4")];
+    const deck = [makeTestCardWithId("d1")];
+    const discard = [makeTestCardWithId("d2"), makeTestCardWithId("d3"), makeTestCardWithId("d4")];
     const result = drawCards(deck, discard, [], 4, 0, Math.random);
     expect(result.hand).toHaveLength(4);
     expect(result.deck).toHaveLength(0);
@@ -138,14 +137,14 @@ describe("drawCards — edge cases", () => {
   });
 
   it("both piles empty with existing hand leaves hand unchanged", () => {
-    const hand = [makeCard("h1")];
+    const hand = [makeTestCardWithId("h1")];
     const result = drawCards([], [], hand, 4, 0, Math.random);
     expect(result.hand).toHaveLength(1);
     expect(result.hand[0].id).toBe("h1");
   });
 
   it("draws single card from single-card deck with empty discard", () => {
-    const deck = [makeCard("d1")];
+    const deck = [makeTestCardWithId("d1")];
     const result = drawCards(deck, [], [], 1, 0, Math.random);
     expect(result.hand).toHaveLength(1);
     expect(result.hand[0].id).toBe("d1");
@@ -153,16 +152,16 @@ describe("drawCards — edge cases", () => {
   });
 
   it("drawing with near-full hand respects MAX_HAND_SIZE", () => {
-    const hand = Array.from({ length: 6 }, (_, i) => makeCard(`h${i}`));
-    const deck = [makeCard("d1"), makeCard("d2"), makeCard("d3")];
+    const hand = Array.from({ length: 6 }, (_, i) => makeTestCardWithId(`h${i}`));
+    const deck = [makeTestCardWithId("d1"), makeTestCardWithId("d2"), makeTestCardWithId("d3")];
     const result = drawCards(deck, [], hand, 4, 0, Math.random);
     expect(result.hand).toHaveLength(7);
     expect(result.deck).toHaveLength(2);
   });
 
   it("silently skips draws when hand is already at MAX_HAND_SIZE", () => {
-    const hand = Array.from({ length: MAX_HAND_SIZE }, (_, i) => makeCard(`h${i}`));
-    const deck = [makeCard("d1"), makeCard("d2"), makeCard("d3")];
+    const hand = Array.from({ length: MAX_HAND_SIZE }, (_, i) => makeTestCardWithId(`h${i}`));
+    const deck = [makeTestCardWithId("d1"), makeTestCardWithId("d2"), makeTestCardWithId("d3")];
     const result = drawCards(deck, [], hand, 4, 0, Math.random);
     expect(result.hand).toHaveLength(MAX_HAND_SIZE);
     expect(result.deck.map((card) => card.id)).toEqual(["d1", "d2", "d3"]);

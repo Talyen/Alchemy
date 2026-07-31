@@ -7,12 +7,7 @@ import {
   defaultCcState,
   defaultTrinketManifest,
 } from "../../fixtures/default-battle-state";
-import type { CombatTextEvent } from "@/lib/battle/types";
-import { patchBattleState } from "./test-state";
-
-function makeTexts(): CombatTextEvent[] {
-  return [];
-}
+import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
 
 describe("tickEnemyStatuses", () => {
   it("deals burn damage and halves burn stack", () => {

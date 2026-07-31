@@ -5,7 +5,7 @@ import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
 import type { TurnOrchestrationDeps } from "@/features/alchemy/run-loop/battle/turn-orchestration";
-import { createTestBattleState } from "../../../../lib/battle/test-state";
+import { makeTestBattleState } from "../../../../fixtures/battle";
 import { getBattleStoreView, resetRunBattleSlice } from "../../../../helpers/run-domain-store-test";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 
@@ -33,7 +33,7 @@ describe("createBattleEndTurnUi handleEndTurn", () => {
     const cardPlayInProgressRef = { current: false };
     const clearAutoEndTurn = vi.fn();
     const battleSessionRef = { current: 1 };
-    const battleState = createTestBattleState({
+    const battleState = makeTestBattleState({
       turnPhase: "player",
       hand: [],
       enemyHealth: 20,

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { addPlayerStatus } from "@/lib/battle/types";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { defaultGearEffects } from "@/lib/gear";
-import { patchBattleState } from "./test-state";
+import { patchBattleState } from "../../fixtures/battle";
 
 describe("gear stun integration", () => {
   it("adds flatBlockGained when gaining block via addPlayerStatus", () => {

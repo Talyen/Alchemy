@@ -38,19 +38,8 @@ import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
 function BattleScreenRoute({ routeCommands, battleBindings, onOpenBattleMenu }: BattleRouteCtx) {
   const commands = routeCommands.battle;
   const { heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
-  const {
-    battleScreenData,
-    handCardRefs,
-    drawPileRef,
-    discardPileRef,
-    battleSceneRef,
-    playerPanelRef,
-    enemyPanelRef,
-    cardTransfers,
-    hiddenHandCardKeys,
-    cardTransferInProgress,
-    playableHandCardKeys,
-  } = battleBindings;
+  const { battleScreenData, refs, cardTransfers, hiddenHandCardKeys, cardTransferInProgress, playableHandCardKeys } =
+    battleBindings;
 
   return (
     <BattleScreen
@@ -59,12 +48,7 @@ function BattleScreenRoute({ routeCommands, battleBindings, onOpenBattleMenu }: 
       playerName={playerName}
       aspectMode={aspectMode}
       stagePixelRatio={stagePixelRatio}
-      handCardRefs={handCardRefs}
-      drawPileRef={drawPileRef}
-      discardPileRef={discardPileRef}
-      battleSceneRef={battleSceneRef}
-      playerPanelRef={playerPanelRef}
-      enemyPanelRef={enemyPanelRef}
+      refs={refs}
       onCardClick={commands.handleCardClick}
       onOpenMenu={onOpenBattleMenu}
       onWishChoice={commands.handleWishChoice}

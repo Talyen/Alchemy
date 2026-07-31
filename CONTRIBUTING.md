@@ -6,7 +6,7 @@ GitHub branch protection is not available on this repo, so **local hooks are the
 
 `lefthook` `pre-push` runs sequentially (`piped: true`):
 
-1. `node scripts/sync-changelog-commit.mjs` — sync `CHANGELOG.md` ## [Unreleased] from git and auto-commit when dirty
+1. `node scripts/sync-changelog-commit.mjs` — verify `CHANGELOG.md` ## [Unreleased] matches git history without mutating the push; if stale, run `npm run sync:changelog`, stage `CHANGELOG.md`, commit, and retry the push
 2. `npm ci --dry-run`
 3. `npm run lint:ci` (format, TypeScript, ESLint, phase boundaries via dependency-cruiser, architecture smoke, knip)
 4. `npm test` (Vitest)
@@ -46,7 +46,7 @@ First-time Playwright: `npx playwright install chromium`.
 
 When explicitly asked to commit or push, agents work directly on `main`; there is no required PR merge step. Commit messages feed an automated changelog:
 
-- **Pre-push hook** syncs `CHANGELOG.md` ## [Unreleased] from git history since the latest `v*` tag
+- **Pre-push hook** verifies `CHANGELOG.md` ## [Unreleased] against git history since the latest `v*` tag without mutating git state. If it is stale, run `npm run sync:changelog`, stage `CHANGELOG.md`, commit, and retry the push.
 - **Player-facing draft:** `npm run generate:patch-notes` → `release-notes/UNRELEASED.md`
 - **Drift guard:** `tests/architecture/changelog-sync.test.ts` (also in `npm run test:ship:unit`)
 

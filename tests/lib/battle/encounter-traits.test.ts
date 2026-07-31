@@ -9,7 +9,7 @@ import {
 } from "@/lib/battle";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import type { BattleCard, BestiaryEntry } from "@/lib/game-data";
-import { createTestBattleState } from "./test-state";
+import { makeTestBattleState } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
 
 function enemyWith(...ids: Array<keyof typeof ENCOUNTER_TRAITS>): BestiaryEntry {
@@ -41,7 +41,7 @@ function card(overrides: Partial<BattleCard> = {}): BattleCard {
 describe("encounter trait enemy actions", () => {
   it("scales buffs and damage with room depth only when the enemy attacks", () => {
     const currentEnemy = enemyWith("tempered", "reinforced", "zealot");
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       currentEnemy,
       enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 1 }],
       roomScalingMultiplier: 2,
@@ -55,7 +55,7 @@ describe("encounter trait enemy actions", () => {
 
   it("does not activate recurring traits on a skipped enemy action", () => {
     const currentEnemy = enemyWith("tempered", "zealot");
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       currentEnemy,
       enemyAttackEffects: currentEnemy.attackEffects,
       enemyCC: defaultCcState({ stunSkipTurns: 1 }),
@@ -67,8 +67,8 @@ describe("encounter trait enemy actions", () => {
 
   it("uses battle RNG for Septic", () => {
     const currentEnemy = enemyWith("septic");
-    const poison = endPlayerTurn(createTestBattleState({ currentEnemy, enemyAttackEffects: [], rng: () => 0.1 })).state;
-    const bleed = endPlayerTurn(createTestBattleState({ currentEnemy, enemyAttackEffects: [], rng: () => 0.9 })).state;
+    const poison = endPlayerTurn(makeTestBattleState({ currentEnemy, enemyAttackEffects: [], rng: () => 0.1 })).state;
+    const bleed = endPlayerTurn(makeTestBattleState({ currentEnemy, enemyAttackEffects: [], rng: () => 0.9 })).state;
     expect(poison.playerStatuses.poison).toBe(1);
     expect(bleed.playerStatuses.bleed).toBe(2);
   });
@@ -76,7 +76,7 @@ describe("encounter trait enemy actions", () => {
   it("applies Plated, Reinforced, and Overgrowth before the attack", () => {
     const currentEnemy = enemyWith("plated", "reinforced", "overgrowth");
     const result = endPlayerTurn(
-      createTestBattleState({
+      makeTestBattleState({
         currentEnemy,
         enemyAttackEffects: [],
         enemyHealth: 10,
@@ -95,22 +95,22 @@ describe("encounter trait enemy actions", () => {
     ["concussive", "stun", 1],
   ] as const)("applies %s typed damage and build-up", (traitId, status, amount) => {
     const currentEnemy = enemyWith(traitId);
-    const result = endPlayerTurn(createTestBattleState({ currentEnemy, enemyAttackEffects: [] })).state;
+    const result = endPlayerTurn(makeTestBattleState({ currentEnemy, enemyAttackEffects: [] })).state;
     expect(result.playerStatuses[status]).toBe(amount);
     expect(result.playerHealth).toBe(30 - amount);
   });
 
   it("applies Zealot Holy damage without a status rider", () => {
     const currentEnemy = enemyWith("zealot");
-    const result = endPlayerTurn(createTestBattleState({ currentEnemy, enemyAttackEffects: [] })).state;
+    const result = endPlayerTurn(makeTestBattleState({ currentEnemy, enemyAttackEffects: [] })).state;
     expect(result.playerHealth).toBe(28);
   });
 
   it("Caustic strips scaled Armor even when its hit is blocked", () => {
     const currentEnemy = enemyWith("caustic");
-    const base = createTestBattleState();
+    const base = makeTestBattleState();
     const result = endPlayerTurn(
-      createTestBattleState({
+      makeTestBattleState({
         currentEnemy,
         enemyAttackEffects: [],
         roomScalingMultiplier: 2,
@@ -124,7 +124,7 @@ describe("encounter trait enemy actions", () => {
   it("Flesheater leeches from its hit and the following Bleed tick", () => {
     const currentEnemy = enemyWith("flesheater");
     const first = endPlayerTurn(
-      createTestBattleState({ currentEnemy, enemyAttackEffects: [], enemyHealth: 10, enemyMaxHealth: 20 }),
+      makeTestBattleState({ currentEnemy, enemyAttackEffects: [], enemyHealth: 10, enemyMaxHealth: 20 }),
     ).state;
     expect(first.enemyHealth).toBe(11);
     expect(first.playerStatuses.bleed).toBe(2);
@@ -141,9 +141,9 @@ describe("encounter trait enemy actions", () => {
     ["Freeze regeneration blocking", { freezeBlocksRegen: true }, 1],
   ] as const)("Flesheater respects %s on its hit and Bleed tick", (_label, talentOverrides, enemyFreezeSkipTurns) => {
     const currentEnemy = enemyWith("flesheater");
-    const base = createTestBattleState();
+    const base = makeTestBattleState();
     const first = endPlayerTurn(
-      createTestBattleState({
+      makeTestBattleState({
         currentEnemy,
         enemyAttackEffects: [],
         enemyHealth: 10,
@@ -169,7 +169,7 @@ describe("encounter trait card events", () => {
         { kind: "damage", damageType: "burn", amount: 2 },
       ],
     });
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       currentEnemy,
       enemyHealth: 1,
       enemyMaxHealth: 1,
@@ -187,7 +187,7 @@ describe("encounter trait card events", () => {
     const currentEnemy = enemyWith("thorns");
     const played = card({ consume: true });
     const result = playBattleCardResolved(
-      createTestBattleState({
+      makeTestBattleState({
         currentEnemy,
         hand: [played],
         mana: 1,
@@ -213,7 +213,7 @@ describe("encounter trait card events", () => {
         { kind: "wish", amount: 3 },
       ],
     });
-    const state = createTestBattleState({ currentEnemy, hand: [played], mana: 1, turnPhase: "player" });
+    const state = makeTestBattleState({ currentEnemy, hand: [played], mana: 1, turnPhase: "player" });
     const result = playBattleCardResolved(state, played.id, 0);
     expect(result.state.enemyPhysicalDamageBonus).toBe(2);
     expect(result.state.enemyMitigation.block).toBe(1);
@@ -222,7 +222,7 @@ describe("encounter trait card events", () => {
   it("activates Divine Aegis once on the first downward half-health crossing", () => {
     const currentEnemy = enemyWith("divine-aegis");
     const played = card({ effects: [{ kind: "damage", damageType: "holy", amount: 6 }] });
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       currentEnemy,
       enemyHealth: 10,
       enemyMaxHealth: 10,
@@ -239,13 +239,13 @@ describe("encounter trait card events", () => {
   it("Braced halves Stun build-up", () => {
     const currentEnemy = enemyWith("braced");
     const played = card({ effects: [{ kind: "damage", damageType: "stun", amount: 4 }] });
-    const state = createTestBattleState({ currentEnemy, hand: [played], mana: 1, turnPhase: "player" });
+    const state = makeTestBattleState({ currentEnemy, hand: [played], mana: 1, turnPhase: "player" });
     const result = playBattleCardResolved(state, played.id, 0).state;
     expect(result.enemyStatuses.stun).toBe(2);
   });
 
   it("Braced halves indirect Stun build-up", () => {
-    const state = createTestBattleState({ currentEnemy: enemyWith("braced") });
+    const state = makeTestBattleState({ currentEnemy: enemyWith("braced") });
     expect(addEnemyStatus(state, "stun", 3).enemyStatuses.stun).toBe(2);
   });
 
@@ -253,7 +253,7 @@ describe("encounter trait card events", () => {
     const currentEnemy = enemyWith("insatiable");
     const played = card({ consume: true, effects: [] });
     const afterCard = playBattleCardResolved(
-      createTestBattleState({ currentEnemy, hand: [played], mana: 1, turnPhase: "player" }),
+      makeTestBattleState({ currentEnemy, hand: [played], mana: 1, turnPhase: "player" }),
       played.id,
       0,
     ).state;
@@ -266,9 +266,9 @@ describe("encounter trait card events", () => {
 
   it("activates Divine Aegis when a DoT crosses half health", () => {
     const currentEnemy = enemyWith("divine-aegis");
-    const base = createTestBattleState();
+    const base = makeTestBattleState();
     const result = tickEnemyStatuses(
-      createTestBattleState({
+      makeTestBattleState({
         currentEnemy,
         enemyHealth: 6,
         enemyMaxHealth: 10,

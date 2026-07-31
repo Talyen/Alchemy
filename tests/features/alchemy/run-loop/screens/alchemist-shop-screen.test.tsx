@@ -43,6 +43,7 @@ vi.mock("@/features/alchemy/shared/ui/card-selection-grid", () => ({
 
 vi.mock("@/features/alchemy/run-loop/screens/shop-browse-shell", () => ({
   ShopBrowseShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  RefreshShopServiceButton: ({ label = "Refresh" }: { label?: string }) => <button type="button">{label}</button>,
   ShopBrowseOfferings: ({ children, services }: { children: ReactNode; services: ReactNode }) => (
     <div>
       {services}

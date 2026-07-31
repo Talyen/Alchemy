@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getCommitsSinceTag, latestCommitHash, latestVersionTag } from "./lib/git-release.mjs";
+import { isMainModule } from "./lib/is-main-module.mjs";
 import { buildChangelogUnreleased, replaceChangelogUnreleased } from "./lib/patch-notes-core.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -58,5 +59,7 @@ export function changelogCommitSubject(rootDir = root) {
   return `chore(changelog): sync unreleased (${commits.length} commits, ${hash})`;
 }
 
-const isCheck = process.argv.includes("--check");
-syncChangelog({ check: isCheck });
+if (isMainModule(import.meta.url)) {
+  const isCheck = process.argv.includes("--check");
+  syncChangelog({ check: isCheck });
+}

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { computeEffectiveCost, type BattleState } from "@/lib/battle";
 import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
 
+import { useLatestRef } from "../../shared/hooks";
 import type { Screen } from "../../shared/types";
 
 interface AutoEndTurnOptions {
@@ -27,12 +28,8 @@ export function useBattleAutoEndTurn({
   hiddenHandCardKeys,
   onEndTurn,
 }: AutoEndTurnOptions) {
-  const onEndTurnRef = useRef(onEndTurn);
+  const onEndTurnRef = useLatestRef(onEndTurn);
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    onEndTurnRef.current = onEndTurn;
-  }, [onEndTurn]);
 
   const clearAutoEndTurn = useCallback(() => {
     if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
@@ -58,15 +55,24 @@ export function useBattleAutoEndTurn({
       if (hasPlayableCard) return;
       autoEndTimerRef.current = setTimeout(() => onEndTurnRef.current(), AUTO_END_TURN_DELAY);
     },
-    [autoEndTurn, battleState, cardTransferInProgress, clearAutoEndTurn, hasActiveBattle, hiddenHandCardKeys, screen],
+    [
+      autoEndTurn,
+      battleState,
+      cardTransferInProgress,
+      clearAutoEndTurn,
+      hasActiveBattle,
+      hiddenHandCardKeys,
+      onEndTurnRef,
+      screen,
+    ],
   );
 
-  const scheduleAutoEndTurnRef = useRef(scheduleAutoEndTurnRaw);
-  useEffect(() => {
-    scheduleAutoEndTurnRef.current = scheduleAutoEndTurnRaw;
-  }, [scheduleAutoEndTurnRaw]);
+  const scheduleAutoEndTurnRef = useLatestRef(scheduleAutoEndTurnRaw);
 
-  const scheduleAutoEndTurn = useCallback((state: BattleState) => scheduleAutoEndTurnRef.current(state), []);
+  const scheduleAutoEndTurn = useCallback(
+    (state: BattleState) => scheduleAutoEndTurnRef.current(state),
+    [scheduleAutoEndTurnRef],
+  );
 
   useEffect(() => {
     scheduleAutoEndTurnRaw();

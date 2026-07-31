@@ -3,19 +3,20 @@ import { computeCardDamageToEnemy, forgeAppliesToDamageType } from "@/lib/battle
 import { defaultTalentEffects } from "@/lib/battle";
 import { CRIT_MULTIPLIER } from "@/lib/game-constants";
 import type { BattleCardEffect } from "@/lib/game-data";
-import { createTestBattleState, seededRng } from "./test-state";
+import { makeTestBattleState, seededRng } from "../../fixtures/battle";
 
 describe("forgeAppliesToDamageType", () => {
-  it("always applies to physical and stun", () => {
-    expect(forgeAppliesToDamageType("physical", defaultTalentEffects)).toBe(true);
-    expect(forgeAppliesToDamageType("stun", defaultTalentEffects)).toBe(true);
+  it.each(["physical", "stun"] as const)("always applies to %s", (damageType) => {
+    expect(forgeAppliesToDamageType(damageType, defaultTalentEffects)).toBe(true);
   });
 
-  it("gates burn, holy, and bleed on talent flags", () => {
-    expect(forgeAppliesToDamageType("burn", defaultTalentEffects)).toBe(false);
-    expect(forgeAppliesToDamageType("burn", { ...defaultTalentEffects, forgeToBurn: true })).toBe(true);
-    expect(forgeAppliesToDamageType("holy", { ...defaultTalentEffects, forgeToHoly: true })).toBe(true);
-    expect(forgeAppliesToDamageType("bleed", { ...defaultTalentEffects, forgeToBleed: true })).toBe(true);
+  it.each([
+    ["burn", "forgeToBurn"],
+    ["holy", "forgeToHoly"],
+    ["bleed", "forgeToBleed"],
+  ] as const)("gates %s on its talent flag", (damageType, talentFlag) => {
+    expect(forgeAppliesToDamageType(damageType, defaultTalentEffects)).toBe(false);
+    expect(forgeAppliesToDamageType(damageType, { ...defaultTalentEffects, [talentFlag]: true })).toBe(true);
   });
 });
 
@@ -27,9 +28,9 @@ describe("computeCardDamageToEnemy", () => {
   };
 
   it("absorbs enemy block before health", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       enemyHealth: 30,
-      enemyMitigation: { ...createTestBattleState().enemyMitigation, block: 4 },
+      enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 4 },
       rng: seededRng(99),
     });
     const { nextState, modifiedDamage } = computeCardDamageToEnemy(state, physicalEffect);
@@ -39,8 +40,8 @@ describe("computeCardDamageToEnemy", () => {
   });
 
   it("applies sundering armor pierce for physical damage", () => {
-    const base = createTestBattleState();
-    const state = createTestBattleState({
+    const base = makeTestBattleState();
+    const state = makeTestBattleState({
       enemyHealth: 30,
       enemyMitigation: { ...base.enemyMitigation, armor: 10, block: 0 },
       trinketEffects: { ...base.trinketEffects, sunderingArmorPiercing: 10 },
@@ -50,8 +51,8 @@ describe("computeCardDamageToEnemy", () => {
   });
 
   it("applies crit multiplier when random rolls below threshold", () => {
-    const state = createTestBattleState({
-      enemyMitigation: { ...createTestBattleState().enemyMitigation, block: 0, armor: 0 },
+    const state = makeTestBattleState({
+      enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 0, armor: 0 },
       talentEffects: { ...defaultTalentEffects, physicalCritChance: 100 },
       rng: () => 0,
     });
@@ -60,9 +61,9 @@ describe("computeCardDamageToEnemy", () => {
   });
 
   it("doubles forge contribution for physical with expert blacksmith", () => {
-    const state = createTestBattleState({
-      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 },
-      enemyMitigation: { ...createTestBattleState().enemyMitigation, block: 0, armor: 0 },
+    const state = makeTestBattleState({
+      playerStatuses: { ...makeTestBattleState().playerStatuses, forge: 3 },
+      enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 0, armor: 0 },
       talentEffects: { ...defaultTalentEffects, forgeToPhysicalDamageMultiplier: 2 },
       rng: () => 0.99,
     });
@@ -71,9 +72,9 @@ describe("computeCardDamageToEnemy", () => {
   });
 
   it("adds half block to physical via blockToPhysicalDamageMultiplier", () => {
-    const state = createTestBattleState({
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 10 },
-      enemyMitigation: { ...createTestBattleState().enemyMitigation, block: 0, armor: 0 },
+    const state = makeTestBattleState({
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10 },
+      enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 0, armor: 0 },
       talentEffects: { ...defaultTalentEffects, blockToPhysicalDamageMultiplier: 0.5 },
       rng: () => 0.99,
     });
@@ -87,10 +88,10 @@ describe("computeCardDamageToEnemy", () => {
       damageType: "bleed",
       amount: 5,
     };
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       enemyHealth: 5,
       enemyMaxHealth: 30,
-      enemyMitigation: { ...createTestBattleState().enemyMitigation, block: 0, armor: 0 },
+      enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 0, armor: 0 },
       talentEffects: { ...defaultTalentEffects, bleedExecuteThreshold: 25 },
       rng: () => 0.99,
     });

@@ -1,6 +1,6 @@
 // Battle presentation screen for actors, hand fan, piles, ghosts, wish choices, and menu entry.
 // Driven by useBattleController; focused child modules own the layout slices.
-import { useMemo, type MouseEvent, type RefObject } from "react";
+import { useMemo, type MouseEvent } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardTransfer } from "../../../shared/types";
 import { CardGhostOverlay } from "../../../shared/ui/card-ghost-overlay";
@@ -28,12 +28,7 @@ interface BattleScreenProps {
   playerName: string;
   aspectMode: "standard" | "narrow" | "ultrawide";
   stagePixelRatio: number;
-  handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
-  drawPileRef: RefObject<HTMLDivElement | null>;
-  discardPileRef: RefObject<HTMLDivElement | null>;
-  battleSceneRef: RefObject<HTMLDivElement | null>;
-  playerPanelRef: RefObject<HTMLDivElement | null>;
-  enemyPanelRef: RefObject<HTMLDivElement | null>;
+  refs: BattleRefsProps;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   onOpenMenu: (rect?: DOMRect) => void;
   onWishChoice: (card: BattleCard | null) => void;
@@ -53,12 +48,7 @@ export function BattleScreen(props: BattleScreenProps) {
     playerName,
     aspectMode,
     stagePixelRatio,
-    handCardRefs,
-    drawPileRef,
-    discardPileRef,
-    battleSceneRef,
-    playerPanelRef,
-    enemyPanelRef,
+    refs,
     onCardClick,
     onOpenMenu,
     onWishChoice,
@@ -132,15 +122,6 @@ export function BattleScreen(props: BattleScreenProps) {
     playerHurtFlashToken,
     enemyHurtFlashToken,
     activeLabyrinthModifiers,
-  };
-
-  const refs: BattleRefsProps = {
-    handCardRefs,
-    drawPileRef,
-    discardPileRef,
-    battleSceneRef,
-    playerPanelRef,
-    enemyPanelRef,
   };
 
   const actions: BattleActionsProps = {

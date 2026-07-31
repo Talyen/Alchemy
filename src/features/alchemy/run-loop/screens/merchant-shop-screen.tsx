@@ -1,13 +1,13 @@
 // Merchant shop screen — buy cards, remove deck cards, or refresh the shop.
 import { useState } from "react";
-import { RefreshCw, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 import type { BattleCard } from "@/lib/game-data";
 
 import { PurchasableCardItem } from "../../shared/ui/shop-card-item";
 import { RemoveCardPanel } from "../../shared/ui/remove-card-panel";
 import { ScreenDescription, ServiceButton } from "../../shared/ui/shared-ui";
-import { ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
+import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
 
 export function MerchantShopScreen({
   gold,
@@ -40,11 +40,6 @@ export function MerchantShopScreen({
 }) {
   const [removeMode, setRemoveMode] = useState(false);
 
-  function handleBuyCard(card: BattleCard, slotKey: string) {
-    if (purchasedSlotKeys.includes(slotKey)) return;
-    onBuyCard(card, slotKey);
-  }
-
   return (
     <ShopBrowseShell title="Merchant's Shop" gold={gold}>
       {!removeMode ? (
@@ -65,15 +60,11 @@ export function MerchantShopScreen({
                   setRemoveMode(true);
                 }}
               />
-              <ServiceButton
-                icon={RefreshCw}
-                label="Refresh"
-                cost={refreshPrice}
-                disabled={refreshesLeft <= 0 || gold < refreshPrice}
-                disabledMessage="Not Enough Gold"
-                used={refreshesLeft <= 0}
-                soldOutText="Refresh — Sold Out"
-                onClick={onRefresh}
+              <RefreshShopServiceButton
+                gold={gold}
+                refreshesLeft={refreshesLeft}
+                refreshPrice={refreshPrice}
+                onRefresh={onRefresh}
               />
             </>
           }
@@ -87,7 +78,7 @@ export function MerchantShopScreen({
                 price={getCardPrice(card)}
                 gold={gold}
                 purchased={purchasedSlotKeys.includes(slotKey)}
-                onBuy={() => handleBuyCard(card, slotKey)}
+                onBuy={() => onBuyCard(card, slotKey)}
                 staggerIndex={i}
               />
             );

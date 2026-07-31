@@ -1,7 +1,7 @@
 // Viewport, Aspect Ratio, and Resolution hooks/helpers.
 // Controls coordinate scaling mapping between virtual design stage and the physical screen.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { MAX_STAGE_SCALE, MIN_STAGE_SCALE, STAGE_HEIGHT } from "@/lib/game-constants";
 import type { AspectRatioOption } from "./types";
 
@@ -179,4 +179,13 @@ export function useVirtualResolution(selectedAspectRatio: AspectRatioOption, byp
     aspectMode: getAspectMode(resolvedAspect),
     stagePixelRatio: native.stagePixelRatio,
   };
+}
+
+/** Keeps the latest value available to stable event handlers without changing their identity. */
+export function useLatestRef<T>(value: T): RefObject<T> {
+  const valueRef = useRef(value);
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+  return valueRef;
 }

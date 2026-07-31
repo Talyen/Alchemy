@@ -5,7 +5,7 @@ import {
   resolvePlayerCrowdControlTrigger,
 } from "@/lib/battle/status-cc";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STUN_THRESHOLD_FRACTION } from "@/lib/game-constants";
-import { createTestBattleState } from "./test-state";
+import { makeTestBattleState } from "../../fixtures/battle";
 import {
   defaultPlayerStatusValues,
   defaultEnemyStatusValues,
@@ -14,8 +14,8 @@ import {
 
 describe("resolvePlayerCrowdControlTrigger", () => {
   it("clears stun without skip when below threshold", () => {
-    const state = createTestBattleState({
-      playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, stun: 5 }),
+    const state = makeTestBattleState({
+      playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, stun: 5 }),
       playerMaxHealth: 30,
     });
     const texts: never[] = [];
@@ -31,8 +31,8 @@ describe("resolvePlayerCrowdControlTrigger", () => {
   });
 
   it("assigns skip and immunity when stun meets threshold", () => {
-    const state = createTestBattleState({
-      playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, stun: 20 }),
+    const state = makeTestBattleState({
+      playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, stun: 20 }),
       playerMaxHealth: 30,
     });
     const texts: Parameters<typeof resolvePlayerCrowdControlTrigger>[0]["combatTexts"] = [];
@@ -49,8 +49,8 @@ describe("resolvePlayerCrowdControlTrigger", () => {
   });
 
   it("clears freeze silently during player CC immunity", () => {
-    const state = createTestBattleState({
-      playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, freeze: 20 }),
+    const state = makeTestBattleState({
+      playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, freeze: 20 }),
       playerCC: defaultCcState({ cooldown: 2 }),
     });
     const result = resolvePlayerCrowdControlTrigger({
@@ -67,8 +67,8 @@ describe("resolvePlayerCrowdControlTrigger", () => {
 
 describe("enemy CC helpers", () => {
   it("applyEnemyCcImmunityClear zeros freeze on pre-hit cooldown", () => {
-    const preHit = createTestBattleState({ enemyCC: defaultCcState({ cooldown: 2 }) });
-    const afterStacks = createTestBattleState({
+    const preHit = makeTestBattleState({ enemyCC: defaultCcState({ cooldown: 2 }) });
+    const afterStacks = makeTestBattleState({
       enemyStatuses: defaultEnemyStatusValues({ ...preHit.enemyStatuses, freeze: 20 }),
     });
     const cleared = applyEnemyCcImmunityClear({
@@ -81,8 +81,8 @@ describe("enemy CC helpers", () => {
   });
 
   it("assignEnemyCrowdControlSkip increments enemy stun skip", () => {
-    const state = createTestBattleState({
-      enemyStatuses: defaultEnemyStatusValues({ ...createTestBattleState().enemyStatuses, stun: 20 }),
+    const state = makeTestBattleState({
+      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, stun: 20 }),
     });
     const result = assignEnemyCrowdControlSkip({
       nextState: state,
@@ -95,8 +95,8 @@ describe("enemy CC helpers", () => {
   });
 
   it("assignEnemyCrowdControlSkip increments enemy freeze skip", () => {
-    const state = createTestBattleState({
-      enemyStatuses: defaultEnemyStatusValues({ ...createTestBattleState().enemyStatuses, freeze: 20 }),
+    const state = makeTestBattleState({
+      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, freeze: 20 }),
     });
     const result = assignEnemyCrowdControlSkip({
       nextState: state,

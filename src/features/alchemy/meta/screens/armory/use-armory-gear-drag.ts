@@ -20,6 +20,7 @@ import {
   buildSecondaryDragVisuals,
 } from "./armory-drag-helpers";
 import { handleGearCommit, type GearCommitEnv } from "./armory-gear-commit";
+import { useLatestRef } from "../../../shared/hooks";
 import { handleGearDoubleClickAction } from "./armory-gear-double-click";
 import { DOUBLE_CLICK_FLYOVER_CLEAR_DELAY_MS, EQUIPMENT_SNAP_INSET_RATIO } from "./drag-constants";
 import type { GearDragOrigin, GearDragVisual } from "./armory-gear-drag-types";
@@ -74,14 +75,8 @@ export function useArmoryGearDrag({
   onHoldCurrency,
 }: UseArmoryGearDragOptions) {
   const activeIdRef = useRef<string | null>(null);
-  const packedInventoryRef = useRef(packedInventory);
-  useEffect(() => {
-    packedInventoryRef.current = packedInventory;
-  }, [packedInventory]);
-  const packedCurrenciesRef = useRef(packedCurrencies);
-  useEffect(() => {
-    packedCurrenciesRef.current = packedCurrencies;
-  }, [packedCurrencies]);
+  const packedInventoryRef = useLatestRef(packedInventory);
+  const packedCurrenciesRef = useLatestRef(packedCurrencies);
   const [secondaryDragVisuals, setSecondaryDragVisuals] = useState<GearDragVisual[]>([]);
   const secondaryCleanupTimerRef = useRef<number | null>(null);
   const fsmClearDragRef = useRef<() => void>(() => {});

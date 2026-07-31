@@ -1,12 +1,16 @@
 // Deterministic battle setup helpers for Vitest (mirrors tests/helpers.ts card shapes).
 import type { BattleCard } from "@/lib/game-data";
-import type { BattleState } from "@/lib/battle/types";
+import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
 import { defaultBattleState } from "@/lib/battle";
 import { makeTestCard } from "./cards";
 import { seededRng } from "./rng";
 
-export { makeTestCard } from "./cards";
+export { makeTestCard, makeTestCardWithId } from "./cards";
 export { seededRng } from "./rng";
+
+export function makeCombatTexts(): CombatTextEvent[] {
+  return [];
+}
 
 export function makeTestBattleState(overrides: Partial<BattleState> = {}): BattleState {
   const base = defaultBattleState();

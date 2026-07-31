@@ -1,12 +1,12 @@
 import { useRef, useMemo, useLayoutEffect, type RefObject } from "react";
 import type { BattleState } from "@/lib/battle";
-import type { CardRect, Screen } from "@/features/alchemy/shared/types";
+import type { BattleRefs, CardRect, Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { BattleRunPort, BattleTalentPort } from "./battle-run-port";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { createTransferCancelRegistry, type TransferCancelRegistry } from "./card-transfer-animations";
 
-export interface BattleControllerContext {
+export interface BattleControllerContext extends BattleRefs {
   // State from props / parent
   run: BattleRunPort;
   talents: BattleTalentPort;
@@ -18,14 +18,6 @@ export interface BattleControllerContext {
   onBattleDefeat?: (() => void) | undefined;
   measureElementRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
-
-  // DOM Refs
-  handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
-  drawPileRef: RefObject<HTMLDivElement | null>;
-  discardPileRef: RefObject<HTMLDivElement | null>;
-  battleSceneRef: RefObject<HTMLDivElement | null>;
-  playerPanelRef: RefObject<HTMLDivElement | null>;
-  enemyPanelRef: RefObject<HTMLDivElement | null>;
 
   // Internal state Refs
   cardPlayInProgressRef: RefObject<boolean>;

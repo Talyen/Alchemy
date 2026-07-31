@@ -7,7 +7,7 @@ import {
 } from "@/lib/battle/gear-effects";
 import { applyGearDamageResistance, scaleGoldReward } from "@/lib/battle/types";
 import { defaultGearEffects } from "@/lib/gear";
-import { patchBattleState } from "./test-state";
+import { patchBattleState } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
 
 describe("gear-effects", () => {

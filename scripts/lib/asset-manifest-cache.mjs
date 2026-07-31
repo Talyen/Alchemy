@@ -7,6 +7,7 @@ import { createHash } from "node:crypto";
 import { access, readFile, stat } from "node:fs/promises";
 
 import { writeTextIfChanged } from "./write-text-if-changed.mjs";
+import { mapPool } from "./map-pool.mjs";
 
 /**
  * @typedef {{ hash: string, mtimeMs: number, size: number }} ManifestEntry
@@ -177,4 +178,56 @@ export async function writeManifestIfChanged(manifestPath, entries) {
   const sorted = sortManifest(entries);
   const content = `${JSON.stringify(sorted, null, 2)}\n`;
   return writeTextIfChanged(manifestPath, content);
+}
+
+/**
+ * Process a set of manifest-backed files and write one normalized manifest.
+ * The callback owns discovery and transformation behavior; this helper owns
+ * freshness state, bounded concurrency, error normalization, and persistence.
+ *
+ * @template T
+ * @template R
+ * @param {{
+ *   entries: T[],
+ *   manifestPath: string,
+ *   concurrency?: number,
+ *   keyOf?: (entry: T) => string,
+ *   processEntry: (entry: T, storedEntry: ManifestEntry | undefined) => Promise<R & { entry?: ManifestEntry | null }>,
+ *   handleError?: (entry: T, error: unknown) => R & { entry?: ManifestEntry | null },
+ * }} options
+ * @returns {Promise<{ previousManifest: Record<string, ManifestEntry>, results: Array<R & { item: T, key: string, failed: boolean }>, nextManifest: Record<string, ManifestEntry>, failed: boolean }>}
+ */
+export async function processManifestEntries({
+  entries,
+  manifestPath,
+  concurrency = 1,
+  keyOf = (entry) => /** @type {{ target?: string }} */ (entry).target ?? String(entry),
+  processEntry,
+  handleError,
+}) {
+  const previousManifest = await loadManifest(manifestPath);
+  const results = await mapPool(entries, concurrency, async (item) => {
+    const key = keyOf(item);
+    try {
+      const result = await processEntry(item, previousManifest[key]);
+      return { item, key, ...result, failed: false };
+    } catch (error) {
+      if (!handleError) throw error;
+      return { item, key, ...handleError(item, error), failed: true };
+    }
+  });
+
+  /** @type {Record<string, ManifestEntry>} */
+  const nextManifest = {};
+  for (const result of results) {
+    if (result.entry) nextManifest[result.key] = result.entry;
+  }
+  await writeManifestIfChanged(manifestPath, nextManifest);
+
+  return {
+    previousManifest,
+    results,
+    nextManifest,
+    failed: results.some((result) => result.failed),
+  };
 }

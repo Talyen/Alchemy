@@ -6,7 +6,7 @@ import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
 import { getBattleStoreView, resetRunBattleSlice } from "../../../../helpers/run-domain-store-test";
-import { createTestBattleState } from "../../../../lib/battle/test-state";
+import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/battle";
 import { playUISound } from "@/lib/audio";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
@@ -99,7 +99,7 @@ describe("createBattleCardPlay", () => {
       cost: 1,
       effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
     });
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       hand: [{ ...slash, uid: 1 }],
       mana: 3,
       enemyHealth: 30,
@@ -123,7 +123,7 @@ describe("createBattleCardPlay", () => {
       cost: 5,
       effects: [{ kind: "damage", damageType: "burn", amount: 20 }],
     });
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       hand: [{ ...expensive, uid: 2 }],
       mana: 1,
     });
@@ -145,7 +145,7 @@ describe("createBattleCardPlay", () => {
       cost: 1,
       effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
     });
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       hand: [{ ...slash, uid: 3 }],
       mana: 3,
       playerHealth: 0,
@@ -167,7 +167,7 @@ describe("createBattleCardPlay", () => {
       cost: 1,
       effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
     });
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       hand: [{ ...slash, uid: 5 }],
       mana: 3,
       enemyHealth: 30,
@@ -189,7 +189,7 @@ describe("createBattleCardPlay", () => {
       cost: 1,
       effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
     });
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       hand: [{ ...slash, uid: 6 }],
       mana: 3,
       enemyHealth: 30,
@@ -213,7 +213,7 @@ describe("createBattleCardPlay", () => {
       cost: 1,
       effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
     });
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       hand: [{ ...slash, uid: 4 }],
       mana: 3,
       enemyHealth: 0,

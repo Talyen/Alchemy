@@ -7,7 +7,6 @@ export * from "./board-moves";
 export * from "./board-view";
 export * from "./board-position-sanitizers";
 export * from "./grid-packing";
-export * from "./affix-ids";
 export * from "./affixes";
 export * from "./affix-catalog";
 export * from "./base-items";

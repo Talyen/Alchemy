@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { refreshOfferings } from "@/features/alchemy/run-loop/shop-transactions";
 import type { BattleCard } from "@/lib/game-data";
+import { makeTestCardWithId } from "../../../fixtures/battle";
 
 vi.mock("@/lib/audio", () => ({
   playGoldSpend: vi.fn(),
@@ -13,16 +14,8 @@ vi.mock("@/features/alchemy/shared/utils", () => ({
 import { playGoldSpend } from "@/lib/audio";
 import { resampleItems } from "@/features/alchemy/shared/utils";
 
-function makeCard(id: string): BattleCard {
-  return {
-    id,
-    title: id,
-    descriptionLines: [""],
-    art: "",
-    cost: 1,
-    effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
-  };
-}
+const makeCard = (id: string): BattleCard =>
+  makeTestCardWithId(id, { effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
 
 beforeEach(() => {
   vi.clearAllMocks();

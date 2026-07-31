@@ -7,7 +7,7 @@ import {
   lastOfferedIncludesCombat,
   restoreOrCreateDestinationRewardState,
   sampleDestinationChoices,
-} from "@/features/alchemy/run-loop/navigation/destination-flow";
+} from "@/features/alchemy/shared/run-flow/destination-flow";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import {
   DEFAULT_DESTINATION_WEIGHT,

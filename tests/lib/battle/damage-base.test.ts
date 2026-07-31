@@ -2,7 +2,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
 import type { BattleCardEffect } from "@/lib/game-data";
 import { defaultGearEffects } from "@/lib/gear";
-import { patchBattleState } from "./test-state";
+import { patchBattleState } from "../../fixtures/battle";
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 import { makeCard, makeEffect, makeTexts } from "./damage-test-helpers";
 

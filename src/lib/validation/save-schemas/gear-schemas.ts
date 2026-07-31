@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { GEAR_AFFIX_IDS } from "@/lib/gear/affix-ids";
+import { GEAR_AFFIX_IDS } from "@/lib/gear/affix-catalog";
 import { GEAR_DEFINITION_IDS } from "@/lib/gear/definitions";
 import { normalizeGearInstance } from "@/lib/gear/operations";
 

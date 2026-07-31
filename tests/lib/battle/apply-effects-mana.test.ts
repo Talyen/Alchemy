@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { applyEffectByKind } from "@/lib/battle/effect-handlers/registry";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { MIN_MAX_MANA_FLOOR } from "@/lib/game-constants";
-import { createTestBattleState, makeTestCard } from "./test-state";
+import { makeCombatTexts as makeTexts, makeTestBattleState, makeTestCard } from "../../fixtures/battle";
 
 const manaCard = makeTestCard({ id: "mana-test", effects: [] });
 
 function applyManaEffect(
-  state: ReturnType<typeof createTestBattleState>,
+  state: ReturnType<typeof makeTestBattleState>,
   effect: Parameters<typeof applyEffectByKind>[3],
   potionMult: number,
   texts: CombatTextEvent[],
@@ -15,13 +15,9 @@ function applyManaEffect(
   return applyEffectByKind(effect.kind, state, manaCard, effect, potionMult, texts);
 }
 
-function makeTexts(): CombatTextEvent[] {
-  return [];
-}
-
 describe("applyEffectByKind (mana effects)", () => {
   it("restores mana and emits combat text", () => {
-    const state = createTestBattleState({ mana: 2, maxMana: 4 });
+    const state = makeTestBattleState({ mana: 2, maxMana: 4 });
     const texts = makeTexts();
     const effect = { kind: "restore-mana" as const, amount: 2 };
     const result = applyManaEffect(state, effect, 1, texts);
@@ -30,7 +26,7 @@ describe("applyEffectByKind (mana effects)", () => {
   });
 
   it("applies potion multiplier to restore-mana", () => {
-    const state = createTestBattleState({ mana: 0, maxMana: 4 });
+    const state = makeTestBattleState({ mana: 0, maxMana: 4 });
     const texts = makeTexts();
     const effect = { kind: "restore-mana" as const, amount: 3 };
     const result = applyManaEffect(state, effect, 1.5, texts);
@@ -39,11 +35,11 @@ describe("applyEffectByKind (mana effects)", () => {
   });
 
   it("heals on mana gain when healOnManaGain talent is active", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       mana: 2,
       maxMana: 4,
       playerHealth: 20,
-      talentEffects: { ...createTestBattleState().talentEffects, healOnManaGain: 3 },
+      talentEffects: { ...makeTestBattleState().talentEffects, healOnManaGain: 3 },
     });
     const texts = makeTexts();
     const effect = { kind: "restore-mana" as const, amount: 1 };
@@ -53,7 +49,7 @@ describe("applyEffectByKind (mana effects)", () => {
   });
 
   it("loses mana without going below zero", () => {
-    const state = createTestBattleState({ mana: 1, maxMana: 4 });
+    const state = makeTestBattleState({ mana: 1, maxMana: 4 });
     const texts = makeTexts();
     const effect = { kind: "lose-mana" as const, amount: 3 };
     const result = applyManaEffect(state, effect, 1, texts);
@@ -62,7 +58,7 @@ describe("applyEffectByKind (mana effects)", () => {
   });
 
   it("gains max mana and current mana together", () => {
-    const state = createTestBattleState({ mana: 2, maxMana: 4 });
+    const state = makeTestBattleState({ mana: 2, maxMana: 4 });
     const texts = makeTexts();
     const effect = { kind: "gain-max-mana" as const, amount: 2 };
     const result = applyManaEffect(state, effect, 1, texts);
@@ -71,7 +67,7 @@ describe("applyEffectByKind (mana effects)", () => {
   });
 
   it("reduces max mana and clamps current mana to the new cap", () => {
-    const state = createTestBattleState({ mana: 4, maxMana: 4 });
+    const state = makeTestBattleState({ mana: 4, maxMana: 4 });
     const texts = makeTexts();
     const effect = { kind: "lose-max-mana" as const, amount: 2 };
     const result = applyManaEffect(state, effect, 1, texts);
@@ -81,7 +77,7 @@ describe("applyEffectByKind (mana effects)", () => {
   });
 
   it("does not drop max mana below MIN_MAX_MANA_FLOOR", () => {
-    const state = createTestBattleState({ mana: 1, maxMana: 1 });
+    const state = makeTestBattleState({ mana: 1, maxMana: 1 });
     const texts = makeTexts();
     const effect = { kind: "lose-max-mana" as const, amount: 5 };
     const result = applyManaEffect(state, effect, 1, texts);
@@ -90,11 +86,11 @@ describe("applyEffectByKind (mana effects)", () => {
   });
 
   it("burns enemy when losing max mana with burnDamageOnManaCrystalLoss talent", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       mana: 4,
       maxMana: 4,
       enemyHealth: 20,
-      talentEffects: { ...createTestBattleState().talentEffects, burnDamageOnManaCrystalLoss: 3 },
+      talentEffects: { ...makeTestBattleState().talentEffects, burnDamageOnManaCrystalLoss: 3 },
     });
     const texts = makeTexts();
     const effect = { kind: "lose-max-mana" as const, amount: 1 };

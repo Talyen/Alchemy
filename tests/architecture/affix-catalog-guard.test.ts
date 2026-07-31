@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GEAR_AFFIX_IDS } from "@/lib/gear/affix-ids";
-import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
+import { GEAR_AFFIX_IDS, gearAffixCatalog } from "@/lib/gear/affix-catalog";
 import { gearAffixNameParts } from "@/lib/gear/affix-name-parts";
 import { GEAR_EFFECT_KEYS } from "@/lib/gear/gear-effect-manifest";
 

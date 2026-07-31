@@ -1,8 +1,9 @@
 // App-level autosave wiring.
 // Depends on: saveAlchemySaveData (storage), isAnimationDisabled (game-constants).
 // Used by: App.tsx.
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { readHasActiveRun, resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useLatestRef } from "@/features/alchemy/shared/hooks";
 import { saveAlchemySaveData, subscribeAlchemyPersistence } from "@/features/alchemy/shared/storage";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
@@ -10,14 +11,8 @@ import type { Screen } from "@/lib/routing";
 
 // Persists the normalized App/controller snapshot whenever a saved field changes.
 export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: Screen | null = null) {
-  const enabledRef = useRef(enabled);
-  const runScreenOverrideRef = useRef(runScreenOverride);
-  useEffect(() => {
-    enabledRef.current = enabled;
-  }, [enabled]);
-  useEffect(() => {
-    runScreenOverrideRef.current = runScreenOverride;
-  }, [runScreenOverride]);
+  const enabledRef = useLatestRef(enabled);
+  const runScreenOverrideRef = useLatestRef(runScreenOverride);
 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
@@ -64,5 +59,5 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
       window.removeEventListener("beforeunload", handleBeforeUnload);
       flush();
     };
-  }, []);
+  }, [enabledRef, runScreenOverrideRef]);
 }

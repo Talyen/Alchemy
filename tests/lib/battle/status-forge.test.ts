@@ -1,19 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { addForgeToPlayer, applyStunForgeTalent } from "@/lib/battle/status-forge";
 import { applyPlayerStatusEffect } from "@/lib/battle/status-player";
-import type { CombatTextEvent } from "@/lib/battle/types";
-import { createTestBattleState } from "./test-state";
+import { makeCombatTexts as makeTexts, makeTestBattleState } from "../../fixtures/battle";
 import { defaultEnemyMitigation } from "../../fixtures/default-battle-state";
-
-function makeTexts(): CombatTextEvent[] {
-  return [];
-}
 
 describe("applyPlayerStatusEffect � forge integration", () => {
   it("applies forge burn burst when forge crosses threshold", () => {
-    const state = createTestBattleState({
-      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 },
-      talentEffects: { ...createTestBattleState().talentEffects, forgeBurnThreshold: 5, forgeBurnDamage: 4 },
+    const state = makeTestBattleState({
+      playerStatuses: { ...makeTestBattleState().playerStatuses, forge: 3 },
+      talentEffects: { ...makeTestBattleState().talentEffects, forgeBurnThreshold: 5, forgeBurnDamage: 4 },
     });
     const effect = { kind: "player-status" as const, status: "forge" as const, amount: 3 };
     const texts = makeTexts();
@@ -24,8 +19,8 @@ describe("applyPlayerStatusEffect � forge integration", () => {
   });
 
   it("flatForgeGained increases forge from card effects", () => {
-    const state = createTestBattleState({
-      talentEffects: { ...createTestBattleState().talentEffects, flatForgeGained: 1 },
+    const state = makeTestBattleState({
+      talentEffects: { ...makeTestBattleState().talentEffects, flatForgeGained: 1 },
     });
     const effect = { kind: "player-status" as const, status: "forge" as const, amount: 3 };
     const texts = makeTexts();
@@ -35,10 +30,10 @@ describe("applyPlayerStatusEffect � forge integration", () => {
   });
 
   it("strips enemy armor when forge crosses forgeStripArmorThreshold", () => {
-    const state = createTestBattleState({
-      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 5 },
+    const state = makeTestBattleState({
+      playerStatuses: { ...makeTestBattleState().playerStatuses, forge: 5 },
       enemyMitigation: defaultEnemyMitigation({ armor: 4 }),
-      talentEffects: { ...createTestBattleState().talentEffects, forgeStripArmorThreshold: 6 },
+      talentEffects: { ...makeTestBattleState().talentEffects, forgeStripArmorThreshold: 6 },
     });
     const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
     const result = applyPlayerStatusEffect(state, effect, []);
@@ -47,10 +42,10 @@ describe("applyPlayerStatusEffect � forge integration", () => {
   });
 
   it("forgeBlockBurst respects forgeToBlock synergy", () => {
-    const state = createTestBattleState({
-      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 5 },
+    const state = makeTestBattleState({
+      playerStatuses: { ...makeTestBattleState().playerStatuses, forge: 5 },
       talentEffects: {
-        ...createTestBattleState().talentEffects,
+        ...makeTestBattleState().talentEffects,
         forgeToBlock: true,
         forgeBlockThreshold: 6,
         forgeBlockAmount: 10,
@@ -65,9 +60,9 @@ describe("applyPlayerStatusEffect � forge integration", () => {
 
 describe("forge threshold boundaries", () => {
   it("forge burn burst fires on crossing threshold from below (3 -> 6, threshold 4)", () => {
-    const state = createTestBattleState({
-      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 },
-      talentEffects: { ...createTestBattleState().talentEffects, forgeBurnThreshold: 4, forgeBurnDamage: 7 },
+    const state = makeTestBattleState({
+      playerStatuses: { ...makeTestBattleState().playerStatuses, forge: 3 },
+      talentEffects: { ...makeTestBattleState().talentEffects, forgeBurnThreshold: 4, forgeBurnDamage: 7 },
     });
     const effect = { kind: "player-status" as const, status: "forge" as const, amount: 3 };
     const result = applyPlayerStatusEffect(state, effect, []);
@@ -76,9 +71,9 @@ describe("forge threshold boundaries", () => {
   });
 
   it("forge burn burst does NOT fire when oldForge exactly equals threshold (4 -> 7, threshold 4)", () => {
-    const state = createTestBattleState({
-      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 4 },
-      talentEffects: { ...createTestBattleState().talentEffects, forgeBurnThreshold: 4, forgeBurnDamage: 7 },
+    const state = makeTestBattleState({
+      playerStatuses: { ...makeTestBattleState().playerStatuses, forge: 4 },
+      talentEffects: { ...makeTestBattleState().talentEffects, forgeBurnThreshold: 4, forgeBurnDamage: 7 },
     });
     const effect = { kind: "player-status" as const, status: "forge" as const, amount: 3 };
     const result = applyPlayerStatusEffect(state, effect, []);
@@ -87,9 +82,9 @@ describe("forge threshold boundaries", () => {
   });
 
   it("forge block burst does NOT re-fire above threshold (7 -> 9, threshold 6)", () => {
-    const state = createTestBattleState({
-      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 7 },
-      talentEffects: { ...createTestBattleState().talentEffects, forgeBlockThreshold: 6, forgeBlockAmount: 10 },
+    const state = makeTestBattleState({
+      playerStatuses: { ...makeTestBattleState().playerStatuses, forge: 7 },
+      talentEffects: { ...makeTestBattleState().talentEffects, forgeBlockThreshold: 6, forgeBlockAmount: 10 },
     });
     const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
     const result = applyPlayerStatusEffect(state, effect, []);
@@ -100,8 +95,8 @@ describe("forge threshold boundaries", () => {
 
 describe("addForgeToPlayer", () => {
   it("adds flatForgeGained to forge gain", () => {
-    const state = createTestBattleState({
-      talentEffects: { ...createTestBattleState().talentEffects, flatForgeGained: 1 },
+    const state = makeTestBattleState({
+      talentEffects: { ...makeTestBattleState().talentEffects, flatForgeGained: 1 },
     });
     const texts = makeTexts();
     const result = addForgeToPlayer(state, 3, texts);
@@ -110,7 +105,7 @@ describe("addForgeToPlayer", () => {
   });
 
   it("does nothing when amount is zero after modifiers", () => {
-    const state = createTestBattleState();
+    const state = makeTestBattleState();
     const result = addForgeToPlayer(state, 0);
     expect(result).toBe(state);
   });
@@ -118,8 +113,8 @@ describe("addForgeToPlayer", () => {
 
 describe("applyStunForgeTalent", () => {
   it("grants forge when forgeOnStun is configured", () => {
-    const state = createTestBattleState({
-      talentEffects: { ...createTestBattleState().talentEffects, forgeOnStun: 2 },
+    const state = makeTestBattleState({
+      talentEffects: { ...makeTestBattleState().talentEffects, forgeOnStun: 2 },
     });
     const texts = makeTexts();
     const result = applyStunForgeTalent(state, texts);
@@ -127,7 +122,7 @@ describe("applyStunForgeTalent", () => {
   });
 
   it("no-ops when forgeOnStun is zero", () => {
-    const state = createTestBattleState();
+    const state = makeTestBattleState();
     expect(applyStunForgeTalent(state)).toBe(state);
   });
 });

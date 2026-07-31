@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyPlayerStatusFromAttack } from "@/lib/battle/status-application";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { createTestBattleState } from "./test-state";
+import { makeTestBattleState } from "../../fixtures/battle";
 import {
   defaultPlayerStatusValues,
   defaultTalentEffects,
@@ -16,7 +16,7 @@ describe("applyPlayerStatusFromAttack", () => {
       { status: "poison", expectedAmount: 5 },
       { status: "bleed", expectedAmount: 10 },
     ] as const)("applies $status status from enemy attack", ({ status, expectedAmount }) => {
-      const state = createTestBattleState();
+      const state = makeTestBattleState();
       const texts: CombatTextEvent[] = [];
       const effect = { kind: "player-status" as const, status, amount: 5 };
       const result = applyPlayerStatusFromAttack(state, effect, texts);
@@ -25,7 +25,7 @@ describe("applyPlayerStatusFromAttack", () => {
     });
 
     it("does not mutate original state", () => {
-      const state = createTestBattleState();
+      const state = makeTestBattleState();
       const texts: CombatTextEvent[] = [];
       applyPlayerStatusFromAttack(state, { kind: "player-status", status: "burn", amount: 3 }, texts);
       expect(state.playerStatuses.burn).toBe(0);
@@ -36,7 +36,7 @@ describe("applyPlayerStatusFromAttack", () => {
     it.each(["armor", "block", "forge", "haste"] as const)(
       "applies %s status from enemy attack with status combat text kind",
       (status) => {
-        const state = createTestBattleState();
+        const state = makeTestBattleState();
         const texts: CombatTextEvent[] = [];
         const effect = { kind: "player-status" as const, status, amount: 4 };
         const result = applyPlayerStatusFromAttack(state, effect, texts);
@@ -46,8 +46,8 @@ describe("applyPlayerStatusFromAttack", () => {
     );
 
     it("adds beneficial status to existing stack", () => {
-      const state = createTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, armor: 3 }),
+      const state = makeTestBattleState({
+        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, armor: 3 }),
       });
       const texts: CombatTextEvent[] = [];
       const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "armor", amount: 2 }, texts);
@@ -60,9 +60,9 @@ describe("applyPlayerStatusFromAttack", () => {
       { status: "bleed" as const, talentKey: "blockPreventsBleed" as const },
       { status: "poison" as const, talentKey: "blockPreventsPoison" as const },
     ] as const)("prevents $status when player has block and $talentKey talent", ({ status, talentKey }) => {
-      const state = createTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, block: 5 }),
-        talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, [talentKey]: true },
+      const state = makeTestBattleState({
+        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, block: 5 }),
+        talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, [talentKey]: true },
       });
       const texts: CombatTextEvent[] = [];
       const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status, amount: 4 }, texts);
@@ -74,9 +74,9 @@ describe("applyPlayerStatusFromAttack", () => {
       { status: "bleed" as const, talentKey: "blockPreventsBleed" as const },
       { status: "poison" as const, talentKey: "blockPreventsPoison" as const },
     ] as const)("does not block $status when talent is inactive even with block", ({ status, talentKey }) => {
-      const state = createTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, block: 5 }),
-        talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, [talentKey]: false },
+      const state = makeTestBattleState({
+        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, block: 5 }),
+        talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, [talentKey]: false },
       });
       const texts: CombatTextEvent[] = [];
       const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status, amount: 4 }, texts);
@@ -84,11 +84,11 @@ describe("applyPlayerStatusFromAttack", () => {
     });
 
     it("does not block burn even with block and talents", () => {
-      const state = createTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, block: 5 }),
+      const state = makeTestBattleState({
+        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, block: 5 }),
         talentEffects: {
           ...defaultTalentEffects,
-          ...createTestBattleState().talentEffects,
+          ...makeTestBattleState().talentEffects,
           blockPreventsBleed: true,
           blockPreventsPoison: true,
         },
@@ -101,9 +101,9 @@ describe("applyPlayerStatusFromAttack", () => {
 
   describe("plague doctor immunity boon", () => {
     it("prevents first harmful status application when boon is active", () => {
-      const state = createTestBattleState({
+      const state = makeTestBattleState({
         trinketEffects: defaultTrinketManifest({
-          ...createTestBattleState().trinketEffects,
+          ...makeTestBattleState().trinketEffects,
           plagueDoctorImmunity: true,
         }),
       });
@@ -114,13 +114,13 @@ describe("applyPlayerStatusFromAttack", () => {
     });
 
     it("allows second harmful status after first was already prevented", () => {
-      const state = createTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, poison: 2 }),
+      const state = makeTestBattleState({
+        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, poison: 2 }),
         trinketEffects: defaultTrinketManifest({
-          ...createTestBattleState().trinketEffects,
+          ...makeTestBattleState().trinketEffects,
           plagueDoctorImmunity: true,
         }),
-        flags: defaultCombatFlags({ ...createTestBattleState().flags, firstHarmfulStatusPrevented: true }),
+        flags: defaultCombatFlags({ ...makeTestBattleState().flags, firstHarmfulStatusPrevented: true }),
       });
       const texts: CombatTextEvent[] = [];
       const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "poison", amount: 3 }, texts);
@@ -128,9 +128,9 @@ describe("applyPlayerStatusFromAttack", () => {
     });
 
     it("does not prevent beneficial statuses", () => {
-      const state = createTestBattleState({
+      const state = makeTestBattleState({
         trinketEffects: defaultTrinketManifest({
-          ...createTestBattleState().trinketEffects,
+          ...makeTestBattleState().trinketEffects,
           plagueDoctorImmunity: true,
         }),
       });

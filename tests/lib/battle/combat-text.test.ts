@@ -3,12 +3,8 @@
 import { describe, expect, it } from "vitest";
 
 import { emitOverhealBlockText, mergeCombatText, shouldShowCombatText } from "@/lib/battle/combat-text";
-import type { CombatTextEvent } from "@/lib/battle/types";
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
-
-function makeTexts(): CombatTextEvent[] {
-  return [];
-}
+import { makeCombatTexts as makeTexts } from "../../fixtures/battle";
 
 describe("shouldShowCombatText", () => {
   it("hides harmful status application text", () => {

@@ -1,11 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { runHandDrawSequence, type HandDrawSequenceDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import { defaultBattleState } from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
-
-function makeCard(uid: number, id = "slash"): BattleCard {
-  return { id, title: id, descriptionLines: [""], art: "", cost: 1, effects: [], uid };
-}
+import { makeTestCardWithId } from "../../../../fixtures/battle";
 
 function makeDeps(overrides: Partial<HandDrawSequenceDeps> = {}): HandDrawSequenceDeps {
   return {
@@ -36,7 +32,7 @@ describe("runHandDrawSequence", () => {
     const applyState = vi.fn();
     const result = await runHandDrawSequence(
       [],
-      { ...defaultBattleState(), hand: [makeCard(1)] },
+      { ...defaultBattleState(), hand: [makeTestCardWithId("slash", { uid: 1 })] },
       applyState,
       1,
       makeDeps({ isSessionActive: () => false }),
@@ -46,7 +42,7 @@ describe("runHandDrawSequence", () => {
   });
 
   it("applies state without animation when no new cards are drawn", async () => {
-    const card = makeCard(1);
+    const card = makeTestCardWithId("slash", { uid: 1 });
     const applyState = vi.fn();
     const deps = makeDeps();
     const result = await runHandDrawSequence([card], { ...defaultBattleState(), hand: [card] }, applyState, 1, deps);
@@ -58,8 +54,8 @@ describe("runHandDrawSequence", () => {
   });
 
   it("hides new cards, applies state, animates, then clears hidden keys", async () => {
-    const oldHand = [makeCard(1)];
-    const newHand = [makeCard(1), makeCard(2, "block")];
+    const oldHand = [makeTestCardWithId("slash", { uid: 1 })];
+    const newHand = [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })];
     const applyState = vi.fn();
     const hiddenKeys: unknown[] = [];
     const deps = makeDeps({
@@ -79,8 +75,8 @@ describe("runHandDrawSequence", () => {
   });
 
   it("clears hidden keys even when the battle session ends mid-draw", async () => {
-    const oldHand = [makeCard(1)];
-    const newHand = [makeCard(1), makeCard(2, "block")];
+    const oldHand = [makeTestCardWithId("slash", { uid: 1 })];
+    const newHand = [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })];
     const applyState = vi.fn();
     const hiddenKeys: unknown[] = [];
     let sessionActive = true;

@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -24,4 +25,13 @@ describe("changelog sync guard", () => {
     },
     15_000,
   );
+
+  it("keeps the pre-push changelog guard non-mutating", () => {
+    const hook = readFileSync(join(ROOT, "scripts/sync-changelog-commit.mjs"), "utf8");
+    const syncModule = readFileSync(join(ROOT, "scripts/sync-changelog.mjs"), "utf8");
+    expect(hook).toContain("computeSyncedChangelog");
+    expect(hook).not.toContain("git add");
+    expect(hook).not.toContain("git commit");
+    expect(syncModule).toContain("isMainModule(import.meta.url)");
+  });
 });

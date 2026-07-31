@@ -7,16 +7,13 @@ import {
   getCombatTextIcon,
 } from "@/features/alchemy/shared/utils/battle";
 import { keywordIcons } from "@/features/alchemy/shared/config";
-import { enemyBestiary, type BattleCard } from "@/lib/game-data";
+import { enemyBestiary } from "@/lib/game-data";
+import { makeTestCard } from "../../../../fixtures/battle";
 
 const skeleton = enemyBestiary.find((enemy) => enemy.id === "skeleton")!;
 
-function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return { id: "test-card", title: "Test", descriptionLines: [""], art: "", cost: 1, effects: [], ...overrides };
-}
-
 function makeProductionBattleState() {
-  return createBattleState({ runDeck: [makeCard()], currentEnemy: skeleton });
+  return createBattleState({ runDeck: [makeTestCard()], currentEnemy: skeleton });
 }
 
 describe("getPlayerStatusChips", () => {

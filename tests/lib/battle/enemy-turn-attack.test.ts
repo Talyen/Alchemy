@@ -1,19 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
-import type { CombatTextEvent } from "@/lib/battle/types";
 import { BATTLE_CONFIG } from "@/lib/game-constants";
-import { createTestBattleState } from "./test-state";
+import { makeCombatTexts as makeTexts, makeTestBattleState } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
-
-function makeTexts(): CombatTextEvent[] {
-  return [];
-}
 
 describe("processEnemyAttack", () => {
   it("player block absorbs before health", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 10, armor: 0 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -22,10 +17,10 @@ describe("processEnemyAttack", () => {
   });
 
   it("applies enemy forge bonus to physical damage", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
-      enemyMitigation: { ...createTestBattleState().enemyMitigation, forge: 3 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 3 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -33,9 +28,9 @@ describe("processEnemyAttack", () => {
   });
 
   it("applies burn status rider on burn damage dealt", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "burn", amount: 4 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -44,9 +39,9 @@ describe("processEnemyAttack", () => {
   });
 
   it("triggers Death's Door fields when attack is lethal", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 5,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       deathsDoorUsed: false,
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
       turn: 3,
@@ -59,9 +54,9 @@ describe("processEnemyAttack", () => {
   });
 
   it("player armor reduces physical damage before health", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 3 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 3 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -69,10 +64,10 @@ describe("processEnemyAttack", () => {
   });
 
   it("halves holy damage when receiveHalfHolyDamage talent is active", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
-      talentEffects: { ...createTestBattleState().talentEffects, receiveHalfHolyDamage: true },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      talentEffects: { ...makeTestBattleState().talentEffects, receiveHalfHolyDamage: true },
       enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 10 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -80,10 +75,10 @@ describe("processEnemyAttack", () => {
   });
 
   it("halves freeze damage and buildup when receiveHalfFreezeBuildUp talent is active", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
-      talentEffects: { ...createTestBattleState().talentEffects, receiveHalfFreezeBuildUp: true },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      talentEffects: { ...makeTestBattleState().talentEffects, receiveHalfFreezeBuildUp: true },
       enemyAttackEffects: [{ kind: "damage", damageType: "freeze", amount: 10 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -92,10 +87,10 @@ describe("processEnemyAttack", () => {
   });
 
   it("adds enemy burnBonus to burn damage", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0 },
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, burnBonus: 2 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0 },
+      enemyStatuses: { ...makeTestBattleState().enemyStatuses, burnBonus: 2 },
       enemyAttackEffects: [{ kind: "damage", damageType: "burn", amount: 4 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -103,10 +98,10 @@ describe("processEnemyAttack", () => {
   });
 
   it("adds enemy freezeBonus to freeze damage and buildup", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0 },
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, freezeBonus: 2 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0 },
+      enemyStatuses: { ...makeTestBattleState().enemyStatuses, freezeBonus: 2 },
       enemyAttackEffects: [{ kind: "damage", damageType: "freeze", amount: 4 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -115,11 +110,11 @@ describe("processEnemyAttack", () => {
   });
 
   it("reduces incoming damage when enemy is poisoned and poisonReducesEnemyDamage is active", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, poison: 3 },
-      talentEffects: { ...createTestBattleState().talentEffects, poisonReducesEnemyDamage: 2 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      enemyStatuses: { ...makeTestBattleState().enemyStatuses, poison: 3 },
+      talentEffects: { ...makeTestBattleState().talentEffects, poisonReducesEnemyDamage: 2 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 7 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -127,10 +122,10 @@ describe("processEnemyAttack", () => {
   });
 
   it("increases block absorption for physical hits with blockAbsorbPhysicalBonus", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 10, armor: 0 },
-      talentEffects: { ...createTestBattleState().talentEffects, blockAbsorbPhysicalBonus: 20 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 0 },
+      talentEffects: { ...makeTestBattleState().talentEffects, blockAbsorbPhysicalBonus: 20 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 11 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -139,9 +134,9 @@ describe("processEnemyAttack", () => {
   });
 
   it("decays player armor when health damage is taken", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 3 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 3 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -149,10 +144,10 @@ describe("processEnemyAttack", () => {
   });
 
   it("grants block when armor breaks with armorBreakBlock talent", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 1 },
-      talentEffects: { ...createTestBattleState().talentEffects, armorBreakBlock: 5 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 1 },
+      talentEffects: { ...makeTestBattleState().talentEffects, armorBreakBlock: 5 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
     });
     const texts = makeTexts();
@@ -163,10 +158,10 @@ describe("processEnemyAttack", () => {
   });
 
   it("decays enemy forge after dealing physical health damage", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
-      enemyMitigation: { ...createTestBattleState().enemyMitigation, forge: 3 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 3 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 4 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -174,9 +169,9 @@ describe("processEnemyAttack", () => {
   });
 
   it("heals enemy for half damage on lifesteal attacks", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }],
@@ -188,12 +183,12 @@ describe("processEnemyAttack", () => {
   });
 
   it("does not heal enemy on lifesteal when blockEnemyLeech talent is active", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       enemyHealth: 20,
       enemyMaxHealth: 30,
-      talentEffects: { ...createTestBattleState().talentEffects, blockEnemyLeech: true },
+      talentEffects: { ...makeTestBattleState().talentEffects, blockEnemyLeech: true },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -201,13 +196,13 @@ describe("processEnemyAttack", () => {
   });
 
   it("does not heal enemy on lifesteal when freeze blocks regen", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
-      talentEffects: { ...createTestBattleState().talentEffects, freezeBlocksRegen: true },
+      talentEffects: { ...makeTestBattleState().talentEffects, freezeBlocksRegen: true },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -215,7 +210,7 @@ describe("processEnemyAttack", () => {
   });
 
   it("applies player-status attack effects", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       enemyAttackEffects: [{ kind: "player-status", status: "poison", amount: 2 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -223,9 +218,9 @@ describe("processEnemyAttack", () => {
   });
 
   it("armor reduces direct stun status attacks by default", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 3 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 3 },
       enemyAttackEffects: [{ kind: "player-status", status: "stun", amount: 5 }],
     });
     const texts = makeTexts();
@@ -236,10 +231,10 @@ describe("processEnemyAttack", () => {
   });
 
   it("immediately triggers player stun when incoming buildup reaches threshold", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "stun", amount: 20 }],
     });
     const texts = makeTexts();
@@ -250,10 +245,10 @@ describe("processEnemyAttack", () => {
   });
 
   it("immediately triggers player freeze when incoming buildup reaches threshold", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "freeze", amount: 20 }],
     });
     const texts = makeTexts();
@@ -264,10 +259,10 @@ describe("processEnemyAttack", () => {
   });
 
   it("grants forge from vanguard crest when block fully absorbs the attack", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 10, armor: 0 },
-      trinketEffects: { ...createTestBattleState().trinketEffects, vanguardCrestForgeOnBlockAbsorb: 2 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 0 },
+      trinketEffects: { ...makeTestBattleState().trinketEffects, vanguardCrestForgeOnBlockAbsorb: 2 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
     const texts = makeTexts();
@@ -278,10 +273,10 @@ describe("processEnemyAttack", () => {
   });
 
   it("heals player when block is depleted with blockDepletedHeal talent", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 20,
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 2, armor: 0 },
-      talentEffects: { ...createTestBattleState().talentEffects, blockDepletedHeal: 3 },
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 2, armor: 0 },
+      talentEffects: { ...makeTestBattleState().talentEffects, blockDepletedHeal: 3 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -289,11 +284,11 @@ describe("processEnemyAttack", () => {
   });
 
   it("consumes phoenix feather and resurrects player when attack is lethal", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       playerHealth: 5,
       playerMaxHealth: 30,
       playerStatuses: {
-        ...createTestBattleState().playerStatuses,
+        ...makeTestBattleState().playerStatuses,
         block: 0,
         armor: 0,
         phoenixFeather: 1,

@@ -2,11 +2,13 @@
 // Mode slots (remove / mix / reveal) stay as children outside ShopBrowseOfferings.
 import type { ReactNode } from "react";
 
+import { RefreshCw } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 
-import { GoldDisplay, ScreenHeader, StaggerGroup } from "../../shared/ui/shared-ui";
+import { GoldDisplay, ScreenHeader, ServiceButton, StaggerGroup } from "../../shared/ui/shared-ui";
 
 export function ShopBrowseShell({
   title,
@@ -51,5 +53,32 @@ export function ShopBrowseOfferings({
         Leave
       </Button>
     </StaggerGroup>
+  );
+}
+
+export function RefreshShopServiceButton({
+  gold,
+  refreshesLeft,
+  refreshPrice,
+  onRefresh,
+  label = "Refresh",
+}: {
+  gold: number;
+  refreshesLeft: number;
+  refreshPrice: number;
+  onRefresh: () => void;
+  label?: string;
+}) {
+  return (
+    <ServiceButton
+      icon={RefreshCw}
+      label={label}
+      cost={refreshPrice}
+      disabled={refreshesLeft <= 0 || gold < refreshPrice}
+      disabledMessage="Not Enough Gold"
+      used={refreshesLeft <= 0}
+      soldOutText={`${label} — Sold Out`}
+      onClick={onRefresh}
+    />
   );
 }

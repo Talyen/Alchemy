@@ -1,13 +1,11 @@
 // Shop gear tile with buy button and sold-out state.
 import { gearDefinitions, getGearInstanceTitle, type GearInstance } from "@/lib/gear";
 import { cn } from "@/lib/utils";
-
 import { cardSurfaceClass, collectionTileWidthClass } from "../config";
 import { GearDetailPopup } from "./gear-detail-popup";
 import { gearInstanceAspectClass } from "./gear-aspect";
+import { InteractiveArtTile } from "./interactive-art-tile";
 import { PurchasableShopTile } from "./purchasable-shop-tile";
-import { TiltSurface } from "./tilt-surface";
-import { useInteractiveCard } from "./use-interactive-card";
 
 interface PurchasableGearItemProps {
   instance: GearInstance;
@@ -29,36 +27,17 @@ export function PurchasableGearItem({
   const definition = gearDefinitions[instance.definitionId];
   const title = getGearInstanceTitle(instance);
   const art = definition?.art ?? "";
-  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
-    "shop",
-    instance.instanceId,
-  );
-
-  const media = purchased ? (
-    <TiltSurface
-      as="div"
-      className={cn(cardSurfaceClass, collectionTileWidthClass, "group", gearInstanceAspectClass(definition))}
-      shimmerActive={false}
-      shimmerToken={undefined}
-      selected={false}
-      ariaLabel={title}
-    >
-      <img src={art} alt={title} className="absolute inset-0 h-full w-full rounded-shell-hero object-cover" />
-    </TiltSurface>
-  ) : (
-    <div onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
-      {isHovered ? <GearDetailPopup definition={definition} instance={instance} /> : null}
-      <TiltSurface
-        as="div"
-        className={cn(cardSurfaceClass, collectionTileWidthClass, "group", gearInstanceAspectClass(definition))}
-        shimmerActive={shimmerActive}
-        shimmerToken={shimmerToken}
-        selected={false}
-        ariaLabel={title}
-      >
-        <img src={art} alt={title} className="absolute inset-0 h-full w-full rounded-shell-hero object-cover" />
-      </TiltSurface>
-    </div>
+  const media = (
+    <InteractiveArtTile
+      id={instance.instanceId}
+      interactionKey="shop"
+      title={title}
+      art={art}
+      className={cn(cardSurfaceClass, collectionTileWidthClass, gearInstanceAspectClass(definition))}
+      imageClassName="absolute inset-0 h-full w-full rounded-shell-hero object-cover"
+      interactive={!purchased}
+      popup={<GearDetailPopup definition={definition} instance={instance} />}
+    />
   );
 
   return (

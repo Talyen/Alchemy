@@ -4,40 +4,40 @@ import {
   getEnemyDamageMultiplier,
   removeHarmfulPlayerStatuses,
 } from "@/lib/battle/status-effects";
-import { createTestBattleState } from "./test-state";
+import { makeTestBattleState } from "../../fixtures/battle";
 import { defaultPlayerStatusValues, defaultTalentEffects, defaultCcState } from "../../fixtures/default-battle-state";
 
 describe("getEnemyDamageMultiplier", () => {
   it("returns 1 when no multipliers apply", () => {
-    const state = createTestBattleState();
+    const state = makeTestBattleState();
     const result = getEnemyDamageMultiplier(state, "physical");
     expect(result).toBe(1);
   });
 
   it("returns TRAIT_DAMAGE_WEAKNESS when stunDoubleDamage is active and enemy is stunned", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       enemyCC: defaultCcState({ stunSkipTurns: 1 }),
-      talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, stunDoubleDamage: true },
+      talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, stunDoubleDamage: true },
     });
     const result = getEnemyDamageMultiplier(state, "physical");
     expect(result).toBe(2);
   });
 
   it("returns TRAIT_DAMAGE_WEAKNESS when freezeDoubleDamage is active and enemy is frozen", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
-      talentEffects: { ...defaultTalentEffects, ...createTestBattleState().talentEffects, freezeDoubleDamage: true },
+      talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, freezeDoubleDamage: true },
     });
     const result = getEnemyDamageMultiplier(state, "physical");
     expect(result).toBe(2);
   });
 
   it("returns 4x when both stun and freeze double damage are active", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       enemyCC: defaultCcState({ stunSkipTurns: 1, freezeSkipTurns: 1 }),
       talentEffects: {
         ...defaultTalentEffects,
-        ...createTestBattleState().talentEffects,
+        ...makeTestBattleState().talentEffects,
         stunDoubleDamage: true,
         freezeDoubleDamage: true,
       },
@@ -47,11 +47,11 @@ describe("getEnemyDamageMultiplier", () => {
   });
 
   it("trait weakness takes priority over stun/freeze multipliers", () => {
-    const state = createTestBattleState({
+    const state = makeTestBattleState({
       enemyCC: defaultCcState({ stunSkipTurns: 1, freezeSkipTurns: 1 }),
       talentEffects: {
         ...defaultTalentEffects,
-        ...createTestBattleState().talentEffects,
+        ...makeTestBattleState().talentEffects,
         stunDoubleDamage: true,
         freezeDoubleDamage: true,
       },
@@ -73,24 +73,24 @@ describe("getEnemyDamageMultiplier", () => {
 
 describe("status-effects re-exports", () => {
   it("applyPlayerDamageStatuses adds burn stacks from enemy burn damage", () => {
-    const state = createTestBattleState({
-      playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, burn: 1 }),
+    const state = makeTestBattleState({
+      playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, burn: 1 }),
     });
     const result = applyPlayerDamageStatuses(state, { damageType: "burn" }, 4);
     expect(result.playerStatuses.burn).toBe(5);
   });
 
   it("applyPlayerDamageStatuses is a no-op at zero damage", () => {
-    const state = createTestBattleState({
-      playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, poison: 2 }),
+    const state = makeTestBattleState({
+      playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, poison: 2 }),
     });
     const result = applyPlayerDamageStatuses(state, { damageType: "poison" }, 0);
     expect(result).toBe(state);
   });
 
   it("removeHarmfulPlayerStatuses clears highest-priority harmful stacks", () => {
-    const state = createTestBattleState({
-      playerStatuses: defaultPlayerStatusValues({ ...createTestBattleState().playerStatuses, burn: 3, bleed: 2 }),
+    const state = makeTestBattleState({
+      playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, burn: 3, bleed: 2 }),
     });
     const result = removeHarmfulPlayerStatuses(state, 1);
     expect(result.playerStatuses.burn).toBe(0);

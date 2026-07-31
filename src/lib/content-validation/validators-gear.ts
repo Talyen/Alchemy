@@ -13,12 +13,13 @@ import { GearDefinitionContentSchema, GearAffixContentSchema } from "./schemas";
 import { addDuplicateIssues, collectSchemaIssues, validateArt } from "./utils";
 import type { createCollector } from "./utils";
 
-const gearAffixIdSet = new Set<string>(GEAR_AFFIX_IDS);
-
 function validateGearAffixIds(collector: ReturnType<typeof createCollector>): void {
   const affixIds = Object.keys(gearAffixCatalog);
   if (GEAR_AFFIX_IDS.length !== new Set(GEAR_AFFIX_IDS).size) {
     collector.error("gear", "GEAR_AFFIX_IDS", "Gear affix id list contains duplicates");
+  }
+  if (GEAR_AFFIX_IDS.length !== affixIds.length) {
+    collector.error("gear", "gearAffixCatalog", "Gear affix catalog has a missing or duplicate row");
   }
   if (GEAR_EFFECT_KEYS.length !== new Set(GEAR_EFFECT_KEYS).size) {
     collector.error("gear", "GEAR_EFFECT_KEYS", "Gear effect key list contains duplicates");
@@ -26,9 +27,6 @@ function validateGearAffixIds(collector: ReturnType<typeof createCollector>): vo
   for (const id of GEAR_AFFIX_IDS) {
     if (!(gearAffixCatalog as Record<string, unknown>)[id])
       collector.error("gear", id, "Affix id is missing from gearAffixCatalog");
-  }
-  for (const id of affixIds) {
-    if (!gearAffixIdSet.has(id)) collector.error("gear", id, "Affix catalog entry is missing from GEAR_AFFIX_IDS");
   }
 }
 

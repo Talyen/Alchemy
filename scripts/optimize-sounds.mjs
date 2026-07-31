@@ -8,9 +8,8 @@ import { promisify } from "node:util";
 // on system installation. We use it to normalize volume and convert WAVs to OGG.
 import ffmpegPath from "ffmpeg-static";
 
-import { isOutputFresh, loadManifest, resolveSourceHash, writeManifestIfChanged } from "./lib/asset-manifest-cache.mjs";
+import { isOutputFresh, processManifestEntries, resolveSourceHash } from "./lib/asset-manifest-cache.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { mapPool } from "./lib/map-pool.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -155,33 +154,17 @@ export async function optimizeSounds() {
 
   await mkdir(outputDir, { recursive: true });
 
-  const previousManifest = await loadManifest(manifestPath);
-
-  const results = await mapPool(sounds, TRANSFORM_CONCURRENCY, async (sound) => {
-    try {
-      const { message, entry } = await optimizeSound(sound, previousManifest[sound.target]);
-      return { sound, message, entry, failed: false };
-    } catch (error) {
+  const { results, failed } = await processManifestEntries({
+    entries: sounds,
+    manifestPath,
+    concurrency: TRANSFORM_CONCURRENCY,
+    processEntry: optimizeSound,
+    handleError: (sound, error) => {
       const detail = error instanceof Error ? error.message : String(error);
       console.error(`FAILED ${sound.target}: ${detail}`);
-      return { sound, message: `FAILED ${sound.target}: ${detail}`, entry: null, failed: true };
-    }
+      return { message: `FAILED ${sound.target}: ${detail}`, entry: null };
+    },
   });
-
-  /** @type {Record<string, import("./lib/asset-manifest-cache.mjs").ManifestEntry>} */
-  const nextManifest = {};
-  let failed = false;
-  for (const result of results) {
-    if (result.failed) {
-      failed = true;
-      continue;
-    }
-    if (result.entry) {
-      nextManifest[result.sound.target] = result.entry;
-    }
-  }
-
-  await writeManifestIfChanged(manifestPath, nextManifest);
 
   console.log(`Processed ${results.length} sounds.`);
   if (failed) {

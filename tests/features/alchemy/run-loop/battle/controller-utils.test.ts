@@ -5,11 +5,7 @@ import {
   getCardTransferBatchSpeed,
 } from "@/features/alchemy/run-loop/battle/controller-utils";
 import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
-import type { BattleCard } from "@/lib/game-data";
-
-function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [], uid: 1, ...overrides };
-}
+import { makeTestCardWithId } from "../../../../fixtures/battle";
 
 describe("getCardTransferBatchSpeed", () => {
   it("uses small, medium, and large multipliers by hand size", () => {
@@ -22,7 +18,7 @@ describe("getCardTransferBatchSpeed", () => {
 
 describe("getCardKey", () => {
   it("combines card id and uid", () => {
-    expect(getCardKey(makeCard({ id: "block", uid: 7 }))).toBe("block-7");
+    expect(getCardKey(makeTestCardWithId("block", { uid: 7 }))).toBe("block-7");
   });
 });
 

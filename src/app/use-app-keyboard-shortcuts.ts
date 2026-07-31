@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
+import { useLatestRef } from "@/features/alchemy/shared/hooks";
 import type { Screen } from "@/lib/routing";
 
 /** True when a Radix dismissible (Select/Dropdown/Popover) should receive Escape first. */
@@ -27,15 +28,8 @@ export function useAppKeyboardShortcuts({
   setMenuAnchorRect: (rect: DOMRect | null | ((prev: DOMRect | null) => DOMRect | null)) => void;
   setGameMenuOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
 }) {
-  const gameMenuOpenRef = useRef(gameMenuOpen);
-  const renderedScreenRef = useRef(renderedScreen);
-
-  useEffect(() => {
-    gameMenuOpenRef.current = gameMenuOpen;
-  }, [gameMenuOpen]);
-  useEffect(() => {
-    renderedScreenRef.current = renderedScreen;
-  }, [renderedScreen]);
+  const gameMenuOpenRef = useLatestRef(gameMenuOpen);
+  const renderedScreenRef = useLatestRef(renderedScreen);
 
   useEffect(() => {
     return pushEscapeHandler({
@@ -50,5 +44,5 @@ export function useAppKeyboardShortcuts({
         return;
       },
     });
-  }, [setMenuAnchorRect, setGameMenuOpen]);
+  }, [gameMenuOpenRef, renderedScreenRef, setMenuAnchorRect, setGameMenuOpen]);
 }

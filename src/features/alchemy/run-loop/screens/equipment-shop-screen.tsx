@@ -1,11 +1,8 @@
 // Equipment Shop — buy gear or refresh offerings.
-import { RefreshCw } from "lucide-react";
-
 import type { GearInstance } from "@/lib/gear";
 
 import { PurchasableGearItem } from "../../shared/ui/purchasable-gear-item";
-import { ServiceButton } from "../../shared/ui/shared-ui";
-import { ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
+import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
 
 export function EquipmentShopScreen({
   gold,
@@ -28,26 +25,17 @@ export function EquipmentShopScreen({
   onRefresh: () => void;
   onContinue: () => void;
 }) {
-  function handleBuy(instance: GearInstance) {
-    if (purchasedSlotKeys.includes(instance.instanceId)) return;
-    onBuyGear(instance);
-  }
-
   return (
     <ShopBrowseShell title="Equipment Shop" gold={gold}>
       <ShopBrowseOfferings
         swapKey={gear.map((g) => g.instanceId).join("-")}
         onLeave={onContinue}
         services={
-          <ServiceButton
-            icon={RefreshCw}
-            label="Refresh"
-            cost={refreshPrice}
-            disabled={refreshesLeft <= 0 || gold < refreshPrice}
-            disabledMessage="Not Enough Gold"
-            used={refreshesLeft <= 0}
-            soldOutText="Refresh — Sold Out"
-            onClick={onRefresh}
+          <RefreshShopServiceButton
+            gold={gold}
+            refreshesLeft={refreshesLeft}
+            refreshPrice={refreshPrice}
+            onRefresh={onRefresh}
           />
         }
       >
@@ -58,7 +46,7 @@ export function EquipmentShopScreen({
             price={getGearPrice(instance)}
             gold={gold}
             purchased={purchasedSlotKeys.includes(instance.instanceId)}
-            onBuy={() => handleBuy(instance)}
+            onBuy={() => onBuyGear(instance)}
             staggerIndex={i}
           />
         ))}

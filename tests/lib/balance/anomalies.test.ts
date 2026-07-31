@@ -7,7 +7,7 @@ import {
   sampleAnomalies,
 } from "@/lib/balance/anomalies";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { createTestBattleState } from "../battle/test-state";
+import { makeTestBattleState } from "../../fixtures/battle";
 
 describe("getAnomalyThreshold", () => {
   it("returns tiered thresholds", () => {
@@ -29,8 +29,8 @@ describe("createEmptyAnomalies", () => {
 describe("sampleAnomalies", () => {
   it("records status peaks from battle state", () => {
     const anomalies = createEmptyAnomalies();
-    const state = createTestBattleState({
-      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 50 },
+    const state = makeTestBattleState({
+      playerStatuses: { ...makeTestBattleState().playerStatuses, burn: 50 },
     });
     sampleAnomalies(state, [], anomalies);
     expect(anomalies.maxPlayerBurn).toBe(50);
@@ -39,8 +39,8 @@ describe("sampleAnomalies", () => {
   it("never lowers an existing peak", () => {
     const anomalies = createEmptyAnomalies();
     anomalies.maxPlayerBurn = 50;
-    const state = createTestBattleState({
-      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 10 },
+    const state = makeTestBattleState({
+      playerStatuses: { ...makeTestBattleState().playerStatuses, burn: 10 },
     });
     sampleAnomalies(state, [], anomalies);
     expect(anomalies.maxPlayerBurn).toBe(50);
@@ -48,7 +48,7 @@ describe("sampleAnomalies", () => {
 
   it("records single-hit damage and heal from combat text", () => {
     const anomalies = createEmptyAnomalies();
-    const state = createTestBattleState();
+    const state = makeTestBattleState();
     const texts: CombatTextEvent[] = [
       { target: "enemy", kind: "damage", stat: "physical", amount: 99 },
       { target: "player", kind: "heal", stat: "health", amount: 12 },
@@ -61,7 +61,7 @@ describe("sampleAnomalies", () => {
 
   it("records damage stat for the true peak hit to the enemy", () => {
     const anomalies = createEmptyAnomalies();
-    const state = createTestBattleState();
+    const state = makeTestBattleState();
     sampleAnomalies(state, [{ target: "enemy", kind: "damage", stat: "burn", amount: 40 }], anomalies);
     sampleAnomalies(state, [{ target: "enemy", kind: "damage", stat: "physical", amount: 25 }], anomalies);
     expect(anomalies.maxSingleHitDamageToEnemy).toBe(40);
@@ -70,7 +70,7 @@ describe("sampleAnomalies", () => {
 
   it("ignores notice combat text", () => {
     const anomalies = createEmptyAnomalies();
-    const state = createTestBattleState();
+    const state = makeTestBattleState();
     const texts: CombatTextEvent[] = [{ target: "enemy", kind: "notice", stat: "physical", text: "Immune" }];
     sampleAnomalies(state, texts, anomalies);
     expect(anomalies.maxSingleHitDamageToEnemy).toBe(0);
@@ -80,15 +80,15 @@ describe("sampleAnomalies", () => {
   it("monotonically increases peaks across multiple samples", () => {
     const anomalies = createEmptyAnomalies();
     sampleAnomalies(
-      createTestBattleState({
-        enemyStatuses: { ...createTestBattleState().enemyStatuses, poison: 4 },
+      makeTestBattleState({
+        enemyStatuses: { ...makeTestBattleState().enemyStatuses, poison: 4 },
       }),
       [{ target: "enemy", kind: "damage", stat: "physical", amount: 10 }],
       anomalies,
     );
     sampleAnomalies(
-      createTestBattleState({
-        enemyStatuses: { ...createTestBattleState().enemyStatuses, poison: 9 },
+      makeTestBattleState({
+        enemyStatuses: { ...makeTestBattleState().enemyStatuses, poison: 9 },
       }),
       [{ target: "enemy", kind: "damage", stat: "physical", amount: 25 }],
       anomalies,

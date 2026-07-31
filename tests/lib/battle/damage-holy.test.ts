@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
 import type { BattleCardEffect } from "@/lib/game-data";
-import { patchBattleState } from "./test-state";
+import { patchBattleState } from "../../fixtures/battle";
 import {
   defaultPlayerStatusValues,
   defaultEnemyStatusValues,

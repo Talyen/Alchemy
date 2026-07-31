@@ -1,22 +1,11 @@
 import type { KeywordId } from "@/lib/game-data";
-import type { GearAffixId } from "./affix-ids";
 import type { GearEffectManifest } from "./gear-effect-manifest";
 import type { GearRarity } from "./types";
 
 export type GearAffixAspect = "offensive" | "defensive";
 
-export interface GearAffixDefinition {
-  id: GearAffixId;
-  aspect: GearAffixAspect;
-  keywordId: KeywordId;
-  secondaryKeywordId?: KeywordId;
-  descriptionTemplate: string;
-  effectKey: keyof GearEffectManifest;
-  roll: Record<GearRarity, { min: number; max: number }>;
-}
-
 interface AffixRow {
-  id: GearAffixId;
+  id: string;
   aspect: GearAffixAspect;
   keywordId: KeywordId;
   secondaryKeywordId?: KeywordId;
@@ -26,7 +15,7 @@ interface AffixRow {
   astral: { min: number; max: number };
 }
 
-const affixRows: readonly AffixRow[] = [
+const affixRows = [
   {
     id: "flat-physical",
     aspect: "offensive",
@@ -630,7 +619,22 @@ const affixRows: readonly AffixRow[] = [
     astral: { min: 3, max: 4 },
     secondaryKeywordId: "stun",
   },
-];
+] as const satisfies readonly AffixRow[];
+
+export type GearAffixId = (typeof affixRows)[number]["id"];
+
+/** Runtime tuple used by Zod schemas; derived from the catalog rows above. */
+export const GEAR_AFFIX_IDS = affixRows.map((row) => row.id) as [GearAffixId, ...GearAffixId[]];
+
+export interface GearAffixDefinition {
+  id: GearAffixId;
+  aspect: GearAffixAspect;
+  keywordId: KeywordId;
+  secondaryKeywordId?: KeywordId;
+  descriptionTemplate: string;
+  effectKey: keyof GearEffectManifest;
+  roll: Record<GearRarity, { min: number; max: number }>;
+}
 
 export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = Object.fromEntries(
   affixRows.map((row) => [
@@ -639,7 +643,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = Object
       id: row.id,
       aspect: row.aspect,
       keywordId: row.keywordId,
-      ...(row.secondaryKeywordId !== undefined ? { secondaryKeywordId: row.secondaryKeywordId } : {}),
+      ...("secondaryKeywordId" in row ? { secondaryKeywordId: row.secondaryKeywordId } : {}),
       descriptionTemplate: row.descriptionTemplate,
       effectKey: row.effectKey,
       roll: { basic: row.basic, astral: row.astral },

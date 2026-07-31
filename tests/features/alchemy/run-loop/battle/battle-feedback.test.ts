@@ -8,7 +8,6 @@ import {
   shouldShakePlayerFromCombatTexts,
 } from "@/features/alchemy/run-loop/battle/battle-feedback";
 import type { BattleState } from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
 import { defaultTalentEffects } from "@/lib/battle";
 import { defaultTrinketEffects } from "@/lib/trinkets";
 import {
@@ -18,6 +17,7 @@ import {
   defaultEnemyMitigation,
   defaultCombatFlags,
 } from "../../../../fixtures/default-battle-state";
+import { makeTestCard } from "../../../../fixtures/battle";
 
 function makeState(): BattleState {
   return {
@@ -76,17 +76,13 @@ function makeState(): BattleState {
   };
 }
 
-function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return { id: "test-card", title: "Test", descriptionLines: [""], art: "", cost: 1, effects: [], ...overrides };
-}
-
 describe("shouldPlayCardGoldGain", () => {
   it("returns true when gold increased and card is not steal", () => {
     const prev = makeState();
     prev.gold = 5;
     const next = makeState();
     next.gold = 8;
-    expect(shouldPlayCardGoldGain(prev, next, makeCard({ id: "strike" }))).toBe(true);
+    expect(shouldPlayCardGoldGain(prev, next, makeTestCard({ id: "strike" }))).toBe(true);
   });
 
   it("returns false when gold unchanged", () => {
@@ -94,7 +90,7 @@ describe("shouldPlayCardGoldGain", () => {
     prev.gold = 5;
     const next = makeState();
     next.gold = 5;
-    expect(shouldPlayCardGoldGain(prev, next, makeCard())).toBe(false);
+    expect(shouldPlayCardGoldGain(prev, next, makeTestCard())).toBe(false);
   });
 
   it("returns false when gold decreased", () => {
@@ -102,7 +98,7 @@ describe("shouldPlayCardGoldGain", () => {
     prev.gold = 10;
     const next = makeState();
     next.gold = 5;
-    expect(shouldPlayCardGoldGain(prev, next, makeCard())).toBe(false);
+    expect(shouldPlayCardGoldGain(prev, next, makeTestCard())).toBe(false);
   });
 
   it("returns false for steal card even if gold increased", () => {
@@ -110,7 +106,7 @@ describe("shouldPlayCardGoldGain", () => {
     prev.gold = 0;
     const next = makeState();
     next.gold = 10;
-    expect(shouldPlayCardGoldGain(prev, next, makeCard({ id: "steal" }))).toBe(false);
+    expect(shouldPlayCardGoldGain(prev, next, makeTestCard({ id: "steal" }))).toBe(false);
   });
 });
 

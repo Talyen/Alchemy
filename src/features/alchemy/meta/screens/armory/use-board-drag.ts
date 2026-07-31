@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { playUISound } from "@/lib/audio";
+import { useLatestRef } from "../../../shared/hooks";
 import type { DragDestination, DragPoint, DragRect } from "./drag-types";
 import { DOUBLE_CLICK_FLYOVER_CLEAR_DELAY_MS, DRAG_POINTER_ACTIVATE_DISTANCE_PX } from "./drag-constants";
 import {
@@ -45,10 +46,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
   const pendingCommitRef = useRef<(() => void) | null>(null);
   const heldCleanupRef = useRef<(() => void) | null>(null);
   const beginHeldRef = useRef<(item: TItem, source: DragRect) => void>(() => {});
-  const boardObstaclesRef = useRef(boardObstacles);
-  useEffect(() => {
-    boardObstaclesRef.current = boardObstacles;
-  }, [boardObstacles]);
+  const boardObstaclesRef = useLatestRef(boardObstacles);
   useEffect(
     () => () => {
       if (cleanupTimerRef.current !== null) {
@@ -72,7 +70,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
         draggedInstanceId: id,
       });
     },
-    [getFootprint, inventoryBoardRef, itemLookup, occupiedRows],
+    [boardObstaclesRef, getFootprint, inventoryBoardRef, itemLookup, occupiedRows],
   );
   const getDragDestination = useCallback(
     (id: TId, freeRect: DragRect, pointer: DragPoint): DragDestination | null => {

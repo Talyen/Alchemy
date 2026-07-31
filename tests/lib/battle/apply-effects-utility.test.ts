@@ -1,16 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { applyEffectByKind } from "@/lib/battle/effect-handlers/registry";
 import { companionLibrary } from "@/lib/game-data";
-import type { CombatTextEvent } from "@/lib/battle/types";
-import { createTestBattleState, makeTestCard, seededRng } from "./test-state";
-
-function makeTexts(): CombatTextEvent[] {
-  return [];
-}
+import { makeCombatTexts as makeTexts, makeTestBattleState, makeTestCard, seededRng } from "../../fixtures/battle";
 
 describe("applyEffectByKind (utility effects)", () => {
   it("gain-gold increases gold and emits combat text", () => {
-    const state = createTestBattleState({ gold: 10 });
+    const state = makeTestBattleState({ gold: 10 });
     const card = makeTestCard({ effects: [{ kind: "gain-gold", amount: 5 }] });
     const texts = makeTexts();
     const effect = { kind: "gain-gold" as const, amount: 5 };
@@ -20,7 +15,7 @@ describe("applyEffectByKind (utility effects)", () => {
   });
 
   it("gain-gold applies potion multiplier", () => {
-    const state = createTestBattleState({ gold: 0 });
+    const state = makeTestBattleState({ gold: 0 });
     const card = makeTestCard({ effects: [{ kind: "gain-gold", amount: 3 }] });
     const texts = makeTexts();
     const effect = { kind: "gain-gold" as const, amount: 3 };
@@ -31,7 +26,7 @@ describe("applyEffectByKind (utility effects)", () => {
 
   it("draw-cards updates deck, discard, and hand", () => {
     const deck = [makeTestCard({ id: "d1" }), makeTestCard({ id: "d2" })];
-    const state = createTestBattleState({ deck, discard: [], hand: [], rng: seededRng(1) });
+    const state = makeTestBattleState({ deck, discard: [], hand: [], rng: seededRng(1) });
     const card = makeTestCard({ effects: [{ kind: "draw-cards", amount: 2 }] });
     const effect = { kind: "draw-cards" as const, amount: 2 };
     const result = applyEffectByKind(effect.kind, state, card, effect, 1, makeTexts());
@@ -42,7 +37,7 @@ describe("applyEffectByKind (utility effects)", () => {
   it("draw-cards reshuffles discard mid-draw when deck runs out", () => {
     const deck = [makeTestCard({ id: "d1" })];
     const discard = [makeTestCard({ id: "d2" }), makeTestCard({ id: "d3" })];
-    const state = createTestBattleState({ deck, discard, hand: [], rng: seededRng(99) });
+    const state = makeTestBattleState({ deck, discard, hand: [], rng: seededRng(99) });
     const card = makeTestCard({ effects: [{ kind: "draw-cards", amount: 3 }] });
     const effect = { kind: "draw-cards" as const, amount: 3 };
     const result = applyEffectByKind(effect.kind, state, card, effect, 1, makeTexts());
@@ -52,8 +47,8 @@ describe("applyEffectByKind (utility effects)", () => {
   });
 
   it("remove-harmful-status clears harmful stacks", () => {
-    const state = createTestBattleState({
-      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 4, poison: 2 },
+    const state = makeTestBattleState({
+      playerStatuses: { ...makeTestBattleState().playerStatuses, burn: 4, poison: 2 },
     });
     const card = makeTestCard({ effects: [{ kind: "remove-harmful-status", amount: 1 }] });
     const effect = { kind: "remove-harmful-status" as const, amount: 1 };
@@ -63,7 +58,7 @@ describe("applyEffectByKind (utility effects)", () => {
   });
 
   it("summon-companion sets activeCompanion from library", () => {
-    const state = createTestBattleState({ activeCompanion: null });
+    const state = makeTestBattleState({ activeCompanion: null });
     const card = makeTestCard({ effects: [{ kind: "summon-companion", companionId: "imp" }] });
     const effect = { kind: "summon-companion" as const, companionId: "imp" as const };
     const result = applyEffectByKind(effect.kind, state, card, effect, 1, makeTexts());
@@ -71,7 +66,7 @@ describe("applyEffectByKind (utility effects)", () => {
   });
 
   it("buff-companion increases companionDamageBuff", () => {
-    const state = createTestBattleState({ companionDamageBuff: 1 });
+    const state = makeTestBattleState({ companionDamageBuff: 1 });
     const card = makeTestCard({ effects: [{ kind: "buff-companion", amount: 2 }] });
     const effect = { kind: "buff-companion" as const, amount: 2 };
     const result = applyEffectByKind(effect.kind, state, card, effect, 1, makeTexts());
@@ -79,7 +74,7 @@ describe("applyEffectByKind (utility effects)", () => {
   });
 
   it("self-damage reduces health and applies status", () => {
-    const state = createTestBattleState({ playerHealth: 20 });
+    const state = makeTestBattleState({ playerHealth: 20 });
     const card = makeTestCard({ effects: [{ kind: "self-damage", damageType: "bleed", amount: 4 }] });
     const texts = makeTexts();
     const effect = { kind: "self-damage" as const, damageType: "bleed" as const, amount: 4 };
@@ -90,7 +85,7 @@ describe("applyEffectByKind (utility effects)", () => {
   });
 
   it("lose-health reduces health without adding status", () => {
-    const state = createTestBattleState({ playerHealth: 20 });
+    const state = makeTestBattleState({ playerHealth: 20 });
     const card = makeTestCard({ effects: [{ kind: "lose-health", amount: 5 }] });
     const texts = makeTexts();
     const effect = { kind: "lose-health" as const, amount: 5 };
@@ -101,7 +96,7 @@ describe("applyEffectByKind (utility effects)", () => {
   });
 
   it("wish queues options for selection", () => {
-    const state = createTestBattleState({ wishOptions: null, wishQueue: [], rng: seededRng(7) });
+    const state = makeTestBattleState({ wishOptions: null, wishQueue: [], rng: seededRng(7) });
     const card = makeTestCard({ id: "wish", effects: [{ kind: "wish", amount: 1 }] });
     const effect = { kind: "wish" as const, amount: 1 };
     const result = applyEffectByKind(effect.kind, state, card, effect, 1, makeTexts());

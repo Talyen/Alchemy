@@ -1,10 +1,11 @@
 // Automatic post-boss Wildwood recovery screen using shared heal chrome.
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 import { theWildwoods } from "@/features/alchemy/shared/config/game-data-catalog";
 import { CAMPFIRE_ANIMATION_MS, CAMPFIRE_CONTINUE_DELAY } from "@/lib/game-constants";
 import { getWildwoodRecoveryHealth, WILDWOOD_RECOVERY_FRACTION } from "@/lib/content-systems/wildwood/gauntlet";
 import { HealthRestoreMeter } from "../../shared/ui/health-restore-meter";
+import { useLatestRef } from "../../shared/hooks";
 import { useEasedHealth } from "../../shared/ui/use-eased-health";
 import { ScreenDescription, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 
@@ -16,10 +17,7 @@ interface Props {
 
 export function WildwoodRecoveryScreen({ playerHealth, maxHealth, onComplete }: Props) {
   const targetHealth = getWildwoodRecoveryHealth(playerHealth, maxHealth);
-  const onCompleteRef = useRef(onComplete);
-  useEffect(() => {
-    onCompleteRef.current = onComplete;
-  }, [onComplete]);
+  const onCompleteRef = useLatestRef(onComplete);
 
   const { displayHealth, progressTarget } = useEasedHealth({
     from: playerHealth,
@@ -30,7 +28,7 @@ export function WildwoodRecoveryScreen({ playerHealth, maxHealth, onComplete }: 
   useEffect(() => {
     const timeout = setTimeout(() => onCompleteRef.current(), CAMPFIRE_ANIMATION_MS + CAMPFIRE_CONTINUE_DELAY);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [onCompleteRef]);
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center px-4 py-6 text-center">

@@ -1,23 +1,10 @@
 ﻿import { describe, expect, it } from "vitest";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import type { BattleState, EnemyStatusValues } from "@/lib/battle/types";
-import type { BattleCard } from "@/lib/game-data";
 import { defaultTalentEffects } from "@/lib/battle";
-import { createTestBattleState } from "./test-state";
+import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
 import type { BestiaryEntry } from "@/lib/game-data";
 import { defaultCcState, defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
-
-function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return {
-    id: "test",
-    title: "Test",
-    descriptionLines: [""],
-    art: "",
-    cost: 1,
-    effects: [],
-    ...overrides,
-  };
-}
 
 function baseEnemy(enemyId: string): BestiaryEntry {
   return {
@@ -44,7 +31,7 @@ const emptyStatuses: EnemyStatusValues = {
 const emptyPlayerStatuses = defaultPlayerStatusValues();
 
 function battleState(overrides: Partial<BattleState> = {}): BattleState {
-  return createTestBattleState({
+  return makeTestBattleState({
     enemyHealth: 50,
     enemyMaxHealth: 50,
     enemyStatuses: { ...emptyStatuses },
@@ -163,7 +150,7 @@ describe("endPlayerTurn â€” standard branch", () => {
   });
 
   it("moves the hand into discard when the enemy phase begins", () => {
-    const held = makeCard({ id: "held" });
+    const held = makeTestCard({ id: "held" });
     const state = battleState({ hand: [held], discard: [] });
     const result = endPlayerTurn(state);
     expect(result.kind).not.toBe("haste");
@@ -186,7 +173,12 @@ describe("endPlayerTurn â€” tick order", () => {
       enemyHealth: 50,
       enemyStatuses: { ...emptyStatuses, burn: 10 },
       playerHealth: 30,
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      deck: [
+        makeTestCard({ id: "d1" }),
+        makeTestCard({ id: "d2" }),
+        makeTestCard({ id: "d3" }),
+        makeTestCard({ id: "d4" }),
+      ],
     });
     const result = endPlayerTurn(state);
     expect(result.kind).not.toBe("haste");
@@ -201,7 +193,12 @@ describe("endPlayerTurn â€” tick order", () => {
       enemyHealth: 8,
       enemyStatuses: { ...emptyStatuses, burn: 10 },
       playerHealth: 30,
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      deck: [
+        makeTestCard({ id: "d1" }),
+        makeTestCard({ id: "d2" }),
+        makeTestCard({ id: "d3" }),
+        makeTestCard({ id: "d4" }),
+      ],
     });
     const result = endPlayerTurn(state);
     expect(result.enemyPerformedAttack).toBe(false);
@@ -213,7 +210,12 @@ describe("endPlayerTurn â€” tick order", () => {
       playerHealth: 30,
       playerStatuses: { ...emptyPlayerStatuses, burn: 5 },
       enemyAttackEffects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 10 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      deck: [
+        makeTestCard({ id: "d1" }),
+        makeTestCard({ id: "d2" }),
+        makeTestCard({ id: "d3" }),
+        makeTestCard({ id: "d4" }),
+      ],
     });
     const result = endPlayerTurn(state);
     expect(result.afterAttackState?.playerHealth).toBe(20);
@@ -300,7 +302,7 @@ describe("endPlayerTurn â€” Death's Door", () => {
       deathsDoorUsed: true,
       deathsDoorActive: false,
       enemyAttackEffects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 10 }],
-      deck: [makeCard(), makeCard(), makeCard(), makeCard()],
+      deck: [makeTestCard(), makeTestCard(), makeTestCard(), makeTestCard()],
     });
     const result = endPlayerTurn(state);
     expect(result.state.playerHealth).toBe(0);
@@ -317,7 +319,7 @@ describe("endPlayerTurn â€” Death's Door", () => {
       deathsDoorTriggeredTurn: 1,
       deathsDoorGraceTurnsRemaining: 1,
       turn: 1,
-      deck: [makeCard(), makeCard(), makeCard(), makeCard()],
+      deck: [makeTestCard(), makeTestCard(), makeTestCard(), makeTestCard()],
     });
     const result = endPlayerTurn(state);
     expect(result.state.turnPhase).toBe("player");

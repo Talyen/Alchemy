@@ -15,6 +15,17 @@ export interface GearBaseItemDefinition {
   quiver?: boolean;
 }
 
+type GearBaseItemInput = Omit<GearBaseItemDefinition, "id">;
+type GearBaseItemCatalog<T extends Record<string, GearBaseItemInput>> = {
+  [K in keyof T]: GearBaseItemDefinition;
+};
+
+function defineGearBaseItems<const T extends Record<string, GearBaseItemInput>>(items: T): GearBaseItemCatalog<T> {
+  return Object.fromEntries(
+    Object.entries(items).map(([id, definition]) => [id, { id, ...definition }]),
+  ) as GearBaseItemCatalog<T>;
+}
+
 function salvage(basicIron: number, astralIron: number, astralCrystal = 1): Record<GearRarity, MaterialInventory> {
   return {
     basic: { ...emptyInventory(), iron: basicIron },
@@ -26,9 +37,8 @@ const lightSalvage = salvage(1, 2);
 const mediumSalvage = salvage(2, 3);
 const heavySalvage = salvage(3, 4);
 
-export const gearBaseItems = {
+export const gearBaseItems = defineGearBaseItems({
   "double-axe": {
-    id: "double-axe",
     displayName: "Double Axe",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: true,
@@ -38,7 +48,6 @@ export const gearBaseItems = {
     rangedWeapon: false,
   },
   maul: {
-    id: "maul",
     displayName: "Maul",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: true,
@@ -48,7 +57,6 @@ export const gearBaseItems = {
     rangedWeapon: false,
   },
   greatsword: {
-    id: "greatsword",
     displayName: "Greatsword",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: true,
@@ -58,7 +66,6 @@ export const gearBaseItems = {
     rangedWeapon: false,
   },
   hatchet: {
-    id: "hatchet",
     displayName: "Hatchet",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
@@ -68,7 +75,6 @@ export const gearBaseItems = {
     rangedWeapon: false,
   },
   longsword: {
-    id: "longsword",
     displayName: "Longsword",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
@@ -78,7 +84,6 @@ export const gearBaseItems = {
     rangedWeapon: false,
   },
   shortsword: {
-    id: "shortsword",
     displayName: "Shortsword",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
@@ -88,7 +93,6 @@ export const gearBaseItems = {
     rangedWeapon: false,
   },
   dagger: {
-    id: "dagger",
     displayName: "Dagger",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
@@ -98,7 +102,6 @@ export const gearBaseItems = {
     rangedWeapon: false,
   },
   mace: {
-    id: "mace",
     displayName: "Mace",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
@@ -108,7 +111,6 @@ export const gearBaseItems = {
     rangedWeapon: false,
   },
   flail: {
-    id: "flail",
     displayName: "Flail",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
@@ -118,7 +120,6 @@ export const gearBaseItems = {
     rangedWeapon: false,
   },
   longbow: {
-    id: "longbow",
     displayName: "Longbow",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
@@ -128,7 +129,6 @@ export const gearBaseItems = {
     rangedWeapon: true,
   },
   shortbow: {
-    id: "shortbow",
     displayName: "Shortbow",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
@@ -138,7 +138,6 @@ export const gearBaseItems = {
     rangedWeapon: true,
   },
   "recurve-bow": {
-    id: "recurve-bow",
     displayName: "Recurve Bow",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
@@ -148,7 +147,6 @@ export const gearBaseItems = {
     rangedWeapon: true,
   },
   crossbow: {
-    id: "crossbow",
     displayName: "Crossbow",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
@@ -158,7 +156,6 @@ export const gearBaseItems = {
     rangedWeapon: true,
   },
   staff: {
-    id: "staff",
     displayName: "Staff",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: true,
@@ -168,7 +165,6 @@ export const gearBaseItems = {
     rangedWeapon: false,
   },
   wand: {
-    id: "wand",
     displayName: "Wand",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
@@ -178,7 +174,6 @@ export const gearBaseItems = {
     rangedWeapon: false,
   },
   "leather-buckler": {
-    id: "leather-buckler",
     displayName: "Leather Buckler",
     compatibleSlots: ["off-hand"],
     requiresTwoHands: false,
@@ -187,7 +182,6 @@ export const gearBaseItems = {
     salvageByRarity: lightSalvage,
   },
   "kite-shield": {
-    id: "kite-shield",
     displayName: "Kite Shield",
     compatibleSlots: ["off-hand"],
     requiresTwoHands: false,
@@ -196,7 +190,6 @@ export const gearBaseItems = {
     salvageByRarity: heavySalvage,
   },
   quiver: {
-    id: "quiver",
     displayName: "Quiver",
     compatibleSlots: ["off-hand"],
     requiresTwoHands: false,
@@ -206,7 +199,6 @@ export const gearBaseItems = {
     quiver: true,
   },
   spellbook: {
-    id: "spellbook",
     displayName: "Spellbook",
     compatibleSlots: ["off-hand"],
     requiresTwoHands: false,
@@ -215,7 +207,6 @@ export const gearBaseItems = {
     salvageByRarity: mediumSalvage,
   },
   "leather-armor": {
-    id: "leather-armor",
     displayName: "Leather Armor",
     compatibleSlots: ["body"],
     requiresTwoHands: false,
@@ -224,7 +215,6 @@ export const gearBaseItems = {
     salvageByRarity: mediumSalvage,
   },
   "plate-armor": {
-    id: "plate-armor",
     displayName: "Plate Armor",
     compatibleSlots: ["body"],
     requiresTwoHands: false,
@@ -233,7 +223,6 @@ export const gearBaseItems = {
     salvageByRarity: heavySalvage,
   },
   "leather-helm": {
-    id: "leather-helm",
     displayName: "Leather Helm",
     compatibleSlots: ["helm"],
     requiresTwoHands: false,
@@ -242,7 +231,6 @@ export const gearBaseItems = {
     salvageByRarity: mediumSalvage,
   },
   "plate-helm": {
-    id: "plate-helm",
     displayName: "Plate Helm",
     compatibleSlots: ["helm"],
     requiresTwoHands: false,
@@ -251,7 +239,6 @@ export const gearBaseItems = {
     salvageByRarity: heavySalvage,
   },
   "leather-boots": {
-    id: "leather-boots",
     displayName: "Leather Boots",
     compatibleSlots: ["boots"],
     requiresTwoHands: false,
@@ -260,7 +247,6 @@ export const gearBaseItems = {
     salvageByRarity: lightSalvage,
   },
   "plate-boots": {
-    id: "plate-boots",
     displayName: "Plate Boots",
     compatibleSlots: ["boots"],
     requiresTwoHands: false,
@@ -269,7 +255,6 @@ export const gearBaseItems = {
     salvageByRarity: heavySalvage,
   },
   "leather-gloves": {
-    id: "leather-gloves",
     displayName: "Leather Gloves",
     compatibleSlots: ["gloves"],
     requiresTwoHands: false,
@@ -278,7 +263,6 @@ export const gearBaseItems = {
     salvageByRarity: lightSalvage,
   },
   "leather-belt": {
-    id: "leather-belt",
     displayName: "Leather Belt",
     compatibleSlots: ["belt"],
     requiresTwoHands: false,
@@ -287,7 +271,6 @@ export const gearBaseItems = {
     salvageByRarity: lightSalvage,
   },
   "ruby-ring": {
-    id: "ruby-ring",
     displayName: "Ruby Ring",
     compatibleSlots: ["left-ring", "right-ring"],
     requiresTwoHands: false,
@@ -296,7 +279,6 @@ export const gearBaseItems = {
     salvageByRarity: lightSalvage,
   },
   "sapphire-ring": {
-    id: "sapphire-ring",
     displayName: "Sapphire Ring",
     compatibleSlots: ["left-ring", "right-ring"],
     requiresTwoHands: false,
@@ -305,7 +287,6 @@ export const gearBaseItems = {
     salvageByRarity: lightSalvage,
   },
   "emerald-ring": {
-    id: "emerald-ring",
     displayName: "Emerald Ring",
     compatibleSlots: ["left-ring", "right-ring"],
     requiresTwoHands: false,
@@ -314,7 +295,6 @@ export const gearBaseItems = {
     salvageByRarity: lightSalvage,
   },
   "topaz-ring": {
-    id: "topaz-ring",
     displayName: "Topaz Ring",
     compatibleSlots: ["left-ring", "right-ring"],
     requiresTwoHands: false,
@@ -323,7 +303,6 @@ export const gearBaseItems = {
     salvageByRarity: lightSalvage,
   },
   "ruby-amulet": {
-    id: "ruby-amulet",
     displayName: "Ruby Amulet",
     compatibleSlots: ["amulet"],
     requiresTwoHands: false,
@@ -332,7 +311,6 @@ export const gearBaseItems = {
     salvageByRarity: lightSalvage,
   },
   "sapphire-amulet": {
-    id: "sapphire-amulet",
     displayName: "Sapphire Amulet",
     compatibleSlots: ["amulet"],
     requiresTwoHands: false,
@@ -341,7 +319,6 @@ export const gearBaseItems = {
     salvageByRarity: lightSalvage,
   },
   "emerald-amulet": {
-    id: "emerald-amulet",
     displayName: "Emerald Amulet",
     compatibleSlots: ["amulet"],
     requiresTwoHands: false,
@@ -350,7 +327,6 @@ export const gearBaseItems = {
     salvageByRarity: lightSalvage,
   },
   "topaz-amulet": {
-    id: "topaz-amulet",
     displayName: "Topaz Amulet",
     compatibleSlots: ["amulet"],
     requiresTwoHands: false,
@@ -358,7 +334,7 @@ export const gearBaseItems = {
     availableRarities: ["basic", "astral"],
     salvageByRarity: lightSalvage,
   },
-} satisfies Record<string, GearBaseItemDefinition>;
+});
 
 export type GearBaseItemId = keyof typeof gearBaseItems;
 

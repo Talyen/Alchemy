@@ -4,8 +4,7 @@ import {
   applyPlayerStatusEffect,
   removeHarmfulPlayerStatuses,
 } from "@/lib/battle/status-player";
-import type { CombatTextEvent } from "@/lib/battle/types";
-import { createTestBattleState, patchBattleState } from "./test-state";
+import { makeCombatTexts as makeTexts, makeTestBattleState, patchBattleState } from "../../fixtures/battle";
 import {
   defaultPlayerStatusValues,
   defaultTalentEffects,
@@ -13,9 +12,6 @@ import {
   defaultCombatFlags,
 } from "../../fixtures/default-battle-state";
 
-function makeTexts(): CombatTextEvent[] {
-  return [];
-}
 describe("removeHarmfulPlayerStatuses", () => {
   it("removes statuses in priority order", () => {
     const state = patchBattleState({
@@ -81,7 +77,7 @@ describe("removeHarmfulPlayerStatuses", () => {
 
 describe("applyPlayerStatusEffect", () => {
   it("adds the status amount to player", () => {
-    const state = createTestBattleState();
+    const state = makeTestBattleState();
     const effect = { kind: "player-status" as const, status: "block" as const, amount: 5 };
     const result = applyPlayerStatusEffect(state, effect, []);
     expect(result.playerStatuses.block).toBe(5);
