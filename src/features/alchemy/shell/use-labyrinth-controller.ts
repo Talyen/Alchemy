@@ -14,7 +14,7 @@ import {
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthNode } from "@/lib/content-systems/types";
 import {
   readRunSessionStore,
-  runSessionTransaction,
+  dispatchRunSessionCommand,
   setActiveLabyrinthPendingNode,
   setLabyrinthMap,
 } from "@/features/alchemy/shared/stores/run-session-facade";
@@ -75,7 +75,7 @@ export function useLabyrinthController(_screen: Screen, rng: () => number): Laby
   }, [rng]);
 
   const enterNode = useCallback((row: number, col: number, handlers: LabyrinthNodeHandlers): boolean => {
-    const node = runSessionTransaction(() => {
+    const node = dispatchRunSessionCommand(() => {
       const session = readRunSessionStore();
       if (session.activeLabyrinthPendingNode) return null;
 
@@ -90,7 +90,7 @@ export function useLabyrinthController(_screen: Screen, rng: () => number): Laby
     try {
       routeNodeInteraction(node, handlers);
     } catch (error) {
-      runSessionTransaction(() => setActiveLabyrinthPendingNode(null));
+      dispatchRunSessionCommand(() => setActiveLabyrinthPendingNode(null));
       throw error;
     }
     return true;

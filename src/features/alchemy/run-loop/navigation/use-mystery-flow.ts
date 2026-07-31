@@ -9,13 +9,13 @@ import { setMysteryCardChoices, setMysteryEvent } from "../../shared/stores/run-
 import {
   readActiveRunStore,
   awardMaterialsDuringRun,
-  runSessionTransaction,
+  dispatchRunSessionCommand,
 } from "../../shared/stores/run-session-facade";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 
 export function useMysteryFlow(rng: () => number) {
   function beginMysteryEvent(navigateToMystery: () => void) {
-    runSessionTransaction(
+    dispatchRunSessionCommand(
       () => {
         setMysteryEvent(pickMysteryEvent(rng));
         setMysteryCardChoices(null);
@@ -25,7 +25,7 @@ export function useMysteryFlow(rng: () => number) {
   }
 
   function handleMysteryChoice(choice: MysteryChoice) {
-    runSessionTransaction(() => {
+    dispatchRunSessionCommand(() => {
       const runStore = readActiveRunStore();
 
       for (const effect of choice.effects) {
@@ -48,7 +48,7 @@ export function useMysteryFlow(rng: () => number) {
   }
 
   function handleMysteryChooseCard(cardId: string) {
-    runSessionTransaction(() => {
+    dispatchRunSessionCommand(() => {
       const card = cardLibrary.find((c) => c.id === cardId);
       if (card) {
         appendCardToRunWithDiscovery(card, readActiveRunStore().setRunDeck);
@@ -58,7 +58,7 @@ export function useMysteryFlow(rng: () => number) {
   }
 
   function handleMysteryRemoveCard(index: number) {
-    runSessionTransaction(() => {
+    dispatchRunSessionCommand(() => {
       readActiveRunStore().setRunDeck((p) => p.filter((_, i) => i !== index));
     });
   }

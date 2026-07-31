@@ -1,5 +1,5 @@
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import { trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { cardLibrary, trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import { DESTINATIONS, type Destination } from "@/lib/routing";
 import type { PersistedPendingReward } from "./types";
@@ -35,15 +35,36 @@ export function resolveCardChoices(choiceIds: string[]): BattleCard[] | null {
   return choices.length === 0 ? null : choices;
 }
 
+function resolveCompanionChoices(choiceIds: string[]): BattleCard[] | null {
+  const choices = choiceIds
+    .map((id) => cardLibrary.find((entry) => entry.id === id))
+    .filter((entry): entry is BattleCard =>
+      Boolean(entry && entry.effects.some((effect) => effect.kind === "summon-companion")),
+    );
+  return choices.length === 0 ? null : choices;
+}
+
 export function resolveTrinketChoices(choiceIds: string[]): TrinketEntry[] | null {
   const choices = lookupTrinketEntries(choiceIds);
   return choices.length === 0 ? null : choices;
 }
 
+interface PersistedRewardSharedFields {
+  companionChoiceIds?: string[];
+  selectedId: string | null;
+  gold: number;
+  materials: RewardState["materials"];
+  destinations: Destination[];
+  selectedBossId: string | null;
+  lastVictoryEnemyType: string | null;
+  lastVictoryContentSystem: RewardState["lastVictoryContentSystem"];
+}
+
 function sharedRewardFields(
   rewardState: RewardState,
-): Omit<PersistedPendingReward, "rewardType" | "choiceIds" | "gearChoices"> {
-  return {
+  companionRewardCards: BattleCard[] | null = null,
+): PersistedRewardSharedFields {
+  const shared = {
     selectedId: rewardState.selectedId,
     gold: rewardState.gold,
     materials: rewardState.materials,
@@ -52,12 +73,18 @@ function sharedRewardFields(
     lastVictoryEnemyType: rewardState.lastVictoryEnemyType,
     lastVictoryContentSystem: rewardState.lastVictoryContentSystem,
   };
+  return companionRewardCards?.length
+    ? { ...shared, companionChoiceIds: companionRewardCards.map((choice) => choice.id) }
+    : shared;
 }
 
-export function serializePendingReward(rewardState: RewardState): PersistedPendingReward | null {
-  if (rewardState.choices.length === 0) return null;
+export function serializePendingReward(
+  rewardState: RewardState,
+  companionRewardCards: BattleCard[] | null = null,
+): PersistedPendingReward | null {
+  if (rewardState.choices.length === 0 && !companionRewardCards?.length) return null;
 
-  const shared = sharedRewardFields(rewardState);
+  const shared = sharedRewardFields(rewardState, companionRewardCards);
   if (rewardState.rewardType === "gear") {
     return { ...shared, rewardType: "gear", gearChoices: rewardState.choices };
   }
@@ -93,4 +120,37 @@ export function restorePendingReward(persisted: PersistedPendingReward): RewardS
   const choices = resolveTrinketChoices(persisted.choiceIds);
   if (!choices) return null;
   return { ...shared, rewardType: "trinket", choices } satisfies TrinketRewardState;
+}
+
+export interface RestoredPendingReward {
+  rewardState: RewardState | null;
+  companionRewardCards: BattleCard[] | null;
+}
+
+/** Restore both sides of the victory reward handoff as one persistence unit. */
+export function restorePendingRewardBundle(persisted: PersistedPendingReward): RestoredPendingReward {
+  const companionRewardCards = resolveCompanionChoices(persisted.companionChoiceIds ?? []);
+  const rewardState = restorePendingReward(persisted);
+
+  if (rewardState || !companionRewardCards) {
+    return { rewardState, companionRewardCards };
+  }
+
+  // A save can be taken after the normal reward is claimed but before the
+  // companion choices are promoted to rewardState. Preserve the shared reward
+  // metadata so the companion claim remains valid after resume.
+  const destinations = filterValidDestinations(persisted.destinations);
+  return {
+    rewardState: {
+      ...createEmptyRewardState(destinations),
+      selectedId: persisted.selectedId,
+      gold: persisted.gold,
+      materials: persisted.materials,
+      selectedBossId: persisted.selectedBossId,
+      lastVictoryEnemyType: persisted.lastVictoryEnemyType,
+      lastVictoryContentSystem: persisted.lastVictoryContentSystem,
+      rewardType: "card",
+    },
+    companionRewardCards,
+  };
 }

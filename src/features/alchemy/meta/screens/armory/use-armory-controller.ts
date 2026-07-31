@@ -17,7 +17,7 @@ import {
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import {
   resolveActiveRunForSave,
-  runSessionTransaction,
+  dispatchRunSessionCommand,
   syncRunMaxHealthFromGearMutation,
   useActiveRunCharacterId,
   useHasActiveBattle,
@@ -84,7 +84,7 @@ export function useArmoryController(): ArmoryController {
   const onEquip = useCallback<ArmoryController["onEquip"]>(
     (characterId, slot, instance, options) => {
       if (hasActiveBattle) return;
-      runSessionTransaction(() => {
+      dispatchRunSessionCommand(() => {
         const loadoutsBefore = gear.loadouts;
         gear.equip(characterId, slot, instance, options);
         if (hasActiveRun && characterId === activeRunCharacterId) {
@@ -106,7 +106,7 @@ export function useArmoryController(): ArmoryController {
   const onUnequip = useCallback<ArmoryController["onUnequip"]>(
     (characterId, slot) => {
       if (hasActiveBattle) return;
-      runSessionTransaction(() => {
+      dispatchRunSessionCommand(() => {
         const loadoutsBefore = gear.loadouts;
         gear.unequip(characterId, slot);
         if (hasActiveRun && characterId === activeRunCharacterId) {
@@ -130,7 +130,7 @@ export function useArmoryController(): ArmoryController {
       if (hasActiveBattle) return false;
       const inventoryBefore = flattenGearInventories(gear.inventories);
       const loadoutsBefore = gear.loadouts;
-      const result = runSessionTransaction(() => {
+      const result = dispatchRunSessionCommand(() => {
         const result = gear.salvage(instanceId, { rng: rngRef.current });
         if (!result) return null;
         if (hasActiveRun) {
@@ -154,7 +154,7 @@ export function useArmoryController(): ArmoryController {
   const onTransferGear = useCallback<ArmoryController["onTransferGear"]>(
     (instanceId, targetCharacterId) => {
       if (hasActiveBattle) return false;
-      const ok = runSessionTransaction(() => {
+      const ok = dispatchRunSessionCommand(() => {
         const ok = gear.transferToInventory(instanceId, targetCharacterId);
         if (ok && hasActiveRun) {
           const inventoryAfter = flattenGearInventories(useGearStore.getState().inventories);
@@ -178,7 +178,7 @@ export function useArmoryController(): ArmoryController {
   const onSortBoard = useCallback<ArmoryController["onSortBoard"]>(
     (characterId) => {
       if (hasActiveBattle) return;
-      runSessionTransaction(() => gear.sortBoard(characterId));
+      dispatchRunSessionCommand(() => gear.sortBoard(characterId));
       flush();
     },
     [gear, hasActiveBattle, flush],
@@ -187,7 +187,7 @@ export function useArmoryController(): ArmoryController {
   const onMoveBoardItem = useCallback<ArmoryController["onMoveBoardItem"]>(
     (characterId, item, col, row) => {
       if (hasActiveBattle) return false;
-      const changed = runSessionTransaction(() => gear.moveBoardItem(characterId, item, col, row));
+      const changed = dispatchRunSessionCommand(() => gear.moveBoardItem(characterId, item, col, row));
       if (changed) flush();
       return changed;
     },
@@ -199,7 +199,7 @@ export function useArmoryController(): ArmoryController {
       if (hasActiveBattle) return false;
       const inventoryBefore = flattenGearInventories(gear.inventories);
       const loadoutsBefore = gear.loadouts;
-      const ok = runSessionTransaction(() => {
+      const ok = dispatchRunSessionCommand(() => {
         const ok = gear.applyCurrency(currencyId, instanceId, { rng: rngRef.current });
         if (ok && hasActiveRun) {
           syncRunMaxHealthFromGearMutation(
@@ -223,7 +223,7 @@ export function useArmoryController(): ArmoryController {
   const onSpawnDevGear = useCallback<NonNullable<ArmoryController["onSpawnDevGear"]>>(
     (characterId) => {
       if (!isAlchemyDevBuild()) return;
-      runSessionTransaction(() => gear.addInstance(generateDevRandomGearInstance(rngRef.current), characterId));
+      dispatchRunSessionCommand(() => gear.addInstance(generateDevRandomGearInstance(rngRef.current), characterId));
       flush();
     },
     [flush, gear],

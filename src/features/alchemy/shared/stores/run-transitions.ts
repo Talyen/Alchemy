@@ -1,15 +1,7 @@
 // Atomic run lifecycle transitions across the run-domain, profile, transient, and battle stores.
 import { getBattleStartPlayerHealth } from "@/lib/battle";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
-import {
-  createActiveRunSnapshot,
-  serializeAlchemistState,
-  serializeEquipmentShopState,
-  serializePendingReward,
-  serializeShopState,
-  serializeTrinketShopState,
-  type ActiveRunData,
-} from "@/lib/active-run-session";
+import { type ActiveRunData } from "@/lib/active-run-session";
 import type { Screen } from "@/lib/routing";
 import type { CharacterId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import { computeGearManifest, type GearInstance, type GearLoadouts } from "@/lib/gear";
@@ -25,8 +17,9 @@ import { clearBattlePresentationCardGhosts, resetBattlePresentation } from "./ba
 import { useUiStore } from "./ui-store";
 import { useProfileStore } from "./profile-store";
 import { getCommittedRunSession } from "./run-session-model";
-import { restoreLabyrinth, restoreReward, restoreShops, restoreWildwoodReward } from "./restore-active-run-session";
-import { runSessionTransaction } from "./run-session-transaction";
+import { restoreRunSession } from "./restore-active-run-session";
+import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "./run-resume-codec";
+import { dispatchRunSessionCommand } from "./run-session-command";
 
 /** Apply persisted active-run data across the run-lifetime stores atomically. */
 export function restoreRun(
@@ -34,22 +27,23 @@ export function restoreRun(
   talentXP: TalentXP,
   unlockedTalents: UnlockedTalents,
 ): void {
-  runSessionTransaction(() => {
+  const decoded = activeRun ? decodeRunResumeSnapshot(activeRun) : null;
+  dispatchRunSessionCommand(() => {
     const store = getRunDomainStore();
-    store.initialize(activeRun);
+    if (decoded) store.initializeFromResumeSnapshot(decoded.progress);
+    else store.initialize(null);
     getRunProfileStore().applyTalentState(talentXP, unlockedTalents);
     getRunBattleDomainStore().initializeActiveBattle(activeRun?.activeCombat?.battleState ?? null);
 
-    if (activeRun?.currentScreen) store.setScreen(activeRun.currentScreen);
+    if (decoded?.screen) store.setScreen(decoded.screen);
     if (!activeRun) return;
 
     const session = getRunTransientStore();
+    // A resume is a full replacement of transient run state. Clearing first
+    // prevents an in-process restore from leaking stale rewards or shop offers.
+    session.clearTransientSession();
     session.setHasActiveRun(true);
-    session.setWildwoodDraft(activeRun.wildwoodDraft);
-    restoreLabyrinth(session, activeRun);
-    restoreWildwoodReward(session, activeRun);
-    restoreReward(session, activeRun, store.setScreen);
-    restoreShops(session, activeRun);
+    if (decoded) restoreRunSession(session, decoded.session);
   });
 }
 
@@ -60,47 +54,7 @@ export function resolveActiveRunForSave(hasActiveRun: boolean, screen?: Screen):
 
 /** Serialize the run-lifetime stores into persisted ActiveRunData. */
 export function snapshotRun(screen?: Screen): ActiveRunData {
-  const { run, session, battle } = getCommittedRunSession(screen);
-  const currentScreen = screen ?? getRunDomainStore().navigation.screen;
-  const pendingReward = session.rewardState.choices.length > 0 ? serializePendingReward(session.rewardState) : null;
-  const persistShop = currentScreen === "shop" || session.shopState.cards.length > 0;
-  const persistAlchemist = currentScreen === "alchemist" || session.alchemistState.potions.length > 0;
-  const persistTrinketShop = currentScreen === "trinket-shop" || session.trinketShopState.trinkets.length > 0;
-  const persistEquipmentShop = currentScreen === "equipment-shop" || session.equipmentShopState.gear.length > 0;
-  return createActiveRunSnapshot({
-    characterId: run.characterId,
-    runDeck: run.runDeck,
-    runGold: run.runGold,
-    runPlayerHealth: run.runPlayerHealth,
-    runMaxHealth: run.runMaxHealth,
-    roomsEncountered: run.roomsEncountered,
-    currentAct: run.currentAct,
-    destinationIndexInAct: run.destinationIndexInAct,
-    completedDestinations: run.completedDestinations,
-    lastOfferedDestinations: run.lastOfferedDestinations,
-    destinationRoundsSinceOffered: { ...run.destinationRoundsSinceOffered },
-    runTrinkets: run.runTrinkets,
-    encounteredRunEnemyIds: run.encounteredRunEnemyIds,
-    selectedDifficulty: run.selectedDifficulty,
-    contentSystemType: run.contentSystemType,
-    rng: run.rng,
-    labyrinthMap: session.labyrinthMap,
-    hasActiveBattle: battle.hasActiveBattle,
-    battleState: battle.battleState,
-    labyrinthPendingNode: session.activeLabyrinthPendingNode,
-    wildwoodDraft: session.wildwoodDraft,
-    activeLabyrinthModifiers: session.activeLabyrinthModifiers,
-    activeLabyrinthRewardModifiers: session.activeLabyrinthRewardModifiers,
-    runTalentXP: run.runTalentXP,
-    runMaterialsEarned: run.runMaterialsEarned,
-    currentScreen,
-    destinationChoices: session.rewardState.destinations,
-    pendingReward,
-    shopState: persistShop ? serializeShopState(session.shopState) : null,
-    alchemistState: persistAlchemist ? serializeAlchemistState(session.alchemistState) : null,
-    trinketShopState: persistTrinketShop ? serializeTrinketShopState(session.trinketShopState) : null,
-    equipmentShopState: persistEquipmentShop ? serializeEquipmentShopState(session.equipmentShopState) : null,
-  });
+  return encodeRunResumeSnapshot(getCommittedRunSession(screen), screen);
 }
 
 /** Apply gear max-health bonus delta after armory gear inventory/loadout mutations during an active run. */
@@ -156,7 +110,7 @@ export function clearBattlePresentationUi(): void {
 
 /** Clear active combat, run progression, session UI, navigation, and presentation (profile survives). */
 export function teardownRun(): void {
-  runSessionTransaction(() => {
+  dispatchRunSessionCommand(() => {
     useRunDomainStore.setState((state) => {
       const fresh = createInitialRunDomainData();
       state.activeRun = { ...fresh.activeRun, characterId: state.activeRun.characterId };
@@ -211,7 +165,7 @@ export function finalizeRunEndSession(options: {
   finalizeRunXP: () => void;
   displayMaterials?: MaterialInventory | null;
 }): MaterialInventory {
-  const materials = runSessionTransaction(() => finalizeRunEndSessionState(options));
+  const materials = dispatchRunSessionCommand(() => finalizeRunEndSessionState(options));
   flushSaveAfterRunEnd();
   return materials;
 }
@@ -223,7 +177,7 @@ export function applyRunDefeatTeardown(options: {
   clearCombatState: () => void;
   clearCombatPresentation?: () => void;
 }): void {
-  runSessionTransaction(() => {
+  dispatchRunSessionCommand(() => {
     finalizeRunEndSessionState({
       awardRunEndMaterials: options.awardRunEndMaterials,
       finalizeRunXP: options.finalizeRunXP,

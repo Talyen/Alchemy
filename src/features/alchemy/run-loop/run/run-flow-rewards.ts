@@ -3,7 +3,7 @@ import {
   awardMaterialsDuringRun,
   beginRewardClaim,
   releaseRewardClaim as releaseRewardClaimState,
-  runSessionTransaction,
+  dispatchRunSessionCommand,
 } from "../../shared/stores/run-session-facade";
 import { setCompanionRewardCards, setRewardState } from "../../shared/stores/run-session-facade";
 import { useUiStore } from "../../shared/stores/ui-store";
@@ -28,7 +28,7 @@ export function createRewardHandlers(ctx: RunFlowContext) {
   }
 
   function finishRewards() {
-    runSessionTransaction(
+    dispatchRunSessionCommand(
       () => {
         if (!beginRewardClaim()) return null;
         const session = readRunSessionStore();
@@ -97,14 +97,18 @@ export function createRewardHandlers(ctx: RunFlowContext) {
                 });
               },
               completeRunVictory: (materials, onCommit) => {
-                ctx.completeRunVictory(materials, () => {
-                  releaseRewardClaim();
-                  onCommit?.();
+                ctx.dispatchContinuation({
+                  type: "complete-run-victory",
+                  displayMaterials: materials,
+                  onRenderedScreenCommit: () => {
+                    releaseRewardClaim();
+                    onCommit?.();
+                  },
                 });
               },
               handleActComplete: (materials) => {
                 releaseRewardClaim();
-                ctx.handleActComplete(materials);
+                ctx.dispatchContinuation({ type: "handle-act-complete", displayMaterials: materials });
               },
               onLabyrinthClearNode: () => deps.dispatch({ type: "labyrinth-clear-node" }),
               setCompanionRewardCards,

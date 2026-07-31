@@ -5,6 +5,7 @@ import {
   subscribeRunSessionCommits,
   useRunSessionCommitStore,
 } from "@/features/alchemy/shared/stores/run-session-transaction";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { getRunDomainStore, resetRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
 import { getRunTransientStore } from "@/features/alchemy/shared/stores/run-transient-store";
 import { getRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
@@ -19,6 +20,23 @@ beforeEach(() => {
 });
 
 describe("run-session transaction coordinator", () => {
+  it("executes the public command boundary and runs its effect after commit", () => {
+    const effect = vi.fn((gold: number) => {
+      expect(useRunSessionCommitStore.getState().snapshot.domain.activeRun.runGold).toBe(gold);
+    });
+
+    const result = dispatchRunSessionCommand({
+      execute: () => {
+        getRunDomainStore().setRunGold(17);
+        return 17;
+      },
+      afterCommit: effect,
+    });
+
+    expect(result).toBe(17);
+    expect(effect).toHaveBeenCalledOnce();
+  });
+
   it("publishes one commit after multiple store mutations", () => {
     const commits: Array<{ revision: number; gold: number; hasActiveRun: boolean }> = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => {

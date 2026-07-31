@@ -23,6 +23,7 @@ For refactors and simplification passes on attached paths, use [docs/Audits](./A
 | Permanent gear                                | [Gear](#add-permanent-gear)                                                                                                                                                       |
 | Screen, destination, mystery                  | [New screen](#adding-a-new-screen) · [Destination](#adding-a-new-destination-map-node) · [Mystery effect](#adding-a-new-mystery-effect-kind)                                      |
 | In-run materials, staggered enter             | [Grant materials during a run](#grant-materials-during-a-run) · [Staggered screen enter](#staggered-screen-enter-motion) · [Interactive buttons](#interactive-button-conventions) |
+| Gameplay session mutation                     | [Gameplay command boundary](#gameplay-command-boundary)                                                                                                                           |
 
 ---
 
@@ -49,10 +50,10 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 ## Change mid-run resume (`ActiveRunData`)
 
 1. Extend `ActiveRunData` in `src/lib/active-run-session/types.ts` and Zod schema in `src/lib/validation/save-schemas/active-run.ts` (optional fields with defaults in `normalize-active-run-data.ts` often avoid a schema bump).
-2. Add the field to `RunStateFields` / hydration in `src/features/alchemy/shared/stores/run-state-init.ts` (mirror `runTalentXP` / `runMaterialsEarned` pattern).
-3. Update `createActiveRunSnapshot()` in `src/lib/active-run-session/snapshot.ts` and `snapshotRun()` in `src/features/alchemy/shared/stores/run-transitions.ts`.
-4. Update the canonical hydration path in `shared/stores/run-transitions.ts` via `restoreRun` (restore `screen`, `destinationChoices`, combat, etc.). Keep the operation inside `runSessionTransaction()` so boot/resume is published as one committed session state; defer navigation, audio, and presentation work with `afterCommit` or after the transaction returns.
-5. Run `tests/features/alchemy/shared/storage/active-run.test.ts`, `tests/features/alchemy/shared/stores/run-domain.test.ts` (snapshot parity), plus storage/migration tests.
+2. Add the field to `RunStateFields` / hydration in `src/features/alchemy/shared/stores/run-state-init.ts` (mirror `runTalentXP` / `runMaterialsEarned` pattern) when it is active-run progression. Transient resume fields belong in the codec projection instead of `RunStateFields`.
+3. Update `createActiveRunSnapshot()` in `src/lib/active-run-session/snapshot.ts`, then update the single feature-owned codec in `src/features/alchemy/shared/stores/run-resume-codec.ts`. Keep reward, shop, combat, and content-system translation there.
+4. Keep `snapshotRun()` and `restoreRun()` as thin lifecycle wrappers around `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()`. `restore-active-run-session.ts` should only apply the decoded projection. Keep the operation inside `dispatchRunSessionCommand()` so boot/resume is published as one committed session state; defer navigation, audio, and presentation work with `afterCommit` or after the command returns.
+5. Run `tests/features/alchemy/shared/storage/active-run.test.ts`, `tests/features/alchemy/shared/stores/run-domain.test.ts` (snapshot parity), the codec / pending-reward tests, plus storage/migration tests.
 
 **Active-run helpers (do not confuse):**
 
@@ -137,6 +138,27 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared
 
 - `teardownRun()` / `flushSaveAfterRunEnd()` in [`run-transitions.ts`](../src/features/alchemy/shared/stores/run-transitions.ts) — run teardown and immediate save flushes (navigation calls these on run end).
 - `clearAllPersistentGameData()` — clears app options, permanent run/talent data, and homestead (Options “clear save”).
+
+## Gameplay command boundary
+
+Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-session-facade.ts`.
+
+1. Keep the command synchronous; do not cross an `await` while mutating run state.
+2. Put audio, navigation, timers, and presentation cleanup in `afterCommit` so failed commands cannot leak non-rollbackable effects.
+3. Use the object form when a result is needed by the post-commit effect:
+
+   ```ts
+   dispatchRunSessionCommand({
+     execute: () => {
+       run.setRunGold((gold) => gold + price);
+       return price;
+     },
+     afterCommit: (paid) => playPurchaseSound(paid),
+   });
+   ```
+
+4. Run-flow concerns must request sibling work with a typed `RunFlowContinuation`; they must not retain mutable sibling callbacks or call another concern's handler directly.
+5. The low-level `runSessionTransaction()` coordinator is an implementation detail for the command boundary and committed projection. New gameplay callers must not import it directly.
 
 ---
 

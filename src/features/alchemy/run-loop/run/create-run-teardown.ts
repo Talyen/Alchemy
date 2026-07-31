@@ -2,7 +2,7 @@
 import {
   cancelDestinationClaim,
   releaseRewardClaim,
-  runSessionTransaction,
+  dispatchRunSessionCommand,
   teardownRun,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { clearBattlePresentationCardGhosts } from "@/features/alchemy/shared/stores/battle-presentation-bridge";
@@ -18,7 +18,7 @@ export interface RunTeardownDeps {
 /** Cancel in-flight claims, clear presentation, tear down the run, and land on menu. */
 export function createRunTeardown(deps: RunTeardownDeps) {
   function resetRunState() {
-    runSessionTransaction(
+    dispatchRunSessionCommand(
       () => {
         cancelDestinationClaim();
         releaseRewardClaim();

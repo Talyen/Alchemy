@@ -59,5 +59,6 @@ export interface ProgressActions {
   addRunMaterialsEarned: (materials: MaterialInventory) => void;
   clearRunMaterialsEarned: () => void;
   initialize: (activeRun: ActiveRunData | null, fallbackCharacterId?: CharacterId) => void;
+  initializeFromResumeSnapshot: (activeRun: ActiveRunProgressFields) => void;
   hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void;
 }

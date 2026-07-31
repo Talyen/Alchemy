@@ -6,31 +6,31 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import type { CorruptionResult } from "@/lib/corruption";
 import { getRunTransientStore } from "../run-transient-store";
 import { getRunDomainStore } from "../run-domain-store";
-import { runSessionTransaction } from "../run-session-transaction";
+import { dispatchRunSessionCommand } from "../run-session-command";
 
 export function setRewardState(state: RewardState | ((prev: RewardState) => RewardState)) {
-  getRunTransientStore().setRewardState(state);
+  return dispatchRunSessionCommand(() => getRunTransientStore().setRewardState(state));
 }
 
 export function setCompanionRewardCards(cards: BattleCard[] | null) {
-  getRunTransientStore().setCompanionRewardCards(cards);
+  return dispatchRunSessionCommand(() => getRunTransientStore().setCompanionRewardCards(cards));
 }
 
 export function beginRewardClaim(): boolean {
-  return getRunTransientStore().beginRewardClaim();
+  return dispatchRunSessionCommand(() => getRunTransientStore().beginRewardClaim());
 }
 
 export function releaseRewardClaim(): void {
-  getRunTransientStore().releaseRewardClaim();
+  dispatchRunSessionCommand(() => getRunTransientStore().releaseRewardClaim());
 }
 
 export function beginDestinationClaim(destination: Destination): boolean {
-  return getRunTransientStore().beginDestinationClaim(destination);
+  return dispatchRunSessionCommand(() => getRunTransientStore().beginDestinationClaim(destination));
 }
 
 /** Commit destination claim across session + active-run progress (cross-lifetime). */
 export function commitDestinationClaim(destination: Destination): boolean {
-  return runSessionTransaction(() => {
+  return dispatchRunSessionCommand(() => {
     const transient = getRunTransientStore();
     if (transient.pendingDestinationClaim !== destination) return false;
     if (!transient.rewardState.destinations.includes(destination)) {
@@ -47,13 +47,13 @@ export function commitDestinationClaim(destination: Destination): boolean {
 }
 
 export function cancelDestinationClaim(): void {
-  getRunTransientStore().cancelDestinationClaim();
+  dispatchRunSessionCommand(() => getRunTransientStore().cancelDestinationClaim());
 }
 
 export function setRunEndMaterials(materials: MaterialInventory) {
-  getRunTransientStore().setRunEndMaterials(materials);
+  return dispatchRunSessionCommand(() => getRunTransientStore().setRunEndMaterials(materials));
 }
 
 export function setCorruptionResult(result: CorruptionResult | null) {
-  getRunTransientStore().setCorruptionResult(result);
+  return dispatchRunSessionCommand(() => getRunTransientStore().setCorruptionResult(result));
 }

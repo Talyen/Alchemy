@@ -32,7 +32,7 @@ import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store"
 import {
   readActiveRunStore,
   readRunSessionStore,
-  runSessionTransaction,
+  dispatchRunSessionCommand,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { CreateShopActionsDeps, ShopActions } from "./shop-action-types";
 import { createShopPriceSelectors } from "./shop-price-selectors";
@@ -57,7 +57,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     slotKey: string,
     onAcquire: () => void,
   ): boolean {
-    return runSessionTransaction(() => {
+    return dispatchRunSessionCommand(() => {
       const run = readActiveRunStore();
       if (run.runGold < price) return false;
       // Reserve the slot in live store state BEFORE spend/acquire so rapid re-entry cannot double-buy.
@@ -108,7 +108,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
   }
 
   function handleShopRemoveCard(index: number): void {
-    runSessionTransaction(() => {
+    dispatchRunSessionCommand(() => {
       const shopState = readRunSessionStore().shopState;
       if (shopState.removeUsed) return;
       const run = readActiveRunStore();
@@ -171,7 +171,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
   });
 
   function handleAlchemistMixPotions(indexA: number, indexB: number): BattleCard | null {
-    return runSessionTransaction(() => {
+    return dispatchRunSessionCommand(() => {
       const price = getMixPotionPrice();
       const run = readActiveRunStore();
       if (run.runGold < price) return null;

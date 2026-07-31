@@ -155,6 +155,9 @@ const WildwoodDraftStateSchema = z
   .catch(null);
 
 const PersistedPendingRewardBaseSchema = {
+  // Companion choices are carried separately from the primary reward choice so
+  // a save during the victory -> companion-reward handoff can resume safely.
+  companionChoiceIds: z.array(z.string()).default([]),
   selectedId: caught(z.string().nullable(), null, "activeRun.pendingReward.selectedId"),
   gold: caught(z.number().int().nonnegative(), 0, "activeRun.pendingReward.gold"),
   materials: caught(MaterialInventorySchema, emptyInventory(), "activeRun.pendingReward.materials"),
@@ -196,7 +199,12 @@ const PersistedPendingRewardSchema = z
   .nullable()
   .catch(null);
 
-export type PersistedPendingReward = z.infer<typeof PersistedPendingRewardUnionSchema>;
+// The parser always supplies companionChoiceIds, while callers restoring older
+// in-memory fixtures may still omit it.
+type OptionalCompanionChoiceIds<T> = T extends unknown
+  ? Omit<T, "companionChoiceIds"> & { companionChoiceIds?: string[] }
+  : never;
+export type PersistedPendingReward = OptionalCompanionChoiceIds<z.infer<typeof PersistedPendingRewardUnionSchema>>;
 
 // ===== ActiveRunData =====
 // normalizeActiveRunData lives in ./normalize-active-run-data.ts — imported above.

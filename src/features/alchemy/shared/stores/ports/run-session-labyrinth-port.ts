@@ -2,19 +2,20 @@
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import { getRunTransientStore } from "../run-transient-store";
+import { dispatchRunSessionCommand } from "../run-session-command";
 
 export function setActiveLabyrinthModifiers(modifiers: EncounterCombatTraitId[]) {
-  getRunTransientStore().setActiveLabyrinthModifiers(modifiers);
+  return dispatchRunSessionCommand(() => getRunTransientStore().setActiveLabyrinthModifiers(modifiers));
 }
 
 export function setActiveLabyrinthRewardModifiers(modifiers: EncounterRewardTraitId[]) {
-  getRunTransientStore().setActiveLabyrinthRewardModifiers(modifiers);
+  return dispatchRunSessionCommand(() => getRunTransientStore().setActiveLabyrinthRewardModifiers(modifiers));
 }
 
 export function setActiveLabyrinthPendingNode(node: LabyrinthNodePosition | null) {
-  getRunTransientStore().setActiveLabyrinthPendingNode(node);
+  return dispatchRunSessionCommand(() => getRunTransientStore().setActiveLabyrinthPendingNode(node));
 }
 
 export function setLabyrinthMap(map: LabyrinthMap | ((prev: LabyrinthMap) => LabyrinthMap)) {
-  getRunTransientStore().setLabyrinthMap(map);
+  return dispatchRunSessionCommand(() => getRunTransientStore().setLabyrinthMap(map));
 }

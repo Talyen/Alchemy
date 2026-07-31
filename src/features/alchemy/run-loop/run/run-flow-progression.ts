@@ -1,6 +1,6 @@
 import {
   readBattleStore,
-  runSessionTransaction,
+  dispatchRunSessionCommand,
   setRewardState,
   clearBattlePresentationUi,
 } from "../../shared/stores/run-session-facade";
@@ -18,14 +18,14 @@ export function createProgressionHandlers(ctx: RunFlowContext) {
       screen: CONSTANTS.SCREENS.DESTINATION,
       onRenderedScreenCommit: () => {
         setRewardState(deps.contentNav.createInitialDestinations({ destinationIndexInAct }));
-        ctx.prepareDestinationScreen();
+        ctx.dispatchContinuation({ type: "prepare-destination-screen" });
         onCommitted?.();
       },
     });
   }
 
   function handleActComplete(displayMaterials?: MaterialInventory) {
-    runSessionTransaction(
+    dispatchRunSessionCommand(
       () => {
         readBattleStore().setHasActiveBattle(false);
         if (deps.run.currentAct >= ACTS_PER_RUN) {
@@ -47,7 +47,7 @@ export function createProgressionHandlers(ctx: RunFlowContext) {
         afterCommit: (runComplete) => {
           clearBattlePresentationUi();
           if (runComplete) {
-            ctx.completeRunVictory(displayMaterials);
+            ctx.dispatchContinuation({ type: "complete-run-victory", displayMaterials: displayMaterials ?? null });
           } else {
             prepareNextDestination(0);
           }
@@ -57,7 +57,7 @@ export function createProgressionHandlers(ctx: RunFlowContext) {
   }
 
   function advanceToNextDestination() {
-    runSessionTransaction(
+    dispatchRunSessionCommand(
       () => {
         deps.run.setRoomsEncountered((p) => p + 1);
         if (deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {

@@ -3,7 +3,7 @@ import {
   beginDestinationClaim,
   cancelDestinationClaim,
   commitDestinationClaim,
-  runSessionTransaction,
+  dispatchRunSessionCommand,
   setCorruptionResult,
   setRewardState,
 } from "../../shared/stores/run-session-facade";
@@ -27,7 +27,7 @@ export function createDestinationScreenHandlers(ctx: RunFlowContext) {
 
   function handleDestinationChoice(destination: Destination) {
     try {
-      const choice = runSessionTransaction(() => {
+      const choice = dispatchRunSessionCommand(() => {
         if (!beginDestinationClaim(destination)) return null;
         const rewardState = readRunSessionStore().rewardState;
         const selectedBossId = destination === CONSTANTS.DESTINATIONS.BOSS_COMBAT ? rewardState.selectedBossId : null;
@@ -59,18 +59,20 @@ export function createDestinationScreenHandlers(ctx: RunFlowContext) {
         startBossBattle: () => deps.dispatch({ type: "start-boss", bossId: choice.selectedBossId }),
       });
     } catch (error) {
-      runSessionTransaction(() => cancelDestinationClaim());
+      dispatchRunSessionCommand(() => cancelDestinationClaim());
       throw error;
     }
   }
 
   function handleCampfireContinue() {
-    runSessionTransaction(
+    dispatchRunSessionCommand(
       () => {
         const healFraction = getCampfireHealFraction(deps.talents.talentEffects.campfireHealBonus);
         deps.run.setRunPlayerHealth((prev) => getCampfireRestHealth(prev, deps.run.runMaxHealth, healFraction));
       },
-      { afterCommit: () => ctx.advanceToNextDestination() },
+      {
+        afterCommit: () => ctx.dispatchContinuation({ type: "advance-to-next-destination" }),
+      },
     );
   }
 

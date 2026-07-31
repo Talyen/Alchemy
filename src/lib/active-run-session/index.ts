@@ -22,6 +22,7 @@ export { parseActiveRun } from "./parse";
 export { toActiveRunData } from "./to-active-run-data";
 export {
   restorePendingReward,
+  restorePendingRewardBundle,
   serializePendingReward,
   resolveCardChoices,
   resolveGearChoices,

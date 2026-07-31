@@ -21,7 +21,16 @@ describe("active run snapshot parity", () => {
   const restoreSource = [
     read("src/features/alchemy/shared/stores/run-transitions.ts"),
     read("src/features/alchemy/shared/stores/restore-active-run-session.ts"),
+    read("src/features/alchemy/shared/stores/run-resume-codec.ts"),
   ].join("\n");
+
+  it("keeps snapshot and resume translation behind one feature-owned codec", () => {
+    const codecSource = read("src/features/alchemy/shared/stores/run-resume-codec.ts");
+    expect(codecSource).toContain("export function encodeRunResumeSnapshot");
+    expect(codecSource).toContain("export function decodeRunResumeSnapshot");
+    expect(read("src/features/alchemy/shared/stores/run-transitions.ts")).toContain("encodeRunResumeSnapshot");
+    expect(read("src/features/alchemy/shared/stores/run-transitions.ts")).toContain("decodeRunResumeSnapshot");
+  });
 
   it("serializes every ActiveRunData field in createActiveRunSnapshot", () => {
     for (const key of typeKeys) {
@@ -31,7 +40,7 @@ describe("active run snapshot parity", () => {
     }
   });
 
-  const progressViaInitialize = ["store.initialize(activeRun"];
+  const progressViaInitialize = ["store.initializeFromResumeSnapshot(decoded.progress"];
   const restoreFieldSignals: Record<string, string[]> = {
     characterId: progressViaInitialize,
     runDeck: progressViaInitialize,

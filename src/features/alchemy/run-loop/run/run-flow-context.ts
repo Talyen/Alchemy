@@ -1,25 +1,31 @@
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
 
-/** Shared mutable bag so concern modules can call siblings at runtime after the composer wires them. */
+/**
+ * Continuations between run-flow concerns.
+ *
+ * These are deliberately explicit instead of hidden sibling callbacks. A
+ * concern can request the next run-flow operation without owning another
+ * concern's handler or depending on construction order.
+ */
+export type RunFlowContinuation =
+  | { type: "prepare-destination-screen" }
+  | {
+      type: "complete-run-victory";
+      displayMaterials?: MaterialInventory | null;
+      onRenderedScreenCommit?: () => void;
+    }
+  | { type: "handle-act-complete"; displayMaterials?: MaterialInventory }
+  | { type: "advance-to-next-destination" };
+
 export interface RunFlowContext {
   deps: RunFlowHandlerDeps;
-  prepareDestinationScreen: () => void;
-  completeRunVictory: (displayMaterials?: MaterialInventory | null, onRenderedScreenCommit?: () => void) => void;
-  handleActComplete: (displayMaterials?: MaterialInventory) => void;
-  advanceToNextDestination: () => void;
-  endLabyrinthRun: () => void;
-  endRunAndShowGameOver: () => void;
+  dispatchContinuation: (continuation: RunFlowContinuation) => void;
 }
 
-export function createRunFlowContext(deps: RunFlowHandlerDeps): RunFlowContext {
-  return {
-    deps,
-    prepareDestinationScreen: () => {},
-    completeRunVictory: () => {},
-    handleActComplete: () => {},
-    advanceToNextDestination: () => {},
-    endLabyrinthRun: () => {},
-    endRunAndShowGameOver: () => {},
-  };
+export function createRunFlowContext(
+  deps: RunFlowHandlerDeps,
+  dispatchContinuation: (continuation: RunFlowContinuation) => void,
+): RunFlowContext {
+  return { deps, dispatchContinuation };
 }

@@ -6,7 +6,7 @@ import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/s
 import {
   readBattleStore,
   readRunSessionStore,
-  runSessionTransaction,
+  dispatchRunSessionCommand,
   syncRunToBattleStart,
 } from "../../shared/stores/run-session-facade";
 import { useBattlePresentationStore } from "./battle-presentation-store";
@@ -54,7 +54,7 @@ export function createBattleInit(
   }
 
   function beginBattle(enemy: BestiaryEntry, deck: BattleCard[], gold: number, modifiers?: DifficultyModifier[]) {
-    runSessionTransaction(
+    dispatchRunSessionCommand(
       () => {
         const startingHealth = syncRunToBattleStart();
         const nextRoomsEncountered = ctx.run.roomsEncountered + 1;

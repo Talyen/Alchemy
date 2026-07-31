@@ -4,11 +4,11 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import { getRunProfileStore } from "../run-profile-store";
 import { getRunTransientStore } from "../run-transient-store";
 import { getRunDomainStore } from "../run-domain-store";
-import { runSessionTransaction } from "../run-session-transaction";
+import { dispatchRunSessionCommand } from "../run-session-command";
 
 /** Persist homestead materials and track totals for the run-end summary screen. */
 export function awardMaterialsDuringRun(materials: MaterialInventory) {
-  runSessionTransaction(() => {
+  dispatchRunSessionCommand(() => {
     getRunProfileStore().addMaterials(materials);
     getRunDomainStore().addRunMaterialsEarned(materials);
   });
@@ -16,12 +16,12 @@ export function awardMaterialsDuringRun(materials: MaterialInventory) {
 
 /** Dev / unlock-all: overwrite homestead materials. */
 export function setMaterials(materials: MaterialInventory) {
-  getRunProfileStore().setMaterials(materials);
+  return dispatchRunSessionCommand(() => getRunProfileStore().setMaterials(materials));
 }
 
 /** Dev unlock-all: max every talent and drop pending run XP so run-end cannot merge on top. */
 export function unlockAllTalents() {
-  runSessionTransaction(() => {
+  dispatchRunSessionCommand(() => {
     getRunProfileStore().unlockAllTalents();
     getRunDomainStore().resetRunXP();
   });
@@ -33,7 +33,7 @@ export function unlockAllTalents() {
  * call with no run XP left clears the snapshot instead of double-counting.
  */
 export function finalizeRunXP(): void {
-  runSessionTransaction(() => {
+  dispatchRunSessionCommand(() => {
     const domain = getRunDomainStore();
     const transient = getRunTransientStore();
     const runTalentXP = domain.activeRun.runTalentXP;

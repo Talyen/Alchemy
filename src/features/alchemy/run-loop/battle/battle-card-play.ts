@@ -23,7 +23,7 @@ import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import { logError } from "@/lib/error-logger";
 import { useBattlePresentationStore } from "./battle-presentation-store";
-import { readBattleStore, runSessionTransaction } from "../../shared/stores/run-session-facade";
+import { readBattleStore, dispatchRunSessionCommand } from "../../shared/stores/run-session-facade";
 
 const BATTLE_CARD_PLAY_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
 
@@ -125,7 +125,7 @@ export function createBattleCardPlay(
       currentState.hand,
       resolution.state,
       () => {
-        runSessionTransaction(
+        dispatchRunSessionCommand(
           () => {
             readBattleStore().setSyncedBattleState(resolution.state);
             ctx.talents.awardCardXP(card);
@@ -159,7 +159,7 @@ export function createBattleCardPlay(
       currentState.hand,
       newState,
       () => {
-        runSessionTransaction(() => {
+        dispatchRunSessionCommand(() => {
           readBattleStore().setSyncedBattleState(newState);
           if (cardOrNull) {
             useProfileStore.getState().setDiscoveredCardIds((current) => appendUnique(current, cardOrNull.id));

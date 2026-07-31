@@ -3,7 +3,7 @@ import {
   readBattleStore,
   readRunSessionStore,
   awardMaterialsDuringRun,
-  runSessionTransaction,
+  dispatchRunSessionCommand,
 } from "../../shared/stores/run-session-facade";
 import { setCompanionRewardCards, setRewardState } from "../../shared/stores/run-session-facade";
 import { playGoldGain, playVictory, stopAllSfx } from "@/lib/audio";
@@ -50,7 +50,7 @@ export function createVictoryHandlers(ctx: RunFlowContext) {
 
   function commitVictoryResult(result: VictoryRewardsResult) {
     let goldGained = false;
-    runSessionTransaction(
+    dispatchRunSessionCommand(
       () => {
         const battleState = readBattleStore().battleState;
         const runState = readActiveRunStore();

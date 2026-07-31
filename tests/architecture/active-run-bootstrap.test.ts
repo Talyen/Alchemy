@@ -11,8 +11,10 @@ function read(relPath: string): string {
 describe("active run bootstrap", () => {
   it("applies persisted currentScreen during domain restore", () => {
     const source = read("src/features/alchemy/shared/stores/run-transitions.ts");
-    expect(source).toContain("activeRun?.currentScreen");
-    expect(source).toContain("store.setScreen(activeRun.currentScreen");
+    const codec = read("src/features/alchemy/shared/stores/run-resume-codec.ts");
+    expect(source).toContain("decodeRunResumeSnapshot");
+    expect(source).toContain("store.setScreen(decoded.screen");
+    expect(codec).toContain("let screen = activeRun.currentScreen");
   });
 
   it("restores active run before paint in the run controller", () => {

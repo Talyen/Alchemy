@@ -23,7 +23,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-transaction";
-import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
+import { cardLibrary, computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
@@ -786,6 +786,35 @@ describe("session facade API", () => {
     restoreRun(snap, {}, {});
     expect(getRunSessionStoreView().rewardState.rewardType).toBe("gear");
     expect(getRunSessionStoreView().rewardState.choices).toEqual([instance]);
+  });
+
+  it("snapshots and restores companion reward handoffs", () => {
+    const primary = cardLibrary.find((card) => card.id === "slash")!;
+    const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"))!;
+    getRunSessionStoreView().setRewardState({
+      ...createEmptyRewardState(),
+      rewardType: "card",
+      choices: [primary],
+    });
+    getRunSessionStoreView().setCompanionRewardCards([companion]);
+
+    const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
+    expect(snap.pendingReward?.rewardType).toBe("card");
+    if (snap.pendingReward?.rewardType === "card") {
+      expect(snap.pendingReward.choiceIds).toEqual([primary.id]);
+    }
+    expect(snap.pendingReward?.companionChoiceIds).toEqual([companion.id]);
+
+    getRunSessionStoreView().setRewardState(createEmptyRewardState());
+    getRunSessionStoreView().setCompanionRewardCards(null);
+    restoreRun(snap, {}, {});
+
+    const restoredRewardState = getRunSessionStoreView().rewardState;
+    expect(restoredRewardState.rewardType).toBe("card");
+    if (restoredRewardState.rewardType === "card") {
+      expect(restoredRewardState.choices.map((choice) => choice.id)).toEqual([primary.id]);
+    }
+    expect(getRunSessionStoreView().companionRewardCards?.map((choice) => choice.id)).toEqual([companion.id]);
   });
 
   it("restores wildwood gear rewards from recovery-phase draft when pendingReward is absent", () => {

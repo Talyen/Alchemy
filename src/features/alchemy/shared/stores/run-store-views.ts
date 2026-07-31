@@ -53,6 +53,7 @@ const runProgressActionKeys = [
   "addRunMaterialsEarned",
   "clearRunMaterialsEarned",
   "initialize",
+  "initializeFromResumeSnapshot",
   "hydrateFromSnapshot",
 ] as const satisfies ReadonlyArray<keyof RunDomainStore>;
 

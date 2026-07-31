@@ -16,7 +16,7 @@ import {
   setWildwoodDraft,
   readRunSessionStore,
   readActiveRunStore,
-  runSessionTransaction,
+  dispatchRunSessionCommand,
 } from "../../shared/stores/run-session-facade";
 import { afterCampaignCharacterResolved } from "@/features/alchemy/shared/run-flow/campaign-start";
 import {
@@ -56,7 +56,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       draftedDeck?: BattleCard[];
     } = {},
   ) {
-    return runSessionTransaction(
+    return dispatchRunSessionCommand(
       () => {
         const snapshot = createStartSnapshot(characterId, contentSystemType, options.difficultyId, options.draftedDeck);
         applyRunStartSnapshot(snapshot);
@@ -115,7 +115,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
-    return runSessionTransaction(() => {
+    return dispatchRunSessionCommand(() => {
       const snapshot = startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN, {
         difficultyId,
         discoverStarterDeck: true,
@@ -140,7 +140,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function initializeWildwoodRun(characterId: CharacterId, initialDeck?: BattleCard[]) {
-    runSessionTransaction(
+    dispatchRunSessionCommand(
       () => {
         const skipDraft = initialDeck !== undefined && initialDeck.length >= DRAFT_ROUNDS;
         setWildwoodDraft(createInitialWildwoodDraftState(characterId, deps.worldRng));
@@ -186,7 +186,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
         deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
       } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
         deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
-          runSessionTransaction(() => {
+          dispatchRunSessionCommand(() => {
             setRewardState((prev) =>
               restoreOrCreateDestinationRewardState(prev, {
                 availableDestinations: deps.getAvailableDestinations(),

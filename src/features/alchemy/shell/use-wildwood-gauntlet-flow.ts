@@ -5,7 +5,7 @@ import {
   setWildwoodDraft,
   setPendingCharacterId,
   teardownRun,
-  runSessionTransaction,
+  dispatchRunSessionCommand,
   type RunStateController,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
@@ -47,7 +47,7 @@ export function useWildwoodGauntletFlow({
   rng,
 }: UseWildwoodGauntletFlowOptions) {
   const startNextWildwoodBoss = useCallback(() => {
-    runSessionTransaction(
+    dispatchRunSessionCommand(
       () => {
         const state = readRunSessionStore().wildwoodDraft;
         if (!state) return null;
@@ -116,7 +116,7 @@ export function useWildwoodGauntletFlow({
 
   const handleDraftPick = useCallback(
     (card: BattleCard) => {
-      runSessionTransaction(() => {
+      dispatchRunSessionCommand(() => {
         const state = readRunSessionStore().wildwoodDraft;
         if (run.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD || state?.phase !== "draft") return;
         const nextDeck = [...run.runDeck, card];
@@ -135,7 +135,7 @@ export function useWildwoodGauntletFlow({
   const handleDraftComplete = useCallback(
     (draftedCards: BattleCard[]) => {
       if (draftedCards.length < DRAFT_ROUNDS) return;
-      runSessionTransaction(() => {
+      dispatchRunSessionCommand(() => {
         run.setRunDeck(draftedCards);
         setPendingCharacterId(null);
         startNextWildwoodBoss();
@@ -145,7 +145,7 @@ export function useWildwoodGauntletFlow({
   );
 
   const handleWildwoodRecoveryComplete = useCallback(() => {
-    runSessionTransaction(
+    dispatchRunSessionCommand(
       () => {
         const wildwood = readRunSessionStore().wildwoodDraft;
         if (wildwood?.phase !== "recovery") return false;
@@ -178,7 +178,7 @@ export function useWildwoodGauntletFlow({
 
   const handleWildwoodRemoveCard = useCallback(
     (index: number) => {
-      runSessionTransaction(() => {
+      dispatchRunSessionCommand(() => {
         run.setRunDeck((deck) => deck.filter((_, cardIndex) => cardIndex !== index));
         startNextWildwoodBoss();
       });

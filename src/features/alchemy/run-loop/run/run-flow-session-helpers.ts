@@ -3,7 +3,7 @@ import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/loot";
 import {
   readActiveRunStore,
   readBattleStore,
-  runSessionTransaction,
+  dispatchRunSessionCommand,
   setRunEndMaterials,
 } from "../../shared/stores/run-session-facade";
 import { useUiStore } from "../../shared/stores/ui-store";
@@ -20,7 +20,7 @@ export function clearCombatPresentation() {
 }
 
 export function awardRunEndMaterials() {
-  return runSessionTransaction(() => {
+  return dispatchRunSessionCommand(() => {
     const runState = readActiveRunStore();
     if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
       runState.clearRunMaterialsEarned();

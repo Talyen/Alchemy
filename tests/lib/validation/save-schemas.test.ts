@@ -414,6 +414,37 @@ describe("ActiveRunDataSchema", () => {
     }
   });
 
+  it("defaults companion reward ids for legacy pending rewards", () => {
+    const result = ActiveRunDataSchema.safeParse({
+      characterId: "knight",
+      runDeck: [],
+      runGold: 0,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      roomsEncountered: 0,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      selectedDifficulty: null,
+      contentSystemType: "campaign",
+      labyrinthMap: null,
+      pendingReward: {
+        rewardType: "card",
+        choiceIds: ["slash"],
+        selectedId: null,
+        gold: 0,
+        materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+        destinations: [],
+        selectedBossId: null,
+        lastVictoryEnemyType: null,
+        lastVictoryContentSystem: null,
+      },
+    });
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    if (result.success) expect(result.data.pendingReward?.companionChoiceIds).toEqual([]);
+  });
+
   it("rejects pending gear rewards with no valid choices", () => {
     const result = ActiveRunDataSchema.safeParse({
       characterId: "knight",

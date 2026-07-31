@@ -1,0 +1,62 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+
+const ROOT = join(import.meta.dirname, "../..");
+
+function read(relPath: string): string {
+  return readFileSync(join(ROOT, relPath), "utf8");
+}
+
+function sourceFiles(relativeDirectory: string): string[] {
+  const absoluteDirectory = join(ROOT, relativeDirectory);
+  return readdirSync(absoluteDirectory, { withFileTypes: true }).flatMap((entry) => {
+    const relativePath = join(relativeDirectory, entry.name);
+    if (entry.isDirectory()) return sourceFiles(relativePath);
+    return /\.(ts|tsx)$/.test(entry.name) ? [relativePath] : [];
+  });
+}
+
+describe("run-session command boundary", () => {
+  it("keeps gameplay mutation callers off the low-level transaction coordinator", () => {
+    const callerRoots = [
+      "src/features/alchemy/meta",
+      "src/features/alchemy/run-loop",
+      "src/features/alchemy/run-setup",
+      "src/features/alchemy/shell",
+      "src/features/alchemy/shared/stores/ports",
+    ];
+    const offenders = callerRoots.flatMap(sourceFiles).filter((path) => {
+      const source = read(path);
+      return source.includes("runSessionTransaction") || source.includes("run-session-transaction");
+    });
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("exports the command API from the facade without leaking the coordinator", () => {
+    const facade = read("src/features/alchemy/shared/stores/run-session-facade.ts");
+    expect(facade).toContain("export { dispatchRunSessionCommand");
+    expect(facade).toContain('from "./run-session-command"');
+    expect(facade).not.toContain("runSessionTransaction");
+  });
+
+  it("keeps focused session write ports inside the same command boundary", () => {
+    for (const path of sourceFiles("src/features/alchemy/shared/stores/ports")) {
+      expect(read(path), path).toContain("dispatchRunSessionCommand");
+    }
+  });
+
+  it("keeps run-flow cross-concern calls typed and one-way", () => {
+    const context = read("src/features/alchemy/run-loop/run/run-flow-context.ts");
+    const handlers = read("src/features/alchemy/run-loop/run/run-flow-handlers.ts");
+
+    expect(context).toContain("export type RunFlowContinuation");
+    expect(context).toContain("dispatchContinuation");
+    expect(context).not.toContain("completeRunVictory:");
+    expect(context).not.toContain("advanceToNextDestination:");
+    expect(handlers).toContain("createRunFlowContext(deps, dispatchContinuation)");
+    expect(handlers).not.toContain("ctx.completeRunVictory");
+    expect(handlers).not.toContain("ctx.advanceToNextDestination");
+  });
+});

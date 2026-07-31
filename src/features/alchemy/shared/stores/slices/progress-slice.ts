@@ -105,6 +105,12 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
         state.initialized = true;
       }),
 
+    initializeFromResumeSnapshot: (activeRun) =>
+      set((state) => {
+        state.activeRun = activeRun;
+        state.initialized = true;
+      }),
+
     hydrateFromSnapshot: (snapshot) =>
       set((state) => {
         Object.assign(state.activeRun, runFieldsFromSnapshot(snapshot), {

@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { createGearInstance } from "@/lib/gear";
 import { gearDefinitions } from "@/lib/gear/definitions";
-import { restorePendingReward, serializePendingReward } from "@/lib/active-run-session/pending-reward-persistence";
+import { cardLibrary } from "@/lib/game-data";
+import {
+  restorePendingReward,
+  restorePendingRewardBundle,
+  serializePendingReward,
+} from "@/lib/active-run-session/pending-reward-persistence";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 
 describe("pending reward persistence", () => {
@@ -66,5 +71,39 @@ describe("pending reward persistence", () => {
       lastVictoryContentSystem: null,
     });
     expect(restored?.destinations).toEqual(["Campfire", "Mystery"]);
+  });
+
+  it("round-trips companion choices alongside the primary reward", () => {
+    const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"));
+    const primary = cardLibrary.find((card) => card.id === "slash");
+    expect(companion).toBeDefined();
+    expect(primary).toBeDefined();
+
+    const rewardState = {
+      ...createEmptyRewardState(),
+      rewardType: "card" as const,
+      choices: [primary!],
+      gold: 8,
+    };
+    const persisted = serializePendingReward(rewardState, [companion!]);
+
+    expect(persisted?.companionChoiceIds).toEqual([companion!.id]);
+    const restored = restorePendingRewardBundle(persisted!);
+    expect(restored.rewardState?.rewardType).toBe("card");
+    if (restored.rewardState?.rewardType === "card") {
+      expect(restored.rewardState.choices.map((choice) => choice.id)).toEqual([primary!.id]);
+    }
+    expect(restored.companionRewardCards?.map((choice) => choice.id)).toEqual([companion!.id]);
+  });
+
+  it("keeps companion-only handoffs claimable when the primary reward is already drained", () => {
+    const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"));
+    expect(companion).toBeDefined();
+
+    const persisted = serializePendingReward(createEmptyRewardState(), [companion!]);
+    const restored = restorePendingRewardBundle(persisted!);
+
+    expect(restored.rewardState?.choices).toEqual([]);
+    expect(restored.companionRewardCards?.map((choice) => choice.id)).toEqual([companion!.id]);
   });
 });

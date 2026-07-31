@@ -25,7 +25,7 @@ export {
   useRunSessionBattleContext,
   useRunSessionNavigationSlice,
 } from "./run-session-model";
-export { runSessionTransaction } from "./run-session-transaction";
+export { dispatchRunSessionCommand, type RunSessionCommand } from "./run-session-command";
 
 // Run lifecycle transitions.
 export {
