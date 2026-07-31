@@ -1,6 +1,6 @@
 import type { KeywordId } from "@/lib/game-data";
 import type { GearEffectManifest } from "./gear-effect-manifest";
-import type { GearRarity } from "./types";
+import type { GearRarity } from "./types-core";
 
 export type GearAffixAspect = "offensive" | "defensive";
 

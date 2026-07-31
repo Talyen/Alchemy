@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface DragState {
   pointerId: number;
@@ -20,8 +20,18 @@ export function useInventoryScrollDrag({
 }) {
   const dragRef = useRef<DragState | null>(null);
   const suppressClickRef = useRef(false);
+  const suppressClickTimeoutRef = useRef<number | null>(null);
   const [dragging, setDragging] = useState(false);
   const [dragSequence, setDragSequence] = useState(0);
+
+  useEffect(() => {
+    return () => {
+      if (suppressClickTimeoutRef.current !== null) {
+        window.clearTimeout(suppressClickTimeoutRef.current);
+        suppressClickTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // suppressingInteraction is true briefly after a scroll drag completes
   const suppressingInteraction = salvageMode ? false : dragSequence > 0;
@@ -36,6 +46,9 @@ export function useInventoryScrollDrag({
       startScrollTop: event.currentTarget.scrollTop,
       moved: false,
     };
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
     setDragging(true);
   }
 
@@ -63,9 +76,13 @@ export function useInventoryScrollDrag({
     dragRef.current = null;
     setDragging(false);
     if (drag.moved) {
-      window.setTimeout(() => {
+      if (suppressClickTimeoutRef.current !== null) {
+        window.clearTimeout(suppressClickTimeoutRef.current);
+      }
+      suppressClickTimeoutRef.current = window.setTimeout(() => {
         suppressClickRef.current = false;
         setDragSequence(0);
+        suppressClickTimeoutRef.current = null;
       }, 150);
     }
   }
