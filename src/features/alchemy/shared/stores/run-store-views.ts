@@ -1,4 +1,5 @@
-// Composed store views and React adapters over the lifetime-matched run stores.
+// Composed store views and React adapters over the gameplay aggregate's
+// lifetime-oriented compatibility slices.
 // Domain fields live in run-domain / profile / transient / battle stores; this module flattens them.
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";

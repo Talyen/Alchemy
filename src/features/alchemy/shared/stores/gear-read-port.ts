@@ -8,6 +8,10 @@ export function readHasAnyOwnedGear(): boolean {
   return flattenGearInventories(useGearStore.getState().inventories).length > 0;
 }
 
+export function useHasAnyOwnedGear(): boolean {
+  return useGearStore((state) => flattenGearInventories(state.inventories).length > 0);
+}
+
 /** Aggregate gear effects for a character at battle/run-start entry. */
 export function readGearManifestForCharacter(characterId: CharacterId) {
   const { inventories, loadouts } = useGearStore.getState();

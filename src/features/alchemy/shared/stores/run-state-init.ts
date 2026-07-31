@@ -273,13 +273,6 @@ export function createInitialPermanentFields(): PermanentProgressFields {
   };
 }
 
-export function createInitialTalentState(
-  initialTalentXP: TalentXP,
-  initialUnlockedTalents: UnlockedTalents,
-): Pick<PermanentProgressFields, "talentXP" | "unlockedTalents"> {
-  return { talentXP: initialTalentXP, unlockedTalents: initialUnlockedTalents };
-}
-
 export function runFieldsFromSnapshot(
   snapshot: RunStartSnapshot,
 ): Pick<

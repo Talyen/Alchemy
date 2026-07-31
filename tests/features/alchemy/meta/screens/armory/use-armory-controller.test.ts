@@ -3,6 +3,8 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { getRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
+import { getRunTransientStore } from "@/features/alchemy/shared/stores/run-transient-store";
 import { createEmptyGearInventories, type GearInstance } from "@/lib/gear";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 
@@ -33,6 +35,32 @@ describe("useArmoryController", () => {
     });
 
     expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
+  });
+
+  it("syncs health for the active-run character when editing another loadout", () => {
+    const helm: GearInstance = {
+      instanceId: "rogue-health-helm",
+      definitionId: "leather-helm-basic",
+      affixes: [{ id: "max-health", value: 7 }],
+    };
+    const inventories = createEmptyGearInventories();
+    inventories.rogue = [helm];
+    useGearStore.getState().initialize(inventories, useGearStore.getState().loadouts);
+    getRunDomainStore().initialize(null, "knight");
+    getRunDomainStore().setRunMaxHealth(30);
+    getRunDomainStore().setRunPlayerHealth(30);
+    getRunTransientStore().setHasActiveRun(true);
+
+    const { result } = renderHook(() => useArmoryController());
+
+    act(() => {
+      result.current.onEquip("rogue", "helm", helm);
+    });
+
+    expect(getRunDomainStore().activeRun.runMaxHealth).toBe(30);
+    expect(getRunDomainStore().activeRun.runPlayerHealth).toBe(30);
+
+    getRunTransientStore().setHasActiveRun(false);
   });
 
   it("moves board items through the controller facade", () => {

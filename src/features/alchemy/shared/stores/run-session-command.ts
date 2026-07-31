@@ -1,9 +1,8 @@
 // Public command boundary for gameplay mutations.
 //
-// The underlying lifetime-matched stores are still being migrated, but feature
-// code should enter the session through this module. Keeping the low-level
-// transaction coordinator behind one command-shaped API gives us a stable seam
-// for the eventual aggregate reducer without changing save/resume data today.
+// Feature code enters the authoritative gameplay aggregate through this module.
+// Keeping transaction mechanics behind a command-shaped API preserves one
+// synchronous commit boundary without coupling callers to Zustand or Immer.
 import { runSessionTransaction } from "./run-session-transaction";
 
 export interface RunSessionCommand<T> {

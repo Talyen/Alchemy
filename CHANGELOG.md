@@ -421,6 +421,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(state): unify gameplay commits and gear health sync
 - fix(armory): stabilize inventory drag pointer handling
 - fix(ci): fetch changelog history for unit tests
 - fix: consolidate runtime helpers and changelog guard

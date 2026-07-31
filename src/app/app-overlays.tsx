@@ -1,12 +1,11 @@
 /* eslint-disable react-refresh/only-export-components -- overlay components and tiny route helpers are colocated here. */
 import { GameMenu, HamburgerTrigger } from "@/features/alchemy/shared/ui/shared-ui";
 import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-particles";
-import { flattenGearInventories } from "@/lib/gear";
 import { platform } from "@/lib/platform";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
 import type { useReturnToRunNavigation } from "@/app/use-return-to-run-navigation";
-import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { useHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-read-port";
 
 export function AppBackgroundParticles({
   renderedScreen,
@@ -52,7 +51,7 @@ export function UnsupportedSaveOverlay() {
 }
 
 export function useIsArmoryLocked() {
-  return useGearStore((s) => flattenGearInventories(s.inventories).length === 0);
+  return !useHasAnyOwnedGear();
 }
 
 export function GameMenuOverlay({

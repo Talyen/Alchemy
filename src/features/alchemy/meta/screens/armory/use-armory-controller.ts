@@ -2,7 +2,6 @@ import { useCallback, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { CharacterId } from "@/lib/game-data";
 import {
-  flattenGearInventories,
   generateDevRandomGearInstance,
   type BoardItemRef,
   type CraftingCurrencyBoardPositionsByCharacter,
@@ -18,7 +17,7 @@ import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import {
   resolveActiveRunForSave,
   dispatchRunSessionCommand,
-  syncRunMaxHealthFromGearMutation,
+  dispatchGearMutationWithRunHealthSync,
   useActiveRunCharacterId,
   useHasActiveBattle,
   useHasActiveRun,
@@ -84,95 +83,56 @@ export function useArmoryController(): ArmoryController {
   const onEquip = useCallback<ArmoryController["onEquip"]>(
     (characterId, slot, instance, options) => {
       if (hasActiveBattle) return;
-      dispatchRunSessionCommand(() => {
-        const loadoutsBefore = gear.loadouts;
-        gear.equip(characterId, slot, instance, options);
-        if (hasActiveRun && characterId === activeRunCharacterId) {
-          const inventoryAfter = flattenGearInventories(useGearStore.getState().inventories);
-          syncRunMaxHealthFromGearMutation(
-            characterId,
-            inventoryAfter,
-            loadoutsBefore,
-            inventoryAfter,
-            useGearStore.getState().loadouts,
-          );
-        }
+      dispatchGearMutationWithRunHealthSync({
+        characterId: activeRunCharacterId,
+        mutate: (state) => {
+          state.equip(characterId, slot, instance, options);
+        },
       });
       flush();
     },
-    [activeRunCharacterId, gear, hasActiveBattle, hasActiveRun, flush],
+    [activeRunCharacterId, hasActiveBattle, flush],
   );
 
   const onUnequip = useCallback<ArmoryController["onUnequip"]>(
     (characterId, slot) => {
       if (hasActiveBattle) return;
-      dispatchRunSessionCommand(() => {
-        const loadoutsBefore = gear.loadouts;
-        gear.unequip(characterId, slot);
-        if (hasActiveRun && characterId === activeRunCharacterId) {
-          const inventoryAfter = flattenGearInventories(useGearStore.getState().inventories);
-          syncRunMaxHealthFromGearMutation(
-            characterId,
-            inventoryAfter,
-            loadoutsBefore,
-            inventoryAfter,
-            useGearStore.getState().loadouts,
-          );
-        }
+      dispatchGearMutationWithRunHealthSync({
+        characterId: activeRunCharacterId,
+        mutate: (state) => {
+          state.unequip(characterId, slot);
+        },
       });
       flush();
     },
-    [activeRunCharacterId, gear, hasActiveBattle, hasActiveRun, flush],
+    [activeRunCharacterId, hasActiveBattle, flush],
   );
 
   const onSalvage = useCallback<ArmoryController["onSalvage"]>(
     (instanceId) => {
       if (hasActiveBattle) return false;
-      const inventoryBefore = flattenGearInventories(gear.inventories);
-      const loadoutsBefore = gear.loadouts;
-      const result = dispatchRunSessionCommand(() => {
-        const result = gear.salvage(instanceId, { rng: rngRef.current });
-        if (!result) return null;
-        if (hasActiveRun) {
-          syncRunMaxHealthFromGearMutation(
-            activeRunCharacterId,
-            inventoryBefore,
-            loadoutsBefore,
-            flattenGearInventories(useGearStore.getState().inventories),
-            useGearStore.getState().loadouts,
-          );
-        }
-        return result;
+      const result = dispatchGearMutationWithRunHealthSync({
+        characterId: activeRunCharacterId,
+        mutate: (state) => state.salvage(instanceId, { rng: rngRef.current }),
       });
       if (!result) return false;
       flush();
       return true;
     },
-    [activeRunCharacterId, flush, gear, hasActiveBattle, hasActiveRun],
+    [activeRunCharacterId, flush, hasActiveBattle],
   );
 
   const onTransferGear = useCallback<ArmoryController["onTransferGear"]>(
     (instanceId, targetCharacterId) => {
       if (hasActiveBattle) return false;
-      const ok = dispatchRunSessionCommand(() => {
-        const ok = gear.transferToInventory(instanceId, targetCharacterId);
-        if (ok && hasActiveRun) {
-          const inventoryAfter = flattenGearInventories(useGearStore.getState().inventories);
-          const loadoutsAfter = useGearStore.getState().loadouts;
-          syncRunMaxHealthFromGearMutation(
-            activeRunCharacterId,
-            flattenGearInventories(gear.inventories),
-            gear.loadouts,
-            inventoryAfter,
-            loadoutsAfter,
-          );
-        }
-        return ok;
+      const ok = dispatchGearMutationWithRunHealthSync({
+        characterId: activeRunCharacterId,
+        mutate: (state) => state.transferToInventory(instanceId, targetCharacterId),
       });
       if (ok) flush();
       return ok;
     },
-    [activeRunCharacterId, flush, gear, hasActiveBattle, hasActiveRun],
+    [activeRunCharacterId, flush, hasActiveBattle],
   );
 
   const onSortBoard = useCallback<ArmoryController["onSortBoard"]>(
@@ -197,27 +157,16 @@ export function useArmoryController(): ArmoryController {
   const onApplyCurrency = useCallback<ArmoryController["onApplyCurrency"]>(
     (currencyId, instanceId) => {
       if (hasActiveBattle) return false;
-      const inventoryBefore = flattenGearInventories(gear.inventories);
-      const loadoutsBefore = gear.loadouts;
-      const ok = dispatchRunSessionCommand(() => {
-        const ok = gear.applyCurrency(currencyId, instanceId, { rng: rngRef.current });
-        if (ok && hasActiveRun) {
-          syncRunMaxHealthFromGearMutation(
-            activeRunCharacterId,
-            inventoryBefore,
-            loadoutsBefore,
-            flattenGearInventories(useGearStore.getState().inventories),
-            useGearStore.getState().loadouts,
-          );
-        }
-        return ok;
+      const ok = dispatchGearMutationWithRunHealthSync({
+        characterId: activeRunCharacterId,
+        mutate: (state) => state.applyCurrency(currencyId, instanceId, { rng: rngRef.current }),
       });
       if (ok) {
         flush();
       }
       return ok;
     },
-    [activeRunCharacterId, flush, gear, hasActiveBattle, hasActiveRun],
+    [activeRunCharacterId, flush, hasActiveBattle],
   );
 
   const onSpawnDevGear = useCallback<NonNullable<ArmoryController["onSpawnDevGear"]>>(

@@ -1,102 +1,54 @@
-// Permanent meta-progression store (talents + homestead) — survives run teardown.
-import { create } from "zustand";
-import { immer } from "zustand/middleware/immer";
-import {
-  computeRunEndTalentXPSnapshot,
-  mergeRunTalentXPIntoPermanent,
-  talentPool,
-  tryUnlockTalent,
-  xpThresholdForPoints,
-  type KeywordId,
-  type TalentXP,
-  type UnlockedTalents,
-} from "@/lib/game-data";
-import {
-  createInitialPermanentFields,
-  createInitialTalentState,
-  type PermanentProgressFields,
-} from "@/features/alchemy/shared/stores/run-state-init";
-import { createHomesteadProfileActions, type HomesteadProfileActions } from "./slices/progress-homestead-actions";
+import type { KeywordId, TalentXP, UnlockedTalents } from "@/lib/game-data";
+import type { PermanentProgressFields } from "./run-state-init";
+import type { HomesteadProfileActions } from "./slices/progress-homestead-actions";
+import type { TalentActions } from "./gameplay-state-store";
+import { createSliceStore } from "./slice-store-adapter";
+import { createInitialPermanentFields } from "./run-state-init";
 
-export interface RunProfileActions extends HomesteadProfileActions {
+export interface RunProfileActions extends HomesteadProfileActions, TalentActions {
   unlockTalent: (keywordId: KeywordId, talentId: string) => void;
   unlockAllTalents: () => void;
   resetUnlockedTalents: () => void;
   clearPermanentData: () => void;
-  /** Apply persisted talent progression during boot / save hydration. */
   applyTalentState: (talentXP: TalentXP, unlockedTalents: UnlockedTalents) => void;
-  /** Merge a finished run's XP into permanent talent XP; returns the multiplied run-end snapshot. */
   mergeRunTalentXPIntoProfile: (runTalentXP: TalentXP, multiplier: number) => TalentXP;
 }
 
 export type RunProfileStore = PermanentProgressFields & RunProfileActions;
 
-export const useRunProfileStore = create<RunProfileStore>()(
-  immer((set) => ({
-    ...createInitialPermanentFields(),
+const PROFILE_KEYS = [
+  "talentXP",
+  "unlockedTalents",
+  "materialInventory",
+  "constructedBuildings",
+  "plantedFarms",
+  "completedResearch",
+  "bondedCompanions",
+  "effects",
+  "addMaterials",
+  "setMaterials",
+  "constructBuilding",
+  "plantFarm",
+  "completeResearch",
+  "bondCompanion",
+  "unlockTalent",
+  "unlockAllTalents",
+  "resetUnlockedTalents",
+  "clearPermanentData",
+  "applyTalentState",
+  "mergeRunTalentXPIntoProfile",
+] as const satisfies ReadonlyArray<keyof RunProfileStore>;
 
-    unlockTalent: (keywordId, talentId) =>
-      set((profile) => {
-        const result = tryUnlockTalent(keywordId, talentId, profile.talentXP, profile.unlockedTalents);
-        if (result.unlockedTalents) {
-          profile.unlockedTalents = result.unlockedTalents;
-        }
-      }),
+export const useRunProfileStore = createSliceStore<RunProfileStore>((state) => state, PROFILE_KEYS);
 
-    unlockAllTalents: import.meta.env.DEV
-      ? () =>
-          set((profile) => {
-            const next: UnlockedTalents = {};
-            const xp: TalentXP = {};
-            for (const talent of talentPool) {
-              next[talent.keywordId] = [...(next[talent.keywordId] ?? []), talent.id];
-            }
-            for (const [keyword, ids] of Object.entries(next)) {
-              xp[keyword as KeywordId] = xpThresholdForPoints(ids.length);
-            }
-            profile.unlockedTalents = next;
-            profile.talentXP = xp;
-          })
-      : () => {},
-
-    resetUnlockedTalents: () =>
-      set((profile) => {
-        profile.unlockedTalents = {};
-      }),
-
-    clearPermanentData: () =>
-      set((profile) => {
-        Object.assign(profile, createInitialPermanentFields());
-      }),
-
-    applyTalentState: (talentXP, unlockedTalents) =>
-      set((profile) => {
-        Object.assign(profile, createInitialTalentState(talentXP, unlockedTalents));
-      }),
-
-    mergeRunTalentXPIntoProfile: (runTalentXP, multiplier) => {
-      const snapshot = computeRunEndTalentXPSnapshot(runTalentXP, multiplier);
-      set((profile) => {
-        profile.talentXP = mergeRunTalentXPIntoPermanent(runTalentXP, profile.talentXP, multiplier);
-      });
-      return snapshot;
-    },
-
-    ...createHomesteadProfileActions(set),
-  })),
-);
-
-/** Imperative access to the permanent profile store API. */
 export function getRunProfileStore(): RunProfileStore {
   return useRunProfileStore.getState();
 }
 
-/** Restore permanent progression to a fresh-save baseline (dev wipe and tests). */
 export function resetRunProfileStore(): void {
-  useRunProfileStore.setState(createInitialPermanentFields());
+  useRunProfileStore.setState(createInitialPermanentFields(), false);
 }
 
-/** Field-only projection for snapshots and flattened views. */
 export function readRunProfileFields(profile: PermanentProgressFields): PermanentProgressFields {
   return {
     talentXP: profile.talentXP,

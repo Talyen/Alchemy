@@ -27,12 +27,12 @@ import {
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import type { GearInstance } from "@/lib/gear";
-import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import {
   readActiveRunStore,
   readRunSessionStore,
   dispatchRunSessionCommand,
+  dispatchGearMutationWithRunHealthSync,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { CreateShopActionsDeps, ShopActions } from "./shop-action-types";
 import { createShopPriceSelectors } from "./shop-price-selectors";
@@ -234,7 +234,11 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
       getGearBuyPrice(instance),
       setEquipmentShopState as (updater: (prev: EquipmentShopState) => EquipmentShopState) => void,
       instance.instanceId,
-      () => useGearStore.getState().addInstance(instance, readActiveRunStore().characterId),
+      () =>
+        dispatchGearMutationWithRunHealthSync({
+          characterId: readActiveRunStore().characterId,
+          mutate: (gear) => gear.addInstance(instance, readActiveRunStore().characterId),
+        }),
     );
   }
 

@@ -8,6 +8,7 @@ import {
   type RunProfileSaveFields,
 } from "@/features/alchemy/shared/stores/run-save-readers";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-transaction";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 export type AlchemyPersistenceFields = SettingsSaveFields & ProfileSaveFields & GearSaveFields & RunProfileSaveFields;
 
@@ -22,9 +23,11 @@ export function encodeAlchemyPersistenceFields(): AlchemyPersistenceFields {
 
 export function hydrateAlchemyPersistenceFields(fields: AlchemyPersistenceFields): void {
   settingsPersistenceCodec.hydrate(fields);
-  profilePersistenceCodec.hydrate(fields);
-  gearPersistenceCodec.hydrate(fields);
-  runProfilePersistenceCodec.hydrate(fields);
+  dispatchRunSessionCommand(() => {
+    profilePersistenceCodec.hydrate(fields);
+    gearPersistenceCodec.hydrate(fields);
+    runProfilePersistenceCodec.hydrate(fields);
+  });
 }
 
 export function subscribeAlchemyPersistence(listener: () => void): () => void {

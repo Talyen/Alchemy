@@ -12,6 +12,8 @@ import { getRunProfileStore } from "@/features/alchemy/shared/stores/run-profile
 import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-transitions";
+import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
+import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -151,6 +153,19 @@ describe("run-session transaction coordinator", () => {
     expect(commits).toHaveLength(1);
   });
 
+  it("does not publish a commit for an unchanged transaction", () => {
+    const commits: number[] = [];
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+    const before = getRunSessionRevision();
+
+    runSessionTransaction(() => {});
+
+    unsubscribe();
+
+    expect(commits).toHaveLength(0);
+    expect(getRunSessionRevision()).toBe(before);
+  });
+
   it("publishes one commit for all persisted gameplay stores", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
@@ -171,6 +186,35 @@ describe("run-session transaction coordinator", () => {
     expect(getRunProfileStore().materialInventory.wood).toBe(1);
     expect(useProfileStore.getState().discoveredCardIds).toEqual(["slash"]);
     expect(useGearStore.getState().craftingCurrencies.voidstone).toBe(1);
+  });
+
+  it("publishes Gear and active-run health changes as one aggregate commit", () => {
+    const helm: GearInstance = {
+      instanceId: "aggregate-health-helm",
+      definitionId: "leather-helm-basic",
+      affixes: [{ id: "max-health", value: 7 }],
+    };
+    const inventories = createEmptyGearInventories();
+    inventories.knight = [helm];
+    useGearStore.getState().initialize(inventories, createEmptyGearLoadouts());
+    getRunDomainStore().setRunMaxHealth(30);
+    getRunDomainStore().setRunPlayerHealth(30);
+    getRunTransientStore().setHasActiveRun(true);
+
+    const commits: number[] = [];
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+
+    dispatchGearMutationWithRunHealthSync({
+      characterId: "knight",
+      mutate: (gear) => gear.equip("knight", "helm", helm),
+    });
+
+    unsubscribe();
+
+    expect(commits).toHaveLength(1);
+    expect(getRunDomainStore().activeRun.runMaxHealth).toBe(37);
+    expect(getRunDomainStore().activeRun.runPlayerHealth).toBe(30);
+    expect(useGearStore.getState().loadouts.knight.helm).toBe(helm.instanceId);
   });
 
   it("restores every gameplay store and publishes no commit when work throws", () => {

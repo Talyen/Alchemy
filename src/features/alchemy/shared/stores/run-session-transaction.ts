@@ -1,123 +1,117 @@
-// Transaction boundary for the run session's lifetime-matched stores.
+// Transaction boundary for the authoritative gameplay aggregate.
 //
-// The run domain, transient session, battle, permanent profile, and gear stores
-// remain separate mutation owners, but React and autosave read one committed
-// session projection. Gameplay operations must publish one committed session
-// change; settings and presentation-only state remain outside this boundary.
-import { create } from "zustand";
-import { useRunBattleDomainStore } from "./run-battle-domain-store";
-import { useRunDomainStore } from "./run-domain-store";
-import { useRunProfileStore } from "./run-profile-store";
-import { useRunTransientStore } from "./run-transient-store";
-import { useProfileStore } from "./profile-store";
-import { useGearStore } from "./gear-store";
+// The aggregate store owns all gameplay fields. A command mutates an Immer
+// draft and publishes exactly one root revision on success; failed commands
+// discard the draft without notifying React or persistence.
+import {
+  beginGameplayTransaction,
+  commitGameplayTransaction,
+  rollbackGameplayTransaction,
+  subscribeGameplayCommits,
+  useGameplayStateStore,
+  type GameplayState,
+} from "./gameplay-state-store";
+import type { RunDomainStore } from "./run-domain-store";
+import type { RunTransientStore } from "./run-transient-store";
+import type { RunBattleDomainStore } from "./run-battle-domain-store";
+import type { RunProfileStore } from "./run-profile-store";
+import type { ProfileStore } from "./profile-store";
+import type { GearStore } from "./gear-store-types";
 
 type RunSessionCommitListener = (revision: number) => void;
+
 export interface RunSessionTransactionOptions<T> {
-  /** Run after the outer transaction commits; discarded when any nested work fails. */
   afterCommit?: (result: T) => void;
 }
 
-let subscriptionsInstalled = false;
-let transactionDepth = 0;
-let transactionDirty = false;
-let transactionFailed = false;
-let restoringSnapshot = false;
-let revision = 0;
-const listeners = new Set<RunSessionCommitListener>();
-let transactionEffects: Array<() => void> | null = null;
-
 export interface RunSessionStoreSnapshot {
-  domain: ReturnType<typeof useRunDomainStore.getState>;
-  transient: ReturnType<typeof useRunTransientStore.getState>;
-  battle: ReturnType<typeof useRunBattleDomainStore.getState>;
-  runProfile: ReturnType<typeof useRunProfileStore.getState>;
-  profile: ReturnType<typeof useProfileStore.getState>;
-  gear: ReturnType<typeof useGearStore.getState>;
+  domain: RunDomainStore;
+  transient: RunTransientStore;
+  battle: RunBattleDomainStore;
+  runProfile: RunProfileStore;
+  profile: ProfileStore;
+  gear: GearStore;
 }
 
-let transactionSnapshot: RunSessionStoreSnapshot | null = null;
-
-interface RunSessionCommitState {
+export interface RunSessionCommitState {
   revision: number;
   snapshot: RunSessionStoreSnapshot;
 }
 
-/**
- * The only React-facing gameplay snapshot.
- *
- * The lifetime-matched stores remain as mutation owners for now, but screens
- * subscribe to this committed projection instead of subscribing to each store
- * independently. A transaction can therefore update its private stores in any
- * order without exposing a mixed revision to React readers.
- */
-export const useRunSessionCommitStore = create<RunSessionCommitState>()(() => ({
-  revision: 0,
-  snapshot: captureSnapshot(),
-}));
+let transactionDepth = 0;
+let transactionFailed = false;
+let transactionEffects: Array<() => void> | null = null;
+let cachedRoot: GameplayState | null = null;
+let cachedCommitState: RunSessionCommitState | null = null;
 
-function publishCommit(): void {
-  revision += 1;
-  useRunSessionCommitStore.setState({ revision, snapshot: captureSnapshot() }, true);
-  for (const listener of listeners) listener(revision);
+interface CommitStoreHook {
+  <T = RunSessionCommitState>(selector?: (state: RunSessionCommitState) => T): T;
+  getState: () => RunSessionCommitState;
+  getInitialState: () => RunSessionCommitState;
 }
 
-function handleStoreMutation(): void {
-  if (restoringSnapshot) return;
-  if (transactionDepth > 0) {
-    transactionDirty = true;
-    return;
-  }
-  publishCommit();
-}
-
-function ensureSubscriptions(): void {
-  if (subscriptionsInstalled) return;
-  subscriptionsInstalled = true;
-  useRunDomainStore.subscribe(handleStoreMutation);
-  useRunTransientStore.subscribe(handleStoreMutation);
-  useRunBattleDomainStore.subscribe(handleStoreMutation);
-  useRunProfileStore.subscribe(handleStoreMutation);
-  if (typeof useProfileStore.subscribe === "function") useProfileStore.subscribe(handleStoreMutation);
-  if (typeof useGearStore.subscribe === "function") useGearStore.subscribe(handleStoreMutation);
-}
-
-function captureSnapshot(): RunSessionStoreSnapshot {
+function createSnapshot(state: GameplayState): RunSessionStoreSnapshot {
   return {
-    domain: useRunDomainStore.getState(),
-    transient: useRunTransientStore.getState(),
-    battle: useRunBattleDomainStore.getState(),
-    runProfile: useRunProfileStore.getState(),
-    profile: useProfileStore.getState(),
-    gear: useGearStore.getState(),
+    domain: state,
+    transient: state,
+    battle: state,
+    runProfile: state,
+    profile: state,
+    gear: {
+      inventories: state.inventories,
+      loadouts: state.loadouts,
+      boardPositionsByCharacter: state.boardPositionsByCharacter,
+      currencyBoardPositionsByCharacter: state.currencyBoardPositionsByCharacter,
+      craftingCurrencies: state.craftingCurrencies,
+      initialize: state.gearInitialize,
+      addInstance: state.gearAddInstance,
+      transferToInventory: state.gearTransferToInventory,
+      equip: state.gearEquip,
+      unequip: state.gearUnequip,
+      moveBoardItem: state.gearMoveBoardItem,
+      syncBoardPositions: state.gearSyncBoardPositions,
+      sortBoard: state.gearSortBoard,
+      salvage: state.gearSalvage,
+      applyCurrency: state.gearApplyCurrency,
+      addCurrencies: state.gearAddCurrencies,
+      reset: state.gearReset,
+    },
   };
 }
 
-function restoreSnapshot(snapshot: RunSessionStoreSnapshot): void {
-  restoringSnapshot = true;
-  try {
-    useRunDomainStore.setState(snapshot.domain, true);
-    useRunTransientStore.setState(snapshot.transient, true);
-    useRunBattleDomainStore.setState(snapshot.battle, true);
-    useRunProfileStore.setState(snapshot.runProfile, true);
-    useProfileStore.setState(snapshot.profile, true);
-    useGearStore.setState(snapshot.gear, true);
-  } finally {
-    restoringSnapshot = false;
-  }
+function getCommitState(): RunSessionCommitState {
+  const root = useGameplayStateStore.getState();
+  if (root === cachedRoot && cachedCommitState) return cachedCommitState;
+  cachedRoot = root;
+  cachedCommitState = { revision: root.revision, snapshot: createSnapshot(root) };
+  return cachedCommitState;
 }
 
-/** Execute synchronous mutations as one committed run-session change. */
+/** Compatibility read hook over the aggregate; no shadow state is stored. */
+export const useRunSessionCommitStore = ((selector?: (state: RunSessionCommitState) => unknown) =>
+  useGameplayStateStore(() => {
+    const state = getCommitState();
+    return selector ? selector(state) : state;
+  })) as CommitStoreHook;
+
+useRunSessionCommitStore.getState = getCommitState;
+useRunSessionCommitStore.getInitialState = () => {
+  const initial = useGameplayStateStore.getInitialState();
+  return { revision: initial.revision, snapshot: createSnapshot(initial) };
+};
+
+/** Execute synchronous mutations as one aggregate commit. */
 export function runSessionTransaction<T>(work: () => T, options: RunSessionTransactionOptions<T> = {}): T {
-  ensureSubscriptions();
-  const isOuterTransaction = transactionDepth === 0;
-  if (isOuterTransaction) {
-    transactionSnapshot = captureSnapshot();
+  const isOuter = transactionDepth === 0;
+  if (isOuter) {
     transactionFailed = false;
-    transactionDirty = false;
     transactionEffects = [];
+    beginGameplayTransaction();
+  } else {
+    beginGameplayTransaction();
   }
   transactionDepth += 1;
+
   let result!: T;
   try {
     result = work();
@@ -128,48 +122,35 @@ export function runSessionTransaction<T>(work: () => T, options: RunSessionTrans
     throw error;
   } finally {
     transactionDepth -= 1;
-    if (transactionDepth === 0) {
-      const snapshot = transactionSnapshot;
-      const failed = transactionFailed;
+    if (transactionDepth > 0) {
+      commitGameplayTransaction();
+    } else {
       const effects = transactionEffects ?? [];
-      transactionSnapshot = null;
-      transactionFailed = false;
+      const failed = transactionFailed;
       transactionEffects = null;
+      transactionFailed = false;
 
       if (failed) {
-        if (snapshot) restoreSnapshot(snapshot);
-        transactionDirty = false;
-      } else if (transactionDirty) {
-        transactionDirty = false;
-        publishCommit();
-      }
-
-      if (!failed) {
+        rollbackGameplayTransaction();
+      } else {
+        commitGameplayTransaction();
         for (const effect of effects) effect();
       }
     }
   }
 }
 
-/** Subscribe to committed run-session changes and receive a monotonic revision. */
 export function subscribeRunSessionCommits(listener: RunSessionCommitListener): () => void {
-  ensureSubscriptions();
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+  return subscribeGameplayCommits(listener);
 }
 
-/** Current committed run-session revision, useful for diagnostics and tests. */
 export function getRunSessionRevision(): number {
-  ensureSubscriptions();
-  return revision;
+  return getCommitState().revision;
 }
 
-/** Read the last committed gameplay snapshot for imperative persistence/readers. */
 export function getCommittedRunSessionSnapshot(): RunSessionStoreSnapshot {
-  ensureSubscriptions();
-  return useRunSessionCommitStore.getState().snapshot;
+  return getCommitState().snapshot;
 }
 
-// Install the bridge eagerly so direct store mutations are never missed before
-// the first transaction or persistence subscription is created.
-ensureSubscriptions();
+// Keep the aggregate bridge eager, matching the old bootstrap behavior.
+useGameplayStateStore.getState();

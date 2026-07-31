@@ -1,29 +1,16 @@
-import { create } from "zustand";
 import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import type { CollectionTab } from "@/features/alchemy/shared/types";
 import type { PersistenceCodec } from "./persistence-codec";
+import { createSliceStore } from "./slice-store-adapter";
+import { createDefaultProfileSaveFields, type ProfileSaveFields } from "./profile-store-types";
+
+export type { ProfileSaveFields } from "./profile-store-types";
 
 type CollectionPages = Record<CollectionTab, number>;
 
-const initialCollectionPages: CollectionPages = { cards: 0, bestiary: 0, trinkets: 0 };
-
-export interface ProfileSaveFields {
-  discoveredCardIds: string[];
-  encounteredEnemyIds: string[];
-  discoveredTrinketIds: string[];
-  completedDifficulties: Record<CharacterId, DifficultyId[]>;
-  finishedRunCharacters: CharacterId[];
-}
-
-export interface ProfileStore {
+export interface ProfileStore extends ProfileSaveFields {
   collectionTab: CollectionTab;
   collectionPages: CollectionPages;
-  discoveredCardIds: string[];
-  encounteredEnemyIds: string[];
-  discoveredTrinketIds: string[];
-  completedDifficulties: Record<CharacterId, DifficultyId[]>;
-  finishedRunCharacters: CharacterId[];
-
   setDiscoveredCardIds: (value: string[] | ((previous: string[]) => string[])) => void;
   setEncounteredEnemyIds: (value: string[] | ((previous: string[]) => string[])) => void;
   setDiscoveredTrinketIds: (value: string[] | ((previous: string[]) => string[])) => void;
@@ -38,24 +25,30 @@ export interface ProfileStore {
   resetToDefaults: () => void;
 }
 
-function createDefaultProfileSaveFields(): ProfileSaveFields {
-  return {
-    discoveredCardIds: [],
-    encounteredEnemyIds: [],
-    discoveredTrinketIds: [],
-    completedDifficulties: {
-      knight: [],
-      rogue: [],
-      wizard: [],
-      ranger: [],
-      alchemist: [],
-      warlock: [],
-      druid: [],
-      wildcard: [],
-    },
-    finishedRunCharacters: [],
-  };
-}
+const PROFILE_KEYS = [
+  "collectionTab",
+  "collectionPages",
+  "discoveredCardIds",
+  "encounteredEnemyIds",
+  "discoveredTrinketIds",
+  "completedDifficulties",
+  "finishedRunCharacters",
+  "setDiscoveredCardIds",
+  "setEncounteredEnemyIds",
+  "setDiscoveredTrinketIds",
+  "setCompletedDifficulties",
+  "setFinishedRunCharacters",
+  "setCollectionPage",
+  "handleCollectionTabChange",
+  "resetToDefaults",
+] as const satisfies ReadonlyArray<keyof ProfileStore>;
+
+const useProfileStore = createSliceStore<ProfileStore>((state) => {
+  const profile = state as unknown as ProfileStore;
+  return profile;
+}, PROFILE_KEYS);
+
+export { useProfileStore };
 
 function cloneProfileSaveFields(fields: ProfileSaveFields): ProfileSaveFields {
   return {
@@ -72,56 +65,9 @@ function cloneProfileSaveFields(fields: ProfileSaveFields): ProfileSaveFields {
   };
 }
 
-export const useProfileStore = create<ProfileStore>()((set) => ({
-  collectionTab: "cards",
-  collectionPages: initialCollectionPages,
-  ...createDefaultProfileSaveFields(),
-
-  setDiscoveredCardIds: (value) =>
-    set((state) => ({
-      discoveredCardIds: typeof value === "function" ? value(state.discoveredCardIds) : value,
-    })),
-  setEncounteredEnemyIds: (value) =>
-    set((state) => ({
-      encounteredEnemyIds: typeof value === "function" ? value(state.encounteredEnemyIds) : value,
-    })),
-  setDiscoveredTrinketIds: (value) =>
-    set((state) => ({
-      discoveredTrinketIds: typeof value === "function" ? value(state.discoveredTrinketIds) : value,
-    })),
-  setCompletedDifficulties: (value) =>
-    set((state) => ({
-      completedDifficulties: typeof value === "function" ? value(state.completedDifficulties) : value,
-    })),
-  setFinishedRunCharacters: (value) =>
-    set((state) => ({
-      finishedRunCharacters: typeof value === "function" ? value(state.finishedRunCharacters) : value,
-    })),
-  setCollectionPage: (tab, page) =>
-    set((state) => ({
-      collectionPages: { ...state.collectionPages, [tab]: Math.max(0, page) },
-    })),
-  handleCollectionTabChange: (collectionTab) =>
-    set((state) => ({
-      collectionTab,
-      collectionPages: {
-        ...state.collectionPages,
-        [collectionTab]: state.collectionPages[collectionTab] ?? 0,
-      },
-    })),
-  resetToDefaults: () =>
-    set({
-      ...createDefaultProfileSaveFields(),
-      collectionPages: initialCollectionPages,
-      collectionTab: "cards",
-    }),
-}));
-
 export const profilePersistenceCodec: PersistenceCodec<ProfileSaveFields> = {
   createDefault: createDefaultProfileSaveFields,
   encode: () => cloneProfileSaveFields(useProfileStore.getState()),
-  hydrate: (fields) => {
-    useProfileStore.setState(cloneProfileSaveFields(fields));
-  },
-  subscribe: (listener) => useProfileStore.subscribe(listener),
+  hydrate: (fields) => useProfileStore.setState(cloneProfileSaveFields(fields)),
+  subscribe: (listener) => useProfileStore.subscribe(() => listener()),
 };

@@ -26,6 +26,11 @@ export {
   useRunSessionNavigationSlice,
 } from "./run-session-model";
 export { dispatchRunSessionCommand, type RunSessionCommand } from "./run-session-command";
+export {
+  dispatchGearMutationWithRunHealthSync,
+  snapshotGearHealth,
+  type GearHealthSnapshot,
+} from "./gear-session-command";
 
 // Run lifecycle transitions.
 export {

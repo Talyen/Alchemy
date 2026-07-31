@@ -21,14 +21,13 @@ import {
   useTalentProgressSlice,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { MetaRouteCtx } from "./route-ctx";
-import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
-import { flattenGearInventories } from "@/lib/gear";
+import { useHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-read-port";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 import { useShallow } from "zustand/react/shallow";
 
 function MenuScreenRoute({ commands }: { commands: MetaRouteCtx["routeCommands"]["meta"] }) {
   const { hasUnspentTalents, hasAffordableHomestead } = useAppScreenChrome();
-  const isArmoryLocked = useGearStore((s) => flattenGearInventories(s.inventories).length === 0);
+  const isArmoryLocked = !useHasAnyOwnedGear();
   return (
     <MenuScreen
       onPlay={() => commands.goToScreen("game-mode-select")}

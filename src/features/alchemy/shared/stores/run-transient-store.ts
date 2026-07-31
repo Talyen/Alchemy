@@ -1,30 +1,68 @@
-// Transient run-session store — shops, rewards, labyrinth, mystery, and pending selections.
-// Lifetime: cleared on teardown; never persisted as permanent progression.
-import { create } from "zustand";
-import { immer } from "zustand/middleware/immer";
 import { createInitialSessionFields, type RunSessionFields } from "./run-domain-types";
-import { defineSessionActions, type SessionActions } from "./slices/session-slice";
+import type { SessionActions } from "./slices/session-slice";
+import { createSliceStore } from "./slice-store-adapter";
 
 export type RunTransientStore = RunSessionFields & SessionActions;
 
-export const useRunTransientStore = create<RunTransientStore>()(
-  immer((set) => ({
-    ...createInitialSessionFields(),
-    ...defineSessionActions(set),
-  })),
-);
+const SESSION_KEYS = [
+  "hasActiveRun",
+  "rewardClaimInFlight",
+  "pendingDestinationClaim",
+  "activeLabyrinthModifiers",
+  "activeLabyrinthRewardModifiers",
+  "activeLabyrinthPendingNode",
+  "rewardState",
+  "companionRewardCards",
+  "runEndMaterials",
+  "runEndTalentXP",
+  "corruptionResult",
+  "pendingCharacterId",
+  "pendingContentSystemType",
+  "labyrinthMap",
+  "wildwoodDraft",
+  "shopState",
+  "alchemistState",
+  "trinketShopState",
+  "equipmentShopState",
+  "mysteryEvent",
+  "mysteryCardChoices",
+  "setHasActiveRun",
+  "beginRewardClaim",
+  "releaseRewardClaim",
+  "beginDestinationClaim",
+  "cancelDestinationClaim",
+  "setActiveLabyrinthModifiers",
+  "setActiveLabyrinthRewardModifiers",
+  "setActiveLabyrinthPendingNode",
+  "setRewardState",
+  "setCompanionRewardCards",
+  "setRunEndMaterials",
+  "setRunEndTalentXP",
+  "setCorruptionResult",
+  "setPendingCharacterId",
+  "setPendingContentSystemType",
+  "setLabyrinthMap",
+  "setWildwoodDraft",
+  "setShopState",
+  "setAlchemistState",
+  "setTrinketShopState",
+  "setEquipmentShopState",
+  "setMysteryEvent",
+  "setMysteryCardChoices",
+  "clearTransientSession",
+  "applyDestinationChoices",
+] as const satisfies ReadonlyArray<keyof RunTransientStore>;
 
-/** Imperative access to the transient session store API. */
+export const useRunTransientStore = createSliceStore<RunTransientStore>((state) => state, SESSION_KEYS);
+
 export function getRunTransientStore(): RunTransientStore {
   return useRunTransientStore.getState();
 }
 
-/** Reset every transient session field (teardown and tests). */
 export function resetRunTransientStore(): void {
-  useRunTransientStore.getState().clearTransientSession();
+  useRunTransientStore.setState(createInitialSessionFields(), false);
 }
 
-/** Field-only projection of the transient session (snapshots and read models). */
 export function readRunSessionFields(session: RunSessionFields): RunSessionFields {
   return {
     hasActiveRun: session.hasActiveRun,

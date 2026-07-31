@@ -7,6 +7,7 @@ import { useSettingsStore } from "./settings-store";
 import { useUiStore } from "./ui-store";
 import { useGearStore } from "./gear-store";
 import { clearAlchemySaveData } from "@/features/alchemy/shared/storage";
+import { dispatchRunSessionCommand } from "./run-session-command";
 
 /** Prefer {@link teardownRun} from run-session-facade at call sites outside shared/stores. */
 export function resetActiveRunStores() {
@@ -22,7 +23,9 @@ export function resetTransientRunUi() {
 export function clearAllPersistentGameData() {
   void clearAlchemySaveData();
   useSettingsStore.getState().resetToDefaults();
-  useProfileStore.getState().resetToDefaults();
-  getRunProfileStore().clearPermanentData();
-  useGearStore.getState().reset();
+  dispatchRunSessionCommand(() => {
+    useProfileStore.getState().resetToDefaults();
+    getRunProfileStore().clearPermanentData();
+    useGearStore.getState().reset();
+  });
 }
