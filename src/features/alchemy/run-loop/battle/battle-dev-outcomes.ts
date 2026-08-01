@@ -1,15 +1,13 @@
 // Dev and run-end battle outcome shortcuts (skip combat, abandon run).
 import type { BattleState } from "@/lib/battle";
-import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { setBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
 
 export function createBattleDevOutcomes(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
-  const getStore = () => readBattle();
-
   function forceBattleOutcome(outcome: "victory" | "defeat", patch: (state: BattleState) => BattleState) {
     session.resetBattleSession();
-    getStore().setSyncedBattleState(patch);
+    setBattleState(patch);
     session.handleVictoryDefeat(outcome);
   }
 

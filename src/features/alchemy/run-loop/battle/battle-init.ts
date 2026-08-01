@@ -3,8 +3,13 @@ import { createBattleState, type CombatTextEvent } from "@/lib/battle";
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";
-import { readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  setBattleStartState,
+  setBattleState,
+  setHasActiveBattle,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { syncRunToBattleStart } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { useBattlePresentationStore } from "./battle-presentation-store";
 import { appendUnique } from "@/lib/utils";
@@ -20,8 +25,6 @@ export function createBattleInit(
   session: ReturnType<typeof createBattleSession>,
   rng: () => number = Math.random,
 ) {
-  const getStore = () => readBattle();
-
   function createBattleForEnemy(
     enemy: BestiaryEntry,
     deck: BattleCard[],
@@ -67,9 +70,9 @@ export function createBattleInit(
           nextRoomsEncountered,
           modifiers,
         );
-        getStore().setSyncedBattleState(nextBattleState);
-        getStore().setBattleStartState(nextBattleState);
-        getStore().setHasActiveBattle(true);
+        setBattleState(nextBattleState);
+        setBattleStartState(nextBattleState);
+        setHasActiveBattle(true);
         ctx.run.setEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
         setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
 

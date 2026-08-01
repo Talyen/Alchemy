@@ -1,0 +1,61 @@
+// Battle write capability. Feature code receives battle data through readBattle();
+// all gameplay mutations enter the aggregate through these commands.
+import type { BattleState } from "@/lib/battle";
+import type { PersistedBattleTransition } from "@/lib/active-run-session";
+import type { DisplayOverrides } from "../run-domain-types";
+import { dispatchRunSessionCommand } from "../run-session-command";
+import { createRunSessionStoreSnapshot } from "../run-session-queries";
+
+type BattleStateUpdate = BattleState | ((previous: BattleState) => BattleState);
+type BattleStore = ReturnType<typeof createRunSessionStoreSnapshot>["battle"];
+
+function dispatchBattleCommand<T>(work: (battle: BattleStore) => T): T {
+  return dispatchRunSessionCommand(() => work(createRunSessionStoreSnapshot().battle));
+}
+
+export function setBattleState(action: BattleStateUpdate): void {
+  dispatchBattleCommand((battle) => battle.setSyncedBattleState(action));
+}
+
+export function setBattleStartState(state: BattleState | null): void {
+  dispatchBattleCommand((battle) => battle.setBattleStartState(state));
+}
+
+export function setHasActiveBattle(active: boolean | ((previous: boolean) => boolean)): void {
+  dispatchBattleCommand((battle) => battle.setHasActiveBattle(active));
+}
+
+export function initializeActiveBattle(
+  battleState: BattleState | null,
+  pendingBattleTransition: PersistedBattleTransition | null = null,
+): void {
+  dispatchBattleCommand((battle) => battle.initializeActiveBattle(battleState, pendingBattleTransition));
+}
+
+/** Commit the logical state and its async continuation as one durable revision. */
+export function commitBattleTransition(
+  battleState: BattleState,
+  pendingBattleTransition: PersistedBattleTransition | null,
+): void {
+  dispatchBattleCommand((battle) => {
+    battle.setSyncedBattleState(battleState);
+    battle.setPendingBattleTransition(pendingBattleTransition);
+  });
+}
+
+/** Start a visible async transition while keeping its continuation in the save. */
+export function beginBattleTransition(
+  battleState: BattleState,
+  pendingBattleTransition: PersistedBattleTransition,
+  displayOverrides: DisplayOverrides,
+): void {
+  dispatchBattleCommand((battle) => {
+    battle.setSyncedBattleState(battleState);
+    battle.setPendingBattleTransition(pendingBattleTransition);
+    battle.setDisplayOverrides(displayOverrides);
+  });
+}
+
+export function clearBattleTransition(): void {
+  dispatchBattleCommand((battle) => battle.setPendingBattleTransition(null));
+}

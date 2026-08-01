@@ -29,6 +29,7 @@ import type {
   TalentCommandPort,
   WildwoodRunPort,
 } from "./run-port-types";
+import { setHasActiveBattle as setHasActiveBattleCommand } from "./ports/run-battle-write-port";
 
 export function useTalentEffects(): TalentEffectManifest {
   const unlockedTalents = useRunSessionCommitStore((state) => state.snapshot.runProfile.unlockedTalents);
@@ -170,7 +171,7 @@ export function useDisplayOverrides(): DisplayOverrides {
 }
 
 export function useSetHasActiveBattle(): (active: boolean) => void {
-  return useRunSessionCommitStore((state) => state.snapshot.battle.setHasActiveBattle);
+  return setHasActiveBattleCommand;
 }
 
 export function useBondedCompanions() {

@@ -103,6 +103,7 @@ const navigationActionKeys = ["setScreen"] as const satisfies ReadonlyArray<keyo
 
 const battleActionKeys = [
   "setSyncedBattleState",
+  "setPendingBattleTransition",
   "setDisplayOverrides",
   "clearDisplayOverrides",
   "setBattleStartState",
@@ -218,14 +219,27 @@ export function getNavigationStoreView(state: GameplayState = readGameplayState(
 }
 
 export type BattleStoreView = RunDomainBattleState & ReturnType<typeof pickBattleActions>;
+export type BattleReadView = RunDomainBattleState;
 
 export function getBattleStoreView(state: GameplayState = readGameplayState()): BattleStoreView {
   const battle = projectBattle(state);
   return {
     battleState: battle.battleState,
+    pendingBattleTransition: battle.pendingBattleTransition,
     displayOverrides: battle.displayOverrides,
     battleStartState: battle.battleStartState,
     hasActiveBattle: battle.hasActiveBattle,
     ...pickBattleActions(battle),
+  };
+}
+
+export function getBattleReadView(state: GameplayState = readGameplayState()): BattleReadView {
+  const battle = projectBattle(state);
+  return {
+    battleState: battle.battleState,
+    pendingBattleTransition: battle.pendingBattleTransition,
+    displayOverrides: battle.displayOverrides,
+    battleStartState: battle.battleStartState,
+    hasActiveBattle: battle.hasActiveBattle,
   };
 }

@@ -159,6 +159,8 @@ Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-
 
 4. Run-flow concerns must request sibling work with a typed `RunFlowContinuation`; they must not retain mutable sibling callbacks or call another concern's handler directly.
 5. The low-level `runSessionTransaction()` coordinator is an implementation detail for the command boundary and committed projection. New gameplay callers must not import it directly.
+6. `readBattle()` is data-only. Battle mutations use the focused commands exported from `run-session-write-port.ts`; do not spread aggregate battle actions into event-time stores.
+7. If an async battle flow persists an intermediate state, commit `activeCombat.pendingBattleTransition` with it and add a boot resume path. Presentation timers alone are not a gameplay continuation.
 
 ---
 

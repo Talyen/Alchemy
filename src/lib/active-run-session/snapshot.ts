@@ -20,6 +20,7 @@ import type {
   PersistedAlchemistState,
   PersistedTrinketShopState,
   PersistedEquipmentShopState,
+  PersistedBattleTransition,
 } from "./types";
 
 export interface ActiveRunSnapshotSource {
@@ -42,6 +43,7 @@ export interface ActiveRunSnapshotSource {
   labyrinthMap: LabyrinthMap | null;
   hasActiveBattle: boolean;
   battleState: BattleState;
+  pendingBattleTransition?: PersistedBattleTransition | null;
   labyrinthPendingNode: LabyrinthNodePosition | null;
   wildwoodDraft: WildwoodDraftState | null;
   activeLabyrinthModifiers: EncounterCombatTraitId[];
@@ -62,6 +64,7 @@ export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): Active
     source.hasActiveBattle && source.battleState.enemyHealth > 0 && !isPlayerDefeated(source.battleState)
       ? {
           battleState: source.battleState,
+          pendingBattleTransition: source.pendingBattleTransition ?? null,
           activeLabyrinthModifiers: source.contentSystemType === "labyrinth" ? source.activeLabyrinthModifiers : [],
           activeLabyrinthRewardModifiers:
             source.contentSystemType === "labyrinth" ? source.activeLabyrinthRewardModifiers : [],

@@ -128,3 +128,7 @@ Gear inventory instances now persist rolled affixes as `affixIds: GearAffixId[]`
 ## Active-run RNG streams (`activeRun.rng`)
 
 Active runs persist a seed and counters for named run-outcome streams. This is an additive nested field, so it does not require a top-level schema-version bump: `ActiveRunDataSchema` creates a fresh seed with zero counters when loading a legacy active run. After that first load, the normal autosave writes the explicit RNG state and all subsequent resumes continue the same sequence.
+
+## Battle transition continuation
+
+`activeCombat.pendingBattleTransition` is an additive field with a `null` default. New saves use it to carry a computed enemy-turn result across presentation delays. Older saves with `battleState.turnPhase === "enemy"` and no transition metadata are marked as `legacy-enemy-turn` by the resume codec and normalized to a playable player phase on boot without replaying unknown damage or replaying an enemy action from the RNG stream.

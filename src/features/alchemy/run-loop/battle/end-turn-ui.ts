@@ -3,7 +3,11 @@ import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { getBattleSessionStore, type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
-import { resolveEndTurn, type TurnOrchestrationDeps } from "./turn-orchestration";
+import {
+  resolveEndTurn,
+  resumePendingBattleTransition as resumePendingBattleTransitionState,
+  type TurnOrchestrationDeps,
+} from "./turn-orchestration";
 
 export function createBattleEndTurnUi(
   ctx: BattleControllerContext,
@@ -60,5 +64,9 @@ export function createBattleEndTurnUi(
     );
   }
 
-  return { handleEndTurn, resolveEndTurn: resolveEndTurnHandler };
+  function resumePendingBattleTransition() {
+    resumePendingBattleTransitionState(ctx.battleSessionRef.current, deps);
+  }
+
+  return { handleEndTurn, resolveEndTurn: resolveEndTurnHandler, resumePendingBattleTransition };
 }

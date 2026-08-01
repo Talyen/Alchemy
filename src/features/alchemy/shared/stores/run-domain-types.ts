@@ -17,7 +17,7 @@ import {
   createInitialActiveRunFields,
   type ActiveRunProgressFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
-import type { LabyrinthNodePosition } from "@/lib/active-run-session";
+import type { LabyrinthNodePosition, PersistedBattleTransition } from "@/lib/active-run-session";
 import type { Destination, Screen } from "@/features/alchemy/shared/types";
 import type {
   ContentSystemId,
@@ -39,6 +39,7 @@ export interface DisplayOverrides {
 
 export interface RunDomainBattleState {
   battleState: BattleState;
+  pendingBattleTransition: PersistedBattleTransition | null;
   displayOverrides: DisplayOverrides;
   battleStartState: BattleState | null;
   hasActiveBattle: boolean;
@@ -85,6 +86,7 @@ export function createInitialSessionFields(): RunSessionFields {
 export function createInitialBattleFields(): RunDomainBattleState {
   return {
     battleState: defaultBattleState(),
+    pendingBattleTransition: null,
     displayOverrides: {},
     battleStartState: null,
     hasActiveBattle: false,

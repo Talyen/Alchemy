@@ -1,5 +1,6 @@
 // Typed read model composed from the canonical gameplay aggregate projection.
 import type { BattleState } from "@/lib/battle";
+import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import type { Screen } from "@/lib/routing";
 import { getRunPhase, type RunPhase } from "@/lib/routing";
 import type { RunStateFields } from "@/features/alchemy/shared/stores/run-state-init";
@@ -45,6 +46,7 @@ type RunSessionTransientSlice = RunSessionFields;
 interface RunSessionBattleSlice {
   hasActiveBattle: boolean;
   battleState: BattleState;
+  pendingBattleTransition: PersistedBattleTransition | null;
 }
 
 /** Unified view of an in-progress or resumable run (screen defaults to navigation slice). */
@@ -86,10 +88,12 @@ function pickRunSessionRunSlice(state: RunDomainStore, profile: RunProfileStore)
 function pickRunSessionBattleSlice(battle: {
   hasActiveBattle: boolean;
   battleState: BattleState;
+  pendingBattleTransition: PersistedBattleTransition | null;
 }): RunSessionBattleSlice {
   return {
     hasActiveBattle: battle.hasActiveBattle,
     battleState: battle.battleState,
+    pendingBattleTransition: battle.pendingBattleTransition,
   };
 }
 

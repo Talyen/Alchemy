@@ -11,6 +11,6 @@ export { canPlayCard, playBattleCardResolved, computeEffectiveCost, type CardPla
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 export { chooseWishCard } from "./wish";
 export { processCompanionTurnStart } from "./companion";
-export { endPlayerTurn, type EndPlayerTurnResolution } from "./enemy-turn";
+export { endPlayerTurn, recoverLegacyEnemyPhase, type EndPlayerTurnResolution } from "./enemy-turn";
 export { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./enemy-turn-traits";
 export { getBattleStartPlayerHealth } from "./start-health";

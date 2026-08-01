@@ -1,5 +1,5 @@
 ﻿import { describe, expect, it } from "vitest";
-import { endPlayerTurn } from "@/lib/battle/enemy-turn";
+import { endPlayerTurn, recoverLegacyEnemyPhase } from "@/lib/battle/enemy-turn";
 import type { BattleState, EnemyStatusValues } from "@/lib/battle/types";
 import { defaultTalentEffects } from "@/lib/battle";
 import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
@@ -164,6 +164,18 @@ describe("endPlayerTurn â€” standard branch", () => {
     const result = endPlayerTurn(state);
     expect(result.state.turnPhase).toBe("player");
     expect(result.state.mana).toBeGreaterThan(0);
+  });
+});
+
+describe("legacy enemy-phase recovery", () => {
+  it("returns an old in-flight enemy save to a drawable player turn", () => {
+    const held = makeTestCard({ id: "held" });
+    const state = battleState({ turnPhase: "enemy", hand: [], deck: [held] });
+
+    const recovered = recoverLegacyEnemyPhase(state);
+
+    expect(recovered.turnPhase).toBe("player");
+    expect(recovered.hand.length).toBeGreaterThan(0);
   });
 });
 

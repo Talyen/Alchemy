@@ -304,6 +304,39 @@ describe("ActiveRunDataSchema", () => {
     }
   });
 
+  it("defaults missing battle transition metadata and accepts resumable enemy turns", () => {
+    const defaults = defaultBattleState();
+    const result = ActiveRunDataSchema.safeParse({
+      characterId: "knight",
+      runDeck: [],
+      runGold: 0,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      roomsEncountered: 1,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      selectedDifficulty: null,
+      contentSystemType: "campaign",
+      labyrinthMap: null,
+      activeCombat: {
+        battleState: { ...defaults, turnPhase: "enemy", hand: [] },
+        pendingBattleTransition: {
+          kind: "enemy-turn",
+          resultState: defaults,
+          playerTurnSkipped: false,
+        },
+        activeLabyrinthModifiers: [],
+        activeLabyrinthRewardModifiers: [],
+      },
+    });
+
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    if (!result.success) return;
+    expect(result.data.activeCombat?.pendingBattleTransition?.kind).toBe("enemy-turn");
+  });
+
   it("replaces legacy starter deck for unstarted run", () => {
     const legacyDeck = [
       {

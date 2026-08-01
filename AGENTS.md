@@ -5,7 +5,9 @@ Alchemy is a fantasy roguelite deckbuilder.
 ## Working Style
 
 - Treat an existing dirty tree as in-flight work: understand it before editing, preserve user intent, and improve it when it intersects with the task.
-- Optimize for simplicity first, then robustness, then maintainability. Development cost is secondary.
+- Choose the simplest implementation that fully meets the current requirements, then optimize for robustness and maintainability.
+- Do not preserve backward compatibility unless there is a concrete need, such as persisted data, shipped behavior, or external consumers.
+- Prefer established, well-maintained libraries over custom implementations when they are a good fit.
 - Prefer honest judgment over compliance. Challenge weak ideas, including user requests, and recommend the strongest architecture or product direction you see.
 - If the same approach fails three times, stop, reassess with the relevant docs or audits, and ask rather than continuing speculative fixes.
 - Run a code-quality audit only when the user cites one under [docs/Audits](./docs/Audits/README.md). Uncited audits are not backlog.

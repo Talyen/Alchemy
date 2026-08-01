@@ -13,7 +13,9 @@ import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store"
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-transitions";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
+import { beginBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { defaultBattleState } from "@/lib/battle";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 
 beforeEach(() => {
@@ -74,6 +76,29 @@ describe("run-session transaction coordinator", () => {
     expect(commits).toHaveLength(1);
     expect(commits[0]).toMatchObject({ gold: 125, hasActiveRun: true });
     expect(commits[0].revision).toBeGreaterThan(0);
+  });
+
+  it("persists a battle continuation with the intermediate state in one commit", () => {
+    const commits: number[] = [];
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+    const intermediate = { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] };
+    const resultState = { ...defaultBattleState(), turn: 2, playerHealth: 18 };
+
+    beginBattleTransition(
+      intermediate,
+      { kind: "enemy-turn", resultState, playerTurnSkipped: false },
+      { hand: [], turnPhase: "enemy" },
+    );
+
+    unsubscribe();
+
+    expect(commits).toHaveLength(1);
+    expect(useRunSessionCommitStore.getState().snapshot.battle.battleState).toEqual(intermediate);
+    expect(useRunSessionCommitStore.getState().snapshot.battle.pendingBattleTransition).toEqual({
+      kind: "enemy-turn",
+      resultState,
+      playerTurnSkipped: false,
+    });
   });
 
   it("keeps the React-facing snapshot unchanged until the outer commit", () => {

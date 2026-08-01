@@ -1,5 +1,6 @@
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import type { BattleState } from "@/lib/battle";
+import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import { createInitialBattleFields, type DisplayOverrides, type RunDomainBattleState } from "../run-domain-types";
 import { defineNestedFieldSetter, type ImmerSet } from "./_field-setter";
 
@@ -15,14 +16,26 @@ function hydrateBattleState(battleState: BattleState): BattleState {
   };
 }
 
+function hydrateBattleTransition(transition: PersistedBattleTransition | null): PersistedBattleTransition | null {
+  if (!transition || transition.kind !== "enemy-turn") return transition;
+  return {
+    ...transition,
+    resultState: hydrateBattleState(transition.resultState),
+  };
+}
+
 export interface BattleActions {
   setSyncedBattleState: (action: BattleState | ((prev: BattleState) => BattleState)) => void;
+  setPendingBattleTransition: (transition: PersistedBattleTransition | null) => void;
   setDisplayOverrides: (overrides: DisplayOverrides) => void;
   clearDisplayOverrides: () => void;
   setBattleStartState: (state: BattleState | null) => void;
   setHasActiveBattle: (active: boolean | ((prev: boolean) => boolean)) => void;
   /** Hydrate and start a battle, or clear combat state entirely when passed `null`. */
-  initializeActiveBattle: (battleState: BattleState | null) => void;
+  initializeActiveBattle: (
+    battleState: BattleState | null,
+    pendingBattleTransition?: PersistedBattleTransition | null,
+  ) => void;
 }
 
 /** Active-combat actions over root-level {@link RunDomainBattleState}. */
@@ -36,6 +49,11 @@ export function defineBattleActions(set: ImmerSet<RunDomainBattleState>): Battle
         state.displayOverrides = {};
       }),
 
+    setPendingBattleTransition: (transition) =>
+      set((state) => {
+        state.pendingBattleTransition = transition;
+      }),
+
     setDisplayOverrides: setField("displayOverrides"),
     clearDisplayOverrides: () =>
       set((state) => {
@@ -45,11 +63,12 @@ export function defineBattleActions(set: ImmerSet<RunDomainBattleState>): Battle
     setBattleStartState: setField("battleStartState"),
     setHasActiveBattle: setField("hasActiveBattle"),
 
-    initializeActiveBattle: (battleState) =>
+    initializeActiveBattle: (battleState, pendingBattleTransition = null) =>
       set((state) => {
         if (battleState) {
           const hydrated = hydrateBattleState(battleState);
           state.battleState = hydrated;
+          state.pendingBattleTransition = hydrateBattleTransition(pendingBattleTransition);
           state.displayOverrides = {};
           state.battleStartState = hydrated;
           state.hasActiveBattle = true;

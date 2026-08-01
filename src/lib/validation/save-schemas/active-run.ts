@@ -41,9 +41,24 @@ const LabyrinthNodePositionSchema = z
   .nullable()
   .catch(null);
 
+const PersistedBattleTransitionSchema = z
+  .union([
+    z.object({
+      kind: z.literal("enemy-turn"),
+      resultState: z.custom<BattleState>(isPersistedBattleState),
+      playerTurnSkipped: z.boolean(),
+    }),
+    z.object({ kind: z.literal("continue-end-turn") }),
+    z.object({ kind: z.literal("legacy-enemy-turn") }),
+  ])
+  .nullable()
+  .catch(null)
+  .default(null);
+
 const ActiveCombatDataSchema = z
   .object({
     battleState: z.custom<BattleState>(isPersistedBattleState),
+    pendingBattleTransition: PersistedBattleTransitionSchema,
     activeLabyrinthModifiers: EncounterCombatTraitArraySchema,
     activeLabyrinthRewardModifiers: EncounterRewardTraitArraySchema,
   })

@@ -19,6 +19,7 @@ import {
   type AlchemistState,
   type EquipmentShopState,
   type LabyrinthNodePosition,
+  type PersistedBattleTransition,
   type RewardState,
   type ShopState,
   type TrinketShopState,
@@ -47,6 +48,7 @@ export interface DecodedRunResumeSession {
 export interface DecodedRunResumeSnapshot {
   progress: ActiveRunProgressFields;
   screen: Screen | null;
+  pendingBattleTransition: PersistedBattleTransition | null;
   session: DecodedRunResumeSession;
 }
 
@@ -81,6 +83,7 @@ export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): Ac
     labyrinthMap: session.labyrinthMap,
     hasActiveBattle: battle.hasActiveBattle,
     battleState: battle.battleState,
+    pendingBattleTransition: battle.pendingBattleTransition,
     labyrinthPendingNode: session.activeLabyrinthPendingNode,
     wildwoodDraft: session.wildwoodDraft,
     activeLabyrinthModifiers: session.activeLabyrinthModifiers,
@@ -146,6 +149,9 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
   return {
     progress: createInitialActiveRunFields(activeRun),
     screen,
+    pendingBattleTransition:
+      activeRun.activeCombat?.pendingBattleTransition ??
+      (activeRun.activeCombat?.battleState.turnPhase === "enemy" ? { kind: "legacy-enemy-turn" } : null),
     session: {
       labyrinthMap: activeRun.labyrinthMap,
       labyrinthPendingNode: activeRun.labyrinthPendingNode,

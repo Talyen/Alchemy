@@ -51,8 +51,23 @@ export interface LabyrinthNodePosition {
   col: number;
 }
 
+export type PersistedBattleTransition =
+  | {
+      kind: "enemy-turn";
+      resultState: BattleState;
+      playerTurnSkipped: boolean;
+    }
+  | {
+      kind: "continue-end-turn";
+    }
+  | {
+      /** Recovery marker for saves written before battle transitions were persisted. */
+      kind: "legacy-enemy-turn";
+    };
+
 interface ActiveCombatData {
   battleState: BattleState;
+  pendingBattleTransition: PersistedBattleTransition | null;
   activeLabyrinthModifiers: EncounterCombatTraitId[];
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
 }

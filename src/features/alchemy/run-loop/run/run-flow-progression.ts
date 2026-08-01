@@ -1,6 +1,5 @@
-import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setHasActiveBattle, setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
@@ -25,7 +24,7 @@ export function createProgressionHandlers(ctx: RunFlowContext) {
   function handleActComplete(displayMaterials?: MaterialInventory) {
     dispatchRunSessionCommand(
       () => {
-        readBattle().setHasActiveBattle(false);
+        setHasActiveBattle(false);
         if (deps.run.currentAct >= ACTS_PER_RUN) {
           if (deps.run.selectedDifficulty) {
             deps.dispatch({

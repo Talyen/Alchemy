@@ -2,6 +2,7 @@
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import { stopAllSfx } from "@/lib/audio";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { setBattleStartState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useBattlePresentationStore } from "./battle-presentation-store";
 import type { BattleControllerContext } from "./battle-context";
 
@@ -77,7 +78,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
 
   function resetBattleSession() {
     prepareBattleSessionForStart();
-    getStore().setBattleStartState(null);
+    setBattleStartState(null);
   }
 
   /** Reset session identity/presentation after the new battle state commits. */

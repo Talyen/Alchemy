@@ -33,3 +33,12 @@ export {
   setWildwoodDraft,
   applyRunStartSnapshot,
 } from "./ports/run-session-setup-port";
+export {
+  clearBattleTransition,
+  beginBattleTransition,
+  commitBattleTransition,
+  initializeActiveBattle,
+  setBattleStartState,
+  setBattleState,
+  setHasActiveBattle,
+} from "./ports/run-battle-write-port";

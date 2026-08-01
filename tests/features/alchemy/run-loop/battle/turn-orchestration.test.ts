@@ -67,6 +67,10 @@ function makeDeps() {
 
   return {
     getStore,
+    setBattleState: vi.fn(),
+    beginBattleTransition: vi.fn(),
+    commitBattleTransition: vi.fn(),
+    clearBattleTransition: vi.fn(),
     isCurrentBattleSession: () => true,
     runIfSessionActive: <T>(_session: number, action: () => T) => action(),
     checkBattleEnd: vi.fn(() => false),
@@ -79,13 +83,13 @@ function makeDeps() {
 }
 
 describe("resolveEndTurn", () => {
-  it("does not sync battle state before the haste draw sequence", () => {
+  it("commits logical state before the haste draw sequence", () => {
     const deps = makeDeps();
     const state = defaultBattleState();
     state.playerStatuses.haste = 1;
 
     resolveEndTurn(state, 1, deps);
 
-    expect(deps.getStore().setSyncedBattleState).not.toHaveBeenCalled();
+    expect(deps.commitBattleTransition).toHaveBeenCalledOnce();
   });
 });

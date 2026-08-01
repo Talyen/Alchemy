@@ -3,6 +3,7 @@ import {
   executeEnemyPhase,
   resolveHasteSkipTurn,
   resolveNormalEnemyTurn,
+  resumePendingBattleTransition,
 } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { defaultBattleState, endPlayerTurn } from "@/lib/battle";
 import type { HandDrawSequenceDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
@@ -30,6 +31,7 @@ function makeStore(): ReturnType<typeof getBattleSessionStore> {
     shakeEnemy: vi.fn(),
     shakeCompanion: vi.fn(),
     battleState: defaultBattleState(),
+    pendingBattleTransition: null,
     cardGhosts: [],
     floatingCombatTexts: [],
     enemyShaking: false,
@@ -93,6 +95,10 @@ function makeDrawDeps(): HandDrawSequenceDeps {
 function makeTurnDeps(store: ReturnType<typeof makeStore>) {
   return {
     getStore: () => store,
+    setBattleState: vi.fn(),
+    beginBattleTransition: vi.fn(),
+    commitBattleTransition: vi.fn(),
+    clearBattleTransition: vi.fn(),
     isCurrentBattleSession: () => true,
     runIfSessionActive: <T>(_session: number, action: () => T) => action(),
     checkBattleEnd: vi.fn(() => false),
@@ -123,6 +129,26 @@ describe("resolveHasteSkipTurn", () => {
 });
 
 describe("resolveNormalEnemyTurn", () => {
+  it("commits a resumable continuation before presentation delays", () => {
+    const store = makeStore();
+    const state = defaultBattleState();
+    const result = endPlayerTurn(state);
+    if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
+    const deps = makeTurnDeps(store);
+
+    resolveNormalEnemyTurn(result, state, [], 1, deps);
+
+    expect(deps.beginBattleTransition).toHaveBeenCalledWith(
+      expect.objectContaining({ turnPhase: "enemy" }),
+      {
+        kind: "enemy-turn",
+        resultState: result.state,
+        playerTurnSkipped: result.playerTurnSkipped,
+      },
+      expect.objectContaining({ hand: [], turnPhase: "enemy" }),
+    );
+  });
+
   it("calls handleVictoryDefeat when the enemy is already dead", () => {
     const store = makeStore();
     const state = defaultBattleState();
@@ -139,7 +165,7 @@ describe("resolveNormalEnemyTurn", () => {
     resolveNormalEnemyTurn(deadResult, state, [], 1, deps);
 
     expect(deps.handleVictoryDefeat).toHaveBeenCalledWith("victory");
-    expect(store.setSyncedBattleState).toHaveBeenCalled();
+    expect(deps.commitBattleTransition).toHaveBeenCalled();
   });
 });
 
@@ -181,5 +207,23 @@ describe("executeEnemyPhase", () => {
 
     expect(store.hurtPlayer).not.toHaveBeenCalled();
     expect(store.shakePlayer).toHaveBeenCalledOnce();
+  });
+});
+
+describe("resumePendingBattleTransition", () => {
+  it("commits the computed result without replaying animation delays", () => {
+    const store = makeStore();
+    const resultState = { ...defaultBattleState(), turn: 2, playerHealth: 18 };
+    store.pendingBattleTransition = {
+      kind: "enemy-turn",
+      resultState,
+      playerTurnSkipped: false,
+    };
+    const deps = makeTurnDeps(store);
+
+    resumePendingBattleTransition(1, deps);
+
+    expect(deps.commitBattleTransition).toHaveBeenCalledWith(resultState, null);
+    expect(deps.scheduleCompanionFollowUp).toHaveBeenCalledWith(resultState, 1);
   });
 });

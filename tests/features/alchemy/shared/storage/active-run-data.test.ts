@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { getStartingDeck } from "@/lib/game-data";
 import { createActiveRunSnapshot } from "@/lib/active-run-session";
+import { decodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
 import { createRunRngState } from "@/lib/run-rng";
 
 const TEST_RNG = createRunRngState(() => 0.5);
@@ -152,6 +153,41 @@ describe("createActiveRunSnapshot", () => {
     expect(result.activeCombat?.battleState).toBe(enemyPhaseState);
     expect(result.activeCombat!.battleState.turn).toBe(2);
     expect(result.activeCombat!.battleState.turnPhase).toBe("enemy");
+  });
+
+  it("persists the computed enemy-turn continuation with the intermediate state", () => {
+    const resultState = { ...defaultBattleState(), turn: 3, playerHealth: 20, turnPhase: "player" as const };
+    const enemyPhaseState = { ...defaultBattleState(), turn: 2, turnPhase: "enemy" as const, hand: [] };
+    const result = createActiveRunSnapshot(
+      makeSource({
+        hasActiveBattle: true,
+        battleState: enemyPhaseState,
+        pendingBattleTransition: {
+          kind: "enemy-turn",
+          resultState,
+          playerTurnSkipped: false,
+        },
+      }),
+    );
+
+    expect(result.activeCombat?.pendingBattleTransition).toEqual({
+      kind: "enemy-turn",
+      resultState,
+      playerTurnSkipped: false,
+    });
+  });
+
+  it("marks legacy enemy-phase saves for safe boot recovery", () => {
+    const activeRun = createActiveRunSnapshot(
+      makeSource({
+        hasActiveBattle: true,
+        battleState: { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] },
+      }),
+    );
+
+    const decoded = decodeRunResumeSnapshot(activeRun);
+
+    expect(decoded.pendingBattleTransition).toEqual({ kind: "legacy-enemy-turn" });
   });
 
   it("persists labyrinth pending node and modifiers during combat", () => {

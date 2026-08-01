@@ -119,6 +119,8 @@ export const DOMAIN_STORE_PATTERNS = [
       "**/stores/ports/*",
       "@/features/alchemy/shared/stores/ports/*",
       "**/run-domain-types",
+      "**/run-session-queries",
+      "@/features/alchemy/shared/stores/run-session-queries",
       "**/run-session-store",
       "@/features/alchemy/shared/stores/run-session-store",
       "**/stores/battle-store",

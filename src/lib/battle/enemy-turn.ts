@@ -157,3 +157,19 @@ export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number
 
   return resolveStandardEnemyTurn(nextState, options);
 }
+
+/**
+ * Recover saves written by versions that exposed an in-flight enemy phase but
+ * did not persist its continuation. The exact enemy action cannot be inferred
+ * safely, so advance to a playable turn without replaying potentially lethal
+ * damage or replaying an enemy action from the RNG stream.
+ */
+export function recoverLegacyEnemyPhase(state: BattleState): BattleState {
+  let recovered = state;
+  let attempts = 0;
+  while (recovered.turnPhase === "enemy" && attempts < 10) {
+    recovered = advanceToPlayerTurn(recovered);
+    attempts += 1;
+  }
+  return recovered.turnPhase === "player" ? recovered : { ...recovered, turnPhase: "player" };
+}

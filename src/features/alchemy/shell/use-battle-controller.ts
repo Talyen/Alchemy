@@ -53,7 +53,7 @@ export function useBattleController({
   measureVisualCardRect = defaultMeasureVisualCardRect,
 }: UseBattleControllerProps) {
   const {
-    battle: { battleState, hasActiveBattle },
+    battle: { battleState, hasActiveBattle, pendingBattleTransition },
     activeLabyrinthModifiers,
   } = useRunSessionBattleContext(screen);
   const displayOverrides = useDisplayOverrides();
@@ -102,6 +102,7 @@ export function useBattleController({
 
   const scheduleAutoEndTurnRef = useRef<((state: BattleState) => void) | null>(null);
   const clearAutoEndTurnRef = useRef<(() => void) | null>(null);
+  const pendingTransitionResumeAttemptedRef = useRef(false);
 
   // Initialize/Update the unified context
   const ctx = useBattleControllerContext({
@@ -158,6 +159,16 @@ export function useBattleController({
     scheduleAutoEndTurnRef.current = scheduleAutoEndTurn;
     clearAutoEndTurnRef.current = clearAutoEndTurn;
   }, [scheduleAutoEndTurn, clearAutoEndTurn]);
+
+  useEffect(() => {
+    if (!hasActiveBattle) {
+      pendingTransitionResumeAttemptedRef.current = false;
+      return;
+    }
+    if (screen !== "battle" || !pendingBattleTransition || pendingTransitionResumeAttemptedRef.current) return;
+    pendingTransitionResumeAttemptedRef.current = true;
+    actions.endTurnUi.resumePendingBattleTransition();
+  }, [actions.endTurnUi, hasActiveBattle, pendingBattleTransition, screen]);
 
   // Playable hand card keys
   const playableHandCardKeys = useMemo(

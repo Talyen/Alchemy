@@ -3,17 +3,17 @@
 import type { RunRngStream } from "@/lib/run-rng";
 import {
   getActiveRunStoreView,
-  getBattleStoreView,
+  getBattleReadView,
   getRunProfileStoreView,
   getRunSessionStoreView,
   type ActiveRunStore,
-  type BattleStoreView,
+  type BattleReadView,
   type RunProfileStoreView,
   type RunSessionStore,
 } from "./run-session-queries";
 import { readGameplayState } from "./gameplay-state-store";
 
-export type { ActiveRunStore, BattleStoreView, RunProfileStoreView, RunSessionStore };
+export type { ActiveRunStore, BattleReadView, RunProfileStoreView, RunSessionStore };
 export type { DisplayOverrides } from "./run-domain-types";
 
 export function readActiveRun(): ActiveRunStore {
@@ -28,8 +28,8 @@ export function readRunSession(): RunSessionStore {
   return getRunSessionStoreView();
 }
 
-export function readBattle(): BattleStoreView {
-  return getBattleStoreView();
+export function readBattle(): BattleReadView {
+  return getBattleReadView();
 }
 
 export function createRunRandomSource(stream: RunRngStream): () => number {

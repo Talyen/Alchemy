@@ -23,8 +23,8 @@ import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import { logError } from "@/lib/error-logger";
 import { useBattlePresentationStore } from "./battle-presentation-store";
-import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 const BATTLE_CARD_PLAY_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
 
@@ -128,7 +128,7 @@ export function createBattleCardPlay(
       () => {
         dispatchRunSessionCommand(
           () => {
-            readBattle().setSyncedBattleState(resolution.state);
+            setBattleState(resolution.state);
             ctx.talents.awardCardXP(card);
           },
           {
@@ -161,7 +161,7 @@ export function createBattleCardPlay(
       newState,
       () => {
         dispatchRunSessionCommand(() => {
-          readBattle().setSyncedBattleState(newState);
+          setBattleState(newState);
           if (cardOrNull) {
             setDiscoveredCardIds((current) => appendUnique(current, cardOrNull.id));
           }

@@ -7,10 +7,12 @@ export type RunBattleDomainStore = RunDomainBattleState & BattleActions;
 
 const BATTLE_KEYS = [
   "battleState",
+  "pendingBattleTransition",
   "displayOverrides",
   "battleStartState",
   "hasActiveBattle",
   "setSyncedBattleState",
+  "setPendingBattleTransition",
   "setDisplayOverrides",
   "clearDisplayOverrides",
   "setBattleStartState",
@@ -20,6 +22,7 @@ const BATTLE_KEYS = [
 
 const battleActionKeys = new Set<string>([
   "setSyncedBattleState",
+  "setPendingBattleTransition",
   "setDisplayOverrides",
   "clearDisplayOverrides",
   "setBattleStartState",

@@ -46,6 +46,22 @@ describe("run-session command boundary", () => {
     }
   });
 
+  it("keeps the battle read port data-only", () => {
+    const readPort = read("src/features/alchemy/shared/stores/run-session-read-port.ts");
+    const writePort = read("src/features/alchemy/shared/stores/ports/run-battle-write-port.ts");
+    expect(readPort).toContain("getBattleReadView");
+    expect(readPort).not.toMatch(/set(?:SyncedBattleState|PendingBattleTransition|DisplayOverrides|HasActiveBattle)/);
+    expect(writePort).toContain("dispatchRunSessionCommand");
+    expect(writePort).toContain("commitBattleTransition");
+
+    const battleCallers = sourceFiles("src/features/alchemy/run-loop/battle");
+    const offenders = battleCallers.filter((path) => {
+      const source = read(path);
+      return /(?:readBattle\(\)|getStore\(\)|getBattleSessionStore\(\))\.(?:set|clear|initialize)/.test(source);
+    });
+    expect(offenders).toEqual([]);
+  });
+
   it("keeps run-flow cross-concern calls typed and one-way", () => {
     const context = read("src/features/alchemy/run-loop/run/run-flow-context.ts");
     const handlers = read("src/features/alchemy/run-loop/run/run-flow-handlers.ts");

@@ -1,14 +1,14 @@
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/loot";
-import { readActiveRun, readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setHasActiveBattle, setRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { CONSTANTS } from "../../shared/types";
 
 /** Clear the persisted battle-active state; presentation cleanup is a post-commit concern. */
 export function clearCombatState() {
-  readBattle().setHasActiveBattle(false);
+  setHasActiveBattle(false);
 }
 
 /** Clear transient combat presentation after the gameplay state has committed. */

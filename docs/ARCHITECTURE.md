@@ -33,6 +33,8 @@ Cross-concern writes go through ports in `shared/stores/ports/` (`run-profile-wr
 
 Gameplay mutation callers enter the session through `dispatchRunSessionCommand()` from `run-session-command.ts`. The command boundary opens an Immer draft of the authoritative aggregate, publishes one root revision on success, and discards the draft on failure. `useRunSessionCommitStore` is now a compatibility projection over that root (it stores no shadow copy), so React selectors and autosave cannot observe mixed revisions. Settings and presentation-only state remain separate. Commands are synchronous and must not span an `await`; audio, navigation timers, presentation updates, and other non-rollbackable work use the command's `afterCommit` option or run after the command returns. Nested commands defer their effects until the outer commit, and discard them if any nested work fails. Projection and persistence adapters may subscribe to the aggregate commit signal directly; gameplay callers must not.
 
+Battle reads are data-only: `run-session-read-port.ts` does not expose aggregate mutators. Battle writes use focused commands from `run-session-write-port.ts`, which preserve the synchronous command boundary even when called from an existing command. An asynchronous battle transition that changes logical state must persist its continuation in `activeCombat.pendingBattleTransition` in the same commit as its intermediate state. Presentation delays and display overrides may continue after that commit, but a booted battle must never depend on an in-memory promise or timer to become playable.
+
 ### Run randomness
 
 Run-level randomness is persisted in `activeRun.rng` as one seed plus counters for the named `rewards`, `destinations`, `events`, `shops`, and `world` streams. Feature orchestration obtains state-backed generators through `createRunRandomSource(stream)`. Advancing one stream cannot perturb another, and save/resume continues at the exact next draw. Battle randomness remains owned by immutable `BattleState.rng`.
@@ -51,16 +53,17 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 
 ### Persistence API
 
-| API                               | Role                                                     |
-| --------------------------------- | -------------------------------------------------------- |
-| `createActiveRunSnapshot(source)` | Serialize explicit fields → `ActiveRunData` (lib)        |
-| `encodeRunResumeSnapshot(source)` | Translate the committed run projection → `ActiveRunData` |
-| `decodeRunResumeSnapshot(data)`   | Translate `ActiveRunData` → transient resume projection  |
-| `snapshotRun(screen?)`            | Read the committed run projection through the codec      |
-| `restoreRun(…)`                   | Apply the decoded snapshot on boot/resume                |
-| `parseActiveRun(raw)`             | Validate JSON before hydrate                             |
-| Domain persistence codecs         | Own defaults, encode, hydrate, and subscriptions         |
-| Persistence coordinator           | Compose domain fields into the versioned envelope        |
+| API                                    | Role                                                     |
+| -------------------------------------- | -------------------------------------------------------- |
+| `createActiveRunSnapshot(source)`      | Serialize explicit fields → `ActiveRunData` (lib)        |
+| `encodeRunResumeSnapshot(source)`      | Translate the committed run projection → `ActiveRunData` |
+| `decodeRunResumeSnapshot(data)`        | Translate `ActiveRunData` → transient resume projection  |
+| `snapshotRun(screen?)`                 | Read the committed run projection through the codec      |
+| `restoreRun(…)`                        | Apply the decoded snapshot on boot/resume                |
+| `parseActiveRun(raw)`                  | Validate JSON before hydrate                             |
+| `activeCombat.pendingBattleTransition` | Resume an interrupted enemy-turn continuation            |
+| Domain persistence codecs              | Own defaults, encode, hydrate, and subscriptions         |
+| Persistence coordinator                | Compose domain fields into the versioned envelope        |
 
 ### Session capability ports
 
@@ -69,6 +72,7 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 - **Reads (React, orchestration):** `useRunSessionNavigationSlice(screen)`, `useRunSessionBattleContext(screen)` from `run-session-model.ts` — both read the same committed projection; do not mirror screen display fields
 - **Reads (React, meta/setup):** focused selectors and narrow orchestration ports from `run-session-react-ports.ts` (`useHomesteadProgressSlice`, `useTalentProgressSlice`, `useDraftDeckSlice`, `useRunFlowRunPort`, `useBattleRunPort`, `useTalentCommandPort`, …); these select from the committed projection and expose only the fields needed by one owner
 - **Writes:** `dispatchRunSessionCommand`, `setRewardState`, `setShopState`, labyrinth/mystery setters, etc.
+- **Battle writes:** `setBattleState`, `beginBattleTransition`, `commitBattleTransition`, and related commands from `run-session-write-port.ts`; `readBattle()` is intentionally data-only
 - **Hooks:** `useActiveRunScreen()`, screen-specific display hooks, and the navigation/battle context slices above
 - **Lifecycle:** `run-session-lifecycle-port.ts` owns the public lifecycle seam over `run-transitions.ts`
 - **Ports:** focused write modules own reward / shop / labyrinth / mystery setters plus profile and run-setup writers
@@ -97,7 +101,7 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 ### Data flow
 
 - **Card play:** UI → `useBattleController.playCard()` → `playBattleCardResolved()` → `applyCardEffects()` → new `BattleState` → store.
-- **Enemy turn:** `endPlayerTurn()` → enemy resolution → status ticks → new `BattleState`.
+- **Enemy turn:** `endPlayerTurn()` → one committed intermediate state + persisted continuation → presentation delays → one committed result state.
 - **Screen transition:** `navigateTo` → `navigation.screen` → `renderAlchemyScreenRoute()`.
 - **Run-loop screens:** `screen-routes` call their screen-specific read hook for display props; `routeCommands` from the shell controller provide actions — no second data bus through `useAlchemyRunController` for shop/rewards/mystery/labyrinth fields.
 - **Shell preload / autosave:** App reads needed fields via capability modules (`useScreenAssetPreloadData`, battle context, and the relevant exact screen hook), not controller state re-exports.

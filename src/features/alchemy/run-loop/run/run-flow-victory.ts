@@ -6,7 +6,11 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setCompanionRewardCards, setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  setCompanionRewardCards,
+  setHasActiveBattle,
+  setRewardState,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { playGoldGain, playVictory, stopAllSfx } from "@/lib/audio";
 import { VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
 import { getBossEnemy } from "@/features/alchemy/shared/config";
@@ -66,7 +70,7 @@ export function createVictoryHandlers(ctx: RunFlowContext) {
             setRewardState,
             setCompanionRewardCards,
             setDestinationOfferState: runState.setDestinationOfferState,
-            setHasActiveBattle: (active) => readBattle().setHasActiveBattle(active),
+            setHasActiveBattle,
           },
           deps.rewardRng,
         );

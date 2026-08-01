@@ -129,6 +129,67 @@ test.describe("Save Persistence & Resume", () => {
     expect(turnAfter).toBe(2);
   });
 
+  test(
+    "reload from an enemy-resolution continuation resumes a playable battle",
+    critical,
+    async ({ page, runtimeErrors }) => {
+      void runtimeErrors;
+      await startBattleWithDeck(
+        page,
+        Array.from({ length: 6 }, () => makeHighDamageCard()),
+      );
+
+      const battle = new BattlePage(page);
+      await expect(battle.endTurnBtn).toBeEnabled({ timeout: 5000 });
+      await expect
+        .poll(
+          () =>
+            page.evaluate((saveKey) => {
+              const activeRun = JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun;
+              return activeRun?.activeCombat?.battleState?.turnPhase ?? null;
+            }, SAVE_KEY),
+          { timeout: 8000 },
+        )
+        .toBe("player");
+
+      await page.evaluate((saveKey) => {
+        const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+        const activeRun = save.activeRun;
+        const activeCombat = activeRun?.activeCombat;
+        if (!activeRun || !activeCombat) throw new Error("Expected an active combat save");
+        const resultState = activeCombat.battleState;
+        activeRun.currentScreen = "battle";
+        activeRun.activeCombat = {
+          ...activeCombat,
+          battleState: { ...resultState, turnPhase: "enemy", hand: [] },
+          pendingBattleTransition: {
+            kind: "enemy-turn",
+            resultState,
+            playerTurnSkipped: false,
+          },
+        };
+        localStorage.setItem(saveKey, JSON.stringify(save));
+      }, SAVE_KEY);
+
+      await page.reload();
+
+      await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
+      await expect
+        .poll(
+          () =>
+            page.evaluate((saveKey) => {
+              const activeRun = JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun;
+              return {
+                phase: activeRun?.activeCombat?.battleState?.turnPhase ?? null,
+                hasPendingTransition: Boolean(activeRun?.activeCombat?.pendingBattleTransition),
+              };
+            }, SAVE_KEY),
+          { timeout: 8000 },
+        )
+        .toEqual({ phase: "player", hasPendingTransition: false });
+    },
+  );
+
   test("resumes a run from legacy pre-metadata save and upgrades schema", async ({ page }) => {
     const legacySave = legacyCampaignRunSave();
     await page.addInitScript(

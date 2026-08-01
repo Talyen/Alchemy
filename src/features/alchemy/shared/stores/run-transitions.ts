@@ -15,6 +15,7 @@ import { restoreRunSession } from "./restore-active-run-session";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "./run-resume-codec";
 import { dispatchRunSessionCommand } from "./run-session-command";
 import { createRunSessionStoreSnapshot } from "./run-session-queries";
+import { initializeActiveBattle, setHasActiveBattle } from "./run-session-write-port";
 
 /** Apply persisted active-run data across the run-lifetime stores atomically. */
 export function restoreRun(
@@ -28,7 +29,7 @@ export function restoreRun(
     if (decoded) session.domain.initializeFromResumeSnapshot(decoded.progress);
     else session.domain.initialize(null);
     session.runProfile.applyTalentState(talentXP, unlockedTalents);
-    session.battle.initializeActiveBattle(activeRun?.activeCombat?.battleState ?? null);
+    initializeActiveBattle(activeRun?.activeCombat?.battleState ?? null, decoded?.pendingBattleTransition ?? null);
 
     if (decoded?.screen) session.domain.setScreen(decoded.screen);
     if (!activeRun) return;
@@ -94,7 +95,7 @@ export function syncBattleToRun(options?: { playerHealth?: number }): void {
 
 /** Clear the battle-active flag and battle-related presentation state. */
 export function clearBattleUi(): void {
-  createRunSessionStoreSnapshot().battle.setHasActiveBattle(false);
+  setHasActiveBattle(false);
   clearBattlePresentationUi();
 }
 
@@ -111,7 +112,7 @@ export function teardownRun(): void {
     session.domain.resetProgress();
     session.domain.resetNavigation();
     session.transient.clearTransientSession();
-    session.battle.initializeActiveBattle(null);
+    initializeActiveBattle(null);
   });
   resetBattlePresentation();
   useUiStore.getState().clearCardHover();

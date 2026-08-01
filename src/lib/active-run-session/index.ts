@@ -6,6 +6,7 @@ export type {
   PersistedAlchemistState,
   PersistedTrinketShopState,
   PersistedEquipmentShopState,
+  PersistedBattleTransition,
 } from "./types";
 export type { CardRewardState, GearRewardState, RewardState, TrinketRewardState } from "./reward-types";
 export { createEmptyRewardState } from "./reward-types";
