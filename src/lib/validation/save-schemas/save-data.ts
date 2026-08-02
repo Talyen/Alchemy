@@ -25,7 +25,6 @@ import {
   MaterialInventorySchema,
   CraftingCurrencyInventorySchema,
   TalentXPSchema,
-  UiScaleSchema,
   UnlockedTalentsSchema,
   EMPTY_COMPLETED_DIFFICULTIES,
 } from "./core";
@@ -132,7 +131,6 @@ export const SaveDataSchema = z.preprocess(
       contentVersion: caught(z.number().int().nonnegative(), CURRENT_CONTENT_VERSION, "contentVersion"),
       selectedAspectRatio: caught(AspectRatioOptionSchema, "auto", "selectedAspectRatio"),
       displayMode: caught(DisplayModeSchema, "borderless-fullscreen", "displayMode"),
-      uiScale: caught(UiScaleSchema, "100", "uiScale"),
       brightness: caught(z.number(), DEFAULT_BRIGHTNESS_PCT, "brightness").transform((v) =>
         Math.max(50, Math.min(150, v)),
       ),

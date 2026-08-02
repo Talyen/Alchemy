@@ -11,7 +11,6 @@ export interface HomesteadSaveFixture {
   contentVersion: number;
   selectedAspectRatio: string;
   displayMode: string;
-  uiScale: string;
   brightness: number;
   musicVolume: number;
   sfxVolume: number;
@@ -40,7 +39,6 @@ export const baseHomesteadSave: HomesteadSaveFixture = {
   contentVersion: CURRENT_CONTENT_VERSION,
   selectedAspectRatio: "auto",
   displayMode: "borderless-fullscreen",
-  uiScale: "100",
   brightness: 100,
   musicVolume: 50,
   sfxVolume: 50,

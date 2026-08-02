@@ -196,7 +196,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   );
   useAppDisplayEffects({
     displayMode: settings.displayMode,
-    uiScale: settings.uiScale,
     brightness: settings.brightness,
     stageRef: vrStageRef,
   });

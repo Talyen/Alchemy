@@ -6,6 +6,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Features
 
+- feat(options): remove UI Scale setting
+  Drop the unused display preference from options UI, settings store, save
+  schema, and CSS so rem sizing stays fixed and legacy saves strip uiScale.
 - feat(battle): surface enemy armor/forge/burnBonus/freezeBonus as status chips with combat text
   Move burnBonus/freezeBonus from EnemyMitigation into EnemyStatusId so they
   render alongside existing enemy status chips (burn, poison, bleed, freeze, stun).

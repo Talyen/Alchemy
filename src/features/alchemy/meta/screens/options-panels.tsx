@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { aspectRatioOptions, displayModeOptions, uiScaleOptions } from "@/features/alchemy/shared/config";
-import { AspectRatioSelect, DisplayModeSelect, UiScaleSelect } from "../../shared/ui/shared-ui";
-import type { AspectRatioOption, DisplayMode, UiScale } from "../../shared/types";
+import { aspectRatioOptions, displayModeOptions } from "@/features/alchemy/shared/config";
+import { AspectRatioSelect, DisplayModeSelect } from "../../shared/ui/shared-ui";
+import type { AspectRatioOption, DisplayMode } from "../../shared/types";
 
 export interface DisplayOptionsProps {
   selectedAspectRatio: AspectRatioOption;
@@ -10,8 +10,6 @@ export interface DisplayOptionsProps {
   displayMode: DisplayMode;
   onDisplayModeChange: (mode: DisplayMode) => void;
   showDisplayMode: boolean;
-  uiScale: UiScale;
-  onUiScaleChange: (scale: UiScale) => void;
   brightness: number;
   onBrightnessChange: (value: number) => void;
 }
@@ -118,7 +116,6 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
           onChange={display.onDisplayModeChange}
         />
       ) : null}
-      <UiScaleSelect uiScale={display.uiScale} uiScaleOptions={uiScaleOptions} onChange={display.onUiScaleChange} />
       <SliderOption
         label="Brightness"
         value={display.brightness}

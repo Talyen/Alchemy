@@ -16,7 +16,6 @@ export {
   PlayerStatusIdSchema,
   EnemyStatusIdSchema,
   DisplayModeSchema,
-  UiScaleSchema,
   MaterialInventorySchema,
   UnlockedTalentsSchema,
   CompletedDifficultiesSchema,

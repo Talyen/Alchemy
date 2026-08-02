@@ -3,31 +3,24 @@
 import { useEffect, useLayoutEffect, type RefObject } from "react";
 
 import { platform } from "@/lib/platform";
-import type { DisplayMode, UiScale } from "@/features/alchemy/shared/types";
+import type { DisplayMode } from "@/features/alchemy/shared/types";
 
 interface AppDisplayEffectsOptions {
   displayMode: DisplayMode;
-  uiScale: UiScale;
   brightness: number;
   stageRef: RefObject<HTMLDivElement | null>;
 }
 
 // Keeps browser/document and desktop display settings synchronized with options state.
 const DISPLAY_CONFIG = {
-  UI_SCALE_CSS_PROPERTY: "--alchemy-ui-scale",
   PERCENTAGE_DIVISOR: 100,
 } as const;
 
-export function useAppDisplayEffects({ displayMode, uiScale, brightness, stageRef }: AppDisplayEffectsOptions) {
+export function useAppDisplayEffects({ displayMode, brightness, stageRef }: AppDisplayEffectsOptions) {
   "use no memo";
   useEffect(() => {
     void platform.setDisplayMode(displayMode);
   }, [displayMode]);
-
-  useLayoutEffect(() => {
-    const scaleFactor = String(Number(uiScale) / DISPLAY_CONFIG.PERCENTAGE_DIVISOR);
-    document.documentElement.style.setProperty(DISPLAY_CONFIG.UI_SCALE_CSS_PROPERTY, scaleFactor);
-  }, [uiScale]);
 
   useLayoutEffect(() => {
     const el = stageRef.current;

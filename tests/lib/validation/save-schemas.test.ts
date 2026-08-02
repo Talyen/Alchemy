@@ -45,14 +45,12 @@ describe("SaveDataSchema", () => {
     const result = SaveDataSchema.safeParse({
       musicVolume: "loud",
       brightness: 999,
-      uiScale: "huge",
       displayMode: "immersive",
     });
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.musicVolume).toBe(50);
       expect(result.data.brightness).toBe(150);
-      expect(result.data.uiScale).toBe("100");
       expect(result.data.displayMode).toBe("borderless-fullscreen");
     }
   });
@@ -66,7 +64,6 @@ describe("SaveDataSchema", () => {
       autoEndTurn: false,
       brightness: 120,
       selectedAspectRatio: "16:10",
-      uiScale: "120",
     });
     expect(result.success).toBe(true);
     if (result.success) {
@@ -77,7 +74,6 @@ describe("SaveDataSchema", () => {
       expect(result.data.autoEndTurn).toBe(false);
       expect(result.data.brightness).toBe(120);
       expect(result.data.selectedAspectRatio).toBe("16:10");
-      expect(result.data.uiScale).toBe("120");
     }
   });
 

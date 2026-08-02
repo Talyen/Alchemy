@@ -1,5 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
+import type { AspectRatioOption, DisplayMode } from "../types";
 
 export function AspectRatioSelect({
   selectedAspectRatio,
@@ -53,37 +53,6 @@ export function DisplayModeSelect({
           {displayModeOptions.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
-
-export function UiScaleSelect({
-  uiScale,
-  uiScaleOptions,
-  onChange,
-}: {
-  uiScale: UiScale;
-  uiScaleOptions: Array<{ value: UiScale; label: string }>;
-  onChange: (scale: UiScale) => void;
-}) {
-  return (
-    <div className="rounded-shell-panel border border-border/70 p-5 text-left surface-muted">
-      <label htmlFor="ui-scale" className="block text-sm font-semibold text-foreground">
-        UI Scale
-      </label>
-      <p className="mt-1 text-sm text-muted-foreground">Adjusts text and fixed-size controls.</p>
-      <Select value={uiScale} onValueChange={(value) => onChange(value as UiScale)}>
-        <SelectTrigger id="ui-scale" className="mt-3">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {uiScaleOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label} ({option.value}%)
             </SelectItem>
           ))}
         </SelectContent>

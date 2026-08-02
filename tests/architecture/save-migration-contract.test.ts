@@ -68,7 +68,6 @@ describe("save migration contract", () => {
       "selectedAspectRatio",
       "sfxVolume",
       "talentXP",
-      "uiScale",
       "unlockedTalents",
     ].sort();
     expect(defaultKeys).toEqual(expectedKeys);

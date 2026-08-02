@@ -330,14 +330,10 @@ describe("normalizeDisplayMode", () => {
   });
 });
 
-describe("normalizeUiScale", () => {
-  it("passes through valid scales", () => {
-    const result = normalizeSaveData({ uiScale: "110" });
-    expect(result.uiScale).toBe("110");
-  });
-
-  it("falls back for invalid", () => {
-    const result = normalizeSaveData({ uiScale: "85" as unknown as "100" });
-    expect(result.uiScale).toBe("100");
+describe("legacy uiScale field", () => {
+  it("is stripped from older saves without wiping other settings", () => {
+    const result = normalizeSaveData({ uiScale: "110", displayMode: "fullscreen" });
+    expect(result.displayMode).toBe("fullscreen");
+    expect(result).not.toHaveProperty("uiScale");
   });
 });

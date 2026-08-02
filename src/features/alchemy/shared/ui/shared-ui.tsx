@@ -2,7 +2,7 @@
 export { ActionButtonRow } from "./action-button-row";
 export { DestinationChoices } from "./destination-choices";
 export { ShineAccentButton } from "./shine-accent-button";
-export { AspectRatioSelect, DisplayModeSelect, UiScaleSelect } from "./settings-controls";
+export { AspectRatioSelect, DisplayModeSelect } from "./settings-controls";
 export { ConfirmationDialog } from "./dialogs";
 export { ScreenHeader, ScreenHeaderRow, PageLayout, ScreenDescription, ScreenShell } from "./layout-components";
 export { staggerDelay } from "./shimmer";

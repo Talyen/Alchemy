@@ -8,7 +8,6 @@ import { bondCompanion, completeResearch, constructBuilding, plantFarm } from ".
 const settingsActionKeys = [
   "setSelectedAspectRatio",
   "setDisplayMode",
-  "setUiScale",
   "setBrightness",
   "setMasterVol",
   "setMusicVol",
@@ -58,7 +57,6 @@ export function useHomesteadActions() {
 export interface AppSettings {
   selectedAspectRatio: SettingsStore["selectedAspectRatio"];
   displayMode: SettingsStore["displayMode"];
-  uiScale: SettingsStore["uiScale"];
   brightness: SettingsStore["brightness"];
   musicVol: SettingsStore["musicVol"];
   sfxVol: SettingsStore["sfxVol"];
@@ -71,7 +69,6 @@ function selectAppSettings(state: SettingsStore): AppSettings {
   return {
     selectedAspectRatio: state.selectedAspectRatio,
     displayMode: state.displayMode,
-    uiScale: state.uiScale,
     brightness: state.brightness,
     musicVol: state.musicVol,
     sfxVol: state.sfxVol,

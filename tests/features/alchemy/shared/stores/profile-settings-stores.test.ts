@@ -98,12 +98,12 @@ describe("settings store", () => {
   it("updates and resets preferences independently from profile state", () => {
     useProfileStore.getState().setDiscoveredCardIds(["card-a"]);
     const settings = useSettingsStore.getState();
-    settings.setUiScale("120");
+    settings.setBrightness(120);
     settings.setMasterVol(75);
     settings.setShowClearSaveConfirm(true);
     settings.resetToDefaults();
 
-    expect(useSettingsStore.getState().uiScale).toBe(defaultSaveData.uiScale);
+    expect(useSettingsStore.getState().brightness).toBe(defaultSaveData.brightness);
     expect(useSettingsStore.getState().masterVol).toBe(defaultSaveData.masterVolume);
     expect(useSettingsStore.getState().showClearSaveConfirm).toBe(false);
     expect(useProfileStore.getState().discoveredCardIds).toEqual(["card-a"]);

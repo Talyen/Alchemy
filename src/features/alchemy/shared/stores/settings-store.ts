@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { AspectRatioOption, DisplayMode, UiScale } from "@/features/alchemy/shared/types";
+import type { AspectRatioOption, DisplayMode } from "@/features/alchemy/shared/types";
 import {
   DEFAULT_BRIGHTNESS_PCT,
   DEFAULT_MASTER_VOLUME_PCT,
@@ -11,7 +11,6 @@ import type { PersistenceCodec } from "./persistence-codec";
 export interface SettingsSaveFields {
   selectedAspectRatio: AspectRatioOption;
   displayMode: DisplayMode;
-  uiScale: UiScale;
   brightness: number;
   musicVolume: number;
   sfxVolume: number;
@@ -23,7 +22,6 @@ export interface SettingsSaveFields {
 export interface SettingsStore {
   selectedAspectRatio: SettingsSaveFields["selectedAspectRatio"];
   displayMode: SettingsSaveFields["displayMode"];
-  uiScale: SettingsSaveFields["uiScale"];
   brightness: SettingsSaveFields["brightness"];
   musicVol: SettingsSaveFields["musicVolume"];
   sfxVol: SettingsSaveFields["sfxVolume"];
@@ -34,7 +32,6 @@ export interface SettingsStore {
 
   setSelectedAspectRatio: (value: AspectRatioOption) => void;
   setDisplayMode: (value: DisplayMode) => void;
-  setUiScale: (value: UiScale) => void;
   setBrightness: (value: number) => void;
   setMusicVol: (value: number) => void;
   setSfxVol: (value: number) => void;
@@ -49,7 +46,6 @@ function createDefaultSettingsSaveFields(): SettingsSaveFields {
   return {
     selectedAspectRatio: "auto",
     displayMode: "borderless-fullscreen",
-    uiScale: "100",
     brightness: DEFAULT_BRIGHTNESS_PCT,
     musicVolume: DEFAULT_MUSIC_VOLUME_PCT,
     sfxVolume: DEFAULT_SFX_VOLUME_PCT,
@@ -63,7 +59,6 @@ function settingsStoreFields(fields: SettingsSaveFields) {
   return {
     selectedAspectRatio: fields.selectedAspectRatio,
     displayMode: fields.displayMode,
-    uiScale: fields.uiScale,
     brightness: fields.brightness,
     musicVol: fields.musicVolume,
     sfxVol: fields.sfxVolume,
@@ -79,7 +74,6 @@ export const useSettingsStore = create<SettingsStore>()((set) => ({
 
   setSelectedAspectRatio: (selectedAspectRatio) => set({ selectedAspectRatio }),
   setDisplayMode: (displayMode) => set({ displayMode }),
-  setUiScale: (uiScale) => set({ uiScale }),
   setBrightness: (brightness) => set({ brightness }),
   setMusicVol: (musicVol) => set({ musicVol }),
   setSfxVol: (sfxVol) => set({ sfxVol }),
@@ -98,7 +92,6 @@ export const settingsPersistenceCodec: PersistenceCodec<SettingsSaveFields> = {
     return {
       selectedAspectRatio: state.selectedAspectRatio,
       displayMode: state.displayMode,
-      uiScale: state.uiScale,
       brightness: state.brightness,
       musicVolume: state.musicVol,
       sfxVolume: state.sfxVol,

@@ -63,7 +63,6 @@ export const LabyrinthNodeTypeSchema = z.enum([
 export const LabyrinthNodeStateSchema = z.enum(["hidden", "visible", "current", "cleared", "failed"]);
 export const AspectRatioOptionSchema = z.enum(["auto", "16:9", "16:10", "21:9"]);
 export const DisplayModeSchema = z.enum(["windowed", "borderless-fullscreen", "fullscreen"]);
-export const UiScaleSchema = z.enum(["90", "100", "110", "120"]);
 
 export const CRAFTING_CURRENCY_ZERO_INVENTORY = { ...EMPTY_CRAFTING_CURRENCIES };
 

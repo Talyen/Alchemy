@@ -13,8 +13,6 @@ const defaultProps = {
     displayMode: "windowed" as const,
     onDisplayModeChange: vi.fn(),
     showDisplayMode: false,
-    uiScale: "100" as const,
-    onUiScaleChange: vi.fn(),
     brightness: 100,
     onBrightnessChange: vi.fn(),
   },
@@ -59,9 +57,10 @@ describe("OptionsScreen", () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it("explains that UI Scale targets text and fixed-size controls", () => {
+  it("renders display options without a UI Scale control", () => {
     render(<OptionsScreen {...defaultProps} />);
 
-    expect(screen.getByText("Adjusts text and fixed-size controls.")).toBeTruthy();
+    expect(screen.queryByText("UI Scale")).toBeNull();
+    expect(screen.getByText("Brightness")).toBeTruthy();
   });
 });

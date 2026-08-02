@@ -6,7 +6,6 @@ import {
   SaveDataSchema,
   ActiveRunDataSchema,
   DisplayModeSchema,
-  UiScaleSchema,
   MaterialInventorySchema,
 } from "@/lib/validation";
 import { getRawSaveSchemaVersion, isUnsupportedFutureSaveData, migrateSaveDataToCurrent } from "@/lib/validation";
@@ -377,23 +376,6 @@ describe("DisplayModeSchema", () => {
   });
 });
 
-describe("UiScaleSchema", () => {
-  const parse = (val: unknown) => UiScaleSchema.catch("100").parse(val);
-
-  it.each([
-    ["90", "90"],
-    ["100", "100"],
-    ["110", "110"],
-    ["120", "120"],
-    [null, "100"],
-    [undefined, "100"],
-    ["200", "100"],
-    [90, "100"],
-  ])("parses %s", (input, expected) => {
-    expect(parse(input)).toBe(expected);
-  });
-});
-
 describe("MaterialInventorySchema", () => {
   it("preserves valid inventory", () => {
     const result = MaterialInventorySchema.parse({ wood: 5, iron: 3, herbs: 2, food: 1, crystal: 0 });
@@ -457,7 +439,6 @@ describe("SaveDataSchema", () => {
     expect(result.contentVersion).toBe(CURRENT_CONTENT_VERSION);
     expect(result.selectedAspectRatio).toBe("auto");
     expect(result.displayMode).toBe("borderless-fullscreen");
-    expect(result.uiScale).toBe("100");
     expect(result.activeRun).toBeNull();
     expect(result.materialInventory).toEqual({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
     expect(result.constructedBuildings["blacksmiths-forge"]).toBe(0);
@@ -502,9 +483,15 @@ describe("SaveDataSchema", () => {
   });
 
   it("preserves valid partial data", () => {
+    const result = parseSave({ displayMode: "fullscreen", brightness: 120 });
+    expect(result.displayMode).toBe("fullscreen");
+    expect(result.brightness).toBe(120);
+  });
+
+  it("strips legacy uiScale from older saves without affecting other fields", () => {
     const result = parseSave({ displayMode: "fullscreen", uiScale: "120" });
     expect(result.displayMode).toBe("fullscreen");
-    expect(result.uiScale).toBe("120");
+    expect(result).not.toHaveProperty("uiScale");
   });
 
   it("loads legacy pre-metadata saves without wiping unrelated progress", () => {
@@ -539,7 +526,7 @@ describe("SaveDataSchema", () => {
 
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(result.displayMode).toBe("fullscreen");
-    expect(result.uiScale).toBe("110");
+    expect(result).not.toHaveProperty("uiScale");
     expect(result.discoveredCardIds).toEqual(["slash", "block", "future-card"]);
     expect(result.talentXP).toMatchObject({ physical: 18, block: 7 });
     expect(result.activeRun).toMatchObject({
@@ -795,7 +782,6 @@ describe("SaveDataSchema", () => {
     const original = parseSave({
       selectedAspectRatio: "16:9",
       displayMode: "windowed",
-      uiScale: "120",
       brightness: 130,
       musicVolume: 40,
       sfxVolume: 60,

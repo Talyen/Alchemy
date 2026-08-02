@@ -17,7 +17,6 @@ export function OptionsScreenRoute({
     useShallow((s) => ({
       selectedAspectRatio: s.selectedAspectRatio,
       displayMode: s.displayMode,
-      uiScale: s.uiScale,
       brightness: s.brightness,
       masterVol: s.masterVol,
       musicVol: s.musicVol,
@@ -39,8 +38,6 @@ export function OptionsScreenRoute({
         displayMode: settings.displayMode,
         onDisplayModeChange: actions.setDisplayMode,
         showDisplayMode: platform.isDesktop,
-        uiScale: settings.uiScale,
-        onUiScaleChange: actions.setUiScale,
         brightness: settings.brightness,
         onBrightnessChange: actions.setBrightness,
       }}
