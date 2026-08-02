@@ -9,13 +9,13 @@ export interface RunFlowRunPort {
   selectedDifficulty: DifficultyId | null;
   characterId: CharacterId;
   runMaxHealth: number;
-  setCurrentAct: (value: number | ((prev: number) => number)) => void;
-  setDestinationIndexInAct: (value: number | ((prev: number) => number)) => void;
-  setCompletedDestinations: (value: Destination[] | ((prev: Destination[]) => Destination[])) => void;
-  setRoomsEncountered: (value: number | ((prev: number) => number)) => void;
-  setRunDeck: (value: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
-  setRunTrinkets: (value: string[] | ((prev: string[]) => string[])) => void;
-  setRunPlayerHealth: (value: number | ((prev: number) => number)) => void;
+  updateCurrentAct: (value: number | ((prev: number) => number)) => void;
+  updateDestinationIndexInAct: (value: number | ((prev: number) => number)) => void;
+  updateCompletedDestinations: (value: Destination[] | ((prev: Destination[]) => Destination[])) => void;
+  updateRoomsEncountered: (value: number | ((prev: number) => number)) => void;
+  updateRunDeck: (value: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
+  updateRunTrinkets: (value: string[] | ((prev: string[]) => string[])) => void;
+  updateRunPlayerHealth: (value: number | ((prev: number) => number)) => void;
 }
 
 /** Talent effects used by run-flow handlers (currently campfire healing). */
@@ -37,7 +37,7 @@ export interface ContentNavigationRunPort {
   contentSystemType: ContentSystemId;
   lastOfferedDestinations: Destination[];
   destinationRoundsSinceOffered: Partial<Record<Destination, number>>;
-  setDestinationOfferState: (offerState: {
+  updateDestinationOfferState: (offerState: {
     lastOfferedDestinations: Destination[];
     roundsSinceOffered: Partial<Record<Destination, number>>;
   }) => void;
@@ -58,13 +58,13 @@ export interface WildwoodRunPort {
   contentSystemType: ContentSystemId;
   characterId: CharacterId;
   runDeck: BattleCard[];
-  setRunDeck: (value: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
+  updateRunDeck: (value: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
 }
 
 /** Corruption flow only needs the run deck reader/writer. */
 export interface CorruptionRunPort {
   runDeck: BattleCard[];
-  setRunDeck: (value: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
+  updateRunDeck: (value: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
 }
 
 /** Battle initialization and combat commands. */
@@ -74,10 +74,10 @@ export interface BattleRunPort {
   runMaxHealth: number;
   runTrinkets: string[];
   roomsEncountered: number;
-  setRoomsEncountered: (value: number | ((prev: number) => number)) => void;
+  updateRoomsEncountered: (value: number | ((prev: number) => number)) => void;
   contentSystemType: ContentSystemId;
   encounteredRunEnemyIds: string[];
-  setEncounteredRunEnemyIds: (value: string[] | ((prev: string[]) => string[])) => void;
+  updateEncounteredRunEnemyIds: (value: string[] | ((prev: string[]) => string[])) => void;
   runDeck: BattleCard[];
   runGold: number;
 }

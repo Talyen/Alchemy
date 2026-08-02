@@ -6,7 +6,7 @@ import { MenuPage } from "../pages/menu-page";
 import { RewardPage } from "../pages/reward-page";
 import { STARTING_DECK } from "./cards";
 import { resumeCampaignRun } from "./navigation";
-import { forceNextDestinationChoice, seedRandom } from "./rng";
+import { seedRandom } from "./rng";
 import { injectSaveState } from "./save-injection";
 import type { DestinationName } from "./types";
 import { completeRunEndToMenu } from "./run-end";
@@ -41,9 +41,6 @@ export async function startAtDestination(
   await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
   if (options.forceDestination) {
     await expect(page.getByRole("button", { name: options.forceDestination })).toBeVisible({ timeout: 3000 });
-    await page.evaluate(() => {
-      window.disableForceDestination = true;
-    });
   }
 }
 
@@ -52,11 +49,12 @@ export async function startBattleWithDeck(
   deck: Array<Record<string, unknown>>,
   overrides: Record<string, unknown> = {},
 ) {
-  await forceNextDestinationChoice(page, "Normal Combat");
   await injectSaveState(page, {
     runDeck: deck,
     runPlayerHealth: 30,
     runMaxHealth: 30,
+    currentScreen: "destination",
+    destinationChoices: ["Normal Combat"],
     ...overrides,
   });
   await page.goto("/");

@@ -17,7 +17,10 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     run = makeRunController(),
     talents = makeTalentController(),
     contentNav = {
-      createInitialDestinations: () => createEmptyRewardState(),
+      createInitialDestinations: () => ({
+        rewardState: createEmptyRewardState(),
+        offerState: { lastOfferedDestinations: [], roundsSinceOffered: {} },
+      }),
     },
     getAvailableDestinations = () => [],
     rewardRng = () => 0.5,

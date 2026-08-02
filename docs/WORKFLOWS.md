@@ -150,7 +150,7 @@ Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-
    ```ts
    dispatchRunSessionCommand({
      execute: () => {
-       run.setRunGold((gold) => gold + price);
+       setRunGold((gold) => gold + price);
        return price;
      },
      afterCommit: (paid) => playPurchaseSound(paid),
@@ -161,6 +161,8 @@ Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-
 5. The low-level `runSessionTransaction()` coordinator is an implementation detail for the command boundary and committed projection. New gameplay callers must not import it directly.
 6. `readBattle()` is data-only. Battle mutations use the focused commands exported from `run-session-write-port.ts`; do not spread aggregate battle actions into event-time stores.
 7. If an async battle flow persists an intermediate state, commit `activeCombat.pendingBattleTransition` with it and add a boot resume path. Presentation timers alone are not a gameplay continuation.
+8. `readActiveRun()`, `readRunProfile()`, and `readRunSession()` are data-only. Active-run and profile mutations use focused command-backed write ports; do not pass aggregate actions through React or imperative read ports.
+9. Run RNG sources are command-backed and must be consumed inside the command that commits their resulting state. Gameplay code must not use `Math.random()` for run outcomes.
 
 ---
 

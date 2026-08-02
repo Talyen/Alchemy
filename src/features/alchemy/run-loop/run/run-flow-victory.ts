@@ -4,7 +4,12 @@ import {
   readRunProfile,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-session-read-port";
-import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  addRunGold,
+  awardMaterialsDuringRun,
+  setDestinationOfferState,
+  setRunMaxHealth,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setCompanionRewardCards,
@@ -14,7 +19,7 @@ import {
 import { playGoldGain, playVictory, stopAllSfx } from "@/lib/audio";
 import { VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
 import { getBossEnemy } from "@/features/alchemy/shared/config";
-import { computeVictoryRewards, commitVictoryRewards, type VictoryRewardsResult } from "../navigation/victory-flow";
+import { computeVictoryRewards, commitVictoryRewards } from "../navigation/victory-flow";
 import { CONSTANTS } from "../../shared/types";
 import { getActiveRewardTraits } from "./run-flow-handler-deps";
 import { clearCombatPresentation } from "./run-flow-session-helpers";
@@ -53,29 +58,30 @@ export function createVictoryHandlers(ctx: RunFlowContext) {
     );
   }
 
-  function commitVictoryResult(result: VictoryRewardsResult) {
+  function commitVictoryResult() {
     let goldGained = false;
     dispatchRunSessionCommand(
       () => {
+        const committedResult = computeVictoryResult();
         const battleState = readBattle().battleState;
         const runState = readActiveRun();
         goldGained = commitVictoryRewards(
-          result,
+          committedResult,
           {
             battleState,
             contentSystemType: runState.contentSystemType,
             addHomesteadMaterials: awardMaterialsDuringRun,
-            addRunGold: runState.addRunGold,
-            setRunMaxHealth: runState.setRunMaxHealth,
+            addRunGold,
+            setRunMaxHealth,
             setRewardState,
             setCompanionRewardCards,
-            setDestinationOfferState: runState.setDestinationOfferState,
+            setDestinationOfferState,
             setHasActiveBattle,
           },
           deps.rewardRng,
         );
         if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-          deps.dispatch({ type: "commit-wildwood-victory", result });
+          deps.dispatch({ type: "commit-wildwood-victory", result: committedResult });
         }
       },
       {
@@ -88,7 +94,9 @@ export function createVictoryHandlers(ctx: RunFlowContext) {
   }
 
   function handleBattleVictory() {
-    commitVictoryResult(computeVictoryResult());
+    // Compute random rewards and commit their state in one transaction so RNG
+    // counters cannot advance independently of the resulting reward state.
+    commitVictoryResult();
     stopAllSfx();
     playVictory();
     if (readRunSession().hasActiveRun) {
@@ -108,7 +116,6 @@ export function createVictoryHandlers(ctx: RunFlowContext) {
   }
 
   return {
-    computeVictoryResult,
     commitVictoryResult,
     handleBattleVictory,
   };

@@ -6,12 +6,14 @@ import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-
 
 // Shared merchant/alchemist refresh helpers.
 
+type StateUpdater<T> = (updater: (previous: T) => T) => void;
+
 interface RefreshShopOfferingsInput<T, TItem> {
   price: number;
   refreshesLeft: number;
   runGold: number;
-  setRunGold: (fn: (g: number) => number) => void;
-  setState: (fn: (prev: T) => T) => void;
+  setRunGold: StateUpdater<number>;
+  setState: StateUpdater<T>;
   mapState: (prev: T, newItems: TItem[]) => T;
   resample: () => TItem[];
 }
@@ -33,11 +35,11 @@ interface RefreshOfferingsInput<T> {
   pool: BattleCard[];
   currentItems: BattleCard[];
   count: number;
-  setRunGold: (fn: (g: number) => number) => void;
-  setState: (fn: (prev: T) => T) => void;
+  setRunGold: StateUpdater<number>;
+  setState: StateUpdater<T>;
   mapState: (prev: T, newItems: BattleCard[]) => T;
   deck?: BattleCard[];
-  rng?: () => number;
+  rng: () => number;
 }
 
 export function markSlotPurchased(keys: string[], slotKey: string): string[] {
@@ -48,14 +50,14 @@ export function makeCardRefreshHandler<T>(config: {
   getPrice: () => number;
   getRefreshesLeft: () => number;
   getRunGold: () => number;
-  setRunGold: (fn: (g: number) => number) => void;
+  setRunGold: StateUpdater<number>;
   getPool: () => BattleCard[];
   getCurrentItems: () => BattleCard[];
   count: number;
-  setState: (fn: (prev: T) => T) => void;
+  setState: StateUpdater<T>;
   getDeck: () => BattleCard[];
   getMapState: (prev: T, items: BattleCard[]) => T;
-  rng?: () => number;
+  rng: () => number;
 }): () => boolean {
   return () =>
     refreshOfferings({
@@ -69,7 +71,7 @@ export function makeCardRefreshHandler<T>(config: {
       setState: config.setState,
       mapState: (prev, items) => config.getMapState(prev, items),
       deck: config.getDeck(),
-      ...(config.rng ? { rng: config.rng } : {}),
+      rng: config.rng,
     });
 }
 
@@ -77,8 +79,8 @@ export function makeShopRefreshHandler<TState, TItem>(config: {
   getPrice: () => number;
   getRefreshesLeft: () => number;
   getRunGold: () => number;
-  setRunGold: (fn: (g: number) => number) => void;
-  setState: (fn: (prev: TState) => TState) => void;
+  setRunGold: StateUpdater<number>;
+  setState: StateUpdater<TState>;
   resample: () => TItem[];
   getMapState: (prev: TState, items: TItem[]) => TState;
 }): () => boolean {

@@ -143,6 +143,7 @@ describe("restoreOrCreateDestinationRewardState", () => {
       availableDestinations: [DESTINATIONS.NORMAL_COMBAT],
       offerState: createEmptyDestinationOfferState(),
       bossEnemyId: "frostwarden",
+      rng: () => 0.5,
     });
     expect(result.destinations).toEqual([DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY]);
     expect(result.selectedBossId).toBeNull();
@@ -155,6 +156,7 @@ describe("restoreOrCreateDestinationRewardState", () => {
       availableDestinations: [DESTINATIONS.MERCHANT_SHOP, DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY],
       offerState: createEmptyDestinationOfferState(),
       bossEnemyId: "skeleton",
+      rng: () => 0.5,
       onSampled,
     });
     expect(result.destinations.length).toBeGreaterThan(0);
@@ -164,7 +166,7 @@ describe("restoreOrCreateDestinationRewardState", () => {
 
 describe("sampleDestinationChoices", () => {
   it("returns boss-only choices unchanged", () => {
-    const result = sampleDestinationChoices([DESTINATIONS.BOSS_COMBAT], createEmptyDestinationOfferState());
+    const result = sampleDestinationChoices([DESTINATIONS.BOSS_COMBAT], createEmptyDestinationOfferState(), () => 0.5);
     expect(result.choices).toEqual([DESTINATIONS.BOSS_COMBAT]);
   });
 
@@ -222,12 +224,16 @@ describe("sampleDestinationChoices", () => {
   });
 
   it("returns all destinations when fewer than requested count", () => {
-    const result = sampleDestinationChoices([DESTINATIONS.NORMAL_COMBAT], createEmptyDestinationOfferState());
+    const result = sampleDestinationChoices(
+      [DESTINATIONS.NORMAL_COMBAT],
+      createEmptyDestinationOfferState(),
+      () => 0.5,
+    );
     expect(result.choices).toEqual([DESTINATIONS.NORMAL_COMBAT]);
   });
 
   it("handles empty array", () => {
-    const result = sampleDestinationChoices([], createEmptyDestinationOfferState());
+    const result = sampleDestinationChoices([], createEmptyDestinationOfferState(), () => 0.5);
     expect(result.choices).toEqual([]);
   });
 

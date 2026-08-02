@@ -11,12 +11,12 @@ function applyCorruptionToDeck(
   runDeck: BattleCard[],
   cardIndex: number,
   rng: () => number,
-  setRunDeck: (deck: BattleCard[]) => void,
+  updateRunDeck: (deck: BattleCard[]) => void,
 ) {
   dispatchRunSessionCommand(
     () => {
       const { deck, result } = corruptDeckCard(runDeck, cardIndex, cardLibrary, rng);
-      setRunDeck(deck);
+      updateRunDeck(deck);
       setCorruptionResult(result);
       setDiscoveredCardIds((current) => appendUnique(current, result.corruptedCard.id));
       return result;
@@ -27,7 +27,7 @@ function applyCorruptionToDeck(
 
 export interface CorruptionFlowDeps {
   getRunDeck: () => BattleCard[];
-  setRunDeck: (deck: BattleCard[]) => void;
+  updateRunDeck: (deck: BattleCard[]) => void;
   eventsRng: () => number;
   advanceToNextDestination: () => void;
 }
@@ -35,7 +35,7 @@ export interface CorruptionFlowDeps {
 /** Corruption screen commands: apply a corrupt pick, then advance when exiting. */
 export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps) {
   function handleCorruptCard(cardIndex: number) {
-    applyCorruptionToDeck(deps.getRunDeck(), cardIndex, deps.eventsRng, deps.setRunDeck);
+    applyCorruptionToDeck(deps.getRunDeck(), cardIndex, deps.eventsRng, deps.updateRunDeck);
   }
 
   function handleCorruptionExit() {

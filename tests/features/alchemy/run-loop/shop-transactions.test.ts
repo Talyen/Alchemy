@@ -36,6 +36,7 @@ describe("refreshOfferings", () => {
       setRunGold: vi.fn((fn: (g: number) => number) => fn(10)),
       setState: vi.fn(),
       mapState: (prev: unknown, items: BattleCard[]) => ({ ...(prev as { cards: BattleCard[] }), cards: items }),
+      rng: () => 0.5,
       ...overrides,
     };
   }
@@ -62,7 +63,7 @@ describe("refreshOfferings", () => {
     expect(refreshOfferings(input)).toBe(true);
     expect(playGoldSpend).toHaveBeenCalled();
     expect(setRunGold).toHaveBeenCalled();
-    expect(resampleItems).toHaveBeenCalledWith(input.pool, currentItems, 2, undefined);
+    expect(resampleItems).toHaveBeenCalledWith(input.pool, currentItems, 2, input.rng);
     expect(setState).toHaveBeenCalled();
     const next = vi.mocked(setState).mock.calls[0][0](prev);
     expect(next.cards).toEqual(newItems);

@@ -46,6 +46,35 @@ describe("run-session command boundary", () => {
     }
   });
 
+  it("keeps feature-facing read ports free of aggregate actions", () => {
+    const readPort = read("src/features/alchemy/shared/stores/run-session-read-port.ts");
+    const profilePort = read("src/features/alchemy/shared/stores/profile-port.ts");
+    const reactPorts = read("src/features/alchemy/shared/stores/run-session-react-ports.ts");
+    const actionSelector = read("src/features/alchemy/shared/stores/store-actions.ts");
+
+    expect(readPort).not.toMatch(/runActions|runProfileActions|createRunRandomSource|\.set[A-Z]/);
+    expect(profilePort).toContain("readProfileStore(): ProfileReadView");
+    expect(reactPorts).not.toMatch(
+      /snapshot\.(domain|transient|battle|runProfile)\.[A-Za-z]+(?:set|add|award|clear|reset|next)/,
+    );
+    expect(actionSelector).not.toContain("runProfileActions");
+  });
+
+  it("keeps feature callers off mutators exposed by imperative reads", () => {
+    const callerRoots = [
+      "src/features/alchemy/meta",
+      "src/features/alchemy/run-loop",
+      "src/features/alchemy/run-setup",
+      "src/features/alchemy/shell",
+    ];
+    const offenders = callerRoots.flatMap(sourceFiles).filter((path) => {
+      const source = read(path);
+      return /read(?:ActiveRun|RunProfile|RunSession)\(\)\.(?:set|add|award|clear|reset|next)[A-Z]/.test(source);
+    });
+
+    expect(offenders).toEqual([]);
+  });
+
   it("keeps the battle read port data-only", () => {
     const readPort = read("src/features/alchemy/shared/stores/run-session-read-port.ts");
     const writePort = read("src/features/alchemy/shared/stores/ports/run-battle-write-port.ts");

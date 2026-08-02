@@ -1,12 +1,5 @@
 import { expect } from "@playwright/test";
-import {
-  pinDestinationChoice,
-  MANA_BERRIES_CARD,
-  makeCard,
-  makeHighDamageCard,
-  startAtDestination,
-  startBattleWithDeck,
-} from "./helpers";
+import { MANA_BERRIES_CARD, makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck } from "./helpers";
 import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
 import { DestinationPage } from "./pages/destination-page";
@@ -165,10 +158,9 @@ test.describe("Card Interactions", slow, () => {
     await new MenuPage(page).stage.expectRunPhase("runLoop");
 
     await expect(page.getByRole("button", { name: "Rest" })).toBeVisible({ timeout: 3000 });
-    await pinDestinationChoice(page, "Normal Combat");
     await page.getByRole("button", { name: "Rest" }).click();
     await destination.expectVisible();
-    await destination.enterCombat("Normal Combat");
+    await destination.enterAnyCombat();
   });
 });
 

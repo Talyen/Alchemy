@@ -23,7 +23,7 @@ import type { createBattleSession } from "./battle-session";
 export function createBattleInit(
   ctx: BattleControllerContext,
   session: ReturnType<typeof createBattleSession>,
-  rng: () => number = Math.random,
+  rng: () => number,
 ) {
   function createBattleForEnemy(
     enemy: BestiaryEntry,
@@ -58,7 +58,7 @@ export function createBattleInit(
       () => {
         const startingHealth = syncRunToBattleStart();
         const nextRoomsEncountered = ctx.run.roomsEncountered + 1;
-        ctx.run.setRoomsEncountered(nextRoomsEncountered);
+        ctx.run.updateRoomsEncountered(nextRoomsEncountered);
         const encounterTraitIds =
           ctx.run.contentSystemType === "labyrinth" ? readRunSession().activeLabyrinthModifiers : [];
         const battleEnemy = encounterTraitIds.length > 0 ? appendEncounterTraits(enemy, encounterTraitIds) : enemy;
@@ -73,7 +73,7 @@ export function createBattleInit(
         setBattleState(nextBattleState);
         setBattleStartState(nextBattleState);
         setHasActiveBattle(true);
-        ctx.run.setEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
+        ctx.run.updateEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
         setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
 
         const startingTexts: CombatTextEvent[] = [];

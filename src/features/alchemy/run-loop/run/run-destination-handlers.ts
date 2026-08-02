@@ -1,7 +1,7 @@
 // Destination routing helpers and reward selection utilities for run flow.
-import type { Dispatch, SetStateAction } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
+import type { RunDeckUpdate, RunTrinketsUpdate } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { RewardState } from "../navigation/reward-flow";
@@ -66,8 +66,8 @@ export function routeDestinationChoice(destination: Destination, handlers: Desti
 interface RewardSelectionInput {
   choice: BattleCard | { id: string } | GearInstance;
   type: RewardState["rewardType"];
-  setRunDeck: Dispatch<SetStateAction<BattleCard[]>>;
-  setRunTrinkets: Dispatch<SetStateAction<string[]>>;
+  setRunDeck: (value: RunDeckUpdate) => void;
+  setRunTrinkets: (value: RunTrinketsUpdate) => void;
 }
 
 export function applyRewardSelection({ choice, type, setRunDeck, setRunTrinkets }: RewardSelectionInput) {
@@ -86,10 +86,10 @@ export function applyRewardSelection({ choice, type, setRunDeck, setRunTrinkets 
 
 export function applyAlchemistPotion({
   setRunDeck,
-  rng = Math.random,
+  rng,
 }: {
-  setRunDeck: Dispatch<SetStateAction<BattleCard[]>>;
-  rng?: () => number;
+  setRunDeck: (value: RunDeckUpdate) => void;
+  rng: () => number;
 }) {
   const potion = getRandomPotionCard(rng);
   appendCardToRunWithDiscovery(potion, setRunDeck);

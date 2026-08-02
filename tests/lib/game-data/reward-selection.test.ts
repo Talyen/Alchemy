@@ -208,7 +208,7 @@ describe("sampleItems for boon rewards", () => {
       { id: "tattered-pages", title: "Tattered Pages", description: "", art: "" },
       { id: "meteorite", title: "Meteorite", description: "", art: "" },
     ];
-    const result = sampleItems(boons, 2);
+    const result = sampleItems(boons, 2, () => 0.5);
     expect(result).toHaveLength(2);
     vi.restoreAllMocks();
   });
@@ -216,13 +216,13 @@ describe("sampleItems for boon rewards", () => {
   it("handles requesting more boons than available", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const boons = [{ id: "bone-charm", title: "Bone Charm", description: "", art: "" }];
-    const result = sampleItems(boons, 5);
+    const result = sampleItems(boons, 5, () => 0.5);
     expect(result).toHaveLength(1);
     vi.restoreAllMocks();
   });
 
   it("returns empty array for empty library", () => {
-    const result = sampleItems([], 3);
+    const result = sampleItems([], 3, () => 0.5);
     expect(result).toEqual([]);
   });
 });

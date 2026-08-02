@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  createInitialShopState,
-  createInitialAlchemistState,
-  createInitialTrinketShopState,
-  createInitialEquipmentShopState,
+  createInitialShopState as createInitialShopStateImpl,
+  createInitialAlchemistState as createInitialAlchemistStateImpl,
+  createInitialTrinketShopState as createInitialTrinketShopStateImpl,
+  createInitialEquipmentShopState as createInitialEquipmentShopStateImpl,
   serializeTrinketShopState,
   hydrateTrinketShopState,
   serializeEquipmentShopState,
@@ -15,6 +15,12 @@ import {
   TRINKET_SHOP_OFFERED,
   EQUIPMENT_SHOP_OFFERED,
 } from "@/lib/game-constants";
+
+const testRng = () => 0.5;
+const createInitialShopState = () => createInitialShopStateImpl([], testRng);
+const createInitialAlchemistState = () => createInitialAlchemistStateImpl([], testRng);
+const createInitialTrinketShopState = (rng: () => number = testRng) => createInitialTrinketShopStateImpl(rng);
+const createInitialEquipmentShopState = (rng: () => number = testRng) => createInitialEquipmentShopStateImpl(rng);
 
 describe("shop-state-init", () => {
   it("createInitialShopState samples correct number of shop cards", () => {

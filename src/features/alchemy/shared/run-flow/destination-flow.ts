@@ -43,6 +43,11 @@ export interface SampleDestinationChoicesResult {
   offerState: DestinationOfferState;
 }
 
+export interface InitialDestinationResult {
+  rewardState: RewardState;
+  offerState: DestinationOfferState;
+}
+
 interface DestinationAvailabilityInput {
   destinationIndexInAct: number;
   currentHealth: number;
@@ -154,7 +159,7 @@ function fillRemainingSlots(
 export function sampleDestinationChoices(
   destinations: Destination[],
   offerState: DestinationOfferState = createEmptyDestinationOfferState(),
-  rng: () => number = Math.random,
+  rng: () => number,
 ): SampleDestinationChoicesResult {
   if (destinations.length === 1 && destinations[0] === DESTINATIONS.BOSS_COMBAT) {
     return {
@@ -210,6 +215,7 @@ export function restoreOrCreateDestinationRewardState(
     availableDestinations: Destination[];
     offerState: DestinationOfferState;
     bossEnemyId: string;
+    rng: () => number;
     onSampled?: (result: SampleDestinationChoicesResult) => void;
   },
 ): RewardState {
@@ -221,7 +227,7 @@ export function restoreOrCreateDestinationRewardState(
     );
   }
 
-  const sampled = sampleDestinationChoices(options.availableDestinations, options.offerState);
+  const sampled = sampleDestinationChoices(options.availableDestinations, options.offerState, options.rng);
   options.onSampled?.(sampled);
   return withSelectedBossForDestinations(
     sampled.choices,

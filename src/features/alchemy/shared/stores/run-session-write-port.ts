@@ -26,7 +26,19 @@ export {
   setRunEndMaterials,
   setCorruptionResult,
 } from "./ports/run-session-reward-port";
-export { awardMaterialsDuringRun, setMaterials, finalizeRunXP, unlockAllTalents } from "./ports/run-profile-write-port";
+export {
+  addMaterials,
+  awardMaterialsDuringRun,
+  bondCompanion,
+  completeResearch,
+  constructBuilding,
+  finalizeRunXP,
+  plantFarm,
+  resetUnlockedTalents,
+  setMaterials,
+  unlockAllTalents,
+  unlockTalent,
+} from "./ports/run-profile-write-port";
 export {
   setPendingCharacterId,
   setPendingContentSystemType,
@@ -42,3 +54,31 @@ export {
   setBattleState,
   setHasActiveBattle,
 } from "./ports/run-battle-write-port";
+export {
+  addRunGold,
+  addRunMaterialsEarned,
+  awardCardXP,
+  awardMysteryXP,
+  clearRunMaterialsEarned,
+  createRunRandomSource,
+  setCharacter,
+  setCompletedDestinations,
+  setContentSystemType,
+  setCurrentAct,
+  setDestinationIndexInAct,
+  setDestinationOfferState,
+  setEncounteredRunEnemyIds,
+  setRunDeck,
+  setRunGold,
+  setRunMaxHealth,
+  setRunPlayerHealth,
+  setRunTrinkets,
+  setRoomsEncountered,
+  setScreen,
+  setSelectedDifficulty,
+  type RunDeckUpdate,
+  type RunGoldUpdate,
+  type RunHealthUpdate,
+  type RunTrinketsUpdate,
+  type RunValueUpdate,
+} from "./ports/run-domain-write-port";

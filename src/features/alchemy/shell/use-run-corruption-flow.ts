@@ -7,7 +7,7 @@ import {
 
 export function useRunCorruptionFlow({
   getRunDeck,
-  setRunDeck,
+  updateRunDeck,
   eventsRng,
   advanceToNextDestination,
 }: CorruptionFlowDeps) {
@@ -15,10 +15,10 @@ export function useRunCorruptionFlow({
     () =>
       createCorruptionFlowHandlers({
         getRunDeck,
-        setRunDeck,
+        updateRunDeck,
         eventsRng,
         advanceToNextDestination,
       }),
-    [getRunDeck, setRunDeck, eventsRng, advanceToNextDestination],
+    [getRunDeck, updateRunDeck, eventsRng, advanceToNextDestination],
   );
 }

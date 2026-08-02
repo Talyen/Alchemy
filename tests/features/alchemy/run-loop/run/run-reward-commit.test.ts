@@ -58,7 +58,7 @@ describe("applyAlchemistPotion", () => {
     vi.spyOn(rewardGold, "getRandomPotionCard").mockReturnValue(potion);
 
     const setRunDeck = vi.fn();
-    applyAlchemistPotion({ setRunDeck });
+    applyAlchemistPotion({ setRunDeck, rng: () => 0.5 });
 
     const deckUpdater = setRunDeck.mock.calls[0][0];
     expect(deckUpdater([])).toEqual([potion]);

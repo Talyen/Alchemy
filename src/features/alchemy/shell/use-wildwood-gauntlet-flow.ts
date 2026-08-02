@@ -1,6 +1,11 @@
 import { useCallback } from "react";
 import { readRunSession, readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
-import { setWildwoodDraft, setPendingCharacterId } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  setRunDeck,
+  setRunPlayerHealth,
+  setWildwoodDraft,
+  setPendingCharacterId,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/profile-port";
@@ -116,7 +121,7 @@ export function useWildwoodGauntletFlow({
         const state = readRunSession().wildwoodDraft;
         if (run.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD || state?.phase !== "draft") return;
         const nextDeck = [...run.runDeck, card];
-        run.setRunDeck(nextDeck);
+        setRunDeck(nextDeck);
         setDiscoveredCardIds((current) => appendUnique(current, card.id));
         setWildwoodDraft({
           ...state,
@@ -132,12 +137,12 @@ export function useWildwoodGauntletFlow({
     (draftedCards: BattleCard[]) => {
       if (draftedCards.length < DRAFT_ROUNDS) return;
       dispatchRunSessionCommand(() => {
-        run.setRunDeck(draftedCards);
+        setRunDeck(draftedCards);
         setPendingCharacterId(null);
         startNextWildwoodBoss();
       });
     },
-    [run, startNextWildwoodBoss],
+    [startNextWildwoodBoss],
   );
 
   const handleWildwoodRecoveryComplete = useCallback(() => {
@@ -145,7 +150,7 @@ export function useWildwoodGauntletFlow({
       () => {
         const wildwood = readRunSession().wildwoodDraft;
         if (wildwood?.phase !== "recovery") return false;
-        const { runPlayerHealth, runMaxHealth, setRunPlayerHealth } = readActiveRun();
+        const { runPlayerHealth, runMaxHealth } = readActiveRun();
         setRunPlayerHealth(getWildwoodRecoveryHealth(runPlayerHealth, runMaxHealth));
         setWildwoodDraft({ ...wildwood, phase: "reward" });
         return true;
@@ -175,11 +180,11 @@ export function useWildwoodGauntletFlow({
   const handleWildwoodRemoveCard = useCallback(
     (index: number) => {
       dispatchRunSessionCommand(() => {
-        run.setRunDeck((deck) => deck.filter((_, cardIndex) => cardIndex !== index));
+        setRunDeck((deck) => deck.filter((_, cardIndex) => cardIndex !== index));
         startNextWildwoodBoss();
       });
     },
-    [run, startNextWildwoodBoss],
+    [startNextWildwoodBoss],
   );
 
   const handleWildwoodSkipRemoval = useCallback(() => {

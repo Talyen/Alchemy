@@ -20,6 +20,7 @@ import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-
 import { afterCampaignCharacterResolved } from "@/features/alchemy/shared/run-flow/campaign-start";
 import {
   createDestinationRewardState,
+  type InitialDestinationResult,
   type DestinationOptionsInput,
   sampleDestinationChoices,
   restoreOrCreateDestinationRewardState,
@@ -31,7 +32,7 @@ import { CONSTANTS } from "../../shared/types";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
-  function createInitialDestinations(options?: DestinationOptionsInput) {
+  function createInitialDestinations(options?: DestinationOptionsInput): InitialDestinationResult {
     const sampled = sampleDestinationChoices(
       deps.getAvailableDestinations(options),
       {
@@ -40,8 +41,10 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       },
       deps.destinationRng,
     );
-    deps.run.setDestinationOfferState(sampled.offerState);
-    return createDestinationRewardState(sampled.choices, getBossEnemy([], deps.worldRng).id);
+    return {
+      offerState: sampled.offerState,
+      rewardState: createDestinationRewardState(sampled.choices, getBossEnemy([], deps.worldRng).id),
+    };
   }
 
   function startRun(
@@ -121,14 +124,14 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
         playStartGoldSound: true,
         resetEncounteredEnemies: true,
       });
-      setRewardState(
-        createInitialDestinations({
-          currentHealth: snapshot.runMaxHealth,
-          currentGold: snapshot.runGold,
-          destinationIndexInAct: 0,
-          maxHealth: snapshot.runMaxHealth,
-        }),
-      );
+      const initialDestinations = createInitialDestinations({
+        currentHealth: snapshot.runMaxHealth,
+        currentGold: snapshot.runGold,
+        destinationIndexInAct: 0,
+        maxHealth: snapshot.runMaxHealth,
+      });
+      deps.run.updateDestinationOfferState(initialDestinations.offerState);
+      setRewardState(initialDestinations.rewardState);
       return { freshDeck: snapshot.freshDeck, totalStartGold: snapshot.runGold };
     });
   }
@@ -194,7 +197,8 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
                   roundsSinceOffered: deps.run.destinationRoundsSinceOffered,
                 },
                 bossEnemyId: getBossEnemy([], deps.worldRng).id,
-                onSampled: (result) => deps.run.setDestinationOfferState(result.offerState),
+                rng: deps.destinationRng,
+                onSampled: (result) => deps.run.updateDestinationOfferState(result.offerState),
               }),
             );
           });

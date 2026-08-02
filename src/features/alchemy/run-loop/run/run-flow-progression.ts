@@ -1,5 +1,9 @@
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setHasActiveBattle, setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  setDestinationOfferState,
+  setHasActiveBattle,
+  setRewardState,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
@@ -14,7 +18,11 @@ export function createProgressionHandlers(ctx: RunFlowContext) {
       type: "navigate",
       screen: CONSTANTS.SCREENS.DESTINATION,
       onRenderedScreenCommit: () => {
-        setRewardState(deps.contentNav.createInitialDestinations({ destinationIndexInAct }));
+        dispatchRunSessionCommand(() => {
+          const initialDestinations = deps.contentNav.createInitialDestinations({ destinationIndexInAct });
+          setDestinationOfferState(initialDestinations.offerState);
+          setRewardState(initialDestinations.rewardState);
+        });
         ctx.dispatchContinuation({ type: "prepare-destination-screen" });
         onCommitted?.();
       },
@@ -35,9 +43,9 @@ export function createProgressionHandlers(ctx: RunFlowContext) {
           }
           return true;
         }
-        deps.run.setCurrentAct((p) => p + 1);
-        deps.run.setDestinationIndexInAct(0);
-        deps.run.setCompletedDestinations([]);
+        deps.run.updateCurrentAct((p) => p + 1);
+        deps.run.updateDestinationIndexInAct(0);
+        deps.run.updateCompletedDestinations([]);
         return false;
       },
       {
@@ -56,7 +64,7 @@ export function createProgressionHandlers(ctx: RunFlowContext) {
   function advanceToNextDestination() {
     dispatchRunSessionCommand(
       () => {
-        deps.run.setRoomsEncountered((p) => p + 1);
+        deps.run.updateRoomsEncountered((p) => p + 1);
         if (deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
           deps.dispatch({ type: "labyrinth-clear-node" });
           return true;

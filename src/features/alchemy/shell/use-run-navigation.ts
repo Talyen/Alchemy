@@ -192,7 +192,7 @@ export function useRunNavigation({
 
   const corruption = useRunCorruptionFlow({
     getRunDeck: () => corruptionRun.runDeck,
-    setRunDeck: corruptionRun.setRunDeck,
+    updateRunDeck: corruptionRun.updateRunDeck,
     eventsRng: randomSources.events,
     advanceToNextDestination: flowHandlers.advanceToNextDestination,
   });

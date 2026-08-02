@@ -56,6 +56,7 @@ describe("reward flow selection", () => {
         talentGoldPerCombat: 0,
         materials: emptyInventory(),
         trinketIds: [],
+        rng: () => 0.5,
       });
       expect(result.gold).toBe(0);
       expect(result.choices.length).toBeGreaterThan(0);
@@ -70,6 +71,7 @@ describe("reward flow selection", () => {
         materials: emptyInventory(),
         trinketIds: [],
         goldMultiplier: 2,
+        rng: () => 0.5,
       });
       expect(result.gold).toBe(34);
     });
@@ -82,6 +84,7 @@ describe("reward flow selection", () => {
         talentGoldPerCombat: 2,
         materials: emptyInventory(),
         trinketIds: [],
+        rng: () => 0.5,
       });
       expect(result.gold).toBe(17);
     });
@@ -101,6 +104,7 @@ describe("reward flow selection", () => {
         materials: emptyInventory(),
         destinations: ["Campfire"],
         trinketIds: [],
+        rng: () => 0.5,
       });
       expect(result.rewardType).toBe("card");
       expect(result.gold).toBe(15);
@@ -119,6 +123,7 @@ describe("reward flow selection", () => {
         materials: emptyInventory(),
         destinations: [],
         trinketIds: [],
+        rng: () => 0.5,
       });
       expect(result.rewardType).toBe("trinket");
       expect(result.gold).toBe(17);
@@ -135,6 +140,7 @@ describe("reward flow selection", () => {
         materials: emptyInventory(),
         destinations: ["Normal Combat", "Mystery"],
         trinketIds: [],
+        rng: () => 0.5,
       });
       expect(result.destinations).toEqual(["Normal Combat", "Mystery"]);
     });
@@ -151,6 +157,7 @@ describe("reward flow selection", () => {
         destinations: [],
         trinketIds: [],
         goldMultiplier: 1.5,
+        rng: () => 0.5,
       });
       expect(result.gold).toBe(22);
     });
@@ -166,6 +173,7 @@ describe("reward flow selection", () => {
         materials: emptyInventory(),
         destinations: [],
         trinketIds: [],
+        rng: () => 0.5,
       });
       expect(result.gold).toBe(15);
     });

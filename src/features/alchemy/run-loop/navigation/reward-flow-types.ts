@@ -38,7 +38,7 @@ export interface BossRewardInput {
   materials: MaterialInventory;
   trinketIds: string[];
   goldMultiplier?: number;
-  rng?: () => number;
+  rng: () => number;
   gearAstralChanceBonus?: number;
 }
 
@@ -53,5 +53,5 @@ export interface CombatRewardInput {
   destinations: Destination[];
   trinketIds: string[];
   goldMultiplier?: number;
-  rng?: () => number;
+  rng: () => number;
 }

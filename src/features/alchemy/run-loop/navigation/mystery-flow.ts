@@ -15,8 +15,6 @@ import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "../run/deck-mutations";
 import type { MaterialId, MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import type { Dispatch, SetStateAction } from "react";
-
 import type { MysteryEffect } from "@/lib/mystery";
 import { sampleItems } from "../../shared/utils";
 import { spendRunGold } from "../run-gold";
@@ -29,15 +27,17 @@ export interface MysteryEffectResult {
   followUp: "choose-card" | null;
 }
 
+type StateUpdater<T> = (value: T | ((previous: T) => T)) => void;
+
 interface MysteryEffectContext {
   runDeck?: BattleCard[];
   runMaxHealth: number;
   rng: () => number;
-  setRunDeck: Dispatch<SetStateAction<BattleCard[]>>;
-  setRunGold: Dispatch<SetStateAction<number>>;
-  setRunPlayerHealth: Dispatch<SetStateAction<number>>;
-  setRunTrinkets: Dispatch<SetStateAction<string[]>>;
-  setMysteryCardChoices: Dispatch<SetStateAction<BattleCard[] | null>>;
+  setRunDeck: StateUpdater<BattleCard[]>;
+  setRunGold: StateUpdater<number>;
+  setRunPlayerHealth: StateUpdater<number>;
+  setRunTrinkets: StateUpdater<string[]>;
+  setMysteryCardChoices: StateUpdater<BattleCard[] | null>;
   awardMysteryXP: (keyword: KeywordId, amount: number) => void;
   onAddMaterials: (materials: MaterialInventory) => void;
   onAwardGold: (amount: number) => void;

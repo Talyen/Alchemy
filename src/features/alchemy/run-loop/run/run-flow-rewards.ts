@@ -57,12 +57,12 @@ export function createRewardHandlers(ctx: RunFlowContext) {
           applyRewardSelection({
             choice: result.selectedChoice,
             type: result.selectedRewardType,
-            setRunDeck: deps.run.setRunDeck,
-            setRunTrinkets: deps.run.setRunTrinkets,
+            setRunDeck: deps.run.updateRunDeck,
+            setRunTrinkets: deps.run.updateRunTrinkets,
           });
         }
         if (grantAlchemistReward) {
-          applyAlchemistPotion({ setRunDeck: deps.run.setRunDeck, rng: deps.rewardRng });
+          applyAlchemistPotion({ setRunDeck: deps.run.updateRunDeck, rng: deps.rewardRng });
         }
 
         return { result, isWildwood };

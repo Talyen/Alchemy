@@ -31,6 +31,7 @@ import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/profile-p
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
+import { setRunDeck, setRunGold, setRunTrinkets } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { CreateShopActionsDeps, ShopActions } from "./shop-action-types";
 import { createShopPriceSelectors } from "./shop-price-selectors";
 
@@ -44,7 +45,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     setEquipmentShopState,
   } = deps;
 
-  const activeRng = deps.rng ?? Math.random;
+  const activeRng = deps.rng;
   const getTalentEffects = () => talentEffects;
 
   // Shared helper for all four buy paths
@@ -69,7 +70,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
         };
       });
       if (!reserved) return false;
-      spendRunGold(price, run.setRunGold);
+      spendRunGold(price, setRunGold);
       onAcquire();
       return true;
     });
@@ -78,19 +79,21 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
   // ======== Init ========
 
   function initShop(): void {
-    setShopState(createInitialShopState(readActiveRun().runDeck, activeRng));
+    dispatchRunSessionCommand(() => setShopState(createInitialShopState(readActiveRun().runDeck, activeRng)));
   }
 
   function initAlchemist(): void {
-    setAlchemistState(createInitialAlchemistState(readActiveRun().runDeck, activeRng));
+    dispatchRunSessionCommand(() => setAlchemistState(createInitialAlchemistState(readActiveRun().runDeck, activeRng)));
   }
 
   function initTrinketShop(): void {
-    setTrinketShopState(createInitialTrinketShopState(activeRng));
+    dispatchRunSessionCommand(() => setTrinketShopState(createInitialTrinketShopState(activeRng)));
   }
 
   function initEquipmentShop(): void {
-    setEquipmentShopState(createInitialEquipmentShopState(activeRng, homesteadEffects.gearAstralChanceBonus));
+    dispatchRunSessionCommand(() =>
+      setEquipmentShopState(createInitialEquipmentShopState(activeRng, homesteadEffects.gearAstralChanceBonus)),
+    );
   }
 
   // ======== Merchant Shop ========
@@ -100,7 +103,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
       getMerchantCardBuyPrice(card),
       setShopState as (updater: (prev: ShopState) => ShopState) => void,
       slotKey,
-      () => appendCardToRunWithDiscovery(card, readActiveRun().setRunDeck),
+      () => appendCardToRunWithDiscovery(card, setRunDeck),
     );
   }
 
@@ -112,8 +115,8 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
       if (index < 0 || index >= run.runDeck.length) return;
       const price = getRemoveCardPrice();
       if (run.runGold < price) return;
-      spendRunGold(price, run.setRunGold);
-      run.setRunDeck((p) => p.filter((_, i) => i !== index));
+      spendRunGold(price, setRunGold);
+      setRunDeck((p) => p.filter((_, i) => i !== index));
       setShopState((p) => ({ ...p, removeUsed: true }));
     });
   }
@@ -122,7 +125,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     getPrice: () => getShopRefreshPrice(readRunSession().shopState.refreshesLeft),
     getRefreshesLeft: () => readRunSession().shopState.refreshesLeft,
     getRunGold: () => readActiveRun().runGold,
-    setRunGold: (fn) => readActiveRun().setRunGold(fn),
+    setRunGold,
     getPool: getOfferableCardPool,
     getCurrentItems: () => readRunSession().shopState.cards,
     count: SHOP_CARDS_OFFERED,
@@ -144,7 +147,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
       getAlchemistPotionBuyPrice(card),
       setAlchemistState as (updater: (prev: AlchemistState) => AlchemistState) => void,
       slotKey,
-      () => appendCardToRunWithDiscovery(card, readActiveRun().setRunDeck),
+      () => appendCardToRunWithDiscovery(card, setRunDeck),
     );
   }
 
@@ -152,7 +155,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     getPrice: () => getAlchemistRefreshPrice(readRunSession().alchemistState.refreshesLeft),
     getRefreshesLeft: () => readRunSession().alchemistState.refreshesLeft,
     getRunGold: () => readActiveRun().runGold,
-    setRunGold: (fn) => readActiveRun().setRunGold(fn),
+    setRunGold,
     getPool: getStandardPotionPool,
     getCurrentItems: () => readRunSession().alchemistState.potions,
     count: ALCHEMIST_POTIONS_OFFERED,
@@ -187,11 +190,11 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
       if (!reserved) return null;
 
       // Any reserved attempt consumes the one mix slot — even programmatic edge cases
-      spendRunGold(price, run.setRunGold);
+      spendRunGold(price, setRunGold);
 
       const mixed = tryCreateMixedPotion(cardA, cardB, talentEffects.potionMixPotency);
       if (mixed) {
-        run.setRunDeck((p) => applyMixToDeck(p, indexA, indexB, mixed));
+        setRunDeck((p) => applyMixToDeck(p, indexA, indexB, mixed));
         setDiscoveredCardIds((cur) => appendUnique(cur, MIXED_POTION_CARD_ID));
       }
       return mixed;
@@ -205,7 +208,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
       getTrinketBuyPrice(trinket),
       setTrinketShopState as (updater: (prev: TrinketShopState) => TrinketShopState) => void,
       slotKey,
-      () => appendTrinketToRunWithDiscovery(trinket.id, readActiveRun().setRunTrinkets),
+      () => appendTrinketToRunWithDiscovery(trinket.id, setRunTrinkets),
     );
   }
 
@@ -213,7 +216,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     getPrice: () => getShopRefreshPrice(readRunSession().trinketShopState.refreshesLeft),
     getRefreshesLeft: () => readRunSession().trinketShopState.refreshesLeft,
     getRunGold: () => readActiveRun().runGold,
-    setRunGold: (fn) => readActiveRun().setRunGold(fn),
+    setRunGold,
     setState: setTrinketShopState,
     resample: () => resampleTrinketShopOfferings(activeRng),
     getMapState: (prev, trinkets) => ({
@@ -243,7 +246,7 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
     getPrice: () => getShopRefreshPrice(readRunSession().equipmentShopState.refreshesLeft),
     getRefreshesLeft: () => readRunSession().equipmentShopState.refreshesLeft,
     getRunGold: () => readActiveRun().runGold,
-    setRunGold: (fn) => readActiveRun().setRunGold(fn),
+    setRunGold,
     setState: setEquipmentShopState,
     resample: () => resampleEquipmentShopOfferings(activeRng, homesteadEffects.gearAstralChanceBonus),
     getMapState: (prev, gear) => ({

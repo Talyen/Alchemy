@@ -1,39 +1,34 @@
 // Imperative capability reads for event-time handlers and persistence bridges.
 // These contracts intentionally expose one lifetime at a time.
-import type { RunRngStream } from "@/lib/run-rng";
 import {
-  getActiveRunStoreView,
+  getActiveRunReadView,
   getBattleReadView,
-  getRunProfileStoreView,
-  getRunSessionStoreView,
-  type ActiveRunStore,
+  getRunProfileReadView,
+  getRunSessionReadView,
+  type ActiveRunReadView,
   type BattleReadView,
-  type RunProfileStoreView,
-  type RunSessionStore,
+  type RunProfileReadView,
+  type RunSessionReadView,
 } from "./run-session-queries";
 import { readGameplayState } from "./gameplay-state-store";
 
-export type { ActiveRunStore, BattleReadView, RunProfileStoreView, RunSessionStore };
+export type { ActiveRunReadView, BattleReadView, RunProfileReadView, RunSessionReadView };
 export type { DisplayOverrides } from "./run-domain-types";
 
-export function readActiveRun(): ActiveRunStore {
-  return getActiveRunStoreView();
+export function readActiveRun(): ActiveRunReadView {
+  return getActiveRunReadView();
 }
 
-export function readRunProfile(): RunProfileStoreView {
-  return getRunProfileStoreView();
+export function readRunProfile(): RunProfileReadView {
+  return getRunProfileReadView();
 }
 
-export function readRunSession(): RunSessionStore {
-  return getRunSessionStoreView();
+export function readRunSession(): RunSessionReadView {
+  return getRunSessionReadView();
 }
 
 export function readBattle(): BattleReadView {
   return getBattleReadView();
-}
-
-export function createRunRandomSource(stream: RunRngStream): () => number {
-  return () => readGameplayState().runActions.nextRunRandom(stream);
 }
 
 export function readRunInitialized(): boolean {

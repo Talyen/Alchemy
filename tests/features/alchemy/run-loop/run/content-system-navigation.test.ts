@@ -14,6 +14,8 @@ import {
   setRunProgress,
   setRunSession,
 } from "../../../../helpers/run-domain-store-test";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-transaction";
+import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 
 vi.mock("@/lib/audio", () => ({
   playGoldGain: vi.fn(),
@@ -109,6 +111,27 @@ describe("createContentSystemNavigation", () => {
     nav.initializeRunForDifficulty("knight", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
 
     expect(useProfileStore.getState().discoveredCardIds).toEqual(knightStarterIds);
+  });
+
+  it("commits the initial destination offer and reward together", () => {
+    // getAvailableDestinations reads the live run state: destinations are only
+    // produced once startRun's in-flight draft is visible to reads inside the
+    // same command. If reads saw committed state, no deck would be present yet.
+    const deps = makeDeps({
+      getAvailableDestinations: () =>
+        readActiveRun().runDeck.length > 0 ? [CONSTANTS.DESTINATIONS.NORMAL_COMBAT] : [],
+    });
+    const nav = createContentSystemNavigation(deps);
+    const commits: number[] = [];
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+
+    nav.initializeRunForDifficulty("knight", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
+
+    unsubscribe();
+
+    expect(commits).toHaveLength(1);
+    expect(getRunSessionStoreView().rewardState.destinations).toEqual([CONSTANTS.DESTINATIONS.NORMAL_COMBAT]);
+    expect(getRunProgressStoreView().lastOfferedDestinations).toEqual([CONSTANTS.DESTINATIONS.NORMAL_COMBAT]);
   });
 
   it("initializeWildwoodRun does not discover the normal starter deck", () => {

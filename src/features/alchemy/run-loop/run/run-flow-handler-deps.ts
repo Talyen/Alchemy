@@ -1,7 +1,9 @@
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import type { RewardState } from "@/lib/active-run-session";
-import type { DestinationOptionsInput } from "@/features/alchemy/shared/run-flow/destination-flow";
+import type {
+  DestinationOptionsInput,
+  InitialDestinationResult,
+} from "@/features/alchemy/shared/run-flow/destination-flow";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { CONSTANTS, type Destination } from "../../shared/types";
 import type { RunFlowDispatch } from "./run-flow-intents";
@@ -13,7 +15,7 @@ export interface RunFlowHandlerDeps {
   /** Shell-executed side effects (navigate, shops, battle starts, content hooks). */
   dispatch: RunFlowDispatch;
   contentNav: {
-    createInitialDestinations: (options?: DestinationOptionsInput) => RewardState;
+    createInitialDestinations: (options?: DestinationOptionsInput) => InitialDestinationResult;
   };
   getAvailableDestinations: (options?: {
     currentHealth?: number;

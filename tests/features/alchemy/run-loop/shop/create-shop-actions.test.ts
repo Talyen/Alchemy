@@ -15,10 +15,10 @@ import {
   setEquipmentShopState,
 } from "@/features/alchemy/shared/stores/ports/run-session-shop-port";
 import {
-  createInitialShopState,
-  createInitialAlchemistState,
-  createInitialTrinketShopState,
-  createInitialEquipmentShopState,
+  createInitialShopState as createInitialShopStateImpl,
+  createInitialAlchemistState as createInitialAlchemistStateImpl,
+  createInitialTrinketShopState as createInitialTrinketShopStateImpl,
+  createInitialEquipmentShopState as createInitialEquipmentShopStateImpl,
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import {
   SHOP_CARD_PRICE,
@@ -50,6 +50,11 @@ function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
 }
 
 const defaultTalentEffects: TalentEffectManifest = createEmptyTalentManifest();
+const testRng = () => 0.5;
+const createInitialShopState = (deck: BattleCard[] = []) => createInitialShopStateImpl(deck, testRng);
+const createInitialAlchemistState = (deck: BattleCard[] = []) => createInitialAlchemistStateImpl(deck, testRng);
+const createInitialTrinketShopState = (rng: () => number = testRng) => createInitialTrinketShopStateImpl(rng);
+const createInitialEquipmentShopState = (rng: () => number = testRng) => createInitialEquipmentShopStateImpl(rng);
 
 function buildActions(
   overrides?: Partial<{
@@ -57,7 +62,7 @@ function buildActions(
     gearAstralChanceBonus: number;
     trinketIds: string[];
   }>,
-  rng?: () => number,
+  rng: () => number = testRng,
 ) {
   if (overrides?.trinketIds) {
     getRunProgressStoreView().setRunTrinkets(() => overrides.trinketIds!);

@@ -5,7 +5,7 @@ import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import type { BattleControllerBindings } from "./battle-bindings";
 import type { CharacterId, DifficultyId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
-import { createRunRandomSource } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { createRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import {
   setActiveLabyrinthModifiers,

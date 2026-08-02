@@ -14,6 +14,7 @@ import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-transitions";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import { beginBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { createRunRandomSource, setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { defaultBattleState } from "@/lib/battle";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
@@ -191,6 +192,43 @@ describe("run-session transaction coordinator", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(1);
+  });
+
+  it("publishes one commit for command-backed run writes and RNG", () => {
+    const commits: number[] = [];
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+    const rewardsRng = createRunRandomSource("rewards");
+
+    dispatchRunSessionCommand(() => {
+      rewardsRng();
+      setRunGold(7);
+    });
+
+    unsubscribe();
+
+    expect(commits).toHaveLength(1);
+    expect(getRunDomainStore().activeRun.runGold).toBe(7);
+    expect(getRunDomainStore().activeRun.rng.counters.rewards).toBe(1);
+  });
+
+  it("rolls back command-backed RNG together with gameplay state", () => {
+    const commits: number[] = [];
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+    const rewardsRng = createRunRandomSource("rewards");
+
+    expect(() =>
+      dispatchRunSessionCommand(() => {
+        rewardsRng();
+        setRunGold(99);
+        throw new Error("command failed");
+      }),
+    ).toThrow("command failed");
+
+    unsubscribe();
+
+    expect(commits).toHaveLength(0);
+    expect(getRunDomainStore().activeRun.runGold).toBe(0);
+    expect(getRunDomainStore().activeRun.rng.counters.rewards).toBe(0);
   });
 
   it("does not publish a commit for an unchanged transaction", () => {

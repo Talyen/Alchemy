@@ -66,6 +66,8 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
   };
 }
 
+const testRng = () => 0.5;
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -237,7 +239,7 @@ describe("computeVictoryRewards", () => {
   });
 
   it("computes combat victory rewards for normal enemy", () => {
-    const result = computeVictoryRewards(baseInput());
+    const result = computeVictoryRewards(baseInput(), testRng);
     expect(result.goldEarned).toBe(15);
     expect(result.rewardState.rewardType).toBe("card");
     expect(result.playerHealth).toBe(30);
@@ -262,6 +264,7 @@ describe("computeVictoryRewards", () => {
       baseInput({
         battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
       }),
+      testRng,
     );
     const mimic = computeVictoryRewards(
       baseInput({
@@ -278,6 +281,7 @@ describe("computeVictoryRewards", () => {
           },
         }),
       }),
+      testRng,
     );
     expect(mimic.goldEarned).toBeGreaterThan(normal.goldEarned);
     expect(mimic.eliteBonus).toBeGreaterThan(normal.eliteBonus);
@@ -289,6 +293,7 @@ describe("computeVictoryRewards", () => {
       baseInput({
         battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
       }),
+      testRng,
     );
     expect(result.bossBonus).toBe(7);
     expect(result.goldEarned).toBe(22);
@@ -301,6 +306,7 @@ describe("computeVictoryRewards", () => {
         contentSystemType: "labyrinth",
         activeLabyrinthRewardModifiers: ["generous"],
       }),
+      testRng,
     );
     expect(result.generousBonus).toBe(7);
     expect(result.goldEarned).toBe(22);
@@ -312,6 +318,7 @@ describe("computeVictoryRewards", () => {
         contentSystemType: "labyrinth",
         activeLabyrinthRewardModifiers: ["scavenger"],
       }),
+      testRng,
     );
     expect(result.materials.wood).toBeGreaterThanOrEqual(1);
   });
@@ -373,13 +380,14 @@ describe("computeVictoryRewards", () => {
       baseInput({
         unlockedTalents: { health: ["health-max-per-combat"] },
       }),
+      testRng,
     );
     expect(result.maxHealthDelta).toBe(1);
   });
 
   it("computes destinations via getAvailableDestinations", () => {
     const getAvailableDestinations = vi.fn(() => ["Normal Combat", "Campfire", "Mystery"] as Destination[]);
-    const result = computeVictoryRewards(baseInput({ getAvailableDestinations }));
+    const result = computeVictoryRewards(baseInput({ getAvailableDestinations }), testRng);
     expect(getAvailableDestinations).toHaveBeenCalledWith({
       currentHealth: 30,
       currentGold: result.newGold,
@@ -427,11 +435,11 @@ describe("commitVictoryRewards", () => {
   }
 
   it("reports gold gain when post-reward gold exceeds battle gold", () => {
-    expect(commitVictoryRewards(victoryResult(), commitDeps())).toBe(true);
+    expect(commitVictoryRewards(victoryResult(), commitDeps(), testRng)).toBe(true);
   });
 
   it("reports no gold gain when gold did not increase", () => {
-    expect(commitVictoryRewards(victoryResult({ newGold: 5, goldEarned: 0 }), commitDeps())).toBe(false);
+    expect(commitVictoryRewards(victoryResult({ newGold: 5, goldEarned: 0 }), commitDeps(), testRng)).toBe(false);
   });
 
   it("adds pending crystal materials to homestead", () => {
@@ -443,6 +451,7 @@ describe("commitVictoryRewards", () => {
         battleState: baseBattleState({ pendingMaterials: materials }),
         addHomesteadMaterials,
       }),
+      testRng,
     );
     expect(addHomesteadMaterials).toHaveBeenCalledWith(materials);
   });
@@ -460,6 +469,7 @@ describe("commitVictoryRewards", () => {
         contentSystemType: "labyrinth",
         setRewardState,
       }),
+      testRng,
     );
     expect(setRewardState).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -2,7 +2,12 @@ import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/loot";
 import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setHasActiveBattle, setRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  addMaterials,
+  clearRunMaterialsEarned,
+  setHasActiveBattle,
+  setRunEndMaterials,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { CONSTANTS } from "../../shared/types";
 
@@ -20,7 +25,7 @@ export function awardRunEndMaterials() {
   return dispatchRunSessionCommand(() => {
     const runState = readActiveRun();
     if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-      runState.clearRunMaterialsEarned();
+      clearRunMaterialsEarned();
       const none = emptyInventory();
       setRunEndMaterials(none);
       return none;
@@ -31,9 +36,9 @@ export function awardRunEndMaterials() {
       readRunProfile().effects,
       runState.roomsEncountered,
     );
-    readRunProfile().addMaterials(homesteadBonus);
+    addMaterials(homesteadBonus);
     setRunEndMaterials(addInventory(runCollected, homesteadBonus));
-    runState.clearRunMaterialsEarned();
+    clearRunMaterialsEarned();
     return homesteadBonus;
   });
 }

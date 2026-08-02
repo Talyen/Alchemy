@@ -6,12 +6,32 @@ import { dispatchRunSessionCommand } from "./run-session-command";
 import { readGameplayState, useGameplayStateStore } from "./gameplay-state-store";
 import type { ProfileStore } from "./profile-store";
 
-function selectProfile(state: ReturnType<typeof readGameplayState>): ProfileStore {
+export type ProfileReadView = Pick<
+  ProfileStore,
+  | "collectionTab"
+  | "collectionPages"
+  | "discoveredCardIds"
+  | "encounteredEnemyIds"
+  | "discoveredTrinketIds"
+  | "completedDifficulties"
+  | "finishedRunCharacters"
+>;
+
+function selectProfileWithActions(state: ReturnType<typeof readGameplayState>): ProfileStore {
   return { ...state.profile, ...state.profileActions };
 }
 
-export function readProfileStore(): ProfileStore {
-  return selectProfile(readGameplayState());
+export function readProfileStore(): ProfileReadView {
+  const profile = readGameplayState().profile;
+  return {
+    collectionTab: profile.collectionTab,
+    collectionPages: profile.collectionPages,
+    discoveredCardIds: profile.discoveredCardIds,
+    encounteredEnemyIds: profile.encounteredEnemyIds,
+    discoveredTrinketIds: profile.discoveredTrinketIds,
+    completedDifficulties: profile.completedDifficulties,
+    finishedRunCharacters: profile.finishedRunCharacters,
+  };
 }
 
 export function useProfileDiscoverySlice() {
@@ -45,15 +65,15 @@ export function useCompletedDifficulties() {
 }
 
 export function setDiscoveredCardIds(value: string[] | ((previous: string[]) => string[])): void {
-  dispatchRunSessionCommand(() => readProfileStore().setDiscoveredCardIds(value));
+  dispatchRunSessionCommand(() => selectProfileWithActions(readGameplayState()).setDiscoveredCardIds(value));
 }
 
 export function setEncounteredEnemyIds(value: string[] | ((previous: string[]) => string[])): void {
-  dispatchRunSessionCommand(() => readProfileStore().setEncounteredEnemyIds(value));
+  dispatchRunSessionCommand(() => selectProfileWithActions(readGameplayState()).setEncounteredEnemyIds(value));
 }
 
 export function setDiscoveredTrinketIds(value: string[] | ((previous: string[]) => string[])): void {
-  dispatchRunSessionCommand(() => readProfileStore().setDiscoveredTrinketIds(value));
+  dispatchRunSessionCommand(() => selectProfileWithActions(readGameplayState()).setDiscoveredTrinketIds(value));
 }
 
 export function setCompletedDifficulties(
@@ -61,9 +81,9 @@ export function setCompletedDifficulties(
     | ProfileStore["completedDifficulties"]
     | ((previous: ProfileStore["completedDifficulties"]) => ProfileStore["completedDifficulties"]),
 ): void {
-  dispatchRunSessionCommand(() => readProfileStore().setCompletedDifficulties(value));
+  dispatchRunSessionCommand(() => selectProfileWithActions(readGameplayState()).setCompletedDifficulties(value));
 }
 
 export function setFinishedRunCharacters(value: ProfileStore["finishedRunCharacters"]): void {
-  dispatchRunSessionCommand(() => readProfileStore().setFinishedRunCharacters(value));
+  dispatchRunSessionCommand(() => selectProfileWithActions(readGameplayState()).setFinishedRunCharacters(value));
 }

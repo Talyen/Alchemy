@@ -103,7 +103,7 @@ export function computeVictoryRewardState(
     bossEnemyId?: string | null | undefined;
     gearAstralChanceBonus?: number;
   },
-  rng: () => number = Math.random,
+  rng: () => number,
 ): RewardState {
   const talentEffects = input.talentEffects ?? computeTalentEffects(input.unlockedTalents);
   const goldMultiplier = getGoldMultiplier(input.characterId, input.selectedDifficulty);
@@ -144,7 +144,7 @@ export function computeVictoryRewardState(
 
 export function computeVictoryRewards(
   input: VictoryRewardsInput,
-  rng: () => number = Math.random,
+  rng: () => number,
   destinationRng: () => number = rng,
 ): VictoryRewardsResult {
   const labyrinthRewardModifiers = getActiveRewardModifiersForContentSystem(
@@ -256,7 +256,7 @@ export function computeVictoryRewards(
 export function commitVictoryRewards(
   result: VictoryRewardsResult,
   deps: CommitVictoryRewardsDeps,
-  rng: () => number = Math.random,
+  rng: () => number,
 ): boolean {
   if (deps.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD && deps.battleState.pendingMaterials.crystal > 0) {
     deps.addHomesteadMaterials(deps.battleState.pendingMaterials);

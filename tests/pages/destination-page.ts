@@ -22,10 +22,16 @@ export class DestinationPage {
   }
 
   async enterCombat(name: string) {
-    await this.page.evaluate(() => {
-      window.disableForceDestination = true;
-    });
     await this.pick(name);
+    await expect(this.page.getByTestId("battle-scene")).toBeVisible({ timeout: 10_000 });
+    await expect(this.page.getByRole("button", { name: "End Turn" })).toBeVisible({ timeout: 10_000 });
+    await expect(this.page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10_000 });
+  }
+
+  async enterAnyCombat() {
+    const combat = this.page.getByRole("button", { name: /^(Normal|Elite) Combat$/ }).first();
+    await expect(combat).toBeVisible({ timeout: 10_000 });
+    await combat.click();
     await expect(this.page.getByTestId("battle-scene")).toBeVisible({ timeout: 10_000 });
     await expect(this.page.getByRole("button", { name: "End Turn" })).toBeVisible({ timeout: 10_000 });
     await expect(this.page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10_000 });

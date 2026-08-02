@@ -14,7 +14,7 @@ interface ShopSetters {
 export type CreateShopActionsDeps = {
   talentEffects: TalentEffectManifest;
   homesteadEffects: HomesteadEffectManifest;
-  rng?: () => number;
+  rng: () => number;
 } & ShopSetters;
 
 export interface ShopActions {

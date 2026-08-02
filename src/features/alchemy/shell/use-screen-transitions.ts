@@ -25,10 +25,7 @@ interface ScreenTransitions {
   cancelPending: () => void;
 }
 
-export function useScreenTransitions(
-  currentScreen: Screen,
-  setScreen: React.Dispatch<React.SetStateAction<Screen>>,
-): ScreenTransitions {
+export function useScreenTransitions(currentScreen: Screen, setScreen: (screen: Screen) => void): ScreenTransitions {
   const timerRef = useRef(new TimerGroup());
   const pendingTransitionCommitRef = useRef<(() => void) | null>(null);
 

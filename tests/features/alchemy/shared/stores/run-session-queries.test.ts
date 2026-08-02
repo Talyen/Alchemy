@@ -6,6 +6,7 @@ import {
   getRunSessionStoreView,
 } from "@/features/alchemy/shared/stores/run-session-queries";
 import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 
 beforeEach(() => {
   useGameplayStateStore.setState(useGameplayStateStore.getInitialState(), true);
@@ -39,5 +40,12 @@ describe("canonical run-session queries", () => {
     expect(getActiveRunStoreView().runGold).toBe(snapshot.domain.activeRun.runGold);
     expect(getRunSessionStoreView().shopState).toBe(snapshot.transient.shopState);
     expect(getBattleStoreView().battleState).toBe(snapshot.battle.battleState);
+  });
+
+  it("keeps feature-facing imperative reads data-only", () => {
+    expect(readActiveRun()).not.toHaveProperty("setRunGold");
+    expect(readActiveRun()).not.toHaveProperty("nextRunRandom");
+    expect(readRunProfile()).not.toHaveProperty("unlockTalent");
+    expect(readRunSession()).not.toHaveProperty("setRewardState");
   });
 });

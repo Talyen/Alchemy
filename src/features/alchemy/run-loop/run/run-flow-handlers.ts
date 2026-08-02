@@ -41,7 +41,6 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
   return {
     clearCombatState,
     awardRunEndMaterials,
-    computeVictoryResult: victory.computeVictoryResult,
     commitVictoryResult: victory.commitVictoryResult,
     handleBattleVictory: victory.handleBattleVictory,
     handleBattleDefeat: defeat.handleBattleDefeat,

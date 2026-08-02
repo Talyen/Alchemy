@@ -29,42 +29,36 @@ export {
   hydrateEquipmentShopState,
 } from "@/lib/active-run-session";
 
-export function resampleTrinketShopOfferings(rng: () => number = Math.random): TrinketEntry[] {
+export function resampleTrinketShopOfferings(rng: () => number): TrinketEntry[] {
   return sampleItems(trinketLibrary, TRINKET_SHOP_OFFERED, rng);
 }
 
-export function resampleEquipmentShopOfferings(
-  rng: () => number = Math.random,
-  gearAstralChanceBonus = 0,
-): GearInstance[] {
+export function resampleEquipmentShopOfferings(rng: () => number, gearAstralChanceBonus = 0): GearInstance[] {
   return generateGearRewardChoices(EQUIPMENT_SHOP_OFFERED, rng, gearAstralChanceBonus);
 }
 
-export function createInitialShopState(deck: BattleCard[] = [], rng?: () => number): ShopState {
+export function createInitialShopState(deck: BattleCard[], rng: () => number): ShopState {
   return {
     ...emptyShopState(),
     cards: selectRewardCards(deck, getOfferableCardPool(), SHOP_CARDS_OFFERED, [], rng),
   };
 }
 
-export function createInitialAlchemistState(deck: BattleCard[] = [], rng?: () => number): AlchemistState {
+export function createInitialAlchemistState(deck: BattleCard[], rng: () => number): AlchemistState {
   return {
     ...emptyAlchemistState(),
     potions: selectRewardCards(deck, getStandardPotionPool(), ALCHEMIST_POTIONS_OFFERED, [], rng),
   };
 }
 
-export function createInitialTrinketShopState(rng: () => number = Math.random): TrinketShopState {
+export function createInitialTrinketShopState(rng: () => number): TrinketShopState {
   return {
     ...emptyTrinketShopState(),
     trinkets: resampleTrinketShopOfferings(rng),
   };
 }
 
-export function createInitialEquipmentShopState(
-  rng: () => number = Math.random,
-  gearAstralChanceBonus = 0,
-): EquipmentShopState {
+export function createInitialEquipmentShopState(rng: () => number, gearAstralChanceBonus = 0): EquipmentShopState {
   return {
     ...emptyEquipmentShopState(),
     gear: resampleEquipmentShopOfferings(rng, gearAstralChanceBonus),

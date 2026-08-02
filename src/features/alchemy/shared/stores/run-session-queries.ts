@@ -198,6 +198,10 @@ export type RunProfileStoreView = PermanentProgressFields & ReturnType<typeof pi
 export type RunSessionStore = RunSessionFields & ReturnType<typeof pickSessionActions>;
 export type NavigationStore = { screen: Screen } & ReturnType<typeof pickNavigationActions>;
 
+export type ActiveRunReadView = ActiveRunProgressFields & Pick<RunDomainStore, "initialized">;
+export type RunProfileReadView = PermanentProgressFields;
+export type RunSessionReadView = RunSessionFields;
+
 export function getActiveRunStoreView(state: GameplayState = readGameplayState()): ActiveRunStore {
   const domain = projectRunDomain(state);
   return { ...domain.activeRun, initialized: domain.initialized, ...pickActiveRunActions(domain) };
@@ -211,6 +215,19 @@ export function getRunProfileStoreView(state: GameplayState = readGameplayState(
 export function getRunSessionStoreView(state: GameplayState = readGameplayState()): RunSessionStore {
   const session = projectTransient(state);
   return { ...session, ...pickSessionActions(session) };
+}
+
+export function getActiveRunReadView(state: GameplayState = readGameplayState()): ActiveRunReadView {
+  const domain = projectRunDomain(state);
+  return { ...domain.activeRun, initialized: domain.initialized };
+}
+
+export function getRunProfileReadView(state: GameplayState = readGameplayState()): RunProfileReadView {
+  return { ...state.runProfile };
+}
+
+export function getRunSessionReadView(state: GameplayState = readGameplayState()): RunSessionReadView {
+  return { ...state.session };
 }
 
 export function getNavigationStoreView(state: GameplayState = readGameplayState()): NavigationStore {

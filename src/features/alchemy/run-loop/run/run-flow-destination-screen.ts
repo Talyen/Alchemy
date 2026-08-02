@@ -22,7 +22,10 @@ export function createDestinationScreenHandlers(ctx: RunFlowContext) {
     const bossOnly = state.destinations.length === 1 && state.destinations[0] === CONSTANTS.DESTINATIONS.BOSS_COMBAT;
     if (!bossOnly) return;
     if (state.selectedBossId && getBossById(state.selectedBossId)) return;
-    setRewardState((prev) => ({ ...prev, selectedBossId: getBossEnemy([], deps.worldRng).id }));
+    dispatchRunSessionCommand(() => {
+      const selectedBossId = getBossEnemy([], deps.worldRng).id;
+      setRewardState((prev) => ({ ...prev, selectedBossId }));
+    });
   }
 
   function handleDestinationChoice(destination: Destination) {
@@ -68,7 +71,7 @@ export function createDestinationScreenHandlers(ctx: RunFlowContext) {
     dispatchRunSessionCommand(
       () => {
         const healFraction = getCampfireHealFraction(deps.talents.talentEffects.campfireHealBonus);
-        deps.run.setRunPlayerHealth((prev) => getCampfireRestHealth(prev, deps.run.runMaxHealth, healFraction));
+        deps.run.updateRunPlayerHealth((prev) => getCampfireRestHealth(prev, deps.run.runMaxHealth, healFraction));
       },
       {
         afterCommit: () => ctx.dispatchContinuation({ type: "advance-to-next-destination" }),

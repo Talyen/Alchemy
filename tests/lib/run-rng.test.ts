@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createRunRngState, nextRunRngValue } from "@/lib/run-rng";
-import { createRunRandomSource } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { createRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { resetRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
 import { setRunProgress } from "../helpers/run-domain-store-test";

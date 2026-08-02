@@ -3,6 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useSettingsStore, type SettingsStore } from "./settings-store";
 import { useGameplayStateStore } from "./gameplay-state-store";
 import type { ProfileStore } from "./profile-store";
+import { bondCompanion, completeResearch, constructBuilding, plantFarm } from "./run-session-write-port";
 
 const settingsActionKeys = [
   "setSelectedAspectRatio",
@@ -46,12 +47,11 @@ export function useCollectionActions(): CollectionActions {
 }
 
 export function useHomesteadActions() {
-  const store = useGameplayStateStore((state) => state.runProfileActions);
   return {
-    constructBuilding: store.constructBuilding,
-    plantFarm: store.plantFarm,
-    completeResearch: store.completeResearch,
-    bondCompanion: store.bondCompanion,
+    constructBuilding,
+    plantFarm,
+    completeResearch,
+    bondCompanion,
   } as const;
 }
 

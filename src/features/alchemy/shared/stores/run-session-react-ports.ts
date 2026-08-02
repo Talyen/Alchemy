@@ -17,6 +17,21 @@ import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet
 import type { DisplayOverrides } from "./run-domain-types";
 import { useGameplayStateStore } from "./gameplay-state-store";
 import { useRunSessionCommitStore } from "./run-session-transaction";
+import {
+  awardCardXP,
+  setCompletedDestinations,
+  setCurrentAct,
+  setDestinationIndexInAct,
+  setDestinationOfferState,
+  setEncounteredRunEnemyIds,
+  setRunDeck,
+  setRunPlayerHealth,
+  setRunTrinkets,
+  setRoomsEncountered,
+  setScreen,
+  unlockTalent,
+  resetUnlockedTalents,
+} from "./run-session-write-port";
 import type {
   BattleRunPort,
   BattleTalentPort,
@@ -44,13 +59,13 @@ export function useRunFlowRunPort(): RunFlowRunPort {
       selectedDifficulty: snapshot.domain.activeRun.selectedDifficulty,
       characterId: snapshot.domain.activeRun.characterId,
       runMaxHealth: snapshot.domain.activeRun.runMaxHealth,
-      setCurrentAct: snapshot.domain.setCurrentAct,
-      setDestinationIndexInAct: snapshot.domain.setDestinationIndexInAct,
-      setCompletedDestinations: snapshot.domain.setCompletedDestinations,
-      setRoomsEncountered: snapshot.domain.setRoomsEncountered,
-      setRunDeck: snapshot.domain.setRunDeck,
-      setRunTrinkets: snapshot.domain.setRunTrinkets,
-      setRunPlayerHealth: snapshot.domain.setRunPlayerHealth,
+      updateCurrentAct: setCurrentAct,
+      updateDestinationIndexInAct: setDestinationIndexInAct,
+      updateCompletedDestinations: setCompletedDestinations,
+      updateRoomsEncountered: setRoomsEncountered,
+      updateRunDeck: setRunDeck,
+      updateRunTrinkets: setRunTrinkets,
+      updateRunPlayerHealth: setRunPlayerHealth,
     })),
   );
 }
@@ -68,10 +83,10 @@ export function useBattleRunPort(): BattleRunPort {
       runMaxHealth: snapshot.domain.activeRun.runMaxHealth,
       runTrinkets: snapshot.domain.activeRun.runTrinkets,
       roomsEncountered: snapshot.domain.activeRun.roomsEncountered,
-      setRoomsEncountered: snapshot.domain.setRoomsEncountered,
+      updateRoomsEncountered: setRoomsEncountered,
       contentSystemType: snapshot.domain.activeRun.contentSystemType,
       encounteredRunEnemyIds: snapshot.domain.activeRun.encounteredRunEnemyIds,
-      setEncounteredRunEnemyIds: snapshot.domain.setEncounteredRunEnemyIds,
+      updateEncounteredRunEnemyIds: setEncounteredRunEnemyIds,
       runDeck: snapshot.domain.activeRun.runDeck,
       runGold: snapshot.domain.activeRun.runGold,
     })),
@@ -80,17 +95,11 @@ export function useBattleRunPort(): BattleRunPort {
 
 export function useBattleTalentPort(): BattleTalentPort {
   const talentEffects = useTalentEffects();
-  const awardCardXP = useRunSessionCommitStore((state) => state.snapshot.domain.awardCardXP);
-  return useMemo(() => ({ talentEffects, awardCardXP }), [talentEffects, awardCardXP]);
+  return useMemo(() => ({ talentEffects, awardCardXP }), [talentEffects]);
 }
 
 export function useTalentCommandPort(): TalentCommandPort {
-  return useRunSessionCommitStore(
-    useShallow(({ snapshot }) => ({
-      unlockTalent: snapshot.runProfile.unlockTalent,
-      resetUnlockedTalents: snapshot.runProfile.resetUnlockedTalents,
-    })),
-  );
+  return useMemo(() => ({ unlockTalent, resetUnlockedTalents }), []);
 }
 
 export function useContentNavigationRunPort(): ContentNavigationRunPort {
@@ -99,7 +108,7 @@ export function useContentNavigationRunPort(): ContentNavigationRunPort {
       contentSystemType: snapshot.domain.activeRun.contentSystemType,
       lastOfferedDestinations: snapshot.domain.activeRun.lastOfferedDestinations,
       destinationRoundsSinceOffered: snapshot.domain.activeRun.destinationRoundsSinceOffered,
-      setDestinationOfferState: snapshot.domain.setDestinationOfferState,
+      updateDestinationOfferState: setDestinationOfferState,
     })),
   );
 }
@@ -131,7 +140,7 @@ export function useWildwoodRunPort(): WildwoodRunPort {
       contentSystemType: snapshot.domain.activeRun.contentSystemType,
       characterId: snapshot.domain.activeRun.characterId,
       runDeck: snapshot.domain.activeRun.runDeck,
-      setRunDeck: snapshot.domain.setRunDeck,
+      updateRunDeck: setRunDeck,
     })),
   );
 }
@@ -140,7 +149,7 @@ export function useCorruptionRunPort(): CorruptionRunPort {
   return useRunSessionCommitStore(
     useShallow(({ snapshot }) => ({
       runDeck: snapshot.domain.activeRun.runDeck,
-      setRunDeck: snapshot.domain.setRunDeck,
+      updateRunDeck: setRunDeck,
     })),
   );
 }
@@ -149,7 +158,7 @@ export function useActiveRunScreen() {
   return useRunSessionCommitStore(
     useShallow(({ snapshot }) => ({
       screen: snapshot.domain.navigation.screen,
-      setScreen: snapshot.domain.setScreen,
+      setScreen,
     })),
   );
 }

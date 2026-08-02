@@ -65,7 +65,7 @@ export function createNextRewardState(rewardState: RewardState): CardRewardState
   };
 }
 
-export function getRandomPotionCard(rng: () => number = Math.random): BattleCard {
+export function getRandomPotionCard(rng: () => number): BattleCard {
   const potionCards = getStandardPotionPool();
   const index = Math.floor(rng() * potionCards.length);
   if (process.env.NODE_ENV !== "production" && potionCards.length === 0) {
@@ -74,7 +74,7 @@ export function getRandomPotionCard(rng: () => number = Math.random): BattleCard
   return potionCards[index]!;
 }
 
-export function getCompanionCardChoices(rng: () => number = Math.random): BattleCard[] {
+export function getCompanionCardChoices(rng: () => number): BattleCard[] {
   const companions = cardLibrary.filter((c) => c.effects?.some((e) => e.kind === "summon-companion"));
   return shuffle(companions, rng).slice(0, LABYRINTH_REWARD_CONFIG.companionCardChoices);
 }
@@ -173,7 +173,7 @@ export function createBossRewardState({
   materials,
   trinketIds,
   goldMultiplier = 1,
-  rng = Math.random,
+  rng,
   gearAstralChanceBonus = 0,
 }: BossRewardInput): GearRewardState {
   return {
@@ -201,7 +201,7 @@ function rollWildwoodRewardType(rng: () => number): "card" | "trinket" | "gear" 
 
 export function createWildwoodRewardState(
   runDeck: BattleCard[],
-  rng: () => number = Math.random,
+  rng: () => number,
   gearAstralChanceBonus = 0,
 ): CardRewardState | TrinketRewardState | GearRewardState {
   const rewardType = rollWildwoodRewardType(rng);
@@ -239,7 +239,7 @@ export function createCombatRewardState({
   destinations,
   trinketIds,
   goldMultiplier = 1,
-  rng = Math.random,
+  rng,
 }: CombatRewardInput): CardRewardState | TrinketRewardState {
   const goldTotal = computeRewardGold({
     baseGold: gold,

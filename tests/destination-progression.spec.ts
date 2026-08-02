@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
-import { injectSaveState, seedRandom, pinDestinationChoice } from "./helpers";
+import { injectSaveState, seedRandom } from "./helpers";
 import { DestinationPage } from "./pages/destination-page";
 import { MysteryPage } from "./pages/mystery-page";
 import { CorruptionPage } from "./pages/corruption-page";
@@ -136,11 +136,10 @@ test.describe("Corruption Full Flow", () => {
     await corruption.open();
 
     await corruption.selectAndCorrupt();
-    await pinDestinationChoice(page, "Normal Combat");
     await corruption.continueBtn.click();
 
     const destination = new DestinationPage(page);
-    await destination.enterCombat("Normal Combat");
+    await destination.enterAnyCombat();
 
     const playableCards = page.locator('[aria-label^="Play "]');
     await expect(playableCards.first()).toBeVisible({ timeout: 5000 });
