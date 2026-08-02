@@ -1,6 +1,6 @@
 // Active-run progression commands. Feature code must use these wrappers rather
 // than receiving the aggregate's raw action functions through a read view.
-import type { BattleCard, CharacterId, KeywordId } from "@/lib/game-data";
+import type { BattleCard, KeywordId } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunRngStream } from "@/lib/run-rng";
 import type { Screen } from "@/features/alchemy/shared/types";
@@ -8,10 +8,10 @@ import type { RunDomainStore } from "../run-domain-store";
 import { dispatchRunSessionCommand } from "../run-session-command";
 import { createRunSessionStoreSnapshot } from "../run-session-queries";
 
-export type RunValueUpdate<T> = T | ((previous: T) => T);
+type RunValueUpdate<T> = T | ((previous: T) => T);
 export type RunDeckUpdate = Parameters<RunDomainStore["setRunDeck"]>[0];
-export type RunGoldUpdate = Parameters<RunDomainStore["setRunGold"]>[0];
-export type RunHealthUpdate = Parameters<RunDomainStore["setRunPlayerHealth"]>[0];
+type RunGoldUpdate = Parameters<RunDomainStore["setRunGold"]>[0];
+type RunHealthUpdate = Parameters<RunDomainStore["setRunPlayerHealth"]>[0];
 export type RunTrinketsUpdate = Parameters<RunDomainStore["setRunTrinkets"]>[0];
 
 export function setRunDeck(value: RunDeckUpdate): void {
@@ -62,18 +62,6 @@ export function setRunTrinkets(value: RunTrinketsUpdate): void {
 
 export function setEncounteredRunEnemyIds(value: RunValueUpdate<string[]>): void {
   dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setEncounteredRunEnemyIds(value));
-}
-
-export function setSelectedDifficulty(value: RunValueUpdate<RunDomainStore["activeRun"]["selectedDifficulty"]>): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setSelectedDifficulty(value));
-}
-
-export function setContentSystemType(value: RunValueUpdate<RunDomainStore["activeRun"]["contentSystemType"]>): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setContentSystemType(value));
-}
-
-export function setCharacter(characterId: CharacterId): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setCharacter(characterId));
 }
 
 export function setScreen(screen: Screen): void {
