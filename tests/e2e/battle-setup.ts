@@ -58,7 +58,6 @@ export async function startBattleWithDeck(
     ...overrides,
   });
   await page.goto("/");
-  await resumeCampaignRun(page);
   const destination = new DestinationPage(page);
   await destination.expectVisible();
   await destination.enterCombat("Normal Combat");
