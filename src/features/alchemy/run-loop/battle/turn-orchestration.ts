@@ -257,15 +257,27 @@ async function continueAfterEnemyDraw(
   playerTurnSkipped: boolean,
   deps: TurnOrchestrationDeps,
 ) {
+  const continuation = getBattleContinuation(resultState, playerTurnSkipped);
+  let committedDuringDraw = false;
   try {
-    await runHandDrawSequence(currentState.hand, resultState, () => undefined, session, deps.getDrawSequenceDeps());
+    await runHandDrawSequence(
+      currentState.hand,
+      resultState,
+      () => {
+        deps.commitBattleTransition(resultState, continuation);
+        committedDuringDraw = true;
+      },
+      session,
+      deps.getDrawSequenceDeps(),
+    );
   } catch (err) {
     deps.logBattleError("handle enemy resolution draw sequence", err);
   }
   if (!deps.isCurrentBattleSession(session)) return;
   deps.runIfSessionActive(session, () => {
-    const continuation = getBattleContinuation(resultState, playerTurnSkipped);
-    deps.commitBattleTransition(resultState, continuation);
+    if (!committedDuringDraw) {
+      deps.commitBattleTransition(resultState, continuation);
+    }
     if (deps.checkBattleEnd(resultState, session)) return;
     if (playerTurnSkipped) {
       deps.clearBattleTransition();

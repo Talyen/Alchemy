@@ -421,6 +421,11 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(battle): keep enemy-turn presentation when CC skips attacks
+  Stop the battle resume effect from committing live pending transitions
+  mid-presentation, and apply the post-enemy hand inside the draw sequence
+  so stunned/frozen enemies still show Enemy Turn without flashing the next
+  hand.
 - fix(audits): consolidate confirmed audit findings
 - fix(test): boot battle setup straight to injected destination
 - fix(battle): persist turn transitions across resume

@@ -41,6 +41,12 @@ export interface DisplayOverrides {
 export interface RunDomainBattleState {
   battleState: BattleState;
   pendingBattleTransition: PersistedBattleTransition | null;
+  /**
+   * In-memory only: true when a pending transition arrived via battle hydration
+   * (save/boot) and must be fast-forwarded. Live `beginBattleTransition` must not
+   * set this — otherwise the controller resume effect commits mid-presentation.
+   */
+  pendingTransitionResumeRequired: boolean;
   displayOverrides: DisplayOverrides;
   battleStartState: BattleState | null;
   hasActiveBattle: boolean;
@@ -88,6 +94,7 @@ export function createInitialBattleFields(): RunDomainBattleState {
   return {
     battleState: defaultBattleState(),
     pendingBattleTransition: null,
+    pendingTransitionResumeRequired: false,
     displayOverrides: {},
     battleStartState: null,
     hasActiveBattle: false,

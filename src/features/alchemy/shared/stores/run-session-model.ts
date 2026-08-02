@@ -43,6 +43,7 @@ interface RunSessionBattleSlice {
   hasActiveBattle: boolean;
   battleState: BattleState;
   pendingBattleTransition: PersistedBattleTransition | null;
+  pendingTransitionResumeRequired: boolean;
 }
 
 /** Unified view of an in-progress or resumable run (screen defaults to navigation slice). */
@@ -85,11 +86,13 @@ function pickRunSessionBattleSlice(battle: {
   hasActiveBattle: boolean;
   battleState: BattleState;
   pendingBattleTransition: PersistedBattleTransition | null;
+  pendingTransitionResumeRequired: boolean;
 }): RunSessionBattleSlice {
   return {
     hasActiveBattle: battle.hasActiveBattle,
     battleState: battle.battleState,
     pendingBattleTransition: battle.pendingBattleTransition,
+    pendingTransitionResumeRequired: battle.pendingTransitionResumeRequired,
   };
 }
 

@@ -27,6 +27,7 @@ function hydrateBattleTransition(transition: PersistedBattleTransition | null): 
 export interface BattleActions {
   setSyncedBattleState: (action: BattleState | ((prev: BattleState) => BattleState)) => void;
   setPendingBattleTransition: (transition: PersistedBattleTransition | null) => void;
+  clearPendingTransitionResumeRequired: () => void;
   setDisplayOverrides: (overrides: DisplayOverrides) => void;
   clearDisplayOverrides: () => void;
   setBattleStartState: (state: BattleState | null) => void;
@@ -54,6 +55,11 @@ export function defineBattleActions(set: ImmerSet<RunDomainBattleState>): Battle
         state.pendingBattleTransition = transition;
       }),
 
+    clearPendingTransitionResumeRequired: () =>
+      set((state) => {
+        state.pendingTransitionResumeRequired = false;
+      }),
+
     setDisplayOverrides: setField("displayOverrides"),
     clearDisplayOverrides: () =>
       set((state) => {
@@ -67,8 +73,10 @@ export function defineBattleActions(set: ImmerSet<RunDomainBattleState>): Battle
       set((state) => {
         if (battleState) {
           const hydrated = hydrateBattleState(battleState);
+          const pending = hydrateBattleTransition(pendingBattleTransition);
           state.battleState = hydrated;
-          state.pendingBattleTransition = hydrateBattleTransition(pendingBattleTransition);
+          state.pendingBattleTransition = pending;
+          state.pendingTransitionResumeRequired = pending != null;
           state.displayOverrides = {};
           state.battleStartState = hydrated;
           state.hasActiveBattle = true;

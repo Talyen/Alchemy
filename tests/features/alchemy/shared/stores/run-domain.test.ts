@@ -571,8 +571,23 @@ describe("battle slice", () => {
   it("hydrates and resets active battle", () => {
     getBattleStoreView().initializeActiveBattle({ ...defaultBattleState(), turn: 4, playerHealth: 9 });
     expect(getBattleStoreView().hasActiveBattle).toBe(true);
+    expect(getBattleStoreView().pendingTransitionResumeRequired).toBe(false);
     getBattleStoreView().initializeActiveBattle(null);
     expect(getBattleStoreView().hasActiveBattle).toBe(false);
+  });
+
+  it("requires resume only when hydrating with a pending transition", () => {
+    const resultState = { ...defaultBattleState(), turn: 2 };
+    getBattleStoreView().initializeActiveBattle(
+      { ...defaultBattleState(), turnPhase: "enemy", hand: [] },
+      { kind: "enemy-turn", resultState, playerTurnSkipped: false },
+    );
+    expect(getBattleStoreView().pendingTransitionResumeRequired).toBe(true);
+    expect(getBattleStoreView().pendingBattleTransition).toEqual({
+      kind: "enemy-turn",
+      resultState,
+      playerTurnSkipped: false,
+    });
   });
 });
 

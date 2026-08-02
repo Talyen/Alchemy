@@ -104,6 +104,8 @@ describe("run domain slice dispatch", () => {
   it("exposes battle actions from the battle domain store", () => {
     expectActions(useRunBattleDomainStore.getState(), [
       "setSyncedBattleState",
+      "setPendingBattleTransition",
+      "clearPendingTransitionResumeRequired",
       "setDisplayOverrides",
       "clearDisplayOverrides",
       "setBattleStartState",

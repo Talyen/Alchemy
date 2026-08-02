@@ -53,7 +53,7 @@ export function useBattleController({
   measureVisualCardRect = defaultMeasureVisualCardRect,
 }: UseBattleControllerProps) {
   const {
-    battle: { battleState, hasActiveBattle, pendingBattleTransition },
+    battle: { battleState, hasActiveBattle, pendingBattleTransition, pendingTransitionResumeRequired },
     activeLabyrinthModifiers,
   } = useRunSessionBattleContext(screen);
   const displayOverrides = useDisplayOverrides();
@@ -165,10 +165,17 @@ export function useBattleController({
       pendingTransitionResumeAttemptedRef.current = false;
       return;
     }
-    if (screen !== "battle" || !pendingBattleTransition || pendingTransitionResumeAttemptedRef.current) return;
+    if (
+      screen !== "battle" ||
+      !pendingBattleTransition ||
+      !pendingTransitionResumeRequired ||
+      pendingTransitionResumeAttemptedRef.current
+    ) {
+      return;
+    }
     pendingTransitionResumeAttemptedRef.current = true;
     actions.endTurnUi.resumePendingBattleTransition();
-  }, [actions.endTurnUi, hasActiveBattle, pendingBattleTransition, screen]);
+  }, [actions.endTurnUi, hasActiveBattle, pendingBattleTransition, pendingTransitionResumeRequired, screen]);
 
   // Playable hand card keys
   const playableHandCardKeys = useMemo(

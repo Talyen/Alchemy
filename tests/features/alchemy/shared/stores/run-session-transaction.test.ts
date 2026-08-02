@@ -15,7 +15,11 @@ import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store"
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-transitions";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
-import { beginBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  beginBattleTransition,
+  initializeActiveBattle,
+  commitBattleTransition,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createRunRandomSource, setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { defaultBattleState } from "@/lib/battle";
@@ -101,6 +105,30 @@ describe("run-session transaction coordinator", () => {
       resultState,
       playerTurnSkipped: false,
     });
+    expect(readGameplayState().battle.pendingTransitionResumeRequired).toBe(false);
+  });
+
+  it("marks hydrated pending transitions for resume without live beginBattleTransition", () => {
+    const resultState = { ...defaultBattleState(), turn: 2, playerHealth: 18 };
+    const intermediate = { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] };
+
+    initializeActiveBattle(intermediate, {
+      kind: "enemy-turn",
+      resultState,
+      playerTurnSkipped: false,
+    });
+
+    expect(readGameplayState().battle.pendingTransitionResumeRequired).toBe(true);
+    expect(readGameplayState().battle.pendingBattleTransition).toEqual({
+      kind: "enemy-turn",
+      resultState,
+      playerTurnSkipped: false,
+    });
+
+    commitBattleTransition(resultState, null);
+
+    expect(readGameplayState().battle.pendingTransitionResumeRequired).toBe(false);
+    expect(readGameplayState().battle.pendingBattleTransition).toBeNull();
   });
 
   it("keeps the committed root unchanged until the outer commit", () => {

@@ -12,6 +12,8 @@ export function TurnBadge({
 }) {
   return (
     <div
+      data-testid={variant === "player" ? "turn-badge-player" : "turn-badge-enemy"}
+      data-active={show ? "true" : "false"}
       className={cn(
         "absolute left-1/2 z-20 rounded-md px-3 py-1 text-sm whitespace-nowrap transition-all",
         urgentHide ? "duration-150" : "duration-500",

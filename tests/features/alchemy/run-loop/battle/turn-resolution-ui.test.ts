@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
   executeEnemyPhase,
   resolveHasteSkipTurn,
@@ -6,10 +6,15 @@ import {
   resumePendingBattleTransition,
 } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { defaultBattleState, endPlayerTurn } from "@/lib/battle";
-import type { HandDrawSequenceDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
+import { runHandDrawSequence, type HandDrawSequenceDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import type { getBattleSessionStore } from "@/features/alchemy/run-loop/battle/battle-session";
 
-vi.mock("@/features/alchemy/run-loop/battle/draw-sequence");
+vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", () => ({
+  runHandDrawSequence: vi.fn(async (_oldHand, _newState, applyState) => {
+    applyState();
+    return true;
+  }),
+}));
 
 vi.mock("@/lib/animation/game-timer", () => ({
   delay: vi.fn(async () => {}),
@@ -170,6 +175,10 @@ describe("resolveNormalEnemyTurn", () => {
 });
 
 describe("executeEnemyPhase", () => {
+  beforeEach(() => {
+    vi.mocked(runHandDrawSequence).mockClear();
+  });
+
   it("shakes the player when enemy damage texts are present", async () => {
     const store = makeStore();
     const current = defaultBattleState();
@@ -207,6 +216,22 @@ describe("executeEnemyPhase", () => {
 
     expect(store.hurtPlayer).not.toHaveBeenCalled();
     expect(store.shakePlayer).toHaveBeenCalledOnce();
+  });
+
+  it("commits result state via the draw sequence applyState callback", async () => {
+    const store = makeStore();
+    const current = defaultBattleState();
+    const result = { ...current, turn: 2, hand: current.hand };
+    const deps = makeTurnDeps(store);
+
+    await executeEnemyPhase(result, current, [], 1, false, false, deps);
+
+    expect(runHandDrawSequence).toHaveBeenCalledOnce();
+    const applyState = vi.mocked(runHandDrawSequence).mock.calls[0]![2];
+    expect(typeof applyState).toBe("function");
+    expect(deps.commitBattleTransition).toHaveBeenCalledWith(result, null);
+    expect(deps.commitBattleTransition).toHaveBeenCalledTimes(1);
+    expect(deps.scheduleCompanionFollowUp).toHaveBeenCalledWith(result, 1);
   });
 });
 

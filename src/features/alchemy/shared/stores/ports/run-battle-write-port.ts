@@ -40,6 +40,7 @@ export function commitBattleTransition(
   dispatchBattleCommand((battle) => {
     battle.setSyncedBattleState(battleState);
     battle.setPendingBattleTransition(pendingBattleTransition);
+    battle.clearPendingTransitionResumeRequired();
   });
 }
 
@@ -57,5 +58,8 @@ export function beginBattleTransition(
 }
 
 export function clearBattleTransition(): void {
-  dispatchBattleCommand((battle) => battle.setPendingBattleTransition(null));
+  dispatchBattleCommand((battle) => {
+    battle.setPendingBattleTransition(null);
+    battle.clearPendingTransitionResumeRequired();
+  });
 }
