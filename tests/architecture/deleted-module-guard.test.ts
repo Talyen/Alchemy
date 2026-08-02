@@ -21,6 +21,8 @@ describe("deleted module guard", () => {
       "src/features/alchemy/shared/stores/run-session-read.ts",
       "src/features/alchemy/shared/stores/run-session-actions.ts",
       "src/features/alchemy/shared/stores/navigation-store.ts",
+      "src/lib/validation/migration.ts",
+      "src/lib/validation/save-schemas.ts",
     ];
     for (const path of deleted) {
       expect(() => read(path)).toThrow();

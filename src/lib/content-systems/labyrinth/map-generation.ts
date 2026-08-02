@@ -10,7 +10,6 @@ import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
 import { LABYRINTH_COLS, LABYRINTH_MAP_CONFIG, LABYRINTH_ROWS, LABYRINTH_START_COL, type LabyrinthPoint } from "./data";
 import { connect, generateRouteGraph, isBoss, isInRowBand, isStart, samePoint } from "./map-graph";
 import { getEnemyModifiersForNodeType, getRewardModifiersForNodeType } from "./modifiers";
-import { logError } from "../../error-logger";
 
 export { canEnterLabyrinthNode, setCurrentNode, withCurrentNode, failNode, withFailedNode } from "./map-state";
 
@@ -43,22 +42,9 @@ function determineNodeType(
   return lowerTypes.shift()!;
 }
 
-export function generateLabyrinthMap(rng: () => number = Math.random): LabyrinthMap {
+export function generateLabyrinthMap(rng: () => number): LabyrinthMap {
   const grid = initializeEmptyGrid();
-  let graph;
-  try {
-    graph = generateRouteGraph(rng);
-  } catch (cause) {
-    console.warn("[Labyrinth] Seeded map generation failed, retrying with Math.random:", cause);
-    try {
-      graph = generateRouteGraph(() => Math.random());
-    } catch (fallbackCause) {
-      logError("[Labyrinth] Map generation failed even with Math.random fallback", "validation", {
-        error: String(fallbackCause),
-      });
-      throw Object.assign(new Error("Labyrinth map generation failed after retry"), { rootCause: fallbackCause });
-    }
-  }
+  const graph = generateRouteGraph(rng);
   const firstCombat = { row: 1, col: LABYRINTH_START_COL };
   const { upperRowBand, lowerRowBand } = LABYRINTH_MAP_CONFIG;
 

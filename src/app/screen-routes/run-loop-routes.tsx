@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { cardLibrary, trinketLibrary } from "@/features/alchemy/shared/config/game-data-catalog";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import {
@@ -209,11 +209,16 @@ function EquipmentShopScreenRoute({ commands }: { commands: RunLoopCommands["sho
 function MysteryScreenRoute({ commands }: { commands: RunLoopCommands["mystery"] }) {
   const r = useMysteryScreenData();
   const { handleContinue } = commands;
+  const autoContinueAttemptedRef = useRef(false);
 
   useEffect(() => {
-    if (!r.mysteryEvent) {
-      handleContinue();
+    if (r.mysteryEvent) {
+      autoContinueAttemptedRef.current = false;
+      return;
     }
+    if (autoContinueAttemptedRef.current) return;
+    autoContinueAttemptedRef.current = true;
+    handleContinue();
   }, [r.mysteryEvent, handleContinue]);
 
   if (!r.mysteryEvent) {

@@ -7,7 +7,7 @@ The Armory is the permanent meta-progression screen for managing **Gear** (per-c
 ## Layout (`src/features/alchemy/meta/screens/armory/`)
 
 | File                              | Role                                                                                                                                                                    |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `use-armory-controller.ts`        | Facade hook: reads `useGearStore`, wraps gear mutations with HP-sync + save-flush side effects, and exposes board movement to the route. Consumed by `meta-routes.tsx`. |
 | `use-armory-gear-drag.ts`         | Pointer FSM for gear drag from inventory/equipment, equipment-slot destination detection, secondary swap animation, double-click flyover.                               |
 | `use-armory-currency-drag.ts`     | Pointer FSM for crafting-currency drag, 1×1 footprint. Wraps `useBoardDrag`.                                                                                            |
@@ -20,7 +20,7 @@ The Armory is the permanent meta-progression screen for managing **Gear** (per-c
 | `gear-tooltip-portal.tsx`         | Shared portaled gear tooltip rendering for inventory and equipment tiles.                                                                                               |
 | `resolve-equip-swap.ts`           | Pure function: given an incoming instance, target slot, and vacated placement, decide whether the displaced item fits.                                                  |
 | `armory-tooltip-placement.ts`     | Stage-aware portaled tooltip placement (reads `[data-testid="vr-stage"]`).                                                                                              |
-| `read-inventory-board-metrics.ts` | DOM probe of `[data-armory-grid-metric="cell"                                                                                                                           | "stride"]`. |
+| `read-inventory-board-metrics.ts` | DOM probe of the `cell` and `stride` grid metrics.                                                                                                                      |
 | `character-panel.tsx`             | `CharacterAndEquipmentPanel`: character art + 10 `SlotButton`s.                                                                                                         |
 | `inventory-panel.tsx`             | `InventoryPanel`: currency stacks + `InventoryGearTile`s.                                                                                                               |
 | `parts/grid-styles.ts`            | `SLOT_LABELS`, `EQUIP_SLOT_PLACEMENT`, `equipmentSlotStyle`, `packedItemStyle`.                                                                                         |
@@ -51,12 +51,15 @@ type GearDefinition = {
   id: string; // stable id, combined with rarity
   baseItemId: GearBaseItemId;
   rarity: GearRarity | null; // null for generic templates
+  title: string;
   compatibleSlots: GearSlot[];
   requiresTwoHands: boolean;
   affinityKeywords: KeywordId[];
   salvageValue: MaterialInventory;
   art: string;
   descriptionLines: string[];
+  rangedWeapon?: boolean;
+  quiver?: boolean;
 };
 
 type GearInstance = {
@@ -72,7 +75,7 @@ type GearLoadout = Record<GearSlot, string | null>;
 type GearLoadouts = Record<CharacterId, GearLoadout>;
 
 type GearBoardPosition = { col: number; row: number }; // 1-indexed
-type GearBoardPositions = Record<instanceId, GearBoardPosition>;
+type GearBoardPositions = Record<string, GearBoardPosition>;
 type GearBoardPositionsByCharacter = Record<CharacterId, GearBoardPositions>;
 ```
 
@@ -233,10 +236,11 @@ Migration steps are in `src/lib/validation/migration/steps.ts`. Notable steps:
 | `tests/lib/gear/generation.test.ts`                                                                                   | `generateGearRewardChoices`, `createGearInstance`.                                                                                                                                                                                               |
 | `tests/features/alchemy/shared/stores/gear-store.test.ts`                                                             | Init, equip, unequip, salvage, board-position swap, transfer, crafting, cross-character equip.                                                                                                                                                   |
 | `tests/features/alchemy/shared/stores/gear-crafting.test.ts`                                                          | Crafting integration: apply, salvage yield, normalization.                                                                                                                                                                                       |
-| `tests/features/alchemy/meta/screens/armory-screen.test.tsx`                                                          | 28 integration tests covering render, character switching, salvage mode, currency targeting, double-click swap animations, transfer menu, tooltips, browse-only, locked characters, two-handed off-hand dimming, dev spawn.                      |
-| `tests/features/alchemy/meta/screens/armory/armory-inventory-layout.test.ts`                                          | Pure packer / placement / swap helpers.                                                                                                                                                                                                          |
+| `tests/features/alchemy/meta/screens/armory-screen.test.tsx`                                                          | Integration coverage for render, character switching, salvage mode, currency targeting, double-click swap animations, transfer menu, tooltips, browse-only, locked characters, two-handed off-hand dimming, and dev spawn.                       |
+| `tests/lib/gear/board-view.test.ts`                                                                                   | Mixed board view and saved-position packing.                                                                                                                                                                                                     |
+| `tests/lib/gear/inventory-placement.test.ts`                                                                          | Collision, nearest/first placement, vacated slots, and destination rectangles.                                                                                                                                                                   |
 | `tests/features/alchemy/meta/screens/armory/armory-resolve-equip-swap.test.ts`                                        | `resolveEquipSwap` canSwap / displaced decisions.                                                                                                                                                                                                |
-| `tests/features/alchemy/meta/screens/armory/board-drag-math.test.ts`                                                  | 12 math helper unit tests.                                                                                                                                                                                                                       |
+| `tests/features/alchemy/meta/screens/armory/board-drag-math.test.ts`                                                  | Drag geometry, destination identity, and magnet-hysteresis math helpers.                                                                                                                                                                         |
 | `tests/features/alchemy/shared/ui/armory-tooltip-placement.test.ts`                                                   | Portaled tooltip placement helpers.                                                                                                                                                                                                              |
 | `tests/features/alchemy/shared/storage/gear-save.test.ts`                                                             | Save round-trip, legacy migration, per-character split.                                                                                                                                                                                          |
 | `tests/architecture/gear-affix-pool.test.ts`                                                                          | Every gear definition has an eligible affix pool at least as large as its minimum affix count.                                                                                                                                                   |

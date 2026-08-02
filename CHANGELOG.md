@@ -421,6 +421,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(audits): consolidate confirmed audit findings
 - fix(test): boot battle setup straight to injected destination
 - fix(battle): persist turn transitions across resume
 - fix(state): unify gameplay commits and gear health sync

@@ -103,7 +103,7 @@ export function pickEncounterTraits(
   mode: EncounterMode,
   category: EncounterTraitCategory,
   count: number,
-  rng: () => number = Math.random,
+  rng: () => number,
 ): EncounterTraitId[] {
   const pool = Object.values(ENCOUNTER_TRAITS)
     .filter((trait) => trait.category === category && trait.modes.includes(mode))

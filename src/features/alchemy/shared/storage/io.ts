@@ -233,6 +233,7 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
 // its place in the chain (which may write a newer snapshot than it submitted).
 let saveWriteChain: Promise<void> = Promise.resolve();
 let coalescedSave: SaveData | null = null;
+let clearPending = false;
 
 async function writeSaveSnapshot(data: SaveData): Promise<void> {
   try {
@@ -254,7 +255,7 @@ export async function saveAlchemySaveData(data: SaveData) {
 
   coalescedSave = data;
   const run = saveWriteChain.then(async () => {
-    while (coalescedSave !== null) {
+    while (coalescedSave !== null && !clearPending) {
       const snapshot = coalescedSave;
       coalescedSave = null;
       if (saveSessionState.isWritesDisabled()) return;
@@ -272,10 +273,22 @@ export async function clearAlchemySaveData() {
     return;
   }
 
-  const result = await removeStorageItem(SAVE_KEY);
-  if (result.ok) {
-    saveSessionState.setWritesDisabled(false);
-    return;
-  }
-  logStorageFailure("Save data could not be cleared", result.error);
+  clearPending = true;
+  coalescedSave = null;
+  const run = saveWriteChain.then(async () => {
+    try {
+      const result = await removeStorageItem(SAVE_KEY);
+      if (result.ok) {
+        saveSessionState.setWritesDisabled(false);
+        return;
+      }
+      logStorageFailure("Save data could not be cleared", result.error);
+    } finally {
+      clearPending = false;
+    }
+  });
+  saveWriteChain = run.catch(() => {
+    clearPending = false;
+  });
+  await run;
 }

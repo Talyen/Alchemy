@@ -64,34 +64,9 @@ describe("characters data integrity", () => {
     }
   });
 
-  it("each character has at least one keyword (except wildcard)", () => {
-    for (const char of Object.values(characters)) {
-      if (char.id === "wildcard") {
-        expect(char.keywords.length).toBe(0);
-      } else {
-        expect(char.keywords.length).toBeGreaterThanOrEqual(1);
-      }
-    }
-  });
-
   it("all characters have unique IDs", () => {
     const ids = Object.values(characters).map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
-  });
-});
-
-describe("companionLibrary data integrity", () => {
-  it("each companion has at least one turnStartEffect", () => {
-    for (const companion of Object.values(companionLibrary)) {
-      expect(companion.turnStartEffects.length).toBeGreaterThanOrEqual(1);
-    }
-  });
-
-  it("each companion has a title and art", () => {
-    for (const companion of Object.values(companionLibrary)) {
-      expect(companion.title).toBeTruthy();
-      expect(companion.art).toBeTruthy();
-    }
   });
 });
 

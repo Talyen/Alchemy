@@ -283,7 +283,8 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
         nextState = applyPlayerStatusFromAttack(nextState, effect, combatTexts);
       }
     } catch (err) {
-      logError(`Enemy attack effect failed: ${(err as Error).message}`, "battle", { effect });
+      const message = err instanceof Error ? err.message : String(err);
+      logError(`Enemy attack effect failed: ${message}`, "battle", { effect });
     }
   }
 

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   LEGACY_ARMORY_POSITIONS_STORAGE_KEY,
   migrateV9ToV10,
@@ -63,13 +63,38 @@ describe("readLegacyArmoryBoardPositionsFromStorage", () => {
   });
 
   it("returns an empty object when the stored JSON is invalid", () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     setStoredValue(LEGACY_ARMORY_POSITIONS_STORAGE_KEY, "{not json");
     expect(readLegacyArmoryBoardPositionsFromStorage()).toEqual({});
+    expect(mockStorage[LEGACY_ARMORY_POSITIONS_STORAGE_KEY]).toBe("{not json");
+    expect(errorSpy).toHaveBeenCalled();
   });
 
   it("returns an empty object when the stored JSON is not a plain object", () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     setStoredValue(LEGACY_ARMORY_POSITIONS_STORAGE_KEY, JSON.stringify([1, 2, 3]));
     expect(readLegacyArmoryBoardPositionsFromStorage()).toEqual({});
+    expect(mockStorage[LEGACY_ARMORY_POSITIONS_STORAGE_KEY]).toBe(JSON.stringify([1, 2, 3]));
+    expect(errorSpy).toHaveBeenCalled();
+  });
+
+  it("returns positions when legacy-key cleanup fails", () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const stored = JSON.stringify({ "helm-1": { col: 1, row: 1 } });
+    setStoredValue(LEGACY_ARMORY_POSITIONS_STORAGE_KEY, stored);
+    Object.defineProperty(globalWithWindow.window, "localStorage", {
+      configurable: true,
+      value: {
+        getItem: (key: string) => mockStorage[key] ?? null,
+        removeItem: () => {
+          throw new Error("blocked");
+        },
+      } as unknown as Storage,
+    });
+
+    expect(readLegacyArmoryBoardPositionsFromStorage()).toEqual({ "helm-1": { col: 1, row: 1 } });
+    expect(mockStorage[LEGACY_ARMORY_POSITIONS_STORAGE_KEY]).toBe(stored);
+    expect(errorSpy).toHaveBeenCalled();
   });
 });
 

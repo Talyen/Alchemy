@@ -353,4 +353,51 @@ describe("storage io", () => {
     expect(JSON.parse(writePayloads[0]).discoveredCardIds).toEqual(["first"]);
     expect(JSON.parse(writePayloads[1]).discoveredCardIds).toEqual(["third"]);
   });
+
+  it("waits for an in-flight save before clearing desktop persistence", async () => {
+    let releaseWrite: (() => void) | undefined;
+    const writeGate = new Promise<void>((resolve) => {
+      releaseWrite = resolve;
+    });
+    const writeSave = vi.fn().mockImplementation(async () => {
+      await writeGate;
+      return true;
+    });
+    const clearSave = vi.fn().mockResolvedValue(true);
+
+    (globalWithWindow as { window?: object }).window = {
+      localStorage: {
+        getItem: () => null,
+        setItem: () => undefined,
+        removeItem: () => undefined,
+      } as unknown as Storage,
+      alchemyDesktop: {
+        isDesktop: true,
+        setDisplayMode: vi.fn(),
+        quit: vi.fn(),
+        listSaveCandidates: vi.fn().mockResolvedValue([]),
+        writeSave,
+        clearSave,
+        steamGetName: vi.fn().mockResolvedValue(null),
+        steamSetRichPresence: vi.fn(),
+        steamCloudRead: vi.fn().mockResolvedValue(null),
+        steamCloudWrite: vi.fn().mockResolvedValue(true),
+        steamCloudDelete: vi.fn().mockResolvedValue(true),
+      },
+    } as unknown as Window;
+
+    const { clearAlchemySaveData, saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
+    const pendingSave = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["stale"] });
+    await vi.waitFor(() => expect(writeSave).toHaveBeenCalledOnce());
+
+    const pendingClear = clearAlchemySaveData();
+    await Promise.resolve();
+    expect(clearSave).not.toHaveBeenCalled();
+
+    releaseWrite?.();
+    await pendingSave;
+    await pendingClear;
+
+    expect(clearSave).toHaveBeenCalledOnce();
+  });
 });

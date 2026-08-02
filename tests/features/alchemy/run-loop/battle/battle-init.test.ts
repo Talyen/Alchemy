@@ -90,4 +90,27 @@ describe("createBattleInit", () => {
       ]),
     );
   });
+
+  it("reads live run state when a battle starts inside another command", () => {
+    const templateCard = getRunProgressStoreView().runDeck[0]!;
+    setRunProgress({
+      runDeck: [{ ...templateCard, id: "stale-card" }],
+      runGold: 3,
+      roomsEncountered: 1,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+    });
+    const init = makeInit();
+    const freshCard = { ...templateCard, id: "fresh-card" };
+
+    setRunProgress({ runDeck: [freshCard], runGold: 27, roomsEncountered: 4 });
+    init.startBossById("forge-golem");
+
+    const battle = getBattleStoreView().battleState;
+    expect([...battle.hand, ...battle.deck, ...battle.discard, ...battle.exhausted].map((card) => card.id)).toEqual([
+      "fresh-card",
+    ]);
+    expect(battle.gold).toBe(27);
+    expect(getRunProgressStoreView().roomsEncountered).toBe(5);
+  });
 });

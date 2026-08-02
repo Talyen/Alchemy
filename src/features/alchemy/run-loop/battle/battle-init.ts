@@ -3,7 +3,7 @@ import { createBattleState, type CombatTextEvent } from "@/lib/battle";
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setBattleStartState,
@@ -33,11 +33,11 @@ export function createBattleInit(
     roomsEncountered: number,
     modifiers?: DifficultyModifier[],
   ) {
-    const gearEffects = readGearManifestForCharacter(ctx.run.characterId);
+    const run = readActiveRun();
+    const gearEffects = readGearManifestForCharacter(run.characterId);
     const battleEffects = mergeIntoManifest(ctx.talents.talentEffects, ctx.homesteadEffects);
     const activeModifiers =
-      modifiers ??
-      (ctx.run.selectedDifficulty ? getDifficultyModifiers(ctx.run.characterId, ctx.run.selectedDifficulty) : []);
+      modifiers ?? (run.selectedDifficulty ? getDifficultyModifiers(run.characterId, run.selectedDifficulty) : []);
     return createBattleState({
       runDeck: deck,
       gold,
@@ -46,8 +46,8 @@ export function createBattleInit(
       playerHealth,
       talentEffects: battleEffects,
       discoveredCardIds: readProfileStore().discoveredCardIds,
-      maxHealth: ctx.run.runMaxHealth,
-      trinketIds: ctx.run.runTrinkets,
+      maxHealth: run.runMaxHealth,
+      trinketIds: run.runTrinkets,
       gearEffects,
       difficultyModifiers: activeModifiers,
     });
@@ -57,10 +57,11 @@ export function createBattleInit(
     dispatchRunSessionCommand(
       () => {
         const startingHealth = syncRunToBattleStart();
-        const nextRoomsEncountered = ctx.run.roomsEncountered + 1;
+        const run = readActiveRun();
+        const nextRoomsEncountered = run.roomsEncountered + 1;
         ctx.run.updateRoomsEncountered(nextRoomsEncountered);
         const encounterTraitIds =
-          ctx.run.contentSystemType === "labyrinth" ? readRunSession().activeLabyrinthModifiers : [];
+          run.contentSystemType === "labyrinth" ? readRunSession().activeLabyrinthModifiers : [];
         const battleEnemy = encounterTraitIds.length > 0 ? appendEncounterTraits(enemy, encounterTraitIds) : enemy;
         const nextBattleState = createBattleForEnemy(
           battleEnemy,
@@ -114,16 +115,23 @@ export function createBattleInit(
   }
 
   function startBattle(
-    deck: BattleCard[] = ctx.run.runDeck,
-    gold: number = ctx.run.runGold,
+    deck?: BattleCard[],
+    gold?: number,
     enemyType: "normal" | "elite" = "normal",
     modifiers?: DifficultyModifier[],
   ) {
-    beginBattle(getCurrentEnemy(enemyType, ctx.run.encounteredRunEnemyIds, rng), deck, gold, modifiers);
+    const run = readActiveRun();
+    beginBattle(
+      getCurrentEnemy(enemyType, run.encounteredRunEnemyIds, rng),
+      deck ?? run.runDeck,
+      gold ?? run.runGold,
+      modifiers,
+    );
   }
 
   function startBossBattle(modifiers?: DifficultyModifier[]) {
-    beginBattle(getBossEnemy(ctx.run.encounteredRunEnemyIds, rng), ctx.run.runDeck, ctx.run.runGold, modifiers);
+    const run = readActiveRun();
+    beginBattle(getBossEnemy(run.encounteredRunEnemyIds, rng), run.runDeck, run.runGold, modifiers);
   }
 
   function startBossById(
@@ -136,10 +144,11 @@ export function createBattleInit(
       console.warn(`startBossById: boss "${bossId}" not found`);
       return false;
     }
+    const run = readActiveRun();
     beginBattle(
       wildwoodModifierId ? withWildwoodModifier(boss, wildwoodModifierId) : boss,
-      ctx.run.runDeck,
-      ctx.run.runGold,
+      run.runDeck,
+      run.runGold,
       modifiers,
     );
     return true;

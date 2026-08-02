@@ -19,11 +19,11 @@ import { computeTrinketManifest } from "../trinkets";
 import { drawCards, shuffleCards } from "./draw";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
 import { initializeEnemyState } from "./battle-enemy-setup";
-import { unsafeNonSeededRng } from "./rng";
+import { placeholderRng } from "./rng";
 
 export { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
 
-function setupOpeningHand(deck: BattleCard[], extraDrawPerBattle: number, rng: () => number = unsafeNonSeededRng) {
+function setupOpeningHand(deck: BattleCard[], extraDrawPerBattle: number, rng: () => number = placeholderRng) {
   const openingHand = drawCards(shuffleCards(deck, rng), [], [], CARDS_PER_TURN, 0, rng);
   if (extraDrawPerBattle <= 0) return openingHand;
   return drawCards(
@@ -158,7 +158,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
   }
 
   const trinketEffects = computeTrinketManifest(battleBoons);
-  const activeRng = optionsRng ?? unsafeNonSeededRng;
+  const activeRng = optionsRng ?? placeholderRng;
   const { deck, hand, discard, nextCardUid } = setupOpeningHand(runDeck, trinketEffects.extraDrawPerBattle, activeRng);
 
   const {

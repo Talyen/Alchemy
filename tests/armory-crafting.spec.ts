@@ -14,7 +14,7 @@ import {
 import { assertGearFlatDamageBoostsPhysicalDamage } from "./e2e/gear-combat";
 import { test } from "./fixtures/e2e";
 import { seedRandom } from "./e2e/rng";
-import { armory, critical, prepush, slow } from "./playwright-tags";
+import { armory, critical, slow } from "./playwright-tags";
 
 const affixedHelm = {
   instanceId: "gear-helm",
@@ -32,7 +32,7 @@ const emptyCraftingCurrencies = {
 };
 
 test.describe("Armory crafting", { ...armory }, () => {
-  test("salvages gear and grants crafting materials", { ...critical, ...prepush }, async ({ page }) => {
+  test("salvages gear and grants crafting materials", critical, async ({ page }) => {
     await seedRandom(page, 0);
     const sword = {
       instanceId: "gear-sword",
@@ -78,7 +78,7 @@ test.describe("Armory crafting", { ...armory }, () => {
     await expect(gearItemLocator(page, "Ruby Ring")).toHaveCount(1);
   });
 
-  test("applies voidstone and removes affixes", { ...critical, ...prepush }, async ({ page }) => {
+  test("applies voidstone and removes affixes", critical, async ({ page }) => {
     await openArmory(page, {
       inventory: [affixedHelm],
       craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },

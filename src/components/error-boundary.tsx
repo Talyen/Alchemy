@@ -2,6 +2,7 @@
 // and shows a reload fallback.
 // Used at the root so render failures do not leave the game on a blank page.
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 import { logError } from "@/lib/error-logger";
 
 interface Props {
@@ -42,15 +43,16 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="text-center">
             <h1 className="mb-4 text-2xl font-bold">Something went wrong</h1>
             <p className="mb-6 text-muted-foreground">An unexpected error occurred. Please reload the page.</p>
-            <button
-              className="rounded-lg bg-primary px-6 py-2 text-primary-foreground hover:bg-primary/90"
+            <Button
+              type="button"
+              hoverSound={false}
               onClick={() => {
                 this.setState({ hasError: false });
                 window.location.reload();
               }}
             >
               Reload
-            </button>
+            </Button>
           </div>
         </div>
       );

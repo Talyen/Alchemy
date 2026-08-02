@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
+import { Button } from "@/components/ui/button";
 import { characters, isCharacterUnlocked, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
@@ -80,17 +81,20 @@ export function ArmoryTransferMenu({
       data-testid="armory-transfer-menu"
     >
       {recipients.map((targetId) => (
-        <button
+        <Button
           key={targetId}
-          role="menuitem"
-          className={cn(
-            "flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors",
-            "text-foreground hover:bg-muted/80 hover:text-amber-100",
-          )}
+          asChild
+          type="button"
+          variant="ghost"
+          size="sm"
+          hoverSound={false}
+          className="h-auto w-full justify-start gap-2 rounded-none px-3 py-1.5 text-left text-sm font-normal tracking-normal text-foreground normal-case hover:text-amber-100"
           onClick={() => handleClick(targetId)}
         >
-          <span>Send to {characters[targetId].name}</span>
-        </button>
+          <button type="button" role="menuitem">
+            <span>Send to {characters[targetId].name}</span>
+          </button>
+        </Button>
       ))}
     </div>,
     document.body,

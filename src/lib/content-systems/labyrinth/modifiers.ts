@@ -10,14 +10,14 @@ export const REWARD_MODIFIER_KINDS: ReadonlySet<EncounterRewardTraitId> = new Se
 
 export function getEnemyModifiersForNodeType(
   type: "combat" | "elite" | "boss",
-  rng: () => number = Math.random,
+  rng: () => number,
 ): EncounterCombatTraitId[] {
   return pickEncounterTraits("labyrinth", "combat", type === "combat" ? 1 : 2, rng) as EncounterCombatTraitId[];
 }
 
 export function getRewardModifiersForNodeType(
   type: "combat" | "elite" | "boss",
-  rng: () => number = Math.random,
+  rng: () => number,
 ): EncounterRewardTraitId[] {
   if (type === "boss" || (type === "combat" && rng() < 0.5)) return [];
   return pickEncounterTraits("labyrinth", "reward", 1, rng) as EncounterRewardTraitId[];

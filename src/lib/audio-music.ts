@@ -14,7 +14,6 @@ import { pickRandom } from "./utils";
 
 const musicBase = import.meta.env.BASE_URL + MUSIC_BASE_PATH;
 
-// Music player configuration grouping local variables and bounds.
 const MUSIC_CONFIG = {
   TRACKS: {
     [MUSIC_KEYS.MENU]: ["Menu 1.mp3", "Menu 2.mp3", "Menu 3.mp3", "Menu 4.mp3"],
@@ -60,13 +59,10 @@ export function getBossMusicKey(bossId: string): string | undefined {
 // resumes the same track from its saved position instead of starting from 0.
 const musicCache = new Map<string, HTMLAudioElement>();
 
-// Returns the cached element for a key, or undefined if miss.
 function getCachedElement(key: string): HTMLAudioElement | undefined {
   return musicCache.get(key);
 }
 
-// Invalidates (removes) the cache entry for a key. The next playMusic call for this
-// key will pick a fresh random track and create a new element.
 export function invalidateCacheForKey(key: string): void {
   const cached = musicCache.get(key);
   if (cached) {
@@ -165,11 +161,9 @@ export function playMusicImmediate(key: string) {
     : pickRandom(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? []);
   if (!track) return;
 
-  // Inlined startTrackImmediate logic to reduce indirection.
   replaceCurrentTrack(key, track, audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN);
 }
 
-// Extracts the filename portion from an absolute Audio element src URL.
 function pathFromSrc(src: string): string | undefined {
   const parts = src.split("/");
   return parts[parts.length - 1];
@@ -204,7 +198,6 @@ function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newKey: string, newTra
   requestAnimationFrame(fadeOut);
 }
 
-// Crossfades to a keyed music group unless that group is already active.
 export function playMusic(key: string) {
   if (key === audioState.currentMusicKey) {
     if (audioState.currentMusic?.paused) {

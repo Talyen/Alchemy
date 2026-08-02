@@ -14,7 +14,7 @@ import {
 } from "./types";
 import { defaultTrinketEffects } from "../trinkets";
 import { defaultGearEffects } from "@/lib/gear";
-import { unsafeNonSeededRng } from "./rng";
+import { placeholderRng } from "./rng";
 
 export const defaultTalentEffects: TalentEffectManifest = createEmptyTalentManifest();
 
@@ -113,7 +113,7 @@ export function defaultBattleState(): BattleState {
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,
     difficultyModifiers: [],
-    rng: unsafeNonSeededRng,
+    rng: placeholderRng,
     pendingMaterials: emptyInventory(),
   };
 }

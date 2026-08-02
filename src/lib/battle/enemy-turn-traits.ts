@@ -215,7 +215,8 @@ export function processEnemyTraits(
       try {
         nextState = processTraitHandler(trait, nextState, combatTexts, traitRoll);
       } catch (err) {
-        logError(`Enemy trait handler failed: ${(err as Error).message}`, "battle", { traitId: trait.id });
+        const message = err instanceof Error ? err.message : String(err);
+        logError(`Enemy trait handler failed: ${message}`, "battle", { traitId: trait.id });
       }
     }
   }

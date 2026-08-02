@@ -9,6 +9,7 @@ import {
   type GearLoadouts,
 } from "@/lib/gear/types";
 import type { CraftingCurrencyBoardPositions } from "@/lib/gear/crafting";
+import { logError } from "@/lib/error-logger";
 import type { RawSaveData } from "./types";
 
 function readLegacyLoadouts(rawLoadouts: unknown): GearLoadouts {
@@ -90,16 +91,35 @@ function getStorage(): Storage | null {
 export function readLegacyArmoryBoardPositionsFromStorage(): Record<string, { col: number; row: number }> {
   const storage = getStorage();
   if (!storage) return {};
+
+  let stored: string | null;
   try {
-    const stored = storage.getItem(LEGACY_ARMORY_POSITIONS_STORAGE_KEY);
-    if (!stored) return {};
-    storage.removeItem(LEGACY_ARMORY_POSITIONS_STORAGE_KEY);
-    const parsed: unknown = JSON.parse(stored);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
-    return parsed as Record<string, { col: number; row: number }>;
+    stored = storage.getItem(LEGACY_ARMORY_POSITIONS_STORAGE_KEY);
   } catch {
+    logError("Legacy armory positions could not be read", "storage");
     return {};
   }
+
+  if (!stored) return {};
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stored);
+  } catch (error) {
+    logError("Legacy armory positions could not be parsed", "storage", { error: String(error) });
+    return {};
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    logError("Legacy armory positions had an invalid shape", "storage");
+    return {};
+  }
+
+  try {
+    storage.removeItem(LEGACY_ARMORY_POSITIONS_STORAGE_KEY);
+  } catch (error) {
+    logError("Legacy armory positions could not be cleared", "storage", { error: String(error) });
+  }
+  return parsed as Record<string, { col: number; row: number }>;
 }
 
 export function migrateV9ToV10(parsed: RawSaveData): RawSaveData {

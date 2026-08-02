@@ -8,7 +8,7 @@ const Switch = ({ className, ref, ...props }: React.ComponentProps<typeof Switch
   <SwitchPrimitive.Root
     ref={ref}
     className={cn(
-      "peer inline-flex h-6 w-10 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:border-amber-400/60 focus-visible:shadow-[0_0_0_2px_rgba(251,191,36,0.35)] disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted",
+      "peer inline-flex h-6 w-10 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted",
       className,
     )}
     {...props}

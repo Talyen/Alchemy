@@ -79,15 +79,15 @@ function dedupeCommits(commitsToDedupe) {
 }
 
 const commits = dedupeCommits(PATHS.flatMap(([t, p]) => parse(p, t)));
-const NOISE = /^(Raw Assets\/|public\/sounds\/|src\/assets\/optimized\/)/;
+const NOISE = /^(CHANGELOG\.md|Raw Assets\/|public\/sounds\/|src\/assets\/optimized\/)/;
 const EXTNOISE = /\.(ogg|wav|mp3|webp|jpeg|jpg|png|svg)$/;
 
-const filtered = commits.filter((c) => {
-  if (!c.files.length) return false;
-  const codeFiles = c.files.filter((f) => !NOISE.test(f) && !EXTNOISE.test(f));
-  if (!codeFiles.length) return false;
-  return codeFiles.some((f) => /^(src\/|tests\/)/.test(f));
-});
+const filtered = commits
+  .map((c) => ({
+    ...c,
+    files: c.files.filter((f) => !NOISE.test(f) && !EXTNOISE.test(f)),
+  }))
+  .filter((c) => c.files.length > 0 && c.files.some((f) => /^(src\/|tests\/)/.test(f)));
 
 const mega = new Set(filtered.filter((c) => c.files.length >= 100).map((c) => c.hash));
 const testBatch = new Set(
@@ -146,8 +146,8 @@ for (const [name, arr] of [
 function printHotspots(arr, label) {
   const fc = new Map();
   for (const c of arr) for (const f of c.files) fc.set(f, (fc.get(f) || 0) + 1);
-  const thr = Math.floor(arr.length * 0.25);
-  console.log(`\n${label} hotspots (>= ${thr} = 25% of ${arr.length}):`);
+  const thr = Math.max(2, Math.ceil(arr.length * 0.25));
+  console.log(`\n${label} hotspots (>= ${thr} = at least 25% of ${arr.length}, minimum 2):`);
   for (const [f, n] of [...fc.entries()].filter(([, n]) => n >= thr).sort((a, b) => b[1] - a[1])) {
     console.log(`  ${String(n).padStart(4)}  ${f}`);
   }

@@ -1,7 +1,6 @@
 /**
- * Non-seeded placeholder RNG for UI-only default battle states.
- * Do NOT import in production turn/battle logic — use state.rng or getBattleRng(state).
- * This export provides a named reference so the eslint Math.random rule
- * catches accidental usage outside the placeholder path.
+ * Deterministic placeholder RNG for UI-only default battle states.
+ * Do NOT use it for production turn/battle outcomes — use state.rng or
+ * getBattleRng(state) with an injected battle stream.
  */
-export const unsafeNonSeededRng: () => number = Math.random;
+export const placeholderRng: () => number = () => 0;

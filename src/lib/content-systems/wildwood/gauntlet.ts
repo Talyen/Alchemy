@@ -37,7 +37,7 @@ export interface WildwoodDraftState {
 export function createWildwoodDraftChoices(
   characterId: CharacterId,
   draftedCards: BattleCard[],
-  rng: () => number = Math.random,
+  rng: () => number,
 ): BattleCard[] {
   return selectRewardCards(
     draftedCards,
@@ -49,10 +49,7 @@ export function createWildwoodDraftChoices(
   );
 }
 
-export function createInitialWildwoodDraftState(
-  characterId: CharacterId,
-  rng: () => number = Math.random,
-): WildwoodDraftState {
+export function createInitialWildwoodDraftState(characterId: CharacterId, rng: () => number): WildwoodDraftState {
   return {
     version: 3,
     phase: "draft",
@@ -69,14 +66,14 @@ export function createInitialWildwoodDraftState(
   };
 }
 
-export function createWildwoodBossBag(rng: () => number = Math.random): WildwoodBossId[] {
+export function createWildwoodBossBag(rng: () => number): WildwoodBossId[] {
   return shuffle(WILDWOOD_BOSS_IDS, rng);
 }
 
 export function drawWildwoodBoss(
   remainingBossIds: readonly WildwoodBossId[],
   previousBossId: WildwoodBossId | null,
-  rng: () => number = Math.random,
+  rng: () => number,
 ): { bossId: WildwoodBossId; remainingBossIds: WildwoodBossId[] } {
   let bag = [...remainingBossIds];
   if (bag.length === 0) {
@@ -103,11 +100,11 @@ export function canOfferWildwoodRemoval(deckSize: number): boolean {
   return deckSize >= WILDWOOD_MINIMUM_REMOVAL_DECK_SIZE;
 }
 
-export function pickWildwoodModifier(rng: () => number = Math.random): WildwoodModifierId {
+export function pickWildwoodModifier(rng: () => number): WildwoodModifierId {
   return pickEncounterTraits("wildwood", "combat", 1, rng)[0] as EncounterCombatTraitId;
 }
 
-export function pickWildwoodRewardTrait(rng: () => number = Math.random): EncounterRewardTraitId {
+export function pickWildwoodRewardTrait(rng: () => number): EncounterRewardTraitId {
   return pickEncounterTraits("wildwood", "reward", 1, rng)[0] as EncounterRewardTraitId;
 }
 

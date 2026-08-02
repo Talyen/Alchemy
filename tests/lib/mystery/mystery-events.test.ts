@@ -102,7 +102,7 @@ describe("mysteryPool", () => {
 
 describe("pickMysteryEvent", () => {
   it("returns a valid event from the pool", () => {
-    const event = pickMysteryEvent();
+    const event = pickMysteryEvent(() => 0.5);
     expect(mysteryPool).toContain(event);
   });
 });

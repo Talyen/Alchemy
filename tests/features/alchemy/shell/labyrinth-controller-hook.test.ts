@@ -3,6 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LABYRINTH_COLS } from "@/lib/content-systems/labyrinth/data";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
+import { createSeededRng } from "@/lib/utils";
 import { useLabyrinthController } from "@/features/alchemy/shell/use-labyrinth-controller";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { getRunSessionStoreView } from "../../../helpers/run-domain-store-test";
@@ -12,7 +13,7 @@ const TEST_RNG = () => 0.5;
 
 beforeEach(() => {
   resetTransientRunUi();
-  getRunSessionStoreView().setLabyrinthMap(generateLabyrinthMap());
+  getRunSessionStoreView().setLabyrinthMap(generateLabyrinthMap(createSeededRng(42)));
 });
 
 describe("useLabyrinthController hook", () => {

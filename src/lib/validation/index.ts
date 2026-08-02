@@ -10,7 +10,7 @@ export {
   isUnsupportedFutureContentData,
   isUnsupportedFutureSaveData,
   migrateSaveDataToCurrent,
-} from "./migration";
+} from "./migration/index";
 export {
   DamageTypeSchema,
   PlayerStatusIdSchema,
@@ -27,7 +27,7 @@ export {
   safeParseWithErrors,
   type ParsedSaveData,
   type ParsedActiveRunData,
-} from "./save-schemas";
+} from "./save-schemas/index";
 export type { PersistedPendingReward } from "./save-schemas/active-run";
 export { normalizeActiveRunData } from "./normalize-active-run-data";
 export { isTombstonedCardId } from "./migration/tombstoned-content-ids";

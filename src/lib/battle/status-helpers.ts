@@ -9,7 +9,7 @@ import {
   TRAIT_DAMAGE_WEAKNESS,
 } from "../game-constants";
 import { mergeCombatText } from "./combat-text";
-import { unsafeNonSeededRng } from "./rng";
+import { placeholderRng } from "./rng";
 import type { BattleState, CombatTextEvent } from "./types";
 
 const CONSTANTS = {
@@ -64,9 +64,9 @@ export function rollPercent(chance: number, rng: () => number) {
   return chance > 0 && rng() * PERCENT_DENOMINATOR < chance;
 }
 
-/** Extracts rng from battle state, falling back to Math.random if absent. */
+/** Extracts rng from battle state, falling back to a deterministic placeholder when absent. */
 export function getBattleRng(state: { rng?: () => number }): () => number {
-  return state.rng ?? unsafeNonSeededRng;
+  return state.rng ?? placeholderRng;
 }
 
 export type ArmorDecayTarget = "player" | "enemy";

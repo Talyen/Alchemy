@@ -65,7 +65,7 @@ describe("defaultBattleState", () => {
       },
       enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     });
-    expect(s.rng).toBe(Math.random);
+    expect(s.rng()).toBe(0);
     for (const value of Object.values(s.flags)) {
       if (typeof value === "boolean") expect(value).toBe(false);
       if (typeof value === "number") expect(value).toBe(0);
