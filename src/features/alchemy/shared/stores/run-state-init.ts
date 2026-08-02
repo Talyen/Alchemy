@@ -55,7 +55,7 @@ export interface PermanentProgressFields {
   effects: HomesteadEffectManifest;
 }
 
-/** Flat facade / view projection of progress (run + permanent + initialized). */
+/** Flat progress patch shape used by initialization helpers (not a store owner). */
 export type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
 
 const ACTIVE_RUN_PROGRESS_KEYS = [

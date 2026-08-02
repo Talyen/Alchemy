@@ -1,10 +1,11 @@
 /** CI gate on every push (~60-80 tests, ≤3 min). Covers core user paths per area without slow tests. */
 export const critical = { tag: "@critical" } as const;
 /**
- * Fast subset of @critical for lefthook pre-push (boot + one battle canary).
- * Always includes @critical so @prepush ⊆ @critical.
+ * Fast subset of the CI critical gate for lefthook pre-push (boot + one battle
+ * canary). The critical command includes this tag explicitly so Playwright
+ * output does not duplicate @critical on pre-push tests.
  */
-export const prepush = { tag: ["@critical", "@prepush"] as string[] };
+export const prepush = { tag: "@prepush" } as const;
 /** Quick boot/menu checks (alchemy boot + electron boot). */
 export const smoke = { tag: "@smoke" } as const;
 /** Intentionally slow specs (drag, animation, viewport loops). Not excluded from full E2E; useful for filtering. */

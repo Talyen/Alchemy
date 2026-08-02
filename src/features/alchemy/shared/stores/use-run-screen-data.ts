@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { Screen } from "@/lib/routing";
-import { useRunSessionCommitStore } from "./run-session-transaction";
+import { useGameplayStateStore } from "./gameplay-state-store";
 import type { RunDataScreen, RunScreenDataByScreen } from "./run-screen-data";
 import type { AlchemistState, RewardState, ShopState } from "@/lib/active-run-session";
 import type { MysteryEvent } from "@/lib/mystery";
@@ -11,19 +11,19 @@ import type { MysteryEvent } from "@/lib/mystery";
 type ScreenData<S extends RunDataScreen> = RunScreenDataByScreen[S];
 
 function useHealthFields(): ScreenData<"campfire"> {
-  return useRunSessionCommitStore(
-    useShallow(({ snapshot }) => ({
-      runPlayerHealth: snapshot.domain.activeRun.runPlayerHealth,
-      runMaxHealth: snapshot.domain.activeRun.runMaxHealth,
+  return useGameplayStateStore(
+    useShallow((state) => ({
+      runPlayerHealth: state.run.activeRun.runPlayerHealth,
+      runMaxHealth: state.run.activeRun.runMaxHealth,
     })),
   );
 }
 
 function useRunGoldAndDeck(): Pick<ScreenData<"shop">, "runGold" | "runDeck"> {
-  return useRunSessionCommitStore(
-    useShallow(({ snapshot }) => ({
-      runGold: snapshot.domain.activeRun.runGold,
-      runDeck: snapshot.domain.activeRun.runDeck,
+  return useGameplayStateStore(
+    useShallow((state) => ({
+      runGold: state.run.activeRun.runGold,
+      runDeck: state.run.activeRun.runDeck,
     })),
   );
 }
@@ -38,35 +38,35 @@ export function useWildwoodRecoveryScreenData(): ScreenData<"wildwood-recovery">
 
 export function useShopScreenData(): ScreenData<"shop"> {
   const run = useRunGoldAndDeck();
-  const shopState = useRunSessionCommitStore((state) => state.snapshot.transient.shopState);
+  const shopState = useGameplayStateStore((state) => state.session.shopState);
   return useMemo(() => ({ ...run, shopState }), [run, shopState]);
 }
 
 export function useAlchemistScreenData(): ScreenData<"alchemist"> {
   const run = useRunGoldAndDeck();
-  const alchemistState = useRunSessionCommitStore((state) => state.snapshot.transient.alchemistState);
+  const alchemistState = useGameplayStateStore((state) => state.session.alchemistState);
   return useMemo(() => ({ ...run, alchemistState }), [run, alchemistState]);
 }
 
 export function useTrinketShopScreenData(): ScreenData<"trinket-shop"> {
-  const runGold = useRunSessionCommitStore((state) => state.snapshot.domain.activeRun.runGold);
-  const trinketShopState = useRunSessionCommitStore((state) => state.snapshot.transient.trinketShopState);
+  const runGold = useGameplayStateStore((state) => state.run.activeRun.runGold);
+  const trinketShopState = useGameplayStateStore((state) => state.session.trinketShopState);
   return useMemo(() => ({ runGold, trinketShopState }), [runGold, trinketShopState]);
 }
 
 export function useEquipmentShopScreenData(): ScreenData<"equipment-shop"> {
-  const runGold = useRunSessionCommitStore((state) => state.snapshot.domain.activeRun.runGold);
-  const equipmentShopState = useRunSessionCommitStore((state) => state.snapshot.transient.equipmentShopState);
+  const runGold = useGameplayStateStore((state) => state.run.activeRun.runGold);
+  const equipmentShopState = useGameplayStateStore((state) => state.session.equipmentShopState);
   return useMemo(() => ({ runGold, equipmentShopState }), [runGold, equipmentShopState]);
 }
 
 export function useLabyrinthMapScreenData(): ScreenData<"labyrinth-map"> {
-  const labyrinthMap = useRunSessionCommitStore((state) => state.snapshot.transient.labyrinthMap);
+  const labyrinthMap = useGameplayStateStore((state) => state.session.labyrinthMap);
   return useMemo(() => ({ labyrinthMap }), [labyrinthMap]);
 }
 
 function useRewardState(): RewardState {
-  return useRunSessionCommitStore((state) => state.snapshot.transient.rewardState);
+  return useGameplayStateStore((state) => state.session.rewardState);
 }
 
 export function useRewardsScreenData(): ScreenData<"rewards"> {
@@ -80,30 +80,30 @@ export function useDestinationScreenData(): ScreenData<"destination"> {
 }
 
 export function useMysteryScreenData(): ScreenData<"mystery"> {
-  const runDeck = useRunSessionCommitStore((state) => state.snapshot.domain.activeRun.runDeck);
-  const mystery = useRunSessionCommitStore(
-    useShallow(({ snapshot }) => ({
-      mysteryEvent: snapshot.transient.mysteryEvent,
-      mysteryCardChoices: snapshot.transient.mysteryCardChoices,
+  const runDeck = useGameplayStateStore((state) => state.run.activeRun.runDeck);
+  const mystery = useGameplayStateStore(
+    useShallow((state) => ({
+      mysteryEvent: state.session.mysteryEvent,
+      mysteryCardChoices: state.session.mysteryCardChoices,
     })),
   );
   return useMemo(() => ({ ...mystery, runDeck }), [mystery, runDeck]);
 }
 
 export function useCorruptionScreenData(): ScreenData<"corruption"> {
-  const runDeck = useRunSessionCommitStore((state) => state.snapshot.domain.activeRun.runDeck);
-  const corruptionResult = useRunSessionCommitStore((state) => state.snapshot.transient.corruptionResult);
+  const runDeck = useGameplayStateStore((state) => state.run.activeRun.runDeck);
+  const corruptionResult = useGameplayStateStore((state) => state.session.corruptionResult);
   return useMemo(() => ({ runDeck, corruptionResult }), [runDeck, corruptionResult]);
 }
 
 function useRunEndFields(): ScreenData<"game-over"> {
-  const { runEndMaterials, runEndTalentXP } = useRunSessionCommitStore(
-    useShallow(({ snapshot }) => ({
-      runEndMaterials: snapshot.transient.runEndMaterials,
-      runEndTalentXP: snapshot.transient.runEndTalentXP,
+  const { runEndMaterials, runEndTalentXP } = useGameplayStateStore(
+    useShallow((state) => ({
+      runEndMaterials: state.session.runEndMaterials,
+      runEndTalentXP: state.session.runEndTalentXP,
     })),
   );
-  const talentXP = useRunSessionCommitStore((state) => state.snapshot.runProfile.talentXP);
+  const talentXP = useGameplayStateStore((state) => state.runProfile.talentXP);
   return useMemo(() => ({ runEndMaterials, runEndTalentXP, talentXP }), [runEndMaterials, runEndTalentXP, talentXP]);
 }
 
@@ -116,7 +116,7 @@ export function useRunVictoryScreenData(): ScreenData<"run-victory"> {
 }
 
 export function useWildwoodRemovalScreenData(): ScreenData<"wildwood-removal"> {
-  const runDeck = useRunSessionCommitStore((state) => state.snapshot.domain.activeRun.runDeck);
+  const runDeck = useGameplayStateStore((state) => state.run.activeRun.runDeck);
   return useMemo(() => ({ runDeck }), [runDeck]);
 }
 
@@ -132,18 +132,12 @@ export interface ScreenAssetPreloadData {
 }
 
 export function useScreenAssetPreloadData(screen: Screen): ScreenAssetPreloadData {
-  const rewardState = useRunSessionCommitStore((state) =>
-    screen === "rewards" ? state.snapshot.transient.rewardState : null,
+  const rewardState = useGameplayStateStore((state) => (screen === "rewards" ? state.session.rewardState : null));
+  const shopState = useGameplayStateStore((state) => (screen === "shop" ? state.session.shopState : null));
+  const alchemistState = useGameplayStateStore((state) =>
+    screen === "alchemist" ? state.session.alchemistState : null,
   );
-  const shopState = useRunSessionCommitStore((state) =>
-    screen === "shop" ? state.snapshot.transient.shopState : null,
-  );
-  const alchemistState = useRunSessionCommitStore((state) =>
-    screen === "alchemist" ? state.snapshot.transient.alchemistState : null,
-  );
-  const mysteryEvent = useRunSessionCommitStore((state) =>
-    screen === "mystery" ? state.snapshot.transient.mysteryEvent : null,
-  );
+  const mysteryEvent = useGameplayStateStore((state) => (screen === "mystery" ? state.session.mysteryEvent : null));
   return useMemo(
     () => ({ rewardState, shopState, alchemistState, mysteryEvent }),
     [rewardState, shopState, alchemistState, mysteryEvent],

@@ -1,4 +1,4 @@
-// Canonical boundary between the committed run projection and persisted resume data.
+// Canonical boundary between aggregate run state and persisted resume data.
 // Keeping this translation in one module prevents autosave and boot hydration from
 // growing independent field-by-field mappings.
 import {
@@ -57,7 +57,7 @@ function validDestinations(values: string[]): Destination[] {
   return values.filter((value): value is Destination => allowed.has(value));
 }
 
-/** Encode one committed run projection for both autosave and explicit save flows. */
+/** Encode one aggregate run read model for both autosave and explicit save flows. */
 export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
   const { run, session, battle } = source;
   const currentScreen = screen ?? source.screen;
@@ -110,7 +110,7 @@ export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): Ac
   });
 }
 
-/** Decode persisted resume data into the transient session projection. */
+/** Decode persisted resume data into the aggregate session fields. */
 export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunResumeSnapshot {
   let screen = activeRun.currentScreen;
   let rewardState: RewardState | null = null;

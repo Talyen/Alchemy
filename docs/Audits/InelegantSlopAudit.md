@@ -4,7 +4,7 @@
 
 ## Intent
 
-Surface **confirmed** hotspots so authored LOC, declarations, indirection, or nesting decreases. Moving ceremony among files is not success. Prefer deleting/inlining; significant structural work remains a proposal per [README.md](README.md). A clean pass is valid. Before shipping a fix, confirm real reading/editing cost, no second need for the indirection, and a shorter local form that preserves behavior. If the fix scope is large, phase the plan.
+Surface **confirmed** hotspots so authored LOC, declarations, indirection, nesting, mixed responsibilities, or review surface decreases. Moving ceremony among files is not success. Prefer deleting/inlining; bounded structural simplification may ship under [README.md](README.md), while new layers or uncertain ownership remain proposals. A clean pass is valid. Before shipping a fix, confirm real reading/editing cost, no second need for the indirection, and a simpler form that preserves behavior. One severe abstraction or mega-module may qualify without repeated examples. Follow the abstraction through its types, tests, configuration, and call sites when removing only the local wrapper would leave the ceremony intact. If the fix scope is large, phase the plan.
 
 This audit owns two scales: **local ceremony** (functions, wrappers, comments, branches) and **file/folder mass** (large authored surfaces whose size or mixed jobs cost more to read, edit, or verify than the behavior warrants). Wrong Architecture owner — even in a huge file — belongs to `StateGravityOwnershipAudit.md`.
 
@@ -36,7 +36,7 @@ Mass hotspots are authored production or test surfaces whose size or mixed jobs 
 - **Hotspot:** large relative to 2–3 peer files in the same owner class (screen / store / `src/lib` / test support), or routinely forces unrelated code prereads because of mixed jobs
 - **Avoidable cause:** mixed jobs, parallel scaffolding, or accumulated helpers without a second need — not inherent domain density
 - **Existing home:** a `src/lib` owner, store slice / facade method, shell controller, `shared/ui` shell, or existing test owner can absorb the split or collapse
-- **Measurable direction:** net authored LOC / declarations down while behavior and required coverage stay intact; the hotspot must shrink and mixed jobs must leave it. Architecture-expected hub splits may be LOC-neutral only when mass moves into **existing** owners and no parallel path remains
+- **Measurable direction:** net authored LOC, declarations, indirection, nesting, mixed responsibilities, or required review surface decreases while behavior and required coverage stay intact. Architecture-expected ownership splits may be LOC-neutral or slightly positive only when work moves into **existing** owners, the hotspot and coupling shrink, and no parallel path remains
 
 File length alone is a candidate signal, never a finding. Historical churn (`git log` LOC rates, blame) may surface candidates but is not confirming evidence. Do not invent repo-wide LOC thresholds or CI ratchets.
 
@@ -52,7 +52,7 @@ File length alone is a candidate signal, never a finding. Historical churn (`git
 
 ## Remedy preference
 
-Prefer delete unused ceremony, then inline single-use wrappers, then collapse duplicates in-module. Extract only when a name removes nesting and has ≥2 call sites or clear domain meaning. Move shared chrome into `shared/ui` / `src/components/ui`, or rules into `src/lib` — never a new layer for one call site.
+Prefer delete unused ceremony, then inline single-use wrappers, then collapse duplicates in-module. Extract only when a name removes nesting and has ≥2 call sites or clear domain meaning. Move shared chrome into `shared/ui` / `src/components/ui`, or rules into `src/lib` — never a new layer for one call site. Judge structural fixes by simplified ownership and reading/editing cost, not LOC alone.
 
 ## Known signals
 

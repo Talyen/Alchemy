@@ -8,9 +8,12 @@ import { defaultSaveData } from "@/features/alchemy/shared/storage";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
-import { getRunProfileStore, useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
-import { getRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
-import { getRunTransientStore } from "@/features/alchemy/shared/stores/run-transient-store";
+import {
+  getRunDomainStore,
+  getRunProfileStore,
+  getRunTransientStore,
+  useRunProfileStore,
+} from "../../../../helpers/gameplay-store-test";
 import { runSessionTransaction } from "@/features/alchemy/shared/stores/run-session-transaction";
 
 beforeEach(() => {

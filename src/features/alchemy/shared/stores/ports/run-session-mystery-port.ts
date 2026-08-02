@@ -2,14 +2,14 @@
 import type { BattleCard } from "@/lib/game-data";
 import type { MysteryEvent } from "@/lib/mystery";
 import { dispatchRunSessionCommand } from "../run-session-command";
-import { createRunSessionStoreSnapshot } from "../run-session-queries";
+import { readGameplayState } from "../gameplay-state-store";
 
 export function setMysteryEvent(event: MysteryEvent | null) {
-  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setMysteryEvent(event));
+  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setMysteryEvent(event));
 }
 
 export function setMysteryCardChoices(
   choices: BattleCard[] | null | ((prev: BattleCard[] | null) => BattleCard[] | null),
 ) {
-  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setMysteryCardChoices(choices));
+  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setMysteryCardChoices(choices));
 }

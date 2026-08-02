@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { useRunDomainStore, resetRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
-import { useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
-import { useRunTransientStore } from "@/features/alchemy/shared/stores/run-transient-store";
-import { useRunBattleDomainStore } from "@/features/alchemy/shared/stores/run-battle-domain-store";
+import {
+  resetRunDomainStore,
+  useRunBattleDomainStore,
+  useRunDomainStore,
+  useRunProfileStore,
+  useRunTransientStore,
+} from "../../../../helpers/gameplay-store-test";
 
 beforeEach(() => {
   resetRunDomainStore();

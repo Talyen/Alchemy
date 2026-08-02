@@ -13,7 +13,7 @@ describe("active run bootstrap", () => {
     const source = read("src/features/alchemy/shared/stores/run-transitions.ts");
     const codec = read("src/features/alchemy/shared/stores/run-resume-codec.ts");
     expect(source).toContain("decodeRunResumeSnapshot");
-    expect(source).toContain("session.domain.setScreen(decoded.screen");
+    expect(source).toContain("session.runActions.setScreen(decoded.screen");
     expect(codec).toContain("let screen = activeRun.currentScreen");
   });
 

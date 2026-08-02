@@ -10,11 +10,7 @@ import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-syst
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { RunSessionFields } from "./run-domain-types";
-import { getCommittedRunSessionSnapshot, useRunSessionCommitStore } from "./run-session-transaction";
-import { createRunSessionStoreSnapshot, type RunSessionStoreSnapshot } from "./run-session-queries";
-import type { RunDomainStore } from "./run-domain-store";
-import type { RunProfileStore } from "./run-profile-store";
-import { readRunSessionFields } from "./run-transient-store";
+import { readGameplayState, useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
 
 type RunSessionRunSlice = Pick<
   RunStateFields,
@@ -73,15 +69,15 @@ export interface RunSessionNavigationSlice {
   pendingContentSystemType: ContentSystemId;
 }
 
-function pickRunSessionRunSlice(state: RunDomainStore, profile: RunProfileStore): RunSessionRunSlice {
+function pickRunSessionRunSlice(state: GameplayState): RunSessionRunSlice {
   return {
-    ...pickActiveRunSessionCoreFields(state.activeRun),
-    rng: state.activeRun.rng,
-    talentXP: profile.talentXP,
-    runTalentXP: state.activeRun.runTalentXP,
-    runMaterialsEarned: state.activeRun.runMaterialsEarned,
-    unlockedTalents: profile.unlockedTalents,
-    initialized: state.initialized,
+    ...pickActiveRunSessionCoreFields(state.run.activeRun),
+    rng: state.run.activeRun.rng,
+    talentXP: state.runProfile.talentXP,
+    runTalentXP: state.run.activeRun.runTalentXP,
+    runMaterialsEarned: state.run.activeRun.runMaterialsEarned,
+    unlockedTalents: state.runProfile.unlockedTalents,
+    initialized: state.run.initialized,
   };
 }
 
@@ -98,16 +94,14 @@ function pickRunSessionBattleSlice(battle: {
 }
 
 function useRunSessionBattleSlice(): RunSessionBattleSlice {
-  return useRunSessionCommitStore(useShallow(({ snapshot }) => pickRunSessionBattleSlice(snapshot.battle)));
+  return useGameplayStateStore(useShallow((state) => pickRunSessionBattleSlice(state.battle)));
 }
 
 /** Battle screen: combat state + labyrinth modifiers only (avoids run/shop subscriptions). */
 export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleContext {
   const battle = useRunSessionBattleSlice();
-  const activeLabyrinthModifiers = useRunSessionCommitStore(
-    (state) => state.snapshot.transient.activeLabyrinthModifiers,
-  );
-  const committedScreen = useRunSessionCommitStore((state) => state.snapshot.domain.navigation.screen);
+  const activeLabyrinthModifiers = useGameplayStateStore((state) => state.session.activeLabyrinthModifiers);
+  const committedScreen = useGameplayStateStore((state) => state.run.navigation.screen);
   const resolvedScreen = screen ?? committedScreen;
   return useMemo(
     () => ({
@@ -121,13 +115,13 @@ export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleCon
 
 /** Run navigation: session fields used by useRunNavigation (no screen-display twins). */
 export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigationSlice {
-  const session = useRunSessionCommitStore(
-    useShallow(({ snapshot }) => ({
-      screen: snapshot.domain.navigation.screen,
-      hasActiveBattle: snapshot.battle.hasActiveBattle,
-      hasActiveRun: snapshot.transient.hasActiveRun,
-      pendingCharacterId: snapshot.transient.pendingCharacterId,
-      pendingContentSystemType: snapshot.transient.pendingContentSystemType,
+  const session = useGameplayStateStore(
+    useShallow((state) => ({
+      screen: state.run.navigation.screen,
+      hasActiveBattle: state.battle.hasActiveBattle,
+      hasActiveRun: state.session.hasActiveRun,
+      pendingCharacterId: state.session.pendingCharacterId,
+      pendingContentSystemType: state.session.pendingContentSystemType,
     })),
   );
   const resolvedScreen = screen ?? session.screen;
@@ -143,24 +137,24 @@ export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigat
   );
 }
 
-function toRunSession(snapshot: RunSessionStoreSnapshot, screen?: Screen): RunSession {
-  const resolvedScreen = screen ?? snapshot.domain.navigation.screen;
-  const battle = pickRunSessionBattleSlice(snapshot.battle);
+function toRunSession(state: GameplayState, screen?: Screen): RunSession {
+  const resolvedScreen = screen ?? state.run.navigation.screen;
+  const battle = pickRunSessionBattleSlice(state.battle);
   return {
     screen: resolvedScreen,
     phase: getRunPhase(resolvedScreen, battle.hasActiveBattle),
-    run: pickRunSessionRunSlice(snapshot.domain, snapshot.runProfile),
-    session: readRunSessionFields(snapshot.transient),
+    run: pickRunSessionRunSlice(state),
+    session: { ...state.session },
     battle,
   };
 }
 
 /** Imperative snapshot of run + session + battle for the current screen. */
 export function getRunSession(screen?: Screen): RunSession {
-  return toRunSession(createRunSessionStoreSnapshot(), screen);
+  return toRunSession(readGameplayState(), screen);
 }
 
 /** Imperative snapshot of the last committed run + session + battle state. */
 export function getCommittedRunSession(screen?: Screen): RunSession {
-  return toRunSession(getCommittedRunSessionSnapshot(), screen);
+  return toRunSession(useGameplayStateStore.getState(), screen);
 }

@@ -979,6 +979,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(state): consolidate run state on capability ports, drop legacy slice stores
 - refactor(state): drop unused run-domain write-port exports
 - refactor(state): command-back run mutations and RNG sources
 - refactor(state): split run session capability ports

@@ -1,14 +1,14 @@
 # Behavior Hardening Audit
 
-**Goal:** Strengthen confirmed correctness gaps at persistence and player-state transition boundaries.
+**Goal:** Strengthen confirmed correctness gaps at persistence, recovery, external-data, and player-state transition boundaries.
 
 ## Intent
 
-Inventory confirmed persistence or transition issues and fix them. A clean pass is valid; do not add guards, logs, seams, or tests solely to create work. Reuse the existing persistence/transition owner; a new seam requires repeated confirmed violations and the proposal bar in [README.md](README.md). If the scope is large, phase the plan.
+Inventory confirmed boundary or transition issues and fix them through the complete invariant: decode/validate → mutate → persist/synchronize → acknowledge → recover. This includes boot/hydration, import/export, backup restore, and cloud merge when applicable. A clean pass is valid; do not add guards, logs, seams, or tests solely to create work. Reuse the existing persistence/transition owner; a new seam requires repeated confirmed violations and the proposal bar in [README.md](README.md). If the scope is large, phase the plan.
 
 ## Hard stops
 
-- Do not run full-repo async-race or type-safety sweeps here — link out to `AsyncRaceAudit.md` / `TypeSafetyAudit.md`.
+- Do not run unrelated full-repo async-race or type-safety sweeps here. Include a companion race or type-model fix when it is necessary to make the same boundary invariant safe, and report its sibling classification.
 - Audio playback handling belongs to `SideEffectSurfaceAudit.md`.
 - Lifetime / cancellation / IPC sequencing bugs belong in `AsyncRaceAudit.md`; this audit owns idempotency of transitions and silent persistence failures.
 
@@ -32,6 +32,8 @@ Prioritize P0–P1 by impact.
 - Stage completion / reward grant / shop purchase / craft: double-click or re-entry must not double-grant; completion flags or idempotent transitions before mutations.
 - Suspect empty `catch` / swallowed Promise rejections on save, hydrate, resume, or battle outcome paths. **Allowlist:** non-fatal audio (`src/lib/audio*.ts`, app audio effects).
 - Store load failure → default/in-memory recovery + log, not crash.
+- Import, export, backup, cloud merge, and boot/hydration paths preserve the same validation, failure-reporting, and recovery guarantees as the primary local save path.
+- Multi-store or multi-step mutations must not expose a partially completed durable state. Confirm rollback, ordering, retry, or resume semantics rather than guarding only the first call site.
 - Prefer existing coverage. Add a regression only when fixing a confirmed gap; battle edges use seeded RNG; save edges reuse empty/partial/corrupt fixtures under `tests/features/alchemy/shared/storage` and save E2E specs.
 
 ## Known signals
@@ -46,3 +48,5 @@ Optional discovery aids — choose your own probes.
 - **Silent decode / parse fallbacks:** Zod `.safeParse` or JSON parse paths that discard corrupt data without logging.
 - **Idempotency & re-entrancy:** reward claim, shop buy, craft, labyrinth/mystery completion handlers — verify guards before granting.
 - **Presentation cleanup:** modal/overlay dismiss that leaves transient run-session flags (`reward`, shop, targeting) uncleared.
+- **Boundary divergence:** import/export, backup, cloud, and resume paths enforce different validation or recovery rules for the same persisted model.
+- **Partial transaction:** one phase of a multi-step grant, purchase, craft, or save completes while a later phase fails, retries, or resumes inconsistently.

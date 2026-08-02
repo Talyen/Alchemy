@@ -40,7 +40,7 @@ describe("active run snapshot parity", () => {
     }
   });
 
-  const progressViaInitialize = ["session.domain.initializeFromResumeSnapshot(decoded.progress"];
+  const progressViaInitialize = ["session.runActions.initializeFromResumeSnapshot(decoded.progress"];
   const restoreFieldSignals: Record<string, string[]> = {
     characterId: progressViaInitialize,
     runDeck: progressViaInitialize,

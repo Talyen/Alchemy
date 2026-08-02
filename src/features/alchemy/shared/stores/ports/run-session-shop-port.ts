@@ -1,20 +1,20 @@
 // Shop session write port — card/alchemist/trinket/equipment shop state.
 import type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState } from "@/lib/active-run-session";
 import { dispatchRunSessionCommand } from "../run-session-command";
-import { createRunSessionStoreSnapshot } from "../run-session-queries";
+import { readGameplayState } from "../gameplay-state-store";
 
 export function setShopState(state: ShopState | ((prev: ShopState) => ShopState)) {
-  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setShopState(state));
+  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setShopState(state));
 }
 
 export function setAlchemistState(state: AlchemistState | ((prev: AlchemistState) => AlchemistState)) {
-  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setAlchemistState(state));
+  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setAlchemistState(state));
 }
 
 export function setTrinketShopState(state: TrinketShopState | ((prev: TrinketShopState) => TrinketShopState)) {
-  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setTrinketShopState(state));
+  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setTrinketShopState(state));
 }
 
 export function setEquipmentShopState(state: EquipmentShopState | ((prev: EquipmentShopState) => EquipmentShopState)) {
-  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setEquipmentShopState(state));
+  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setEquipmentShopState(state));
 }

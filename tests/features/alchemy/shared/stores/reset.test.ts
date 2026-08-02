@@ -26,7 +26,7 @@ import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-stor
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { defaultSaveData } from "@/features/alchemy/shared/storage";
-import { useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
+import { useRunProfileStore } from "../../../../helpers/gameplay-store-test";
 import {
   getBattleStoreView,
   getRunProgressStoreView,

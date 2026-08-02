@@ -52,7 +52,7 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 1. Extend `ActiveRunData` in `src/lib/active-run-session/types.ts` and Zod schema in `src/lib/validation/save-schemas/active-run.ts` (optional fields with defaults in `normalize-active-run-data.ts` often avoid a schema bump).
 2. Add the field to `RunStateFields` / hydration in `src/features/alchemy/shared/stores/run-state-init.ts` (mirror `runTalentXP` / `runMaterialsEarned` pattern) when it is active-run progression. Transient resume fields belong in the codec projection instead of `RunStateFields`.
 3. Update `createActiveRunSnapshot()` in `src/lib/active-run-session/snapshot.ts`, then update the single feature-owned codec in `src/features/alchemy/shared/stores/run-resume-codec.ts`. Keep reward, shop, combat, and content-system translation there.
-4. Keep `snapshotRun()` and `restoreRun()` as thin lifecycle wrappers around `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()`. `restore-active-run-session.ts` should only apply the decoded projection. Keep the operation inside `dispatchRunSessionCommand()` so boot/resume is published as one committed session state; defer navigation, audio, and presentation work with `afterCommit` or after the command returns.
+4. Keep `snapshotRun()` and `restoreRun()` as thin lifecycle wrappers around `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()`. `restore-active-run-session.ts` should only apply the decoded session fields. Keep the operation inside `dispatchRunSessionCommand()` so boot/resume is published as one aggregate commit; defer navigation, audio, and presentation work with `afterCommit` or after the command returns.
 5. Run `tests/features/alchemy/shared/storage/active-run.test.ts`, `tests/features/alchemy/shared/stores/run-domain.test.ts` (snapshot parity), the codec / pending-reward tests, plus storage/migration tests.
 
 **Active-run helpers (do not confuse):**
@@ -68,12 +68,12 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 
 Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-session-write-port.ts`, implemented in `stores/ports/run-profile-write-port.ts`) so homestead inventory and `activeRun.runMaterialsEarned` stay aligned for the run-end summary.
 
-| Step                                                       | File(s)                                                                                                                                                                                    |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1. Call `awardMaterialsDuringRun(materials)`               | Mystery handlers: `run-loop/navigation/use-mystery-flow.ts`; combat: `run-loop/run/run-flow-handlers.ts` (`finishRewards`, `commitVictoryRewards` via `addHomesteadMaterials` callback)    |
-| 2. Apply homestead find bonus when appropriate             | `applyMaterialFindBonus()` from `@/lib/homestead/loot` before awarding (mystery/combat already do this)                                                                                    |
-| 3. Run-end display (no change needed if step 1 is correct) | `run-flow-handlers.awardRunEndMaterials` in `run-loop/run/run-flow-handlers.ts` merges `runMaterialsEarned` + `applyEndOfRunHomesteadBonuses` into the transient store's `runEndMaterials` |
-| 4. Tests                                                   | `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts`; mystery/reward-flow tests if adding a new source                                                                       |
+| Step                                                       | File(s)                                                                                                                                                                                             |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Call `awardMaterialsDuringRun(materials)`               | Mystery handlers: `run-loop/navigation/use-mystery-flow.ts`; combat: `run-loop/run/run-flow-handlers.ts` (`finishRewards`, `commitVictoryRewards` via `addHomesteadMaterials` callback)             |
+| 2. Apply homestead find bonus when appropriate             | `applyMaterialFindBonus()` from `@/lib/homestead/loot` before awarding (mystery/combat already do this)                                                                                             |
+| 3. Run-end display (no change needed if step 1 is correct) | `run-flow-handlers.awardRunEndMaterials` in `run-loop/run/run-flow-handlers.ts` merges `runMaterialsEarned` + `applyEndOfRunHomesteadBonuses` into the aggregate session region's `runEndMaterials` |
+| 4. Tests                                                   | `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts`; mystery/reward-flow tests if adding a new source                                                                                |
 
 **Do not** call `addMaterials()` on the run profile store directly from run-loop or mystery code for player loot.
 
@@ -158,7 +158,7 @@ Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-
    ```
 
 4. Run-flow concerns must request sibling work with a typed `RunFlowContinuation`; they must not retain mutable sibling callbacks or call another concern's handler directly.
-5. The low-level `runSessionTransaction()` coordinator is an implementation detail for the command boundary and committed projection. New gameplay callers must not import it directly.
+5. The low-level `runSessionTransaction()` coordinator is an implementation detail for the command boundary and aggregate commit. New gameplay callers must not import it directly.
 6. `readBattle()` is data-only. Battle mutations use the focused commands exported from `run-session-write-port.ts`; do not spread aggregate battle actions into event-time stores.
 7. If an async battle flow persists an intermediate state, commit `activeCombat.pendingBattleTransition` with it and add a boot resume path. Presentation timers alone are not a gameplay continuation.
 8. `readActiveRun()`, `readRunProfile()`, and `readRunSession()` are data-only. Active-run and profile mutations use focused command-backed write ports; do not pass aggregate actions through React or imperative read ports.

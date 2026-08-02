@@ -188,7 +188,7 @@ jobs:
       - run: mkdir -p reports
 
       - name: Run critical e2e tests
-        run: npm run test:e2e:critical
+        run: npm run test:e2e:prepush:full
         env:
           PLAYWRIGHT_VITE_MODE: preview
 

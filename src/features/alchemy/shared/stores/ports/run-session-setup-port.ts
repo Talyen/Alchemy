@@ -4,29 +4,28 @@ import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import { dispatchRunSessionCommand } from "../run-session-command";
-import { createRunSessionStoreSnapshot } from "../run-session-queries";
+import { readGameplayState } from "../gameplay-state-store";
 
 export function setPendingCharacterId(id: CharacterId | null) {
-  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setPendingCharacterId(id));
+  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setPendingCharacterId(id));
 }
 
 export function setPendingContentSystemType(type: ContentSystemId) {
-  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setPendingContentSystemType(type));
+  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setPendingContentSystemType(type));
 }
 
 export function setWildwoodDraft(
   state: WildwoodDraftState | null | ((prev: WildwoodDraftState | null) => WildwoodDraftState | null),
 ) {
-  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().transient.setWildwoodDraft(state));
+  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setWildwoodDraft(state));
 }
 
 /** Start a fresh run: seed active-run progress, drop the previous run-end XP snapshot, flag the run active. */
 export function applyRunStartSnapshot(snapshot: RunStartSnapshot): void {
   dispatchRunSessionCommand(() => {
-    const session = createRunSessionStoreSnapshot();
-    session.domain.hydrateFromSnapshot(snapshot);
-    const transient = session.transient;
-    transient.setRunEndTalentXP({});
-    transient.setHasActiveRun(snapshot.hasActiveRun);
+    const session = readGameplayState();
+    session.runActions.hydrateFromSnapshot(snapshot);
+    session.sessionActions.setRunEndTalentXP({});
+    session.sessionActions.setHasActiveRun(snapshot.hasActiveRun);
   });
 }

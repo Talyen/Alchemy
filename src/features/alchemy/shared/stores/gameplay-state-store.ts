@@ -2,8 +2,8 @@
 //
 // All persisted gameplay state lives in one Zustand root. Commands can mutate a
 // private Immer draft and publish the root once, which keeps React readers and
-// autosave on one revision while preserving the existing lifetime-specific
-// reset operations exposed by the facade.
+// autosave on one revision while preserving explicit lifetime-specific reset
+// operations.
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { produce } from "immer";
@@ -66,8 +66,8 @@ interface GearAggregateActions {
 
 /**
  * The committed gameplay aggregate is deliberately nested by lifetime/domain.
- * Commands remain on the root for the compatibility facades, but persisted and
- * read state is no longer a flat bag where every slice can see every field.
+ * Action groups remain beside each region so commands can target the owning
+ * lifetime without turning persisted or read state into a flat bag.
  */
 export interface GameplayState {
   revision: number;

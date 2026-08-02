@@ -3,19 +3,21 @@ import {
   getRunSessionRevision,
   runSessionTransaction,
   subscribeRunSessionCommits,
-  useRunSessionCommitStore,
 } from "@/features/alchemy/shared/stores/run-session-transaction";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { getRunDomainStore, resetRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
-import { getRunTransientStore } from "@/features/alchemy/shared/stores/run-transient-store";
-import { getRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
+import {
+  getRunDomainStore,
+  getRunProfileStore,
+  getRunTransientStore,
+  resetRunDomainStore,
+} from "../../../../helpers/gameplay-store-test";
 import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-transitions";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import { beginBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createRunRandomSource, setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { defaultBattleState } from "@/lib/battle";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 
@@ -26,23 +28,22 @@ beforeEach(() => {
 });
 
 describe("run-session transaction coordinator", () => {
-  it("keeps the root nested while exposing domain-shaped compatibility projections", () => {
+  it("keeps the root nested with action groups beside each lifetime", () => {
     const root = readGameplayState();
-    const snapshot = useRunSessionCommitStore.getState().snapshot;
 
     expect(root).not.toHaveProperty("activeRun");
     expect(root.run).toHaveProperty("activeRun");
-    expect(snapshot.domain).not.toBe(root);
-    expect(snapshot.transient).not.toBe(root);
-    expect(snapshot.battle).not.toBe(root);
-    expect(snapshot.runProfile).not.toBe(root);
-    expect(snapshot.profile).not.toBe(root);
-    expect(snapshot.gear).not.toBe(root);
+    expect(root.runActions).toBeDefined();
+    expect(root.sessionActions).toBeDefined();
+    expect(root.battleActions).toBeDefined();
+    expect(root.runProfileActions).toBeDefined();
+    expect(root.profileActions).toBeDefined();
+    expect(root.gearActions).toBeDefined();
   });
 
   it("executes the public command boundary and runs its effect after commit", () => {
     const effect = vi.fn((gold: number) => {
-      expect(useRunSessionCommitStore.getState().snapshot.domain.activeRun.runGold).toBe(gold);
+      expect(readGameplayState().run.activeRun.runGold).toBe(gold);
     });
 
     const result = dispatchRunSessionCommand({
@@ -94,36 +95,37 @@ describe("run-session transaction coordinator", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(1);
-    expect(useRunSessionCommitStore.getState().snapshot.battle.battleState).toEqual(intermediate);
-    expect(useRunSessionCommitStore.getState().snapshot.battle.pendingBattleTransition).toEqual({
+    expect(readGameplayState().battle.battleState).toEqual(intermediate);
+    expect(readGameplayState().battle.pendingBattleTransition).toEqual({
       kind: "enemy-turn",
       resultState,
       playerTurnSkipped: false,
     });
   });
 
-  it("keeps the React-facing snapshot unchanged until the outer commit", () => {
-    const before = useRunSessionCommitStore.getState().snapshot;
+  it("keeps the committed root unchanged until the outer commit", () => {
+    const before = useGameplayStateStore.getState();
 
     runSessionTransaction(() => {
       getRunDomainStore().setRunGold(125);
       getRunTransientStore().setHasActiveRun(true);
 
-      expect(useRunSessionCommitStore.getState().snapshot).toBe(before);
-      expect(useRunSessionCommitStore.getState().snapshot.domain.activeRun.runGold).toBe(0);
-      expect(useRunSessionCommitStore.getState().snapshot.transient.hasActiveRun).toBe(false);
+      expect(readGameplayState().run.activeRun.runGold).toBe(125);
+      expect(useGameplayStateStore.getState()).toBe(before);
+      expect(useGameplayStateStore.getState().run.activeRun.runGold).toBe(0);
+      expect(useGameplayStateStore.getState().session.hasActiveRun).toBe(false);
     });
 
-    const after = useRunSessionCommitStore.getState().snapshot;
+    const after = useGameplayStateStore.getState();
     expect(after).not.toBe(before);
-    expect(after.domain.activeRun.runGold).toBe(125);
-    expect(after.transient.hasActiveRun).toBe(true);
+    expect(after.run.activeRun.runGold).toBe(125);
+    expect(after.session.hasActiveRun).toBe(true);
   });
 
   it("runs post-commit effects only after the committed snapshot is published", () => {
     const effect = vi.fn((result: number) => {
       expect(result).toBe(42);
-      expect(useRunSessionCommitStore.getState().snapshot.domain.activeRun.runGold).toBe(42);
+      expect(readGameplayState().run.activeRun.runGold).toBe(42);
     });
 
     runSessionTransaction(
@@ -319,8 +321,8 @@ describe("run-session transaction coordinator", () => {
     expect(getRunProfileStore().materialInventory.wood).toBe(0);
     expect(useProfileStore.getState().discoveredCardIds).toEqual([]);
     expect(useGearStore.getState().craftingCurrencies.voidstone).toBe(initialVoidstone);
-    expect(useRunSessionCommitStore.getState().snapshot.domain.activeRun.runGold).toBe(0);
-    expect(useRunSessionCommitStore.getState().snapshot.transient.hasActiveRun).toBe(false);
+    expect(readGameplayState().run.activeRun.runGold).toBe(0);
+    expect(readGameplayState().session.hasActiveRun).toBe(false);
   });
 
   it("hydrates the complete active run before publishing its commit", () => {

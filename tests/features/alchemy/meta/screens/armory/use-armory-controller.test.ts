@@ -3,8 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
-import { getRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
-import { getRunTransientStore } from "@/features/alchemy/shared/stores/run-transient-store";
+import { getRunDomainStore, getRunTransientStore } from "../../../../../helpers/gameplay-store-test";
 import { createEmptyGearInventories, type GearInstance } from "@/lib/gear";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 

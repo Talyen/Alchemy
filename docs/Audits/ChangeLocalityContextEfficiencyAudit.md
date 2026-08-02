@@ -4,7 +4,7 @@
 
 ## Intent
 
-Identify repeated high-friction clusters and simplify them through existing sources of truth or owners. A successful fix reduces at least one stable proxy: authored touchpoints, required preread surface, duplicated declarations or policy, routed verification tiers, or routine command output. Do not use tokenizer-specific token counts. A clean pass is valid. Before shipping, confirm recurrence (or demonstrated drift), causality beyond co-change alone, excess avoidable surface, an existing home for the remedy, and a measurable before/after proxy with unchanged correctness coverage. If the scope is large, phase the plan.
+Identify high-friction clusters and simplify them through existing sources of truth or owners. A successful fix reduces at least one stable proxy: authored touchpoints, required preread surface, duplicated declarations or policy, routed verification tiers, or routine command output. Do not use tokenizer-specific token counts. A clean pass is valid. Before shipping, confirm recurrence, demonstrated drift, or one consistently expensive workflow; causality beyond co-change alone; excess avoidable surface; an existing home for the remedy; and a measurable before/after proxy with unchanged correctness coverage. Follow the authoring path through source, tests, fixtures, generated inputs, commands, and docs when they participate in the same friction. If the scope is large, phase the plan.
 
 ## What counts as locality or context friction
 
@@ -34,12 +34,12 @@ This audit owns two distinct concerns; a run may scope to either.
 - Do not count intentional source/test, authored/generated-output, manifest/catalog, or implementation/fixture companionship as excess fan-out.
 - A broad feature change or large file is not itself a finding. Confirm that unrelated context or touchpoints recur.
 - Do not mechanically split files, merge unrelated owners, or centralize distinct policies merely to improve a count.
-- Do not add routing metadata, a configuration framework, or an abstraction for an isolated task.
+- Do not add routing metadata, a configuration framework, or an abstraction for an isolated low-cost task. One demonstrably expensive workflow may justify reusing or restoring an existing owner without waiting for repeated failures.
 - Treat the composition root (`App.tsx`, screen route tables) as expected fan-out, not a seam target by default.
 
 ## Remedy preference
 
-Prefer delete duplicated policy or commands and link consumers to the existing source of truth. Narrow verification routing or docs preread using evidence from representative paths. Restore repeated configuration or behavior to its existing semantic owner and remove old copies. Move or split only when it restores an established owner and makes the selected concern independently reviewable; significant moves remain proposals per [README.md](README.md). Parameterize / add a seam only for confirmed repetition with at least three current uses, or propose the seam when non-obvious.
+Prefer delete duplicated policy or commands and link consumers to the existing source of truth. Narrow verification routing or docs preread using evidence from representative paths. Restore repeated configuration or behavior to its existing semantic owner and remove old copies. A bounded move or split may ship when it restores an established owner, removes the old surface, and makes the selected concern independently reviewable; uncertain ownership or new architecture remains a proposal per [README.md](README.md). Parameterize or add a seam only for at least three current uses, two demonstrated drifting implementations, or an enforced boundary.
 
 ## Domain rules
 
@@ -47,7 +47,7 @@ Executable scripts and checked-in configuration own tool behavior; [ARCHITECTURE
 
 Mine history only as a capped discovery tool, then confirm the strongest candidates in their diffs. Count authored inputs separately from generated outputs and assets. For amplification hotspots, prefer an existing capability port, asset barrel, or screen-content owner over a new framework.
 
-Every shipped finding must report its before/after proxy and the unchanged correctness signal (same lint gate, semantic test owner, or E2E journey).
+Every shipped finding must report its before/after proxy and the unchanged correctness signal (same lint gate, semantic test owner, or E2E journey). LOC may remain neutral when authored touchpoints, prerequisite context, verification breadth, or diagnostic noise materially decreases.
 
 ### Circular imports (madge)
 
@@ -62,3 +62,5 @@ Optional discovery aids — choose your own probes. See also the [measurable swe
 - **Repeated policy and commands:** duplicated rules, versions, flags, or command sequences across `AGENTS.md`, `docs/`, `CONTRIBUTING.md`, and `scripts/` that can link to one owner.
 - **Non-local review surface:** frequently changed authored owners whose diffs repeatedly require unrelated sections; route genuine ownership drift to `StateGravityOwnershipAudit.md`.
 - **Single-use abstractions forcing fan-out:** `npm run audit:single-use` as a supporting signal (not sole evidence).
+- **Test/fixture amplification:** one behavior change requires avoidable updates across parallel fixtures, test harnesses, or tier-specific setup.
+- **Generated-source ambiguity:** agents must inspect or edit both authored inputs and generated products because ownership or regeneration guidance is unclear.

@@ -4,87 +4,88 @@ import type { BattleCard, KeywordId } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunRngStream } from "@/lib/run-rng";
 import type { Screen } from "@/features/alchemy/shared/types";
-import type { RunDomainStore } from "../run-domain-store";
+import type { GameplayState } from "../gameplay-state-store";
 import { dispatchRunSessionCommand } from "../run-session-command";
-import { createRunSessionStoreSnapshot } from "../run-session-queries";
+import { readGameplayState } from "../gameplay-state-store";
 
 type RunValueUpdate<T> = T | ((previous: T) => T);
-export type RunDeckUpdate = Parameters<RunDomainStore["setRunDeck"]>[0];
-type RunGoldUpdate = Parameters<RunDomainStore["setRunGold"]>[0];
-type RunHealthUpdate = Parameters<RunDomainStore["setRunPlayerHealth"]>[0];
-export type RunTrinketsUpdate = Parameters<RunDomainStore["setRunTrinkets"]>[0];
+type RunActions = GameplayState["runActions"];
+type RunGoldUpdate = Parameters<RunActions["setRunGold"]>[0];
+type RunHealthUpdate = Parameters<RunActions["setRunPlayerHealth"]>[0];
+export type RunTrinketsUpdate = Parameters<RunActions["setRunTrinkets"]>[0];
+export type RunDeckUpdate = Parameters<RunActions["setRunDeck"]>[0];
 
 export function setRunDeck(value: RunDeckUpdate): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setRunDeck(value));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.setRunDeck(value));
 }
 
 export function setRunGold(value: RunGoldUpdate): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setRunGold(value));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.setRunGold(value));
 }
 
 export function addRunGold(amount: number): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.addRunGold(amount));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.addRunGold(amount));
 }
 
 export function setRunPlayerHealth(value: RunHealthUpdate): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setRunPlayerHealth(value));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.setRunPlayerHealth(value));
 }
 
 export function setRunMaxHealth(value: RunValueUpdate<number>): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setRunMaxHealth(value));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.setRunMaxHealth(value));
 }
 
 export function setRoomsEncountered(value: RunValueUpdate<number>): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setRoomsEncountered(value));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.setRoomsEncountered(value));
 }
 
 export function setCurrentAct(value: RunValueUpdate<number>): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setCurrentAct(value));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.setCurrentAct(value));
 }
 
 export function setDestinationIndexInAct(value: RunValueUpdate<number>): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setDestinationIndexInAct(value));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.setDestinationIndexInAct(value));
 }
 
 export function setCompletedDestinations(
-  value: RunValueUpdate<RunDomainStore["activeRun"]["completedDestinations"]>,
+  value: RunValueUpdate<GameplayState["run"]["activeRun"]["completedDestinations"]>,
 ): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setCompletedDestinations(value));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.setCompletedDestinations(value));
 }
 
-export function setDestinationOfferState(value: Parameters<RunDomainStore["setDestinationOfferState"]>[0]): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setDestinationOfferState(value));
+export function setDestinationOfferState(value: Parameters<RunActions["setDestinationOfferState"]>[0]): void {
+  dispatchRunSessionCommand(() => readGameplayState().runActions.setDestinationOfferState(value));
 }
 
 export function setRunTrinkets(value: RunTrinketsUpdate): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setRunTrinkets(value));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.setRunTrinkets(value));
 }
 
 export function setEncounteredRunEnemyIds(value: RunValueUpdate<string[]>): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setEncounteredRunEnemyIds(value));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.setEncounteredRunEnemyIds(value));
 }
 
 export function setScreen(screen: Screen): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.setScreen(screen));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.setScreen(screen));
 }
 
 export function awardCardXP(card: BattleCard): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.awardCardXP(card));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.awardCardXP(card));
 }
 
 export function awardMysteryXP(keywordId: KeywordId, amount: number): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.awardMysteryXP(keywordId, amount));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.awardMysteryXP(keywordId, amount));
 }
 
 export function addRunMaterialsEarned(materials: MaterialInventory): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.addRunMaterialsEarned(materials));
+  dispatchRunSessionCommand(() => readGameplayState().runActions.addRunMaterialsEarned(materials));
 }
 
 export function clearRunMaterialsEarned(): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.clearRunMaterialsEarned());
+  dispatchRunSessionCommand(() => readGameplayState().runActions.clearRunMaterialsEarned());
 }
 
 /** Draw from a persisted run stream without exposing the aggregate action. */
 export function createRunRandomSource(stream: RunRngStream): () => number {
-  return () => dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().domain.nextRunRandom(stream));
+  return () => dispatchRunSessionCommand(() => readGameplayState().runActions.nextRunRandom(stream));
 }

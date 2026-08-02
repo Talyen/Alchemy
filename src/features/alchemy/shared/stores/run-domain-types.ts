@@ -46,7 +46,7 @@ export interface RunDomainBattleState {
   hasActiveBattle: boolean;
 }
 
-/** Active-run lifetime state owned by run-domain-store (profile / session / battle live in sibling stores). */
+/** Active-run region of the authoritative gameplay aggregate. */
 export interface RunDomainDataState {
   activeRun: ActiveRunProgressFields;
   initialized: boolean;

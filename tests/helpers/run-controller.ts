@@ -1,5 +1,5 @@
 // Test helpers — build run/talent controller shapes from the live run store.
-import { getRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
+import { getRunDomainStore } from "./gameplay-store-test";
 import type {
   BattleRunPort,
   BattleTalentPort,

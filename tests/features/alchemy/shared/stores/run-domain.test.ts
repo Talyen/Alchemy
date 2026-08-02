@@ -18,7 +18,7 @@ import { applyRunStartSnapshot } from "@/features/alchemy/shared/stores/ports/ru
 import { finalizeRunXP, unlockAllTalents } from "@/features/alchemy/shared/stores/ports/run-profile-write-port";
 import { getRunSession } from "@/features/alchemy/shared/stores/run-session-model";
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
+import { useRunProfileStore } from "../../../../helpers/gameplay-store-test";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-transaction";
 import { cardLibrary, computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";

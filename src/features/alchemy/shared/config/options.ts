@@ -3,7 +3,7 @@
 import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
 
 // Aspect ratio choices determine virtual canvas width (height is fixed at 1080).
-// Auto currently preserves the standard 16:9 baseline until viewport-aware selection lands.
+// Auto selects the closest supported canvas shape for the current CSS viewport.
 export const aspectRatioOptions: Array<{ value: AspectRatioOption; label: string }> = [
   { value: "auto", label: "Auto" },
   { value: "16:9", label: "Standard (16:9)" },
@@ -19,7 +19,8 @@ export const displayModeOptions: Array<{ value: DisplayMode; label: string }> = 
   { value: "fullscreen", label: "Fullscreen" },
 ];
 
-// UI scale is stored as a percentage string to match persisted save data.
+// UI scale adjusts rem-based text and fixed-size controls; the virtual stage
+// continues to fit the viewport independently.
 export const uiScaleOptions: Array<{ value: UiScale; label: string }> = [
   { value: "90", label: "Small" },
   { value: "100", label: "Normal" },

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -9,7 +9,7 @@ function read(path: string): string {
 }
 
 describe("gameplay aggregate boundary", () => {
-  it("keeps one authoritative root and compatibility slices over it", () => {
+  it("keeps one authoritative root and no duplicate run-lifetime stores", () => {
     const aggregate = read("src/features/alchemy/shared/stores/gameplay-state-store.ts");
     expect(aggregate).toContain("create<GameplayState>()");
     expect(aggregate).toContain("subscribeGameplayCommits");
@@ -20,27 +20,27 @@ describe("gameplay aggregate boundary", () => {
     expect(aggregate).not.toMatch(/activeRun:\s*RunDomainData/);
 
     for (const path of [
-      "profile-store.ts",
-      "gear-store.ts",
       "run-domain-store.ts",
       "run-profile-store.ts",
       "run-transient-store.ts",
       "run-battle-domain-store.ts",
+      "run-session-queries.ts",
     ]) {
+      expect(existsSync(join(ROOT, `src/features/alchemy/shared/stores/${path}`)), path).toBe(false);
+    }
+    for (const path of ["profile-store.ts", "gear-store.ts"]) {
       expect(read(`src/features/alchemy/shared/stores/${path}`), path).toContain("createSliceStore");
       expect(read(`src/features/alchemy/shared/stores/${path}`), path).not.toContain("create<");
     }
   });
 
-  it("keeps the committed compatibility snapshot projected from nested domains", () => {
+  it("keeps transaction coordination separate from aggregate reads", () => {
     const transaction = read("src/features/alchemy/shared/stores/run-session-transaction.ts");
-    const queries = read("src/features/alchemy/shared/stores/run-session-queries.ts");
-    expect(transaction).toContain("createRunSessionStoreSnapshot");
-    expect(queries).toContain("projectRunDomain");
-    expect(queries).toContain("projectTransient");
-    expect(queries).toContain("projectBattle");
-    expect(transaction).not.toContain("domain: state as");
-    expect(transaction).not.toContain("transient: state as");
+    const readPort = read("src/features/alchemy/shared/stores/run-session-read-port.ts");
+    expect(transaction).not.toContain("createRunSessionStoreSnapshot");
+    expect(transaction).not.toContain("useRunSessionCommitStore");
+    expect(readPort).toContain("readGameplayState");
+    expect(readPort).not.toContain("run-session-queries");
   });
 
   it("centralizes Gear-to-active-run health synchronization", () => {

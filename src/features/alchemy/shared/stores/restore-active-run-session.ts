@@ -1,8 +1,8 @@
-// Apply the decoded resume session to its owning transient store.
+// Apply the decoded resume session to the aggregate's session region.
 import type { DecodedRunResumeSession } from "./run-resume-codec";
 import type { SessionActions } from "./slices/session-slice";
 
-/** Transient-session writers needed to rehydrate a persisted run. */
+/** Session-region writers needed to rehydrate a persisted run. */
 type SessionStore = Pick<
   SessionActions,
   | "setLabyrinthMap"

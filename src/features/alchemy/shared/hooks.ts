@@ -12,9 +12,7 @@ import type { AspectRatioOption } from "./types";
 const LAYOUT_CONFIG = {
   DEFAULT_WIDTH: 1920,
   DEFAULT_HEIGHT: 1080,
-  NATIVE_RESOLUTION_SCALE_THRESHOLD: 1.5,
   STAGE_PIXEL_RATIO_DEFAULT: 1,
-  STAGE_SCALE_DEFAULT: 1.0,
   ASPECT_RATIO_STAGE_SIZES: {
     "16:9": { width: 1920, height: 1080 },
     "16:10": { width: 1920, height: 1200 },
@@ -27,8 +25,10 @@ const LAYOUT_CONFIG = {
   } as Record<Exclude<AspectRatioOption, "auto">, number>,
 } as const;
 
+export const VIRTUAL_STAGE_VIEWPORT_INSET_PX = 16;
+
 /**
- * Resolves the closest preset aspect ratio based on the current physical viewport dimensions.
+ * Resolves the closest preset aspect ratio based on the current CSS viewport dimensions.
  */
 export function resolveAutoAspectRatio(
   viewportWidth: number,
@@ -82,51 +82,12 @@ function getVirtualStageDimensions(resolvedAspect: Exclude<AspectRatioOption, "a
  * Computes viewport fitting scale while clamping it to safe min/max ranges.
  */
 function getStageScale(viewportWidth: number, viewportHeight: number, stageWidth: number, stageHeight: number): number {
-  const viewportAspect = viewportWidth / viewportHeight;
+  const availableWidth = Math.max(0, viewportWidth - VIRTUAL_STAGE_VIEWPORT_INSET_PX * 2);
+  const availableHeight = Math.max(0, viewportHeight - VIRTUAL_STAGE_VIEWPORT_INSET_PX * 2);
+  const viewportAspect = availableWidth / availableHeight;
   const stageAspect = stageWidth / stageHeight;
-  const rawScale = viewportAspect > stageAspect ? viewportHeight / stageHeight : viewportWidth / stageWidth;
+  const rawScale = viewportAspect > stageAspect ? availableHeight / stageHeight : availableWidth / stageWidth;
   return Math.max(MIN_STAGE_SCALE, Math.min(MAX_STAGE_SCALE, rawScale));
-}
-
-interface NativeResolutionResult {
-  finalScale: number;
-  finalStageWidth: number;
-  finalStageHeight: number;
-  stagePixelRatio: number;
-}
-
-/**
- * High-DPI optimization: For scales >= 1.5, we increase stage size natively
- * and set transform scale to 1.0 to preserve subpixel antialiasing/avoid blurriness.
- */
-function optimizeForNativeResolution(
-  scale: number,
-  stageWidth: number,
-  stageHeight: number,
-  viewportWidth: number,
-  viewportHeight: number,
-): NativeResolutionResult {
-  const nativeMultiplier = Math.round(scale);
-  const useNativeResolution =
-    scale >= LAYOUT_CONFIG.NATIVE_RESOLUTION_SCALE_THRESHOLD &&
-    stageWidth * nativeMultiplier <= viewportWidth &&
-    stageHeight * nativeMultiplier <= viewportHeight;
-
-  if (useNativeResolution) {
-    return {
-      finalScale: LAYOUT_CONFIG.STAGE_SCALE_DEFAULT,
-      finalStageWidth: stageWidth * nativeMultiplier,
-      finalStageHeight: stageHeight * nativeMultiplier,
-      stagePixelRatio: nativeMultiplier,
-    };
-  }
-
-  return {
-    finalScale: scale,
-    finalStageWidth: stageWidth,
-    finalStageHeight: stageHeight,
-    stagePixelRatio: LAYOUT_CONFIG.STAGE_PIXEL_RATIO_DEFAULT,
-  };
 }
 
 /**
@@ -149,6 +110,33 @@ const BYPASS_RESOLUTION_RESULT = {
   stagePixelRatio: 1,
 } as const;
 
+export function getVirtualResolutionLayout(
+  selectedAspectRatio: AspectRatioOption,
+  viewportWidth: number,
+  viewportHeight: number,
+) {
+  const resolvedAspect =
+    selectedAspectRatio === "auto" ? resolveAutoAspectRatio(viewportWidth, viewportHeight) : selectedAspectRatio;
+  const dims = getVirtualStageDimensions(resolvedAspect);
+  const scale = getStageScale(viewportWidth, viewportHeight, dims.stageWidth, dims.stageHeight);
+  const frameWidth = dims.stageWidth * scale;
+  const frameHeight = dims.stageHeight * scale;
+
+  return {
+    frameStyle: { width: `${frameWidth}px`, height: `${frameHeight}px` },
+    stageStyle: {
+      width: `${dims.stageWidth}px`,
+      height: `${dims.stageHeight}px`,
+      transform: `scale(${scale})`,
+      transformOrigin: "top left",
+      left: 0,
+      top: 0,
+    },
+    aspectMode: getAspectMode(resolvedAspect),
+    stagePixelRatio: LAYOUT_CONFIG.STAGE_PIXEL_RATIO_DEFAULT,
+  };
+}
+
 /**
  * Hook to compute responsive CSS transform scaling style mappings, bounding boxes, and ratios
  * to fit a target game canvas size into the browser viewport size.
@@ -156,29 +144,7 @@ const BYPASS_RESOLUTION_RESULT = {
 export function useVirtualResolution(selectedAspectRatio: AspectRatioOption, bypassVr = false) {
   const { width, height } = useViewportSize();
   if (bypassVr) return BYPASS_RESOLUTION_RESULT;
-
-  const resolvedAspect = selectedAspectRatio === "auto" ? resolveAutoAspectRatio(width, height) : selectedAspectRatio;
-
-  const dims = getVirtualStageDimensions(resolvedAspect);
-  const scale = getStageScale(width, height, dims.stageWidth, dims.stageHeight);
-  const native = optimizeForNativeResolution(scale, dims.stageWidth, dims.stageHeight, width, height);
-
-  const frameWidth = native.finalStageWidth * native.finalScale;
-  const frameHeight = native.finalStageHeight * native.finalScale;
-
-  return {
-    frameStyle: { width: `${frameWidth}px`, height: `${frameHeight}px` },
-    stageStyle: {
-      width: `${native.finalStageWidth}px`,
-      height: `${native.finalStageHeight}px`,
-      transform: `scale(${native.finalScale})`,
-      transformOrigin: "top left",
-      left: 0,
-      top: 0,
-    },
-    aspectMode: getAspectMode(resolvedAspect),
-    stagePixelRatio: native.stagePixelRatio,
-  };
+  return getVirtualResolutionLayout(selectedAspectRatio, width, height);
 }
 
 /** Keeps the latest value available to stable event handlers without changing their identity. */

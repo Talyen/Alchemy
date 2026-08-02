@@ -4,9 +4,8 @@
 import type { CharacterId } from "@/lib/game-data";
 import { flattenGearInventories, type GearInstance, type GearLoadouts } from "@/lib/gear";
 import type { GearStore } from "./gear-store-types";
-import { readGameplayState } from "./gameplay-state-store";
+import { readGameplayState, type GameplayState } from "./gameplay-state-store";
 import { dispatchRunSessionCommand } from "./run-session-command";
-import { createRunSessionStoreSnapshot } from "./run-session-queries";
 import { syncRunMaxHealthFromGearMutation } from "./run-transitions";
 
 export interface GearHealthSnapshot {
@@ -14,8 +13,26 @@ export interface GearHealthSnapshot {
   loadouts: GearLoadouts;
 }
 
+function gearCommandView(state: GameplayState): GearStore {
+  return {
+    ...state.gear,
+    initialize: state.gearActions.gearInitialize,
+    addInstance: state.gearActions.gearAddInstance,
+    transferToInventory: state.gearActions.gearTransferToInventory,
+    equip: state.gearActions.gearEquip,
+    unequip: state.gearActions.gearUnequip,
+    moveBoardItem: state.gearActions.gearMoveBoardItem,
+    syncBoardPositions: state.gearActions.gearSyncBoardPositions,
+    sortBoard: state.gearActions.gearSortBoard,
+    salvage: state.gearActions.gearSalvage,
+    applyCurrency: state.gearActions.gearApplyCurrency,
+    addCurrencies: state.gearActions.gearAddCurrencies,
+    reset: state.gearActions.gearReset,
+  };
+}
+
 function snapshotGearHealth(
-  state: Pick<GearStore, "inventories" | "loadouts"> = createRunSessionStoreSnapshot().gear,
+  state: Pick<GearStore, "inventories" | "loadouts"> = readGameplayState().gear,
 ): GearHealthSnapshot {
   return {
     // Flattening creates a stable array before the command starts. Gear
@@ -35,7 +52,7 @@ export function dispatchGearMutationWithRunHealthSync<T>(options: {
 }): T {
   return dispatchRunSessionCommand(() => {
     const before = options.before ?? snapshotGearHealth();
-    const result = options.mutate(createRunSessionStoreSnapshot().gear);
+    const result = options.mutate(gearCommandView(readGameplayState()));
     if (options.syncRunHealth ?? readGameplayState().session.hasActiveRun) {
       const after = snapshotGearHealth();
       syncRunMaxHealthFromGearMutation(

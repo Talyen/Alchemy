@@ -27,7 +27,7 @@ import {
   useScreenParticleConfig,
 } from "@/app/app-shell";
 import { useDevShortcuts } from "@/app/use-dev-shortcuts";
-import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
+import { useVirtualResolution, VIRTUAL_STAGE_VIEWPORT_INSET_PX } from "@/features/alchemy/shared/hooks";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -190,6 +190,10 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const settings = useAppSettings();
   const vrStageRef = useRef<HTMLDivElement>(null);
   const initialLoadReady = useInitialLoadReady();
+  const { frameStyle, stageStyle, aspectMode, stagePixelRatio } = useVirtualResolution(
+    settings.selectedAspectRatio,
+    false,
+  );
   useAppDisplayEffects({
     displayMode: settings.displayMode,
     uiScale: settings.uiScale,
@@ -205,10 +209,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
     setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
   }
 
-  const { frameStyle, stageStyle, aspectMode, stagePixelRatio } = useVirtualResolution(
-    settings.selectedAspectRatio,
-    false,
-  );
   const screen = useActiveRunScreenValue();
   useAppAudioEffects({
     masterVol: settings.masterVol,
@@ -231,7 +231,10 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 
   return (
     <ErrorBoundary label={screen}>
-      <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background p-4">
+      <div
+        className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background"
+        style={{ padding: VIRTUAL_STAGE_VIEWPORT_INSET_PX }}
+      >
         <div className="relative" style={frameStyle}>
           <AppMainContent
             saveBlockedByNewerVersion={saveBlockedByNewerVersion}

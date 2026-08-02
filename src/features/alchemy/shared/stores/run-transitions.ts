@@ -14,7 +14,7 @@ import { getCommittedRunSession } from "./run-session-model";
 import { restoreRunSession } from "./restore-active-run-session";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "./run-resume-codec";
 import { dispatchRunSessionCommand } from "./run-session-command";
-import { createRunSessionStoreSnapshot } from "./run-session-queries";
+import { readGameplayState } from "./gameplay-state-store";
 import { initializeActiveBattle, setHasActiveBattle } from "./run-session-write-port";
 
 /** Apply persisted active-run data across the run-lifetime stores atomically. */
@@ -25,16 +25,16 @@ export function restoreRun(
 ): void {
   const decoded = activeRun ? decodeRunResumeSnapshot(activeRun) : null;
   dispatchRunSessionCommand(() => {
-    const session = createRunSessionStoreSnapshot();
-    if (decoded) session.domain.initializeFromResumeSnapshot(decoded.progress);
-    else session.domain.initialize(null);
-    session.runProfile.applyTalentState(talentXP, unlockedTalents);
+    const session = readGameplayState();
+    if (decoded) session.runActions.initializeFromResumeSnapshot(decoded.progress);
+    else session.runActions.initialize(null);
+    session.runProfileActions.applyTalentState(talentXP, unlockedTalents);
     initializeActiveBattle(activeRun?.activeCombat?.battleState ?? null, decoded?.pendingBattleTransition ?? null);
 
-    if (decoded?.screen) session.domain.setScreen(decoded.screen);
+    if (decoded?.screen) session.runActions.setScreen(decoded.screen);
     if (!activeRun) return;
 
-    const transient = session.transient;
+    const transient = session.sessionActions;
     // A resume is a full replacement of transient run state. Clearing first
     // prevents an in-process restore from leaking stale rewards or shop offers.
     transient.clearTransientSession();
@@ -66,31 +66,31 @@ export function syncRunMaxHealthFromGearMutation(
   const delta = newBonus - oldBonus;
   if (delta === 0) return;
 
-  const store = createRunSessionStoreSnapshot().domain;
-  const nextMax = store.activeRun.runMaxHealth + delta;
-  store.setRunMaxHealth(nextMax);
-  store.setRunPlayerHealth(Math.min(nextMax, store.activeRun.runPlayerHealth));
+  const state = readGameplayState();
+  const nextMax = state.run.activeRun.runMaxHealth + delta;
+  state.runActions.setRunMaxHealth(nextMax);
+  state.runActions.setRunPlayerHealth(Math.min(nextMax, state.run.activeRun.runPlayerHealth));
 }
 
 /** Clamp run HP for battle entry and persist before creating BattleState. */
 export function syncRunToBattleStart(playerHealth?: number): number {
-  const store = createRunSessionStoreSnapshot().domain;
+  const state = readGameplayState();
   const startingHealth =
     playerHealth ??
     getBattleStartPlayerHealth(
-      store.activeRun.runPlayerHealth,
-      store.activeRun.runMaxHealth,
-      store.activeRun.runTrinkets,
+      state.run.activeRun.runPlayerHealth,
+      state.run.activeRun.runMaxHealth,
+      state.run.activeRun.runTrinkets,
     );
-  store.setRunPlayerHealth(startingHealth);
+  state.runActions.setRunPlayerHealth(startingHealth);
   return startingHealth;
 }
 
 /** Persist combat HP to run progress after victory or when leaving battle. */
 export function syncBattleToRun(options?: { playerHealth?: number }): void {
-  const session = createRunSessionStoreSnapshot();
+  const session = readGameplayState();
   const health = options?.playerHealth ?? session.battle.battleState.playerHealth;
-  session.domain.setRunPlayerHealth(health);
+  session.runActions.setRunPlayerHealth(health);
 }
 
 /** Clear the battle-active flag and battle-related presentation state. */
@@ -108,10 +108,10 @@ export function clearBattlePresentationUi(): void {
 /** Clear active combat, run progression, session UI, navigation, and presentation (profile survives). */
 export function teardownRun(): void {
   dispatchRunSessionCommand(() => {
-    const session = createRunSessionStoreSnapshot();
-    session.domain.resetProgress();
-    session.domain.resetNavigation();
-    session.transient.clearTransientSession();
+    const session = readGameplayState();
+    session.runActions.resetProgress();
+    session.runActions.resetNavigation();
+    session.sessionActions.clearTransientSession();
     initializeActiveBattle(null);
   });
   resetBattlePresentation();
@@ -134,15 +134,15 @@ function finalizeRunEndSessionState(options: {
   finalizeRunXP: () => void;
   displayMaterials?: MaterialInventory | null;
 }): MaterialInventory {
-  const aggregate = createRunSessionStoreSnapshot();
-  const session = aggregate.transient;
+  const aggregate = readGameplayState();
+  const session = aggregate.session;
   // Re-entry guard: run-end rewards are granted once per active run (menu abandon, defeat, victory).
   if (!session.hasActiveRun) {
     return emptyInventory();
   }
 
-  const activeChar = aggregate.domain.activeRun.characterId;
-  aggregate.profile.setFinishedRunCharacters((prev) => {
+  const activeChar = aggregate.run.activeRun.characterId;
+  aggregate.profileActions.setFinishedRunCharacters((prev) => {
     if (prev.includes(activeChar)) return prev;
     return [...prev, activeChar];
   });
@@ -150,7 +150,7 @@ function finalizeRunEndSessionState(options: {
   const materials = options.awardRunEndMaterials(options.displayMaterials);
   options.finalizeRunXP();
 
-  session.setHasActiveRun(false);
+  aggregate.sessionActions.setHasActiveRun(false);
   return materials;
 }
 

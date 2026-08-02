@@ -21,36 +21,43 @@ Unless the cited audit explicitly owns the behavior, do not change player-facing
 
 **Agents choose their own discovery and fix strategy.** Each audit’s Known signals and the measurable sweep map below are optional instrumentation — interpret hits through the owning audit; they are not a required runbook. Do not dump or read a directory wholesale or run unrelated full-repo sweeps.
 
+### Discovery breadth
+
+Start from the highest-yield evidence, but follow a confirmed candidate through its **causal neighborhood**: callers, callees, sibling implementations, tests, schemas, fixtures, docs, configuration, and generated inputs that participate in the same behavior. A recent diff or selected live flow is a starting point on repeat runs, not an automatic stopping boundary. When the user explicitly requests a full audit, inspect the audit's applicable ownership area rather than limiting discovery to recent changes.
+
+Audit ownership classifies findings; it does not forbid completing a connected remedy. A cited audit may include a **companion finding** normally classified under a sibling audit when it shares the same root cause, authored paths, or verification path and including it makes the remedy complete. Report both classifications and do not silently turn the pass into the sibling audit's unrelated full sweep.
+
 ### Right-size policy
 
-Prefer the smallest remedy that removes the confirmed cause. Related hits may justify one cohesive change, but shared ownership alone does not justify a new seam or framework.
+Prefer the smallest **complete causal remedy** that removes the confirmed cause. Related hits may justify one cohesive change, but shared ownership alone does not justify a new seam or framework. Bound scope by causal coherence and verification, not by an arbitrary file count.
 
 - **Ship in-pass:** confirmed local fixes that fully address the finding and do not paper over a larger root cause.
-- **Propose and stop:** significant refactors, package moves, new seams, or architecture changes. Do not implement those in the same unsupervised pass; present the proposal and wait for approval.
+- **Ship bounded structural fixes:** a refactor may ship in the same pass when it restores an existing documented owner, removes rather than mirrors the old path, requires no product/balance/persistence-compatibility/public-contract decision, and has focused verification. Phase large but separable fixes into reviewable slices.
+- **Propose and stop:** new packages or frameworks, new architectural seams, save-format or supported-migration changes, player-facing product decisions, broad module relocations with uncertain ownership, or changes that cannot be adequately verified. Present the proposal and wait for approval.
 - **Proposal bar** (all must hold, else do not propose):
   1. Confirmed evidence (a probe hit alone is not enough)
   2. Clear maintenance or correctness win (not taste)
   3. Local patches would leave the same class of problem nearby, or already have
-  4. Remedy fits an existing owner and removes the replaced surface
-  5. A generic abstraction has at least three current uses or repairs an enforced architectural boundary; predicted reuse is insufficient
+  4. Remedy fits an existing owner, or justifies a new owner with a real lifetime/boundary, and removes the replaced surface
+  5. A generic abstraction has at least three current uses, two demonstrated drifting implementations, or repairs an enforced architectural boundary; predicted reuse is insufficient
 
 ### Pass outcomes
 
-Inventory confirmed findings and address them per the right-size policy. If the fix scope is large, break work into distinct phases. Record outcomes in the handoff/commit/PR, never in an audit guide. Do not append run logs, Done tables, or dated status to these guides. The one durable exception is [decisions.md](decisions.md): when a pass ends with a rejected or deferred proposal, or a borderline candidate is intentionally kept, add one ledger row so future passes do not re-litigate it.
+Inventory confirmed findings and address them per the right-size policy. For a finding cluster, record the primary finding, causal neighborhood, included companion findings, intentionally excluded issues, and why the implementation boundary is cohesive. If the fix scope is large, break work into distinct phases. Record outcomes in the handoff/commit/PR, never in an audit guide. Do not append run logs, Done tables, or dated status to these guides. The one durable exception is [decisions.md](decisions.md): when a pass ends with a rejected or deferred proposal, or a borderline candidate is intentionally kept, add one ledger row so future passes do not re-litigate it.
 
 ### Repeat runs
 
 These audits are designed to be re-run every few days. To keep repeat passes cheap and non-repetitive:
 
 - **Check the ledger first.** Skip candidates already dispositioned in [decisions.md](decisions.md) unless evidence changed (new callers, new drift, changed ownership).
-- **Scope discovery incrementally.** On a repeat run, prefer scanning paths touched since the last audit pass (`git diff --name-only <last-audit-ref>...HEAD`, or the last few days of commits) over a whole-repo sweep. Do a full-repo pass periodically (roughly monthly) or when a cheap mechanical probe (`npm run audit:all`) already covers the repo.
+- **Scope discovery incrementally.** On a repeat run, prefer starting with paths touched since the last audit pass (`git diff --name-only <last-audit-ref>...HEAD`, or the last few days of commits), then follow confirmed candidates through their causal neighborhoods. Do a full-repo pass periodically (roughly monthly), when the user explicitly requests a full audit, or when a cheap mechanical probe (`npm run audit:all`) already covers the repo.
 - **Match cadence to yield.** Not every audit earns a run every few days:
 
-| Tier                                          | Audits                                                                                                                                                       |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Frequent** (mechanical, greppable, cheap)   | `DeadCodeAudit`, `TypeSafetyAudit`, `SideEffectSurfaceAudit`, `DesignSystemConsistencyAudit`, `DocumentationStalenessAudit`, `BugHuntingAudit` (diff-scoped) |
-| **Occasional** (judgment or runtime needed)   | `UnitTestAudit`, `E2ETestQualityAudit`, `BehaviorHardeningAudit`, `AsyncRaceAudit`, `UIInteractionFeedbackAudit`, `InelegantSlopAudit`, `PerformanceAudit`   |
-| **Rare** (structural, expensive, slow-moving) | `DuplicateFeatureSurfaceAudit`, `StateGravityOwnershipAudit`, `DualPathRetentionAudit`, `ChangeLocalityContextEfficiencyAudit`                               |
+| Tier                                          | Audits                                                                                                                                                                           |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Frequent** (mechanical, greppable, cheap)   | `DeadCodeAudit`, `TypeSafetyAudit`, `SideEffectSurfaceAudit`, `DesignSystemConsistencyAudit`, `DocumentationStalenessAudit`, `BugHuntingAudit` (recent changes + rotating slice) |
+| **Occasional** (judgment or runtime needed)   | `UnitTestAudit`, `E2ETestQualityAudit`, `BehaviorHardeningAudit`, `AsyncRaceAudit`, `UIInteractionFeedbackAudit`, `InelegantSlopAudit`, `PerformanceAudit`                       |
+| **Rare** (structural, expensive, slow-moving) | `DuplicateFeatureSurfaceAudit`, `StateGravityOwnershipAudit`, `DualPathRetentionAudit`, `ChangeLocalityContextEfficiencyAudit`                                                   |
 
 The tiers are guidance, not gates — a user citing an audit always runs it.
 
@@ -72,9 +79,9 @@ When a user requests multiple audits or subagent implementation, keep one root o
 
 ### Code and test budgets
 
-- Simplification, duplication, dead-code, and test-reduction fixes should reduce authored LOC, declarations, indirection, or executed cases. Moving code without removing the old path is not a reduction.
+- Simplification, duplication, dead-code, and test-reduction fixes should reduce authored LOC, declarations, indirection, duplicated structure, or executed cases. Ownership, correctness, type-model, test-quality, and performance fixes may be LOC-neutral or grow when the causal remedy requires it; report the more relevant before/after proxy. Moving code without removing the old path is not a reduction.
 - Feature/correctness fixes may grow; explain necessity and the simpler rejected alternative when growth is large.
-- Verification does not imply new coverage. Extend an existing semantic owner first and remove coverage made redundant.
+- Verification alone does not imply new coverage. Add coverage for a confirmed gap under the existing semantic owner first and remove coverage made redundant.
 - Parameterization is not a reduction when it merely hides the same or more expanded cases behind fewer declarations.
 
 ### Verification
@@ -87,23 +94,23 @@ Each audit holds only its distinct scope, confirmation rules, and domain allowli
 
 | Concern                                                    | Owner audit                               |
 | ---------------------------------------------------------- | ----------------------------------------- |
-| Dead / unused symbols                                      | `DeadCodeAudit.md`                        |
+| Dead / obsolete authored surface                           | `DeadCodeAudit.md`                        |
 | Live dual paths / retained compatibility shims             | `DualPathRetentionAudit.md`               |
-| RNG / I/O seams                                            | `SideEffectSurfaceAudit.md`               |
-| Persistence / idempotency / swallowed errors               | `BehaviorHardeningAudit.md`               |
-| Async races / IPC / effect lifetime                        | `AsyncRaceAudit.md`                       |
-| `any` / casts / typing escapes                             | `TypeSafetyAudit.md`                      |
-| Unit test value, runtime, redundancy, and tier ownership   | `UnitTestAudit.md`                        |
-| Playwright reliability and tier fit                        | `E2ETestQualityAudit.md`                  |
+| RNG / I/O / environment seams and effect quality           | `SideEffectSurfaceAudit.md`               |
+| Persistence / recovery / transition-boundary correctness   | `BehaviorHardeningAudit.md`               |
+| Async lifetime / ordering / concurrency / IPC              | `AsyncRaceAudit.md`                       |
+| Typing escapes / dishonest or invalid-state models         | `TypeSafetyAudit.md`                      |
+| Unit-test trust, gaps, runtime, redundancy, and ownership  | `UnitTestAudit.md`                        |
+| Playwright reliability, signal, coverage, isolation, tiers | `E2ETestQualityAudit.md`                  |
 | Opportunistic defect hunt                                  | `BugHuntingAudit.md`                      |
-| Doc drift                                                  | `DocumentationStalenessAudit.md`          |
-| UI interaction / feedback / keyboard                       | `UIInteractionFeedbackAudit.md`           |
-| Design tokens / shared UI chrome                           | `DesignSystemConsistencyAudit.md`         |
+| Doc drift / harmful omissions / duplicated policy          | `DocumentationStalenessAudit.md`          |
+| UI interaction / feedback / responsive / keyboard / focus  | `UIInteractionFeedbackAudit.md`           |
+| Design tokens / semantic states / shared UI chrome         | `DesignSystemConsistencyAudit.md`         |
 | Over-engineered / verbose / inelegant agent slop           | `InelegantSlopAudit.md`                   |
 | Authored mass hotspots (file / folder, mixed jobs)         | `InelegantSlopAudit.md`                   |
-| Render churn / frame cost / bundle & asset weight          | `PerformanceAudit.md`                     |
-| Copy-paste feature screens / shells                        | `DuplicateFeatureSurfaceAudit.md`         |
-| Misplaced logic in stores / controllers / mega-screens     | `StateGravityOwnershipAudit.md`           |
+| Startup / latency / render / memory / payload performance  | `PerformanceAudit.md`                     |
+| Copy-paste feature screens / shells / state families       | `DuplicateFeatureSurfaceAudit.md`         |
+| Misplaced rules/transforms in stores/controllers/screens   | `StateGravityOwnershipAudit.md`           |
 | Change locality / amplification / agent context efficiency | `ChangeLocalityContextEfficiencyAudit.md` |
 
 Layer import boundaries (`src/lib` ↔ `src/features`, facade-only store access) are continuously enforced by ESLint; they are not a user-invoked audit. Fix violations via `npm run lint` / `lint:ci`.

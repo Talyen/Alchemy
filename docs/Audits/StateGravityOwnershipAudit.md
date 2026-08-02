@@ -4,7 +4,7 @@
 
 ## Intent
 
-Identify ownership-drift clusters and restore them to existing owners. Move, do not mirror: delete old forwarding APIs, parallel paths, and duplicate tests. New managers/stores must express a real lifetime boundary and replace more surface than they add. Significant moves remain proposals per [README.md](README.md). Before shipping, confirm the code’s concern matches a different Architecture owner, real review/test cost from mixed jobs, and an existing home (not a greenfield layer). If the scope is large, phase the plan.
+Identify ownership-drift clusters and restore them to existing owners. Inspect rules, transforms, derived selectors, route composition, feature adapters, controller glue, test helpers, persistence, and presentation when they participate in the same misplaced responsibility. Move, do not mirror: migrate callers and tests, then delete old forwarding APIs and parallel paths. New managers/stores must express a real lifetime boundary and replace more surface than they add. Bounded moves into an existing documented owner may ship under [README.md](README.md); uncertain ownership or a new lifetime seam remains a proposal. Before shipping, confirm the code’s concern matches a different Architecture owner, real review/test cost from mixed jobs, and an existing home (not a greenfield layer). LOC-neutral moves are acceptable when mixed-lifetime coupling and verification surface materially decrease. If the scope is large, phase the plan.
 
 ## What “state gravity” means here
 
@@ -27,10 +27,11 @@ Agentic coding often drops the next method on the nearest large module. Gravity 
 - Do not move presentation into `src/lib` (must stay React-free).
 - Repair an obvious one-file ESLint boundary violation directly rather than expanding it into an ownership audit.
 - Feature code outside `shared/stores/` must not import `run-domain-store` directly — use the facade.
+- Screens continue to receive run/battle bindings through shell controllers and controller props; do not replace documented bindings with React context or direct store/facade hooks merely to shorten prop flow.
 
 ## Remedy preference
 
-Prefer moving pure rules into the matching `src/lib/*` owner and persistence policy into `shared/storage` / save-schemas / migrations, keeping stores thin. Keep run orchestration on shell controllers plus capability-specific run-session ports (lifecycle implemented in `run-transitions.ts`). Keep battle VFX in `battle-presentation-store`, global UI chrome in `ui-store`, meta discovery in `app-store`, permanent gear in `gear-store`, homestead/talents in `run-profile-store`. Extract presentation-only helpers into `shared/ui` or the feature folder; collapse duplicate shells via `DuplicateFeatureSurfaceAudit.md` when that is the bulk of the win. Propose hub splits when local moves would leave the same gravity well intact.
+Prefer moving pure rules into the matching `src/lib/*` owner and persistence policy into `shared/storage` / save-schemas / migrations, keeping stores thin. Keep run orchestration on shell controllers plus capability-specific run-session ports (lifecycle implemented in `run-transitions.ts`). Keep battle VFX in `battle-presentation-store`, global UI chrome in `ui-store`, meta discovery in `app-store`, permanent gear in `gear-store`, homestead/talents in `run-profile-store`. Extract presentation-only helpers into `shared/ui` or the feature folder; collapse duplicate shells via `DuplicateFeatureSurfaceAudit.md` when that is the bulk of the win. A pass may move several connected responsibilities out of one gravity well in phases when each destination is already documented and the old APIs disappear; propose only when the split requires a new owner.
 
 ## Domain rules
 
@@ -43,10 +44,13 @@ Ownership is defined by [ARCHITECTURE.md](../ARCHITECTURE.md) (store layout, con
 
 Optional discovery aids — choose your own probes.
 
-- **Deep prop drilling:** battle/run props passed through ≥3 levels where a facade hook or controller binding already exists.
+- **Deep prop drilling:** battle/run props passed through ≥3 levels because controller props or view composition are shaped too broadly; preserve the documented shell-controller binding rather than bypassing it with direct store/facade access.
 - **Direct domain-store imports from screens:** `run-domain-store` imports under `src/features/alchemy` outside `**/stores/**`.
 - **Other store bypasses:** screens importing `gear-store` / `app-store` mutation APIs where a facade/controller already owns the write path.
 - **Transient UI in persistence types:** hover/selection/scroll fields on save shapes.
 - **Misplaced battle math in React:** damage/deck calculations inside `*.tsx` screens.
 - **Controller / store bloat:** mega-files mixing navigation, rewards, battle sync, and persistence.
 - **Invented parallel hubs:** new `*Manager` / `*Store` beside existing owners for a single flow.
+- **Misplaced transforms/selectors:** catalog joins, projections, derived state, or feature adapters live on a screen/store only because it was the nearest large owner.
+- **Route and controller glue:** repeated route composition or controller bindings encode feature rules that belong to an existing capability owner.
+- **Test ownership gravity:** production-only factories or semantic rules live in test helpers, or tests remain attached to the old owner after a move.

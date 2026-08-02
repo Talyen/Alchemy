@@ -9,9 +9,7 @@ import {
   rollbackGameplayTransaction,
   subscribeGameplayCommits,
   useGameplayStateStore,
-  type GameplayState,
 } from "./gameplay-state-store";
-import { createRunSessionStoreSnapshot, type RunSessionStoreSnapshot } from "./run-session-queries";
 
 type RunSessionCommitListener = (revision: number) => void;
 
@@ -19,43 +17,9 @@ export interface RunSessionTransactionOptions<T> {
   afterCommit?: (result: T) => void;
 }
 
-export interface RunSessionCommitState {
-  revision: number;
-  snapshot: RunSessionStoreSnapshot;
-}
-
 let transactionDepth = 0;
 let transactionFailed = false;
 let transactionEffects: Array<() => void> | null = null;
-let cachedRoot: GameplayState | null = null;
-let cachedCommitState: RunSessionCommitState | null = null;
-
-interface CommitStoreHook {
-  <T = RunSessionCommitState>(selector?: (state: RunSessionCommitState) => T): T;
-  getState: () => RunSessionCommitState;
-  getInitialState: () => RunSessionCommitState;
-}
-
-function getCommitState(): RunSessionCommitState {
-  const root = useGameplayStateStore.getState();
-  if (root === cachedRoot && cachedCommitState) return cachedCommitState;
-  cachedRoot = root;
-  cachedCommitState = { revision: root.revision, snapshot: createRunSessionStoreSnapshot(root) };
-  return cachedCommitState;
-}
-
-/** Compatibility read hook over the aggregate; no shadow state is stored. */
-export const useRunSessionCommitStore = ((selector?: (state: RunSessionCommitState) => unknown) =>
-  useGameplayStateStore(() => {
-    const state = getCommitState();
-    return selector ? selector(state) : state;
-  })) as CommitStoreHook;
-
-useRunSessionCommitStore.getState = getCommitState;
-useRunSessionCommitStore.getInitialState = () => {
-  const initial = useGameplayStateStore.getInitialState();
-  return { revision: initial.revision, snapshot: createRunSessionStoreSnapshot(initial) };
-};
 
 /** Execute synchronous mutations as one aggregate commit. */
 export function runSessionTransaction<T>(work: () => T, options: RunSessionTransactionOptions<T> = {}): T {
@@ -102,12 +66,5 @@ export function subscribeRunSessionCommits(listener: RunSessionCommitListener): 
 }
 
 export function getRunSessionRevision(): number {
-  return getCommitState().revision;
+  return useGameplayStateStore.getState().revision;
 }
-
-export function getCommittedRunSessionSnapshot(): RunSessionStoreSnapshot {
-  return getCommitState().snapshot;
-}
-
-// Keep the aggregate bridge eager, matching the old bootstrap behavior.
-useGameplayStateStore.getState();

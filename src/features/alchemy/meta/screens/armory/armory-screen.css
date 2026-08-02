@@ -8,10 +8,11 @@
 
 .armory-character-art-container {
   --battle-scene-height-mimic: calc(100cqh + 77px);
+  --battle-to-armory-art-scale: 1.038686;
   width: clamp(
-    calc(0.2724 * var(--battle-scene-height-mimic)),
-    calc(0.2768 * var(--battle-scene-height-mimic)),
-    calc(0.4123 * var(--battle-scene-height-mimic))
+    calc(0.2724 * var(--battle-scene-height-mimic) * var(--battle-to-armory-art-scale)),
+    calc(0.2768 * var(--battle-scene-height-mimic) * var(--battle-to-armory-art-scale)),
+    calc(0.4123 * var(--battle-scene-height-mimic) * var(--battle-to-armory-art-scale))
   );
 }
 

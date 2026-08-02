@@ -24,14 +24,7 @@ pre-push:
   commands:
     changelog-sync:
       run: node scripts/sync-changelog-commit.mjs
-    lockfile-check:
-      run: npm ci --dry-run
-    lint-ci:
-      run: npm run lint:ci
-    test:
-      run: npm test
-    build:
-      # Web build only; desktop bundle is covered by CI ship-gate / desktop jobs.
-      run: npm run build
-    e2e-critical:
-      run: npm run test:e2e:prepush
+    fast-gate:
+      # Full lint, unit, build, and broad E2E gates run in CI or explicitly via
+      # `npm run check:push:full`; keep the default hook fast for iteration.
+      run: npm run check:push

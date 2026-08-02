@@ -1,10 +1,10 @@
 # Unsafe Escape Audit
 
-**Goal:** Remove confirmed unsafe typing escapes in non-test, non-generated source without replacing valid invariants with vague fallbacks.
+**Goal:** Remove confirmed unsafe typing escapes and dishonest type models without replacing valid invariants with vague fallbacks.
 
 ## Intent
 
-Find unsafe escapes and fix them. Prefer one validation boundary (Zod) or an impossible-state model over repeated call-site guards and fallbacks. A clean pass is valid; significant typing seams remain proposals. If the scope is large, phase the plan.
+Find unsafe escapes, unsound generics, broad records, non-exhaustive unions, optional-property bags that encode invalid states, and types that disagree with runtime presence. Prefer one validation boundary (Zod) or an impossible-state model over repeated call-site guards and fallbacks. Once an unsafe model is confirmed, follow it through schema, domain type, callers, fixtures, and tests. Production-facing test helpers and fixtures are in scope when their typing masks a state that product code consumes. A clean pass is valid; bounded repairs under existing owners may ship, while persistence-format or new architectural seams remain proposals. If the scope is large, phase the plan.
 
 ## Hard stops
 
@@ -12,6 +12,7 @@ Find unsafe escapes and fix them. Prefer one validation boundary (Zod) or an imp
 - Do not chase every `\bany\b` or every `!` — triage by risk and diagnostics.
 - Keep Zod/validation at save/load boundaries; do not replace boundary validation with scattered casts.
 - Casts on save paths: this audit owns the typing escape; silent failure / corrupt-save behavior belongs to `BehaviorHardeningAudit.md`.
+- Do not improve static appearance by widening types, adding optional properties, or inserting runtime fallbacks that make an invalid state easier to represent.
 
 ## Triage
 
@@ -29,6 +30,9 @@ Find unsafe escapes and fix them. Prefer one validation boundary (Zod) or an imp
 - Replace non-null assertions (`!.`) with explicit null checks or optional chaining.
 - Module / bootstrap entrypoints may keep hard failures; orchestration should not crash on corrupt input — validate at the boundary.
 - `any` mainly at serialization edges; validate decoded saves via Zod schemas — not runtime casts after the fact.
+- External and JSON data is `unknown` until a boundary validates it; types must not claim fields or variants that decoding does not establish.
+- Prefer exhaustive switches and domain-specific unions over string bags, broad `Record<string, unknown>`, and boolean/optional-property combinations.
+- Test builders used to create production state must preserve production invariants or deliberately expose an explicitly unsafe fixture boundary.
 - Targets (directional, not absolute gates): `any` → 0 in non-test `src`; `@ts-expect-error` / `as unknown as` trending to 0; `!.` ≤ ~1 per 500 LOC.
 
 ## Known signals
@@ -41,3 +45,8 @@ Optional discovery aids — choose your own probes.
 - **Non-null assertions:** `!.` in non-test `src`.
 - **Unsafe assertions on persistence/battle:** hits in `shared/storage/`, `save-schemas/`, `run-transitions.ts`, `src/lib/battle`.
 - **Raw enum / string decoding:** stringly unions without Zod or exhaustive checks at hydrate boundaries.
+- **Unsound generic/record models:** generic constraints, keyed writes, index signatures, or broad records permit values the runtime owner cannot handle.
+- **Invalid-state bags:** several optional properties or booleans encode mutually exclusive modes without a discriminant.
+- **Non-exhaustive consumption:** switches or lookup tables silently accept new variants without a compiler-enforced owner.
+- **Dishonest external types:** JSON, storage, IPC, or environment values are asserted directly to a domain type without validation.
+- **Fixture escapes:** shared test builders cast partial objects into production state and can conceal invalid states used by live orchestration tests.

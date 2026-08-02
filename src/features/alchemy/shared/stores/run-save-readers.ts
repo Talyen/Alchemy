@@ -5,8 +5,7 @@ import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/ho
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { createInitialPermanentFields } from "@/features/alchemy/shared/stores/run-state-init";
 import type { PersistenceCodec } from "./persistence-codec";
-import { createRunSessionStoreSnapshot } from "./run-session-queries";
-import { applyGameplayStateUpdate, subscribeGameplayCommits } from "./gameplay-state-store";
+import { applyGameplayStateUpdate, readGameplayState, subscribeGameplayCommits } from "./gameplay-state-store";
 
 export interface RunProfileSaveFields {
   talentXP: TalentXP;
@@ -40,7 +39,7 @@ function createDefaultRunProfileSaveFields(): RunProfileSaveFields {
 
 /** Persistence: permanent homestead + talent fields for save snapshots. */
 function readPermanentProgressForSave(): RunProfileSnapshot {
-  return createRunSessionStoreSnapshot().runProfile;
+  return readGameplayState().runProfile;
 }
 
 export const runProfilePersistenceCodec: PersistenceCodec<RunProfileSaveFields> = {

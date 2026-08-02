@@ -58,4 +58,10 @@ describe("OptionsScreen", () => {
     await user.click(screen.getByRole("button", { name: "Back" }));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
+
+  it("explains that UI Scale targets text and fixed-size controls", () => {
+    render(<OptionsScreen {...defaultProps} />);
+
+    expect(screen.getByText("Adjusts text and fixed-size controls.")).toBeTruthy();
+  });
 });

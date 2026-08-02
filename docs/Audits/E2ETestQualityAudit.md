@@ -1,14 +1,14 @@
 # E2E Test Reliability & Signal Audit
 
-**Goal:** Improve confirmed Playwright reliability, signal, and tier fit without weakening product coverage.
+**Goal:** Improve Playwright reliability, diagnostic signal, portfolio coverage, isolation, and tier fit without weakening product behavior coverage.
 
 Conventions: [CONTRIBUTING.md](../../CONTRIBUTING.md) (E2E helpers, tags, CI parity).
 
 ## Intent
 
-Confirm P0–P2 candidates across suites and address them, preferring delete → merge → move to a cheaper tier → shorten. Add page-object or harness surface only when at least three current uses become shorter or one enforced test boundary requires it. If the scope is large, phase the plan.
+Confirm P0–P2 candidates across suites and address them, preferring delete → merge → move to a cheaper tier → shorten when coverage is redundant. Also add or strengthen a journey when a confirmed shipping-critical behavior has no trustworthy E2E owner. Add page-object or harness surface when at least three current uses become shorter, two uses have demonstrated drift/cost, or one enforced reliability boundary requires it. If the scope is large, phase the plan.
 
-Prefer CI run history and `npm run test:e2e:audit` timing/flake reports as the primary discovery input — do not re-run full suites solely to hunt for flakes. Re-run only the suspect spec(s) when confirming a candidate.
+Prefer CI run history and `npm run test:e2e:audit` timing/flake reports as primary discovery inputs, but accept deterministic local reproduction or conclusive structural evidence of false positives, state leakage, or nondeterminism. Do not re-run full suites solely to hunt for flakes. Re-run only the suspect spec cluster when confirming a candidate.
 
 ## Hard stops
 
@@ -17,6 +17,7 @@ Prefer CI run history and `npm run test:e2e:audit` timing/flake reports as the p
 - Do not add or rely on dev-only QA shortcuts (Skip Combat / Unlock All selectors). Prefer real combat/card helpers and flows documented in CONTRIBUTING.
 - Animation canaries must use raw `@playwright/test` — never `enableFastMode` / `fastBattle`.
 - Electron / desktop E2E is optional verification when available — do not fail the audit solely because Electron tooling is absent (see [README.md](README.md) toolchain limits).
+- Do not treat test deletion as inherently preferable to adding one missing semantic owner; optimize portfolio trustworthiness, then cost.
 
 ## Tier rules
 
@@ -45,7 +46,7 @@ Tier meaning and commands live in [CONTRIBUTING.md](../../CONTRIBUTING.md). Inte
 
 Reuse existing page objects under `tests/pages/` and helpers under `tests/e2e/` / `tests/helpers.ts`; do not extract a new page object for one or two call sites. Product interaction defects belong in `UIInteractionFeedbackAudit.md`.
 
-**Allowed fixes:** delete duplicate journeys/assertions; shorten excessive waits after deterministic bootstrap; move multi-step assertions from `@prepush` → `@critical` without retaining the prepush copy; replace text/index hunts with stable roles/test ids; reuse page objects consistently; remove QA-shortcut selectors.
+**Allowed fixes:** delete duplicate journeys/assertions; add a missing shipping-critical journey; shorten excessive waits after deterministic bootstrap; move multi-step assertions from `@prepush` → `@critical` without retaining the prepush copy; replace text/index hunts with stable roles/test ids; repair cross-test isolation and fixture realism; improve failure diagnostics; reuse page objects consistently; remove QA-shortcut selectors.
 
 ## Known signals
 
@@ -57,3 +58,8 @@ Optional discovery aids — choose your own probes.
 - **Wrong fixture import:** animation canaries import `@playwright/test` (not `./fixtures/e2e`); combat/flow specs use `./fixtures/e2e` **with** `runtimeErrors`.
 - **Tier duplication:** same multi-step journey asserted in both `@prepush` and a slower tagged suite.
 - **Diagnostic tooling:** `npm run test:e2e:audit` / timings reports as supporting evidence for flake classes — not a required every-pass gate.
+- **State leakage / order dependence:** a spec passes alone but fails after another test, or shared storage/session state is not reset deterministically.
+- **False-positive assertions:** waits or weak visibility checks can pass before the intended state transition or without proving the user outcome.
+- **Missing shipping owner:** a critical cross-layer journey has only unit coverage or no automated coverage despite a demonstrated regression risk.
+- **Fixture and platform divergence:** bootstrap state cannot occur in production, or Chromium/Electron paths unintentionally exercise different contracts.
+- **Diagnostic weakness:** failures omit the state, runtime errors, trace, or semantic checkpoint needed to distinguish product failure from harness failure.

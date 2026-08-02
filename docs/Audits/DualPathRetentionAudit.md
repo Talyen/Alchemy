@@ -4,19 +4,20 @@
 
 ## Intent
 
-Confirm two reachable paths for one behavior (or a reachable shim that only forwards to the surviving owner) and remove one path. A successful fix reports authored LOC, declarations, or exported API removed by deleting the superseded path — not by wrapping it again. A clean pass is valid. Planning and phasing: [README.md](README.md).
+Confirm two reachable paths for one behavior (or a reachable shim that only forwards to the surviving owner) and remove the complete superseded path. Once confirmed, inspect its connected callers, tests, docs, configuration, flags, adapters, selectors, commands, and generated inputs. A successful fix reports authored LOC, declarations, branches, configuration, or exported API removed by deleting the superseded path — not by wrapping it again. A clean pass is valid. Planning and phasing: [README.md](README.md).
 
 ## What counts as dual-path retention
 
-| Tell                                                                                                           | Why it is a finding candidate                                                                                |
-| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Forwarding wrapper or rename-only type alias still imported beside the real owner                              | Extra name preserves a deleted API surface                                                                   |
-| Barrel dual-export of old and new names after callers moved                                                    | Side-by-side re-exports keep both names live with no unique behavior                                         |
-| Feature API on a hub that duplicates a facade / controller / `src/lib` method                                  | Callers can use either; hubs and owners drift                                                                |
-| Migration / legacy bridge still on hot paths after the consumer window is closed                               | Temporary compatibility became permanent surface                                                             |
-| Parallel implementations of the same rule or presentation after a refactor                                     | “Keep both for safety” without a remaining distinct consumer                                                 |
-| Deprecated entry that only exists to call the new entry                                                        | Reachable twin with no unique behavior                                                                       |
-| Permanent feature-flag or build-time switch that still ships both implementations of one behavior indefinitely | Loser path has no remaining distinct consumer — temporary rollout flags with an open window are not findings |
+| Tell                                                                                                              | Why it is a finding candidate                                                                                |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Forwarding wrapper or rename-only type alias still imported beside the real owner                                 | Extra name preserves a deleted API surface                                                                   |
+| Barrel dual-export of old and new names after callers moved                                                       | Side-by-side re-exports keep both names live with no unique behavior                                         |
+| Feature API on a hub that duplicates a facade / controller / `src/lib` method                                     | Callers can use either; hubs and owners drift                                                                |
+| Migration / legacy bridge still on hot paths after the consumer window is closed                                  | Temporary compatibility became permanent surface                                                             |
+| Parallel implementations of the same rule or presentation after a refactor                                        | “Keep both for safety” without a remaining distinct consumer                                                 |
+| Deprecated entry that only exists to call the new entry                                                           | Reachable twin with no unique behavior                                                                       |
+| Permanent feature-flag or build-time switch that still ships both implementations of one behavior indefinitely    | Loser path has no remaining distinct consumer — temporary rollout flags with an open window are not findings |
+| Parallel configuration, command, event, adapter, selector, or test-harness paths select the same product behavior | The alternate route keeps implementation and verification policy duplicated                                  |
 
 **Not this audit:** zero live consumers → `DeadCodeAudit.md`; single intentional entry that is noun theater / ceremony with no second product path → `InelegantSlopAudit.md`; wrong owner (with or without a twin) → `StateGravityOwnershipAudit.md` (move, then delete the old path); duplicate product screens / shells → `DuplicateFeatureSurfaceAudit.md`; twin kept reachable only by test scaffolding → `UnitTestAudit.md` / `E2ETestQualityAudit.md` (this audit still owns product-reachable twins; retarget tests after delete); live mass / mixed jobs on a single path → `InelegantSlopAudit.md`; async races / effect lifetime → `AsyncRaceAudit.md`. Intentional dual seams are listed under Hard stops — leave them alone.
 
@@ -39,13 +40,13 @@ Either:
 
 Plus a delete-one-path remedy that preserves behavior. Speculative “might need later” is not evidence.
 
-For migration / legacy-bridge tells, also confirm the consumer window is closed: inventory shows no remaining save / resume / schema / fixture consumer of the old shape, or persistence docs mark the bridge obsolete. Speculative “enough time has passed” is not evidence.
+For migration / legacy-bridge tells, also confirm the consumer window is closed: repository-supported save/version policy plus inventory shows no remaining save / resume / schema / fixture consumer of the old shape, or persistence docs mark the bridge obsolete. External telemetry is not implicitly required when repository policy defines the supported window. Speculative “enough time has passed” is not evidence.
 
 `DeadCodeAudit.md` owns symbols with **zero** live consumers. This audit owns reachable twins or reachable no-op shims.
 
 ## Remedy preference
 
-Prefer delete the superseded path → retarget callers to the surviving owner → remove forwarding wrappers and rename-only type aliases → demote or delete leftover barrel exports. Do not leave a pass-through “for compatibility” after callers move. Significant folder moves or new seams remain proposals per [README.md](README.md).
+Prefer delete the superseded path → retarget callers to the surviving owner → remove forwarding wrappers and rename-only type aliases → demote or delete leftover barrel exports → remove path-specific tests, docs, flags, configuration, and commands. Do not leave a pass-through “for compatibility” after callers move. Bounded structural deletion may ship under [README.md](README.md); uncertain ownership or new seams remain proposals.
 
 ## Domain rules
 
@@ -69,3 +70,4 @@ Optional discovery aids — choose your own probes.
 - **Hub + owner twins:** feature methods on `run-domain-store` / controllers that only forward to facade or `src/lib` owners already used elsewhere.
 - **Closed migration windows:** inventory via [MIGRATIONS.md](../../src/features/alchemy/shared/storage/MIGRATIONS.md), `tests/fixtures/legacy-saves.ts`, `CURRENT_SAVE_SCHEMA_VERSION`, and migration contract/guard tests — one-shot `localStorage` shims, renamed save fields, or alias re-exports retained after those consumers no longer need the old shape.
 - **Flagged dual implementations:** env / Vite / Electron switches that still compile and ship both branches of one behavior indefinitely (open temporary rollout windows are not findings).
+- **Parallel infrastructure routes:** duplicate configuration, commands, events, adapters, selectors, or test harness entrypoints that reach the same behavior without distinct consumers.

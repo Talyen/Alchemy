@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { createRunRngState, nextRunRngValue } from "@/lib/run-rng";
 import { createRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { resetRunDomainStore } from "@/features/alchemy/shared/stores/run-domain-store";
+import { resetRunDomainStore } from "../helpers/gameplay-store-test";
 import { setRunProgress } from "../helpers/run-domain-store-test";
 
 function drawSequence(seed: number, stream: "rewards" | "destinations", count: number): number[] {

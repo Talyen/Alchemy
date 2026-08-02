@@ -20,18 +20,20 @@ Import using on-disk paths (for example `@/features/alchemy/shared/stores/run-se
 
 ## Run state
 
-Gameplay state has one authoritative nested Zustand aggregate in `shared/stores/gameplay-state-store.ts`. Its `run`, `session`, `battle`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state; action groups sit beside those objects so commands cannot accidentally read or write another domain's fields. Lifetime-matched compatibility slices project those nested domains for event-time and persistence bridges, but hold no independent state or revisions.
+Gameplay state has one authoritative nested Zustand aggregate in `shared/stores/gameplay-state-store.ts`. Its `run`, `session`, `battle`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state; action groups sit beside those objects so commands cannot accidentally read or write another domain's fields. The former run-lifetime stores and aggregate query projection are removed. `profile-store.ts` and `gear-store.ts` remain thin aggregate-backed persistence/adapter modules for their established external contracts; they do not own shadow state. The capability ports are the feature-facing seams.
 
-| Compatibility slice       | Concern                                                                                 | Lifetime                                            |
-| ------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `run-domain-store`        | `activeRun` (deck, gold, HP, acts, trinkets, RNG, tallies), `navigation`, `initialized` | Reset by run teardown; `initialized` is boot-scoped |
-| `run-profile-store`       | Homestead, talent XP / unlocks, derived `effects`                                       | Meta lifetime; survives teardown                    |
-| `run-transient-store`     | Rewards, shops, labyrinth, mystery, pending selections, run-flow claims                 | Transient per run                                   |
-| `run-battle-domain-store` | Combat snapshot, battle-start state, display overrides                                  | Transient per battle                                |
+| Aggregate region | Concern                                                                      | Lifetime              |
+| ---------------- | ---------------------------------------------------------------------------- | --------------------- |
+| `run`            | Active-run progression and navigation (`activeRun`, `initialized`, `screen`) | Reset by run teardown |
+| `session`        | Rewards, shops, labyrinth, mystery, pending selections, and run-flow claims  | Transient per run     |
+| `battle`         | Combat snapshot, battle-start state, and display overrides                   | Transient per battle  |
+| `runProfile`     | Homestead, talent XP / unlocks, and derived effects                          | Meta lifetime         |
+| `profile`        | Compendium discoveries and collection browsing state                         | Profile lifetime      |
+| `gear`           | Permanent inventories, loadouts, board positions, and crafting currencies    | Profile lifetime      |
 
-Cross-concern writes go through ports in `shared/stores/ports/` (`run-domain-write-port`, `run-profile-write-port`, `run-session-setup-port`, reward / shop / labyrinth / mystery ports); multi-concern lifecycle orchestration is exposed through `run-session-lifecycle-port.ts`. Canonical imperative queries live in `run-session-queries.ts`; its action-bearing projections are store-internal implementation views. Feature-facing read ports (`run-session-read-port`, `profile-port`, and the React ports) are data-only, while command-backed write ports own every gameplay mutation. React orchestration uses narrow ports from `run-session-react-ports.ts` such as `useRunFlowRunPort`, `useBattleRunPort`, and `useTalentCommandPort`; screens use exact screen-data hooks. Profile reads and imperative active-run/session/battle reads are separate capability ports, so no caller receives a cross-lifetime flattened view.
+Cross-concern writes go through ports in `shared/stores/ports/` (`run-domain-write-port`, `run-profile-write-port`, `run-session-setup-port`, reward / shop / labyrinth / mystery ports); multi-concern lifecycle orchestration is exposed through `run-session-lifecycle-port.ts`. Feature-facing read ports (`run-session-read-port`, `profile-port`, and the React ports) are data-only, while command-backed write ports own every gameplay mutation. React orchestration uses narrow ports from `run-session-react-ports.ts` such as `useRunFlowRunPort`, `useBattleRunPort`, and `useTalentCommandPort`; screens use exact screen-data hooks. Profile reads and imperative active-run/session/battle reads are separate capability ports, so no caller receives a cross-lifetime flattened view.
 
-Gameplay mutation callers enter the session through `dispatchRunSessionCommand()` from `run-session-command.ts`. The command boundary opens an Immer draft of the authoritative aggregate, publishes one root revision on success, and discards the draft on failure. `useRunSessionCommitStore` is now a compatibility projection over that root (it stores no shadow copy), so React selectors and autosave cannot observe mixed revisions. Settings and presentation-only state remain separate. Commands are synchronous and must not span an `await`; audio, navigation timers, presentation updates, and other non-rollbackable work use the command's `afterCommit` option or run after the command returns. Nested commands defer their effects until the outer commit, and discard them if any nested work fails. Projection and persistence adapters may subscribe to the aggregate commit signal directly; gameplay callers must not.
+Gameplay mutation callers enter the session through `dispatchRunSessionCommand()` from `run-session-command.ts`. The command boundary opens an Immer draft of the authoritative aggregate, publishes one root revision on success, and discards the draft on failure. React selectors and autosave subscribe to that same root; there is no committed compatibility snapshot to drift from it. Settings and presentation-only state remain separate. Commands are synchronous and must not span an `await`; audio, navigation timers, presentation updates, and other non-rollbackable work use the command's `afterCommit` option or run after the command returns. Nested commands defer their effects until the outer commit, and discard them if any nested work fails. Persistence adapters may subscribe to the aggregate commit signal directly; gameplay callers must not.
 
 Battle reads are data-only: `run-session-read-port.ts` does not expose aggregate mutators. Battle writes use focused commands from `run-session-write-port.ts`, which preserve the synchronous command boundary even when called from an existing command. An asynchronous battle transition that changes logical state must persist its continuation in `activeCombat.pendingBattleTransition` in the same commit as its intermediate state. Presentation delays and display overrides may continue after that commit, but a booted battle must never depend on an in-memory promise or timer to become playable.
 
@@ -43,44 +45,44 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 
 | Concern                             | Owner                                                  | Notes                                    |
 | ----------------------------------- | ------------------------------------------------------ | ---------------------------------------- |
-| Deck, gold, HP, acts, trinkets      | `run-domain-store.activeRun`                           | Persisted inside `activeRun`             |
-| Homestead + permanent talents       | `run-profile-store`                                    | Persisted as top-level save fields       |
-| Rewards, shops, labyrinth, mystery  | `run-transient-store`                                  | Transient per run                        |
-| Current `Screen`                    | `run-domain-store.navigation`                          | `useActiveRunScreen()`                   |
-| Combat snapshot + display overrides | `run-battle-domain-store`                              | Synced during battle                     |
+| Deck, gold, HP, acts, trinkets      | `gameplay-state-store.run.activeRun`                   | Persisted inside `activeRun`             |
+| Homestead + permanent talents       | `gameplay-state-store.runProfile`                      | Persisted as top-level save fields       |
+| Rewards, shops, labyrinth, mystery  | `gameplay-state-store.session`                         | Transient per run                        |
+| Current `Screen`                    | `gameplay-state-store.run.navigation`                  | `useActiveRunScreen()`                   |
+| Combat snapshot + display overrides | `gameplay-state-store.battle`                          | Synced during battle                     |
 | Battle VFX                          | `battle-presentation-store`                            | Not persisted                            |
 | Lifecycle                           | `run-session-lifecycle-port.ts` → `run-transitions.ts` | Restore, snapshot, teardown, battle sync |
 
 ### Persistence API
 
-| API                                    | Role                                                     |
-| -------------------------------------- | -------------------------------------------------------- |
-| `createActiveRunSnapshot(source)`      | Serialize explicit fields → `ActiveRunData` (lib)        |
-| `encodeRunResumeSnapshot(source)`      | Translate the committed run projection → `ActiveRunData` |
-| `decodeRunResumeSnapshot(data)`        | Translate `ActiveRunData` → transient resume projection  |
-| `snapshotRun(screen?)`                 | Read the committed run projection through the codec      |
-| `restoreRun(…)`                        | Apply the decoded snapshot on boot/resume                |
-| `parseActiveRun(raw)`                  | Validate JSON before hydrate                             |
-| `activeCombat.pendingBattleTransition` | Resume an interrupted enemy-turn continuation            |
-| Domain persistence codecs              | Own defaults, encode, hydrate, and subscriptions         |
-| Persistence coordinator                | Compose domain fields into the versioned envelope        |
+| API                                    | Role                                                 |
+| -------------------------------------- | ---------------------------------------------------- |
+| `createActiveRunSnapshot(source)`      | Serialize explicit fields → `ActiveRunData` (lib)    |
+| `encodeRunResumeSnapshot(source)`      | Translate aggregate run fields → `ActiveRunData`     |
+| `decodeRunResumeSnapshot(data)`        | Translate `ActiveRunData` → aggregate session fields |
+| `snapshotRun(screen?)`                 | Read aggregate run state through the codec           |
+| `restoreRun(…)`                        | Apply the decoded snapshot on boot/resume            |
+| `parseActiveRun(raw)`                  | Validate JSON before hydrate                         |
+| `activeCombat.pendingBattleTransition` | Resume an interrupted enemy-turn continuation        |
+| Domain persistence codecs              | Own defaults, encode, hydrate, and subscriptions     |
+| Persistence coordinator                | Compose domain fields into the versioned envelope    |
 
 ### Session capability ports
 
 - **Reads (imperative):** `run-session-read-port.ts` exposes data-only `readActiveRun()`, `readRunProfile()`, `readRunSession()`, and `readBattle()` — for handlers, lifecycle, and non-React code
-- **Reads (React, screen-scoped):** screen-specific hooks in `use-run-screen-data.ts` (for example `useShopScreenData`, `useRewardsScreenData`, and `useGameOverScreenData`) — each hook selects from the committed `useRunSessionCommitStore` projection and returns only its route's exact display contract
-- **Reads (React, orchestration):** `useRunSessionNavigationSlice(screen)`, `useRunSessionBattleContext(screen)` from `run-session-model.ts` — both read the same committed projection; do not mirror screen display fields
-- **Reads (React, meta/setup):** focused selectors and narrow orchestration ports from `run-session-react-ports.ts` (`useHomesteadProgressSlice`, `useTalentProgressSlice`, `useDraftDeckSlice`, `useRunFlowRunPort`, `useBattleRunPort`, `useTalentCommandPort`, …); these select from the committed projection and expose only the fields needed by one owner
+- **Reads (React, screen-scoped):** screen-specific hooks in `use-run-screen-data.ts` (for example `useShopScreenData`, `useRewardsScreenData`, and `useGameOverScreenData`) — each hook selects directly from the aggregate and returns only its route's exact display contract
+- **Reads (React, orchestration):** `useRunSessionNavigationSlice(screen)`, `useRunSessionBattleContext(screen)` from `run-session-model.ts` — both select directly from the aggregate; do not mirror screen display fields
+- **Reads (React, meta/setup):** focused selectors and narrow orchestration ports from `run-session-react-ports.ts` (`useHomesteadProgressSlice`, `useTalentProgressSlice`, `useDraftDeckSlice`, `useRunFlowRunPort`, `useBattleRunPort`, `useTalentCommandPort`, …); these select from the aggregate and expose only the fields needed by one owner
 - **Writes:** `dispatchRunSessionCommand`, command-backed `run-domain-write-port`, `setRewardState`, `setShopState`, labyrinth/mystery setters, etc. Port mutators that accept a functional update (`value | (previous) => next`) use an `update*` prefix (`updateRunDeck`, `updateCurrentAct`) to distinguish them from plain-value `set*` setters (`setScreen`, `setCharacter`); both are command-backed wrappers that re-read committed state and are safe to call from event-time handlers.
 - **Battle writes:** `setBattleState`, `beginBattleTransition`, `commitBattleTransition`, and related commands from `run-session-write-port.ts`; `readBattle()` is intentionally data-only
 - **Hooks:** `useActiveRunScreen()`, screen-specific display hooks, and the navigation/battle context slices above
 - **Lifecycle:** `run-session-lifecycle-port.ts` owns the public lifecycle seam over `run-transitions.ts`
 - **Ports:** focused write modules own reward / shop / labyrinth / mystery setters plus profile and run-setup writers
-- **Composed views:** `run-session-queries.ts` owns lifetime-matched aggregate projections used by store internals, event-time commands, and persistence; its action-free read projections are exposed through `run-session-read-port.ts`. `run-session-react-ports.ts` owns narrow React ports, and command-backed write ports own mutation capabilities. There is no compatibility facade or cross-lifetime flattened read model. `run-domain-store` owns only the nested run domain projection + lifetime reset
+- **Composed views:** there is no all-domain projection module. `run-session-read-port.ts` exposes action-free lifetime reads, `run-session-react-ports.ts` owns narrow React ports, and command-backed write ports own mutation capabilities. `run-session-transaction.ts` only coordinates atomic aggregate commits; it does not publish a second read store.
 
 **Do not add** a broad all-screens display bag or a second flattening read model. Each route owns its exact screen-specific hook; the shared `RunScreenDataByScreen` map in `run-screen-data.ts` keeps those contracts explicit. Controllers own **commands** (assembled by `shell/create-route-commands.ts`); screen routes own **display data** via their specific hooks. The asset preloader uses the intentionally small `useScreenAssetPreloadData` projection because it spans several possible screens. App chrome / autosave / particles read via capability hooks (`useActiveRunCharacterId`, `useTalentProgressSlice`, `useRunSessionBattleContext`, …), not controller display re-exports. Imperative handlers read lifetime-specific ports (`readActiveRun`, `readRunProfile`, `readRunSession`, `readBattle`) at call time; they do not receive a React controller data bus. Battle uses controller `battleBindings` props (intentional exception) and takes narrow `BattleRunPort` / `BattleTalentPort` inputs. Run-flow handlers take narrow `RunFlowRunPort` / `RunFlowTalentPort`, dispatch intents to the shell, and use typed `RunFlowContinuation` values for cross-concern transitions; the shell executes intents via `createRunFlowIntentExecutor` (navigate, shops, battle starts, content hooks). Active-run core fields shared by committed session reads come from `pickActiveRunSessionCoreFields` in `run-state-init.ts`.
 
-Boot: [`use-alchemy-run-controller.ts`](../src/features/alchemy/shell/use-alchemy-run-controller.ts) calls the canonical `restoreRun` transition in `useLayoutEffect`. `restoreRun` is the only runtime hydration path. `run-resume-codec.ts` is the single feature-owned translation boundary for save/resume state; `restore-active-run-session.ts` only applies its decoded projection to the transient store, so autosave and boot hydration cannot grow separate field mappings. The mega-controller is a thin composer: domain controllers + `createAlchemyRouteCommands` + `battleBindings`.
+Boot: [`use-alchemy-run-controller.ts`](../src/features/alchemy/shell/use-alchemy-run-controller.ts) calls the canonical `restoreRun` transition in `useLayoutEffect`. `restoreRun` is the only runtime hydration path. `run-resume-codec.ts` is the single feature-owned translation boundary for save/resume state; `restore-active-run-session.ts` only applies its decoded session fields through the aggregate session action group, so autosave and boot hydration cannot grow separate field mappings. The mega-controller is a thin composer: domain controllers + `createAlchemyRouteCommands` + `battleBindings`.
 
 ### Run phase
 
@@ -123,10 +125,10 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 
 - `settings-store` owns display, audio, and gameplay preferences. It does not contain gameplay progression.
 - `profile-store` owns compendium discoveries, completed difficulties, finished-run characters, and transient collection browsing state.
-- `run-profile-store` owns homestead and talent progression. Run reward finalization writes through `run-profile-write-port` and lifecycle ports — do not merge this into `profile-store`.
+- `gameplay-state-store.runProfile` owns homestead and talent progression. Run reward finalization writes through `run-profile-write-port` and lifecycle ports — do not merge this into `profile`.
 - `gear-store` owns the permanent Gear subdomain and its invariants.
 
-Each persistence owner exposes a codec beside its compatibility slice. The codec owns that domain's save-field contract, defaults, encoding, and hydration. `shared/storage/persistence-coordinator.ts` composes those codecs and subscribes to the settings codec plus the aggregate commit signal; it contains no field-by-field store mapping. Feature code uses the owning capability port.
+Each persistence owner exposes a codec beside its aggregate region. The codec owns that domain's save-field contract, defaults, encoding, and hydration. `shared/storage/persistence-coordinator.ts` composes those codecs and subscribes to the settings codec plus the aggregate commit signal; it contains no field-by-field store mapping. Feature code uses the owning capability port.
 
 ## Permanent Gear (`gear-store`)
 
@@ -138,7 +140,7 @@ Each Gear instance may be equipped on at most one character at a time (one slot 
 
 ## Types
 
-Aggregate fields and action wiring live in `gameplay-state-store.ts`; lifetime compatibility slices live in `run-domain-store.ts`, `run-profile-store.ts`, `run-transient-store.ts`, `run-battle-domain-store.ts`, `profile-store.ts`, and `gear-store.ts`. The single aggregate-to-imperative projection lives in `run-session-queries.ts`; action-free feature reads live in `run-session-read-port.ts` and command-backed mutations live in `run-session-write-port.ts` / its focused ports. React orchestration ports live in `run-session-react-ports.ts` and `run-port-types.ts`. Exact screen display contracts live in `run-screen-data.ts` (`RunScreenDataByScreen`); screen-specific React selectors live in `use-run-screen-data.ts` — do not recreate a broad all-screen bag or parallel flatten twin. `run-session-transaction.ts` reuses the canonical query projection for its committed snapshot, backed directly by the nested aggregate root. Gameplay mutations use the command boundary in `run-session-command.ts`; only projection/persistence adapters and that command implementation should depend on the transaction implementation. Active-run field init and flatten helpers live in `shared/stores/run-state-init.ts` (`pickActiveRunSessionCoreFields` is the shared core block for committed session reads). Fresh-run snapshots live in `shared/run-flow/run-start.ts` (consumed by run-setup and stores). Feature code imports narrow ports, commands, reads, writes, and lifecycle directly from their owning modules.
+Aggregate fields and action wiring live in `gameplay-state-store.ts`; action-free feature reads live in `run-session-read-port.ts` and command-backed mutations live in `run-session-write-port.ts` / its focused ports. React orchestration ports live in `run-session-react-ports.ts` and `run-port-types.ts`. Exact screen display contracts live in `run-screen-data.ts` (`RunScreenDataByScreen`); screen-specific React selectors live in `use-run-screen-data.ts` — do not recreate a broad all-screen bag or parallel flatten twin. `run-session-transaction.ts` is only the atomic commit coordinator over the nested aggregate root. Gameplay mutations use the command boundary in `run-session-command.ts`; only persistence adapters and that command implementation should depend on the transaction implementation. Active-run field init and flatten helpers live in `shared/stores/run-state-init.ts` (`pickActiveRunSessionCoreFields` is the shared core block for committed session reads). Fresh-run snapshots live in `shared/run-flow/run-start.ts` (consumed by run-setup and the aggregate). Feature code imports narrow ports, commands, reads, writes, and lifecycle directly from their owning modules.
 
 ## Import boundaries
 
@@ -170,8 +172,9 @@ One loading experience at cold start, then instant navigation — no per-route "
 
 Path-specific commands: [CONTRIBUTING.md § What to run](../CONTRIBUTING.md#what-to-run-when-you-change). CI parity: [CONTRIBUTING.md § CI parity](../CONTRIBUTING.md#ci-parity).
 
-| Tier      | Command                      |
-| --------- | ---------------------------- |
-| Unit      | `npm test`                   |
-| Pre-push  | `npm run test:e2e:prepush`   |
-| Full gate | `npm run test:e2e:main-gate` |
+| Tier         | Command                         |
+| ------------ | ------------------------------- |
+| Unit         | `npm test`                      |
+| Local fast   | `npm run check:push`            |
+| CI critical  | `npm run test:e2e:prepush:full` |
+| Broader/full | `npm run test:e2e:full`         |

@@ -5,7 +5,7 @@ import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-st
 import type { ActiveRunProgressFields } from "@/features/alchemy/shared/stores/run-state-init";
 import type { RunRngStream } from "@/lib/run-rng";
 
-/** Active-run scoped progression actions. Permanent progression lives on run-profile-store. */
+/** Active-run scoped progression actions. Permanent progression lives on the aggregate's runProfile region. */
 export interface ProgressActions {
   setRunDeck: (action: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
   setRunGold: (action: number | ((prev: number) => number)) => void;

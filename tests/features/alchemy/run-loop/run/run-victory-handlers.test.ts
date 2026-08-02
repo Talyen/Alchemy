@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { addRunMaterialsEarned } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { useRunProfileStore } from "@/features/alchemy/shared/stores/run-profile-store";
+import { useRunProfileStore } from "../../../../helpers/gameplay-store-test";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import {

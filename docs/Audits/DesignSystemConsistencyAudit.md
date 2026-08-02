@@ -1,12 +1,12 @@
 # Design System Consistency Audit
 
-**Goal:** Find custom sizing, layout, typography, and color patterns that diverge from existing shared UI primitives and design tokens, then migrate identified custom patterns toward those owners without losing justified game UI.
+**Goal:** Find visual and interaction-state patterns that diverge from existing shared UI primitives, semantic roles, and design tokens, then migrate coherent surface families toward those owners without losing justified game UI.
 
 Token / primitive owners: `src/components/ui/README.md`, `src/features/alchemy/shared/ui/README.md`, `src/styles/theme.css` (+ `src/index.css` / `src/styles/*.css` for CSS variables).
 
 ## Intent
 
-Inventory custom vs tokenized vs justified-custom, then migrate confirmed drift toward existing shared primitives and CSS variables. Add a shared token/helper only for at least three current uses, and only when removing call-site surface outweighs the new API; otherwise simplify locally. If the scope is large, phase the plan.
+Inventory custom vs tokenized vs justified-custom across complete UI families, then migrate confirmed drift toward existing shared primitives and CSS variables. Include responsive rules, elevation, density, focus/disabled/error states, motion roles, and icon treatment when they are part of the same visual system. Add a shared token/helper for at least three current uses, two demonstrated drifting implementations, or an enforced design-system boundary, and only when removing call-site surface outweighs the new API; otherwise simplify locally. If the scope is large, phase the plan.
 
 **Principles:** one spacing/color scale; delete parallel one-off systems; reuse `src/components/ui` and `shared/ui` before inventing new chrome; don’t invent a second visual language beside the established game UI.
 
@@ -15,17 +15,20 @@ Inventory custom vs tokenized vs justified-custom, then migrate confirmed drift 
 - Do not rewrite battle battlefield / hand layout unsupervised in one pass — include a scoped migration phase if that is part of the plan.
 - Do not replace intentional game juice: combat float text, card fan, Armory drag ghosts, Motion stagger recipes.
 - Do not hand-roll buttons/inputs that already exist in `src/components/ui`.
+- Do not stop a coherent migration at one literal when sibling surfaces implement the same semantic role; inspect and, when justified, migrate the complete family.
 
 ## Triage
 
-| Priority | Cluster                    | Typical signal                                         | Preferred remediation                                       |
-| -------- | -------------------------- | ------------------------------------------------------ | ----------------------------------------------------------- |
-| 1        | Spacing / padding literals | Raw `p-[13px]` / magic numbers next to existing tokens | Map to theme spacing / shared classes                       |
-| 1        | Duplicated chrome          | Same card/frame/badge markup in 3+ files               | Shared UI component                                         |
-| 2        | One-off colors             | Raw hex / `rgb()` bypassing CSS variables              | Adopt theme tokens                                          |
-| 2        | Typography roles unused    | Ad-hoc font sizes where a shared text style exists     | Adopt shared typography classes                             |
-| 3        | Justified custom layout    | Battle hand fan, Armory board packing                  | Extract constants / small helper; **keep** product behavior |
-| 3        | Competing size rules       | Multiple undocumented min-widths for the same chrome   | One documented rule in a shared layout helper               |
+| Priority | Cluster                    | Typical signal                                                                           | Preferred remediation                                       |
+| -------- | -------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 1        | Spacing / padding literals | Raw `p-[13px]` / magic numbers next to existing tokens                                   | Map to theme spacing / shared classes                       |
+| 1        | Duplicated chrome          | Same card/frame/badge markup in 3+ files                                                 | Shared UI component                                         |
+| 2        | One-off colors             | Raw hex / `rgb()` bypassing CSS variables                                                | Adopt theme tokens                                          |
+| 2        | Typography roles unused    | Ad-hoc font sizes where a shared text style exists                                       | Adopt shared typography classes                             |
+| 3        | Justified custom layout    | Battle hand fan, Armory board packing                                                    | Extract constants / small helper; **keep** product behavior |
+| 3        | Competing size rules       | Multiple undocumented min-widths for the same chrome                                     | One documented rule in a shared layout helper               |
+| 2        | State-role drift           | Focus, disabled, error, selected, or loading states disagree across one component family | Adopt the existing semantic variant or primitive            |
+| 2        | Responsive / motion drift  | Same surface family changes density, breakpoint, or transition behavior inconsistently   | Consolidate under the established responsive or motion role |
 
 **Leave alone (justified custom):** fanned battle hand + drag-to-play; Armory drag FSM / packing; combat float motion; health-bar geometry fills; intentional Motion recipes.
 
@@ -45,3 +48,6 @@ Optional discovery aids — choose your own probes.
 - **Parallel button/card markup:** custom button-looking `div`/`button` stacks beside existing `Button` / card primitives.
 - **Duplicated empty-state / panel chrome:** copy-pasted panel shells — if structural twins dominate, also consider `DuplicateFeatureSurfaceAudit.md`.
 - **Inline shadow/border recipes:** repeated one-off shadow stacks where a shared class exists.
+- **Semantic state drift:** parallel controls render focus, selected, disabled, loading, or error states with incompatible roles.
+- **Responsive and motion roles:** sibling surfaces use conflicting breakpoints, densities, easing, or durations where an established role exists.
+- **Icon treatment:** inconsistent size, alignment, stroke, or label spacing for the same action family.

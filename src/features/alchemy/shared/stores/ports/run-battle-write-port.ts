@@ -4,13 +4,13 @@ import type { BattleState } from "@/lib/battle";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import type { DisplayOverrides } from "../run-domain-types";
 import { dispatchRunSessionCommand } from "../run-session-command";
-import { createRunSessionStoreSnapshot } from "../run-session-queries";
+import { readGameplayState, type GameplayState } from "../gameplay-state-store";
 
 type BattleStateUpdate = BattleState | ((previous: BattleState) => BattleState);
-type BattleStore = ReturnType<typeof createRunSessionStoreSnapshot>["battle"];
+type BattleActions = GameplayState["battleActions"];
 
-function dispatchBattleCommand<T>(work: (battle: BattleStore) => T): T {
-  return dispatchRunSessionCommand(() => work(createRunSessionStoreSnapshot().battle));
+function dispatchBattleCommand<T>(work: (battle: BattleActions) => T): T {
+  return dispatchRunSessionCommand(() => work(readGameplayState().battleActions));
 }
 
 export function setBattleState(action: BattleStateUpdate): void {

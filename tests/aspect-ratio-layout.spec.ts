@@ -53,6 +53,26 @@ const RESOLUTIONS = [
 
 const CARD_VIEWPORT_TOLERANCE_PX = 12;
 const CARD_VIEWPORT_TOLERANCE_RATIO = 0.015;
+const STAGE_VIEWPORT_INSET_PX = 16;
+
+async function assertStageFitsViewportInset(page: import("@playwright/test").Page) {
+  const bounds = await page.getByTestId("vr-stage").evaluate((stage) => {
+    const rect = stage.getBoundingClientRect();
+    return {
+      top: rect.top,
+      right: rect.right,
+      bottom: rect.bottom,
+      left: rect.left,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+    };
+  });
+
+  expect(bounds.top).toBeGreaterThanOrEqual(STAGE_VIEWPORT_INSET_PX - 1);
+  expect(bounds.left).toBeGreaterThanOrEqual(STAGE_VIEWPORT_INSET_PX - 1);
+  expect(bounds.right).toBeLessThanOrEqual(bounds.viewportWidth - STAGE_VIEWPORT_INSET_PX + 1);
+  expect(bounds.bottom).toBeLessThanOrEqual(bounds.viewportHeight - STAGE_VIEWPORT_INSET_PX + 1);
+}
 
 for (const { width, height, label } of RESOLUTIONS) {
   test.describe(`${label}`, slow, () => {
@@ -62,6 +82,7 @@ for (const { width, height, label } of RESOLUTIONS) {
       await page.goto("/");
       await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
       await assertNoOverflow(page, "Menu");
+      await assertStageFitsViewportInset(page);
     });
 
     test("character-select screen fits viewport without overflow", async ({ page }) => {
@@ -103,6 +124,26 @@ for (const { width, height, label } of RESOLUTIONS) {
   });
 }
 
+const MACBOOK_VIEWPORTS = [
+  { width: 1512, height: 982, label: "1512x982" },
+  { width: 1728, height: 1117, label: "1728x1117" },
+  { width: 2560, height: 1600, label: "2560x1600" },
+] as const;
+
+test.describe("MacBook and 16:10 stage fitting", slow, () => {
+  for (const { width, height, label } of MACBOOK_VIEWPORTS) {
+    test(`${label} keeps the auto stage inside the viewport inset`, async ({ page }) => {
+      await setAspectRatio(page, "auto");
+      await page.setViewportSize({ width, height });
+      await page.goto("/");
+      await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
+
+      await assertNoOverflow(page, `Menu ${label}`);
+      await assertStageFitsViewportInset(page);
+    });
+  }
+});
+
 function isIdentityTransform(transform: string): boolean {
   if (transform === "none") return true;
   const scaleMatch = transform.match(/^scale\(([^)]+)\)/);
@@ -113,7 +154,7 @@ function isIdentityTransform(transform: string): boolean {
 }
 
 test.describe("Ultra HD 3840x2160 (4K) additional checks", slow, () => {
-  test("stage uses native resolution (no CSS transform scaling)", async ({ page }) => {
+  test("stage uniformly scales fixed-size and container-relative UI", async ({ page }) => {
     await setAspectRatio(page, "16:9");
     await page.setViewportSize({ width: 3840, height: 2160 });
     await page.goto("/");
@@ -123,10 +164,38 @@ test.describe("Ultra HD 3840x2160 (4K) additional checks", slow, () => {
     await expect(stage).toBeVisible();
 
     const transform = await stage.evaluate((el) => window.getComputedStyle(el).transform);
-    expect(isIdentityTransform(transform)).toBe(true);
+    expect(isIdentityTransform(transform)).toBe(false);
 
     const pixelRatio = Number(await stage.getAttribute("data-stage-pixel-ratio"));
-    expect(pixelRatio).toBeGreaterThan(1);
+    expect(pixelRatio).toBe(1);
+
+    const fixedUiMetrics = await page.getByRole("button", { name: "Play" }).evaluate((button) => ({
+      rootFontSize: parseFloat(window.getComputedStyle(document.documentElement).fontSize),
+      buttonWidth: button.getBoundingClientRect().width,
+      stageTransformScale: new DOMMatrixReadOnly(
+        window.getComputedStyle(document.querySelector('[data-testid="vr-stage"]')!).transform,
+      ).a,
+    }));
+    expect(fixedUiMetrics.rootFontSize).toBe(16);
+    expect(fixedUiMetrics.buttonWidth).toBeCloseTo(
+      14 * fixedUiMetrics.rootFontSize * fixedUiMetrics.stageTransformScale,
+      0,
+    );
+    await assertStageFitsViewportInset(page);
+  });
+});
+
+test.describe("high-DPR layout", () => {
+  test.use({ deviceScaleFactor: 2, viewport: { width: 1512, height: 982 } });
+
+  test("uses CSS viewport dimensions without double-scaling for DPR", async ({ page }) => {
+    await setAspectRatio(page, "auto");
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
+
+    expect(await page.evaluate(() => window.devicePixelRatio)).toBe(2);
+    expect(Number(await page.getByTestId("vr-stage").getAttribute("data-stage-pixel-ratio"))).toBe(1);
+    await assertStageFitsViewportInset(page);
   });
 });
 

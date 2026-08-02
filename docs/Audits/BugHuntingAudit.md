@@ -4,20 +4,21 @@
 
 ## Intent
 
-Confirm candidate defects and fix them. A pass with no confirmed defect is successful. Do not re-run sibling audits’ full suites; defer P4/P5 by default. Significant structural remedies are proposals per [README.md](README.md). If the scope is large, phase the plan.
+Confirm candidate defects and fix them. A pass with no confirmed defect is successful. Do not re-run sibling audits’ unrelated full suites; defer P4/P5 by default. Bounded structural remedies may ship under [README.md](README.md); new architecture or product decisions remain proposals. If the scope is large, phase the plan.
 
-**Default discovery mode:** hunt the diff. On a repeat cadence, review commits since the last pass (`git log`/`git diff` on authored paths) for defects introduced or exposed by recent work — that is the highest-yield surface. Whole-repo signal greps are the secondary, periodic mode.
+**Default discovery mode:** start with recent changes, then inspect one rotating high-risk subsystem or invariant family. Review commits since the last pass (`git log`/`git diff` on authored paths) for defects introduced or exposed by recent work, follow confirmed candidates through their causal neighborhoods, and perform a deeper slice such as persistence/resume, battle transitions, reward/shop mutation, routing, or desktop lifecycle. Whole-repo signal greps remain a secondary, periodic mode.
 
-This is an **opportunistic defect hunt**. When a hit is clearly owned by a sibling (idempotency → `BehaviorHardeningAudit.md`, lifetime/IPC → `AsyncRaceAudit.md`, unused API → `DeadCodeAudit.md`), hand off rather than duplicating that audit’s full pass.
+This is an **opportunistic defect hunt**. When a hit is clearly classified by a sibling (idempotency → `BehaviorHardeningAudit.md`, lifetime/IPC → `AsyncRaceAudit.md`, unused API → `DeadCodeAudit.md`), do not duplicate that sibling's unrelated full pass. A connected defect may still be fixed here under the companion-finding policy in [README.md](README.md).
 
 ## Hard stops
 
-- Do not rename/restyle or opportunistically refactor unrelated code. Fix the confirmed bug’s root cause; larger structural remedies are proposals, not unsupervised rewrites.
+- Do not rename/restyle or opportunistically refactor unrelated code. Fix the confirmed bug’s complete root cause; bounded structural remedies may ship under [README.md](README.md), while new architecture or product decisions remain proposals.
 - Do not expand into speculative backlog or touch manifests/assets/audio unless they directly cause the confirmed defect.
 
 ## Confirmation policy
 
 - **Auto-fix** P0–P2 correctness bugs (crashes, data loss, double grants, stuck state, clear wrong behavior).
+- **Fix P3 when causal:** missing diagnostics or recovery may be included when it obscures or perpetuates a confirmed higher-impact defect. Otherwise skip it unless trivial.
 - **Skip and note** balance retunes, player-facing copy/layout design choices, or ambiguous product intent — do not block waiting for answers.
 - Never ask about naming, file structure, or obvious internal guards.
 
@@ -42,3 +43,7 @@ Optional discovery aids — choose your own probes.
 - **Arithmetic underflow:** unchecked `gold - cost`, `hp - damage` paths that can leave negative progress values without `Math.max(0, …)`.
 - **Swallowed errors on orchestration:** empty `catch` on save, resume, battle end, or navigation transitions (allow non-fatal audio).
 - **Stale async completion:** `await` after unmount that still calls `setState` / store writes — route to `AsyncRaceAudit.md` when that is the bulk of the win.
+- **State-machine invariants:** impossible or stuck combinations across navigation, targeting, rewards, shops, victory/defeat, and resume.
+- **Round-trip divergence:** save → reload, serialize → parse, or web → Electron behavior does not preserve the same valid state.
+- **Boundary values:** empty catalogs/decks, maximum upgrades, exhausted options, missing route targets, or stale identifiers violate assumptions.
+- **Cross-feature mismatch:** one subsystem changes an invariant that another consumer still interprets under the old rule.

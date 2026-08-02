@@ -75,6 +75,7 @@ export function UiScaleSelect({
       <label htmlFor="ui-scale" className="block text-sm font-semibold text-foreground">
         UI Scale
       </label>
+      <p className="mt-1 text-sm text-muted-foreground">Adjusts text and fixed-size controls.</p>
       <Select value={uiScale} onValueChange={(value) => onChange(value as UiScale)}>
         <SelectTrigger id="ui-scale" className="mt-3">
           <SelectValue />

@@ -3,56 +3,56 @@ import { getDifficultyXPMultiplier } from "@/lib/game-data";
 import type { CompanionId, KeywordId } from "@/lib/game-data";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import { dispatchRunSessionCommand } from "../run-session-command";
-import { createRunSessionStoreSnapshot } from "../run-session-queries";
+import { readGameplayState } from "../gameplay-state-store";
 
 /** Persist homestead materials and track totals for the run-end summary screen. */
 export function awardMaterialsDuringRun(materials: MaterialInventory) {
   dispatchRunSessionCommand(() => {
-    const session = createRunSessionStoreSnapshot();
-    session.runProfile.addMaterials(materials);
-    session.domain.addRunMaterialsEarned(materials);
+    const session = readGameplayState();
+    session.runProfileActions.addMaterials(materials);
+    session.runActions.addRunMaterialsEarned(materials);
   });
 }
 
 /** Dev / unlock-all: overwrite homestead materials. */
 export function setMaterials(materials: MaterialInventory) {
-  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().runProfile.setMaterials(materials));
+  return dispatchRunSessionCommand(() => readGameplayState().runProfileActions.setMaterials(materials));
 }
 
 export function addMaterials(materials: MaterialInventory): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().runProfile.addMaterials(materials));
+  dispatchRunSessionCommand(() => readGameplayState().runProfileActions.addMaterials(materials));
 }
 
 export function constructBuilding(id: BuildingId): boolean {
-  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().runProfile.constructBuilding(id));
+  return dispatchRunSessionCommand(() => readGameplayState().runProfileActions.constructBuilding(id));
 }
 
 export function plantFarm(id: FarmId): boolean {
-  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().runProfile.plantFarm(id));
+  return dispatchRunSessionCommand(() => readGameplayState().runProfileActions.plantFarm(id));
 }
 
 export function completeResearch(id: ResearchId): boolean {
-  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().runProfile.completeResearch(id));
+  return dispatchRunSessionCommand(() => readGameplayState().runProfileActions.completeResearch(id));
 }
 
 export function bondCompanion(id: CompanionId): boolean {
-  return dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().runProfile.bondCompanion(id));
+  return dispatchRunSessionCommand(() => readGameplayState().runProfileActions.bondCompanion(id));
 }
 
 export function unlockTalent(keywordId: KeywordId, talentId: string): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().runProfile.unlockTalent(keywordId, talentId));
+  dispatchRunSessionCommand(() => readGameplayState().runProfileActions.unlockTalent(keywordId, talentId));
 }
 
 export function resetUnlockedTalents(): void {
-  dispatchRunSessionCommand(() => createRunSessionStoreSnapshot().runProfile.resetUnlockedTalents());
+  dispatchRunSessionCommand(() => readGameplayState().runProfileActions.resetUnlockedTalents());
 }
 
 /** Dev unlock-all: max every talent and drop pending run XP so run-end cannot merge on top. */
 export function unlockAllTalents() {
   dispatchRunSessionCommand(() => {
-    const session = createRunSessionStoreSnapshot();
-    session.runProfile.unlockAllTalents();
-    session.domain.resetRunXP();
+    const session = readGameplayState();
+    session.runProfileActions.unlockAllTalents();
+    session.runActions.resetRunXP();
   });
 }
 
@@ -63,16 +63,16 @@ export function unlockAllTalents() {
  */
 export function finalizeRunXP(): void {
   dispatchRunSessionCommand(() => {
-    const session = createRunSessionStoreSnapshot();
-    const domain = session.domain;
-    const transient = session.transient;
-    const runTalentXP = domain.activeRun.runTalentXP;
+    const session = readGameplayState();
+    const runTalentXP = session.run.activeRun.runTalentXP;
     if (Object.keys(runTalentXP).length === 0) {
-      transient.setRunEndTalentXP({});
+      session.sessionActions.setRunEndTalentXP({});
       return;
     }
-    const multiplier = getDifficultyXPMultiplier(domain.activeRun.selectedDifficulty);
-    transient.setRunEndTalentXP(session.runProfile.mergeRunTalentXPIntoProfile(runTalentXP, multiplier));
-    domain.resetRunXP();
+    const multiplier = getDifficultyXPMultiplier(session.run.activeRun.selectedDifficulty);
+    session.sessionActions.setRunEndTalentXP(
+      session.runProfileActions.mergeRunTalentXPIntoProfile(runTalentXP, multiplier),
+    );
+    session.runActions.resetRunXP();
   });
 }

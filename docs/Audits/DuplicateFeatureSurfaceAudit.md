@@ -4,7 +4,7 @@
 
 ## Intent
 
-Find cohesive clusters of **confirmed** copy-paste feature surfaces and collapse them under their existing owners. Require three structural twins, or two with demonstrated drift/duplicate maintenance. A successful collapse removes the old paths and reduces net LOC/declarations; do not build a generic configuration surface for two callers. Before shipping, confirm structural twinship, maintenance cost across siblings, and a safer shared shape that preserves behavior. If the scope across features is large, phase the plan.
+Find cohesive clusters of **confirmed** copy-paste feature surfaces and collapse them under their existing owners. Two substantial structural twins are sufficient when an existing owner can absorb them with clear simplification; otherwise require three twins or two with demonstrated drift/duplicate maintenance. Inspect the surrounding controllers and loading, empty, error, overlay, and responsive states when they form one duplicated surface family. A successful collapse removes the old paths and reduces duplicated structure, declarations, or drift risk; modest LOC growth is acceptable when it establishes one authoritative shell and deletes parallel scaffolding. Do not build a generic configuration renderer merely because two callers exist. Before shipping, confirm structural twinship, maintenance cost across siblings, and a safer shared shape that preserves behavior. If the scope across features is large, phase the plan.
 
 ## What counts as a duplicate surface
 
@@ -25,10 +25,11 @@ Duplicate surfaces look like parallel product screens that differ mainly by labe
 - Do not force unrelated product flows into one component (e.g. battle hand vs collection grid) just because both show cards.
 - Do not move shared chrome into a feature folder when it already belongs in `shared/ui` or `src/components/ui`, or domain rules into screens.
 - Prefer the owning audit when the hit is primarily dead code, slop ceremony, token adoption, or state ownership.
+- Do not extract only a cosmetic fragment when the confirmed duplication is the complete screen-family state model; collapse the smallest complete repeated surface.
 
 ## Remedy preference
 
-Prefer delete the weaker twin when one path is strictly redundant, then parameterize in place under the existing feature folder. Move shared product UI into `src/features/alchemy/shared/ui/` when ≥2 feature folders need it. Adopt shared UI primitives / tokens for chrome duplication — route pure token work through `DesignSystemConsistencyAudit.md` when that is the whole fix. Propose a larger shared shell when local parameterization would leave the same twins nearby.
+Prefer delete the weaker twin when one path is strictly redundant, then parameterize in place under the existing feature folder. Move shared product UI into `src/features/alchemy/shared/ui/` when ≥2 feature folders need it. Adopt shared UI primitives / tokens for chrome duplication — route pure token work through `DesignSystemConsistencyAudit.md` when that is the whole fix. A bounded shared shell may ship when ownership and behavior are already established; propose only when the shell creates a new product model or architectural seam.
 
 ## Domain rules
 
@@ -52,3 +53,4 @@ Optional discovery aids — choose your own probes.
 - **Card / grid scaffolding:** near-identical card grids, pickers, and list wrappers across features.
 - **Modal / overlay twins:** duplicated confirm dialogs, portals, and backdrop dismiss patterns.
 - **Reward / outcome wrappers:** parallel post-battle or claim-reward presentation shells.
+- **State-family duplication:** sibling screens repeat loading, empty, error, overlay, responsive, and controller glue around otherwise parallel content.

@@ -1,12 +1,12 @@
 # Unit Test Portfolio Audit
 
-**Goal:** Reduce unit test LOC, declarations, expanded cases, and runtime while preserving unique high-value semantic owners.
+**Goal:** Maximize unit-test portfolio trustworthiness and defect detection while controlling redundant LOC, expanded cases, runtime, and maintenance cost.
 
 Conventions: [CONTRIBUTING.md](../../CONTRIBUTING.md). Architecture owners: [ARCHITECTURE.md](../ARCHITECTURE.md).
 
 ## Intent
 
-Confirm duplicate, weaker, implementation-detail, slow, or over-expanded cases with a stronger owner elsewhere, then fix them. A clean pass is valid; do not add coverage to manufacture value. If the scope is large, phase the plan.
+Confirm duplicate, weaker, implementation-detail, slow, over-expanded, nondeterministic, or false-positive cases and fix them. Also confirm meaningful boundary, branch, mutation, or invariant gaps where regression risk lacks a semantic test owner. A clean pass is valid; do not add coverage to manufacture value, but permit net growth when it closes a demonstrated gap under the correct owner. Follow a confirmed ownership problem through its related fixtures, helpers, and sibling cases rather than optimizing one declaration in isolation. If the scope is large, phase the plan.
 
 ## Hard stops
 
@@ -14,6 +14,7 @@ Confirm duplicate, weaker, implementation-detail, slow, or over-expanded cases w
 - Do not optimize declaration count alone: parameterized tables may hide more executed cases and runtime.
 - Preserve unique battle, persistence, migration, architecture-guard, and player-flow owners. Do not delete a failing journey merely to reduce the portfolio.
 - E2E portfolio and Playwright flake work belong in `E2ETestQualityAudit.md`.
+- Do not preserve a low-value test merely to avoid net deletion, and do not reject a high-value missing test merely because the portfolio grows.
 
 ## Fix priority
 
@@ -37,11 +38,11 @@ Prefer highest-impact portfolio waste first:
 
 **Quality:** assert outcomes (HP deltas, events, reloaded save shape), not implementation details or log fingerprints; no trivial “function exists” / “returns defined” assertions; no soft-fail that hides errors.
 
-**Fixtures:** reuse existing helpers under `tests/` rather than duplicating setup; extract shared fixtures when ≥3 call sites benefit.
+**Fixtures:** reuse existing helpers under `tests/` rather than duplicating setup; extract shared fixtures when at least three call sites benefit, two callers have demonstrated drift/cost, or one invariant requires a single canonical builder.
 
 Track authored declarations and expanded executions separately. A merge is successful only when it reduces duplication, runtime/setup, or maintenance surface—not merely the number of `it`/`test` calls.
 
-**Reduction vs addition:** the reduction goal applies to _redundant_ coverage — duplicated owners, weaker echoes, over-expanded cases. It is not a license to whittle unique coverage across repeat runs. Adding tests is allowed only for confirmed behavioral gaps in the core modules below; everywhere else, prefer extending an existing semantic owner.
+**Reduction vs addition:** reduction applies to _redundant_ coverage — duplicated owners, weaker echoes, over-expanded cases. It is not a license to whittle unique coverage across repeat runs. Adding tests is allowed anywhere a confirmed correctness risk, changed invariant, or historically fragile behavior lacks a trustworthy semantic owner; prefer extending an existing owner before creating a new suite.
 
 Directional coverage interest: branch coverage on `src/lib/battle`, `src/lib/gear`, `src/features/alchemy/shared/storage`, and `src/lib/validation` — add behavior-targeted tests for untested exports there; do not pad with dead assertions.
 
@@ -55,3 +56,9 @@ Optional discovery aids — choose your own probes.
 - **Duplicate tier ownership:** feature tests that only restate `tests/lib/battle` matrices.
 - **Coverage gaps (discovery):** `npm run test:coverage` — review weak branches on core `src/lib` modules.
 - **Fragile string matching:** assertions on error message text instead of typed error kinds / result shapes.
+- **Boundary and branch gaps:** meaningful empty, maximum, failure, retry, resume, or alternate-variant behavior lacks an assertion under its semantic owner.
+- **False-positive tests:** assertions can pass without exercising the intended transition, mutation, or failure path.
+- **Nondeterminism:** uncontrolled clocks, RNG, shared state, ordering, or retries make results unstable or mask defects.
+- **Fixture coupling:** broad setup creates incidental state, bypasses production invariants, or forces unrelated edits for one behavior change.
+- **Mutation resilience:** a plausible change to a rule, predicate, mapping, or error branch would leave the suite green despite changing promised behavior.
+- **Recently changed invariants:** implementation or architecture changed without updating or establishing the semantic test that owns the new contract.
