@@ -76,7 +76,8 @@ test.describe("Run Outcomes", () => {
   test.describe("Defeat and Run End Flow", () => {
     test("ending a run from destination screen shows defeat screen", critical, async ({ page }) => {
       await startAtDestination(page, {});
-      await page.getByRole("button", { name: "Open destination menu" }).click();
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("button", { name: "End Run" })).toBeVisible({ timeout: 3000 });
       await page.getByRole("button", { name: "End Run" }).click();
       await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 5000 });
       await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });

@@ -28,20 +28,21 @@ export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Pr
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden px-3 py-4 text-center sm:gap-5 sm:px-5 sm:py-6">
-      <ScreenHeader title="Labyrinth" />
-      <p className="max-w-xl text-sm text-amber-100/75">Choose your path through the depths</p>
+      <ScreenHeader title="Labyrinth" className="shrink-0" />
+      <p className="max-w-xl shrink-0 text-sm text-amber-100/75">Choose your path through the depths</p>
 
       <StaggerGroup
         as="section"
         aria-label="Labyrinth map"
-        className="relative w-full max-w-[920px] rounded-shell-panel border border-border bg-card p-4 sm:p-5"
+        className="relative flex min-h-0 w-full max-w-[1104px] shrink items-center justify-center rounded-shell-panel border border-border bg-card p-5 sm:p-6"
         style={{ "--labyrinth-node-size": "clamp(2.35rem, 4.8vw, 3.45rem)" } as CSSProperties}
       >
         <div className="absolute top-4 right-4 z-30">
           <HamburgerTrigger onClick={onOpenMenu} label="Open labyrinth menu" />
         </div>
 
-        <div className="relative mx-auto aspect-[9/8] w-full max-w-[85.19cqh] p-[clamp(0.6rem,1.4vw,1rem)]">
+        {/* 90cqh (not 100): header/subtitle + denser padding leave ~887px; 100cqh board is ~939px and clips. */}
+        <div className="relative mx-auto aspect-[9/8] w-full max-w-[min(100%,90cqh)] p-[clamp(0.72rem,1.68vw,1.2rem)]">
           <div className="relative h-full w-full">
             <LabyrinthConnectionLayer labyrinthMap={labyrinthMap} />
 

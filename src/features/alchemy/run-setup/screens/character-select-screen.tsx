@@ -25,7 +25,7 @@ import { useUiStore } from "../../shared/stores/ui-store";
 import { useFinishedRunCharacters } from "../../shared/stores/profile-port";
 import { playUISound } from "@/lib/audio";
 
-const charCardWidthClass = "w-[clamp(18vh,20.5vh,28vh)]";
+const charCardWidthClass = "w-[clamp(21.6vh,24.6vh,33.6vh)]"; // 1.2× former 18 / 20.5 / 28 vh
 
 function CharacterCard({
   id,

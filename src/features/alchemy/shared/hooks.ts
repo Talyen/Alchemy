@@ -25,8 +25,6 @@ const LAYOUT_CONFIG = {
   } as Record<Exclude<AspectRatioOption, "auto">, number>,
 } as const;
 
-export const VIRTUAL_STAGE_VIEWPORT_INSET_PX = 16;
-
 /**
  * Resolves the closest preset aspect ratio based on the current CSS viewport dimensions.
  */
@@ -80,10 +78,12 @@ function getVirtualStageDimensions(resolvedAspect: Exclude<AspectRatioOption, "a
 
 /**
  * Computes viewport fitting scale while clamping it to safe min/max ranges.
+ * Fits the full CSS viewport — leftover space letterboxes via centered layout,
+ * so a native-size window stays at scale 1 instead of permanently downscaling.
  */
 function getStageScale(viewportWidth: number, viewportHeight: number, stageWidth: number, stageHeight: number): number {
-  const availableWidth = Math.max(0, viewportWidth - VIRTUAL_STAGE_VIEWPORT_INSET_PX * 2);
-  const availableHeight = Math.max(0, viewportHeight - VIRTUAL_STAGE_VIEWPORT_INSET_PX * 2);
+  const availableWidth = Math.max(0, viewportWidth);
+  const availableHeight = Math.max(0, viewportHeight);
   const viewportAspect = availableWidth / availableHeight;
   const stageAspect = stageWidth / stageHeight;
   const rawScale = viewportAspect > stageAspect ? availableHeight / stageHeight : availableWidth / stageWidth;

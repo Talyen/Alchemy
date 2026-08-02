@@ -50,8 +50,8 @@ export function CollectionScreen({
         />
         <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
 
-        <div className="mt-6 flex min-h-[59.26cqh] flex-col items-center overflow-visible">
-          <div className="grid min-h-[50cqh] w-full grid-cols-1 overflow-visible">
+        <div className="mt-6 flex min-h-[71.11cqh] flex-col items-center overflow-visible">
+          <div className="grid min-h-[60cqh] w-full grid-cols-1 overflow-visible">
             {COLLECTION_TABS.map((tab) => (
               <div
                 key={tab}

@@ -40,7 +40,7 @@ export function DestinationChoices({
         return (
           <StaggerItem key={destination} index={index} className="flex flex-col items-center gap-4">
             <TiltSurface className="rounded-shell-card">
-              <img src={art} alt={destination} className="w-full max-w-[32.59cqh] rounded-shell-card object-contain" />
+              <img src={art} alt={destination} className="w-full max-w-[39.11cqh] rounded-shell-card object-contain" />
             </TiltSurface>
             <ChoiceButton
               label={destination}

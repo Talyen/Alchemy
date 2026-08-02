@@ -55,7 +55,7 @@ export function CardSelectionGrid({
       <StaggerGroup
         swapKey={safePage}
         animate={false}
-        className="mx-auto flex max-w-[calc(4*26.48cqh+3*1rem)] flex-col gap-y-5"
+        className="mx-auto flex max-w-[calc(4*31.78cqh+3*1.2rem)] flex-col gap-y-6"
         data-testid="card-selection-grid"
       >
         {rows.map((rowItems, rowIndex) => (

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const NAVIGATION_CONFIG = {
-  paginationMinHeightClass: "min-h-[4.07cqh]",
+  paginationMinHeightClass: "min-h-[4.88cqh]", // 1.2× former 4.07cqh
 } as const;
 
 export function PaginationControls({

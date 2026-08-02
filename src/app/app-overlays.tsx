@@ -26,6 +26,9 @@ export function AppBackgroundParticles({
   );
 }
 
+/** Run-loop screens with an outer shell that use the app-level floating trigger. */
+const APP_FLOATING_HAMBURGER_SCREENS = new Set<Screen>(["rewards"]);
+
 export function AppHamburgerTrigger({
   renderedScreen,
   onOpenMenu,
@@ -33,8 +36,7 @@ export function AppHamburgerTrigger({
   renderedScreen: Screen;
   onOpenMenu: () => void;
 }) {
-  if (!isRunLoopScreen(renderedScreen)) return null;
-  if (renderedScreen === "battle" || renderedScreen === "labyrinth-map") return null;
+  if (!APP_FLOATING_HAMBURGER_SCREENS.has(renderedScreen)) return null;
   return (
     <div className="pointer-events-none absolute inset-0 z-50 flex justify-center">
       <div className="pointer-events-none relative w-full max-w-6xl">

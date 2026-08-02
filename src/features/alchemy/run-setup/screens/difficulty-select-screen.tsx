@@ -22,7 +22,7 @@ import { PressableSound } from "../../shared/ui/pressable-sound";
 import { ScreenHeader, ActionButtonRow, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { tokenizeDescription } from "../../shared/utils";
-import { battleCardWidthClass, cardSurfaceClass } from "@/features/alchemy/shared/config";
+import { cardSurfaceClass, nonBattleCardWidthClass } from "@/features/alchemy/shared/config";
 import { TooltipPanel } from "../../shared/ui/tooltip-panel";
 import { useUiStore } from "../../shared/stores/ui-store";
 
@@ -98,7 +98,7 @@ function DifficultyCard({
         >
           {showTilt ? (
             <TiltSurface
-              className={cn("relative aspect-[5/6] overflow-hidden rounded-shell-panel", battleCardWidthClass)}
+              className={cn("relative aspect-[5/6] overflow-hidden rounded-shell-panel", nonBattleCardWidthClass)}
               shimmerActive={isShimmer}
               shimmerToken={shimmerToken}
               shimmerRounded="rounded-shell-panel"
@@ -112,7 +112,7 @@ function DifficultyCard({
               )}
             </TiltSurface>
           ) : (
-            <div className={cn("relative aspect-[5/6] overflow-hidden rounded-shell-panel", battleCardWidthClass)}>
+            <div className={cn("relative aspect-[5/6] overflow-hidden rounded-shell-panel", nonBattleCardWidthClass)}>
               <img
                 src={diffArt}
                 alt=""
@@ -126,8 +126,8 @@ function DifficultyCard({
           <p className={cn("font-sans text-base font-bold text-amber-100/75", locked && "text-muted-foreground")}>
             {name}
           </p>
-          <div className="flex min-h-[5.56cqh] flex-col justify-center">
-            <div className="max-w-[20.37cqh] text-center text-sm leading-relaxed text-muted-foreground">
+          <div className="flex min-h-[6.67cqh] flex-col justify-center">
+            <div className="max-w-[24.44cqh] text-center text-sm leading-relaxed text-muted-foreground">
               {renderDescription(fullDescription)}
             </div>
           </div>
@@ -185,7 +185,7 @@ export function DifficultySelectScreen({
           className="flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6"
         >
           <TiltSurface
-            className={cn("relative aspect-[3/4] overflow-hidden rounded-shell-panel", battleCardWidthClass)}
+            className={cn("relative aspect-[3/4] overflow-hidden rounded-shell-panel", nonBattleCardWidthClass)}
             shimmerActive={shimmerState?.cardId === "character"}
             shimmerToken={shimmerState?.token}
             shimmerRounded="rounded-shell-panel"

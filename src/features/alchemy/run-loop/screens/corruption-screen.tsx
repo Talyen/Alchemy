@@ -71,7 +71,7 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
         <img
           src={corruptionAltar}
           alt="Altar of Corruption"
-          className="block w-full max-w-[38.89cqh] rounded-shell-panel object-contain"
+          className="block w-full max-w-[46.67cqh] rounded-shell-panel object-contain"
           loading="eager"
           decoding="sync"
         />

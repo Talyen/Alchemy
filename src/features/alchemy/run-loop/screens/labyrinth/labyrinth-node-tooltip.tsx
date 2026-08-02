@@ -55,7 +55,7 @@ export function LabyrinthNodeTooltip({ type, modifiers, rewardModifiers }: Props
     <TooltipPanel
       ref={ref}
       flip={flip}
-      width="w-[23.7cqh]"
+      width="w-[28.44cqh]"
       className="z-50 rounded-shell-tooltip"
       style={dx !== 0 ? { marginLeft: dx } : undefined}
     >

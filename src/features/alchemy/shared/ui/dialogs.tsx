@@ -57,7 +57,7 @@ export function ConfirmationDialog({
       onClick={dismissOnBackdrop ? onCancel : undefined}
     >
       <div
-        className="motion-panel alchemy-shell w-full max-w-[41.48cqh] rounded-shell-dialog border border-border/80 px-6 py-6 text-center"
+        className="motion-panel alchemy-shell w-full max-w-[49.78cqh] rounded-shell-dialog border border-border/80 px-7 py-7 text-center"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/15 text-amber-200">

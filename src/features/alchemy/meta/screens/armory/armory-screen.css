@@ -3,7 +3,7 @@
   container-type: size;
   --armory-board-gap: 0.375rem;
   --armory-inventory-cols: 8;
-  --armory-cell-size: round(nearest, min(6.8cqh, 5.5rem, calc((100cqw - 5rem) / var(--armory-inventory-cols))), 1px);
+  --armory-cell-size: round(nearest, min(8.16cqh, 6.6rem, calc((100cqw - 5rem) / var(--armory-inventory-cols))), 1px);
 }
 
 .armory-character-art-container {
@@ -49,8 +49,8 @@
     --armory-cell-size: round(
       nearest,
       min(
-        6.8cqh,
-        5.5rem,
+        8.16cqh,
+        6.6rem,
         calc((40cqw - 6 * var(--armory-board-gap) - 2rem) / var(--armory-inventory-cols)),
         calc((60cqw - 19rem - 5 * var(--armory-board-gap)) / 6)
       ),

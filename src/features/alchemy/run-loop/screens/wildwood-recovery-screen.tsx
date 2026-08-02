@@ -43,10 +43,10 @@ export function WildwoodRecoveryScreen({ playerHealth, maxHealth, onComplete }: 
           <img
             src={theWildwoods}
             alt="The Wildwoods"
-            className="w-full max-w-[37.04cqh] rounded-shell-panel object-contain"
+            className="w-full max-w-[44.45cqh] rounded-shell-panel object-contain"
           />
         </StaggerItem>
-        <StaggerItem index={3} className="min-w-[clamp(20.56cqh,22cqh,31.11cqh)]">
+        <StaggerItem index={3} className="min-w-[clamp(24.67cqh,26.4cqh,37.33cqh)]">
           <HealthRestoreMeter displayHealth={displayHealth} maxHealth={maxHealth} progressTarget={progressTarget} />
         </StaggerItem>
       </StaggerGroup>

@@ -421,6 +421,10 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(ui): fill viewport, densify non-battle layouts, and unify gear offer footprints
+  Drop the virtual-stage inset so native windows stay at scale 1.
+  Scale non-battle UI denser, and keep gear reward choices in one
+  footprint family with static aspect classes.
 - fix(battle): keep enemy-turn presentation when CC skips attacks
   Stop the battle resume effect from committing live pending transitions
   mid-presentation, and apply the post-enemy hand inside the draw sequence

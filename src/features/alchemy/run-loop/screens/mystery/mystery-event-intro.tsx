@@ -43,7 +43,7 @@ function MysteryEventChoiceButton({
         {choice.label}
       </Button>
       <TooltipPanel
-        width="w-[23.7cqh]"
+        width="w-[28.44cqh]"
         className="pointer-events-none opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
       >
         <MysteryEffectList
@@ -79,7 +79,7 @@ export function MysteryEventIntro({
       </StaggerItem>
       {event.art ? (
         <StaggerItem index={1}>
-          <TiltSurface className="aspect-[4/3] w-full max-w-[32.59cqh] overflow-hidden rounded-shell-card">
+          <TiltSurface className="aspect-[4/3] w-full max-w-[39.11cqh] overflow-hidden rounded-shell-card">
             <img
               src={event.art}
               alt={event.title}

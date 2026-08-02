@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  getVirtualResolutionLayout,
-  resolveAutoAspectRatio,
-  VIRTUAL_STAGE_VIEWPORT_INSET_PX,
-} from "@/features/alchemy/shared/hooks";
+import { getVirtualResolutionLayout, resolveAutoAspectRatio } from "@/features/alchemy/shared/hooks";
 
 describe("resolveAutoAspectRatio", () => {
   it("returns 16:9 for 1920x1080", () => {
@@ -44,11 +40,13 @@ describe("resolveAutoAspectRatio", () => {
 });
 
 describe("getVirtualResolutionLayout", () => {
-  it("fits the stage inside the configured viewport inset", () => {
+  it("keeps native 16:9 windows at scale 1", () => {
     const layout = getVirtualResolutionLayout("16:9", 1920, 1080);
+    const transformScale = Number(layout.stageStyle.transform.match(/^scale\(([^)]+)\)$/)?.[1]);
 
-    expect(parseFloat(layout.frameStyle.width)).toBeLessThanOrEqual(1920 - VIRTUAL_STAGE_VIEWPORT_INSET_PX * 2);
-    expect(parseFloat(layout.frameStyle.height)).toBe(1080 - VIRTUAL_STAGE_VIEWPORT_INSET_PX * 2);
+    expect(transformScale).toBe(1);
+    expect(parseFloat(layout.frameStyle.width)).toBe(1920);
+    expect(parseFloat(layout.frameStyle.height)).toBe(1080);
     expect(layout.stagePixelRatio).toBe(1);
   });
 
@@ -59,8 +57,9 @@ describe("getVirtualResolutionLayout", () => {
     expect(layout.stagePixelRatio).toBe(1);
     expect(layout.stageStyle.width).toBe("1920px");
     expect(layout.stageStyle.height).toBe("1080px");
-    expect(transformScale).toBeGreaterThan(1);
-    expect(parseFloat(layout.frameStyle.height)).toBe(2160 - VIRTUAL_STAGE_VIEWPORT_INSET_PX * 2);
+    expect(transformScale).toBe(2);
+    expect(parseFloat(layout.frameStyle.width)).toBe(3840);
+    expect(parseFloat(layout.frameStyle.height)).toBe(2160);
   });
 
   it("preserves fixed-rem proportions between standard and native rendering", () => {
@@ -78,9 +77,11 @@ describe("getVirtualResolutionLayout", () => {
 
   it("selects and fits a MacBook-shaped 16:10 stage", () => {
     const layout = getVirtualResolutionLayout("auto", 1512, 982);
+    const transformScale = Number(layout.stageStyle.transform.match(/^scale\(([^)]+)\)$/)?.[1]);
 
     expect(layout.aspectMode).toBe("narrow");
-    expect(parseFloat(layout.frameStyle.width)).toBe(1512 - VIRTUAL_STAGE_VIEWPORT_INSET_PX * 2);
-    expect(parseFloat(layout.frameStyle.height)).toBeLessThanOrEqual(982 - VIRTUAL_STAGE_VIEWPORT_INSET_PX * 2);
+    expect(parseFloat(layout.frameStyle.width)).toBe(1512);
+    expect(parseFloat(layout.frameStyle.height)).toBeLessThanOrEqual(982);
+    expect(transformScale).toBeLessThan(1);
   });
 });

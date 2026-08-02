@@ -27,7 +27,7 @@ import {
   useScreenParticleConfig,
 } from "@/app/app-shell";
 import { useDevShortcuts } from "@/app/use-dev-shortcuts";
-import { useVirtualResolution, VIRTUAL_STAGE_VIEWPORT_INSET_PX } from "@/features/alchemy/shared/hooks";
+import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -231,10 +231,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 
   return (
     <ErrorBoundary label={screen}>
-      <div
-        className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background"
-        style={{ padding: VIRTUAL_STAGE_VIEWPORT_INSET_PX }}
-      >
+      <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background">
         <div className="relative" style={frameStyle}>
           <AppMainContent
             saveBlockedByNewerVersion={saveBlockedByNewerVersion}

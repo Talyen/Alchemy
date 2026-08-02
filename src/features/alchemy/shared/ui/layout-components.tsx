@@ -37,7 +37,7 @@ export function ScreenHeaderRow({
 
 export function PageLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="game-page-scroll flex h-full w-full flex-col items-center justify-center overflow-x-hidden overflow-y-auto px-4 py-6">
+    <div className="game-page-scroll flex h-full w-full flex-col items-center justify-center overflow-x-hidden overflow-y-auto px-5 py-7">
       {children}
     </div>
   );
@@ -47,7 +47,7 @@ export function ScreenShell({
   children,
   className,
   maxWidthClass = "max-w-5xl",
-  minHeightClass = "min-h-[48.15cqh]",
+  minHeightClass = "min-h-[57.78cqh]", // 1.2× former 48.15cqh
 }: {
   children: ReactNode;
   className?: string;
@@ -57,7 +57,7 @@ export function ScreenShell({
   return (
     <div
       className={cn(
-        "alchemy-shell flex w-full flex-col rounded-shell-screen p-7",
+        "alchemy-shell flex w-full flex-col rounded-shell-screen p-[2.1rem]",
         minHeightClass,
         maxWidthClass,
         className,

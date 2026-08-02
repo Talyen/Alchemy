@@ -54,11 +54,11 @@ export function CampfireScreen({
           <img
             src={campfire}
             alt="Campfire"
-            className="w-full max-w-[37.04cqh] rounded-shell-panel object-contain"
+            className="w-full max-w-[44.45cqh] rounded-shell-panel object-contain"
             loading="eager"
           />
         </StaggerItem>
-        <StaggerItem index={3} className="min-h-16 min-w-[clamp(20.56cqh,22cqh,31.11cqh)]">
+        <StaggerItem index={3} className="min-h-16 min-w-[clamp(24.67cqh,26.4cqh,37.33cqh)]">
           {!resting ? (
             <Button size="lg" onClick={handleRest}>
               Rest

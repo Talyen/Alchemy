@@ -58,9 +58,9 @@ export function MenuScreen({
   }, [flipped, variantIdx, variants.length]);
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-8 text-center">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-10 text-center">
       <TiltSurface
-        className="relative w-full max-w-[39.81cqh] cursor-pointer"
+        className="relative w-full max-w-[47.77cqh] cursor-pointer"
         onDivClick={handleLogoClick}
         ariaLabel="Flip Alchemy logo"
       >
@@ -78,10 +78,10 @@ export function MenuScreen({
           <Button
             size="lg"
             variant="primary"
-            className={cn("justify-center gap-2 text-base", BUTTON_WIDTH_MENU)}
+            className={cn("h-14 justify-center gap-2 text-lg", BUTTON_WIDTH_MENU)}
             onClick={onPlay}
           >
-            <Swords className="h-4 w-4" />
+            <Swords className="h-5 w-5" />
             Play
           </Button>
         </StaggerItem>
@@ -89,10 +89,10 @@ export function MenuScreen({
           <Button
             size="lg"
             variant="outline"
-            className={cn("justify-center gap-2 text-base", BUTTON_WIDTH_MENU)}
+            className={cn("h-14 justify-center gap-2 text-lg", BUTTON_WIDTH_MENU)}
             onClick={onCollection}
           >
-            <BookOpen className="h-4 w-4" />
+            <BookOpen className="h-5 w-5" />
             Collection
           </Button>
         </StaggerItem>
@@ -102,8 +102,8 @@ export function MenuScreen({
             message={KNIGHT_UNLOCK_MESSAGE}
             locked={isKnightGatedLocked}
             onSelect={onTalents}
-            icon={<WandSparkles className="h-4 w-4" />}
-            className={cn("justify-center gap-2 text-base", BUTTON_WIDTH_MENU)}
+            icon={<WandSparkles className="h-5 w-5" />}
+            className={cn("h-14 justify-center gap-2 text-lg", BUTTON_WIDTH_MENU)}
             size="lg"
             variant="outline"
             tooltipPlacement="side-start"
@@ -120,8 +120,8 @@ export function MenuScreen({
             message={KNIGHT_UNLOCK_MESSAGE}
             locked={isKnightGatedLocked}
             onSelect={onHomestead}
-            icon={<TreePine className="h-4 w-4" />}
-            className={cn("justify-center gap-2 text-base", BUTTON_WIDTH_MENU)}
+            icon={<TreePine className="h-5 w-5" />}
+            className={cn("h-14 justify-center gap-2 text-lg", BUTTON_WIDTH_MENU)}
             size="lg"
             variant="outline"
             tooltipPlacement="side-start"
@@ -138,8 +138,8 @@ export function MenuScreen({
             message="Find Gear to unlock"
             locked={isArmoryLocked}
             onSelect={onArmory}
-            icon={<Shield className="h-4 w-4" />}
-            className={cn("justify-center gap-2 text-base", BUTTON_WIDTH_MENU)}
+            icon={<Shield className="h-5 w-5" />}
+            className={cn("h-14 justify-center gap-2 text-lg", BUTTON_WIDTH_MENU)}
             size="lg"
             variant="outline"
             tooltipPlacement="side-start"
@@ -151,10 +151,10 @@ export function MenuScreen({
           <Button
             size="lg"
             variant="outline"
-            className={cn("justify-center gap-2 text-base", BUTTON_WIDTH_MENU)}
+            className={cn("h-14 justify-center gap-2 text-lg", BUTTON_WIDTH_MENU)}
             onClick={onOptions}
           >
-            <Cog className="h-4 w-4" />
+            <Cog className="h-5 w-5" />
             Options
           </Button>
         </StaggerItem>
@@ -163,7 +163,7 @@ export function MenuScreen({
             <Button
               size="lg"
               variant="outline"
-              className={cn("justify-center gap-2 text-base", BUTTON_WIDTH_MENU)}
+              className={cn("h-14 justify-center gap-2 text-lg", BUTTON_WIDTH_MENU)}
               onClick={onQuit}
             >
               Quit

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { makeCard, SAVE_KEY, startBattleWithDeck, startAtDestination } from "./helpers";
+import { injectLabyrinthRun, makeCard, SAVE_KEY, startBattleWithDeck, startAtDestination } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 import { slow } from "./playwright-tags";
 
@@ -53,9 +53,8 @@ const RESOLUTIONS = [
 
 const CARD_VIEWPORT_TOLERANCE_PX = 12;
 const CARD_VIEWPORT_TOLERANCE_RATIO = 0.015;
-const STAGE_VIEWPORT_INSET_PX = 16;
 
-async function assertStageFitsViewportInset(page: import("@playwright/test").Page) {
+async function assertStageFitsViewport(page: import("@playwright/test").Page) {
   const bounds = await page.getByTestId("vr-stage").evaluate((stage) => {
     const rect = stage.getBoundingClientRect();
     return {
@@ -68,10 +67,10 @@ async function assertStageFitsViewportInset(page: import("@playwright/test").Pag
     };
   });
 
-  expect(bounds.top).toBeGreaterThanOrEqual(STAGE_VIEWPORT_INSET_PX - 1);
-  expect(bounds.left).toBeGreaterThanOrEqual(STAGE_VIEWPORT_INSET_PX - 1);
-  expect(bounds.right).toBeLessThanOrEqual(bounds.viewportWidth - STAGE_VIEWPORT_INSET_PX + 1);
-  expect(bounds.bottom).toBeLessThanOrEqual(bounds.viewportHeight - STAGE_VIEWPORT_INSET_PX + 1);
+  expect(bounds.top).toBeGreaterThanOrEqual(-1);
+  expect(bounds.left).toBeGreaterThanOrEqual(-1);
+  expect(bounds.right).toBeLessThanOrEqual(bounds.viewportWidth + 1);
+  expect(bounds.bottom).toBeLessThanOrEqual(bounds.viewportHeight + 1);
 }
 
 for (const { width, height, label } of RESOLUTIONS) {
@@ -82,7 +81,7 @@ for (const { width, height, label } of RESOLUTIONS) {
       await page.goto("/");
       await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
       await assertNoOverflow(page, "Menu");
-      await assertStageFitsViewportInset(page);
+      await assertStageFitsViewport(page);
     });
 
     test("character-select screen fits viewport without overflow", async ({ page }) => {
@@ -132,14 +131,14 @@ const MACBOOK_VIEWPORTS = [
 
 test.describe("MacBook and 16:10 stage fitting", slow, () => {
   for (const { width, height, label } of MACBOOK_VIEWPORTS) {
-    test(`${label} keeps the auto stage inside the viewport inset`, async ({ page }) => {
+    test(`${label} keeps the auto stage inside the viewport`, async ({ page }) => {
       await setAspectRatio(page, "auto");
       await page.setViewportSize({ width, height });
       await page.goto("/");
       await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
 
       await assertNoOverflow(page, `Menu ${label}`);
-      await assertStageFitsViewportInset(page);
+      await assertStageFitsViewport(page);
     });
   }
 });
@@ -178,10 +177,10 @@ test.describe("Ultra HD 3840x2160 (4K) additional checks", slow, () => {
     }));
     expect(fixedUiMetrics.rootFontSize).toBe(16);
     expect(fixedUiMetrics.buttonWidth).toBeCloseTo(
-      14 * fixedUiMetrics.rootFontSize * fixedUiMetrics.stageTransformScale,
+      16.8 * fixedUiMetrics.rootFontSize * fixedUiMetrics.stageTransformScale,
       0,
     );
-    await assertStageFitsViewportInset(page);
+    await assertStageFitsViewport(page);
   });
 });
 
@@ -195,7 +194,7 @@ test.describe("high-DPR layout", () => {
 
     expect(await page.evaluate(() => window.devicePixelRatio)).toBe(2);
     expect(Number(await page.getByTestId("vr-stage").getAttribute("data-stage-pixel-ratio"))).toBe(1);
-    await assertStageFitsViewportInset(page);
+    await assertStageFitsViewport(page);
   });
 });
 
@@ -222,5 +221,34 @@ test.describe("Card Selection Grid Layout", slow, () => {
       return Math.abs(gridCenter - viewportCenter) < 50;
     });
     expect(isCentered).toBe(true);
+  });
+});
+
+test.describe("Labyrinth map stage fitting", slow, () => {
+  test("labyrinth map stays inside the virtual stage without clipping", async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await injectLabyrinthRun(page);
+    await expect(page.getByRole("heading", { name: /Labyrinth/i })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Labyrinth map" })).toBeVisible();
+
+    await assertNoOverflow(page, "Labyrinth");
+
+    const fit = await page.evaluate(() => {
+      const stage = document.querySelector('[data-testid="vr-stage"]');
+      const map = document.querySelector('[aria-label="Labyrinth map"]');
+      if (!stage || !map) return { ok: false as const, reason: "missing-nodes" };
+      const stageRect = stage.getBoundingClientRect();
+      const mapRect = map.getBoundingClientRect();
+      return {
+        ok:
+          mapRect.top >= stageRect.top - 1 &&
+          mapRect.bottom <= stageRect.bottom + 1 &&
+          mapRect.left >= stageRect.left - 1 &&
+          mapRect.right <= stageRect.right + 1,
+        stageBottom: stageRect.bottom,
+        mapBottom: mapRect.bottom,
+      };
+    });
+    expect(fit, JSON.stringify(fit)).toMatchObject({ ok: true });
   });
 });

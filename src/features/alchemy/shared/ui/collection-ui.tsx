@@ -46,7 +46,7 @@ export function CollectionGrid({
     <StaggerGroup
       swapKey={`${collectionTab}-${page}`}
       className={cn(
-        "min-h-[50cqh] gap-y-7 overflow-visible",
+        "min-h-[60cqh] gap-y-8 overflow-visible",
         collectionTab === "trinkets" ? collectionTrinketGridClass : collectionCardGridClass,
         "grid-rows-2",
       )}

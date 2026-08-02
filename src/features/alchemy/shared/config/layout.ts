@@ -6,18 +6,22 @@
 // (the stage container may be 1080, 2160, or another height in the future).
 export const battleCardWidthClass = "w-[clamp(24.76cqh,25.16cqh,37.48cqh)]";
 export const handCardWidthClass = "w-[clamp(22.28cqh,22.64cqh,33.73cqh)]";
-export const viewCardWidthClass = "w-[clamp(17.5cqh,17.78cqh,26.48cqh)]";
-export const collectionTileWidthClass = "w-[clamp(21cqh,21.34cqh,31.78cqh)]"; // 1.2× viewCardWidthClass for collection cards/bestiary tiles.
+// Non-battle card/tile widths are authored ~1.2× denser than the prior stage sizes.
+export const viewCardWidthClass = "w-[clamp(21cqh,21.34cqh,31.78cqh)]"; // was 17.5 / 17.78 / 26.48
+export const collectionTileWidthClass = "w-[clamp(25.2cqh,25.61cqh,38.14cqh)]"; // was 21 / 21.34 / 31.78
 export const collectionGridGapXClass = "gap-x-3";
 export const collectionShellWidthClass = "w-full max-w-6xl";
 // Shared with CollectionGrid — same column count, gap, and justify-items-center.
 export const collectionCardGridClass = `grid w-full justify-items-center ${collectionGridGapXClass} grid-cols-4`;
 export const collectionTrinketGridClass = `grid w-full justify-items-center ${collectionGridGapXClass} grid-cols-3`;
-export const trinketCardWidthClass = "w-[clamp(24.5cqh,24.89cqh,37.07cqh)]"; // 1.4× viewCardWidthClass for larger boon tiles.
+export const trinketCardWidthClass = "w-[clamp(29.4cqh,29.87cqh,44.48cqh)]"; // was 24.5 / 24.89 / 37.07
 export const pileCardWidthClass = "w-[clamp(12cqh,12.96cqh,18.25cqh)]";
 
 // Boss variants — 1.3× the standard battle card width for wider status panes.
 export const bossCardWidthClass = "w-[calc(clamp(24.76cqh,25.16cqh,37.48cqh)*1.3)]";
+
+// Non-battle portrait/card panels (e.g. difficulty select) — 1.2× battleCardWidthClass, battle token untouched.
+export const nonBattleCardWidthClass = "w-[clamp(29.71cqh,30.19cqh,44.98cqh)]";
 
 // Card and popup surfaces stay centralized so repeated game widgets share the
 // same tactile fantasy material treatment.

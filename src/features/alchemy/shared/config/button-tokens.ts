@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 export const BUTTON_SHAPE = "rounded-xl";
 export const BUTTON_SURFACE_NEUTRAL = "bg-background border border-border/80 text-foreground";
 
-export const BUTTON_WIDTH_MENU = "w-56";
+export const BUTTON_WIDTH_MENU = "w-[16.8rem]"; // 1.2× former w-56 (14rem); menu-only
 export const BUTTON_WIDTH_DIALOG = "w-40";
 export const BUTTON_WIDTH_ACTION = "min-w-40";
 

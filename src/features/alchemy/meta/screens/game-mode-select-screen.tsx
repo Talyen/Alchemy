@@ -87,7 +87,7 @@ export function GameModeSelectScreen({
                     src={meta.art}
                     alt=""
                     aria-hidden
-                    className="w-full max-w-[32.59cqh] rounded-shell-card object-contain"
+                    className="w-full max-w-[39.11cqh] rounded-shell-card object-contain"
                   />
                   <h2 className="font-sans text-base font-bold text-amber-100/75">{meta.title}</h2>
                   <p className="text-sm leading-relaxed text-muted-foreground">{meta.description}</p>
