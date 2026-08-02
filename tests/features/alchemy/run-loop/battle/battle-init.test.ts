@@ -49,6 +49,8 @@ describe("createBattleInit", () => {
     const expected = mergeIntoManifest(computeTalentEffects({}), testEffects);
     expect(battle.talentEffects.flatPhysicalDamage).toBe(expected.flatPhysicalDamage);
     expect(battle.currentEnemy.enemyType).toBe("normal");
+    // createBattleInit must wire its rng into BattleState (not placeholderRng).
+    expect(battle.rng()).toBe(0.5);
   });
 
   it("beginBattle increments roomsEncountered and sets hasActiveBattle", () => {

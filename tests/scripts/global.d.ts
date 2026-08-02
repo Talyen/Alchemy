@@ -51,6 +51,43 @@ declare module "../../scripts/prettier-paths.mjs" {
   export function filterPrettierPaths(paths: readonly string[]): string[];
 }
 
+declare module "*/clean-dev-artifacts.mjs" {
+  export const DEFAULT_ARTIFACT_DIRS: readonly string[];
+  export const BUILD_ARTIFACT_DIRS: readonly string[];
+  export const STALE_TEST_PORTS: readonly number[];
+  export function listArtifactDirsToRemove(rootDir: string, options?: { builds?: boolean }): string[];
+  export function measurePath(absolutePath: string): { path: string; bytes: number };
+  export function removePath(absolutePath: string): void;
+  export function formatBytes(bytes: number): string;
+  export function parseCleanArgs(argv: string[]): {
+    help: boolean;
+    builds: boolean;
+    processes: boolean;
+    includeDevPort: boolean;
+    dryRun: boolean;
+  };
+}
+
+declare module "../../scripts/lib/clean-dev-artifacts.mjs" {
+  export const DEFAULT_ARTIFACT_DIRS: readonly string[];
+  export const BUILD_ARTIFACT_DIRS: readonly string[];
+  export const STALE_TEST_PORTS: readonly number[];
+  export function listArtifactDirsToRemove(rootDir: string, options?: { builds?: boolean }): string[];
+  export function measurePath(absolutePath: string): { path: string; bytes: number };
+  export function removePath(absolutePath: string): void;
+  export function formatBytes(bytes: number): string;
+}
+
+declare module "../../scripts/clean-dev-artifacts.mjs" {
+  export function parseCleanArgs(argv: string[]): {
+    help: boolean;
+    builds: boolean;
+    processes: boolean;
+    includeDevPort: boolean;
+    dryRun: boolean;
+  };
+}
+
 declare module "*/asset-manifest-cache.mjs" {
   export interface ManifestEntry {
     hash: string;

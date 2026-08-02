@@ -50,6 +50,7 @@ export function createBattleInit(
       trinketIds: run.runTrinkets,
       gearEffects,
       difficultyModifiers: activeModifiers,
+      rng,
     });
   }
 

@@ -421,6 +421,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(battle): wire run RNG into battle init and clear CI gates
 - fix(ui): fill viewport, densify non-battle layouts, and unify gear offer footprints
   Drop the virtual-stage inset so native windows stay at scale 1.
   Scale non-battle UI denser, and keep gear reward choices in one

@@ -2,6 +2,7 @@ import { expect, type Page } from "@playwright/test";
 import { createEmptyGearLoadouts } from "./armory";
 import { startBattleWithDeck } from "./battle-setup";
 import { makeCard } from "./cards";
+import { seedRandom } from "./rng";
 import { BattlePage } from "../pages/battle-page";
 import { MenuPage } from "../pages/menu-page";
 
@@ -13,6 +14,9 @@ interface GearSlotSetup {
 }
 
 export async function assertGearFlatDamageBoostsPhysicalDamage(page: Page, gear: GearSlotSetup) {
+  // Seed before save injection / battle start so world-stream crit rolls stay deterministic.
+  await seedRandom(page, 42);
+
   const loadouts = createEmptyGearLoadouts();
   (loadouts.knight as Record<string, string | null>)[gear.slot] = gear.instanceId;
 
@@ -32,6 +36,10 @@ export async function assertGearFlatDamageBoostsPhysicalDamage(page: Page, gear:
   await startBattleWithDeck(
     page,
     Array.from({ length: 6 }, () => physicalCard),
+    {
+      // Fixed seed keeps opening-hand shuffle + crit rolls stable across CI.
+      rng: { seed: 42, counters: { rewards: 0, destinations: 0, events: 0, shops: 0, world: 0 } },
+    },
   );
 
   const battle = new BattlePage(page);

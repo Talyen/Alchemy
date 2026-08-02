@@ -12,11 +12,8 @@ import {
   type RunSessionFields,
 } from "@/features/alchemy/shared/stores/run-domain-types";
 import {
-  applyActiveRunProgressPartial,
-  applyPermanentProgressPartial,
   createInitialActiveRunFields,
   createInitialPermanentFields,
-  type RunStateFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
 
 type RunDomainStore = GameplayState["run"] & GameplayState["runActions"];
@@ -111,7 +108,7 @@ export function getRunTransientStore(): RunTransientStore {
   return useRunTransientStore.getState();
 }
 
-export function getRunBattleDomainStore(): RunBattleDomainStore {
+function getRunBattleDomainStore(): RunBattleDomainStore {
   return useRunBattleDomainStore.getState();
 }
 
@@ -170,20 +167,4 @@ export function resetRunNavigationSlice(): void {
 
 export function resetRunBattleSlice(): void {
   useRunBattleDomainStore.setState(createInitialBattleFields(), true);
-}
-
-export function setRunProgress(partial: Partial<RunStateFields>, replace = false): void {
-  if (replace) resetRunProgressSlice();
-  applyGameplayStateUpdate((state) => {
-    applyActiveRunProgressPartial(state.run, partial);
-    applyPermanentProgressPartial(state.runProfile, partial);
-  });
-}
-
-export function setRunSession(partial: Partial<RunSessionFields>, replace = false): void {
-  if (replace) {
-    useRunTransientStore.setState({ ...createInitialSessionFields(), ...partial }, true);
-    return;
-  }
-  useRunTransientStore.setState(partial);
 }

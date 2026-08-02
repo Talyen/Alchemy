@@ -22,7 +22,7 @@ export const GEAR_FOOTPRINT: Record<GearSlot, GearFootprint> = {
   "right-ring": { w: 1, h: 1 },
 };
 
-export function footprintKey(footprint: GearFootprint): GearOfferFootprintKey {
+function footprintKey(footprint: GearFootprint): GearOfferFootprintKey {
   return `${footprint.w}x${footprint.h}`;
 }
 

@@ -17,9 +17,6 @@ import {
   resetRunNavigationSlice,
   resetRunProgressSlice,
   resetRunSessionSlice,
-  useRunBattleDomainStore,
-  useRunDomainStore,
-  useRunProfileStore,
   useRunTransientStore,
 } from "./gameplay-store-test";
 
@@ -53,5 +50,3 @@ export function setRunSession(partial: Partial<RunSessionFields>, replace = fals
   }
   useRunTransientStore.setState(partial);
 }
-
-export { useRunBattleDomainStore, useRunDomainStore, useRunProfileStore, useRunTransientStore };
