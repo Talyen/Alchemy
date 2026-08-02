@@ -53,6 +53,8 @@
     "steam:upload": "node scripts/steam-upload.mjs",
     "steam:upload:dry-run": "cross-env STEAM_UPLOAD_DRY_RUN=1 node scripts/steam-upload.mjs",
     "preview": "vite preview",
+    "clean": "node scripts/clean-dev-artifacts.mjs",
+    "clean:all": "node scripts/clean-dev-artifacts.mjs --all",
     "test": "vitest run --maxWorkers=4",
     "test:timings": "vitest run --reporter=verbose --reporter=json --outputFile=reports/vitest-timings.json",
     "test:watch": "vitest",

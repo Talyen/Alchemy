@@ -52,7 +52,11 @@ npm run test:e2e:prepush:full  # @critical on preview (CI e2e job)
 npm run test:e2e:full         # Full suite on preview (broader CI/release tier)
 npm run test:e2e:main-gate    # Compatibility alias for the full suite
 npm run balance:sim         # Balance simulator report (opens via scripts/open-report.mjs)
+npm run clean               # Remove local test/report/.vite artifacts
+npm run clean:all           # clean + dist/release-desktop + stop stale E2E preview ports (4173/4175)
 ```
+
+`npm run clean` never stops the main Vite dev server (`5173` / `ALCHEMY_DEV_PORT`). Use `npm run clean -- --processes --include-dev-port` for that, or rely on `predev` which already calls `scripts/stop-dev-server.mjs`. Playwright keeps only failed-run output under `test-results/` (`preserveOutput: "failures-only"`). Shared `~/Library/Caches/ms-playwright` may be used by other projects — do not prune it from Alchemy alone.
 
 Full script list: `package.json` / [README.md](../README.md).
 

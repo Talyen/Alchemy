@@ -39,6 +39,8 @@ npm run dev
 | `npm run format`        | Format with Prettier                                  |
 | `npm run release`       | Bump version + generate changelog + create git tag    |
 | `npm run balance:sim`   | Run headless balance simulation report                |
+| `npm run clean`         | Remove local test/report/.vite artifacts              |
+| `npm run clean:all`     | clean + builds + stop stale E2E preview ports         |
 
 > Full command reference: [`docs/REFERENCE.md`](./docs/REFERENCE.md#environment--commands). Agent/coding rules: [`AGENTS.md`](./AGENTS.md).
 

@@ -28,6 +28,8 @@ export default defineConfig({
   timeout: isCi ? 30_000 : 15_000,
   retries: isCi ? 1 : 0,
   forbidOnly: isCi,
+  // Keep only failed-run output locally/CI so successful shards do not accumulate under test-results/.
+  preserveOutput: "failures-only",
   // CI: github annotations + compact console + HTML artifact + JSON for step summary.
   reporter: isPrepush
     ? "line"

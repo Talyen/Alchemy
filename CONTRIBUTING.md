@@ -38,6 +38,8 @@ Install hooks once: `npm run prepare` (runs on `npm install`).
 
 First-time Playwright: `npx playwright install chromium`.
 
+Local leftover reports/builds: `npm run clean` (safe artifacts) or `npm run clean:all` (also `dist` / `release-desktop` + stale E2E ports `4173`/`4175`). The main Vite port is left alone unless you pass `--include-dev-port`. Details: [REFERENCE.md § Script Command Reference](./docs/REFERENCE.md#script-command-reference).
+
 **PowerShell command chaining:** PowerShell 7 supports `&&` and `||`; prefer them for simple chains. Use `; if ($?) { next-command }` only when you need a conditional block; `;` alone ignores exit codes on Windows.
 
 ## Changelog and patch notes

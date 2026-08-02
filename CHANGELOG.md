@@ -2025,6 +2025,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Chores
 
+- chore(dev): add clean scripts and keep Playwright failure-only output
 - chore(tooling): automate changelog sync after commits
 - chore(architecture): align strict integration contracts
 - chore(dead-code): remove unused shim and UI token exports

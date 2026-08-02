@@ -4,6 +4,7 @@ release/
 release-desktop/
 playwright-report/
 test-results/
+blob-report/
 coverage/
 reports/
 .env
