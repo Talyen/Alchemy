@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
 import { MIXED_POTION_CARD_ID, MIXED_POTION_TITLE, SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
-import { collectionTileWidthClass } from "@/features/alchemy/shared/config";
+import { collectionTileWidthClass, BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { PurchasableCardItem, SelectableShopCard } from "../../shared/ui/shop-card-item";
@@ -130,6 +130,7 @@ export function AlchemistShopScreen({
           <StaggerItem index={2}>
             <Button
               size="lg"
+              className={BUTTON_WIDTH_ACTION}
               onClick={() => {
                 setMixedCard(null);
                 cancelMix();
@@ -200,7 +201,7 @@ export function AlchemistShopScreen({
             )}
           />
           <div className="mt-5 flex justify-center gap-3">
-            <Button variant="outline" onClick={cancelMix}>
+            <Button size="lg" variant="outline" onClick={cancelMix}>
               Cancel
             </Button>
             <Button size="lg" disabled={selectedA === null || selectedB === null} onClick={handleMixConfirm}>

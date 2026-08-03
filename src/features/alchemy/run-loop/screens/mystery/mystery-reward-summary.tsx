@@ -6,7 +6,14 @@ import { type MaterialId } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 
 import { FoundResourcesRow } from "../../../shared/ui/found-resources-row";
-import { cardSurfaceClass, collectionTileWidthClass, viewCardWidthClass } from "@/features/alchemy/shared/config";
+import {
+  BUTTON_WIDTH_ACTION,
+  bodyTextClass,
+  cardSurfaceClass,
+  collectionTileWidthClass,
+  controlLabelClass,
+  viewCardWidthClass,
+} from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEffect } from "@/lib/mystery";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { BattleCardButton } from "../../../shared/ui/card-button";
@@ -22,7 +29,7 @@ interface LookupProps {
 
 function renderFoundOrLost(effect: MysteryEffect, prefix: string) {
   return (
-    <div className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
+    <div className="flex items-center justify-center gap-2 text-lg font-medium text-muted-foreground">
       {prefix}
       <MysteryEffectBadge effect={effect} findCard={undefined} findTrinket={undefined} />
     </div>
@@ -53,10 +60,10 @@ function MysteryRewardEffectItem({
           shimmerToken={undefined}
           className={viewCardWidthClass}
         />
-        <p className="text-sm font-semibold text-foreground">
+        <p className={controlLabelClass}>
           <CardTitle card={card} />
         </p>
-        <p className="text-sm text-muted-foreground">
+        <p className={bodyTextClass}>
           Added <CardTitle card={card} /> to your Deck
         </p>
       </div>
@@ -95,12 +102,12 @@ function MysteryRewardEffectItem({
               />
             </TiltSurface>
           </div>
-          <p className="text-sm font-semibold text-foreground">{boon.title}</p>
-          <p className="text-sm text-muted-foreground">Added {boon.title} to your Inventory</p>
+          <p className={controlLabelClass}>{boon.title}</p>
+          <p className={bodyTextClass}>Added {boon.title} to your Inventory</p>
         </div>
       );
     },
-    gainRandomTrinket: () => <p className="text-sm font-semibold text-foreground">Gained a random trinket</p>,
+    gainRandomTrinket: () => <p className={controlLabelClass}>Gained a random trinket</p>,
     gainGold: () => renderFoundOrLost(effect, "Found"),
     gainMaterial: () => renderFoundOrLost(effect, "Found"),
     loseGold: () => renderFoundOrLost(effect, "Lost"),
@@ -110,7 +117,7 @@ function MysteryRewardEffectItem({
   const render =
     rewardRenderers[effect.kind] ??
     (() => (
-      <p className="text-base text-muted-foreground">
+      <p className={bodyTextClass}>
         <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} />
       </p>
     ));
@@ -164,7 +171,7 @@ export function MysteryRewardSummary({
       ) : null}
 
       <StaggerItem index={otherEffects.length + (resourceEffects.length > 0 ? 2 : 1)}>
-        <Button size="lg" onClick={onContinue}>
+        <Button size="lg" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
           Continue
         </Button>
       </StaggerItem>

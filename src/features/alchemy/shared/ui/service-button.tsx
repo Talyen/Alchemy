@@ -12,7 +12,7 @@ export function DisabledTooltip({ show, message, children }: { show: boolean; me
     <div className="group relative">
       {children}
       <TooltipPanel width="w-auto" className="pointer-events-none whitespace-nowrap opacity-0 group-hover:opacity-100">
-        <p className="text-xs leading-none text-foreground">{message}</p>
+        <p className="text-base leading-none text-foreground">{message}</p>
       </TooltipPanel>
     </div>
   );
@@ -39,16 +39,16 @@ export function ServiceButton({
 }) {
   if (used) {
     return (
-      <Button variant="outline" disabled className="text-muted-foreground/40">
+      <Button size="lg" variant="outline" disabled className="text-muted-foreground/40">
         {soldOutText}
       </Button>
     );
   }
   return (
     <DisabledTooltip show={disabled} message={disabledMessage}>
-      <Button variant="outline" disabled={disabled} onClick={onClick}>
-        <Icon className="h-4 w-4" />
-        <span className="text-sm font-normal">{label}</span>
+      <Button size="lg" variant="outline" disabled={disabled} onClick={onClick}>
+        <Icon className="h-7 w-7" />
+        <span className="font-normal">{label}</span>
         <GoldCost amount={cost} />
       </Button>
     </DisabledTooltip>

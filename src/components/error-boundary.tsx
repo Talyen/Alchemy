@@ -45,6 +45,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="mb-6 text-muted-foreground">An unexpected error occurred. Please reload the page.</p>
             <Button
               type="button"
+              size="lg"
               hoverSound={false}
               onClick={() => {
                 this.setState({ hasError: false });

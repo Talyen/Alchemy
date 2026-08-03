@@ -25,7 +25,8 @@ import { useUiStore } from "../../shared/stores/ui-store";
 import { useFinishedRunCharacters } from "../../shared/stores/profile-port";
 import { playUISound } from "@/lib/audio";
 
-const charCardWidthClass = "w-[clamp(21.6vh,24.6vh,33.6vh)]"; // 1.2× former 18 / 20.5 / 28 vh
+// Stage-relative clamp (slightly under the mid/small-monitor enlarge step).
+const charCardWidthClass = "w-[clamp(22.5cqh,25.5cqh,35cqh)]";
 
 function CharacterCard({
   id,
@@ -124,7 +125,7 @@ function CharacterCard({
                   </div>
                 ) : (
                   <div className="mt-2 flex">
-                    <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm leading-none font-semibold text-amber-100/90">
+                    <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-3.5 py-2 text-lg leading-none font-semibold text-amber-100/90">
                       All Keywords
                     </span>
                   </div>
@@ -134,7 +135,7 @@ function CharacterCard({
           </TooltipPanel>
         ) : null}
       </div>
-      <p className={cn("mt-1 font-sans text-lg font-bold text-amber-100/90", isLocked && "text-muted-foreground/60")}>
+      <p className={cn("mt-1 font-sans text-2xl font-bold text-amber-100/90", isLocked && "text-muted-foreground/60")}>
         {char.name}
       </p>
     </div>

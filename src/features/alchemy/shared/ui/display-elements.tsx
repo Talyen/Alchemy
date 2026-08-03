@@ -5,8 +5,8 @@ import { Coins } from "lucide-react";
 
 export function GoldCost({ amount }: { amount: number }) {
   return (
-    <span className="flex items-center gap-1 text-xs text-yellow-300">
-      <Coins className="h-3 w-3" />
+    <span className="flex items-center gap-1 text-base text-yellow-300">
+      <Coins className="h-4 w-4" />
       {amount}
     </span>
   );
@@ -14,8 +14,8 @@ export function GoldCost({ amount }: { amount: number }) {
 
 export function GoldDisplay({ gold }: { gold: number }) {
   return (
-    <p className="flex items-center gap-2 text-lg font-medium text-yellow-300">
-      <Coins className="h-5 w-5" />
+    <p className="flex items-center gap-2 text-2xl font-medium text-yellow-300">
+      <Coins className="h-7 w-7" />
       {gold} Gold
     </p>
   );

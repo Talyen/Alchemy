@@ -777,6 +777,71 @@ describe("session facade API", () => {
     );
   });
 
+  it("omits primary reward choices while a claim is in flight but keeps destinations", () => {
+    const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
+    getRunSessionStoreView().setRewardState({
+      ...createEmptyRewardState(["Campfire"]),
+      rewardType: "gear",
+      choices: [instance],
+      gold: 5,
+    });
+    getRunSessionStoreView().beginRewardClaim();
+    const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
+    expect(snap.pendingReward).toBeNull();
+    expect(snap.destinationChoices).toEqual(["Campfire"]);
+    expect(snap.currentScreen).toBe("destination");
+  });
+
+  it("persists companion handoff during mid-claim and restores companion as the offer", () => {
+    const primary = cardLibrary.find((card) => card.id === "slash")!;
+    const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"))!;
+    getRunSessionStoreView().setRewardState({
+      ...createEmptyRewardState(["Shop"]),
+      rewardType: "card",
+      choices: [primary],
+    });
+    getRunSessionStoreView().setCompanionRewardCards([companion]);
+    getRunSessionStoreView().beginRewardClaim();
+
+    const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
+    expect(snap.pendingReward?.rewardType).toBe("card");
+    if (snap.pendingReward?.rewardType === "card") {
+      expect(snap.pendingReward.choiceIds).toEqual([]);
+    }
+    expect(snap.pendingReward?.companionChoiceIds).toEqual([companion.id]);
+    expect(snap.currentScreen).toBe("rewards");
+
+    getRunSessionStoreView().setRewardState(createEmptyRewardState());
+    getRunSessionStoreView().setCompanionRewardCards(null);
+    getRunSessionStoreView().releaseRewardClaim();
+    restoreRun(snap, {}, {});
+
+    const restored = getRunSessionStoreView().rewardState;
+    expect(restored.rewardType).toBe("card");
+    if (restored.rewardType === "card") {
+      expect(restored.choices.map((choice) => choice.id)).toEqual([companion.id]);
+    }
+    expect(getRunSessionStoreView().companionRewardCards).toBeNull();
+    expect(getNavigationStoreView().screen).toBe("rewards");
+  });
+
+  it("avoids soft-locking hollow boss rewards on resume", () => {
+    getRunSessionStoreView().setRewardState({
+      ...createEmptyRewardState(),
+      rewardType: "gear",
+      choices: [],
+      lastVictoryEnemyType: "boss",
+    });
+    const snap = {
+      ...snapshotRun(ROUTE_SCREENS.REWARDS),
+      pendingReward: null,
+      destinationChoices: [],
+      currentScreen: "rewards" as const,
+    };
+    restoreRun(snap, {}, {});
+    expect(getNavigationStoreView().screen).toBe("destination");
+  });
+
   it("snapshots and restores pending gear rewards on the rewards screen", () => {
     const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
     getRunSessionStoreView().setRewardState({

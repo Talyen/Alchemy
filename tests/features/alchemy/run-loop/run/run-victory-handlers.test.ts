@@ -196,7 +196,7 @@ describe("createRunFlowHandlers victory paths", () => {
     expect(onWildwoodRewardComplete).not.toHaveBeenCalled();
   });
 
-  it("finishRewards ignores a second call after claim surface is cleared", () => {
+  it("finishRewards ignores a second call while claim is in flight", () => {
     const card = {
       id: "reward-card",
       uid: 1,
@@ -233,13 +233,73 @@ describe("createRunFlowHandlers victory paths", () => {
     expect(getRunProgressStoreView().runDeck).toHaveLength(1);
     expect(navigateTo).toHaveBeenCalledTimes(1);
     expect(getRunSessionStoreView().rewardClaimInFlight).toBe(true);
-    // Destinations remain until navigation commits (resume-safe mid-transition).
+    // Offer UI stays populated until navigation commits (no hollow Victory exit).
     expect(getRunSessionStoreView().rewardState.destinations).toEqual([CONSTANTS.DESTINATIONS.NORMAL_COMBAT]);
-    expect(getRunSessionStoreView().rewardState.choices).toEqual([]);
+    expect(getRunSessionStoreView().rewardState.choices).toEqual([card]);
 
     const onCommit = navigateTo.mock.calls[0][1] as () => void;
     onCommit();
     expect(getRunSessionStoreView().rewardClaimInFlight).toBe(false);
+    expect(getRunSessionStoreView().rewardState.choices).toEqual([]);
+  });
+
+  it("finishRewards defers companion handoff until navigation commit", () => {
+    const primary = {
+      id: "reward-card",
+      uid: 1,
+      title: "Reward Card",
+      descriptionLines: [],
+      art: "",
+      cost: 1,
+      effects: [],
+    };
+    const companion = {
+      id: "wolf-companion",
+      uid: 2,
+      title: "Wolf Companion",
+      descriptionLines: [],
+      art: "",
+      cost: 0,
+      effects: [],
+    };
+    setRunProgress({
+      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN,
+      runDeck: [],
+    });
+    setRunSession({
+      rewardState: {
+        choices: [primary],
+        gold: 5,
+        materials: emptyInventory(),
+        selectedId: primary.id,
+        destinations: [CONSTANTS.DESTINATIONS.NORMAL_COMBAT],
+        rewardType: "card",
+        selectedBossId: null,
+        lastVictoryEnemyType: "normal",
+        lastVictoryContentSystem: "campaign",
+      },
+      companionRewardCards: [companion],
+    });
+    const navigateTo = vi.fn();
+    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
+
+    handlers.finishRewards();
+
+    expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.REWARDS, expect.any(Function));
+    expect(getRunProgressStoreView().runDeck.map((card) => card.id)).toEqual([primary.id]);
+    expect(getRunSessionStoreView().rewardClaimInFlight).toBe(true);
+    // Primary offer stays visible until commit (no hollow / early companion swap).
+    expect(getRunSessionStoreView().rewardState.choices).toEqual([primary]);
+    expect(getRunSessionStoreView().companionRewardCards).toEqual([companion]);
+
+    const onCommit = navigateTo.mock.calls[0]![1] as () => void;
+    onCommit();
+
+    expect(getRunSessionStoreView().rewardClaimInFlight).toBe(false);
+    expect(getRunSessionStoreView().companionRewardCards).toBeNull();
+    expect(getRunSessionStoreView().rewardState.choices.map((card) => card.id)).toEqual([companion.id]);
+    expect(getRunSessionStoreView().rewardState.selectedId).toBeNull();
+    expect(getRunSessionStoreView().rewardState.gold).toBe(0);
   });
 
   it("handleDestinationChoice ignores a second call after destinations are cleared", () => {
@@ -285,6 +345,47 @@ describe("createRunFlowHandlers victory paths", () => {
 
     expect(getRunProgressStoreView().completedDestinations).toEqual([CONSTANTS.DESTINATIONS.CAMPFIRE]);
     expect(getRunProgressStoreView().destinationIndexInAct).toBe(1);
+    expect(getRunSessionStoreView().rewardState.destinations).toEqual([]);
+    expect(getRunSessionStoreView().pendingDestinationClaim).toBeNull();
+  });
+
+  it("handleDestinationChoice defers mystery destination commit until screen commit", () => {
+    setRunProgress({
+      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN,
+      completedDestinations: [],
+      destinationIndexInAct: 0,
+    });
+    setRunSession({
+      rewardState: {
+        choices: [],
+        gold: 0,
+        materials: emptyInventory(),
+        selectedId: null,
+        destinations: [CONSTANTS.DESTINATIONS.MYSTERY, CONSTANTS.DESTINATIONS.CAMPFIRE],
+        rewardType: "card",
+        selectedBossId: null,
+        lastVictoryEnemyType: null,
+        lastVictoryContentSystem: null,
+      },
+    });
+    const beginMysteryEvent = vi.fn();
+    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ beginMysteryEvent }));
+
+    handlers.handleDestinationChoice(CONSTANTS.DESTINATIONS.MYSTERY);
+
+    expect(beginMysteryEvent).toHaveBeenCalledTimes(1);
+    expect(beginMysteryEvent).toHaveBeenCalledWith(expect.any(Function));
+    expect(getRunSessionStoreView().pendingDestinationClaim).toBe(CONSTANTS.DESTINATIONS.MYSTERY);
+    expect(getRunSessionStoreView().rewardState.destinations).toEqual([
+      CONSTANTS.DESTINATIONS.MYSTERY,
+      CONSTANTS.DESTINATIONS.CAMPFIRE,
+    ]);
+    expect(getRunProgressStoreView().completedDestinations).toEqual([]);
+
+    const onCommit = beginMysteryEvent.mock.calls[0]![0] as () => void;
+    onCommit();
+
+    expect(getRunProgressStoreView().completedDestinations).toEqual([CONSTANTS.DESTINATIONS.MYSTERY]);
     expect(getRunSessionStoreView().rewardState.destinations).toEqual([]);
     expect(getRunSessionStoreView().pendingDestinationClaim).toBeNull();
   });

@@ -4,21 +4,26 @@
 // browser viewport so preview emulation and desktop scaling stay consistent.
 // Pixel bounds converted to cqh/cqw so the layout is resolution-independent
 // (the stage container may be 1080, 2160, or another height in the future).
-export const battleCardWidthClass = "w-[clamp(24.76cqh,25.16cqh,37.48cqh)]";
+export const battleCardWidthClass = "w-[clamp(28.5cqh,28.9cqh,43.1cqh)]";
 export const handCardWidthClass = "w-[clamp(22.28cqh,22.64cqh,33.73cqh)]";
 // Non-battle card/tile widths are authored ~1.2× denser than the prior stage sizes.
 export const viewCardWidthClass = "w-[clamp(21cqh,21.34cqh,31.78cqh)]"; // was 17.5 / 17.78 / 26.48
 export const collectionTileWidthClass = "w-[clamp(25.2cqh,25.61cqh,38.14cqh)]"; // was 21 / 21.34 / 31.78
-export const collectionGridGapXClass = "gap-x-3";
-export const collectionShellWidthClass = "w-full max-w-6xl";
-// Shared with CollectionGrid — same column count, gap, and justify-items-center.
-export const collectionCardGridClass = `grid w-full justify-items-center ${collectionGridGapXClass} grid-cols-4`;
-export const collectionTrinketGridClass = `grid w-full justify-items-center ${collectionGridGapXClass} grid-cols-3`;
+// Grid cells use max-width so densified tiles shrink instead of overlapping neighbors when
+// the shell is narrower than 4×tile + gaps (e.g. rem-fixed max-w after UI Scale removal).
+export const collectionGridTileWidthClass = "mx-auto w-full max-w-[clamp(25.2cqh,25.61cqh,38.14cqh)]";
+export const collectionGridGapXClass = "gap-x-5";
+// Must fit 4× collection tile max + 3× gap-x-5 + ScreenShell p-[2.1rem] at 1080cqh (~1.2kpx).
+export const collectionShellWidthClass = "max-w-7xl";
+// Shared with CollectionGrid — stretch columns; tiles self-center via collectionGrid*WidthClass.
+export const collectionCardGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-4`;
+export const collectionTrinketGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-3`;
 export const trinketCardWidthClass = "w-[clamp(29.4cqh,29.87cqh,44.48cqh)]"; // was 24.5 / 24.89 / 37.07
-export const pileCardWidthClass = "w-[clamp(12cqh,12.96cqh,18.25cqh)]";
+export const collectionGridTrinketWidthClass = "mx-auto w-full max-w-[clamp(29.4cqh,29.87cqh,44.48cqh)]";
+export const pileCardWidthClass = "w-[clamp(13.8cqh,14.9cqh,21cqh)]";
 
 // Boss variants — 1.3× the standard battle card width for wider status panes.
-export const bossCardWidthClass = "w-[calc(clamp(24.76cqh,25.16cqh,37.48cqh)*1.3)]";
+export const bossCardWidthClass = "w-[calc(clamp(28.5cqh,28.9cqh,43.1cqh)*1.3)]";
 
 // Non-battle portrait/card panels (e.g. difficulty select) — 1.2× battleCardWidthClass, battle token untouched.
 export const nonBattleCardWidthClass = "w-[clamp(29.71cqh,30.19cqh,44.98cqh)]";

@@ -2,6 +2,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { BUTTON_WIDTH_DIALOG } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 
 import {
@@ -98,7 +99,7 @@ export function OptionsScreen({
         </div>
 
         <div className="mt-6 flex justify-center">
-          <Button variant="outline" className="w-40" onClick={onBack}>
+          <Button size="lg" variant="outline" className={BUTTON_WIDTH_DIALOG} onClick={onBack}>
             Back
           </Button>
         </div>

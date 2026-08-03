@@ -1,7 +1,7 @@
 // Single interactive collection tile for card, bestiary, and boon entries.
 // Depends on tile item data, card flipping, tooltip components, audio, and tilt utilities.
 // Used by CollectionGrid to keep grid layout separate from tile behavior.
-import { useState } from "react";
+import { useRef, useState, type RefObject } from "react";
 
 import { playCardSound, playEnemyAttack } from "@/lib/audio";
 import { cardBack } from "@/lib/game-data";
@@ -10,9 +10,9 @@ import { cn } from "@/lib/utils";
 import {
   cardArtImageClass,
   cardSurfaceClass,
-  collectionTileWidthClass,
+  collectionGridTileWidthClass,
+  collectionGridTrinketWidthClass,
   squareArtImageClass,
-  trinketCardWidthClass,
 } from "../config";
 import { CardFlip } from "./card-flip";
 import { DetailPopup } from "./card-popup";
@@ -26,6 +26,7 @@ interface CompendiumTileProps {
 }
 
 export function CompendiumTile({ item }: CompendiumTileProps) {
+  const tileRef = useRef<HTMLDivElement>(null);
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
     item.hoverScope,
     item.id,
@@ -33,8 +34,8 @@ export function CompendiumTile({ item }: CompendiumTileProps) {
   const [flipped, setFlipped] = useState(false);
 
   return (
-    <div className="relative h-full w-full" onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
-      <CollectionTilePopup item={item} hovered={isHovered} />
+    <div ref={tileRef} className="relative h-full w-full" onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
+      <CollectionTilePopup item={item} hovered={isHovered} triggerRef={tileRef} />
       <TiltSurface
         as="button"
         ariaLabel={item.discovered ? `Inspect ${item.title}` : "Inspect Undiscovered Entry"}
@@ -43,9 +44,9 @@ export function CompendiumTile({ item }: CompendiumTileProps) {
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
         className={cn(
-          "group w-full",
+          "group",
           cardSurfaceClass,
-          item.frameType === "trinket" ? trinketCardWidthClass : collectionTileWidthClass,
+          item.frameType === "trinket" ? collectionGridTrinketWidthClass : collectionGridTileWidthClass,
           item.frameType === "card" && "bg-transparent",
         )}
         onClick={() => {
@@ -63,11 +64,21 @@ export function CompendiumTile({ item }: CompendiumTileProps) {
   );
 }
 
-function CollectionTilePopup({ item, hovered }: { item: CollectionTileItem; hovered: boolean }) {
-  if (!hovered) return null;
+function CollectionTilePopup({
+  item,
+  hovered,
+  triggerRef,
+}: {
+  item: CollectionTileItem;
+  hovered: boolean;
+  triggerRef: RefObject<HTMLElement | null>;
+}) {
   if (item.frameType === "bestiary" && item.enemyEntry) {
-    return <EnemyTooltip entry={item.enemyEntry} discovered={item.discovered} />;
+    return (
+      <EnemyTooltip entry={item.enemyEntry} discovered={item.discovered} triggerRef={triggerRef} visible={hovered} />
+    );
   }
+  if (!hovered) return null;
   return (
     <DetailPopup
       idPrefix={item.id}

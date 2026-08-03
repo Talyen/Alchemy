@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { gameModeMeta } from "@/features/alchemy/shared/config";
+import { gameModeMeta, bodyTextClass, sectionTitleClass } from "@/features/alchemy/shared/config";
 import { PressableSound } from "../../shared/ui/pressable-sound";
 import { ActionButtonRow, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
@@ -89,8 +89,8 @@ export function GameModeSelectScreen({
                     aria-hidden
                     className="w-full max-w-[39.11cqh] rounded-shell-card object-contain"
                   />
-                  <h2 className="font-sans text-base font-bold text-amber-100/75">{meta.title}</h2>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{meta.description}</p>
+                  <h2 className={cn("font-sans", sectionTitleClass)}>{meta.title}</h2>
+                  <p className={bodyTextClass}>{meta.description}</p>
                 </TiltSurface>
               </PressableSound>
               {hoveredModeId === modeId && isLocked && (

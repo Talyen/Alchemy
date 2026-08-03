@@ -22,7 +22,12 @@ import { PressableSound } from "../../shared/ui/pressable-sound";
 import { ScreenHeader, ActionButtonRow, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { tokenizeDescription } from "../../shared/utils";
-import { cardSurfaceClass, nonBattleCardWidthClass } from "@/features/alchemy/shared/config";
+import {
+  cardSurfaceClass,
+  bodyTextClass,
+  nonBattleCardWidthClass,
+  sectionTitleClass,
+} from "@/features/alchemy/shared/config";
 import { TooltipPanel } from "../../shared/ui/tooltip-panel";
 import { useUiStore } from "../../shared/stores/ui-store";
 
@@ -123,11 +128,9 @@ function DifficultyCard({
               </div>
             </div>
           )}
-          <p className={cn("font-sans text-base font-bold text-amber-100/75", locked && "text-muted-foreground")}>
-            {name}
-          </p>
+          <p className={cn("font-sans", sectionTitleClass, locked && "text-muted-foreground")}>{name}</p>
           <div className="flex min-h-[6.67cqh] flex-col justify-center">
-            <div className="max-w-[24.44cqh] text-center text-sm leading-relaxed text-muted-foreground">
+            <div className={cn("max-w-[24.44cqh] text-center", bodyTextClass)}>
               {renderDescription(fullDescription)}
             </div>
           </div>
@@ -136,7 +139,7 @@ function DifficultyCard({
 
       {locked && (
         <TooltipPanel className="pointer-events-none opacity-0 group-hover:opacity-100">
-          <p className="text-sm leading-6 text-muted-foreground">Clear Previous Difficulty to Unlock</p>
+          <p className={bodyTextClass}>Clear Previous Difficulty to Unlock</p>
         </TooltipPanel>
       )}
     </div>
@@ -197,7 +200,7 @@ export function DifficultySelectScreen({
               className={cn(cardSurfaceClass, "h-full w-full rounded-shell-panel object-cover")}
             />
           </TiltSurface>
-          <p className="font-sans text-base font-bold text-amber-100/75">{char.name}</p>
+          <p className={cn("font-sans", sectionTitleClass)}>{char.name}</p>
           <div className="flex flex-wrap justify-center gap-1">
             {char.keywords.map((kw) => (
               <KeywordTag key={kw} keywordId={kw} pill showTooltip />

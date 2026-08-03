@@ -149,12 +149,16 @@ export function BattleScreen(props: BattleScreenProps) {
           <BackgroundParticles variant="embers" colors={particleColors} alphaMultiplier={particleAlpha} />
         </div>
 
-        <div className="relative z-10 flex flex-1 flex-col">
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col">
           <div className="absolute top-0 right-0 z-30">
             <HamburgerTrigger onClick={actions.onOpenMenu} label="Open battle menu" />
           </div>
 
-          <div ref={sceneRef} data-testid="battle-scene" className="[container-type:size] relative mt-2 flex-1">
+          <div
+            ref={sceneRef}
+            data-testid="battle-scene"
+            className="[container-type:size] absolute inset-0 overflow-hidden"
+          >
             <BattleActors view={requiredView} hover={hover} feedback={feedback} refs={refs} />
 
             <BattleBottomBar view={requiredView} refs={refs} actions={actions} />

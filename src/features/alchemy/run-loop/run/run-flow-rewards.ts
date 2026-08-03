@@ -44,11 +44,9 @@ export function createRewardHandlers(ctx: RunFlowContext) {
           companionRewardCards: session.companionRewardCards,
         });
 
-        // Apply the post-claim persistable surface immediately so autosave cannot
-        // snapshot an empty rewards screen. Companion route keeps choices (the
-        // companion offer); other routes keep destinations with choices cleared.
-        setRewardState(result.nextRewardState);
-        if (result.clearCompanionRewardCards) setCompanionRewardCards(null);
+        // Keep the live offer UI until onRenderedScreenCommit so Victory does not
+        // hollow during NAVIGATION_DELAY_MS + PAGE_EXIT_MS. Mid-claim autosave
+        // persists companion handoff or destination continuation (not the claimed primary).
 
         const isWildwood = deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD;
         if (!isWildwood) awardMaterialsDuringRun(result.materials);
@@ -71,28 +69,35 @@ export function createRewardHandlers(ctx: RunFlowContext) {
         afterCommit: (commit) => {
           if (!commit) return;
           const { result, isWildwood } = commit;
-          const releaseRewardClaim = () => releaseRewardClaimState();
+
+          const settleClaimSurface = () => {
+            setRewardState(result.nextRewardState);
+            if (result.clearCompanionRewardCards) setCompanionRewardCards(null);
+            releaseRewardClaimState();
+          };
 
           if (result.selectedChoice) playUISound("talentUnlock");
           useUiStore.getState().clearCardHover();
           if (isWildwood && result.route !== CONSTANTS.REWARD_ROUTES.COMPANION_REWARD) {
-            releaseRewardClaim();
-            deps.dispatch({ type: "wildwood-reward-complete" });
+            deps.dispatch({
+              type: "wildwood-reward-complete",
+              onRenderedScreenCommit: settleClaimSurface,
+            });
             return;
           }
           executeRewardRouteTransition(
             result.route,
             result.materials,
             result.nextRewardState,
-            false, // companion cards already cleared above when needed
+            result.clearCompanionRewardCards,
             {
               navigateTo: (screen, onCommit) => {
                 deps.dispatch({
                   type: "navigate",
                   screen,
                   onRenderedScreenCommit: () => {
-                    releaseRewardClaim();
                     onCommit?.();
+                    releaseRewardClaimState();
                   },
                 });
               },
@@ -101,14 +106,21 @@ export function createRewardHandlers(ctx: RunFlowContext) {
                   type: "complete-run-victory",
                   displayMaterials: materials,
                   onRenderedScreenCommit: () => {
-                    releaseRewardClaim();
                     onCommit?.();
+                    releaseRewardClaimState();
                   },
                 });
               },
               handleActComplete: (materials) => {
-                releaseRewardClaim();
-                ctx.dispatchContinuation({ type: "handle-act-complete", displayMaterials: materials });
+                ctx.dispatchContinuation({
+                  type: "handle-act-complete",
+                  displayMaterials: materials,
+                  onRenderedScreenCommit: () => {
+                    // prepareNextDestination / victory commit overwrite offer state;
+                    // only the claim lock must be released here.
+                    releaseRewardClaimState();
+                  },
+                });
               },
               onLabyrinthClearNode: () => deps.dispatch({ type: "labyrinth-clear-node" }),
               setCompanionRewardCards,

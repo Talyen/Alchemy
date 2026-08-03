@@ -43,7 +43,7 @@ describe("Button", () => {
     render(<Button>Default</Button>);
     const button = screen.getByRole("button");
     expect(button.className).toContain("bg-primary");
-    expect(button.className).toContain("h-11");
+    expect(button.className).toContain("h-14");
   });
 
   it("applies destructive variant", () => {
@@ -76,20 +76,20 @@ describe("Button", () => {
   it("applies sm size", () => {
     const { container } = render(<Button size="sm">Small</Button>);
     const button = container.querySelector("button")!;
-    expect(button.className).toContain("h-9");
+    expect(button.className).toContain("h-11");
   });
 
   it("applies lg size", () => {
     const { container } = render(<Button size="lg">Large</Button>);
     const button = container.querySelector("button")!;
-    expect(button.className).toContain("h-12");
+    expect(button.className).toContain("h-16");
   });
 
   it("applies icon size", () => {
     const { container } = render(<Button size="icon">X</Button>);
     const button = container.querySelector("button")!;
-    expect(button.className).toContain("h-11");
-    expect(button.className).toContain("w-11");
+    expect(button.className).toContain("h-14");
+    expect(button.className).toContain("w-14");
   });
 
   it("applies primary variant alias", () => {

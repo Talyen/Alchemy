@@ -5,6 +5,7 @@ import { useEffect, useId, type ComponentType, type ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { Button } from "@/components/ui/button";
+import { bodyTextClass, sectionTitleClass } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 
 const DIALOG_CONFIG = {
@@ -63,13 +64,13 @@ export function ConfirmationDialog({
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/15 text-amber-200">
           <Icon className="h-6 w-6" />
         </div>
-        <h2 className="mt-4 font-sans text-base font-bold text-amber-100/75">{title}</h2>
-        {description && <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>}
+        <h2 className={cn("mt-4 font-sans", sectionTitleClass)}>{title}</h2>
+        {description && <p className={cn("mt-3", bodyTextClass)}>{description}</p>}
         <div className="mt-6 flex justify-center gap-3">
-          <Button variant="outline" onClick={onCancel}>
+          <Button size="lg" variant="outline" onClick={onCancel}>
             {cancelLabel}
           </Button>
-          <Button variant={tone === DIALOG_CONFIG.dangerTone ? "destructive" : "default"} onClick={onConfirm}>
+          <Button size="lg" variant={tone === DIALOG_CONFIG.dangerTone ? "destructive" : "default"} onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </div>

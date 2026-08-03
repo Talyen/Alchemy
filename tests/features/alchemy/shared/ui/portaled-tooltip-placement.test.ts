@@ -5,7 +5,7 @@ import {
   buildPortaledTooltipStyle,
   measurePortaledTooltipPlacement,
   shouldPlacePortaledTooltipBelow,
-} from "@/features/alchemy/meta/screens/armory/armory-tooltip-placement";
+} from "@/features/alchemy/shared/ui/portaled-tooltip-placement";
 
 const stage = { top: 0, left: 0, right: 1280, bottom: 720 };
 

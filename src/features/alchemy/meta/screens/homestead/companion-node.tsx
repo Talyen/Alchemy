@@ -33,7 +33,7 @@ function getCompanionFooter(
   return (
     <div className="mt-0.5 flex items-center gap-2">
       <DisabledTooltip show={!bondAffordable} message="Not Enough Resources">
-        <Button variant="outline" disabled={!bondAffordable} onClick={() => onBond(card)}>
+        <Button size="lg" variant="outline" disabled={!bondAffordable} onClick={() => onBond(card)}>
           {card.title}
           <MaterialCost material="food" amount={bondCost.food} />
         </Button>

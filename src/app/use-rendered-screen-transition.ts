@@ -4,7 +4,7 @@ import type { Screen } from "@/features/alchemy/shared/types";
 import { PAGE_EXIT_MS } from "@/lib/game-constants";
 
 export function useRenderedScreenTransition(controllerScreen: Screen, commitPendingTransition: () => void) {
-  const [renderedScreen, setRenderedScreen] = useState<Screen>("menu");
+  const [renderedScreen, setRenderedScreen] = useState(controllerScreen);
   const [pagePhase, setPagePhase] = useState<"enter" | "exit">("enter");
   const [tooltipBlocked, setTooltipBlocked] = useState(true);
   const pendingScreenRef = useRef(renderedScreen);

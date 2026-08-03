@@ -6,7 +6,7 @@ import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-c
 import { cn } from "@/lib/utils";
 
 import { keywordIcons } from "../config";
-import { TooltipPanel, useTooltipViewportClamp } from "./tooltip-panel";
+import { TooltipBody, TooltipPanel, useTooltipViewportClamp } from "./tooltip-panel";
 
 export function KeywordTag({
   keywordId,
@@ -30,9 +30,9 @@ export function KeywordTag({
   const tag = (
     <span
       className={cn(
-        "inline-flex items-baseline gap-1 text-sm leading-none font-semibold",
+        "inline-flex items-baseline gap-1 text-lg leading-none font-semibold",
         def.colorClass,
-        pill && "character-keyword-pill-tint rounded-full px-2.5 py-1",
+        pill && "character-keyword-pill-tint rounded-full px-3.5 py-2",
         className,
       )}
     >
@@ -57,7 +57,7 @@ export function KeywordTag({
         <span className="flex items-center gap-2 text-base">
           <KeywordTag keywordId={keywordId} showIcon />
         </span>
-        <span className="mt-2 block text-sm leading-6 text-muted-foreground">{def.description}</span>
+        <TooltipBody>{def.description}</TooltipBody>
       </TooltipPanel>
     </span>
   );

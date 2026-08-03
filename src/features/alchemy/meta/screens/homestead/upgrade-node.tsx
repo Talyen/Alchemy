@@ -46,7 +46,7 @@ export function HomesteadUpgradeNode({
   ) : hasCost ? (
     <div className="mt-1.5 flex items-center gap-2">
       <DisabledTooltip show={!itemAffordable} message="Not Enough Resources">
-        <Button variant="outline" disabled={!itemAffordable} onClick={() => onAction(item)}>
+        <Button size="lg" variant="outline" disabled={!itemAffordable} onClick={() => onAction(item)}>
           {item.data.title}
           {costItems.map((m) => (
             <MaterialCost key={m} material={m} amount={itemCost[m]} />

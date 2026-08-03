@@ -1,10 +1,8 @@
-import { createPortal } from "react-dom";
 import type { RefObject } from "react";
 import type { GearDefinition, GearInstance } from "@/lib/gear";
-import { TooltipPanel } from "../../../shared/ui/tooltip-panel";
+import { PortaledTooltip } from "../../../shared/ui/portaled-tooltip";
 import { GearTooltipContent } from "../../../shared/ui/gear-tooltip-content";
 import { ARMORY_TOOLTIP_WIDTH } from "./gear-tooltip-content";
-import { useArmoryPortaledTooltipPlacement } from "./armory-tooltip-placement";
 
 interface Props {
   triggerRef: RefObject<HTMLElement | null>;
@@ -14,21 +12,14 @@ interface Props {
 }
 
 export function GearTooltipPortal({ triggerRef, visible, definition, instance }: Props) {
-  const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(triggerRef, visible);
-
-  if (!visible) return null;
-
-  return createPortal(
-    <TooltipPanel
-      ref={tooltipRef}
+  return (
+    <PortaledTooltip
+      triggerRef={triggerRef}
+      visible={visible}
       width={ARMORY_TOOLTIP_WIDTH}
-      visible
-      flip={placeBelow}
-      className="armory-inventory-tooltip pointer-events-none fixed top-auto bottom-auto z-[100] mt-0 mb-0 !shadow-none"
-      style={tooltipStyle}
+      className="armory-inventory-tooltip !shadow-none"
     >
       <GearTooltipContent definition={definition} {...(instance ? { instance } : {})} />
-    </TooltipPanel>,
-    document.body,
+    </PortaledTooltip>
   );
 }

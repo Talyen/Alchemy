@@ -1,14 +1,14 @@
 // Battle actor panels for hero/enemy art, health, status rows, and death effects.
 // Depends on actor subcomponents, enemy tooltips, and shared card styling.
 // Used by BattleScreen through the battle UI barrel.
-import type { Ref } from "react";
+import { useRef, useState, type Ref } from "react";
 
 import { Progress } from "@/components/ui/progress";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { battleCardWidthClass, cardArtImageClass, cardSurfaceClass } from "../../config";
+import { battleCardWidthClass, cardArtImageClass, cardSurfaceClass, sectionTitleClass } from "../../config";
 import type { StatusChip } from "../../types";
 import { TiltSurface } from "../tilt-surface";
 import { PortraitHurtVfx } from "./portrait-hurt-vfx";
@@ -47,6 +47,8 @@ interface ArtPanelProps {
   isBoss?: boolean;
   statsCardWidthClass?: string | undefined;
   hurtFlashToken?: number;
+  turnActive?: boolean;
+  turnUrgentHide?: boolean;
 }
 
 function getStatsCardWidth(isBoss: boolean, statsCardWidthClass: string | undefined, defaultClass: string): string {
@@ -78,22 +80,35 @@ export function ArtPanel({
   isBoss = false,
   statsCardWidthClass,
   hurtFlashToken = 0,
+  turnActive = false,
+  turnUrgentHide = false,
 }: ArtPanelProps) {
   const healthToken = useChangeToken(health);
   const healthPercent = maxHealth > 0 ? (health / maxHealth) * ACTOR_PANEL_CONFIG.fullHealthPercent : 0;
+  const artWrapperRef = useRef<HTMLDivElement>(null);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
 
   const artWrapClass = cn(isBoss && "origin-bottom scale-[1.3]");
 
   return (
     <div className={cn("relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
-      <div className="group/art-wrapper relative">
+      <div
+        ref={artWrapperRef}
+        className="group/art-wrapper relative"
+        tabIndex={currentEnemy || descriptionLines ? 0 : undefined}
+        onMouseEnter={() => setTooltipVisible(true)}
+        onMouseLeave={() => setTooltipVisible(false)}
+        onFocus={() => setTooltipVisible(true)}
+        onBlur={() => setTooltipVisible(false)}
+      >
         <ActorTooltip
-          side={side}
           title={title}
           descriptionLines={descriptionLines}
           currentEnemy={currentEnemy}
           currentEnemyAttackEffects={currentEnemyAttackEffects}
           activeLabyrinthModifiers={activeLabyrinthModifiers}
+          triggerRef={artWrapperRef}
+          visible={tooltipVisible}
         />
         <div className={artWrapClass}>
           <ActorArtFrame
@@ -109,6 +124,8 @@ export function ArtPanel({
             cardWidthClass={cardWidthClass}
             deathsDoorActive={deathsDoorActive}
             hurtFlashToken={hurtFlashToken}
+            turnActive={turnActive}
+            turnUrgentHide={turnUrgentHide}
           />
         </div>
       </div>
@@ -128,7 +145,7 @@ export function ArtPanel({
   );
 }
 
-import { ActorTooltip, ArtDeathDoorBorder, StatsDeathDoorBorder } from "./actor-panel-helpers";
+import { ActorTooltip, ArtDeathDoorBorder, ArtTurnActiveBorder, StatsDeathDoorBorder } from "./actor-panel-helpers";
 
 function ActorArtFrame({
   side,
@@ -143,6 +160,8 @@ function ActorArtFrame({
   cardWidthClass = battleCardWidthClass,
   deathsDoorActive,
   hurtFlashToken = 0,
+  turnActive = false,
+  turnUrgentHide = false,
 }: {
   side: "player" | "enemy";
   title: string;
@@ -156,6 +175,8 @@ function ActorArtFrame({
   cardWidthClass?: string;
   deathsDoorActive: boolean;
   hurtFlashToken?: number;
+  turnActive?: boolean;
+  turnUrgentHide?: boolean;
 }) {
   const { pulse, sparksOverflow } = useHurtPulse(hurtFlashToken);
 
@@ -176,6 +197,7 @@ function ActorArtFrame({
       shimmerRounded="rounded-shell-hero"
       onMouseEnter={() => onHoverShimmer(shimmerId)}
     >
+      <ArtTurnActiveBorder side={side} active={turnActive && !isDead} urgentHide={turnUrgentHide} />
       {deathsDoorActive ? <ArtDeathDoorBorder /> : null}
       <img
         src={art}
@@ -208,7 +230,7 @@ function ActorStatsPanel({
   return (
     <div
       className={cn(
-        "relative rounded-shell-inner px-4 py-3 surface-muted",
+        "relative rounded-shell-inner px-5 py-3.5 surface-muted",
         cardWidthClass,
         deathsDoorActive && "shadow-deaths-door-glow",
         isDead && "animate-frame-fade !bg-transparent",
@@ -219,7 +241,7 @@ function ActorStatsPanel({
         <ActorHealthHeader side={side} title={title} health={health} maxHealth={maxHealth} healthToken={healthToken} />
         <Progress
           value={healthPercent}
-          className={cn("mt-1 h-2 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")}
+          className={cn("mt-1.5 h-3 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")}
         />
         <ActorStatusRow title={title} statuses={statuses} deathsDoorActive={deathsDoorActive} side={side} />
       </div>
@@ -236,11 +258,11 @@ function ActorHealthHeader({
 }: Pick<ArtPanelProps, "side" | "title" | "health" | "maxHealth"> & { healthToken: number }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <p className="font-sans text-base font-bold text-amber-100/75">{title}</p>
+      <p className={cn("font-sans", sectionTitleClass)}>{title}</p>
       <p
         key={healthToken}
         data-testid={`${side}-health`}
-        className={cn("text-sm font-semibold text-foreground", healthToken > 0 && "hp-number-pop")}
+        className={cn("text-xl font-semibold text-foreground", healthToken > 0 && "hp-number-pop")}
       >
         {health}/{maxHealth}
       </p>
@@ -256,7 +278,7 @@ function ActorStatusRow({
   side,
 }: Pick<ArtPanelProps, "title" | "statuses" | "side"> & { deathsDoorActive: boolean | undefined }) {
   return (
-    <div className="mt-2.5 flex min-h-7 items-center gap-1" data-testid={`${side}-statuses`}>
+    <div className="mt-2.5 flex min-h-9 items-center gap-1" data-testid={`${side}-statuses`}>
       {deathsDoorActive ? <DeathsDoorStatusIcon /> : null}
       {statuses.map((status) => (
         <StatusIcon key={`${title}-${status.id}-${status.value}`} chip={status} />

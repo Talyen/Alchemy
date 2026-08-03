@@ -20,6 +20,7 @@ import {
   type EquipmentShopState,
   type LabyrinthNodePosition,
   type PersistedBattleTransition,
+  type PersistedPendingReward,
   type RewardState,
   type ShopState,
   type TrinketShopState,
@@ -27,6 +28,7 @@ import {
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import { DESTINATIONS, type Destination, type Screen } from "@/features/alchemy/shared/types";
 import { createInitialActiveRunFields, type ActiveRunProgressFields } from "./run-state-init";
 import type { RunSession } from "./run-session-model";
@@ -57,11 +59,61 @@ function validDestinations(values: string[]): Destination[] {
   return values.filter((value): value is Destination => allowed.has(value));
 }
 
+/**
+ * During an in-flight claim the primary choice is already applied to the deck.
+ * Persist only the post-claim surface (companion handoff or destinations) so
+ * autosave cannot re-offer the claimed primary or soft-lock empty Rewards.
+ */
+function encodeMidClaimPendingReward(session: RunSession["session"]): PersistedPendingReward | null {
+  const companions = session.companionRewardCards;
+  if (!companions?.length) return null;
+
+  return {
+    rewardType: "card",
+    choiceIds: [],
+    companionChoiceIds: companions.map((choice) => choice.id),
+    selectedId: null,
+    gold: 0,
+    materials: emptyInventory(),
+    destinations: [...session.rewardState.destinations],
+    selectedBossId: session.rewardState.selectedBossId,
+    lastVictoryEnemyType: session.rewardState.lastVictoryEnemyType,
+    lastVictoryContentSystem: session.rewardState.lastVictoryContentSystem,
+  };
+}
+
+function resolveEncodeScreen(
+  requested: Screen | null | undefined,
+  session: RunSession["session"],
+): Screen | null | undefined {
+  if (!session.rewardClaimInFlight) return requested;
+  if (session.companionRewardCards?.length) return requested ?? "rewards";
+  // Primary drained with destinations still pending — resume on destination pick.
+  if (session.rewardState.destinations.length > 0) return "destination";
+  // Boss / act-complete / labyrinth clear: no claimable surface left.
+  if (requested === "rewards" || requested == null) {
+    if (session.labyrinthMap) return "labyrinth-map";
+    if (session.wildwoodDraft) {
+      const phase = session.wildwoodDraft.phase;
+      if (phase === "removal") return "wildwood-removal";
+      if (phase === "recovery") return "wildwood-recovery";
+      if (phase === "reward") return "rewards";
+      if (phase === "draft") return "draft-deck";
+      if (phase === "battle") return "battle";
+    }
+    return "destination";
+  }
+  return requested;
+}
+
 /** Encode one aggregate run read model for both autosave and explicit save flows. */
 export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
   const { run, session, battle } = source;
-  const currentScreen = screen ?? source.screen;
-  const pendingReward = serializePendingReward(session.rewardState, session.companionRewardCards);
+  const requestedScreen = screen ?? source.screen;
+  const currentScreen = resolveEncodeScreen(requestedScreen, session) ?? requestedScreen;
+  const pendingReward = session.rewardClaimInFlight
+    ? encodeMidClaimPendingReward(session)
+    : serializePendingReward(session.rewardState, session.companionRewardCards);
 
   return createActiveRunSnapshot({
     characterId: run.characterId,
@@ -131,7 +183,19 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
     const restored = restorePendingRewardBundle(activeRun.pendingReward);
     rewardState = restored.rewardState;
     companionRewardCards = restored.companionRewardCards;
-    if (!rewardState) {
+    // Mid-claim companion saves use empty primary choiceIds; promote companions to the offer.
+    if (companionRewardCards?.length && (!rewardState || rewardState.choices.length === 0)) {
+      rewardState = {
+        ...(rewardState ?? createEmptyRewardState(validDestinations(activeRun.pendingReward.destinations))),
+        rewardType: "card",
+        choices: companionRewardCards,
+        selectedId: null,
+        gold: 0,
+        materials: emptyInventory(),
+      };
+      companionRewardCards = null;
+      screen = "rewards";
+    } else if (!rewardState) {
       console.warn("Pending reward could not be restored; reward choices were dropped", {
         rewardType: activeRun.pendingReward.rewardType,
       });
@@ -144,6 +208,21 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
     // Claim drained mid-transition; resume on destination pick with destinations intact.
     rewardState = createEmptyRewardState(validDestinations(activeRun.destinationChoices));
     screen = "destination";
+  } else if (activeRun.currentScreen === "rewards" && !rewardState) {
+    // Hollow Rewards with no pending offer — never soft-lock Add/Skip.
+    if (activeRun.labyrinthMap) {
+      screen = "labyrinth-map";
+    } else if (activeRun.wildwoodDraft) {
+      const phase = activeRun.wildwoodDraft.phase;
+      if (phase === "removal") screen = "wildwood-removal";
+      else if (phase === "recovery") screen = "wildwood-recovery";
+      else if (phase === "draft") screen = "draft-deck";
+      else if (phase === "battle") screen = "battle";
+      else screen = "destination";
+    } else {
+      screen = "destination";
+      rewardState = createEmptyRewardState();
+    }
   }
 
   return {

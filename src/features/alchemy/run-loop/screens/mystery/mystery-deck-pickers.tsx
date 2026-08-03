@@ -6,6 +6,7 @@ import { type BattleCard } from "@/lib/game-data";
 import { CardSelectionGrid, type CardSelectionGridItem } from "../../../shared/ui/card-selection-grid";
 import { SelectableShopCard } from "../../../shared/ui/shop-card-item";
 import { ScreenHeader, StaggerGroup, StaggerItem } from "../../../shared/ui/shared-ui";
+import { bodyTextClass } from "@/features/alchemy/shared/config";
 
 function DeckCardSelectionFlow({
   intro,
@@ -59,7 +60,7 @@ export function CardChoicePicker({ choices, onSelect }: { choices: BattleCard[];
       intro={
         <>
           <ScreenHeader title="Choose a Card" />
-          <p className="text-base text-muted-foreground">Select one of the scrolls to add to your deck</p>
+          <p className={bodyTextClass}>Select one of the scrolls to add to your deck</p>
         </>
       }
       items={items}

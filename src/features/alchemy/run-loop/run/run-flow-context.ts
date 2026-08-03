@@ -15,7 +15,11 @@ export type RunFlowContinuation =
       displayMaterials?: MaterialInventory | null;
       onRenderedScreenCommit?: () => void;
     }
-  | { type: "handle-act-complete"; displayMaterials?: MaterialInventory }
+  | {
+      type: "handle-act-complete";
+      displayMaterials?: MaterialInventory;
+      onRenderedScreenCommit?: () => void;
+    }
   | { type: "advance-to-next-destination" };
 
 export interface RunFlowContext {

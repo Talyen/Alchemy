@@ -17,9 +17,12 @@ describe("active run bootstrap", () => {
     expect(codec).toContain("let screen = activeRun.currentScreen");
   });
 
-  it("restores active run before paint in the run controller", () => {
-    const source = read("src/features/alchemy/shell/use-alchemy-run-controller.ts");
-    expect(source).toContain("useLayoutEffect");
-    expect(source).toMatch(/useLayoutEffect\([\s\S]*restoreRun/);
+  it("restores active run before first AppInner paint", () => {
+    const app = read("src/App.tsx");
+    const controller = read("src/features/alchemy/shell/use-alchemy-run-controller.ts");
+    expect(app).toContain("restoreRun(result.data.activeRun");
+    expect(app).toContain("readRunInitialized");
+    expect(controller).toContain("useLayoutEffect");
+    expect(controller).toContain("restoreRun(initialActiveRun");
   });
 });

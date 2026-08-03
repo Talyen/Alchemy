@@ -35,7 +35,7 @@ export function ShineAccentButton({
         disabled={disabled}
         onClick={onClick}
       >
-        {Icon ? <Icon className="h-4 w-4" /> : null}
+        {Icon ? <Icon className="h-7 w-7" /> : null}
         {children}
       </Button>
       {!disabled ? <ShineBorder shineColor={shineColor} borderWidth={1} duration={8} className={BUTTON_SHAPE} /> : null}

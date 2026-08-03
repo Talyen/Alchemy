@@ -1,4 +1,5 @@
 // localStorage save injection for fast E2E bootstrap.
+// Desktop (Electron) boots from the native save bridge — write there and reload instead.
 import { expect, type Page } from "@playwright/test";
 import { SAVE_KEY } from "@/lib/game-constants";
 import { baseHomesteadSave } from "../fixtures/saves";
@@ -37,7 +38,73 @@ function createMinimalLabyrinthMap(options?: { rows?: number; cols?: number }) {
   return { grid, rows, cols, currentNode: { row: 0, col: Math.floor(cols / 2) } };
 }
 
+async function isDesktopPage(page: Page): Promise<boolean> {
+  return page.evaluate(() => Boolean(window.alchemyDesktop?.isDesktop)).catch(() => false);
+}
+
+async function writeDesktopSaveAndReload(page: Page, save: unknown): Promise<void> {
+  const write = async () => {
+    const ok = await page.evaluate(async (payload) => {
+      const desktop = window.alchemyDesktop;
+      if (!desktop?.writeSave) return false;
+      if (desktop.clearSave) await desktop.clearSave();
+      return desktop.writeSave(JSON.stringify(payload));
+    }, save);
+    if (!ok) {
+      throw new Error("Failed to write desktop save for E2E / performance injection");
+    }
+  };
+
+  // Double-write: a Victory/rewards autosave can overwrite the first inject before reload.
+  await write();
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  await write();
+  await page.reload({ waitUntil: "domcontentloaded" });
+}
+
+function buildActiveRunSave(overrides: Record<string, unknown>) {
+  const {
+    discoveredCardIds,
+    encounteredEnemyIds,
+    discoveredTrinketIds,
+    autoEndTurn,
+    selectedAspectRatio,
+    ...activeRunData
+  } = overrides;
+  const save: Record<string, unknown> = {
+    ...baseHomesteadSave,
+    // E2E battles assert on a stable opening hand; auto-end races empty/mid-draw states.
+    autoEndTurn: autoEndTurn === true,
+    ...(typeof selectedAspectRatio === "string" ? { selectedAspectRatio } : {}),
+    activeRun: {
+      characterId: "knight",
+      runDeck: [],
+      runGold: 0,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      roomsEncountered: 0,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      ...activeRunData,
+    },
+    finishedRunCharacters: ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"],
+    discoveredCardIds: Array.isArray(discoveredCardIds)
+      ? discoveredCardIds
+      : ["slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis"],
+  };
+  if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
+  if (Array.isArray(discoveredTrinketIds)) save.discoveredTrinketIds = discoveredTrinketIds;
+  return save;
+}
+
 export async function injectSaveState(page: Page, overrides: Record<string, unknown> = {}) {
+  if (await isDesktopPage(page)) {
+    await writeDesktopSaveAndReload(page, buildActiveRunSave(overrides));
+    return;
+  }
+
   const injectionId = Math.random().toString(36).substring(2);
   await page.addInitScript(
     (data) => {
@@ -46,8 +113,14 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
       }
       sessionStorage.setItem("alchemy-injected-id", data.injectionId);
       const save = JSON.parse(localStorage.getItem(data.saveKey) || "{}");
-      const { discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, autoEndTurn, ...activeRunData } =
-        data.payload;
+      const {
+        discoveredCardIds,
+        encounteredEnemyIds,
+        discoveredTrinketIds,
+        autoEndTurn,
+        selectedAspectRatio,
+        ...activeRunData
+      } = data.payload;
       save.activeRun = {
         characterId: "knight",
         runDeck: [],
@@ -63,6 +136,7 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
       };
       // E2E battles assert on a stable opening hand; auto-end races empty/mid-draw states.
       save.autoEndTurn = autoEndTurn === true;
+      if (typeof selectedAspectRatio === "string") save.selectedAspectRatio = selectedAspectRatio;
       if (Array.isArray(discoveredCardIds)) save.discoveredCardIds = discoveredCardIds;
       if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
       if (Array.isArray(discoveredTrinketIds)) save.discoveredTrinketIds = discoveredTrinketIds;
@@ -82,6 +156,10 @@ export async function injectHomestead(page: Page, overrides: Record<string, unkn
   const save = { ...baseHomesteadSave, ...overrides };
   if ("gearInventory" in overrides && overrides.gearInventory !== undefined) {
     save.saveSchemaVersion = 8;
+  }
+  if (await isDesktopPage(page)) {
+    await writeDesktopSaveAndReload(page, save);
+    return;
   }
   await page.addInitScript(
     (data) => {

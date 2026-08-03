@@ -424,6 +424,11 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(ui): enlarge chrome, defer hollow Victory, and ship perf harness
+  Bump shared typography/buttons after UI Scale removal, keep reward offers
+  populated until screen commit with mid-claim resume encoding, portal
+  tooltips with scroll/resize remeasure, and add on-demand FPS profiling
+  with baseline-stable battle stage marks.
 - fix(battle): wire run RNG into battle init and clear CI gates
 - fix(ui): fill viewport, densify non-battle layouts, and unify gear offer footprints
   Drop the virtual-stage inset so native windows stay at scale 1.

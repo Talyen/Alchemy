@@ -25,6 +25,7 @@ For non-trivial work, find and read only the docs that match the task; prefer sp
 | Commands, battle rules glossary                   | [docs/REFERENCE.md](./docs/REFERENCE.md)         |
 | Hooks, area → test commands, E2E helpers          | [CONTRIBUTING.md](./CONTRIBUTING.md)             |
 | Armory / gear                                     | [docs/ARMORY.md](./docs/ARMORY.md)               |
+| FPS / hitch profiling (on-demand)                 | [docs/PERFORMANCE.md](./docs/PERFORMANCE.md)     |
 | Steam release process                             | [docs/RELEASE.md](./docs/RELEASE.md)             |
 | Audits                                            | [docs/Audits/README.md](./docs/Audits/README.md) |
 

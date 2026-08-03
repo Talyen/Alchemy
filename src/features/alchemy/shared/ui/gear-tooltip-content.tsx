@@ -10,6 +10,8 @@ import {
 import { GearItemTitle } from "./gear-item-title";
 import { renderColoredKeywords } from "./card-description-ui";
 import { TooltipBody, TooltipHeader, TooltipSubheader } from "./tooltip-panel";
+import { cn } from "@/lib/utils";
+import { tooltipBodyClass } from "@/features/alchemy/shared/config";
 
 export function GearTooltipContent({
   definition,
@@ -54,7 +56,7 @@ export function GearTooltipContent({
                 ) : (
                   <TooltipSubheader>{entry.name}</TooltipSubheader>
                 )}
-                <p className="pl-3 text-sm leading-6 whitespace-nowrap text-muted-foreground">
+                <p className={cn(tooltipBodyClass, "mt-0 pl-3 whitespace-nowrap")}>
                   {renderColoredKeywords(entry.text)}
                 </p>
               </div>

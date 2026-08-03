@@ -6,6 +6,8 @@ export const SHINE_PALETTES = {
   bossVictoryFallback: ["#cbd5e1", "#64748b", "#cbd5e1"],
   deathsDoorArt: ["#450a0a", "#dc2626", "#7f1d1d", "#111827"],
   deathsDoorStats: ["#450a0a", "#ef4444", "#991b1b", "#1f0505"],
+  turnPlayer: ["#78350f", "#eab308", "#fbbf24", "#92400e"],
+  turnEnemy: ["#450a0a", "#b91c1c", "#f87171", "#7f1d1d"],
   wildwoodBossSelection: ["#450a0a", "#ef4444", "#991b1b", "#7f1d1d"],
   corruption: ["#450a0a", "#dc2626", "#f87171", "#7f1d1d"],
   labyrinth: {

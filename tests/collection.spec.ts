@@ -21,6 +21,25 @@ test.describe("Collection", critical, () => {
     await expect(page.getByText(/^Gain \d+ Forge/)).toBeVisible();
   });
 
+  test("collection card tiles keep horizontal gaps between neighbors", async ({ page }) => {
+    await injectHomestead(page, { discoveredCardIds: ["anvil"] });
+    const menu = new MenuPage(page);
+    await menu.goto();
+    await menu.openCollection();
+
+    const tiles = page.getByRole("button", { name: /Inspect/ });
+    await expect(tiles.first()).toBeVisible();
+    const count = await tiles.count();
+    expect(count).toBeGreaterThanOrEqual(2);
+
+    const first = await tiles.nth(0).boundingBox();
+    const second = await tiles.nth(1).boundingBox();
+    expect(first).toBeTruthy();
+    expect(second).toBeTruthy();
+    const gap = second!.x - (first!.x + first!.width);
+    expect(gap).toBeGreaterThanOrEqual(16);
+  });
+
   test("collection tab navigation shows bestiary and boon undiscovered entries", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();

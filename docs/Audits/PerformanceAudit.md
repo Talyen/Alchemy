@@ -35,7 +35,7 @@ Optional discovery aids — choose your own probes.
 - **Whole-store subscriptions:** `useXStore()` without a selector inside battle/grid components.
 - **Wide effects:** `useEffect` bodies doing expensive work with broad or unstable dependency arrays.
 - **Build size trend:** `npm run build` output size vs the previous pass (record the number in the handoff for comparison).
-- **Runtime traces:** browser Performance panel / Playwright tracing during a battle or Armory drag — long tasks > 50ms, dropped-frame clusters.
+- **Runtime traces:** browser Performance panel / Playwright tracing during a battle or Armory drag — long tasks > 50ms, dropped-frame clusters. For a repeatable on-demand FPS / hitch harness (`npm run perf`, advisory targets, optional CDP deep traces), see [PERFORMANCE.md](../PERFORMANCE.md).
 - **Heavy imports on light paths:** large modules imported into boot or menu paths that only need them later (respecting the eager-art and no-lazy-routes policy).
 - **Repeated computation / serialization:** sorting, parsing, cloning, validation, snapshotting, or storage access repeated inside render, input, or high-frequency transitions.
 - **Memory retention:** listeners, timers, caches, object URLs, or state histories retain data after their owning flow ends.

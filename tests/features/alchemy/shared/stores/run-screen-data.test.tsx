@@ -34,7 +34,10 @@ describe("screen-specific run data hooks", () => {
   it("keeps reward data separate from unrelated route fields", () => {
     const { result } = renderHook(() => useRewardsScreenData());
 
-    expect(result.current).toEqual({ rewardState: getRunSessionStoreView().rewardState });
+    expect(result.current).toEqual({
+      rewardState: getRunSessionStoreView().rewardState,
+      rewardClaimInFlight: false,
+    });
     expect(result.current).not.toHaveProperty("runGold");
     expect(result.current).not.toHaveProperty("shopState");
   });

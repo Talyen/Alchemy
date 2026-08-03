@@ -64,12 +64,12 @@ export function RemoveCardPanel({
       />
       <div className="mt-5 flex justify-center gap-3">
         {onCancel ? (
-          <Button variant="outline" onClick={onCancel}>
+          <Button size="lg" variant="outline" onClick={onCancel}>
             {cancelLabel}
           </Button>
         ) : null}
-        <Button variant="outline" disabled={confirmDisabled} onClick={handleConfirm}>
-          <Trash2 className="h-4 w-4" /> Remove Card{removePrice !== undefined && <GoldCost amount={removePrice} />}
+        <Button size="lg" variant="outline" disabled={confirmDisabled} onClick={handleConfirm}>
+          <Trash2 className="h-7 w-7" /> Remove Card{removePrice !== undefined && <GoldCost amount={removePrice} />}
         </Button>
       </div>
     </StaggerGroup>

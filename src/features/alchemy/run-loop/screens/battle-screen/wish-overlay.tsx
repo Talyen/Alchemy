@@ -9,7 +9,8 @@ import type { BattleCard } from "@/lib/game-data";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
 import { ScreenHeader } from "../../../shared/ui/shared-ui";
-import { handCardWidthClass } from "@/features/alchemy/shared/config";
+import { handCardWidthClass, BUTTON_WIDTH_ACTION, bodyTextClass } from "@/features/alchemy/shared/config";
+import { cn } from "@/lib/utils";
 import type { BattleActionsProps, BattleScreenState } from "./types";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import type { CardDescriptionContext } from "../../../shared/utils/card-description";
@@ -94,7 +95,7 @@ export function WishOverlay({ battleState, actions }: { battleState: BattleScree
     <div className="wish-overlay-backdrop absolute inset-0 z-[90] flex items-center justify-center bg-black/70 px-6">
       <div className="wish-overlay-panel alchemy-shell w-full max-w-5xl rounded-shell-screen border border-border/80 px-6 py-6">
         <ScreenHeader title="Wish" />
-        <p className="mt-2 text-center text-sm text-muted-foreground">Choose one card to add to your hand, or skip.</p>
+        <p className={cn("mt-2 text-center", bodyTextClass)}>Choose one card to add to your hand, or skip.</p>
 
         <div className="mt-6 flex flex-wrap items-start justify-center gap-5">
           {battleState.wishOptions?.map((card, index) => (
@@ -111,10 +112,21 @@ export function WishOverlay({ battleState, actions }: { battleState: BattleScree
         </div>
 
         <div className="mt-6 flex justify-center gap-3">
-          <Button variant="outline" size="lg" disabled={isResolving} onClick={() => resolveWish(null)}>
+          <Button
+            variant="outline"
+            size="lg"
+            className={BUTTON_WIDTH_ACTION}
+            disabled={isResolving}
+            onClick={() => resolveWish(null)}
+          >
             Skip
           </Button>
-          <Button size="lg" disabled={isResolving || !wishSelectedCard} onClick={() => resolveWish(wishSelectedCard)}>
+          <Button
+            size="lg"
+            className={BUTTON_WIDTH_ACTION}
+            disabled={isResolving || !wishSelectedCard}
+            onClick={() => resolveWish(wishSelectedCard)}
+          >
             Confirm
           </Button>
         </div>

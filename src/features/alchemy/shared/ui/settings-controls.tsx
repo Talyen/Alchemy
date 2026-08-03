@@ -1,4 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { controlLabelClass } from "@/features/alchemy/shared/config";
+import { cn } from "@/lib/utils";
 import type { AspectRatioOption, DisplayMode } from "../types";
 
 export function AspectRatioSelect({
@@ -12,7 +14,7 @@ export function AspectRatioSelect({
 }) {
   return (
     <div className="rounded-shell-panel border border-border/70 p-5 text-left surface-muted">
-      <label htmlFor="resolution" className="block text-sm font-semibold text-foreground">
+      <label htmlFor="resolution" className={cn("block", controlLabelClass)}>
         Aspect Ratio
       </label>
       <Select value={selectedAspectRatio} onValueChange={(value) => onChange(value as AspectRatioOption)}>
@@ -42,7 +44,7 @@ export function DisplayModeSelect({
 }) {
   return (
     <div className="rounded-shell-panel border border-border/70 p-5 text-left surface-muted">
-      <label htmlFor="display-mode" className="block text-sm font-semibold text-foreground">
+      <label htmlFor="display-mode" className={cn("block", controlLabelClass)}>
         Display Mode
       </label>
       <Select value={displayMode} onValueChange={(value) => onChange(value as DisplayMode)}>

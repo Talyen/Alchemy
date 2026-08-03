@@ -29,7 +29,7 @@ export function PilePanel({
     return (
       <div
         ref={ref}
-        className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"
+        className="flex items-center gap-1.5 text-base font-semibold text-muted-foreground"
         data-testid={`${type}-pile`}
         data-count={count}
       >
@@ -59,8 +59,8 @@ export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: numb
 
   return (
     <div className="flex flex-col items-center gap-2" data-testid="mana-panel" data-mana={mana}>
-      <div className="flex items-center gap-1 text-sm font-medium text-yellow-300">
-        <Coins className="h-4 w-4" />
+      <div className="flex items-center gap-1.5 text-lg font-medium text-yellow-300">
+        <Coins className="h-6 w-6" />
         <span>{gold}</span>
       </div>
       <div className="flex items-center justify-center gap-1.5">
@@ -71,7 +71,7 @@ export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: numb
             <Gem
               key={`mana-${index}-${manaToken}-${isFilled}`}
               className={cn(
-                "h-[2.04cqh] w-[2.04cqh] transition-opacity duration-200",
+                "h-[2.7cqh] w-[2.7cqh] transition-opacity duration-200",
                 isFilled && "mana-gem-active",
                 isFilled && isOverflow && "text-sky-300 drop-shadow-mana-overflow-glow",
                 isFilled && !isOverflow && "text-mana-gem",

@@ -18,11 +18,13 @@ To analyze test performance and trace failures, you can run:
 - `npm run test:e2e:timings` — runs the E2E suite and exports a timing/stats JSON to `reports/e2e-results.json`.
 - `npm run test:e2e:audit` — runs the timing E2E suite and automatically compiles a diagnostic markdown report to `reports/e2e-audit-report.md`.
 
+For **frame pacing / hitch profiling** (on-demand only, not CI): see [docs/PERFORMANCE.md](./docs/PERFORMANCE.md). Commands: `npm run perf`, `npm run perf:trace`, `npm run perf:compare`.
+
 Manual full gate before **releasing**: `npm run release` (pre-flight gate including `check:ship:full`). Fast local checks: `npm run check:push` or `npm run test:e2e:prepush`. Comprehensive local checks: `npm run check:push:full` or `npm run test:e2e:prepush:full` (`@critical` only).
 
 Install hooks once: `npm run prepare` (runs on `npm install`).
 
-`lefthook` `pre-commit` runs `npm ci --dry-run`, `npm run typecheck`, and Prettier on **staged files** that match `scripts/prettier-paths.mjs` (same set as `npm run format` / `format:check`: `src`, `tests`, `scripts`, `desktop`, `docs`, plus root `*.{js,json,md,ts,yml,yaml}` and `.prettierrc`). Do not hand-duplicate those globs in lefthook.
+`lefthook` `pre-commit` runs `npm ci --dry-run`, `npm run typecheck`, and Prettier on **staged files** that match `scripts/prettier-paths.mjs` (same set as `npm run format` / `format:check`: `src`, `tests`, `scripts`, `desktop`, `docs`, `performance`, plus root `*.{js,json,md,ts,yml,yaml}` and `.prettierrc`). Do not hand-duplicate those globs in lefthook.
 
 ### Lint / format / dead-code commands
 

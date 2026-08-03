@@ -5,11 +5,7 @@ import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  setBattleStartState,
-  setBattleState,
-  setHasActiveBattle,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { initializeActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { syncRunToBattleStart } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { useBattlePresentationStore } from "./battle-presentation-store";
 import { appendUnique } from "@/lib/utils";
@@ -72,9 +68,7 @@ export function createBattleInit(
           nextRoomsEncountered,
           modifiers,
         );
-        setBattleState(nextBattleState);
-        setBattleStartState(nextBattleState);
-        setHasActiveBattle(true);
+        initializeActiveBattle(nextBattleState, null);
         ctx.run.updateEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
         setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
 

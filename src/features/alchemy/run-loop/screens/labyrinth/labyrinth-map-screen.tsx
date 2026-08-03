@@ -5,7 +5,7 @@
  */
 import { type CSSProperties, useState } from "react";
 
-import { HamburgerTrigger, ScreenHeader, StaggerGroup } from "../../../shared/ui/shared-ui";
+import { HamburgerTrigger, ScreenDescription, ScreenHeader, StaggerGroup } from "../../../shared/ui/shared-ui";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 
 import { LabyrinthConnectionLayer } from "./labyrinth-connection-layer";
@@ -29,13 +29,15 @@ export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Pr
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden px-3 py-4 text-center sm:gap-5 sm:px-5 sm:py-6">
       <ScreenHeader title="Labyrinth" className="shrink-0" />
-      <p className="max-w-xl shrink-0 text-sm text-amber-100/75">Choose your path through the depths</p>
+      <ScreenDescription className="max-w-xl shrink-0 text-amber-100/75">
+        Choose your path through the depths
+      </ScreenDescription>
 
       <StaggerGroup
         as="section"
         aria-label="Labyrinth map"
         className="relative flex min-h-0 w-full max-w-[1104px] shrink items-center justify-center rounded-shell-panel border border-border bg-card p-5 sm:p-6"
-        style={{ "--labyrinth-node-size": "clamp(2.35rem, 4.8vw, 3.45rem)" } as CSSProperties}
+        style={{ "--labyrinth-node-size": "clamp(2.7rem, 5.5vw, 4rem)" } as CSSProperties}
       >
         <div className="absolute top-4 right-4 z-30">
           <HamburgerTrigger onClick={onOpenMenu} label="Open labyrinth menu" />

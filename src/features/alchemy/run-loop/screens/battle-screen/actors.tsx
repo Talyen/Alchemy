@@ -1,11 +1,10 @@
-// Actor rail for the battle screen: hero/enemy panels, companion, turn badge, and combat text.
+// Actor rail for the battle screen: hero/enemy panels, companion, turn shine, and combat text.
 // Depends on screen store shimmer actions, actor UI widgets, and battle layout constants.
 // Used only by BattleScreen to keep the main screen composition smaller.
 import { BATTLE_ACTOR_TOP } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
 import { ArtPanel, CompanionPanel, CombatTextRail } from "../../../shared/ui/battle-ui";
-import { TurnBadge } from "../../../shared/ui/turn-badge";
 import { battleActorSectionClass, bossCardWidthClass } from "@/features/alchemy/shared/config";
 import type { BattleFeedbackProps, BattleHoverProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 
@@ -71,6 +70,7 @@ export function BattleActors({
             surfaceRef={playerPanelRef}
             shaking={playerShaking}
             hurtFlashToken={playerHurtFlashToken}
+            turnActive={isPlayerTurn}
           />
           {battleState.activeCompanion ? (
             <div className="absolute bottom-[clamp(8.56cqh,8.93cqh,11.48cqh)] left-[calc(100%-clamp(4.71cqh,5.58cqh,7.65cqh))] z-20">
@@ -86,7 +86,6 @@ export function BattleActors({
               />
             </div>
           ) : null}
-          <TurnBadge show={isPlayerTurn} variant="player" />
         </div>
       </div>
 
@@ -114,8 +113,9 @@ export function BattleActors({
           activeLabyrinthModifiers={activeLabyrinthModifiers}
           isBoss={isBoss}
           statsCardWidthClass={bossStatsCardWidthClass}
+          turnActive={!isPlayerTurn && !enemyDead}
+          turnUrgentHide={enemyDead}
         />
-        <TurnBadge show={!isPlayerTurn && !enemyDead} variant="enemy" urgentHide={enemyDead} />
       </div>
     </section>
   );

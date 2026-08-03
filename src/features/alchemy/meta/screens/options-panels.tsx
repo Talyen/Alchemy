@@ -1,6 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { aspectRatioOptions, displayModeOptions } from "@/features/alchemy/shared/config";
+import {
+  aspectRatioOptions,
+  controlDescriptionClass,
+  controlLabelClass,
+  displayModeOptions,
+} from "@/features/alchemy/shared/config";
+import { cn } from "@/lib/utils";
 import { AspectRatioSelect, DisplayModeSelect } from "../../shared/ui/shared-ui";
 import type { AspectRatioOption, DisplayMode } from "../../shared/types";
 
@@ -60,8 +66,8 @@ function SliderOption({
   return (
     <div className="rounded-shell-panel border border-border/70 p-5 surface-muted">
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm font-semibold text-foreground">{label}</p>
-        <p className="text-sm font-semibold text-primary">{value}%</p>
+        <p className={controlLabelClass}>{label}</p>
+        <p className={cn(controlLabelClass, "text-primary")}>{value}%</p>
       </div>
       <input
         type="range"
@@ -91,8 +97,8 @@ function ToggleOption({
     <div className="rounded-shell-panel border border-border/70 p-5 surface-muted">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-foreground">{label}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          <p className={controlLabelClass}>{label}</p>
+          <p className={controlDescriptionClass}>{description}</p>
         </div>
         <Switch checked={checked} onCheckedChange={onChange} />
       </div>
@@ -166,24 +172,24 @@ export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptions
         <div className="rounded-shell-panel border border-primary/40 p-5 surface-muted">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-foreground">Dev / QA Unlocks</p>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className={controlLabelClass}>Dev / QA Unlocks</p>
+              <p className={controlDescriptionClass}>
                 Unlock every compendium entry and grant every talent node for testing.
               </p>
             </div>
-            <Button onClick={dev.onUnlockAll}>Unlock All</Button>
+            <Button size="lg" onClick={dev.onUnlockAll}>
+              Unlock All
+            </Button>
           </div>
         </div>
       ) : null}
       <div className="rounded-shell-panel border border-border/70 p-5 surface-muted">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-foreground">Options</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Restore display, sound, and gameplay options to their defaults.
-            </p>
+            <p className={controlLabelClass}>Options</p>
+            <p className={controlDescriptionClass}>Restore display, sound, and gameplay options to their defaults.</p>
           </div>
-          <Button variant="outline" onClick={saveData.onResetOptions}>
+          <Button size="lg" variant="outline" onClick={saveData.onResetOptions}>
             Reset to Default
           </Button>
         </div>
@@ -191,10 +197,10 @@ export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptions
       <div className="rounded-shell-panel border border-border/70 p-5 surface-muted">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-foreground">Save Data</p>
-            <p className="mt-1 text-sm text-muted-foreground">Clear all existing save data and start fresh.</p>
+            <p className={controlLabelClass}>Save Data</p>
+            <p className={controlDescriptionClass}>Clear all existing save data and start fresh.</p>
           </div>
-          <Button variant="destructive" onClick={saveData.onOpenClearSaveConfirm}>
+          <Button size="lg" variant="destructive" onClick={saveData.onOpenClearSaveConfirm}>
             Clear Save Data
           </Button>
         </div>

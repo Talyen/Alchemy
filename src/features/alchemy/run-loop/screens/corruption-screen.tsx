@@ -8,7 +8,12 @@ import { Button } from "@/components/ui/button";
 import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { corruptionAltar, type BattleCard } from "@/lib/game-data";
 import type { CorruptionResult } from "../corruption";
-import { SHINE_PALETTES, viewCardWidthClass } from "@/features/alchemy/shared/config";
+import {
+  SHINE_PALETTES,
+  viewCardWidthClass,
+  BUTTON_WIDTH_ACTION,
+  controlLabelClass,
+} from "@/features/alchemy/shared/config";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../shared/ui/card-description-ui";
@@ -20,6 +25,7 @@ import {
   StaggerGroup,
   StaggerItem,
 } from "../../shared/ui/shared-ui";
+import { cn } from "@/lib/utils";
 
 function CorruptionDeckPicker({
   runDeck,
@@ -77,7 +83,7 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
         />
       </StaggerItem>
       <StaggerItem index={3} className="flex flex-wrap justify-center gap-3">
-        <Button size="lg" variant="outline" onClick={onLeave}>
+        <Button size="lg" variant="outline" className={BUTTON_WIDTH_ACTION} onClick={onLeave}>
           Leave
         </Button>
         <ShineAccentButton
@@ -120,7 +126,7 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
             />
           </StaggerItem>
           <StaggerItem index={3} className="col-start-2 flex shrink-0 self-center">
-            <MoveRight className="h-8 w-8 text-red-800" />
+            <MoveRight className="h-10 w-10 text-red-800" />
           </StaggerItem>
           <StaggerItem index={4} className="col-start-3 flex flex-col items-center">
             <BattleCardButton
@@ -134,10 +140,10 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
               className={viewCardWidthClass}
             />
           </StaggerItem>
-          <StaggerItem index={5} className="col-start-1 text-sm font-semibold text-foreground">
+          <StaggerItem index={5} className={cn("col-start-1", controlLabelClass)}>
             <CardTitle card={result.originalCard} />
           </StaggerItem>
-          <StaggerItem index={6} className="col-start-3 text-sm font-semibold text-foreground">
+          <StaggerItem index={6} className={cn("col-start-3", controlLabelClass)}>
             <CardTitle card={result.corruptedCard} />
           </StaggerItem>
         </div>
@@ -153,13 +159,13 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
             shimmerToken={undefined}
             className={viewCardWidthClass}
           />
-          <p className="text-base font-semibold text-foreground">
+          <p className="text-xl font-semibold text-foreground">
             <CardTitle card={result.corruptedCard} />
           </p>
         </StaggerItem>
       )}
       <StaggerItem index={result.transformed ? 7 : 3}>
-        <Button size="lg" variant="primary" onClick={onContinue}>
+        <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
           Continue
         </Button>
       </StaggerItem>

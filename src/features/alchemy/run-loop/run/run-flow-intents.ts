@@ -23,9 +23,9 @@ export type RunFlowIntent =
   | { type: "start-boss"; bossId?: string | null; modifiers?: DifficultyModifier[] }
   | { type: "mark-difficulty-completed"; characterId: CharacterId; difficultyId: DifficultyId }
   | { type: "commit-wildwood-victory"; result: VictoryRewardsResult }
-  | { type: "begin-mystery-event" }
+  | { type: "begin-mystery-event"; onRenderedScreenCommit?: () => void }
   | { type: "clear-mystery-card-choices" }
-  | { type: "wildwood-reward-complete" }
+  | { type: "wildwood-reward-complete"; onRenderedScreenCommit?: () => void }
   | { type: "select-reward-choice"; id: string };
 
 export type RunFlowDispatch = (intent: RunFlowIntent) => void;

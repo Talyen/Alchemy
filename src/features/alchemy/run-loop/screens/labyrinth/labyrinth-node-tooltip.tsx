@@ -19,6 +19,7 @@ import {
   TooltipSection,
   useTooltipViewportClamp,
 } from "../../../shared/ui/tooltip-panel";
+import { tooltipBodyClass } from "@/features/alchemy/shared/config";
 
 interface Props {
   type: LabyrinthNodeType;
@@ -35,8 +36,8 @@ function ModifierTooltipCard({ modifier, variant }: { modifier: EncounterTraitId
         variant === "enemy" ? "border border-red-500/40" : "border border-emerald-500/40",
       )}
     >
-      <p className="text-xs font-bold text-amber-100">{definition.label}</p>
-      <p className="mt-0.5 text-sm leading-6 text-muted-foreground">{renderColoredKeywords(definition.description)}</p>
+      <p className="text-base font-bold text-amber-100">{definition.label}</p>
+      <p className={cn(tooltipBodyClass, "mt-0.5")}>{renderColoredKeywords(definition.description)}</p>
     </div>
   );
 }

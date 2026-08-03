@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 import { tokenizeDescription } from "../utils";
 import { KeywordTag } from "./keyword-tag";
-import { TooltipPanel, useTooltipViewportClamp } from "./tooltip-panel";
+import { TooltipBody, TooltipPanel, useTooltipViewportClamp } from "./tooltip-panel";
 import { getCorruptedValueOffsets, splitCorruptedNumericParts } from "./card-text";
 
 export function renderColoredKeywords(description: string) {
@@ -43,9 +43,7 @@ export function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId;
         <span className="flex items-center gap-2 text-base">
           <KeywordTag keywordId={keywordId} />
         </span>
-        <span className="mt-2 block text-sm leading-6 text-muted-foreground">
-          {renderColoredKeywords(definition.description)}
-        </span>
+        <TooltipBody>{renderColoredKeywords(definition.description)}</TooltipBody>
       </TooltipPanel>
     </span>
   );
@@ -61,7 +59,7 @@ export function DescriptionLines({
   card?: Pick<BattleCard, "corruptedValuePositions">;
 }) {
   return (
-    <div className="mt-2 space-y-1.5 text-sm leading-6 text-muted-foreground">
+    <TooltipBody>
       {lines.map((line, lineIndex) => {
         const parts = tokenizeDescription(line);
         const corruptedOffsets = getCorruptedValueOffsets(card, lineIndex);
@@ -92,7 +90,7 @@ export function DescriptionLines({
           </div>
         );
       })}
-    </div>
+    </TooltipBody>
   );
 }
 

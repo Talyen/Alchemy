@@ -23,7 +23,7 @@ const primaryVariantClasses = cn(
 
 const buttonVariants = cva(
   cn(
-    "inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold whitespace-nowrap disabled:pointer-events-none disabled:opacity-50",
+    "inline-flex items-center justify-center gap-2 rounded-xl text-base font-semibold whitespace-nowrap disabled:pointer-events-none disabled:opacity-50",
     BUTTON_HOVER_TRANSITION,
   ),
   {
@@ -46,10 +46,10 @@ const buttonVariants = cva(
         ),
       },
       size: {
-        default: "h-11 px-5",
-        sm: "h-9 px-4 text-xs tracking-widest uppercase",
-        lg: "h-12 px-6 text-base",
-        icon: "h-11 w-11",
+        default: "h-14 px-6",
+        sm: "h-11 px-4 text-sm tracking-widest uppercase",
+        lg: "h-16 px-7 text-xl",
+        icon: "h-14 w-14",
       },
     },
     defaultVariants: {

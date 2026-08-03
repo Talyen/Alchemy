@@ -1,8 +1,9 @@
 // Shared run-end shell for victory and defeat — title, subtitle, progress, continue.
 import { Button } from "@/components/ui/button";
-import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
+import { BUTTON_WIDTH_ACTION, bodyTextClass } from "@/features/alchemy/shared/config";
 import type { TalentXP } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
+import { cn } from "@/lib/utils";
 import { ScreenHeader } from "../../shared/ui/shared-ui";
 import { RunEndProgressSection } from "./run-end-progress-section";
 
@@ -25,7 +26,7 @@ export function RunEndScreen({
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
       <div>
         <ScreenHeader title={title} />
-        <p className="mt-3 text-sm text-muted-foreground">{subtitle}</p>
+        <p className={cn("mt-3", bodyTextClass)}>{subtitle}</p>
       </div>
 
       <RunEndProgressSection runEndTalentXP={runEndTalentXP} talentXP={talentXP} runEndMaterials={runEndMaterials} />

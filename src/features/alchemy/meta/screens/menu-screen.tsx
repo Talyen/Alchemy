@@ -78,32 +78,21 @@ export function MenuScreen({
           <Button
             size="lg"
             variant="primary"
-            className={cn("h-14 justify-center gap-2 text-lg", BUTTON_WIDTH_MENU)}
+            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
             onClick={onPlay}
           >
-            <Swords className="h-5 w-5" />
+            <Swords className="h-7 w-7" />
             Play
           </Button>
         </StaggerItem>
-        <StaggerItem index={1}>
-          <Button
-            size="lg"
-            variant="outline"
-            className={cn("h-14 justify-center gap-2 text-lg", BUTTON_WIDTH_MENU)}
-            onClick={onCollection}
-          >
-            <BookOpen className="h-5 w-5" />
-            Collection
-          </Button>
-        </StaggerItem>
-        <StaggerItem index={2} className="relative">
+        <StaggerItem index={1} className="relative">
           <LockedMenuItem
             title="Talents"
             message={KNIGHT_UNLOCK_MESSAGE}
             locked={isKnightGatedLocked}
             onSelect={onTalents}
-            icon={<WandSparkles className="h-5 w-5" />}
-            className={cn("h-14 justify-center gap-2 text-lg", BUTTON_WIDTH_MENU)}
+            icon={<WandSparkles className="h-7 w-7" />}
+            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
             size="lg"
             variant="outline"
             tooltipPlacement="side-start"
@@ -114,14 +103,14 @@ export function MenuScreen({
             <ShineBorder shineColor="var(--color-primary)" borderWidth={1} duration={8} className="rounded-xl" />
           )}
         </StaggerItem>
-        <StaggerItem index={3} className="relative">
+        <StaggerItem index={2} className="relative">
           <LockedMenuItem
             title="Homestead"
             message={KNIGHT_UNLOCK_MESSAGE}
             locked={isKnightGatedLocked}
             onSelect={onHomestead}
-            icon={<TreePine className="h-5 w-5" />}
-            className={cn("h-14 justify-center gap-2 text-lg", BUTTON_WIDTH_MENU)}
+            icon={<TreePine className="h-7 w-7" />}
+            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
             size="lg"
             variant="outline"
             tooltipPlacement="side-start"
@@ -132,14 +121,14 @@ export function MenuScreen({
             <ShineBorder shineColor="var(--color-primary)" borderWidth={1} duration={8} className="rounded-xl" />
           )}
         </StaggerItem>
-        <StaggerItem index={4} className="relative">
+        <StaggerItem index={3} className="relative">
           <LockedMenuItem
             title="Armory"
             message="Find Gear to unlock"
             locked={isArmoryLocked}
             onSelect={onArmory}
-            icon={<Shield className="h-5 w-5" />}
-            className={cn("h-14 justify-center gap-2 text-lg", BUTTON_WIDTH_MENU)}
+            icon={<Shield className="h-7 w-7" />}
+            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
             size="lg"
             variant="outline"
             tooltipPlacement="side-start"
@@ -147,14 +136,25 @@ export function MenuScreen({
             Armory
           </LockedMenuItem>
         </StaggerItem>
+        <StaggerItem index={4}>
+          <Button
+            size="lg"
+            variant="outline"
+            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
+            onClick={onCollection}
+          >
+            <BookOpen className="h-7 w-7" />
+            Collection
+          </Button>
+        </StaggerItem>
         <StaggerItem index={5}>
           <Button
             size="lg"
             variant="outline"
-            className={cn("h-14 justify-center gap-2 text-lg", BUTTON_WIDTH_MENU)}
+            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
             onClick={onOptions}
           >
-            <Cog className="h-5 w-5" />
+            <Cog className="h-7 w-7" />
             Options
           </Button>
         </StaggerItem>
@@ -163,7 +163,7 @@ export function MenuScreen({
             <Button
               size="lg"
               variant="outline"
-              className={cn("h-14 justify-center gap-2 text-lg", BUTTON_WIDTH_MENU)}
+              className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
               onClick={onQuit}
             >
               Quit

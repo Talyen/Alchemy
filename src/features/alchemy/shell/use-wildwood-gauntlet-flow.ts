@@ -5,6 +5,7 @@ import {
   setRunPlayerHealth,
   setWildwoodDraft,
   setPendingCharacterId,
+  releaseRewardClaim,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
@@ -47,45 +48,52 @@ export function useWildwoodGauntletFlow({
   clearCardHover,
   rng,
 }: UseWildwoodGauntletFlowOptions) {
-  const startNextWildwoodBoss = useCallback(() => {
-    dispatchRunSessionCommand(
-      () => {
-        const state = readRunSession().wildwoodDraft;
-        if (!state) return null;
-        const draw = drawWildwoodBoss(state.remainingBossIds, state.currentBossId ?? state.previousBossId, rng);
-        const modifierId = pickWildwoodModifier(rng);
-        const rewardTraitId = pickWildwoodRewardTrait(rng);
-        setWildwoodDraft({
-          ...state,
-          phase: "battle",
-          remainingBossIds: draw.remainingBossIds,
-          previousBossId: state.currentBossId ?? state.previousBossId,
-          currentBossId: draw.bossId,
-          currentCombatTraitIds: [modifierId],
-          currentRewardTraitIds: [rewardTraitId],
-          rewardType: null,
-          rewardChoiceIds: [],
-          rewardGearChoices: [],
-          selectedRewardId: null,
-        });
-        if (!onStartBossById(draw.bossId, undefined, modifierId)) return false;
-        setHasActiveBattle(true);
-        return true;
-      },
-      {
-        afterCommit: (started) => {
-          if (started === null) return;
-          if (!started) {
-            logError("[useWildwoodGauntletFlow] startNextWildwoodBoss: failed to start boss battle", "other");
-            navigateTo(CONSTANTS.SCREENS.MENU, teardownRun);
-            return;
-          }
-          clearCardHover();
-          navigateTo(CONSTANTS.SCREENS.BATTLE);
+  const startNextWildwoodBoss = useCallback(
+    (onRenderedScreenCommit?: () => void) => {
+      dispatchRunSessionCommand(
+        () => {
+          const state = readRunSession().wildwoodDraft;
+          if (!state) return null;
+          const draw = drawWildwoodBoss(state.remainingBossIds, state.currentBossId ?? state.previousBossId, rng);
+          const modifierId = pickWildwoodModifier(rng);
+          const rewardTraitId = pickWildwoodRewardTrait(rng);
+          setWildwoodDraft({
+            ...state,
+            phase: "battle",
+            remainingBossIds: draw.remainingBossIds,
+            previousBossId: state.currentBossId ?? state.previousBossId,
+            currentBossId: draw.bossId,
+            currentCombatTraitIds: [modifierId],
+            currentRewardTraitIds: [rewardTraitId],
+            rewardType: null,
+            rewardChoiceIds: [],
+            rewardGearChoices: [],
+            selectedRewardId: null,
+          });
+          if (!onStartBossById(draw.bossId, undefined, modifierId)) return false;
+          setHasActiveBattle(true);
+          return true;
         },
-      },
-    );
-  }, [clearCardHover, navigateTo, onStartBossById, rng, setHasActiveBattle]);
+        {
+          afterCommit: (started) => {
+            if (started === null) {
+              onRenderedScreenCommit?.();
+              return;
+            }
+            if (!started) {
+              logError("[useWildwoodGauntletFlow] startNextWildwoodBoss: failed to start boss battle", "other");
+              onRenderedScreenCommit?.();
+              navigateTo(CONSTANTS.SCREENS.MENU, teardownRun);
+              return;
+            }
+            clearCardHover();
+            navigateTo(CONSTANTS.SCREENS.BATTLE, onRenderedScreenCommit);
+          },
+        },
+      );
+    },
+    [clearCardHover, navigateTo, onStartBossById, rng, setHasActiveBattle],
+  );
 
   const resumeWildwoodRun = useCallback(() => {
     const state = readRunSession().wildwoodDraft;
@@ -159,23 +167,31 @@ export function useWildwoodGauntletFlow({
     );
   }, [navigateTo]);
 
-  const handleWildwoodRewardComplete = useCallback(() => {
-    const state = readRunSession().wildwoodDraft;
-    if (!state) return;
-    if (canOfferWildwoodRemoval(readActiveRun().runDeck.length)) {
-      setWildwoodDraft({
-        ...state,
-        phase: "removal",
-        rewardType: null,
-        rewardChoiceIds: [],
-        rewardGearChoices: [],
-        selectedRewardId: null,
-      });
-      navigateTo(CONSTANTS.SCREENS.WILDWOOD_REMOVAL);
-      return;
-    }
-    startNextWildwoodBoss();
-  }, [navigateTo, startNextWildwoodBoss]);
+  const handleWildwoodRewardComplete = useCallback(
+    (onRenderedScreenCommit?: () => void) => {
+      const state = readRunSession().wildwoodDraft;
+      if (!state) {
+        // settleClaimSurface already releases; fall back when no commit callback was passed.
+        if (onRenderedScreenCommit) onRenderedScreenCommit();
+        else releaseRewardClaim();
+        return;
+      }
+      if (canOfferWildwoodRemoval(readActiveRun().runDeck.length)) {
+        setWildwoodDraft({
+          ...state,
+          phase: "removal",
+          rewardType: null,
+          rewardChoiceIds: [],
+          rewardGearChoices: [],
+          selectedRewardId: null,
+        });
+        navigateTo(CONSTANTS.SCREENS.WILDWOOD_REMOVAL, onRenderedScreenCommit);
+        return;
+      }
+      startNextWildwoodBoss(onRenderedScreenCommit);
+    },
+    [navigateTo, startNextWildwoodBoss],
+  );
 
   const handleWildwoodRemoveCard = useCallback(
     (index: number) => {

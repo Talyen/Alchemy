@@ -49,9 +49,10 @@ export function createDestinationScreenHandlers(ctx: RunFlowContext) {
             onRenderedScreenCommit: commitDestinationProgress,
           }),
         beginMysteryEvent: () => {
-          // Mystery owns its navigateTo; commit the offer surface before starting.
-          commitDestinationProgress();
-          deps.dispatch({ type: "begin-mystery-event" });
+          deps.dispatch({
+            type: "begin-mystery-event",
+            onRenderedScreenCommit: commitDestinationProgress,
+          });
         },
         resetCorruption: () => setCorruptionResult(null),
         startShop: () => deps.dispatch({ type: "init-shop" }),

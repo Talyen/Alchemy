@@ -21,7 +21,7 @@ export function FoundResourcesRow({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground",
+        "flex flex-wrap items-center justify-center gap-3 text-xl font-medium text-muted-foreground",
         className,
       )}
     >

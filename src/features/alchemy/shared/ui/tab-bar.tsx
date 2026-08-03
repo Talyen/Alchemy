@@ -42,7 +42,7 @@ export function TabBar<T extends string>({
               )}
               aria-label={isDisabled ? `${tab.label} (Locked)` : tab.label}
             >
-              <Icon className={cn("h-4 w-4", tab.iconClassName)} />
+              <Icon className={cn("h-6 w-6", tab.iconClassName)} />
               {tab.label}
             </button>
           </PressableSound>

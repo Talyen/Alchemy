@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RewardsScreen } from "@/features/alchemy/run-loop/screens/rewards-screen";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import type { BattleCard } from "@/lib/game-data";
@@ -25,6 +25,10 @@ beforeEach(() => {
   });
 });
 
+afterEach(() => {
+  cleanup();
+});
+
 describe("RewardsScreen", () => {
   it("routes reward selection through controller action instead of mutating the store directly", async () => {
     const user = userEvent.setup();
@@ -43,5 +47,52 @@ describe("RewardsScreen", () => {
 
     expect(onSelectReward).toHaveBeenCalledWith("slash");
     expect(getRunSessionStoreView().rewardState.selectedId).toBeNull();
+  });
+
+  it("disables claim actions while a reward claim is in flight", () => {
+    render(
+      <RewardsScreen
+        rewardState={{
+          ...getRunSessionStoreView().rewardState,
+          selectedId: "slash",
+        }}
+        claimInFlight
+        onAddReward={vi.fn()}
+        onSkip={vi.fn()}
+        onSelectReward={vi.fn()}
+      />,
+    );
+
+    const addButtons = screen.getAllByRole("button", { name: /add card/i });
+    expect(addButtons.length).toBeGreaterThan(0);
+    for (const button of addButtons) {
+      expect(button).toHaveProperty("disabled", true);
+    }
+    const skipButtons = screen.getAllByRole("button", { name: /skip/i });
+    expect(skipButtons.length).toBeGreaterThan(0);
+    for (const button of skipButtons) {
+      expect(button).toHaveProperty("disabled", true);
+    }
+  });
+
+  it("staggers Found resources after the last reward choice, not after a multi-second delay", () => {
+    render(
+      <RewardsScreen
+        rewardState={{
+          ...createEmptyRewardState(),
+          rewardType: "card",
+          choices: [testCard, { ...testCard, id: "bash", title: "Bash" }],
+          gold: 13,
+          materials: { herbs: 1 },
+        }}
+        onAddReward={vi.fn()}
+        onSkip={vi.fn()}
+        onSelectReward={vi.fn()}
+      />,
+    );
+
+    const found = screen.getByText("Found").closest(".stagger-item") as HTMLElement | null;
+    expect(found).not.toBeNull();
+    expect(found!.style.getPropertyValue("--stagger-index")).toBe("2");
   });
 });

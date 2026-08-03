@@ -4,7 +4,7 @@
 import type { CompanionDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardSurfaceClass } from "../../config";
+import { cardSurfaceClass, sectionTitleClass } from "../../config";
 import { formatCompanionTurnStartLine } from "@/features/alchemy/shared/utils";
 import { DescriptionLines } from "../card-description-ui";
 import { TiltSurface } from "../tilt-surface";
@@ -51,7 +51,7 @@ export function CompanionPanel({
         />
       </TiltSurface>
       <TooltipPanel className="opacity-0 group-hover/companion:opacity-100">
-        <p className="font-sans text-base font-bold text-amber-100/75">{companion.title}</p>
+        <p className={cn("font-sans", sectionTitleClass)}>{companion.title}</p>
         <DescriptionLines
           lines={getCompanionDescriptionLines(companion, damageBonus)}
           idPrefix={`companion-${companion.id}`}

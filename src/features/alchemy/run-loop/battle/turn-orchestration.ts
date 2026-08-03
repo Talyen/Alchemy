@@ -24,6 +24,7 @@ import { applyCombatTextPortraitFeedback, shouldHurtEnemyFromCombatTexts } from 
 import { playCompanionSound } from "./controller-utils";
 import { runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
 import { getBattleSessionStore, type createBattleSession } from "./battle-session";
+import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 
@@ -116,34 +117,39 @@ export function createTurnOrchestrationDeps(
 /** Top-level end-turn dispatch. Returns true when an async draw sequence was started (haste), false otherwise. */
 export function resolveEndTurn(currentState: BattleState, session: number, deps: TurnOrchestrationDeps): boolean {
   if (!deps.isCurrentBattleSession(session)) return false;
-  const companionTexts: CombatTextEvent[] = [];
-  const companionState = triggerCompanionEffects(deps, currentState, companionTexts);
+  markBattleStage("resolve-start");
+  try {
+    const companionTexts: CombatTextEvent[] = [];
+    const companionState = triggerCompanionEffects(deps, currentState, companionTexts);
 
-  if (companionState.enemyHealth <= 0) {
-    deps.setBattleState(companionState);
-    if (companionTexts.length > 0) {
-      const store = deps.getStore();
-      store.showCombatTexts(companionTexts);
-      applyCombatTextPortraitFeedback(companionTexts, store);
-    }
-    deps.handleVictoryDefeat("victory");
-    return false;
-  }
-  if (isPlayerDefeated(companionState)) {
-    deps.handleVictoryDefeat("defeat");
-    return false;
-  }
-
-  const result = endPlayerTurn(companionState);
-
-  switch (result.kind) {
-    case "haste":
-      resolveHasteSkipTurn(result, companionState, session, deps);
-      return true;
-    case "skipped":
-    case "standard":
-      resolveNormalEnemyTurn(result, companionState, companionTexts, session, deps);
+    if (companionState.enemyHealth <= 0) {
+      deps.setBattleState(companionState);
+      if (companionTexts.length > 0) {
+        const store = deps.getStore();
+        store.showCombatTexts(companionTexts);
+        applyCombatTextPortraitFeedback(companionTexts, store);
+      }
+      deps.handleVictoryDefeat("victory");
       return false;
+    }
+    if (isPlayerDefeated(companionState)) {
+      deps.handleVictoryDefeat("defeat");
+      return false;
+    }
+
+    const result = endPlayerTurn(companionState);
+
+    switch (result.kind) {
+      case "haste":
+        resolveHasteSkipTurn(result, companionState, session, deps);
+        return true;
+      case "skipped":
+      case "standard":
+        resolveNormalEnemyTurn(result, companionState, companionTexts, session, deps);
+        return false;
+    }
+  } finally {
+    markBattleStage("resolve-end");
   }
 }
 
@@ -238,6 +244,7 @@ export async function executeEnemyPhase(
   enemyPerformedAttack: boolean,
   deps: TurnOrchestrationDeps,
 ) {
+  markBattleStage("enemy-start");
   const playerTexts = combatTexts.filter((ct) => ct.target === "player");
   await delay(ENEMY_PHASE_DELAY);
   if (!deps.isCurrentBattleSession(session)) return;
@@ -247,6 +254,7 @@ export async function executeEnemyPhase(
   applyCombatTextPortraitFeedback(playerTexts, deps.getStore());
   await delay(ENEMY_ATTACK_RECOVERY_DELAY);
   if (!deps.isCurrentBattleSession(session)) return;
+  markBattleStage("enemy-end");
   await continueAfterEnemyDraw(resultState, currentState, session, playerTurnSkipped, deps);
 }
 

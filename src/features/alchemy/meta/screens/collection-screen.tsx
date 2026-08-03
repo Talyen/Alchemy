@@ -2,6 +2,7 @@
 // All three tab grids are rendered simultaneously (preloaded) — only the active
 // one is visible, so switching tabs is instant with no image re-loading.
 import { cn } from "@/lib/utils";
+import { collectionShellWidthClass } from "../../shared/config";
 import { HamburgerTrigger, PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/shared-ui";
 import {
   CollectionGrid,
@@ -43,7 +44,7 @@ export function CollectionScreen({
 
   return (
     <PageLayout>
-      <ScreenShell maxWidthClass="max-w-6xl">
+      <ScreenShell maxWidthClass={collectionShellWidthClass}>
         <ScreenHeaderRow
           title="Collection"
           trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open collection menu" />}

@@ -3,8 +3,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TextAnimate } from "@/components/ui/text-animate";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { cn } from "@/lib/utils";
 
-import { viewCardWidthClass } from "@/features/alchemy/shared/config";
+import { bodyTextClass, viewCardWidthClass } from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { BattleCardButton } from "../../../shared/ui/card-button";
@@ -105,7 +106,7 @@ export function MysteryEventIntro({
         </StaggerItem>
       ) : null}
       <StaggerItem index={event.art || featuredCard ? 2 : 1}>
-        <TextAnimate once className="max-w-lg text-base leading-relaxed text-muted-foreground">
+        <TextAnimate once className={cn("max-w-lg", bodyTextClass)}>
           {event.narrative}
         </TextAnimate>
       </StaggerItem>

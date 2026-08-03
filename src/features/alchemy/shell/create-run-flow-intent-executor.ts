@@ -19,9 +19,9 @@ export interface RunFlowIntentExecutorDeps {
   onStartBossById: (bossId: string, modifiers?: DifficultyModifier[]) => boolean;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
   onCommitWildwoodVictory: (result: VictoryRewardsResult) => void;
-  beginMysteryEvent: () => void;
+  beginMysteryEvent: (onRenderedScreenCommit?: () => void) => void;
   clearMysteryCardChoices: () => void;
-  onWildwoodRewardComplete: () => void;
+  onWildwoodRewardComplete: (onRenderedScreenCommit?: () => void) => void;
   onSelectRewardChoice?: (id: string) => void;
 }
 
@@ -70,13 +70,13 @@ export function createRunFlowIntentExecutor(deps: RunFlowIntentExecutorDeps): Ru
         deps.onCommitWildwoodVictory(intent.result);
         return;
       case "begin-mystery-event":
-        deps.beginMysteryEvent();
+        deps.beginMysteryEvent(intent.onRenderedScreenCommit);
         return;
       case "clear-mystery-card-choices":
         deps.clearMysteryCardChoices();
         return;
       case "wildwood-reward-complete":
-        deps.onWildwoodRewardComplete();
+        deps.onWildwoodRewardComplete(intent.onRenderedScreenCommit);
         return;
       case "select-reward-choice":
         deps.onSelectRewardChoice?.(intent.id);

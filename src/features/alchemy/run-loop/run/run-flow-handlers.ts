@@ -18,7 +18,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
         defeat.completeRunVictory(continuation.displayMaterials, continuation.onRenderedScreenCommit);
         return;
       case "handle-act-complete":
-        progression.handleActComplete(continuation.displayMaterials);
+        progression.handleActComplete(continuation.displayMaterials, continuation.onRenderedScreenCommit);
         return;
       case "advance-to-next-destination":
         progression.advanceToNextDestination();

@@ -33,12 +33,13 @@ import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-
 import { ErrorBoundary } from "@/components/error-boundary";
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
 import { readProfileStore, setCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-port";
+import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { readRunInitialized } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
 import {
   useActiveRunCharacterId,
   useActiveRunScreenValue,
   useBondedCompanions,
-  useContentSystemType,
   useHomesteadEffects,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-port";
@@ -51,7 +52,6 @@ import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-ru
 
 function AppMainContent({
   saveBlockedByNewerVersion,
-  initialLoadReady,
   vrStageRef,
   stagePixelRatio,
   stageStyle,
@@ -59,7 +59,6 @@ function AppMainContent({
   run,
 }: {
   saveBlockedByNewerVersion: boolean;
-  initialLoadReady: boolean;
   vrStageRef: React.RefObject<HTMLDivElement | null>;
   stagePixelRatio: number;
   stageStyle: React.CSSProperties;
@@ -87,7 +86,6 @@ function AppMainContent({
   const nav = useReturnToRunNavigation({ run, renderedScreen });
 
   const heroArt = characterArt[characterId];
-  const contentSystemType = useContentSystemType();
   const rewardsData = useRewardsScreenData();
 
   useScreenAssetPreloadEffects({
@@ -98,8 +96,11 @@ function AppMainContent({
   const isAutosaveAllowed = (): boolean => {
     if (runPhase === "runEnd") return false;
     if (runPhase === "battle" && battle.battleState.enemyHealth <= 0) return false;
-    if (run.screen === "rewards" && contentSystemType !== "wildwood" && rewardsData.rewardState.choices.length === 0)
+    // Mid-claim keeps choices populated; encodeRunResumeSnapshot handles that surface.
+    // Block only a true hollow Victory (no claim lock, nothing to pick).
+    if (run.screen === "rewards" && !rewardsData.rewardClaimInFlight && rewardsData.rewardState.choices.length === 0) {
       return false;
+    }
     return true;
   };
   const autosaveEnabled = isAutosaveAllowed();
@@ -117,8 +118,6 @@ function AppMainContent({
   const pagePhaseClass = pagePhase === "exit" ? "page-exit" : "page-enter";
   const content = saveBlockedByNewerVersion ? (
     <UnsupportedSaveOverlay />
-  ) : !initialLoadReady ? (
-    <StartupLoadingScreen />
   ) : (
     <div key={renderedScreen} className={cn(pagePhaseClass, "h-full w-full overflow-hidden")}>
       <CardDescriptionProvider
@@ -189,7 +188,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 
   const settings = useAppSettings();
   const vrStageRef = useRef<HTMLDivElement>(null);
-  const initialLoadReady = useInitialLoadReady();
   const { frameStyle, stageStyle, aspectMode, stagePixelRatio } = useVirtualResolution(
     settings.selectedAspectRatio,
     false,
@@ -234,7 +232,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
         <div className="relative" style={frameStyle}>
           <AppMainContent
             saveBlockedByNewerVersion={saveBlockedByNewerVersion}
-            initialLoadReady={initialLoadReady && !saveBlockedByNewerVersion}
             vrStageRef={vrStageRef}
             stagePixelRatio={stagePixelRatio}
             stageStyle={stageStyle}
@@ -250,21 +247,32 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 
 export default function App() {
   const [bootstrapResult, setBootstrapResult] = useState<SaveLoadState | null>(null);
+  // Gate lives here so StartupLoadingScreen stays mounted across bootstrap and
+  // keeps a single empty→full animation (outside the VR stage for size parity).
+  const initialLoadReady = useInitialLoadReady();
 
   useEffect(() => {
     let cancelled = false;
     void bootstrapAlchemySaveState().then((result) => {
-      if (!cancelled) {
-        applySaveDataToStores(result.data);
-        setBootstrapResult(result);
+      if (cancelled) return;
+      applySaveDataToStores(result.data);
+      // Restore before first AppInner paint so resumed screen is available without
+      // mutating Zustand during React render.
+      if (!readRunInitialized()) {
+        restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
       }
+      setBootstrapResult(result);
     });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  if (!bootstrapResult) {
+  const saveBlockedByNewerVersion =
+    bootstrapResult?.status.kind === "unsupported-newer-schema" ||
+    bootstrapResult?.status.kind === "unsupported-newer-content";
+
+  if (!bootstrapResult || (!initialLoadReady && !saveBlockedByNewerVersion)) {
     return <StartupLoadingScreen />;
   }
 

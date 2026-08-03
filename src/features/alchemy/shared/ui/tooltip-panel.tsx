@@ -1,12 +1,19 @@
 // Shared hover tooltip container with standard header/subheader/body/section slots.
 // Provides consistent styling across all tooltips — enemy, card, keyword, status, map, etc.
-// Width is configurable via the `width` prop (defaults to w-60).
+// Width is configurable via the `width` prop (defaults to w-72).
 /* eslint-disable react-refresh/only-export-components -- exports TooltipPanel plus measurement helpers from same module */
 import { type CSSProperties, type MouseEventHandler, type ReactNode, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { popupBaseClassName, tooltipAnchorClassNames } from "../config";
+import {
+  popupBaseClassName,
+  tooltipAnchorClassNames,
+  tooltipBodyClass,
+  tooltipHeaderClass,
+  tooltipSubheaderClass,
+} from "../config";
+import { getVrStageBounds } from "./portaled-tooltip-placement";
 
 export type TooltipPlacement = "above" | "below" | "side-start" | "side-end";
 
@@ -33,7 +40,7 @@ function tooltipAnchorClass(placement: TooltipPlacement): string {
 
 export function TooltipPanel({
   children,
-  width = "w-60",
+  width = "w-72",
   className,
   flip,
   placement = "above",
@@ -67,18 +74,20 @@ export function TooltipPanel({
   );
 }
 
+export type TooltipClipBounds = Pick<DOMRect, "top" | "left" | "right" | "bottom">;
+
 export function measureTooltipPlacement(
   rect: Pick<DOMRect, "top" | "left" | "right">,
   padding: number,
-  viewportWidth = window.innerWidth,
+  bounds: TooltipClipBounds = getVrStageBounds(),
 ): { flip: boolean; dx: number } {
-  const flip = rect.top < padding;
+  const flip = rect.top < bounds.top + padding;
 
   let horizontalShift = 0;
-  if (rect.left < padding) {
-    horizontalShift = -rect.left + padding;
-  } else if (rect.right > viewportWidth - padding) {
-    horizontalShift = viewportWidth - rect.right - padding;
+  if (rect.left < bounds.left + padding) {
+    horizontalShift = bounds.left + padding - rect.left;
+  } else if (rect.right > bounds.right - padding) {
+    horizontalShift = bounds.right - padding - rect.right;
   }
 
   return { flip, dx: horizontalShift !== 0 ? horizontalShift : 0 };
@@ -101,13 +110,14 @@ function useTooltipPlacementMeasure(padding: number, trigger?: unknown) {
     if (!el) return;
 
     const rect = el.getBoundingClientRect();
+    const bounds = getVrStageBounds();
 
-    if (!flip && rect.top < padding) {
+    if (!flip && rect.top < bounds.top + padding) {
       setFlip(true);
       return;
     }
 
-    const { dx: nextDx } = measureTooltipPlacement(rect, padding);
+    const { dx: nextDx } = measureTooltipPlacement(rect, padding, bounds);
     setDx(nextDx);
   }, [flip, padding, trigger]);
 
@@ -120,7 +130,7 @@ export function useTooltipFlip(trigger?: unknown) {
   return { ref, flip };
 }
 
-// Flips below when clipped above the viewport and shifts horizontally to stay on-screen.
+// Flips below when clipped above the stage and shifts horizontally to stay on-stage.
 export function useTooltipViewportClamp(padding = 8, trigger?: unknown) {
   const { ref, flip, dx } = useTooltipPlacementMeasure(padding, trigger);
   return { ref, flip, dx };
@@ -135,7 +145,7 @@ export function tooltipSideAnchorClass(placement: SidePlacement): string {
     : "absolute right-[calc(100%+1rem)] top-1/2 left-auto bottom-auto";
 }
 
-// Picks side-start or side-end based on viewport clipping; does not flip above/below.
+// Picks side-start or side-end based on stage clipping; does not flip above/below.
 export function useTooltipSidePlacement(preferred: SidePlacement, trigger?: unknown, padding = 8) {
   const ref = useRef<HTMLDivElement>(null);
   const [placement, setPlacement] = useState<SidePlacement>(preferred);
@@ -151,21 +161,22 @@ export function useTooltipSidePlacement(preferred: SidePlacement, trigger?: unkn
     if (!el) return;
 
     const rect = el.getBoundingClientRect();
+    const bounds = getVrStageBounds();
 
-    if (placement === "side-end" && rect.left < padding) {
+    if (placement === "side-end" && rect.left < bounds.left + padding) {
       setPlacement("side-start");
       return;
     }
 
-    if (placement === "side-start" && rect.right > window.innerWidth - padding) {
+    if (placement === "side-start" && rect.right > bounds.right - padding) {
       setPlacement("side-end");
       return;
     }
 
     if (
       (placement === "side-start" || placement === "side-end") &&
-      rect.left < padding &&
-      rect.right > window.innerWidth - padding
+      rect.left < bounds.left + padding &&
+      rect.right > bounds.right - padding
     ) {
       setPlacement(preferred);
     }
@@ -174,7 +185,7 @@ export function useTooltipSidePlacement(preferred: SidePlacement, trigger?: unkn
   return { ref, placement };
 }
 
-// Above unless top-clipped, then below; if below clips the viewport bottom, use side placement.
+// Above unless top-clipped, then below; if below clips the stage bottom, use side placement.
 export function useTooltipPlacementWithSideFallback(side: "left" | "right", padding = 8, trigger?: unknown) {
   const sidePlacement: TooltipPlacement = side === "left" ? "side-start" : "side-end";
   const ref = useRef<HTMLDivElement>(null);
@@ -193,26 +204,27 @@ export function useTooltipPlacementWithSideFallback(side: "left" | "right", padd
     if (!el) return;
 
     const rect = el.getBoundingClientRect();
+    const bounds = getVrStageBounds();
 
-    if (placement === "above" && rect.top < padding) {
+    if (placement === "above" && rect.top < bounds.top + padding) {
       setPlacement("below");
       return;
     }
 
-    if (placement === "below" && rect.bottom > window.innerHeight - padding) {
+    if (placement === "below" && rect.bottom > bounds.bottom - padding) {
       setPlacement(sidePlacement);
       return;
     }
 
-    const { dx: nextDx } = measureTooltipPlacement(rect, padding);
+    const { dx: nextDx } = measureTooltipPlacement(rect, padding, bounds);
     setDx(nextDx);
   }, [padding, placement, sidePlacement, trigger]);
 
   return { ref, placement, flip: placement === "below", dx };
 }
 
-export function TooltipHeader({ children }: { children: ReactNode }) {
-  return <p className="mb-1 font-sans text-lg font-bold text-foreground">{children}</p>;
+export function TooltipHeader({ children, className }: { children: ReactNode; className?: string }) {
+  return <p className={cn(tooltipHeaderClass, className)}>{children}</p>;
 }
 
 export function TooltipSubheader({
@@ -225,17 +237,14 @@ export function TooltipSubheader({
   style?: CSSProperties;
 }) {
   return (
-    <p
-      className={cn("mt-3 mb-1 text-xs font-semibold tracking-widest text-amber-100/80 uppercase", className)}
-      style={style}
-    >
+    <p className={cn(tooltipSubheaderClass, className)} style={style}>
       {children}
     </p>
   );
 }
 
 export function TooltipBody({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("mt-1 space-y-1.5 text-sm leading-6 text-muted-foreground", className)}>{children}</div>;
+  return <div className={cn(tooltipBodyClass, className)}>{children}</div>;
 }
 
 export function TooltipSeparator({ className }: { className?: string }) {

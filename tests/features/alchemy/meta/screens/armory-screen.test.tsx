@@ -397,7 +397,7 @@ describe("ArmoryScreen", () => {
     const tooltip = screen.getByText("Remove All Affixes");
     expect(tooltip.isConnected).toBe(true);
     expect(tooltip.closest(".armory-inventory-tooltip")?.parentElement).toBe(document.body);
-    expect(tooltip.parentElement?.className).toContain("text-sm");
+    expect(tooltip.parentElement?.className).toContain("text-muted-foreground");
   });
 
   it("clears active currency targeting when that currency reaches zero", async () => {

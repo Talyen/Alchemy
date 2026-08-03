@@ -71,7 +71,8 @@ function useRewardState(): RewardState {
 
 export function useRewardsScreenData(): ScreenData<"rewards"> {
   const rewardState = useRewardState();
-  return useMemo(() => ({ rewardState }), [rewardState]);
+  const rewardClaimInFlight = useGameplayStateStore((state) => state.session.rewardClaimInFlight);
+  return useMemo(() => ({ rewardState, rewardClaimInFlight }), [rewardState, rewardClaimInFlight]);
 }
 
 export function useDestinationScreenData(): ScreenData<"destination"> {

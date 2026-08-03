@@ -31,13 +31,13 @@ export function ChoiceButton({
           type="button"
           onClick={onClick}
           className={cn(
-            "relative justify-start text-left font-semibold",
+            "relative justify-center font-semibold",
             CHIP_BUTTON_CLASS,
-            "active:bg-muted active:brightness-100",
+            "min-w-56 active:bg-muted active:brightness-100",
             accentClassName,
           )}
         >
-          {Icon ? <Icon className="h-4 w-4" /> : null}
+          {Icon ? <Icon className="h-7 w-7" /> : null}
           <span className="leading-none">{label}</span>
         </button>
       </PressableSound>

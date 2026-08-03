@@ -1,6 +1,7 @@
 // Battle status icon popups for keyword statuses and Death's Door.
 // Depends on keyword metadata/icons and shared tooltip panel.
 // Used by ArtPanel to keep actor layout separate from status tooltip details.
+import { useRef, useState, type ReactNode } from "react";
 import { Skull, Sparkles } from "lucide-react";
 
 import type { KeywordId } from "@/lib/game-data";
@@ -12,7 +13,45 @@ import { augmentDefinitions } from "../../augment-definitions";
 import type { StatusChip } from "../../types";
 import { renderColoredKeywords } from "../card-description-ui";
 import { KeywordTag } from "../keyword-tag";
-import { TooltipPanel, TooltipBody } from "../tooltip-panel";
+import { PortaledTooltip } from "../portaled-tooltip";
+import { TooltipBody, TooltipHeader } from "../tooltip-panel";
+
+function StatusChipShell({
+  ariaLabel,
+  buttonClassName,
+  icon,
+  tooltip,
+  width = "w-72",
+}: {
+  ariaLabel: string;
+  buttonClassName?: string;
+  icon: ReactNode;
+  tooltip: ReactNode;
+  width?: string;
+}) {
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="status-chip-pop relative flex items-center justify-center">
+      <button
+        ref={triggerRef}
+        type="button"
+        className={cn("relative flex h-9 w-9 items-center justify-center", buttonClassName)}
+        aria-label={ariaLabel}
+        onMouseEnter={() => setVisible(true)}
+        onMouseLeave={() => setVisible(false)}
+        onFocus={() => setVisible(true)}
+        onBlur={() => setVisible(false)}
+      >
+        {icon}
+      </button>
+      <PortaledTooltip triggerRef={triggerRef} visible={visible} width={width}>
+        {tooltip}
+      </PortaledTooltip>
+    </div>
+  );
+}
 
 export function StatusIcon({ chip }: { chip: StatusChip }) {
   if (chip.id === "haste") {
@@ -34,26 +73,23 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
   }
 
   return (
-    <div className="status-chip-pop group/status relative flex items-center justify-center">
-      <button
-        type="button"
-        className="relative flex h-7 w-7 items-center justify-center"
-        aria-label={`${definition.label} ${chip.value}`}
-      >
-        <Icon className={cn("h-[1.67cqh] w-[1.67cqh]", definition.colorClass)} />
-      </button>
-      <TooltipPanel className="pointer-events-none opacity-0 group-hover/status:opacity-100">
-        <div className="flex items-center justify-between gap-3">
-          <KeywordTag keywordId={kw} />
-          <span className="rounded-full bg-background px-2 py-0.5 text-xs font-semibold text-foreground">
-            {chip.value}
-          </span>
-        </div>
-        <TooltipBody>
-          <p>{renderColoredKeywords(definition.description)}</p>
-        </TooltipBody>
-      </TooltipPanel>
-    </div>
+    <StatusChipShell
+      ariaLabel={`${definition.label} ${chip.value}`}
+      icon={<Icon className={cn("h-[2.3cqh] w-[2.3cqh]", definition.colorClass)} />}
+      tooltip={
+        <>
+          <div className="flex items-center justify-between gap-3">
+            <KeywordTag keywordId={kw} />
+            <span className="rounded-full bg-background px-2 py-0.5 text-base font-semibold text-foreground">
+              {chip.value}
+            </span>
+          </div>
+          <TooltipBody>
+            <p>{renderColoredKeywords(definition.description)}</p>
+          </TooltipBody>
+        </>
+      }
+    />
   );
 }
 
@@ -66,72 +102,66 @@ function AugmentStatusIcon({
 }) {
   const Icon = augment.icon;
   return (
-    <div className="status-chip-pop group/status relative flex items-center justify-center">
-      <button
-        type="button"
-        className="relative flex h-7 w-7 items-center justify-center"
-        aria-label={`${augment.label} ${chip.value}`}
-      >
-        <Icon className={cn("h-[1.67cqh] w-[1.67cqh]", augment.colorClass)} />
-      </button>
-      <TooltipPanel className="pointer-events-none opacity-0 group-hover/status:opacity-100">
-        <div className="flex items-center justify-between gap-3">
-          <span className="font-sans text-lg font-bold text-foreground">{augment.label}</span>
-          <span className="rounded-full bg-background px-2 py-0.5 text-xs font-semibold text-foreground">
-            {chip.value}
-          </span>
-        </div>
-        <TooltipBody>
-          <p>{augment.description}</p>
-        </TooltipBody>
-      </TooltipPanel>
-    </div>
+    <StatusChipShell
+      ariaLabel={`${augment.label} ${chip.value}`}
+      icon={<Icon className={cn("h-[2.3cqh] w-[2.3cqh]", augment.colorClass)} />}
+      tooltip={
+        <>
+          <div className="flex items-center justify-between gap-3">
+            <TooltipHeader className="mb-0">{augment.label}</TooltipHeader>
+            <span className="rounded-full bg-background px-2 py-0.5 text-base font-semibold text-foreground">
+              {chip.value}
+            </span>
+          </div>
+          <TooltipBody>
+            <p>{augment.description}</p>
+          </TooltipBody>
+        </>
+      }
+    />
   );
 }
 
 function HasteStatusIcon({ value }: { value: number }) {
   return (
-    <div className="status-chip-pop group/status relative flex items-center justify-center">
-      <button type="button" className="relative flex h-7 w-7 items-center justify-center" aria-label={`Haste ${value}`}>
-        <Sparkles className="h-[1.67cqh] w-[1.67cqh] text-fuchsia-300" />
-      </button>
-      <TooltipPanel className="pointer-events-none opacity-0 group-hover/status:opacity-100">
-        <div className="flex items-center justify-between gap-3">
-          <span className="font-sans text-lg font-bold text-foreground">Haste</span>
-          <span className="rounded-full bg-background px-2 py-0.5 text-xs font-semibold text-foreground">{value}</span>
-        </div>
-        <TooltipBody>
-          <p>Skips the next enemy phase and grants another player turn.</p>
-        </TooltipBody>
-      </TooltipPanel>
-    </div>
+    <StatusChipShell
+      ariaLabel={`Haste ${value}`}
+      icon={<Sparkles className="h-[2.3cqh] w-[2.3cqh] text-fuchsia-300" />}
+      tooltip={
+        <>
+          <div className="flex items-center justify-between gap-3">
+            <TooltipHeader className="mb-0">Haste</TooltipHeader>
+            <span className="rounded-full bg-background px-2 py-0.5 text-base font-semibold text-foreground">
+              {value}
+            </span>
+          </div>
+          <TooltipBody>
+            <p>Skips the next enemy phase and grants another player turn.</p>
+          </TooltipBody>
+        </>
+      }
+    />
   );
 }
 
 export function DeathsDoorStatusIcon() {
   return (
-    <div className="status-chip-pop group/status relative flex items-center justify-center">
-      <button
-        type="button"
-        className={cn(
-          "relative flex h-7 w-7 items-center justify-center rounded-full bg-red-950/70 text-red-200 ring-1 ring-red-400/60",
-        )}
-        aria-label="Death's Door"
-      >
-        <Skull className="h-[1.67cqh] w-[1.67cqh]" />
-      </button>
-      <TooltipPanel width="w-72" className="pointer-events-none opacity-0 group-hover/status:opacity-100">
-        <div className="flex items-center justify-between gap-3">
-          <span className="font-sans text-lg font-bold text-foreground">Death's Door</span>
-        </div>
-        <TooltipBody className="italic">
-          <p>
-            Because I could not stop for Death,
-            <br />
-            He kindly stopped for me
-          </p>
-        </TooltipBody>
-      </TooltipPanel>
-    </div>
+    <StatusChipShell
+      ariaLabel="Death's Door"
+      buttonClassName="rounded-full bg-red-950/70 text-red-200 ring-1 ring-red-400/60"
+      icon={<Skull className="h-[2.3cqh] w-[2.3cqh]" />}
+      tooltip={
+        <>
+          <TooltipHeader>Death's Door</TooltipHeader>
+          <TooltipBody className="italic">
+            <p>
+              Because I could not stop for Death,
+              <br />
+              He kindly stopped for me
+            </p>
+          </TooltipBody>
+        </>
+      }
+    />
   );
 }

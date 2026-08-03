@@ -22,7 +22,7 @@ export function PaginationControls({
   reserveSpace?: boolean;
   className?: string;
 }) {
-  const buttonClass = size === "sm" ? "h-9 w-9" : "h-11 w-11";
+  const buttonClass = size === "sm" ? "h-11 w-11" : "h-14 w-14";
   const widthClass = size === "sm" ? "max-w-28" : "max-w-36";
 
   if (totalPages <= 1) {

@@ -391,8 +391,12 @@ describe("reward flow orchestration", () => {
     it("routes companion rewards back to the rewards screen", () => {
       const handlers = makeHandlers();
       executeRewardRouteTransition("companion-reward", materials, nextRewardState, true, handlers);
-      expect(handlers.setCompanionRewardCards).toHaveBeenCalledWith(null);
+      expect(handlers.setCompanionRewardCards).not.toHaveBeenCalled();
       expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.REWARDS, expect.any(Function));
+      const onCommit = handlers.navigateTo.mock.calls[0]![1] as () => void;
+      onCommit();
+      expect(handlers.setRewardState).toHaveBeenCalledWith(nextRewardState);
+      expect(handlers.setCompanionRewardCards).toHaveBeenCalledWith(null);
     });
 
     it("routes labyrinth map rewards to the labyrinth screen", () => {

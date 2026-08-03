@@ -29,7 +29,7 @@ export function PurchasableShopTile({
     <div className="flex flex-col items-center gap-3 rounded-shell-card border border-border/70 bg-card/60 p-4 text-center">
       {media}
       <DisabledTooltip show={gold < price} message="Not Enough Gold">
-        <Button variant="outline" disabled={gold < price} onClick={onBuy}>
+        <Button size="lg" variant="outline" disabled={gold < price} onClick={onBuy}>
           Buy <GoldCost amount={price} />
         </Button>
       </DisabledTooltip>

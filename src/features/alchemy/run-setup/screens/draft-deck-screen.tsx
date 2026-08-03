@@ -5,7 +5,8 @@ import { selectRewardCards } from "@/lib/game-data";
 import { DRAFT_ROUNDS, DRAFT_CHOICES } from "@/lib/game-constants";
 
 import { Button } from "@/components/ui/button";
-import { BUTTON_WIDTH_ACTION, collectionTileWidthClass } from "@/features/alchemy/shared/config";
+import { BUTTON_WIDTH_ACTION, bodyTextClass, collectionTileWidthClass } from "@/features/alchemy/shared/config";
+import { cn } from "@/lib/utils";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
 import { SelectableChoiceCard } from "../../shared/ui/selectable-choice-card";
@@ -66,7 +67,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
       <div className="alchemy-shell flex w-full max-w-6xl flex-col items-center rounded-shell-hero border border-border/80 p-7">
         <ScreenHeader title={isComplete ? "Draft Complete" : "Draft a Deck"} />
-        <p className="mt-3 text-base text-muted-foreground">
+        <p className={cn("mt-3", bodyTextClass)}>
           {isComplete
             ? "You drafted " + String(drafted.length) + " cards. Ready to begin your run."
             : "Pick 1 of 3 cards \u2014 " + String(round + 1) + "/" + String(DRAFT_ROUNDS) + " selected"}

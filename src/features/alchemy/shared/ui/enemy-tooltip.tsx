@@ -1,22 +1,15 @@
 // Structured hover popup for enemy data in battle and bestiary collection.
-// Depends on enemy formatting utilities and the shared tooltip panel.
+// Depends on enemy formatting utilities and the shared portaled tooltip panel.
 // Used by ArtPanel (battle) and CompendiumTile (collection) to show attacks and traits.
+import type { RefObject } from "react";
 import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
-import { cn } from "@/lib/utils";
-import type React from "react";
 
 import { formatEnemyAttackLines } from "../utils";
 import { DescriptionLines } from "./card-description-ui";
-import {
-  TooltipBody,
-  TooltipHeader,
-  TooltipPanel,
-  TooltipSection,
-  TooltipSeparator,
-  useTooltipPlacementWithSideFallback,
-} from "./tooltip-panel";
+import { PortaledTooltip } from "./portaled-tooltip";
+import { TooltipBody, TooltipHeader, TooltipSection, TooltipSeparator } from "./tooltip-panel";
 
 function EnemyTooltipModifiers({ modifiers }: { modifiers: EncounterCombatTraitId[] }) {
   if (modifiers.length === 0) return null;
@@ -37,38 +30,21 @@ function EnemyTooltipModifiers({ modifiers }: { modifiers: EncounterCombatTraitI
   );
 }
 
-function getEnemyTooltipClass(isSide: boolean, align: "left" | "right", className: string | undefined): string {
-  if (!isSide) return cn("rounded-shell-tooltip", className);
-  if (align === "left") {
-    return cn("rounded-shell-tooltip", "absolute top-0 right-[calc(100%+1.11cqh)] bottom-auto left-auto", className);
-  }
-  return cn("rounded-shell-tooltip", "absolute top-0 right-auto bottom-auto left-[calc(100%+1.11cqh)]", className);
-}
-
-function getEnemyTooltipStyle(isSide: boolean, dx: number): React.CSSProperties {
-  return {
-    ...(isSide ? { transform: "none" } : {}),
-    ...(dx !== 0 ? { marginLeft: dx } : {}),
-  };
-}
-
 export function EnemyTooltip({
   entry,
   discovered = true,
   attackEffects,
   labyrinthModifiers = [],
-  align = "right",
-  className,
+  triggerRef,
+  visible,
 }: {
   entry: BestiaryEntry;
   discovered?: boolean;
   attackEffects?: EnemyAttackEffect[] | undefined;
   labyrinthModifiers?: EncounterCombatTraitId[];
-  align?: "left" | "right";
-  className?: string;
+  triggerRef: RefObject<HTMLElement | null>;
+  visible: boolean;
 }) {
-  const { ref, placement, flip, dx } = useTooltipPlacementWithSideFallback(align, 8, entry.id);
-  const isSide = placement === "side-start" || placement === "side-end";
   const attackLines = formatEnemyAttackLines(attackEffects ?? entry.attackEffects);
   const separatelyDisplayedTraitIds = new Set<string>(labyrinthModifiers);
   const traitLines = entry.traits
@@ -76,14 +52,7 @@ export function EnemyTooltip({
     .flatMap((trait) => trait.description.split("\n"));
 
   return (
-    <TooltipPanel
-      ref={ref}
-      placement={isSide ? placement : "above"}
-      flip={flip}
-      width="w-60"
-      className={getEnemyTooltipClass(isSide, align, className)}
-      style={getEnemyTooltipStyle(isSide, dx)}
-    >
+    <PortaledTooltip triggerRef={triggerRef} visible={visible} width="w-80" className="rounded-shell-tooltip">
       <TooltipHeader>{discovered ? entry.title : "Undiscovered"}</TooltipHeader>
       <TooltipBody>
         {discovered ? (
@@ -95,6 +64,6 @@ export function EnemyTooltip({
         )}
       </TooltipBody>
       <EnemyTooltipModifiers modifiers={labyrinthModifiers} />
-    </TooltipPanel>
+    </PortaledTooltip>
   );
 }

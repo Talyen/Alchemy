@@ -48,16 +48,16 @@ function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "p
       style={{
         top: `${entry.lane * 56}px`,
       }}
-      initial={{ y: 0, opacity: 1, filter: "blur(0px)", scale: 1 }}
+      // Transform/opacity only — animated CSS filter blur is a confirmed Electron DPR2
+      // hitch source when many combat texts overlap (battle-effects play-card / enemy-turn).
+      initial={{ y: 0, opacity: 1, scale: 1 }}
       animate={{
         y: -120,
         opacity: [1, 1, 0],
-        filter: ["blur(0px)", "blur(0px)", "blur(4px)"],
         scale: [1, 1, 1.3],
         transition: {
           y: { duration: 1.6, ease: "easeOut" },
           opacity: { duration: 1.6, times: [0, 0.4, 1], ease: "easeOut" },
-          filter: { duration: 1.6, times: [0, 0.4, 1], ease: "easeOut" },
           scale: { duration: 1.6, times: [0, 0.5, 1], ease: "easeOut" },
         },
       }}

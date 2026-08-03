@@ -1,10 +1,9 @@
 import { memo, useCallback, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { getCraftingCurrencyDefinition, type CraftingCurrencyId } from "@/lib/gear";
 import { playUISound } from "@/lib/audio";
 import { cn } from "@/lib/utils";
-import { TooltipBody, TooltipHeader, TooltipPanel } from "../../../../shared/ui/tooltip-panel";
-import { useArmoryPortaledTooltipPlacement } from "../armory-tooltip-placement";
+import { PortaledTooltip } from "../../../../shared/ui/portaled-tooltip";
+import { TooltipBody, TooltipHeader } from "../../../../shared/ui/tooltip-panel";
 import { ARMORY_TOOLTIP_WIDTH } from "../gear-tooltip-content";
 import { packedItemStyle } from "./grid-styles";
 import { CURRENCY_COUNT_LABEL_CLASS } from "./currency-styles";
@@ -38,8 +37,6 @@ export const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
   const tileRef = useRef<HTMLDivElement>(null);
   const [showTooltip, setShowTooltip] = useState(false);
   const definition = getCraftingCurrencyDefinition(currencyId);
-
-  const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(tileRef, showTooltip);
 
   const openTooltip = useCallback(() => {
     setShowTooltip(true);
@@ -120,28 +117,21 @@ export const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
         <img src={definition.art} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <span className={CURRENCY_COUNT_LABEL_CLASS}>{count}</span>
       </div>
-      {showTooltip
-        ? createPortal(
-            <TooltipPanel
-              ref={tooltipRef}
-              width={ARMORY_TOOLTIP_WIDTH}
-              visible
-              flip={placeBelow}
-              className="armory-inventory-tooltip pointer-events-none fixed top-auto bottom-auto z-[100] mt-0 mb-0 !shadow-none"
-              style={tooltipStyle}
-            >
-              <div className="w-max">
-                <TooltipHeader>
-                  <span className="whitespace-nowrap">{definition.displayName}</span>
-                </TooltipHeader>
-                <TooltipBody>
-                  <p className="whitespace-nowrap">{definition.tooltipEffect}</p>
-                </TooltipBody>
-              </div>
-            </TooltipPanel>,
-            document.body,
-          )
-        : null}
+      <PortaledTooltip
+        triggerRef={tileRef}
+        visible={showTooltip}
+        width={ARMORY_TOOLTIP_WIDTH}
+        className="armory-inventory-tooltip !shadow-none"
+      >
+        <div className="w-max">
+          <TooltipHeader>
+            <span className="whitespace-nowrap">{definition.displayName}</span>
+          </TooltipHeader>
+          <TooltipBody>
+            <p className="whitespace-nowrap">{definition.tooltipEffect}</p>
+          </TooltipBody>
+        </div>
+      </PortaledTooltip>
     </div>
   );
 });

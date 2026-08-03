@@ -81,7 +81,7 @@ export function LabyrinthNodeButton({ row, col, node, labyrinthMap, onNodeClick,
 }
 
 function getNodeIconClassName(nodeType: LabyrinthNodeType, isCurrent: boolean): string {
-  const size = nodeType === "boss" && !isCurrent ? "h-7 w-7" : "h-6 w-6";
+  const size = nodeType === "boss" && !isCurrent ? "h-8 w-8" : "h-7 w-7";
   return cn(size, isCurrent && "text-amber-400");
 }
 
@@ -92,7 +92,7 @@ function getNodeButtonClassName(
   isEnterable: boolean,
 ): string {
   return cn(
-    "relative flex aspect-square h-full w-full items-center justify-center rounded-full border-2 text-xs transition-[transform,border-color] duration-150",
+    "relative flex aspect-square h-full w-full items-center justify-center rounded-full border-2 text-sm transition-[transform,border-color] duration-150",
     meta.className,
     isCurrent && "border-amber-400",
     isCurrent && node.type !== "entrance" && "shadow-labyrinth-current-glow",

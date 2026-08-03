@@ -4,11 +4,12 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { TextAnimate } from "@/components/ui/text-animate";
+import { screenDescriptionClass, screenTitleClass } from "../config";
 
 export function ScreenHeader({ title, className }: { title: ReactNode; className?: string }) {
   return (
     <div className={cn("flex flex-col items-center text-center", className)}>
-      <h1 className="font-sans text-lg font-black tracking-[0.15em] text-amber-100/75 uppercase sm:text-xl">{title}</h1>
+      <h1 className={cn("font-sans", screenTitleClass)}>{title}</h1>
       <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-amber-100/75 to-transparent" />
     </div>
   );
@@ -36,9 +37,11 @@ export function ScreenHeaderRow({
 }
 
 export function PageLayout({ children }: { children: ReactNode }) {
+  // Outer scroller + inner min-h-full center: keeps justify-center from jumping when
+  // abspos feedback (combat text, ghosts, hurt sparks) changes scrollHeight.
   return (
-    <div className="game-page-scroll flex h-full w-full flex-col items-center justify-center overflow-x-hidden overflow-y-auto px-5 py-7">
-      {children}
+    <div className="game-page-scroll h-full w-full overflow-x-hidden overflow-y-auto px-5 py-7">
+      <div className="flex min-h-full w-full flex-col items-center justify-center">{children}</div>
     </div>
   );
 }
@@ -84,7 +87,8 @@ export function ScreenDescription({
       once
       startOnView={startOnView}
       className={cn(
-        "mx-auto max-w-lg text-center text-sm leading-relaxed",
+        "mx-auto max-w-lg text-center",
+        screenDescriptionClass,
         tone === "danger" ? "text-red-100/75" : "text-muted-foreground",
         className,
       )}

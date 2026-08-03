@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils";
 import { PaginationControls, StaggerGroup, StaggerItem } from "./shared-ui";
 import {
   collectionCardGridClass,
+  collectionGridTileWidthClass,
+  collectionGridTrinketWidthClass,
   collectionTabMeta,
-  collectionTileWidthClass,
   collectionTrinketGridClass,
-  trinketCardWidthClass,
 } from "../config";
 import type { CollectionTab } from "../types";
 import { TabBar } from "./tab-bar";
@@ -59,7 +59,7 @@ export function CollectionGrid({
       {Array.from({ length: getCollectionFillerCount(pageItems.length, collectionTab) }).map((_, index) => (
         <div
           key={`collection-filler-${index}`}
-          className={cn(collectionTab === "trinkets" ? trinketCardWidthClass : collectionTileWidthClass)}
+          className={cn(collectionTab === "trinkets" ? collectionGridTrinketWidthClass : collectionGridTileWidthClass)}
           aria-hidden="true"
         />
       ))}

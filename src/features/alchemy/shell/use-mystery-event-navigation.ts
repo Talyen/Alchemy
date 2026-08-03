@@ -13,10 +13,13 @@ export function useMysteryEventNavigation({
 }) {
   const mystery = useMysteryFlow(eventsRng);
 
-  const beginMysteryEvent = useCallback(() => {
-    mystery.beginMysteryEvent(() => navigateTo(CONSTANTS.SCREENS.MYSTERY));
-    playUISound("musicBoxMystery");
-  }, [mystery, navigateTo]);
+  const beginMysteryEvent = useCallback(
+    (onRenderedScreenCommit?: () => void) => {
+      mystery.beginMysteryEvent(() => navigateTo(CONSTANTS.SCREENS.MYSTERY, onRenderedScreenCommit));
+      playUISound("musicBoxMystery");
+    },
+    [mystery, navigateTo],
+  );
 
   return {
     beginMysteryEvent,

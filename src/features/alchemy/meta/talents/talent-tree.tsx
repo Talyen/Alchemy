@@ -6,7 +6,7 @@ import { Lock } from "lucide-react";
 import { keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { TalentDefinition } from "@/lib/game-data";
-import { getKeywordShineColors, keywordIcons } from "@/features/alchemy/shared/config";
+import { getKeywordShineColors, keywordIcons, sectionTitleClass } from "@/features/alchemy/shared/config";
 import { tokenizeDescription } from "../../shared/utils";
 import { TooltipPanel, TooltipBody, useTooltipViewportClamp } from "../../shared/ui/tooltip-panel";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -38,7 +38,7 @@ function TalentNodeTooltip({ talent }: { talent: TalentDefinition }) {
       className="z-50"
       style={dx !== 0 ? { marginLeft: dx } : undefined}
     >
-      <div className="font-sans text-base font-bold text-amber-100/75">{talent.name ?? "Talent"}</div>
+      <div className={cn("font-sans", sectionTitleClass)}>{talent.name ?? "Talent"}</div>
       <TooltipBody className="max-w-60">
         {descParts.map((part, i) =>
           part.keywordId ? (

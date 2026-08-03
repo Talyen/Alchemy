@@ -78,7 +78,7 @@ export default tseslint.config(
 
   // Tests and non-src files — disable type-aware rules (they parse fine without project info)
   {
-    files: ["tests/**", "scripts/**", "desktop/**", "*.config.*"],
+    files: ["tests/**", "scripts/**", "desktop/**", "performance/**", "*.config.*"],
     ...tseslint.configs.disableTypeChecked,
   },
 
@@ -191,10 +191,12 @@ export default tseslint.config(
 
   // Test files — relax rules for test-specific patterns
   {
-    files: ["tests/**/*.ts", "tests/**/*.tsx"],
+    files: ["tests/**/*.ts", "tests/**/*.tsx", "performance/**/*.ts"],
     rules: {
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
       "@typescript-eslint/no-explicit-any": "off",
+      // Playwright fixture `use` is not a React Hook.
+      "react-hooks/rules-of-hooks": "off",
     },
   },
 
@@ -203,7 +205,7 @@ export default tseslint.config(
   // the most common source of flaky e2e tests.
   {
     ...playwright.configs["flat/recommended"],
-    files: ["tests/**/*.spec.ts"],
+    files: ["tests/**/*.spec.ts", "performance/scenarios/**/*.perf.ts"],
     rules: {
       ...playwright.configs["flat/recommended"].rules,
       // This suite intentionally uses conditional flows (save-state probing),
@@ -243,7 +245,11 @@ export default tseslint.config(
 
   // Animation specs must not disable animations via fastBattle or enableFastMode.
   {
-    files: ["tests/draw-discard-animations.spec.ts", "tests/battle-end-turn-canary.spec.ts"],
+    files: [
+      "tests/draw-discard-animations.spec.ts",
+      "tests/battle-end-turn-canary.spec.ts",
+      "performance/scenarios/**/*.perf.ts",
+    ],
     rules: {
       "no-restricted-imports": restrictedImports({
         paths: [
@@ -252,16 +258,32 @@ export default tseslint.config(
             message:
               "Animation specs must use @playwright/test directly — fixtures/e2e enables fastBattle/enableFastMode.",
           },
+          {
+            name: "../tests/fixtures/e2e",
+            message: "Performance scenarios must keep real animations — do not import fixtures/e2e (fastBattle).",
+          },
+          {
+            name: "../../tests/fixtures/e2e",
+            message: "Performance scenarios must keep real animations — do not import fixtures/e2e (fastBattle).",
+          },
         ],
       }),
       "no-restricted-syntax": restrictedSyntax(
         {
           selector: 'CallExpression[callee.name="enableFastMode"]',
-          message: "Do not call enableFastMode in animation-focused specs.",
+          message: "Do not call enableFastMode in animation-focused specs or performance scenarios.",
         },
         {
           selector: 'ImportDeclaration[source.value="./fixtures/e2e"]',
           message: "Animation specs must use @playwright/test directly — fixtures/e2e enables fastBattle.",
+        },
+        {
+          selector: 'ImportDeclaration[source.value="../tests/fixtures/e2e"]',
+          message: "Performance scenarios must keep real animations — do not import fixtures/e2e.",
+        },
+        {
+          selector: 'ImportDeclaration[source.value="../../tests/fixtures/e2e"]',
+          message: "Performance scenarios must keep real animations — do not import fixtures/e2e.",
         },
       ),
     },

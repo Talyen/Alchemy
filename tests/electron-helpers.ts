@@ -4,9 +4,15 @@ import { fileURLToPath } from "node:url";
 import { type ElectronApplication, type Page, _electron as electron } from "playwright";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const previewPort = Number.parseInt(process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT ?? "4175", 10);
-const rendererUrl = `http://127.0.0.1:${previewPort}`;
 const pathMarkerFile = path.join(projectRoot, "test-results", ".electron-executable-path");
+
+function getPreviewPort(): number {
+  return Number.parseInt(process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT ?? "4175", 10);
+}
+
+function getRendererUrl(): string {
+  return `http://127.0.0.1:${getPreviewPort()}`;
+}
 
 function platformExecutableName(): string {
   switch (process.platform) {
@@ -45,8 +51,11 @@ function getElectronExecutablePath(): string {
   return executablePath;
 }
 
-export async function launchElectronApp(options: { packagedRenderer?: boolean } = {}): Promise<ElectronApplication> {
-  const args = process.env.CI ? [".", "--no-sandbox", "--disable-gpu"] : ["."];
+export async function launchElectronApp(
+  options: { packagedRenderer?: boolean; enableGpu?: boolean } = {},
+): Promise<ElectronApplication> {
+  // Performance profiling must keep the GPU enabled; CI smoke tests disable it.
+  const args = process.env.CI && !options.enableGpu ? [".", "--no-sandbox", "--disable-gpu"] : ["."];
 
   return electron.launch({
     executablePath: getElectronExecutablePath(),
@@ -54,7 +63,7 @@ export async function launchElectronApp(options: { packagedRenderer?: boolean } 
     cwd: projectRoot,
     env: {
       ...process.env,
-      ELECTRON_RENDERER_URL: rendererUrl,
+      ELECTRON_RENDERER_URL: getRendererUrl(),
       ...(options.packagedRenderer ? { ELECTRON_FORCE_PACKAGED_RENDERER: "1" } : {}),
     },
   });

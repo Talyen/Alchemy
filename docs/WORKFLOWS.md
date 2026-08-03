@@ -23,6 +23,7 @@ For refactors and simplification passes on attached paths, use [docs/Audits](./A
 | Permanent gear                                | [Gear](#add-permanent-gear)                                                                                                                                                       |
 | Screen, destination, mystery                  | [New screen](#adding-a-new-screen) · [Destination](#adding-a-new-destination-map-node) · [Mystery effect](#adding-a-new-mystery-effect-kind)                                      |
 | In-run materials, staggered enter             | [Grant materials during a run](#grant-materials-during-a-run) · [Staggered screen enter](#staggered-screen-enter-motion) · [Interactive buttons](#interactive-button-conventions) |
+| Tooltips                                      | [Hover tooltips](#hover-tooltips)                                                                                                                                                 |
 | Gameplay session mutation                     | [Gameplay command boundary](#gameplay-command-boundary)                                                                                                                           |
 
 ---
@@ -118,6 +119,20 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared
 | 3. Skip + confirm  | `ActionButtonRow` with `width="action"`; skip secondary, confirm primary     |
 | 4. Destinations    | `ChoiceButton` via `DestinationChoices`; accent text only on neutral surface |
 | 5. Shine           | Only on accent-intent forward actions — never Back/Cancel/Skip               |
+
+---
+
+## Hover tooltips
+
+Clip bounds are `[data-testid="vr-stage"]` (fallback: `documentElement`), not the raw browser window. Prefer above; flip below when the tooltip would clip the stage top.
+
+| Case                                                                                                 | Use                                                                                                                          |
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Tall tooltips inside `overflow-hidden` scenes (battle enemies, armory gear/currency, bestiary tiles) | `PortaledTooltip` / `EnemyTooltip` / `GearTooltipPortal` — `createPortal` to `document.body` + `usePortaledTooltipPlacement` |
+| Smaller in-DOM hover panels that already opt into flip                                               | `useTooltipFlip`, `useTooltipViewportClamp`, or `useTooltipPlacementWithSideFallback` on `TooltipPanel`                      |
+| Tiny labels that never near an edge                                                                  | Plain `TooltipPanel` without measurement hooks                                                                               |
+
+Placement helpers live in `src/features/alchemy/shared/ui/portaled-tooltip-placement.ts` and `tooltip-panel.tsx`.
 
 ---
 

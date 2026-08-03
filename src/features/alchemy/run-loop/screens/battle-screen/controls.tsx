@@ -5,9 +5,10 @@ import type { RefObject } from "react";
 import { Coins } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 import { ManaPanel, PilePanel } from "../../../shared/ui/battle-ui";
-import { battleBottomBarClass, battleBottomColumnClass } from "@/features/alchemy/shared/config";
+import { battleBottomBarClass, battleBottomColumnClass, BUTTON_WIDTH_DIALOG } from "@/features/alchemy/shared/config";
 import { BattleHand } from "./hand";
 import type { BattleActionsProps, BattleRefsProps, BattleScreenState, RequiredBattleViewProps } from "./types";
 
@@ -55,8 +56,8 @@ function BattleControls({
       <div className="relative flex flex-col items-center gap-2">
         <Button
           variant="primary"
-          size="sm"
-          className="font-bold"
+          size="lg"
+          className={cn("font-bold", BUTTON_WIDTH_DIALOG)}
           onClick={onEndTurn}
           disabled={battleState.turnPhase !== "player" || cardTransferInProgress}
         >

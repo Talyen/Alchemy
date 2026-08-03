@@ -10,3 +10,4 @@ export * from "./config/options";
 export * from "./config/combat-text-icons";
 export * from "./config/shine-palettes";
 export * from "./config/labyrinth-map";
+export * from "./config/typography";

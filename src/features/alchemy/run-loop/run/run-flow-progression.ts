@@ -29,7 +29,7 @@ export function createProgressionHandlers(ctx: RunFlowContext) {
     });
   }
 
-  function handleActComplete(displayMaterials?: MaterialInventory) {
+  function handleActComplete(displayMaterials?: MaterialInventory, onRenderedScreenCommit?: () => void) {
     dispatchRunSessionCommand(
       () => {
         setHasActiveBattle(false);
@@ -52,9 +52,13 @@ export function createProgressionHandlers(ctx: RunFlowContext) {
         afterCommit: (runComplete) => {
           clearBattlePresentationUi();
           if (runComplete) {
-            ctx.dispatchContinuation({ type: "complete-run-victory", displayMaterials: displayMaterials ?? null });
+            ctx.dispatchContinuation({
+              type: "complete-run-victory",
+              displayMaterials: displayMaterials ?? null,
+              ...(onRenderedScreenCommit ? { onRenderedScreenCommit } : {}),
+            });
           } else {
-            prepareNextDestination(0);
+            prepareNextDestination(0, onRenderedScreenCommit);
           }
         },
       },

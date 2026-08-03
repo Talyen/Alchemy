@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ScreenDescription, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { Button } from "@/components/ui/button";
 import { campfire } from "@/features/alchemy/shared/config/game-data-catalog";
+import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import { CAMPFIRE_CONTINUE_DELAY, getCampfireRestHealth } from "@/lib/game-constants";
 import { HealthRestoreMeter } from "../../shared/ui/health-restore-meter";
 import { useEasedHealth } from "../../shared/ui/use-eased-health";
@@ -60,7 +61,7 @@ export function CampfireScreen({
         </StaggerItem>
         <StaggerItem index={3} className="min-h-16 min-w-[clamp(24.67cqh,26.4cqh,37.33cqh)]">
           {!resting ? (
-            <Button size="lg" onClick={handleRest}>
+            <Button size="lg" className={BUTTON_WIDTH_ACTION} onClick={handleRest}>
               Rest
             </Button>
           ) : (

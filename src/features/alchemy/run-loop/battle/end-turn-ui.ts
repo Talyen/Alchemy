@@ -1,6 +1,7 @@
 import { type BattleState } from "@/lib/battle";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { getBattleSessionStore, type createBattleSession } from "./battle-session";
+import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import {
@@ -23,12 +24,16 @@ export function createBattleEndTurnUi(
 
   async function animateEndTurnThenResolve(currentState: BattleState, sessionNum: number) {
     try {
-      if (!isAnimationDisabled()) {
-        try {
+      // Always emit discard bounds so the perf harness can wait even when animation is off.
+      markBattleStage("discard-start");
+      try {
+        if (!isAnimationDisabled()) {
           await transferDeps.animateDiscardedHand(currentState.hand, sessionNum);
-        } catch (err) {
-          deps.logBattleError("discard hand animation", err);
         }
+      } catch (err) {
+        deps.logBattleError("discard hand animation", err);
+      } finally {
+        markBattleStage("discard-end");
       }
       session.runIfSessionActive(sessionNum, () => {
         if (resolveEndTurn(currentState, sessionNum, deps)) {

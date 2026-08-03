@@ -5,6 +5,7 @@ import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { getCardKey } from "./controller-utils";
+import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 
 function detectNewHandCards(oldHand: BattleCard[], newHand: BattleCard[]): BattleCard[] {
   const oldUidSet = new Set(oldHand.map((c) => c.uid));
@@ -37,6 +38,7 @@ export async function runHandDrawSequence(
   }
   const hiddenDrawKeys = new Set(drawnCards.map(getCardKey));
   deps.setTransferInProgress(true);
+  markBattleStage("draw-start");
   deps.runIfSessionActive(session, () => {
     deps.setHiddenHandCardKeys(hiddenDrawKeys);
     applyState();
@@ -47,6 +49,7 @@ export async function runHandDrawSequence(
       await deps.animateDrawnHand(drawnCards, newState.hand, session);
     }
   } finally {
+    markBattleStage("draw-end");
     const clearHidden = () => {
       deps.setTransferInProgress(false);
       deps.setHiddenHandCardKeys((current) => {

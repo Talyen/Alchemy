@@ -5,5 +5,5 @@
     "noUncheckedIndexedAccess": false,
     "exactOptionalPropertyTypes": false
   },
-  "include": ["tests"]
+  "include": ["tests", "performance"]
 }

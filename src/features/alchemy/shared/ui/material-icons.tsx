@@ -6,12 +6,14 @@ import { Apple, Coins, Gem, Leaf, Pickaxe, TreePine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { materialLabels, type MaterialId } from "@/lib/homestead/types";
 
+const MAT_ICON_CLASS = "block h-6 w-6 shrink-0";
+
 export const matIconMap: Record<MaterialId, ReactNode> = {
-  wood: <TreePine absoluteStrokeWidth aria-hidden="true" className="block h-4 w-4 shrink-0" />,
-  iron: <Pickaxe absoluteStrokeWidth aria-hidden="true" className="block h-4 w-4 shrink-0" />,
-  herbs: <Leaf absoluteStrokeWidth aria-hidden="true" className="block h-4 w-4 shrink-0" />,
-  food: <Apple absoluteStrokeWidth aria-hidden="true" className="block h-4 w-4 shrink-0" />,
-  crystal: <Gem absoluteStrokeWidth aria-hidden="true" className="block h-4 w-4 shrink-0" />,
+  wood: <TreePine absoluteStrokeWidth aria-hidden="true" className={MAT_ICON_CLASS} />,
+  iron: <Pickaxe absoluteStrokeWidth aria-hidden="true" className={MAT_ICON_CLASS} />,
+  herbs: <Leaf absoluteStrokeWidth aria-hidden="true" className={MAT_ICON_CLASS} />,
+  food: <Apple absoluteStrokeWidth aria-hidden="true" className={MAT_ICON_CLASS} />,
+  crystal: <Gem absoluteStrokeWidth aria-hidden="true" className={MAT_ICON_CLASS} />,
 };
 
 export const matTextColor: Record<MaterialId, string> = {
@@ -31,7 +33,7 @@ export const matPillStyle: Record<MaterialId, string> = {
 };
 
 export function MaterialIcon({ material, className }: { material: MaterialId; className?: string }) {
-  const iconClassName = cn("block h-4 w-4 shrink-0", className);
+  const iconClassName = cn(MAT_ICON_CLASS, className);
   const icons: Record<MaterialId, ReactNode> = {
     wood: <TreePine absoluteStrokeWidth aria-hidden="true" className={cn("text-amber-600", iconClassName)} />,
     iron: <Pickaxe absoluteStrokeWidth aria-hidden="true" className={cn("text-gray-400", iconClassName)} />,
@@ -46,7 +48,7 @@ export function MaterialPill({ material, amount }: { material: MaterialId; amoun
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+        "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-base font-semibold",
         matPillStyle[material],
         matTextColor[material],
       )}
@@ -59,8 +61,8 @@ export function MaterialPill({ material, amount }: { material: MaterialId; amoun
 
 export function GoldPill({ amount }: { amount: number }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-300/15 px-3 py-1 text-xs font-semibold text-yellow-300">
-      <Coins className="h-4 w-4" />
+    <span className="inline-flex items-center gap-2 rounded-full bg-yellow-300/15 px-4 py-1.5 text-base font-semibold text-yellow-300">
+      <Coins className="h-6 w-6" />
       {amount} Gold
     </span>
   );

@@ -140,10 +140,12 @@ export function executeRewardRouteTransition(
   clearCompanion: boolean,
   handlers: RewardRouteTransitionHandlers,
 ) {
-  const setReward = () => handlers.setRewardState(nextRewardState);
+  const setReward = () => {
+    handlers.setRewardState(nextRewardState);
+    if (clearCompanion) handlers.setCompanionRewardCards(null);
+  };
   switch (route) {
     case CONSTANTS.REWARD_ROUTES.COMPANION_REWARD:
-      if (clearCompanion) handlers.setCompanionRewardCards(null);
       handlers.navigateTo(CONSTANTS.SCREENS.REWARDS, setReward);
       break;
     case CONSTANTS.REWARD_ROUTES.LABYRINTH_VICTORY:

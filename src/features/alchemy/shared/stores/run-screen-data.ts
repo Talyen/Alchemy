@@ -47,6 +47,7 @@ interface LabyrinthMapScreenData {
 
 interface RewardsScreenData {
   rewardState: RewardState;
+  rewardClaimInFlight: boolean;
 }
 
 interface DestinationScreenData {

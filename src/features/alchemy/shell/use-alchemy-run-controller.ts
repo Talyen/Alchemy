@@ -47,6 +47,8 @@ export function useAlchemyRunController({
   autoEndTurn: boolean;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
 }) {
+  // Fallback for tests/harnesses that mount the controller without App bootstrap.
+  // Production path restores in App before first paint (see App.tsx).
   useLayoutEffect(() => {
     if (readRunInitialized()) return;
     restoreRun(initialActiveRun, initialTalentXP, initialUnlockedTalents);

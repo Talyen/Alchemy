@@ -13,16 +13,19 @@ import { allGameArt } from "@/lib/game-data";
 // background via idle-time callbacks so that images are typically decoded before the
 // user has navigated to a screen that needs them.
 export function useInitialLoadReady({ minDurationMs = INITIAL_LOAD_MIN_DURATION_MS } = {}) {
-  const [ready, setReady] = useState(() => shouldSkipStartupLoadingGate());
+  const skipGate = shouldSkipStartupLoadingGate();
+  const [ready, setReady] = useState(() => skipGate);
+
+  // Always warm game art — Playwright skips the loading gate but still needs decoded assets.
+  useEffect(() => {
+    preloadImagesWhenIdle(allGameArt);
+    void waitForFonts();
+  }, []);
 
   useEffect(() => {
-    if (ready) return;
+    if (skipGate) return;
+
     let cancelled = false;
-
-    preloadImagesWhenIdle(allGameArt);
-
-    void waitForFonts().then(() => undefined);
-
     const timer = window.setTimeout(() => {
       if (!cancelled) setReady(true);
     }, minDurationMs);
@@ -31,7 +34,7 @@ export function useInitialLoadReady({ minDurationMs = INITIAL_LOAD_MIN_DURATION_
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [ready, minDurationMs]);
+  }, [skipGate, minDurationMs]);
 
   return ready;
 }

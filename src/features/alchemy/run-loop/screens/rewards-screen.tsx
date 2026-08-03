@@ -9,7 +9,7 @@ import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
 import { InteractiveArtTile } from "../../shared/ui/interactive-art-tile";
 import { SelectableChoiceCard } from "../../shared/ui/selectable-choice-card";
 import { ActionButtonRow, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
-import { cardSurfaceClass, collectionTileWidthClass } from "@/features/alchemy/shared/config";
+import { cardSurfaceClass, collectionTileWidthClass, bodyTextClass } from "@/features/alchemy/shared/config";
 import { gearInstanceAspectClass } from "@/features/alchemy/shared/ui/gear-aspect";
 import {
   getRewardChoiceId,
@@ -63,14 +63,16 @@ function RewardChoiceItems({
 function RewardsFound({
   rewardGold,
   rewardMaterials,
+  staggerIndex,
 }: {
   rewardGold: number;
   rewardMaterials: Partial<Record<MaterialId, number>>;
+  staggerIndex: number;
 }) {
   const hasRewards = rewardGold > 0 || MATERIAL_IDS.some((mat) => (rewardMaterials[mat] ?? 0) > 0);
   if (!hasRewards) return null;
   return (
-    <StaggerItem index={100}>
+    <StaggerItem index={staggerIndex}>
       <FoundResourcesRow gold={rewardGold} materials={rewardMaterials} />
     </StaggerItem>
   );
@@ -152,12 +154,14 @@ export function RewardsScreen({
   onSkip,
   onSelectReward,
   allowTrinketSkip = false,
+  claimInFlight = false,
 }: {
   rewardState: RewardState;
   onAddReward: () => void;
   onSkip: () => void;
   onSelectReward: (id: string) => void;
   allowTrinketSkip?: boolean;
+  claimInFlight?: boolean;
 }) {
   const rewardType = rewardState.rewardType;
   const rewardChoices = rewardState.choices;
@@ -169,12 +173,13 @@ export function RewardsScreen({
   const selectedRewardItem = selectedRewardId
     ? (rewardChoices.find((item) => getRewardChoiceId(item) === selectedRewardId) ?? null)
     : null;
+  const claimLocked = claimInFlight || rewardChoices.length === 0;
 
   return (
     <div className="flex h-full w-full items-center justify-center px-4 py-6">
       <div className="alchemy-shell w-full max-w-6xl rounded-shell-hero border border-border/80 p-7 text-center">
         <ScreenHeader title="Victory" />
-        <p className="mt-3 text-base text-muted-foreground">
+        <p className={cn("mt-3", bodyTextClass)}>
           {isGear
             ? "Choose permanent Gear for your Armory"
             : isTrinket
@@ -195,7 +200,7 @@ export function RewardsScreen({
             />
           </div>
 
-          <RewardsFound rewardGold={rewardGold} rewardMaterials={rewardMaterials} />
+          <RewardsFound rewardGold={rewardGold} rewardMaterials={rewardMaterials} staggerIndex={rewardChoices.length} />
         </StaggerGroup>
 
         <ActionButtonRow
@@ -206,14 +211,14 @@ export function RewardsScreen({
                 secondary: {
                   label: "Skip",
                   onClick: onSkip,
-                  // Disabled once claim surface is drained (finishRewards clears choices sync).
-                  disabled: rewardChoices.length === 0,
+                  // Disabled while claim is in flight or after commit drains choices.
+                  disabled: claimLocked,
                 },
               }
             : {})}
           primary={{
             label: isGear ? "Take Gear" : isTrinket ? "Take Trinket" : "Add Card",
-            disabled: !selectedRewardItem || rewardChoices.length === 0,
+            disabled: !selectedRewardItem || claimLocked,
             onClick: onAddReward,
           }}
         />

@@ -260,7 +260,8 @@
 
   .alchemy-startup-bar {
     background: var(--color-primary);
-    animation: startupBarCycle 1200ms ease-in-out forwards;
+    /* both: start at scaleX(0) immediately (no full-bar flash), hold full at end */
+    animation: startupBarCycle 1200ms ease-in-out both;
     transform-origin: left;
   }
 

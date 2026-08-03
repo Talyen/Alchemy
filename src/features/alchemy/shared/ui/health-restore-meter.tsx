@@ -16,15 +16,15 @@ export function HealthRestoreMeter({
   return (
     <div className="rounded-shell-inner px-4 py-3 surface-muted">
       <div className="flex items-center justify-between gap-3">
-        <p className={cn("text-sm font-semibold", keywordDefinitions.health.colorClass)}>Health</p>
-        <p className="hp-number-pop text-xs font-medium text-muted-foreground">
+        <p className={cn("text-lg font-semibold", keywordDefinitions.health.colorClass)}>Health</p>
+        <p className="hp-number-pop text-base font-medium text-muted-foreground">
           {displayHealth} / {maxHealth}
         </p>
       </div>
       <Progress
         value={(progressTarget / maxHealth) * 100}
         fillStyle={{ transitionDuration: `${CAMPFIRE_ANIMATION_MS}ms` }}
-        className="campfire-hp-progress mt-2.5 h-2 bg-background/80 [&>div]:bg-destructive"
+        className="campfire-hp-progress mt-2.5 h-3 bg-background/80 [&>div]:bg-destructive"
       />
     </div>
   );

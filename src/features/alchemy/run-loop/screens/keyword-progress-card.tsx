@@ -27,10 +27,10 @@ export function KeywordProgressCard({
     <div className="rounded-shell-compact border border-border/70 p-3 text-left surface-muted">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          {Icon ? <Icon className={cn("h-3.5 w-3.5", def?.colorClass)} /> : null}
-          <span className={cn("text-xs font-semibold", def?.colorClass)}>{def?.label ?? kw}</span>
+          {Icon ? <Icon className={cn("h-5 w-5", def?.colorClass)} /> : null}
+          <span className={cn("text-base font-semibold", def?.colorClass)}>{def?.label ?? kw}</span>
         </div>
-        <span className="text-xs font-semibold text-muted-foreground">+{runXP}</span>
+        <span className="text-base font-semibold text-muted-foreground">+{runXP}</span>
       </div>
       <Progress
         size="sm"
@@ -41,7 +41,7 @@ export function KeywordProgressCard({
           backgroundColor: def?.shineColors?.[0] ?? undefined,
         }}
       />
-      <p className="mt-1 text-right text-xs font-semibold text-muted-foreground">
+      <p className="mt-1 text-right text-base font-semibold text-muted-foreground">
         {xpForNext - xpRemaining}/{xpForNext}
       </p>
     </div>

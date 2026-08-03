@@ -1,6 +1,8 @@
+import type { RefObject } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
+import { cn } from "@/lib/utils";
 import { SHINE_PALETTES } from "../../config";
 import { DescriptionLines } from "../card-description-ui";
 import { EnemyTooltip } from "../enemy-tooltip";
@@ -10,22 +12,26 @@ const ACTOR_PANEL_CONFIG = {
   deathDoorShineDurationSeconds: 4,
   deathDoorArtBorderWidth: 3,
   deathDoorStatsBorderWidth: 2,
+  turnActiveShineDurationSeconds: 4,
+  turnActiveArtBorderWidth: 2,
 } as const;
 
 export function ActorTooltip({
-  side,
   title,
   descriptionLines,
   currentEnemy,
   currentEnemyAttackEffects,
   activeLabyrinthModifiers,
+  triggerRef,
+  visible,
 }: {
-  side: "player" | "enemy";
   title: string;
   descriptionLines: string[] | undefined;
   currentEnemy: BestiaryEntry | undefined;
   currentEnemyAttackEffects: EnemyAttackEffect[] | undefined;
   activeLabyrinthModifiers?: EncounterCombatTraitId[] | undefined;
+  triggerRef: RefObject<HTMLElement | null>;
+  visible: boolean;
 }) {
   if (currentEnemy) {
     return (
@@ -33,8 +39,8 @@ export function ActorTooltip({
         entry={currentEnemy}
         attackEffects={currentEnemyAttackEffects}
         labyrinthModifiers={activeLabyrinthModifiers ?? []}
-        align={side === "enemy" ? "left" : "right"}
-        className="opacity-0 transition-opacity duration-150 group-hover/art-wrapper:opacity-100"
+        triggerRef={triggerRef}
+        visible={visible}
       />
     );
   }
@@ -48,13 +54,52 @@ export function ActorTooltip({
   );
 }
 
+export function ArtTurnActiveBorder({
+  side,
+  active,
+  urgentHide = false,
+}: {
+  side: "player" | "enemy";
+  active: boolean;
+  urgentHide?: boolean;
+}) {
+  const palette = side === "player" ? SHINE_PALETTES.turnPlayer : SHINE_PALETTES.turnEnemy;
+  const label = side === "player" ? "Your Turn" : "Enemy Turn";
+  return (
+    <>
+      <div
+        data-testid={side === "player" ? "turn-badge-player" : "turn-badge-enemy"}
+        data-active={active ? "true" : "false"}
+        className={cn(
+          "pointer-events-none absolute inset-0 z-[5] rounded-shell-hero transition-opacity",
+          urgentHide ? "duration-150" : "duration-500",
+          active ? "opacity-70" : "opacity-0",
+        )}
+        aria-hidden
+      >
+        {active ? (
+          <ShineBorder
+            borderWidth={ACTOR_PANEL_CONFIG.turnActiveArtBorderWidth}
+            duration={ACTOR_PANEL_CONFIG.turnActiveShineDurationSeconds}
+            shineColor={[...palette]}
+            className="rounded-shell-hero"
+          />
+        ) : null}
+      </div>
+      <span className="sr-only" aria-live="polite">
+        {active ? label : ""}
+      </span>
+    </>
+  );
+}
+
 export function ArtDeathDoorBorder() {
   return (
     <ShineBorder
       borderWidth={ACTOR_PANEL_CONFIG.deathDoorArtBorderWidth}
       duration={ACTOR_PANEL_CONFIG.deathDoorShineDurationSeconds}
       shineColor={[...SHINE_PALETTES.deathsDoorArt]}
-      className="rounded-shell-hero"
+      className="z-10 rounded-shell-hero"
     />
   );
 }
