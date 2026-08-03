@@ -18,10 +18,10 @@ const TRACE_CATEGORIES = [
   "disabled-by-default-devtools.screenshot",
 ].join(",");
 
-type TraceSession = {
+interface TraceSession {
   client: CDPSession;
   events: unknown[];
-};
+}
 
 export async function startCdpTrace(page: Page): Promise<TraceSession> {
   const client = await page.context().newCDPSession(page);

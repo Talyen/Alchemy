@@ -4,7 +4,6 @@ import { test } from "../fixtures";
 import { weakEndTurnDeck } from "../scenario-data";
 import { startPerfBattle } from "../battle-setup";
 import { waitForCardPlayFx, runMeasuredEndTurn, waitForHandPlayable, playHandCard } from "../battle-helpers";
-import { delay } from "../delay";
 
 const MEASURE_MS = Number.parseInt(process.env.PERF_MEASURE_MS ?? "30000", 10);
 

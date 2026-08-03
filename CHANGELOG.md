@@ -424,6 +424,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(perf): clear eslint errors in performance harness
+  Attach error causes, prefer interface for CDP session, drop unused
+  imports, and replace waitForTimeout with delay in art diagnostics.
 - fix(ui): enlarge chrome, defer hollow Victory, and ship perf harness
   Bump shared typography/buttons after UI Scale removal, keep reward offers
   populated until screen commit with mid-claim resume encoding, portal

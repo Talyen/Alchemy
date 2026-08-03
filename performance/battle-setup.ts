@@ -163,6 +163,6 @@ async function waitForBattleArtLoaded(
       .toBe(1);
   } catch (error) {
     const { dir, diagnostics } = await writeBattleArtDiagnostics(page, { failedAssetRequests });
-    throw new Error(`${formatArtDiagnosticFailure(diagnostics, dir)}\n\n${String(error)}`);
+    throw new Error(`${formatArtDiagnosticFailure(diagnostics, dir)}\n\n${String(error)}`, { cause: error });
   }
 }

@@ -7,6 +7,7 @@ import {
   writeBattleArtDiagnostics,
   formatArtDiagnosticFailure,
 } from "../battle-art-diagnostics";
+import { delay } from "../delay";
 
 /**
  * Headed evidence capture for blank battle art.
@@ -19,7 +20,7 @@ test.describe("battle-art-diag", () => {
       await seedRandom(perfPage, 42);
       await startPerfBattle(perfPage, weakEndTurnDeck());
       // Give one paint frame after readiness for layout to settle.
-      await perfPage.waitForTimeout(300);
+      await delay(300);
       const { dir, diagnostics, ok } = await writeBattleArtDiagnostics(perfPage, {
         failedAssetRequests: tracker.failures,
       });
