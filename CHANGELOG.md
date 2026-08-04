@@ -1977,6 +1977,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Docs
 
+- docs(ci): drop required ci-ok push gate on main
+  Trunk pushes cannot wait on a status check that only exists after CI
+  runs; document local pre-push + post-push CI + fixer bot instead.
 - docs(audits): add orchestration skill
 - docs: correct stale navigation, autosave, and materials paths
   Fix ARCHITECTURE screen-transition module name, ARMORY autosave

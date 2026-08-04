@@ -100,12 +100,12 @@ Windows release job.
 
 ## CI jobs
 
-| Job                                         | Trigger                                                     |
-| ------------------------------------------- | ----------------------------------------------------------- |
-| `e2e` (`@critical`)                         | Every push                                                  |
-| `ship-gate`                                 | Every push (desktop compile after unit tests)               |
-| `save-gate`                                 | Push when save/migration/active-run paths change            |
-| `desktop-build`                             | Push when desktop paths change (Windows installer artifact) |
-| `electron-e2e`                              | Push when desktop/Electron paths change                     |
-| `ci-ok`                                     | Aggregate status check over all CI jobs                     |
-| `release` (incl. `e2e-full` 3-shard matrix) | Tag `v*` push                                               |
+| Job                                         | Trigger                                                                             |
+| ------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `e2e` (`@critical`)                         | Every push                                                                          |
+| `ship-gate`                                 | Every push (desktop compile after unit tests)                                       |
+| `save-gate`                                 | Push when save/migration/active-run paths change                                    |
+| `desktop-build`                             | Push when desktop paths change (Windows installer artifact)                         |
+| `electron-e2e`                              | Push when desktop/Electron paths change                                             |
+| `ci-ok`                                     | Aggregate status over all CI jobs (dashboards / optional PRs; not a main push gate) |
+| `release` (incl. `e2e-full` 3-shard matrix) | Tag `v*` push                                                                       |

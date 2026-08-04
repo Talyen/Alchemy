@@ -326,7 +326,7 @@ jobs:
         if: always()
         run: node scripts/ci-summarize-playwright.mjs
 
-  # Aggregate status check: require this single job in branch protection.
+  # Aggregate status check for dashboards / optional PR merges (not a main push gate).
   ci-ok:
     name: CI OK
     needs: [changes, lint, test, build, e2e, ship-gate, save-gate, desktop-build, electron-e2e]
