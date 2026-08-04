@@ -424,6 +424,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(audits): rebind resumed battle RNG and ship confirmed audit fixes
+  Normalize pending enemy-turn resultState on load, delete dead surfaces,
+  align docs/tests/selection chrome, and ledger deferred proposals.
 - fix(perf): clear eslint errors in performance harness
   Attach error causes, prefer interface for CDP session, drop unused
   imports, and replace waitForTimeout with delay in art diagnostics.

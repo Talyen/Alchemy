@@ -27,6 +27,7 @@ import {
   bodyTextClass,
   nonBattleCardWidthClass,
   sectionTitleClass,
+  tiltSurfaceSelectedRingClass,
 } from "@/features/alchemy/shared/config";
 import { TooltipPanel } from "../../shared/ui/tooltip-panel";
 import { useUiStore } from "../../shared/stores/ui-store";
@@ -98,7 +99,7 @@ function DifficultyCard({
           className={cn(
             "relative flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6 text-center transition-all disabled:cursor-default",
             locked && "border-muted/40 grayscale",
-            isSelected && "ring-2 ring-primary",
+            isSelected && tiltSurfaceSelectedRingClass,
           )}
         >
           {showTilt ? (

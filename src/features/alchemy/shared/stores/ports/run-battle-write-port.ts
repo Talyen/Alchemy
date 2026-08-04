@@ -5,12 +5,27 @@ import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import type { DisplayOverrides } from "../run-domain-types";
 import { dispatchRunSessionCommand } from "../run-session-command";
 import { readGameplayState, type GameplayState } from "../gameplay-state-store";
+import { createRunRandomSource } from "./run-domain-write-port";
 
 type BattleStateUpdate = BattleState | ((previous: BattleState) => BattleState);
 type BattleActions = GameplayState["battleActions"];
 
 function dispatchBattleCommand<T>(work: (battle: BattleActions) => T): T {
   return dispatchRunSessionCommand(() => work(readGameplayState().battleActions));
+}
+
+function rebindBattleWorldRng(battleState: BattleState): BattleState {
+  return { ...battleState, rng: createRunRandomSource("world") };
+}
+
+function rebindPendingTransitionWorldRng(
+  pendingBattleTransition: PersistedBattleTransition | null,
+): PersistedBattleTransition | null {
+  if (!pendingBattleTransition || pendingBattleTransition.kind !== "enemy-turn") return pendingBattleTransition;
+  return {
+    ...pendingBattleTransition,
+    resultState: rebindBattleWorldRng(pendingBattleTransition.resultState),
+  };
 }
 
 export function setBattleState(action: BattleStateUpdate): void {
@@ -29,7 +44,16 @@ export function initializeActiveBattle(
   battleState: BattleState | null,
   pendingBattleTransition: PersistedBattleTransition | null = null,
 ): void {
-  dispatchBattleCommand((battle) => battle.initializeActiveBattle(battleState, pendingBattleTransition));
+  if (!battleState) {
+    dispatchBattleCommand((battle) => battle.initializeActiveBattle(null, null));
+    return;
+  }
+  dispatchBattleCommand((battle) =>
+    battle.initializeActiveBattle(
+      rebindBattleWorldRng(battleState),
+      rebindPendingTransitionWorldRng(pendingBattleTransition),
+    ),
+  );
 }
 
 /** Commit the logical state and its async continuation as one durable revision. */

@@ -23,6 +23,9 @@ import {
 import { createRunRandomSource, setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { defaultBattleState } from "@/lib/battle";
+import { placeholderRng } from "@/lib/battle/rng";
+import { createRunRngState } from "@/lib/run-rng";
+import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 
 beforeEach(() => {
@@ -119,16 +122,48 @@ describe("run-session transaction coordinator", () => {
     });
 
     expect(readGameplayState().battle.pendingTransitionResumeRequired).toBe(true);
-    expect(readGameplayState().battle.pendingBattleTransition).toEqual({
-      kind: "enemy-turn",
-      resultState,
-      playerTurnSkipped: false,
-    });
+    const pending = readGameplayState().battle.pendingBattleTransition;
+    expect(pending?.kind).toBe("enemy-turn");
+    if (pending?.kind === "enemy-turn") {
+      expect(pending.resultState.turn).toBe(2);
+      expect(pending.resultState.playerHealth).toBe(18);
+      expect(pending.playerTurnSkipped).toBe(false);
+      expect(pending.resultState.rng).not.toBe(placeholderRng);
+    }
 
-    commitBattleTransition(resultState, null);
+    commitBattleTransition(
+      pending?.kind === "enemy-turn" ? pending.resultState : readGameplayState().battle.battleState,
+      null,
+    );
 
     expect(readGameplayState().battle.pendingTransitionResumeRequired).toBe(false);
     expect(readGameplayState().battle.pendingBattleTransition).toBeNull();
+  });
+
+  it("rebinds world RNG when hydrating active combat from a stripped save", () => {
+    setRunProgress({ rng: createRunRngState(() => 42 / 0x1_0000_0000) });
+    const worldBefore = readGameplayState().run.activeRun.rng.counters.world;
+    const strippedBattle = JSON.parse(JSON.stringify({ ...defaultBattleState(), turn: 5, playerHealth: 20 }));
+    const strippedResult = JSON.parse(JSON.stringify({ ...defaultBattleState(), turn: 6, playerHealth: 19 }));
+
+    initializeActiveBattle(strippedBattle, {
+      kind: "enemy-turn",
+      resultState: strippedResult,
+      playerTurnSkipped: false,
+    });
+
+    const battle = readGameplayState().battle;
+    expect(battle.battleState.rng).not.toBe(placeholderRng);
+    battle.battleState.rng();
+    expect(readGameplayState().run.activeRun.rng.counters.world).toBe(worldBefore + 1);
+
+    const pending = battle.pendingBattleTransition;
+    expect(pending?.kind).toBe("enemy-turn");
+    if (pending?.kind === "enemy-turn") {
+      expect(pending.resultState.rng).not.toBe(placeholderRng);
+      pending.resultState.rng();
+      expect(readGameplayState().run.activeRun.rng.counters.world).toBe(worldBefore + 2);
+    }
   });
 
   it("keeps the committed root unchanged until the outer commit", () => {

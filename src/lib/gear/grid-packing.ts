@@ -214,25 +214,6 @@ export function packInventoryGridPreserving<T extends { id: string }>(
   }));
 }
 
-export function packMixedBoard<TKind extends string, TItem extends { id: string; kind: TKind }>(
-  items: TItem[],
-  cols: number,
-  getFootprint: (item: TItem) => GearFootprint,
-  getSavedPosition: (item: TItem) => InventoryPlacement | undefined,
-): Array<{ item: TItem; col: number; row: number }> {
-  return packGridItems(
-    items.map((item) => {
-      const footprint = getFootprint(item);
-      return { id: item.id, w: footprint.w, h: footprint.h, saved: getSavedPosition(item), originalItem: item };
-    }),
-    cols,
-  ).items.map((packed) => ({
-    item: packed.item.originalItem,
-    col: packed.col,
-    row: packed.row,
-  }));
-}
-
 export function packCurrencyGridWithGearObstacles(
   currencyIds: string[],
   cols: number,

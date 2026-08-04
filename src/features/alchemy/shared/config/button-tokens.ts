@@ -1,5 +1,4 @@
 // Canonical interactive button tokens — shape, surface, sizing, motion, and intent.
-import type { UISound } from "@/lib/sound-registry";
 import {
   BUTTON_HOVER_DESTRUCTIVE,
   BUTTON_HOVER_PRIMARY,
@@ -19,7 +18,6 @@ export const BUTTON_WIDTH_ACTION = "min-w-56";
 export const BUTTON_HEIGHT_DEFAULT = "h-16";
 
 export { BUTTON_PRESS_OUTLINE as BUTTON_PRESS };
-export const BUTTON_HOVER_SOUND: UISound = "buttonHover";
 
 export { BUTTON_HOVER_DESTRUCTIVE, BUTTON_HOVER_PRIMARY, BUTTON_HOVER_SECONDARY, BUTTON_HOVER_TRANSITION };
 

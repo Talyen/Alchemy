@@ -18,7 +18,6 @@ export const collectionShellWidthClass = "max-w-7xl";
 // Shared with CollectionGrid — stretch columns; tiles self-center via collectionGrid*WidthClass.
 export const collectionCardGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-4`;
 export const collectionTrinketGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-3`;
-export const trinketCardWidthClass = "w-[clamp(29.4cqh,29.87cqh,44.48cqh)]"; // was 24.5 / 24.89 / 37.07
 export const collectionGridTrinketWidthClass = "mx-auto w-full max-w-[clamp(29.4cqh,29.87cqh,44.48cqh)]";
 export const pileCardWidthClass = "w-[clamp(13.8cqh,14.9cqh,21cqh)]";
 
@@ -36,6 +35,9 @@ export const squareArtImageClass = "rounded-shell-hero aspect-square object-cove
 export const staticCardTransform = "translate3d(0px, 0px, 0px)";
 export const popupBaseClassName =
   "absolute left-1/2 z-50 rounded-shell-tooltip border border-border bg-card px-3 py-3 text-left";
+
+// Selection ring for TiltSurface and outer panels that wrap art + labels (setup/run tiles).
+export const tiltSurfaceSelectedRingClass = "ring-2 ring-primary ring-offset-4 ring-offset-background";
 
 export const tooltipAnchorClassNames = {
   above: "bottom-full mb-4",

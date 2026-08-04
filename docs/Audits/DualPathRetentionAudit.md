@@ -67,7 +67,7 @@ Optional discovery aids — choose your own probes.
 - **Deprecated / compat names:** `legacy`, `compat`, `deprecated`, `shim`, `bridge`, `v1`/`old` suffixes still imported beside a newer owner.
 - **Barrel dual-exports:** old and new names re-exported side by side after callers moved to one owner.
 - **Parallel rule paths:** two `src/lib` or feature helpers implementing the same battle, gear, or save rule with overlapping callers.
-- **Hub + owner twins:** feature methods on `run-domain-store` / controllers that only forward to facade or `src/lib` owners already used elsewhere.
+- **Hub + owner twins:** feature methods on `gameplay-state-store` / capability ports / controllers that only forward to another port or `src/lib` owner already used elsewhere ([ARCHITECTURE.md](../ARCHITECTURE.md)).
 - **Closed migration windows:** inventory via [MIGRATIONS.md](../../src/features/alchemy/shared/storage/MIGRATIONS.md), `tests/fixtures/legacy-saves.ts`, `CURRENT_SAVE_SCHEMA_VERSION`, and migration contract/guard tests — one-shot `localStorage` shims, renamed save fields, or alias re-exports retained after those consumers no longer need the old shape.
 - **Flagged dual implementations:** env / Vite / Electron switches that still compile and ship both branches of one behavior indefinitely (open temporary rollout windows are not findings).
 - **Parallel infrastructure routes:** duplicate configuration, commands, events, adapters, selectors, or test harness entrypoints that reach the same behavior without distinct consumers.

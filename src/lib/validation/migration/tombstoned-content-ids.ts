@@ -8,21 +8,8 @@
 //   2. Add a guard test in tests/architecture/save-migration-guard.test.ts
 //      that asserts legacy fixtures don't reference un-tombstoned IDs.
 
-import type { RawSaveData } from "./types";
-
 export const TOMBSTONED_CARD_IDS: ReadonlySet<string> = new Set<string>(["future-card"]);
 
 export function isTombstonedCardId(id: string): boolean {
   return TOMBSTONED_CARD_IDS.has(id);
-}
-
-// Returns a RawSaveData with tombstoned IDs pruned from discoveredCardIds.
-export function pruneTombstonedIds(parsed: RawSaveData): RawSaveData {
-  const next: RawSaveData = { ...parsed };
-
-  if (Array.isArray(next.discoveredCardIds)) {
-    next.discoveredCardIds = (next.discoveredCardIds as string[]).filter((id) => !isTombstonedCardId(id));
-  }
-
-  return next;
 }

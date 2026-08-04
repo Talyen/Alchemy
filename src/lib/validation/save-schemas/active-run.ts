@@ -1,12 +1,13 @@
 // Active run and mid-combat persistence schemas.
 import { z } from "zod";
-import { defaultBattleState, type BattleState } from "@/lib/battle";
+import { type BattleState } from "@/lib/battle";
 import { computeTrinketManifest, isDefaultTrinketManifest } from "@/lib/trinkets";
 import { isPersistedBattleState } from "../battle-state-guard";
+import { normalizePersistedBattleState } from "../normalize-persisted-battle-state";
 import { ROUTE_SCREEN_VALUES } from "@/lib/routing";
 import { ACTS_PER_RUN, LEGACY_CHARACTER_RENAMES } from "@/lib/game-constants";
 import { WILDWOOD_BOSS_IDS } from "@/lib/content-systems/wildwood/bosses";
-import { sanitizeEncounterTraitIds, sanitizePersistedEnemyTraits } from "@/lib/content-systems/encounter-traits";
+import { sanitizeEncounterTraitIds } from "@/lib/content-systems/encounter-traits";
 import { normalizeActiveRunData } from "../normalize-active-run-data";
 import { GearInstanceArraySchema, GearInstanceSchema, normalizeGearInstanceArray } from "./gear-schemas";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -63,23 +64,17 @@ const ActiveCombatDataSchema = z
     activeLabyrinthRewardModifiers: EncounterRewardTraitArraySchema,
   })
   .transform((data) => {
-    const defaults = defaultBattleState();
-    const saved = data.battleState;
+    const pendingBattleTransition =
+      data.pendingBattleTransition?.kind === "enemy-turn"
+        ? {
+            ...data.pendingBattleTransition,
+            resultState: normalizePersistedBattleState(data.pendingBattleTransition.resultState),
+          }
+        : data.pendingBattleTransition;
     return {
       ...data,
-      battleState: {
-        ...defaults,
-        ...saved,
-        trinketEffects: { ...defaults.trinketEffects, ...saved.trinketEffects },
-        gearEffects: { ...defaults.gearEffects, ...saved.gearEffects },
-        flags: { ...defaults.flags, ...saved.flags },
-        currentEnemy: {
-          ...saved.currentEnemy,
-          traits: sanitizePersistedEnemyTraits(
-            Array.isArray(saved.currentEnemy.traits) ? saved.currentEnemy.traits : [],
-          ),
-        },
-      },
+      battleState: normalizePersistedBattleState(data.battleState),
+      pendingBattleTransition,
     };
   })
   .nullable()

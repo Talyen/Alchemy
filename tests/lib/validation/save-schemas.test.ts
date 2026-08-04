@@ -333,6 +333,60 @@ describe("ActiveRunDataSchema", () => {
     expect(result.data.activeCombat?.pendingBattleTransition?.kind).toBe("enemy-turn");
   });
 
+  it("normalizes enemy-turn resultState manifests after JSON save/load", () => {
+    const defaults = defaultBattleState();
+    const strippedResultState = JSON.parse(
+      JSON.stringify({
+        ...defaults,
+        turn: 3,
+        playerHealth: 20,
+        gearEffects: { flatPhysicalDamage: 2 },
+        flags: { divineAegisTriggered: true },
+      }),
+    );
+    const strippedBattleState = JSON.parse(JSON.stringify({ ...defaults, turnPhase: "enemy", hand: [], turn: 2 }));
+
+    const result = ActiveRunDataSchema.safeParse({
+      characterId: "knight",
+      runDeck: [],
+      runGold: 0,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      roomsEncountered: 1,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      selectedDifficulty: null,
+      contentSystemType: "campaign",
+      labyrinthMap: null,
+      activeCombat: {
+        battleState: strippedBattleState,
+        pendingBattleTransition: {
+          kind: "enemy-turn",
+          resultState: strippedResultState,
+          playerTurnSkipped: false,
+        },
+        activeLabyrinthModifiers: [],
+        activeLabyrinthRewardModifiers: [],
+      },
+    });
+
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    if (!result.success) return;
+
+    const transition = result.data.activeCombat?.pendingBattleTransition;
+    expect(transition?.kind).toBe("enemy-turn");
+    if (transition?.kind !== "enemy-turn") return;
+
+    expect(transition.resultState.turn).toBe(3);
+    expect(transition.resultState.playerHealth).toBe(20);
+    expect(transition.resultState.gearEffects.flatPhysicalDamage).toBe(2);
+    expect(transition.resultState.gearEffects.flatStunDamage).toBe(0);
+    expect(transition.resultState.flags.divineAegisTriggered).toBe(true);
+    expect(transition.resultState.flags.firstPhysicalCardFreeUsed).toBe(false);
+  });
+
   it("replaces legacy starter deck for unstarted run", () => {
     const legacyDeck = [
       {

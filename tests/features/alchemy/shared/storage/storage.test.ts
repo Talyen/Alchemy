@@ -8,7 +8,7 @@ import {
   DisplayModeSchema,
   MaterialInventorySchema,
 } from "@/lib/validation";
-import { getRawSaveSchemaVersion, isUnsupportedFutureSaveData, migrateSaveDataToCurrent } from "@/lib/validation";
+import { getRawSaveSchemaVersion, migrateSaveDataToCurrent } from "@/lib/validation";
 import { parseActiveRun } from "@/lib/active-run-session";
 import { cardLibrary } from "@/lib/game-data";
 import { createSeededRng } from "@/lib/utils";
@@ -659,12 +659,6 @@ describe("SaveDataSchema", () => {
       druid: [],
       wildcard: [],
     });
-  });
-
-  it("detects saves from a newer schema", () => {
-    expect(isUnsupportedFutureSaveData({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 })).toBe(true);
-    expect(isUnsupportedFutureSaveData({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION })).toBe(false);
-    expect(isUnsupportedFutureSaveData({})).toBe(false);
   });
 
   it("minimal save round-trips through JSON serialize/deserialize", () => {

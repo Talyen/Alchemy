@@ -228,8 +228,6 @@ export function createWildwoodRewardState(
   };
 }
 
-export { restoreWildwoodRewardState } from "@/lib/active-run-session";
-
 export function createCombatRewardState({
   battleState,
   runDeck,

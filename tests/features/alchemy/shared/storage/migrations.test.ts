@@ -1,85 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  normalizeSaveData,
-  migrateSaveDataToCurrent,
-  getRawSaveSchemaVersion,
-  isUnsupportedFutureSaveData,
-} from "@/features/alchemy/shared/storage/migrations";
-import { normalizePositiveInteger } from "@/lib/validation/migration/types";
-import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
-
-describe("getRawSaveSchemaVersion", () => {
-  it("returns 0 for non-object", () => {
-    expect(getRawSaveSchemaVersion(null)).toBe(0);
-    expect(getRawSaveSchemaVersion("string")).toBe(0);
-    expect(getRawSaveSchemaVersion(42)).toBe(0);
-  });
-
-  it("returns 0 for missing version field", () => {
-    expect(getRawSaveSchemaVersion({})).toBe(0);
-  });
-
-  it("returns 0 for non-integer version", () => {
-    expect(getRawSaveSchemaVersion({ saveSchemaVersion: 1.5 })).toBe(0);
-    expect(getRawSaveSchemaVersion({ saveSchemaVersion: NaN })).toBe(0);
-    expect(getRawSaveSchemaVersion({ saveSchemaVersion: Infinity })).toBe(0);
-  });
-
-  it("returns 0 for negative version", () => {
-    expect(getRawSaveSchemaVersion({ saveSchemaVersion: -1 })).toBe(0);
-  });
-
-  it("returns the version for valid positive integers", () => {
-    expect(getRawSaveSchemaVersion({ saveSchemaVersion: 1 })).toBe(1);
-    expect(getRawSaveSchemaVersion({ saveSchemaVersion: 5 })).toBe(5);
-  });
-});
-
-describe("isUnsupportedFutureSaveData", () => {
-  it("returns false for current version", () => {
-    expect(isUnsupportedFutureSaveData({ saveSchemaVersion: 1 })).toBe(false);
-  });
-
-  it("returns true for newer version", () => {
-    expect(isUnsupportedFutureSaveData({ saveSchemaVersion: 9999 })).toBe(true);
-  });
-
-  it("returns false for invalid version", () => {
-    expect(isUnsupportedFutureSaveData({})).toBe(false);
-    expect(isUnsupportedFutureSaveData(null)).toBe(false);
-  });
-});
-
-describe("migrateSaveDataToCurrent", () => {
-  it("returns {} for null input", () => {
-    expect(migrateSaveDataToCurrent(null)).toEqual({});
-  });
-
-  it("returns {} for non-object input", () => {
-    expect(migrateSaveDataToCurrent("bad")).toEqual({});
-  });
-
-  it("migrates v1 saves to current version", () => {
-    const result = migrateSaveDataToCurrent({ saveSchemaVersion: 1 });
-    expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-  });
-
-  it("migrates version 0 to current version", () => {
-    const result = migrateSaveDataToCurrent({ saveSchemaVersion: 0 });
-    expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-  });
-
-  it("sets gameBuildVersion from fallback when missing", () => {
-    const result = migrateSaveDataToCurrent({ saveSchemaVersion: 0 });
-    expect(typeof result.gameBuildVersion).toBe("string");
-    expect((result as { gameBuildVersion: string }).gameBuildVersion.length).toBeGreaterThan(0);
-  });
-
-  it("preserves existing gameBuildVersion", () => {
-    const result = migrateSaveDataToCurrent({ saveSchemaVersion: 0, gameBuildVersion: "existing" });
-    expect(result.gameBuildVersion).toBe("existing");
-  });
-});
+import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations";
 
 describe("normalizeAspectRatio", () => {
   it("passes through valid aspect ratios", () => {
@@ -153,24 +73,6 @@ describe("normalizeBoundedNumber", () => {
   it("falls back for Infinity", () => {
     const result = normalizeSaveData({ musicVolume: Infinity });
     expect(result.musicVolume).toBe(50);
-  });
-});
-
-describe("normalizePositiveInteger", () => {
-  it("passes through positive integers", () => {
-    expect(normalizePositiveInteger(42, 10)).toBe(42);
-  });
-
-  it("passes through zero", () => {
-    expect(normalizePositiveInteger(0, 10)).toBe(0);
-  });
-
-  it("falls back for negative values", () => {
-    expect(normalizePositiveInteger(-5, 10)).toBe(10);
-  });
-
-  it("falls back for floats", () => {
-    expect(normalizePositiveInteger(3.14, 10)).toBe(10);
   });
 });
 

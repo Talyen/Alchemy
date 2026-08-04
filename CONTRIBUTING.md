@@ -2,7 +2,7 @@
 
 ## Before you push
 
-The default local hook is an iteration gate: it catches formatting, TypeScript, ESLint, and the small Playwright canary quickly. CI is the comprehensive gate after every push to `main` (and on PRs). Do not require `ci-ok` as a GitHub push gate on `main` — that blocks trunk pushes before CI can run. Rely on local `pre-push`, post-push CI, and the CI fixer bot; use `npm run check:push:full` before a high-risk push or release candidate.
+The default local hook is an iteration gate: it catches formatting, TypeScript, ESLint, and the small Playwright canary quickly. CI is the comprehensive gate after every push to `main` (and on PRs). Do not require `ci-ok` as a GitHub push gate on `main` — that blocks trunk pushes before CI can run. Rely on local `pre-push` and post-push CI; use `npm run check:push:full` before a high-risk push or release candidate.
 
 `lefthook` `post-commit` automatically regenerates the unreleased changelog and amends it into the commit just created. It skips when `CHANGELOG.md` has separate uncommitted edits; the pre-push guard remains the final check.
 
@@ -28,15 +28,15 @@ Install hooks once: `npm run prepare` (runs on `npm install`).
 
 ### Lint / format / dead-code commands
 
-| Command                           | Role                                                                |
-| --------------------------------- | ------------------------------------------------------------------- |
-| `npm run format` / `format:check` | Prettier via `scripts/run-prettier.mjs`                             |
-| `npm run lint`                    | ESLint (`eslint.config.js` + `eslint/`)                             |
-| `npm run lint:boundaries`         | dependency-cruiser phase / lib edges                                |
-| `npm run lint:architecture-smoke` | Cold ESLint lintFiles smoke (not in Vitest)                         |
-| `npm run deadcode`                | knip (CI / pre-push)                                                |
-| `npm run deadcode:strict`         | knip strict + entry exports, deps excluded (nightly)                |
-| `npm run lint:ci`                 | format:check → typecheck:all → lint → boundaries → smoke → deadcode |
+| Command                           | Role                                                                            |
+| --------------------------------- | ------------------------------------------------------------------------------- |
+| `npm run format` / `format:check` | Prettier via `scripts/run-prettier.mjs`                                         |
+| `npm run lint`                    | ESLint (`eslint.config.js` + `eslint/`)                                         |
+| `npm run lint:boundaries`         | dependency-cruiser phase / lib edges                                            |
+| `npm run lint:architecture-smoke` | Cold ESLint lintFiles smoke (not in Vitest)                                     |
+| `npm run deadcode`                | knip (`lint:ci` / CI; not default `pre-push`; in `check:push:full` via `check`) |
+| `npm run deadcode:strict`         | knip strict + entry exports, deps excluded (nightly)                            |
+| `npm run lint:ci`                 | format:check → typecheck:all → lint → boundaries → smoke → deadcode             |
 
 First-time Playwright: `npx playwright install chromium`.
 
@@ -67,7 +67,7 @@ Commit message rules: [Conventional Commits](https://www.conventionalcommits.org
 | Integration-style unit tests    | `run-domain.test.ts`, `storage.test.ts`, `reward-flow*.test.ts`, `shell/*-hook.test.ts`                  | `npm test -- tests/features/alchemy/shared/stores/run-domain.test.ts tests/features/alchemy/shared/storage tests/features/alchemy/run-loop/navigation/reward-flow tests/features/alchemy/shell`                                                                                                                                                                                                                                                                                     |
 | Battle E2E helpers              | `tests/pages/battle-page.ts`, `tests/helpers.ts` (`enableFastMode`)                                      | `npm run test:e2e:prepush` (animation canary) + relevant specs; CI runs `npm run test:e2e:full` in the broader/release tiers                                                                                                                                                                                                                                                                                                                                                        |
 | UI flows                        | `screens/`, controllers                                                                                  | Relevant `tests/*.spec.ts` + `npm run test:e2e:prepush`; longer UI coverage runs in CI/nightly                                                                                                                                                                                                                                                                                                                                                                                      |
-| Any push to `main`              | —                                                                                                        | Fast pre-push hook; CI `ci-ok` runs after push (fixer bot on failure). Use `npm run check:push:full` for an explicit comprehensive local gate                                                                                                                                                                                                                                                                                                                                       |
+| Any push to `main`              | —                                                                                                        | Fast pre-push hook (`check:push`); CI `ci-ok` runs after push. Use `npm run check:push:full` for an explicit comprehensive local gate                                                                                                                                                                                                                                                                                                                                               |
 
 ## E2E helpers
 

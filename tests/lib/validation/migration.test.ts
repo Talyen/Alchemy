@@ -7,6 +7,7 @@ import {
   isUnsupportedFutureContentData,
 } from "@/lib/validation/migration";
 import { migrateContentV2 } from "@/lib/validation/migration/migrate-content-v2";
+import { normalizePositiveInteger } from "@/lib/validation/migration/types";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_CONTENT_VERSION } from "@/lib/validation/metadata";
 import { legacyCampaignRunSave, legacyLabyrinthRunSave, legacyCorruptedCardRunSave } from "../../fixtures/legacy-saves";
 
@@ -31,10 +32,31 @@ describe("getRawSaveSchemaVersion", () => {
 
   it("returns 0 for non-integer version", () => {
     expect(getRawSaveSchemaVersion({ saveSchemaVersion: 1.5 })).toBe(0);
+    expect(getRawSaveSchemaVersion({ saveSchemaVersion: NaN })).toBe(0);
+    expect(getRawSaveSchemaVersion({ saveSchemaVersion: Infinity })).toBe(0);
   });
 
   it("returns the version when valid", () => {
     expect(getRawSaveSchemaVersion({ saveSchemaVersion: 1 })).toBe(1);
+    expect(getRawSaveSchemaVersion({ saveSchemaVersion: 5 })).toBe(5);
+  });
+});
+
+describe("normalizePositiveInteger", () => {
+  it("passes through positive integers", () => {
+    expect(normalizePositiveInteger(42, 10)).toBe(42);
+  });
+
+  it("passes through zero", () => {
+    expect(normalizePositiveInteger(0, 10)).toBe(0);
+  });
+
+  it("falls back for negative values", () => {
+    expect(normalizePositiveInteger(-5, 10)).toBe(10);
+  });
+
+  it("falls back for floats", () => {
+    expect(normalizePositiveInteger(3.14, 10)).toBe(10);
   });
 });
 

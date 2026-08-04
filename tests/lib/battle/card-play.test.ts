@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { cardHasDamageType, playBattleCardResolved } from "@/lib/battle/card-play";
+import { canPlayCard, cardHasDamageType, playBattleCardResolved } from "@/lib/battle/card-play";
+import { defaultBattleState } from "@/lib/battle";
 import { companionLibrary } from "@/lib/game-data";
-import { POTION_CARD_ID_SUFFIX } from "@/lib/game-constants";
-import { defaultTrinketEffects } from "@/lib/trinkets";
 import { makeTestBattleState, makeTestCard, slashDeck } from "../../fixtures/battle";
 
 function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
@@ -96,47 +95,6 @@ describe("playBattleCardResolved", () => {
     expect(result.state.exhausted).toEqual([card]);
   });
 
-  it("makes first physical card free when talent is active", () => {
-    const card = makeTestCard({
-      cost: 2,
-      effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
-    });
-    const state = makeState({
-      hand: [
-        card,
-        makeTestCard({ id: "second", cost: 2, effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
-      ],
-      flags: {
-        ...makeState().flags,
-        firstPhysicalCardFreeUsed: false,
-      },
-      talentEffects: {
-        ...makeState().talentEffects,
-        firstPhysicalCardFree: true,
-      },
-    });
-    const first = playBattleCardResolved(state, card.id, 0);
-    expect(first.state.mana).toBe(5);
-    expect(first.state.flags.firstPhysicalCardFreeUsed).toBe(true);
-    const second = playBattleCardResolved(first.state, "second", 0);
-    expect(second.state.mana).toBe(3);
-  });
-
-  it("makes first potion free with mortar and pestle boon", () => {
-    const card = makeTestCard({
-      id: `healing${POTION_CARD_ID_SUFFIX}`,
-      cost: 2,
-      effects: [{ kind: "heal", amount: 5 }],
-    });
-    const state = makeState({
-      hand: [card],
-      trinketEffects: { ...defaultTrinketEffects, mortarPestleFreeFirstPotion: true },
-    });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.mana).toBe(5);
-    expect(result.state.flags.firstPotionFreeUsed).toBe(true);
-  });
-
   it("replaces the current companion when another companion is summoned", () => {
     const card = makeTestCard({ id: "wolf-companion", effects: [{ kind: "summon-companion", companionId: "wolf" }] });
     const state = makeState({
@@ -166,5 +124,46 @@ describe("playBattleCardResolved — edge cases", () => {
     const result = playBattleCardResolved(state, "test-card", 0);
     expect(result.state).toBe(state);
     expect(result.combatTexts).toEqual([]);
+  });
+});
+
+describe("canPlayCard", () => {
+  it("allows affordable cards on the player turn", () => {
+    const card = makeTestCard({
+      id: "strike",
+      cost: 2,
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    const state = makeState({ mana: 3, hand: [card], turnPhase: "player" });
+    expect(canPlayCard(state, card, 0)).toBe(true);
+  });
+
+  it("blocks play when mana is insufficient", () => {
+    const card = makeTestCard({ cost: 5 });
+    const state = makeState({ mana: 2, hand: [card], turnPhase: "player" });
+    expect(canPlayCard(state, card, 0)).toBe(false);
+  });
+
+  it("blocks play during enemy turn, wish selection, or after defeat", () => {
+    const card = makeTestCard({ cost: 1 });
+    const base = makeState({ mana: 5, hand: [card] });
+    expect(canPlayCard({ ...base, turnPhase: "enemy" }, card, 0)).toBe(false);
+    expect(canPlayCard({ ...base, wishOptions: [card] }, card, 0)).toBe(false);
+    expect(canPlayCard({ ...base, playerHealth: 0, deathsDoorActive: false }, card, 0)).toBe(false);
+    expect(canPlayCard({ ...base, enemyHealth: 0 }, card, 0)).toBe(false);
+  });
+
+  it("requires hand index to match card id and uid", () => {
+    const handCard = makeTestCard({ id: "a", uid: 1 });
+    const otherCard = makeTestCard({ id: "b", uid: 2 });
+    const state = makeState({ mana: 5, hand: [handCard], turnPhase: "player" });
+    expect(canPlayCard(state, handCard, 0)).toBe(true);
+    expect(canPlayCard(state, otherCard, 0)).toBe(false);
+  });
+
+  it("matches defaultBattleState mana baseline used by headless sim", () => {
+    const card = makeTestCard({ cost: 1 });
+    const state = { ...defaultBattleState(), hand: [card], turnPhase: "player" as const, mana: 0 };
+    expect(canPlayCard(state, card, 0)).toBe(false);
   });
 });

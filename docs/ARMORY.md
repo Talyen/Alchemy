@@ -19,7 +19,6 @@ The Armory is the permanent meta-progression screen for managing **Gear** (per-c
 | `armory-overlays.tsx`             | Salvage confirmation, drag visuals, currency cursor, and transfer menu composition.                                                                                     |
 | `gear-tooltip-portal.tsx`         | Shared portaled gear tooltip rendering for inventory and equipment tiles (uses shared `PortaledTooltip`).                                                               |
 | `resolve-equip-swap.ts`           | Pure function: given an incoming instance, target slot, and vacated placement, decide whether the displaced item fits.                                                  |
-| `armory-tooltip-placement.ts`     | Thin re-export of shared stage-aware portaled placement (`shared/ui/portaled-tooltip-placement.ts`).                                                                    |
 | `read-inventory-board-metrics.ts` | DOM probe of the `cell` and `stride` grid metrics.                                                                                                                      |
 | `character-panel.tsx`             | `CharacterAndEquipmentPanel`: character art + 10 `SlotButton`s.                                                                                                         |
 | `inventory-panel.tsx`             | `InventoryPanel`: currency stacks + `InventoryGearTile`s.                                                                                                               |
@@ -175,7 +174,6 @@ All grid layout logic lives in **`src/lib/gear/grid-packing.ts`** (pure, framewo
 - `packInventoryGrid(items, cols, getFootprint)` — pack items in row-major order.
 - `packInventoryGridPreserving(items, cols, getFootprint, getSavedPosition)` — keep saved positions when valid, pack the rest sequentially.
 - `packCurrencyGridWithGearObstacles(...)` — same for crafting currencies, treating gear as obstacles.
-- `packMixedBoard(items, cols, getFootprint, getSavedPosition)` — heterogeneous gear + currency packer used by `syncBoardPositions`.
 - `resolveMoveWithSwap(items, movingId, target, cols, options?)` — `setBoardPosition`/`setCurrencyBoardPosition` use this to push displaced items to the closest open cell.
 
 ## Battle integration

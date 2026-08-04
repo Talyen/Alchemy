@@ -74,12 +74,12 @@ export function GameModeSelectScreen({
                   tiltEnabled={!isLocked}
                   ariaLabel={meta.title}
                   ariaPressed={isSelected}
+                  selected={isSelected}
                   onClick={selectMode}
                   onMouseEnter={() => setHoveredModeId(modeId)}
                   onMouseLeave={() => setHoveredModeId(null)}
                   className={cn(
                     "flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-8 pt-6 pb-7 text-left",
-                    isSelected && "ring-2 ring-primary",
                     isLocked && "cursor-not-allowed opacity-50 grayscale-[30%]",
                   )}
                 >

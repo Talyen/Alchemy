@@ -13,7 +13,7 @@ import {
 
 import { cn } from "@/lib/utils";
 
-import { staticCardTransform } from "../config/layout";
+import { staticCardTransform, tiltSurfaceSelectedRingClass } from "../config/layout";
 import { clearTiltFromEvent, DEFAULT_TILT_STRENGTH, setTiltFromEvent } from "../utils";
 import { ShimmerOverlay } from "./shimmer";
 
@@ -135,7 +135,7 @@ function TiltSurfaceButton({
       data-tilt-strength={String(tiltStrength ?? DEFAULT_TILT_STRENGTH)}
       className={cn(
         TILT_CLASSES,
-        selected && "ring-2 ring-primary ring-offset-4 ring-offset-background",
+        selected && tiltSurfaceSelectedRingClass,
         disabled && "cursor-default grayscale",
         dragging && "opacity-0",
         className,
@@ -196,12 +196,7 @@ function TiltSurfaceDiv({
       onMouseEnter={onMouseEnter}
       onMouseLeave={handleMouseLeave}
       data-tilt-strength={String(tiltStrength ?? DEFAULT_TILT_STRENGTH)}
-      className={cn(
-        TILT_CLASSES,
-        selected && "ring-2 ring-primary ring-offset-4 ring-offset-background",
-        dragging && "opacity-0",
-        className,
-      )}
+      className={cn(TILT_CLASSES, selected && tiltSurfaceSelectedRingClass, dragging && "opacity-0", className)}
       style={surfaceStyle}
     >
       <ShimmerSlot active={shimmerActive} token={shimmerToken} rounded={shimmerRounded} />

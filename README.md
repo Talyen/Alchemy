@@ -178,7 +178,7 @@ Optimized images are committed under `src/assets/optimized/`. Optimized sounds a
 
 ## Deployment
 
-The web build targets Vercel. `vercel.json` uses `npm run build`, outputs `dist`, and rewrites routes to `index.html` for the single-page app.
+The web build targets Vercel. `vercel.json` runs `npm run typecheck && npm run build`, outputs `dist`, and rewrites routes to `index.html` for the single-page app.
 
 ## Tech Stack
 
