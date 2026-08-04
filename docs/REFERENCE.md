@@ -72,7 +72,7 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 - **Companions** — invulnerable; act at player turn start; persist indefinitely.
 - **Draw / deck** — draw 4 per turn, max hand 7 (overflow skipped); hand cleared before draw; discard reshuffles when draw pile empties; only `consume` cards leave permanently.
 - **Block** — absorbs incoming damage first; halved (not cleared) at the start of the owner's next turn, after the opposing side had a chance to attack into it.
-- **Death's Door** — at 0 HP, grace turn(s) before run ends; CC skip suppressed during grace.
+- **Death's Door** — prevents fatal damage once per battle, leaving player at 1 HP with grace turn(s); CC skip suppressed during grace.
 - **Battle RNG** — use `state.rng`, not `Math.random()` (`createBattleState` may pass explicit RNG in tests).
 - **Enemy status** — stack changes go through `addEnemyStatus()` / `setEnemyStatus()` in `src/lib/battle/types.ts`; `braced` enemy trait halves incoming stun.
 - **Static enemy actions** — `enemyAttackEffects` resolve sequentially every turn; no randomized intents.
@@ -88,7 +88,7 @@ Definitions of common terms used in the Alchemy codebase.
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Block**                      | Damage absorption on player/enemy; halves at the start of the owner's next turn after one opposing attack window.                                                                                                                                                   |
 | **Burn**                       | DoT status; deals its stack as damage, then normally decays by half.                                                                                                                                                                                                |
-| **Death's Door**               | At 0 HP, grace turn(s) before run ends; must heal above 0 before grace expires.                                                                                                                                                                                     |
+| **Death's Door**               | Prevents fatal damage once per battle, leaving player at 1 HP with grace turn(s); subsequent damage before healing is lethal.                                                                                                                                       |
 | **Homestead**                  | Between-run hub; spend **Materials** on permanent upgrades.                                                                                                                                                                                                         |
 | **Mana**                       | Resource to play cards; resets to `maxMana` each turn (unspent lost unless Wellspring).                                                                                                                                                                             |
 | **Materials**                  | Meta currency for homestead upgrades; in-run earnings via `awardMaterialsDuringRun()`.                                                                                                                                                                              |

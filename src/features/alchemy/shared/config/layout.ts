@@ -46,9 +46,9 @@ export const tooltipAnchorClassNames = {
 
 export const battleActorSectionClass = {
   desktop:
-    "absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 gap-[clamp(17.5cqw,20cqw,21.88cqw)]",
+    "absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 gap-[clamp(21.5cqw,24.5cqw,27cqw)]",
   ultrawide:
-    "absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 gap-[clamp(13.125cqw,20cqw,23.44cqw)]",
+    "absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 gap-[clamp(18cqw,24.5cqw,28cqw)]",
 } as const;
 
 export const battleBottomBarClass =

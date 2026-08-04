@@ -80,7 +80,7 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
         <>
           <div className="flex items-center justify-between gap-3">
             <KeywordTag keywordId={kw} />
-            <span className="rounded-full bg-background px-2 py-0.5 text-base font-semibold text-foreground">
+            <span className="rounded-full bg-background px-2 py-0.5 text-xs font-semibold text-foreground">
               {chip.value}
             </span>
           </div>
@@ -109,7 +109,7 @@ function AugmentStatusIcon({
         <>
           <div className="flex items-center justify-between gap-3">
             <TooltipHeader className="mb-0">{augment.label}</TooltipHeader>
-            <span className="rounded-full bg-background px-2 py-0.5 text-base font-semibold text-foreground">
+            <span className="rounded-full bg-background px-2 py-0.5 text-xs font-semibold text-foreground">
               {chip.value}
             </span>
           </div>
@@ -131,7 +131,7 @@ function HasteStatusIcon({ value }: { value: number }) {
         <>
           <div className="flex items-center justify-between gap-3">
             <TooltipHeader className="mb-0">Haste</TooltipHeader>
-            <span className="rounded-full bg-background px-2 py-0.5 text-base font-semibold text-foreground">
+            <span className="rounded-full bg-background px-2 py-0.5 text-xs font-semibold text-foreground">
               {value}
             </span>
           </div>

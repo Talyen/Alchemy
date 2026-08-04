@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   advanceToPlayerTurn,
   checkHealthThresholds,
@@ -157,28 +157,17 @@ describe("checkHealthThresholds", () => {
 });
 
 describe("resolveDeathsDoorEndOfEnemyTurn", () => {
-  it("clears Death's Door when player healed above 0", () => {
-    const state = makeTestBattleState({
-      deathsDoorActive: true,
-      deathsDoorTriggeredTurn: 1,
-      deathsDoorGraceTurnsRemaining: 1,
-      playerHealth: 5,
-    });
-    const result = resolveDeathsDoorEndOfEnemyTurn(state);
-    expect(result.deathsDoorActive).toBe(false);
-    expect(result.deathsDoorGraceTurnsRemaining).toBeNull();
-  });
-
   it("deactivates Death's Door when grace expires", () => {
     const state = makeTestBattleState({
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: 1,
       deathsDoorGraceTurnsRemaining: 0,
-      playerHealth: 0,
+      playerHealth: 1,
       turn: 2,
     });
     const result = resolveDeathsDoorEndOfEnemyTurn(state);
     expect(result.deathsDoorActive).toBe(false);
+    expect(result.playerHealth).toBe(1);
   });
 
   it("no-ops when Death's Door inactive", () => {

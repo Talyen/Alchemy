@@ -47,7 +47,7 @@ describe("processEnemyAttack", () => {
       turn: 3,
     });
     const result = processEnemyAttack(state, makeTexts());
-    expect(result.playerHealth).toBe(0);
+    expect(result.playerHealth).toBe(1);
     expect(result.deathsDoorUsed).toBe(true);
     expect(result.deathsDoorActive).toBe(true);
     expect(result.deathsDoorTriggeredTurn).toBe(3);

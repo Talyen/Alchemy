@@ -30,9 +30,9 @@ export function KeywordTag({
   const tag = (
     <span
       className={cn(
-        "inline-flex items-baseline gap-1 text-lg leading-none font-semibold",
+        "inline-flex items-baseline gap-1 text-sm leading-none font-semibold",
         def.colorClass,
-        pill && "character-keyword-pill-tint rounded-full px-3.5 py-2",
+        pill && "character-keyword-pill-tint rounded-full px-3 py-1 text-xs",
         className,
       )}
     >
@@ -54,7 +54,7 @@ export function KeywordTag({
         style={dx !== 0 ? { marginLeft: dx } : undefined}
         className="pointer-events-none opacity-0 group-hover/keyword:opacity-100"
       >
-        <span className="flex items-center gap-2 text-base">
+        <span className="flex items-center gap-2 text-sm font-semibold">
           <KeywordTag keywordId={keywordId} showIcon />
         </span>
         <TooltipBody>{def.description}</TooltipBody>

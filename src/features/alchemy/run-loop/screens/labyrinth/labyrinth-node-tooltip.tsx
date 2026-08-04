@@ -36,7 +36,7 @@ function ModifierTooltipCard({ modifier, variant }: { modifier: EncounterTraitId
         variant === "enemy" ? "border border-red-500/40" : "border border-emerald-500/40",
       )}
     >
-      <p className="text-base font-bold text-amber-100">{definition.label}</p>
+      <p className="text-xs font-bold text-amber-100 uppercase">{definition.label}</p>
       <p className={cn(tooltipBodyClass, "mt-0.5")}>{renderColoredKeywords(definition.description)}</p>
     </div>
   );

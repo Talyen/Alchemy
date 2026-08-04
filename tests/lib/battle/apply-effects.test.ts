@@ -78,7 +78,7 @@ describe("applyCardEffects", () => {
     const card = makeTestCard({ effects: [{ kind: "self-damage", damageType: "bleed", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
-    expect(result.playerHealth).toBe(0);
+    expect(result.playerHealth).toBe(1);
     expect(result.deathsDoorUsed).toBe(true);
     expect(result.deathsDoorActive).toBe(true);
     expect(isPlayerDefeated(result)).toBe(false);

@@ -93,7 +93,7 @@ function performDrawAndResetPhase(state: BattleState, deathsDoorNeedsRecoveryTur
 }
 
 export function advanceToPlayerTurn(state: BattleState, combatTexts: CombatTextEvent[] = []) {
-  const deathsDoorNeedsRecoveryTurn = state.deathsDoorActive && state.playerHealth <= 0;
+  const deathsDoorNeedsRecoveryTurn = state.deathsDoorActive;
 
   let nextState = state;
   if (deathsDoorNeedsRecoveryTurn) {
@@ -160,15 +160,6 @@ export function reduceSkipTurns(state: BattleState): BattleState {
 
 export function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
   if (!state.deathsDoorActive) return state;
-  if (state.playerHealth > 0) {
-    return {
-      ...state,
-      deathsDoorActive: false,
-      deathsDoorTriggeredTurn: null,
-      deathsDoorGraceTurnsRemaining: null,
-    };
-  }
-
   const remaining = computeDeathsDoorGraceRemaining(state);
   if (remaining <= 0) {
     return {

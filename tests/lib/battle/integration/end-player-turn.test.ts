@@ -85,7 +85,7 @@ describe("endPlayerTurn", () => {
     });
     const result = endPlayerTurn(state);
 
-    expect(result.state.playerHealth).toBe(0);
+    expect(result.state.playerHealth).toBe(1);
     expect(result.state.deathsDoorUsed).toBe(true);
     expect(result.state.deathsDoorActive).toBe(true);
     expect(result.state.deathsDoorTriggeredTurn).toBe(1);
@@ -104,7 +104,7 @@ describe("endPlayerTurn", () => {
 
     const result = endPlayerTurn(state);
 
-    expect(result.state.playerHealth).toBe(0);
+    expect(result.state.playerHealth).toBe(1);
     expect(result.state.deathsDoorActive).toBe(true);
     expect(result.state.turnPhase).toBe("player");
     expect(result.playerTurnSkipped).toBe(false);

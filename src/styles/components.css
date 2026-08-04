@@ -89,7 +89,8 @@
   }
 
   .stagger-item:has(.hover-popup-panel[data-visible]),
-  [class*="group"]:has(.hover-popup-panel):is(:hover, :focus-within) {
+  [class*="group"]:has(.hover-popup-panel):is(:hover, :focus-within),
+  div:has(> .hover-popup-panel):is(:hover, :focus-within) {
     position: relative;
     z-index: 50;
   }
@@ -110,13 +111,15 @@
     transform: translateY(-50%);
   }
 
-  [class*="group"]:is(:hover, :focus-within) > .hover-popup-panel,
+  [class*="group"]:is(:hover, :focus-within) .hover-popup-panel,
+  :has(> .hover-popup-panel):is(:hover, :focus-within) > .hover-popup-panel,
   .hover-popup-panel[data-visible] {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
 
-  [class*="group"]:is(:hover, :focus-within) > .hover-popup-panel[data-placement^="side-"],
+  [class*="group"]:is(:hover, :focus-within) .hover-popup-panel[data-placement^="side-"],
+  :has(> .hover-popup-panel):is(:hover, :focus-within) > .hover-popup-panel[data-placement^="side-"],
   .hover-popup-panel[data-placement^="side-"][data-visible] {
     opacity: 1;
     transform: translateY(-50%);

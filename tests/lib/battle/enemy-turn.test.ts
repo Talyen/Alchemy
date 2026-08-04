@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { endPlayerTurn, recoverLegacyEnemyPhase } from "@/lib/battle/enemy-turn";
 import type { BattleState, EnemyStatusValues } from "@/lib/battle/types";
 import { defaultTalentEffects } from "@/lib/battle";
@@ -235,14 +235,15 @@ describe("endPlayerTurn â€” tick order", () => {
   });
 });
 
-describe("endPlayerTurn â€” Death's Door", () => {
+describe("endPlayerTurn — Death's Door", () => {
   it("gives grace recovery turn when player hits 0", () => {
     const state = battleState({
-      playerHealth: 0,
+      playerHealth: 1,
       deathsDoorUsed: true,
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: 1,
       deathsDoorGraceTurnsRemaining: 1,
+      enemyAttackEffects: [],
       turn: 1,
     });
     const result = endPlayerTurn(state);
@@ -251,7 +252,7 @@ describe("endPlayerTurn â€” Death's Door", () => {
 
   it("deactivates Death's Door after grace expires", () => {
     const state = battleState({
-      playerHealth: 0,
+      playerHealth: 1,
       deathsDoorUsed: true,
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: 1,
@@ -324,7 +325,7 @@ describe("endPlayerTurn â€” Death's Door", () => {
 
   it("CC immunity cooldown does not prevent Death's Door grace recovery turn", () => {
     const state = battleState({
-      playerHealth: 0,
+      playerHealth: 1,
       playerStatuses: { ...emptyPlayerStatuses, stun: 20 },
       deathsDoorUsed: true,
       deathsDoorActive: true,

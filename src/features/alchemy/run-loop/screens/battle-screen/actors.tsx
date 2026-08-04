@@ -46,7 +46,7 @@ export function BattleActors({
       style={{ top: BATTLE_ACTOR_TOP }}
     >
       <div className="relative flex items-start justify-center transition-transform duration-500 ease-out">
-        <div className="absolute top-[30%] left-[calc(100%+clamp(1.46cqw,3cqw,2.29cqw))] z-30 w-40">
+        <div className="absolute top-[30%] left-[calc(100%+clamp(3cqw,5cqw,6.5cqw))] z-30 w-40">
           <CombatTextRail entries={playerCombatTexts} side="player" />
         </div>
         <div
@@ -90,7 +90,7 @@ export function BattleActors({
       </div>
 
       <div className="relative flex flex-col items-center">
-        <div className="absolute top-[30%] right-[calc(100%+clamp(1.46cqw,3cqw,2.29cqw))] z-30 w-40">
+        <div className="absolute top-[30%] right-[calc(100%+clamp(3cqw,5cqw,6.5cqw))] z-30 w-40">
           <CombatTextRail entries={enemyCombatTexts} side="enemy" />
         </div>
         <ArtPanel

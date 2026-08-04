@@ -6,6 +6,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Features
 
+- feat(ui): implement floating combat text, standardize tooltips, and fix mutual KO resolution
 - feat(options): remove UI Scale setting
   Drop the unused display preference from options UI, settings store, save
   schema, and CSS so rem sizing stays fixed and legacy saves strip uiScale.

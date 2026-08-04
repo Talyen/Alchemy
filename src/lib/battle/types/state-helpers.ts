@@ -174,27 +174,27 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number, dama
   if (!state.deathsDoorUsed) {
     return {
       ...state,
-      playerHealth: 0,
+      playerHealth: 1,
       deathsDoorUsed: true,
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: state.turn,
       deathsDoorGraceTurnsRemaining: 1 + Math.max(0, state.talentEffects.deathsDoorExtension),
     };
   }
-  return { ...state, playerHealth: 0, deathsDoorActive: state.deathsDoorActive };
+  return { ...state, playerHealth: 0, deathsDoorActive: false };
 }
 
-// Healing at 0 HP with Death's Door active removes protection (deathsDoorActive flips to false
-// via the `health > 0` path of the expression) — healing saves you but costs the grace window.
+// Healing with Death's Door active removes protection — healing saves you but costs the grace window.
 export function applyPlayerHealing(state: BattleState, amount: number): BattleState {
   const playerHealth = clampHealth(state.playerHealth, amount, state.playerMaxHealth);
   const overheal = state.playerHealth + amount - playerHealth;
+  const healedOnDeathsDoor = state.deathsDoorActive && amount > 0;
   let nextState = {
     ...state,
     playerHealth,
-    deathsDoorActive: playerHealth <= 0 && state.deathsDoorActive,
-    deathsDoorTriggeredTurn: playerHealth <= 0 ? state.deathsDoorTriggeredTurn : null,
-    deathsDoorGraceTurnsRemaining: playerHealth <= 0 ? state.deathsDoorGraceTurnsRemaining : null,
+    deathsDoorActive: healedOnDeathsDoor ? false : state.deathsDoorActive,
+    deathsDoorTriggeredTurn: healedOnDeathsDoor ? null : state.deathsDoorTriggeredTurn,
+    deathsDoorGraceTurnsRemaining: healedOnDeathsDoor ? null : state.deathsDoorGraceTurnsRemaining,
   };
   if (overheal > 0 && nextState.talentEffects.overhealToBlockRatio > 0) {
     const blockGain = Math.round(overheal * nextState.talentEffects.overhealToBlockRatio);

@@ -17,14 +17,16 @@ function EnemyTooltipModifiers({ modifiers }: { modifiers: EncounterCombatTraitI
     <>
       <TooltipSeparator />
       <TooltipSection label="Special Modifiers">
-        {modifiers.map((modifier) => {
-          const def = ENCOUNTER_TRAITS[modifier];
-          return def ? (
-            <p key={modifier}>
-              <span className="font-semibold text-amber-100">{def.label}:</span> {def.description}
-            </p>
-          ) : null;
-        })}
+        <TooltipBody>
+          {modifiers.map((modifier) => {
+            const def = ENCOUNTER_TRAITS[modifier];
+            return def ? (
+              <p key={modifier}>
+                <span className="font-semibold text-amber-100">{def.label}:</span> {def.description}
+              </p>
+            ) : null;
+          })}
+        </TooltipBody>
       </TooltipSection>
     </>
   );
@@ -52,17 +54,15 @@ export function EnemyTooltip({
     .flatMap((trait) => trait.description.split("\n"));
 
   return (
-    <PortaledTooltip triggerRef={triggerRef} visible={visible} width="w-80" className="rounded-shell-tooltip">
+    <PortaledTooltip triggerRef={triggerRef} visible={visible} width="w-72" className="rounded-shell-tooltip">
       <TooltipHeader>{discovered ? entry.title : "Undiscovered"}</TooltipHeader>
-      <TooltipBody>
-        {discovered ? (
-          [...attackLines, ...traitLines].map((line, i) => (
-            <DescriptionLines key={`enemy-${entry.id}-${i}`} lines={[line]} idPrefix={`enemy-${entry.id}-${i}`} />
-          ))
-        ) : (
+      {discovered ? (
+        <DescriptionLines lines={[...attackLines, ...traitLines]} idPrefix={`enemy-${entry.id}`} />
+      ) : (
+        <TooltipBody>
           <p>Undiscovered</p>
-        )}
-      </TooltipBody>
+        </TooltipBody>
+      )}
       <EnemyTooltipModifiers modifiers={labyrinthModifiers} />
     </PortaledTooltip>
   );

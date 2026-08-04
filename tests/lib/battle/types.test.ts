@@ -172,7 +172,7 @@ describe("applyPlayerCombatDamage", () => {
   it("triggers Death's Door on first lethal hit", () => {
     const state = makeTestBattleState({ playerHealth: 10, turn: 3 });
     const next = applyPlayerCombatDamage(state, 20);
-    expect(next.playerHealth).toBe(0);
+    expect(next.playerHealth).toBe(1);
     expect(next.deathsDoorUsed).toBe(true);
     expect(next.deathsDoorActive).toBe(true);
     expect(next.deathsDoorTriggeredTurn).toBe(3);
@@ -189,7 +189,7 @@ describe("applyPlayerCombatDamage", () => {
     const next = applyPlayerCombatDamage(state, 20);
     expect(next.playerHealth).toBe(0);
     expect(next.deathsDoorUsed).toBe(true);
-    expect(next.deathsDoorActive).toBe(true);
+    expect(next.deathsDoorActive).toBe(false);
   });
 
   it("is defeated when hit while Death's Door already used and health was already 0", () => {
@@ -218,27 +218,27 @@ describe("applyPlayerHealing", () => {
     expect(next.playerHealth).toBe(30);
   });
 
-  it("clears Death's Door when healing above 0", () => {
+  it("clears Death's Door when healing active", () => {
     const state = makeTestBattleState({
-      playerHealth: 0,
+      playerHealth: 1,
       deathsDoorUsed: true,
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: 3,
     });
     const next = applyPlayerHealing(state, 5);
-    expect(next.playerHealth).toBe(5);
+    expect(next.playerHealth).toBe(6);
     expect(next.deathsDoorActive).toBe(false);
   });
 
-  it("preserves Death's Door active when still at 0 Health after heal", () => {
+  it("preserves Death's Door active when heal amount is 0", () => {
     const state = makeTestBattleState({
-      playerHealth: 0,
+      playerHealth: 1,
       deathsDoorUsed: true,
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: 3,
     });
     const next = applyPlayerHealing(state, 0);
-    expect(next.playerHealth).toBe(0);
+    expect(next.playerHealth).toBe(1);
     expect(next.deathsDoorActive).toBe(true);
   });
 

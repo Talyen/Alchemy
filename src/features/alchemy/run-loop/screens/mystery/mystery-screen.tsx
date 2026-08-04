@@ -15,6 +15,7 @@ import {
   MysteryEventIntro,
   choiceOffersCardSelection,
   choiceRequiresCardRemoval,
+  choiceHasDisplayableSummary,
   hasPositiveMysteryEffect,
 } from "./parts";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
@@ -70,14 +71,14 @@ export function MysteryScreen({
 
   // Invoked after the user selects a card from the deck to remove.
   function handleRemoveConfirm(index: number) {
-    // pendingRemoval is expected here because this path is reachable only after choosing
-    // a remove-card event; after removal, resume the delayed result screen.
     onRemoveCard(index);
+    const choice = chosen ?? pendingRemoval;
     setPendingRemoval(null);
-    if (!chosen) {
-      const choice = pendingRemoval!;
+    if (choice && choiceHasDisplayableSummary(choice)) {
       setChosen(choice);
       if (hasPositiveMysteryEffect(choice.effects)) playUISound("talentUnlock");
+    } else {
+      onContinue();
     }
   }
 

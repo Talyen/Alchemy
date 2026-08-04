@@ -26,3 +26,8 @@ export function choiceOffersCardSelection(choice: MysteryChoice) {
 export function choiceRequiresCardRemoval(choice: MysteryChoice) {
   return choice.effects.some((e) => e.kind === "removeCard" && e.mode === "choose");
 }
+
+/** True when the choice has visual reward items to display on the mystery summary screen. */
+export function choiceHasDisplayableSummary(choice: MysteryChoice): boolean {
+  return choice.effects.some((e) => e.kind !== "removeCard");
+}

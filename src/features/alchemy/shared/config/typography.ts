@@ -20,10 +20,10 @@ export const controlLabelClass = "text-lg font-semibold text-foreground";
 export const controlDescriptionClass = "mt-1 text-lg text-muted-foreground";
 
 /** Tooltip title. */
-export const tooltipHeaderClass = "mb-1 font-sans text-2xl font-bold text-foreground";
+export const tooltipHeaderClass = "mb-1 font-sans text-base font-bold text-foreground sm:text-lg";
 
 /** Tooltip uppercase label / keyword line. */
-export const tooltipSubheaderClass = "mt-3 mb-1 text-base font-semibold tracking-widest text-amber-100/80 uppercase";
+export const tooltipSubheaderClass = "mt-2.5 mb-1 text-xs font-semibold tracking-widest text-amber-100/80 uppercase";
 
 /** Tooltip body copy. */
-export const tooltipBodyClass = "mt-1 space-y-1.5 text-lg leading-6 text-muted-foreground";
+export const tooltipBodyClass = "mt-1 space-y-1 text-sm leading-relaxed text-muted-foreground";

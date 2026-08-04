@@ -7,7 +7,7 @@ describe("prettier-paths", () => {
       expect.arrayContaining([
         "*.{js,json,md,ts,yml,yaml}",
         ".prettierrc",
-        "{src,tests,scripts,desktop,docs}/**/*.{ts,tsx,css,mjs,cjs,md}",
+        "{src,tests,scripts,desktop,docs,performance}/**/*.{ts,tsx,css,mjs,cjs,md}",
       ]),
     );
   });

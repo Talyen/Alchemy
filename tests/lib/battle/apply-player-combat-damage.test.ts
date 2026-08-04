@@ -79,7 +79,7 @@ describe("applyPlayerCombatDamage", () => {
   });
 
   it("health does not go below zero", () => {
-    const state = patchBattleState({ playerHealth: 5 });
+    const state = patchBattleState({ playerHealth: 5, deathsDoorUsed: true });
     const result = applyPlayerCombatDamage(state, 20);
     expect(result.playerHealth).toBe(0);
   });
@@ -87,6 +87,7 @@ describe("applyPlayerCombatDamage", () => {
   it("activates deaths door on lethal hit if not used", () => {
     const state = patchBattleState({ playerHealth: 5, deathsDoorUsed: false });
     const result = applyPlayerCombatDamage(state, 20);
+    expect(result.playerHealth).toBe(1);
     expect(result.deathsDoorUsed).toBe(true);
     expect(result.deathsDoorActive).toBe(true);
   });
@@ -94,6 +95,7 @@ describe("applyPlayerCombatDamage", () => {
   it("does not reactivate deaths door if already used", () => {
     const state = patchBattleState({ playerHealth: 5, deathsDoorUsed: true, deathsDoorActive: true });
     const result = applyPlayerCombatDamage(state, 20);
-    expect(result.deathsDoorActive).toBe(true);
+    expect(result.playerHealth).toBe(0);
+    expect(result.deathsDoorActive).toBe(false);
   });
 });

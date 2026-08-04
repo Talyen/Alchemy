@@ -40,7 +40,7 @@ export function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId;
         style={dx !== 0 ? { marginLeft: dx } : undefined}
         className="pointer-events-none opacity-0 group-hover/keyword:opacity-100"
       >
-        <span className="flex items-center gap-2 text-base">
+        <span className="flex items-center gap-2 text-sm font-semibold">
           <KeywordTag keywordId={keywordId} />
         </span>
         <TooltipBody>{renderColoredKeywords(definition.description)}</TooltipBody>

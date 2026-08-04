@@ -4,11 +4,11 @@
 import type { CompanionDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardSurfaceClass, sectionTitleClass } from "../../config";
+import { cardSurfaceClass } from "../../config";
+import { TooltipHeader, TooltipPanel } from "../tooltip-panel";
 import { formatCompanionTurnStartLine } from "@/features/alchemy/shared/utils";
 import { DescriptionLines } from "../card-description-ui";
 import { TiltSurface } from "../tilt-surface";
-import { TooltipPanel } from "../tooltip-panel";
 
 function getCompanionDescriptionLines(companion: CompanionDefinition, damageBonus: number): string[] {
   const turnEffect = companion.turnStartEffects[0];
@@ -51,7 +51,7 @@ export function CompanionPanel({
         />
       </TiltSurface>
       <TooltipPanel className="opacity-0 group-hover/companion:opacity-100">
-        <p className={cn("font-sans", sectionTitleClass)}>{companion.title}</p>
+        <TooltipHeader>{companion.title}</TooltipHeader>
         <DescriptionLines
           lines={getCompanionDescriptionLines(companion, damageBonus)}
           idPrefix={`companion-${companion.id}`}
