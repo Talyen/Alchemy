@@ -31,12 +31,7 @@ import {
   unlockTalent,
   resetUnlockedTalents,
 } from "./run-session-write-port";
-import type {
-  BattleRunPort,
-  BattleTalentPort,
-  RunFlowEnginePort,
-  TalentCommandPort,
-} from "./run-port-types";
+import type { BattleRunPort, BattleTalentPort, RunFlowEnginePort, TalentCommandPort } from "./run-port-types";
 import { setHasActiveBattle as setHasActiveBattleCommand } from "./ports/run-battle-write-port";
 
 export function useTalentEffects(): TalentEffectManifest {
