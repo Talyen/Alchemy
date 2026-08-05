@@ -8,7 +8,7 @@ function makeSave(overrides: Partial<SaveData> = {}): SaveData {
 }
 
 beforeEach(() => {
-  useProfileStore.setState(useProfileStore.getInitialState(), true);
+  useProfileStore.setState(useProfileStore.getInitialState());
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
 });
 
