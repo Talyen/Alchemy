@@ -38,7 +38,6 @@
     "audit:all": "node scripts/audit-all.mjs",
     "audit:single-use": "node scripts/audit-single-use.mjs",
     "sync:changelog": "node scripts/sync-changelog.mjs",
-    "sync:changelog:check": "node scripts/sync-changelog.mjs --check",
     "sync:version": "node scripts/sync-version-metadata.mjs",
     "sync:steam-appid": "node scripts/sync-steam-appid.mjs",
     "sync:gear-art": "node scripts/sync-gear-art.mjs",

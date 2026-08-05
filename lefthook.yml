@@ -1,8 +1,3 @@
-post-commit:
-  commands:
-    changelog-sync:
-      run: node scripts/sync-changelog-post-commit.mjs
-
 pre-commit:
   commands:
     lockfile-check:
@@ -20,10 +15,7 @@ commit-msg:
       run: npx commitlint --edit {1}
 
 pre-push:
-  piped: true
   commands:
-    changelog-sync:
-      run: node scripts/sync-changelog-commit.mjs
     fast-gate:
       # Full lint, unit, build, and broad E2E gates run in CI or explicitly via
       # `npm run check:push:full`; keep the default hook fast for iteration.

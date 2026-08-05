@@ -28,13 +28,13 @@ Prefer highest-impact portfolio waste first:
 
 **Coverage ownership:**
 
-| Concern                                      | Prefer owner                                                                                                         |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Battle rules / effects                       | `tests/lib/battle`, `tests/lib/game-data`                                                                            |
-| Gear rules                                   | `tests/lib/gear` + `tests/features/alchemy/shared/stores/gear-*.test.ts`                                             |
-| Save / migrations                            | `tests/features/alchemy/shared/storage`, `tests/architecture/`                                                       |
-| Run orchestration                            | `tests/features/alchemy/shared/stores`, `tests/features/alchemy/shell`, `tests/features/alchemy/run-loop/navigation` |
-| Structural / deleted-module / changelog sync | `tests/architecture/`                                                                                                |
+| Concern                                           | Prefer owner                                                                                                         |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Battle rules / effects                            | `tests/lib/battle`, `tests/lib/game-data`                                                                            |
+| Gear rules                                        | `tests/lib/gear` + `tests/features/alchemy/shared/stores/gear-*.test.ts`                                             |
+| Save / migrations                                 | `tests/features/alchemy/shared/storage`, `tests/architecture/`                                                       |
+| Run orchestration                                 | `tests/features/alchemy/shared/stores`, `tests/features/alchemy/shell`, `tests/features/alchemy/run-loop/navigation` |
+| Structural / deleted-module / changelog ownership | `tests/architecture/`                                                                                                |
 
 **Quality:** assert outcomes (HP deltas, events, reloaded save shape), not implementation details or log fingerprints; no trivial “function exists” / “returns defined” assertions; no soft-fail that hides errors.
 

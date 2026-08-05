@@ -4,12 +4,7 @@
 
 The default local hook is an iteration gate: it catches formatting, TypeScript, ESLint, and the small Playwright canary quickly. CI is the comprehensive gate after every push to `main` (and on PRs). Do not require `ci-ok` as a GitHub push gate on `main` — that blocks trunk pushes before CI can run. Rely on local `pre-push` and post-push CI; use `npm run check:push:full` before a high-risk push or release candidate.
 
-`lefthook` `post-commit` automatically regenerates the unreleased changelog and amends it into the commit just created. It skips when `CHANGELOG.md` has separate uncommitted edits; the pre-push guard remains the final check.
-
-`lefthook` `pre-push` runs sequentially (`piped: true`):
-
-1. `node scripts/sync-changelog-commit.mjs` — verify `CHANGELOG.md` ## [Unreleased] matches git history without mutating the push; if stale, run `npm run sync:changelog`, stage `CHANGELOG.md`, commit, and retry the push
-2. `npm run check:push` — format check, TypeScript, ESLint, and the fast **@prepush** subset (parallel preview build; includes one animation canary)
+`lefthook` `pre-push` runs `npm run check:push` — format check, TypeScript, ESLint, and the fast **@prepush** subset (parallel preview build; includes one animation canary).
 
 The comprehensive local equivalent is `npm run check:push:full`. It runs the full static gate, all Vitest tests, the web production build, and the pre-push E2E canary. CI on every PR and push runs the full `@critical` suite, including `@prepush` tests. On optional PR branches, wait for `ci-ok` before merging.
 
@@ -46,12 +41,11 @@ Local leftover reports/builds: `npm run clean` (safe artifacts) or `npm run clea
 
 ## Changelog and patch notes
 
-When explicitly asked to commit or push, agents work directly on `main`; there is no required PR merge step. Commit messages feed an automated changelog:
+When explicitly asked to commit or push, agents work directly on `main`; there is no required PR merge step. **Do not edit `CHANGELOG.md`.** Conventional commit messages are the day-to-day source of truth.
 
-- **Post-commit hook:** regenerates `CHANGELOG.md` ## [Unreleased] and amends it into the commit just created, so normal commits do not need a follow-up sync commit.
-- **Pre-push hook** verifies `CHANGELOG.md` ## [Unreleased] against git history since the latest `v*` tag without mutating git state. If the post-commit hook skipped because `CHANGELOG.md` had separate edits, run `npm run sync:changelog`, stage `CHANGELOG.md`, commit, and retry the push.
-- **Player-facing draft:** `npm run generate:patch-notes` → `release-notes/UNRELEASED.md`
-- **Drift guard:** `tests/architecture/changelog-sync.test.ts` (also in `npm run test:ship:unit`)
+- **Release:** `npm run release` / `release:hotfix` runs `sync-changelog.mjs` (fill ## [Unreleased] from git since the latest `v*` tag) then `release-changelog.mjs` (promote that section to `[x.y.z]`). Wired in `.versionrc.json` as `prerelease` / `postbump`.
+- **Draft patch notes anytime:** `npm run generate:patch-notes` → `release-notes/UNRELEASED.md` (derives from git in memory; does not require a synced `CHANGELOG.md` on disk).
+- **Optional preview:** `npm run sync:changelog` rewrites ## [Unreleased] locally — not part of normal commits or CI.
 
 Commit message rules: [Conventional Commits](https://www.conventionalcommits.org/). Release flow: [RELEASE.md](./docs/RELEASE.md).
 

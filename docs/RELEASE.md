@@ -12,20 +12,19 @@ Automation enforces release readiness — agents do not rely on manual checklist
 | `npm run verify:release-version` | `release.yml` — tag must match `package.json`                                                                     |
 | `npm run sync:version`           | `prebuild` / `prebuild:desktop` — syncs `package.json` → `metadata.generated.ts`                                  |
 | `npm run sync:steam-appid`       | `prebuild:desktop` / release — writes `steam_appid.txt` from `STEAM_APP_ID`                                       |
-| `npm run sync:changelog`         | Rebuilds `CHANGELOG.md` ## [Unreleased] from git since latest `v*` tag                                            |
-| `npm run sync:changelog:check`   | Local drift check — fails if `CHANGELOG.md` is stale (CI uses `tests/architecture/changelog-sync.test.ts`)        |
+| `npm run sync:changelog`         | Optional: rebuild `CHANGELOG.md` ## [Unreleased] from git (also runs automatically as release `prerelease`)       |
 | `npm run generate:patch-notes`   | Active dev → `release-notes/UNRELEASED.md`; tag CI → `release-notes/vX.Y.Z.md`                                    |
 | `npm run dist:desktop`           | Hardened, verified targets from [`steam/platforms.json`](../steam/platforms.json)                                 |
 | `npm run steam:upload:dry-run`   | Validates Steam VDF templates + contentroot (`release-desktop/win-unpacked`) without credentials                  |
-| `npm run release`                | Bumps version, promotes changelog, creates git tag                                                                |
+| `npm run release`                | Bumps version, syncs + promotes changelog, creates git tag                                                        |
 
-## Changelog automation (main-only)
+## Changelog (release-time only)
 
-1. When explicitly asked to commit, agents commit to `main` with [Conventional Commits](https://www.conventionalcommits.org/) headers.
-2. **Post-commit hook** runs `sync-changelog-post-commit.mjs` — regenerates `CHANGELOG.md` ## [Unreleased] and amends it into the commit just created. If `CHANGELOG.md` has separate uncommitted edits, the hook skips them.
-3. **Pre-push hook** runs `sync-changelog-commit.mjs` — verifies `CHANGELOG.md` ## [Unreleased] against git history without mutating git state. If the post-commit hook skipped because of separate changelog edits, run `npm run sync:changelog`, stage `CHANGELOG.md`, commit, and retry the push.
-4. During development: `npm run generate:patch-notes` writes player-facing `release-notes/UNRELEASED.md` from the changelog.
-5. `tests/architecture/changelog-sync.test.ts` fails CI if the unreleased section drifts from git.
+1. Day to day: commit to `main` with [Conventional Commits](https://www.conventionalcommits.org/). **Do not edit `CHANGELOG.md`.**
+2. `npm run release` / `release:hotfix` → `commit-and-tag-version` runs `.versionrc.json` hooks:
+   - **prerelease:** `sync-changelog.mjs` fills ## [Unreleased] from git since the latest `v*` tag
+   - **postbump:** `release-changelog.mjs` promotes that section to `## [x.y.z] (date)`
+3. Anytime: `npm run generate:patch-notes` writes player-facing `release-notes/UNRELEASED.md` (uses git via an in-memory sync; no need to commit changelog churn).
 
 ## Agent release flow
 

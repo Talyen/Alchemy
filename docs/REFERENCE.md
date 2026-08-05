@@ -17,7 +17,7 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 - **npm `>=11`** — authoritative in `package.json` `engines` (Node 24 bundles npm 11).
 - **Playwright:** `npx playwright install chromium` once before first `npm run test:e2e`.
 - **GitHub CLI (`gh`):** optional; PR/CI only when the user asks — do not run `gh auth login`. CI failures are easiest to read from check annotations and the job Step Summary (not the raw Vitest pass list).
-- **Git hooks:** lefthook `post-commit` changelog sync plus a fast `pre-push` gate — see [CONTRIBUTING.md](../CONTRIBUTING.md). The comprehensive local gate is `npm run check:push:full`; CI owns the full static, unit, build, and critical E2E checks.
+- **Git hooks:** lefthook `pre-commit` / `commit-msg` / fast `pre-push` — see [CONTRIBUTING.md](../CONTRIBUTING.md). Changelog updates happen at release only ([RELEASE.md](./RELEASE.md)). The comprehensive local gate is `npm run check:push:full`; CI owns the full static, unit, build, and critical E2E checks.
 - **Steam / ship gates:** [RELEASE.md](./RELEASE.md) — `check:ship`, `check:ship:full`, tag-triggered `release.yml`.
 - **Balance sim env vars:** `ALCHEMY_BALANCE_ITERATIONS`, `ALCHEMY_BALANCE_POLICY` (`random-playable`, `greedy-damage`, `defensive-random`).
 
@@ -43,9 +43,8 @@ npm run check:push:full     # comprehensive check + @prepush E2E gate
 npm run check:ship          # lint:ci + ship unit tests + build:desktop:no-sync
 npm run check:ship:full     # check:ship + save E2E + Electron E2E
 npm run sync:version        # package.json → metadata.generated.ts
-npm run sync:changelog      # git log → CHANGELOG.md ## [Unreleased]
-npm run sync:changelog:check  # local drift check (CI uses changelog-sync.test.ts)
-npm run generate:patch-notes    # CHANGELOG → release-notes/UNRELEASED.md (or vX.Y.Z on tag)
+npm run sync:changelog      # optional / release prerelease: git log → CHANGELOG ## [Unreleased]
+npm run generate:patch-notes    # git/changelog → release-notes/UNRELEASED.md (or vX.Y.Z on tag)
 npm run dist:desktop        # electron-builder per steam/platforms.json
 npm run test:e2e:prepush    # Fast @prepush subset (pre-push hook)
 npm run test:e2e:prepush:full  # @critical on preview (CI e2e job)

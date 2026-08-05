@@ -1,8 +1,10 @@
 // Rebuilds CHANGELOG.md ## [Unreleased] from git commits since the latest v* tag.
+// Used at release time (`.versionrc.json` prerelease) and for optional local preview.
+// Do not keep Unreleased in sync on every commit — git history is the day-to-day source of truth.
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getCommitsSinceTag, latestCommitHash, latestVersionTag } from "./lib/git-release.mjs";
+import { getCommitsSinceTag, latestVersionTag } from "./lib/git-release.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { buildChangelogUnreleased, replaceChangelogUnreleased } from "./lib/patch-notes-core.mjs";
 
@@ -50,13 +52,6 @@ export function syncChangelog(options = {}) {
   }
 
   return synced;
-}
-
-export function changelogCommitSubject(rootDir = root) {
-  const lastTag = latestVersionTag(rootDir);
-  const commits = getCommitsSinceTag(rootDir, lastTag).filter((commit) => !isSyncCommitSubject(commit.subject));
-  const hash = latestCommitHash(rootDir);
-  return `chore(changelog): sync unreleased (${commits.length} commits, ${hash})`;
 }
 
 if (isMainModule(import.meta.url)) {

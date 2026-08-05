@@ -32,7 +32,7 @@ For non-trivial work, find and read only the docs that match the task; prefer sp
 ## Verification
 
 - Prefer an E2E-verifiable user flow when possible, with focused tests for implementation detail.
-- Verify with the path-scoped gates for the touched area in [CONTRIBUTING.md § What to run when you change…](./CONTRIBUTING.md#what-to-run-when-you-change). Full pre-push, main-gate, and changelog rules live in [CONTRIBUTING.md § Before you push](./CONTRIBUTING.md#before-you-push).
+- Verify with the path-scoped gates for the touched area in [CONTRIBUTING.md § What to run when you change…](./CONTRIBUTING.md#what-to-run-when-you-change). Full pre-push and main-gate rules live in [CONTRIBUTING.md § Before you push](./CONTRIBUTING.md#before-you-push).
 - Treat lint failures, test failures, flaky tests, and React Compiler ESLint errors (`react-compiler/react-compiler`) as real quality problems, not noise.
 - Animation and canary specs use raw `@playwright/test`; never `enableFastMode` / `fastBattle`. See [CONTRIBUTING.md § E2E helpers](./CONTRIBUTING.md#e2e-helpers).
 
@@ -40,8 +40,9 @@ For non-trivial work, find and read only the docs that match the task; prefer sp
 
 - Trunk-based. When the user explicitly asks for a commit, commit directly to `main`; do not create PR or feature branches unless asked.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `type(scope): description`.
-- Type → audience mapping: player-facing patch notes get `feat`, `fix`, `balance`, `perf`. Dev-only (`CHANGELOG.md`) get `refactor`, `test`, `chore`, `ci`, `build`, `docs`, `style`.
-- Hooks, commitlint, and changelog / patch-note rules: [CONTRIBUTING.md § Changelog and patch notes](./CONTRIBUTING.md#changelog-and-patch-notes) and [Before you push](./CONTRIBUTING.md#before-you-push).
+- Type → audience mapping: player-facing patch notes get `feat`, `fix`, `balance`, `perf`. Dev-only entries get `refactor`, `test`, `chore`, `ci`, `build`, `docs`, `style`.
+- **Do not edit `CHANGELOG.md`.** It is updated only at release from git history. See [CONTRIBUTING.md § Changelog and patch notes](./CONTRIBUTING.md#changelog-and-patch-notes).
+- Hooks, commitlint, and patch-note rules: [CONTRIBUTING.md § Changelog and patch notes](./CONTRIBUTING.md#changelog-and-patch-notes) and [Before you push](./CONTRIBUTING.md#before-you-push).
 
 ## Architectural invariants
 
