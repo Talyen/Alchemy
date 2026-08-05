@@ -1,6 +1,6 @@
 /** User Timing mark names for battle end-turn profiling (app + perf harness). */
 
-export const BATTLE_STAGE_MARK_PREFIX = "alchemy:battle:";
+const BATTLE_STAGE_MARK_PREFIX = "alchemy:battle:";
 
 export type BattleStageMark =
   | "discard-start"
@@ -12,7 +12,7 @@ export type BattleStageMark =
   | "draw-start"
   | "draw-end";
 
-export function battleStageMarkName(stage: BattleStageMark): string {
+function battleStageMarkName(stage: BattleStageMark): string {
   return `${BATTLE_STAGE_MARK_PREFIX}${stage}`;
 }
 

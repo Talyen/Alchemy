@@ -129,7 +129,7 @@ Clip bounds are `[data-testid="vr-stage"]` (fallback: `documentElement`), not th
 | Case                                                                                                 | Use                                                                                                                          |
 | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | Tall tooltips inside `overflow-hidden` scenes (battle enemies, armory gear/currency, bestiary tiles) | `PortaledTooltip` / `EnemyTooltip` / `GearTooltipPortal` — `createPortal` to `document.body` + `usePortaledTooltipPlacement` |
-| Smaller in-DOM hover panels that already opt into flip                                               | `useTooltipFlip`, `useTooltipViewportClamp`, or `useTooltipPlacementWithSideFallback` on `TooltipPanel`                      |
+| Smaller in-DOM hover panels that already opt into flip                                               | `useTooltipFlip`, `useTooltipViewportClamp`, or `useTooltipSidePlacement` on `TooltipPanel`                                  |
 | Tiny labels that never near an edge                                                                  | Plain `TooltipPanel` without measurement hooks                                                                               |
 
 Placement helpers live in `src/features/alchemy/shared/ui/portaled-tooltip-placement.ts` and `tooltip-panel.tsx`.
