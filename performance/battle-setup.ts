@@ -10,7 +10,9 @@ import {
 } from "./battle-art-diagnostics";
 import { PERF_ASPECT_RATIO } from "./viewport";
 
-type PerfDeckCard = { id: string };
+interface PerfDeckCard {
+  id: string;
+}
 
 type PerfLandedScreen = "battle" | "destination" | "rewards" | "";
 

@@ -425,6 +425,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(perf): use interface for PerfDeckCard lint consistency
 - fix(armory): use fixed rem cells so inventory tiles stay visible
   Container-query cell sizing collapsed to 0 with content-sized flex
   ancestors; switch to rem and tighten TypeScript in perf harness and tests.
