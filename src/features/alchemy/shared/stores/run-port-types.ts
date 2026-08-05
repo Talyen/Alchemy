@@ -61,12 +61,6 @@ export interface WildwoodRunPort {
   updateRunDeck: (value: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
 }
 
-/** Corruption flow only needs the run deck reader/writer. */
-export interface CorruptionRunPort {
-  runDeck: BattleCard[];
-  updateRunDeck: (value: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
-}
-
 /** Unified capability port for run-flow navigation, content systems, and destination choices. */
 export interface RunFlowEnginePort {
   contentSystemType: ContentSystemId;
