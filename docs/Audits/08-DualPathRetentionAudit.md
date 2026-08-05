@@ -1,4 +1,4 @@
-# Dual-Path & Compatibility Retention Audit
+# 08. Dual-Path & Compatibility Retention Audit
 
 **Goal:** Delete confirmed parallel live implementations, migration shims past their window, and “keep both” leftovers that still compile and remain reachable — the over-engineering that is neither unused nor single-path ceremony.
 
@@ -19,16 +19,16 @@ Confirm two reachable paths for one behavior (or a reachable shim that only forw
 | Permanent feature-flag or build-time switch that still ships both implementations of one behavior indefinitely    | Loser path has no remaining distinct consumer — temporary rollout flags with an open window are not findings |
 | Parallel configuration, command, event, adapter, selector, or test-harness paths select the same product behavior | The alternate route keeps implementation and verification policy duplicated                                  |
 
-**Not this audit:** zero live consumers → `DeadCodeAudit.md`; single intentional entry that is noun theater / ceremony with no second product path → `InelegantSlopAudit.md`; wrong owner (with or without a twin) → `StateGravityOwnershipAudit.md` (move, then delete the old path); duplicate product screens / shells → `DuplicateFeatureSurfaceAudit.md`; twin kept reachable only by test scaffolding → `UnitTestAudit.md` / `E2ETestQualityAudit.md` (this audit still owns product-reachable twins; retarget tests after delete); live mass / mixed jobs on a single path → `InelegantSlopAudit.md`; async races / effect lifetime → `AsyncRaceAudit.md`. Intentional dual seams are listed under Hard stops — leave them alone.
+**Not this audit:** zero live consumers → `05-DeadCodeAudit.md`; single intentional entry that is noun theater / ceremony with no second product path → `11-InelegantSlopAudit.md`; wrong owner (with or without a twin) → `14-StateGravityOwnershipAudit.md` (move, then delete the old path); duplicate product screens / shells → `09-DuplicateFeatureSurfaceAudit.md`; twin kept reachable only by test scaffolding → `17-UnitTestAudit.md` / `10-E2ETestQualityAudit.md` (this audit still owns product-reachable twins; retarget tests after delete); live mass / mixed jobs on a single path → `11-InelegantSlopAudit.md`; async races / effect lifetime → `01-AsyncRaceAudit.md`. Intentional dual seams are listed under Hard stops — leave them alone.
 
-**Shim vs Slop:** this audit owns a reachable twin or reachable no-op shim where callers can retarget to the real owner and delete the shim/name. `InelegantSlopAudit.md` owns a single intentional entry that is ceremony without a second product path to collapse.
+**Shim vs Slop:** this audit owns a reachable twin or reachable no-op shim where callers can retarget to the real owner and delete the shim/name. `11-InelegantSlopAudit.md` owns a single intentional entry that is ceremony without a second product path to collapse.
 
 ## Hard stops
 
 - Do not collapse intentional dual seams listed in [ARCHITECTURE.md](../ARCHITECTURE.md) or sibling audits (battle RNG injection, persistence write coalescing, options/display prefs vs the versioned player-save envelope, authored catalogs vs `assets.generated.ts` / `metadata.generated.ts`, Vite web vs Electron desktop entries, facade-only feature access to run domain).
 - Do not delete a migration path while save, resume, or legacy-fixture clients still require the old shape — confirm the consumer window is closed first (`MIGRATIONS.md`, `tests/fixtures/legacy-saves.ts`, migration contract/guard tests). Deprecation comments or “enough time has passed” alone do not close a window.
 - Do not rewrite battle pipeline math or save wire format under this audit; prove equivalence via existing `src/lib` / storage owners when a dual rule path is confirmed.
-- Do not demote or delete barrel / knip-allowlisted exports that are intentional cross-folder contracts without the same consumer inventory `DeadCodeAudit.md` requires.
+- Do not demote or delete barrel / knip-allowlisted exports that are intentional cross-folder contracts without the same consumer inventory `05-DeadCodeAudit.md` requires.
 - Prefer the owning audit when the hit is primarily unused, ceremony-only (no twin), ownership drift (with or without a twin), duplicate UI, test-portfolio fit, authored mass on a single path, or async isolation.
 
 ## Evidence bar
@@ -42,7 +42,7 @@ Plus a delete-one-path remedy that preserves behavior. Speculative “might need
 
 For migration / legacy-bridge tells, also confirm the consumer window is closed: repository-supported save/version policy plus inventory shows no remaining save / resume / schema / fixture consumer of the old shape, or persistence docs mark the bridge obsolete. External telemetry is not implicitly required when repository policy defines the supported window. Speculative “enough time has passed” is not evidence.
 
-`DeadCodeAudit.md` owns symbols with **zero** live consumers. This audit owns reachable twins or reachable no-op shims.
+`05-DeadCodeAudit.md` owns symbols with **zero** live consumers. This audit owns reachable twins or reachable no-op shims.
 
 ## Remedy preference
 
@@ -56,7 +56,7 @@ When neither path is marked deprecated, choose the survivor in this order:
 2. Path with unique behavior over a pure forwarder
 3. Newer entry only after those; call-site count is a last tie-break, not ownership
 
-Correct owner with leftover twin / shim → this audit; wrong owner with leftover twin → `StateGravityOwnershipAudit.md`.
+Correct owner with leftover twin / shim → this audit; wrong owner with leftover twin → `14-StateGravityOwnershipAudit.md`.
 
 Successful fixes leave a single owner for the behavior and a net surface reduction.
 

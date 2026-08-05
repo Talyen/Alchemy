@@ -1,4 +1,4 @@
-# Unsafe Escape Audit
+# 15. Unsafe Escape Audit
 
 **Goal:** Remove confirmed unsafe typing escapes and dishonest type models without replacing valid invariants with vague fallbacks.
 
@@ -11,7 +11,7 @@ Find unsafe escapes, unsound generics, broad records, non-exhaustive unions, opt
 - Do not add net-new `eslint-disable` / `@ts-expect-error` without a minimal line-scoped reason.
 - Do not chase every `\bany\b` or every `!` — triage by risk and diagnostics.
 - Keep Zod/validation at save/load boundaries; do not replace boundary validation with scattered casts.
-- Casts on save paths: this audit owns the typing escape; silent failure / corrupt-save behavior belongs to `BehaviorHardeningAudit.md`.
+- Casts on save paths: this audit owns the typing escape; silent failure / corrupt-save behavior belongs to `02-BehaviorHardeningAudit.md`.
 - Do not improve static appearance by widening types, adding optional properties, or inserting runtime fallbacks that make an invalid state easier to represent.
 
 ## Triage

@@ -1,4 +1,4 @@
-# Behavior Hardening Audit
+# 02. Behavior Hardening Audit
 
 **Goal:** Strengthen confirmed correctness gaps at persistence, recovery, external-data, and player-state transition boundaries.
 
@@ -9,8 +9,8 @@ Inventory confirmed boundary or transition issues and fix them through the compl
 ## Hard stops
 
 - Do not run unrelated full-repo async-race or type-safety sweeps here. Include a companion race or type-model fix when it is necessary to make the same boundary invariant safe, and report its sibling classification.
-- Audio playback handling belongs to `SideEffectSurfaceAudit.md`.
-- Lifetime / cancellation / IPC sequencing bugs belong in `AsyncRaceAudit.md`; this audit owns idempotency of transitions and silent persistence failures.
+- Audio playback handling belongs to `13-SideEffectSurfaceAudit.md`.
+- Lifetime / cancellation / IPC sequencing bugs belong in `01-AsyncRaceAudit.md`; this audit owns idempotency of transitions and silent persistence failures.
 
 ## Triage
 

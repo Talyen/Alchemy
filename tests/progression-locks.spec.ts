@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures/e2e";
 import { enableFastMode, injectHomestead } from "./helpers";
 import { critical } from "./playwright-tags";
 

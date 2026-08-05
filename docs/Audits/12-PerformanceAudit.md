@@ -1,4 +1,4 @@
-# Performance Audit
+# 12. Performance Audit
 
 **Goal:** Fix confirmed runtime and payload performance problems — startup, input latency, render churn, frame cost, memory/allocation pressure, synchronous persistence work, background CPU, and bundle/asset weight — without speculative optimization or degrading intentional spectacle.
 
@@ -18,14 +18,14 @@ Confirm a performance cost with evidence (profiler trace, React Compiler diagnos
 ## Domain rules
 
 - **Render churn:** hot components (battle board, hand, large grids like compendium/armory) should not re-render wholesale on unrelated store writes. Prefer narrow Zustand selectors over whole-store subscriptions; confirm churn with the profiler, not by reading code alone.
-- **Effects:** expensive work re-firing from unstable effect dependencies is a finding when traced; pure lifetime/cancellation bugs → `AsyncRaceAudit.md`.
+- **Effects:** expensive work re-firing from unstable effect dependencies is a finding when traced; pure lifetime/cancellation bugs → `01-AsyncRaceAudit.md`.
 - **Frame cost:** confirm dropped frames or long tasks in a Performance trace during battle/motion before optimizing; keep gesture-driven motion at 1:1 tracking.
 - **Payload:** compare `npm run build` output sizes against the previous run; investigate large regressions to their source (new dependency, unoptimized asset, accidental import of a heavy module into a light path).
 - **Startup and interaction latency:** profile boot/hydration, route entry, large-grid interaction, save/resume, and input-to-feedback latency when users wait or input is blocked.
 - **Memory and allocation:** confirm retained listeners/data, unbounded collections, repeated large allocations, or asset/object churn with heap/allocation evidence.
 - **Synchronous work:** repeated parsing, sorting, cloning, validation, or storage access on render/input/transition paths is a finding when the scenario shows material blocking cost.
 - **Background work:** timers, observers, effects, or hidden views should not consume sustained CPU without user-visible purpose.
-- **Decorative randomness / cosmetic state:** re-rolls per render are owned by `SideEffectSurfaceAudit.md`; take them here only when the profiler shows real render cost.
+- **Decorative randomness / cosmetic state:** re-rolls per render are owned by `13-SideEffectSurfaceAudit.md`; take them here only when the profiler shows real render cost.
 
 ## Known signals
 

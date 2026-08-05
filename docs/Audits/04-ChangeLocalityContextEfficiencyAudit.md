@@ -1,4 +1,4 @@
-# Change Locality & Context Efficiency Audit
+# 04. Change Locality & Context Efficiency Audit
 
 **Goal:** Reduce maintenance and agent-context cost by finding recurring changes that require more authored edits, unrelated context, verification, or output than the behavior warrants.
 
@@ -26,7 +26,7 @@ This audit owns two distinct concerns; a run may scope to either.
 | A local path forces unrelated docs/scripts into the working set                          | Routine work pays avoidable reading or execution cost  |
 | Routine successful commands emit repetitive output, or failures require opening raw logs | Useful signal is buried in avoidable tool output       |
 
-**Not this audit:** import legality → ESLint boundaries; wrong semantic ownership → `StateGravityOwnershipAudit.md`; local ceremony or file/folder mass without recurring co-touch → `InelegantSlopAudit.md`; duplicate UI → `DuplicateFeatureSurfaceAudit.md`; unit/E2E portfolio → `UnitTestAudit.md` / `E2ETestQualityAudit.md`; reachable dual paths / shims → `DualPathRetentionAudit.md`. Single-use export cleanup without fan-out evidence → `DeadCodeAudit.md`.
+**Not this audit:** import legality → ESLint boundaries; wrong semantic ownership → `14-StateGravityOwnershipAudit.md`; local ceremony or file/folder mass without recurring co-touch → `11-InelegantSlopAudit.md`; duplicate UI → `09-DuplicateFeatureSurfaceAudit.md`; unit/E2E portfolio → `17-UnitTestAudit.md` / `10-E2ETestQualityAudit.md`; reachable dual paths / shims → `08-DualPathRetentionAudit.md`. Single-use export cleanup without fan-out evidence → `05-DeadCodeAudit.md`.
 
 ## Hard stops
 
@@ -60,7 +60,7 @@ Optional discovery aids — choose your own probes. See also the [measurable swe
 - **Change amplification:** `node scripts/audit-change-amplification.mjs` (defaults `--since=3 months ago`, subjects matching `^feat|^fix|^balance`). Empty stats usually mean the since-window or subject filters matched nothing. On repeat runs, prefer `--since` the last dispositioned audit pass over the fixed default, and skip clusters already recorded in [decisions.md](decisions.md).
 - **Authored co-change clusters:** capped history samples excluding `dist/`, assets, and generated files; confirm in diffs.
 - **Repeated policy and commands:** duplicated rules, versions, flags, or command sequences across `AGENTS.md`, `docs/`, `CONTRIBUTING.md`, and `scripts/` that can link to one owner.
-- **Non-local review surface:** frequently changed authored owners whose diffs repeatedly require unrelated sections; route genuine ownership drift to `StateGravityOwnershipAudit.md`.
+- **Non-local review surface:** frequently changed authored owners whose diffs repeatedly require unrelated sections; route genuine ownership drift to `14-StateGravityOwnershipAudit.md`.
 - **Single-use abstractions forcing fan-out:** `npm run audit:single-use` as a supporting signal (not sole evidence).
 - **Test/fixture amplification:** one behavior change requires avoidable updates across parallel fixtures, test harnesses, or tier-specific setup.
 - **Generated-source ambiguity:** agents must inspect or edit both authored inputs and generated products because ownership or regeneration guidance is unclear.

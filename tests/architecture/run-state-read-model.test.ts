@@ -124,7 +124,7 @@ describe("run-state read model", () => {
   });
 
   it("splits run navigation into concern hooks rather than inlining factories", () => {
-    const nav = read("src/features/alchemy/shell/use-run-navigation.ts");
+    const nav = read("src/features/alchemy/shell/use-run-flow-engine.ts");
     expect(nav).toContain("useRunDestinationWiring");
     expect(nav).toContain("useContentSystemNavigation");
     expect(nav).toContain("useRunFlowHandlers");
@@ -176,7 +176,7 @@ describe("run-state read model", () => {
     const executor = read("src/features/alchemy/shell/create-run-flow-intent-executor.ts");
     expect(executor).toContain("export function createRunFlowIntentExecutor");
 
-    const nav = read("src/features/alchemy/shell/use-run-navigation.ts");
+    const nav = read("src/features/alchemy/shell/use-run-flow-engine.ts");
     expect(nav).toContain("createRunFlowIntentExecutor");
     expect(nav).toContain("dispatch");
   });

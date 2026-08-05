@@ -1,4 +1,4 @@
-# UI Interaction & Feedback Audit
+# 16. UI Interaction & Feedback Audit
 
 **Goal:** Find confirmed interaction and feedback defects desktop players feel but static types miss — broken clicks, drag ghosts, stuck modes, missing feedback, keyboard gaps.
 
@@ -12,9 +12,9 @@ This audit checks interactive clarity for a desktop web/Electron game, including
 
 ## Hard stops
 
-- Do not restyle unrelated chrome or expand into token/typography migrations (`DesignSystemConsistencyAudit.md` owns those).
+- Do not restyle unrelated chrome or expand into token/typography migrations (`06-DesignSystemConsistencyAudit.md` owns those).
 - Do not expand a selected-flow family into an unfocused full-app manual pass; skip unavailable Electron checks without failing the audit. Explicit full audits still require representative coverage across the major families.
-- Do not expand into Playwright rewrites (`E2ETestQualityAudit.md` owns those).
+- Do not expand into Playwright rewrites (`10-E2ETestQualityAudit.md` owns those).
 - Do not turn `data-testid` churn into an a11y project — only change ids when interaction or E2E stability is blocked.
 
 ## Domain rules

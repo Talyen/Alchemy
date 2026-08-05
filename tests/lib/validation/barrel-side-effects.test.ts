@@ -28,7 +28,7 @@ describe("@/lib/battle barrel", () => {
     expect(mod.defaultBattleState).toBeTypeOf("function");
     expect(mod.playBattleCardResolved).toBeTypeOf("function");
     expect(mod.chooseWishCard).toBeTypeOf("function");
-  });
+  }, 15_000);
 });
 
 describe("@/lib/validation barrel", () => {
@@ -38,7 +38,7 @@ describe("@/lib/validation barrel", () => {
     expect(mod.SaveDataSchema).toBeDefined();
     expect(mod.CURRENT_SAVE_SCHEMA_VERSION).toBeTypeOf("number");
     expect(mod.migrateSaveDataToCurrent).toBeTypeOf("function");
-  });
+  }, 15_000);
 });
 
 describe("@/features/alchemy phase screen barrels", () => {

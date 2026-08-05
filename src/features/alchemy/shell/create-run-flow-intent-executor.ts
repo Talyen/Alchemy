@@ -1,28 +1,19 @@
 // Executes RunFlowIntent against shell-owned navigation / battle / shop / content controllers.
-import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
+import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import type { ScreenTransitionOptions } from "./use-screen-transitions";
-import type { VictoryRewardsResult } from "@/features/alchemy/run-loop/navigation/victory-flow";
 import type { RunFlowDispatch, RunFlowIntent } from "@/features/alchemy/run-loop/run/run-flow-intents";
 import type { Screen } from "@/features/alchemy/shared/types";
+import type { BattleLauncherDeps, LabyrinthNavOps, MysteryNavOps, ShopNavOps, WildwoodNavOps } from "./shell-types";
 
 export interface RunFlowIntentExecutorDeps {
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
   transition: (nextScreen: Screen, options?: ScreenTransitionOptions) => void;
-  onLabyrinthFailNode: () => void;
-  onLabyrinthClearNode: () => void;
-  onInitShop: () => void;
-  onInitAlchemist: () => void;
-  onInitTrinketShop: () => void;
-  onInitEquipmentShop: () => void;
-  onStartBattle: (deck?: BattleCard[], gold?: number, enemyType?: "normal" | "elite") => void;
-  onStartBossBattle: () => void;
-  onStartBossById: (bossId: string, modifiers?: DifficultyModifier[]) => boolean;
+  labyrinth?: LabyrinthNavOps;
+  shop?: ShopNavOps;
+  battle?: BattleLauncherDeps;
+  wildwood?: WildwoodNavOps;
+  mystery?: MysteryNavOps;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
-  onCommitWildwoodVictory: (result: VictoryRewardsResult) => void;
-  beginMysteryEvent: (onRenderedScreenCommit?: () => void) => void;
-  clearMysteryCardChoices: () => void;
-  onWildwoodRewardComplete: (onRenderedScreenCommit?: () => void) => void;
-  onSelectRewardChoice?: (id: string) => void;
 }
 
 export function createRunFlowIntentExecutor(deps: RunFlowIntentExecutorDeps): RunFlowDispatch {
@@ -39,47 +30,47 @@ export function createRunFlowIntentExecutor(deps: RunFlowIntentExecutorDeps): Ru
         deps.transition(intent.screen, intent.options);
         return;
       case "labyrinth-fail-node":
-        deps.onLabyrinthFailNode();
+        deps.labyrinth?.onLabyrinthFailNode();
         return;
       case "labyrinth-clear-node":
-        deps.onLabyrinthClearNode();
+        deps.labyrinth?.onLabyrinthClearNode();
         return;
       case "init-shop":
-        deps.onInitShop();
+        deps.shop?.onInitShop();
         return;
       case "init-alchemist":
-        deps.onInitAlchemist();
+        deps.shop?.onInitAlchemist();
         return;
       case "init-trinket-shop":
-        deps.onInitTrinketShop();
+        deps.shop?.onInitTrinketShop();
         return;
       case "init-equipment-shop":
-        deps.onInitEquipmentShop();
+        deps.shop?.onInitEquipmentShop();
         return;
       case "start-battle":
-        deps.onStartBattle(intent.deck, intent.gold, intent.enemyType);
+        deps.battle?.onStartBattle(intent.deck, intent.gold, intent.enemyType);
         return;
       case "start-boss":
-        if (intent.bossId && deps.onStartBossById(intent.bossId, intent.modifiers)) return;
-        deps.onStartBossBattle();
+        if (intent.bossId && deps.battle?.onStartBossById(intent.bossId, intent.modifiers)) return;
+        deps.battle?.onStartBossBattle();
         return;
       case "mark-difficulty-completed":
         deps.onMarkDifficultyCompleted(intent.characterId, intent.difficultyId);
         return;
       case "commit-wildwood-victory":
-        deps.onCommitWildwoodVictory(intent.result);
+        deps.wildwood?.onCommitWildwoodVictory(intent.result);
         return;
       case "begin-mystery-event":
-        deps.beginMysteryEvent(intent.onRenderedScreenCommit);
+        deps.mystery?.beginMysteryEvent(intent.onRenderedScreenCommit);
         return;
       case "clear-mystery-card-choices":
-        deps.clearMysteryCardChoices();
+        deps.mystery?.clearMysteryCardChoices();
         return;
       case "wildwood-reward-complete":
-        deps.onWildwoodRewardComplete(intent.onRenderedScreenCommit);
+        deps.wildwood?.onWildwoodRewardComplete(intent.onRenderedScreenCommit);
         return;
       case "select-reward-choice":
-        deps.onSelectRewardChoice?.(intent.id);
+        deps.wildwood?.onSelectRewardChoice?.(intent.id);
         return;
       default: {
         const _exhaustive: never = intent;

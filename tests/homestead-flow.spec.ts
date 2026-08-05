@@ -1,4 +1,5 @@
-import { expect, test, type Locator } from "@playwright/test";
+import type { Locator } from "@playwright/test";
+import { expect, test } from "./fixtures/e2e";
 import { HomesteadPage } from "./pages/homestead-page";
 
 test.describe("Homestead Flow", () => {

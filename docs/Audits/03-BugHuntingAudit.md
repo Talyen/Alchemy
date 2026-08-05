@@ -1,4 +1,4 @@
-# Strategic Bug Hunting Audit
+# 03. Strategic Bug Hunting Audit
 
 **Goal:** Find and fix real defects — opportunistic hunt, not a sibling-audit re-run.
 
@@ -8,7 +8,7 @@ Confirm candidate defects and fix them. A pass with no confirmed defect is succe
 
 **Default discovery mode:** start with recent changes, then inspect one rotating high-risk subsystem or invariant family. Review commits since the last pass (`git log`/`git diff` on authored paths) for defects introduced or exposed by recent work, follow confirmed candidates through their causal neighborhoods, and perform a deeper slice such as persistence/resume, battle transitions, reward/shop mutation, routing, or desktop lifecycle. Whole-repo signal greps remain a secondary, periodic mode.
 
-This is an **opportunistic defect hunt**. When a hit is clearly classified by a sibling (idempotency → `BehaviorHardeningAudit.md`, lifetime/IPC → `AsyncRaceAudit.md`, unused API → `DeadCodeAudit.md`), do not duplicate that sibling's unrelated full pass. A connected defect may still be fixed here under the companion-finding policy in [README.md](README.md).
+This is an **opportunistic defect hunt**. When a hit is clearly classified by a sibling (idempotency → `02-BehaviorHardeningAudit.md`, lifetime/IPC → `01-AsyncRaceAudit.md`, unused API → `05-DeadCodeAudit.md`), do not duplicate that sibling's unrelated full pass. A connected defect may still be fixed here under the companion-finding policy in [README.md](README.md).
 
 ## Hard stops
 
@@ -24,25 +24,25 @@ This is an **opportunistic defect hunt**. When a hit is clearly classified by a 
 
 ## Severity
 
-| Sev | Criteria                                                 | Default disposition           |
-| --- | -------------------------------------------------------- | ----------------------------- |
-| P0  | Crash / data loss / double reward / save corruption      | Fix now                       |
-| P1  | Wrong battle/progress/UI state                           | Fix now                       |
-| P2  | Degraded UX (stuck spinner, missing dismiss, ghost drag) | Fix when confirmed and scoped |
-| P3  | Recoverable failure without appropriate diagnostics      | Fix only if trivial           |
-| P4  | Maintainability (orphaned state)                         | Defer to `DeadCodeAudit.md`   |
-| P5  | Async / effect lifetime risk                             | Defer to `AsyncRaceAudit.md`  |
+| Sev | Criteria                                                 | Default disposition             |
+| --- | -------------------------------------------------------- | ------------------------------- |
+| P0  | Crash / data loss / double reward / save corruption      | Fix now                         |
+| P1  | Wrong battle/progress/UI state                           | Fix now                         |
+| P2  | Degraded UX (stuck spinner, missing dismiss, ghost drag) | Fix when confirmed and scoped   |
+| P3  | Recoverable failure without appropriate diagnostics      | Fix only if trivial             |
+| P4  | Maintainability (orphaned state)                         | Defer to `05-DeadCodeAudit.md`  |
+| P5  | Async / effect lifetime risk                             | Defer to `01-AsyncRaceAudit.md` |
 
 ## Known signals
 
 Optional discovery aids — choose your own probes.
 
 - **Collection bounds:** array index access in `src/lib/battle`, `src/lib/gear`, and stores without length/empty guards.
-- **Rapid tap & double-trigger:** `onClick` / pointer handlers for reward claim, shop buy, craft, start battle that lack disable/`isProcessing` guards during async work — if the gap is pure idempotency of grants, prefer `BehaviorHardeningAudit.md`.
-- **Leaked timers & listeners:** `setInterval` / `setTimeout` / `addEventListener` without matching clear/remove on unmount (`useEffect` cleanup) — route lifetime issues to `AsyncRaceAudit.md` when that is the bulk of the win.
+- **Rapid tap & double-trigger:** `onClick` / pointer handlers for reward claim, shop buy, craft, start battle that lack disable/`isProcessing` guards during async work — if the gap is pure idempotency of grants, prefer `02-BehaviorHardeningAudit.md`.
+- **Leaked timers & listeners:** `setInterval` / `setTimeout` / `addEventListener` without matching clear/remove on unmount (`useEffect` cleanup) — route lifetime issues to `01-AsyncRaceAudit.md` when that is the bulk of the win.
 - **Arithmetic underflow:** unchecked `gold - cost`, `hp - damage` paths that can leave negative progress values without `Math.max(0, …)`.
 - **Swallowed errors on orchestration:** empty `catch` on save, resume, battle end, or navigation transitions (allow non-fatal audio).
-- **Stale async completion:** `await` after unmount that still calls `setState` / store writes — route to `AsyncRaceAudit.md` when that is the bulk of the win.
+- **Stale async completion:** `await` after unmount that still calls `setState` / store writes — route to `01-AsyncRaceAudit.md` when that is the bulk of the win.
 - **State-machine invariants:** impossible or stuck combinations across navigation, targeting, rewards, shops, victory/defeat, and resume.
 - **Round-trip divergence:** save → reload, serialize → parse, or web → Electron behavior does not preserve the same valid state.
 - **Boundary values:** empty catalogs/decks, maximum upgrades, exhausted options, missing route targets, or stale identifiers violate assumptions.

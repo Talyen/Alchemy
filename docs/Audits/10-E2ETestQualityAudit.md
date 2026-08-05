@@ -1,4 +1,4 @@
-# E2E Test Reliability & Signal Audit
+# 10. E2E Test Reliability & Signal Audit
 
 **Goal:** Improve Playwright reliability, diagnostic signal, portfolio coverage, isolation, and tier fit without weakening product behavior coverage.
 
@@ -13,7 +13,7 @@ Prefer CI run history and `npm run test:e2e:audit` timing/flake reports as prima
 ## Hard stops
 
 - Do not invent wall-clock budgets that conflict with CONTRIBUTING / lefthook tiers.
-- Do not expand into unit-test portfolio cleanup (`UnitTestAudit.md`).
+- Do not expand into unit-test portfolio cleanup (`17-UnitTestAudit.md`).
 - Do not add or rely on dev-only QA shortcuts (Skip Combat / Unlock All selectors). Prefer real combat/card helpers and flows documented in CONTRIBUTING.
 - Animation canaries must use raw `@playwright/test` — never `enableFastMode` / `fastBattle`.
 - Electron / desktop E2E is optional verification when available — do not fail the audit solely because Electron tooling is absent (see [README.md](README.md) toolchain limits).
@@ -44,7 +44,7 @@ Tier meaning and commands live in [CONTRIBUTING.md](../../CONTRIBUTING.md). Inte
 
 ## Domain rules
 
-Reuse existing page objects under `tests/pages/` and helpers under `tests/e2e/` / `tests/helpers.ts`; do not extract a new page object for one or two call sites. Product interaction defects belong in `UIInteractionFeedbackAudit.md`.
+Reuse existing page objects under `tests/pages/` and helpers under `tests/e2e/` / `tests/helpers.ts`; do not extract a new page object for one or two call sites. Product interaction defects belong in `16-UIInteractionFeedbackAudit.md`.
 
 **Allowed fixes:** delete duplicate journeys/assertions; add a missing shipping-critical journey; shorten excessive waits after deterministic bootstrap; move multi-step assertions from `@prepush` → `@critical` without retaining the prepush copy; replace text/index hunts with stable roles/test ids; repair cross-test isolation and fixture realism; improve failure diagnostics; reuse page objects consistently; remove QA-shortcut selectors.
 

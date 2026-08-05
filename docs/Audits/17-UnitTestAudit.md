@@ -1,4 +1,4 @@
-# Unit Test Portfolio Audit
+# 17. Unit Test Portfolio Audit
 
 **Goal:** Maximize unit-test portfolio trustworthiness and defect detection while controlling redundant LOC, expanded cases, runtime, and maintenance cost.
 
@@ -13,7 +13,7 @@ Confirm duplicate, weaker, implementation-detail, slow, over-expanded, nondeterm
 - Do not invent coverage % CI gates unless already configured. Coverage reports are discovery tools; prefer behavior-targeted tests over chasing line %.
 - Do not optimize declaration count alone: parameterized tables may hide more executed cases and runtime.
 - Preserve unique battle, persistence, migration, architecture-guard, and player-flow owners. Do not delete a failing journey merely to reduce the portfolio.
-- E2E portfolio and Playwright flake work belong in `E2ETestQualityAudit.md`.
+- E2E portfolio and Playwright flake work belong in `10-E2ETestQualityAudit.md`.
 - Do not preserve a low-value test merely to avoid net deletion, and do not reject a high-value missing test merely because the portfolio grows.
 
 ## Fix priority

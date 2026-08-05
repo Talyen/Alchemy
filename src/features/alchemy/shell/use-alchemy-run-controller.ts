@@ -84,8 +84,18 @@ export function useAlchemyRunController({
     setActiveLabyrinthRewardModifiers(modifiers);
   }, []);
 
-  const onBattleVictoryRef = useRef<() => void>(() => {});
-  const onBattleDefeatRef = useRef<() => void>(() => {});
+  const battleCompletionRef = useRef<{ onBattleVictory: () => void; onBattleDefeat: () => void }>({
+    onBattleVictory: () => {},
+    onBattleDefeat: () => {},
+  });
+
+  const battleCompletionOps = useMemo(
+    () => ({
+      onBattleVictory: () => battleCompletionRef.current.onBattleVictory(),
+      onBattleDefeat: () => battleCompletionRef.current.onBattleDefeat(),
+    }),
+    [],
+  );
 
   const battle = useBattleController({
     run: battleRun,
@@ -94,8 +104,8 @@ export function useAlchemyRunController({
     homesteadEffects,
     screen,
     setHoveredCardId,
-    onBattleVictory: () => onBattleVictoryRef.current(),
-    onBattleDefeat: () => onBattleDefeatRef.current(),
+    onBattleVictory: battleCompletionOps.onBattleVictory,
+    onBattleDefeat: battleCompletionOps.onBattleDefeat,
     rng: runRandom.world,
   });
 
@@ -107,27 +117,48 @@ export function useAlchemyRunController({
 
   const labyrinth = useLabyrinthController(screen, runRandom.world);
 
+  const battleLauncher = useMemo(
+    () => ({
+      onStartBattle: battle.startBattle,
+      onStartBossBattle: battle.startBossBattle,
+      onStartBossById: battle.startBossById,
+    }),
+    [battle.startBattle, battle.startBossBattle, battle.startBossById],
+  );
+
+  const labyrinthNavOps = useMemo(
+    () => ({
+      onLabyrinthClearNode: labyrinth.onNodeCleared,
+      onLabyrinthFailNode: labyrinth.onNodeFailed,
+    }),
+    [labyrinth.onNodeCleared, labyrinth.onNodeFailed],
+  );
+
+  const shopNavOps = useMemo(
+    () => ({
+      onInitShop: shop.initShop,
+      onInitAlchemist: shop.initAlchemist,
+      onInitTrinketShop: shop.initTrinketShop,
+      onInitEquipmentShop: shop.initEquipmentShop,
+    }),
+    [shop.initShop, shop.initAlchemist, shop.initTrinketShop, shop.initEquipmentShop],
+  );
+
   const nav = useRunNavigation({
     screen,
     navigateTo,
     transition,
     cancelPending,
-    onStartBattle: battle.startBattle,
-    onStartBossBattle: battle.startBossBattle,
-    onStartBossById: battle.startBossById,
-    onLabyrinthClearNode: labyrinth.onNodeCleared,
-    onLabyrinthFailNode: labyrinth.onNodeFailed,
-    onInitShop: shop.initShop,
-    onInitAlchemist: shop.initAlchemist,
-    onInitTrinketShop: shop.initTrinketShop,
-    onInitEquipmentShop: shop.initEquipmentShop,
+    battle: battleLauncher,
+    labyrinth: labyrinthNavOps,
+    shop: shopNavOps,
     onMarkDifficultyCompleted,
     randomSources: runRandom,
   });
 
   useLayoutEffect(() => {
-    onBattleVictoryRef.current = nav.handleBattleVictory;
-    onBattleDefeatRef.current = nav.handleBattleDefeat;
+    battleCompletionRef.current.onBattleVictory = nav.handleBattleVictory;
+    battleCompletionRef.current.onBattleDefeat = nav.handleBattleDefeat;
   });
 
   useSteamRichPresence(screen, nav.runPhase, characterId);

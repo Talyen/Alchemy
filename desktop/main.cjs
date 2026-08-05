@@ -134,42 +134,48 @@ function registerIpcHandlers() {
     return candidates;
   });
 
-  handleAuthorized("alchemy:write-save", async (data) => {
-    if (!isSavePayload(data)) return false;
-    try {
-      await fs.promises.mkdir(path.dirname(SAVE_FILE_PATH), { recursive: true });
-      const handle = await fs.promises.open(SAVE_TMP_PATH, "w");
+  let saveIpcQueue = Promise.resolve();
+
+  handleAuthorized("alchemy:write-save", (data) => {
+    if (!isSavePayload(data)) return Promise.resolve(false);
+    const writeTask = saveIpcQueue.then(async () => {
       try {
-        await handle.writeFile(data, "utf8");
-        await handle.datasync();
-      } finally {
-        await handle.close();
-      }
-      for (let index = SAVE_BAK_PATHS.length - 1; index >= 0; index -= 1) {
-        const to = SAVE_BAK_PATHS[index];
-        const from = index === 0 ? SAVE_FILE_PATH : SAVE_BAK_PATHS[index - 1];
+        await fs.promises.mkdir(path.dirname(SAVE_FILE_PATH), { recursive: true });
+        const handle = await fs.promises.open(SAVE_TMP_PATH, "w");
         try {
-          await fs.promises.access(from, fs.constants.F_OK);
-        } catch (error) {
-          if (error?.code === "ENOENT") continue;
-          throw error;
+          await handle.writeFile(data, "utf8");
+          await handle.datasync();
+        } finally {
+          await handle.close();
         }
-        if (index === SAVE_BAK_PATHS.length - 1) {
-          await fs.promises.unlink(to).catch((error) => {
-            if (error?.code !== "ENOENT") throw error;
-          });
+        for (let index = SAVE_BAK_PATHS.length - 1; index >= 0; index -= 1) {
+          const to = SAVE_BAK_PATHS[index];
+          const from = index === 0 ? SAVE_FILE_PATH : SAVE_BAK_PATHS[index - 1];
+          try {
+            await fs.promises.access(from, fs.constants.F_OK);
+          } catch (error) {
+            if (error?.code === "ENOENT") continue;
+            throw error;
+          }
+          if (index === SAVE_BAK_PATHS.length - 1) {
+            await fs.promises.unlink(to).catch((error) => {
+              if (error?.code !== "ENOENT") throw error;
+            });
+          }
+          await fs.promises.rename(from, to);
         }
-        await fs.promises.rename(from, to);
+        await fs.promises.rename(SAVE_TMP_PATH, SAVE_FILE_PATH);
+        return true;
+      } catch (error) {
+        await fs.promises.unlink(SAVE_TMP_PATH).catch((cleanupError) => {
+          if (cleanupError?.code !== "ENOENT") console.error("Error cleaning up temp save file:", cleanupError);
+        });
+        console.error("Error writing save file:", error);
+        return false;
       }
-      await fs.promises.rename(SAVE_TMP_PATH, SAVE_FILE_PATH);
-      return true;
-    } catch (error) {
-      await fs.promises.unlink(SAVE_TMP_PATH).catch((cleanupError) => {
-        if (cleanupError?.code !== "ENOENT") console.error("Error cleaning up temp save file:", cleanupError);
-      });
-      console.error("Error writing save file:", error);
-      return false;
-    }
+    });
+    saveIpcQueue = writeTask.catch(() => {});
+    return writeTask;
   });
 
   handleAuthorized("alchemy:clear-save", async () => {

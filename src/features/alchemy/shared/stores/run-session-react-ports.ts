@@ -40,6 +40,7 @@ import type {
   DestinationRunPort,
   RunFlowRunPort,
   RunFlowTalentPort,
+  RunFlowEnginePort,
   TalentCommandPort,
   WildwoodRunPort,
 } from "./run-port-types";
@@ -150,6 +151,49 @@ export function useCorruptionRunPort(): CorruptionRunPort {
       runDeck: state.run.activeRun.runDeck,
       updateRunDeck: setRunDeck,
     })),
+  );
+}
+
+export function useRunFlowEnginePort(): RunFlowEnginePort {
+  const talentEffects = useTalentEffects();
+  const talentXP = useGameplayStateStore((state) => state.runProfile.talentXP);
+  const activeRun = useGameplayStateStore(
+    useShallow((state) => ({
+      contentSystemType: state.run.activeRun.contentSystemType,
+      currentAct: state.run.activeRun.currentAct,
+      selectedDifficulty: state.run.activeRun.selectedDifficulty,
+      characterId: state.run.activeRun.characterId,
+      runPlayerHealth: state.run.activeRun.runPlayerHealth,
+      runMaxHealth: state.run.activeRun.runMaxHealth,
+      runGold: state.run.activeRun.runGold,
+      runDeck: state.run.activeRun.runDeck,
+      runTrinkets: state.run.activeRun.runTrinkets,
+      roomsEncountered: state.run.activeRun.roomsEncountered,
+      destinationIndexInAct: state.run.activeRun.destinationIndexInAct,
+      completedDestinations: state.run.activeRun.completedDestinations,
+      lastOfferedDestinations: state.run.activeRun.lastOfferedDestinations,
+      destinationRoundsSinceOffered: state.run.activeRun.destinationRoundsSinceOffered,
+    })),
+  );
+
+  return useMemo(
+    () => ({
+      ...activeRun,
+      talentXP,
+      talentEffects: {
+        campfireHealBonus: talentEffects.campfireHealBonus,
+        startGold: talentEffects.startGold,
+      },
+      updateCurrentAct: setCurrentAct,
+      updateDestinationIndexInAct: setDestinationIndexInAct,
+      updateCompletedDestinations: setCompletedDestinations,
+      updateRoomsEncountered: setRoomsEncountered,
+      updateRunDeck: setRunDeck,
+      updateRunTrinkets: setRunTrinkets,
+      updateRunPlayerHealth: setRunPlayerHealth,
+      updateDestinationOfferState: setDestinationOfferState,
+    }),
+    [activeRun, talentEffects, talentXP],
   );
 }
 

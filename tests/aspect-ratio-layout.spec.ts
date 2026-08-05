@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures/e2e";
 import { injectLabyrinthRun, makeCard, SAVE_KEY, startBattleWithDeck, startAtDestination } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 import { slow } from "./playwright-tags";

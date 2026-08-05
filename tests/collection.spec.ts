@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures/e2e";
 import { injectHomestead } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 import { critical, prepush } from "./playwright-tags";

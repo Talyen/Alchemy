@@ -1,10 +1,10 @@
-# Dead Code & API Surface Audit
+# 05. Dead Code & API Surface Audit
 
 **Goal:** Remove clearly obsolete authored surface — unused symbols/APIs, unreachable branches, exhausted flags, and orphaned registrations or support files — without deleting live entry points.
 
 ## Intent
 
-Identify confirmed obsolete authored surface and clean up the complete deletion cascade. A clean pass is valid. Prefer narrowing exports (module-private) when the API remains useful inside its folder. Once an owner is proven dead, follow callers, barrels, routes, styles, tests, docs, configuration, generated inputs, and assets that exist only for it. A successful fix must report authored LOC, declarations, files, branches, registrations, or exported API removed; moving the same surface is not dead-code reduction. Reachable twins / no-op shims with live callers belong to `DualPathRetentionAudit.md`. If the scope is large, phase the plan.
+Identify confirmed obsolete authored surface and clean up the complete deletion cascade. A clean pass is valid. Prefer narrowing exports (module-private) when the API remains useful inside its folder. Once an owner is proven dead, follow callers, barrels, routes, styles, tests, docs, configuration, generated inputs, and assets that exist only for it. A successful fix must report authored LOC, declarations, files, branches, registrations, or exported API removed; moving the same surface is not dead-code reduction. Reachable twins / no-op shims with live callers belong to `08-DualPathRetentionAudit.md`. If the scope is large, phase the plan.
 
 ## Hard stops
 
@@ -24,7 +24,7 @@ Identify confirmed obsolete authored surface and clean up the complete deletion 
 - Delete source only after reference, registration, generated-output, E2E, and barrel checks establish it is not an entry point.
 - Delete empty / fully commented-out test files; keep intentional cross-cutting suites.
 - Delete unreachable branches, exhausted temporary flags, unused union/event variants, unread store fields, orphaned styles, abandoned test helpers, and stale configuration only after their dynamic and compatibility consumers are disproven.
-- Inline single-use helpers when inlining reduces total LOC (ceremony-only single-use → also see `InelegantSlopAudit.md`).
+- Inline single-use helpers when inlining reduces total LOC (ceremony-only single-use → also see `11-InelegantSlopAudit.md`).
 - Read `knip.config.js` before treating an “unused” facade export as dead.
 - After deletions, run `npm run deadcode` to confirm the pass introduced no new hits (removals often orphan their own helpers).
 

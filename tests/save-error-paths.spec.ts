@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures/e2e";
 import { failOnRuntimeErrors, SAVE_KEY } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 import { critical } from "./playwright-tags";

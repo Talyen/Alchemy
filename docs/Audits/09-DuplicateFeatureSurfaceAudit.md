@@ -1,4 +1,4 @@
-# Duplicate Feature Surface Audit
+# 09. Duplicate Feature Surface Audit
 
 **Goal:** Collapse near-duplicate React product surfaces — copied screens, shells, modals, pickers, and summary grids — into one parameterized owner without inventing a new UI framework.
 
@@ -18,18 +18,22 @@ Duplicate surfaces look like parallel product screens that differ mainly by labe
 | Same modal / overlay scaffolding in 3+ files                 | Layout ownership belongs in one helper, not N call sites     |
 | Diverged twins that used to match                            | Copy-paste drift — bugs get fixed in one sibling only        |
 
-**Not this audit:** single-file ceremony or single-path authored mass → `InelegantSlopAudit.md`; raw spacing/color literals → `DesignSystemConsistencyAudit.md`; unused symbols → `DeadCodeAudit.md`; logic living in the wrong layer → `StateGravityOwnershipAudit.md`; retained parallel live implementations outside product UI → `DualPathRetentionAudit.md`.
+**Not this audit:** single-file ceremony or single-path authored mass → `11-InelegantSlopAudit.md`; raw spacing/color literals → `06-DesignSystemConsistencyAudit.md`; unused symbols → `05-DeadCodeAudit.md`; logic living in the wrong layer → `14-StateGravityOwnershipAudit.md`; retained parallel live implementations outside product UI → `08-DualPathRetentionAudit.md`.
 
 ## Hard stops
 
-- Do not force unrelated product flows into one component (e.g. battle hand vs collection grid) just because both show cards.
-- Do not move shared chrome into a feature folder when it already belongs in `shared/ui` or `src/components/ui`, or domain rules into screens.
-- Prefer the owning audit when the hit is primarily dead code, slop ceremony, token adoption, or state ownership.
-- Do not extract only a cosmetic fragment when the confirmed duplication is the complete screen-family state model; collapse the smallest complete repeated surface.
+- Do not introduce a generic "UI builder", dynamic form schema engine, or generic component registry to collapse two or three screens.
+- Do not move feature-specific code into `src/features/alchemy/shared/ui/` unless it is used by at least two distinct feature domains.
+- Do not flatten intentional variants that serve distinct product roles (e.g. reward card selection vs deck inventory viewer).
+
+## Evidence bar
+
+- **Two or more product UI surfaces** (components, screens, modal dialogs, drawers, control clusters) with near-identical markup, layout, state management, and interaction flow.
+- A single parameterized component or shared sub-component can replace the duplicates without introducing complex conditional branching (more than 2-3 simple props).
 
 ## Remedy preference
 
-Prefer delete the weaker twin when one path is strictly redundant, then parameterize in place under the existing feature folder. Move shared product UI into `src/features/alchemy/shared/ui/` when ≥2 feature folders need it. Adopt shared UI primitives / tokens for chrome duplication — route pure token work through `DesignSystemConsistencyAudit.md` when that is the whole fix. A bounded shared shell may ship when ownership and behavior are already established; propose only when the shell creates a new product model or architectural seam.
+Prefer delete the weaker twin when one path is strictly redundant, then parameterize in place under the existing feature folder. Move shared product UI into `src/features/alchemy/shared/ui/` when ≥2 feature folders need it. Adopt shared UI primitives / tokens for chrome duplication — route pure token work through `06-DesignSystemConsistencyAudit.md` when that is the whole fix. A bounded shared shell may ship when ownership and behavior are already established; propose only when the shell creates a new product model or architectural seam.
 
 ## Domain rules
 

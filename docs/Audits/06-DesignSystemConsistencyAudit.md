@@ -1,4 +1,4 @@
-# Design System Consistency Audit
+# 06. Design System Consistency Audit
 
 **Goal:** Find visual and interaction-state patterns that diverge from existing shared UI primitives, semantic roles, and design tokens, then migrate coherent surface families toward those owners without losing justified game UI.
 
@@ -46,7 +46,7 @@ Optional discovery aids — choose your own probes.
 - **Raw colors (TS/TSX):** hex / `rgb(` / `hsl(` bypassing CSS variables.
 - **Raw colors (CSS):** same patterns under `src/styles` / `src/index.css`.
 - **Parallel button/card markup:** custom button-looking `div`/`button` stacks beside existing `Button` / card primitives.
-- **Duplicated empty-state / panel chrome:** copy-pasted panel shells — if structural twins dominate, also consider `DuplicateFeatureSurfaceAudit.md`.
+- **Duplicated empty-state / panel chrome:** copy-pasted panel shells — if structural twins dominate, also consider `09-DuplicateFeatureSurfaceAudit.md`.
 - **Inline shadow/border recipes:** repeated one-off shadow stacks where a shared class exists.
 - **Semantic state drift:** parallel controls render focus, selected, disabled, loading, or error states with incompatible roles.
 - **Responsive and motion roles:** sibling surfaces use conflicting breakpoints, densities, easing, or durations where an established role exists.

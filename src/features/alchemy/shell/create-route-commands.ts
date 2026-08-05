@@ -199,4 +199,10 @@ export function createAlchemyRouteCommands(deps: AlchemyRouteCommandDeps) {
   };
 }
 
+export type MetaRouteCommands = ReturnType<typeof createMetaRouteCommands>;
+export type RunSetupRouteCommands = ReturnType<typeof createRunSetupRouteCommands>;
+export type RunLoopRouteCommands = ReturnType<typeof createRunLoopRouteCommands>;
+export type BattleRouteCommands = ReturnType<typeof createBattleRouteCommands>;
+export type RunEndRouteCommands = ReturnType<typeof createRunEndRouteCommands>;
+
 export type AlchemyRouteCommands = ReturnType<typeof createAlchemyRouteCommands>;

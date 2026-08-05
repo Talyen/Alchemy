@@ -1,4 +1,4 @@
-# Async & Race Audit
+# 01. Async & Race Audit
 
 **Goal:** Close confirmed async lifetime, ordering, concurrency, double-submit, and Electron IPC race risks — without converting APIs to async “for style.”
 
@@ -12,7 +12,7 @@ Investigate high-risk candidates and fix confirmed lifetime/race issues across t
 - Prefer cancellable `useEffect` cleanups and AbortSignals over fire-and-forget promises that write after unmount.
 - Do not relocate battle simulation into Workers unless Architecture already requires it.
 - React Strict Mode double-mount is expected in development — fix real duplicate side effects (double persist, double grant), not the Strict Mode behavior itself.
-- Double grant / double persist whose root cause is missing idempotency guards (not lifetime) → prefer `BehaviorHardeningAudit.md`.
+- Double grant / double persist whose root cause is missing idempotency guards (not lifetime) → prefer `02-BehaviorHardeningAudit.md`.
 - A companion idempotency fix may stay in this pass when it is part of the same overlapping operation and is required to make the race remedy complete.
 
 ## Severity
@@ -27,7 +27,7 @@ Investigate high-risk candidates and fix confirmed lifetime/race issues across t
 
 ## Domain rules
 
-**Safe patterns:** `useEffect` returns cleanup that clears timers, aborts fetches, and removes listeners; Zustand `subscribe` calls unsubscribe on teardown; disable primary actions while async work runs; Electron IPC handlers ignore stale or out-of-order replies for closed windows; overlapping saves and transitions serialize or reject stale completion; battle/run transitions are idempotent under re-entry (pair with `BehaviorHardeningAudit.md` when persistence is the bulk of the win).
+**Safe patterns:** `useEffect` returns cleanup that clears timers, aborts fetches, and removes listeners; Zustand `subscribe` calls unsubscribe on teardown; disable primary actions while async work runs; Electron IPC handlers ignore stale or out-of-order replies for closed windows; overlapping saves and transitions serialize or reject stale completion; battle/run transitions are idempotent under re-entry (pair with `02-BehaviorHardeningAudit.md` when persistence is the bulk of the win).
 
 Presence of `async` / `Promise` / IPC is not itself a defect — confirm lifetime, cancellation, and single-flight assumptions.
 

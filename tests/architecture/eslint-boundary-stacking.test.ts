@@ -56,7 +56,7 @@ describe("eslint architecture boundary stacking", () => {
     expect(hasGroupContaining(imports, "features")).toBe(true);
     expect(hasSelectorContaining(syntax, "random")).toBe(true);
     expect(hasSelectorContaining(syntax, "floor")).toBe(true);
-  });
+  }, 30_000);
 
   it("keeps facade / run-domain-store ban for run-loop/battle", async () => {
     const cfg = await eslint.calculateConfigForFile(

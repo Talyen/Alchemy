@@ -2,6 +2,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { test as base, expect } from "@playwright/test";
+export { expect } from "@playwright/test";
 import { enableFastMode } from "../e2e/battle-setup";
 import { failOnRuntimeErrors } from "../e2e/errors";
 
