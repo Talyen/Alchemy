@@ -18,8 +18,8 @@ import { runSessionTransaction } from "@/features/alchemy/shared/stores/run-sess
 
 beforeEach(() => {
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
-  useProfileStore.setState(useProfileStore.getInitialState(), true);
-  useGearStore.setState(useGearStore.getInitialState(), true);
+  useProfileStore.setState(useProfileStore.getInitialState());
+  useGearStore.setState(useGearStore.getInitialState());
   useRunProfileStore.setState(useRunProfileStore.getInitialState(), true);
 });
 
