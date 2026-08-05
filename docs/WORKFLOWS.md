@@ -42,7 +42,7 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 
 1. Decide if a schema bump is needed (transform required vs safe additive default).
 2. Increment `CURRENT_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts`.
-3. Add `migrateVNToVNPlus1` in `src/lib/validation/migration/steps.ts` (use nested helpers under `src/lib/validation/migration/` for `activeRun` / battle / wildwood renames).
+3. Add `migrateVNToVNPlus1` in `src/lib/validation/migration/steps.ts` or a topical `steps-*.ts` file (use nested helpers under `src/lib/validation/migration/` for `activeRun` / battle / wildwood / gear renames).
 4. Update Zod schemas in `src/lib/validation/save-schemas/`, storage defaults, and fixtures in `tests/fixtures/legacy-saves.ts`.
 5. CI enforces via `tests/architecture/save-migration-guard.test.ts`, `tests/architecture/save-migration-contract.test.ts`, and `npm run check:ship` — no manual release checklist.
 
@@ -67,7 +67,7 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 
 ## Grant materials during a run
 
-Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-session-write-port.ts`, implemented in `stores/ports/run-profile-write-port.ts`) so homestead inventory and `activeRun.runMaterialsEarned` stay aligned for the run-end summary.
+Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-session-write-port.ts`) so homestead inventory and `activeRun.runMaterialsEarned` stay aligned for the run-end summary.
 
 | Step                                                       | File(s)                                                                                                                                                                                             |
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

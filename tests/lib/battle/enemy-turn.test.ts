@@ -177,6 +177,20 @@ describe("legacy enemy-phase recovery", () => {
     expect(recovered.turnPhase).toBe("player");
     expect(recovered.hand.length).toBeGreaterThan(0);
   });
+
+  it("forces player phase even when player CC would re-enter enemy phase", () => {
+    const held = makeTestCard({ id: "held" });
+    const recovered = recoverLegacyEnemyPhase(
+      battleState({
+        turnPhase: "enemy",
+        hand: [],
+        deck: [held],
+        playerCC: defaultCcState({ stunSkipTurns: 2 }),
+      }),
+    );
+
+    expect(recovered.turnPhase).toBe("player");
+  });
 });
 
 describe("endPlayerTurn â€” tick order", () => {

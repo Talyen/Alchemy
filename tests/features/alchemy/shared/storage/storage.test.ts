@@ -420,8 +420,6 @@ describe("SaveDataSchema", () => {
     const migrated = migrateSaveDataToCurrent({ discoveredCardIds: ["slash"], materialInventory: { wood: 5 } });
 
     expect(migrated.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    expect(migrated.gameBuildVersion).toBe(CURRENT_GAME_BUILD_VERSION);
-    expect(migrated.contentVersion).toBe(CURRENT_CONTENT_VERSION);
     expect(migrated.discoveredCardIds).toEqual(["slash"]);
     expect(migrated.materialInventory).toEqual({ wood: 5 });
   });
@@ -429,7 +427,6 @@ describe("SaveDataSchema", () => {
   it("migrates legacy v2 saves to the current schema", () => {
     const migrated = migrateSaveDataToCurrent({ saveSchemaVersion: 2, discoveredCardIds: ["slash"] });
     expect(migrated.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    expect(migrated.finishedRunCharacters).toEqual([]);
   });
 
   it("fills all defaults for empty input", () => {
@@ -509,7 +506,7 @@ describe("SaveDataSchema", () => {
     });
 
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    expect(result.selectedAspectRatio).toBe("21:9");
+    expect(result.selectedAspectRatio).toBe("auto");
     expect(result.discoveredCardIds).toEqual(["slash", "future-card"]);
     expect(result.encounteredEnemyIds).toEqual(["goblin"]);
     expect(result.discoveredTrinketIds).toEqual(["bone-charm"]);

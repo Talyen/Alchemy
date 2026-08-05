@@ -88,7 +88,7 @@ describe("parseActiveRun", () => {
       }),
     );
     expect(result).not.toBeNull();
-    expect(result!.runDeck.length).toBe(7); // ranger default
+    expect(result!.runDeck.length).toBe(8);
   });
 
   it("hydrates saved cards with library data", () => {
@@ -114,7 +114,7 @@ describe("parseActiveRun", () => {
     expect(card.descriptionLines.length).toBeGreaterThan(0);
   });
 
-  it("uses class deck when runDeck is empty and run is unstarted", () => {
+  it("preserves empty runDeck array for unstarted run without deck synthesis", () => {
     const result = parseActiveRun(
       makeRunCandidate({
         runDeck: [],
@@ -125,7 +125,7 @@ describe("parseActiveRun", () => {
       }),
     );
     expect(result).not.toBeNull();
-    expect(result!.runDeck.length).toBe(7); // knight default
+    expect(result!.runDeck.length).toBe(0);
   });
 
   it("discards legacy wildwood runs without Wildwood Draft state", () => {

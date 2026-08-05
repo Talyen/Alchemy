@@ -14,7 +14,7 @@ import {
   getRunTransientStore,
   useRunProfileStore,
 } from "../../../../helpers/gameplay-store-test";
-import { runSessionTransaction } from "@/features/alchemy/shared/stores/run-session-transaction";
+import { runSessionTransaction } from "@/features/alchemy/shared/stores/run-session-command";
 
 beforeEach(() => {
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);

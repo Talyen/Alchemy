@@ -4,9 +4,8 @@
 // on raw Record<string, unknown> input before Zod schema parsing completes.
 // Depends on: game-data, game-constants.
 // Used by: save-schemas.ts (ActiveRunDataSchema.transform), tests.
-import { getStartingDeck, type CharacterId, type TalentXP } from "@/lib/game-data";
+import type { TalentXP } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import { LEGACY_STARTER_DECK_IDS } from "@/lib/game-constants";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 
@@ -17,44 +16,8 @@ function computeContentSystemType(data: Record<string, unknown>): ContentSystemI
   return "campaign";
 }
 
-function readNumber(data: Record<string, unknown>, key: string, fallback: number): number {
-  return typeof data[key] === "number" ? data[key] : fallback;
-}
-
-function readString(data: Record<string, unknown>, key: string, fallback: string): string {
-  return typeof data[key] === "string" ? data[key] : fallback;
-}
-
-function readStringArray(data: Record<string, unknown>, key: string): string[] {
-  return Array.isArray(data[key]) ? (data[key] as string[]) : [];
-}
-
-function isUnstartedRun(data: Record<string, unknown>): boolean {
-  return (
-    readNumber(data, "roomsEncountered", 0) === 0 &&
-    readNumber(data, "currentAct", 1) === 1 &&
-    readNumber(data, "destinationIndexInAct", 0) === 0 &&
-    readStringArray(data, "completedDestinations").length === 0
-  );
-}
-
-function isLegacyStarterDeck(runDeckArr: Array<{ id: string }>): boolean {
-  if (runDeckArr.length !== LEGACY_STARTER_DECK_IDS.length) return false;
-  const legacySet = new Set(LEGACY_STARTER_DECK_IDS);
-  return runDeckArr.every((card) => legacySet.has(card.id as (typeof LEGACY_STARTER_DECK_IDS)[number]));
-}
-
-function normalizeRunDeck(data: Record<string, unknown>, contentSystemType: ContentSystemId): unknown[] {
-  const runDeckArr = Array.isArray(data.runDeck) ? (data.runDeck as Array<{ id: string }>) : [];
-  const characterId = readString(data, "characterId", "");
-  const preserveEmptyWildwoodDraft = contentSystemType === "wildwood" && Boolean(data.wildwoodDraft);
-  if (
-    (!preserveEmptyWildwoodDraft && runDeckArr.length === 0) ||
-    (isUnstartedRun(data) && isLegacyStarterDeck(runDeckArr))
-  ) {
-    return characterId ? getStartingDeck(characterId as CharacterId) : [];
-  }
-  return runDeckArr;
+function normalizeRunDeck(data: Record<string, unknown>): unknown[] {
+  return Array.isArray(data.runDeck) ? (data.runDeck as Array<{ id: string }>) : [];
 }
 
 function normalizeActiveCombat(
@@ -97,7 +60,7 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
     contentSystemType,
     runPlayerHealth,
     completedDestinations,
-    runDeck: normalizeRunDeck(data, contentSystemType),
+    runDeck: normalizeRunDeck(data),
     runTalentXP: (data.runTalentXP as TalentXP | undefined) ?? {},
     runMaterialsEarned: (data.runMaterialsEarned as MaterialInventory | undefined) ?? emptyInventory(),
     labyrinthMap: contentSystemType === "labyrinth" ? data.labyrinthMap : null,

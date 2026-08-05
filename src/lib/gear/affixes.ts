@@ -1,21 +1,9 @@
 import type { GearAffixId } from "./affix-catalog";
-import { type LEGACY_GEAR_AFFIX_IDS } from "./legacy-ids";
 import { gearAffixNameParts } from "./affix-name-parts";
 import { gearAffixCatalog, type GearAffixDefinition } from "./affix-catalog";
 import type { GearEffectManifest } from "./gear-effect-manifest";
 import { defaultGearEffects } from "./gear-effect-manifest";
 import type { GearAffixRoll, GearRarity } from "./types";
-
-const LEGACY_AFFIX_MAP: Record<(typeof LEGACY_GEAR_AFFIX_IDS)[number], GearAffixId> = {
-  "flat-physical-1": "flat-physical",
-  "flat-stun-1": "flat-stun",
-  "flat-holy-1": "flat-holy",
-  "flat-burn-1": "flat-burn",
-  "flat-poison-1": "flat-poison",
-  "flat-bleed-1": "flat-bleed",
-  "flat-freeze-1": "flat-freeze",
-  "flat-nature-1": "flat-nature",
-};
 
 function isGearAffixId(value: string): value is GearAffixId {
   return value in gearAffixCatalog;
@@ -29,56 +17,19 @@ export function resolveAffixEffects(affixes: readonly GearAffixRoll[], _rarity?:
   const effects = { ...defaultGearEffects };
   for (const roll of affixes) {
     const def = gearAffixCatalog[roll.id];
-    effects[def.effectKey] += roll.value;
+    if (def) {
+      effects[def.effectKey] += roll.value;
+    }
   }
   return effects;
 }
 
-function isLegacyAffixId(id: string): id is (typeof LEGACY_GEAR_AFFIX_IDS)[number] {
-  return id in LEGACY_AFFIX_MAP;
-}
-
-function normalizeLegacyAffixId(id: string): GearAffixId | null {
-  if (isGearAffixId(id)) return id;
-  if (isLegacyAffixId(id)) return LEGACY_AFFIX_MAP[id];
-  return null;
-}
-
-export function normalizeAffixRolls(raw: {
-  affixes?: Array<{ id: string; value: number }>;
-  affixIds?: string[];
-  modifiers?: Array<{ kind: string; value: number }>;
-}): GearAffixRoll[] {
-  if (raw.affixes && raw.affixes.length > 0) {
-    return raw.affixes.flatMap((entry) => {
-      const id = normalizeLegacyAffixId(entry.id);
-      if (!id || !Number.isFinite(entry.value) || entry.value <= 0) return [];
-      return [{ id, value: Math.round(entry.value) }];
-    });
-  }
-
-  if (raw.affixIds && raw.affixIds.length > 0) {
-    return raw.affixIds.flatMap((legacyId) => {
-      const id = normalizeLegacyAffixId(legacyId);
-      return id ? [{ id, value: 1 }] : [];
-    });
-  }
-
-  return legacyFlatPhysicalModifiersToAffixRolls(raw.modifiers ?? []);
-}
-
-export function legacyFlatPhysicalModifiersToAffixRolls(
-  modifiers: Array<{ kind: string; value: number }>,
-): GearAffixRoll[] {
-  const rolls: GearAffixRoll[] = [];
-  for (const modifier of modifiers) {
-    if (modifier.kind !== "flatPhysicalDamage" || !Number.isFinite(modifier.value)) continue;
-    const count = Math.max(0, Math.round(modifier.value));
-    for (let index = 0; index < count; index += 1) {
-      rolls.push({ id: "flat-physical", value: 1 });
-    }
-  }
-  return rolls;
+export function normalizeAffixRolls(rawAffixes?: Array<{ id: string; value: number }> | null): GearAffixRoll[] {
+  if (!rawAffixes || !Array.isArray(rawAffixes)) return [];
+  return rawAffixes.flatMap((entry) => {
+    if (!entry || !isGearAffixId(entry.id) || !Number.isFinite(entry.value) || entry.value <= 0) return [];
+    return [{ id: entry.id, value: Math.round(entry.value) }];
+  });
 }
 
 export function rollAffixValue(def: GearAffixDefinition, rarity: GearRarity, rng: () => number): number {
@@ -89,7 +40,7 @@ export function rollAffixValue(def: GearAffixDefinition, rarity: GearRarity, rng
 
 export function getGearAffixDisplayName(affixId: GearAffixId): string {
   const parts = gearAffixNameParts[affixId];
-  return parts.prefix ?? parts.suffix ?? affixId;
+  return parts?.prefix ?? parts?.suffix ?? affixId;
 }
 
 export function getGearAffixTooltipEntries(
@@ -98,6 +49,7 @@ export function getGearAffixTooltipEntries(
 ): Array<{ key: string; name: string; text: string }> {
   return affixes.flatMap((roll, index) => {
     const def = gearAffixCatalog[roll.id];
+    if (!def) return [];
     return [
       {
         key: `${roll.id}-${index}`,

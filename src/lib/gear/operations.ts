@@ -13,7 +13,6 @@ import {
   type GearLoadouts,
   type GearSlot,
 } from "./types";
-import { LEGACY_GEAR_DEFINITION_IDS } from "./legacy-ids";
 
 export function isGearCompatibleWithSlot(definition: GearDefinition, slot: GearSlot): boolean {
   return definition.compatibleSlots.includes(slot);
@@ -180,12 +179,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function readStringArray(value: unknown): string[] | undefined {
-  if (!Array.isArray(value)) return undefined;
-  const strings = value.filter((entry): entry is string => typeof entry === "string");
-  return strings.length > 0 ? strings : undefined;
-}
-
 function readAffixEntries(value: unknown): Array<{ id: string; value: number }> | undefined {
   if (!Array.isArray(value)) return undefined;
   const entries = value.flatMap((entry) => {
@@ -198,40 +191,19 @@ function readAffixEntries(value: unknown): Array<{ id: string; value: number }> 
   return entries.length > 0 ? entries : undefined;
 }
 
-function readModifierEntries(value: unknown): Array<{ kind: string; value: number }> | undefined {
-  if (!Array.isArray(value)) return undefined;
-  const entries = value.flatMap((entry) => {
-    if (!isRecord(entry)) return [];
-    const kind = typeof entry.kind === "string" ? entry.kind : undefined;
-    const modifierValue = entry.value;
-    if (!kind || typeof modifierValue !== "number") return [];
-    return [{ kind, value: modifierValue }];
-  });
-  return entries.length > 0 ? entries : undefined;
-}
-
 export function normalizeGearInstance(raw: unknown): GearInstance | null {
   if (!isRecord(raw)) return null;
 
   const instanceId = typeof raw.instanceId === "string" ? raw.instanceId : undefined;
-  const rawDefinitionId = typeof raw.definitionId === "string" ? raw.definitionId : undefined;
-  if (!instanceId || !rawDefinitionId) return null;
+  const definitionId = typeof raw.definitionId === "string" ? raw.definitionId : undefined;
+  if (!instanceId || !definitionId || !gearDefinitions[definitionId]) return null;
 
-  const definitionId = LEGACY_GEAR_DEFINITION_IDS[rawDefinitionId] ?? rawDefinitionId;
-  if (!gearDefinitions[definitionId]) return null;
-
-  const affixInput: Parameters<typeof normalizeAffixRolls>[0] = {};
-  const affixes = readAffixEntries(raw.affixes);
-  const affixIds = readStringArray(raw.affixIds);
-  const modifiers = readModifierEntries(raw.modifiers);
-  if (affixes) affixInput.affixes = affixes;
-  if (affixIds) affixInput.affixIds = affixIds;
-  if (modifiers) affixInput.modifiers = modifiers;
+  const rawAffixes = readAffixEntries(raw.affixes);
 
   return {
     instanceId,
     definitionId,
-    affixes: normalizeAffixRolls(affixInput),
+    affixes: normalizeAffixRolls(rawAffixes),
   };
 }
 

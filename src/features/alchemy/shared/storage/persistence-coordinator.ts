@@ -7,7 +7,7 @@ import {
   runProfilePersistenceCodec,
   type RunProfileSaveFields,
 } from "@/features/alchemy/shared/stores/run-save-readers";
-import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-transaction";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 export type AlchemyPersistenceFields = SettingsSaveFields & ProfileSaveFields & GearSaveFields & RunProfileSaveFields;

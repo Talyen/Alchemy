@@ -17,16 +17,16 @@ function countMigrationSteps(source: string): number {
 
 describe("save migration contract", () => {
   it("tracks launch baseline at or below current schema version", () => {
-    expect(LAUNCH_SAVE_SCHEMA_VERSION).toBe(4);
+    expect(LAUNCH_SAVE_SCHEMA_VERSION).toBe(8);
     expect(CURRENT_SAVE_SCHEMA_VERSION).toBeGreaterThanOrEqual(LAUNCH_SAVE_SCHEMA_VERSION);
   });
 
-  it("chains migration steps through CURRENT_SAVE_SCHEMA_VERSION", () => {
+  it("chains migration steps from LAUNCH through CURRENT_SAVE_SCHEMA_VERSION", () => {
     const stepsSource = [
       read("src/lib/validation/migration/steps.ts"),
       read("src/lib/validation/migration/steps-gear-layout.ts"),
     ].join("\n");
-    expect(countMigrationSteps(stepsSource)).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+    expect(countMigrationSteps(stepsSource)).toBe(CURRENT_SAVE_SCHEMA_VERSION - LAUNCH_SAVE_SCHEMA_VERSION);
   });
 
   it("keeps rename logic out of active-run schema transforms", () => {

@@ -79,7 +79,7 @@ describe("storage io", () => {
 
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.data.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    expect(loaded.data.selectedAspectRatio).toBe("16:9");
+    expect(loaded.data.selectedAspectRatio).toBe("auto");
     expect(loaded.data.discoveredCardIds).toEqual(["slash", "block", "future-card"]);
     expect(loaded.data.activeRun).toMatchObject({
       characterId: "knight",

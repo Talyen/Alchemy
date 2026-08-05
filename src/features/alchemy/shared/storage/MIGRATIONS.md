@@ -2,9 +2,11 @@
 
 This file documents how to change persisted save data without breaking player progress. **CI is the source of truth** — `tests/architecture/save-migration-guard.test.ts` and `tests/architecture/save-migration-contract.test.ts` enforce the contract on every `npm run test:ship:unit`.
 
-## Launch baseline
+## Supported baseline (pre-launch)
 
-`LAUNCH_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts` marks the first public-release save shape (currently **4**). Steps `migrateV0ToV1` … `migrateV3ToV4` in `src/lib/validation/migration/steps.ts` are frozen pre-launch history. Post-launch bumps add `migrateV4ToV5` (etc.) only.
+`LAUNCH_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts` is the **minimum supported** save shape (currently **8**). There are no players yet, so older local schemas are intentionally unsupported: schema step functions exist only for versions `>= LAUNCH_SAVE_SCHEMA_VERSION`. Nested soft remaps in `migrate-active-run.ts`, `migrate-battle-state.ts`, `migrate-wildwood-draft.ts`, `migrate-content-v2.ts`, and `migrate-gear.ts` may still clean some legacy field names when a payload happens to load, but that is not a compatibility guarantee.
+
+After public launch, treat `LAUNCH_SAVE_SCHEMA_VERSION` as frozen and never remove steps that players can still hold.
 
 ## When to increment
 
@@ -21,11 +23,11 @@ Do **not** increment for purely additive fields that can safely use defaults in 
 
 ## Single-responsibility rule
 
-| Change                                                      | Where                                                                                                                                                                                                      |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Renames, enum value changes, nested `activeRun` shape fixes | `src/lib/validation/migration/` helpers (`migrate-active-run.ts`, `migrate-battle-state.ts`, `migrate-wildwood-draft.ts`, `migrate-save-top-level.ts`) and the new `migrateVNToVNPlus1` step in `steps.ts` |
-| Additive fields with defaults                               | Zod `.default()` / `.catch()` and `defaults.ts` — no schema bump                                                                                                                                           |
-| Deck / content-system soft fixes on already-valid shape     | `normalize-active-run-data.ts`                                                                                                                                                                             |
+| Change                                                      | Where                                                                                                                                                                                             |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Renames, enum value changes, nested `activeRun` shape fixes | `src/lib/validation/migration/` helpers (`migrate-active-run.ts`, `migrate-battle-state.ts`, `migrate-wildwood-draft.ts`, `migrate-gear.ts`) and the new `migrateVNToVNPlus1` step in `steps*.ts` |
+| Additive fields with defaults                               | Zod `.default()` / `.catch()` and `defaults.ts` — no schema bump                                                                                                                                  |
+| Deck / content-system soft fixes on already-valid shape     | `normalize-active-run-data.ts`                                                                                                                                                                    |
 
 **Do not** put rename logic in `save-schemas/active-run.ts` transforms. Zod must only validate the current shape after preprocess migration.
 
@@ -34,10 +36,10 @@ Do **not** increment for purely additive fields that can safely use defaults in 
 For a schema bump from `N` to `N + 1`:
 
 1. Increment `CURRENT_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts`.
-2. Add `migrateVNToVNPlus1` in `src/lib/validation/migration/steps.ts` (delegate nested work to `migration/` helpers).
+2. Add `migrateVNToVNPlus1` in `src/lib/validation/migration/steps.ts` or a topical `steps-*.ts` file (delegate nested work to `migration/` helpers).
 3. Chain it from `migrateSaveDataToCurrent` in `src/lib/validation/migration/index.ts`.
 4. Update Zod schemas in `src/lib/validation/save-schemas/` and `defaults.ts`.
-5. Add a fixture to `LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION` in `tests/fixtures/legacy-saves.ts` (CI fails if any source version `0 … N-1` is missing).
+5. Add a fixture to `LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION` in `tests/fixtures/legacy-saves.ts` (CI fails if any source version `LAUNCH … N-1` is missing).
 6. If the change touches `activeRun` nested state, add or extend a scenario in `MIGRATION_SCENARIO_FIXTURES` and assert gameplay outcomes in `save-migration-guard.test.ts`.
 7. Run `npm run check:ship` — tests use `normalizeSaveData` → `SaveDataSchema.parse` (production path).
 
@@ -63,7 +65,7 @@ Saves with a schema newer than the current build are intentionally not migrated 
 
 ## Public save contract
 
-`LAUNCH_SAVE_SCHEMA_VERSION` (currently `4`) is the frozen pre-launch baseline. **It is never modified post-launch.** Every bump to `CURRENT_SAVE_SCHEMA_VERSION >= LAUNCH_SAVE_SCHEMA_VERSION` is a public save-compat commitment: a player who upgrades from any prior build must be able to load and play their existing save.
+Until launch, `LAUNCH_SAVE_SCHEMA_VERSION` may move forward when the team deliberately drops unsupported local schemas. **After launch it is frozen.** Every bump to `CURRENT_SAVE_SCHEMA_VERSION >= LAUNCH_SAVE_SCHEMA_VERSION` is a save-compat commitment for supported versions: a player who upgrades from any prior _supported_ build must be able to load and play their existing save.
 
 ### Policy: local is authoritative
 
@@ -71,7 +73,7 @@ Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring
 
 ### Implementation rules
 
-- Migration steps in `src/lib/validation/migration/steps.ts` from v0→v4 are pre-launch history and stay frozen. Post-launch steps (v4→v5, v5→v6, …) may be added but never removed without a deliberate compat decision.
+- Schema migration steps cover `LAUNCH_SAVE_SCHEMA_VERSION → CURRENT_SAVE_SCHEMA_VERSION` only. Do not remove a supported step without raising `LAUNCH_SAVE_SCHEMA_VERSION` in the same change.
 - Card IDs that disappear from the live catalog must be added to `TOMBSTONED_CARD_IDS` in `src/lib/validation/migration/tombstoned-content-ids.ts`. The guard test in `save-migration-guard.test.ts` fails CI if a fixture references a card ID that is neither in the catalog nor in the tombstone set.
 - Saved active-run decks are eagerly hydrated at load time: card IDs are resolved against the live library, and any card whose ID no longer exists is silently dropped from the deck. The run always has a valid, drawable set of cards. No player-facing diagnostics.
 - The `SaveLoadStatus` shape has four variants: `ok`, `unsupported-newer-schema`, `unsupported-newer-content`, and `corrupt`. No diagnostic fields surface to the player.
@@ -84,26 +86,6 @@ When adding a new saved field that gates features (unlocks, meta screens, game m
 2. List inferrable existing fields for backfill in the migration step only when a real signal exists.
 3. Add a fixture at version `N−1` in `tests/fixtures/legacy-saves.ts`.
 4. Assert **gameplay outcome** in `save-migration-guard.test.ts` — not only JSON field presence.
-
-## Schema v4 (launch baseline)
-
-Schema v4 renames persisted Trinket fields to Boon fields and introduces Gear inventory/loadouts. Nested renames (battle snapshots, wildwood `rewardType`, combat flags) live in frozen `migrate-*-v4` helpers invoked from `migrateV3ToV4`.
-
-## Schema v5 (Boon → Trinket revert)
-
-Schema v5 restores Trinket terminology in persisted saves:
-
-| v4 field                           | v5 field                            |
-| ---------------------------------- | ----------------------------------- |
-| `discoveredBoonIds`                | `discoveredTrinketIds`              |
-| `runBoons`                         | `runTrinkets`                       |
-| `boonEffects`                      | `trinketEffects`                    |
-| `flags.firstBurnBoonDoubledUsed`   | `flags.firstBurnTrinketDoubledUsed` |
-| `wildwoodDraft.rewardType: "boon"` | `"trinket"`                         |
-
-Run-end discovery snapshots (`*AtRunStart` on `activeRun`) were removed with the discoveries screen; discovery is now immediate when items are earned during a run.
-
-Implemented in `migrateV4ToV5` (`migrate-save-top-level-v5.ts`, updated `migrate-active-run.ts`, `migrate-battle-state.ts`, `migrate-wildwood-draft.ts`).
 
 ## Content version 2 (ID remaps)
 
@@ -119,11 +101,11 @@ Applied in `migrateContentV2` whenever `contentVersion < CURRENT_CONTENT_VERSION
 
 ## Gear board layout (`gearBoardPositions`)
 
-Armory inventory tile positions persist in `gearBoardPositions: Record<instanceId, { col, row }>` (additive default `{}`). On first load after upgrade, any legacy `localStorage["alchemy-armory-positions"]` entries are merged into the save-backed store and the local key is removed.
+Armory inventory tile positions persist per character (`gearBoardPositionsByCharacter`). Schema steps v8→v9 / v9→v10 split flat gear inventory + board positions into per-character maps. On first load after those steps, any leftover `localStorage["alchemy-armory-positions"]` entries may still be merged via `readLegacyArmoryBoardPositionsFromStorage`.
 
-## Gear instances (`affixIds`)
+## Gear instances (legacy remaps)
 
-Gear inventory instances now persist rolled affixes as `affixIds: GearAffixId[]` instead of legacy `modifiers`. Save normalization in `save-data.ts` strips unknown affix ids and converts legacy `{ kind: "flatPhysicalDamage", value }` modifiers into repeated `flat-physical-1` affix ids when `affixIds` is absent. Placeholder definition IDs remain valid for older saves and tests.
+Canonical gear instances use `affixes: Array<{ id, value }>`. `migrateLegacyGearInstance` (used from gear Zod normalization) remaps legacy definition IDs, `affixIds`, and `modifiers` into that shape before domain normalization.
 
 ## Active-run RNG streams (`activeRun.rng`)
 

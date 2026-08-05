@@ -29,13 +29,13 @@ describe("gameplay aggregate boundary", () => {
       expect(existsSync(join(ROOT, `src/features/alchemy/shared/stores/${path}`)), path).toBe(false);
     }
     for (const path of ["profile-store.ts", "gear-store.ts"]) {
-      expect(read(`src/features/alchemy/shared/stores/${path}`), path).toContain("createSliceStore");
+      expect(read(`src/features/alchemy/shared/stores/${path}`), path).toContain("useGameplayStateStore");
       expect(read(`src/features/alchemy/shared/stores/${path}`), path).not.toContain("create<");
     }
   });
 
   it("keeps transaction coordination separate from aggregate reads", () => {
-    const transaction = read("src/features/alchemy/shared/stores/run-session-transaction.ts");
+    const transaction = read("src/features/alchemy/shared/stores/run-session-command.ts");
     const readPort = read("src/features/alchemy/shared/stores/run-session-read-port.ts");
     expect(transaction).not.toContain("createRunSessionStoreSnapshot");
     expect(transaction).not.toContain("useRunSessionCommitStore");

@@ -24,7 +24,6 @@ describe("run-session command boundary", () => {
       "src/features/alchemy/run-loop",
       "src/features/alchemy/run-setup",
       "src/features/alchemy/shell",
-      "src/features/alchemy/shared/stores/ports",
     ];
     const offenders = callerRoots.flatMap(sourceFiles).filter((path) => {
       const source = read(path);
@@ -34,16 +33,27 @@ describe("run-session command boundary", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("exports the command API without leaking the coordinator", () => {
+  it("exports the command API as a self-contained module", () => {
     const command = read("src/features/alchemy/shared/stores/run-session-command.ts");
     expect(command).toContain("export function dispatchRunSessionCommand");
-    expect(command).toContain('from "./run-session-transaction"');
+    // Transaction logic is now inlined here rather than delegated to a separate file.
+    expect(command).toContain("beginGameplayTransaction");
+    expect(command).toContain("commitGameplayTransaction");
+    expect(command).toContain("rollbackGameplayTransaction");
   });
 
-  it("keeps focused session write ports inside the same command boundary", () => {
-    for (const path of sourceFiles("src/features/alchemy/shared/stores/ports")) {
-      expect(read(path), path).toContain("dispatchRunSessionCommand");
-    }
+  it("keeps all session write commands accessible through a single barrel", () => {
+    const writePort = read("src/features/alchemy/shared/stores/run-session-write-port.ts");
+    // Core sample of every domain section to confirm it's all present.
+    expect(writePort).toContain("export function setRunDeck");
+    expect(writePort).toContain("export function setBattleState");
+    expect(writePort).toContain("export function commitBattleTransition");
+    expect(writePort).toContain("export function setShopState");
+    expect(writePort).toContain("export function setMysteryEvent");
+    expect(writePort).toContain("export function setLabyrinthMap");
+    expect(writePort).toContain("export function setRewardState");
+    expect(writePort).toContain("export function applyRunStartSnapshot");
+    expect(writePort).toContain("export function addMaterials");
   });
 
   it("keeps feature-facing read ports free of aggregate actions", () => {
@@ -77,7 +87,7 @@ describe("run-session command boundary", () => {
 
   it("keeps the battle read port data-only", () => {
     const readPort = read("src/features/alchemy/shared/stores/run-session-read-port.ts");
-    const writePort = read("src/features/alchemy/shared/stores/ports/run-battle-write-port.ts");
+    const writePort = read("src/features/alchemy/shared/stores/run-session-write-port.ts");
     expect(readPort).toContain("readBattle");
     expect(readPort).not.toMatch(/set(?:SyncedBattleState|PendingBattleTransition|DisplayOverrides|HasActiveBattle)/);
     expect(writePort).toContain("dispatchRunSessionCommand");

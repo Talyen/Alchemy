@@ -1,7 +1,12 @@
 import type { PersistenceCodec } from "./persistence-codec";
 import type { GearSaveFields, GearStore } from "./gear-store-types";
-import { createSliceStore } from "./slice-store-adapter";
-import { readGameplayState, subscribeGameplayCommits, type GameplayState } from "./gameplay-state-store";
+import {
+  applyGameplayStateUpdate,
+  readGameplayState,
+  subscribeGameplayCommits,
+  useGameplayStateStore,
+  type GameplayState,
+} from "./gameplay-state-store";
 import {
   createEmptyCurrencyBoardPositionsByCharacter,
   createEmptyGearBoardPositionsByCharacter,
@@ -11,41 +16,6 @@ import {
 } from "@/lib/gear";
 
 export type { GearSaveFields, GearStore } from "./gear-store-types";
-
-const GEAR_KEYS = [
-  "inventories",
-  "loadouts",
-  "boardPositionsByCharacter",
-  "currencyBoardPositionsByCharacter",
-  "craftingCurrencies",
-  "initialize",
-  "addInstance",
-  "transferToInventory",
-  "equip",
-  "unequip",
-  "moveBoardItem",
-  "syncBoardPositions",
-  "sortBoard",
-  "salvage",
-  "applyCurrency",
-  "addCurrencies",
-  "reset",
-] as const satisfies ReadonlyArray<keyof GearStore>;
-
-const gearActionKeyMap = {
-  initialize: "gearInitialize",
-  addInstance: "gearAddInstance",
-  transferToInventory: "gearTransferToInventory",
-  equip: "gearEquip",
-  unequip: "gearUnequip",
-  moveBoardItem: "gearMoveBoardItem",
-  syncBoardPositions: "gearSyncBoardPositions",
-  sortBoard: "gearSortBoard",
-  salvage: "gearSalvage",
-  applyCurrency: "gearApplyCurrency",
-  addCurrencies: "gearAddCurrencies",
-  reset: "gearReset",
-} as const satisfies Partial<Record<keyof GearStore, keyof GameplayState["gearActions"]>>;
 
 function pickGearStore(state: GameplayState): GearStore {
   return {
@@ -65,16 +35,42 @@ function pickGearStore(state: GameplayState): GearStore {
   };
 }
 
-function writeGearKey(state: GameplayState, key: keyof GearStore, value: unknown): void {
-  const mappedKey = gearActionKeyMap[key as keyof typeof gearActionKeyMap];
-  if (mappedKey) {
-    (state.gearActions as unknown as Record<string, unknown>)[mappedKey] = value;
-    return;
-  }
-  (state.gear as unknown as Record<string, unknown>)[String(key)] = value;
+export interface GearStoreHook {
+  <U = GearStore>(selector?: (state: GearStore) => U): U;
+  getState: () => GearStore;
+  getInitialState: () => GearStore;
+  setState: (partial: Partial<GearStore> | ((state: GearStore) => Partial<GearStore> | void)) => void;
+  subscribe: (listener: (state: GearStore, previousState: GearStore) => void) => () => void;
 }
 
-export const useGearStore = createSliceStore<GearStore>(pickGearStore, GEAR_KEYS, {}, writeGearKey);
+const useGearStoreHook = ((selector?: (state: GearStore) => unknown) =>
+  useGameplayStateStore((state) => {
+    const slice = pickGearStore(state);
+    return selector ? selector(slice) : slice;
+  })) as GearStoreHook;
+
+useGearStoreHook.getState = () => pickGearStore(readGameplayState());
+useGearStoreHook.getInitialState = () => pickGearStore(useGameplayStateStore.getInitialState());
+useGearStoreHook.setState = (partial) => {
+  applyGameplayStateUpdate((state) => {
+    const slice = pickGearStore(state);
+    const next = typeof partial === "function" ? partial(slice) : partial;
+    if (!next || typeof next !== "object") return;
+    if (next.inventories !== undefined) state.gear.inventories = next.inventories;
+    if (next.loadouts !== undefined) state.gear.loadouts = next.loadouts;
+    if (next.boardPositionsByCharacter !== undefined)
+      state.gear.boardPositionsByCharacter = next.boardPositionsByCharacter;
+    if (next.currencyBoardPositionsByCharacter !== undefined)
+      state.gear.currencyBoardPositionsByCharacter = next.currencyBoardPositionsByCharacter;
+    if (next.craftingCurrencies !== undefined) state.gear.craftingCurrencies = next.craftingCurrencies;
+  });
+};
+useGearStoreHook.subscribe = (listener) =>
+  useGameplayStateStore.subscribe((state, previousState) =>
+    listener(pickGearStore(state), pickGearStore(previousState)),
+  );
+
+export const useGearStore = useGearStoreHook;
 
 export const gearPersistenceCodec: PersistenceCodec<GearSaveFields> = {
   createDefault: () => ({

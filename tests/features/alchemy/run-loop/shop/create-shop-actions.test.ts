@@ -13,7 +13,7 @@ import {
   setAlchemistState,
   setTrinketShopState,
   setEquipmentShopState,
-} from "@/features/alchemy/shared/stores/ports/run-session-shop-port";
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   createInitialShopState as createInitialShopStateImpl,
   createInitialAlchemistState as createInitialAlchemistStateImpl,

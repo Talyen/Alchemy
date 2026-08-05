@@ -43,7 +43,7 @@ import type {
   TalentCommandPort,
   WildwoodRunPort,
 } from "./run-port-types";
-import { setHasActiveBattle as setHasActiveBattleCommand } from "./ports/run-battle-write-port";
+import { setHasActiveBattle as setHasActiveBattleCommand } from "./run-session-write-port";
 
 export function useTalentEffects(): TalentEffectManifest {
   const unlockedTalents = useGameplayStateStore((state) => state.runProfile.unlockedTalents);

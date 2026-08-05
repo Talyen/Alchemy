@@ -46,7 +46,7 @@ For non-trivial work, find and read only the docs that match the task; prefer sp
 
 ## Architectural invariants
 
-- **Run state:** feature code outside `shared/stores/` accesses run state through capability-specific ports (`run-session-react-ports`, `run-session-read-port`, `run-session-write-port`, `run-session-lifecycle-port`, and `profile-port`) — not compatibility stores, low-level `ports/*`, or `run-transitions` directly.
+- **Run state:** feature code outside `shared/stores/` accesses run state through capability-specific ports (`run-session-react-ports`, `run-session-read-port`, `run-session-write-port`, `run-session-lifecycle-port`, and `profile-port`) — not compatibility stores or `run-transitions` directly. Gameplay writes live in `run-session-write-port.ts`; commits go through `dispatchRunSessionCommand()` in `run-session-command.ts`.
 - **Controllers:** screens receive run/battle data via controller props from `screen-routes/` / shell controllers — no React context for those bindings. See [ARCHITECTURE § Data flow](./docs/ARCHITECTURE.md#data-flow).
 - **Battle:** treat `BattleState` as immutable; use `state.rng` and `Math.round()` (never `Math.random()` / `Math.floor()`); keep tuning in `src/lib/game-constants/` (barrel at `game-constants.ts`; edit the topical file under that folder).
 - **Content:** card `descriptionLines` must match effects. Run-earned materials flow through `awardMaterialsDuringRun()` — do not call progress `addMaterials()` directly for run-loop loot. See [WORKFLOWS § Grant materials](./docs/WORKFLOWS.md#grant-materials-during-a-run).

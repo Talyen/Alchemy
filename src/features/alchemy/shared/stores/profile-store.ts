@@ -1,14 +1,13 @@
 import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import type { CollectionTab } from "@/features/alchemy/shared/types";
 import type { PersistenceCodec } from "./persistence-codec";
-import { createSliceStore } from "./slice-store-adapter";
 import { createDefaultProfileSaveFields, type ProfileSaveFields } from "./profile-store-types";
 import {
   applyGameplayStateUpdate,
   readGameplayState,
   subscribeGameplayCommits,
+  useGameplayStateStore,
   type GameplayState,
-  type ProfileStateFields,
 } from "./gameplay-state-store";
 
 export type { ProfileSaveFields } from "./profile-store-types";
@@ -32,50 +31,47 @@ export interface ProfileStore extends ProfileSaveFields {
   resetToDefaults: () => void;
 }
 
-const PROFILE_KEYS = [
-  "collectionTab",
-  "collectionPages",
-  "discoveredCardIds",
-  "encounteredEnemyIds",
-  "discoveredTrinketIds",
-  "completedDifficulties",
-  "finishedRunCharacters",
-  "setDiscoveredCardIds",
-  "setEncounteredEnemyIds",
-  "setDiscoveredTrinketIds",
-  "setCompletedDifficulties",
-  "setFinishedRunCharacters",
-  "setCollectionPage",
-  "handleCollectionTabChange",
-  "resetToDefaults",
-] as const satisfies ReadonlyArray<keyof ProfileStore>;
-
-const profileActionKeys = new Set<string>([
-  "setDiscoveredCardIds",
-  "setEncounteredEnemyIds",
-  "setDiscoveredTrinketIds",
-  "setCompletedDifficulties",
-  "setFinishedRunCharacters",
-  "setCollectionPage",
-  "handleCollectionTabChange",
-  "resetToDefaults",
-]);
-
 function pickProfileStore(state: GameplayState): ProfileStore {
   return { ...state.profile, ...state.profileActions };
 }
 
-function writeProfileKey(state: GameplayState, key: keyof ProfileStore, value: unknown): void {
-  if (profileActionKeys.has(String(key))) {
-    (state.profileActions as unknown as Record<string, unknown>)[String(key)] = value;
-    return;
-  }
-  state.profile[key as keyof ProfileStateFields] = value as never;
+export interface ProfileStoreHook {
+  <U = ProfileStore>(selector?: (state: ProfileStore) => U): U;
+  getState: () => ProfileStore;
+  getInitialState: () => ProfileStore;
+  setState: (partial: Partial<ProfileStore> | ((state: ProfileStore) => Partial<ProfileStore> | void)) => void;
+  subscribe: (listener: (state: ProfileStore, previousState: ProfileStore) => void) => () => void;
 }
 
-const useProfileStore = createSliceStore<ProfileStore>(pickProfileStore, PROFILE_KEYS, {}, writeProfileKey);
+const useProfileStoreHook = ((selector?: (state: ProfileStore) => unknown) =>
+  useGameplayStateStore((state) => {
+    const slice = pickProfileStore(state);
+    return selector ? selector(slice) : slice;
+  })) as ProfileStoreHook;
 
-export { useProfileStore };
+useProfileStoreHook.getState = () => pickProfileStore(readGameplayState());
+useProfileStoreHook.getInitialState = () => pickProfileStore(useGameplayStateStore.getInitialState());
+useProfileStoreHook.setState = (partial) => {
+  applyGameplayStateUpdate((state) => {
+    const slice = pickProfileStore(state);
+    const next = typeof partial === "function" ? partial(slice) : partial;
+    if (!next || typeof next !== "object") return;
+    // Only data fields — never copy action methods from getInitialState()/getState() onto the draft.
+    if (next.discoveredCardIds !== undefined) state.profile.discoveredCardIds = next.discoveredCardIds;
+    if (next.encounteredEnemyIds !== undefined) state.profile.encounteredEnemyIds = next.encounteredEnemyIds;
+    if (next.discoveredTrinketIds !== undefined) state.profile.discoveredTrinketIds = next.discoveredTrinketIds;
+    if (next.completedDifficulties !== undefined) state.profile.completedDifficulties = next.completedDifficulties;
+    if (next.finishedRunCharacters !== undefined) state.profile.finishedRunCharacters = next.finishedRunCharacters;
+    if (next.collectionTab !== undefined) state.profile.collectionTab = next.collectionTab;
+    if (next.collectionPages !== undefined) state.profile.collectionPages = next.collectionPages;
+  });
+};
+useProfileStoreHook.subscribe = (listener) =>
+  useGameplayStateStore.subscribe((state, previousState) =>
+    listener(pickProfileStore(state), pickProfileStore(previousState)),
+  );
+
+export { useProfileStoreHook as useProfileStore };
 
 function cloneProfileSaveFields(fields: ProfileSaveFields): ProfileSaveFields {
   return {

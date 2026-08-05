@@ -14,7 +14,7 @@ import {
   setRunProgress,
   setRunSession,
 } from "../../../../helpers/run-domain-store-test";
-import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-transaction";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 
 vi.mock("@/lib/audio", () => ({

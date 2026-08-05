@@ -3,7 +3,7 @@ import {
   getRunSessionRevision,
   runSessionTransaction,
   subscribeRunSessionCommits,
-} from "@/features/alchemy/shared/stores/run-session-transaction";
+} from "@/features/alchemy/shared/stores/run-session-command";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   getRunDomainStore,
@@ -53,13 +53,13 @@ describe("run-session transaction coordinator", () => {
       expect(readGameplayState().run.activeRun.runGold).toBe(gold);
     });
 
-    const result = dispatchRunSessionCommand({
-      execute: () => {
+    const result = dispatchRunSessionCommand(
+      () => {
         getRunDomainStore().setRunGold(17);
         return 17;
       },
-      afterCommit: effect,
-    });
+      { afterCommit: effect },
+    );
 
     expect(result).toBe(17);
     expect(effect).toHaveBeenCalledOnce();

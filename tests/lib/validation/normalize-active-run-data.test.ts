@@ -1,17 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { normalizeActiveRunData } from "@/lib/validation";
-import type { BattleCard } from "@/lib/game-data";
 import { baseActiveRunInput } from "../../fixtures/active-run";
 
 const baseInput = baseActiveRunInput;
 
 describe("normalizeActiveRunData", () => {
-  it("passes through a valid campaign run", () => {
+  it("passes through an active campaign run", () => {
     const result = normalizeActiveRunData(baseInput());
     expect(result.contentSystemType).toBe("campaign");
     expect(result.runPlayerHealth).toBe(30);
     expect(Array.isArray(result.runDeck)).toBe(true);
-    expect((result.runDeck as BattleCard[]).length).toBeGreaterThan(0);
     expect(result.labyrinthMap).toBeNull();
   });
 
@@ -27,13 +25,12 @@ describe("normalizeActiveRunData", () => {
     expect(result.runPlayerHealth).toBe(30);
   });
 
-  it("replaces empty deck with starting deck for unstarted run", () => {
+  it("preserves empty deck array without synthesis", () => {
     const result = normalizeActiveRunData(baseInput());
-    expect((result.runDeck as BattleCard[]).length).toBeGreaterThan(0);
-    expect((result.runDeck as BattleCard[])[0].id).toBeTruthy();
+    expect(Array.isArray(result.runDeck)).toBe(true);
   });
 
-  it("replaces legacy starter deck with current starting deck for unstarted run", () => {
+  it("preserves starter deck for unstarted run without legacy scanning", () => {
     const legacyDeck = [
       { id: "slash" },
       { id: "bash" },
@@ -46,8 +43,8 @@ describe("normalizeActiveRunData", () => {
     ];
     const input = { ...baseInput(), runDeck: legacyDeck };
     const result = normalizeActiveRunData(input);
-    expect(result.runDeck.length).toBeGreaterThan(0);
-    expect((result.runDeck[0] as { id: string }).id).not.toBe("slash");
+    expect(result.runDeck.length).toBe(8);
+    expect((result.runDeck[0] as { id: string }).id).toBe("slash");
   });
 
   it("preserves custom deck for started run", () => {
@@ -98,11 +95,11 @@ describe("normalizeActiveRunData", () => {
     expect(result.completedDestinations).toEqual([]);
   });
 
-  it("does not crash when runDeck is not an array", () => {
+  it("normalizes non-array runDeck to empty array", () => {
     const input = { ...baseInput(), runDeck: "invalid" };
     const result = normalizeActiveRunData(input);
     expect(Array.isArray(result.runDeck)).toBe(true);
-    expect(result.runDeck.length).toBeGreaterThan(0);
+    expect(result.runDeck.length).toBe(0);
   });
 
   it("does not crash when completedDestinations is not an array", () => {

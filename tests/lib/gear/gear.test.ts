@@ -16,12 +16,10 @@ import {
   isQuiver,
   isRangedWeapon,
   isTwoHanded,
-  legacyFlatPhysicalModifiersToAffixRolls,
   normalizeExclusiveGearLoadouts,
   normalizeGearInstance,
   normalizeGearLoadout,
   pruneOrphanGearLoadouts,
-  resolveAffixEffects,
   rollAffixCount,
   salvageGear,
   unequipGear,
@@ -30,6 +28,7 @@ import {
   GEAR_DEFINITION_IDS,
   GEAR_SLOTS,
 } from "@/lib/gear";
+import { migrateLegacyGearInstance } from "@/lib/validation/migration/migrate-gear";
 
 const ring: GearInstance = { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] };
 
@@ -125,14 +124,17 @@ describe("gear domain", () => {
     });
   });
 
-  it("normalizes legacy physical modifiers into affix rolls", () => {
-    expect(legacyFlatPhysicalModifiersToAffixRolls([{ kind: "flatPhysicalDamage", value: 2 }])).toEqual([
+  it("migrates legacy physical modifiers into affix rolls", () => {
+    const migrated = migrateLegacyGearInstance({
+      instanceId: "gear-1",
+      definitionId: "ruby-ring-basic",
+      modifiers: [{ kind: "flatPhysicalDamage", value: 2 }],
+    });
+    const normalized = normalizeGearInstance(migrated);
+    expect(normalized?.affixes).toEqual([
       { id: "flat-physical", value: 1 },
       { id: "flat-physical", value: 1 },
     ]);
-    expect(
-      resolveAffixEffects(legacyFlatPhysicalModifiersToAffixRolls([{ kind: "flatPhysicalDamage", value: 2 }]), "basic"),
-    ).toEqual(manifestWithPhysical(2));
   });
 
   it("rolls basic and astral affix counts with 80/20 min vs max weighting", () => {
@@ -201,21 +203,23 @@ describe("gear domain", () => {
   });
 
   it("ignores legacy modifiers when affix rolls are present", () => {
-    const normalized = normalizeGearInstance({
+    const migrated = migrateLegacyGearInstance({
       instanceId: "gear-1",
       definitionId: "ruby-ring-basic",
-      affixIds: ["flat-physical-1"],
+      affixes: [{ id: "flat-physical", value: 1 }],
       modifiers: [{ kind: "flatPhysicalDamage", value: 2 }],
     });
+    const normalized = normalizeGearInstance(migrated);
     expect(normalized?.affixes).toEqual([{ id: "flat-physical", value: 1 }]);
   });
 
   it("migrates legacy affix ids to rolls", () => {
-    const normalized = normalizeGearInstance({
+    const migrated = migrateLegacyGearInstance({
       instanceId: "gear-1",
       definitionId: "ruby-ring-basic",
       affixIds: ["flat-physical-1", "flat-physical-1"],
     });
+    const normalized = normalizeGearInstance(migrated);
     expect(normalized?.affixes).toEqual([
       { id: "flat-physical", value: 1 },
       { id: "flat-physical", value: 1 },
@@ -286,25 +290,30 @@ describe("gear domain", () => {
   });
 
   it("normalizes legacy leather-hood definition ids to leather-helm", () => {
-    const normalized = normalizeGearInstance({
+    const migrated = migrateLegacyGearInstance({
       instanceId: "hood-1",
       definitionId: "leather-hood-basic",
       affixes: [{ id: "max-health", value: 1 }],
     });
+    const normalized = normalizeGearInstance(migrated);
     expect(normalized?.definitionId).toBe("leather-helm-basic");
   });
 
   it("normalizes legacy great-axe definition ids to double-axe", () => {
-    const basic = normalizeGearInstance({
-      instanceId: "axe-1",
-      definitionId: "great-axe-basic",
-      affixes: [],
-    });
-    const astral = normalizeGearInstance({
-      instanceId: "axe-2",
-      definitionId: "great-axe-astral",
-      affixes: [],
-    });
+    const basic = normalizeGearInstance(
+      migrateLegacyGearInstance({
+        instanceId: "axe-1",
+        definitionId: "great-axe-basic",
+        affixes: [],
+      }),
+    );
+    const astral = normalizeGearInstance(
+      migrateLegacyGearInstance({
+        instanceId: "axe-2",
+        definitionId: "great-axe-astral",
+        affixes: [],
+      }),
+    );
     expect(basic?.definitionId).toBe("double-axe-basic");
     expect(astral?.definitionId).toBe("double-axe-astral");
   });

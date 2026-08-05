@@ -77,12 +77,12 @@ describe("SaveDataSchema", () => {
     }
   });
 
-  it("migrates legacy resolution values to aspect ratio values", () => {
-    const result = SaveDataSchema.safeParse({ selectedResolution: "2560x1080" });
+  it("uses default aspect ratio when selectedResolution is omitted", () => {
+    const result = SaveDataSchema.safeParse({});
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.selectedAspectRatio).toBe("21:9");
+      expect(result.data.selectedAspectRatio).toBe("auto");
     }
   });
 
@@ -387,7 +387,7 @@ describe("ActiveRunDataSchema", () => {
     expect(transition.resultState.flags.firstPhysicalCardFreeUsed).toBe(false);
   });
 
-  it("replaces legacy starter deck for unstarted run", () => {
+  it("preserves run deck array for unstarted run", () => {
     const legacyDeck = [
       {
         id: "slash",
@@ -396,55 +396,6 @@ describe("ActiveRunDataSchema", () => {
         art: "",
         cost: 1,
         effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-      },
-      {
-        id: "bash",
-        title: "Bash",
-        descriptionLines: [],
-        art: "",
-        cost: 2,
-        effects: [{ kind: "damage", damageType: "physical", amount: 10 }],
-      },
-      {
-        id: "block",
-        title: "Block",
-        descriptionLines: [],
-        art: "",
-        cost: 1,
-        effects: [{ kind: "player-status", status: "block", amount: 8 }],
-      },
-      {
-        id: "anvil",
-        title: "Anvil",
-        descriptionLines: [],
-        art: "",
-        cost: 2,
-        effects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-      },
-      {
-        id: "plate-mail",
-        title: "Plate Mail",
-        descriptionLines: [],
-        art: "",
-        cost: 1,
-        effects: [{ kind: "player-status", status: "armor", amount: 5 }],
-      },
-      { id: "apple", title: "Apple", descriptionLines: [], art: "", cost: 1, effects: [{ kind: "heal", amount: 5 }] },
-      {
-        id: "meteor",
-        title: "Meteor",
-        descriptionLines: [],
-        art: "",
-        cost: 3,
-        effects: [{ kind: "damage", damageType: "physical", amount: 15 }],
-      },
-      {
-        id: "blessed-aegis",
-        title: "Blessed Aegis",
-        descriptionLines: [],
-        art: "",
-        cost: 2,
-        effects: [{ kind: "player-status", status: "block", amount: 12 }],
       },
     ];
     const result = ActiveRunDataSchema.safeParse({
@@ -464,7 +415,7 @@ describe("ActiveRunDataSchema", () => {
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.runDeck.length).toBeGreaterThan(0);
+      expect(result.data.runDeck.length).toBe(1);
     }
   });
 

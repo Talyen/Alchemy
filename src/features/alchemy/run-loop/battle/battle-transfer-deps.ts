@@ -53,48 +53,42 @@ export function createBattleTransferDeps(
     });
   }
 
-  function getStableHandCardDeps(): StableHandCardRectDeps {
-    return {
-      measureHandCard: (cardKey) => localVisualCardRect(ctx.handCardRefs.current[cardKey] ?? null),
-      registerCancel: (callback) => ctx.transferCancelRegistryRef.current.register(callback),
-      scheduleTimeout: (fn, ms) => ctx.battleTimerGroupRef.current.setTimeout(fn, ms),
-    };
-  }
+  const stableHandCardDeps: StableHandCardRectDeps = {
+    measureHandCard: (cardKey) => localVisualCardRect(ctx.handCardRefs.current[cardKey] ?? null),
+    registerCancel: (callback) => ctx.transferCancelRegistryRef.current.register(callback),
+    scheduleTimeout: (fn, ms) => ctx.battleTimerGroupRef.current.setTimeout(fn, ms),
+  };
 
-  function getCardTransferDeps(): CardTransferAnimationDeps {
-    return {
-      isSessionActive: isCurrentBattleSession,
-      measureDiscardPile: () => localRectFromElement(ctx.discardPileRef.current),
-      measureDrawPile: () => localRectFromElement(ctx.drawPileRef.current),
-      measureHandCard: (cardKey) => localVisualCardRect(ctx.handCardRefs.current[cardKey] ?? null),
-      runCardTransfer,
-      playTransferSound,
-      setHiddenHandCardKeys: (update) => getPresentation().setHiddenHandCardKeys(update),
-      revealCardKey: (cardKey) => getPresentation().addRevealedCardKey(cardKey),
-      setCardPlayInProgress: (active) => {
-        ctx.cardPlayInProgressRef.current = active;
-      },
-      setTransferInProgress: getPresentation().setCardTransferInProgress,
-      stableHandCardDeps: getStableHandCardDeps(),
-    };
-  }
+  const cardTransferDeps: CardTransferAnimationDeps = {
+    isSessionActive: isCurrentBattleSession,
+    measureDiscardPile: () => localRectFromElement(ctx.discardPileRef.current),
+    measureDrawPile: () => localRectFromElement(ctx.drawPileRef.current),
+    measureHandCard: (cardKey) => localVisualCardRect(ctx.handCardRefs.current[cardKey] ?? null),
+    runCardTransfer,
+    playTransferSound,
+    setHiddenHandCardKeys: (update) => getPresentation().setHiddenHandCardKeys(update),
+    revealCardKey: (cardKey) => getPresentation().addRevealedCardKey(cardKey),
+    setCardPlayInProgress: (active) => {
+      ctx.cardPlayInProgressRef.current = active;
+    },
+    setTransferInProgress: (active) => getPresentation().setCardTransferInProgress(active),
+    stableHandCardDeps,
+  };
 
-  function getDrawSequenceDeps(): HandDrawSequenceDeps {
-    return {
-      isSessionActive: isCurrentBattleSession,
-      animateDrawnHand: (cards, allHandCards, session) =>
-        animateDrawnHand(cards, allHandCards, session, getCardTransferDeps()),
-      setTransferInProgress: getPresentation().setCardTransferInProgress,
-      setHiddenHandCardKeys: getPresentation().setHiddenHandCardKeys,
-      runIfSessionActive: (session, action) => {
-        if (isCurrentBattleSession(session)) action();
-      },
-    };
-  }
+  const drawSequenceDeps: HandDrawSequenceDeps = {
+    isSessionActive: isCurrentBattleSession,
+    animateDrawnHand: (cards, allHandCards, session) =>
+      animateDrawnHand(cards, allHandCards, session, cardTransferDeps),
+    setTransferInProgress: (active) => getPresentation().setCardTransferInProgress(active),
+    setHiddenHandCardKeys: (update) => getPresentation().setHiddenHandCardKeys(update),
+    runIfSessionActive: (session, action) => {
+      if (isCurrentBattleSession(session)) action();
+    },
+  };
 
   return {
-    getDrawSequenceDeps,
+    getDrawSequenceDeps: () => drawSequenceDeps,
     animateDiscardedHand: (hand: Array<import("@/lib/game-data").BattleCard>, session: number) =>
-      animateDiscardedHand(hand, session, getCardTransferDeps()),
+      animateDiscardedHand(hand, session, cardTransferDeps),
   };
 }

@@ -63,6 +63,19 @@ describe("profile store", () => {
     expect(useProfileStore.getState().discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
     expect(useProfileStore.getState().collectionTab).toBe("cards");
   });
+
+  it("setState from getInitialState only writes data fields onto the aggregate", () => {
+    useProfileStore.setState(useProfileStore.getInitialState());
+    const encoded = profilePersistenceCodec.encode();
+    expect(encoded).toEqual({
+      discoveredCardIds: [],
+      encounteredEnemyIds: [],
+      discoveredTrinketIds: [],
+      completedDifficulties: expect.any(Object),
+      finishedRunCharacters: [],
+    });
+    expect(typeof useProfileStore.getState().setDiscoveredCardIds).toBe("function");
+  });
 });
 
 describe("settings store", () => {

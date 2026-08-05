@@ -88,122 +88,29 @@ describe("migrateSaveDataToCurrent", () => {
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
 
-  it("preserves existing fields during v0→v1 migration", () => {
+  it("preserves existing fields while advancing unsupported-era saves to current schema", () => {
     const result = migrateSaveDataToCurrent({ musicVolume: 75, activeRun: null });
     expect(result.musicVolume).toBe(75);
     expect(result.activeRun).toBeNull();
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
 
-  it("adds default gameBuildVersion when missing", () => {
-    const result = migrateSaveDataToCurrent({});
-    expect(typeof result.gameBuildVersion).toBe("string");
-  });
-
-  it("preserves existing gameBuildVersion", () => {
-    const result = migrateSaveDataToCurrent({ gameBuildVersion: "0.2.0-test" });
-    expect(result.gameBuildVersion).toBe("0.2.0-test");
-  });
-
-  it("normalizes contentVersion to current when invalid", () => {
-    const result = migrateSaveDataToCurrent({ contentVersion: -1 });
-    expect(result.contentVersion).toBe(CURRENT_CONTENT_VERSION);
-  });
-
-  it("normalizes contentVersion to current when non-numeric", () => {
-    const result = migrateSaveDataToCurrent({ contentVersion: "old" });
-    expect(result.contentVersion).toBe(CURRENT_CONTENT_VERSION);
-  });
-
-  it("migration chain length matches CURRENT_SAVE_SCHEMA_VERSION", () => {
-    const result = migrateSaveDataToCurrent({});
-    expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-  });
-
-  it("migrates arrow keyword progress to archery on v1 saves", () => {
+  it("migrates v8 saves through v9 and v10 to current schema", () => {
     const result = migrateSaveDataToCurrent({
-      saveSchemaVersion: 1,
-      talentXP: { arrow: 12, physical: 3 },
-      unlockedTalents: { arrow: ["arrow-damage"], physical: ["physical-damage"] },
+      saveSchemaVersion: 8,
+      gearInventory: [{ instanceId: "g1", definitionId: "sword-1" }],
+      gearLoadouts: {},
     });
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    expect(result.talentXP).toEqual({ archery: 12, physical: 3 });
-    expect(result.unlockedTalents).toEqual({
-      archery: ["archery-damage"],
-      physical: ["physical-damage"],
-    });
+    expect(result.gearInventories).toBeDefined();
   });
 
-  it("migrates v2 saves through the current schema (adds finishedRunCharacters)", () => {
+  it("migrates v9 saves to v10 baseline", () => {
     const result = migrateSaveDataToCurrent({
-      saveSchemaVersion: 2,
-      discoveredCardIds: ["slash"],
+      saveSchemaVersion: 9,
+      gearInventories: { knight: [] },
     });
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    expect(result.finishedRunCharacters).toEqual([]);
-  });
-
-  it("remaps arrow placeholder talent ids when merging into archery", () => {
-    const result = migrateSaveDataToCurrent({
-      saveSchemaVersion: 1,
-      unlockedTalents: {
-        arrow: ["arrow-damage", "arrow-placeholder-3"],
-        archery: ["archery-placeholder-2"],
-      },
-    });
-    expect(result.unlockedTalents).toEqual({
-      archery: ["archery-placeholder-2", "archery-damage", "archery-placeholder-3"],
-    });
-  });
-
-  it("migrates v3 trinket fields through to trinket fields", () => {
-    const result = migrateSaveDataToCurrent({
-      saveSchemaVersion: 3,
-      discoveredTrinketIds: ["bone-charm"],
-      activeRun: {
-        runTrinkets: ["bone-charm"],
-        discoveredTrinketIdsAtRunStart: ["bone-charm"],
-        activeCombat: {
-          battleState: {
-            trinketEffects: { boneCharmHealOnKill: 3 },
-          },
-        },
-      },
-    });
-    expect(result.discoveredTrinketIds).toEqual(["bone-charm"]);
-    expect((result.activeRun as Record<string, unknown>).runTrinkets).toEqual(["bone-charm"]);
-    const activeCombat = (result.activeRun as Record<string, unknown>).activeCombat as Record<string, unknown>;
-    const battleState = activeCombat.battleState as Record<string, unknown>;
-    expect(battleState.trinketEffects).toEqual({ boneCharmHealOnKill: 3 });
-    expect(battleState.boonEffects).toBeUndefined();
-    expect((result.activeRun as Record<string, unknown>).discoveredTrinketIdsAtRunStart).toBeUndefined();
-  });
-});
-
-describe("legacy resolution→aspect ratio migration", () => {
-  it("converts '1920x1080' to '16:9'", () => {
-    const result = migrateSaveDataToCurrent({ selectedResolution: "1920x1080" });
-    expect(result.selectedAspectRatio).toBe("16:9");
-  });
-
-  it("converts '1920x1200' to '16:10'", () => {
-    const result = migrateSaveDataToCurrent({ selectedResolution: "1920x1200" });
-    expect(result.selectedAspectRatio).toBe("16:10");
-  });
-
-  it("converts '2560x1080' to '21:9'", () => {
-    const result = migrateSaveDataToCurrent({ selectedResolution: "2560x1080" });
-    expect(result.selectedAspectRatio).toBe("21:9");
-  });
-
-  it("preserves existing selectedAspectRatio even if selectedResolution is set", () => {
-    const result = migrateSaveDataToCurrent({ selectedResolution: "1920x1080", selectedAspectRatio: "16:10" });
-    expect(result.selectedAspectRatio).toBe("16:10");
-  });
-
-  it("does not add selectedAspectRatio for unknown resolution", () => {
-    const result = migrateSaveDataToCurrent({ selectedResolution: "800x600" });
-    expect(result.selectedAspectRatio).toBeUndefined();
   });
 });
 
