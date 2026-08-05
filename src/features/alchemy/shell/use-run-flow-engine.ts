@@ -1,6 +1,15 @@
 // Consolidated Run Flow Engine hook for Alchemy shell navigation and sub-system flow routing.
 import { useMemo, useCallback } from "react";
-import { useRunFlowEnginePort, useSetHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-react-ports";
+import {
+  useRunFlowRunPort,
+  useRunFlowTalentPort,
+  useContentNavigationRunPort,
+  useContentNavigationTalentPort,
+  useWildwoodRunPort,
+  useCorruptionRunPort,
+  useDestinationRunPort,
+  useSetHasActiveBattle,
+} from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-port";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-session-model";
@@ -29,7 +38,13 @@ export function useRunFlowEngine({
   onMarkDifficultyCompleted,
   randomSources,
 }: RunNavigationDeps) {
-  const enginePort = useRunFlowEnginePort();
+  const flowRun = useRunFlowRunPort();
+  const flowTalents = useRunFlowTalentPort();
+  const contentRun = useContentNavigationRunPort();
+  const contentTalents = useContentNavigationTalentPort();
+  const wildwoodRun = useWildwoodRunPort();
+  const corruptionRun = useCorruptionRunPort();
+  const destinationRun = useDestinationRunPort();
   const setHasActiveBattle = useSetHasActiveBattle();
   const completedDifficulties = useCompletedDifficulties();
   const nav = useRunSessionNavigationSlice(screen);
@@ -42,14 +57,14 @@ export function useRunFlowEngine({
   const pendingContentSystemType = nav.pendingContentSystemType;
 
   const destinations = useRunDestinationWiring({
-    run: enginePort,
+    run: destinationRun,
     hasActiveBattle,
     navigateTo,
     clearCardHover,
   });
 
   const wildwood = useWildwoodGauntletFlow({
-    run: enginePort,
+    run: wildwoodRun,
     navigateTo,
     onStartBossById: battle.onStartBossById,
     setHasActiveBattle,
@@ -58,8 +73,8 @@ export function useRunFlowEngine({
   });
 
   const contentNav = useContentSystemNavigation({
-    run: enginePort,
-    talents: enginePort,
+    run: contentRun,
+    talents: contentTalents,
     hasActiveRun,
     hasActiveBattle,
     pendingContentSystemType,
@@ -76,13 +91,13 @@ export function useRunFlowEngine({
 
   const handleDraftComplete = useCallback(
     (draftedCards: BattleCard[]) => {
-      if (enginePort.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+      if (flowRun.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
         contentNav.handleDraftComplete(draftedCards);
         return;
       }
       wildwood.handleDraftComplete(draftedCards);
     },
-    [enginePort.contentSystemType, contentNav, wildwood],
+    [flowRun.contentSystemType, contentNav, wildwood],
   );
 
   const mystery = useMysteryEventNavigation({
@@ -130,8 +145,8 @@ export function useRunFlowEngine({
   );
 
   const flowHandlers = useRunFlowHandlers({
-    run: enginePort,
-    talents: enginePort,
+    run: flowRun,
+    talents: flowTalents,
     dispatch,
     contentNav,
     getAvailableDestinations: destinations.getAvailableDestinations,
@@ -141,8 +156,8 @@ export function useRunFlowEngine({
   });
 
   const corruption = useRunCorruptionFlow({
-    getRunDeck: () => enginePort.runDeck,
-    updateRunDeck: enginePort.updateRunDeck,
+    getRunDeck: () => corruptionRun.runDeck,
+    updateRunDeck: corruptionRun.updateRunDeck,
     eventsRng: randomSources.events,
     advanceToNextDestination: flowHandlers.advanceToNextDestination,
   });

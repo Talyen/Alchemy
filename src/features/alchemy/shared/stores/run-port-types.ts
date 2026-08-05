@@ -61,35 +61,10 @@ export interface WildwoodRunPort {
   updateRunDeck: (value: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
 }
 
-/** Unified capability port for run-flow navigation, content systems, and destination choices. */
-export interface RunFlowEnginePort {
-  contentSystemType: ContentSystemId;
-  currentAct: number;
-  selectedDifficulty: DifficultyId | null;
-  characterId: CharacterId;
-  runPlayerHealth: number;
-  runMaxHealth: number;
-  runGold: number;
+/** Corruption flow only needs the run deck reader/writer. */
+export interface CorruptionRunPort {
   runDeck: BattleCard[];
-  runTrinkets: string[];
-  roomsEncountered: number;
-  destinationIndexInAct: number;
-  completedDestinations: Destination[];
-  lastOfferedDestinations: Destination[];
-  destinationRoundsSinceOffered: Partial<Record<Destination, number>>;
-  talentXP: TalentXP;
-  talentEffects: Pick<TalentEffectManifest, "campfireHealBonus" | "startGold">;
-  updateCurrentAct: (value: number | ((prev: number) => number)) => void;
-  updateDestinationIndexInAct: (value: number | ((prev: number) => number)) => void;
-  updateCompletedDestinations: (value: Destination[] | ((prev: Destination[]) => Destination[])) => void;
-  updateRoomsEncountered: (value: number | ((prev: number) => number)) => void;
   updateRunDeck: (value: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
-  updateRunTrinkets: (value: string[] | ((prev: string[]) => string[])) => void;
-  updateRunPlayerHealth: (value: number | ((prev: number) => number)) => void;
-  updateDestinationOfferState: (offerState: {
-    lastOfferedDestinations: Destination[];
-    roundsSinceOffered: Partial<Record<Destination, number>>;
-  }) => void;
 }
 
 /** Battle initialization and combat commands. */
