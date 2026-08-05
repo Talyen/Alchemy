@@ -3,7 +3,13 @@
   container-type: size;
   --armory-board-gap: 0.375rem;
   --armory-inventory-cols: 8;
-  --armory-cell-size: round(nearest, min(8.16cqh, 6.6rem, calc((100cqw - 5rem) / var(--armory-inventory-cols))), 1px);
+  /*
+    Fixed rem cell size. cq-based sizing on this size-container re-resolves on
+    board descendants, cycles with content-sized flex ancestors (PageLayout),
+    collapses to 0, and hides 1×1 currency tiles (multi-cell gear still shows
+    via board-gap). Rem keeps inventory/equipment boards readable at stage scale.
+  */
+  --armory-cell-size: 4.5rem;
 }
 
 .armory-character-art-container {
@@ -46,16 +52,7 @@
 
 @container (min-width: 76rem) {
   .armory-workspace-grid {
-    --armory-cell-size: round(
-      nearest,
-      min(
-        8.16cqh,
-        6.6rem,
-        calc((40cqw - 6 * var(--armory-board-gap) - 2rem) / var(--armory-inventory-cols)),
-        calc((60cqw - 19rem - 5 * var(--armory-board-gap)) / 6)
-      ),
-      1px
-    );
+    /* Cell size stays the inherited absolute length from .armory-workspace. */
     grid-template-columns: 2.4fr 2fr;
   }
 }

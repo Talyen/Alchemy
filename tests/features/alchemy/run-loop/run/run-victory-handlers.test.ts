@@ -297,7 +297,9 @@ describe("createRunFlowHandlers victory paths", () => {
 
     expect(getRunSessionStoreView().rewardClaimInFlight).toBe(false);
     expect(getRunSessionStoreView().companionRewardCards).toBeNull();
-    expect(getRunSessionStoreView().rewardState.choices.map((card) => card.id)).toEqual([companion.id]);
+    const companionChoices = getRunSessionStoreView().rewardState.choices;
+    expect(companionChoices.every((card) => "id" in card)).toBe(true);
+    expect(companionChoices.map((card) => ("id" in card ? card.id : card.instanceId))).toEqual([companion.id]);
     expect(getRunSessionStoreView().rewardState.selectedId).toBeNull();
     expect(getRunSessionStoreView().rewardState.gold).toBe(0);
   });

@@ -50,7 +50,7 @@ describe("measurePortaledTooltipPlacement", () => {
 describe("buildPortaledTooltipStyle", () => {
   it("uses stage left/right for horizontal clamp instead of viewport width", () => {
     const anchor = { centerX: 200, top: 300, bottom: 380 };
-    const narrowStage = { left: 100, right: 900 };
+    const narrowStage = { left: 100, right: 900, top: 0, bottom: 720 };
     const style = buildPortaledTooltipStyle(anchor, false, 8, narrowStage);
 
     expect(style.left).toBe("clamp(252px, 200px, 748px)");

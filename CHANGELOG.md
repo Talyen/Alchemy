@@ -425,6 +425,9 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(armory): use fixed rem cells so inventory tiles stay visible
+  Container-query cell sizing collapsed to 0 with content-sized flex
+  ancestors; switch to rem and tighten TypeScript in perf harness and tests.
 - fix(audits): rebind resumed battle RNG and ship confirmed audit fixes
   Normalize pending enemy-turn resultState on load, delete dead surfaces,
   align docs/tests/selection chrome, and ledger deferred proposals.

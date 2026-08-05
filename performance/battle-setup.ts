@@ -10,7 +10,9 @@ import {
 } from "./battle-art-diagnostics";
 import { PERF_ASPECT_RATIO } from "./viewport";
 
-type PerfDeckCard = Record<string, unknown>;
+type PerfDeckCard = { id: string };
+
+type PerfLandedScreen = "battle" | "destination" | "rewards" | "";
 
 /**
  * Bootstrap a combat with real animations and wait until actors + hand are interactable.
@@ -47,20 +49,21 @@ export async function startPerfBattle(
     // Electron reload can paint loading → battle/destination after inject; wait for either.
     // Leftover Victory (prior warm-up / autosave race) is recoverable with a second inject.
     for (let attempt = 0; attempt < 2; attempt++) {
-      let landed: "battle" | "destination" | "rewards" | "" = "";
+      // Box the landing screen so TypeScript keeps the union across the async poll callback.
+      const landed: { screen: PerfLandedScreen } = { screen: "" };
       await expect
         .poll(
           async () => {
             if (await endTurn.isVisible().catch(() => false)) {
-              landed = "battle";
+              landed.screen = "battle";
               return true;
             }
             if (await destinationHeading.isVisible().catch(() => false)) {
-              landed = "destination";
+              landed.screen = "destination";
               return true;
             }
             if (await rewardsHeading.isVisible().catch(() => false)) {
-              landed = "rewards";
+              landed.screen = "rewards";
               return true;
             }
             return false;
@@ -69,7 +72,7 @@ export async function startPerfBattle(
         )
         .toBe(true);
 
-      if (landed === "rewards") {
+      if (landed.screen === "rewards") {
         if (attempt === 0) {
           await injectSaveState(page, {
             runDeck: deck,
@@ -86,7 +89,7 @@ export async function startPerfBattle(
         throw new Error("startPerfBattle: stuck on Victory rewards after re-inject");
       }
 
-      if (landed === "destination") {
+      if (landed.screen === "destination") {
         const destination = new DestinationPage(page);
         await destination.pick("Normal Combat");
       }

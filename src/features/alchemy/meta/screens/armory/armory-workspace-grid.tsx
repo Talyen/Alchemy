@@ -44,7 +44,7 @@ interface WorkspaceGridProps {
 
 export function ArmoryWorkspaceGrid(props: WorkspaceGridProps) {
   return (
-    <div className="armory-workspace mt-2 min-w-0 flex-1" data-testid="armory-workspace">
+    <div className="armory-workspace mt-2 min-h-0 min-w-0 flex-1" data-testid="armory-workspace">
       <div
         className="armory-workspace-grid"
         onPointerMove={(event) => {

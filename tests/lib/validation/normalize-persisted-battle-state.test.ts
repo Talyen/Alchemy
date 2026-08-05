@@ -29,7 +29,10 @@ describe("normalizePersistedBattleState", () => {
       ...defaultBattleState(),
       currentEnemy: {
         ...defaultBattleState().currentEnemy,
-        traits: [{ id: "tempered", kind: "combat" as const }],
+        // Incomplete legacy traits — normalizer must accept and repair them.
+        traits: [{ id: "tempered", kind: "combat" as const }] as unknown as ReturnType<
+          typeof defaultBattleState
+        >["currentEnemy"]["traits"],
       },
     };
 

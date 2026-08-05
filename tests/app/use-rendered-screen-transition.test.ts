@@ -2,6 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useRenderedScreenTransition } from "@/app/use-rendered-screen-transition";
+import type { Screen } from "@/features/alchemy/shared/types";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { PAGE_EXIT_MS } from "@/lib/game-constants";
 
@@ -19,8 +20,8 @@ describe("useRenderedScreenTransition", () => {
     vi.useFakeTimers();
     const commitPendingTransition = vi.fn();
     const { result, rerender } = renderHook(
-      ({ screen }) => useRenderedScreenTransition(screen, commitPendingTransition),
-      { initialProps: { screen: ROUTE_SCREENS.MENU } },
+      ({ screen }: { screen: Screen }) => useRenderedScreenTransition(screen, commitPendingTransition),
+      { initialProps: { screen: ROUTE_SCREENS.MENU as Screen } },
     );
 
     expect(result.current.renderedScreen).toBe(ROUTE_SCREENS.MENU);

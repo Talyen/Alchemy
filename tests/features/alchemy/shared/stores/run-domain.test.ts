@@ -796,7 +796,7 @@ describe("session facade API", () => {
     const primary = cardLibrary.find((card) => card.id === "slash")!;
     const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"))!;
     getRunSessionStoreView().setRewardState({
-      ...createEmptyRewardState(["Shop"]),
+      ...createEmptyRewardState(["Merchant's Shop"]),
       rewardType: "card",
       choices: [primary],
     });
