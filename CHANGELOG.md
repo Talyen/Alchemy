@@ -425,7 +425,10 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
-- fix(lint): clear knip unused file and export findings
+- fix(test): stabilize burn DoT e2e and sync changelog
+  Exclude Goblin from DoT encounters so double-burn cannot end the battle
+  before HP assertions, and regenerate Unreleased changelog after the knip PR.
+- fix(lint): clear knip unused file and export findings (#6)
   Drop the unused battle-stage-marks re-export shim, unexport internal UI
   helpers, trim migration re-exports tests never import, and keep perf
   harness mark names local so deadcode stays green.

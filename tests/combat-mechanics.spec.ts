@@ -1,5 +1,12 @@
 import { expect } from "@playwright/test";
-import { startBattleWithDeck, makeStatusCard, WOLF_COMPANION_CARD, injectTalentUnlocks, makeCard } from "./helpers";
+import {
+  startBattleWithDeck,
+  makeStatusCard,
+  WOLF_COMPANION_CARD,
+  injectTalentUnlocks,
+  makeCard,
+  seedRandom,
+} from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
 import { critical } from "./playwright-tags";
@@ -31,16 +38,21 @@ const CC_STATUS_CASES = [
   { name: "freeze triggers CC causing enemy to skip turn", damageType: "freeze", amount: 25 },
 ] as const;
 
+// Goblin's trinket-hoarder doubles burn; play+tick can kill and leave this suite on Victory.
+const DOT_ENCOUNTER_OVERRIDES = { encounteredRunEnemyIds: ["goblin"] };
+
 test.describe("Damage-over-Time Status Effects", critical, () => {
   for (const statusCase of DOT_STATUS_CASES) {
     test(statusCase.name, async ({ page, fastBattle, runtimeErrors }) => {
       void fastBattle;
       void runtimeErrors;
 
+      await seedRandom(page, 42);
       const title = statusCase.damageType.charAt(0).toUpperCase() + statusCase.damageType.slice(1);
       await startBattleWithDeck(
         page,
         Array.from({ length: 6 }, () => makeStatusCard(statusCase.damageType, statusCase.amount)),
+        DOT_ENCOUNTER_OVERRIDES,
       );
       const battle = new BattlePage(page);
 
@@ -50,6 +62,7 @@ test.describe("Damage-over-Time Status Effects", critical, () => {
       const enemyHpBefore = await battle.enemyHealth();
       await battle.endTurn();
 
+      await expect(battle.victoryHeading).toBeHidden();
       await expect(async () => {
         expect(await battle.enemyHealth()).toBeLessThan(enemyHpBefore);
       }).toPass({ timeout: 5000 });
