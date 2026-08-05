@@ -60,12 +60,3 @@ export interface RunNavigationDeps {
   wildwood?: WildwoodNavOps;
   mystery?: MysteryNavOps;
 }
-
-export type {
-  MetaRouteCommands,
-  RunSetupRouteCommands,
-  RunLoopRouteCommands,
-  BattleRouteCommands,
-  RunEndRouteCommands,
-  AlchemyRouteCommands,
-} from "./create-route-commands";

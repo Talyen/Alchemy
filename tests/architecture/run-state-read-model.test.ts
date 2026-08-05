@@ -193,15 +193,9 @@ describe("run-state read model", () => {
   it("exposes narrow orchestration ports instead of broad React adapters", () => {
     const facade = read("src/features/alchemy/shared/stores/run-session-react-ports.ts");
     for (const hook of [
-      "useRunFlowRunPort",
-      "useRunFlowTalentPort",
+      "useRunFlowEnginePort",
       "useBattleRunPort",
       "useBattleTalentPort",
-      "useContentNavigationRunPort",
-      "useContentNavigationTalentPort",
-      "useDestinationRunPort",
-      "useWildwoodRunPort",
-      "useCorruptionRunPort",
       "useTalentCommandPort",
       "useHomesteadEffects",
     ]) {
