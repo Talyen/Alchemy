@@ -425,6 +425,10 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Bug Fixes
 
+- fix(lint): clear knip unused file and export findings
+  Drop the unused battle-stage-marks re-export shim, unexport internal UI
+  helpers, trim migration re-exports tests never import, and keep perf
+  harness mark names local so deadcode stays green.
 - fix(perf): use interface for PerfDeckCard lint consistency
 - fix(armory): use fixed rem cells so inventory tiles stay visible
   Container-query cell sizing collapsed to 0 with content-sized flex

@@ -113,7 +113,7 @@ export function CombatTextRail({ entries, side }: { entries: FloatingCombatText[
   );
 }
 
-export function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "player" | "enemy" }) {
+function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "player" | "enemy" }) {
   const icon = getCombatTextIcon(entry);
   const colorClass = getCombatTextColorClass(entry);
 

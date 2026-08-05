@@ -3,16 +3,7 @@
 // path (Zod preprocess + migration + field-level .catch) rather than a parallel implementation.
 // Depends on: save-schemas.ts (SaveDataSchema), lib/validation (migration utils).
 // Used by: tests/features/alchemy/shared/storage/migrations.test.ts only — NOT on the production load path.
-import {
-  SaveDataSchema,
-  getRawSaveSchemaVersion,
-  migrateSaveDataToCurrent,
-  isUnsupportedFutureSaveData,
-  type ParsedSaveData,
-} from "@/lib/validation";
-
-// Re-export the building blocks tests use to assert on intermediate migration steps.
-export { getRawSaveSchemaVersion, migrateSaveDataToCurrent, isUnsupportedFutureSaveData };
+import { SaveDataSchema, type ParsedSaveData } from "@/lib/validation";
 
 // Delegates to SaveDataSchema — the production load path in io.ts.
 // Any change to SaveDataSchema (field defaults, migration steps, clamping) is automatically

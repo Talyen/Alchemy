@@ -185,44 +185,6 @@ export function useTooltipSidePlacement(preferred: SidePlacement, trigger?: unkn
   return { ref, placement };
 }
 
-// Above unless top-clipped, then below; if below clips the stage bottom, use side placement.
-export function useTooltipPlacementWithSideFallback(side: "left" | "right", padding = 8, trigger?: unknown) {
-  const sidePlacement: TooltipPlacement = side === "left" ? "side-start" : "side-end";
-  const ref = useRef<HTMLDivElement>(null);
-  const [placement, setPlacement] = useState<TooltipPlacement>("above");
-  const [dx, setDx] = useState(0);
-  const [prevTrigger, setPrevTrigger] = useState(trigger);
-
-  if (trigger !== prevTrigger) {
-    setPrevTrigger(trigger);
-    setPlacement("above");
-    setDx(0);
-  }
-
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const rect = el.getBoundingClientRect();
-    const bounds = getVrStageBounds();
-
-    if (placement === "above" && rect.top < bounds.top + padding) {
-      setPlacement("below");
-      return;
-    }
-
-    if (placement === "below" && rect.bottom > bounds.bottom - padding) {
-      setPlacement(sidePlacement);
-      return;
-    }
-
-    const { dx: nextDx } = measureTooltipPlacement(rect, padding, bounds);
-    setDx(nextDx);
-  }, [padding, placement, sidePlacement, trigger]);
-
-  return { ref, placement, flip: placement === "below", dx };
-}
-
 export function TooltipHeader({ children, className }: { children: ReactNode; className?: string }) {
   return <p className={cn(tooltipHeaderClass, className)}>{children}</p>;
 }
