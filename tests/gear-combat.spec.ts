@@ -1,9 +1,8 @@
 import { expect } from "@playwright/test";
-import { bodyGear, createEmptyGearLoadouts, gearItemLocator } from "./e2e/armory";
+import { bodyGear, createEmptyGearInventories, createEmptyGearLoadouts, gearItemLocator } from "./e2e/armory";
 import { assertGearFlatDamageBoostsPhysicalDamage } from "./e2e/gear-combat";
 import { startBattleWithDeck } from "./e2e/battle-setup";
 import { makeCard } from "./e2e/cards";
-import { createEmptyGearInventories } from "@/lib/gear";
 import { MenuPage } from "./pages/menu-page";
 import { test } from "./fixtures/e2e";
 import { armory, critical } from "./playwright-tags";

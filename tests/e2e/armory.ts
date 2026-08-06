@@ -1,6 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
-import { createEmptyGearInventories } from "@/lib/gear";
 import { MenuPage } from "../pages/menu-page";
 
 const characterIds = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid", "wildcard"];
@@ -33,6 +32,13 @@ export function createEmptyGearLoadouts() {
   return Object.fromEntries(
     characterIds.map((characterId) => [characterId, Object.fromEntries(gearSlots.map((slot) => [slot, null]))]),
   );
+}
+
+export function createEmptyGearInventories() {
+  return Object.fromEntries(characterIds.map((characterId) => [characterId, [] as unknown[]])) as Record<
+    string,
+    unknown[]
+  >;
 }
 
 export interface OpenArmoryOptions {

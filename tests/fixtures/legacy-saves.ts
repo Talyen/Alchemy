@@ -8,12 +8,43 @@ import {
   CURRENT_GAME_BUILD_VERSION,
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation/metadata";
-import {
-  createEmptyCurrencyBoardPositionsByCharacter,
-  createEmptyGearBoardPositionsByCharacter,
-  createEmptyGearInventories,
-  createEmptyGearLoadouts,
-} from "@/lib/gear";
+
+const FIXTURE_CHARACTER_IDS = [
+  "knight",
+  "rogue",
+  "wizard",
+  "ranger",
+  "alchemist",
+  "warlock",
+  "druid",
+  "wildcard",
+] as const;
+const FIXTURE_GEAR_SLOTS = [
+  "body",
+  "helm",
+  "boots",
+  "gloves",
+  "belt",
+  "main-hand",
+  "off-hand",
+  "left-ring",
+  "right-ring",
+  "amulet",
+] as const;
+
+function emptyGearInventories() {
+  return Object.fromEntries(FIXTURE_CHARACTER_IDS.map((id) => [id, [] as unknown[]])) as Record<string, unknown[]>;
+}
+
+function emptyGearLoadouts() {
+  return Object.fromEntries(
+    FIXTURE_CHARACTER_IDS.map((id) => [id, Object.fromEntries(FIXTURE_GEAR_SLOTS.map((slot) => [slot, null]))]),
+  ) as Record<string, Record<string, string | null>>;
+}
+
+function emptyBoardPositionsByCharacter() {
+  return Object.fromEntries(FIXTURE_CHARACTER_IDS.map((id) => [id, {}])) as Record<string, object>;
+}
 
 function emptyCraftingCurrencies() {
   return {
@@ -37,11 +68,11 @@ function currentSaveEnvelope(overrides: Record<string, unknown> = {}) {
     discoveredCardIds: [] as string[],
     encounteredEnemyIds: [] as string[],
     discoveredTrinketIds: [] as string[],
-    gearInventories: createEmptyGearInventories(),
-    gearLoadouts: createEmptyGearLoadouts(),
-    gearBoardPositionsByCharacter: createEmptyGearBoardPositionsByCharacter(),
+    gearInventories: emptyGearInventories(),
+    gearLoadouts: emptyGearLoadouts(),
+    gearBoardPositionsByCharacter: emptyBoardPositionsByCharacter(),
     craftingCurrencies: emptyCraftingCurrencies(),
-    craftingCurrencyBoardPositionsByCharacter: createEmptyCurrencyBoardPositionsByCharacter(),
+    craftingCurrencyBoardPositionsByCharacter: emptyBoardPositionsByCharacter(),
     talentXP: {} as Record<string, number>,
     unlockedTalents: {} as Record<string, string[]>,
     musicVolume: 50,
@@ -78,7 +109,7 @@ function currentSchemaSave() {
     encounteredEnemyIds: ["goblin"],
     discoveredTrinketIds: ["bone-charm"],
     gearInventories: (() => {
-      const inventories = createEmptyGearInventories();
+      const inventories = emptyGearInventories();
       inventories.knight = [
         {
           instanceId: "gear-1",
@@ -89,7 +120,7 @@ function currentSchemaSave() {
       return inventories;
     })(),
     gearLoadouts: (() => {
-      const loadouts = createEmptyGearLoadouts();
+      const loadouts = emptyGearLoadouts();
       loadouts.knight.body = "gear-1";
       return loadouts;
     })(),
