@@ -126,17 +126,18 @@ Layout: bootstrap helpers in [`tests/e2e/`](tests/e2e/) (`battle-setup.ts`, `arm
 
 ## CI parity
 
-| Job                                         | Local equivalent                                                                                                             |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| CI `ship-gate`                              | `npm run build:desktop:no-sync` (after unit tests pass)                                                                      |
-| CI `save-gate`                              | `npm run test:ship:e2e` (path-filtered)                                                                                      |
-| CI `desktop-build` / `electron-e2e`         | `npm run dist:win` / `npm run test:ship:desktop`                                                                             |
-| CI `e2e` (`@critical`, every push)          | `npm run build && npm run test:e2e:prepush:full`                                                                             |
-| Pre-push hook                               | `npm run check:push`                                                                                                         |
-| Tag `v*` release (`e2e-full` + release job) | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md); release job runs `dist:desktop` once (no `check:ship` rebuild) |
+| Job                                         | Local equivalent                                                                                                                    |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| CI `ship-gate`                              | `ALCHEMY_SKIP_ASSETS=1 npm run build:desktop` (after unit tests pass); uploads `dist-desktop` artifact                              |
+| CI `assets`                                 | `node scripts/prepare-assets.mjs` + git diff on committed outputs (path-filtered on Raw Assets / asset scripts / committed outputs) |
+| CI `save-gate`                              | `npm run test:ship:e2e` (path-filtered)                                                                                             |
+| CI `desktop-build` / `electron-e2e`         | `npm run dist:desktop` / `npm run test:ship:desktop` (electron reuses ship-gate `dist/`)                                            |
+| CI `e2e` (`@critical`, every push)          | `npm run build && npm run test:e2e:prepush:full`                                                                                    |
+| Pre-push hook                               | `npm run check:push`                                                                                                                |
+| Tag `v*` release (`e2e-full` + release job) | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md); release job runs `dist:desktop` once (no `check:ship` rebuild)        |
 
 CI surfaces failures via GitHub check annotations (Vitest `github-actions` / Playwright `github` reporters) and a short job Step Summary from `scripts/ci-summarize-*.mjs`. The `lint` job runs each `lint:ci` stage as its own step so the failed step name identifies format vs typecheck vs ESLint vs boundaries vs knip. Local `check:push:full` runs the same comprehensive gate; the default pre-push hook uses the faster `check:push` subset.
 
-Path-filtered jobs (`save-gate`, `desktop-build`, `electron-e2e`) are gated by the `changes` job (`dorny/paths-filter`); on `workflow_dispatch` they always run. The `ci-ok` job aggregates every CI job into a single status check for dashboards and optional PR merges — it is not a required push gate on `main`. Shared job setup (Node + `npm ci`) lives in the composite action `.github/actions/setup`. Nightly failures open or update a GitHub issue labeled `nightly-failure`.
+Path-filtered jobs (`assets`, `save-gate`, `desktop-build`, `electron-e2e`) are gated by the `changes` job (`dorny/paths-filter`); on `workflow_dispatch` they always run. The `ci-ok` job aggregates every CI job into a single status check for dashboards and optional PR merges — it is not a required push gate on `main`. Shared job setup (Node + `npm ci`) lives in the composite action `.github/actions/setup`. Nightly failures open or update a GitHub issue labeled `nightly-failure`.
 
 **Docs:** [AGENTS.md](./AGENTS.md) (rules) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [docs/REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [docs/RELEASE.md](./docs/RELEASE.md) (Steam) · [docs/Audits](./docs/Audits/README.md) (audits)

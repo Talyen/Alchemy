@@ -12,11 +12,9 @@ import { getCampfireHealFraction, getCampfireRestHealth } from "@/lib/game-const
 import { getBossEnemy, getBossById } from "@/features/alchemy/shared/config";
 import { routeDestinationChoice } from "./run-destination-handlers";
 import { CONSTANTS, type Destination } from "../../shared/types";
-import type { RunFlowContext } from "./run-flow-context";
+import type { RunFlowHandlerDeps, RunFlowSiblingHandlers } from "./run-flow-handler-deps";
 
-export function createDestinationScreenHandlers(ctx: RunFlowContext) {
-  const { deps } = ctx;
-
+export function createDestinationScreenHandlers(deps: RunFlowHandlerDeps, handlers: RunFlowSiblingHandlers) {
   function prepareDestinationScreen() {
     const state = readRunSession().rewardState;
     const bossOnly = state.destinations.length === 1 && state.destinations[0] === CONSTANTS.DESTINATIONS.BOSS_COMBAT;
@@ -55,10 +53,10 @@ export function createDestinationScreenHandlers(ctx: RunFlowContext) {
           });
         },
         resetCorruption: () => setCorruptionResult(null),
-        startShop: () => deps.dispatch({ type: "init-shop" }),
-        startAlchemist: () => deps.dispatch({ type: "init-alchemist" }),
-        startTrinketShop: () => deps.dispatch({ type: "init-trinket-shop" }),
-        startEquipmentShop: () => deps.dispatch({ type: "init-equipment-shop" }),
+        startShop: () => deps.dispatch({ type: "init-shop", kind: "shop" }),
+        startAlchemist: () => deps.dispatch({ type: "init-shop", kind: "alchemist" }),
+        startTrinketShop: () => deps.dispatch({ type: "init-shop", kind: "trinket" }),
+        startEquipmentShop: () => deps.dispatch({ type: "init-shop", kind: "equipment" }),
         startBattle: (enemyType) => deps.dispatch({ type: "start-battle", enemyType }),
         startBossBattle: () => deps.dispatch({ type: "start-boss", bossId: choice.selectedBossId }),
       });
@@ -75,7 +73,7 @@ export function createDestinationScreenHandlers(ctx: RunFlowContext) {
         deps.run.updateRunPlayerHealth((prev) => getCampfireRestHealth(prev, deps.run.runMaxHealth, healFraction));
       },
       {
-        afterCommit: () => ctx.dispatchContinuation({ type: "advance-to-next-destination" }),
+        afterCommit: () => handlers.advanceToNextDestination(),
       },
     );
   }

@@ -2,7 +2,7 @@ import { useRef, useMemo, useLayoutEffect, type RefObject } from "react";
 import type { BattleState } from "@/lib/battle";
 import type { BattleRefs, CardRect, Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import type { BattleRunPort, BattleTalentPort } from "./battle-run-port";
+import type { BattleRunPort, BattleTalentPort } from "@/features/alchemy/shared/stores/run-port-types";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { createTransferCancelRegistry, type TransferCancelRegistry } from "./card-transfer-animations";
 
@@ -24,6 +24,7 @@ export interface BattleControllerContext extends BattleRefs {
   companionScheduledRef: RefObject<boolean>;
   battleTimerGroupRef: RefObject<TimerGroup>;
   battleSessionRef: RefObject<number>;
+  battleAbortControllerRef: RefObject<AbortController>;
   victoryDefeatHandledRef: RefObject<boolean>;
   transferCancelRegistryRef: RefObject<TransferCancelRegistry>;
   transferIdCounterRef: RefObject<number>;
@@ -60,6 +61,7 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
   const companionScheduledRef = useRef(false);
   const battleTimerGroupRef = useRef(new TimerGroup());
   const battleSessionRef = useRef(0);
+  const battleAbortControllerRef = useRef(new AbortController());
   const victoryDefeatHandledRef = useRef(false);
   const transferCancelRegistryRef = useRef(createTransferCancelRegistry());
   const transferIdCounterRef = useRef(0);
@@ -82,6 +84,7 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
       companionScheduledRef,
       battleTimerGroupRef,
       battleSessionRef,
+      battleAbortControllerRef,
       victoryDefeatHandledRef,
       transferCancelRegistryRef,
       transferIdCounterRef,

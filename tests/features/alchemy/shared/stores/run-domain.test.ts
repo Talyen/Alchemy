@@ -129,6 +129,7 @@ describe("initialize", () => {
       currentScreen: null,
       destinationChoices: [],
       pendingReward: null,
+      resumePhase: "none",
     };
     getRunProgressStoreView().initialize(activeRun);
     useRunProfileStore.getState().applyTalentState({ physical: 100 }, { physical: ["talent-1"] });
@@ -170,6 +171,7 @@ describe("initialize", () => {
       currentScreen: null,
       destinationChoices: [],
       pendingReward: null,
+      resumePhase: "none",
     };
 
     getRunProgressStoreView().initialize(activeRun);
@@ -218,6 +220,7 @@ describe("initialize", () => {
       currentScreen: "shop",
       destinationChoices: [],
       pendingReward: null,
+      resumePhase: "none",
     };
     restoreRun(activeRun, {}, {});
     expect(getNavigationStoreView().screen).toBe("shop");
@@ -758,6 +761,7 @@ describe("session facade API", () => {
       trinketShopState: null,
       equipmentShopState: null,
       wildwoodDraft: null,
+      resumePhase: "destination",
     });
     expect(fromStores).toEqual(explicit);
   });
@@ -793,6 +797,57 @@ describe("session facade API", () => {
     expect(snap.pendingReward).toBeNull();
     expect(snap.destinationChoices).toEqual(["Campfire"]);
     expect(snap.currentScreen).toBe("destination");
+    expect(snap.resumePhase).toBe("destination");
+  });
+
+  it("encodes destination resumePhase for hollow boss mid-claim without destinations", () => {
+    getRunSessionStoreView().setRewardState({
+      ...createEmptyRewardState(),
+      rewardType: "gear",
+      choices: [],
+      lastVictoryEnemyType: "boss",
+    });
+    // Hollow post-claim surfaces cannot beginRewardClaim (no choices); encode still
+    // stamps destination phase from empty rewards screen so resume cannot soft-lock.
+    const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
+    expect(snap.pendingReward).toBeNull();
+    expect(snap.currentScreen).toBe("rewards");
+    expect(snap.resumePhase).toBe("destination");
+
+    restoreRun(snap, {}, {});
+    expect(getNavigationStoreView().screen).toBe("destination");
+    expect(getRunSessionStoreView().rewardState.choices).toEqual([]);
+  });
+
+  it("infers hollow rewards resume when resumePhase is none", () => {
+    getRunSessionStoreView().setRewardState({
+      ...createEmptyRewardState(),
+      rewardType: "gear",
+      choices: [],
+      lastVictoryEnemyType: "boss",
+    });
+    const snap = {
+      ...snapshotRun(ROUTE_SCREENS.REWARDS),
+      pendingReward: null,
+      destinationChoices: [],
+      currentScreen: "rewards" as const,
+      resumePhase: "none" as const,
+    };
+    restoreRun(snap, {}, {});
+    expect(getNavigationStoreView().screen).toBe("destination");
+  });
+
+  it("marks enemy-phase combat without a transition for boot recovery", () => {
+    const enemyPhase = { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] };
+    getBattleStoreView().initializeActiveBattle(enemyPhase, null);
+    getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+    const snap = snapshotRun(ROUTE_SCREENS.BATTLE);
+    expect(snap.activeCombat?.battleState.turnPhase).toBe("enemy");
+    expect(snap.activeCombat?.pendingBattleTransition).toBeNull();
+
+    restoreRun(snap, {}, {});
+    expect(getBattleStoreView().pendingBattleTransition).toEqual({ kind: "legacy-enemy-turn" });
+    expect(getBattleStoreView().battleState.turnPhase).toBe("enemy");
   });
 
   it("persists companion handoff during mid-claim and restores companion as the offer", () => {
@@ -813,6 +868,7 @@ describe("session facade API", () => {
     }
     expect(snap.pendingReward?.companionChoiceIds).toEqual([companion.id]);
     expect(snap.currentScreen).toBe("rewards");
+    expect(snap.resumePhase).toBe("companion-reward");
 
     getRunSessionStoreView().setRewardState(createEmptyRewardState());
     getRunSessionStoreView().setCompanionRewardCards(null);
@@ -924,14 +980,15 @@ describe("session facade API", () => {
     expect(getRunSessionStoreView().rewardState.choices).toEqual([instance]);
   });
 
-  it("warns when pending reward choices cannot be restored", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  it("drops unrestorable pending reward choices without soft-locking", () => {
     const activeRun: ActiveRunData = {
       ...snapshotRun(ROUTE_SCREENS.REWARDS),
+      resumePhase: "primary-reward",
       destinationChoices: [],
       pendingReward: {
         rewardType: "card",
         choiceIds: ["not-a-real-card-id"],
+        companionChoiceIds: [],
         selectedId: null,
         gold: 0,
         materials: emptyInventory(),
@@ -946,9 +1003,5 @@ describe("session facade API", () => {
     restoreRun(activeRun, {}, {});
 
     expect(getRunSessionStoreView().rewardState.choices).toEqual([]);
-    expect(warn).toHaveBeenCalledWith("Pending reward could not be restored; reward choices were dropped", {
-      rewardType: "card",
-    });
-    warn.mockRestore();
   });
 });

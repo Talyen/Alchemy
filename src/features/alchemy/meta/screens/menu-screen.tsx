@@ -7,7 +7,7 @@ import { BUTTON_WIDTH_MENU } from "@/features/alchemy/shared/config";
 import { CardFlip } from "../../shared/ui/card-flip";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { cn } from "@/lib/utils";
-import { useFinishedRunCharacters } from "../../shared/stores/profile-port";
+import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
 import { StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { LockedMenuItem } from "../../shared/ui/locked-menu-item";
 import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data";

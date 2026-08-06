@@ -22,12 +22,10 @@ import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { computeVictoryRewards, commitVictoryRewards } from "../navigation/victory-flow";
 import { CONSTANTS } from "../../shared/types";
 import { getActiveRewardTraits } from "./run-flow-handler-deps";
+import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
 import { clearCombatPresentation } from "./run-flow-session-helpers";
-import type { RunFlowContext } from "./run-flow-context";
 
-export function createVictoryHandlers(ctx: RunFlowContext) {
-  const { deps } = ctx;
-
+export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
   function computeVictoryResult() {
     const runState = readActiveRun();
     return computeVictoryRewards(

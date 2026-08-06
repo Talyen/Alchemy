@@ -1,6 +1,5 @@
-// Save validation utilities: error collection stack, caught() preprocessors, string dedup.
+// Save validation utilities: error collection stack and string dedup preprocessors.
 import { z } from "zod";
-import { logError } from "@/lib/error-logger";
 
 export interface ValidationError {
   path: string;
@@ -47,26 +46,10 @@ export function safeParseWithErrors<T>(
   }
 }
 
-export function caught<T>(schema: z.ZodType<T>, fallback: T, path: string): z.ZodType<T> {
-  return z.preprocess((val) => {
-    if (val == null) return fallback;
-    const result = schema.safeParse(val);
-    if (!result.success) {
-      pushValidationError(path, result.error.message);
-      logError(`[Save Validation] Field "${path}" invalid, fell back to default`, "validation", {
-        field: path,
-        error: result.error.message,
-      });
-      return fallback;
-    }
-    return result.data;
-  }, schema);
-}
-
 export function deduplicateStrings(val: unknown): string[] {
   return Array.isArray(val) ? [...new Set(val.filter((v): v is string => typeof v === "string"))] : [];
 }
 
-export function deduplicatedStringArraySchema(path: string) {
-  return caught(z.preprocess(deduplicateStrings, z.array(z.string())), [], path);
+export function deduplicatedStringArraySchema() {
+  return z.preprocess(deduplicateStrings, z.array(z.string())).catch([]);
 }

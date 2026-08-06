@@ -39,6 +39,8 @@ jobs:
         run: node scripts/ensure-electron.mjs
 
       - run: npm run build
+        env:
+          ALCHEMY_SKIP_ASSETS: "1"
 
       - uses: actions/upload-artifact@v5
         with:

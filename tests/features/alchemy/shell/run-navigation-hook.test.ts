@@ -2,7 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { useRunNavigation } from "@/features/alchemy/shell/use-run-navigation";
+import { useRunFlowEngine } from "@/features/alchemy/shell/use-run-flow-engine";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
   getBattleStoreView,
@@ -23,7 +23,7 @@ beforeEach(() => {
   getNavigationStoreView().setScreen(ROUTE_SCREENS.MENU);
 });
 
-describe("useRunNavigation", () => {
+describe("useRunFlowEngine", () => {
   it("resetRunState tears down run stores when navigating to menu", () => {
     getRunSessionStoreView().setHasActiveRun(true);
     getBattleStoreView().setHasActiveBattle(true);
@@ -32,7 +32,7 @@ describe("useRunNavigation", () => {
     const cancelPending = vi.fn();
 
     const { result } = renderHook(() =>
-      useRunNavigation({
+      useRunFlowEngine({
         screen: ROUTE_SCREENS.BATTLE,
         navigateTo,
         transition,

@@ -16,6 +16,7 @@ import {
   WildwoodRecoveryScreen,
   WildwoodRemovalScreen,
 } from "@/features/alchemy/run-loop/screens";
+import { useBattleScreenRouteData } from "@/app/screen-routes/use-battle-screen-route-data";
 import {
   useAlchemistScreenData,
   useCampfireScreenData,
@@ -34,11 +35,11 @@ import { useIsWildwoodRun, useTalentEffects } from "@/features/alchemy/shared/st
 import { getCampfireHealFraction } from "@/lib/game-constants";
 import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
 
-function BattleScreenRoute({ routeCommands, battleBindings, onOpenBattleMenu }: BattleRouteCtx) {
+function BattleScreenRoute({ routeCommands, onOpenBattleMenu }: BattleRouteCtx) {
   const commands = routeCommands.battle;
   const { heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
-  const { battleScreenData, refs, cardTransfers, hiddenHandCardKeys, cardTransferInProgress, playableHandCardKeys } =
-    battleBindings;
+  const { battleScreenData, cardTransfers, hiddenHandCardKeys, cardTransferInProgress, playableHandCardKeys } =
+    useBattleScreenRouteData();
 
   return (
     <BattleScreen
@@ -47,7 +48,7 @@ function BattleScreenRoute({ routeCommands, battleBindings, onOpenBattleMenu }: 
       playerName={playerName}
       aspectMode={aspectMode}
       stagePixelRatio={stagePixelRatio}
-      refs={refs}
+      refs={commands.refs}
       onCardClick={commands.handleCardClick}
       onOpenMenu={onOpenBattleMenu}
       onWishChoice={commands.handleWishChoice}
@@ -268,12 +269,8 @@ export const runLoopScreenRoutes: {
   mystery: (ctx: RunLoopRouteCtx) => ReactNode;
   corruption: (ctx: RunLoopRouteCtx) => ReactNode;
 } = {
-  battle: ({ routeCommands, battleBindings, onOpenBattleMenu }) => (
-    <BattleScreenRoute
-      routeCommands={routeCommands}
-      battleBindings={battleBindings}
-      onOpenBattleMenu={onOpenBattleMenu}
-    />
+  battle: ({ routeCommands, onOpenBattleMenu }) => (
+    <BattleScreenRoute routeCommands={routeCommands} onOpenBattleMenu={onOpenBattleMenu} />
   ),
   "labyrinth-map": ({ routeCommands, onOpenBattleMenu }) => (
     <LabyrinthMapScreenRoute commands={routeCommands.runLoop.labyrinth} onOpenBattleMenu={onOpenBattleMenu} />

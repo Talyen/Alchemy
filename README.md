@@ -52,8 +52,8 @@ The game also has an Electron shell for local desktop builds.
 | ----------------------- | ------------------------------------------------ |
 | `npm run dev:desktop`   | Run Vite and Electron together                   |
 | `npm run build:desktop` | Desktop production build (Vite `--mode desktop`) |
-| `npm run package:win`   | Create an unpacked Windows build                 |
-| `npm run dist:win`      | Create a Windows installer                       |
+| `npm run package:win`   | Unpacked Windows build via `dist-desktop.mjs`    |
+| `npm run dist:desktop`  | Desktop installers via `dist-desktop.mjs`        |
 
 ## Testing
 
@@ -164,7 +164,7 @@ tests/                   # Vitest unit tests and Playwright e2e specs
 
 ## Assets
 
-Asset preparation runs automatically before development and production builds via `scripts/prepare-assets.mjs` (`predev` / `prebuild`). Set `ALCHEMY_SKIP_ASSETS=1` to skip.
+Asset preparation runs automatically before development and production builds via `scripts/prepare-assets.mjs` (`predev` / `prebuild`). Set `ALCHEMY_SKIP_ASSETS=1` to skip (CI/Vercel/release do this because optimized outputs are committed).
 
 | Command                   | Action                           |
 | ------------------------- | -------------------------------- |
@@ -178,7 +178,7 @@ Optimized images are committed under `src/assets/optimized/`. Optimized sounds a
 
 ## Deployment
 
-The web build targets Vercel. `vercel.json` runs `npm run typecheck && npm run build`, outputs `dist`, and rewrites routes to `index.html` for the single-page app.
+The web build targets Vercel. `vercel.json` runs `npm run build:web:ci` (typecheck + build with `ALCHEMY_SKIP_ASSETS=1`), outputs `dist`, and rewrites routes to `index.html` for the single-page app.
 
 ## Tech Stack
 

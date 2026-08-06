@@ -1,9 +1,7 @@
-export { getPlayableHandCardKeysExcludingHidden } from "./playable-hand";
 export { useBattleAutoEndTurn } from "./use-battle-auto-end-turn";
 export { createBattleSession } from "./battle-session";
 export { defaultMeasureElementRect, defaultMeasureVisualCardRect } from "./controller-utils";
 export { createBattleEndTurnUi } from "./end-turn-ui";
-export { createTurnOrchestrationDeps } from "./turn-orchestration";
 export { createBattleTransferDeps } from "./battle-transfer-deps";
 export { createBattleInit } from "./battle-init";
 export { createBattleCardPlay } from "./battle-card-play";

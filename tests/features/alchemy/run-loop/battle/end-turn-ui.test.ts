@@ -4,7 +4,6 @@ import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-tu
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
-import type { TurnOrchestrationDeps } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { getBattleStoreView, resetRunBattleSlice } from "../../../../helpers/run-domain-store-test";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
@@ -15,6 +14,11 @@ const { resolveEndTurnMock } = vi.hoisted(() => ({
 
 vi.mock("@/features/alchemy/run-loop/battle/turn-orchestration", () => ({
   resolveEndTurn: resolveEndTurnMock,
+  createTurnOrchestration: () => ({
+    logBattleError: vi.fn(),
+    resetHandTransferUi: vi.fn(),
+  }),
+  resumePendingBattleTransition: vi.fn(),
 }));
 
 vi.mock("@/lib/animation/animation-prefs", () => ({
@@ -64,12 +68,7 @@ describe("createBattleEndTurnUi handleEndTurn", () => {
       animateDiscardedHand: vi.fn(() => discardPromise),
     } as unknown as ReturnType<typeof createBattleTransferDeps>;
 
-    const deps = {
-      logBattleError: vi.fn(),
-      resetHandTransferUi: vi.fn(),
-    } as unknown as TurnOrchestrationDeps;
-
-    const ui = createBattleEndTurnUi(ctx, session, transferDeps, deps);
+    const ui = createBattleEndTurnUi(ctx, session, transferDeps);
     return { ui, cardPlayInProgressRef, clearAutoEndTurn, releaseDiscard: releaseDiscard! };
   }
 

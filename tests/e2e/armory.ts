@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
+import { createEmptyGearInventories } from "@/lib/gear";
 import { MenuPage } from "../pages/menu-page";
 
 const characterIds = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid", "wildcard"];
@@ -42,9 +43,12 @@ export interface OpenArmoryOptions {
 
 export async function openArmory(page: Page, options: GearInstance[] | OpenArmoryOptions = [bodyGear, helmGear]) {
   const resolved: OpenArmoryOptions = Array.isArray(options) ? { inventory: options } : options;
+  const inventory = resolved.inventory ?? [bodyGear, helmGear];
+  const gearInventories = createEmptyGearInventories();
+  gearInventories.knight = inventory;
   const menu = new MenuPage(page);
   await menu.gotoWithUnlockedMeta({
-    gearInventory: resolved.inventory ?? [bodyGear, helmGear],
+    gearInventories,
     gearLoadouts: resolved.loadouts ?? createEmptyGearLoadouts(),
     ...(resolved.craftingCurrencies ? { craftingCurrencies: resolved.craftingCurrencies } : {}),
   });

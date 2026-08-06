@@ -58,7 +58,7 @@ describe("run-session command boundary", () => {
 
   it("keeps feature-facing read ports free of aggregate actions", () => {
     const readPort = read("src/features/alchemy/shared/stores/run-session-read-port.ts");
-    const profilePort = read("src/features/alchemy/shared/stores/profile-port.ts");
+    const profilePort = read("src/features/alchemy/shared/stores/profile-store.ts");
     const reactPorts = read("src/features/alchemy/shared/stores/run-session-react-ports.ts");
     const actionSelector = read("src/features/alchemy/shared/stores/store-actions.ts");
 
@@ -101,16 +101,18 @@ describe("run-session command boundary", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("keeps run-flow cross-concern calls typed and one-way", () => {
-    const context = read("src/features/alchemy/run-loop/run/run-flow-context.ts");
+  it("keeps run-flow cross-concern calls as direct sibling handler invocations", () => {
     const handlers = read("src/features/alchemy/run-loop/run/run-flow-handlers.ts");
+    const deps = read("src/features/alchemy/run-loop/run/run-flow-handler-deps.ts");
+    const progression = read("src/features/alchemy/run-loop/run/run-flow-progression.ts");
 
-    expect(context).toContain("export type RunFlowContinuation");
-    expect(context).toContain("dispatchContinuation");
-    expect(context).not.toContain("completeRunVictory:");
-    expect(context).not.toContain("advanceToNextDestination:");
-    expect(handlers).toContain("createRunFlowContext(deps, dispatchContinuation)");
-    expect(handlers).not.toContain("ctx.completeRunVictory");
-    expect(handlers).not.toContain("ctx.advanceToNextDestination");
+    expect(deps).toContain("export interface RunFlowSiblingHandlers");
+    expect(handlers).toContain("createProgressionHandlers(deps, sibling)");
+    expect(handlers).toContain("createRewardHandlers(deps, sibling)");
+    expect(handlers).toContain("createDestinationScreenHandlers(deps, sibling)");
+    expect(progression).toContain("handlers.prepareDestinationScreen()");
+    expect(progression).toContain("handlers.completeRunVictory(");
+    expect(handlers).not.toContain("dispatchContinuation");
+    expect(handlers).not.toContain("RunFlowContinuation");
   });
 });

@@ -1,6 +1,6 @@
 // Phased routeCommands assembly — feature command maps live here so the mega-controller stays thin wiring.
 import type { BattleCard, CharacterId, DifficultyId, KeywordId } from "@/lib/game-data";
-import type { Destination, Screen } from "@/features/alchemy/shared/types";
+import type { Destination, Screen, BattleRefs } from "@/features/alchemy/shared/types";
 import type { MysteryChoice } from "@/lib/mystery";
 import type { ShopActions } from "@/features/alchemy/run-loop/shop/shop-action-types";
 import type { MouseEvent } from "react";
@@ -39,6 +39,7 @@ export interface AlchemyRouteCommandDeps {
   handleEndTurn: () => void;
   skipCombatDevMode: () => void;
   removeCardGhost: (id: string) => void;
+  refs: BattleRefs;
   continueFromRunEnd: () => void;
 }
 
@@ -167,35 +168,23 @@ function createRunLoopRouteCommands(
   };
 }
 
-function createBattleRouteCommands(
-  deps: Pick<
-    AlchemyRouteCommandDeps,
-    "handleCardClick" | "handleWishChoice" | "handleEndTurn" | "skipCombatDevMode" | "removeCardGhost"
-  >,
-) {
-  return {
-    handleCardClick: deps.handleCardClick,
-    handleWishChoice: deps.handleWishChoice,
-    handleEndTurn: deps.handleEndTurn,
-    skipCombatDevMode: deps.skipCombatDevMode,
-    removeCardGhost: deps.removeCardGhost,
-  };
-}
-
-function createRunEndRouteCommands(deps: Pick<AlchemyRouteCommandDeps, "continueFromRunEnd">) {
-  return {
-    continueFromRunEnd: deps.continueFromRunEnd,
-  };
-}
-
 /** Assemble the phased routeCommands tree from shell controller surfaces. */
 export function createAlchemyRouteCommands(deps: AlchemyRouteCommandDeps) {
   return {
     meta: createMetaRouteCommands(deps),
     runSetup: createRunSetupRouteCommands(deps),
     runLoop: createRunLoopRouteCommands(deps),
-    battle: createBattleRouteCommands(deps),
-    runEnd: createRunEndRouteCommands(deps),
+    battle: {
+      handleCardClick: deps.handleCardClick,
+      handleWishChoice: deps.handleWishChoice,
+      handleEndTurn: deps.handleEndTurn,
+      skipCombatDevMode: deps.skipCombatDevMode,
+      removeCardGhost: deps.removeCardGhost,
+      refs: deps.refs,
+    },
+    runEnd: {
+      continueFromRunEnd: deps.continueFromRunEnd,
+    },
   };
 }
 

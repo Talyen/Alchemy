@@ -7,6 +7,7 @@ export {
   isCombatDestination,
   isShopDestination,
 } from "./destinations";
+export { filterValidDestinations, filterValidDestinationRounds } from "./destination-validation";
 export { getAvailableDestinations } from "./destination-availability";
 export {
   DOCUMENTED_META_TRANSITIONS,

@@ -5,11 +5,11 @@ import {
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation/metadata";
 import { migrateSaveDataToCurrent } from "@/lib/validation/migration";
-import { legacyCampaignRunSave } from "../../fixtures/legacy-saves";
+import { currentSchemaCampaignSave } from "../../fixtures/legacy-saves";
 
 describe("validation metadata", () => {
   it("CURRENT_SAVE_SCHEMA_VERSION matches migrated legacy save version", () => {
-    const migrated = migrateSaveDataToCurrent(legacyCampaignRunSave());
+    const migrated = migrateSaveDataToCurrent(currentSchemaCampaignSave());
     expect(migrated.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
 

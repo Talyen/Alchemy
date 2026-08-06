@@ -11,7 +11,7 @@ import {
 import type { BattleCard } from "@/lib/game-data";
 import { playCardSound, playGoldGain, playUISound } from "@/lib/audio";
 import { appendUnique } from "@/lib/utils";
-import { setDiscoveredCardIds } from "../../shared/stores/profile-port";
+import { setDiscoveredCardIds } from "../../shared/stores/profile-store";
 import { CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
 import { animateCardActivation } from "./card-transfer-animations";
 import { getCardRect, getHoverId } from "../../shared/utils";

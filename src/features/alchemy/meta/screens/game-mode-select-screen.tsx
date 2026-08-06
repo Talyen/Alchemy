@@ -4,7 +4,7 @@ import { gameModeMeta, bodyTextClass, sectionTitleClass } from "@/features/alche
 import { PressableSound } from "../../shared/ui/pressable-sound";
 import { ActionButtonRow, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
-import { useFinishedRunCharacters } from "../../shared/stores/profile-port";
+import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
 import { playUISound } from "@/lib/audio";
 import { TooltipBody, TooltipHeader, TooltipPanel } from "../../shared/ui/tooltip-panel";
 

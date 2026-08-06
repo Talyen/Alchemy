@@ -5,21 +5,21 @@ import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import {
+  createTurnOrchestration,
   resolveEndTurn,
   resumePendingBattleTransition as resumePendingBattleTransitionState,
-  type TurnOrchestrationDeps,
 } from "./turn-orchestration";
 
 export function createBattleEndTurnUi(
   ctx: BattleControllerContext,
   session: ReturnType<typeof createBattleSession>,
   transferDeps: ReturnType<typeof createBattleTransferDeps>,
-  deps: TurnOrchestrationDeps,
 ) {
+  const orch = createTurnOrchestration(ctx, session, transferDeps);
   let hasteDrawInProgress = false;
 
   function resolveEndTurnHandler(currentState: BattleState, sessionNum: number) {
-    resolveEndTurn(currentState, sessionNum, deps);
+    resolveEndTurn(currentState, sessionNum, orch);
   }
 
   async function animateEndTurnThenResolve(currentState: BattleState, sessionNum: number) {
@@ -31,18 +31,18 @@ export function createBattleEndTurnUi(
           await transferDeps.animateDiscardedHand(currentState.hand, sessionNum);
         }
       } catch (err) {
-        deps.logBattleError("discard hand animation", err);
+        orch.logBattleError("discard hand animation", err);
       } finally {
         markBattleStage("discard-end");
       }
       session.runIfSessionActive(sessionNum, () => {
-        if (resolveEndTurn(currentState, sessionNum, deps)) {
+        if (resolveEndTurn(currentState, sessionNum, orch)) {
           hasteDrawInProgress = true;
         }
       });
     } finally {
       session.runIfSessionActive(sessionNum, () => {
-        if (!hasteDrawInProgress) deps.resetHandTransferUi();
+        if (!hasteDrawInProgress) orch.resetHandTransferUi();
         ctx.cardPlayInProgressRef.current = false;
       });
     }
@@ -65,12 +65,12 @@ export function createBattleEndTurnUi(
     session.clearBattleTimeoutsKeepCompanion();
     const sessionNum = ctx.battleSessionRef.current;
     void animateEndTurnThenResolve(currentState, sessionNum).catch((err: unknown) =>
-      deps.logBattleError("resolve end turn animation sequence", err),
+      orch.logBattleError("resolve end turn animation sequence", err),
     );
   }
 
   function resumePendingBattleTransition() {
-    resumePendingBattleTransitionState(ctx.battleSessionRef.current, deps);
+    resumePendingBattleTransitionState(ctx.battleSessionRef.current, orch);
   }
 
   return { handleEndTurn, resolveEndTurn: resolveEndTurnHandler, resumePendingBattleTransition };

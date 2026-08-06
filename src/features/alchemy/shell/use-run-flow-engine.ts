@@ -1,27 +1,27 @@
 // Consolidated Run Flow Engine hook for Alchemy shell navigation and sub-system flow routing.
 import { useMemo, useCallback } from "react";
 import {
-  useRunFlowRunPort,
+  useRunOrchestrationPort,
   useRunFlowTalentPort,
-  useContentNavigationRunPort,
   useContentNavigationTalentPort,
-  useWildwoodRunPort,
-  useCorruptionRunPort,
-  useDestinationRunPort,
+  useTalentEffects,
   useSetHasActiveBattle,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
-import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-port";
+import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-session-model";
+import { useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import type { BattleCard } from "@/lib/game-data";
+import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
+import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
+import { createRunTeardown } from "@/features/alchemy/run-loop/run/create-run-teardown";
 import { useRunDestinationWiring } from "./use-run-destination-wiring";
 import { useWildwoodGauntletFlow } from "./use-wildwood-gauntlet-flow";
 import { useContentSystemNavigation } from "./use-content-system-navigation";
 import { useMysteryEventNavigation } from "./use-mystery-event-navigation";
-import { useRunCorruptionFlow } from "./use-run-corruption-flow";
-import { useRunFlowHandlers } from "./use-run-flow-handlers";
-import { useRunTeardown } from "./use-run-teardown";
 import { createRunFlowIntentExecutor } from "./create-run-flow-intent-executor";
 import type { RunNavigationDeps } from "./shell-types";
 
@@ -33,18 +33,14 @@ export function useRunFlowEngine({
   battle,
   labyrinth,
   shop,
-  wildwood: wildwoodOverride,
-  mystery: mysteryOverride,
   onMarkDifficultyCompleted,
   randomSources,
 }: RunNavigationDeps) {
-  const flowRun = useRunFlowRunPort();
-  const flowTalents = useRunFlowTalentPort();
-  const contentRun = useContentNavigationRunPort();
-  const contentTalents = useContentNavigationTalentPort();
-  const wildwoodRun = useWildwoodRunPort();
-  const corruptionRun = useCorruptionRunPort();
-  const destinationRun = useDestinationRunPort();
+  const orchestration = useRunOrchestrationPort();
+  const talentEffects = useTalentEffects();
+  const talentXP = useGameplayStateStore((state) => state.runProfile.talentXP);
+  const flowTalents = useRunFlowTalentPort(talentEffects);
+  const contentTalents = useContentNavigationTalentPort(talentEffects, talentXP);
   const setHasActiveBattle = useSetHasActiveBattle();
   const completedDifficulties = useCompletedDifficulties();
   const nav = useRunSessionNavigationSlice(screen);
@@ -57,14 +53,14 @@ export function useRunFlowEngine({
   const pendingContentSystemType = nav.pendingContentSystemType;
 
   const destinations = useRunDestinationWiring({
-    run: destinationRun,
+    run: orchestration,
     hasActiveBattle,
     navigateTo,
     clearCardHover,
   });
 
   const wildwood = useWildwoodGauntletFlow({
-    run: wildwoodRun,
+    run: orchestration,
     navigateTo,
     onStartBossById: battle.onStartBossById,
     setHasActiveBattle,
@@ -73,7 +69,7 @@ export function useRunFlowEngine({
   });
 
   const contentNav = useContentSystemNavigation({
-    run: contentRun,
+    run: orchestration,
     talents: contentTalents,
     hasActiveRun,
     hasActiveBattle,
@@ -87,17 +83,18 @@ export function useRunFlowEngine({
     onStartNextWildwoodBoss: wildwood.startNextWildwoodBoss,
     destinationRng: randomSources.destinations,
     worldRng: randomSources.world,
+    clearCardHover,
   });
 
   const handleDraftComplete = useCallback(
     (draftedCards: BattleCard[]) => {
-      if (flowRun.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+      if (orchestration.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
         contentNav.handleDraftComplete(draftedCards);
         return;
       }
       wildwood.handleDraftComplete(draftedCards);
     },
-    [flowRun.contentSystemType, contentNav, wildwood],
+    [orchestration.contentSystemType, contentNav, wildwood],
   );
 
   const mystery = useMysteryEventNavigation({
@@ -106,27 +103,20 @@ export function useRunFlowEngine({
   });
 
   const wildwoodNavOps = useMemo(
-    () =>
-      wildwoodOverride ?? {
-        onCommitWildwoodVictory: wildwood.commitWildwoodVictory,
-        onWildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
-        onSelectRewardChoice: wildwood.selectRewardChoice,
-      },
-    [
-      wildwoodOverride,
-      wildwood.commitWildwoodVictory,
-      wildwood.handleWildwoodRewardComplete,
-      wildwood.selectRewardChoice,
-    ],
+    () => ({
+      onCommitWildwoodVictory: wildwood.commitWildwoodVictory,
+      onWildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
+      onSelectRewardChoice: wildwood.selectRewardChoice,
+    }),
+    [wildwood.commitWildwoodVictory, wildwood.handleWildwoodRewardComplete, wildwood.selectRewardChoice],
   );
 
   const mysteryNavOps = useMemo(
-    () =>
-      mysteryOverride ?? {
-        beginMysteryEvent: mystery.beginMysteryEvent,
-        clearMysteryCardChoices: mystery.clearCardChoices,
-      },
-    [mysteryOverride, mystery.beginMysteryEvent, mystery.clearCardChoices],
+    () => ({
+      beginMysteryEvent: mystery.beginMysteryEvent,
+      clearMysteryCardChoices: mystery.clearCardChoices,
+    }),
+    [mystery.beginMysteryEvent, mystery.clearCardChoices],
   );
 
   const dispatch = useMemo(
@@ -144,30 +134,51 @@ export function useRunFlowEngine({
     [navigateTo, transition, labyrinth, shop, battle, wildwoodNavOps, mysteryNavOps, onMarkDifficultyCompleted],
   );
 
-  const flowHandlers = useRunFlowHandlers({
-    run: flowRun,
-    talents: flowTalents,
-    dispatch,
-    contentNav,
-    getAvailableDestinations: destinations.getAvailableDestinations,
-    rewardRng: randomSources.rewards,
-    destinationRng: randomSources.destinations,
-    worldRng: randomSources.world,
-  });
+  const flowHandlers = useMemo(
+    () =>
+      createRunFlowHandlers({
+        run: orchestration,
+        talents: flowTalents,
+        dispatch,
+        contentNav,
+        getAvailableDestinations: destinations.getAvailableDestinations,
+        rewardRng: randomSources.rewards,
+        destinationRng: randomSources.destinations,
+        worldRng: randomSources.world,
+      }),
+    [
+      orchestration,
+      flowTalents,
+      dispatch,
+      contentNav,
+      destinations.getAvailableDestinations,
+      randomSources.rewards,
+      randomSources.destinations,
+      randomSources.world,
+    ],
+  );
 
-  const corruption = useRunCorruptionFlow({
-    getRunDeck: () => corruptionRun.runDeck,
-    updateRunDeck: corruptionRun.updateRunDeck,
-    eventsRng: randomSources.events,
-    advanceToNextDestination: flowHandlers.advanceToNextDestination,
-  });
+  const corruption = useMemo(
+    () =>
+      createCorruptionFlowHandlers({
+        getRunDeck: () => readActiveRun().runDeck,
+        updateRunDeck: setRunDeck,
+        eventsRng: randomSources.events,
+        advanceToNextDestination: flowHandlers.advanceToNextDestination,
+      }),
+    [randomSources.events, flowHandlers.advanceToNextDestination],
+  );
 
-  const teardown = useRunTeardown({
-    cancelPending,
-    setHasActiveBattle,
-    clearCardHover,
-    navigateTo,
-  });
+  const teardown = useMemo(
+    () =>
+      createRunTeardown({
+        cancelPending,
+        setHasActiveBattle,
+        clearCardHover,
+        navigateTo,
+      }),
+    [cancelPending, setHasActiveBattle, clearCardHover, navigateTo],
+  );
 
   const handleMysteryContinue = useCallback(() => {
     flowHandlers.advanceToNextDestination();

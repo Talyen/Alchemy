@@ -2,7 +2,7 @@
 // Depends on game-data types and appendUnique helper.
 import type { BattleCard } from "@/lib/game-data";
 import { appendUnique } from "@/lib/utils";
-import { setDiscoveredCardIds, setDiscoveredTrinketIds } from "../../shared/stores/profile-port";
+import { setDiscoveredCardIds, setDiscoveredTrinketIds } from "../../shared/stores/profile-store";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 type StateUpdater<T> = (value: T | ((previous: T) => T)) => void;

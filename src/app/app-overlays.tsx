@@ -5,7 +5,7 @@ import { platform } from "@/lib/platform";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
 import type { useReturnToRunNavigation } from "@/app/use-return-to-run-navigation";
-import { useHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-read-port";
+import { useHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-store";
 
 export function AppBackgroundParticles({
   renderedScreen,

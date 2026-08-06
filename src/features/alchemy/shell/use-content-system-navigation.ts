@@ -22,6 +22,7 @@ export function useContentSystemNavigation({
   onStartNextWildwoodBoss,
   destinationRng,
   worldRng,
+  clearCardHover,
 }: ContentSystemNavigationHookDeps) {
   const draftedDeckRef = useRef<BattleCard[] | null>(null);
   return useMemo(
@@ -42,6 +43,7 @@ export function useContentSystemNavigation({
         onStartNextWildwoodBoss,
         destinationRng,
         worldRng,
+        clearCardHover,
       }),
     [
       run,
@@ -58,6 +60,7 @@ export function useContentSystemNavigation({
       onStartNextWildwoodBoss,
       destinationRng,
       worldRng,
+      clearCardHover,
     ],
   );
 }

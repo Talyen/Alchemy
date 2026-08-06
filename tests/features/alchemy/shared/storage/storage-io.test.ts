@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import type { SaveData } from "@/features/alchemy/shared/storage/types";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
-import { legacyCampaignRunSave } from "../../../../fixtures/legacy-saves";
+import { currentSchemaCampaignSave } from "../../../../fixtures/legacy-saves";
 
 const { SAVE_KEY } = await import("@/lib/game-constants");
 const { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } = await import("@/lib/validation");
@@ -70,9 +70,9 @@ describe("storage io", () => {
     expect(data.musicVolume).toBe(50);
   });
 
-  it("loadAlchemySaveState migrates legacy campaign fixture from localStorage", async () => {
+  it("loadAlchemySaveState loads campaign fixture from localStorage", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
-    mockStorage[SAVE_KEY] = JSON.stringify(legacyCampaignRunSave());
+    mockStorage[SAVE_KEY] = JSON.stringify(currentSchemaCampaignSave());
     const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
 
     const loaded = await loadAlchemySaveState();
@@ -80,7 +80,7 @@ describe("storage io", () => {
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.data.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(loaded.data.selectedAspectRatio).toBe("auto");
-    expect(loaded.data.discoveredCardIds).toEqual(["slash", "block", "future-card"]);
+    expect(loaded.data.discoveredCardIds).toEqual(["slash", "block", "bash"]);
     expect(loaded.data.activeRun).toMatchObject({
       characterId: "knight",
       runGold: 42,
@@ -92,7 +92,7 @@ describe("storage io", () => {
     await saveAlchemySaveData(loaded.data);
     const reloaded = JSON.parse(mockStorage[SAVE_KEY]);
     expect(reloaded.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    expect(reloaded.discoveredCardIds).toEqual(["slash", "block", "future-card"]);
+    expect(reloaded.discoveredCardIds).toEqual(["slash", "block", "bash"]);
     expect(reloaded.activeRun.runGold).toBe(42);
   });
 

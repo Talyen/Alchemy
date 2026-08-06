@@ -9,7 +9,7 @@ import type {
   ShopState,
   TrinketShopState,
 } from "@/lib/active-run-session";
-import { DESTINATIONS, type Destination } from "@/features/alchemy/shared/types";
+import { filterValidDestinations, type Destination } from "@/lib/routing";
 import { createEmptyRewardState } from "@/lib/active-run-session/reward-types";
 import { defineNestedFieldSetter, type ImmerSet } from "./_field-setter";
 import { createInitialSessionFields, type RunSessionFields } from "../run-domain-types";
@@ -118,9 +118,7 @@ export function defineSessionActions(set: ImmerSet<RunSessionFields>): SessionAc
 
     applyDestinationChoices: (choices) =>
       set((state) => {
-        const validDestinations = new Set<string>(Object.values(DESTINATIONS));
-        const filtered = choices.filter((c): c is Destination => validDestinations.has(c));
-        state.rewardState = { ...createEmptyRewardState(), destinations: filtered };
+        state.rewardState = { ...createEmptyRewardState(), destinations: filterValidDestinations(choices) };
       }),
   };
 }

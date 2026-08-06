@@ -1,7 +1,7 @@
 // Destination / screen navigation helpers for run-flow shell wiring.
 import { useCallback, useMemo } from "react";
 import type { DestinationRunPort } from "@/features/alchemy/shared/stores/run-port-types";
-import { readHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-read-port";
+import { readHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-store";
 import { bindAvailableDestinationsResolver } from "@/features/alchemy/shared/run-flow";
 import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
 

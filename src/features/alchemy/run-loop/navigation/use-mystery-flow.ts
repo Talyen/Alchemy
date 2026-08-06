@@ -1,6 +1,6 @@
 // Manages React state integration and event handlers for the run's mystery events flow.
 // Depends on: cardLibrary, run session store, mysteryPool, and mystery-flow helpers.
-// Depended on by: useRunNavigation for managing the React state of mystery events during a run.
+// Depended on by: useRunFlowEngine for managing the React state of mystery events during a run.
 import { cardLibrary } from "@/lib/game-data";
 import { pickMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "../run/deck-mutations";

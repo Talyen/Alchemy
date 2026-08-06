@@ -38,9 +38,9 @@ import {
   withSelectedBossForDestinations,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
 
-// Pure victory reward computation extracted from use-run-navigation.
+// Pure victory reward computation for run-flow victory handlers.
 // Depends on: reward-flow, destination-flow, game data, game constants, homestead loot.
-// Depended on by: useRunNavigation for computing battle victory outcomes.
+// Depended on by: useRunFlowEngine for computing battle victory outcomes.
 export {
   withSelectedBossForDestinations,
   createDestinationRewardState,

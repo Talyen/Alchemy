@@ -8,11 +8,9 @@ import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
 import { CONSTANTS } from "../../shared/types";
-import type { RunFlowContext } from "./run-flow-context";
+import type { RunFlowHandlerDeps, RunFlowSiblingHandlers } from "./run-flow-handler-deps";
 
-export function createProgressionHandlers(ctx: RunFlowContext) {
-  const { deps } = ctx;
-
+export function createProgressionHandlers(deps: RunFlowHandlerDeps, handlers: RunFlowSiblingHandlers) {
   function prepareNextDestination(destinationIndexInAct: number = 0, onCommitted?: () => void) {
     deps.dispatch({
       type: "navigate",
@@ -23,7 +21,7 @@ export function createProgressionHandlers(ctx: RunFlowContext) {
           setDestinationOfferState(initialDestinations.offerState);
           setRewardState(initialDestinations.rewardState);
         });
-        ctx.dispatchContinuation({ type: "prepare-destination-screen" });
+        handlers.prepareDestinationScreen();
         onCommitted?.();
       },
     });
@@ -52,11 +50,7 @@ export function createProgressionHandlers(ctx: RunFlowContext) {
         afterCommit: (runComplete) => {
           clearBattlePresentationUi();
           if (runComplete) {
-            ctx.dispatchContinuation({
-              type: "complete-run-victory",
-              displayMaterials: displayMaterials ?? null,
-              ...(onRenderedScreenCommit ? { onRenderedScreenCommit } : {}),
-            });
+            handlers.completeRunVictory(displayMaterials ?? null, onRenderedScreenCommit);
           } else {
             prepareNextDestination(0, onRenderedScreenCommit);
           }

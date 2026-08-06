@@ -1,6 +1,6 @@
 // Run screen taxonomy and transition helpers.
 // Screen *state* lives in navigation.screen on the run domain store; stores hold run/battle/session data.
-// Navigation handlers (use-run-navigation, run-flow-handlers) call navigateTo/goToScreen or createScreenTransition.
+// Navigation handlers (use-run-flow-engine, run-flow-handlers) call navigateTo/goToScreen or createScreenTransition.
 //
 // Screen transition modes (see shell/screen-transition.ts):
 // - navigateTo: default run-loop path — NAVIGATION_DELAY_MS delay + optional deferred store commit after PAGE_EXIT_MS.

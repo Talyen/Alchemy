@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
-import { legacyCampaignRunSave } from "../../../../fixtures/legacy-saves";
+import { currentSchemaCampaignSave } from "../../../../fixtures/legacy-saves";
 
 const globalWithWindow = globalThis as unknown as { window?: object };
 
@@ -14,7 +14,7 @@ describe("storage io desktop backup", () => {
   });
 
   it("does not request a desktop backup on load (rotation owns backups at write time)", async () => {
-    const legacy = JSON.stringify(legacyCampaignRunSave());
+    const legacy = JSON.stringify(currentSchemaCampaignSave());
 
     globalWithWindow.window = {
       localStorage: {

@@ -20,8 +20,8 @@ import {
   useHasActiveBattle,
   useHasActiveRun,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
-import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-port";
-import { useGearArmorySlice } from "@/features/alchemy/shared/stores/gear-read-port";
+import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
+import { useGearArmorySlice } from "@/features/alchemy/shared/stores/gear-store";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";

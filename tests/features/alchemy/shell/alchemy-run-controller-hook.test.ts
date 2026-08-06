@@ -48,9 +48,6 @@ describe("useAlchemyRunController", () => {
   function renderController() {
     return renderHook(() =>
       useAlchemyRunController({
-        initialTalentXP: {},
-        initialUnlockedTalents: {},
-        initialActiveRun: null,
         autoEndTurn: false,
         onMarkDifficultyCompleted: vi.fn(),
       }),
@@ -62,7 +59,8 @@ describe("useAlchemyRunController", () => {
 
     expect(result.current.screen).toBe(ROUTE_SCREENS.MENU);
     expect(result.current.routeCommands).toBeDefined();
-    expect(result.current.battleBindings).toBeDefined();
+    expect(result.current.routeCommands.battle.refs).toBeDefined();
+    expect(result.current.routeCommands.battle.handleEndTurn).toBeTypeOf("function");
   });
 
   it("resetRunState tears down run stores when navigating to menu", () => {

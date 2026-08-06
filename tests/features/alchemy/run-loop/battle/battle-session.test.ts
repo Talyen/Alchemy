@@ -15,6 +15,7 @@ import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle
 
 function makeSession() {
   const battleSessionRef = { current: 1 };
+  const battleAbortControllerRef = { current: new AbortController() };
   const battleTimerGroupRef = { current: new TimerGroup() };
   const transferCancelRegistryRef = { current: createTransferCancelRegistry() };
   const cardPlayInProgressRef = { current: false };
@@ -25,6 +26,7 @@ function makeSession() {
 
   const session = createBattleSession({
     battleSessionRef,
+    battleAbortControllerRef,
     battleTimerGroupRef,
     transferCancelRegistryRef,
     cardPlayInProgressRef,
@@ -37,6 +39,7 @@ function makeSession() {
   return {
     session,
     battleSessionRef,
+    battleAbortControllerRef,
     victoryDefeatHandledRef,
     onBattleVictory,
     onBattleDefeat,

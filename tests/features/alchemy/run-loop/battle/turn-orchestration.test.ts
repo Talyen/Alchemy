@@ -1,81 +1,47 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { resolveEndTurn } from "@/features/alchemy/run-loop/battle/turn-orchestration";
-import type { getBattleSessionStore } from "@/features/alchemy/run-loop/battle/battle-session";
+import type { TurnOrchestration } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { defaultBattleState } from "@/lib/battle";
 
-function makeDeps() {
-  const store = {
+const commitBattleTransition = vi.fn();
+const setBattleState = vi.fn();
+const beginBattleTransition = vi.fn();
+const clearBattleTransition = vi.fn();
+
+vi.mock("@/features/alchemy/shared/stores/run-session-write-port", () => ({
+  commitBattleTransition: (...args: unknown[]) => commitBattleTransition(...args),
+  setBattleState: (...args: unknown[]) => setBattleState(...args),
+  beginBattleTransition: (...args: unknown[]) => beginBattleTransition(...args),
+  clearBattleTransition: (...args: unknown[]) => clearBattleTransition(...args),
+}));
+
+const showCombatTexts = vi.fn();
+const shakeCompanion = vi.fn();
+
+vi.mock("@/features/alchemy/run-loop/battle/battle-session", () => ({
+  getBattleSessionStore: () => ({
     battleState: defaultBattleState(),
-    setSyncedBattleState: vi.fn(),
-    showCombatTexts: vi.fn(),
+    showCombatTexts,
+    shakeCompanion,
     shakeEnemy: vi.fn(),
     shakePlayer: vi.fn(),
     hurtEnemy: vi.fn(),
     hurtPlayer: vi.fn(),
-    setDisplayOverrides: vi.fn(),
-    shakeCompanion: vi.fn(),
-    cardGhosts: [],
-    floatingCombatTexts: [],
-    enemyShaking: false,
-    playerShaking: false,
-    companionShaking: false,
-    playerHurtFlashToken: 0,
-    deathsDoorActive: false,
-    previousPlayerHealth: 30,
-    previousEnemyHealth: 0,
-    manaPanelMode: "normal" as const,
-    maxManaFlashActive: false,
-    menuOpen: false,
-    handDisabled: false,
-    handDiscarded: false,
-    drawPending: false,
-    resolvePending: false,
-    autoEndTurnTimerId: null,
-    damageReductionFloor: null,
-    cardsThatCannotBeAutoEndTurnedOn: [],
-    transferInProgress: false,
-    hiddenHandCardKeys: new Set(),
-    pendingDraw: null,
-    pendingTransferAnimations: [],
-    pendingResolveAnimations: [],
-    battleSessionHistory: [],
-    hudOverride: null,
-    displayOverrides: {},
-    initializeActiveBattle: vi.fn(),
-    setBattleState: vi.fn(),
-    setDeathDoor: vi.fn(),
-    setMenuOpen: vi.fn(),
-    setHandDisabled: vi.fn(),
-    setHandDiscarded: vi.fn(),
-    setDrawPending: vi.fn(),
-    setResolvePending: vi.fn(),
-    setAutoEndTurnTimerId: vi.fn(),
-    setDamageReductionFloor: vi.fn(),
-    setCardsThatCannotBeAutoEndTurnedOn: vi.fn(),
-    setTransferInProgress: vi.fn(),
-    setHiddenHandCardKeys: vi.fn(),
-    setPendingDraw: vi.fn(),
-    setHudOverride: vi.fn(),
-    setBattleSessionHistory: vi.fn(),
-    pushCombatTexts: vi.fn(),
-    setMaxManaFlash: vi.fn(),
-    resetDisplayOverrides: vi.fn(),
-    getAutoEndTurnCandidate: vi.fn(() => null),
-  } as unknown as ReturnType<typeof getBattleSessionStore>;
+    pendingBattleTransition: null,
+  }),
+}));
 
-  const getStore = vi.fn(() => store);
+vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", () => ({
+  runHandDrawSequence: vi.fn(() => Promise.resolve()),
+}));
 
+function makeOrch(): TurnOrchestration {
   return {
-    getStore,
-    setBattleState: vi.fn(),
-    beginBattleTransition: vi.fn(),
-    commitBattleTransition: vi.fn(),
-    clearBattleTransition: vi.fn(),
     isCurrentBattleSession: () => true,
     runIfSessionActive: <T>(_session: number, action: () => T) => action(),
     checkBattleEnd: vi.fn(() => false),
     handleVictoryDefeat: vi.fn(),
-    getDrawSequenceDeps: vi.fn(),
+    getDrawSequenceDeps: vi.fn(() => ({}) as never),
     logBattleError: vi.fn(),
     resetHandTransferUi: vi.fn(),
     scheduleCompanionFollowUp: vi.fn(),
@@ -83,13 +49,21 @@ function makeDeps() {
 }
 
 describe("resolveEndTurn", () => {
+  beforeEach(() => {
+    commitBattleTransition.mockClear();
+    setBattleState.mockClear();
+    beginBattleTransition.mockClear();
+    clearBattleTransition.mockClear();
+    showCombatTexts.mockClear();
+  });
+
   it("commits logical state before the haste draw sequence", () => {
-    const deps = makeDeps();
+    const orch = makeOrch();
     const state = defaultBattleState();
     state.playerStatuses.haste = 1;
 
-    resolveEndTurn(state, 1, deps);
+    resolveEndTurn(state, 1, orch);
 
-    expect(deps.commitBattleTransition).toHaveBeenCalledOnce();
+    expect(commitBattleTransition).toHaveBeenCalledOnce();
   });
 });

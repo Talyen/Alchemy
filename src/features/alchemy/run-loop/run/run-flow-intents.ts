@@ -9,10 +9,7 @@ export type RunFlowIntent =
   | { type: "transition"; screen: Screen; options?: ScreenTransitionOptions }
   | { type: "labyrinth-fail-node" }
   | { type: "labyrinth-clear-node" }
-  | { type: "init-shop" }
-  | { type: "init-alchemist" }
-  | { type: "init-trinket-shop" }
-  | { type: "init-equipment-shop" }
+  | { type: "init-shop"; kind: "shop" | "alchemist" | "trinket" | "equipment" }
   | {
       type: "start-battle";
       deck?: BattleCard[];

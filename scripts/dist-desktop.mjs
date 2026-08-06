@@ -42,11 +42,15 @@ if (process.env.CI_RELEASE === "true" && configuredSentryUploadFields.length ===
 const builderCli = join(root, "node_modules", "electron-builder", "out", "cli", "cli.js");
 // Publishing is an explicit release-workflow responsibility. electron-builder
 // otherwise infers publishing from CI environment variables.
+const packageDir = process.env.ALCHEMY_PACKAGE_DIR === "1" || process.argv.includes("--dir");
 const builderArgs = ["--publish", "never"];
 for (const target of targets) {
   if (target === "win") builderArgs.push("--win");
   if (target === "linux") builderArgs.push("--linux");
   if (target === "mac") builderArgs.push("--mac");
+}
+if (packageDir) {
+  builderArgs.push("--dir");
 }
 
 if (process.env.CI_RELEASE === "true" && sentryDsn) {

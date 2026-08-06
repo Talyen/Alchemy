@@ -2,24 +2,24 @@
 // Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
-import type { BattleControllerBindings } from "./battle-bindings";
-import type { CharacterId, DifficultyId, UnlockedTalents, TalentXP } from "@/lib/game-data";
+import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
-import { createRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import {
+  createRunRandomSource,
+  unlockTalent,
+  resetUnlockedTalents,
   setActiveLabyrinthModifiers,
   setActiveLabyrinthRewardModifiers,
+  unlockAllTalents,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useBattleController } from "./use-battle-controller";
 import { useShopController } from "./use-shop-controller";
-import { useRunNavigation } from "./use-run-navigation";
+import { useRunFlowEngine } from "./use-run-flow-engine";
 import { useLabyrinthController } from "./use-labyrinth-controller";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
 import { useScreenTransitions } from "./use-screen-transitions";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
-import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { unlockAllTalents } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useActiveRunScreen } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import {
   useActiveRunCharacterId,
@@ -27,36 +27,21 @@ import {
   useBattleTalentPort,
   useContentSystemType,
   useHomesteadEffects,
-  useTalentCommandPort,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
-import { readRunInitialized } from "@/features/alchemy/shared/stores/run-session-read-port";
-import type { ActiveRunData } from "@/lib/active-run-session";
 import { shouldSurrenderBattleOnEndRun } from "./end-run-policy";
 import { createAlchemyRouteCommands, type AlchemyRouteCommands } from "./create-route-commands";
 
 export function useAlchemyRunController({
-  initialTalentXP,
-  initialUnlockedTalents,
-  initialActiveRun,
   autoEndTurn,
   onMarkDifficultyCompleted,
 }: {
-  initialTalentXP: TalentXP;
-  initialUnlockedTalents: UnlockedTalents;
-  initialActiveRun: ActiveRunData | null;
   autoEndTurn: boolean;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
 }) {
-  // Fallback for tests/harnesses that mount the controller without App bootstrap.
-  // Production path restores in App before first paint (see App.tsx).
-  useLayoutEffect(() => {
-    if (readRunInitialized()) return;
-    restoreRun(initialActiveRun, initialTalentXP, initialUnlockedTalents);
-  }, [initialActiveRun, initialTalentXP, initialUnlockedTalents]);
+  // Bootstrap restore lives in App before first paint (see App.tsx). Tests set initialized themselves.
   const homesteadEffects = useHomesteadEffects();
   const battleRun = useBattleRunPort();
   const battleTalents = useBattleTalentPort();
-  const talentCommands = useTalentCommandPort();
   const contentSystemType = useContentSystemType();
   const characterId = useActiveRunCharacterId();
   const runRandom = useMemo(
@@ -84,11 +69,11 @@ export function useAlchemyRunController({
     setActiveLabyrinthRewardModifiers(modifiers);
   }, []);
 
+  // Stable wrappers so battle can be created before nav; assign latest handlers during render.
   const battleCompletionRef = useRef<{ onBattleVictory: () => void; onBattleDefeat: () => void }>({
     onBattleVictory: () => {},
     onBattleDefeat: () => {},
   });
-
   const battleCompletionOps = useMemo(
     () => ({
       onBattleVictory: () => battleCompletionRef.current.onBattleVictory(),
@@ -144,7 +129,7 @@ export function useAlchemyRunController({
     [shop.initShop, shop.initAlchemist, shop.initTrinketShop, shop.initEquipmentShop],
   );
 
-  const nav = useRunNavigation({
+  const nav = useRunFlowEngine({
     screen,
     navigateTo,
     transition,
@@ -200,8 +185,8 @@ export function useAlchemyRunController({
     beginCampaign: nav.beginCampaign,
     beginLabyrinth: handleBeginLabyrinth,
     beginWildwood: nav.beginWildwood,
-    unlockTalent: talentCommands.unlockTalent,
-    resetUnlockedTalents: talentCommands.resetUnlockedTalents,
+    unlockTalent,
+    resetUnlockedTalents,
     handleCharacterSelect: nav.handleCharacterSelect,
     handleDraftComplete: nav.handleDraftComplete,
     handleDraftPick: nav.handleDraftPick,
@@ -229,33 +214,14 @@ export function useAlchemyRunController({
     handleEndTurn: battle.handleEndTurn,
     skipCombatDevMode: battle.skipCombatDevMode,
     removeCardGhost: battle.removeCardGhost,
+    refs: battle.refs,
     continueFromRunEnd: nav.continueFromRunEnd,
   });
-
-  const battleBindings = useMemo<BattleControllerBindings>(
-    () => ({
-      battleScreenData: battle.battleScreenData,
-      refs: battle.refs,
-      cardTransfers: battle.cardTransfers,
-      hiddenHandCardKeys: battle.hiddenHandCardKeys,
-      cardTransferInProgress: battle.cardTransferInProgress,
-      playableHandCardKeys: battle.playableHandCardKeys,
-    }),
-    [
-      battle.battleScreenData,
-      battle.cardTransfers,
-      battle.hiddenHandCardKeys,
-      battle.cardTransferInProgress,
-      battle.playableHandCardKeys,
-      battle.refs,
-    ],
-  );
 
   return {
     screen,
     commitPendingTransition,
     routeCommands,
-    battleBindings,
     unlockAllTalents,
     returnToBattle: nav.returnToBattle,
     goToScreen: nav.goToScreen,

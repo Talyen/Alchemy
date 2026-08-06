@@ -220,7 +220,7 @@ describe("normalizeSaveData", () => {
   });
 });
 
-describe("normalizeDisplayMode", () => {
+describe("displayMode schema normalization", () => {
   it("passes through valid display modes", () => {
     const result = normalizeSaveData({ displayMode: "fullscreen" });
     expect(result.displayMode).toBe("fullscreen");

@@ -6,7 +6,7 @@ import {
   setDiscoveredTrinketIds,
   setEncounteredEnemyIds,
   setFinishedRunCharacters,
-} from "@/features/alchemy/shared/stores/profile-port";
+} from "@/features/alchemy/shared/stores/profile-store";
 import { setMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";

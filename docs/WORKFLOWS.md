@@ -32,7 +32,7 @@ For refactors and simplification passes on attached paths, use [docs/Audits](./A
 
 **Add a new raw asset:** register it in `scripts/assets/` (core/content/card manifests) → `npm run assets:optimize` (or `node scripts/prepare-assets.mjs`) → import from `@/assets/optimized/` in `src/lib/game-data/assets.ts`. `sync:assets` regenerates `assets.generated.ts` from the art manifest targets.
 
-**Gear art:** place files in `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg` → `npm run assets:optimize` → `npm run sync:gear-art` (regenerates `src/lib/game-data/gear-art.ts`). `predev` / `prebuild` run the full pipeline via `scripts/prepare-assets.mjs` (art → sync assets → sync gear art → sounds → music). Set `ALCHEMY_SKIP_ASSETS=1` to skip that prep.
+**Gear art:** place files in `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg` → `npm run assets:optimize` → `npm run sync:gear-art` (regenerates `src/lib/game-data/gear-art.ts`). `predev` / `prebuild` run the full pipeline via `scripts/prepare-assets.mjs` (art → sync assets → sync gear art → sounds → music). Set `ALCHEMY_SKIP_ASSETS=1` to skip that prep (CI/Vercel/release use this; commit regenerated outputs when you change sources).
 
 ---
 
@@ -42,7 +42,7 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 
 1. Decide if a schema bump is needed (transform required vs safe additive default).
 2. Increment `CURRENT_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts`.
-3. Add `migrateVNToVNPlus1` in `src/lib/validation/migration/steps.ts` or a topical `steps-*.ts` file (use nested helpers under `src/lib/validation/migration/` for `activeRun` / battle / wildwood / gear renames).
+3. Add `migrateVNToVNPlus1` in a new `src/lib/validation/migration/steps.ts` or topical `steps-*.ts` file when the first real post-floor bump lands (today is stamp-only); chain it from `migrateSaveDataToCurrent`.
 4. Update Zod schemas in `src/lib/validation/save-schemas/`, storage defaults, and fixtures in `tests/fixtures/legacy-saves.ts`.
 5. CI enforces via `tests/architecture/save-migration-guard.test.ts`, `tests/architecture/save-migration-contract.test.ts`, and `npm run check:ship` — no manual release checklist.
 
@@ -58,10 +58,10 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 
 **Active-run helpers (do not confuse):**
 
-| Function                 | Module                                                                       | When                                                                        |
-| ------------------------ | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `normalizeActiveRunData` | `@/lib/validation`                                                           | Zod transform while loading save files (legacy deck / content-system fixes) |
-| `parseActiveRun`         | `@/lib/active-run-session` or `@/features/alchemy/shared/storage/active-run` | Runtime validation before hydration                                         |
+| Function                 | Module                                                                       | When                                                         |
+| ------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `normalizeActiveRunData` | `@/lib/validation`                                                           | Zod transform: health clamp + content-system field isolation |
+| `parseActiveRun`         | `@/lib/active-run-session` or `@/features/alchemy/shared/storage/active-run` | Runtime validation before hydration                          |
 
 ---
 
@@ -142,7 +142,7 @@ Placement helpers live in `src/features/alchemy/shared/ui/portaled-tooltip-place
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1. Add route constant          | `src/features/alchemy/shared/types.ts` → `REWARD_ROUTES`, exported via `CONSTANTS`                                                                       |
 | 2. Compute route after rewards | `src/features/alchemy/run-loop/navigation/reward-flow.ts` (`finalizeRewardState` / related; import `@/features/alchemy/run-loop/navigation/reward-flow`) |
-| 3. Handle transition           | `reward-flow.ts` (`executeRewardRouteTransition`) and/or `shell/use-run-navigation.ts` (`routeAfterReward`)                                              |
+| 3. Handle transition           | `reward-flow.ts` (`executeRewardRouteTransition`) and/or `shell/use-run-flow-engine.ts`                                                                  |
 | 4. Tests                       | `tests/features/alchemy/run-loop/navigation/reward-flow.test.ts`; victory-flow tests if end-of-run                                                       |
 
 ---
@@ -172,8 +172,8 @@ Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-
    });
    ```
 
-4. Run-flow concerns must request sibling work with a typed `RunFlowContinuation`; they must not retain mutable sibling callbacks or call another concern's handler directly.
-5. The low-level `runSessionTransaction()` coordinator is an implementation detail for the command boundary and aggregate commit. New gameplay callers must not import it directly.
+4. Run-flow concerns call sibling work through the shared `RunFlowSiblingHandlers` object filled by `createRunFlowHandlers` (for example `handlers.advanceToNextDestination()`). Do not introduce a second dispatch/continuation layer.
+5. Gameplay mutations enter through `dispatchRunSessionCommand()` (or focused write-port commands that wrap it). Do not reach past that boundary into aggregate transaction internals.
 6. `readBattle()` is data-only. Battle mutations use the focused commands exported from `run-session-write-port.ts`; do not spread aggregate battle actions into event-time stores.
 7. If an async battle flow persists an intermediate state, commit `activeCombat.pendingBattleTransition` with it and add a boot resume path. Presentation timers alone are not a gameplay continuation.
 8. `readActiveRun()`, `readRunProfile()`, and `readRunSession()` are data-only. Active-run and profile mutations use focused command-backed write ports; do not pass aggregate actions through React or imperative read ports.
@@ -259,7 +259,7 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 3. Variant definitions are built automatically in `src/lib/gear/definitions.ts` as `{baseItemId}-{rarity}`.
 4. Add new affixes in `src/lib/gear/affixes.ts` with stable `affixId` and `keywordId` for affinity weighting.
 5. Reward generation rolls instances in `src/lib/gear/generation.ts`; rewards screen stores the exact `GearInstance` (never re-roll on accept). Mid-reward campaign/labyrinth progress is persisted in `activeRun.pendingReward` (gear stores full instances; cards/trinkets store choice ids).
-6. Keep owned items as unique `GearInstance` records with `affixIds`; never put definition objects or art URLs into save data. On load, `affixIds` win over legacy `modifiers` when both are present.
+6. Keep owned items as unique `GearInstance` records with `affixIds`; never put definition objects or art URLs into save data.
 7. Battle applies aggregated `gearEffects` from `computeGearManifest()` during battle creation.
 8. v1 affixes only cover the eight flat damage keywords; affinity tags like `archery` or `gold` are forward-looking for roll weighting until matching affixes ship.
 9. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change. Additive `activeRun.pendingReward` and `gearBoardPositions` use schema defaults (no bump required).

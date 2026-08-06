@@ -22,7 +22,7 @@ import {
 } from "../../shared/ui/tooltip-panel";
 import { cardSurfaceClass } from "@/features/alchemy/shared/config";
 import { useUiStore } from "../../shared/stores/ui-store";
-import { useFinishedRunCharacters } from "../../shared/stores/profile-port";
+import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
 import { playUISound } from "@/lib/audio";
 
 // Stage-relative clamp (slightly under the mid/small-monitor enlarge step).

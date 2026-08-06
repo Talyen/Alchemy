@@ -32,7 +32,7 @@ import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-ru
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { ErrorBoundary } from "@/components/error-boundary";
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
-import { readProfileStore, setCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-port";
+import { readProfileStore, setCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { readRunInitialized } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
@@ -42,7 +42,7 @@ import {
   useBondedCompanions,
   useHomesteadEffects,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
-import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-port";
+import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import { useRewardsScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import {
   useRunSessionBattleContext,
@@ -136,7 +136,6 @@ function AppMainContent({
           <RenderAlchemyScreen
             screen={renderedScreen}
             routeCommands={run.routeCommands}
-            battleBindings={run.battleBindings}
             onOpenBattleMenu={gameMenu.openBattleMenu}
             onClearSaveData={dev.clearSaveData}
             onUnlockAllDevMode={dev.unlockAllDevMode}
@@ -184,7 +183,7 @@ function AppMainContent({
 }
 
 function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
-  const { data: initialSave, status: saveLoadStatus } = bootstrapResult;
+  const { status: saveLoadStatus } = bootstrapResult;
 
   const settings = useAppSettings();
   const vrStageRef = useRef<HTMLDivElement>(null);
@@ -216,9 +215,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   });
 
   const run = useAlchemyRunController({
-    initialActiveRun: initialSave.activeRun,
-    initialTalentXP: initialSave.talentXP,
-    initialUnlockedTalents: initialSave.unlockedTalents,
     autoEndTurn: settings.autoEndTurn,
     onMarkDifficultyCompleted: handleMarkDifficultyCompleted,
   });

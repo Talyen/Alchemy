@@ -28,20 +28,13 @@ import {
   setRunTrinkets,
   setRoomsEncountered,
   setScreen,
-  unlockTalent,
-  resetUnlockedTalents,
 } from "./run-session-write-port";
 import type {
   BattleRunPort,
   BattleTalentPort,
-  ContentNavigationRunPort,
   ContentNavigationTalentPort,
-  CorruptionRunPort,
-  DestinationRunPort,
-  RunFlowRunPort,
   RunFlowTalentPort,
-  TalentCommandPort,
-  WildwoodRunPort,
+  RunOrchestrationPort,
 } from "./run-port-types";
 import { setHasActiveBattle as setHasActiveBattleCommand } from "./run-session-write-port";
 
@@ -50,7 +43,8 @@ export function useTalentEffects(): TalentEffectManifest {
   return useMemo(() => computeTalentEffects(unlockedTalents), [unlockedTalents]);
 }
 
-export function useRunFlowRunPort(): RunFlowRunPort {
+/** Single orchestration subscription for run-flow, content-nav, destinations, and wildwood. */
+export function useRunOrchestrationPort(): RunOrchestrationPort {
   return useGameplayStateStore(
     useShallow((state) => ({
       contentSystemType: state.run.activeRun.contentSystemType,
@@ -58,6 +52,14 @@ export function useRunFlowRunPort(): RunFlowRunPort {
       selectedDifficulty: state.run.activeRun.selectedDifficulty,
       characterId: state.run.activeRun.characterId,
       runMaxHealth: state.run.activeRun.runMaxHealth,
+      roomsEncountered: state.run.activeRun.roomsEncountered,
+      runDeck: state.run.activeRun.runDeck,
+      runPlayerHealth: state.run.activeRun.runPlayerHealth,
+      runGold: state.run.activeRun.runGold,
+      destinationIndexInAct: state.run.activeRun.destinationIndexInAct,
+      completedDestinations: state.run.activeRun.completedDestinations,
+      lastOfferedDestinations: state.run.activeRun.lastOfferedDestinations,
+      destinationRoundsSinceOffered: state.run.activeRun.destinationRoundsSinceOffered,
       updateCurrentAct: setCurrentAct,
       updateDestinationIndexInAct: setDestinationIndexInAct,
       updateCompletedDestinations: setCompletedDestinations,
@@ -65,13 +67,9 @@ export function useRunFlowRunPort(): RunFlowRunPort {
       updateRunDeck: setRunDeck,
       updateRunTrinkets: setRunTrinkets,
       updateRunPlayerHealth: setRunPlayerHealth,
+      updateDestinationOfferState: setDestinationOfferState,
     })),
   );
-}
-
-export function useRunFlowTalentPort(): RunFlowTalentPort {
-  const talentEffects = useTalentEffects();
-  return useMemo(() => ({ talentEffects: { campfireHealBonus: talentEffects.campfireHealBonus } }), [talentEffects]);
 }
 
 export function useBattleRunPort(): BattleRunPort {
@@ -97,59 +95,17 @@ export function useBattleTalentPort(): BattleTalentPort {
   return useMemo(() => ({ talentEffects, awardCardXP }), [talentEffects]);
 }
 
-export function useTalentCommandPort(): TalentCommandPort {
-  return useMemo(() => ({ unlockTalent, resetUnlockedTalents }), []);
+export function useRunFlowTalentPort(talentEffects: TalentEffectManifest): RunFlowTalentPort {
+  return useMemo(() => ({ talentEffects: { campfireHealBonus: talentEffects.campfireHealBonus } }), [talentEffects]);
 }
 
-export function useContentNavigationRunPort(): ContentNavigationRunPort {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      contentSystemType: state.run.activeRun.contentSystemType,
-      lastOfferedDestinations: state.run.activeRun.lastOfferedDestinations,
-      destinationRoundsSinceOffered: state.run.activeRun.destinationRoundsSinceOffered,
-      updateDestinationOfferState: setDestinationOfferState,
-    })),
-  );
-}
-
-export function useContentNavigationTalentPort(): ContentNavigationTalentPort {
-  const talentEffects = useTalentEffects();
-  const talentXP = useGameplayStateStore((state) => state.runProfile.talentXP);
+export function useContentNavigationTalentPort(
+  talentEffects: TalentEffectManifest,
+  talentXP: TalentXP,
+): ContentNavigationTalentPort {
   return useMemo(
     () => ({ talentXP, talentEffects: { startGold: talentEffects.startGold } }),
     [talentEffects, talentXP],
-  );
-}
-
-export function useDestinationRunPort(): DestinationRunPort {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      destinationIndexInAct: state.run.activeRun.destinationIndexInAct,
-      completedDestinations: state.run.activeRun.completedDestinations,
-      runPlayerHealth: state.run.activeRun.runPlayerHealth,
-      runGold: state.run.activeRun.runGold,
-      runMaxHealth: state.run.activeRun.runMaxHealth,
-    })),
-  );
-}
-
-export function useWildwoodRunPort(): WildwoodRunPort {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      contentSystemType: state.run.activeRun.contentSystemType,
-      characterId: state.run.activeRun.characterId,
-      runDeck: state.run.activeRun.runDeck,
-      updateRunDeck: setRunDeck,
-    })),
-  );
-}
-
-export function useCorruptionRunPort(): CorruptionRunPort {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      runDeck: state.run.activeRun.runDeck,
-      updateRunDeck: setRunDeck,
-    })),
   );
 }
 

@@ -22,6 +22,7 @@ jobs:
       save: ${{ steps.filter.outputs.save }}
       desktop: ${{ steps.filter.outputs.desktop }}
       electron: ${{ steps.filter.outputs.electron }}
+      assets: ${{ steps.filter.outputs.assets }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -71,7 +72,21 @@ jobs:
               - "scripts/ensure-electron*"
               - "scripts/electron-download*"
               - "scripts/verify-desktop-package*"
-
+            assets:
+              - "Raw Assets/**"
+              - "scripts/assets/**"
+              - "scripts/prepare-assets.mjs"
+              - "scripts/optimize-assets.mjs"
+              - "scripts/optimize-sounds.mjs"
+              - "scripts/optimize-music.mjs"
+              - "scripts/sync-assets.mjs"
+              - "scripts/sync-gear-art.mjs"
+              - "scripts/lib/asset-manifest-cache.mjs"
+              - "src/assets/optimized/**"
+              - "public/sounds/**"
+              - "public/Music/**"
+              - "src/lib/game-data/assets.generated.ts"
+              - "src/lib/game-data/gear-art.ts"
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -130,14 +145,11 @@ jobs:
 
       - uses: ./.github/actions/setup
       - run: npm run build
+        env:
+          ALCHEMY_SKIP_ASSETS: "1"
 
       - name: Smoke test production build
-        run: |
-          npx vite preview --host 127.0.0.1 --port 4174 --strictPort &
-          preview_pid=$!
-          npx wait-on http://127.0.0.1:4174 --timeout 30000
-          curl -sf http://127.0.0.1:4174 > /dev/null
-          kill "$preview_pid"
+        run: npm run smoke:preview
 
       - uses: actions/upload-artifact@v5
         with:
@@ -215,9 +227,39 @@ jobs:
       - uses: actions/checkout@v5
 
       - uses: ./.github/actions/setup
-      - run: node scripts/sync-version-metadata.mjs
       - name: Build desktop renderer
-        run: npm run build:desktop:no-sync
+        run: npm run build:desktop
+        env:
+          ALCHEMY_SKIP_ASSETS: "1"
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: dist-desktop
+          path: |
+            dist/
+            !dist/Music/
+          retention-days: 1
+
+  assets:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.assets == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/setup
+      - name: Prepare assets from Raw Assets
+        run: node scripts/prepare-assets.mjs
+
+      - name: Assert committed outputs match prep
+        run: |
+          git diff --exit-code -- \
+            src/assets/optimized \
+            public/sounds \
+            public/Music \
+            src/lib/game-data/assets.generated.ts \
+            src/lib/game-data/gear-art.ts
 
   save-gate:
     needs: [changes, build]
@@ -276,7 +318,9 @@ jobs:
 
       - uses: ./.github/actions/setup
       - name: Build Windows installer
-        run: npm run dist:win
+        run: npm run dist:desktop
+        env:
+          ALCHEMY_SKIP_ASSETS: "1"
 
       - name: Upload desktop artifact
         uses: actions/upload-artifact@v5
@@ -286,7 +330,7 @@ jobs:
           retention-days: 3
 
   electron-e2e:
-    needs: changes
+    needs: [changes, ship-gate]
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.electron == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -296,6 +340,11 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           skip-electron-download: "true"
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist-desktop
+          path: dist/
 
       - name: Cache Electron binary
         uses: actions/cache@v5
@@ -312,9 +361,6 @@ jobs:
       - name: Ensure Electron binary
         run: node scripts/ensure-electron.mjs
 
-      - name: Build desktop renderer
-        run: npm run build:desktop:no-sync
-
       - run: mkdir -p reports
 
       - name: Run Electron e2e
@@ -329,7 +375,7 @@ jobs:
   # Aggregate status check for dashboards / optional PR merges (not a main push gate).
   ci-ok:
     name: CI OK
-    needs: [changes, lint, test, build, e2e, ship-gate, save-gate, desktop-build, electron-e2e]
+    needs: [changes, lint, test, build, e2e, ship-gate, assets, save-gate, desktop-build, electron-e2e]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5

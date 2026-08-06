@@ -23,7 +23,6 @@ export default {
     "src/lib/game-data/index.ts",
     "src/lib/battle/index.ts",
     "src/lib/validation/index.ts",
-    "src/features/alchemy/shared/stores/run-session-facade.ts",
     "src/features/alchemy/shared/run-flow/index.ts",
     "scripts/*.mjs",
     "desktop/*.cjs",
@@ -45,6 +44,8 @@ export default {
     "src/lib/utils.ts": ["exports", "types"],
     "src/app/screen-routes/index.tsx": ["types"],
     "src/lib/validation/migration/tombstoned-content-ids.ts": ["exports", "types"],
+    // Shared active-run orchestration contract enforced by architecture tests; consumed via Pick aliases.
+    "src/features/alchemy/shared/stores/run-port-types.ts": ["types"],
   },
   ignore: [
     "tests/environment.d.ts",
@@ -53,5 +54,9 @@ export default {
     // Dev-mode screen retained for error-log routing experiments; not mounted in normal builds.
     "src/features/alchemy/meta/screens/error-log-viewer.tsx",
   ],
-  ignoreDependencies: ["tailwindcss-animate"],
+  ignoreDependencies: [
+    "tailwindcss-animate",
+    // Loaded via node_modules path string in scripts/dist-desktop.mjs; knip cannot trace it.
+    "electron-builder",
+  ],
 };

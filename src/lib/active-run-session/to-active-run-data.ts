@@ -1,5 +1,5 @@
 // Maps Zod-parsed active-run output to the hydrated runtime ActiveRunData contract.
-// Strips BattleCardSchema *FullyValid flags via hydrateCard so stores never see them.
+// hydrateCard fills missing/empty cost, effects, and descriptionLines from the library.
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import type { BattleCard } from "@/lib/game-data";
 import type { ParsedActiveRunData } from "@/lib/validation";

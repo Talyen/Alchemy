@@ -9,7 +9,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/profile-port";
+import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/profile-store";
 import type { WildwoodRunPort } from "@/features/alchemy/shared/stores/run-port-types";
 import { type BattleCard, type DifficultyModifier } from "@/lib/game-data";
 import { logError } from "@/lib/error-logger";

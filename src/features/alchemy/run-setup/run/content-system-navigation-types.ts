@@ -26,4 +26,5 @@ export interface ContentSystemNavigationDeps {
   onStartNextWildwoodBoss: () => void;
   destinationRng: () => number;
   worldRng: () => number;
+  clearCardHover: () => void;
 }

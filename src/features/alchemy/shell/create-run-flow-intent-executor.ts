@@ -36,16 +36,10 @@ export function createRunFlowIntentExecutor(deps: RunFlowIntentExecutorDeps): Ru
         deps.labyrinth?.onLabyrinthClearNode();
         return;
       case "init-shop":
-        deps.shop?.onInitShop();
-        return;
-      case "init-alchemist":
-        deps.shop?.onInitAlchemist();
-        return;
-      case "init-trinket-shop":
-        deps.shop?.onInitTrinketShop();
-        return;
-      case "init-equipment-shop":
-        deps.shop?.onInitEquipmentShop();
+        if (intent.kind === "shop") deps.shop?.onInitShop();
+        else if (intent.kind === "alchemist") deps.shop?.onInitAlchemist();
+        else if (intent.kind === "trinket") deps.shop?.onInitTrinketShop();
+        else deps.shop?.onInitEquipmentShop();
         return;
       case "start-battle":
         deps.battle?.onStartBattle(intent.deck, intent.gold, intent.enemyType);

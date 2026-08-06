@@ -26,6 +26,7 @@ describe("run-state read model", () => {
     const routes = read("src/app/screen-routes/run-loop-routes.tsx");
     expect(routes).toContain("useRewardsScreenData");
     expect(routes).toContain("useShopScreenData");
+    expect(routes).toContain("useBattleScreenRouteData");
     expect(routes).not.toContain("useRunScreenData");
   });
 
@@ -123,18 +124,17 @@ describe("run-state read model", () => {
     expect(factory).toContain("function createRunLoopRouteCommands");
   });
 
-  it("splits run navigation into concern hooks rather than inlining factories", () => {
+  it("splits run navigation into concern hooks and inlines thin factories", () => {
     const nav = read("src/features/alchemy/shell/use-run-flow-engine.ts");
     expect(nav).toContain("useRunDestinationWiring");
     expect(nav).toContain("useContentSystemNavigation");
-    expect(nav).toContain("useRunFlowHandlers");
-    expect(nav).toContain("useRunCorruptionFlow");
-    expect(nav).toContain("useRunTeardown");
     expect(nav).toContain("useMysteryEventNavigation");
-    expect(nav).not.toContain("createRunFlowHandlers(");
-    expect(nav).not.toContain("createCorruptionFlowHandlers(");
-    expect(nav).not.toContain("createRunTeardown(");
-    expect(nav).not.toContain("createContentSystemNavigation(");
+    expect(nav).toContain("createRunFlowHandlers(");
+    expect(nav).toContain("createCorruptionFlowHandlers(");
+    expect(nav).toContain("createRunTeardown(");
+    expect(nav).not.toContain("useRunFlowHandlers");
+    expect(nav).not.toContain("useRunCorruptionFlow");
+    expect(nav).not.toContain("useRunTeardown");
   });
 
   it("battle controller takes BattleRunPort / BattleTalentPort, not RunStateController", () => {
@@ -161,12 +161,12 @@ describe("run-state read model", () => {
     expect(deps).not.toContain("onStartBattle");
     expect(deps).not.toContain("navigateTo:");
 
-    const ports = read("src/features/alchemy/run-loop/run/run-flow-ports.ts");
-    expect(ports).toContain("RunFlowRunPort");
-    expect(ports).toContain("RunFlowTalentPort");
     const sharedPorts = read("src/features/alchemy/shared/stores/run-port-types.ts");
-    expect(sharedPorts).toContain("export interface RunFlowRunPort");
+    expect(sharedPorts).toContain("export type RunFlowRunPort");
     expect(sharedPorts).toContain("export interface RunFlowTalentPort");
+    expect(sharedPorts).toContain("export interface ActiveRunCorePort");
+    expect(sharedPorts).toContain("export interface BattleRunPort");
+    expect(sharedPorts).toContain("export interface RunOrchestrationPort");
 
     const intents = read("src/features/alchemy/run-loop/run/run-flow-intents.ts");
     expect(intents).toContain("export type RunFlowIntent");
@@ -192,15 +192,13 @@ describe("run-state read model", () => {
 
   it("exposes narrow orchestration ports instead of broad React adapters", () => {
     const facade = read("src/features/alchemy/shared/stores/run-session-react-ports.ts");
-    for (const hook of [
-      "useRunFlowEnginePort",
-      "useBattleRunPort",
-      "useBattleTalentPort",
-      "useTalentCommandPort",
-      "useHomesteadEffects",
-    ]) {
+    for (const hook of ["useRunOrchestrationPort", "useBattleRunPort", "useBattleTalentPort", "useHomesteadEffects"]) {
       expect(facade).toContain(`export function ${hook}`);
     }
+    expect(facade).not.toContain("useRunFlowRunPort");
+    expect(facade).not.toContain("useWildwoodRunPort");
+    expect(facade).not.toContain("useTalentCommandPort");
+    expect(facade).not.toContain("useCorruptionRunPort");
     expect(facade).not.toContain("useRunAdapter");
     expect(facade).not.toContain("useTalentAdapter");
     expect(facade).not.toContain("useHomesteadAdapter");

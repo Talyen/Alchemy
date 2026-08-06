@@ -28,14 +28,9 @@ describe("parseActiveRun", () => {
     expect(parseActiveRun(makeRunCandidate({ characterId: "invalid-char" }))).toBeNull();
   });
 
-  it("remaps legacy characterId 'sorcerer' to 'wizard'", () => {
-    const result = parseActiveRun(makeRunCandidate({ characterId: "sorcerer" }));
-    expect(result?.characterId).toBe("wizard");
-  });
-
-  it("remaps legacy characterId 'warden' to 'ranger'", () => {
-    const result = parseActiveRun(makeRunCandidate({ characterId: "warden" }));
-    expect(result?.characterId).toBe("ranger");
+  it("rejects retired characterId aliases", () => {
+    expect(parseActiveRun(makeRunCandidate({ characterId: "sorcerer" }))).toBeNull();
+    expect(parseActiveRun(makeRunCandidate({ characterId: "warden" }))).toBeNull();
   });
 
   it("returns null when run shape is missing required fields", () => {
@@ -67,7 +62,7 @@ describe("parseActiveRun", () => {
     expect(result!.encounteredRunEnemyIds).toEqual(["goblin"]);
   });
 
-  it("uses class starting deck when runDeck matches legacy starter deck IDs", () => {
+  it("accepts a full 8-card runDeck for ranger", () => {
     const result = parseActiveRun(
       makeRunCandidate({
         characterId: "ranger",
@@ -128,23 +123,24 @@ describe("parseActiveRun", () => {
     expect(result!.runDeck.length).toBe(0);
   });
 
-  it("discards legacy wildwood runs without Wildwood Draft state", () => {
+  it("discards wildwood runs without Wildwood Draft state", () => {
     const result = parseActiveRun(makeRunCandidate({ contentSystemType: "wildwood" }));
     expect(result).toBeNull();
   });
 
   it("parses resumable Wildwood Draft state", () => {
     const wildwoodDraft = {
-      version: 2,
-      phase: "draft",
+      version: 3 as const,
+      phase: "draft" as const,
       draftChoices: makeRunCandidate().runDeck,
-      remainingBossIds: ["forge-golem", "iron-bear"],
+      remainingBossIds: ["forge-golem", "iron-bear"] as const,
       previousBossId: null,
       currentBossId: null,
       currentCombatTraitIds: [],
       currentRewardTraitIds: [],
       rewardType: null,
       rewardChoiceIds: [],
+      rewardGearChoices: [],
       selectedRewardId: null,
     };
 
@@ -166,16 +162,17 @@ describe("parseActiveRun", () => {
         contentSystemType: "wildwood",
         selectedDifficulty: null,
         wildwoodDraft: {
-          version: 2,
-          phase: "battle",
+          version: 3 as const,
+          phase: "battle" as const,
           draftChoices: [],
           remainingBossIds: [],
           previousBossId: null,
-          currentBossId: "forge-golem",
+          currentBossId: "forge-golem" as const,
           currentCombatTraitIds: ["tempered", "removed-combat-trait"],
           currentRewardTraitIds: ["collector", "removed-reward-trait"],
           rewardType: null,
           rewardChoiceIds: [],
+          rewardGearChoices: [],
           selectedRewardId: null,
         },
       }),
@@ -185,9 +182,9 @@ describe("parseActiveRun", () => {
     expect(result?.wildwoodDraft?.currentRewardTraitIds).toEqual([]);
   });
 
-  it("falls back to campaign when labyrinth map is missing", () => {
+  it("drops labyrinth runs when labyrinth map is missing", () => {
     const result = parseActiveRun(makeRunCandidate({ contentSystemType: "labyrinth" }));
-    expect(result!.contentSystemType).toBe("campaign");
+    expect(result).toBeNull();
   });
 
   it("normalizes valid active combat data", () => {
@@ -199,7 +196,7 @@ describe("parseActiveRun", () => {
     expect(result!.labyrinthPendingNode).toBeNull();
   });
 
-  it("migrates legacy trinketEffects through save normalization and reconciles from runTrinkets", () => {
+  it("reconciles default trinketEffects from runTrinkets on load", () => {
     const battleState = defaultBattleState();
     const legacyBattleState = {
       ...battleState,
@@ -282,7 +279,7 @@ describe("parseActiveRun with labyrinth map", () => {
     expect(result!.labyrinthMap!.cols).toBe(2);
   });
 
-  it("sets labyrinthMap to null when grid dimension mismatches rows", () => {
+  it("drops labyrinth runs when grid dimension mismatches rows", () => {
     const result = parseActiveRun(
       makeLabyrinthRun({
         rows: 2,
@@ -291,11 +288,10 @@ describe("parseActiveRun with labyrinth map", () => {
         grid: valid1x2Grid,
       }),
     );
-    expect(result).not.toBeNull();
-    expect(result!.labyrinthMap).toBeNull();
+    expect(result).toBeNull();
   });
 
-  it("sets labyrinthMap to null when map has no entrance", () => {
+  it("drops labyrinth runs when map has no entrance", () => {
     const result = parseActiveRun(
       makeLabyrinthRun({
         rows: 1,
@@ -309,11 +305,10 @@ describe("parseActiveRun with labyrinth map", () => {
         ],
       }),
     );
-    expect(result).not.toBeNull();
-    expect(result!.labyrinthMap).toBeNull();
+    expect(result).toBeNull();
   });
 
-  it("sets labyrinthMap to null when currentNode is out of bounds", () => {
+  it("drops labyrinth runs when currentNode is out of bounds", () => {
     const result = parseActiveRun(
       makeLabyrinthRun({
         rows: 1,
@@ -322,11 +317,10 @@ describe("parseActiveRun with labyrinth map", () => {
         grid: valid1x2Grid,
       }),
     );
-    expect(result).not.toBeNull();
-    expect(result!.labyrinthMap).toBeNull();
+    expect(result).toBeNull();
   });
 
-  it("sets labyrinthMap to null when a node has 0 connections", () => {
+  it("drops labyrinth runs when a node has 0 connections", () => {
     const result = parseActiveRun(
       makeLabyrinthRun({
         rows: 1,
@@ -340,11 +334,10 @@ describe("parseActiveRun with labyrinth map", () => {
         ],
       }),
     );
-    expect(result).not.toBeNull();
-    expect(result!.labyrinthMap).toBeNull();
+    expect(result).toBeNull();
   });
 
-  it("sets labyrinthMap to null when connections are non-adjacent (dr=2)", () => {
+  it("drops labyrinth runs when connections are non-adjacent (dr=2)", () => {
     const result = parseActiveRun(
       makeLabyrinthRun({
         rows: 3,
@@ -366,8 +359,7 @@ describe("parseActiveRun with labyrinth map", () => {
       }),
     );
     // entrance(0,0)→boss(2,0) is non-adjacent (dr=2)
-    expect(result).not.toBeNull();
-    expect(result!.labyrinthMap).toBeNull();
+    expect(result).toBeNull();
   });
 
   it("filters unknown labyrinth modifier kinds", () => {
@@ -416,17 +408,13 @@ describe("parseActiveRun with labyrinth map", () => {
 });
 
 describe("labyrinth map normalization (direct)", () => {
-  it("sets labyrinthMap to null for non-object labyrinthMap", () => {
+  it("drops labyrinth runs for non-object labyrinthMap", () => {
     const data = makeRunCandidate({ contentSystemType: "labyrinth", labyrinthMap: "bad" });
-    const result = parseActiveRun(data);
-    expect(result).not.toBeNull();
-    expect(result!.labyrinthMap).toBeNull();
+    expect(parseActiveRun(data)).toBeNull();
   });
 
-  it("sets labyrinthMap to null for labyrinthMap with non-array grid", () => {
+  it("drops labyrinth runs for labyrinthMap with non-array grid", () => {
     const data = makeRunCandidate({ contentSystemType: "labyrinth", labyrinthMap: { grid: "bad" } });
-    const result = parseActiveRun(data);
-    expect(result).not.toBeNull();
-    expect(result!.labyrinthMap).toBeNull();
+    expect(parseActiveRun(data)).toBeNull();
   });
 });

@@ -14,12 +14,12 @@ import {
   getRunTransientStore,
   useRunProfileStore,
 } from "../../../../helpers/gameplay-store-test";
-import { runSessionTransaction } from "@/features/alchemy/shared/stores/run-session-command";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 beforeEach(() => {
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
-  useProfileStore.setState(useProfileStore.getInitialState(), true);
-  useGearStore.setState(useGearStore.getInitialState(), true);
+  useProfileStore.setState(useProfileStore.getInitialState());
+  useGearStore.setState(useGearStore.getInitialState());
   useRunProfileStore.setState(useRunProfileStore.getInitialState(), true);
 });
 
@@ -78,7 +78,7 @@ describe("persistence coordinator", () => {
     const listener = vi.fn();
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
-    runSessionTransaction(() => {
+    dispatchRunSessionCommand(() => {
       getRunDomainStore().setRunGold(42);
       getRunTransientStore().setHasActiveRun(true);
     });
@@ -91,7 +91,7 @@ describe("persistence coordinator", () => {
     const listener = vi.fn();
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
-    runSessionTransaction(() => {
+    dispatchRunSessionCommand(() => {
       getRunDomainStore().setRunGold(42);
       getRunTransientStore().setHasActiveRun(true);
       useProfileStore.getState().setDiscoveredCardIds(["slash"]);

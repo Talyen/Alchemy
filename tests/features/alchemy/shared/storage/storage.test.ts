@@ -15,9 +15,9 @@ import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import {
-  legacyCampaignRunSave,
-  legacyCorruptedCardRunSave,
-  legacyLabyrinthRunSave,
+  currentSchemaCampaignSave,
+  currentSchemaCorruptedCardRunSave,
+  currentSchemaLabyrinthRunSave,
 } from "../../../../fixtures/legacy-saves";
 import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
 import type { SaveData } from "@/features/alchemy/shared/storage/types";
@@ -155,7 +155,7 @@ describe("ActiveRunDataSchema", () => {
     expect(result?.runDeck[0].effects).toEqual(libraryCard?.effects);
   });
 
-  it("falls back to library effects when a known card has mixed valid and invalid saved effects", () => {
+  it("keeps valid saved effects after dropping invalid ones for known cards", () => {
     const result = parseActiveRun(
       makeMinimalActiveRunInput({
         runDeck: [
@@ -174,8 +174,7 @@ describe("ActiveRunDataSchema", () => {
       }),
     );
 
-    const libraryCard = cardLibrary.find((card) => card.id === "fireball");
-    expect(result?.runDeck[0].effects).toEqual(libraryCard?.effects);
+    expect(result?.runDeck[0].effects).toEqual([{ kind: "damage", damageType: "burn", amount: 10 }]);
   });
 
   it("keeps only valid saved effects for unknown cards", () => {
@@ -259,10 +258,9 @@ describe("ActiveRunDataSchema", () => {
     expect(result?.contentSystemType).toBe("labyrinth");
   });
 
-  it("recovers labyrinth runs without a valid map to campaign", () => {
+  it("drops labyrinth runs without a valid map", () => {
     const result = parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth" }));
-    expect(result).not.toBeNull();
-    expect(result?.contentSystemType).toBe("campaign");
+    expect(result).toBeNull();
   });
 
   it("preserves valid labyrinth map state", () => {
@@ -285,7 +283,7 @@ describe("ActiveRunDataSchema", () => {
     expect(normalizedCombat?.rewardModifiers).toEqual(["generous"]);
   });
 
-  it("recovers from malformed labyrinth maps to campaign", () => {
+  it("drops runs with malformed labyrinth maps", () => {
     const mismatchedRows = generateLabyrinthMap(createSeededRng(42));
     mismatchedRows.rows += 1;
 
@@ -293,19 +291,15 @@ describe("ActiveRunDataSchema", () => {
     const firstNode = invalidConnection.grid.flat().find(Boolean);
     firstNode!.connections = [{ row: 999, col: 999 }];
 
-    // Fractional currentNode is recovered by Zod catch() — row 0.5 becomes 0, col 4 stays 4,
-    // pointing to a valid entrance node, so the map passes validation.
     expect(
-      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: mismatchedRows }))
-        ?.contentSystemType,
-    ).toBe("campaign");
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: mismatchedRows })),
+    ).toBeNull();
     expect(
-      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: invalidConnection }))
-        ?.contentSystemType,
-    ).toBe("campaign");
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: invalidConnection })),
+    ).toBeNull();
   });
 
-  it("recovers from labyrinth maps with impossible current or endpoint state to campaign", () => {
+  it("drops runs with labyrinth maps that have impossible current or endpoint state", () => {
     const multipleCurrent = generateLabyrinthMap(createSeededRng(42));
     const firstVisible = multipleCurrent.grid.flat().find((node) => node?.state === "visible");
     firstVisible!.state = "current";
@@ -321,21 +315,17 @@ describe("ActiveRunDataSchema", () => {
     boss!.type = "combat";
 
     expect(
-      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: multipleCurrent }))
-        ?.contentSystemType,
-    ).toBe("campaign");
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: multipleCurrent })),
+    ).toBeNull();
     expect(
-      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: mismatchedCurrent }))
-        ?.contentSystemType,
-    ).toBe("campaign");
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: mismatchedCurrent })),
+    ).toBeNull();
     expect(
-      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: missingEntrance }))
-        ?.contentSystemType,
-    ).toBe("campaign");
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: missingEntrance })),
+    ).toBeNull();
     expect(
-      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: missingBoss }))
-        ?.contentSystemType,
-    ).toBe("campaign");
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: missingBoss })),
+    ).toBeNull();
   });
 
   it("drops labyrinth map state for campaign runs", () => {
@@ -416,7 +406,7 @@ describe("SaveDataSchema", () => {
     expect(getRawSaveSchemaVersion({ discoveredCardIds: ["slash"] })).toBe(0);
   });
 
-  it("migrates legacy v0 saves to the current schema", () => {
+  it("stamps saveSchemaVersion on v0 input", () => {
     const migrated = migrateSaveDataToCurrent({ discoveredCardIds: ["slash"], materialInventory: { wood: 5 } });
 
     expect(migrated.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
@@ -424,7 +414,7 @@ describe("SaveDataSchema", () => {
     expect(migrated.materialInventory).toEqual({ wood: 5 });
   });
 
-  it("migrates legacy v2 saves to the current schema", () => {
+  it("stamps saveSchemaVersion on v2 input", () => {
     const migrated = migrateSaveDataToCurrent({ saveSchemaVersion: 2, discoveredCardIds: ["slash"] });
     expect(migrated.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
@@ -465,10 +455,10 @@ describe("SaveDataSchema", () => {
     expect(result.bondedCompanions.wolf).toBe(2);
   });
 
-  it("migrates legacy homestead arrays without dropping progress", () => {
+  it("normalizes homestead arrays into tier records", () => {
     const result = parseSave({
-      constructedBuildings: ["smithy"],
-      plantedFarms: ["sheep-pasture"],
+      constructedBuildings: ["blacksmiths-forge"],
+      plantedFarms: ["pasture"],
     });
     expect(result.constructedBuildings["blacksmiths-forge"]).toBe(1);
     expect(result.plantedFarms.pasture).toBe(1);
@@ -491,23 +481,23 @@ describe("SaveDataSchema", () => {
     expect(result).not.toHaveProperty("uiScale");
   });
 
-  it("loads legacy pre-metadata saves without wiping unrelated progress", () => {
+  it("loads pre-metadata saves without wiping unrelated progress", () => {
     const result = parseSave({
       selectedResolution: "2560x1080",
-      discoveredCardIds: ["slash", "future-card"],
+      discoveredCardIds: ["slash", "bash"],
       encounteredEnemyIds: ["goblin"],
       discoveredTrinketIds: ["bone-charm"],
       talentXP: { burn: 25 },
       unlockedTalents: { burn: ["burn-dmg-1"] },
       materialInventory: { wood: 7, iron: 3 },
-      constructedBuildings: ["smithy"],
-      plantedFarms: ["sheep-pasture"],
+      constructedBuildings: ["blacksmiths-forge"],
+      plantedFarms: ["pasture"],
       completedDifficulties: { knight: ["difficulty-1"] },
     });
 
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(result.selectedAspectRatio).toBe("auto");
-    expect(result.discoveredCardIds).toEqual(["slash", "future-card"]);
+    expect(result.discoveredCardIds).toEqual(["slash", "bash"]);
     expect(result.encounteredEnemyIds).toEqual(["goblin"]);
     expect(result.discoveredTrinketIds).toEqual(["bone-charm"]);
     expect(result.talentXP.burn).toBe(25);
@@ -519,12 +509,12 @@ describe("SaveDataSchema", () => {
   });
 
   it("loads the legacy campaign fixture into current save data", () => {
-    const result = parseSave(legacyCampaignRunSave());
+    const result = parseSave(currentSchemaCampaignSave());
 
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(result.displayMode).toBe("fullscreen");
     expect(result).not.toHaveProperty("uiScale");
-    expect(result.discoveredCardIds).toEqual(["slash", "block", "future-card"]);
+    expect(result.discoveredCardIds).toEqual(["slash", "block", "bash"]);
     expect(result.talentXP).toMatchObject({ physical: 18, block: 7 });
     expect(result.activeRun).toMatchObject({
       characterId: "knight",
@@ -541,7 +531,7 @@ describe("SaveDataSchema", () => {
   });
 
   it("loads the legacy labyrinth fixture with its map intact", () => {
-    const result = parseSave(legacyLabyrinthRunSave());
+    const result = parseSave(currentSchemaLabyrinthRunSave());
 
     expect(result.activeRun?.contentSystemType).toBe("labyrinth");
     expect(result.activeRun?.characterId).toBe("ranger");
@@ -550,7 +540,7 @@ describe("SaveDataSchema", () => {
   });
 
   it("loads the legacy corrupted-card fixture without stale library-owned card fields", () => {
-    const result = parseSave(legacyCorruptedCardRunSave());
+    const result = parseSave(currentSchemaCorruptedCardRunSave());
     const card = result.activeRun?.runDeck[0];
 
     expect(card?.id).toBe("fireball");
@@ -564,12 +554,12 @@ describe("SaveDataSchema", () => {
 
   it("normalizes corrupt discovery arrays while preserving unknown string ids", () => {
     const result = parseSave({
-      discoveredCardIds: ["slash", 123, "future-card", "slash", null] as never,
+      discoveredCardIds: ["slash", 123, "not-in-catalog", "slash", null] as never,
       encounteredEnemyIds: ["goblin", {}, "future-enemy", "goblin"] as never,
       discoveredTrinketIds: ["bone-charm", false, "future-boon", "bone-charm"] as never,
     });
 
-    expect(result.discoveredCardIds).toEqual(["slash", "future-card"]);
+    expect(result.discoveredCardIds).toEqual(["slash", "not-in-catalog"]);
     expect(result.encounteredEnemyIds).toEqual(["goblin", "future-enemy"]);
     expect(result.discoveredTrinketIds).toEqual(["bone-charm", "future-boon"]);
   });

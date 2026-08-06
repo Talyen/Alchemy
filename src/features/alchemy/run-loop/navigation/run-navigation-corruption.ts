@@ -1,11 +1,11 @@
-// Corruption screen handlers extracted from useRunNavigation.
+// Corruption screen handlers used by useRunFlowEngine.
 import { appendUnique } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { corruptDeckCard } from "@/lib/corruption";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setCorruptionResult } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setDiscoveredCardIds } from "../../shared/stores/profile-port";
+import { setDiscoveredCardIds } from "../../shared/stores/profile-store";
 
 function applyCorruptionToDeck(
   runDeck: BattleCard[],

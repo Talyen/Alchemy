@@ -11,7 +11,7 @@ import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
 import type { GearInstance } from "@/lib/gear";
-import type { PersistedPendingReward } from "@/lib/validation";
+import type { PersistedPendingReward, ResumePhase } from "@/lib/validation";
 import type { RunRngState } from "@/lib/run-rng";
 
 export type { PersistedPendingReward };
@@ -61,7 +61,7 @@ export type PersistedBattleTransition =
       kind: "continue-end-turn";
     }
   | {
-      /** Recovery marker for saves written before battle transitions were persisted. */
+      /** Recovery marker for enemy-phase saves without a persisted continuation. */
       kind: "legacy-enemy-turn";
     };
 
@@ -98,6 +98,7 @@ export interface ActiveRunData {
   currentScreen: Screen | null;
   destinationChoices: string[];
   pendingReward: PersistedPendingReward | null;
+  resumePhase: ResumePhase;
   shopState: PersistedShopState | null;
   alchemistState: PersistedAlchemistState | null;
   trinketShopState: PersistedTrinketShopState | null;

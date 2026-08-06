@@ -10,11 +10,9 @@ import { stopAllSfx } from "@/lib/audio";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { CONSTANTS } from "../../shared/types";
 import { awardRunEndMaterials, clearCombatPresentation, clearCombatState } from "./run-flow-session-helpers";
-import type { RunFlowContext } from "./run-flow-context";
+import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
 
-export function createDefeatHandlers(ctx: RunFlowContext) {
-  const { deps } = ctx;
-
+export function createDefeatHandlers(deps: RunFlowHandlerDeps) {
   function endRunAndShowGameOver() {
     applyRunDefeatTeardown({
       awardRunEndMaterials,

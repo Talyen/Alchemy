@@ -217,6 +217,7 @@ export function processEnemyTraits(
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         logError(`Enemy trait handler failed: ${message}`, "battle", { traitId: trait.id });
+        if (import.meta.env.DEV) throw err;
       }
     }
   }

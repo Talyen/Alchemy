@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createGearInstance } from "@/lib/gear";
 import { gearDefinitions } from "@/lib/gear/definitions";
 import { cardLibrary } from "@/lib/game-data";
+import type { Destination } from "@/lib/routing";
 import {
   restorePendingReward,
   restorePendingRewardBundle,
@@ -29,6 +30,7 @@ describe("pending reward persistence", () => {
     expect(persisted).toEqual({
       rewardType: "gear",
       gearChoices: [instance],
+      companionChoiceIds: [],
       selectedId: instance.instanceId,
       gold: 12,
       materials: rewardState.materials,
@@ -42,10 +44,11 @@ describe("pending reward persistence", () => {
     expect(restored).toEqual(rewardState);
   });
 
-  it("remaps legacy boon rewardType to trinket when parsing saves", () => {
+  it("restores trinket rewardType from persisted saves", () => {
     const parsed = restorePendingReward({
       rewardType: "trinket",
       choiceIds: ["bone-charm"],
+      companionChoiceIds: [],
       selectedId: null,
       gold: 0,
       materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
@@ -62,10 +65,11 @@ describe("pending reward persistence", () => {
     const restored = restorePendingReward({
       rewardType: "trinket",
       choiceIds: ["bone-charm"],
+      companionChoiceIds: [],
       selectedId: null,
       gold: 0,
       materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
-      destinations: ["Campfire", "Not A Real Destination", "Mystery"],
+      destinations: ["Campfire", "Not A Real Destination", "Mystery"] as Destination[],
       selectedBossId: null,
       lastVictoryEnemyType: null,
       lastVictoryContentSystem: null,

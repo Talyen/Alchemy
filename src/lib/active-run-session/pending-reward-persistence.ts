@@ -1,7 +1,7 @@
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { cardLibrary, trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
-import { DESTINATIONS, type Destination } from "@/lib/routing";
+import { filterValidDestinations, type Destination } from "@/lib/routing";
 import type { PersistedPendingReward } from "./types";
 import {
   createEmptyRewardState,
@@ -10,12 +10,6 @@ import {
   type RewardState,
   type TrinketRewardState,
 } from "./reward-types";
-
-const VALID_DESTINATIONS = new Set<string>(Object.values(DESTINATIONS));
-
-function filterValidDestinations(values: string[]): Destination[] {
-  return values.filter((destination): destination is Destination => VALID_DESTINATIONS.has(destination));
-}
 
 export function lookupTrinketEntries(ids: string[]): TrinketEntry[] {
   return ids.flatMap((id) => {
@@ -50,7 +44,7 @@ export function resolveTrinketChoices(choiceIds: string[]): TrinketEntry[] | nul
 }
 
 interface PersistedRewardSharedFields {
-  companionChoiceIds?: string[];
+  companionChoiceIds: string[];
   selectedId: string | null;
   gold: number;
   materials: RewardState["materials"];
@@ -64,7 +58,8 @@ function sharedRewardFields(
   rewardState: RewardState,
   companionRewardCards: BattleCard[] | null = null,
 ): PersistedRewardSharedFields {
-  const shared = {
+  return {
+    companionChoiceIds: companionRewardCards?.map((choice) => choice.id) ?? [],
     selectedId: rewardState.selectedId,
     gold: rewardState.gold,
     materials: rewardState.materials,
@@ -73,9 +68,6 @@ function sharedRewardFields(
     lastVictoryEnemyType: rewardState.lastVictoryEnemyType,
     lastVictoryContentSystem: rewardState.lastVictoryContentSystem,
   };
-  return companionRewardCards?.length
-    ? { ...shared, companionChoiceIds: companionRewardCards.map((choice) => choice.id) }
-    : shared;
 }
 
 export function serializePendingReward(
@@ -129,7 +121,7 @@ export interface RestoredPendingReward {
 
 /** Restore both sides of the victory reward handoff as one persistence unit. */
 export function restorePendingRewardBundle(persisted: PersistedPendingReward): RestoredPendingReward {
-  const companionRewardCards = resolveCompanionChoices(persisted.companionChoiceIds ?? []);
+  const companionRewardCards = resolveCompanionChoices(persisted.companionChoiceIds);
   const rewardState = restorePendingReward(persisted);
 
   if (rewardState || !companionRewardCards) {

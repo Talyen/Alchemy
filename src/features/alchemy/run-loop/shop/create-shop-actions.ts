@@ -27,7 +27,7 @@ import {
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import type { GearInstance } from "@/lib/gear";
-import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/profile-port";
+import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/profile-store";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";

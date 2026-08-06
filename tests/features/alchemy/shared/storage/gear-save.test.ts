@@ -8,9 +8,10 @@ import {
   createEmptyCurrencyBoardPositionsByCharacter,
   createEmptyGearLoadouts,
   equipGear,
-  flattenGearInventories,
   type GearInstance,
+  type GearLoadout,
 } from "@/lib/gear";
+import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 
 afterEach(() => {
   useGearStore.getState().reset();
@@ -23,24 +24,27 @@ function knightInventories(...items: GearInstance[]) {
 }
 
 describe("gear save normalization", () => {
-  it("defaults old saves to empty per-character inventories and empty class loadouts", () => {
-    const save = normalizeSaveData({ saveSchemaVersion: 3 });
-    expect(flattenGearInventories(save.gearInventories)).toEqual([]);
+  it("defaults v10 saves to empty per-character inventories and empty class loadouts", () => {
+    const save = normalizeSaveData({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION });
+    expect(save.gearInventories.knight).toEqual([]);
     expect(Object.values(save.gearLoadouts).every((loadout) => Object.values(loadout).every((id) => id === null))).toBe(
       true,
     );
   });
 
   it("discards obsolete Gear trinkets and loadout slots while preserving valid Gear", () => {
+    const inventories = createEmptyGearInventories();
+    inventories.knight = [
+      { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] },
+      { instanceId: "old-trinket", definitionId: "placeholder-trinket", affixes: [] },
+    ];
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight = { ...loadouts.knight, body: "body-1", "trinket-1": "old-trinket" } as GearLoadout;
+
     const save = normalizeSaveData({
-      saveSchemaVersion: 5,
-      gearInventory: [
-        { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] },
-        { instanceId: "old-trinket", definitionId: "placeholder-trinket", affixes: [] },
-      ],
-      gearLoadouts: {
-        knight: { body: "body-1", "trinket-1": "old-trinket" },
-      },
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      gearInventories: inventories,
+      gearLoadouts: loadouts,
     });
 
     expect(save.gearInventories.knight).toEqual([
@@ -50,14 +54,17 @@ describe("gear save normalization", () => {
     expect(save.gearLoadouts.knight).not.toHaveProperty("trinket-1");
   });
 
-  it("keeps only the first loadout reference when legacy saves equip one item multiple times", () => {
+  it("keeps only the first loadout reference when one item is equipped on multiple classes", () => {
+    const inventories = createEmptyGearInventories();
+    inventories.knight = [{ instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] }];
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight["left-ring"] = "ring-1";
+    loadouts.rogue["right-ring"] = "ring-1";
+
     const save = normalizeSaveData({
-      saveSchemaVersion: 5,
-      gearInventory: [{ instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] }],
-      gearLoadouts: {
-        knight: { "left-ring": "ring-1" },
-        rogue: { "right-ring": "ring-1" },
-      },
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      gearInventories: inventories,
+      gearLoadouts: loadouts,
     });
 
     expect(save.gearLoadouts.knight["left-ring"]).toBe("ring-1");
@@ -67,59 +74,29 @@ describe("gear save normalization", () => {
     ]);
   });
 
-  it("drops loadout references that are not present in gearInventory", () => {
+  it("drops loadout references that are not present in gearInventories", () => {
+    const inventories = createEmptyGearInventories();
+    inventories.knight = [{ instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] }];
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight = { ...loadouts.knight, body: "body-1", helm: "missing-helm" };
+
     const save = normalizeSaveData({
-      saveSchemaVersion: 5,
-      gearInventory: [{ instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] }],
-      gearLoadouts: {
-        knight: { body: "body-1", helm: "missing-helm" },
-      },
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      gearInventories: inventories,
+      gearLoadouts: loadouts,
     });
 
     expect(save.gearLoadouts.knight.body).toBe("body-1");
     expect(save.gearLoadouts.knight.helm).toBeNull();
   });
 
-  it("normalizes legacy physical modifiers when affix rolls are absent", () => {
-    const save = normalizeSaveData({
-      saveSchemaVersion: 5,
-      gearInventory: [
-        {
-          instanceId: "body-1",
-          definitionId: "leather-armor-basic",
-          modifiers: [{ kind: "flatPhysicalDamage", value: 2 }],
-        },
-      ],
-    });
-
-    expect(save.gearInventories.knight[0]?.affixes).toEqual([
-      { id: "flat-physical", value: 1 },
-      { id: "flat-physical", value: 1 },
-    ]);
-  });
-
-  it("migrates legacy affix ids and strips invalid entries", () => {
-    const save = normalizeSaveData({
-      saveSchemaVersion: 5,
-      gearInventory: [
-        {
-          instanceId: "body-1",
-          definitionId: "leather-armor-basic",
-          affixIds: ["flat-burn-1", "not-an-affix"],
-        },
-      ],
-    });
-
-    expect(save.gearInventories.knight[0]?.affixes).toEqual([{ id: "flat-burn", value: 1 }]);
-  });
-
   it("defaults gear board positions to empty per-character records", () => {
-    const save = normalizeSaveData({ saveSchemaVersion: 5 });
+    const save = normalizeSaveData({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION });
     expect(save.gearBoardPositionsByCharacter.knight).toEqual({});
   });
 
-  it("defaults migrated crafting currencies to an empty record", () => {
-    const save = normalizeSaveData({ saveSchemaVersion: 6 });
+  it("defaults crafting currencies to an empty record", () => {
+    const save = normalizeSaveData({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION });
     expect(save.craftingCurrencies).toEqual({
       "discordant-dice": 0,
       "sprig-of-growth": 0,
@@ -131,13 +108,20 @@ describe("gear save normalization", () => {
   });
 
   it("defaults crafting currency board positions to empty per-character records", () => {
-    const save = normalizeSaveData({ saveSchemaVersion: 7 });
+    const save = normalizeSaveData({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION });
     expect(save.craftingCurrencyBoardPositionsByCharacter.knight).toEqual({});
   });
 
   it("preserves valid crafting currency board positions and prunes zero-count currencies", () => {
+    const currencyBoardPositions = createEmptyCurrencyBoardPositionsByCharacter();
+    currencyBoardPositions.knight = {
+      "discordant-dice": { col: 2, row: 1 },
+      "sprig-of-growth": { col: 3, row: 1 },
+      voidstone: { col: 0, row: 0 },
+    };
+
     const save = normalizeSaveData({
-      saveSchemaVersion: 8,
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
       craftingCurrencies: {
         "discordant-dice": 2,
         "sprig-of-growth": 0,
@@ -146,11 +130,7 @@ describe("gear save normalization", () => {
         "severance-maw": 0,
         "smiths-whetstone": 0,
       },
-      craftingCurrencyBoardPositions: {
-        "discordant-dice": { col: 2, row: 1 },
-        "sprig-of-growth": { col: 3, row: 1 },
-        voidstone: { col: 0, row: 0 },
-      },
+      craftingCurrencyBoardPositionsByCharacter: currencyBoardPositions,
     });
 
     expect(save.craftingCurrencyBoardPositionsByCharacter.knight).toEqual({
@@ -160,7 +140,7 @@ describe("gear save normalization", () => {
 
   it("preserves valid crafting currencies while normalizing missing or invalid values", () => {
     const save = normalizeSaveData({
-      saveSchemaVersion: 7,
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
       craftingCurrencies: {
         "discordant-dice": 3,
         "sprig-of-growth": -1,
@@ -179,33 +159,42 @@ describe("gear save normalization", () => {
   });
 
   it("prunes board positions for items no longer in inventory", () => {
+    const inventories = createEmptyGearInventories();
+    inventories.knight = [{ instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] }];
+    const boardPositions = createEmptyGearBoardPositionsByCharacter();
+    boardPositions.knight = {
+      "body-1": { col: 2, row: 1 },
+      "missing-1": { col: 0, row: 0 },
+    };
+
     const save = normalizeSaveData({
-      saveSchemaVersion: 5,
-      gearInventory: [{ instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] }],
-      gearBoardPositions: {
-        "body-1": { col: 2, row: 1 },
-        "missing-1": { col: 0, row: 0 },
-      },
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      gearInventories: inventories,
+      gearBoardPositionsByCharacter: boardPositions,
     });
 
     expect(save.gearBoardPositionsByCharacter.knight).toEqual({ "body-1": { col: 2, row: 1 } });
   });
 
-  it("migrates v8 flat inventory into per-character inventories with equipped ownership", () => {
+  it("preserves per-character inventories with equipped ownership", () => {
+    const inventories = createEmptyGearInventories();
+    inventories.knight = [
+      { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] },
+      { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] },
+    ];
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight.body = "body-1";
+    const boardPositions = createEmptyGearBoardPositionsByCharacter();
+    boardPositions.knight = {
+      "body-1": { col: 2, row: 1 },
+      "ring-1": { col: 4, row: 2 },
+    };
+
     const save = normalizeSaveData({
-      saveSchemaVersion: 8,
-      gearInventory: [
-        { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] },
-        { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] },
-      ],
-      gearLoadouts: {
-        knight: { body: "body-1" },
-        rogue: {},
-      },
-      gearBoardPositions: {
-        "body-1": { col: 2, row: 1 },
-        "ring-1": { col: 4, row: 2 },
-      },
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      gearInventories: inventories,
+      gearLoadouts: loadouts,
+      gearBoardPositionsByCharacter: boardPositions,
     });
 
     expect(save.gearInventories.knight).toEqual([
@@ -215,28 +204,6 @@ describe("gear save normalization", () => {
     expect(save.gearInventories.rogue).toEqual([]);
     expect(save.gearBoardPositionsByCharacter.knight).toEqual({ "ring-1": { col: 4, row: 2 } });
     expect(save.gearBoardPositionsByCharacter.rogue).toEqual({});
-  });
-
-  it("migrates persisted legacy trinket field names to trinkets", () => {
-    const save = normalizeSaveData({
-      saveSchemaVersion: 3,
-      discoveredTrinketIds: ["bone-charm"],
-      activeRun: {
-        characterId: "knight",
-        runDeck: [],
-        runGold: 0,
-        runPlayerHealth: 30,
-        runMaxHealth: 30,
-        roomsEncountered: 0,
-        currentAct: 1,
-        destinationIndexInAct: 0,
-        completedDestinations: [],
-        runTrinkets: ["bone-charm"],
-        contentSystemType: "campaign",
-      },
-    });
-    expect(save.discoveredTrinketIds).toEqual(["bone-charm"]);
-    expect(save.activeRun?.runTrinkets).toEqual(["bone-charm"]);
   });
 
   it("round-trips gear store state through buildAlchemySaveDataFromStores and normalizeSaveData", () => {

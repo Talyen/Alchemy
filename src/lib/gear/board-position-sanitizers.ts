@@ -40,6 +40,8 @@ function sanitizeGearBoardPositions(
   inventory: GearInstance[],
   loadout: GearLoadout,
 ): GearBoardPositions {
+  // Load-path repair only. Runtime mutations go through syncBoardPositionsForState
+  // (store-helpers / gear-actions), which rebuilds positions from the packed board view.
   const inventoryIds = new Set(inventory.map((item) => item.instanceId));
   const equippedIds = new Set(Object.values(loadout).filter(Boolean) as string[]);
   const next: GearBoardPositions = {};

@@ -81,6 +81,7 @@ describe("createActiveRunSnapshot", () => {
       currentScreen: null,
       destinationChoices: [],
       pendingReward: null,
+      resumePhase: "none",
       shopState: null,
       alchemistState: null,
       trinketShopState: null,
@@ -177,7 +178,7 @@ describe("createActiveRunSnapshot", () => {
     });
   });
 
-  it("marks legacy enemy-phase saves for safe boot recovery", () => {
+  it("marks enemy-phase saves without a pending transition for boot recovery", () => {
     const activeRun = createActiveRunSnapshot(
       makeSource({
         hasActiveBattle: true,
@@ -188,6 +189,7 @@ describe("createActiveRunSnapshot", () => {
     const decoded = decodeRunResumeSnapshot(activeRun);
 
     expect(decoded.pendingBattleTransition).toEqual({ kind: "legacy-enemy-turn" });
+    expect(activeRun.activeCombat?.battleState.turnPhase).toBe("enemy");
   });
 
   it("persists labyrinth pending node and modifiers during combat", () => {

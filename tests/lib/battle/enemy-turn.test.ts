@@ -193,7 +193,7 @@ describe("legacy enemy-phase recovery", () => {
   });
 });
 
-describe("endPlayerTurn â€” tick order", () => {
+describe("endPlayerTurn — tick order", () => {
   it("ticks enemy DoT before attack when enemy survives", () => {
     const state = battleState({
       enemyHealth: 50,

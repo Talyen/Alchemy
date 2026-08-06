@@ -285,6 +285,7 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       logError(`Enemy attack effect failed: ${message}`, "battle", { effect });
+      if (import.meta.env.DEV) throw err;
     }
   }
 

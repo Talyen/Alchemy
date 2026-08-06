@@ -16,7 +16,7 @@ import { BattlePage } from "./pages/battle-page";
 import { DestinationPage } from "./pages/destination-page";
 import { RewardPage } from "./pages/reward-page";
 import { critical } from "./playwright-tags";
-import { legacyCampaignRunSave } from "./fixtures/legacy-saves";
+import { currentSchemaCampaignSave } from "./fixtures/legacy-saves";
 
 function getSavedRoomCount(page: import("@playwright/test").Page): Promise<number> {
   return page.evaluate((saveKey) => {
@@ -190,8 +190,8 @@ test.describe("Save Persistence & Resume", () => {
     },
   );
 
-  test("resumes a run from legacy pre-metadata save and upgrades schema", async ({ page }) => {
-    const legacySave = legacyCampaignRunSave();
+  test("resumes a run from a current-schema campaign fixture", async ({ page }) => {
+    const legacySave = currentSchemaCampaignSave();
     await page.addInitScript(
       (data) => {
         try {

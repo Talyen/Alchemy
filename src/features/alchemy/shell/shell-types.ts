@@ -57,6 +57,4 @@ export interface RunNavigationDeps {
   battle: BattleLauncherDeps;
   labyrinth: LabyrinthNavOps;
   shop: ShopNavOps;
-  wildwood?: WildwoodNavOps;
-  mystery?: MysteryNavOps;
 }

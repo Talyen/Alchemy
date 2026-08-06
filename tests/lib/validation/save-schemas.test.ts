@@ -194,7 +194,7 @@ describe("ActiveRunDataSchema", () => {
     }
   });
 
-  it("migrates sorcerer to wizard", () => {
+  it("rejects retired characterId aliases", () => {
     const result = ActiveRunDataSchema.safeParse({
       characterId: "sorcerer",
       runDeck: [],
@@ -210,10 +210,7 @@ describe("ActiveRunDataSchema", () => {
       contentSystemType: "campaign",
       labyrinthMap: null,
     });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.characterId).toBe("wizard");
-    }
+    expect(result.success).toBe(false);
   });
 
   it("clamps health to maxHealth when health > maxHealth", () => {
@@ -238,7 +235,7 @@ describe("ActiveRunDataSchema", () => {
     }
   });
 
-  it("falls back contentSystemType to campaign if contentSystemType is labyrinth but labyrinthMap is null", () => {
+  it("rejects labyrinth runs without a labyrinth map", () => {
     const result = ActiveRunDataSchema.safeParse({
       characterId: "knight",
       runDeck: [],
@@ -254,10 +251,7 @@ describe("ActiveRunDataSchema", () => {
       contentSystemType: "labyrinth",
       labyrinthMap: null,
     });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.contentSystemType).toBe("campaign");
-    }
+    expect(result.success).toBe(false);
   });
 
   it("merges partial legacy gearEffects with defaults on mid-combat hydrate", () => {
@@ -331,6 +325,35 @@ describe("ActiveRunDataSchema", () => {
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (!result.success) return;
     expect(result.data.activeCombat?.pendingBattleTransition?.kind).toBe("enemy-turn");
+  });
+
+  it("accepts legacy-enemy-turn pending transition markers", () => {
+    const defaults = defaultBattleState();
+    const result = ActiveRunDataSchema.safeParse({
+      characterId: "knight",
+      runDeck: [],
+      runGold: 0,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      roomsEncountered: 1,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      selectedDifficulty: null,
+      contentSystemType: "campaign",
+      labyrinthMap: null,
+      activeCombat: {
+        battleState: { ...defaults, turnPhase: "enemy", hand: [] },
+        pendingBattleTransition: { kind: "legacy-enemy-turn" },
+        activeLabyrinthModifiers: [],
+        activeLabyrinthRewardModifiers: [],
+      },
+    });
+
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    if (!result.success) return;
+    expect(result.data.activeCombat?.pendingBattleTransition).toEqual({ kind: "legacy-enemy-turn" });
   });
 
   it("normalizes enemy-turn resultState manifests after JSON save/load", () => {

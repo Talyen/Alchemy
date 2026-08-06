@@ -101,7 +101,7 @@ describe("eslint architecture boundary stacking", () => {
     const cfg = await eslint.calculateConfigForFile("src/features/alchemy/shared/ui/game-menu.tsx");
     const imports = asRestrictedImports(cfg.rules?.["no-restricted-imports"]);
 
-    expect(hasGroupContaining(imports, "run-session-facade")).toBe(true);
+    expect(hasGroupContaining(imports, "battle-store")).toBe(true);
     expect(hasGroupContaining(imports, "@/lib/battle/*")).toBe(true);
   });
 

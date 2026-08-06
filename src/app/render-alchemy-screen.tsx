@@ -7,7 +7,6 @@ export type { RenderAlchemyScreenProps } from "@/app/render-screen-props";
 export function RenderAlchemyScreen({
   screen,
   routeCommands,
-  battleBindings,
   onOpenBattleMenu,
   onClearSaveData,
   onUnlockAllDevMode,
@@ -16,7 +15,6 @@ export function RenderAlchemyScreen({
   return renderAlchemyScreenRoute({
     screen,
     routeCommands,
-    battleBindings,
     onOpenBattleMenu,
     onClearSaveData,
     onUnlockAllDevMode,

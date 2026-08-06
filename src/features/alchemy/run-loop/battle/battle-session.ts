@@ -17,12 +17,18 @@ export function createBattleSession(ctx: BattleControllerContext) {
 
   function isBattleSessionActive(session: number) {
     if (session !== ctx.battleSessionRef.current) return false;
+    if (ctx.battleAbortControllerRef.current.signal.aborted) return false;
     const store = getStore();
+    // Allow post-victory animation frames until a new session starts.
     return store.hasActiveBattle || (ctx.victoryDefeatHandledRef.current && store.battleState.enemyHealth <= 0);
   }
 
   function isCurrentBattleSession(session: number) {
     return isBattleSessionActive(session);
+  }
+
+  function getBattleAbortSignal(): AbortSignal {
+    return ctx.battleAbortControllerRef.current.signal;
   }
 
   function runIfSessionActive<T>(session: number, fn: () => T, fallback: T): T;
@@ -83,6 +89,8 @@ export function createBattleSession(ctx: BattleControllerContext) {
 
   /** Reset session identity/presentation after the new battle state commits. */
   function prepareBattleSessionForStart() {
+    ctx.battleAbortControllerRef.current.abort();
+    ctx.battleAbortControllerRef.current = new AbortController();
     ctx.battleSessionRef.current += 1;
     ctx.battleTimerGroupRef.current.clearAll();
     clearTransferHandles();
@@ -108,6 +116,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
 
   return {
     isCurrentBattleSession,
+    getBattleAbortSignal,
     runIfSessionActive,
     handleVictoryDefeat,
     checkBattleEnd,

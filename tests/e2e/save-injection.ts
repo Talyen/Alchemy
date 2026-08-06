@@ -154,9 +154,6 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
 
 export async function injectHomestead(page: Page, overrides: Record<string, unknown> = {}) {
   const save = { ...baseHomesteadSave, ...overrides };
-  if ("gearInventory" in overrides && overrides.gearInventory !== undefined) {
-    save.saveSchemaVersion = 8;
-  }
   if (await isDesktopPage(page)) {
     await writeDesktopSaveAndReload(page, save);
     return;

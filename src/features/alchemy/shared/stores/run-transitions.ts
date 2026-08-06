@@ -29,7 +29,9 @@ export function restoreRun(
     if (decoded) session.runActions.initializeFromResumeSnapshot(decoded.progress);
     else session.runActions.initialize(null);
     session.runProfileActions.applyTalentState(talentXP, unlockedTalents);
-    initializeActiveBattle(activeRun?.activeCombat?.battleState ?? null, decoded?.pendingBattleTransition ?? null);
+    const battleState = activeRun?.activeCombat?.battleState ?? null;
+    const pending = decoded?.pendingBattleTransition ?? null;
+    initializeActiveBattle(battleState, pending);
 
     if (decoded?.screen) session.runActions.setScreen(decoded.screen);
     if (!activeRun) return;

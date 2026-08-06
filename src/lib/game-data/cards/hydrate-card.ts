@@ -2,20 +2,19 @@
 import type { BattleCard } from "../types";
 import { cardLibrary } from "../cards";
 
-export type SavedCard = BattleCard & {
-  descriptionLinesFullyValid?: boolean;
-  effectsFullyValid?: boolean;
-};
+export type SavedCard = BattleCard;
 
 function hydrateDescriptionLines(saved: SavedCard, libraryCard: BattleCard): string[] {
-  if (Array.isArray(saved.descriptionLines) && saved.descriptionLinesFullyValid !== false)
+  if (Array.isArray(saved.descriptionLines) && saved.descriptionLines.length > 0) {
     return [...saved.descriptionLines];
+  }
   return [...libraryCard.descriptionLines];
 }
 
 function hydrateEffects(saved: SavedCard, libraryCard: BattleCard): BattleCard["effects"] {
-  if (Array.isArray(saved.effects) && saved.effectsFullyValid !== false)
+  if (Array.isArray(saved.effects) && saved.effects.length > 0) {
     return saved.effects.map((e) => (typeof e === "object" ? { ...e } : e));
+  }
   return libraryCard.effects.map((e) => ({ ...e }));
 }
 
@@ -31,26 +30,24 @@ function pickOptionalField<T>(saved: SavedCard, key: keyof SavedCard): T | undef
 export function hydrateCard(savedCard: SavedCard): BattleCard {
   const libraryCard = cardLibrary.find((c) => c.id === savedCard.id);
   if (!libraryCard) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- strip save-only validity flags
-    const { descriptionLinesFullyValid, effectsFullyValid, ...rest } = savedCard;
-    return rest;
+    // E2E / custom cards with no library entry — keep the saved shape as-is.
+    return savedCard;
   }
 
-  const saved = savedCard;
   const corruptedValuePositions =
-    Array.isArray(saved.corruptedValuePositions) && saved.corruptedValuePositions.length > 0
-      ? saved.corruptedValuePositions
+    Array.isArray(savedCard.corruptedValuePositions) && savedCard.corruptedValuePositions.length > 0
+      ? savedCard.corruptedValuePositions
       : undefined;
 
   return {
     ...libraryCard,
-    descriptionLines: hydrateDescriptionLines(saved, libraryCard),
-    effects: hydrateEffects(saved, libraryCard),
-    cost: hydrateCost(saved, libraryCard),
-    ...(pickOptionalField<boolean>(saved, "consume") !== undefined && { consume: saved.consume }),
-    ...(pickOptionalField<boolean>(saved, "corrupted") !== undefined && { corrupted: saved.corrupted }),
-    ...(pickOptionalField<string>(saved, "baseTitle") !== undefined && { baseTitle: saved.baseTitle }),
-    ...(pickOptionalField<string>(saved, "uid") !== undefined && { uid: saved.uid }),
+    descriptionLines: hydrateDescriptionLines(savedCard, libraryCard),
+    effects: hydrateEffects(savedCard, libraryCard),
+    cost: hydrateCost(savedCard, libraryCard),
+    ...(pickOptionalField<boolean>(savedCard, "consume") !== undefined && { consume: savedCard.consume }),
+    ...(pickOptionalField<boolean>(savedCard, "corrupted") !== undefined && { corrupted: savedCard.corrupted }),
+    ...(pickOptionalField<string>(savedCard, "baseTitle") !== undefined && { baseTitle: savedCard.baseTitle }),
+    ...(pickOptionalField<string>(savedCard, "uid") !== undefined && { uid: savedCard.uid }),
     ...(corruptedValuePositions && { corruptedValuePositions }),
   };
 }

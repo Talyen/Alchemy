@@ -33,78 +33,82 @@ type RunActions = GameplayState["runActions"];
 export type RunTrinketsUpdate = Parameters<RunActions["setRunTrinkets"]>[0];
 export type RunDeckUpdate = Parameters<RunActions["setRunDeck"]>[0];
 
+function dispatchRunAction<T>(work: (session: GameplayState) => T): T {
+  return dispatchRunSessionCommand(() => work(readGameplayState()));
+}
+
 // ---------------------------------------------------------------------------
 // Active-run progression
 // ---------------------------------------------------------------------------
 
 export function setRunDeck(value: RunDeckUpdate): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.setRunDeck(value));
+  dispatchRunAction((session) => session.runActions.setRunDeck(value));
 }
 
 export function setRunGold(value: Parameters<RunActions["setRunGold"]>[0]): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.setRunGold(value));
+  dispatchRunAction((session) => session.runActions.setRunGold(value));
 }
 
 export function addRunGold(amount: number): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.addRunGold(amount));
+  dispatchRunAction((session) => session.runActions.addRunGold(amount));
 }
 
 export function setRunPlayerHealth(value: Parameters<RunActions["setRunPlayerHealth"]>[0]): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.setRunPlayerHealth(value));
+  dispatchRunAction((session) => session.runActions.setRunPlayerHealth(value));
 }
 
 export function setRunMaxHealth(value: RunValueUpdate<number>): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.setRunMaxHealth(value));
+  dispatchRunAction((session) => session.runActions.setRunMaxHealth(value));
 }
 
 export function setRoomsEncountered(value: RunValueUpdate<number>): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.setRoomsEncountered(value));
+  dispatchRunAction((session) => session.runActions.setRoomsEncountered(value));
 }
 
 export function setCurrentAct(value: RunValueUpdate<number>): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.setCurrentAct(value));
+  dispatchRunAction((session) => session.runActions.setCurrentAct(value));
 }
 
 export function setDestinationIndexInAct(value: RunValueUpdate<number>): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.setDestinationIndexInAct(value));
+  dispatchRunAction((session) => session.runActions.setDestinationIndexInAct(value));
 }
 
 export function setCompletedDestinations(
   value: RunValueUpdate<GameplayState["run"]["activeRun"]["completedDestinations"]>,
 ): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.setCompletedDestinations(value));
+  dispatchRunAction((session) => session.runActions.setCompletedDestinations(value));
 }
 
 export function setDestinationOfferState(value: Parameters<RunActions["setDestinationOfferState"]>[0]): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.setDestinationOfferState(value));
+  dispatchRunAction((session) => session.runActions.setDestinationOfferState(value));
 }
 
 export function setRunTrinkets(value: RunTrinketsUpdate): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.setRunTrinkets(value));
+  dispatchRunAction((session) => session.runActions.setRunTrinkets(value));
 }
 
 export function setEncounteredRunEnemyIds(value: RunValueUpdate<string[]>): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.setEncounteredRunEnemyIds(value));
+  dispatchRunAction((session) => session.runActions.setEncounteredRunEnemyIds(value));
 }
 
 export function setScreen(screen: Screen): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.setScreen(screen));
+  dispatchRunAction((session) => session.runActions.setScreen(screen));
 }
 
 export function awardCardXP(card: BattleCard): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.awardCardXP(card));
+  dispatchRunAction((session) => session.runActions.awardCardXP(card));
 }
 
 export function awardMysteryXP(keywordId: KeywordId, amount: number): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.awardMysteryXP(keywordId, amount));
+  dispatchRunAction((session) => session.runActions.awardMysteryXP(keywordId, amount));
 }
 
 export function addRunMaterialsEarned(materials: MaterialInventory): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.addRunMaterialsEarned(materials));
+  dispatchRunAction((session) => session.runActions.addRunMaterialsEarned(materials));
 }
 
 export function clearRunMaterialsEarned(): void {
-  dispatchRunSessionCommand(() => readGameplayState().runActions.clearRunMaterialsEarned());
+  dispatchRunAction((session) => session.runActions.clearRunMaterialsEarned());
 }
 
 /** Draw from a persisted run stream without exposing the aggregate action. */
@@ -127,35 +131,35 @@ export function awardMaterialsDuringRun(materials: MaterialInventory) {
 
 /** Dev / unlock-all: overwrite homestead materials. */
 export function setMaterials(materials: MaterialInventory) {
-  return dispatchRunSessionCommand(() => readGameplayState().runProfileActions.setMaterials(materials));
+  return dispatchRunAction((session) => session.runProfileActions.setMaterials(materials));
 }
 
 export function addMaterials(materials: MaterialInventory): void {
-  dispatchRunSessionCommand(() => readGameplayState().runProfileActions.addMaterials(materials));
+  dispatchRunAction((session) => session.runProfileActions.addMaterials(materials));
 }
 
 export function constructBuilding(id: BuildingId): boolean {
-  return dispatchRunSessionCommand(() => readGameplayState().runProfileActions.constructBuilding(id));
+  return dispatchRunAction((session) => session.runProfileActions.constructBuilding(id));
 }
 
 export function plantFarm(id: FarmId): boolean {
-  return dispatchRunSessionCommand(() => readGameplayState().runProfileActions.plantFarm(id));
+  return dispatchRunAction((session) => session.runProfileActions.plantFarm(id));
 }
 
 export function completeResearch(id: ResearchId): boolean {
-  return dispatchRunSessionCommand(() => readGameplayState().runProfileActions.completeResearch(id));
+  return dispatchRunAction((session) => session.runProfileActions.completeResearch(id));
 }
 
 export function bondCompanion(id: CompanionId): boolean {
-  return dispatchRunSessionCommand(() => readGameplayState().runProfileActions.bondCompanion(id));
+  return dispatchRunAction((session) => session.runProfileActions.bondCompanion(id));
 }
 
 export function unlockTalent(keywordId: KeywordId, talentId: string): void {
-  dispatchRunSessionCommand(() => readGameplayState().runProfileActions.unlockTalent(keywordId, talentId));
+  dispatchRunAction((session) => session.runProfileActions.unlockTalent(keywordId, talentId));
 }
 
 export function resetUnlockedTalents(): void {
-  dispatchRunSessionCommand(() => readGameplayState().runProfileActions.resetUnlockedTalents());
+  dispatchRunAction((session) => session.runProfileActions.resetUnlockedTalents());
 }
 
 /** Dev unlock-all: max every talent and drop pending run XP so run-end cannot merge on top. */
@@ -278,17 +282,17 @@ export function clearBattleTransition(): void {
 // ---------------------------------------------------------------------------
 
 export function setPendingCharacterId(id: CharacterId | null) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setPendingCharacterId(id));
+  return dispatchRunAction((session) => session.sessionActions.setPendingCharacterId(id));
 }
 
 export function setPendingContentSystemType(type: ContentSystemId) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setPendingContentSystemType(type));
+  return dispatchRunAction((session) => session.sessionActions.setPendingContentSystemType(type));
 }
 
 export function setWildwoodDraft(
   state: WildwoodDraftState | null | ((prev: WildwoodDraftState | null) => WildwoodDraftState | null),
 ) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setWildwoodDraft(state));
+  return dispatchRunAction((session) => session.sessionActions.setWildwoodDraft(state));
 }
 
 /** Start a fresh run: seed active-run progress, drop the previous run-end XP snapshot, flag the run active. */
@@ -306,23 +310,23 @@ export function applyRunStartSnapshot(snapshot: RunStartSnapshot): void {
 // ---------------------------------------------------------------------------
 
 export function setRewardState(state: RewardState | ((prev: RewardState) => RewardState)) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setRewardState(state));
+  return dispatchRunAction((session) => session.sessionActions.setRewardState(state));
 }
 
 export function setCompanionRewardCards(cards: BattleCard[] | null) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setCompanionRewardCards(cards));
+  return dispatchRunAction((session) => session.sessionActions.setCompanionRewardCards(cards));
 }
 
 export function beginRewardClaim(): boolean {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.beginRewardClaim());
+  return dispatchRunAction((session) => session.sessionActions.beginRewardClaim());
 }
 
 export function releaseRewardClaim(): void {
-  dispatchRunSessionCommand(() => readGameplayState().sessionActions.releaseRewardClaim());
+  dispatchRunAction((session) => session.sessionActions.releaseRewardClaim());
 }
 
 export function beginDestinationClaim(destination: Destination): boolean {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.beginDestinationClaim(destination));
+  return dispatchRunAction((session) => session.sessionActions.beginDestinationClaim(destination));
 }
 
 /** Commit destination claim across session + active-run progress (cross-lifetime). */
@@ -344,15 +348,15 @@ export function commitDestinationClaim(destination: Destination): boolean {
 }
 
 export function cancelDestinationClaim(): void {
-  dispatchRunSessionCommand(() => readGameplayState().sessionActions.cancelDestinationClaim());
+  dispatchRunAction((session) => session.sessionActions.cancelDestinationClaim());
 }
 
 export function setRunEndMaterials(materials: MaterialInventory) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setRunEndMaterials(materials));
+  return dispatchRunAction((session) => session.sessionActions.setRunEndMaterials(materials));
 }
 
 export function setCorruptionResult(result: CorruptionResult | null) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setCorruptionResult(result));
+  return dispatchRunAction((session) => session.sessionActions.setCorruptionResult(result));
 }
 
 // ---------------------------------------------------------------------------
@@ -360,19 +364,19 @@ export function setCorruptionResult(result: CorruptionResult | null) {
 // ---------------------------------------------------------------------------
 
 export function setShopState(state: ShopState | ((prev: ShopState) => ShopState)) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setShopState(state));
+  return dispatchRunAction((session) => session.sessionActions.setShopState(state));
 }
 
 export function setAlchemistState(state: AlchemistState | ((prev: AlchemistState) => AlchemistState)) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setAlchemistState(state));
+  return dispatchRunAction((session) => session.sessionActions.setAlchemistState(state));
 }
 
 export function setTrinketShopState(state: TrinketShopState | ((prev: TrinketShopState) => TrinketShopState)) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setTrinketShopState(state));
+  return dispatchRunAction((session) => session.sessionActions.setTrinketShopState(state));
 }
 
 export function setEquipmentShopState(state: EquipmentShopState | ((prev: EquipmentShopState) => EquipmentShopState)) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setEquipmentShopState(state));
+  return dispatchRunAction((session) => session.sessionActions.setEquipmentShopState(state));
 }
 
 // ---------------------------------------------------------------------------
@@ -380,13 +384,13 @@ export function setEquipmentShopState(state: EquipmentShopState | ((prev: Equipm
 // ---------------------------------------------------------------------------
 
 export function setMysteryEvent(event: import("@/lib/mystery").MysteryEvent | null) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setMysteryEvent(event));
+  return dispatchRunAction((session) => session.sessionActions.setMysteryEvent(event));
 }
 
 export function setMysteryCardChoices(
   choices: BattleCard[] | null | ((prev: BattleCard[] | null) => BattleCard[] | null),
 ) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setMysteryCardChoices(choices));
+  return dispatchRunAction((session) => session.sessionActions.setMysteryCardChoices(choices));
 }
 
 // ---------------------------------------------------------------------------
@@ -394,7 +398,7 @@ export function setMysteryCardChoices(
 // ---------------------------------------------------------------------------
 
 export function setActiveLabyrinthModifiers(modifiers: EncounterCombatTraitId[]) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setActiveLabyrinthModifiers(modifiers));
+  return dispatchRunAction((session) => session.sessionActions.setActiveLabyrinthModifiers(modifiers));
 }
 
 export function setActiveLabyrinthRewardModifiers(modifiers: EncounterRewardTraitId[]) {
@@ -404,9 +408,9 @@ export function setActiveLabyrinthRewardModifiers(modifiers: EncounterRewardTrai
 }
 
 export function setActiveLabyrinthPendingNode(node: LabyrinthNodePosition | null) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setActiveLabyrinthPendingNode(node));
+  return dispatchRunAction((session) => session.sessionActions.setActiveLabyrinthPendingNode(node));
 }
 
 export function setLabyrinthMap(map: LabyrinthMap | ((prev: LabyrinthMap) => LabyrinthMap)) {
-  return dispatchRunSessionCommand(() => readGameplayState().sessionActions.setLabyrinthMap(map));
+  return dispatchRunAction((session) => session.sessionActions.setLabyrinthMap(map));
 }

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { CharacterSelectScreen, DifficultySelectScreen, DraftDeckScreen } from "@/features/alchemy/run-setup/screens";
-import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-port";
+import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { useDifficultySelectSlice, useDraftDeckSlice } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import type { RunSetupRouteCtx } from "./route-ctx";
 

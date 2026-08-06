@@ -4,19 +4,20 @@ Automation enforces release readiness — agents do not rely on manual checklist
 
 ## Commands
 
-| Command                          | When it runs                                                                                                      |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `npm run check:ship`             | Local ship gate (`lint:ci` + ship unit + `build:desktop:no-sync`); also used by `release:hotfix`                  |
-| `npm run check:ship:full`        | Nightly + before tagging (`unit` + save E2E + Electron E2E)                                                       |
-| `npm run build:desktop:no-sync`  | Vite desktop build only — no typecheck, no version/steam/asset sync; sync runs via `prebuild:desktop` or CI steps |
-| `npm run verify:release-version` | `release.yml` — tag must match `package.json`                                                                     |
-| `npm run sync:version`           | `prebuild` / `prebuild:desktop` — syncs `package.json` → `metadata.generated.ts`                                  |
-| `npm run sync:steam-appid`       | `prebuild:desktop` / release — writes `steam_appid.txt` from `STEAM_APP_ID`                                       |
-| `npm run sync:changelog`         | Optional: rebuild `CHANGELOG.md` ## [Unreleased] from git (also runs automatically as release `prerelease`)       |
-| `npm run generate:patch-notes`   | Active dev → `release-notes/UNRELEASED.md`; tag CI → `release-notes/vX.Y.Z.md`                                    |
-| `npm run dist:desktop`           | Hardened, verified targets from [`steam/platforms.json`](../steam/platforms.json)                                 |
-| `npm run steam:upload:dry-run`   | Validates Steam VDF templates + contentroot (`release-desktop/win-unpacked`) without credentials                  |
-| `npm run release`                | Bumps version, syncs + promotes changelog, creates git tag                                                        |
+| Command                          | When it runs                                                                                                     |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `npm run check:ship`             | Local ship gate (`lint:ci` + ship unit + `ALCHEMY_SKIP_ASSETS=1` `build:desktop`); also used by `release:hotfix` |
+| `npm run check:ship:full`        | Nightly + before tagging (`unit` + save E2E + Electron E2E)                                                      |
+| `npm run build:desktop`          | Desktop Vite build via `prebuild:desktop` (version + steam app id + assets; CI sets `ALCHEMY_SKIP_ASSETS=1`)     |
+| `npm run verify:release-version` | `release.yml` — tag must match `package.json`                                                                    |
+| `npm run sync:version`           | `prebuild` / `prebuild:desktop` — syncs `package.json` → `metadata.generated.ts`                                 |
+| `npm run sync:steam-appid`       | `prebuild:desktop` — writes `steam_appid.txt` from `STEAM_APP_ID` (release job relies on this hook)              |
+| `npm run sync:changelog`         | Optional: rebuild `CHANGELOG.md` ## [Unreleased] from git (also runs automatically as release `prerelease`)      |
+| `npm run generate:patch-notes`   | Active dev → `release-notes/UNRELEASED.md`; tag CI → `release-notes/vX.Y.Z.md`                                   |
+| `npm run package:win`            | Unpacked Windows app via `dist-desktop.mjs` (`ALCHEMY_PACKAGE_DIR=1`)                                            |
+| `npm run dist:desktop`           | Hardened, verified installers from [`steam/platforms.json`](../steam/platforms.json)                             |
+| `npm run steam:upload:dry-run`   | Validates Steam VDF templates + contentroot (`release-desktop/win-unpacked`) without credentials                 |
+| `npm run release`                | Bumps version, syncs + promotes changelog, creates git tag                                                       |
 
 ## Changelog (release-time only)
 
@@ -102,9 +103,10 @@ Windows release job.
 | Job                                         | Trigger                                                                             |
 | ------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `e2e` (`@critical`)                         | Every push                                                                          |
-| `ship-gate`                                 | Every push (desktop compile after unit tests)                                       |
+| `ship-gate`                                 | Every push (desktop compile after unit tests; uploads `dist-desktop` for electron)  |
+| `assets`                                    | Push when Raw Assets / asset scripts change (prep + drift check)                    |
 | `save-gate`                                 | Push when save/migration/active-run paths change                                    |
-| `desktop-build`                             | Push when desktop paths change (Windows installer artifact)                         |
-| `electron-e2e`                              | Push when desktop/Electron paths change                                             |
+| `desktop-build`                             | Push when desktop paths change (`dist:desktop` Windows installer artifact)          |
+| `electron-e2e`                              | Push when desktop/Electron paths change (reuses ship-gate `dist/`)                  |
 | `ci-ok`                                     | Aggregate status over all CI jobs (dashboards / optional PRs; not a main push gate) |
 | `release` (incl. `e2e-full` 3-shard matrix) | Tag `v*` push                                                                       |

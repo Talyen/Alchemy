@@ -64,14 +64,11 @@ jobs:
 
       - uses: ./.github/actions/setup
       - run: npm run build
+        env:
+          ALCHEMY_SKIP_ASSETS: "1"
 
       - name: Smoke test production build
-        run: |
-          npx vite preview --host 127.0.0.1 --port 4174 --strictPort &
-          preview_pid=$!
-          npx wait-on http://127.0.0.1:4174 --timeout 30000
-          curl -sf http://127.0.0.1:4174 > /dev/null
-          kill "$preview_pid"
+        run: npm run smoke:preview
 
       - uses: actions/upload-artifact@v5
         with:
@@ -119,7 +116,7 @@ jobs:
         run: npx playwright install chromium
 
       - name: Run full e2e shard
-        run: npm run test:e2e:preview -- --shard=${{ matrix.shard }}/3
+        run: npm run test:e2e:full -- --shard=${{ matrix.shard }}/3
         env:
           CI: true
 
@@ -151,14 +148,6 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.ref_name }}
 
-      - name: Sync version metadata
-        run: node scripts/sync-version-metadata.mjs
-
-      - name: Sync Steam App ID file
-        run: node scripts/sync-steam-appid.mjs
-        env:
-          STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
-
       - name: Generate patch notes
         run: node scripts/generate-patch-notes.mjs
         env:
@@ -167,6 +156,7 @@ jobs:
       - name: Build desktop installers
         run: npm run dist:desktop
         env:
+          ALCHEMY_SKIP_ASSETS: "1"
           CI_RELEASE: "true"
           STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}

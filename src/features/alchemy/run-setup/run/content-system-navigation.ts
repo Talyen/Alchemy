@@ -5,9 +5,8 @@ import { appendUniqueMany } from "@/lib/utils";
 import { getDifficultyModifiers, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import { DEFAULT_BATTLE_ENEMY_TYPE, DRAFT_ROUNDS } from "@/lib/game-constants";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import { setDiscoveredCardIds, setEncounteredEnemyIds } from "../../shared/stores/profile-port";
-import { useUiStore } from "../../shared/stores/ui-store";
-import { readGearMaxHealthBonus } from "../../shared/stores/gear-read-port";
+import { setDiscoveredCardIds, setEncounteredEnemyIds } from "../../shared/stores/profile-store";
+import { readGearMaxHealthBonus } from "../../shared/stores/gear-store";
 import {
   applyRunStartSnapshot,
   setPendingCharacterId,
@@ -78,7 +77,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       {
         afterCommit: (snapshot) => {
           if (options.playStartGoldSound && snapshot.runGold > 0) playGoldGain();
-          useUiStore.getState().clearCardHover();
+          deps.clearCardHover();
         },
       },
     );
@@ -244,7 +243,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       return;
     }
     if (systemType !== CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
-      logError(`[useRunNavigation] handleCharacterSelect: unhandled content system ${systemType}`, "other");
+      logError(`[content-system-navigation] handleCharacterSelect: unhandled content system ${systemType}`, "other");
       deps.navigateTo(CONSTANTS.SCREENS.MENU);
       return;
     }
@@ -276,7 +275,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   function handleDifficultySelect(difficultyId: DifficultyId) {
     const pendingCharacterId = readRunSession().pendingCharacterId;
     if (!pendingCharacterId) {
-      logError("[useRunNavigation] handleDifficultySelect: no pending character", "other");
+      logError("[content-system-navigation] handleDifficultySelect: no pending character", "other");
       deps.navigateTo(CONSTANTS.SCREENS.MENU);
       return;
     }

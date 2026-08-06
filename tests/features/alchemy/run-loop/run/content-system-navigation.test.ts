@@ -56,6 +56,7 @@ function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNaviga
     onStartNextWildwoodBoss: vi.fn(),
     destinationRng: () => 0.5,
     worldRng: () => 0.5,
+    clearCardHover: vi.fn(),
     ...overrides,
   };
 }

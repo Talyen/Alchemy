@@ -1,14 +1,15 @@
 // Content IDs that have been intentionally removed from the live catalogs but
 // may still appear in older saves.
-// The guard test in save-migration-guard.test.ts enforces that legacy fixtures
+// The guard test in save-migration-guard.test.ts enforces that fixtures
 // only reference live catalog IDs or explicitly tombstoned IDs.
 //
+// The set is empty until a real content retirement needs it.
 // Adding a new tombstone:
 //   1. Add the ID to the TOMBSTONED_CARD_IDS set below.
 //   2. Add a guard test in tests/architecture/save-migration-guard.test.ts
-//      that asserts legacy fixtures don't reference un-tombstoned IDs.
+//      that asserts fixtures don't reference un-tombstoned IDs.
 
-export const TOMBSTONED_CARD_IDS: ReadonlySet<string> = new Set<string>(["future-card"]);
+export const TOMBSTONED_CARD_IDS: ReadonlySet<string> = new Set<string>([]);
 
 export function isTombstonedCardId(id: string): boolean {
   return TOMBSTONED_CARD_IDS.has(id);

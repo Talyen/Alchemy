@@ -23,6 +23,7 @@ describe("active run bootstrap", () => {
     expect(app).toContain("restoreRun(result.data.activeRun");
     expect(app).toContain("readRunInitialized");
     expect(controller).toContain("useLayoutEffect");
-    expect(controller).toContain("restoreRun(initialActiveRun");
+    expect(controller).not.toContain("restoreRun(");
+    expect(controller).toContain("Bootstrap restore lives in App");
   });
 });

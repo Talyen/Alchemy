@@ -25,11 +25,12 @@ import {
   type ShopState,
   type TrinketShopState,
 } from "@/lib/active-run-session";
+import type { ResumePhase } from "@/lib/validation";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { DESTINATIONS, type Destination, type Screen } from "@/features/alchemy/shared/types";
+import { filterValidDestinations, type Screen } from "@/lib/routing";
 import { createInitialActiveRunFields, type ActiveRunProgressFields } from "./run-state-init";
 import type { RunSession } from "./run-session-model";
 
@@ -52,11 +53,6 @@ export interface DecodedRunResumeSnapshot {
   screen: Screen | null;
   pendingBattleTransition: PersistedBattleTransition | null;
   session: DecodedRunResumeSession;
-}
-
-function validDestinations(values: string[]): Destination[] {
-  const allowed = new Set<string>(Object.values(DESTINATIONS));
-  return values.filter((value): value is Destination => allowed.has(value));
 }
 
 /**
@@ -106,6 +102,158 @@ function resolveEncodeScreen(
   return requested;
 }
 
+function encodeResumePhase(session: RunSession["session"], currentScreen: Screen | null | undefined): ResumePhase {
+  if (session.rewardClaimInFlight) {
+    if (session.companionRewardCards?.length) return "companion-reward";
+    // Match resolveEncodeScreen: post-claim destination / hollow rewards need destination phase.
+    if (session.rewardState.destinations.length > 0 || currentScreen === "destination" || currentScreen === "rewards") {
+      return "destination";
+    }
+    return "none";
+  }
+
+  if (currentScreen === "rewards" && session.rewardState.choices.length > 0) {
+    return "primary-reward";
+  }
+
+  // Destination phase: destination screen, or rewards with no primary/companion choices left.
+  if (currentScreen === "destination" || (currentScreen === "rewards" && session.rewardState.choices.length === 0)) {
+    return "destination";
+  }
+
+  return "none";
+}
+
+function resolveDestinationExitScreen(activeRun: ActiveRunData): Screen {
+  if (activeRun.labyrinthMap) return "labyrinth-map";
+  if (activeRun.wildwoodDraft) {
+    const phase = activeRun.wildwoodDraft.phase;
+    if (phase === "removal") return "wildwood-removal";
+    if (phase === "recovery") return "wildwood-recovery";
+    if (phase === "draft") return "draft-deck";
+    if (phase === "battle") return "battle";
+  }
+  return "destination";
+}
+
+function restoreCompanionHandoff(
+  activeRun: ActiveRunData,
+  restored: ReturnType<typeof restorePendingRewardBundle>,
+): { rewardState: RewardState | null; companionRewardCards: BattleCard[] | null; screen: Screen | null } {
+  let { rewardState, companionRewardCards } = restored;
+  let screen = activeRun.currentScreen;
+
+  if (companionRewardCards?.length && (!rewardState || rewardState.choices.length === 0)) {
+    rewardState = {
+      ...(rewardState ?? createEmptyRewardState(filterValidDestinations(activeRun.pendingReward!.destinations))),
+      rewardType: "card",
+      choices: companionRewardCards,
+      selectedId: null,
+      gold: 0,
+      materials: emptyInventory(),
+    };
+    companionRewardCards = null;
+    screen = "rewards";
+  }
+
+  return { rewardState, companionRewardCards, screen };
+}
+
+function restorePrimaryPendingReward(activeRun: ActiveRunData): {
+  rewardState: RewardState | null;
+  companionRewardCards: BattleCard[] | null;
+  screen: Screen | null;
+} {
+  if (!activeRun.pendingReward) {
+    return { rewardState: null, companionRewardCards: null, screen: activeRun.currentScreen };
+  }
+  const restored = restorePendingRewardBundle(activeRun.pendingReward);
+  const companionRewardCards = restored.companionRewardCards;
+  let rewardState = restored.rewardState;
+  let screen = activeRun.currentScreen;
+  if (!rewardState && activeRun.pendingReward.destinations.length > 0) {
+    rewardState = createEmptyRewardState(filterValidDestinations(activeRun.pendingReward.destinations));
+    screen = "destination";
+  }
+  return { rewardState, companionRewardCards, screen };
+}
+
+function restoreDestinationPhase(activeRun: ActiveRunData): {
+  rewardState: RewardState | null;
+  screen: Screen | null;
+} {
+  if (activeRun.currentScreen === "rewards" && !activeRun.pendingReward) {
+    const screen = resolveDestinationExitScreen(activeRun);
+    return {
+      screen,
+      rewardState: screen === "destination" ? createEmptyRewardState() : null,
+    };
+  }
+  const destinations = filterValidDestinations(
+    activeRun.destinationChoices.length > 0
+      ? activeRun.destinationChoices
+      : (activeRun.pendingReward?.destinations ?? []),
+  );
+  return {
+    rewardState: createEmptyRewardState(destinations.length > 0 ? destinations : undefined),
+    screen: "destination",
+  };
+}
+
+/**
+ * Infer claim surface when resumePhase is missing/defaulted to none (pre-field saves).
+ * Prefer explicit resumePhase when present.
+ */
+function inferResumeFromLegacySignals(activeRun: ActiveRunData): {
+  rewardState: RewardState | null;
+  companionRewardCards: BattleCard[] | null;
+  screen: Screen | null;
+} {
+  if (activeRun.currentScreen === "destination" && activeRun.destinationChoices.length > 0) {
+    return {
+      rewardState: createEmptyRewardState(filterValidDestinations(activeRun.destinationChoices)),
+      companionRewardCards: null,
+      screen: activeRun.currentScreen,
+    };
+  }
+
+  if (activeRun.pendingReward) {
+    const handoff = restoreCompanionHandoff(activeRun, restorePendingRewardBundle(activeRun.pendingReward));
+    if (handoff.rewardState || handoff.companionRewardCards) {
+      return handoff;
+    }
+    return restorePrimaryPendingReward(activeRun);
+  }
+
+  if (activeRun.currentScreen === "rewards" && activeRun.destinationChoices.length > 0) {
+    return {
+      rewardState: createEmptyRewardState(filterValidDestinations(activeRun.destinationChoices)),
+      companionRewardCards: null,
+      screen: "destination",
+    };
+  }
+
+  if (activeRun.currentScreen === "rewards") {
+    const screen = resolveDestinationExitScreen(activeRun);
+    return {
+      rewardState: screen === "destination" ? createEmptyRewardState() : null,
+      companionRewardCards: null,
+      screen,
+    };
+  }
+
+  return { rewardState: null, companionRewardCards: null, screen: activeRun.currentScreen };
+}
+
+function resolvePendingBattleTransition(activeRun: ActiveRunData): PersistedBattleTransition | null {
+  const pending = activeRun.activeCombat?.pendingBattleTransition ?? null;
+  if (pending) return pending;
+  if (activeRun.activeCombat?.battleState.turnPhase === "enemy") {
+    return { kind: "legacy-enemy-turn" };
+  }
+  return null;
+}
+
 /** Encode one aggregate run read model for both autosave and explicit save flows. */
 export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
   const { run, session, battle } = source;
@@ -114,6 +262,7 @@ export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): Ac
   const pendingReward = session.rewardClaimInFlight
     ? encodeMidClaimPendingReward(session)
     : serializePendingReward(session.rewardState, session.companionRewardCards);
+  const resumePhase = encodeResumePhase(session, currentScreen);
 
   return createActiveRunSnapshot({
     characterId: run.characterId,
@@ -145,6 +294,7 @@ export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): Ac
     currentScreen,
     destinationChoices: session.rewardState.destinations,
     pendingReward,
+    resumePhase,
     shopState:
       currentScreen === "shop" || session.shopState.cards.length > 0 ? serializeShopState(session.shopState) : null,
     alchemistState:
@@ -177,60 +327,36 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
     );
   }
 
-  if (activeRun.currentScreen === "destination" && activeRun.destinationChoices.length > 0) {
-    rewardState = createEmptyRewardState(validDestinations(activeRun.destinationChoices));
-  } else if (activeRun.pendingReward) {
-    const restored = restorePendingRewardBundle(activeRun.pendingReward);
-    rewardState = restored.rewardState;
-    companionRewardCards = restored.companionRewardCards;
-    // Mid-claim companion saves use empty primary choiceIds; promote companions to the offer.
-    if (companionRewardCards?.length && (!rewardState || rewardState.choices.length === 0)) {
-      rewardState = {
-        ...(rewardState ?? createEmptyRewardState(validDestinations(activeRun.pendingReward.destinations))),
-        rewardType: "card",
-        choices: companionRewardCards,
-        selectedId: null,
-        gold: 0,
-        materials: emptyInventory(),
-      };
-      companionRewardCards = null;
-      screen = "rewards";
-    } else if (!rewardState) {
-      console.warn("Pending reward could not be restored; reward choices were dropped", {
-        rewardType: activeRun.pendingReward.rewardType,
-      });
-      if (activeRun.pendingReward.destinations.length > 0) {
-        rewardState = createEmptyRewardState(validDestinations(activeRun.pendingReward.destinations));
-        screen = "destination";
-      }
-    }
-  } else if (activeRun.currentScreen === "rewards" && activeRun.destinationChoices.length > 0) {
-    // Claim drained mid-transition; resume on destination pick with destinations intact.
-    rewardState = createEmptyRewardState(validDestinations(activeRun.destinationChoices));
-    screen = "destination";
-  } else if (activeRun.currentScreen === "rewards" && !rewardState) {
-    // Hollow Rewards with no pending offer — never soft-lock Add/Skip.
-    if (activeRun.labyrinthMap) {
-      screen = "labyrinth-map";
-    } else if (activeRun.wildwoodDraft) {
-      const phase = activeRun.wildwoodDraft.phase;
-      if (phase === "removal") screen = "wildwood-removal";
-      else if (phase === "recovery") screen = "wildwood-recovery";
-      else if (phase === "draft") screen = "draft-deck";
-      else if (phase === "battle") screen = "battle";
-      else screen = "destination";
-    } else {
-      screen = "destination";
-      rewardState = createEmptyRewardState();
+  const resumePhase = activeRun.resumePhase;
+
+  if (resumePhase === "companion-reward" && activeRun.pendingReward) {
+    const handoff = restoreCompanionHandoff(activeRun, restorePendingRewardBundle(activeRun.pendingReward));
+    rewardState = handoff.rewardState;
+    companionRewardCards = handoff.companionRewardCards;
+    screen = handoff.screen;
+  } else if (resumePhase === "destination") {
+    const destination = restoreDestinationPhase(activeRun);
+    rewardState = destination.rewardState;
+    screen = destination.screen;
+  } else if (resumePhase === "primary-reward" && activeRun.pendingReward) {
+    const primary = restorePrimaryPendingReward(activeRun);
+    rewardState = primary.rewardState;
+    companionRewardCards = primary.companionRewardCards;
+    screen = primary.screen;
+  } else if (resumePhase === "none") {
+    // Pre-resumePhase saves and mid-flight gaps: infer from screen / pendingReward signals.
+    const inferred = inferResumeFromLegacySignals(activeRun);
+    if (inferred.rewardState || inferred.companionRewardCards || inferred.screen !== activeRun.currentScreen) {
+      rewardState = inferred.rewardState ?? rewardState;
+      companionRewardCards = inferred.companionRewardCards;
+      screen = inferred.screen;
     }
   }
 
   return {
     progress: createInitialActiveRunFields(activeRun),
     screen,
-    pendingBattleTransition:
-      activeRun.activeCombat?.pendingBattleTransition ??
-      (activeRun.activeCombat?.battleState.turnPhase === "enemy" ? { kind: "legacy-enemy-turn" } : null),
+    pendingBattleTransition: resolvePendingBattleTransition(activeRun),
     session: {
       labyrinthMap: activeRun.labyrinthMap,
       labyrinthPendingNode: activeRun.labyrinthPendingNode,

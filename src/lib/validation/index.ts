@@ -27,6 +27,6 @@ export {
   type ParsedSaveData,
   type ParsedActiveRunData,
 } from "./save-schemas/index";
-export type { PersistedPendingReward } from "./save-schemas/active-run";
+export type { PersistedPendingReward, ResumePhase } from "./save-schemas/active-run";
 export { normalizeActiveRunData } from "./normalize-active-run-data";
 export { isTombstonedCardId } from "./migration/tombstoned-content-ids";

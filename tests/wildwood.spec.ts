@@ -53,7 +53,7 @@ test.describe("Wildwood Draft", () => {
       currentScreen: "draft-deck",
       runDeck: [drafted],
       wildwoodDraft: {
-        version: 2,
+        version: 3,
         phase: "draft",
         draftChoices: choices,
         remainingBossIds: [],
@@ -86,7 +86,7 @@ test.describe("Wildwood Draft", () => {
       currentScreen: "draft-deck",
       runDeck: draftedCards,
       wildwoodDraft: {
-        version: 2,
+        version: 3,
         phase: "draft",
         draftChoices: finalChoices,
         remainingBossIds: [],
@@ -127,7 +127,7 @@ test.describe("Wildwood Draft", () => {
       runMaxHealth: 30,
       runDeck: Array.from({ length: 5 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
       wildwoodDraft: {
-        version: 2,
+        version: 3,
         phase: "draft",
         draftChoices: [{ ...bossKiller, id: "boss-killer-final" }],
         remainingBossIds: [],
@@ -188,7 +188,7 @@ test.describe("Wildwood Draft", () => {
         runMaxHealth: 30,
         runDeck: Array.from({ length: 5 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
         wildwoodDraft: {
-          version: 2,
+          version: 3,
           phase: "draft",
           draftChoices: [{ ...bossKiller, id: "boss-killer-final" }],
           remainingBossIds: [],
@@ -234,7 +234,7 @@ function wildwoodBossState(overrides: Record<string, unknown> = {}) {
       effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
     })),
     wildwoodDraft: {
-      version: 2,
+      version: 3,
       phase: "draft",
       draftChoices: [makeCard({ id: "boss-killer-final" })],
       remainingBossIds: [],
@@ -300,7 +300,7 @@ test.describe("Wildwood Traits", slow, () => {
       page,
       wildwoodBossState({
         wildwoodDraft: {
-          version: 2,
+          version: 3,
           phase: "draft",
           draftChoices: [makeCard()],
           remainingBossIds: [],
@@ -337,7 +337,7 @@ test.describe("Wildwood Traits", slow, () => {
       page,
       wildwoodBossState({
         wildwoodDraft: {
-          version: 2,
+          version: 3,
           phase: "draft",
           draftChoices: [makeCard()],
           remainingBossIds: [],
@@ -376,7 +376,7 @@ test.describe("Wildwood Traits", slow, () => {
       page,
       wildwoodBossState({
         wildwoodDraft: {
-          version: 2,
+          version: 3,
           phase: "draft",
           draftChoices: [makeCard()],
           remainingBossIds: [],

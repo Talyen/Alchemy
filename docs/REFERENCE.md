@@ -25,9 +25,12 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 
 ```sh
 npm run dev                 # Vite dev server
-npm run build               # vite build (typecheck is a separate gate; Vercel runs typecheck && build)
+npm run build               # vite build (typecheck is a separate gate; Vercel uses build:web:ci)
+npm run build:web:ci        # typecheck + build with ALCHEMY_SKIP_ASSETS=1 (Vercel)
 npm run build:desktop       # vite desktop build (runs prebuild:desktop sync)
-npm run build:desktop:no-sync  # vite desktop build only (no typecheck / sync)
+npm run package:win         # unpacked Windows app via dist-desktop.mjs (ALCHEMY_PACKAGE_DIR=1)
+npm run dist:desktop        # installers via dist-desktop.mjs (steam/platforms.json targets)
+npm run smoke:preview       # start vite preview and assert HTTP 200 (CI/release)
 npm run typecheck           # tsc --noEmit (fast; also in lint:ci and pre-commit)
 npm test                    # Vitest
 npm test -- <path>          # Single test file
@@ -40,20 +43,37 @@ npm run format / format:check  # Prettier via scripts/run-prettier.mjs (shared g
 npm run check               # npm ci --dry-run + lint:ci + test + build
 npm run check:push          # fast format + typecheck + lint + @prepush E2E gate
 npm run check:push:full     # comprehensive check + @prepush E2E gate
-npm run check:ship          # lint:ci + ship unit tests + build:desktop:no-sync
+npm run check:ship          # lint:ci + ship unit tests + ALCHEMY_SKIP_ASSETS=1 build:desktop
 npm run check:ship:full     # check:ship + save E2E + Electron E2E
 npm run sync:version        # package.json → metadata.generated.ts
 npm run sync:changelog      # optional / release prerelease: git log → CHANGELOG ## [Unreleased]
 npm run generate:patch-notes    # git/changelog → release-notes/UNRELEASED.md (or vX.Y.Z on tag)
-npm run dist:desktop        # electron-builder per steam/platforms.json
 npm run test:e2e:prepush    # Fast @prepush subset (pre-push hook)
 npm run test:e2e:prepush:full  # @critical on preview (CI e2e job)
 npm run test:e2e:full         # Full suite on preview (broader CI/release tier)
-npm run test:e2e:main-gate    # Compatibility alias for the full suite
+npm run test:e2e:nightly      # Full suite + nightly-only coverage
+npm run test:e2e:electron     # Electron Playwright suite
 npm run balance:sim         # Balance simulator report (opens via scripts/open-report.mjs)
 npm run clean               # Remove local test/report/.vite artifacts
 npm run clean:all           # clean + dist/release-desktop + stop stale E2E preview ports (4173/4175)
 ```
+
+### Build commands decision tree
+
+| Intent                                                  | Command                                                      |
+| ------------------------------------------------------- | ------------------------------------------------------------ |
+| Local web/dev                                           | `npm run dev` / `npm run build` (hooks run asset prep)       |
+| Vercel web                                              | `npm run build:web:ci` (typecheck + build, skips asset prep) |
+| Desktop renderer + version/steam/asset sync             | `npm run build:desktop`                                      |
+| Fast desktop renderer (committed assets / CI ship-gate) | `ALCHEMY_SKIP_ASSETS=1 npm run build:desktop`                |
+| Unpacked Windows app (local iterate)                    | `npm run package:win`                                        |
+| Windows/mac/linux installers (CI desktop + release)     | `npm run dist:desktop`                                       |
+
+**Skip flag:** `ALCHEMY_SKIP_ASSETS=1` skips only `prepare-assets.mjs` (sharp/ffmpeg/codegen). Version sync, steam app id sync, and the Vite build still run via `prebuild` / `prebuild:desktop`.
+
+CI, Vercel, and release builds set `ALCHEMY_SKIP_ASSETS=1` because optimized outputs are committed. When you change `Raw Assets/` or asset scripts, commit the regenerated outputs (CI `assets` job fails on drift).
+
+`predev:desktop` is an alias of `predev` (same stop-server + asset prep).
 
 `npm run clean` never stops the main Vite dev server (`5173` / `ALCHEMY_DEV_PORT`). Use `npm run clean -- --processes --include-dev-port` for that, or rely on `predev` which already calls `scripts/stop-dev-server.mjs`. Playwright keeps only failed-run output under `test-results/` (`preserveOutput: "failures-only"`). Shared `~/Library/Caches/ms-playwright` may be used by other projects — do not prune it from Alchemy alone.
 

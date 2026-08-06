@@ -15,7 +15,10 @@ const VALID_TARGETS = new Set(["win", "linux", "mac"]);
 
 describe("steam platform config", () => {
   const config = JSON.parse(readFileSync(join(ROOT, "steam/platforms.json"), "utf8")) as PlatformsConfig;
-  const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { build: Record<string, unknown> };
+  const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as {
+    build: Record<string, unknown>;
+    scripts: Record<string, string>;
+  };
   const mainSource = readFileSync(join(ROOT, "desktop/main.cjs"), "utf8");
 
   it("declares at least one shipping target", () => {
@@ -50,7 +53,21 @@ describe("steam platform config", () => {
     expect(distDesktop).toContain("forceCodeSigning=true");
     expect(distDesktop).toContain('"electron-builder", "out", "cli", "cli.js"');
     expect(distDesktop).toContain('["--publish", "never"]');
+    expect(distDesktop).toContain("ALCHEMY_PACKAGE_DIR");
     expect(distDesktop).not.toContain('"npx.cmd"');
     expect(JSON.stringify(pkg.build)).not.toContain('"signAndEditExecutable":false');
+  });
+
+  it("routes packaging through dist-desktop rather than direct electron-builder scripts", () => {
+    expect(pkg.scripts["dist:desktop"]).toContain("dist-desktop.mjs");
+    expect(pkg.scripts["package:win"]).toContain("dist-desktop.mjs");
+    expect(pkg.scripts["package:win"]).toContain("ALCHEMY_PACKAGE_DIR");
+    expect(pkg.scripts["dist:win"]).toBeUndefined();
+    expect(pkg.scripts["package:win:full"]).toBeUndefined();
+    expect(pkg.scripts["build:desktop:no-sync"]).toBeUndefined();
+    expect(pkg.scripts["build:web:ci"]).toContain("build-web-ci.mjs");
+    expect(pkg.scripts["smoke:preview"]).toContain("smoke-preview.mjs");
+    expect(pkg.scripts["check:ship"]).toContain("ALCHEMY_SKIP_ASSETS=1");
+    expect(pkg.scripts["check:ship"]).toContain("build:desktop");
   });
 });

@@ -4,7 +4,7 @@ import { BattleCardEffectSchema } from "@/lib/game-data";
 import { pushValidationError } from "./validation-utils";
 
 function parseSavedEffectList(values: unknown[]) {
-  const effects = values.flatMap((value, i) => {
+  return values.flatMap((value, i) => {
     const result = BattleCardEffectSchema.safeParse(value);
     if (!result.success) {
       pushValidationError(`effects[${i}]`, result.error.message);
@@ -12,7 +12,6 @@ function parseSavedEffectList(values: unknown[]) {
     }
     return result.success ? [{ ...result.data }] : [];
   });
-  return { effects, fullyValid: effects.length === values.length };
 }
 
 function cloneSavedDescriptionLines(values: unknown[]): string[] | null {
@@ -30,9 +29,9 @@ export const BattleCardSchema = z
   .object({
     id: z.string(),
     uid: z.number().int().optional(),
-    title: z.string(),
+    title: z.string().default(""),
     descriptionLines: z.array(z.unknown()).optional(),
-    art: z.string(),
+    art: z.string().default(""),
     cost: z.union([z.number(), z.nan()]).catch(-1),
     consume: z.boolean().optional(),
     corrupted: z.boolean().optional(),
@@ -52,7 +51,7 @@ export const BattleCardSchema = z
   })
   .transform((saved) => {
     const savedDescriptionLines = saved.descriptionLines ? cloneSavedDescriptionLines(saved.descriptionLines) : null;
-    const savedEffects = saved.effects ? parseSavedEffectList(saved.effects) : { effects: [], fullyValid: false };
+    const savedEffects = saved.effects ? parseSavedEffectList(saved.effects) : [];
     const corruptedValuePositions = Array.isArray(saved.corruptedValuePositions)
       ? saved.corruptedValuePositions.filter(
           (p): p is { lineIndex: number; matchIndex: number } =>
@@ -72,9 +71,7 @@ export const BattleCardSchema = z
       descriptionLines: savedDescriptionLines ?? [],
       art: saved.art,
       cost,
-      effects: savedEffects.effects,
-      effectsFullyValid: savedEffects.fullyValid,
-      descriptionLinesFullyValid: savedDescriptionLines !== null,
+      effects: savedEffects,
       ...(saved.uid !== undefined ? { uid: saved.uid } : {}),
       ...(saved.consume !== undefined ? { consume: saved.consume } : {}),
       ...(saved.corrupted !== undefined ? { corrupted: saved.corrupted } : {}),

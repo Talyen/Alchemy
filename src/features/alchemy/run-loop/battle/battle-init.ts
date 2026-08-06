@@ -9,10 +9,10 @@ import { initializeActiveBattle } from "@/features/alchemy/shared/stores/run-ses
 import { syncRunToBattleStart } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { useBattlePresentationStore } from "./battle-presentation-store";
 import { appendUnique } from "@/lib/utils";
-import { readProfileStore, setEncounteredEnemyIds } from "../../shared/stores/profile-port";
+import { readProfileStore, setEncounteredEnemyIds } from "../../shared/stores/profile-store";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
-import { readGearManifestForCharacter } from "../../shared/stores/gear-read-port";
+import { readGearManifestForCharacter } from "../../shared/stores/gear-store";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
 

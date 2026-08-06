@@ -10,7 +10,7 @@ import {
   TalentsScreen,
   ArmoryScreen,
 } from "@/features/alchemy/meta/screens";
-import { useProfileCollectionSlice, useProfileDiscoverySlice } from "@/features/alchemy/shared/stores/profile-port";
+import { useProfileCollectionSlice, useProfileDiscoverySlice } from "@/features/alchemy/shared/stores/profile-store";
 import { useCollectionActions, useHomesteadActions } from "@/features/alchemy/shared/stores/store-actions";
 import {
   useBondedCompanions,
@@ -20,7 +20,7 @@ import {
   useTalentProgressSlice,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import type { MetaRouteCtx } from "./route-ctx";
-import { useHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-read-port";
+import { useHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-store";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 
 function MenuScreenRoute({ commands }: { commands: MetaRouteCtx["routeCommands"]["meta"] }) {

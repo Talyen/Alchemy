@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useLayoutEffect, useRef } from "react";
-import { useShallow } from "zustand/react/shallow";
 import {
-  getPlayableHandCardKeysExcludingHidden,
   useBattleAutoEndTurn,
   createBattleSession,
   defaultMeasureElementRect,
   defaultMeasureVisualCardRect,
   createBattleEndTurnUi,
-  createTurnOrchestrationDeps,
   createBattleTransferDeps,
   createBattleInit,
   createBattleCardPlay,
@@ -17,13 +14,10 @@ import {
 } from "@/features/alchemy/run-loop/battle";
 import type { CardRect, Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import type { BattleRunPort, BattleTalentPort } from "@/features/alchemy/run-loop/battle/battle-run-port";
-import { useDisplayOverrides } from "@/features/alchemy/shared/stores/run-session-react-ports";
+import type { BattleRunPort, BattleTalentPort } from "@/features/alchemy/shared/stores/run-port-types";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-model";
 import type { BattleState } from "@/lib/battle";
-import type { BattleScreenData } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 
 interface UseBattleControllerProps {
   run: BattleRunPort;
@@ -54,51 +48,9 @@ export function useBattleController({
 }: UseBattleControllerProps) {
   const {
     battle: { battleState, hasActiveBattle, pendingBattleTransition, pendingTransitionResumeRequired },
-    activeLabyrinthModifiers,
   } = useRunSessionBattleContext(screen);
-  const displayOverrides = useDisplayOverrides();
-  const battlePresentation = useBattlePresentationStore(
-    useShallow((s) => ({
-      revealedCardKeys: s.revealedCardKeys,
-      cardGhosts: s.cardGhosts,
-      floatingCombatTexts: s.floatingCombatTexts,
-      enemyShaking: s.enemyShaking,
-      playerShaking: s.playerShaking,
-      companionShaking: s.companionShaking,
-      playerHurtFlashToken: s.playerHurtFlashToken,
-      enemyHurtFlashToken: s.enemyHurtFlashToken,
-    })),
-  );
-  const { hoveredCardId, shimmerState, maybeTriggerShimmer } = useUiStore(
-    useShallow((s) => ({
-      hoveredCardId: s.hoveredCardId,
-      shimmerState: s.shimmerState,
-      maybeTriggerShimmer: s.maybeTriggerShimmer,
-    })),
-  );
   const removeCardGhost = useBattlePresentationStore((s) => s.removeCardGhost);
   const clearFloatingCombatTexts = useBattlePresentationStore((s) => s.clearFloatingCombatTexts);
-
-  const battleScreenData: BattleScreenData = useMemo(
-    () => ({
-      battleState,
-      displayOverrides,
-      ...battlePresentation,
-      hoveredCardId,
-      shimmerState,
-      maybeTriggerShimmer,
-      activeLabyrinthModifiers,
-    }),
-    [
-      battleState,
-      displayOverrides,
-      battlePresentation,
-      hoveredCardId,
-      shimmerState,
-      maybeTriggerShimmer,
-      activeLabyrinthModifiers,
-    ],
-  );
 
   const scheduleAutoEndTurnRef = useRef<((state: BattleState) => void) | null>(null);
   const clearAutoEndTurnRef = useRef<(() => void) | null>(null);
@@ -124,8 +76,7 @@ export function useBattleController({
   const actions = useMemo(() => {
     const session = createBattleSession(ctx);
     const transferDeps = createBattleTransferDeps(ctx, session.isCurrentBattleSession);
-    const orchestrationDeps = createTurnOrchestrationDeps(ctx, session, transferDeps);
-    const endTurnUi = createBattleEndTurnUi(ctx, session, transferDeps, orchestrationDeps);
+    const endTurnUi = createBattleEndTurnUi(ctx, session, transferDeps);
     const cardPlay = createBattleCardPlay(ctx, session, transferDeps);
     const init = createBattleInit(ctx, session, rng);
     const devOutcomes = createBattleDevOutcomes(ctx, session);
@@ -140,7 +91,6 @@ export function useBattleController({
   }, [ctx, rng]);
 
   const hiddenHandCardKeys = useBattlePresentationStore((s) => s.hiddenHandCardKeys);
-  const cardTransfers = useBattlePresentationStore((s) => s.cardTransfers);
   const cardTransferInProgress = useBattlePresentationStore((s) => s.cardTransferInProgress);
 
   // Auto end turn hook
@@ -177,12 +127,6 @@ export function useBattleController({
     actions.endTurnUi.resumePendingBattleTransition();
   }, [actions.endTurnUi, hasActiveBattle, pendingBattleTransition, pendingTransitionResumeRequired, screen]);
 
-  // Playable hand card keys
-  const playableHandCardKeys = useMemo(
-    () => getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys),
-    [battleState, hiddenHandCardKeys],
-  );
-
   const resetHandTransferUi = useBattlePresentationStore((s) => s.resetHandTransferUi);
 
   useEffect(() => {
@@ -203,7 +147,6 @@ export function useBattleController({
 
   return {
     battleState,
-    battleScreenData,
     hasActiveBattle,
     refs: {
       handCardRefs: ctx.handCardRefs,
@@ -213,9 +156,6 @@ export function useBattleController({
       playerPanelRef: ctx.playerPanelRef,
       enemyPanelRef: ctx.enemyPanelRef,
     },
-    cardTransfers,
-    hiddenHandCardKeys,
-    cardTransferInProgress,
     startBattle: actions.init.startBattle,
     startBossBattle: actions.init.startBossBattle,
     startBossById: actions.init.startBossById,
@@ -225,6 +165,5 @@ export function useBattleController({
     handleEndRun: actions.devOutcomes.handleEndRun,
     skipCombatDevMode: actions.devOutcomes.skipCombatDevMode,
     removeCardGhost,
-    playableHandCardKeys,
   };
 }

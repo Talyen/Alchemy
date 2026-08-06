@@ -17,11 +17,9 @@ import {
 import { applyAlchemistPotion, applyRewardSelection } from "./run-destination-handlers";
 import { CONSTANTS } from "../../shared/types";
 import { getActiveRewardTraits } from "./run-flow-handler-deps";
-import type { RunFlowContext } from "./run-flow-context";
+import type { RunFlowHandlerDeps, RunFlowSiblingHandlers } from "./run-flow-handler-deps";
 
-export function createRewardHandlers(ctx: RunFlowContext) {
-  const { deps } = ctx;
-
+export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlowSiblingHandlers) {
   function selectRewardChoice(id: string) {
     setRewardState((prev) => ({ ...prev, selectedId: id }));
     deps.dispatch({ type: "select-reward-choice", id });
@@ -102,24 +100,16 @@ export function createRewardHandlers(ctx: RunFlowContext) {
                 });
               },
               completeRunVictory: (materials, onCommit) => {
-                ctx.dispatchContinuation({
-                  type: "complete-run-victory",
-                  displayMaterials: materials,
-                  onRenderedScreenCommit: () => {
-                    onCommit?.();
-                    releaseRewardClaimState();
-                  },
+                handlers.completeRunVictory(materials, () => {
+                  onCommit?.();
+                  releaseRewardClaimState();
                 });
               },
               handleActComplete: (materials) => {
-                ctx.dispatchContinuation({
-                  type: "handle-act-complete",
-                  displayMaterials: materials,
-                  onRenderedScreenCommit: () => {
-                    // prepareNextDestination / victory commit overwrite offer state;
-                    // only the claim lock must be released here.
-                    releaseRewardClaimState();
-                  },
+                handlers.handleActComplete(materials, () => {
+                  // prepareNextDestination / victory commit overwrite offer state;
+                  // only the claim lock must be released here.
+                  releaseRewardClaimState();
                 });
               },
               onLabyrinthClearNode: () => deps.dispatch({ type: "labyrinth-clear-node" }),

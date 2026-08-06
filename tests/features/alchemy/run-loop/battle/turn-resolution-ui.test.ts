@@ -4,10 +4,23 @@ import {
   resolveHasteSkipTurn,
   resolveNormalEnemyTurn,
   resumePendingBattleTransition,
+  type TurnOrchestration,
 } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { defaultBattleState, endPlayerTurn } from "@/lib/battle";
 import { runHandDrawSequence, type HandDrawSequenceDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import type { getBattleSessionStore } from "@/features/alchemy/run-loop/battle/battle-session";
+
+const beginBattleTransition = vi.fn();
+const commitBattleTransition = vi.fn();
+const clearBattleTransition = vi.fn();
+const setBattleState = vi.fn();
+
+vi.mock("@/features/alchemy/shared/stores/run-session-write-port", () => ({
+  beginBattleTransition: (...args: unknown[]) => beginBattleTransition(...args),
+  commitBattleTransition: (...args: unknown[]) => commitBattleTransition(...args),
+  clearBattleTransition: (...args: unknown[]) => clearBattleTransition(...args),
+  setBattleState: (...args: unknown[]) => setBattleState(...args),
+}));
 
 vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", () => ({
   runHandDrawSequence: vi.fn(async (_oldHand, _newState, applyState) => {
@@ -23,6 +36,12 @@ vi.mock("@/lib/animation/game-timer", () => ({
 vi.mock("@/lib/audio", () => ({
   playBattleEvent: vi.fn(),
   playEnemyAttack: vi.fn(),
+}));
+
+let activeStore: ReturnType<typeof makeStore>;
+
+vi.mock("@/features/alchemy/run-loop/battle/battle-session", () => ({
+  getBattleSessionStore: () => activeStore,
 }));
 
 function makeStore(): ReturnType<typeof getBattleSessionStore> {
@@ -97,13 +116,8 @@ function makeDrawDeps(): HandDrawSequenceDeps {
   };
 }
 
-function makeTurnDeps(store: ReturnType<typeof makeStore>) {
+function makeOrch(): TurnOrchestration {
   return {
-    getStore: () => store,
-    setBattleState: vi.fn(),
-    beginBattleTransition: vi.fn(),
-    commitBattleTransition: vi.fn(),
-    clearBattleTransition: vi.fn(),
     isCurrentBattleSession: () => true,
     runIfSessionActive: <T>(_session: number, action: () => T) => action(),
     checkBattleEnd: vi.fn(() => false),
@@ -115,35 +129,42 @@ function makeTurnDeps(store: ReturnType<typeof makeStore>) {
   };
 }
 
+beforeEach(() => {
+  activeStore = makeStore();
+  beginBattleTransition.mockClear();
+  commitBattleTransition.mockClear();
+  clearBattleTransition.mockClear();
+  setBattleState.mockClear();
+  vi.mocked(runHandDrawSequence).mockClear();
+});
+
 describe("resolveHasteSkipTurn", () => {
   it("shows combat texts and runs the draw sequence", async () => {
-    const store = makeStore();
     const state = defaultBattleState();
     const result = endPlayerTurn({ ...state, playerStatuses: { ...state.playerStatuses, haste: 1 } });
-    const deps = makeTurnDeps(store);
+    const orch = makeOrch();
 
-    resolveHasteSkipTurn(result, state, 1, deps);
+    resolveHasteSkipTurn(result, state, 1, orch);
 
     await vi.waitFor(() => {
-      expect(deps.scheduleCompanionFollowUp).toHaveBeenCalled();
+      expect(orch.scheduleCompanionFollowUp).toHaveBeenCalled();
     });
     if (result.combatTexts.length > 0) {
-      expect(store.showCombatTexts).toHaveBeenCalledWith(result.combatTexts);
+      expect(activeStore.showCombatTexts).toHaveBeenCalledWith(result.combatTexts);
     }
   });
 });
 
 describe("resolveNormalEnemyTurn", () => {
   it("commits a resumable continuation before presentation delays", () => {
-    const store = makeStore();
     const state = defaultBattleState();
     const result = endPlayerTurn(state);
     if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
-    const deps = makeTurnDeps(store);
+    const orch = makeOrch();
 
-    resolveNormalEnemyTurn(result, state, [], 1, deps);
+    resolveNormalEnemyTurn(result, state, [], 1, orch);
 
-    expect(deps.beginBattleTransition).toHaveBeenCalledWith(
+    expect(beginBattleTransition).toHaveBeenCalledWith(
       expect.objectContaining({ turnPhase: "enemy" }),
       {
         kind: "enemy-turn",
@@ -155,7 +176,6 @@ describe("resolveNormalEnemyTurn", () => {
   });
 
   it("calls handleVictoryDefeat when the enemy is already dead", () => {
-    const store = makeStore();
     const state = defaultBattleState();
     const result = endPlayerTurn(state);
     expect(result.kind).not.toBe("haste");
@@ -165,22 +185,17 @@ describe("resolveNormalEnemyTurn", () => {
       kind: "standard" as const,
       state: { ...state, enemyHealth: 0, turnPhase: "enemy" as const },
     };
-    const deps = makeTurnDeps(store);
+    const orch = makeOrch();
 
-    resolveNormalEnemyTurn(deadResult, state, [], 1, deps);
+    resolveNormalEnemyTurn(deadResult, state, [], 1, orch);
 
-    expect(deps.handleVictoryDefeat).toHaveBeenCalledWith("victory");
-    expect(deps.commitBattleTransition).toHaveBeenCalled();
+    expect(orch.handleVictoryDefeat).toHaveBeenCalledWith("victory");
+    expect(commitBattleTransition).toHaveBeenCalled();
   });
 });
 
 describe("executeEnemyPhase", () => {
-  beforeEach(() => {
-    vi.mocked(runHandDrawSequence).mockClear();
-  });
-
   it("shakes the player when enemy damage texts are present", async () => {
-    const store = makeStore();
     const current = defaultBattleState();
     const result = { ...current, playerHealth: 5 };
 
@@ -191,16 +206,15 @@ describe("executeEnemyPhase", () => {
       1,
       false,
       true,
-      makeTurnDeps(store),
+      makeOrch(),
     );
 
-    expect(store.shakePlayer).toHaveBeenCalledOnce();
-    expect(store.hurtPlayer).toHaveBeenCalledOnce();
-    expect(store.showCombatTexts).toHaveBeenCalled();
+    expect(activeStore.shakePlayer).toHaveBeenCalledOnce();
+    expect(activeStore.hurtPlayer).toHaveBeenCalledOnce();
+    expect(activeStore.showCombatTexts).toHaveBeenCalled();
   });
 
   it("does not hurt the player when only block absorb damage is present", async () => {
-    const store = makeStore();
     const current = defaultBattleState();
     const result = { ...current, playerHealth: 5 };
 
@@ -211,44 +225,57 @@ describe("executeEnemyPhase", () => {
       1,
       false,
       true,
-      makeTurnDeps(store),
+      makeOrch(),
     );
 
-    expect(store.hurtPlayer).not.toHaveBeenCalled();
-    expect(store.shakePlayer).toHaveBeenCalledOnce();
+    expect(activeStore.hurtPlayer).not.toHaveBeenCalled();
+    expect(activeStore.shakePlayer).toHaveBeenCalledOnce();
   });
 
   it("commits result state via the draw sequence applyState callback", async () => {
-    const store = makeStore();
     const current = defaultBattleState();
     const result = { ...current, turn: 2, hand: current.hand };
-    const deps = makeTurnDeps(store);
+    const orch = makeOrch();
 
-    await executeEnemyPhase(result, current, [], 1, false, false, deps);
+    await executeEnemyPhase(result, current, [], 1, false, false, orch);
 
     expect(runHandDrawSequence).toHaveBeenCalledOnce();
     const applyState = vi.mocked(runHandDrawSequence).mock.calls[0]![2];
     expect(typeof applyState).toBe("function");
-    expect(deps.commitBattleTransition).toHaveBeenCalledWith(result, null);
-    expect(deps.commitBattleTransition).toHaveBeenCalledTimes(1);
-    expect(deps.scheduleCompanionFollowUp).toHaveBeenCalledWith(result, 1);
+    expect(commitBattleTransition).toHaveBeenCalledWith(result, null);
+    expect(commitBattleTransition).toHaveBeenCalledTimes(1);
+    expect(orch.scheduleCompanionFollowUp).toHaveBeenCalledWith(result, 1);
   });
 });
 
 describe("resumePendingBattleTransition", () => {
   it("commits the computed result without replaying animation delays", () => {
-    const store = makeStore();
     const resultState = { ...defaultBattleState(), turn: 2, playerHealth: 18 };
-    store.pendingBattleTransition = {
+    activeStore.pendingBattleTransition = {
       kind: "enemy-turn",
       resultState,
       playerTurnSkipped: false,
     };
-    const deps = makeTurnDeps(store);
+    const orch = makeOrch();
 
-    resumePendingBattleTransition(1, deps);
+    resumePendingBattleTransition(1, orch);
 
-    expect(deps.commitBattleTransition).toHaveBeenCalledWith(resultState, null);
-    expect(deps.scheduleCompanionFollowUp).toHaveBeenCalledWith(resultState, 1);
+    expect(commitBattleTransition).toHaveBeenCalledWith(resultState, null);
+    expect(orch.scheduleCompanionFollowUp).toHaveBeenCalledWith(resultState, 1);
+  });
+
+  it("recovers legacy enemy-phase markers into a playable player turn", () => {
+    const enemyPhase = { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] };
+    activeStore.battleState = enemyPhase;
+    activeStore.pendingBattleTransition = { kind: "legacy-enemy-turn" };
+    const orch = makeOrch();
+
+    resumePendingBattleTransition(1, orch);
+
+    expect(commitBattleTransition).toHaveBeenCalledOnce();
+    const [recovered, continuation] = vi.mocked(commitBattleTransition).mock.calls[0]!;
+    expect(continuation).toBeNull();
+    expect(recovered.turnPhase).toBe("player");
+    expect(orch.checkBattleEnd).toHaveBeenCalledWith(recovered, 1);
   });
 });

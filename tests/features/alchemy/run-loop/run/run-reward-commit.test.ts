@@ -8,8 +8,8 @@ const discoveryMocks = vi.hoisted(() => ({
   setDiscoveredTrinketIds: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/shared/stores/profile-port", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/profile-port")>();
+vi.mock("@/features/alchemy/shared/stores/profile-store", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/profile-store")>();
   return {
     ...actual,
     setDiscoveredCardIds: discoveryMocks.setDiscoveredCardIds,

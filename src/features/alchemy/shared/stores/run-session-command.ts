@@ -65,6 +65,3 @@ export function subscribeRunSessionCommits(listener: (revision: number) => void)
 export function getRunSessionRevision(): number {
   return useGameplayStateStore.getState().revision;
 }
-
-/** Legacy alias for dispatchRunSessionCommand */
-export { dispatchRunSessionCommand as runSessionTransaction };

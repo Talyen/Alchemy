@@ -11,7 +11,7 @@ import { buildings, visibleFarmPlots, researchUpgrades } from "@/lib/homestead/d
 import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
 import { canAfford } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { useProfileDiscoverySlice } from "@/features/alchemy/shared/stores/profile-port";
+import { useProfileDiscoverySlice } from "@/features/alchemy/shared/stores/profile-store";
 import {
   useActiveRunCharacterId,
   useHomesteadProgressSlice,

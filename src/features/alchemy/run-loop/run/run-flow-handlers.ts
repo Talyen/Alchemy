@@ -1,6 +1,5 @@
 // Unified run-flow handlers: composes concern modules for victory, defeat, rewards, destinations, and progression.
-import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
-import { createRunFlowContext, type RunFlowContinuation } from "./run-flow-context";
+import type { RunFlowHandlerDeps, RunFlowSiblingHandlers } from "./run-flow-handler-deps";
 import { createVictoryHandlers } from "./run-flow-victory";
 import { createDefeatHandlers } from "./run-flow-defeat";
 import { createProgressionHandlers } from "./run-flow-progression";
@@ -9,34 +8,30 @@ import { createDestinationScreenHandlers } from "./run-flow-destination-screen";
 import { awardRunEndMaterials, clearCombatState } from "./run-flow-session-helpers";
 
 export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
-  const dispatchContinuation = (continuation: RunFlowContinuation): void => {
-    switch (continuation.type) {
-      case "prepare-destination-screen":
-        destination.prepareDestinationScreen();
-        return;
-      case "complete-run-victory":
-        defeat.completeRunVictory(continuation.displayMaterials, continuation.onRenderedScreenCommit);
-        return;
-      case "handle-act-complete":
-        progression.handleActComplete(continuation.displayMaterials, continuation.onRenderedScreenCommit);
-        return;
-      case "advance-to-next-destination":
-        progression.advanceToNextDestination();
-        return;
-      default: {
-        const _exhaustive: never = continuation;
-        void _exhaustive;
-      }
-    }
+  const victory = createVictoryHandlers(deps);
+  const defeat = createDefeatHandlers(deps);
+
+  // Sibling bag is filled after factories return; call sites only run after mount.
+  const sibling: RunFlowSiblingHandlers = {
+    prepareDestinationScreen: () => {
+      throw new Error("prepareDestinationScreen used before run-flow wiring completed");
+    },
+    completeRunVictory: defeat.completeRunVictory,
+    handleActComplete: () => {
+      throw new Error("handleActComplete used before run-flow wiring completed");
+    },
+    advanceToNextDestination: () => {
+      throw new Error("advanceToNextDestination used before run-flow wiring completed");
+    },
   };
 
-  const ctx = createRunFlowContext(deps, dispatchContinuation);
+  const progression = createProgressionHandlers(deps, sibling);
+  const rewards = createRewardHandlers(deps, sibling);
+  const destination = createDestinationScreenHandlers(deps, sibling);
 
-  const victory = createVictoryHandlers(ctx);
-  const defeat = createDefeatHandlers(ctx);
-  const progression = createProgressionHandlers(ctx);
-  const rewards = createRewardHandlers(ctx);
-  const destination = createDestinationScreenHandlers(ctx);
+  sibling.prepareDestinationScreen = destination.prepareDestinationScreen;
+  sibling.handleActComplete = progression.handleActComplete;
+  sibling.advanceToNextDestination = progression.advanceToNextDestination;
 
   return {
     clearCombatState,

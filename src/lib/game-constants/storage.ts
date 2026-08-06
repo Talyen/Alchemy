@@ -7,9 +7,3 @@ export const DEFAULT_MUSIC_VOLUME_PCT = 50;
 export const DEFAULT_SFX_VOLUME_PCT = 50;
 export const DEFAULT_MASTER_VOLUME_PCT = 50;
 export const DEFAULT_BRIGHTNESS_PCT = 100;
-
-// Legacy character renames to support saves from before IDs were aligned with data files.
-export const LEGACY_CHARACTER_RENAMES = {
-  sorcerer: "wizard",
-  warden: "ranger",
-} as const;

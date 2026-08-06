@@ -6,10 +6,12 @@ import {
   isUnsupportedFutureSaveData,
   isUnsupportedFutureContentData,
 } from "@/lib/validation/migration";
-import { migrateContentV2 } from "@/lib/validation/migration/migrate-content-v2";
-import { normalizePositiveInteger } from "@/lib/validation/migration/types";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_CONTENT_VERSION } from "@/lib/validation/metadata";
-import { legacyCampaignRunSave, legacyLabyrinthRunSave, legacyCorruptedCardRunSave } from "../../fixtures/legacy-saves";
+import {
+  currentSchemaCampaignSave,
+  currentSchemaLabyrinthRunSave,
+  currentSchemaCorruptedCardRunSave,
+} from "../../fixtures/legacy-saves";
 
 describe("getRawSaveSchemaVersion", () => {
   it("returns 0 for null/undefined input", () => {
@@ -42,24 +44,6 @@ describe("getRawSaveSchemaVersion", () => {
   });
 });
 
-describe("normalizePositiveInteger", () => {
-  it("passes through positive integers", () => {
-    expect(normalizePositiveInteger(42, 10)).toBe(42);
-  });
-
-  it("passes through zero", () => {
-    expect(normalizePositiveInteger(0, 10)).toBe(0);
-  });
-
-  it("falls back for negative values", () => {
-    expect(normalizePositiveInteger(-5, 10)).toBe(10);
-  });
-
-  it("falls back for floats", () => {
-    expect(normalizePositiveInteger(3.14, 10)).toBe(10);
-  });
-});
-
 describe("getRawContentVersion", () => {
   it("returns 0 for null input", () => {
     expect(getRawContentVersion(null)).toBe(0);
@@ -88,29 +72,22 @@ describe("migrateSaveDataToCurrent", () => {
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
 
-  it("preserves existing fields while advancing unsupported-era saves to current schema", () => {
+  it("preserves existing fields while stamping the current schema version", () => {
     const result = migrateSaveDataToCurrent({ musicVolume: 75, activeRun: null });
     expect(result.musicVolume).toBe(75);
     expect(result.activeRun).toBeNull();
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
 
-  it("migrates v8 saves through v9 and v10 to current schema", () => {
+  it("stamps current schema version without reshaping gear inventories", () => {
+    const inventories = { knight: [{ instanceId: "g1", definitionId: "leather-armor-basic", affixes: [] }] };
     const result = migrateSaveDataToCurrent({
-      saveSchemaVersion: 8,
-      gearInventory: [{ instanceId: "g1", definitionId: "sword-1" }],
+      saveSchemaVersion: 9,
+      gearInventories: inventories,
       gearLoadouts: {},
     });
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    expect(result.gearInventories).toBeDefined();
-  });
-
-  it("migrates v9 saves to v10 baseline", () => {
-    const result = migrateSaveDataToCurrent({
-      saveSchemaVersion: 9,
-      gearInventories: { knight: [] },
-    });
-    expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+    expect(result.gearInventories).toEqual(inventories);
   });
 });
 
@@ -146,63 +123,39 @@ describe("isUnsupportedFutureContentData", () => {
   });
 });
 
-describe("legacy fixture migration determinism", () => {
-  it("campaign fixture migrates idempotently", () => {
-    const first = migrateSaveDataToCurrent(legacyCampaignRunSave());
+describe("schema version stamping determinism", () => {
+  it("campaign fixture stamps idempotently", () => {
+    const first = migrateSaveDataToCurrent(currentSchemaCampaignSave());
     const second = migrateSaveDataToCurrent(first);
     expect(second).toEqual(first);
   });
 
-  it("labyrinth fixture migrates idempotently", () => {
-    const first = migrateSaveDataToCurrent(legacyLabyrinthRunSave());
+  it("labyrinth fixture stamps idempotently", () => {
+    const first = migrateSaveDataToCurrent(currentSchemaLabyrinthRunSave());
     const second = migrateSaveDataToCurrent(first);
     expect(second).toEqual(first);
   });
 
-  it("corrupted-card fixture migrates idempotently", () => {
-    const first = migrateSaveDataToCurrent(legacyCorruptedCardRunSave());
+  it("corrupted-card fixture stamps idempotently", () => {
+    const first = migrateSaveDataToCurrent(currentSchemaCorruptedCardRunSave());
     const second = migrateSaveDataToCurrent(first);
     expect(second).toEqual(first);
   });
 
   it("campaign fixture round-trips through JSON serialize", () => {
-    const first = migrateSaveDataToCurrent(legacyCampaignRunSave());
+    const first = migrateSaveDataToCurrent(currentSchemaCampaignSave());
     const serialized = JSON.stringify(first);
     const deserialized = JSON.parse(serialized);
     const second = migrateSaveDataToCurrent(deserialized);
     expect(second).toEqual(first);
   });
 
-  it("all legacy fixtures produce stable saveSchemaVersion", () => {
-    const campaign = migrateSaveDataToCurrent(legacyCampaignRunSave());
-    const labyrinth = migrateSaveDataToCurrent(legacyLabyrinthRunSave());
-    const corrupted = migrateSaveDataToCurrent(legacyCorruptedCardRunSave());
+  it("all scenario fixtures produce stable saveSchemaVersion", () => {
+    const campaign = migrateSaveDataToCurrent(currentSchemaCampaignSave());
+    const labyrinth = migrateSaveDataToCurrent(currentSchemaLabyrinthRunSave());
+    const corrupted = migrateSaveDataToCurrent(currentSchemaCorruptedCardRunSave());
     expect(campaign.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(labyrinth.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(corrupted.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-  });
-});
-
-describe("migrateContentV2 idempotency", () => {
-  it("running migrateContentV2 twice produces a stable result", () => {
-    const before = {
-      contentVersion: 1,
-      discoveredTrinketIds: ["wish-boon", "leech-boon-siphon"],
-      unlockedTalents: { wish: ["wish-boon"], leech: ["leech-boon-siphon"] },
-    } as unknown as Record<string, unknown>;
-    const once = migrateContentV2(before as never);
-    const twice = migrateContentV2(once as never);
-    expect(twice).toEqual(once);
-    expect(once.contentVersion).toBe(CURRENT_CONTENT_VERSION);
-  });
-
-  it("running migrateContentV2 with no legacy ids is a no-op", () => {
-    const input = {
-      contentVersion: 1,
-      discoveredTrinketIds: ["bone-charm"],
-      unlockedTalents: { wish: ["wish-trinket"] },
-    } as unknown as Record<string, unknown>;
-    const once = migrateContentV2(input as never);
-    expect(once).toEqual({ ...input, contentVersion: CURRENT_CONTENT_VERSION });
   });
 });

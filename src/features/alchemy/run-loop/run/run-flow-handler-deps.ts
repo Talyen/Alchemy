@@ -1,5 +1,6 @@
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import type { ContentSystemId } from "@/lib/content-systems/types";
+import type { MaterialInventory } from "@/lib/homestead/types";
 import type {
   DestinationOptionsInput,
   InitialDestinationResult,
@@ -7,7 +8,15 @@ import type {
 import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { CONSTANTS, type Destination } from "../../shared/types";
 import type { RunFlowDispatch } from "./run-flow-intents";
-import type { RunFlowRunPort, RunFlowTalentPort } from "./run-flow-ports";
+import type { RunFlowRunPort, RunFlowTalentPort } from "@/features/alchemy/shared/stores/run-port-types";
+
+/** Sibling handlers that run-flow concerns call directly (filled after concern factories return). */
+export interface RunFlowSiblingHandlers {
+  prepareDestinationScreen: () => void;
+  completeRunVictory: (displayMaterials?: MaterialInventory | null, onRenderedScreenCommit?: () => void) => void;
+  handleActComplete: (displayMaterials?: MaterialInventory, onRenderedScreenCommit?: () => void) => void;
+  advanceToNextDestination: () => void;
+}
 
 export interface RunFlowHandlerDeps {
   run: RunFlowRunPort;

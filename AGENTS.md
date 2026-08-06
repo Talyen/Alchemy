@@ -46,7 +46,7 @@ For non-trivial work, find and read only the docs that match the task; prefer sp
 
 ## Architectural invariants
 
-- **Run state:** feature code outside `shared/stores/` accesses run state through capability-specific ports (`run-session-react-ports`, `run-session-read-port`, `run-session-write-port`, `run-session-lifecycle-port`, and `profile-port`) — not compatibility stores or `run-transitions` directly. Gameplay writes live in `run-session-write-port.ts`; commits go through `dispatchRunSessionCommand()` in `run-session-command.ts`.
+- **Run state:** feature code outside `shared/stores/` accesses run state through capability-specific ports (`run-session-react-ports`, `run-session-read-port`, `run-session-write-port`, `run-session-lifecycle-port`) and domain modules (`profile-store`, `gear-store`) — not `run-transitions` directly. Gameplay writes live in `run-session-write-port.ts`; commits go through `dispatchRunSessionCommand()` in `run-session-command.ts`.
 - **Controllers:** screens receive run/battle data via controller props from `screen-routes/` / shell controllers — no React context for those bindings. See [ARCHITECTURE § Data flow](./docs/ARCHITECTURE.md#data-flow).
 - **Battle:** treat `BattleState` as immutable; use `state.rng` and `Math.round()` (never `Math.random()` / `Math.floor()`); keep tuning in `src/lib/game-constants/` (barrel at `game-constants.ts`; edit the topical file under that folder).
 - **Content:** card `descriptionLines` must match effects. Run-earned materials flow through `awardMaterialsDuringRun()` — do not call progress `addMaterials()` directly for run-loop loot. See [WORKFLOWS § Grant materials](./docs/WORKFLOWS.md#grant-materials-during-a-run).
@@ -77,7 +77,7 @@ For non-trivial work, find and read only the docs that match the task; prefer sp
 
 - Node + npm versions: see `package.json` `engines`; install via `npm ci`. First-time Playwright setup: `npx playwright install chromium`.
 - Run the game with `npm run dev` (Vite, port 5173 with `strictPort`; override via `ALCHEMY_DEV_PORT`).
-- `predev` and `prebuild` run `scripts/prepare-assets.mjs` (and version sync on prebuild); the first build is slow. Escape hatch: `ALCHEMY_SKIP_ASSETS=1`.
+- `predev` and `prebuild` run `scripts/prepare-assets.mjs` (and version sync on prebuild); the first build is slow. Escape hatch: `ALCHEMY_SKIP_ASSETS=1` (CI/Vercel/release skip because optimized outputs are committed; see [REFERENCE § Build commands](./docs/REFERENCE.md#build-commands-decision-tree)).
 - Don't chain `cd` into commands — set your tool's working-directory option instead.
 - Windows / PowerShell 7 shell details: [CONTRIBUTING.md](./CONTRIBUTING.md#before-you-push).
 

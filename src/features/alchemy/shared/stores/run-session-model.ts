@@ -61,7 +61,7 @@ export interface RunSessionBattleContext {
   activeLabyrinthModifiers: EncounterCombatTraitId[];
 }
 
-/** Cross-screen orchestration fields for useRunNavigation (not screen display data). */
+/** Cross-screen orchestration fields for useRunFlowEngine (not screen display data). */
 export interface RunSessionNavigationSlice {
   phase: RunPhase;
   hasActiveBattle: boolean;
@@ -116,7 +116,7 @@ export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleCon
   );
 }
 
-/** Run navigation: session fields used by useRunNavigation (no screen-display twins). */
+/** Run navigation: session fields used by useRunFlowEngine (no screen-display twins). */
 export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigationSlice {
   const session = useGameplayStateStore(
     useShallow((state) => ({

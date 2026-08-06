@@ -15,6 +15,7 @@ import {
 } from "@/lib/game-data";
 import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies } from "@/lib/gear/crafting";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
+import { filterValidDestinations } from "@/lib/routing";
 import { deduplicateStrings } from "./validation-utils";
 
 function toNonEmptyTuple<T extends string>(values: readonly T[], label: string): [T, ...T[]] {
@@ -40,6 +41,11 @@ function createMaterialInventoryShape() {
 export const CharacterIdSchema = z.enum(CHARACTER_IDS);
 export const DifficultyIdSchema = z.enum(DIFFICULTY_IDS);
 export const ContentSystemIdSchema = z.enum(["campaign", "labyrinth", "wildwood"]);
+
+export const DestinationArraySchema = z
+  .array(z.string())
+  .catch([])
+  .transform((values) => filterValidDestinations(values));
 
 const DAMAGE_TYPE_VALUES = toNonEmptyTuple(DAMAGE_TYPES, "Damage types");
 const PLAYER_STATUS_IDS = toNonEmptyTuple(PLAYER_STATUS_DISPLAY_ORDER as PlayerStatusId[], "Player status IDs");
@@ -129,27 +135,26 @@ export const EMPTY_COMPLETED_DIFFICULTIES: Record<CharacterId, DifficultyId[]> =
   Object.fromEntries(CHARACTER_IDS.map((id) => [id, []])),
 );
 
-function normalizeArrayInput(arr: unknown[], renameMap: Record<string, string>): Record<string, number> {
+function normalizeArrayInput(arr: unknown[]): Record<string, number> {
   const result: Record<string, number> = {};
   for (const rawId of arr) {
-    const id = typeof rawId === "string" ? (renameMap[rawId] ?? rawId) : String(rawId);
+    const id = typeof rawId === "string" ? rawId : String(rawId);
     result[id] = (result[id] ?? 0) + 1;
   }
   return result;
 }
 
-function normalizeObjectInput(obj: Record<string, unknown>, renameMap: Record<string, string>): Record<string, number> {
+function normalizeObjectInput(obj: Record<string, unknown>): Record<string, number> {
   const result: Record<string, number> = {};
-  for (const [rawId, level] of Object.entries(obj)) {
-    const id = renameMap[rawId] ?? rawId;
+  for (const [id, level] of Object.entries(obj)) {
     result[id] = typeof level === "number" && Number.isFinite(level) ? Math.max(0, Math.floor(level)) : 0;
   }
   return result;
 }
 
-function normalizeTierRecordInput(val: unknown, renameMap: Record<string, string>): Record<string, number> {
-  if (Array.isArray(val)) return normalizeArrayInput(val, renameMap);
-  if (val && typeof val === "object") return normalizeObjectInput(val as Record<string, unknown>, renameMap);
+function normalizeTierRecordInput(val: unknown): Record<string, number> {
+  if (Array.isArray(val)) return normalizeArrayInput(val);
+  if (val && typeof val === "object") return normalizeObjectInput(val as Record<string, unknown>);
   return {};
 }
 
@@ -168,13 +173,9 @@ function clampTierLevels<T extends string>(
 
 export function createTierRecordSchema<T extends string>(
   items: ReadonlyArray<{ id: T; tiers: readonly unknown[] }>,
-  renameMap: Record<string, string> = {},
 ): z.ZodType<Record<T, number>> {
   const validIds = items.map((item) => item.id);
   return z
-    .preprocess(
-      (val) => normalizeTierRecordInput(val, renameMap),
-      z.record(z.string(), z.number().int().nonnegative().catch(0)),
-    )
+    .preprocess((val) => normalizeTierRecordInput(val), z.record(z.string(), z.number().int().nonnegative().catch(0)))
     .transform((data) => clampTierLevels(data, items, validIds));
 }

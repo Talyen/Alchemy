@@ -3,6 +3,7 @@ import { bodyGear, createEmptyGearLoadouts, gearItemLocator } from "./e2e/armory
 import { assertGearFlatDamageBoostsPhysicalDamage } from "./e2e/gear-combat";
 import { startBattleWithDeck } from "./e2e/battle-setup";
 import { makeCard } from "./e2e/cards";
+import { createEmptyGearInventories } from "@/lib/gear";
 import { MenuPage } from "./pages/menu-page";
 import { test } from "./fixtures/e2e";
 import { armory, critical } from "./playwright-tags";
@@ -22,9 +23,11 @@ test.describe("Gear combat", { ...armory, ...critical }, () => {
 
   test("keeps Armory editing disabled while a battle is active", async ({ page, fastBattle }) => {
     void fastBattle;
+    const gearInventories = createEmptyGearInventories();
+    gearInventories.knight = [bodyGear];
     const menu = new MenuPage(page);
     await menu.gotoWithUnlockedMeta({
-      gearInventory: [bodyGear],
+      gearInventories,
       gearLoadouts: createEmptyGearLoadouts(),
     });
     await startBattleWithDeck(

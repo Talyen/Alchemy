@@ -31,7 +31,7 @@ Gameplay state has one authoritative nested Zustand aggregate in `shared/stores/
 | `profile`        | Compendium discoveries and collection browsing state                         | Profile lifetime      |
 | `gear`           | Permanent inventories, loadouts, board positions, and crafting currencies    | Profile lifetime      |
 
-Cross-concern writes go through `run-session-write-port.ts` (active-run progression, profile/homestead, battle transitions, rewards, shops, labyrinth, mystery, and run setup). Multi-concern lifecycle orchestration is exposed through `run-session-lifecycle-port.ts`. Feature-facing read ports (`run-session-read-port`, `profile-port`, and the React ports) are data-only, while command-backed write ports own every gameplay mutation. React orchestration uses narrow ports from `run-session-react-ports.ts` such as `useRunFlowRunPort`, `useBattleRunPort`, and `useTalentCommandPort`; screens use exact screen-data hooks. Profile reads and imperative active-run/session/battle reads are separate capability ports, so no caller receives a cross-lifetime flattened view.
+Cross-concern writes go through `run-session-write-port.ts` (active-run progression, profile/homestead, battle transitions, rewards, shops, labyrinth, mystery, and run setup). Multi-concern lifecycle orchestration is exposed through `run-session-lifecycle-port.ts`. Feature-facing reads (`run-session-read-port`, `profile-store` / `gear-store` slices, and the React ports) are data-only, while command-backed write ports own every gameplay mutation. React orchestration uses narrow ports from `run-session-react-ports.ts` such as `useRunOrchestrationPort` and `useBattleRunPort`; screens use exact screen-data hooks (battle display via `useBattleScreenRouteData`). Profile and gear live in their domain store modules (persistence + feature slices); no caller receives a cross-lifetime flattened view.
 
 Gameplay mutation callers enter the session through `dispatchRunSessionCommand()` from `run-session-command.ts`. The command boundary opens an Immer draft of the authoritative aggregate, publishes one root revision on success, and discards the draft on failure. React selectors and autosave subscribe to that same root; there is no committed compatibility snapshot to drift from it. Settings and presentation-only state remain separate. Commands are synchronous and must not span an `await`; audio, navigation timers, presentation updates, and other non-rollbackable work use the command's `afterCommit` option or run after the command returns. Nested commands defer their effects until the outer commit, and discard them if any nested work fails. Persistence adapters may subscribe to the aggregate commit signal directly; gameplay callers must not.
 
@@ -72,30 +72,32 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 - **Reads (imperative):** `run-session-read-port.ts` exposes data-only `readActiveRun()`, `readRunProfile()`, `readRunSession()`, and `readBattle()` — for handlers, lifecycle, and non-React code
 - **Reads (React, screen-scoped):** screen-specific hooks in `use-run-screen-data.ts` (for example `useShopScreenData`, `useRewardsScreenData`, and `useGameOverScreenData`) — each hook selects directly from the aggregate and returns only its route's exact display contract
 - **Reads (React, orchestration):** `useRunSessionNavigationSlice(screen)`, `useRunSessionBattleContext(screen)` from `run-session-model.ts` — both select directly from the aggregate; do not mirror screen display fields
-- **Reads (React, meta/setup):** focused selectors and narrow orchestration ports from `run-session-react-ports.ts` (`useHomesteadProgressSlice`, `useTalentProgressSlice`, `useDraftDeckSlice`, `useRunFlowRunPort`, `useBattleRunPort`, `useTalentCommandPort`, …); these select from the aggregate and expose only the fields needed by one owner
+- **Reads (React, meta/setup):** focused selectors and narrow orchestration ports from `run-session-react-ports.ts` (`useHomesteadProgressSlice`, `useTalentProgressSlice`, `useDraftDeckSlice`, `useRunOrchestrationPort`, `useBattleRunPort`, …); these select from the aggregate and expose only the fields needed by one owner
 - **Writes:** `dispatchRunSessionCommand` and the command-backed helpers in `run-session-write-port.ts` (`setRewardState`, `setShopState`, labyrinth/mystery setters, run progression, profile awards, …). Port mutators that accept a functional update (`value | (previous) => next`) use an `update*` prefix (`updateRunDeck`, `updateCurrentAct`) to distinguish them from plain-value `set*` setters (`setScreen`, `setCharacter`); both are command-backed wrappers that re-read committed state and are safe to call from event-time handlers.
 - **Battle writes:** `setBattleState`, `beginBattleTransition`, `commitBattleTransition`, and related commands from `run-session-write-port.ts`; `readBattle()` is intentionally data-only
 - **Hooks:** `useActiveRunScreen()`, screen-specific display hooks, and the navigation/battle context slices above
 - **Lifecycle:** `run-session-lifecycle-port.ts` owns the public lifecycle seam over `run-transitions.ts`
 - **Composed views:** there is no all-domain projection module. `run-session-read-port.ts` exposes action-free lifetime reads, `run-session-react-ports.ts` owns narrow React ports, and `run-session-write-port.ts` owns mutation capabilities. `run-session-command.ts` coordinates atomic aggregate commits (Immer draft + one published revision); it does not publish a second read store.
 
-**Do not add** a broad all-screens display bag or a second flattening read model. Each route owns its exact screen-specific hook; the shared `RunScreenDataByScreen` map in `run-screen-data.ts` keeps those contracts explicit. Controllers own **commands** (assembled by `shell/create-route-commands.ts`); screen routes own **display data** via their specific hooks. The asset preloader uses the intentionally small `useScreenAssetPreloadData` projection because it spans several possible screens. App chrome / autosave / particles read via capability hooks (`useActiveRunCharacterId`, `useTalentProgressSlice`, `useRunSessionBattleContext`, …), not controller display re-exports. Imperative handlers read lifetime-specific ports (`readActiveRun`, `readRunProfile`, `readRunSession`, `readBattle`) at call time; they do not receive a React controller data bus. Battle uses controller `battleBindings` props (intentional exception) and takes narrow `BattleRunPort` / `BattleTalentPort` inputs. Run-flow handlers take narrow `RunFlowRunPort` / `RunFlowTalentPort`, dispatch intents to the shell, and use typed `RunFlowContinuation` values for cross-concern transitions; the shell executes intents via `createRunFlowIntentExecutor` (navigate, shops, battle starts, content hooks). Active-run core fields shared by committed session reads come from `pickActiveRunSessionCoreFields` in `run-state-init.ts`.
+**Do not add** a broad all-screens display bag or a second flattening read model. Each route owns its exact screen-specific hook; the shared `RunScreenDataByScreen` map in `run-screen-data.ts` keeps those contracts explicit. Controllers own **commands** (assembled by `shell/create-route-commands.ts`); screen routes own **display data** via their specific hooks. The asset preloader uses the intentionally small `useScreenAssetPreloadData` projection because it spans several possible screens. App chrome / autosave / particles read via capability hooks (`useActiveRunCharacterId`, `useTalentProgressSlice`, `useRunSessionBattleContext`, …), not controller display re-exports. Imperative handlers read lifetime-specific ports (`readActiveRun`, `readRunProfile`, `readRunSession`, `readBattle`) at call time; they do not receive a React controller data bus. Battle presentation and actions share `routeCommands.battle` (screen data, refs, transfers, and handlers) and take narrow `BattleRunPort` / `BattleTalentPort` inputs. Run-flow handlers take narrow `RunFlowRunPort` / `RunFlowTalentPort`, dispatch intents to the shell, and call sibling concern handlers directly via a shared `RunFlowSiblingHandlers` object; the shell executes intents via `createRunFlowIntentExecutor` (navigate, shops, battle starts, content hooks). Active-run core fields shared by committed session reads come from `pickActiveRunSessionCoreFields` in `run-state-init.ts`.
 
-Boot: [`use-alchemy-run-controller.ts`](../src/features/alchemy/shell/use-alchemy-run-controller.ts) calls the canonical `restoreRun` transition synchronously on mount (guarded by `readRunInitialized`) so the first paint already has the resumed screen. `restoreRun` is the only runtime hydration path. `run-resume-codec.ts` is the single feature-owned translation boundary for save/resume state; `restore-active-run-session.ts` only applies its decoded session fields through the aggregate session action group, so autosave and boot hydration cannot grow separate field mappings. The mega-controller is a thin composer: domain controllers + `createAlchemyRouteCommands` + `battleBindings`.
+Boot: [`App.tsx`](../src/App.tsx) calls the canonical `restoreRun` transition after bootstrap and before first paint (guarded by `readRunInitialized`) so the first rendered screen is already resumed. `restoreRun` is the only runtime hydration path. `run-resume-codec.ts` is the single feature-owned translation boundary for save/resume state; `restore-active-run-session.ts` only applies its decoded session fields through the aggregate session action group, so autosave and boot hydration cannot grow separate field mappings. The mega-controller wires domain controllers into `createAlchemyRouteCommands` (including battle presentation on `routeCommands.battle`); it is not a display-data bus.
 
 ### Run phase
 
 `getRunPhase(screen, hasActiveBattle)` in `@/lib/routing` → `meta` | `runLoop` | `battle` | `runEnd`.
 
-## Battle path (simplified)
+## Battle path
 
 ```
-Screen route → battleBindings (props) → BattleScreen
+Screen route → routeCommands.battle (props) → BattleScreen
            → useAlchemyRunController → useBattleController (BattleRunPort / BattleTalentPort)
            → run-loop/battle/* → run-session-read-port / run-session-command → lib/battle
 ```
 
-`useAlchemyRunController` exposes `battleBindings` (refs, transfers, `battleScreenData`). `App.tsx` passes them through `RenderAlchemyScreen` → `run-loop-routes` — no React context.
+`useAlchemyRunController` exposes battle **commands** on `routeCommands.battle` (refs + handlers). Battle display state is read locally in `BattleScreenRoute` via `useBattleScreenRouteData`. `App.tsx` passes `routeCommands` through `RenderAlchemyScreen` → `run-loop-routes` — no React context and no separate `battleBindings` channel.
+
+`useBattleController` builds session/transfer/end-turn/card-play factories from a shared context; end-turn orchestration takes session + transfer helpers and calls write-port commands directly (no write-port re-bundle on a deps object).
 
 Presentation VFX uses `battle-presentation-store` only. Global card hover/shimmer uses `ui-store`.
 
@@ -109,16 +111,16 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 
 ## Controller entry points
 
-| Concern              | Start here                                                                                       |
-| -------------------- | ------------------------------------------------------------------------------------------------ |
-| Run lifecycle        | `shell/use-alchemy-run-controller.ts`, `run-session-lifecycle-port.ts`                           |
-| Route command maps   | `shell/create-route-commands.ts`                                                                 |
-| Navigation / rewards | `shell/use-run-navigation.ts` (wires concern hooks) + `run-loop/navigation/*` / `run-loop/run/*` |
-| Run-flow intents     | `run-loop/run/run-flow-intents.ts` + `shell/create-run-flow-intent-executor.ts`                  |
-| Run-flow ports       | `run-loop/run/run-flow-ports.ts` (`RunFlowRunPort` / `RunFlowTalentPort`)                        |
-| Battle               | `shell/use-battle-controller.ts` → `lib/battle/*`                                                |
-| Session reads/writes | `shared/stores/run-session-read-port.ts`, `run-session-write-port.ts`, `run-session-command.ts`  |
-| Screen routing       | `shell/use-screen-transitions.ts`, `useActiveRunScreen()`                                        |
+| Concern                 | Start here                                                                                                                               |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Run lifecycle           | `shell/use-alchemy-run-controller.ts`, `run-session-lifecycle-port.ts`                                                                   |
+| Route command maps      | `shell/create-route-commands.ts`                                                                                                         |
+| Navigation / rewards    | `shell/use-run-flow-engine.ts` (destination/content/mystery hooks + inlined flow factories) + `run-loop/navigation/*` / `run-loop/run/*` |
+| Run-flow intents        | `run-loop/run/run-flow-intents.ts` + `shell/create-run-flow-intent-executor.ts`                                                          |
+| Run-flow / battle ports | `shared/stores/run-port-types.ts` (`RunFlowRunPort`, `BattleRunPort`, …)                                                                 |
+| Battle                  | `shell/use-battle-controller.ts` → `lib/battle/*`                                                                                        |
+| Session reads/writes    | `shared/stores/run-session-read-port.ts`, `run-session-write-port.ts`, `run-session-command.ts`                                          |
+| Screen routing          | `shell/use-screen-transitions.ts`, `useActiveRunScreen()`                                                                                |
 
 ## Settings and meta profile
 
@@ -133,7 +135,7 @@ Each persistence owner exposes a codec beside its aggregate region. The codec ow
 
 Owned Gear instances and per-character loadouts live in `shared/stores/gear-store.ts`. Definitions and pure equip/salvage/effect rules live under `src/lib/gear/`. Gear is permanent meta progression and is not copied into active-run data; battle creation snapshots the selected character's aggregate Gear effects into the immutable battle talent manifest.
 
-Run-loop / run-setup / shell read gear through `shared/stores/gear-read-port.ts` (`readGearManifestForCharacter`, `readHasAnyOwnedGear`, `useGearArmorySlice`, …) instead of reaching into the full store API. Mutations enter through `dispatchGearMutationWithRunHealthSync()` so active-run health is derived from the same before/after Gear snapshot and committed with the Gear mutation. Autosave observes the single aggregate commit signal.
+Run-loop / run-setup / shell read gear through `shared/stores/gear-store.ts` (`readGearManifestForCharacter`, `readHasAnyOwnedGear`, `useGearArmorySlice`, …) instead of reaching into the full store API. Mutations enter through `dispatchGearMutationWithRunHealthSync()` so active-run health is derived from the same before/after Gear snapshot and committed with the Gear mutation. Autosave observes the single aggregate commit signal.
 
 Each Gear instance may be equipped on at most one character at a time (one slot per loadout). Equipping moves the instance off any other character or slot. Armory editing is disabled while a battle is active. Autosave subscribes to the Gear store and uses the transient Return to Run screen when meta screens are opened during a run. See [ARMORY.md](./ARMORY.md) for the data model, state flow, board-packing rules, drag FSM, battle integration, and tests map.
 

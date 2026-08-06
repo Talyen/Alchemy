@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  dispatchRunSessionCommand,
   getRunSessionRevision,
-  runSessionTransaction,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   getRunDomainStore,
   getRunProfileStore,
@@ -30,8 +29,8 @@ import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance 
 
 beforeEach(() => {
   resetRunDomainStore();
-  useProfileStore.setState(useProfileStore.getInitialState(), true);
-  useGearStore.setState(useGearStore.getInitialState(), true);
+  useProfileStore.setState(useProfileStore.getInitialState());
+  useGearStore.setState(useGearStore.getInitialState());
 });
 
 describe("run-session transaction coordinator", () => {
@@ -75,7 +74,7 @@ describe("run-session transaction coordinator", () => {
       });
     });
 
-    runSessionTransaction(() => {
+    dispatchRunSessionCommand(() => {
       getRunDomainStore().setRunGold(125);
       getRunTransientStore().setHasActiveRun(true);
     });
@@ -169,7 +168,7 @@ describe("run-session transaction coordinator", () => {
   it("keeps the committed root unchanged until the outer commit", () => {
     const before = useGameplayStateStore.getState();
 
-    runSessionTransaction(() => {
+    dispatchRunSessionCommand(() => {
       getRunDomainStore().setRunGold(125);
       getRunTransientStore().setHasActiveRun(true);
 
@@ -191,7 +190,7 @@ describe("run-session transaction coordinator", () => {
       expect(readGameplayState().run.activeRun.runGold).toBe(42);
     });
 
-    runSessionTransaction(
+    dispatchRunSessionCommand(
       () => {
         getRunDomainStore().setRunGold(42);
         return 42;
@@ -206,7 +205,7 @@ describe("run-session transaction coordinator", () => {
     const effect = vi.fn();
 
     expect(() =>
-      runSessionTransaction(
+      dispatchRunSessionCommand(
         () => {
           getRunDomainStore().setRunGold(42);
           throw new Error("transaction failed");
@@ -221,9 +220,9 @@ describe("run-session transaction coordinator", () => {
   it("defers nested post-commit effects until the outer transaction commits", () => {
     const effect = vi.fn();
 
-    runSessionTransaction(() => {
+    dispatchRunSessionCommand(() => {
       getRunDomainStore().setRunGold(42);
-      runSessionTransaction(() => getRunTransientStore().setHasActiveRun(true), { afterCommit: effect });
+      dispatchRunSessionCommand(() => getRunTransientStore().setHasActiveRun(true), { afterCommit: effect });
       expect(effect).not.toHaveBeenCalled();
     });
 
@@ -234,9 +233,9 @@ describe("run-session transaction coordinator", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
-    runSessionTransaction(() => {
+    dispatchRunSessionCommand(() => {
       getRunDomainStore().setRunGold(10);
-      runSessionTransaction(() => {
+      dispatchRunSessionCommand(() => {
         getRunTransientStore().setHasActiveRun(true);
       });
       getRunDomainStore().setRunGold(20);
@@ -301,7 +300,7 @@ describe("run-session transaction coordinator", () => {
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
     const before = getRunSessionRevision();
 
-    runSessionTransaction(() => {});
+    dispatchRunSessionCommand(() => {});
 
     unsubscribe();
 
@@ -313,7 +312,7 @@ describe("run-session transaction coordinator", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
-    runSessionTransaction(() => {
+    dispatchRunSessionCommand(() => {
       getRunDomainStore().setRunGold(125);
       getRunTransientStore().setHasActiveRun(true);
       getRunProfileStore().setMaterials({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
@@ -366,7 +365,7 @@ describe("run-session transaction coordinator", () => {
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
     expect(() =>
-      runSessionTransaction(() => {
+      dispatchRunSessionCommand(() => {
         getRunDomainStore().setRunGold(999);
         getRunTransientStore().setHasActiveRun(true);
         getRunProfileStore().setMaterials({ wood: 9, iron: 0, herbs: 0, food: 0, crystal: 0 });
