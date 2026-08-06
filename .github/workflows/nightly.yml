@@ -42,7 +42,7 @@ jobs:
         env:
           ALCHEMY_SKIP_ASSETS: "1"
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: |
@@ -104,7 +104,7 @@ jobs:
 
       - name: Upload Playwright report
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-nightly-web-${{ matrix.shard }}
           path: |
