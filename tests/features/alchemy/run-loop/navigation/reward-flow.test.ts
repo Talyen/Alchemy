@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   applyLabyrinthRewardMaterialModifiers,
   computeVictoryGold,
@@ -393,7 +393,7 @@ describe("reward flow orchestration", () => {
       executeRewardRouteTransition("companion-reward", materials, nextRewardState, true, handlers);
       expect(handlers.setCompanionRewardCards).not.toHaveBeenCalled();
       expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.REWARDS, expect.any(Function));
-      const onCommit = handlers.navigateTo.mock.calls[0]![1] as () => void;
+      const onCommit = vi.mocked(handlers.navigateTo).mock.calls[0]![1] as () => void;
       onCommit();
       expect(handlers.setRewardState).toHaveBeenCalledWith(nextRewardState);
       expect(handlers.setCompanionRewardCards).toHaveBeenCalledWith(null);
