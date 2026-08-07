@@ -4,7 +4,7 @@ import type { ScreenTransitionOptions } from "@/features/alchemy/shell/use-scree
 import type { VictoryRewardsResult } from "../navigation/victory-flow";
 import type { Screen } from "../../shared/types";
 
-export type RunFlowShopKind = "shop" | "alchemist" | "trinket" | "equipment";
+type RunFlowShopKind = "shop" | "alchemist" | "trinket" | "equipment";
 
 export interface RunFlowShellActions {
   navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;

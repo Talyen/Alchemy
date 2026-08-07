@@ -184,7 +184,7 @@ describe("run-state read model", () => {
     expect(nav).not.toContain("mysteryNavOps");
 
     const shellTypes = read("src/features/alchemy/shell/shell-types.ts");
-    expect(shellTypes).toContain("export interface BattleLauncherDeps");
+    expect(shellTypes).toContain("interface BattleLauncherDeps");
     expect(shellTypes).toContain("export interface RunNavigationDeps");
     expect(shellTypes).not.toContain("ShopNavOps");
     expect(shellTypes).not.toContain("LabyrinthNavOps");

@@ -3,7 +3,7 @@ import type { WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet
 import type { Screen } from "@/features/alchemy/shared/types";
 import type { ScreenTransitionOptions } from "./use-screen-transitions";
 
-export interface BattleLauncherDeps {
+interface BattleLauncherDeps {
   onStartBattle: (
     deck?: BattleCard[],
     gold?: number,
