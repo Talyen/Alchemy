@@ -11,4 +11,6 @@ export {
   finalizeRunEndSession,
   applyRunDefeatTeardown,
   resolveActiveRunForSave,
+  onRunTeardown,
+  onClearBattlePresentation,
 } from "./run-transitions";

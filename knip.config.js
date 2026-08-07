@@ -46,6 +46,7 @@ export default {
     "src/lib/validation/migration/tombstoned-content-ids.ts": ["exports", "types"],
     // Shared active-run orchestration contract enforced by architecture tests; consumed via Pick aliases.
     "src/features/alchemy/shared/stores/run-port-types.ts": ["types"],
+    "src/features/alchemy/shell/shell-types.ts": ["types"],
   },
   ignore: [
     "tests/environment.d.ts",

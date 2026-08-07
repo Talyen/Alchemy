@@ -161,10 +161,10 @@ One loading experience at cold start, then instant navigation — no per-route "
 | Layer          | Where                                                  | Policy                                        |
 | -------------- | ------------------------------------------------------ | --------------------------------------------- |
 | Images         | `allGameArt` in `assets.ts` (eager `import.meta.glob`) | Decoded before menu via `useInitialLoadReady` |
-| Fonts          | `use-initial-load-ready.ts`                            | With images at startup                        |
+| Fonts          | `use-app-effects.ts`                                   | With images at startup                        |
 | Screen JS      | `src/app/screen-routes/`                               | Static imports — **no** `React.lazy()`        |
-| Runtime extras | `use-app-preload-effects.ts`                           | Battle/rewards/shop warm-up only              |
-| SFX            | `use-app-audio-effects.ts`                             | Critical sounds eager; rest on idle           |
+| Runtime extras | `use-app-effects.ts`                                   | Battle/rewards/shop warm-up only              |
+| SFX            | `use-app-effects.ts`                                   | Critical sounds eager; rest on idle           |
 
 **Do not add:** `React.lazy()` on route screens; lazy game art; per-screen spinners for assets in `allGameArt`.
 

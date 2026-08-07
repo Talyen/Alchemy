@@ -4,8 +4,13 @@ import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-par
 import { platform } from "@/lib/platform";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
-import type { useReturnToRunNavigation } from "@/app/use-return-to-run-navigation";
+import type { useReturnToRunNavigation } from "@/app/use-app-navigation";
 import { useHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-store";
+import { renderAlchemyScreenRoute, type RenderAlchemyScreenProps } from "@/app/screen-routes";
+
+export function RenderAlchemyScreen(props: RenderAlchemyScreenProps) {
+  return renderAlchemyScreenRoute(props);
+}
 
 export function AppBackgroundParticles({
   renderedScreen,

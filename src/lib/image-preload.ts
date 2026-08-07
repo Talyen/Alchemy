@@ -2,51 +2,40 @@
 // current interaction. Used by the app shell to reduce visible image pop-in.
 import { IMAGE_PRELOAD_BATCH_SIZE, IMAGE_PRELOAD_IDLE_TIMEOUT } from "./game-constants";
 
-const imageCache = new Set<string>();
+// Cache storing in-flight and completed load promises by image source URL.
 const imageLoads = new Map<string, Promise<void>>();
 
 // Decodes an image once and caches the promise so repeated route predictions can
 // share work instead of creating competing network requests.
-export function preloadImage(src: string) {
-  if (!src || imageCache.has(src)) return Promise.resolve();
+export function preloadImage(src: string): Promise<void> {
+  if (!src) return Promise.resolve();
   const existing = imageLoads.get(src);
   if (existing) return existing;
 
   const promise = new Promise<void>((resolve) => {
     const image = new Image();
-    let settled = false;
     image.decoding = "async";
 
-    function resolveOnce() {
-      if (settled) return;
-      settled = true;
-      imageCache.add(src);
+    function finish() {
+      image.onload = null;
+      image.onerror = null;
       resolve();
     }
 
-    function decodeLoadedImage() {
+    function handleLoad() {
       image
         .decode()
-        .then(resolveOnce)
-        .catch(() => {
-          image
-            .decode()
-            .then(resolveOnce)
-            .catch(() => {
-              console.warn("Image decode failed:", src);
-              resolveOnce();
-            });
-        });
+        .catch(() => {})
+        .finally(finish);
     }
 
-    image.onload = decodeLoadedImage;
-    image.onerror = () => {
-      if (settled) return;
-      settled = true;
-      resolve();
-    };
+    image.onload = handleLoad;
+    image.onerror = finish;
     image.src = src;
-    if (image.complete) decodeLoadedImage();
+
+    if (image.complete) {
+      handleLoad();
+    }
   });
 
   imageLoads.set(src, promise);
@@ -55,7 +44,7 @@ export function preloadImage(src: string) {
 
 // Warms a list immediately for high-confidence assets, such as the current battle
 // enemy and hand images, while still allowing the browser to prioritize rendering.
-export function preloadImages(srcs: string[]) {
+export function preloadImages(srcs: string[]): void {
   srcs.forEach((src) => {
     void preloadImage(src);
   });
@@ -63,7 +52,7 @@ export function preloadImages(srcs: string[]) {
 
 // Spreads speculative image decoding across idle time so menu and battle input
 // remain responsive while future screen art is prepared.
-export function preloadImagesWhenIdle(srcs: string[]) {
+export function preloadImagesWhenIdle(srcs: string[]): void {
   const uniqueSrcs = Array.from(new Set(srcs.filter(Boolean)));
   let index = 0;
 
@@ -78,7 +67,7 @@ export function preloadImagesWhenIdle(srcs: string[]) {
 
 // Uses idle callbacks when available and falls back to a timer in browsers that
 // do not expose requestIdleCallback.
-function schedulePreloadBatch(callback: () => void) {
+function schedulePreloadBatch(callback: () => void): void {
   if ("requestIdleCallback" in globalThis) {
     (globalThis as Window & typeof globalThis).requestIdleCallback(callback, {
       timeout: IMAGE_PRELOAD_IDLE_TIMEOUT,

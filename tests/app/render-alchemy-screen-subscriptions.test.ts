@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const appSource = readFileSync("src/App.tsx", "utf8");
-const renderSource = readFileSync("src/app/render-alchemy-screen.tsx", "utf8");
+const renderSource = readFileSync("src/app/screen-routes/index.tsx", "utf8");
 
 function uniqueMatches(source: string, pattern: RegExp) {
   return [...new Set([...source.matchAll(pattern)].map((match) => match[1]))].sort();

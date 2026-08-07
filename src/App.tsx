@@ -17,6 +17,7 @@ import {
   useAppAudioEffects,
   useAppDisplayEffects,
   useAppKeyboardShortcuts,
+  useDevShortcuts,
   useGameMenuState,
   useGlobalErrorHandlers,
   useInitialLoadReady,
@@ -24,9 +25,8 @@ import {
   useRenderedScreenTransition,
   useReturnToRunNavigation,
   useScreenAssetPreloadEffects,
-  useScreenParticleConfig,
+  getScreenParticleConfig,
 } from "@/app/app-shell";
-import { useDevShortcuts } from "@/app/use-dev-shortcuts";
 import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
@@ -134,7 +134,7 @@ function AppMainContent({
   const homesteadBondedCompanions = useBondedCompanions();
 
   const isBossBattle = renderedScreen === "battle" && battle.battleState.currentEnemy.enemyType === "boss";
-  const { particleColors, particleAlphaMultiplier } = useScreenParticleConfig(renderedScreen, isBossBattle);
+  const { particleColors, particleAlphaMultiplier } = getScreenParticleConfig(renderedScreen, isBossBattle);
 
   const [deletingUnsupportedSave, setDeletingUnsupportedSave] = useState(false);
   const handleDeleteUnsupportedSave = useCallback(() => {

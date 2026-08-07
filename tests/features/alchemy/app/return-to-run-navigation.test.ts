@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveReturnToRunTarget } from "@/app/return-to-run-navigation";
+import { resolveReturnToRunTarget } from "@/app/use-app-navigation";
 
 describe("return-to-run navigation", () => {
   it("prefers an explicit return screen when set", () => {

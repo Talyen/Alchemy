@@ -8,7 +8,6 @@ import { computeGearManifest, type GearInstance, type GearLoadouts } from "@/lib
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { clearBattlePresentationCardGhosts, resetBattlePresentation } from "./battle-presentation-bridge";
 import { useUiStore } from "./ui-store";
 import { getCommittedRunSession } from "./run-session-model";
 import { restoreRunSession } from "./restore-active-run-session";
@@ -98,6 +97,24 @@ export function syncBattleToRun(options?: { playerHealth?: number }): void {
   session.runActions.setRunPlayerHealth(health);
 }
 
+type LifecycleListener = () => void;
+const teardownListeners = new Set<LifecycleListener>();
+const clearPresentationListeners = new Set<LifecycleListener>();
+
+export function onRunTeardown(listener: LifecycleListener): () => void {
+  teardownListeners.add(listener);
+  return () => {
+    teardownListeners.delete(listener);
+  };
+}
+
+export function onClearBattlePresentation(listener: LifecycleListener): () => void {
+  clearPresentationListeners.add(listener);
+  return () => {
+    clearPresentationListeners.delete(listener);
+  };
+}
+
 /** Clear the battle-active flag and battle-related presentation state. */
 export function clearBattleUi(): void {
   setHasActiveBattle(false);
@@ -107,7 +124,7 @@ export function clearBattleUi(): void {
 /** Clear battle presentation after the gameplay commit that ended combat. */
 export function clearBattlePresentationUi(): void {
   useUiStore.getState().clearCardHover();
-  clearBattlePresentationCardGhosts();
+  clearPresentationListeners.forEach((listener) => listener());
 }
 
 /** Clear active combat, run progression, session UI, navigation, and presentation (profile survives). */
@@ -119,8 +136,8 @@ export function teardownRun(): void {
     session.sessionActions.clearTransientSession();
     initializeActiveBattle(null);
   });
-  resetBattlePresentation();
   useUiStore.getState().clearCardHover();
+  teardownListeners.forEach((listener) => listener());
 }
 
 /** Write the full save file immediately (bypasses autosave debounce). */

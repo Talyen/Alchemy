@@ -1,12 +1,12 @@
 // Screen route registry — maps Screen values to screen components.
 import type { ReactNode } from "react";
-import { optionsScreenRoutes } from "./options-route";
+import { optionsScreenRoutes } from "./options-screen-route";
 import { metaScreenRoutes } from "./meta-routes";
 import { runSetupScreenRoutes } from "./run-setup-routes";
 import { runLoopScreenRoutes } from "./run-loop-routes";
 import { runEndScreenRoutes } from "./run-end-routes";
 import { withScreenBoundary } from "./with-screen-boundary";
-import type { RenderAlchemyScreenProps } from "@/app/render-screen-props";
+import type { AlchemyRouteCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import type { Screen } from "@/lib/routing";
 
 export type ScreenRoute = (ctx: RenderAlchemyScreenProps) => ReactNode;
@@ -35,6 +35,15 @@ const SCREEN_ROUTES = {
   ...runEndScreenRoutes,
   ...optionsScreenRoutes,
 };
+
+export interface RenderAlchemyScreenProps {
+  screen: Screen;
+  routeCommands: AlchemyRouteCommands;
+  onOpenBattleMenu: (rect?: DOMRect) => void;
+  onClearSaveData: () => void;
+  onUnlockAllDevMode: () => void;
+  onBackFromOptions: () => void;
+}
 
 export function renderAlchemyScreenRoute(ctx: RenderAlchemyScreenProps): ReactNode {
   const render = SCREEN_ROUTES[ctx.screen];

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { getRunSession } from "@/features/alchemy/shared/stores/run-session-model";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
-import { registerBattlePresentationBridge } from "../../shared/stores/battle-presentation-bridge";
+import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import type { CombatTextEvent } from "@/lib/battle";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
@@ -183,7 +183,10 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
   },
 }));
 
-registerBattlePresentationBridge({
-  clearCardGhosts: () => useBattlePresentationStore.getState().clearCardGhosts(),
-  resetPresentation: () => useBattlePresentationStore.getState().resetPresentation(),
+onClearBattlePresentation(() => {
+  useBattlePresentationStore.getState().clearCardGhosts();
+});
+
+onRunTeardown(() => {
+  useBattlePresentationStore.getState().resetPresentation();
 });

@@ -138,9 +138,9 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 
 | Need                                                                       | Look in                                                                                                                                         |
 | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| App boot / screen registry                                                 | `src/app/screen-routes/`, `render-alchemy-screen.tsx`                                                                                           |
+| App boot / screen registry                                                 | `src/app/screen-routes/`                                                                                                                        |
 | Audio (cache / music / SFX / volume)                                       | `src/lib/audio-*.ts`, `src/lib/audio.ts`                                                                                                        |
-| Cold-start loading gate                                                    | `use-initial-load-ready.ts`, `allGameArt` in `assets.ts` — see [ARCHITECTURE § Boot](./ARCHITECTURE.md#boot-and-loading)                        |
+| Cold-start loading gate                                                    | `use-app-effects.ts`, `allGameArt` in `assets.ts` — see [ARCHITECTURE § Boot](./ARCHITECTURE.md#boot-and-loading)                               |
 | Balance simulation                                                         | `src/lib/balance/`                                                                                                                              |
 | Card corruption                                                            | `src/features/alchemy/run-loop/corruption.ts`                                                                                                   |
 | Card library barrel                                                        | `src/lib/game-data/cards.ts` → `cards/library/{core-cards,specialty-cards,advanced-cards}.ts`                                                   |

@@ -1,7 +1,7 @@
 import { cancelDestinationClaim, releaseRewardClaim } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { clearBattlePresentationCardGhosts } from "@/features/alchemy/shared/stores/battle-presentation-bridge";
+import { useBattlePresentationStore } from "../battle/battle-presentation-store";
 import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
 
 export interface RunTeardownDeps {
@@ -23,7 +23,7 @@ export function createRunTeardown(deps: RunTeardownDeps) {
       {
         afterCommit: () => {
           deps.cancelPending();
-          clearBattlePresentationCardGhosts();
+          useBattlePresentationStore.getState().resetPresentation();
           deps.clearCardHover();
           deps.navigateTo(CONSTANTS.SCREENS.MENU, () => {
             teardownRun();

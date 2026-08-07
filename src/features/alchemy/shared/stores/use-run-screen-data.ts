@@ -2,11 +2,11 @@
 // fields required by its screen, and its return type describes exactly that data.
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { gearDefinitions } from "@/lib/gear";
 import type { Screen } from "@/lib/routing";
 import { useGameplayStateStore } from "./gameplay-state-store";
 import type { RunDataScreen, RunScreenDataByScreen } from "./run-screen-data";
-import type { AlchemistState, RewardState, ShopState } from "@/lib/active-run-session";
-import type { MysteryEvent } from "@/lib/mystery";
+import type { RewardState } from "@/lib/active-run-session";
 
 type ScreenData<S extends RunDataScreen> = RunScreenDataByScreen[S];
 
@@ -122,25 +122,44 @@ export function useWildwoodRemovalScreenData(): ScreenData<"wildwood-removal"> {
 }
 
 /**
- * Small cross-screen projection used only by the asset preloader. It remains
- * screen-aware, but does not pretend to contain every route's display fields.
+ * Screen-aware asset URL extractor used by the asset preloader. Returns a clean
+ * array of image URL strings for the active screen without intermediate objects.
  */
-export interface ScreenAssetPreloadData {
-  rewardState: RewardState | null;
-  shopState: ShopState | null;
-  alchemistState: AlchemistState | null;
-  mysteryEvent: MysteryEvent | null;
-}
-
-export function useScreenAssetPreloadData(screen: Screen): ScreenAssetPreloadData {
+export function useScreenAssetPreloadUrls(screen: Screen): string[] {
   const rewardState = useGameplayStateStore((state) => (screen === "rewards" ? state.session.rewardState : null));
   const shopState = useGameplayStateStore((state) => (screen === "shop" ? state.session.shopState : null));
   const alchemistState = useGameplayStateStore((state) =>
     screen === "alchemist" ? state.session.alchemistState : null,
   );
   const mysteryEvent = useGameplayStateStore((state) => (screen === "mystery" ? state.session.mysteryEvent : null));
-  return useMemo(
-    () => ({ rewardState, shopState, alchemistState, mysteryEvent }),
-    [rewardState, shopState, alchemistState, mysteryEvent],
-  );
+
+  return useMemo(() => {
+    const urls: string[] = [];
+    if (rewardState) {
+      if (rewardState.rewardType === "gear") {
+        for (const choice of rewardState.choices) {
+          const art = gearDefinitions[choice.definitionId]?.art;
+          if (art) urls.push(art);
+        }
+      } else {
+        for (const choice of rewardState.choices) {
+          if (choice.art) urls.push(choice.art);
+        }
+      }
+    }
+    if (shopState) {
+      for (const card of shopState.cards) {
+        if (card.art) urls.push(card.art);
+      }
+    }
+    if (alchemistState) {
+      for (const potion of alchemistState.potions) {
+        if (potion.art) urls.push(potion.art);
+      }
+    }
+    if (mysteryEvent?.art) {
+      urls.push(mysteryEvent.art);
+    }
+    return urls;
+  }, [rewardState, shopState, alchemistState, mysteryEvent]);
 }

@@ -6,7 +6,13 @@ import {
   characters,
   type CompanionId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
-import { hasUnspentTalents } from "@/app/talent-affordability";
+import {
+  countImplementedTalents,
+  getTalentKeywordProgress,
+  getTalentTreeKeywordIds,
+  type UnlockedTalents,
+  type TalentXP,
+} from "@/lib/game-data";
 import { buildings, visibleFarmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
 import { canAfford } from "@/lib/homestead/inventory";
@@ -18,6 +24,13 @@ import {
   useTalentProgressSlice,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import type { Screen } from "@/lib/routing";
+
+function hasUnspentTalents(talentXP: TalentXP, unlockedTalents: UnlockedTalents): boolean {
+  return getTalentTreeKeywordIds().some((kwId) => {
+    const xp = talentXP[kwId] ?? 0;
+    return getTalentKeywordProgress(xp, (unlockedTalents[kwId] ?? []).length, countImplementedTalents(kwId)).hasUnspent;
+  });
+}
 
 function hasAffordableHomesteadUpgrade(input: {
   materialInventory: MaterialInventory;

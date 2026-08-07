@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components -- route mapping table colocated here */
+import type { ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { platform } from "@/lib/platform";
 import { OptionsScreen } from "@/features/alchemy/meta/screens";
@@ -7,7 +9,7 @@ import type { OptionsRouteCtx } from "./route-ctx";
 
 type OptionsScreenRouteProps = OptionsRouteCtx;
 
-export function OptionsScreenRoute({
+function OptionsScreenRoute({
   onOpenBattleMenu,
   onClearSaveData,
   onUnlockAllDevMode,
@@ -63,3 +65,9 @@ export function OptionsScreenRoute({
     />
   );
 }
+
+export const optionsScreenRoutes: {
+  options: (ctx: OptionsRouteCtx) => ReactNode;
+} = {
+  options: (ctx) => <OptionsScreenRoute {...ctx} />,
+};

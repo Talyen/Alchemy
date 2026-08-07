@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   useRewardsScreenData,
-  useScreenAssetPreloadData,
+  useScreenAssetPreloadUrls,
   useShopScreenData,
 } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
@@ -56,12 +56,12 @@ describe("screen-specific run data hooks", () => {
     expect(renders).toBe(1);
   });
 
-  it("preload projection only exposes asset-bearing transient state", () => {
-    const { result } = renderHook(() => useScreenAssetPreloadData("shop"));
+  it("preload projection extracts asset URLs for active screen", () => {
+    const { result } = renderHook(() => useScreenAssetPreloadUrls("shop"));
 
-    expect(result.current.shopState).toEqual(getRunSessionStoreView().shopState);
-    expect(result.current.rewardState).toBeNull();
-    expect(result.current.alchemistState).toBeNull();
-    expect(result.current.mysteryEvent).toBeNull();
+    const expectedShopUrls = getRunSessionStoreView()
+      .shopState.cards.map((card) => card.art)
+      .filter(Boolean);
+    expect(result.current).toEqual(expectedShopUrls);
   });
 });
