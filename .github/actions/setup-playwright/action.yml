@@ -21,13 +21,11 @@ runs:
     - name: Install Playwright Chromium (with system deps)
       if: steps.playwright-cache.outputs.cache-hit != 'true' && inputs.install-deps == 'true'
       shell: bash
-      timeout-minutes: 15
       run: npx playwright install --with-deps chromium
 
     - name: Install Playwright Chromium
       if: steps.playwright-cache.outputs.cache-hit == 'true' || inputs.install-deps == 'false'
       shell: bash
-      timeout-minutes: 15
       run: npx playwright install chromium
 
     - name: Playwright install diagnostics
