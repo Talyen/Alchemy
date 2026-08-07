@@ -111,32 +111,18 @@ export function useAlchemyRunController({
     [battle.startBattle, battle.startBossBattle, battle.startBossById],
   );
 
-  const labyrinthNavOps = useMemo(
-    () => ({
-      onLabyrinthClearNode: labyrinth.onNodeCleared,
-      onLabyrinthFailNode: labyrinth.onNodeFailed,
-    }),
-    [labyrinth.onNodeCleared, labyrinth.onNodeFailed],
-  );
-
-  const shopNavOps = useMemo(
-    () => ({
-      onInitShop: shop.initShop,
-      onInitAlchemist: shop.initAlchemist,
-      onInitTrinketShop: shop.initTrinketShop,
-      onInitEquipmentShop: shop.initEquipmentShop,
-    }),
-    [shop.initShop, shop.initAlchemist, shop.initTrinketShop, shop.initEquipmentShop],
-  );
-
   const nav = useRunFlowEngine({
     screen,
     navigateTo,
     transition,
     cancelPending,
     battle: battleLauncher,
-    labyrinth: labyrinthNavOps,
-    shop: shopNavOps,
+    initShop: shop.initShop,
+    initAlchemist: shop.initAlchemist,
+    initTrinketShop: shop.initTrinketShop,
+    initEquipmentShop: shop.initEquipmentShop,
+    labyrinthClearNode: labyrinth.onNodeCleared,
+    labyrinthFailNode: labyrinth.onNodeFailed,
     onMarkDifficultyCompleted,
     randomSources: runRandom,
   });

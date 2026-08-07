@@ -43,13 +43,13 @@ import type {
   FinalizeRewardInput,
   FinalizeRewardResult,
   FinalizeRewardRoute,
-  RewardRouteTransitionHandlers,
+  RewardRouteDeps,
 } from "./reward-flow-types";
 export type {
   FinalizeRewardInput,
   FinalizeRewardResult,
   FinalizeRewardRoute,
-  RewardRouteTransitionHandlers,
+  RewardRouteDeps,
 } from "./reward-flow-types";
 
 export function getRewardChoiceId(choice: BattleCard | TrinketEntry | GearInstance): string {
@@ -138,31 +138,31 @@ export function executeRewardRouteTransition(
   materials: MaterialInventory,
   nextRewardState: CardRewardState,
   clearCompanion: boolean,
-  handlers: RewardRouteTransitionHandlers,
+  deps: RewardRouteDeps,
 ) {
   const setReward = () => {
-    handlers.setRewardState(nextRewardState);
-    if (clearCompanion) handlers.setCompanionRewardCards(null);
+    deps.setRewardState(nextRewardState);
+    if (clearCompanion) deps.setCompanionRewardCards(null);
   };
   switch (route) {
     case CONSTANTS.REWARD_ROUTES.COMPANION_REWARD:
-      handlers.navigateTo(CONSTANTS.SCREENS.REWARDS, setReward);
+      deps.navigateTo(CONSTANTS.SCREENS.REWARDS, setReward);
       break;
     case CONSTANTS.REWARD_ROUTES.LABYRINTH_VICTORY:
-      handlers.completeRunVictory(materials, setReward);
+      deps.completeRunVictory(materials, setReward);
       break;
     case CONSTANTS.REWARD_ROUTES.WILDWOOD_VICTORY:
-      handlers.completeRunVictory(materials, setReward);
+      deps.completeRunVictory(materials, setReward);
       break;
     case CONSTANTS.REWARD_ROUTES.LABYRINTH_MAP:
-      handlers.onLabyrinthClearNode();
-      handlers.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP, setReward);
+      deps.labyrinthClearNode();
+      deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP, setReward);
       break;
     case CONSTANTS.REWARD_ROUTES.ACT_COMPLETE:
-      handlers.handleActComplete(materials);
+      deps.handleActComplete(materials);
       break;
     case CONSTANTS.REWARD_ROUTES.DESTINATION:
-      handlers.navigateTo(CONSTANTS.SCREENS.DESTINATION, setReward);
+      deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, setReward);
       break;
   }
 }

@@ -12,18 +12,14 @@ import type { RunFlowHandlerDeps, RunFlowSiblingHandlers } from "./run-flow-hand
 
 export function createProgressionHandlers(deps: RunFlowHandlerDeps, handlers: RunFlowSiblingHandlers) {
   function prepareNextDestination(destinationIndexInAct: number = 0, onCommitted?: () => void) {
-    deps.dispatch({
-      type: "navigate",
-      screen: CONSTANTS.SCREENS.DESTINATION,
-      onRenderedScreenCommit: () => {
-        dispatchRunSessionCommand(() => {
-          const initialDestinations = deps.contentNav.createInitialDestinations({ destinationIndexInAct });
-          setDestinationOfferState(initialDestinations.offerState);
-          setRewardState(initialDestinations.rewardState);
-        });
-        handlers.prepareDestinationScreen();
-        onCommitted?.();
-      },
+    deps.actions.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
+      dispatchRunSessionCommand(() => {
+        const initialDestinations = deps.contentNav.createInitialDestinations({ destinationIndexInAct });
+        setDestinationOfferState(initialDestinations.offerState);
+        setRewardState(initialDestinations.rewardState);
+      });
+      handlers.prepareDestinationScreen();
+      onCommitted?.();
     });
   }
 
@@ -33,11 +29,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, handlers: Ru
         setHasActiveBattle(false);
         if (deps.run.currentAct >= ACTS_PER_RUN) {
           if (deps.run.selectedDifficulty) {
-            deps.dispatch({
-              type: "mark-difficulty-completed",
-              characterId: deps.run.characterId,
-              difficultyId: deps.run.selectedDifficulty,
-            });
+            deps.actions.markDifficultyCompleted(deps.run.characterId, deps.run.selectedDifficulty);
           }
           return true;
         }
@@ -64,17 +56,17 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, handlers: Ru
       () => {
         deps.run.updateRoomsEncountered((p) => p + 1);
         if (deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
-          deps.dispatch({ type: "labyrinth-clear-node" });
+          deps.actions.labyrinthClearNode();
           return true;
         }
-        deps.dispatch({ type: "clear-mystery-card-choices" });
+        deps.actions.clearMysteryCardChoices();
         return false;
       },
       {
         afterCommit: (labyrinth) => {
           clearBattlePresentationUi();
           if (labyrinth) {
-            deps.dispatch({ type: "navigate", screen: CONSTANTS.SCREENS.LABYRINTH_MAP });
+            deps.actions.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
           } else {
             prepareNextDestination();
           }

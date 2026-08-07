@@ -1,39 +1,34 @@
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow-handler-deps";
-import {
-  createRunFlowIntentExecutor,
-  type RunFlowIntentExecutorDeps,
-} from "@/features/alchemy/shell/create-run-flow-intent-executor";
-import type {
-  BattleLauncherDeps,
-  LabyrinthNavOps,
-  MysteryNavOps,
-  ShopNavOps,
-  WildwoodNavOps,
-} from "@/features/alchemy/shell/shell-types";
+import type { RunFlowShellActions } from "@/features/alchemy/run-loop/run/run-flow-shell-actions";
+import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
 import { makeRunController, makeTalentController } from "./run-controller";
 
 export type MakeFlowHandlerDepsOverrides = Partial<RunFlowHandlerDeps> &
-  Partial<RunFlowIntentExecutorDeps> & {
+  Partial<RunFlowShellActions> & {
     onLabyrinthFailNode?: () => void;
     onLabyrinthClearNode?: () => void;
     onInitShop?: () => void;
     onInitAlchemist?: () => void;
     onInitTrinketShop?: () => void;
     onInitEquipmentShop?: () => void;
-    onStartBattle?: BattleLauncherDeps["onStartBattle"];
-    onStartBossBattle?: BattleLauncherDeps["onStartBossBattle"];
-    onStartBossById?: BattleLauncherDeps["onStartBossById"];
-    onCommitWildwoodVictory?: WildwoodNavOps["onCommitWildwoodVictory"];
-    onWildwoodRewardComplete?: WildwoodNavOps["onWildwoodRewardComplete"];
-    onSelectRewardChoice?: WildwoodNavOps["onSelectRewardChoice"];
-    beginMysteryEvent?: MysteryNavOps["beginMysteryEvent"];
-    clearMysteryCardChoices?: MysteryNavOps["clearMysteryCardChoices"];
+    onStartBattle?: (
+      deck?: BattleCard[],
+      gold?: number,
+      enemyType?: "normal" | "elite",
+      modifiers?: DifficultyModifier[],
+    ) => void;
+    onStartBossBattle?: () => void;
+    onStartBossById?: (bossId: string, modifiers?: DifficultyModifier[]) => boolean;
+    onCommitWildwoodVictory?: RunFlowShellActions["commitWildwoodVictory"];
+    onWildwoodRewardComplete?: RunFlowShellActions["wildwoodRewardComplete"];
+    onSelectRewardChoice?: RunFlowShellActions["selectRewardChoice"];
+    onMarkDifficultyCompleted?: RunFlowShellActions["markDifficultyCompleted"];
   };
 
 /**
  * Builds RunFlowHandlerDeps for tests. Convenience stubs (navigateTo, onInitShop, …)
- * are wired into a default intent executor when `dispatch` is omitted.
+ * are wired into a default RunFlowShellActions when `actions` is omitted.
  */
 export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}): RunFlowHandlerDeps {
   const {
@@ -49,14 +44,20 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     rewardRng = () => 0.5,
     destinationRng = () => 0.5,
     worldRng = () => 0.5,
-    dispatch: dispatchOverride,
+    actions: actionsOverride,
     navigateTo = () => {},
     transition = () => {},
-    labyrinth: labyrinthOverride,
-    shop: shopOverride,
-    battle: battleOverride,
-    wildwood: wildwoodOverride,
-    mystery: mysteryOverride,
+    labyrinthFailNode,
+    labyrinthClearNode,
+    initShop,
+    startBattle,
+    startBoss,
+    markDifficultyCompleted,
+    commitWildwoodVictory,
+    beginMysteryEvent = () => {},
+    clearMysteryCardChoices = () => {},
+    wildwoodRewardComplete,
+    selectRewardChoice,
     onLabyrinthFailNode = () => {},
     onLabyrinthClearNode = () => {},
     onInitShop = () => {},
@@ -68,58 +69,46 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     onStartBossById = () => true,
     onMarkDifficultyCompleted = () => {},
     onCommitWildwoodVictory = () => {},
-    beginMysteryEvent = () => {},
-    clearMysteryCardChoices = () => {},
     onWildwoodRewardComplete = () => {},
     onSelectRewardChoice,
   } = overrides;
 
-  const labyrinth: LabyrinthNavOps = labyrinthOverride ?? {
-    onLabyrinthFailNode,
-    onLabyrinthClearNode,
-  };
-
-  const shop: ShopNavOps = shopOverride ?? {
-    onInitShop,
-    onInitAlchemist,
-    onInitTrinketShop,
-    onInitEquipmentShop,
-  };
-
-  const battle: BattleLauncherDeps = battleOverride ?? {
-    onStartBattle,
-    onStartBossBattle,
-    onStartBossById,
-  };
-
-  const wildwood: WildwoodNavOps = wildwoodOverride ?? {
-    onCommitWildwoodVictory,
-    onWildwoodRewardComplete,
-    ...(onSelectRewardChoice ? { onSelectRewardChoice } : {}),
-  };
-
-  const mystery: MysteryNavOps = mysteryOverride ?? {
+  const actions: RunFlowShellActions = actionsOverride ?? {
+    navigateTo,
+    transition,
+    labyrinthFailNode: labyrinthFailNode ?? onLabyrinthFailNode,
+    labyrinthClearNode: labyrinthClearNode ?? onLabyrinthClearNode,
+    initShop:
+      initShop ??
+      ((kind) => {
+        if (kind === "shop") onInitShop();
+        else if (kind === "alchemist") onInitAlchemist();
+        else if (kind === "trinket") onInitTrinketShop();
+        else onInitEquipmentShop();
+      }),
+    startBattle:
+      startBattle ??
+      ((opts) => {
+        onStartBattle(opts?.deck, opts?.gold, opts?.enemyType);
+      }),
+    startBoss:
+      startBoss ??
+      ((opts) => {
+        if (opts?.bossId && onStartBossById(opts.bossId, opts.modifiers)) return;
+        onStartBossBattle();
+      }),
+    markDifficultyCompleted: markDifficultyCompleted ?? onMarkDifficultyCompleted,
+    commitWildwoodVictory: commitWildwoodVictory ?? onCommitWildwoodVictory,
     beginMysteryEvent,
     clearMysteryCardChoices,
+    wildwoodRewardComplete: wildwoodRewardComplete ?? onWildwoodRewardComplete,
+    selectRewardChoice: selectRewardChoice ?? onSelectRewardChoice ?? (() => {}),
   };
-
-  const dispatch =
-    dispatchOverride ??
-    createRunFlowIntentExecutor({
-      navigateTo,
-      transition,
-      labyrinth,
-      shop,
-      battle,
-      wildwood,
-      mystery,
-      onMarkDifficultyCompleted,
-    });
 
   return {
     run,
     talents,
-    dispatch,
+    actions,
     contentNav,
     getAvailableDestinations,
     rewardRng,

@@ -22,7 +22,7 @@ import type { RunFlowHandlerDeps, RunFlowSiblingHandlers } from "./run-flow-hand
 export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlowSiblingHandlers) {
   function selectRewardChoice(id: string) {
     setRewardState((prev) => ({ ...prev, selectedId: id }));
-    deps.dispatch({ type: "select-reward-choice", id });
+    deps.actions.selectRewardChoice(id);
   }
 
   function finishRewards() {
@@ -77,10 +77,7 @@ export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlow
           if (result.selectedChoice) playUISound("talentUnlock");
           useUiStore.getState().clearCardHover();
           if (isWildwood && result.route !== CONSTANTS.REWARD_ROUTES.COMPANION_REWARD) {
-            deps.dispatch({
-              type: "wildwood-reward-complete",
-              onRenderedScreenCommit: settleClaimSurface,
-            });
+            deps.actions.wildwoodRewardComplete(settleClaimSurface);
             return;
           }
           executeRewardRouteTransition(
@@ -90,13 +87,9 @@ export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlow
             result.clearCompanionRewardCards,
             {
               navigateTo: (screen, onCommit) => {
-                deps.dispatch({
-                  type: "navigate",
-                  screen,
-                  onRenderedScreenCommit: () => {
-                    onCommit?.();
-                    releaseRewardClaimState();
-                  },
+                deps.actions.navigateTo(screen, () => {
+                  onCommit?.();
+                  releaseRewardClaimState();
                 });
               },
               completeRunVictory: (materials, onCommit) => {
@@ -112,7 +105,7 @@ export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlow
                   releaseRewardClaimState();
                 });
               },
-              onLabyrinthClearNode: () => deps.dispatch({ type: "labyrinth-clear-node" }),
+              labyrinthClearNode: deps.actions.labyrinthClearNode,
               setCompanionRewardCards,
               setRewardState,
             },

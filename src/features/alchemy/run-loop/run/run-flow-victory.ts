@@ -79,7 +79,7 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
           deps.rewardRng,
         );
         if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-          deps.dispatch({ type: "commit-wildwood-victory", result: committedResult });
+          deps.actions.commitWildwoodVictory(committedResult);
         }
       },
       {
@@ -102,13 +102,9 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
         readActiveRun().contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
           ? CONSTANTS.SCREENS.WILDWOOD_RECOVERY
           : CONSTANTS.SCREENS.REWARDS;
-      deps.dispatch({
-        type: "transition",
-        screen: nextScreen,
-        options: {
-          delayMs: VICTORY_TRANSITION_DELAY,
-          guard: () => readRunSession().hasActiveRun,
-        },
+      deps.actions.transition(nextScreen, {
+        delayMs: VICTORY_TRANSITION_DELAY,
+        guard: () => readRunSession().hasActiveRun,
       });
     }
   }

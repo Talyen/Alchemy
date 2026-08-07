@@ -22,7 +22,7 @@ import { useRunDestinationWiring } from "./use-run-destination-wiring";
 import { useWildwoodGauntletFlow } from "./use-wildwood-gauntlet-flow";
 import { useContentSystemNavigation } from "./use-content-system-navigation";
 import { useMysteryEventNavigation } from "./use-mystery-event-navigation";
-import { createRunFlowIntentExecutor } from "./create-run-flow-intent-executor";
+import type { RunFlowShellActions } from "@/features/alchemy/run-loop/run/run-flow-shell-actions";
 import type { RunNavigationDeps } from "./shell-types";
 
 export function useRunFlowEngine({
@@ -31,8 +31,12 @@ export function useRunFlowEngine({
   transition,
   cancelPending,
   battle,
-  labyrinth,
-  shop,
+  initShop,
+  initAlchemist,
+  initTrinketShop,
+  initEquipmentShop,
+  labyrinthClearNode,
+  labyrinthFailNode,
   onMarkDifficultyCompleted,
   randomSources,
 }: RunNavigationDeps) {
@@ -102,44 +106,54 @@ export function useRunFlowEngine({
     eventsRng: randomSources.events,
   });
 
-  const wildwoodNavOps = useMemo(
-    () => ({
-      onCommitWildwoodVictory: wildwood.commitWildwoodVictory,
-      onWildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
-      onSelectRewardChoice: wildwood.selectRewardChoice,
-    }),
-    [wildwood.commitWildwoodVictory, wildwood.handleWildwoodRewardComplete, wildwood.selectRewardChoice],
-  );
-
-  const mysteryNavOps = useMemo(
-    () => ({
+  const actions = useMemo((): RunFlowShellActions => {
+    return {
+      navigateTo,
+      transition,
+      labyrinthFailNode,
+      labyrinthClearNode,
+      initShop: (kind) => {
+        if (kind === "shop") initShop();
+        else if (kind === "alchemist") initAlchemist();
+        else if (kind === "trinket") initTrinketShop();
+        else initEquipmentShop();
+      },
+      startBattle: (opts) => battle.onStartBattle(opts?.deck, opts?.gold, opts?.enemyType),
+      startBoss: (opts) => {
+        if (opts?.bossId && battle.onStartBossById(opts.bossId, opts.modifiers)) return;
+        battle.onStartBossBattle();
+      },
+      markDifficultyCompleted: onMarkDifficultyCompleted,
+      commitWildwoodVictory: wildwood.commitWildwoodVictory,
       beginMysteryEvent: mystery.beginMysteryEvent,
       clearMysteryCardChoices: mystery.clearCardChoices,
-    }),
-    [mystery.beginMysteryEvent, mystery.clearCardChoices],
-  );
-
-  const dispatch = useMemo(
-    () =>
-      createRunFlowIntentExecutor({
-        navigateTo,
-        transition,
-        labyrinth,
-        shop,
-        battle,
-        wildwood: wildwoodNavOps,
-        mystery: mysteryNavOps,
-        onMarkDifficultyCompleted,
-      }),
-    [navigateTo, transition, labyrinth, shop, battle, wildwoodNavOps, mysteryNavOps, onMarkDifficultyCompleted],
-  );
+      wildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
+      selectRewardChoice: wildwood.selectRewardChoice,
+    };
+  }, [
+    navigateTo,
+    transition,
+    labyrinthFailNode,
+    labyrinthClearNode,
+    initShop,
+    initAlchemist,
+    initTrinketShop,
+    initEquipmentShop,
+    battle,
+    onMarkDifficultyCompleted,
+    wildwood.commitWildwoodVictory,
+    wildwood.handleWildwoodRewardComplete,
+    wildwood.selectRewardChoice,
+    mystery.beginMysteryEvent,
+    mystery.clearCardChoices,
+  ]);
 
   const flowHandlers = useMemo(
     () =>
       createRunFlowHandlers({
         run: orchestration,
         talents: flowTalents,
-        dispatch,
+        actions,
         contentNav,
         getAvailableDestinations: destinations.getAvailableDestinations,
         rewardRng: randomSources.rewards,
@@ -149,7 +163,7 @@ export function useRunFlowEngine({
     [
       orchestration,
       flowTalents,
-      dispatch,
+      actions,
       contentNav,
       destinations.getAvailableDestinations,
       randomSources.rewards,

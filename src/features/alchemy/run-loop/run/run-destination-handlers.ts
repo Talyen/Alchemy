@@ -7,60 +7,54 @@ import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read
 import type { RewardState } from "../navigation/reward-flow";
 import { getRandomPotionCard } from "../navigation/reward-flow";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "./deck-mutations";
-import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
+import type { RunFlowShellActions } from "./run-flow-shell-actions";
+import { CONSTANTS, type Destination } from "../../shared/types";
 
-export interface DestinationRouteHandlers {
-  navigateTo: (nextScreen: Screen) => void;
-  beginMysteryEvent: () => void;
-  resetCorruption: () => void;
-  startShop: () => void;
-  startAlchemist: () => void;
-  startTrinketShop: () => void;
-  startEquipmentShop: () => void;
-  startBattle: (enemyType: typeof CONSTANTS.ENEMY_TYPES.NORMAL | typeof CONSTANTS.ENEMY_TYPES.ELITE) => void;
-  startBossBattle: () => void;
-}
+export type DestinationRouteDeps = Pick<
+  RunFlowShellActions,
+  "navigateTo" | "beginMysteryEvent" | "initShop" | "startBattle" | "startBoss"
+> & { resetCorruption: () => void };
 
-const DESTINATION_HANDLERS: Record<Destination, (handlers: DestinationRouteHandlers) => void> = {
-  [CONSTANTS.DESTINATIONS.CAMPFIRE]: (handlers) => handlers.navigateTo(CONSTANTS.SCREENS.CAMPFIRE),
-  [CONSTANTS.DESTINATIONS.MERCHANT_SHOP]: (handlers) => {
-    handlers.startShop();
-    handlers.navigateTo(CONSTANTS.SCREENS.SHOP);
+const DESTINATION_HANDLERS: Record<Destination, (deps: DestinationRouteDeps) => void> = {
+  [CONSTANTS.DESTINATIONS.CAMPFIRE]: (deps) => deps.navigateTo(CONSTANTS.SCREENS.CAMPFIRE),
+  [CONSTANTS.DESTINATIONS.MERCHANT_SHOP]: (deps) => {
+    deps.initShop("shop");
+    deps.navigateTo(CONSTANTS.SCREENS.SHOP);
   },
-  [CONSTANTS.DESTINATIONS.ALCHEMIST_SHOP]: (handlers) => {
-    handlers.startAlchemist();
-    handlers.navigateTo(CONSTANTS.SCREENS.ALCHEMIST);
+  [CONSTANTS.DESTINATIONS.ALCHEMIST_SHOP]: (deps) => {
+    deps.initShop("alchemist");
+    deps.navigateTo(CONSTANTS.SCREENS.ALCHEMIST);
   },
-  [CONSTANTS.DESTINATIONS.TRINKET_SHOP]: (handlers) => {
-    handlers.startTrinketShop();
-    handlers.navigateTo(CONSTANTS.SCREENS.TRINKET_SHOP);
+  [CONSTANTS.DESTINATIONS.TRINKET_SHOP]: (deps) => {
+    deps.initShop("trinket");
+    deps.navigateTo(CONSTANTS.SCREENS.TRINKET_SHOP);
   },
-  [CONSTANTS.DESTINATIONS.EQUIPMENT_SHOP]: (handlers) => {
-    handlers.startEquipmentShop();
-    handlers.navigateTo(CONSTANTS.SCREENS.EQUIPMENT_SHOP);
+  [CONSTANTS.DESTINATIONS.EQUIPMENT_SHOP]: (deps) => {
+    deps.initShop("equipment");
+    deps.navigateTo(CONSTANTS.SCREENS.EQUIPMENT_SHOP);
   },
-  [CONSTANTS.DESTINATIONS.MYSTERY]: (handlers) => handlers.beginMysteryEvent(),
-  [CONSTANTS.DESTINATIONS.CORRUPTION]: (handlers) => {
-    handlers.resetCorruption();
-    handlers.navigateTo(CONSTANTS.SCREENS.CORRUPTION);
+  [CONSTANTS.DESTINATIONS.MYSTERY]: (deps) => deps.beginMysteryEvent(),
+  [CONSTANTS.DESTINATIONS.CORRUPTION]: (deps) => {
+    deps.resetCorruption();
+    deps.navigateTo(CONSTANTS.SCREENS.CORRUPTION);
   },
-  [CONSTANTS.DESTINATIONS.ELITE_COMBAT]: (handlers) => {
-    handlers.startBattle(CONSTANTS.ENEMY_TYPES.ELITE);
-    handlers.navigateTo(CONSTANTS.SCREENS.BATTLE);
+  [CONSTANTS.DESTINATIONS.ELITE_COMBAT]: (deps) => {
+    deps.startBattle({ enemyType: CONSTANTS.ENEMY_TYPES.ELITE });
+    deps.navigateTo(CONSTANTS.SCREENS.BATTLE);
   },
-  [CONSTANTS.DESTINATIONS.BOSS_COMBAT]: (handlers) => {
-    handlers.startBossBattle();
-    handlers.navigateTo(CONSTANTS.SCREENS.BATTLE);
+  [CONSTANTS.DESTINATIONS.BOSS_COMBAT]: (deps) => {
+    deps.startBoss();
+    deps.navigateTo(CONSTANTS.SCREENS.BATTLE);
   },
-  [CONSTANTS.DESTINATIONS.NORMAL_COMBAT]: (handlers) => {
-    handlers.startBattle(CONSTANTS.ENEMY_TYPES.NORMAL);
-    handlers.navigateTo(CONSTANTS.SCREENS.BATTLE);
+  [CONSTANTS.DESTINATIONS.NORMAL_COMBAT]: (deps) => {
+    deps.startBattle({ enemyType: CONSTANTS.ENEMY_TYPES.NORMAL });
+    deps.navigateTo(CONSTANTS.SCREENS.BATTLE);
   },
 };
 
-export function routeDestinationChoice(destination: Destination, handlers: DestinationRouteHandlers) {
+export function routeDestinationChoice(destination: Destination, deps: DestinationRouteDeps) {
   const handler = DESTINATION_HANDLERS[destination] ?? DESTINATION_HANDLERS[CONSTANTS.DESTINATIONS.NORMAL_COMBAT];
-  handler(handlers);
+  handler(deps);
 }
 
 interface RewardSelectionInput {

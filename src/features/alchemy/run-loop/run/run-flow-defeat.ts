@@ -20,11 +20,7 @@ export function createDefeatHandlers(deps: RunFlowHandlerDeps) {
       clearCombatState,
       clearCombatPresentation,
     });
-    deps.dispatch({
-      type: "transition",
-      screen: CONSTANTS.SCREENS.GAME_OVER,
-      options: { immediate: true },
-    });
+    deps.actions.transition(CONSTANTS.SCREENS.GAME_OVER, { immediate: true });
   }
 
   function handleBattleDefeat() {
@@ -33,8 +29,8 @@ export function createDefeatHandlers(deps: RunFlowHandlerDeps) {
       stopAllSfx();
       clearCombatState();
       clearCombatPresentation();
-      deps.dispatch({ type: "labyrinth-fail-node" });
-      deps.dispatch({ type: "navigate", screen: CONSTANTS.SCREENS.LABYRINTH_MAP });
+      deps.actions.labyrinthFailNode();
+      deps.actions.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
       return;
     }
     endRunAndShowGameOver();
@@ -61,11 +57,7 @@ export function createDefeatHandlers(deps: RunFlowHandlerDeps) {
       finalizeRunXP,
       displayMaterials,
     });
-    deps.dispatch({
-      type: "navigate",
-      screen: CONSTANTS.SCREENS.RUN_VICTORY,
-      ...(onRenderedScreenCommit ? { onRenderedScreenCommit } : {}),
-    });
+    deps.actions.navigateTo(CONSTANTS.SCREENS.RUN_VICTORY, onRenderedScreenCommit);
   }
 
   return {

@@ -16,7 +16,7 @@ import {
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { makeRewardRouteHandlers } from "../../../../helpers/destination-route-handlers";
+import { makeRewardRouteDeps } from "../../../../helpers/destination-route-handlers";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 
 describe("reward flow orchestration", () => {
@@ -385,7 +385,7 @@ describe("reward flow orchestration", () => {
     const nextRewardState = createEmptyRewardState(["Campfire"]);
 
     function makeHandlers() {
-      return makeRewardRouteHandlers();
+      return makeRewardRouteDeps();
     }
 
     it("routes companion rewards back to the rewards screen", () => {
@@ -402,7 +402,7 @@ describe("reward flow orchestration", () => {
     it("routes labyrinth map rewards to the labyrinth screen", () => {
       const handlers = makeHandlers();
       executeRewardRouteTransition("labyrinth-map", materials, nextRewardState, false, handlers);
-      expect(handlers.onLabyrinthClearNode).toHaveBeenCalledOnce();
+      expect(handlers.labyrinthClearNode).toHaveBeenCalledOnce();
       expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.LABYRINTH_MAP, expect.any(Function));
     });
 

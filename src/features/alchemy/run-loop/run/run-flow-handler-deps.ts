@@ -7,7 +7,7 @@ import type {
 } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { CONSTANTS, type Destination } from "../../shared/types";
-import type { RunFlowDispatch } from "./run-flow-intents";
+import type { RunFlowShellActions } from "./run-flow-shell-actions";
 import type { RunFlowRunPort, RunFlowTalentPort } from "@/features/alchemy/shared/stores/run-port-types";
 
 /** Sibling handlers that run-flow concerns call directly (filled after concern factories return). */
@@ -22,7 +22,7 @@ export interface RunFlowHandlerDeps {
   run: RunFlowRunPort;
   talents: RunFlowTalentPort;
   /** Shell-executed side effects (navigate, shops, battle starts, content hooks). */
-  dispatch: RunFlowDispatch;
+  actions: RunFlowShellActions;
   contentNav: {
     createInitialDestinations: (options?: DestinationOptionsInput) => InitialDestinationResult;
   };

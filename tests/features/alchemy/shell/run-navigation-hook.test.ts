@@ -42,16 +42,12 @@ describe("useRunFlowEngine", () => {
           onStartBossBattle: vi.fn(),
           onStartBossById: vi.fn(),
         },
-        labyrinth: {
-          onLabyrinthClearNode: vi.fn(),
-          onLabyrinthFailNode: vi.fn(),
-        },
-        shop: {
-          onInitShop: vi.fn(),
-          onInitAlchemist: vi.fn(),
-          onInitTrinketShop: vi.fn(),
-          onInitEquipmentShop: vi.fn(),
-        },
+        initShop: vi.fn(),
+        initAlchemist: vi.fn(),
+        initTrinketShop: vi.fn(),
+        initEquipmentShop: vi.fn(),
+        labyrinthClearNode: vi.fn(),
+        labyrinthFailNode: vi.fn(),
         onMarkDifficultyCompleted: vi.fn(),
         randomSources: {
           rewards: () => 0.5,

@@ -1,26 +1,24 @@
 import { vi } from "vitest";
-import type { DestinationRouteHandlers } from "@/features/alchemy/run-loop/run/run-destination-handlers";
+import type { DestinationRouteDeps } from "@/features/alchemy/run-loop/run/run-destination-handlers";
+import type { RewardRouteDeps } from "@/features/alchemy/run-loop/navigation/reward-flow-types";
 
-export function makeDestinationRouteHandlers(): DestinationRouteHandlers {
+export function makeDestinationRouteDeps(): DestinationRouteDeps {
   return {
     navigateTo: vi.fn(),
     beginMysteryEvent: vi.fn(),
-    resetCorruption: vi.fn(),
-    startShop: vi.fn(),
-    startAlchemist: vi.fn(),
-    startTrinketShop: vi.fn(),
-    startEquipmentShop: vi.fn(),
+    initShop: vi.fn(),
     startBattle: vi.fn(),
-    startBossBattle: vi.fn(),
+    startBoss: vi.fn(),
+    resetCorruption: vi.fn(),
   };
 }
 
-export function makeRewardRouteHandlers() {
+export function makeRewardRouteDeps(): RewardRouteDeps {
   return {
     navigateTo: vi.fn(),
     completeRunVictory: vi.fn(),
     handleActComplete: vi.fn(),
-    onLabyrinthClearNode: vi.fn(),
+    labyrinthClearNode: vi.fn(),
     setCompanionRewardCards: vi.fn(),
     setRewardState: vi.fn(),
   };

@@ -150,16 +150,17 @@ describe("run-state read model", () => {
     expect(context).not.toContain("RunStateController");
   });
 
-  it("run-flow handlers take RunFlowRunPort / RunFlowTalentPort and dispatch intents", () => {
+  it("run-flow handlers take RunFlowRunPort / RunFlowTalentPort and shell actions", () => {
     const deps = read("src/features/alchemy/run-loop/run/run-flow-handler-deps.ts");
     expect(deps).toContain("RunFlowRunPort");
     expect(deps).toContain("RunFlowTalentPort");
-    expect(deps).toContain("dispatch: RunFlowDispatch");
+    expect(deps).toContain("actions: RunFlowShellActions");
     expect(deps).not.toContain("RunStateController");
     expect(deps).not.toContain("TalentStateController");
     expect(deps).not.toContain("onInitShop");
     expect(deps).not.toContain("onStartBattle");
-    expect(deps).not.toContain("navigateTo:");
+    expect(deps).not.toContain("RunFlowDispatch");
+    expect(deps).not.toContain("RunFlowIntent");
 
     const sharedPorts = read("src/features/alchemy/shared/stores/run-port-types.ts");
     expect(sharedPorts).toContain("export type RunFlowRunPort");
@@ -168,17 +169,37 @@ describe("run-state read model", () => {
     expect(sharedPorts).toContain("export interface BattleRunPort");
     expect(sharedPorts).toContain("export interface RunOrchestrationPort");
 
-    const intents = read("src/features/alchemy/run-loop/run/run-flow-intents.ts");
-    expect(intents).toContain("export type RunFlowIntent");
+    const actions = read("src/features/alchemy/run-loop/run/run-flow-shell-actions.ts");
+    expect(actions).toContain("export interface RunFlowShellActions");
   });
 
-  it("shell executes run-flow intents via createRunFlowIntentExecutor", () => {
-    const executor = read("src/features/alchemy/shell/create-run-flow-intent-executor.ts");
-    expect(executor).toContain("export function createRunFlowIntentExecutor");
-
+  it("shell assembles RunFlowShellActions for run-flow handlers", () => {
     const nav = read("src/features/alchemy/shell/use-run-flow-engine.ts");
-    expect(nav).toContain("createRunFlowIntentExecutor");
-    expect(nav).toContain("dispatch");
+    expect(nav).toContain("RunFlowShellActions");
+    expect(nav).toContain("actions");
+    expect(nav).toContain("createRunFlowHandlers(");
+    expect(nav).not.toContain("createRunFlowIntentExecutor");
+    expect(nav).not.toContain("RunFlowDispatch");
+    expect(nav).not.toContain("wildwoodNavOps");
+    expect(nav).not.toContain("mysteryNavOps");
+
+    const shellTypes = read("src/features/alchemy/shell/shell-types.ts");
+    expect(shellTypes).toContain("export interface BattleLauncherDeps");
+    expect(shellTypes).toContain("export interface RunNavigationDeps");
+    expect(shellTypes).not.toContain("ShopNavOps");
+    expect(shellTypes).not.toContain("LabyrinthNavOps");
+    expect(shellTypes).not.toContain("WildwoodNavOps");
+    expect(shellTypes).not.toContain("MysteryNavOps");
+
+    const destination = read("src/features/alchemy/run-loop/run/run-destination-handlers.ts");
+    expect(destination).toContain("export type DestinationRouteDeps");
+    expect(destination).not.toContain("DestinationRouteHandlers");
+
+    const rewardTypes = read("src/features/alchemy/run-loop/navigation/reward-flow-types.ts");
+    expect(rewardTypes).toContain("export interface RewardRouteDeps");
+    expect(rewardTypes).not.toContain("RewardRouteTransitionHandlers");
+    expect(rewardTypes).toContain("labyrinthClearNode");
+    expect(rewardTypes).not.toContain("onLabyrinthClearNode");
   });
 
   it("the committed run session model shares the canonical active-run view picker", () => {

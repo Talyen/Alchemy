@@ -21,11 +21,11 @@ export interface FinalizeRewardResult {
   route: FinalizeRewardRoute;
 }
 
-export interface RewardRouteTransitionHandlers {
+export interface RewardRouteDeps {
   navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
   completeRunVictory: (materials: MaterialInventory, onRenderedScreenCommit?: () => void) => void;
   handleActComplete: (materials: MaterialInventory) => void;
-  onLabyrinthClearNode: () => void;
+  labyrinthClearNode: () => void;
   setCompanionRewardCards: (cards: BattleCard[] | null) => void;
   setRewardState: (state: RewardState) => void;
 }

@@ -40,25 +40,12 @@ export function createDestinationScreenHandlers(deps: RunFlowHandlerDeps, handle
         commitDestinationClaim(destination);
       };
       routeDestinationChoice(destination, {
-        navigateTo: (screen) =>
-          deps.dispatch({
-            type: "navigate",
-            screen,
-            onRenderedScreenCommit: commitDestinationProgress,
-          }),
-        beginMysteryEvent: () => {
-          deps.dispatch({
-            type: "begin-mystery-event",
-            onRenderedScreenCommit: commitDestinationProgress,
-          });
-        },
+        navigateTo: (screen) => deps.actions.navigateTo(screen, commitDestinationProgress),
+        beginMysteryEvent: () => deps.actions.beginMysteryEvent(commitDestinationProgress),
+        initShop: deps.actions.initShop,
+        startBattle: deps.actions.startBattle,
+        startBoss: (opts) => deps.actions.startBoss({ ...opts, bossId: choice.selectedBossId }),
         resetCorruption: () => setCorruptionResult(null),
-        startShop: () => deps.dispatch({ type: "init-shop", kind: "shop" }),
-        startAlchemist: () => deps.dispatch({ type: "init-shop", kind: "alchemist" }),
-        startTrinketShop: () => deps.dispatch({ type: "init-shop", kind: "trinket" }),
-        startEquipmentShop: () => deps.dispatch({ type: "init-shop", kind: "equipment" }),
-        startBattle: (enemyType) => deps.dispatch({ type: "start-battle", enemyType }),
-        startBossBattle: () => deps.dispatch({ type: "start-boss", bossId: choice.selectedBossId }),
       });
     } catch (error) {
       dispatchRunSessionCommand(() => cancelDestinationClaim());
