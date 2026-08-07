@@ -17,6 +17,8 @@ commit-msg:
 pre-push:
   commands:
     fast-gate:
-      # Full lint, unit, build, and broad E2E gates run in CI or explicitly via
-      # `npm run check:push:full`; keep the default hook fast for iteration.
+      # check:push runs format, typecheck:all (src + tests), lint, a build with
+      # committed assets, and the preview-mode prepush E2E — so the browser gate
+      # always exercises a freshly built bundle, never stale dist/. Full lint:ci,
+      # unit, and broad E2E gates still run in CI.
       run: npm run check:push

@@ -2,9 +2,9 @@
 
 ## Before you push
 
-The default local hook is an iteration gate: it catches formatting, TypeScript, ESLint, and the small Playwright canary quickly. CI is the comprehensive gate after every push to `main` (and on PRs). Do not require `ci-ok` as a GitHub push gate on `main` — that blocks trunk pushes before CI can run. Rely on local `pre-push` and post-push CI; use `npm run check:push:full` before a high-risk push or release candidate.
+The default local hook is the pre-push gate: it catches formatting, TypeScript (src _and_ tests), ESLint, a fresh production build, and the small Playwright canary. CI is the comprehensive gate after every push to `main` (and on PRs). Do not require `ci-ok` as a GitHub push gate on `main` — that blocks trunk pushes before CI can run. Rely on local `pre-push` and post-push CI; use `npm run check:push:full` before a high-risk push or release candidate.
 
-`lefthook` `pre-push` runs `npm run check:push` — format check, TypeScript, ESLint, and the fast **@prepush** subset (parallel preview build; includes one animation canary).
+`lefthook` `pre-push` runs `npm run check:push` — format check, `typecheck:all`, ESLint, a production build with committed assets (`ALCHEMY_SKIP_ASSETS=1`), then the **@prepush** E2E subset against that freshly built bundle (includes one animation canary). Building before E2E guarantees the canary never runs against stale `dist/`.
 
 The comprehensive local equivalent is `npm run check:push:full`. It runs the full static gate, all Vitest tests, the web production build, and the pre-push E2E canary. CI on every PR and push runs the full `@critical` suite, including `@prepush` tests. On optional PR branches, wait for `ci-ok` before merging.
 

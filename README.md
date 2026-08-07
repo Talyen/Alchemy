@@ -70,14 +70,14 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-| Tier            | Command                         | When to use                                       |
-| --------------- | ------------------------------- | ------------------------------------------------- |
-| Unit            | `npm test`                      | Fast feedback on logic and stores                 |
-| Local fast gate | `npm run check:push`            | Format, typecheck, lint, and `@prepush` scenarios |
-| E2E critical    | `npm run test:e2e:prepush:full` | CI critical Playwright suite                      |
-| E2E full        | `npm run test:e2e:full`         | Broader Playwright suite in CI/nightly/release    |
+| Tier            | Command                         | When to use                                                            |
+| --------------- | ------------------------------- | ---------------------------------------------------------------------- |
+| Unit            | `npm test`                      | Fast feedback on logic and stores                                      |
+| Local fast gate | `npm run check:push`            | Format, typecheck (src + tests), lint, build, and `@prepush` scenarios |
+| E2E critical    | `npm run test:e2e:prepush:full` | CI critical Playwright suite                                           |
+| E2E full        | `npm run test:e2e:full`         | Broader Playwright suite in CI/nightly/release                         |
 
-For a comprehensive local pre-push check, use `npm run check:push:full`. The default hook stays fast; CI is the authoritative full gate.
+For a comprehensive local pre-push check, use `npm run check:push:full`. The default hook stays lean; CI is the authoritative full gate.
 
 CI runs formatting, linting, unit tests, production build, and the critical Playwright suite. Path-specific tests and CI parity: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 

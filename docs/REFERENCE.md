@@ -41,7 +41,7 @@ npm run deadcode            # knip (lint:ci / CI; not default pre-push; in check
 npm run deadcode:strict     # knip --strict, entry exports, deps excluded (nightly)
 npm run format / format:check  # Prettier via scripts/run-prettier.mjs (shared globs)
 npm run check               # npm ci --dry-run + lint:ci + test + build
-npm run check:push          # fast format + typecheck + lint + @prepush E2E gate
+npm run check:push          # format + typecheck:all (src + tests) + lint + build + @prepush E2E gate
 npm run check:push:full     # comprehensive check + @prepush E2E gate
 npm run check:ship          # lint:ci + ship unit tests + ALCHEMY_SKIP_ASSETS=1 build:desktop
 npm run check:ship:full     # check:ship + save E2E + Electron E2E
