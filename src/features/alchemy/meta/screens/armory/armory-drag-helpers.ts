@@ -2,7 +2,6 @@ import {
   findFirstInventoryPlacement,
   footprintForInstance,
   INVENTORY_COLS,
-  inventoryPlacementRect,
   isGearCompatibleWithLoadoutSlot,
   gearDefinitions,
   type GearInstance,
@@ -13,41 +12,9 @@ import {
   type GearDefinition,
 } from "@/lib/gear";
 import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
+import { resolveInventoryCellRect } from "./board-drag-math";
 import { resolveEquipSwap } from "./resolve-equip-swap";
 import type { DragDestination, DragPoint, DragRect } from "./drag-types";
-
-function inventoryCellDragRect({
-  board,
-  placement,
-  footprint,
-  metrics,
-}: {
-  board: HTMLElement;
-  placement: InventoryPlacement;
-  footprint: { w: number; h: number };
-  metrics: NonNullable<ReturnType<typeof readInventoryBoardMetrics>>;
-}): DragRect {
-  const { cellSize, gap, boardRect, scrollTop } = metrics;
-  const cell = board.querySelector<HTMLElement>(`[data-armory-inventory-cell="${placement.col}-${placement.row}"]`);
-  const width = cellSize * footprint.w + gap * (footprint.w - 1);
-  const height = cellSize * footprint.h + gap * (footprint.h - 1);
-  if (cell) {
-    const cellRect = cell.getBoundingClientRect();
-    return {
-      left: cellRect.left,
-      top: cellRect.top,
-      width,
-      height,
-    };
-  }
-  const localRect = inventoryPlacementRect(placement, footprint, { cellSize, gap });
-  return {
-    left: boardRect.left + localRect.left,
-    top: boardRect.top + localRect.top - scrollTop,
-    width: localRect.width,
-    height: localRect.height,
-  };
-}
 
 function findSlotUnderPointer(
   pointer: DragPoint,
@@ -136,7 +103,7 @@ export function getInventoryDragDestination({
   return {
     kind: "inventory",
     placement,
-    rect: inventoryCellDragRect({ board, placement, footprint, metrics }),
+    rect: resolveInventoryCellRect(board, placement, footprint, metrics),
   };
 }
 
@@ -242,7 +209,7 @@ export function buildSecondaryDragVisuals({
   for (const { instance: displaced, source, vacatedPlacement } of displacedItems) {
     const footprint = footprintForInstance(displaced);
     if (!footprint) continue;
-    const destinationRect = inventoryCellDragRect({ board, placement: vacatedPlacement, footprint, metrics });
+    const destinationRect = resolveInventoryCellRect(board, vacatedPlacement, footprint, metrics);
     visuals.push({
       instance: displaced,
       source,

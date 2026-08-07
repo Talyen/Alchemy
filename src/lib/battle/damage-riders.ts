@@ -19,18 +19,7 @@ import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { addEnemyStatus, addPlayerStatus, clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { BATTLE_CONFIG, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
-
-function decayEnemyDefensesOnHit(state: BattleState, modifiedDamage: number): BattleState {
-  if (modifiedDamage <= 0) return state;
-  if (state.enemyMitigation.armor <= 0) return state;
-  return {
-    ...state,
-    enemyMitigation: {
-      ...state.enemyMitigation,
-      armor: Math.max(0, state.enemyMitigation.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
-    },
-  };
-}
+import { decayArmorAfterDamage } from "./status-helpers";
 
 function applyBurnDamageRiders(
   state: BattleState,
@@ -152,7 +141,7 @@ export function applyDamageRiders(
     enemyHealth: clampHealth(state.enemyHealth, -modifiedDamage, state.enemyMaxHealth),
   };
 
-  nextState = decayEnemyDefensesOnHit(nextState, modifiedDamage);
+  nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
   // boneCharmHeal uses state.enemyHealth > 0 (pre-hit state), not nextState,
   // so heal-on-kill only triggers if the enemy WAS alive before this hit.
   nextState = applyBoneCharmHeal(nextState, state.enemyHealth > 0, combatTexts);

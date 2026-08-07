@@ -21,15 +21,17 @@ export type InventoryPlacementResult = {
   rect: DragRect;
 } | null;
 
-function computeTileSnapRect(
+/**
+ * On-screen rect of an inventory cell placement. Falls back to the computed
+ * grid position when the cell is not mounted (e.g. a scrolled-off row).
+ */
+export function resolveInventoryCellRect(
   board: HTMLElement,
-  boardRect: DOMRect,
   placement: InventoryPlacement,
   footprint: GearFootprint,
-  cellSize: number,
-  gap: number,
-  scrollTop: number,
+  metrics: NonNullable<ReturnType<typeof readInventoryBoardMetrics>>,
 ): DragRect {
+  const { cellSize, gap, boardRect, scrollTop } = metrics;
   const cellEl = board.querySelector<HTMLElement>(`[data-armory-inventory-cell="${placement.col}-${placement.row}"]`);
   if (!cellEl) {
     const local = inventoryPlacementRect(placement, footprint, { cellSize, gap });
@@ -87,7 +89,7 @@ export function placeInventoryTileFromMetrics(
     { x: freeCenter.x - boardRect.left, y: freeCenter.y - boardRect.top + scrollRef.scrollTop },
   );
   if (!placement) return null;
-  const snapRect = computeTileSnapRect(board, boardRect, placement, footprint, cellSize, gap, scrollTop);
+  const snapRect = resolveInventoryCellRect(board, placement, footprint, metrics);
   if (!isWithinSnapRadius(freeCenter, snapRect, cellSize, requireProximity)) return null;
   return { placement, rect: snapRect };
 }

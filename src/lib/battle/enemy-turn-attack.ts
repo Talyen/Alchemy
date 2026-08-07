@@ -16,6 +16,7 @@ import {
 } from "./types";
 import { BATTLE_CONFIG, computeLeechHeal, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { checkHealthThresholds, isFreezeActiveForAspect } from "./enemy-turn-utils";
+import { decayArmorAfterDamage } from "./status-helpers";
 
 type DirectPlayerStatusAttackEffect = Extract<EnemyAttackEffect, { kind: "player-status" }> & {
   status: Exclude<PlayerStatusId, "stun" | "freeze">;
@@ -109,34 +110,6 @@ function applyVanguardCrestAfterBlock(
   };
 }
 
-function applyArmorDecayOnHit(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
-  if (actualDamage <= 0 || state.playerStatuses.armor <= 0) return state;
-  const armorBefore = state.playerStatuses.armor;
-  let nextState = {
-    ...state,
-    playerStatuses: {
-      ...state.playerStatuses,
-      armor: Math.max(0, state.playerStatuses.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
-    },
-  };
-  if (armorBefore > 0 && nextState.playerStatuses.armor === 0 && nextState.talentEffects.armorBreakBlock > 0) {
-    nextState = {
-      ...nextState,
-      playerStatuses: {
-        ...nextState.playerStatuses,
-        block: nextState.playerStatuses.block + nextState.talentEffects.armorBreakBlock,
-      },
-    };
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "block",
-      amount: nextState.talentEffects.armorBreakBlock,
-    });
-  }
-  return nextState;
-}
-
 function applyEnemyForgeDecayOnHit(state: BattleState, actualDamage: number, damageType: string): BattleState {
   if (actualDamage <= 0 || damageType !== "physical" || state.enemyMitigation.forge <= 0) return state;
   return {
@@ -159,7 +132,7 @@ function resolvePostDamageThresholds(
 ): BattleState {
   let nextState = applyVanguardCrestAfterBlock(state, blockAbsorb, remainingDamage, combatTexts);
   nextState = checkHealthThresholds(prevHealth, nextState.playerHealth, nextState, combatTexts);
-  nextState = applyArmorDecayOnHit(nextState, actualDamage, combatTexts);
+  nextState = decayArmorAfterDamage(nextState, actualDamage, "player", combatTexts);
   nextState = applyEnemyForgeDecayOnHit(nextState, actualDamage, damageType);
   return nextState;
 }
