@@ -11,7 +11,7 @@ import {
 } from "@/lib/gear";
 import type { GearInstance } from "@/lib/gear";
 import type { CharacterId } from "@/lib/game-data";
-import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { useGearStore } from "../../../../helpers/gameplay-store-test";
 
 function mockDomRect(partial: Partial<DOMRect>): DOMRect {
   return {

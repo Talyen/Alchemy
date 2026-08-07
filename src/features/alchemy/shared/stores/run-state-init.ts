@@ -61,12 +61,18 @@ export interface PermanentProgressFields {
  */
 export type ActiveRunReadView = ActiveRunProgressFields & { initialized: boolean };
 
-/** Shared picker for the active-run view used by the committed read model and the run read port. */
+/**
+ * Shared picker for the active-run view used by the committed read model and the run read port.
+ */
+export function pickActiveRunFields(activeRun: ActiveRunProgressFields): ActiveRunProgressFields {
+  return { ...activeRun };
+}
+
 export function pickActiveRunView(run: {
   activeRun: ActiveRunProgressFields;
   initialized: boolean;
 }): ActiveRunReadView {
-  return { ...run.activeRun, initialized: run.initialized };
+  return { ...pickActiveRunFields(run.activeRun), initialized: run.initialized };
 }
 
 function hydrateDestinations(initialActiveRun: ActiveRunData): {

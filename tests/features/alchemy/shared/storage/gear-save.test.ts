@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
 import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations";
-import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { useGearStore } from "../../../../helpers/gameplay-store-test";
 import {
   createEmptyGearBoardPositionsByCharacter,
   createEmptyGearInventories,

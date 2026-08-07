@@ -6,8 +6,7 @@ import {
 } from "@/features/alchemy/shared/storage/persistence-coordinator";
 import { defaultSaveData } from "@/features/alchemy/shared/storage";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { useGearStore, useProfileStore } from "../../../../helpers/gameplay-store-test";
 import {
   getRunDomainStore,
   getRunProfileStore,

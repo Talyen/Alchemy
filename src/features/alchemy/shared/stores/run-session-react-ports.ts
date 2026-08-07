@@ -15,6 +15,7 @@ import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { Screen } from "@/lib/routing";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { DisplayOverrides } from "./run-domain-types";
+import { pickActiveRunFields } from "./run-state-init";
 import { useGameplayStateStore } from "./gameplay-state-store";
 import {
   awardCardXP,
@@ -47,19 +48,7 @@ export function useTalentEffects(): TalentEffectManifest {
 export function useRunOrchestrationPort(): RunOrchestrationPort {
   return useGameplayStateStore(
     useShallow((state) => ({
-      contentSystemType: state.run.activeRun.contentSystemType,
-      currentAct: state.run.activeRun.currentAct,
-      selectedDifficulty: state.run.activeRun.selectedDifficulty,
-      characterId: state.run.activeRun.characterId,
-      runMaxHealth: state.run.activeRun.runMaxHealth,
-      roomsEncountered: state.run.activeRun.roomsEncountered,
-      runDeck: state.run.activeRun.runDeck,
-      runPlayerHealth: state.run.activeRun.runPlayerHealth,
-      runGold: state.run.activeRun.runGold,
-      destinationIndexInAct: state.run.activeRun.destinationIndexInAct,
-      completedDestinations: state.run.activeRun.completedDestinations,
-      lastOfferedDestinations: state.run.activeRun.lastOfferedDestinations,
-      destinationRoundsSinceOffered: state.run.activeRun.destinationRoundsSinceOffered,
+      ...pickActiveRunFields(state.run.activeRun),
       updateCurrentAct: setCurrentAct,
       updateDestinationIndexInAct: setDestinationIndexInAct,
       updateCompletedDestinations: setCompletedDestinations,

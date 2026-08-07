@@ -1,34 +1,18 @@
 // Public gameplay write capability for feature code.
 // All write functions are grouped by domain in this single barrel — import from here only.
+// Trivial single-action writes are bound through `bindWriteAction` so the public seam
+// stays a one-line list of names; compound cross-lifetime writes stay explicit below.
 import { getDifficultyXPMultiplier } from "@/lib/game-data";
-import type { BattleCard, CharacterId, CompanionId, KeywordId } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
-import type {
-  AlchemistState,
-  EquipmentShopState,
-  PersistedBattleTransition,
-  RewardState,
-  ShopState,
-  TrinketShopState,
-} from "@/lib/active-run-session";
-import type { ContentSystemId } from "@/lib/content-systems/types";
-import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
-import type { LabyrinthNodePosition } from "@/lib/active-run-session";
-import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
+import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
-import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
+import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunRngStream } from "@/lib/run-rng";
-import type { Destination, Screen } from "@/features/alchemy/shared/types";
-import type { CorruptionResult } from "@/lib/corruption";
+import type { Destination } from "@/features/alchemy/shared/types";
 import { dispatchRunSessionCommand } from "./run-session-command";
 import { readGameplayState, type GameplayState } from "./gameplay-state-store";
 import type { DisplayOverrides } from "./run-domain-types";
 
-// ---------------------------------------------------------------------------
-// Exported types (part of the public API surface)
-// ---------------------------------------------------------------------------
-
-type RunValueUpdate<T> = T | ((previous: T) => T);
 type RunActions = GameplayState["runActions"];
 export type RunTrinketsUpdate = Parameters<RunActions["setRunTrinkets"]>[0];
 export type RunDeckUpdate = Parameters<RunActions["setRunDeck"]>[0];
@@ -37,79 +21,43 @@ function dispatchRunAction<T>(work: (session: GameplayState) => T): T {
   return dispatchRunSessionCommand(() => work(readGameplayState()));
 }
 
+/**
+ * Bind one committed aggregate action method into a command-backed write.
+ * `provider(state)` returns a stable action method; the public signature is inferred
+ * so callers pass the exact slice-action arguments.
+ */
+function bindWriteAction<Args extends unknown[], Ret>(
+  run: (state: GameplayState) => (...args: Args) => Ret,
+): (...args: Args) => Ret {
+  return (...args: Args) => dispatchRunAction((state) => run(state)(...args));
+}
+
+const runActions = (state: GameplayState) => state.runActions;
+const sessionActions = (state: GameplayState) => state.sessionActions;
+const runProfileActions = (state: GameplayState) => state.runProfileActions;
+const battleActions = (state: GameplayState) => state.battleActions;
+
 // ---------------------------------------------------------------------------
 // Active-run progression
 // ---------------------------------------------------------------------------
 
-export function setRunDeck(value: RunDeckUpdate): void {
-  dispatchRunAction((session) => session.runActions.setRunDeck(value));
-}
-
-export function setRunGold(value: Parameters<RunActions["setRunGold"]>[0]): void {
-  dispatchRunAction((session) => session.runActions.setRunGold(value));
-}
-
-export function addRunGold(amount: number): void {
-  dispatchRunAction((session) => session.runActions.addRunGold(amount));
-}
-
-export function setRunPlayerHealth(value: Parameters<RunActions["setRunPlayerHealth"]>[0]): void {
-  dispatchRunAction((session) => session.runActions.setRunPlayerHealth(value));
-}
-
-export function setRunMaxHealth(value: RunValueUpdate<number>): void {
-  dispatchRunAction((session) => session.runActions.setRunMaxHealth(value));
-}
-
-export function setRoomsEncountered(value: RunValueUpdate<number>): void {
-  dispatchRunAction((session) => session.runActions.setRoomsEncountered(value));
-}
-
-export function setCurrentAct(value: RunValueUpdate<number>): void {
-  dispatchRunAction((session) => session.runActions.setCurrentAct(value));
-}
-
-export function setDestinationIndexInAct(value: RunValueUpdate<number>): void {
-  dispatchRunAction((session) => session.runActions.setDestinationIndexInAct(value));
-}
-
-export function setCompletedDestinations(
-  value: RunValueUpdate<GameplayState["run"]["activeRun"]["completedDestinations"]>,
-): void {
-  dispatchRunAction((session) => session.runActions.setCompletedDestinations(value));
-}
-
-export function setDestinationOfferState(value: Parameters<RunActions["setDestinationOfferState"]>[0]): void {
-  dispatchRunAction((session) => session.runActions.setDestinationOfferState(value));
-}
-
-export function setRunTrinkets(value: RunTrinketsUpdate): void {
-  dispatchRunAction((session) => session.runActions.setRunTrinkets(value));
-}
-
-export function setEncounteredRunEnemyIds(value: RunValueUpdate<string[]>): void {
-  dispatchRunAction((session) => session.runActions.setEncounteredRunEnemyIds(value));
-}
-
-export function setScreen(screen: Screen): void {
-  dispatchRunAction((session) => session.runActions.setScreen(screen));
-}
-
-export function awardCardXP(card: BattleCard): void {
-  dispatchRunAction((session) => session.runActions.awardCardXP(card));
-}
-
-export function awardMysteryXP(keywordId: KeywordId, amount: number): void {
-  dispatchRunAction((session) => session.runActions.awardMysteryXP(keywordId, amount));
-}
-
-export function addRunMaterialsEarned(materials: MaterialInventory): void {
-  dispatchRunAction((session) => session.runActions.addRunMaterialsEarned(materials));
-}
-
-export function clearRunMaterialsEarned(): void {
-  dispatchRunAction((session) => session.runActions.clearRunMaterialsEarned());
-}
+export const setRunDeck = bindWriteAction((s) => runActions(s).setRunDeck);
+export const setRunGold = bindWriteAction((s) => runActions(s).setRunGold);
+export const addRunGold = bindWriteAction((s) => runActions(s).addRunGold);
+export const setRunPlayerHealth = bindWriteAction((s) => runActions(s).setRunPlayerHealth);
+export const setRunMaxHealth = bindWriteAction((s) => runActions(s).setRunMaxHealth);
+export const setRoomsEncountered = bindWriteAction((s) => runActions(s).setRoomsEncountered);
+export const setCurrentAct = bindWriteAction((s) => runActions(s).setCurrentAct);
+export const setDestinationIndexInAct = bindWriteAction((s) => runActions(s).setDestinationIndexInAct);
+export const setCompletedDestinations = bindWriteAction((s) => runActions(s).setCompletedDestinations);
+export const setDestinationOfferState = bindWriteAction((s) => runActions(s).setDestinationOfferState);
+export const setRunTrinkets = bindWriteAction((s) => runActions(s).setRunTrinkets);
+export const setEncounteredRunEnemyIds = bindWriteAction((s) => runActions(s).setEncounteredRunEnemyIds);
+export const setScreen = bindWriteAction((s) => runActions(s).setScreen);
+export const awardCardXP = bindWriteAction((s) => runActions(s).awardCardXP);
+export const awardMysteryXP = bindWriteAction((s) => runActions(s).awardMysteryXP);
+export const addRunMaterialsEarned = bindWriteAction((s) => runActions(s).addRunMaterialsEarned);
+export const clearRunMaterialsEarned = bindWriteAction((s) => runActions(s).clearRunMaterialsEarned);
 
 /** Draw from a persisted run stream without exposing the aggregate action. */
 export function createRunRandomSource(stream: RunRngStream): () => number {
@@ -129,38 +77,14 @@ export function awardMaterialsDuringRun(materials: MaterialInventory) {
   });
 }
 
-/** Dev / unlock-all: overwrite homestead materials. */
-export function setMaterials(materials: MaterialInventory) {
-  return dispatchRunAction((session) => session.runProfileActions.setMaterials(materials));
-}
-
-export function addMaterials(materials: MaterialInventory): void {
-  dispatchRunAction((session) => session.runProfileActions.addMaterials(materials));
-}
-
-export function constructBuilding(id: BuildingId): boolean {
-  return dispatchRunAction((session) => session.runProfileActions.constructBuilding(id));
-}
-
-export function plantFarm(id: FarmId): boolean {
-  return dispatchRunAction((session) => session.runProfileActions.plantFarm(id));
-}
-
-export function completeResearch(id: ResearchId): boolean {
-  return dispatchRunAction((session) => session.runProfileActions.completeResearch(id));
-}
-
-export function bondCompanion(id: CompanionId): boolean {
-  return dispatchRunAction((session) => session.runProfileActions.bondCompanion(id));
-}
-
-export function unlockTalent(keywordId: KeywordId, talentId: string): void {
-  dispatchRunAction((session) => session.runProfileActions.unlockTalent(keywordId, talentId));
-}
-
-export function resetUnlockedTalents(): void {
-  dispatchRunAction((session) => session.runProfileActions.resetUnlockedTalents());
-}
+export const setMaterials = bindWriteAction((s) => runProfileActions(s).setMaterials);
+export const addMaterials = bindWriteAction((s) => runProfileActions(s).addMaterials);
+export const constructBuilding = bindWriteAction((s) => runProfileActions(s).constructBuilding);
+export const plantFarm = bindWriteAction((s) => runProfileActions(s).plantFarm);
+export const completeResearch = bindWriteAction((s) => runProfileActions(s).completeResearch);
+export const bondCompanion = bindWriteAction((s) => runProfileActions(s).bondCompanion);
+export const unlockTalent = bindWriteAction((s) => runProfileActions(s).unlockTalent);
+export const resetUnlockedTalents = bindWriteAction((s) => runProfileActions(s).resetUnlockedTalents);
 
 /** Dev unlock-all: max every talent and drop pending run XP so run-end cannot merge on top. */
 export function unlockAllTalents() {
@@ -196,12 +120,9 @@ export function finalizeRunXP(): void {
 // Battle
 // ---------------------------------------------------------------------------
 
-type BattleStateUpdate = BattleState | ((previous: BattleState) => BattleState);
-type BattleActions = GameplayState["battleActions"];
-
-function dispatchBattleCommand<T>(work: (battle: BattleActions) => T): T {
-  return dispatchRunSessionCommand(() => work(readGameplayState().battleActions));
-}
+export const setBattleState = bindWriteAction((s) => battleActions(s).setSyncedBattleState);
+export const setBattleStartState = bindWriteAction((s) => battleActions(s).setBattleStartState);
+export const setHasActiveBattle = bindWriteAction((s) => battleActions(s).setHasActiveBattle);
 
 function rebindBattleWorldRng(battleState: BattleState): BattleState {
   return { ...battleState, rng: createRunRandomSource("world") };
@@ -217,28 +138,16 @@ function rebindPendingTransitionWorldRng(
   };
 }
 
-export function setBattleState(action: BattleStateUpdate): void {
-  dispatchBattleCommand((battle) => battle.setSyncedBattleState(action));
-}
-
-export function setBattleStartState(state: BattleState | null): void {
-  dispatchBattleCommand((battle) => battle.setBattleStartState(state));
-}
-
-export function setHasActiveBattle(active: boolean | ((previous: boolean) => boolean)): void {
-  dispatchBattleCommand((battle) => battle.setHasActiveBattle(active));
-}
-
 export function initializeActiveBattle(
   battleState: BattleState | null,
   pendingBattleTransition: PersistedBattleTransition | null = null,
 ): void {
   if (!battleState) {
-    dispatchBattleCommand((battle) => battle.initializeActiveBattle(null, null));
+    dispatchRunSessionCommand(() => readGameplayState().battleActions.initializeActiveBattle(null, null));
     return;
   }
-  dispatchBattleCommand((battle) =>
-    battle.initializeActiveBattle(
+  dispatchRunSessionCommand(() =>
+    readGameplayState().battleActions.initializeActiveBattle(
       rebindBattleWorldRng(battleState),
       rebindPendingTransitionWorldRng(pendingBattleTransition),
     ),
@@ -250,7 +159,8 @@ export function commitBattleTransition(
   battleState: BattleState,
   pendingBattleTransition: PersistedBattleTransition | null,
 ): void {
-  dispatchBattleCommand((battle) => {
+  dispatchRunSessionCommand(() => {
+    const battle = readGameplayState().battleActions;
     battle.setSyncedBattleState(battleState);
     battle.setPendingBattleTransition(pendingBattleTransition);
     battle.clearPendingTransitionResumeRequired();
@@ -263,7 +173,8 @@ export function beginBattleTransition(
   pendingBattleTransition: PersistedBattleTransition,
   displayOverrides: DisplayOverrides,
 ): void {
-  dispatchBattleCommand((battle) => {
+  dispatchRunSessionCommand(() => {
+    const battle = readGameplayState().battleActions;
     battle.setSyncedBattleState(battleState);
     battle.setPendingBattleTransition(pendingBattleTransition);
     battle.setDisplayOverrides(displayOverrides);
@@ -271,7 +182,8 @@ export function beginBattleTransition(
 }
 
 export function clearBattleTransition(): void {
-  dispatchBattleCommand((battle) => {
+  dispatchRunSessionCommand(() => {
+    const battle = readGameplayState().battleActions;
     battle.setPendingBattleTransition(null);
     battle.clearPendingTransitionResumeRequired();
   });
@@ -281,19 +193,9 @@ export function clearBattleTransition(): void {
 // Run setup (pending selections, draft, run-start application)
 // ---------------------------------------------------------------------------
 
-export function setPendingCharacterId(id: CharacterId | null) {
-  return dispatchRunAction((session) => session.sessionActions.setPendingCharacterId(id));
-}
-
-export function setPendingContentSystemType(type: ContentSystemId) {
-  return dispatchRunAction((session) => session.sessionActions.setPendingContentSystemType(type));
-}
-
-export function setWildwoodDraft(
-  state: WildwoodDraftState | null | ((prev: WildwoodDraftState | null) => WildwoodDraftState | null),
-) {
-  return dispatchRunAction((session) => session.sessionActions.setWildwoodDraft(state));
-}
+export const setPendingCharacterId = bindWriteAction((s) => sessionActions(s).setPendingCharacterId);
+export const setPendingContentSystemType = bindWriteAction((s) => sessionActions(s).setPendingContentSystemType);
+export const setWildwoodDraft = bindWriteAction((s) => sessionActions(s).setWildwoodDraft);
 
 /** Start a fresh run: seed active-run progress, drop the previous run-end XP snapshot, flag the run active. */
 export function applyRunStartSnapshot(snapshot: RunStartSnapshot): void {
@@ -309,25 +211,14 @@ export function applyRunStartSnapshot(snapshot: RunStartSnapshot): void {
 // Rewards / claims
 // ---------------------------------------------------------------------------
 
-export function setRewardState(state: RewardState | ((prev: RewardState) => RewardState)) {
-  return dispatchRunAction((session) => session.sessionActions.setRewardState(state));
-}
-
-export function setCompanionRewardCards(cards: BattleCard[] | null) {
-  return dispatchRunAction((session) => session.sessionActions.setCompanionRewardCards(cards));
-}
-
-export function beginRewardClaim(): boolean {
-  return dispatchRunAction((session) => session.sessionActions.beginRewardClaim());
-}
-
-export function releaseRewardClaim(): void {
-  dispatchRunAction((session) => session.sessionActions.releaseRewardClaim());
-}
-
-export function beginDestinationClaim(destination: Destination): boolean {
-  return dispatchRunAction((session) => session.sessionActions.beginDestinationClaim(destination));
-}
+export const setRewardState = bindWriteAction((s) => sessionActions(s).setRewardState);
+export const setCompanionRewardCards = bindWriteAction((s) => sessionActions(s).setCompanionRewardCards);
+export const beginRewardClaim = bindWriteAction((s) => sessionActions(s).beginRewardClaim);
+export const releaseRewardClaim = bindWriteAction((s) => sessionActions(s).releaseRewardClaim);
+export const beginDestinationClaim = bindWriteAction((s) => sessionActions(s).beginDestinationClaim);
+export const cancelDestinationClaim = bindWriteAction((s) => sessionActions(s).cancelDestinationClaim);
+export const setRunEndMaterials = bindWriteAction((s) => sessionActions(s).setRunEndMaterials);
+export const setCorruptionResult = bindWriteAction((s) => sessionActions(s).setCorruptionResult);
 
 /** Commit destination claim across session + active-run progress (cross-lifetime). */
 export function commitDestinationClaim(destination: Destination): boolean {
@@ -347,70 +238,29 @@ export function commitDestinationClaim(destination: Destination): boolean {
   });
 }
 
-export function cancelDestinationClaim(): void {
-  dispatchRunAction((session) => session.sessionActions.cancelDestinationClaim());
-}
-
-export function setRunEndMaterials(materials: MaterialInventory) {
-  return dispatchRunAction((session) => session.sessionActions.setRunEndMaterials(materials));
-}
-
-export function setCorruptionResult(result: CorruptionResult | null) {
-  return dispatchRunAction((session) => session.sessionActions.setCorruptionResult(result));
-}
-
 // ---------------------------------------------------------------------------
 // Shop / alchemist
 // ---------------------------------------------------------------------------
 
-export function setShopState(state: ShopState | ((prev: ShopState) => ShopState)) {
-  return dispatchRunAction((session) => session.sessionActions.setShopState(state));
-}
-
-export function setAlchemistState(state: AlchemistState | ((prev: AlchemistState) => AlchemistState)) {
-  return dispatchRunAction((session) => session.sessionActions.setAlchemistState(state));
-}
-
-export function setTrinketShopState(state: TrinketShopState | ((prev: TrinketShopState) => TrinketShopState)) {
-  return dispatchRunAction((session) => session.sessionActions.setTrinketShopState(state));
-}
-
-export function setEquipmentShopState(state: EquipmentShopState | ((prev: EquipmentShopState) => EquipmentShopState)) {
-  return dispatchRunAction((session) => session.sessionActions.setEquipmentShopState(state));
-}
+export const setShopState = bindWriteAction((s) => sessionActions(s).setShopState);
+export const setAlchemistState = bindWriteAction((s) => sessionActions(s).setAlchemistState);
+export const setTrinketShopState = bindWriteAction((s) => sessionActions(s).setTrinketShopState);
+export const setEquipmentShopState = bindWriteAction((s) => sessionActions(s).setEquipmentShopState);
 
 // ---------------------------------------------------------------------------
 // Mystery
 // ---------------------------------------------------------------------------
 
-export function setMysteryEvent(event: import("@/lib/mystery").MysteryEvent | null) {
-  return dispatchRunAction((session) => session.sessionActions.setMysteryEvent(event));
-}
-
-export function setMysteryCardChoices(
-  choices: BattleCard[] | null | ((prev: BattleCard[] | null) => BattleCard[] | null),
-) {
-  return dispatchRunAction((session) => session.sessionActions.setMysteryCardChoices(choices));
-}
+export const setMysteryEvent = bindWriteAction((s) => sessionActions(s).setMysteryEvent);
+export const setMysteryCardChoices = bindWriteAction((s) => sessionActions(s).setMysteryCardChoices);
 
 // ---------------------------------------------------------------------------
 // Labyrinth
 // ---------------------------------------------------------------------------
 
-export function setActiveLabyrinthModifiers(modifiers: EncounterCombatTraitId[]) {
-  return dispatchRunAction((session) => session.sessionActions.setActiveLabyrinthModifiers(modifiers));
-}
-
-export function setActiveLabyrinthRewardModifiers(modifiers: EncounterRewardTraitId[]) {
-  return dispatchRunSessionCommand(() =>
-    readGameplayState().sessionActions.setActiveLabyrinthRewardModifiers(modifiers),
-  );
-}
-
-export function setActiveLabyrinthPendingNode(node: LabyrinthNodePosition | null) {
-  return dispatchRunAction((session) => session.sessionActions.setActiveLabyrinthPendingNode(node));
-}
-
-export function setLabyrinthMap(map: LabyrinthMap | ((prev: LabyrinthMap) => LabyrinthMap)) {
-  return dispatchRunAction((session) => session.sessionActions.setLabyrinthMap(map));
-}
+export const setActiveLabyrinthModifiers = bindWriteAction((s) => sessionActions(s).setActiveLabyrinthModifiers);
+export const setActiveLabyrinthRewardModifiers = bindWriteAction(
+  (s) => sessionActions(s).setActiveLabyrinthRewardModifiers,
+);
+export const setActiveLabyrinthPendingNode = bindWriteAction((s) => sessionActions(s).setActiveLabyrinthPendingNode);
+export const setLabyrinthMap = bindWriteAction((s) => sessionActions(s).setLabyrinthMap);

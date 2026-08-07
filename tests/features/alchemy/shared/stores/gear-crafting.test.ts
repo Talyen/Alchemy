@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type GearInstance, createEmptyGearInventories, createEmptyGearLoadouts, equipGear } from "@/lib/gear";
-import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { useGearStore } from "../../../../helpers/gameplay-store-test";
 
 function knightInventories(...items: GearInstance[]) {
   const inventories = createEmptyGearInventories();

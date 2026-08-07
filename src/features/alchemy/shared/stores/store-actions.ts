@@ -1,8 +1,7 @@
 // Stable action-only selectors for render paths (functions do not change between store updates).
 import { useShallow } from "zustand/react/shallow";
 import { useSettingsStore, type SettingsStore } from "./settings-store";
-import { useGameplayStateStore } from "./gameplay-state-store";
-import type { ProfileStore } from "./profile-store";
+import { useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
 import { bondCompanion, completeResearch, constructBuilding, plantFarm } from "./run-session-write-port";
 
 const settingsActionKeys = [
@@ -20,8 +19,10 @@ const settingsActionKeys = [
 
 const collectionActionKeys = ["setCollectionPage", "handleCollectionTabChange"] as const;
 
+type ProfileSelect = GameplayState["profile"] & GameplayState["profileActions"];
+
 export type SettingsActions = Pick<SettingsStore, (typeof settingsActionKeys)[number]>;
-export type CollectionActions = Pick<ProfileStore, (typeof collectionActionKeys)[number]>;
+export type CollectionActions = Pick<ProfileSelect, (typeof collectionActionKeys)[number]>;
 
 function pickActions<T extends object, K extends keyof T>(state: T, keys: readonly K[]): Pick<T, K> {
   const out = {} as Pick<T, K>;

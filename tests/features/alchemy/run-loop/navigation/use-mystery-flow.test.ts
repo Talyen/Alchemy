@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { useProfileStore } from "../../../../helpers/gameplay-store-test";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,

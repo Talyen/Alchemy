@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { profilePersistenceCodec, useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { profilePersistenceCodec } from "@/features/alchemy/shared/stores/profile-store";
+import { useProfileStore } from "../../../../helpers/gameplay-store-test";
 import { settingsPersistenceCodec, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { defaultSaveData, type SaveData } from "@/features/alchemy/shared/storage";
 

@@ -21,7 +21,7 @@ vi.mock("@/lib/platform", () => ({
 }));
 
 import { clearAllPersistentGameData, resetActiveRunStores } from "@/features/alchemy/shared/stores/reset";
-import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { useProfileStore } from "../../../../helpers/gameplay-store-test";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";

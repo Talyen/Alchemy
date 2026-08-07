@@ -47,16 +47,24 @@ describe("run-session command boundary", () => {
 
   it("keeps all session write commands accessible through a single barrel", () => {
     const writePort = read("src/features/alchemy/shared/stores/run-session-write-port.ts");
-    // Core sample of every domain section to confirm it's all present.
-    expect(writePort).toContain("export function setRunDeck");
-    expect(writePort).toContain("export function setBattleState");
-    expect(writePort).toContain("export function commitBattleTransition");
-    expect(writePort).toContain("export function setShopState");
-    expect(writePort).toContain("export function setMysteryEvent");
-    expect(writePort).toContain("export function setLabyrinthMap");
-    expect(writePort).toContain("export function setRewardState");
-    expect(writePort).toContain("export function applyRunStartSnapshot");
-    expect(writePort).toContain("export function addMaterials");
+    // Core sample of every domain section to confirm it's all present. Simple
+    // forwards are bound via `bindWriteAction` (`export const`); compound writes
+    // stay `export function`.
+    const exported = (name: string) => new RegExp(`export (?:function|const) ${name}`).test(writePort);
+    for (const name of [
+      "setRunDeck",
+      "setBattleState",
+      "commitBattleTransition",
+      "setShopState",
+      "setMysteryEvent",
+      "setLabyrinthMap",
+      "setRewardState",
+      "applyRunStartSnapshot",
+      "addMaterials",
+    ]) {
+      expect(exported(name), `write-port must export ${name}`).toBe(true);
+    }
+    expect(writePort).toContain("bindWriteAction");
   });
 
   it("keeps feature-facing read ports free of aggregate actions", () => {

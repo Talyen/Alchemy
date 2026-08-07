@@ -168,3 +168,57 @@ export function resetRunNavigationSlice(): void {
 export function resetRunBattleSlice(): void {
   useRunBattleDomainStore.setState(createInitialBattleFields(), true);
 }
+
+// ---------------------------------------------------------------------------
+// Profile & gear test facades
+// ---------------------------------------------------------------------------
+// These were removed from the production store modules (they were never imported
+// by src/ — only by tests, for setup/reset and full-view reads). Kept as a thin
+// convenience here so tests can still reset and inspect those two domains.
+
+type TestProfileStore = GameplayState["profile"] & GameplayState["profileActions"];
+
+function profileStoreView(state: GameplayState): TestProfileStore {
+  return { ...state.profile, ...state.profileActions };
+}
+
+function gearStoreActions(state: GameplayState) {
+  return {
+    initialize: state.gearActions.gearInitialize,
+    addInstance: state.gearActions.gearAddInstance,
+    transferToInventory: state.gearActions.gearTransferToInventory,
+    equip: state.gearActions.gearEquip,
+    unequip: state.gearActions.gearUnequip,
+    moveBoardItem: state.gearActions.gearMoveBoardItem,
+    syncBoardPositions: state.gearActions.gearSyncBoardPositions,
+    sortBoard: state.gearActions.gearSortBoard,
+    salvage: state.gearActions.gearSalvage,
+    applyCurrency: state.gearActions.gearApplyCurrency,
+    addCurrencies: state.gearActions.gearAddCurrencies,
+    reset: state.gearActions.gearReset,
+  };
+}
+
+type TestGearStore = GameplayState["gear"] & ReturnType<typeof gearStoreActions>;
+
+function gearStoreView(state: GameplayState): TestGearStore {
+  return { ...state.gear, ...gearStoreActions(state) };
+}
+
+export const useProfileStore = createFacade<TestProfileStore>(profileStoreView, (state, next) => {
+  state.profile.discoveredCardIds = next.discoveredCardIds;
+  state.profile.encounteredEnemyIds = next.encounteredEnemyIds;
+  state.profile.discoveredTrinketIds = next.discoveredTrinketIds;
+  state.profile.completedDifficulties = next.completedDifficulties;
+  state.profile.finishedRunCharacters = next.finishedRunCharacters;
+  state.profile.collectionTab = next.collectionTab;
+  state.profile.collectionPages = next.collectionPages;
+});
+
+export const useGearStore = createFacade<TestGearStore>(gearStoreView, (state, next) => {
+  state.gear.inventories = next.inventories;
+  state.gear.loadouts = next.loadouts;
+  state.gear.boardPositionsByCharacter = next.boardPositionsByCharacter;
+  state.gear.currencyBoardPositionsByCharacter = next.currencyBoardPositionsByCharacter;
+  state.gear.craftingCurrencies = next.craftingCurrencies;
+});

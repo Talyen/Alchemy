@@ -8,7 +8,7 @@ import {
   flattenGearInventories,
   type GearInstance,
 } from "@/lib/gear";
-import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { useGearStore } from "../../../../helpers/gameplay-store-test";
 
 function knightInventories(...items: GearInstance[]) {
   const inventories = createEmptyGearInventories();

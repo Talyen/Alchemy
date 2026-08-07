@@ -10,8 +10,7 @@ import {
   getRunTransientStore,
   resetRunDomainStore,
 } from "../../../../helpers/gameplay-store-test";
-import { useProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { useGearStore, useProfileStore } from "../../../../helpers/gameplay-store-test";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-transitions";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {
