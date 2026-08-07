@@ -55,96 +55,18 @@ export interface PermanentProgressFields {
   effects: HomesteadEffectManifest;
 }
 
-/** Flat progress patch shape used by initialization helpers (not a store owner). */
-export type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
+/**
+ * Full active-run fields + initialized flag. Derived from the canonical model so
+ * adding a field flows into every committed session read and the imperative read.
+ */
+export type ActiveRunReadView = ActiveRunProgressFields & { initialized: boolean };
 
-const ACTIVE_RUN_PROGRESS_KEYS = [
-  "characterId",
-  "runDeck",
-  "runGold",
-  "runPlayerHealth",
-  "runMaxHealth",
-  "roomsEncountered",
-  "currentAct",
-  "destinationIndexInAct",
-  "completedDestinations",
-  "lastOfferedDestinations",
-  "destinationRoundsSinceOffered",
-  "runTrinkets",
-  "encounteredRunEnemyIds",
-  "selectedDifficulty",
-  "contentSystemType",
-  "rng",
-  "runTalentXP",
-  "runMaterialsEarned",
-] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
-
-/** Active-run fields shared by committed session reads (sans rng / run XP / materials). */
-const ACTIVE_RUN_SESSION_CORE_KEYS = [
-  "characterId",
-  "runDeck",
-  "runGold",
-  "runPlayerHealth",
-  "runMaxHealth",
-  "roomsEncountered",
-  "currentAct",
-  "destinationIndexInAct",
-  "completedDestinations",
-  "lastOfferedDestinations",
-  "destinationRoundsSinceOffered",
-  "runTrinkets",
-  "encounteredRunEnemyIds",
-  "selectedDifficulty",
-  "contentSystemType",
-] as const satisfies ReadonlyArray<(typeof ACTIVE_RUN_PROGRESS_KEYS)[number]>;
-
-export type ActiveRunSessionCoreFields = Pick<ActiveRunProgressFields, (typeof ACTIVE_RUN_SESSION_CORE_KEYS)[number]>;
-
-/** Shared picker for the active-run core block used by controller + session read models. */
-export function pickActiveRunSessionCoreFields(activeRun: ActiveRunProgressFields): ActiveRunSessionCoreFields {
-  const picked = {} as ActiveRunSessionCoreFields;
-  for (const key of ACTIVE_RUN_SESSION_CORE_KEYS) {
-    picked[key] = activeRun[key] as never;
-  }
-  return picked;
-}
-
-const PERMANENT_PROGRESS_KEYS = [
-  "talentXP",
-  "unlockedTalents",
-  "materialInventory",
-  "constructedBuildings",
-  "plantedFarms",
-  "completedResearch",
-  "bondedCompanions",
-  "effects",
-] as const satisfies ReadonlyArray<keyof PermanentProgressFields>;
-
-/** Apply the active-run subset of a flat progress partial onto run-domain state. */
-export function applyActiveRunProgressPartial(
-  state: { activeRun: ActiveRunProgressFields; initialized: boolean },
-  partial: Partial<RunStateFields>,
-): void {
-  for (const key of ACTIVE_RUN_PROGRESS_KEYS) {
-    if (key in partial && partial[key] !== undefined) {
-      (state.activeRun as unknown as Record<string, unknown>)[key] = partial[key];
-    }
-  }
-  if (partial.initialized !== undefined) {
-    state.initialized = partial.initialized;
-  }
-}
-
-/** Apply the permanent subset of a flat progress partial onto profile state. */
-export function applyPermanentProgressPartial(
-  profile: PermanentProgressFields,
-  partial: Partial<RunStateFields>,
-): void {
-  for (const key of PERMANENT_PROGRESS_KEYS) {
-    if (key in partial && partial[key] !== undefined) {
-      (profile as unknown as Record<string, unknown>)[key] = partial[key];
-    }
-  }
+/** Shared picker for the active-run view used by the committed read model and the run read port. */
+export function pickActiveRunView(run: {
+  activeRun: ActiveRunProgressFields;
+  initialized: boolean;
+}): ActiveRunReadView {
+  return { ...run.activeRun, initialized: run.initialized };
 }
 
 function hydrateDestinations(initialActiveRun: ActiveRunData): {

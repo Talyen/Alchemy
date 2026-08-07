@@ -8,7 +8,8 @@ import type {
   RunFlowRunPort,
   RunFlowTalentPort,
 } from "@/features/alchemy/shared/stores/run-port-types";
-import { computeTalentEffects, type KeywordId, type TalentXP, type UnlockedTalents } from "@/lib/game-data";
+import { computeTalentEffects } from "@/lib/game-data/talents";
+import type { KeywordId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import type { Destination } from "@/features/alchemy/shared/types";
 import { getRunProgressStoreView } from "./run-domain-store-test";
 

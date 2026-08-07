@@ -3,39 +3,19 @@ import type { BattleState } from "@/lib/battle";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import type { Screen } from "@/lib/routing";
 import { getRunPhase, type RunPhase } from "@/lib/routing";
-import type { RunStateFields } from "@/features/alchemy/shared/stores/run-state-init";
-import { pickActiveRunSessionCoreFields } from "@/features/alchemy/shared/stores/run-state-init";
-import type { CharacterId } from "@/lib/game-data";
+import { pickActiveRunView, type ActiveRunReadView } from "@/features/alchemy/shared/stores/run-state-init";
+import type { CharacterId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { RunSessionFields } from "./run-domain-types";
 import { readGameplayState, useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
 
-type RunSessionRunSlice = Pick<
-  RunStateFields,
-  | "characterId"
-  | "runDeck"
-  | "runGold"
-  | "runPlayerHealth"
-  | "runMaxHealth"
-  | "roomsEncountered"
-  | "currentAct"
-  | "destinationIndexInAct"
-  | "completedDestinations"
-  | "lastOfferedDestinations"
-  | "destinationRoundsSinceOffered"
-  | "runTrinkets"
-  | "encounteredRunEnemyIds"
-  | "selectedDifficulty"
-  | "contentSystemType"
-  | "rng"
-  | "talentXP"
-  | "runTalentXP"
-  | "runMaterialsEarned"
-  | "unlockedTalents"
-  | "initialized"
->;
+/** Active-run view plus the permanent talent fields joined for committed session reads. */
+type RunSessionRunSlice = ActiveRunReadView & {
+  talentXP: TalentXP;
+  unlockedTalents: UnlockedTalents;
+};
 
 type RunSessionTransientSlice = RunSessionFields;
 
@@ -71,15 +51,8 @@ export interface RunSessionNavigationSlice {
 }
 
 function pickRunSessionRunSlice(state: GameplayState): RunSessionRunSlice {
-  return {
-    ...pickActiveRunSessionCoreFields(state.run.activeRun),
-    rng: state.run.activeRun.rng,
-    talentXP: state.runProfile.talentXP,
-    runTalentXP: state.run.activeRun.runTalentXP,
-    runMaterialsEarned: state.run.activeRun.runMaterialsEarned,
-    unlockedTalents: state.runProfile.unlockedTalents,
-    initialized: state.run.initialized,
-  };
+  const { talentXP, unlockedTalents } = state.runProfile;
+  return { ...pickActiveRunView(state.run), talentXP, unlockedTalents };
 }
 
 function pickRunSessionBattleSlice(battle: {

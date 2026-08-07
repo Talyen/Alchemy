@@ -36,10 +36,13 @@ describe("run-session command boundary", () => {
   it("exports the command API as a self-contained module", () => {
     const command = read("src/features/alchemy/shared/stores/run-session-command.ts");
     expect(command).toContain("export function dispatchRunSessionCommand");
-    // Transaction logic is now inlined here rather than delegated to a separate file.
+    // Transaction logic is inlined here rather than delegated to a separate file.
     expect(command).toContain("beginGameplayTransaction");
     expect(command).toContain("commitGameplayTransaction");
-    expect(command).toContain("rollbackGameplayTransaction");
+    // The nesting depth and draft live in the store; the command owns only the
+    // failure flag and deferred effects, so it must not re-implement rollback.
+    expect(command).not.toContain("rollbackGameplayTransaction");
+    expect(command).not.toContain("transactionDepth");
   });
 
   it("keeps all session write commands accessible through a single barrel", () => {

@@ -310,23 +310,33 @@ export function readGameplayState(): GameplayState {
   return transactionAwareGet();
 }
 
-export function beginGameplayTransaction(): void {
-  if (transactionDepth === 0) transactionDraft = useGameplayStateStore.getState();
+/**
+ * Open a gameplay transaction. Returns true when this call opens the outermost
+ * (first) level of nesting; the command boundary uses that to (re)initialize its
+ * per-transaction effect list. The single depth counter lives here so the store
+ * and the command never drift on when the draft is finally published.
+ */
+export function beginGameplayTransaction(): boolean {
+  const isOuter = transactionDepth === 0;
+  if (isOuter) transactionDraft = useGameplayStateStore.getState();
   transactionDepth += 1;
+  return isOuter;
 }
 
-export function commitGameplayTransaction(): void {
+/**
+ * Close one transaction level. Returns true when this closes the outermost level
+ * and the aggregate was published (on success) or discarded (on rollback).
+ * Nested levels only decrement the depth and never publish the draft.
+ */
+export function commitGameplayTransaction(success: boolean): boolean {
   transactionDepth -= 1;
-  if (transactionDepth > 0) return;
+  if (transactionDepth > 0) return false;
   const next = transactionDraft;
   const previous = useGameplayStateStore.getState();
   transactionDraft = null;
-  if (next && next !== previous) rawSet!(next, true);
-}
-
-export function rollbackGameplayTransaction(): void {
   transactionDepth = 0;
-  transactionDraft = null;
+  if (success && next && next !== previous) rawSet!(next, true);
+  return true;
 }
 
 export function applyGameplayStateUpdate(partial: StateUpdate, replace?: boolean): void {

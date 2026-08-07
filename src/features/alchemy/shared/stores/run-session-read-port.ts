@@ -2,11 +2,12 @@
 // These contracts intentionally expose one lifetime at a time and contain no
 // command methods, so callers cannot accidentally mutate the aggregate while
 // reading it.
-import type { ActiveRunProgressFields, PermanentProgressFields } from "./run-state-init";
+import type { PermanentProgressFields } from "./run-state-init";
+import { pickActiveRunView, type ActiveRunReadView } from "./run-state-init";
 import { readGameplayState } from "./gameplay-state-store";
-import type { RunDomainBattleState, RunDomainDataState, RunSessionFields } from "./run-domain-types";
+import type { RunDomainBattleState, RunSessionFields } from "./run-domain-types";
 
-export type ActiveRunReadView = ActiveRunProgressFields & Pick<RunDomainDataState, "initialized">;
+export type { ActiveRunReadView } from "./run-state-init";
 export type RunProfileReadView = PermanentProgressFields;
 export type RunSessionReadView = RunSessionFields;
 export type BattleReadView = RunDomainBattleState;
@@ -14,8 +15,7 @@ export type BattleReadView = RunDomainBattleState;
 export type { DisplayOverrides } from "./run-domain-types";
 
 export function readActiveRun(): ActiveRunReadView {
-  const state = readGameplayState();
-  return { ...state.run.activeRun, initialized: state.run.initialized };
+  return pickActiveRunView(readGameplayState().run);
 }
 
 export function readRunProfile(): RunProfileReadView {

@@ -181,13 +181,19 @@ describe("run-state read model", () => {
     expect(nav).toContain("dispatch");
   });
 
-  it("the committed run session model shares the canonical active-run core picker", () => {
+  it("the committed run session model shares the canonical active-run view picker", () => {
     const init = read("src/features/alchemy/shared/stores/run-state-init.ts");
-    expect(init).toContain("export function pickActiveRunSessionCoreFields");
-    expect(init).toContain("const ACTIVE_RUN_SESSION_CORE_KEYS");
+    expect(init).toContain("export function pickActiveRunView");
+    // The view is derived from the canonical model, not a second hand-maintained key list.
+    expect(init).toMatch(/ActiveRunReadView = ActiveRunProgressFields/);
+    expect(init).not.toContain("const ACTIVE_RUN_SESSION_CORE_KEYS");
+
+    const readPort = read("src/features/alchemy/shared/stores/run-session-read-port.ts");
+    expect(readPort).toContain("pickActiveRunView");
 
     const model = read("src/features/alchemy/shared/stores/run-session-model.ts");
-    expect(model).toContain("pickActiveRunSessionCoreFields");
+    expect(model).toContain("pickActiveRunView");
+    expect(model).not.toContain("ActiveRunSessionCoreFields");
   });
 
   it("exposes narrow orchestration ports instead of broad React adapters", () => {
