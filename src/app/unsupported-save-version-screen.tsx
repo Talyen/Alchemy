@@ -2,12 +2,12 @@
 // Depends only on the shared Button primitive so unsupported saves cannot enter normal game UI.
 import { Button } from "@/components/ui/button";
 
-type Props = {
+interface Props {
   canQuit: boolean;
   onQuit: () => void;
   onDeleteSaveAndContinue: () => void;
   deleting?: boolean;
-};
+}
 
 export function UnsupportedSaveVersionScreen({ canQuit, onQuit, onDeleteSaveAndContinue, deleting = false }: Props) {
   return (

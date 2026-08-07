@@ -32,7 +32,7 @@ import type { BattleCard } from "@/lib/game-data";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { filterValidDestinations, type Screen } from "@/lib/routing";
-import { createInitialActiveRunFields, type ActiveRunProgressFields } from "./run-state-init";
+import { createInitialActiveRunFields, pickActiveRunFields, type ActiveRunProgressFields } from "./run-state-init";
 import type { RunSession } from "./run-session-model";
 
 export interface DecodedRunResumeSession {
@@ -56,11 +56,11 @@ export interface DecodedRunResumeSnapshot {
   session: DecodedRunResumeSession;
 }
 
-type DecodedClaimSurface = {
+interface DecodedClaimSurface {
   rewardState: RewardState | null;
   companionRewardCards: BattleCard[] | null;
   screen: Screen | null;
-};
+}
 
 /**
  * During an in-flight claim the primary choice is already applied to the deck.
@@ -265,7 +265,8 @@ type ResumeEncodeFields = Pick<
 /** Map aggregate session → snapshot source; progress fields spread once (no second ActiveRunData table). */
 function toActiveRunSnapshotSource(source: RunSession, resume: ResumeEncodeFields): ActiveRunSnapshotSource {
   const { run, session, battle } = source;
-  const { talentXP: _talentXP, unlockedTalents: _unlockedTalents, initialized: _initialized, ...progress } = run;
+  // Drop permanent talent + initialized flags from the session run slice.
+  const progress = pickActiveRunFields(run);
   return {
     ...progress,
     destinationRoundsSinceOffered: { ...progress.destinationRoundsSinceOffered },
