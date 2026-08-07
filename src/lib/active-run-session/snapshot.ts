@@ -12,11 +12,10 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
 import type { RunRngState } from "@/lib/run-rng";
 
-import type { ResumePhase } from "@/lib/validation";
+import type { InterruptedFlow } from "@/lib/validation";
 import type {
   ActiveRunData,
   LabyrinthNodePosition,
-  PersistedPendingReward,
   PersistedShopState,
   PersistedAlchemistState,
   PersistedTrinketShopState,
@@ -52,9 +51,7 @@ export interface ActiveRunSnapshotSource {
   runTalentXP: TalentXP;
   runMaterialsEarned: MaterialInventory;
   currentScreen: Screen | null;
-  destinationChoices: string[];
-  pendingReward: PersistedPendingReward | null;
-  resumePhase?: ResumePhase;
+  interruptedFlow: InterruptedFlow;
   shopState: PersistedShopState | null;
   alchemistState: PersistedAlchemistState | null;
   trinketShopState: PersistedTrinketShopState | null;
@@ -97,9 +94,7 @@ export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): Active
     runTalentXP: source.runTalentXP,
     runMaterialsEarned: source.runMaterialsEarned,
     currentScreen: source.currentScreen,
-    destinationChoices: source.destinationChoices,
-    pendingReward: source.pendingReward,
-    resumePhase: source.resumePhase ?? "none",
+    interruptedFlow: source.interruptedFlow,
     shopState: source.shopState,
     alchemistState: source.alchemistState,
     trinketShopState: source.trinketShopState,

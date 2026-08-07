@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
-import { injectSaveState, seedRandom } from "./helpers";
+import { injectSaveState, destinationInterruptedFlow, seedRandom } from "./helpers";
 import { DestinationPage } from "./pages/destination-page";
 import { MysteryPage } from "./pages/mystery-page";
 import { CorruptionPage } from "./pages/corruption-page";
@@ -16,7 +16,7 @@ test.describe("Destination Progression", () => {
       destinationIndexInAct: 0,
       completedDestinations: [],
       currentScreen: "destination",
-      destinationChoices: ["Normal Combat", "Campfire", "Mystery"],
+      interruptedFlow: destinationInterruptedFlow(["Normal Combat", "Campfire", "Mystery"]),
     });
     await page.goto("/");
 
@@ -35,7 +35,7 @@ test.describe("Destination Progression", () => {
       destinationIndexInAct: 1,
       completedDestinations: ["Normal Combat"],
       currentScreen: "destination",
-      destinationChoices: ["Campfire", "Mystery", "Merchant's Shop"],
+      interruptedFlow: destinationInterruptedFlow(["Campfire", "Mystery", "Merchant's Shop"]),
     });
     await page.goto("/");
 
@@ -53,7 +53,7 @@ test.describe("Destination Progression", () => {
       destinationIndexInAct: 4,
       completedDestinations: ["Normal Combat", "Normal Combat", "Normal Combat", "Campfire"],
       currentScreen: "destination",
-      destinationChoices: ["Boss Combat"],
+      interruptedFlow: destinationInterruptedFlow(["Boss Combat"]),
     });
     await page.goto("/");
 
@@ -160,7 +160,7 @@ async function startAtDestination(
     destinationIndexInAct: 0,
     completedDestinations: [],
     currentScreen: "destination",
-    destinationChoices: choices,
+    interruptedFlow: destinationInterruptedFlow(choices),
     ...overrides,
   });
   await page.goto("/");

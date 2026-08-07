@@ -55,17 +55,18 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 
 ### Persistence API
 
-| API                                    | Role                                                 |
-| -------------------------------------- | ---------------------------------------------------- |
-| `createActiveRunSnapshot(source)`      | Serialize explicit fields → `ActiveRunData` (lib)    |
-| `encodeRunResumeSnapshot(source)`      | Translate aggregate run fields → `ActiveRunData`     |
-| `decodeRunResumeSnapshot(data)`        | Translate `ActiveRunData` → aggregate session fields |
-| `snapshotRun(screen?)`                 | Read aggregate run state through the codec           |
-| `restoreRun(…)`                        | Apply the decoded snapshot on boot/resume            |
-| `parseActiveRun(raw)`                  | Validate JSON before hydrate                         |
-| `activeCombat.pendingBattleTransition` | Resume an interrupted enemy-turn continuation        |
-| Domain persistence codecs              | Own defaults, encode, hydrate, and subscriptions     |
-| Persistence coordinator                | Compose domain fields into the versioned envelope    |
+| API                                    | Role                                                                                           |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `createActiveRunSnapshot(source)`      | Sole field→`ActiveRunData` assembler (content-system nulling + `activeCombat`)                 |
+| `encodeRunResumeSnapshot(source)`      | Resume semantics (screen, interrupted flow, shops) then snapshot via `ActiveRunSnapshotSource` |
+| `decodeRunResumeSnapshot(data)`        | Translate `ActiveRunData` → aggregate session fields                                           |
+| `snapshotRun(screen?)`                 | Read aggregate run state through the codec                                                     |
+| `restoreRun(…)`                        | Apply the decoded snapshot on boot/resume (incl. trinket-manifest repair)                      |
+| `parseActiveRun(raw)`                  | Validate JSON before hydrate                                                                   |
+| `PersistedBattleStateSchema`           | Single BattleState wire parse + default merge                                                  |
+| `activeCombat.pendingBattleTransition` | Resume an interrupted enemy-turn continuation                                                  |
+| Domain persistence codecs              | Own defaults, encode, hydrate, and subscriptions                                               |
+| Persistence coordinator                | Compose domain fields into the versioned envelope                                              |
 
 ### Session capability ports
 

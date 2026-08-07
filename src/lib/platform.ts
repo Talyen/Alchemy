@@ -97,15 +97,17 @@ export const platform = {
       const desktop = getDesktopApi();
       if (desktop?.isDesktop) {
         try {
-          const ok = await desktop.clearSave();
-          if (!ok) {
-            return { ok: false, error: new Error("Failed to clear desktop save file") };
-          }
+          // Cloud first so a failed mirror delete leaves local candidates intact for retry.
+          // clearSave must remove primary + bak ring; load walks those as candidates.
           if (platform.cloud.isAvailable) {
             const cloudOk = await platform.cloud.delete(DESKTOP_SAVE_FILENAME);
             if (!cloudOk) {
-              console.warn("Steam Cloud delete failed, save may remain in cloud");
+              return { ok: false, error: new Error("Failed to clear Steam Cloud save") };
             }
+          }
+          const ok = await desktop.clearSave();
+          if (!ok) {
+            return { ok: false, error: new Error("Failed to clear desktop save file") };
           }
           return { ok: true };
         } catch (error) {

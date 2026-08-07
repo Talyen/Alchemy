@@ -194,3 +194,55 @@ describe("platform.cloud", () => {
     expect(result).toBe(false);
   });
 });
+
+describe("platform.storage.removeLocal", () => {
+  it("clears desktop local only when Steam Cloud is unavailable", async () => {
+    const clearSave = vi.fn(() => Promise.resolve(true));
+    const steamCloudDelete = vi.fn(() => Promise.resolve(true));
+    (window as any).alchemyDesktop = { isDesktop: true, clearSave, steamCloudDelete };
+    const { platform } = await import("@/lib/platform");
+    expect(platform.cloud.isAvailable).toBe(false);
+
+    const result = await platform.storage.removeLocal("alchemy-save");
+    expect(result.ok).toBe(true);
+    expect(clearSave).toHaveBeenCalledOnce();
+    expect(steamCloudDelete).not.toHaveBeenCalled();
+  });
+
+  it("deletes Steam Cloud before local clear when cloud is available", async () => {
+    const callOrder: string[] = [];
+    const clearSave = vi.fn(async () => {
+      callOrder.push("local");
+      return true;
+    });
+    const steamCloudDelete = vi.fn(async () => {
+      callOrder.push("cloud");
+      return true;
+    });
+    const steamGetName = vi.fn(() => Promise.resolve("PlayerOne"));
+    (window as any).alchemyDesktop = { isDesktop: true, clearSave, steamCloudDelete, steamGetName };
+    const { platform } = await import("@/lib/platform");
+    await platform.steam.init();
+
+    const result = await platform.storage.removeLocal("alchemy-save");
+    expect(result.ok).toBe(true);
+    expect(callOrder).toEqual(["cloud", "local"]);
+  });
+
+  it("fails closed when Steam Cloud delete fails without clearing local", async () => {
+    const clearSave = vi.fn(() => Promise.resolve(true));
+    const steamCloudDelete = vi.fn(() => Promise.resolve(false));
+    const steamGetName = vi.fn(() => Promise.resolve("PlayerOne"));
+    (window as any).alchemyDesktop = { isDesktop: true, clearSave, steamCloudDelete, steamGetName };
+    const { platform } = await import("@/lib/platform");
+    await platform.steam.init();
+
+    const result = await platform.storage.removeLocal("alchemy-save");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(String(result.error)).toMatch(/Steam Cloud/i);
+    }
+    expect(steamCloudDelete).toHaveBeenCalledOnce();
+    expect(clearSave).not.toHaveBeenCalled();
+  });
+});

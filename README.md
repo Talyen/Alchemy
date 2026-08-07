@@ -77,7 +77,7 @@ npm run test:e2e
 | E2E critical    | `npm run test:e2e:prepush:full` | CI critical Playwright suite                                           |
 | E2E full        | `npm run test:e2e:full`         | Broader Playwright suite in CI/nightly/release                         |
 
-For a comprehensive local pre-push check, use `npm run check:push:full`. The default hook stays lean; CI is the authoritative full gate.
+For fuller local static+unit (`lint:ci` + Vitest + build) with the same `@prepush` E2E canary, use `npm run check:push:full`. It is not CI E2E parity — use `npm run test:e2e:prepush:full` for that. The default hook stays lean; CI is the authoritative full gate.
 
 CI runs formatting, linting, unit tests, production build, and the critical Playwright suite. Path-specific tests and CI parity: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 

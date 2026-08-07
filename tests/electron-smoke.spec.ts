@@ -46,6 +46,38 @@ test.describe("Electron desktop integration", { ...desktop, ...smoke }, () => {
     }
   });
 
+  test("clearSave removes primary save and bak ring candidates", async () => {
+    const electronApp = await launchElectronApp();
+
+    try {
+      const window = await getElectronMainWindow(electronApp);
+      const errors = failOnRuntimeErrors(window);
+
+      await window.evaluate(async () => {
+        const desktop = window.alchemyDesktop;
+        if (!desktop) throw new Error("desktop bridge missing");
+        await desktop.clearSave();
+        // Four writes rotate primary into bak.1–3 so clear must wipe the full ring.
+        for (let i = 0; i < 4; i += 1) {
+          const ok = await desktop.writeSave(JSON.stringify({ marker: `bak-ring-${i}`, lastSavedAt: i }));
+          if (!ok) throw new Error(`writeSave failed at ${i}`);
+        }
+      });
+
+      const beforeClear = await window.evaluate(async () => (await window.alchemyDesktop?.listSaveCandidates()) ?? []);
+      expect(beforeClear.length).toBeGreaterThan(1);
+
+      const cleared = await window.evaluate(async () => window.alchemyDesktop?.clearSave() ?? false);
+      expect(cleared).toBe(true);
+
+      const afterClear = await window.evaluate(async () => (await window.alchemyDesktop?.listSaveCandidates()) ?? []);
+      expect(afterClear).toEqual([]);
+      expect(errors).toEqual([]);
+    } finally {
+      await electronApp.close();
+    }
+  });
+
   test("setDisplayMode resolves without error", async () => {
     const electronApp = await launchElectronApp();
 

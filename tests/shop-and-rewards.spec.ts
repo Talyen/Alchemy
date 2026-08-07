@@ -5,6 +5,7 @@ import { RewardPage } from "./pages/reward-page";
 import { DestinationPage } from "./pages/destination-page";
 import {
   injectSaveState,
+  primaryRewardInterruptedFlow,
   makeHighDamageCard,
   SAVE_KEY,
   skipBattleAndClaimReward,
@@ -146,7 +147,7 @@ test.describe("Reward Flow", () => {
       await injectSaveState(page, {
         runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
         currentScreen: "rewards",
-        pendingReward: {
+        interruptedFlow: primaryRewardInterruptedFlow({
           rewardType: "trinket",
           choiceIds: ["tattered-pages", "companions-collar"],
           selectedId: null,
@@ -156,7 +157,7 @@ test.describe("Reward Flow", () => {
           selectedBossId: null,
           lastVictoryEnemyType: "normal",
           lastVictoryContentSystem: "campaign",
-        },
+        }),
       });
       await page.goto("/");
 
@@ -182,7 +183,7 @@ test.describe("Reward Flow", () => {
     await injectSaveState(page, {
       runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
       currentScreen: "rewards",
-      pendingReward: {
+      interruptedFlow: primaryRewardInterruptedFlow({
         rewardType: "gear",
         gearChoices: [{ instanceId: "reward-gear", definitionId: "leather-armor-basic", affixes: [] }],
         selectedId: null,
@@ -192,7 +193,7 @@ test.describe("Reward Flow", () => {
         selectedBossId: null,
         lastVictoryEnemyType: "normal",
         lastVictoryContentSystem: "campaign",
-      },
+      }),
     });
     await page.goto("/");
 
@@ -218,7 +219,7 @@ test.describe("Reward Flow", () => {
     await injectSaveState(page, {
       runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
       currentScreen: "rewards",
-      pendingReward: {
+      interruptedFlow: primaryRewardInterruptedFlow({
         rewardType: "trinket",
         choiceIds: ["tattered-pages", "companions-collar"],
         selectedId: null,
@@ -228,7 +229,7 @@ test.describe("Reward Flow", () => {
         selectedBossId: null,
         lastVictoryEnemyType: "normal",
         lastVictoryContentSystem: "campaign",
-      },
+      }),
     });
     await page.goto("/");
 
@@ -241,7 +242,8 @@ test.describe("Reward Flow", () => {
         const save = await page.evaluate((saveKey) => {
           return JSON.parse(localStorage.getItem(saveKey) || "{}");
         }, SAVE_KEY);
-        return save.activeRun?.pendingReward?.selectedId;
+        const flow = save.activeRun?.interruptedFlow;
+        return flow?.kind === "primary-reward" ? flow.pending?.selectedId : null;
       })
       .not.toBeNull();
 

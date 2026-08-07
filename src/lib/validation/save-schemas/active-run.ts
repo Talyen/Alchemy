@@ -1,15 +1,12 @@
 // Active run and mid-combat persistence schemas.
 import { z } from "zod";
-import { type BattleState } from "@/lib/battle";
-import { computeTrinketManifest, isDefaultTrinketManifest } from "@/lib/trinkets";
-import { isPersistedBattleState } from "../battle-state-guard";
-import { normalizePersistedBattleState } from "../normalize-persisted-battle-state";
 import { ROUTE_SCREEN_VALUES } from "@/lib/routing";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
 import { WILDWOOD_BOSS_IDS } from "@/lib/content-systems/wildwood/bosses";
 import { sanitizeEncounterTraitIds } from "@/lib/content-systems/encounter-traits";
 import { normalizeActiveRunData } from "../normalize-active-run-data";
 import { GearInstanceArraySchema, GearInstanceSchema, normalizeGearInstanceArray } from "./gear-schemas";
+import { PersistedBattleStateSchema } from "./persisted-battle-state";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import {
   deduplicatedStringArraySchema,
@@ -46,7 +43,7 @@ const PersistedBattleTransitionSchema = z
   .union([
     z.object({
       kind: z.literal("enemy-turn"),
-      resultState: z.custom<BattleState>(isPersistedBattleState),
+      resultState: PersistedBattleStateSchema,
       playerTurnSkipped: z.boolean(),
     }),
     z.object({ kind: z.literal("continue-end-turn") }),
@@ -59,24 +56,10 @@ const PersistedBattleTransitionSchema = z
 
 const ActiveCombatDataSchema = z
   .object({
-    battleState: z.custom<BattleState>(isPersistedBattleState),
+    battleState: PersistedBattleStateSchema,
     pendingBattleTransition: PersistedBattleTransitionSchema,
     activeLabyrinthModifiers: EncounterCombatTraitArraySchema,
     activeLabyrinthRewardModifiers: EncounterRewardTraitArraySchema,
-  })
-  .transform((data) => {
-    const pendingBattleTransition =
-      data.pendingBattleTransition?.kind === "enemy-turn"
-        ? {
-            ...data.pendingBattleTransition,
-            resultState: normalizePersistedBattleState(data.pendingBattleTransition.resultState),
-          }
-        : data.pendingBattleTransition;
-    return {
-      ...data,
-      battleState: normalizePersistedBattleState(data.battleState),
-      pendingBattleTransition,
-    };
   })
   .nullable()
   .catch(null);
@@ -179,12 +162,27 @@ const PersistedPendingRewardUnionSchema = z.discriminatedUnion("rewardType", [
   }),
 ]);
 
-const PersistedPendingRewardSchema = PersistedPendingRewardUnionSchema.nullable().catch(null);
-
-const ResumePhaseSchema = z.enum(["primary-reward", "companion-reward", "destination", "none"]);
-export type ResumePhase = z.infer<typeof ResumePhaseSchema>;
-
 export type PersistedPendingReward = z.infer<typeof PersistedPendingRewardUnionSchema>;
+
+const InterruptedFlowDestinationSchema = z.object({
+  kind: z.literal("destination"),
+  destinations: DestinationArraySchema,
+  selectedBossId: z.string().nullable().catch(null),
+  lastVictoryEnemyType: z.string().nullable().catch(null),
+  lastVictoryContentSystem: ContentSystemIdSchema.nullable().catch(null),
+});
+
+const InterruptedFlowSchema = z
+  .discriminatedUnion("kind", [
+    z.object({ kind: z.literal("none") }),
+    z.object({ kind: z.literal("primary-reward"), pending: PersistedPendingRewardUnionSchema }),
+    z.object({ kind: z.literal("companion-reward"), pending: PersistedPendingRewardUnionSchema }),
+    InterruptedFlowDestinationSchema,
+  ])
+  .catch({ kind: "none" })
+  .default({ kind: "none" });
+
+export type InterruptedFlow = z.infer<typeof InterruptedFlowSchema>;
 
 // ===== ActiveRunData =====
 // normalizeActiveRunData lives in ./normalize-active-run-data.ts — imported above.
@@ -215,30 +213,13 @@ export const ActiveRunDataSchema = z
     runTalentXP: TalentXPSchema.default({}),
     runMaterialsEarned: MaterialInventorySchema.default(emptyInventory()),
     currentScreen: z.enum(ROUTE_SCREEN_VALUES).nullable().catch(null).default(null),
-    destinationChoices: DestinationArraySchema.default([]),
-    pendingReward: PersistedPendingRewardSchema.catch(null).default(null),
-    resumePhase: ResumePhaseSchema.catch("none").default("none"),
+    interruptedFlow: InterruptedFlowSchema,
     shopState: ShopPersistSchema.default(null),
     alchemistState: AlchemistPersistSchema.default(null),
     trinketShopState: TrinketShopPersistSchema.default(null),
     equipmentShopState: EquipmentShopPersistSchema.default(null),
   })
   .transform((data) => normalizeActiveRunData(data))
-  .transform((data) => {
-    if (!data.activeCombat?.battleState || data.runTrinkets.length === 0) return data;
-    const battleState = data.activeCombat.battleState;
-    if (!isDefaultTrinketManifest(battleState.trinketEffects)) return data;
-    return {
-      ...data,
-      activeCombat: {
-        ...data.activeCombat,
-        battleState: {
-          ...battleState,
-          trinketEffects: computeTrinketManifest(data.runTrinkets),
-        },
-      },
-    };
-  })
   .refine((data) => data.contentSystemType !== "labyrinth" || data.labyrinthMap !== null, {
     message: "Labyrinth runs require a valid labyrinth map",
   })

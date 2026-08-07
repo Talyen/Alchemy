@@ -7,7 +7,7 @@ import { RewardPage } from "../pages/reward-page";
 import { STARTING_DECK } from "./cards";
 import { resumeCampaignRun } from "./navigation";
 import { seedRandom } from "./rng";
-import { injectSaveState } from "./save-injection";
+import { injectSaveState, destinationInterruptedFlow } from "./save-injection";
 import type { DestinationName } from "./types";
 import { completeRunEndToMenu } from "./run-end";
 
@@ -29,7 +29,7 @@ export async function startAtDestination(
     runDeck: STARTING_DECK,
     ...overrides,
     ...(options.forceDestination
-      ? { currentScreen: "destination", destinationChoices: [options.forceDestination] }
+      ? { currentScreen: "destination", interruptedFlow: destinationInterruptedFlow([options.forceDestination]) }
       : {}),
   });
   await page.goto("/");
@@ -54,7 +54,7 @@ export async function startBattleWithDeck(
     runPlayerHealth: 30,
     runMaxHealth: 30,
     currentScreen: "destination",
-    destinationChoices: ["Normal Combat"],
+    interruptedFlow: destinationInterruptedFlow(["Normal Combat"]),
     ...overrides,
   });
   await page.goto("/");

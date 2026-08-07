@@ -3,7 +3,8 @@
 import { defaultBattleState, type BattleState } from "@/lib/battle";
 import { sanitizePersistedEnemyTraits } from "@/lib/content-systems/encounter-traits";
 
-export function normalizePersistedBattleState(saved: BattleState): BattleState {
+/** Wire input may omit fields that defaults fill; cast is intentional at the persistence boundary. */
+export function normalizePersistedBattleState(saved: Partial<BattleState>): BattleState {
   const defaults = defaultBattleState();
   return {
     ...defaults,
@@ -12,8 +13,9 @@ export function normalizePersistedBattleState(saved: BattleState): BattleState {
     gearEffects: { ...defaults.gearEffects, ...saved.gearEffects },
     flags: { ...defaults.flags, ...saved.flags },
     currentEnemy: {
+      ...defaults.currentEnemy,
       ...saved.currentEnemy,
-      traits: sanitizePersistedEnemyTraits(Array.isArray(saved.currentEnemy.traits) ? saved.currentEnemy.traits : []),
+      traits: sanitizePersistedEnemyTraits(Array.isArray(saved.currentEnemy?.traits) ? saved.currentEnemy.traits : []),
     },
   };
 }

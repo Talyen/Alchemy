@@ -16,8 +16,10 @@ import {
   serializeShopState,
   serializeTrinketShopState,
   type ActiveRunData,
+  type ActiveRunSnapshotSource,
   type AlchemistState,
   type EquipmentShopState,
+  type InterruptedFlow,
   type LabyrinthNodePosition,
   type PersistedBattleTransition,
   type PersistedPendingReward,
@@ -25,7 +27,6 @@ import {
   type ShopState,
   type TrinketShopState,
 } from "@/lib/active-run-session";
-import type { ResumePhase } from "@/lib/validation";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
@@ -54,6 +55,12 @@ export interface DecodedRunResumeSnapshot {
   pendingBattleTransition: PersistedBattleTransition | null;
   session: DecodedRunResumeSession;
 }
+
+type DecodedClaimSurface = {
+  rewardState: RewardState | null;
+  companionRewardCards: BattleCard[] | null;
+  screen: Screen | null;
+};
 
 /**
  * During an in-flight claim the primary choice is already applied to the deck.
@@ -102,26 +109,52 @@ function resolveEncodeScreen(
   return requested;
 }
 
-function encodeResumePhase(session: RunSession["session"], currentScreen: Screen | null | undefined): ResumePhase {
+function encodeDestinationFlow(session: RunSession["session"]): InterruptedFlow {
+  return {
+    kind: "destination",
+    destinations: [...session.rewardState.destinations],
+    selectedBossId: session.rewardState.selectedBossId,
+    lastVictoryEnemyType: session.rewardState.lastVictoryEnemyType,
+    lastVictoryContentSystem: session.rewardState.lastVictoryContentSystem,
+  };
+}
+
+function encodeInterruptedFlow(
+  session: RunSession["session"],
+  currentScreen: Screen | null | undefined,
+): InterruptedFlow {
   if (session.rewardClaimInFlight) {
-    if (session.companionRewardCards?.length) return "companion-reward";
+    if (session.companionRewardCards?.length) {
+      const pending = encodeMidClaimPendingReward(session);
+      return pending ? { kind: "companion-reward", pending } : { kind: "none" };
+    }
     // Match resolveEncodeScreen: post-claim destination / hollow rewards need destination phase.
     if (session.rewardState.destinations.length > 0 || currentScreen === "destination" || currentScreen === "rewards") {
-      return "destination";
+      return encodeDestinationFlow(session);
     }
-    return "none";
+    return { kind: "none" };
   }
 
   if (currentScreen === "rewards" && session.rewardState.choices.length > 0) {
-    return "primary-reward";
+    const pending = serializePendingReward(session.rewardState, session.companionRewardCards);
+    return pending ? { kind: "primary-reward", pending } : { kind: "none" };
   }
 
   // Destination phase: destination screen, or rewards with no primary/companion choices left.
   if (currentScreen === "destination" || (currentScreen === "rewards" && session.rewardState.choices.length === 0)) {
-    return "destination";
+    return encodeDestinationFlow(session);
   }
 
-  return "none";
+  // Non-claim screens can still carry an in-progress reward payload (e.g. snapshot parity).
+  const pending = serializePendingReward(session.rewardState, session.companionRewardCards);
+  if (pending && session.companionRewardCards?.length) {
+    return { kind: "companion-reward", pending };
+  }
+  if (pending && session.rewardState.choices.length > 0) {
+    return { kind: "primary-reward", pending };
+  }
+
+  return { kind: "none" };
 }
 
 function resolveDestinationExitScreen(activeRun: ActiveRunData): Screen {
@@ -136,16 +169,14 @@ function resolveDestinationExitScreen(activeRun: ActiveRunData): Screen {
   return "destination";
 }
 
-function restoreCompanionHandoff(
-  activeRun: ActiveRunData,
-  restored: ReturnType<typeof restorePendingRewardBundle>,
-): { rewardState: RewardState | null; companionRewardCards: BattleCard[] | null; screen: Screen | null } {
+function restoreCompanionHandoff(currentScreen: Screen | null, pending: PersistedPendingReward): DecodedClaimSurface {
+  const restored = restorePendingRewardBundle(pending);
   let { rewardState, companionRewardCards } = restored;
-  let screen = activeRun.currentScreen;
+  let screen = currentScreen;
 
   if (companionRewardCards?.length && (!rewardState || rewardState.choices.length === 0)) {
     rewardState = {
-      ...(rewardState ?? createEmptyRewardState(filterValidDestinations(activeRun.pendingReward!.destinations))),
+      ...(rewardState ?? createEmptyRewardState(filterValidDestinations(pending.destinations))),
       rewardType: "card",
       choices: companionRewardCards,
       selectedId: null,
@@ -159,90 +190,62 @@ function restoreCompanionHandoff(
   return { rewardState, companionRewardCards, screen };
 }
 
-function restorePrimaryPendingReward(activeRun: ActiveRunData): {
-  rewardState: RewardState | null;
-  companionRewardCards: BattleCard[] | null;
-  screen: Screen | null;
-} {
-  if (!activeRun.pendingReward) {
-    return { rewardState: null, companionRewardCards: null, screen: activeRun.currentScreen };
-  }
-  const restored = restorePendingRewardBundle(activeRun.pendingReward);
+function restorePrimaryPendingReward(
+  currentScreen: Screen | null,
+  pending: PersistedPendingReward,
+): DecodedClaimSurface {
+  const restored = restorePendingRewardBundle(pending);
   const companionRewardCards = restored.companionRewardCards;
   let rewardState = restored.rewardState;
-  let screen = activeRun.currentScreen;
-  if (!rewardState && activeRun.pendingReward.destinations.length > 0) {
-    rewardState = createEmptyRewardState(filterValidDestinations(activeRun.pendingReward.destinations));
+  let screen = currentScreen;
+  if (!rewardState && pending.destinations.length > 0) {
+    rewardState = createEmptyRewardState(filterValidDestinations(pending.destinations));
     screen = "destination";
   }
   return { rewardState, companionRewardCards, screen };
 }
 
-function restoreDestinationPhase(activeRun: ActiveRunData): {
-  rewardState: RewardState | null;
-  screen: Screen | null;
-} {
-  if (activeRun.currentScreen === "rewards" && !activeRun.pendingReward) {
+function restoreDestinationFlow(
+  activeRun: ActiveRunData,
+  flow: Extract<InterruptedFlow, { kind: "destination" }>,
+): DecodedClaimSurface {
+  const destinations = filterValidDestinations(flow.destinations);
+  if (destinations.length === 0) {
     const screen = resolveDestinationExitScreen(activeRun);
-    return {
-      screen,
-      rewardState: screen === "destination" ? createEmptyRewardState() : null,
-    };
+    if (screen !== "destination") {
+      return { rewardState: null, companionRewardCards: null, screen };
+    }
   }
-  const destinations = filterValidDestinations(
-    activeRun.destinationChoices.length > 0
-      ? activeRun.destinationChoices
-      : (activeRun.pendingReward?.destinations ?? []),
-  );
+
   return {
-    rewardState: createEmptyRewardState(destinations.length > 0 ? destinations : undefined),
+    rewardState: {
+      ...createEmptyRewardState(destinations.length > 0 ? destinations : undefined),
+      selectedBossId: flow.selectedBossId,
+      lastVictoryEnemyType: flow.lastVictoryEnemyType,
+      lastVictoryContentSystem: flow.lastVictoryContentSystem,
+    },
+    companionRewardCards: null,
     screen: "destination",
   };
 }
 
-/**
- * Infer claim surface when resumePhase is missing/defaulted to none (pre-field saves).
- * Prefer explicit resumePhase when present.
- */
-function inferResumeFromLegacySignals(activeRun: ActiveRunData): {
-  rewardState: RewardState | null;
-  companionRewardCards: BattleCard[] | null;
-  screen: Screen | null;
-} {
-  if (activeRun.currentScreen === "destination" && activeRun.destinationChoices.length > 0) {
-    return {
-      rewardState: createEmptyRewardState(filterValidDestinations(activeRun.destinationChoices)),
-      companionRewardCards: null,
-      screen: activeRun.currentScreen,
-    };
-  }
-
-  if (activeRun.pendingReward) {
-    const handoff = restoreCompanionHandoff(activeRun, restorePendingRewardBundle(activeRun.pendingReward));
-    if (handoff.rewardState || handoff.companionRewardCards) {
-      return handoff;
+function decodeInterruptedFlow(activeRun: ActiveRunData): DecodedClaimSurface {
+  const flow = activeRun.interruptedFlow;
+  switch (flow.kind) {
+    case "companion-reward":
+      return restoreCompanionHandoff(activeRun.currentScreen, flow.pending);
+    case "primary-reward":
+      return restorePrimaryPendingReward(activeRun.currentScreen, flow.pending);
+    case "destination":
+      return restoreDestinationFlow(activeRun, flow);
+    case "none":
+      return { rewardState: null, companionRewardCards: null, screen: activeRun.currentScreen };
+    default: {
+      const _exhaustive: never = flow;
+      void _exhaustive;
+      return { rewardState: null, companionRewardCards: null, screen: activeRun.currentScreen };
     }
-    return restorePrimaryPendingReward(activeRun);
   }
-
-  if (activeRun.currentScreen === "rewards" && activeRun.destinationChoices.length > 0) {
-    return {
-      rewardState: createEmptyRewardState(filterValidDestinations(activeRun.destinationChoices)),
-      companionRewardCards: null,
-      screen: "destination",
-    };
-  }
-
-  if (activeRun.currentScreen === "rewards") {
-    const screen = resolveDestinationExitScreen(activeRun);
-    return {
-      rewardState: screen === "destination" ? createEmptyRewardState() : null,
-      companionRewardCards: null,
-      screen,
-    };
-  }
-
-  return { rewardState: null, companionRewardCards: null, screen: activeRun.currentScreen };
 }
 
 function resolvePendingBattleTransition(activeRun: ActiveRunData): PersistedBattleTransition | null {
@@ -254,33 +257,18 @@ function resolvePendingBattleTransition(activeRun: ActiveRunData): PersistedBatt
   return null;
 }
 
-/** Encode one aggregate run read model for both autosave and explicit save flows. */
-export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
-  const { run, session, battle } = source;
-  const requestedScreen = screen ?? source.screen;
-  const currentScreen = resolveEncodeScreen(requestedScreen, session) ?? requestedScreen;
-  const pendingReward = session.rewardClaimInFlight
-    ? encodeMidClaimPendingReward(session)
-    : serializePendingReward(session.rewardState, session.companionRewardCards);
-  const resumePhase = encodeResumePhase(session, currentScreen);
+type ResumeEncodeFields = Pick<
+  ActiveRunSnapshotSource,
+  "currentScreen" | "interruptedFlow" | "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState"
+>;
 
-  return createActiveRunSnapshot({
-    characterId: run.characterId,
-    runDeck: run.runDeck,
-    runGold: run.runGold,
-    runPlayerHealth: run.runPlayerHealth,
-    runMaxHealth: run.runMaxHealth,
-    roomsEncountered: run.roomsEncountered,
-    currentAct: run.currentAct,
-    destinationIndexInAct: run.destinationIndexInAct,
-    completedDestinations: run.completedDestinations,
-    lastOfferedDestinations: run.lastOfferedDestinations,
-    destinationRoundsSinceOffered: { ...run.destinationRoundsSinceOffered },
-    runTrinkets: run.runTrinkets,
-    encounteredRunEnemyIds: run.encounteredRunEnemyIds,
-    selectedDifficulty: run.selectedDifficulty,
-    contentSystemType: run.contentSystemType,
-    rng: run.rng,
+/** Map aggregate session → snapshot source; progress fields spread once (no second ActiveRunData table). */
+function toActiveRunSnapshotSource(source: RunSession, resume: ResumeEncodeFields): ActiveRunSnapshotSource {
+  const { run, session, battle } = source;
+  const { talentXP: _talentXP, unlockedTalents: _unlockedTalents, initialized: _initialized, ...progress } = run;
+  return {
+    ...progress,
+    destinationRoundsSinceOffered: { ...progress.destinationRoundsSinceOffered },
     labyrinthMap: session.labyrinthMap,
     hasActiveBattle: battle.hasActiveBattle,
     battleState: battle.battleState,
@@ -289,12 +277,15 @@ export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): Ac
     wildwoodDraft: session.wildwoodDraft,
     activeLabyrinthModifiers: session.activeLabyrinthModifiers,
     activeLabyrinthRewardModifiers: session.activeLabyrinthRewardModifiers,
-    runTalentXP: run.runTalentXP,
-    runMaterialsEarned: run.runMaterialsEarned,
-    currentScreen,
-    destinationChoices: session.rewardState.destinations,
-    pendingReward,
-    resumePhase,
+    ...resume,
+  };
+}
+
+function encodePersistedShops(
+  session: RunSession["session"],
+  currentScreen: Screen | null | undefined,
+): Pick<ResumeEncodeFields, "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState"> {
+  return {
     shopState:
       currentScreen === "shop" || session.shopState.cards.length > 0 ? serializeShopState(session.shopState) : null,
     alchemistState:
@@ -309,7 +300,20 @@ export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): Ac
       currentScreen === "equipment-shop" || session.equipmentShopState.gear.length > 0
         ? serializeEquipmentShopState(session.equipmentShopState)
         : null,
-  });
+  };
+}
+
+/** Encode one aggregate run read model for both autosave and explicit save flows. */
+export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
+  const requestedScreen = screen ?? source.screen;
+  const currentScreen = resolveEncodeScreen(requestedScreen, source.session) ?? requestedScreen;
+  return createActiveRunSnapshot(
+    toActiveRunSnapshotSource(source, {
+      currentScreen,
+      interruptedFlow: encodeInterruptedFlow(source.session, currentScreen),
+      ...encodePersistedShops(source.session, currentScreen),
+    }),
+  );
 }
 
 /** Decode persisted resume data into the aggregate session fields. */
@@ -327,30 +331,11 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
     );
   }
 
-  const resumePhase = activeRun.resumePhase;
-
-  if (resumePhase === "companion-reward" && activeRun.pendingReward) {
-    const handoff = restoreCompanionHandoff(activeRun, restorePendingRewardBundle(activeRun.pendingReward));
-    rewardState = handoff.rewardState;
-    companionRewardCards = handoff.companionRewardCards;
-    screen = handoff.screen;
-  } else if (resumePhase === "destination") {
-    const destination = restoreDestinationPhase(activeRun);
-    rewardState = destination.rewardState;
-    screen = destination.screen;
-  } else if (resumePhase === "primary-reward" && activeRun.pendingReward) {
-    const primary = restorePrimaryPendingReward(activeRun);
-    rewardState = primary.rewardState;
-    companionRewardCards = primary.companionRewardCards;
-    screen = primary.screen;
-  } else if (resumePhase === "none") {
-    // Pre-resumePhase saves and mid-flight gaps: infer from screen / pendingReward signals.
-    const inferred = inferResumeFromLegacySignals(activeRun);
-    if (inferred.rewardState || inferred.companionRewardCards || inferred.screen !== activeRun.currentScreen) {
-      rewardState = inferred.rewardState ?? rewardState;
-      companionRewardCards = inferred.companionRewardCards;
-      screen = inferred.screen;
-    }
+  if (activeRun.interruptedFlow.kind !== "none") {
+    const claim = decodeInterruptedFlow(activeRun);
+    rewardState = claim.rewardState;
+    companionRewardCards = claim.companionRewardCards;
+    screen = claim.screen;
   }
 
   return {

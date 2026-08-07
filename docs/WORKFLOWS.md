@@ -50,10 +50,10 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 
 ## Change mid-run resume (`ActiveRunData`)
 
-1. Extend `ActiveRunData` in `src/lib/active-run-session/types.ts` and Zod schema in `src/lib/validation/save-schemas/active-run.ts` (optional fields with defaults in `normalize-active-run-data.ts` often avoid a schema bump).
+1. Extend `ActiveRunData` in `src/lib/active-run-session/types.ts` and Zod schema in `src/lib/validation/save-schemas/active-run.ts` (optional fields with defaults in `normalize-active-run-data.ts` often avoid a schema bump). Mid-combat wire shape goes through `PersistedBattleStateSchema` in `save-schemas/persisted-battle-state.ts`.
 2. Add the field to `ActiveRunProgressFields` / hydration in `src/features/alchemy/shared/stores/run-state-init.ts` (mirror `runTalentXP` / `runMaterialsEarned` pattern) when it is active-run progression. Transient resume fields belong in the codec projection instead of the run-domain types. The flat `RunStateFields` patch type is test-only now — if a test needs it, add the key to `tests/helpers/run-domain-store-test.ts`.
-3. Update `createActiveRunSnapshot()` in `src/lib/active-run-session/snapshot.ts`, then update the single feature-owned codec in `src/features/alchemy/shared/stores/run-resume-codec.ts`. Keep reward, shop, combat, and content-system translation there.
-4. Keep `snapshotRun()` and `restoreRun()` as thin lifecycle wrappers around `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()`. `restore-active-run-session.ts` should only apply the decoded session fields. Keep the operation inside `dispatchRunSessionCommand()` so boot/resume is published as one aggregate commit; defer navigation, audio, and presentation work with `afterCommit` or after the command returns.
+3. Update `ActiveRunSnapshotSource` / `createActiveRunSnapshot()` in `src/lib/active-run-session/snapshot.ts` once — that is the sole field→`ActiveRunData` assembler. Touch `run-resume-codec.ts` only when encode/decode **behavior** changes (interrupted flow, shop gating, mid-claim, screen resolution). Progress fields spread from the aggregate via `toActiveRunSnapshotSource`; do not re-list them in the codec.
+4. Keep `snapshotRun()` and `restoreRun()` as thin lifecycle wrappers around `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()`. `restore-active-run-session.ts` should only apply the decoded session fields. Default trinket-manifest repair for mid-combat resume runs in `restoreRun` via `repairPersistedBattleTrinketManifest` (not Zod). Keep the operation inside `dispatchRunSessionCommand()` so boot/resume is published as one aggregate commit; defer navigation, audio, and presentation work with `afterCommit` or after the command returns.
 5. Run `tests/features/alchemy/shared/storage/active-run.test.ts`, `tests/features/alchemy/shared/stores/run-domain.test.ts` (snapshot parity), the codec / pending-reward tests, plus storage/migration tests.
 
 **Active-run helpers (do not confuse):**
@@ -62,6 +62,7 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 | ------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | `normalizeActiveRunData` | `@/lib/validation`                                                           | Zod transform: health clamp + content-system field isolation |
 | `parseActiveRun`         | `@/lib/active-run-session` or `@/features/alchemy/shared/storage/active-run` | Runtime validation before hydration                          |
+| `toActiveRunData`        | `@/lib/active-run-session` (`parse.ts`)                                      | Card hydrate after Zod parse (also used by save IO)          |
 
 ---
 
@@ -258,11 +259,11 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 2. Register raw art as `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg`; run `npm run assets:optimize` then `npm run sync:gear-art` to emit `gear-{slug}-{rarity}.webp` mappings in `src/lib/game-data/gear-art.ts`.
 3. Variant definitions are built automatically in `src/lib/gear/definitions.ts` as `{baseItemId}-{rarity}`.
 4. Add new affixes in `src/lib/gear/affixes.ts` with stable `affixId` and `keywordId` for affinity weighting.
-5. Reward generation rolls instances in `src/lib/gear/generation.ts`; rewards screen stores the exact `GearInstance` (never re-roll on accept). Mid-reward campaign/labyrinth progress is persisted in `activeRun.pendingReward` (gear stores full instances; cards/trinkets store choice ids).
+5. Reward generation rolls instances in `src/lib/gear/generation.ts`; rewards screen stores the exact `GearInstance` (never re-roll on accept). Mid-reward campaign/labyrinth progress is persisted in `activeRun.interruptedFlow` (`primary-reward` / `companion-reward` arms; gear stores full instances; cards/trinkets store choice ids).
 6. Keep owned items as unique `GearInstance` records with `affixIds`; never put definition objects or art URLs into save data.
 7. Battle applies aggregated `gearEffects` from `computeGearManifest()` during battle creation.
 8. v1 affixes only cover the eight flat damage keywords; affinity tags like `archery` or `gold` are forward-looking for roll weighting until matching affixes ship.
-9. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change. Additive `activeRun.pendingReward` and `gearBoardPositions` use schema defaults (no bump required).
+9. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change. Additive `interruptedFlow` reward fields and `gearBoardPositions` use schema defaults where safe (no bump required for pure additives).
 10. Cover pure operations, generation, persistence, reward selection, Armory interaction, and battle snapshot behavior.
 
 ---

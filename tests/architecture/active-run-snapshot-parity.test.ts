@@ -62,11 +62,10 @@ describe("active run snapshot parity", () => {
     labyrinthMap: ["activeRun.labyrinthMap"],
     labyrinthPendingNode: ["activeRun.labyrinthPendingNode"],
     activeCombat: ["activeRun.activeCombat", "activeRun?.activeCombat"],
-    destinationChoices: ["activeRun.destinationChoices"],
+    interruptedFlow: ["activeRun.interruptedFlow"],
     wildwoodDraft: ["activeRun.wildwoodDraft"],
     runTalentXP: progressViaInitialize,
     runMaterialsEarned: progressViaInitialize,
-    pendingReward: ["activeRun.pendingReward"],
   };
 
   it("restoreRun references persisted ActiveRunData fields", () => {

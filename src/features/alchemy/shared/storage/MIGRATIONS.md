@@ -4,7 +4,7 @@ This file documents how to change persisted save data without breaking player pr
 
 ## Supported baseline (pre-launch)
 
-`LAUNCH_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts` is the **minimum supported** save shape (currently **10**). There are no players yet, so older local schemas are intentionally unsupported. `migrateSaveDataToCurrent` only stamps `CURRENT_SAVE_SCHEMA_VERSION`; Zod defaults and `.catch()` repair the envelope.
+`LAUNCH_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts` is the **minimum supported** save shape (currently **11**). There are no players yet, so older local schemas are intentionally unsupported. `migrateSaveDataToCurrent` only stamps `CURRENT_SAVE_SCHEMA_VERSION`; Zod defaults and `.catch()` repair the envelope.
 
 After public launch, treat `LAUNCH_SAVE_SCHEMA_VERSION` as frozen and never remove steps that players can still hold.
 
@@ -19,7 +19,7 @@ Examples:
 - Replacing array-shaped progress with record-shaped progress.
 - Changing meanings or units of saved numeric values.
 
-Do **not** increment for purely additive fields that can safely use defaults in Zod / `defaults.ts` (for example `activeRun.resumePhase`, which records the in-flight reward/destination resume surface without a schema bump).
+Do **not** increment for purely additive fields that can safely use defaults in Zod / `defaults.ts` (for example optional shop refresh counters). Replacing the resume claim-surface triad with `activeRun.interruptedFlow` required a floor bump (see below).
 
 ## Single-responsibility rule
 
@@ -63,7 +63,7 @@ Migration tests must verify gameplay progress, not just field presence:
 
 ## Future schema saves
 
-Saves with a schema newer than the current build are intentionally not migrated or overwritten. The load path returns defaults for the session and disables autosave writes so an older build cannot destroy newer progress.
+Saves with a schema newer than the current build are intentionally not migrated or overwritten. The load path returns defaults for the session and disables autosave writes so an older build cannot destroy newer progress. The player-facing Save Protected screen offers update guidance plus an explicit “Delete local save and continue” escape hatch. That wipe clears the full candidate set (desktop `save.json` + bak.1–3 + tmp, then Steam Cloud when available) and fails closed if cloud delete fails so a residual mirror cannot re-block boot. Dev builds also accept `?wipeLocalSave=1` to clear before bootstrap.
 
 ## Public save contract
 
@@ -71,7 +71,7 @@ Until launch, `LAUNCH_SAVE_SCHEMA_VERSION` may move forward when the team delibe
 
 ### Policy: local is authoritative
 
-Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring rotation) and then mirror to Steam Cloud. On load, candidates are walked in preference order (local → bak.1 → bak.2 → bak.3 → cloud) and the first that Zod-validates is used. Future-versioned candidates are silently skipped. Only when every candidate is from a future version does the load fall back to defaults with writes disabled; even then, the player sees no error UI.
+Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring rotation) and then mirror to Steam Cloud. On load, candidates are walked in preference order (local → bak.1 → bak.2 → bak.3 → cloud) and the first that Zod-validates is used. Future-versioned candidates are silently skipped. Only when every candidate is from a future version does the load fall back to defaults with writes disabled and the Save Protected screen.
 
 ### Implementation rules
 
@@ -91,15 +91,15 @@ When adding a new saved field that gates features (unlocks, meta screens, game m
 
 ## Gear board layout (`gearBoardPositionsByCharacter`)
 
-Armory inventory tile positions persist per character (`gearBoardPositionsByCharacter`). Gear inventories are per-character (`gearInventories`). Both are part of the v10 baseline.
+Armory inventory tile positions persist per character (`gearBoardPositionsByCharacter`). Gear inventories are per-character (`gearInventories`). Both are part of the launch baseline.
 
 ## Active-run RNG streams (`activeRun.rng`)
 
 Active runs persist a seed and counters for named run-outcome streams. This is an additive nested field, so it does not require a top-level schema-version bump: `ActiveRunDataSchema` creates a fresh seed with zero counters when loading a legacy active run. After that first load, the normal autosave writes the explicit RNG state and all subsequent resumes continue the same sequence.
 
-## Resume phase (`activeRun.resumePhase`)
+## Interrupted flow (`activeRun.interruptedFlow`)
 
-Enum (`primary-reward` | `companion-reward` | `destination` | `none`) that records which claim surface the run should resume on. Encode sets it from live session state (aligned with mid-claim screen resolution). Decode prefers the persisted value; when the field is missing or defaults to `none`, decode infers from `currentScreen` / `pendingReward` / `destinationChoices` so pre-field local saves do not soft-lock.
+Discriminated union (`kind: none | primary-reward | companion-reward | destination`) that records which claim surface the run should resume on. Encode maps live session reward/companion/claim state into one arm; decode switches on `kind` with no legacy inference. Reward payloads live under `pending` on the reward arms; destination-only resume carries destinations and victory metadata on the destination arm. Pre-launch floor raise to schema 11 dropped the prior `resumePhase` + `destinationChoices` + top-level `pendingReward` triad.
 
 ## Battle transition continuation
 

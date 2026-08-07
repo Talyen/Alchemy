@@ -1,5 +1,6 @@
 export type {
   ActiveRunData,
+  InterruptedFlow,
   LabyrinthNodePosition,
   PersistedPendingReward,
   PersistedShopState,
@@ -19,8 +20,8 @@ export {
 } from "./shop-session-types";
 export { restoreWildwoodRewardState } from "./wildwood-reward-restore";
 export { createActiveRunSnapshot } from "./snapshot";
-export { parseActiveRun } from "./parse";
-export { toActiveRunData } from "./to-active-run-data";
+export type { ActiveRunSnapshotSource } from "./snapshot";
+export { parseActiveRun, toActiveRunData } from "./parse";
 export {
   restorePendingReward,
   restorePendingRewardBundle,

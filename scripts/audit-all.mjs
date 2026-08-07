@@ -4,8 +4,9 @@
  * Run: node scripts/audit-all.mjs
  *
  * Exits non-zero if any audit fails. Prints a summary at the end.
- * Intended for local sweeps and CI nightly; not a pre-push gate (use
- * `npm run lint:ci` for that).
+ * Local / agent periodic sweep (docs/Audits); not CI nightly and not a
+ * pre-push gate (nightly runs `deadcode:strict` only; use `npm run lint:ci`
+ * for the static gate).
  */
 import { spawnSync } from "node:child_process";
 import path from "node:path";

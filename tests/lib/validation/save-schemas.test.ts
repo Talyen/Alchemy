@@ -136,12 +136,24 @@ describe("ActiveRunDataSchema", () => {
       contentSystemType: "campaign",
       labyrinthMap: null,
       currentScreen: "rewards",
-      destinationChoices: ["Campfire"],
+      interruptedFlow: {
+        kind: "destination",
+        destinations: ["Campfire"],
+        selectedBossId: null,
+        lastVictoryEnemyType: null,
+        lastVictoryContentSystem: null,
+      },
     });
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (result.success) {
       expect(result.data.currentScreen).toBe("rewards");
-      expect(result.data.destinationChoices).toEqual(["Campfire"]);
+      expect(result.data.interruptedFlow).toEqual({
+        kind: "destination",
+        destinations: ["Campfire"],
+        selectedBossId: null,
+        lastVictoryEnemyType: null,
+        lastVictoryContentSystem: null,
+      });
     }
   });
 
@@ -161,8 +173,7 @@ describe("ActiveRunDataSchema", () => {
       contentSystemType: "campaign",
       labyrinthMap: null,
       currentScreen: "not-a-screen",
-      destinationChoices: [],
-      pendingReward: null,
+      interruptedFlow: { kind: "none" },
     });
     expect(result.success).toBe(true);
     if (result.success) {
@@ -486,20 +497,25 @@ describe("ActiveRunDataSchema", () => {
       selectedDifficulty: null,
       contentSystemType: "campaign",
       labyrinthMap: null,
-      pendingReward: {
-        rewardType: "card",
-        choiceIds: ["slash"],
-        selectedId: null,
-        gold: 0,
-        materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
-        destinations: [],
-        selectedBossId: null,
-        lastVictoryEnemyType: null,
-        lastVictoryContentSystem: null,
+      interruptedFlow: {
+        kind: "primary-reward",
+        pending: {
+          rewardType: "card",
+          choiceIds: ["slash"],
+          selectedId: null,
+          gold: 0,
+          materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+          destinations: [],
+          selectedBossId: null,
+          lastVictoryEnemyType: null,
+          lastVictoryContentSystem: null,
+        },
       },
     });
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
-    if (result.success) expect(result.data.pendingReward?.companionChoiceIds).toEqual([]);
+    if (result.success && result.data.interruptedFlow.kind === "primary-reward") {
+      expect(result.data.interruptedFlow.pending.companionChoiceIds).toEqual([]);
+    }
   });
 
   it("rejects pending gear rewards with no valid choices", () => {
@@ -517,21 +533,24 @@ describe("ActiveRunDataSchema", () => {
       selectedDifficulty: null,
       contentSystemType: "campaign",
       labyrinthMap: null,
-      pendingReward: {
-        rewardType: "gear",
-        gearChoices: [],
-        selectedId: null,
-        gold: 0,
-        materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
-        destinations: [],
-        selectedBossId: null,
-        lastVictoryEnemyType: null,
-        lastVictoryContentSystem: null,
+      interruptedFlow: {
+        kind: "primary-reward",
+        pending: {
+          rewardType: "gear",
+          gearChoices: [],
+          selectedId: null,
+          gold: 0,
+          materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+          destinations: [],
+          selectedBossId: null,
+          lastVictoryEnemyType: null,
+          lastVictoryContentSystem: null,
+        },
       },
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.pendingReward).toBeNull();
+      expect(result.data.interruptedFlow).toEqual({ kind: "none" });
     }
   });
 });

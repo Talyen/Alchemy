@@ -1,5 +1,5 @@
 // Current-schema save payloads for migration guard and storage tests.
-// CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION maps the launch baseline (v10) to a fixture.
+// CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION maps the launch baseline to a fixture.
 // Depends on deterministic labyrinth map generation so fixture tests can cover mid-run map saves.
 import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";

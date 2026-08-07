@@ -36,8 +36,7 @@ function makeSource(
     activeLabyrinthRewardModifiers: [],
     runTalentXP: {},
     currentScreen: null,
-    destinationChoices: [],
-    pendingReward: null,
+    interruptedFlow: { kind: "none" },
     wildwoodDraft: null,
     runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
     shopState: null,
@@ -79,9 +78,7 @@ describe("createActiveRunSnapshot", () => {
       labyrinthPendingNode: null,
       activeCombat: null,
       currentScreen: null,
-      destinationChoices: [],
-      pendingReward: null,
-      resumePhase: "none",
+      interruptedFlow: { kind: "none" },
       shopState: null,
       alchemistState: null,
       trinketShopState: null,
@@ -239,12 +236,24 @@ describe("createActiveRunSnapshot", () => {
     const result = createActiveRunSnapshot(
       makeSource({
         currentScreen: "destination",
-        destinationChoices: ["Campfire", "Merchant's Shop"],
+        interruptedFlow: {
+          kind: "destination",
+          destinations: ["Campfire", "Merchant's Shop"],
+          selectedBossId: null,
+          lastVictoryEnemyType: null,
+          lastVictoryContentSystem: null,
+        },
       }),
     );
 
     expect(result.currentScreen).toBe("destination");
-    expect(result.destinationChoices).toEqual(["Campfire", "Merchant's Shop"]);
+    expect(result.interruptedFlow).toEqual({
+      kind: "destination",
+      destinations: ["Campfire", "Merchant's Shop"],
+      selectedBossId: null,
+      lastVictoryEnemyType: null,
+      lastVictoryContentSystem: null,
+    });
   });
 
   it("persists Wildwood Draft phase state", () => {

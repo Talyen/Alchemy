@@ -179,12 +179,19 @@ function registerIpcHandlers() {
   });
 
   handleAuthorized("alchemy:clear-save", async () => {
+    // Wipe the full local candidate set (primary + bak ring + tmp). Bootstrap walks
+    // bak.1–3 after save.json; leaving them behind would re-block Save Protected.
     try {
-      await fs.promises.unlink(SAVE_FILE_PATH);
+      for (const filePath of [SAVE_FILE_PATH, SAVE_TMP_PATH, ...SAVE_BAK_PATHS]) {
+        try {
+          await fs.promises.unlink(filePath);
+        } catch (error) {
+          if (error?.code !== "ENOENT") throw error;
+        }
+      }
       return true;
     } catch (error) {
-      if (error?.code === "ENOENT") return true;
-      console.error("Error clearing save file:", error);
+      console.error("Error clearing save files:", error);
       return false;
     }
   });

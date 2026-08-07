@@ -48,8 +48,21 @@ export function AppHamburgerTrigger({
   );
 }
 
-export function UnsupportedSaveOverlay() {
-  return <UnsupportedSaveVersionScreen canQuit={platform.canQuit} onQuit={() => platform.quit()} />;
+export function UnsupportedSaveOverlay({
+  onDeleteSaveAndContinue,
+  deleting = false,
+}: {
+  onDeleteSaveAndContinue: () => void;
+  deleting?: boolean;
+}) {
+  return (
+    <UnsupportedSaveVersionScreen
+      canQuit={platform.canQuit}
+      onQuit={() => platform.quit()}
+      onDeleteSaveAndContinue={onDeleteSaveAndContinue}
+      deleting={deleting}
+    />
+  );
 }
 
 export function useIsArmoryLocked() {

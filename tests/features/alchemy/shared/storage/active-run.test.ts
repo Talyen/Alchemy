@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseActiveRun } from "@/lib/active-run-session";
 import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations";
-import { defaultBattleState } from "@/lib/battle";
+import { defaultBattleState, repairPersistedBattleTrinketManifest } from "@/lib/battle";
 import { cardLibrary } from "@/lib/game-data";
 import { makeRunCandidate } from "../../../../fixtures/active-run";
 
@@ -196,12 +196,9 @@ describe("parseActiveRun", () => {
     expect(result!.labyrinthPendingNode).toBeNull();
   });
 
-  it("reconciles default trinketEffects from runTrinkets on load", () => {
+  it("reconciles default trinketEffects from runTrinkets on resume", () => {
     const battleState = defaultBattleState();
-    const legacyBattleState = {
-      ...battleState,
-      trinketEffects: { boneCharmHealOnKill: 3 },
-    };
+    const legacyBattleState = { ...battleState };
     delete (legacyBattleState as { trinketEffects?: unknown }).trinketEffects;
 
     const migrated = normalizeSaveData({
@@ -214,7 +211,14 @@ describe("parseActiveRun", () => {
       },
     });
 
-    expect(migrated.activeRun?.activeCombat?.battleState.trinketEffects.boneCharmHealOnKill).toBe(3);
+    const parsedBattle = migrated.activeRun?.activeCombat?.battleState;
+    expect(parsedBattle).toBeTruthy();
+    // Wire parse keeps structural defaults; resume repair recomputes from runTrinkets.
+    expect(parsedBattle!.trinketEffects.boneCharmHealOnKill).toBe(0);
+    expect(
+      repairPersistedBattleTrinketManifest(parsedBattle!, migrated.activeRun!.runTrinkets).trinketEffects
+        .boneCharmHealOnKill,
+    ).toBe(3);
   });
 
   it("normalizes nested battle defaults and removes retired encounter traits", () => {

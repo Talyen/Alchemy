@@ -268,18 +268,22 @@ export async function saveAlchemySaveData(data: SaveData) {
 }
 
 // Removes the persisted save while leaving in-memory React state reset to callers.
-export async function clearAlchemySaveData() {
+// Returns false when the wipe could not complete (e.g. Steam Cloud delete failed) so
+// callers like Save Protected can fail closed instead of reloading into the same block.
+export async function clearAlchemySaveData(): Promise<boolean> {
   if (typeof window === "undefined") {
-    return;
+    return true;
   }
 
   clearPending = true;
   coalescedSave = null;
+  let cleared = false;
   const run = saveWriteChain.then(async () => {
     try {
       const result = await removeStorageItem(SAVE_KEY);
       if (result.ok) {
         saveSessionState.setWritesDisabled(false);
+        cleared = true;
         return;
       }
       logStorageFailure("Save data could not be cleared", result.error);
@@ -287,8 +291,14 @@ export async function clearAlchemySaveData() {
       clearPending = false;
     }
   });
+  // Keep the chain alive even if clear logs-and-continues; never reject the gate.
   saveWriteChain = run.catch(() => {
     clearPending = false;
   });
-  await run;
+  try {
+    await run;
+  } catch {
+    return false;
+  }
+  return cleared;
 }

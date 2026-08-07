@@ -1,5 +1,5 @@
 // Atomic run lifecycle transitions across the run-domain, profile, transient, and battle stores.
-import { getBattleStartPlayerHealth } from "@/lib/battle";
+import { getBattleStartPlayerHealth, repairPersistedBattleTrinketManifest } from "@/lib/battle";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
 import { type ActiveRunData } from "@/lib/active-run-session";
 import type { Screen } from "@/lib/routing";
@@ -29,7 +29,10 @@ export function restoreRun(
     if (decoded) session.runActions.initializeFromResumeSnapshot(decoded.progress);
     else session.runActions.initialize(null);
     session.runProfileActions.applyTalentState(talentXP, unlockedTalents);
-    const battleState = activeRun?.activeCombat?.battleState ?? null;
+    const battleState =
+      activeRun?.activeCombat?.battleState != null
+        ? repairPersistedBattleTrinketManifest(activeRun.activeCombat.battleState, activeRun.runTrinkets)
+        : null;
     const pending = decoded?.pendingBattleTransition ?? null;
     initializeActiveBattle(battleState, pending);
 

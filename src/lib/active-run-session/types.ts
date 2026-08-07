@@ -11,10 +11,10 @@ import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
 import type { GearInstance } from "@/lib/gear";
-import type { PersistedPendingReward, ResumePhase } from "@/lib/validation";
+import type { InterruptedFlow, PersistedPendingReward } from "@/lib/validation";
 import type { RunRngState } from "@/lib/run-rng";
 
-export type { PersistedPendingReward };
+export type { InterruptedFlow, PersistedPendingReward };
 
 export interface PersistedShopState {
   cards: BattleCard[];
@@ -96,9 +96,7 @@ export interface ActiveRunData {
   runTalentXP: TalentXP;
   runMaterialsEarned: MaterialInventory;
   currentScreen: Screen | null;
-  destinationChoices: string[];
-  pendingReward: PersistedPendingReward | null;
-  resumePhase: ResumePhase;
+  interruptedFlow: InterruptedFlow;
   shopState: PersistedShopState | null;
   alchemistState: PersistedAlchemistState | null;
   trinketShopState: PersistedTrinketShopState | null;

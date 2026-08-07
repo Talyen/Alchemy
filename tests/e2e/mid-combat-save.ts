@@ -73,8 +73,7 @@ export async function injectMidCombatSave(page: Page) {
       runTalentXP: {},
       runMaterialsEarned: {},
       currentScreen: "battle",
-      destinationChoices: [],
-      pendingReward: null,
+      interruptedFlow: { kind: "none" },
     },
   };
 

@@ -5,6 +5,22 @@ import { SAVE_KEY } from "@/lib/game-constants";
 import { baseHomesteadSave } from "../fixtures/saves";
 import { makeHighDamageCard } from "./cards";
 
+/** Persisted destination claim surface for E2E / performance save injection. */
+export function destinationInterruptedFlow(destinations: string[]) {
+  return {
+    kind: "destination" as const,
+    destinations,
+    selectedBossId: null,
+    lastVictoryEnemyType: null,
+    lastVictoryContentSystem: null,
+  };
+}
+
+/** Persisted primary-reward claim surface for E2E save injection. */
+export function primaryRewardInterruptedFlow(pending: Record<string, unknown>) {
+  return { kind: "primary-reward" as const, pending };
+}
+
 function createMinimalLabyrinthMap(options?: { rows?: number; cols?: number }) {
   const rows = options?.rows ?? 8;
   const cols = options?.cols ?? 9;

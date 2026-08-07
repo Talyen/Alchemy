@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { injectSaveState } from "../tests/e2e/save-injection";
+import { injectSaveState, destinationInterruptedFlow } from "../tests/e2e/save-injection";
 import { DestinationPage } from "../tests/pages/destination-page";
 import { waitForHandPlayable } from "./battle-helpers";
 import {
@@ -32,7 +32,7 @@ export async function startPerfBattle(
       autoEndTurn: false,
       selectedAspectRatio: PERF_ASPECT_RATIO,
       currentScreen: "destination",
-      destinationChoices: ["Normal Combat"],
+      interruptedFlow: destinationInterruptedFlow(["Normal Combat"]),
       runPlayerHealth: 80,
       runMaxHealth: 80,
       ...overrides,
@@ -81,7 +81,7 @@ export async function startPerfBattle(
             autoEndTurn: false,
             selectedAspectRatio: PERF_ASPECT_RATIO,
             currentScreen: "destination",
-            destinationChoices: ["Normal Combat"],
+            interruptedFlow: destinationInterruptedFlow(["Normal Combat"]),
             runPlayerHealth: 80,
             runMaxHealth: 80,
             ...overrides,

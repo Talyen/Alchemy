@@ -2,6 +2,7 @@ import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
 import {
   injectSaveState,
+  destinationInterruptedFlow,
   openGameModeSelect,
   resumeCampaignRun,
   SAVE_KEY,
@@ -73,7 +74,7 @@ test.describe("Save Persistence & Resume", () => {
       destinationIndexInAct: 1,
       completedDestinations: ["Normal Combat"],
       currentScreen: "destination",
-      destinationChoices: ["Campfire", "Mystery", "Merchant's Shop"],
+      interruptedFlow: destinationInterruptedFlow(["Campfire", "Mystery", "Merchant's Shop"]),
     });
     await page.goto("/");
 

@@ -687,8 +687,7 @@ describe("SaveDataSchema", () => {
         labyrinthPendingNode: null,
         activeCombat: null,
         currentScreen: null,
-        destinationChoices: [],
-        pendingReward: null,
+        interruptedFlow: { kind: "none" },
         runTalentXP: { burn: 12, poison: 8 },
       } as never,
     });
@@ -719,13 +718,25 @@ describe("SaveDataSchema", () => {
         labyrinthPendingNode: null,
         activeCombat: null,
         currentScreen: "destination",
-        destinationChoices: ["Campfire", "Mystery", "Merchant's Shop"],
+        interruptedFlow: {
+          kind: "destination",
+          destinations: ["Campfire", "Mystery", "Merchant's Shop"],
+          selectedBossId: null,
+          lastVictoryEnemyType: null,
+          lastVictoryContentSystem: null,
+        },
         runTalentXP: {},
       } as never,
     });
     const reParsed = parseSave(JSON.parse(JSON.stringify(original)));
     expect(reParsed.activeRun?.currentScreen).toBe("destination");
-    expect(reParsed.activeRun?.destinationChoices).toEqual(["Campfire", "Mystery", "Merchant's Shop"]);
+    expect(reParsed.activeRun?.interruptedFlow).toEqual({
+      kind: "destination",
+      destinations: ["Campfire", "Mystery", "Merchant's Shop"],
+      selectedBossId: null,
+      lastVictoryEnemyType: null,
+      lastVictoryContentSystem: null,
+    });
   });
 
   it("labyrinth map round-trips through JSON serialize/deserialize", () => {
@@ -747,8 +758,7 @@ describe("SaveDataSchema", () => {
         labyrinthPendingNode: null,
         activeCombat: null,
         currentScreen: null,
-        destinationChoices: [],
-        pendingReward: null,
+        interruptedFlow: { kind: "none" },
         runTalentXP: {},
       } as never,
     });

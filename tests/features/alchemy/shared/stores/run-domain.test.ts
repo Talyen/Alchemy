@@ -127,9 +127,7 @@ describe("initialize", () => {
       trinketShopState: null,
       equipmentShopState: null,
       currentScreen: null,
-      destinationChoices: [],
-      pendingReward: null,
-      resumePhase: "none",
+      interruptedFlow: { kind: "none" },
     };
     getRunProgressStoreView().initialize(activeRun);
     useRunProfileStore.getState().applyTalentState({ physical: 100 }, { physical: ["talent-1"] });
@@ -169,9 +167,7 @@ describe("initialize", () => {
       trinketShopState: null,
       equipmentShopState: null,
       currentScreen: null,
-      destinationChoices: [],
-      pendingReward: null,
-      resumePhase: "none",
+      interruptedFlow: { kind: "none" },
     };
 
     getRunProgressStoreView().initialize(activeRun);
@@ -218,9 +214,7 @@ describe("initialize", () => {
       trinketShopState: null,
       equipmentShopState: null,
       currentScreen: "shop",
-      destinationChoices: [],
-      pendingReward: null,
-      resumePhase: "none",
+      interruptedFlow: { kind: "none" },
     };
     restoreRun(activeRun, {}, {});
     expect(getNavigationStoreView().screen).toBe("shop");
@@ -754,19 +748,23 @@ describe("session facade API", () => {
       runTalentXP: getRunProgressStoreView().runTalentXP,
       runMaterialsEarned: getRunProgressStoreView().runMaterialsEarned,
       currentScreen: ROUTE_SCREENS.DESTINATION,
-      destinationChoices: ["Campfire", "Merchant's Shop"],
-      pendingReward: null,
+      interruptedFlow: {
+        kind: "destination",
+        destinations: ["Campfire", "Merchant's Shop"],
+        selectedBossId: null,
+        lastVictoryEnemyType: null,
+        lastVictoryContentSystem: null,
+      },
       shopState: null,
       alchemistState: null,
       trinketShopState: null,
       equipmentShopState: null,
       wildwoodDraft: null,
-      resumePhase: "destination",
     });
     expect(fromStores).toEqual(explicit);
   });
 
-  it("snapshots pending rewards whenever choices are present", () => {
+  it("snapshots pending rewards on the rewards screen whenever choices are present", () => {
     const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
     getRunSessionStoreView().setRewardState({
       ...createEmptyRewardState(),
@@ -774,12 +772,15 @@ describe("session facade API", () => {
       choices: [instance],
       gold: 5,
     });
-    const snap = snapshotRun(ROUTE_SCREENS.DESTINATION);
-    expect(snap.pendingReward).toEqual(
+    const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
+    expect(snap.interruptedFlow).toEqual(
       expect.objectContaining({
-        rewardType: "gear",
-        gearChoices: [instance],
-        gold: 5,
+        kind: "primary-reward",
+        pending: expect.objectContaining({
+          rewardType: "gear",
+          gearChoices: [instance],
+          gold: 5,
+        }),
       }),
     );
   });
@@ -794,13 +795,17 @@ describe("session facade API", () => {
     });
     getRunSessionStoreView().beginRewardClaim();
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
-    expect(snap.pendingReward).toBeNull();
-    expect(snap.destinationChoices).toEqual(["Campfire"]);
+    expect(snap.interruptedFlow).toEqual({
+      kind: "destination",
+      destinations: ["Campfire"],
+      selectedBossId: null,
+      lastVictoryEnemyType: null,
+      lastVictoryContentSystem: null,
+    });
     expect(snap.currentScreen).toBe("destination");
-    expect(snap.resumePhase).toBe("destination");
   });
 
-  it("encodes destination resumePhase for hollow boss mid-claim without destinations", () => {
+  it("encodes destination interruptedFlow for hollow boss mid-claim without destinations", () => {
     getRunSessionStoreView().setRewardState({
       ...createEmptyRewardState(),
       rewardType: "gear",
@@ -808,33 +813,20 @@ describe("session facade API", () => {
       lastVictoryEnemyType: "boss",
     });
     // Hollow post-claim surfaces cannot beginRewardClaim (no choices); encode still
-    // stamps destination phase from empty rewards screen so resume cannot soft-lock.
+    // stamps destination flow from empty rewards screen so resume cannot soft-lock.
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
-    expect(snap.pendingReward).toBeNull();
     expect(snap.currentScreen).toBe("rewards");
-    expect(snap.resumePhase).toBe("destination");
+    expect(snap.interruptedFlow).toEqual({
+      kind: "destination",
+      destinations: [],
+      selectedBossId: null,
+      lastVictoryEnemyType: "boss",
+      lastVictoryContentSystem: null,
+    });
 
     restoreRun(snap, {}, {});
     expect(getNavigationStoreView().screen).toBe("destination");
     expect(getRunSessionStoreView().rewardState.choices).toEqual([]);
-  });
-
-  it("infers hollow rewards resume when resumePhase is none", () => {
-    getRunSessionStoreView().setRewardState({
-      ...createEmptyRewardState(),
-      rewardType: "gear",
-      choices: [],
-      lastVictoryEnemyType: "boss",
-    });
-    const snap = {
-      ...snapshotRun(ROUTE_SCREENS.REWARDS),
-      pendingReward: null,
-      destinationChoices: [],
-      currentScreen: "rewards" as const,
-      resumePhase: "none" as const,
-    };
-    restoreRun(snap, {}, {});
-    expect(getNavigationStoreView().screen).toBe("destination");
   });
 
   it("marks enemy-phase combat without a transition for boot recovery", () => {
@@ -862,13 +854,15 @@ describe("session facade API", () => {
     getRunSessionStoreView().beginRewardClaim();
 
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
-    expect(snap.pendingReward?.rewardType).toBe("card");
-    if (snap.pendingReward?.rewardType === "card") {
-      expect(snap.pendingReward.choiceIds).toEqual([]);
+    expect(snap.interruptedFlow.kind).toBe("companion-reward");
+    if (snap.interruptedFlow.kind === "companion-reward") {
+      expect(snap.interruptedFlow.pending.rewardType).toBe("card");
+      if (snap.interruptedFlow.pending.rewardType === "card") {
+        expect(snap.interruptedFlow.pending.choiceIds).toEqual([]);
+      }
+      expect(snap.interruptedFlow.pending.companionChoiceIds).toEqual([companion.id]);
     }
-    expect(snap.pendingReward?.companionChoiceIds).toEqual([companion.id]);
     expect(snap.currentScreen).toBe("rewards");
-    expect(snap.resumePhase).toBe("companion-reward");
 
     getRunSessionStoreView().setRewardState(createEmptyRewardState());
     getRunSessionStoreView().setCompanionRewardCards(null);
@@ -891,12 +885,7 @@ describe("session facade API", () => {
       choices: [],
       lastVictoryEnemyType: "boss",
     });
-    const snap = {
-      ...snapshotRun(ROUTE_SCREENS.REWARDS),
-      pendingReward: null,
-      destinationChoices: [],
-      currentScreen: "rewards" as const,
-    };
+    const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
     restoreRun(snap, {}, {});
     expect(getNavigationStoreView().screen).toBe("destination");
   });
@@ -910,11 +899,14 @@ describe("session facade API", () => {
       gold: 5,
     });
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
-    expect(snap.pendingReward).toEqual(
+    expect(snap.interruptedFlow).toEqual(
       expect.objectContaining({
-        rewardType: "gear",
-        gearChoices: [instance],
-        gold: 5,
+        kind: "primary-reward",
+        pending: expect.objectContaining({
+          rewardType: "gear",
+          gearChoices: [instance],
+          gold: 5,
+        }),
       }),
     );
 
@@ -935,11 +927,14 @@ describe("session facade API", () => {
     getRunSessionStoreView().setCompanionRewardCards([companion]);
 
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
-    expect(snap.pendingReward?.rewardType).toBe("card");
-    if (snap.pendingReward?.rewardType === "card") {
-      expect(snap.pendingReward.choiceIds).toEqual([primary.id]);
+    expect(snap.interruptedFlow.kind).toBe("primary-reward");
+    if (snap.interruptedFlow.kind === "primary-reward") {
+      expect(snap.interruptedFlow.pending.rewardType).toBe("card");
+      if (snap.interruptedFlow.pending.rewardType === "card") {
+        expect(snap.interruptedFlow.pending.choiceIds).toEqual([primary.id]);
+      }
+      expect(snap.interruptedFlow.pending.companionChoiceIds).toEqual([companion.id]);
     }
-    expect(snap.pendingReward?.companionChoiceIds).toEqual([companion.id]);
 
     getRunSessionStoreView().setRewardState(createEmptyRewardState());
     getRunSessionStoreView().setCompanionRewardCards(null);
@@ -953,11 +948,11 @@ describe("session facade API", () => {
     expect(getRunSessionStoreView().companionRewardCards?.map((choice) => choice.id)).toEqual([companion.id]);
   });
 
-  it("restores wildwood gear rewards from recovery-phase draft when pendingReward is absent", () => {
+  it("restores wildwood gear rewards from recovery-phase draft when interruptedFlow is none", () => {
     const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
     const activeRun = {
       ...snapshotRun(ROUTE_SCREENS.LABYRINTH_MAP),
-      pendingReward: null,
+      interruptedFlow: { kind: "none" as const },
       wildwoodDraft: {
         version: 3 as const,
         phase: "recovery" as const,
@@ -983,19 +978,20 @@ describe("session facade API", () => {
   it("drops unrestorable pending reward choices without soft-locking", () => {
     const activeRun: ActiveRunData = {
       ...snapshotRun(ROUTE_SCREENS.REWARDS),
-      resumePhase: "primary-reward",
-      destinationChoices: [],
-      pendingReward: {
-        rewardType: "card",
-        choiceIds: ["not-a-real-card-id"],
-        companionChoiceIds: [],
-        selectedId: null,
-        gold: 0,
-        materials: emptyInventory(),
-        destinations: [],
-        selectedBossId: null,
-        lastVictoryEnemyType: null,
-        lastVictoryContentSystem: null,
+      interruptedFlow: {
+        kind: "primary-reward",
+        pending: {
+          rewardType: "card",
+          choiceIds: ["not-a-real-card-id"],
+          companionChoiceIds: [],
+          selectedId: null,
+          gold: 0,
+          materials: emptyInventory(),
+          destinations: [],
+          selectedBossId: null,
+          lastVictoryEnemyType: null,
+          lastVictoryContentSystem: null,
+        },
       },
     };
 

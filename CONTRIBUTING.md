@@ -2,11 +2,11 @@
 
 ## Before you push
 
-The default local hook is the pre-push gate: it catches formatting, TypeScript (src _and_ tests), ESLint, a fresh production build, and the small Playwright canary. CI is the comprehensive gate after every push to `main` (and on PRs). Do not require `ci-ok` as a GitHub push gate on `main` — that blocks trunk pushes before CI can run. Rely on local `pre-push` and post-push CI; use `npm run check:push:full` before a high-risk push or release candidate.
+The default local hook is the pre-push gate: it catches formatting, TypeScript (src _and_ tests), ESLint, a fresh production build, and the small Playwright canary. CI is the comprehensive gate after every push to `main` (and on PRs). Do not require `ci-ok` as a GitHub push gate on `main` — that blocks trunk pushes before CI can run. Rely on local `pre-push` and post-push CI; use `npm run check:push:full` before a high-risk push when you want the full static gate + Vitest locally (still `@prepush` E2E only).
 
-`lefthook` `pre-push` runs `npm run check:push` — format check, `typecheck:all`, ESLint, a production build with committed assets (`ALCHEMY_SKIP_ASSETS=1`), then the **@prepush** E2E subset against that freshly built bundle (includes one animation canary). Building before E2E guarantees the canary never runs against stale `dist/`.
+`lefthook` `pre-push` runs `npm run check:push` — format check, `typecheck:all`, ESLint, a production build with committed assets (`ALCHEMY_SKIP_ASSETS=1`), then the **@prepush** E2E subset against that freshly built bundle (includes one animation canary). Building before E2E guarantees the canary never runs against stale `dist/`. Default pre-push skips `lint:boundaries`, `lint:architecture-smoke`, and `deadcode` — those run in CI `lint:ci` and in `check:push:full` via `check`.
 
-The comprehensive local equivalent is `npm run check:push:full`. It runs the full static gate, all Vitest tests, the web production build, and the pre-push E2E canary. CI on every PR and push runs the full `@critical` suite, including `@prepush` tests. On optional PR branches, wait for `ci-ok` before merging.
+`npm run check:push:full` is the fuller local static+unit gate: `check` (`lint:ci` + Vitest + web build) plus the same **@prepush** E2E canary as the hook. It is **not** CI E2E parity — CI runs `@critical|@prepush` via `npm run test:e2e:prepush:full`. On optional PR branches, wait for `ci-ok` before merging.
 
 To analyze test performance and trace failures, you can run:
 
@@ -15,7 +15,7 @@ To analyze test performance and trace failures, you can run:
 
 For **frame pacing / hitch profiling** (on-demand only, not CI): see [docs/PERFORMANCE.md](./docs/PERFORMANCE.md). Commands: `npm run perf`, `npm run perf:trace`, `npm run perf:compare`.
 
-Manual full gate before **releasing**: `npm run release` (pre-flight gate including `check:ship:full`). Fast local checks: `npm run check:push` or `npm run test:e2e:prepush`. Comprehensive local checks: `npm run check:push:full` or `npm run test:e2e:prepush:full` (`@critical` only).
+Manual full gate before **releasing**: `npm run release` (pre-flight gate including `check:ship:full`). Fast local checks: `npm run check:push` or `npm run test:e2e:prepush`. Fuller local static+unit: `npm run check:push:full`. CI E2E parity locally: `npm run test:e2e:prepush:full` (`@critical|@prepush`).
 
 Install hooks once: `npm run prepare` (runs on `npm install`).
 
@@ -61,7 +61,7 @@ Commit message rules: [Conventional Commits](https://www.conventionalcommits.org
 | Integration-style unit tests    | `run-domain.test.ts`, `storage.test.ts`, `reward-flow*.test.ts`, `shell/*-hook.test.ts`                  | `npm test -- tests/features/alchemy/shared/stores/run-domain.test.ts tests/features/alchemy/shared/storage tests/features/alchemy/run-loop/navigation/reward-flow tests/features/alchemy/shell`                                                                                                                                                                                                                                                                                     |
 | Battle E2E helpers              | `tests/pages/battle-page.ts`, `tests/helpers.ts` (`enableFastMode`)                                      | `npm run test:e2e:prepush` (animation canary) + relevant specs; CI runs `npm run test:e2e:full` in the broader/release tiers                                                                                                                                                                                                                                                                                                                                                        |
 | UI flows                        | `screens/`, controllers                                                                                  | Relevant `tests/*.spec.ts` + `npm run test:e2e:prepush`; longer UI coverage runs in CI/nightly                                                                                                                                                                                                                                                                                                                                                                                      |
-| Any push to `main`              | —                                                                                                        | Fast pre-push hook (`check:push`); CI `ci-ok` runs after push. Use `npm run check:push:full` for an explicit comprehensive local gate                                                                                                                                                                                                                                                                                                                                               |
+| Any push to `main`              | —                                                                                                        | Fast pre-push hook (`check:push`); CI `ci-ok` runs after push. Use `npm run check:push:full` for full static+unit locally (`@prepush` E2E only); use `test:e2e:prepush:full` for CI E2E parity                                                                                                                                                                                                                                                                                      |
 
 ## E2E helpers
 
@@ -119,24 +119,24 @@ Layout: bootstrap helpers in [`tests/e2e/`](tests/e2e/) (`battle-setup.ts`, `arm
 ### Tags (`tests/playwright-tags.ts`)
 
 - **`@prepush`** — fast subset selected into the CI `@critical` command and run by the pre-push hook (`npm run test:e2e:prepush`). App boot + battle canary.
-- **`@critical`** — CI gate on every push (`npm run test:e2e:prepush:full`). One or two fast tests per area covering core gameplay, save integrity, progression locks, difficulty select, combat mechanics, armory in battle, keyboard navigation. **~60-75 tests, ≤3 min on CI.**
+- **`@critical`** — CI gate on every push (`npm run test:e2e:prepush:full` greps `@critical|@prepush`). One or two fast tests per area covering core gameplay, save integrity, progression locks, difficulty select, combat mechanics, armory in battle, keyboard navigation. **~60-75 tests, ≤3 min on CI.**
 - **`@smoke`** — quick boot/menu checks (alchemy boot + Electron boot).
 - **`@slow`** — intentionally slow specs (animation canaries, drag-and-drop, viewport loops). Runs in full E2E on release; can be run manually with `npm run test:e2e:slow`.
 - **`@armory`** — armory screen / gear interaction specs. Overlaps with `critical` and `slow` on a per-test basis.
 
 ## CI parity
 
-| Job                                         | Local equivalent                                                                                                                    |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| CI `ship-gate`                              | `ALCHEMY_SKIP_ASSETS=1 npm run build:desktop` (after unit tests pass); uploads `dist-desktop` artifact                              |
-| CI `assets`                                 | `node scripts/prepare-assets.mjs` + git diff on committed outputs (path-filtered on Raw Assets / asset scripts / committed outputs) |
-| CI `save-gate`                              | `npm run test:ship:e2e` (path-filtered)                                                                                             |
-| CI `desktop-build` / `electron-e2e`         | `npm run dist:desktop` / `npm run test:ship:desktop` (electron reuses ship-gate `dist/`)                                            |
-| CI `e2e` (`@critical`, every push)          | `npm run build && npm run test:e2e:prepush:full`                                                                                    |
-| Pre-push hook                               | `npm run check:push`                                                                                                                |
-| Tag `v*` release (`e2e-full` + release job) | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md); release job runs `dist:desktop` once (no `check:ship` rebuild)        |
+| Job                                             | Local equivalent                                                                                                                    |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| CI `ship-gate`                                  | `ALCHEMY_SKIP_ASSETS=1 npm run build:desktop` (after unit tests pass); uploads `dist-desktop` artifact                              |
+| CI `assets`                                     | `node scripts/prepare-assets.mjs` + git diff on committed outputs (path-filtered on Raw Assets / asset scripts / committed outputs) |
+| CI `save-gate`                                  | `npm run test:ship:e2e` (path-filtered)                                                                                             |
+| CI `desktop-build` / `electron-e2e`             | `npm run dist:desktop` / `npm run test:ship:desktop` (electron reuses ship-gate `dist/`)                                            |
+| CI `e2e` (`@critical` + `@prepush`, every push) | `npm run build && npm run test:e2e:prepush:full`                                                                                    |
+| Pre-push hook                                   | `npm run check:push`                                                                                                                |
+| Tag `v*` release (`e2e-full` + release job)     | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md); release job runs `dist:desktop` once (no `check:ship` rebuild)        |
 
-CI surfaces failures via GitHub check annotations (Vitest `github-actions` / Playwright `github` reporters) and a short job Step Summary from `scripts/ci-summarize-*.mjs`. The `lint` job runs each `lint:ci` stage as its own step so the failed step name identifies format vs typecheck vs ESLint vs boundaries vs knip. Local `check:push:full` runs the same comprehensive gate; the default pre-push hook uses the faster `check:push` subset.
+CI surfaces failures via GitHub check annotations (Vitest `github-actions` / Playwright `github` reporters) and a short job Step Summary from `scripts/ci-summarize-*.mjs`. The `lint` job runs each `lint:ci` stage as its own step so the failed step name identifies format vs typecheck vs ESLint vs boundaries vs knip. Local `check:push:full` matches CI for static analysis + Vitest + web build, but keeps `@prepush` E2E only; the default pre-push hook uses the faster `check:push` subset (no boundaries/knip/architecture-smoke).
 
 Path-filtered jobs (`assets`, `save-gate`, `desktop-build`, `electron-e2e`) are gated by the `changes` job (`dorny/paths-filter`); on `workflow_dispatch` they always run. The `ci-ok` job aggregates every CI job into a single status check for dashboards and optional PR merges — it is not a required push gate on `main`. Shared job setup (Node + `npm ci`) lives in the composite action `.github/actions/setup`. Nightly failures open or update a GitHub issue labeled `nightly-failure`.
 

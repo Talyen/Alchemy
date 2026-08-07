@@ -150,7 +150,7 @@ describe("storage io", () => {
   it("clearAlchemySaveData removes key from localStorage", async () => {
     mockStorage[SAVE_KEY] = "some-data";
     const { clearAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
-    await clearAlchemySaveData();
+    await expect(clearAlchemySaveData()).resolves.toBe(true);
     expect(mockStorage[SAVE_KEY]).toBeUndefined();
   });
 
@@ -399,5 +399,53 @@ describe("storage io", () => {
     await pendingClear;
 
     expect(clearSave).toHaveBeenCalledOnce();
+  });
+
+  it("keeps writes disabled when desktop clear fails due to Steam Cloud", async () => {
+    const clearSave = vi.fn().mockResolvedValue(true);
+    const writeSave = vi.fn().mockResolvedValue(true);
+    const steamCloudDelete = vi.fn().mockResolvedValue(false);
+    const futurePayload = JSON.stringify({
+      ...currentSchemaCampaignSave(),
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+    });
+
+    globalWithWindow.window = {
+      localStorage: {
+        getItem: () => null,
+        setItem: () => undefined,
+        removeItem: () => undefined,
+      } as unknown as Storage,
+      alchemyDesktop: {
+        isDesktop: true,
+        setDisplayMode: vi.fn(),
+        quit: vi.fn(),
+        listSaveCandidates: vi.fn().mockResolvedValue([futurePayload]),
+        writeSave,
+        clearSave,
+        steamGetName: vi.fn().mockResolvedValue("PlayerOne"),
+        steamSetRichPresence: vi.fn(),
+        steamCloudRead: vi.fn().mockResolvedValue(null),
+        steamCloudWrite: vi.fn().mockResolvedValue(true),
+        steamCloudDelete,
+      },
+    } as unknown as Window;
+
+    // Import platform first so steam.init marks cloud available before io wipe path runs.
+    const { platform } = await import("@/lib/platform");
+    await platform.steam.init();
+
+    const { clearAlchemySaveData, loadAlchemySaveState, saveAlchemySaveData } =
+      await import("@/features/alchemy/shared/storage/io");
+
+    const loaded = await loadAlchemySaveState();
+    expect(loaded.status.kind).toBe("unsupported-newer-schema");
+
+    await expect(clearAlchemySaveData()).resolves.toBe(false);
+    expect(steamCloudDelete).toHaveBeenCalledOnce();
+    expect(clearSave).not.toHaveBeenCalled();
+
+    await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["should-not-write"] });
+    expect(writeSave).not.toHaveBeenCalled();
   });
 });
