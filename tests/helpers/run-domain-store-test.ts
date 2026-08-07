@@ -69,15 +69,14 @@ const PERMANENT_PROGRESS_KEYS = [
 // adding a field to ActiveRunProgressFields/PermanentProgressFields without listing
 // it here becomes a type error instead of silently weakening setRunProgress(). The
 // record asserts each list is exhaustive: a missing key resolves the field to
-// `never`, so assigning `true` stops compiling. Not an API — referenced by `void`
-// only so tsc's noUnusedLocals does not flag the probe.
+// `never`, so assigning `true` stops compiling. Referenced via void so noUnusedLocals
+// stays quiet without an unused export that knip would flag.
 type AssertKeysCover<T, K extends ReadonlyArray<keyof T>> = [keyof T] extends [K[number]] ? true : never;
 
 const runProgressKeyGuards: Readonly<{
   activeRun: AssertKeysCover<ActiveRunProgressFields, typeof ACTIVE_RUN_PROGRESS_KEYS>;
   permanent: AssertKeysCover<PermanentProgressFields, typeof PERMANENT_PROGRESS_KEYS>;
 }> = { activeRun: true, permanent: true };
-
 void runProgressKeyGuards;
 
 export function setRunProgress(partial: Partial<RunStateFields>, replace = false): void {
