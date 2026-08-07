@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "shell": "pwsh",
+  "shell": "zsh",
   "permission": {
     "bash": {
       "*": "allow",
@@ -8,7 +8,8 @@
       "git checkout --*": "deny",
       "git restore*": "deny",
       "git clean*": "deny",
-      "git rebase*": "deny",
+      "git rebase --continue": "allow",
+      "git rebase --abort": "allow",
       "git stash*": "ask"
     }
   }
