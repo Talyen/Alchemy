@@ -172,30 +172,8 @@ jobs:
           name: dist
           path: dist/
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v5
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-
-      - name: Install Playwright Chromium (with system deps)
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        timeout-minutes: 15
-        run: npx playwright install --with-deps chromium
-
-      - name: Install Playwright Chromium
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        timeout-minutes: 15
-        run: npx playwright install chromium
-
-      - name: Playwright install diagnostics
-        if: failure()
-        run: |
-          npx playwright install --dry-run || true
-          ls -la ~/.cache/ms-playwright || true
+      - name: Setup Playwright Chromium
+        uses: ./.github/actions/setup-playwright
 
       - run: mkdir -p reports
 
@@ -275,16 +253,10 @@ jobs:
           name: dist
           path: dist/
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v5
+      - name: Setup Playwright Chromium
+        uses: ./.github/actions/setup-playwright
         with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-
-      - name: Install Playwright Chromium
-        run: npx playwright install chromium
+          install-deps: "false"
 
       - run: mkdir -p reports
 

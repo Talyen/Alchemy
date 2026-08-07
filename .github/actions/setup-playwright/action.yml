@@ -1,0 +1,38 @@
+name: Setup Playwright Chromium
+description: Cache and install the Playwright Chromium browser for the E2E jobs.
+
+inputs:
+  install-deps:
+    description: Install OS system deps on cache miss (needed on self-hosted/minimal images; false for browser-only installs).
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/cache@v5
+      id: playwright-cache
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          playwright-${{ runner.os }}-
+
+    - name: Install Playwright Chromium (with system deps)
+      if: steps.playwright-cache.outputs.cache-hit != 'true' && inputs.install-deps == 'true'
+      shell: bash
+      timeout-minutes: 15
+      run: npx playwright install --with-deps chromium
+
+    - name: Install Playwright Chromium
+      if: steps.playwright-cache.outputs.cache-hit == 'true' || inputs.install-deps == 'false'
+      shell: bash
+      timeout-minutes: 15
+      run: npx playwright install chromium
+
+    - name: Playwright install diagnostics
+      if: failure()
+      shell: bash
+      run: |
+        npx playwright install --dry-run || true
+        ls -la ~/.cache/ms-playwright || true
