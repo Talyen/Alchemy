@@ -14,6 +14,23 @@ import {
   restrictedSyntax,
 } from "./eslint/fragments.js";
 
+// The game-data and gear barrels re-export .webp assets; Playwright's esbuild
+// cannot parse those, and any file it collects that value-imports these barrels
+// breaks the whole E2E suite at collection time. Flag value imports (importKind
+// "value"); type-only imports are erased and deep imports of pure modules are fine.
+const ASSET_BARREL_NO_VALUE_IMPORT_REASONS = {
+  "@/lib/game-data": "its barrel re-exports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",
+  "@/lib/gear":
+    "it re-exports crafting.ts which imports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",
+};
+
+const ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS = Object.entries(ASSET_BARREL_NO_VALUE_IMPORT_REASONS).map(
+  ([source, reason]) => ({
+    selector: `ImportDeclaration[source.value="${source}"]:not([importKind="type"])`,
+    message: `Playwright-collected tests must not value-import ${source} — ${reason}`,
+  }),
+);
+
 export default tseslint.config(
   {
     ignores: [
@@ -239,7 +256,26 @@ export default tseslint.config(
           selector: 'Literal[value="Unlock All"]',
           message: "Unlock All is dev-only UI. Do not target it in e2e specs.",
         },
+        ...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS,
       ),
+    },
+  },
+
+  // Everything Playwright's esbuild collects (specs + e2e/fixtures/pages/helpers)
+  // must stay off the asset-coupled game-data/gear barrels' value imports. Those
+  // barrels re-export .webp assets that Playwright's esbuild cannot parse, so a
+  // single value import anywhere in the graph breaks the entire suite at
+  // collection time. Type-only imports and deep imports of pure modules are fine.
+  {
+    files: [
+      "tests/e2e/**/*.ts",
+      "tests/fixtures/**/*.ts",
+      "tests/pages/**/*.ts",
+      "tests/helpers/**/*.ts",
+      "tests/electron-helpers.ts",
+    ],
+    rules: {
+      "no-restricted-syntax": restrictedSyntax(...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS),
     },
   },
 
