@@ -5,16 +5,14 @@ import {
   useRunFlowTalentPort,
   useContentNavigationTalentPort,
   useTalentEffects,
+  useTalentProgressSlice,
   useSetHasActiveBattle,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-session-model";
-import { useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { CONSTANTS } from "@/features/alchemy/shared/types";
-import type { BattleCard } from "@/lib/game-data";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
 import { createRunTeardown } from "@/features/alchemy/run-loop/run/create-run-teardown";
@@ -31,10 +29,7 @@ export function useRunFlowEngine({
   transition,
   cancelPending,
   battle,
-  initShop,
-  initAlchemist,
-  initTrinketShop,
-  initEquipmentShop,
+  initializeShop,
   labyrinthClearNode,
   labyrinthFailNode,
   onMarkDifficultyCompleted,
@@ -42,7 +37,7 @@ export function useRunFlowEngine({
 }: RunNavigationDeps) {
   const orchestration = useRunOrchestrationPort();
   const talentEffects = useTalentEffects();
-  const talentXP = useGameplayStateStore((state) => state.runProfile.talentXP);
+  const { talentXP } = useTalentProgressSlice();
   const flowTalents = useRunFlowTalentPort(talentEffects);
   const contentTalents = useContentNavigationTalentPort(talentEffects, talentXP);
   const setHasActiveBattle = useSetHasActiveBattle();
@@ -84,22 +79,10 @@ export function useRunFlowEngine({
     onStartBattle: battle.onStartBattle,
     getAvailableDestinations: destinations.getAvailableDestinations,
     onResumeWildwood: wildwood.resumeWildwoodRun,
-    onStartNextWildwoodBoss: wildwood.startNextWildwoodBoss,
     destinationRng: randomSources.destinations,
     worldRng: randomSources.world,
     clearCardHover,
   });
-
-  const handleDraftComplete = useCallback(
-    (draftedCards: BattleCard[]) => {
-      if (orchestration.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-        contentNav.handleDraftComplete(draftedCards);
-        return;
-      }
-      wildwood.handleDraftComplete(draftedCards);
-    },
-    [orchestration.contentSystemType, contentNav, wildwood],
-  );
 
   const mystery = useMysteryEventNavigation({
     navigateTo,
@@ -112,12 +95,7 @@ export function useRunFlowEngine({
       transition,
       labyrinthFailNode,
       labyrinthClearNode,
-      initShop: (kind) => {
-        if (kind === "shop") initShop();
-        else if (kind === "alchemist") initAlchemist();
-        else if (kind === "trinket") initTrinketShop();
-        else initEquipmentShop();
-      },
+      initializeShop,
       startBattle: (opts) => battle.onStartBattle(opts?.deck, opts?.gold, opts?.enemyType),
       startBoss: (opts) => {
         if (opts?.bossId && battle.onStartBossById(opts.bossId, opts.modifiers)) return;
@@ -135,10 +113,7 @@ export function useRunFlowEngine({
     transition,
     labyrinthFailNode,
     labyrinthClearNode,
-    initShop,
-    initAlchemist,
-    initTrinketShop,
-    initEquipmentShop,
+    initializeShop,
     battle,
     onMarkDifficultyCompleted,
     wildwood.commitWildwoodVictory,
@@ -154,7 +129,6 @@ export function useRunFlowEngine({
         run: orchestration,
         talents: flowTalents,
         actions,
-        contentNav,
         getAvailableDestinations: destinations.getAvailableDestinations,
         rewardRng: randomSources.rewards,
         destinationRng: randomSources.destinations,
@@ -164,7 +138,6 @@ export function useRunFlowEngine({
       orchestration,
       flowTalents,
       actions,
-      contentNav,
       destinations.getAvailableDestinations,
       randomSources.rewards,
       randomSources.destinations,
@@ -211,7 +184,8 @@ export function useRunFlowEngine({
     endLabyrinthRun: flowHandlers.endLabyrinthRun,
     handleAbandonRun: flowHandlers.handleAbandonRun,
     handleCharacterSelect: contentNav.handleCharacterSelect,
-    handleDraftComplete,
+    handleStandardDraftComplete: contentNav.handleStandardDraftComplete,
+    handleWildwoodDraftComplete: wildwood.handleWildwoodDraftComplete,
     handleDraftPick: wildwood.handleDraftPick,
     handleDifficultySelect: contentNav.handleDifficultySelect,
     handleBackFromDifficultySelect: contentNav.handleBackFromDifficultySelect,

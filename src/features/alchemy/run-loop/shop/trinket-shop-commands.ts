@@ -1,0 +1,80 @@
+import { appendTrinketToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import {
+  bindRunRandomSource,
+  setRunTrinkets,
+  setTrinketShopState,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import type { TalentEffectManifest, TrinketEntry } from "@/lib/game-data";
+import { purchaseShopOffering, refreshShopOfferings } from "../shop-transactions";
+import type { TrinketShopCommands } from "./shop-action-types";
+import { playShopSpendFeedback } from "./shop-feedback";
+import { computeMerchantRefreshPrice, computeTrinketBuyPrice } from "./shop-price-selectors";
+import { createInitialTrinketShopState, resampleTrinketShopOfferings, type TrinketShopState } from "./shop-state-init";
+
+export function createTrinketShopCommands({
+  talentEffects,
+  rng,
+}: {
+  talentEffects: TalentEffectManifest;
+  rng: () => number;
+}): TrinketShopCommands {
+  const getBuyPrice = (_trinket: TrinketEntry) =>
+    computeTrinketBuyPrice({
+      talentEffects,
+      runTrinkets: readActiveRun().runTrinkets,
+      firstPurchaseUsed: readRunSession().trinketShopState.firstPurchaseUsed,
+    });
+  const getRefreshPrice = (refreshesLeft: number) => computeMerchantRefreshPrice(talentEffects, refreshesLeft);
+
+  function initialize(): void {
+    dispatchRunSessionCommand((draft) =>
+      setTrinketShopState(draft, createInitialTrinketShopState(bindRunRandomSource(rng, draft))),
+    );
+  }
+
+  function buy(trinket: TrinketEntry, slotKey: string): boolean {
+    const result = dispatchRunSessionCommand((draft) => {
+      const state = draft.session.trinketShopState;
+      const price = computeTrinketBuyPrice({
+        talentEffects,
+        runTrinkets: draft.run.activeRun.runTrinkets,
+        firstPurchaseUsed: state.firstPurchaseUsed,
+      });
+      return purchaseShopOffering({
+        draft,
+        price,
+        state,
+        setState: setTrinketShopState,
+        slotKey,
+        acquire: () => appendTrinketToRunWithDiscovery(trinket.id, setRunTrinkets, draft),
+      });
+    });
+    playShopSpendFeedback(result);
+    return result.committed;
+  }
+
+  function refresh(): boolean {
+    const result = dispatchRunSessionCommand((draft) => {
+      const state = draft.session.trinketShopState;
+      return refreshShopOfferings<TrinketShopState, TrinketEntry>({
+        draft,
+        price: getRefreshPrice(state.refreshesLeft),
+        refreshesLeft: state.refreshesLeft,
+        setState: setTrinketShopState,
+        resample: () => resampleTrinketShopOfferings(bindRunRandomSource(rng, draft)),
+        mapState: (previous, trinkets) => ({
+          ...previous,
+          trinkets,
+          refreshesLeft: previous.refreshesLeft - 1,
+          purchasedSlotKeys: [],
+        }),
+      });
+    });
+    playShopSpendFeedback(result);
+    return result.committed;
+  }
+
+  return { initialize, buy, refresh, getBuyPrice, getRefreshPrice };
+}

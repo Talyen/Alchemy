@@ -7,10 +7,6 @@ export {
   useIsArmoryLocked,
 } from "./app-overlays";
 export { AppScreenChromeProvider } from "./app-screen-chrome-context";
-export {
-  applySaveDataToStores,
-  bootstrapAlchemySaveState,
-} from "@/features/alchemy/shared/storage/bootstrap-save-state";
 export { StartupLoadingScreen } from "./startup-loading-screen";
 export { useAlchemyAutosaveFromStores } from "./use-app-save-state";
 export {

@@ -8,9 +8,12 @@ import {
   setDestinationIndexInAct,
   setCompletedDestinations,
   setMysteryCardChoices,
+  bindRunRandomSource,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { createInitialDestinationResult } from "@/features/alchemy/shared/run-flow/destination-flow";
+import { getBossEnemy } from "@/features/alchemy/shared/config";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
 import { CONSTANTS } from "../../shared/types";
@@ -20,7 +23,16 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, handlers: Ru
   function prepareNextDestination(destinationIndexInAct: number = 0, onCommitted?: () => void) {
     deps.actions.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
       dispatchRunSessionCommand((draft) => {
-        const initialDestinations = deps.contentNav.createInitialDestinations({ destinationIndexInAct }, draft);
+        const run = draft.run.activeRun;
+        const initialDestinations = createInitialDestinationResult({
+          availableDestinations: deps.getAvailableDestinations({ destinationIndexInAct }),
+          offerState: {
+            lastOfferedDestinations: run.lastOfferedDestinations,
+            roundsSinceOffered: run.destinationRoundsSinceOffered,
+          },
+          bossEnemyId: getBossEnemy([], bindRunRandomSource(deps.worldRng, draft)).id,
+          rng: bindRunRandomSource(deps.destinationRng, draft),
+        });
         setDestinationOfferState(draft, initialDestinations.offerState);
         setRewardState(draft, initialDestinations.rewardState);
       });

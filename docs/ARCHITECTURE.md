@@ -33,7 +33,7 @@ Gameplay state has one authoritative nested Zustand aggregate in `shared/stores/
 
 Cross-concern writes go through `run-session-write-port.ts` (active-run progression, profile/homestead, battle transitions, rewards, shops, labyrinth, mystery, and run setup). Multi-concern lifecycle orchestration is exposed through `run-session-lifecycle-port.ts`. Feature-facing reads (`run-session-read-port`, `profile-store` / `gear-store` slices, and the React ports) are data-only, while command-backed write ports own every gameplay mutation. React orchestration uses narrow ports from `run-session-react-ports.ts` such as `useRunOrchestrationPort` and `useBattleRunPort`; screens use exact screen-data hooks (battle display via `useBattleScreenRouteData`). Profile and gear live in their domain store modules (persistence + feature slices); no caller receives a cross-lifetime flattened view.
 
-Gameplay mutation callers enter the session through `dispatchRunSessionCommand()` from `run-session-command.ts`. The command boundary opens one Immer draft of the authoritative aggregate, publishes one root revision on success, and discards the draft on failure. React selectors and autosave subscribe to that same root; there is no committed compatibility snapshot to drift from it. Settings and presentation-only state remain separate. Commands are synchronous and must not span an `await`; audio, navigation timers, presentation updates, and other non-rollbackable work use the command's `afterCommit` option or run after the command returns. Draft mutators receive the draft explicitly and compose inside one command; a command body must not call another command. Persistence adapters may subscribe to the aggregate commit signal directly; gameplay callers must not.
+Gameplay mutation callers enter the session through `dispatchRunSessionCommand()` from `run-session-command.ts`. The command boundary opens one Immer draft of the authoritative aggregate, publishes one root revision on success, and discards the draft on failure. React selectors and autosave subscribe to that same root; there is no committed compatibility snapshot to drift from it. Settings and presentation-only state remain separate. Commands are synchronous and must not span an `await`; audio, navigation timers, presentation updates, and other non-rollbackable work use the command's `afterCommit` option or run after the command returns. Draft mutators receive the draft explicitly and compose inside one command; a command body must not call another command. Transactional checks that guard a write, such as shop gold, refresh counts, and purchased slots, read from that same draft rather than a committed read port. Persistence adapters may subscribe to the aggregate commit signal directly; gameplay callers must not.
 
 Battle reads are data-only: `run-session-read-port.ts` does not expose aggregate mutators. Battle writes use focused draft-first mutators from `run-session-write-port.ts`; event-time calls open one command and existing command recipes pass their draft explicitly. An asynchronous battle transition that changes logical state must persist its continuation in `activeCombat.pendingBattleTransition` in the same commit as its intermediate state. Presentation delays and display overrides may continue after that commit, but a booted battle must never depend on an in-memory promise or timer to become playable.
 
@@ -81,11 +81,17 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 
 **Do not add** a broad all-screens display bag or a second flattening read model. Each route owns its exact screen-specific hook; the shared `RunScreenDataByScreen` map in `run-screen-data.ts` keeps those contracts explicit. Controllers own **commands** (assembled by `shell/create-route-commands.ts`); screen routes own **display data** via their specific hooks. The asset preloader uses the intentionally small `useScreenAssetPreloadData` projection because it spans several possible screens. App chrome / autosave / particles read via capability hooks (`useActiveRunCharacterId`, `useTalentProgressSlice`, `useRunSessionBattleContext`, …), not controller display re-exports. Imperative handlers read lifetime-specific ports (`readActiveRun`, `readRunProfile`, `readRunSession`, `readBattle`) at call time; they do not receive a React controller data bus. Battle presentation and actions share `routeCommands.battle` (screen data, refs, transfers, and handlers) and take narrow `BattleRunPort` / `BattleTalentPort` inputs. Run-flow handlers take narrow `RunFlowRunPort` / `RunFlowTalentPort`, call shell side effects through `RunFlowShellActions` (assembled once in `use-run-flow-engine.ts` from battle/shop/labyrinth/wildwood/mystery callbacks — not parallel NavOps bags), and call sibling concern handlers directly via a shared `RunFlowSiblingHandlers` object. Pure destination/reward routers take a `Pick` of those shell actions (plus write-port or sibling extras only where needed): `DestinationRouteDeps` and `RewardRouteDeps`. Active-run core fields shared by committed session reads come from `pickActiveRunView` in `run-state-init.ts`.
 
-Boot: [`App.tsx`](../src/App.tsx) calls the canonical `restoreRun` transition after bootstrap and before first paint (guarded by `readRunInitialized`) so the first rendered screen is already resumed. `restoreRun` is the only runtime hydration path. `run-resume-codec.ts` is the single feature-owned translation boundary for save/resume state; `restore-active-run-session.ts` only applies its decoded session fields through the aggregate session action group, so autosave and boot hydration cannot grow separate field mappings. The mega-controller wires domain controllers into `createAlchemyRouteCommands` (including battle presentation on `routeCommands.battle`); it is not a display-data bus.
+Boot: [`use-alchemy-bootstrap.ts`](../src/app/use-alchemy-bootstrap.ts) applies persistence owners and calls the canonical `restoreRun` transition before publishing bootstrap readiness (guarded by `readRunInitialized`), so [`App.tsx`](../src/App.tsx) cannot render `AppInner` against an unhydrated run. `restoreRun` is the only runtime hydration path. `run-resume-codec.ts` is the single feature-owned translation boundary for save/resume state; `restore-active-run-session.ts` only applies its decoded session fields through the aggregate session action group, so autosave and boot hydration cannot grow separate field mappings. The mega-controller wires domain controllers into `createAlchemyRouteCommands` (including battle presentation on `routeCommands.battle`); it is not a display-data bus.
 
 ### Run phase
 
 `getRunPhase(screen, hasActiveBattle)` in `@/lib/routing` → `meta` | `runLoop` | `battle` | `runEnd`.
+
+### Run setup ownership
+
+`run-setup/run/content-system-navigation.ts` owns content-system selection, character/difficulty routing, and creation of a fresh campaign, labyrinth, or Wildwood run. Its run-start recipes use the draft-only helper in `run-start-command.ts`; event handlers own the surrounding command and post-commit effects. Wildwood setup ends once its persisted draft is created. From the first draft pick onward, `shell/use-wildwood-gauntlet-flow.ts` is the sole owner of Wildwood draft completion, boss progression, recovery, rewards, and resume routing.
+
+Destination offer construction is pure in `shared/run-flow/destination-flow.ts`. Campaign start and run-loop progression supply explicit offer history, boss ID, and command-bound RNG; destination generation is not exposed through the content-system navigation API.
 
 ## Battle path
 
@@ -116,11 +122,19 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 | Run lifecycle           | `shell/use-alchemy-run-controller.ts`, `run-session-lifecycle-port.ts`                                                                               |
 | Route command maps      | `shell/create-route-commands.ts`                                                                                                                     |
 | Navigation / rewards    | `shell/use-run-flow-engine.ts` (destination/content/mystery hooks + inlined flow factories) + `run-loop/navigation/*` / `run-loop/run/*`             |
+| Content-system entry    | `run-setup/run/content-system-navigation.ts` → `run-start-command.ts`; Wildwood post-entry flow stays in `shell/use-wildwood-gauntlet-flow.ts`       |
 | Run-flow shell actions  | `run-loop/run/run-flow-shell-actions.ts` (assembled in `shell/use-run-flow-engine.ts`); routers use `DestinationRouteDeps` / `RewardRouteDeps` picks |
 | Run-flow / battle ports | `shared/stores/run-port-types.ts` (`RunFlowRunPort`, `BattleRunPort`, …)                                                                             |
 | Battle                  | `shell/use-battle-controller.ts` → `lib/battle/*`                                                                                                    |
+| Shops                   | `shell/use-shop-controller.ts` → `run-loop/shop/create-shop-actions.ts` → domain command modules                                                     |
 | Session reads/writes    | `shared/stores/run-session-read-port.ts`, `run-session-write-port.ts`, `run-session-command.ts`                                                      |
 | Screen routing          | `shell/use-screen-transitions.ts`, `useActiveRunScreen()`                                                                                            |
+
+## Shop commands
+
+`useShopController` memoizes one domain-shaped command surface: `initialize(kind)` plus `merchant`, `alchemist`, `trinket`, and `equipment` command groups. `create-shop-actions.ts` is composition only; each shop's initialization, purchases, services, refreshes, and live price selectors belong to its matching `*-shop-commands.ts` module. Route assembly consumes the nested groups directly, while destination and Labyrinth routing receive only the shared `initialize(kind)` capability.
+
+Shared recipes in `run-loop/shop-transactions.ts` operate on the active command draft and return an explicit `ShopTransactionResult`; they do not dispatch commands or play audio. Domain commands calculate guarded prices from that same draft, own the single `dispatchRunSessionCommand()` boundary, and trigger spend feedback only after the command returns. Equipment acquisition remains in `equipment-shop-commands.ts` and must use `dispatchGearMutationWithRunHealthSync()` so permanent Gear and active-run health commit atomically.
 
 ## Settings and meta profile
 
@@ -148,6 +162,7 @@ Aggregate fields and action wiring live in `gameplay-state-store.ts`; action-fre
 Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/boundaries.js`) and double-checked by `npm run lint:boundaries` (dependency-cruiser). Phase bans and flat-config stacking order live in those files; `tests/architecture/eslint-boundary-stacking.test.ts` asserts stacked `no-restricted-imports` fragments. Summary:
 
 - `src/lib/**` must not import `@/features/**`
+- `gameplay-state-store.ts` is internal to `shared/stores/`; other layers use capability hooks, reads, writes, commands, and lifecycle ports
 - Feature code outside `shared/stores/` imports capability ports, commands, reads, writes, and lifecycle modules directly (not compatibility stores or `run-transitions`)
 - Screens must not import `run-loop/battle` or `run-loop/navigation` orchestration
 - `run-setup` ↛ `run-loop` and `run-loop` ↛ `run-setup` (shared helpers in `shared/run-flow/`)
@@ -157,13 +172,13 @@ Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/b
 
 One loading experience at cold start, then instant navigation — no per-route "Loading …" fallbacks.
 
-| Layer          | Where                                                  | Policy                                        |
-| -------------- | ------------------------------------------------------ | --------------------------------------------- |
-| Images         | `allGameArt` in `assets.ts` (eager `import.meta.glob`) | Decoded before menu via `useInitialLoadReady` |
-| Fonts          | `use-app-effects.ts`                                   | With images at startup                        |
-| Screen JS      | `src/app/screen-routes/`                               | Static imports — **no** `React.lazy()`        |
-| Runtime extras | `use-app-effects.ts`                                   | Battle/rewards/shop warm-up only              |
-| SFX            | `use-app-effects.ts`                                   | Critical sounds eager; rest on idle           |
+| Layer          | Where                                                  | Policy                                 |
+| -------------- | ------------------------------------------------------ | -------------------------------------- |
+| Images         | `allGameArt` in `assets.ts` (eager `import.meta.glob`) | Decoded up front before reveal         |
+| Fonts          | `use-app-effects.ts`                                   | Ready with images before reveal        |
+| Screen JS      | `src/app/screen-routes/`                               | Static imports — **no** `React.lazy()` |
+| Runtime extras | `use-app-effects.ts`                                   | Battle/rewards/shop warm-up only       |
+| SFX            | `use-app-effects.ts`                                   | Critical sounds eager; rest on idle    |
 
 **Do not add:** `React.lazy()` on route screens; lazy game art; per-screen spinners for assets in `allGameArt`.
 

@@ -207,6 +207,9 @@ test.describe("Startup Loading Screen", slow, () => {
 
     await expect(page.getByText(LOADING_WORDS)).toBeVisible({ timeout: 5000 });
     await new MenuPage(page).expectMainMenu(15000);
+    const logo = page.getByRole("img", { name: "Alchemy logo" }).first();
+    await expect(logo).toHaveJSProperty("complete", true);
+    expect(await logo.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
 
     expect(errors).toEqual([]);
   });

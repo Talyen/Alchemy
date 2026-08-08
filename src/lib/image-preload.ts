@@ -44,10 +44,8 @@ export function preloadImage(src: string): Promise<void> {
 
 // Warms a list immediately for high-confidence assets, such as the current battle
 // enemy and hand images, while still allowing the browser to prioritize rendering.
-export function preloadImages(srcs: string[]): void {
-  srcs.forEach((src) => {
-    void preloadImage(src);
-  });
+export function preloadImages(srcs: readonly string[]): Promise<void> {
+  return Promise.all(srcs.map(preloadImage)).then(() => undefined);
 }
 
 // Spreads speculative image decoding across idle time so menu and battle input
@@ -57,7 +55,7 @@ export function preloadImagesWhenIdle(srcs: string[]): void {
   let index = 0;
 
   function preloadNextBatch() {
-    preloadImages(uniqueSrcs.slice(index, index + IMAGE_PRELOAD_BATCH_SIZE));
+    void preloadImages(uniqueSrcs.slice(index, index + IMAGE_PRELOAD_BATCH_SIZE));
     index += IMAGE_PRELOAD_BATCH_SIZE;
     if (index < uniqueSrcs.length) schedulePreloadBatch(preloadNextBatch);
   }

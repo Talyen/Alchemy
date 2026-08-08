@@ -2,6 +2,7 @@ import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "
 import type { WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import type { Screen } from "@/features/alchemy/shared/types";
 import type { ScreenTransitionOptions } from "./use-screen-transitions";
+import type { ShopKind } from "@/features/alchemy/run-loop/shop/shop-action-types";
 
 interface BattleLauncherDeps {
   onStartBattle: (
@@ -31,10 +32,7 @@ export interface RunNavigationDeps {
     world: () => number;
   };
   battle: BattleLauncherDeps;
-  initShop: () => void;
-  initAlchemist: () => void;
-  initTrinketShop: () => void;
-  initEquipmentShop: () => void;
+  initializeShop: (kind: ShopKind) => void;
   labyrinthClearNode: () => void;
   labyrinthFailNode: () => void;
 }

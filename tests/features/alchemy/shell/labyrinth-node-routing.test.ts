@@ -22,10 +22,7 @@ describe("createLabyrinthNodeRouting", () => {
       },
       nav: { beginMysteryEvent },
       shop: {
-        initShop: vi.fn(),
-        initAlchemist: vi.fn(),
-        initTrinketShop: vi.fn(),
-        initEquipmentShop: vi.fn(),
+        initialize: vi.fn(),
       },
     });
 

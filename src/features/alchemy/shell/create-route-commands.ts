@@ -13,7 +13,8 @@ export interface AlchemyRouteCommandDeps {
   unlockTalent: (keywordId: KeywordId, talentId: string) => void;
   resetUnlockedTalents: () => void;
   handleCharacterSelect: (characterId: CharacterId) => void;
-  handleDraftComplete: (draftedCards: BattleCard[]) => void;
+  handleStandardDraftComplete: (draftedCards: BattleCard[]) => void;
+  handleWildwoodDraftComplete: (draftedCards: BattleCard[]) => void;
   handleDraftPick: (card: BattleCard) => void;
   handleDifficultySelect: (difficultyId: DifficultyId) => void;
   handleBackFromDifficultySelect: () => void;
@@ -64,7 +65,8 @@ function createRunSetupRouteCommands(
     AlchemyRouteCommandDeps,
     | "goToScreen"
     | "handleCharacterSelect"
-    | "handleDraftComplete"
+    | "handleStandardDraftComplete"
+    | "handleWildwoodDraftComplete"
     | "handleDraftPick"
     | "handleDifficultySelect"
     | "handleBackFromDifficultySelect"
@@ -73,7 +75,8 @@ function createRunSetupRouteCommands(
   return {
     goToScreen: deps.goToScreen,
     handleCharacterSelect: deps.handleCharacterSelect,
-    handleDraftComplete: deps.handleDraftComplete,
+    handleStandardDraftComplete: deps.handleStandardDraftComplete,
+    handleWildwoodDraftComplete: deps.handleWildwoodDraftComplete,
     handleDraftPick: deps.handleDraftPick,
     handleDifficultySelect: deps.handleDifficultySelect,
     handleBackFromDifficultySelect: deps.handleBackFromDifficultySelect,
@@ -123,36 +126,36 @@ function createRunLoopRouteCommands(
     },
     shop: {
       merchant: {
-        handleBuyCard: shop.handleShopBuyCard,
-        handleRemoveCard: shop.handleShopRemoveCard,
-        handleRefresh: shop.handleShopRefresh,
+        handleBuyCard: shop.merchant.buyCard,
+        handleRemoveCard: shop.merchant.removeCard,
+        handleRefresh: shop.merchant.refresh,
         handleContinue: deps.advanceToNextDestination,
-        getCardBuyPrice: shop.getMerchantCardBuyPrice,
-        getRemoveCardPrice: shop.getRemoveCardPrice,
-        getRefreshPrice: shop.getShopRefreshPrice,
+        getCardBuyPrice: shop.merchant.getCardBuyPrice,
+        getRemoveCardPrice: shop.merchant.getRemoveCardPrice,
+        getRefreshPrice: shop.merchant.getRefreshPrice,
       },
       alchemist: {
-        handleBuyCard: shop.handleAlchemistBuyCard,
-        handleRefresh: shop.handleAlchemistRefresh,
-        handleMixPotions: shop.handleAlchemistMixPotions,
+        handleBuyCard: shop.alchemist.buyPotion,
+        handleRefresh: shop.alchemist.refresh,
+        handleMixPotions: shop.alchemist.mixPotions,
         handleContinue: deps.advanceToNextDestination,
-        getPotionBuyPrice: shop.getAlchemistPotionBuyPrice,
-        getMixPrice: shop.getMixPotionPrice,
-        getRefreshPrice: shop.getAlchemistRefreshPrice,
+        getPotionBuyPrice: shop.alchemist.getPotionBuyPrice,
+        getMixPrice: shop.alchemist.getMixPrice,
+        getRefreshPrice: shop.alchemist.getRefreshPrice,
       },
       trinket: {
-        handleBuy: shop.handleTrinketShopBuy,
-        handleRefresh: shop.handleTrinketShopRefresh,
+        handleBuy: shop.trinket.buy,
+        handleRefresh: shop.trinket.refresh,
         handleContinue: deps.advanceToNextDestination,
-        getBuyPrice: shop.getTrinketBuyPrice,
-        getRefreshPrice: shop.getTrinketRefreshPrice,
+        getBuyPrice: shop.trinket.getBuyPrice,
+        getRefreshPrice: shop.trinket.getRefreshPrice,
       },
       equipment: {
-        handleBuy: shop.handleEquipmentShopBuy,
-        handleRefresh: shop.handleEquipmentShopRefresh,
+        handleBuy: shop.equipment.buy,
+        handleRefresh: shop.equipment.refresh,
         handleContinue: deps.advanceToNextDestination,
-        getBuyPrice: shop.getGearBuyPrice,
-        getRefreshPrice: shop.getEquipmentRefreshPrice,
+        getBuyPrice: shop.equipment.getBuyPrice,
+        getRefreshPrice: shop.equipment.getRefreshPrice,
       },
     },
     mystery: {

@@ -15,7 +15,6 @@ import {
   setRunSession,
 } from "../../../../helpers/run-domain-store-test";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
-import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 
 vi.mock("@/lib/audio", () => ({
   playGoldGain: vi.fn(),
@@ -53,7 +52,6 @@ function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNaviga
     onStartBattle,
     getAvailableDestinations: () => [CONSTANTS.DESTINATIONS.NORMAL_COMBAT],
     onResumeWildwood: vi.fn(),
-    onStartNextWildwoodBoss: vi.fn(),
     destinationRng: () => 0.5,
     worldRng: () => 0.5,
     clearCardHover: vi.fn(),
@@ -115,12 +113,10 @@ describe("createContentSystemNavigation", () => {
   });
 
   it("commits the initial destination offer and reward together", () => {
-    // getAvailableDestinations reads the live run state: destinations are only
-    // produced once startRun's in-flight draft is visible to reads inside the
-    // same command. If reads saw committed state, no deck would be present yet.
+    setRunProgress({ runDeck: [] });
+    const getAvailableDestinations = vi.fn(() => [CONSTANTS.DESTINATIONS.NORMAL_COMBAT]);
     const deps = makeDeps({
-      getAvailableDestinations: () =>
-        readActiveRun().runDeck.length > 0 ? [CONSTANTS.DESTINATIONS.NORMAL_COMBAT] : [],
+      getAvailableDestinations,
     });
     const nav = createContentSystemNavigation(deps);
     const commits: number[] = [];
@@ -131,6 +127,12 @@ describe("createContentSystemNavigation", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(1);
+    expect(getAvailableDestinations).toHaveBeenCalledWith({
+      currentHealth: expect.any(Number),
+      currentGold: expect.any(Number),
+      destinationIndexInAct: 0,
+      maxHealth: expect.any(Number),
+    });
     expect(getRunSessionStoreView().rewardState.destinations).toEqual([CONSTANTS.DESTINATIONS.NORMAL_COMBAT]);
     expect(getRunProgressStoreView().lastOfferedDestinations).toEqual([CONSTANTS.DESTINATIONS.NORMAL_COMBAT]);
   });
@@ -152,25 +154,19 @@ describe("createContentSystemNavigation", () => {
     expect(getRunSessionStoreView().pendingCharacterId).toBe("wildcard");
   });
 
-  it("wildcard Wildwood draft complete starts the gauntlet with the drafted deck", () => {
-    setRunSession({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD });
-    const onStartNextWildwoodBoss = vi.fn();
-    const deps = makeDeps({
-      pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD,
-      onStartNextWildwoodBoss,
-    });
+  it("uses the standard draft owner to start a wildcard campaign", () => {
+    setRunSession({ pendingCharacterId: "wildcard", pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN });
+    const deps = makeDeps({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN });
     const nav = createContentSystemNavigation(deps);
     const draftedCards = Array.from({ length: DRAFT_ROUNDS }, (_, index) =>
-      makeTestCard({ id: `wildcard-draft-${index}` }),
+      makeTestCard({ id: `campaign-draft-${index}` }),
     );
 
-    nav.handleDraftComplete(draftedCards);
+    nav.handleStandardDraftComplete(draftedCards);
+    nav.handleDifficultySelect(DEFAULT_CAMPAIGN_DIFFICULTY_ID);
 
-    expect(getRunProgressStoreView().contentSystemType).toBe(CONSTANTS.CONTENT_SYSTEMS.WILDWOOD);
+    expect(getRunProgressStoreView().contentSystemType).toBe(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
     expect(getRunProgressStoreView().runDeck).toEqual(draftedCards);
-    expect(getRunSessionStoreView().wildwoodDraft).not.toBeNull();
-    expect(getRunSessionStoreView().pendingCharacterId).toBeNull();
-    expect(onStartNextWildwoodBoss).toHaveBeenCalledOnce();
-    expect(deps.navigateTo).not.toHaveBeenCalledWith(CONSTANTS.SCREENS.DRAFT_DECK);
+    expect(deps.onStartBattle).toHaveBeenCalledOnce();
   });
 });

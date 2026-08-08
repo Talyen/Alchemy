@@ -132,6 +132,11 @@ export function useScreenAssetPreloadUrls(screen: Screen): string[] {
     screen === "alchemist" ? state.session.alchemistState : null,
   );
   const mysteryEvent = useGameplayStateStore((state) => (screen === "mystery" ? state.session.mysteryEvent : null));
+  const battleArtKey = useGameplayStateStore((state) =>
+    screen === "battle"
+      ? [state.battle.battleState.currentEnemy.art, ...state.battle.battleState.hand.map((card) => card.art)].join("|")
+      : "",
+  );
 
   return useMemo(() => {
     const urls: string[] = [];
@@ -160,6 +165,9 @@ export function useScreenAssetPreloadUrls(screen: Screen): string[] {
     if (mysteryEvent?.art) {
       urls.push(mysteryEvent.art);
     }
+    if (battleArtKey) {
+      urls.push(...battleArtKey.split("|").filter(Boolean));
+    }
     return urls;
-  }, [rewardState, shopState, alchemistState, mysteryEvent]);
+  }, [rewardState, shopState, alchemistState, mysteryEvent, battleArtKey]);
 }

@@ -45,13 +45,15 @@ describe("applyMysteryEffect", () => {
     expect(damageUpdater(20)).toBe(17);
 
     const gainGoldContext = minimalContext();
-    applyMysteryEffect({ kind: "gainGold", amount: 10 }, gainGoldContext);
+    const gainGoldResult = applyMysteryEffect({ kind: "gainGold", amount: 10 }, gainGoldContext);
     expect(gainGoldContext.onAwardGold).toHaveBeenCalledWith(10);
+    expect(gainGoldResult.goldSound).toBe("gain");
 
     const loseGoldContext = minimalContext();
-    applyMysteryEffect({ kind: "loseGold", amount: 5 }, loseGoldContext);
+    const loseGoldResult = applyMysteryEffect({ kind: "loseGold", amount: 5 }, loseGoldContext);
     const goldUpdater = loseGoldContext.setRunGold.mock.calls[0][0];
     expect(goldUpdater(20)).toBe(15);
+    expect(loseGoldResult.goldSound).toBe("spend");
 
     const gainXpContext = minimalContext();
     applyMysteryEffect({ kind: "gainXP", keyword: "physical", amount: 1 }, gainXpContext);

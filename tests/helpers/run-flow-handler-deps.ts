@@ -1,4 +1,3 @@
-import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow-handler-deps";
 import type { RunFlowShellActions } from "@/features/alchemy/run-loop/run/run-flow-shell-actions";
 import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
@@ -34,12 +33,6 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
   const {
     run = makeRunController(),
     talents = makeTalentController(),
-    contentNav = {
-      createInitialDestinations: () => ({
-        rewardState: createEmptyRewardState(),
-        offerState: { lastOfferedDestinations: [], roundsSinceOffered: {} },
-      }),
-    },
     getAvailableDestinations = () => [],
     rewardRng = () => 0.5,
     destinationRng = () => 0.5,
@@ -49,7 +42,7 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     transition = () => {},
     labyrinthFailNode,
     labyrinthClearNode,
-    initShop,
+    initializeShop,
     startBattle,
     startBoss,
     markDifficultyCompleted,
@@ -78,10 +71,10 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     transition,
     labyrinthFailNode: labyrinthFailNode ?? onLabyrinthFailNode,
     labyrinthClearNode: labyrinthClearNode ?? onLabyrinthClearNode,
-    initShop:
-      initShop ??
+    initializeShop:
+      initializeShop ??
       ((kind) => {
-        if (kind === "shop") onInitShop();
+        if (kind === "merchant") onInitShop();
         else if (kind === "alchemist") onInitAlchemist();
         else if (kind === "trinket") onInitTrinketShop();
         else onInitEquipmentShop();
@@ -109,7 +102,6 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     run,
     talents,
     actions,
-    contentNav,
     getAvailableDestinations,
     rewardRng,
     destinationRng,

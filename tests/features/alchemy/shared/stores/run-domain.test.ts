@@ -28,6 +28,7 @@ import type { ActiveRunData } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 import { createRunRngState } from "@/lib/run-rng";
+import { createCompleteActiveRunData } from "./active-run-data-fixture";
 
 vi.mock("@/features/alchemy/shared/storage/flush-save", () => ({
   flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
@@ -218,6 +219,53 @@ describe("initialize", () => {
     };
     restoreRun(activeRun, {}, {});
     expect(getNavigationStoreView().screen).toBe("shop");
+  });
+
+  it("round-trips every active-run persistence region through the aggregate", () => {
+    const activeRun = createCompleteActiveRunData();
+
+    restoreRun(activeRun, { armor: 21 }, { armor: ["armor-1"] });
+    const snapshot = snapshotRun();
+
+    expect(Object.keys(snapshot).sort()).toEqual(Object.keys(activeRun).sort());
+    expect(snapshot).toMatchObject({
+      characterId: activeRun.characterId,
+      runDeck: activeRun.runDeck,
+      runGold: activeRun.runGold,
+      runPlayerHealth: activeRun.runPlayerHealth,
+      runMaxHealth: activeRun.runMaxHealth,
+      roomsEncountered: activeRun.roomsEncountered,
+      currentAct: activeRun.currentAct,
+      destinationIndexInAct: activeRun.destinationIndexInAct,
+      completedDestinations: activeRun.completedDestinations,
+      lastOfferedDestinations: activeRun.lastOfferedDestinations,
+      destinationRoundsSinceOffered: activeRun.destinationRoundsSinceOffered,
+      runTrinkets: activeRun.runTrinkets,
+      encounteredRunEnemyIds: activeRun.encounteredRunEnemyIds,
+      selectedDifficulty: activeRun.selectedDifficulty,
+      contentSystemType: activeRun.contentSystemType,
+      labyrinthMap: activeRun.labyrinthMap,
+      labyrinthPendingNode: activeRun.labyrinthPendingNode,
+      runTalentXP: activeRun.runTalentXP,
+      runMaterialsEarned: activeRun.runMaterialsEarned,
+      currentScreen: activeRun.currentScreen,
+      interruptedFlow: activeRun.interruptedFlow,
+      shopState: activeRun.shopState,
+      alchemistState: activeRun.alchemistState,
+      trinketShopState: activeRun.trinketShopState,
+      equipmentShopState: activeRun.equipmentShopState,
+    });
+    expect(snapshot.rng).toEqual(activeRun.rng);
+    expect(snapshot.activeCombat).toMatchObject({
+      battleState: {
+        turn: activeRun.activeCombat?.battleState.turn,
+        playerHealth: activeRun.activeCombat?.battleState.playerHealth,
+        turnPhase: activeRun.activeCombat?.battleState.turnPhase,
+      },
+      pendingBattleTransition: activeRun.activeCombat?.pendingBattleTransition,
+      activeLabyrinthModifiers: activeRun.activeCombat?.activeLabyrinthModifiers,
+      activeLabyrinthRewardModifiers: activeRun.activeCombat?.activeLabyrinthRewardModifiers,
+    });
   });
 });
 

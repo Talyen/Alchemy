@@ -1,101 +1,130 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { makeCardRefreshHandler, makeShopRefreshHandler } from "@/features/alchemy/run-loop/shop-transactions";
-import type { BattleCard } from "@/lib/game-data";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { refreshCardShopOfferings, refreshShopOfferings } from "@/features/alchemy/run-loop/shop-transactions";
+import { createInitialShopState } from "@/features/alchemy/run-loop/shop/shop-state-init";
+import {
+  dispatchRunSessionCommand,
+  subscribeRunSessionCommits,
+} from "@/features/alchemy/shared/stores/run-session-command";
+import { setShopState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+import { selectRewardCards, type BattleCard } from "@/lib/game-data";
+import type { ShopState } from "@/lib/active-run-session";
 import { makeTestCardWithId } from "../../../fixtures/battle";
-
-vi.mock("@/lib/audio", () => ({
-  playGoldSpend: vi.fn(),
-}));
+import {
+  getRunProgressStoreView,
+  getRunSessionStoreView,
+  resetRunProgressSlice,
+  setRunProgress,
+} from "../../../helpers/run-domain-store-test";
 
 vi.mock("@/lib/game-data", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/game-data")>();
   return { ...actual, selectRewardCards: vi.fn() };
 });
 
-import { playGoldSpend } from "@/lib/audio";
-import { selectRewardCards } from "@/lib/game-data";
-
 const makeCard = (id: string): BattleCard =>
   makeTestCardWithId(id, { effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resetRunProgressSlice();
+  resetTransientRunUi();
 });
 
-describe("makeShopRefreshHandler", () => {
+describe("refreshShopOfferings", () => {
   const newItems = [makeCard("b"), makeCard("c")];
 
-  function makeHandler(overrides: Partial<Parameters<typeof makeShopRefreshHandler>[0]> = {}) {
-    return makeShopRefreshHandler({
-      getPrice: () => 5,
-      getRefreshesLeft: () => 1,
-      getRunGold: () => 10,
-      setRunGold: vi.fn(),
-      setState: vi.fn(),
-      resample: vi.fn(() => newItems),
-      getMapState: (prev, items) => ({ ...(prev as object), items }),
-      ...overrides,
-    });
-  }
+  it("commits gold and refreshed state atomically", () => {
+    setRunProgress({ runGold: 10 });
+    setShopState({ ...createInitialShopState([], () => 0.5), refreshesLeft: 1 });
+    const commits: number[] = [];
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
-  it("returns false when refreshesLeft <= 0", () => {
-    const setRunGold = vi.fn();
-    const setState = vi.fn();
-    const handler = makeHandler({ getRefreshesLeft: () => 0, setRunGold, setState });
-    expect(handler()).toBe(false);
-    expect(playGoldSpend).not.toHaveBeenCalled();
-    expect(setRunGold).not.toHaveBeenCalled();
-    expect(setState).not.toHaveBeenCalled();
+    const refreshed = dispatchRunSessionCommand((draft) =>
+      refreshShopOfferings<ShopState, BattleCard>({
+        draft,
+        price: 5,
+        refreshesLeft: draft.session.shopState.refreshesLeft,
+        setState: setShopState,
+        resample: () => newItems,
+        mapState: (previous, items) => ({
+          ...previous,
+          cards: items,
+          refreshesLeft: previous.refreshesLeft - 1,
+        }),
+      }),
+    );
+    unsubscribe();
+
+    expect(refreshed).toMatchObject({ committed: true, price: 5, value: newItems });
+    expect(commits).toHaveLength(1);
+    expect(getRunProgressStoreView().runGold).toBe(5);
+    expect(getRunSessionStoreView().shopState.cards).toEqual(newItems);
+    expect(getRunSessionStoreView().shopState.refreshesLeft).toBe(0);
   });
 
-  it("returns false when runGold < price", () => {
-    const handler = makeHandler({ getRunGold: () => 2 });
-    expect(handler()).toBe(false);
-    expect(playGoldSpend).not.toHaveBeenCalled();
-  });
+  it.each([
+    { name: "no refreshes remain", runGold: 10, refreshesLeft: 0 },
+    { name: "gold is insufficient", runGold: 2, refreshesLeft: 1 },
+  ])("does not publish a revision when $name", ({ runGold, refreshesLeft }) => {
+    setRunProgress({ runGold });
+    setShopState({ ...createInitialShopState([], () => 0.5), refreshesLeft });
+    const commits: number[] = [];
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
-  it("on success spends gold and maps the resampled items into state", () => {
-    const setRunGold = vi.fn();
-    const setState = vi.fn();
-    const handler = makeHandler({ setRunGold, setState });
+    const refreshed = dispatchRunSessionCommand((draft) =>
+      refreshShopOfferings<ShopState, BattleCard>({
+        draft,
+        price: 5,
+        refreshesLeft: draft.session.shopState.refreshesLeft,
+        setState: setShopState,
+        resample: () => newItems,
+        mapState: (previous, items) => ({ ...previous, cards: items }),
+      }),
+    );
+    unsubscribe();
 
-    expect(handler()).toBe(true);
-    expect(playGoldSpend).toHaveBeenCalled();
-    expect(setRunGold).toHaveBeenCalled();
-    expect(vi.mocked(setRunGold).mock.calls[0][1](100)).toBe(95);
-    expect(setState).toHaveBeenCalled();
-    const next = vi.mocked(setState).mock.calls[0][1]({ cards: [] });
-    expect(next.items).toEqual(newItems);
+    expect(refreshed).toMatchObject({ committed: false, price: 5, value: null });
+    expect(commits).toHaveLength(0);
+    expect(getRunProgressStoreView().runGold).toBe(runGold);
   });
 });
 
-describe("makeCardRefreshHandler", () => {
-  it("delegates resampling to selectRewardCards with the deck pool", () => {
+describe("refreshCardShopOfferings", () => {
+  it("selects replacement cards from the draft deck and supplied pool", () => {
     const deck = [makeCard("d")];
     const pool = [makeCard("x")];
     const currentItems = [makeCard("a")];
     const newItems = [makeCard("b")];
     const rng = () => 0.5;
-    vi.mocked(selectRewardCards).mockReturnValue(newItems);
-    const setState = vi.fn();
-
-    const handler = makeCardRefreshHandler({
-      getPrice: () => 5,
-      getRefreshesLeft: () => 1,
-      getRunGold: () => 10,
-      setRunGold: vi.fn(),
-      getPool: () => pool,
-      getCurrentItems: () => currentItems,
-      count: 2,
-      setState,
-      getDeck: () => deck,
-      rng,
-      getMapState: (prev, items) => ({ ...(prev as object), cards: items }),
+    setRunProgress({ runGold: 10, runDeck: deck });
+    setShopState({ ...createInitialShopState([], rng), cards: currentItems, refreshesLeft: 1 });
+    vi.mocked(selectRewardCards).mockClear();
+    vi.mocked(selectRewardCards).mockImplementation((actualDeck, actualPool, count, excluded, actualRng) => {
+      expect(actualDeck).toEqual(deck);
+      expect(actualPool).toBe(pool);
+      expect(count).toBe(2);
+      expect(excluded).toEqual(currentItems);
+      expect(actualRng).toBe(rng);
+      return newItems;
     });
 
-    expect(handler()).toBe(true);
-    expect(selectRewardCards).toHaveBeenCalledWith(deck, pool, 2, currentItems, rng);
-    const next = vi.mocked(setState).mock.calls[0][1]({ cards: currentItems });
-    expect(next.cards).toEqual(newItems);
+    const refreshed = dispatchRunSessionCommand((draft) =>
+      refreshCardShopOfferings<ShopState>({
+        draft,
+        price: 5,
+        refreshesLeft: draft.session.shopState.refreshesLeft,
+        pool,
+        currentItems: draft.session.shopState.cards,
+        count: 2,
+        setState: setShopState,
+        rng,
+        mapState: (previous, cards) => ({ ...previous, cards }),
+      }),
+    );
+
+    expect(refreshed).toMatchObject({ committed: true, price: 5, value: newItems });
+    expect(selectRewardCards).toHaveBeenCalledOnce();
+    expect(getRunSessionStoreView().shopState.cards).toEqual(newItems);
   });
 });

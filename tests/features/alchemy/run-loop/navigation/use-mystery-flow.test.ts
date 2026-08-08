@@ -8,9 +8,20 @@ import {
   getRunProgressStoreView,
   getRunSessionStoreView,
   resetRunProgressSlice,
+  setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
+import type { MysteryEffect } from "@/lib/mystery";
+
+vi.mock("@/lib/audio", () => ({
+  playGoldGain: vi.fn(),
+  playGoldSpend: vi.fn(),
+}));
+
+import { playGoldGain, playGoldSpend } from "@/lib/audio";
 
 beforeEach(() => {
+  vi.clearAllMocks();
   resetTransientRunUi();
   resetRunProgressSlice();
   useProfileStore.setState(useProfileStore.getInitialState());
@@ -59,5 +70,51 @@ describe("useMysteryFlow", () => {
     });
 
     expect(getRunSessionStoreView().mysteryCardChoices).not.toBeNull();
+  });
+
+  it("plays gold sounds only after the choice commits", () => {
+    setRunProgress({ runGold: 20 });
+    const { result } = renderHook(() => useMysteryFlow(rng));
+    const commits: number[] = [];
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+    vi.mocked(playGoldGain).mockImplementationOnce(() => {
+      expect(getRunProgressStoreView().runGold).toBe(25);
+    });
+    vi.mocked(playGoldSpend).mockImplementationOnce(() => {
+      expect(getRunProgressStoreView().runGold).toBe(25);
+    });
+
+    act(() => {
+      result.current.handleMysteryChoice({
+        label: "Trade",
+        effects: [
+          { kind: "gainGold", amount: 10 },
+          { kind: "loseGold", amount: 5 },
+        ],
+      });
+    });
+    unsubscribe();
+
+    expect(commits).toHaveLength(1);
+    expect(playGoldGain).toHaveBeenCalledOnce();
+    expect(playGoldSpend).toHaveBeenCalledOnce();
+  });
+
+  it("rolls back state and skips gold sounds when a later effect throws", () => {
+    setRunProgress({ runGold: 20 });
+    const { result } = renderHook(() => useMysteryFlow(rng));
+
+    expect(() =>
+      act(() => {
+        result.current.handleMysteryChoice({
+          label: "Broken",
+          effects: [{ kind: "gainGold", amount: 10 }, { kind: "unknown-kind" } as unknown as MysteryEffect],
+        });
+      }),
+    ).toThrow(/Unhandled mystery effect kind/);
+
+    expect(getRunProgressStoreView().runGold).toBe(20);
+    expect(playGoldGain).not.toHaveBeenCalled();
+    expect(playGoldSpend).not.toHaveBeenCalled();
   });
 });

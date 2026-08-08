@@ -3,6 +3,7 @@ import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/conte
 import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
 import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
 import type { LabyrinthNodeHandlers } from "./use-labyrinth-controller";
+import type { ShopActions } from "@/features/alchemy/run-loop/shop/shop-action-types";
 
 interface LabyrinthNodeRoutingDeps {
   applyLabyrinthBattleModifiers: (modifiers: EncounterCombatTraitId[]) => void;
@@ -21,7 +22,7 @@ interface LabyrinthNodeRoutingDeps {
     startBossBattle: (modifiers?: DifficultyModifier[]) => void;
   };
   nav: { beginMysteryEvent: () => void };
-  shop: { initShop: () => void; initAlchemist: () => void; initTrinketShop: () => void; initEquipmentShop: () => void };
+  shop: Pick<ShopActions, "initialize">;
 }
 
 export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
@@ -61,12 +62,13 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
       },
       onStartRest: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.CAMPFIRE),
       onStartMystery: () => deps.nav.beginMysteryEvent(),
-      onStartShop: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.SHOP, () => deps.shop.initShop()),
-      onStartAlchemist: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.ALCHEMIST, () => deps.shop.initAlchemist()),
+      onStartShop: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.SHOP, () => deps.shop.initialize("merchant")),
+      onStartAlchemist: () =>
+        enterLabyrinthNodeScreen(CONSTANTS.SCREENS.ALCHEMIST, () => deps.shop.initialize("alchemist")),
       onStartTrinketShop: () =>
-        enterLabyrinthNodeScreen(CONSTANTS.SCREENS.TRINKET_SHOP, () => deps.shop.initTrinketShop()),
+        enterLabyrinthNodeScreen(CONSTANTS.SCREENS.TRINKET_SHOP, () => deps.shop.initialize("trinket")),
       onStartEquipmentShop: () =>
-        enterLabyrinthNodeScreen(CONSTANTS.SCREENS.EQUIPMENT_SHOP, () => deps.shop.initEquipmentShop()),
+        enterLabyrinthNodeScreen(CONSTANTS.SCREENS.EQUIPMENT_SHOP, () => deps.shop.initialize("equipment")),
     });
   }
 

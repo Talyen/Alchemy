@@ -114,11 +114,13 @@ export const DOMAIN_STORE_PATTERNS = [
       "@/features/alchemy/shared/stores/run-battle-domain-store",
       "**/run-transitions",
       "@/features/alchemy/shared/stores/run-transitions",
+      "**/gameplay-state-store",
+      "@/features/alchemy/shared/stores/gameplay-state-store",
       "**/stores/battle-store",
       "@/features/alchemy/shared/stores/battle-store",
     ],
     message:
-      "Import a capability-specific run-session port instead of low-level run stores, ports, or run-transitions.",
+      "Import a capability-specific run-session port instead of the low-level gameplay aggregate, legacy stores, or run-transitions.",
   },
 ];
 

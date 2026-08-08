@@ -16,12 +16,11 @@ import { audioState } from "@/lib/audio-state";
 import { getBossMusicKey, invalidateCacheForKey } from "@/lib/audio-music";
 import { logError } from "@/lib/error-logger";
 import { allGameArt } from "@/lib/game-data";
-import { preloadImages, preloadImagesWhenIdle } from "@/lib/image-preload";
+import { preloadImages } from "@/lib/image-preload";
 import type { DisplayMode, Screen } from "@/features/alchemy/shared/types";
 import { pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-react-ports";
-import { useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { useScreenAssetPreloadUrls } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
 
@@ -191,47 +190,44 @@ interface ScreenAssetPreloadOptions {
 
 export function useScreenAssetPreloadEffects({ heroArt, screen }: ScreenAssetPreloadOptions) {
   const screenAssetUrls = useScreenAssetPreloadUrls(screen);
-  const currentEnemyArt = useGameplayStateStore((state) =>
-    screen === "battle" ? state.battle.battleState.currentEnemy.art : null,
-  );
-  const handCardArtsKey = useGameplayStateStore((state) =>
-    screen === "battle" ? state.battle.battleState.hand.map((card) => card.art).join("|") : "",
-  );
 
   useEffect(() => {
     const priorityImages = [heroArt];
     if (screen === "battle") {
-      if (currentEnemyArt) priorityImages.push(currentEnemyArt);
       priorityImages.push(pileDrawArt, pileDiscardArt);
-      if (handCardArtsKey) priorityImages.push(...handCardArtsKey.split("|"));
     }
     priorityImages.push(...screenAssetUrls);
-    preloadImages(priorityImages);
-  }, [heroArt, screen, currentEnemyArt, handCardArtsKey, screenAssetUrls]);
+    void preloadImages(priorityImages);
+  }, [heroArt, screen, screenAssetUrls]);
 }
 
 // ── Initial Load Readiness Gate ──
 
+// Keeps the loader presentation on its fixed minimum timing while decoding all
+// game art and waiting for fonts. The bar is intentionally aesthetic rather than
+// a progress meter; readiness only controls when the app is revealed.
 export function useInitialLoadReady({ minDurationMs = INITIAL_LOAD_MIN_DURATION_MS } = {}) {
   const skipGate = shouldSkipStartupLoadingGate();
   const [ready, setReady] = useState(() => skipGate);
 
   useEffect(() => {
-    preloadImagesWhenIdle(allGameArt);
-    void waitForFonts();
-  }, []);
-
-  useEffect(() => {
-    if (skipGate) return;
-
     let cancelled = false;
-    const timer = window.setTimeout(() => {
+    let resolveMinimumDuration = () => {};
+    const minimumDuration = skipGate
+      ? Promise.resolve()
+      : new Promise<void>((resolve) => {
+          resolveMinimumDuration = resolve;
+        });
+    const timer = skipGate ? undefined : window.setTimeout(resolveMinimumDuration, minDurationMs);
+
+    void Promise.all([minimumDuration, preloadImages(allGameArt), waitForFonts()]).then(() => {
       if (!cancelled) setReady(true);
-    }, minDurationMs);
+    });
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
+      if (timer !== undefined) window.clearTimeout(timer);
+      resolveMinimumDuration();
     };
   }, [skipGate, minDurationMs]);
 

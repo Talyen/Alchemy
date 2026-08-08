@@ -44,7 +44,7 @@ export function createDestinationScreenHandlers(deps: RunFlowHandlerDeps, handle
       routeDestinationChoice(destination, {
         navigateTo: (screen) => deps.actions.navigateTo(screen, commitDestinationProgress),
         beginMysteryEvent: () => deps.actions.beginMysteryEvent(commitDestinationProgress),
-        initShop: deps.actions.initShop,
+        initializeShop: deps.actions.initializeShop,
         startBattle: deps.actions.startBattle,
         startBoss: (opts) => deps.actions.startBoss({ ...opts, bossId: choice.selectedBossId }),
         resetCorruption: () => setCorruptionResult(null),

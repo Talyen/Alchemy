@@ -38,7 +38,7 @@ export function useAlchemyRunController({
   autoEndTurn: boolean;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
 }) {
-  // Bootstrap restore lives in App before first paint (see App.tsx). Tests set initialized themselves.
+  // The app bootstrap gate restores the aggregate before this controller mounts.
   const homesteadEffects = useHomesteadEffects();
   const battleRun = useBattleRunPort();
   const battleTalents = useBattleTalentPort();
@@ -117,10 +117,7 @@ export function useAlchemyRunController({
     transition,
     cancelPending,
     battle: battleLauncher,
-    initShop: shop.initShop,
-    initAlchemist: shop.initAlchemist,
-    initTrinketShop: shop.initTrinketShop,
-    initEquipmentShop: shop.initEquipmentShop,
+    initializeShop: shop.initialize,
     labyrinthClearNode: labyrinth.onNodeCleared,
     labyrinthFailNode: labyrinth.onNodeFailed,
     onMarkDifficultyCompleted,
@@ -174,7 +171,8 @@ export function useAlchemyRunController({
     unlockTalent,
     resetUnlockedTalents,
     handleCharacterSelect: nav.handleCharacterSelect,
-    handleDraftComplete: nav.handleDraftComplete,
+    handleStandardDraftComplete: nav.handleStandardDraftComplete,
+    handleWildwoodDraftComplete: nav.handleWildwoodDraftComplete,
     handleDraftPick: nav.handleDraftPick,
     handleDifficultySelect: nav.handleDifficultySelect,
     handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,

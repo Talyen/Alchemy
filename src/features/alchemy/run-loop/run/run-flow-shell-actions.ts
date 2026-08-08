@@ -4,15 +4,14 @@ import type { ScreenTransitionOptions } from "@/features/alchemy/shell/use-scree
 import type { VictoryRewardsResult } from "../navigation/victory-flow";
 import type { Screen } from "../../shared/types";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-
-type RunFlowShopKind = "shop" | "alchemist" | "trinket" | "equipment";
+import type { ShopKind } from "@/features/alchemy/run-loop/shop/shop-action-types";
 
 export interface RunFlowShellActions {
   navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
   transition: (screen: Screen, options?: ScreenTransitionOptions) => void;
   labyrinthFailNode: () => void;
   labyrinthClearNode: () => void;
-  initShop: (kind: RunFlowShopKind) => void;
+  initializeShop: (kind: ShopKind) => void;
   startBattle: (opts?: { deck?: BattleCard[]; gold?: number; enemyType?: "normal" | "elite" }) => void;
   /** Prefer bossId via onStartBossById; fall back to generic boss start when missing or rejected. */
   startBoss: (opts?: { bossId?: string | null; modifiers?: DifficultyModifier[] }) => void;

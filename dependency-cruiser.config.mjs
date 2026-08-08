@@ -36,6 +36,13 @@ export default {
       from: { path: "^src/features/alchemy/run-loop/" },
       to: { path: "^src/features/alchemy/run-setup/" },
     },
+    {
+      name: "gameplay-aggregate-is-internal",
+      severity: "error",
+      comment: "Only shared/stores may import the authoritative gameplay aggregate directly.",
+      from: { pathNot: "^src/features/alchemy/shared/stores/" },
+      to: { path: "^src/features/alchemy/shared/stores/gameplay-state-store\\.ts$" },
+    },
   ],
   options: {
     doNotFollow: {

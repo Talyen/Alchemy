@@ -1,12 +1,8 @@
-import { readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROOT = join(import.meta.dirname, "../..");
-
-function read(path: string): string {
-  return readFileSync(join(ROOT, path), "utf8");
-}
 
 describe("deleted module guard", () => {
   it("removed run glue modules are not present", () => {
@@ -21,11 +17,15 @@ describe("deleted module guard", () => {
       "src/features/alchemy/shared/stores/run-session-read.ts",
       "src/features/alchemy/shared/stores/run-session-actions.ts",
       "src/features/alchemy/shared/stores/navigation-store.ts",
+      "src/features/alchemy/shared/stores/run-profile-store.ts",
+      "src/features/alchemy/shared/stores/run-transient-store.ts",
+      "src/features/alchemy/shared/stores/run-battle-domain-store.ts",
+      "src/features/alchemy/shared/stores/run-session-queries.ts",
       "src/lib/validation/migration.ts",
       "src/lib/validation/save-schemas.ts",
     ];
     for (const path of deleted) {
-      expect(() => read(path)).toThrow();
+      expect(existsSync(join(ROOT, path)), path).toBe(false);
     }
   });
 });

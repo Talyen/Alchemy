@@ -6,7 +6,7 @@ export function makeDestinationRouteDeps(): DestinationRouteDeps {
   return {
     navigateTo: vi.fn(),
     beginMysteryEvent: vi.fn(),
-    initShop: vi.fn(),
+    initializeShop: vi.fn(),
     startBattle: vi.fn(),
     startBoss: vi.fn(),
     resetCorruption: vi.fn(),

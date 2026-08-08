@@ -10,7 +10,6 @@ import {
   type BattleCard,
   type KeywordId,
 } from "@/lib/game-data";
-import { playGoldGain } from "@/lib/audio";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "../run/deck-mutations";
 import type { MaterialId, MaterialInventory } from "@/lib/homestead/types";
@@ -26,6 +25,7 @@ export interface MysteryEffectResult {
    * was opened, which pauses the evaluation of subsequent effects in the list.
    */
   followUp: "choose-card" | null;
+  goldSound?: "gain" | "spend";
 }
 
 type StateUpdater<T> = (value: T | ((previous: T) => T)) => void;
@@ -40,8 +40,8 @@ interface MysteryEffectContext {
   setRunTrinkets: StateUpdater<string[]>;
   setMysteryCardChoices: StateUpdater<BattleCard[] | null>;
   awardMysteryXP: (keyword: KeywordId, amount: number) => void;
-  onAddMaterials: (draftOrMaterials: GameplayDraft | MaterialInventory, materials?: MaterialInventory) => void;
-  onAwardGold: (draftOrAmount: GameplayDraft | number, amount?: number) => void;
+  onAddMaterials: (materials: MaterialInventory) => void;
+  onAwardGold: (amount: number) => void;
   draft?: GameplayDraft;
 }
 
@@ -142,14 +142,14 @@ function damageFromMystery(amount: number, context: MysteryEffectContext) {
 }
 
 function gainMysteryGold(amount: number, context: MysteryEffectContext) {
-  if (amount > 0) playGoldGain();
-  if (context.draft) invokeDraftAction(context.onAwardGold, context.draft, amount);
-  else context.onAwardGold(amount);
+  context.onAwardGold(amount);
+  if (amount > 0) return { followUp: null, goldSound: "gain" as const };
   return { followUp: null };
 }
 
 function loseMysteryGold(amount: number, context: MysteryEffectContext) {
   spendRunGold(amount, (update) => mutate(context.setRunGold, context.draft, update));
+  if (amount > 0) return { followUp: null, goldSound: "spend" as const };
   return { followUp: null };
 }
 
@@ -178,7 +178,6 @@ function gainRandomMysteryTrinket(context: MysteryEffectContext) {
 function gainMysteryMaterial(material: MaterialId, amount: number, context: MysteryEffectContext) {
   const matInv = emptyInventory();
   matInv[material] = amount;
-  if (context.draft) invokeDraftAction(context.onAddMaterials, context.draft, matInv);
-  else context.onAddMaterials(matInv);
+  context.onAddMaterials(matInv);
   return { followUp: null };
 }

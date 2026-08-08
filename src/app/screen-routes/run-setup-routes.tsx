@@ -25,7 +25,7 @@ function DraftDeckScreenRoute({ commands }: { commands: RunSetupRouteCtx["routeC
   const isWildwoodDraft = draft.contentSystemType === "wildwood" && draft.wildwoodDraft?.phase === "draft";
   return (
     <DraftDeckScreen
-      onComplete={commands.handleDraftComplete}
+      onComplete={isWildwoodDraft ? commands.handleWildwoodDraftComplete : commands.handleStandardDraftComplete}
       {...(isWildwoodDraft
         ? {
             draftedCards: draft.runDeck,

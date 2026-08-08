@@ -48,6 +48,13 @@ export interface InitialDestinationResult {
   offerState: DestinationOfferState;
 }
 
+interface CreateInitialDestinationResultInput {
+  availableDestinations: Destination[];
+  offerState: DestinationOfferState;
+  bossEnemyId: string;
+  rng: () => number;
+}
+
 interface DestinationAvailabilityInput {
   destinationIndexInAct: number;
   currentHealth: number;
@@ -206,6 +213,20 @@ export function sampleDestinationChoices(
   }
 
   return { choices, offerState: advanceDestinationOfferState(offerState, destinations, choices) };
+}
+
+/** Create the initial destination picker state from explicit, command-owned inputs. */
+export function createInitialDestinationResult({
+  availableDestinations,
+  offerState,
+  bossEnemyId,
+  rng,
+}: CreateInitialDestinationResultInput): InitialDestinationResult {
+  const sampled = sampleDestinationChoices(availableDestinations, offerState, rng);
+  return {
+    offerState: sampled.offerState,
+    rewardState: createDestinationRewardState(sampled.choices, bossEnemyId),
+  };
 }
 
 /** Campaign resume keeps prior choices; advancing samples fresh destinations for the next room. */

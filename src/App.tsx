@@ -1,6 +1,6 @@
 // Root app shell for save data, audio/display side effects, routing, and global layout.
 // Depends on alchemy controllers, homestead state, screen modules, assets, and platform/audio helpers.
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { characterArt, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import {
@@ -11,8 +11,6 @@ import {
   RenderAlchemyScreen,
   StartupLoadingScreen,
   UnsupportedSaveOverlay,
-  applySaveDataToStores,
-  bootstrapAlchemySaveState,
   useAlchemyAutosaveFromStores,
   useAppAudioEffects,
   useAppDisplayEffects,
@@ -33,8 +31,6 @@ import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-
 import { ErrorBoundary } from "@/components/error-boundary";
 import { clearAlchemySaveData, type SaveLoadState } from "@/features/alchemy/shared/storage";
 import { readProfileStore, setCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
-import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { readRunInitialized } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
 import {
   useActiveRunCharacterId,
@@ -49,7 +45,7 @@ import {
   useRunSessionNavigationSlice,
 } from "@/features/alchemy/shared/stores/run-session-model";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
+import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
 
 async function wipeUnsupportedSaveAndReload() {
   const cleared = await clearAlchemySaveData();
@@ -57,18 +53,6 @@ async function wipeUnsupportedSaveAndReload() {
     throw new Error("Save data could not be cleared");
   }
   window.location.reload();
-}
-
-/** Dev-only: `?wipeLocalSave=1` clears browser/desktop save before bootstrap, then strips the query. */
-async function maybeWipeLocalSaveFromQuery(): Promise<void> {
-  if (!isAlchemyDevBuild() || typeof window === "undefined") return;
-  const url = new URL(window.location.href);
-  if (!url.searchParams.has("wipeLocalSave")) return;
-  const cleared = await clearAlchemySaveData();
-  if (!cleared) return;
-  url.searchParams.delete("wipeLocalSave");
-  const next = `${url.pathname}${url.search}${url.hash}`;
-  window.history.replaceState({}, "", next);
 }
 
 function AppMainContent({
@@ -272,30 +256,10 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 }
 
 export default function App() {
-  const [bootstrapResult, setBootstrapResult] = useState<SaveLoadState | null>(null);
+  const bootstrapResult = useAlchemyBootstrap();
   // Gate lives here so StartupLoadingScreen stays mounted across bootstrap and
   // keeps a single empty→full animation (outside the VR stage for size parity).
   const initialLoadReady = useInitialLoadReady();
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      await maybeWipeLocalSaveFromQuery();
-      if (cancelled) return;
-      const result = await bootstrapAlchemySaveState();
-      if (cancelled) return;
-      applySaveDataToStores(result.data);
-      // Restore before first AppInner paint so resumed screen is available without
-      // mutating Zustand during React render.
-      if (!readRunInitialized()) {
-        restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
-      }
-      setBootstrapResult(result);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const saveBlockedByNewerVersion =
     bootstrapResult?.status.kind === "unsupported-newer-schema" ||

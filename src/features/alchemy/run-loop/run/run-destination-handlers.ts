@@ -14,25 +14,25 @@ import { CONSTANTS, type Destination } from "../../shared/types";
 
 export type DestinationRouteDeps = Pick<
   RunFlowShellActions,
-  "navigateTo" | "beginMysteryEvent" | "initShop" | "startBattle" | "startBoss"
+  "navigateTo" | "beginMysteryEvent" | "initializeShop" | "startBattle" | "startBoss"
 > & { resetCorruption: () => void };
 
 const DESTINATION_HANDLERS: Record<Destination, (deps: DestinationRouteDeps) => void> = {
   [CONSTANTS.DESTINATIONS.CAMPFIRE]: (deps) => deps.navigateTo(CONSTANTS.SCREENS.CAMPFIRE),
   [CONSTANTS.DESTINATIONS.MERCHANT_SHOP]: (deps) => {
-    deps.initShop("shop");
+    deps.initializeShop("merchant");
     deps.navigateTo(CONSTANTS.SCREENS.SHOP);
   },
   [CONSTANTS.DESTINATIONS.ALCHEMIST_SHOP]: (deps) => {
-    deps.initShop("alchemist");
+    deps.initializeShop("alchemist");
     deps.navigateTo(CONSTANTS.SCREENS.ALCHEMIST);
   },
   [CONSTANTS.DESTINATIONS.TRINKET_SHOP]: (deps) => {
-    deps.initShop("trinket");
+    deps.initializeShop("trinket");
     deps.navigateTo(CONSTANTS.SCREENS.TRINKET_SHOP);
   },
   [CONSTANTS.DESTINATIONS.EQUIPMENT_SHOP]: (deps) => {
-    deps.initShop("equipment");
+    deps.initializeShop("equipment");
     deps.navigateTo(CONSTANTS.SCREENS.EQUIPMENT_SHOP);
   },
   [CONSTANTS.DESTINATIONS.MYSTERY]: (deps) => deps.beginMysteryEvent(),

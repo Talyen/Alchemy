@@ -1,92 +1,84 @@
-// Shared merchant/alchemist refresh helpers.
+// Shared draft-level shop recipes. Callers own the surrounding command and post-commit feedback.
 import { selectRewardCards, type BattleCard } from "@/lib/game-data";
-import { spendRunGold } from "./run-gold";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { spendRunGold } from "./run-gold";
 
-type StateUpdater<T> = (updater: (previous: T) => T) => void;
+type StateUpdate<T> = T | ((previous: T) => T);
+export type DraftStateWriter<T> = (draft: GameplayDraft, value: StateUpdate<T>) => void;
+
+export interface ShopTransactionResult<T = undefined> {
+  committed: boolean;
+  price: number;
+  value: T;
+}
+
+interface PurchaseShopOfferingInput<TState extends { firstPurchaseUsed: boolean; purchasedSlotKeys: string[] }> {
+  draft: GameplayDraft;
+  price: number;
+  state: TState;
+  setState: DraftStateWriter<TState>;
+  slotKey: string;
+  acquire: () => void;
+}
+
+export function purchaseShopOffering<TState extends { firstPurchaseUsed: boolean; purchasedSlotKeys: string[] }>(
+  input: PurchaseShopOfferingInput<TState>,
+): ShopTransactionResult {
+  if (input.draft.run.activeRun.runGold < input.price || input.state.purchasedSlotKeys.includes(input.slotKey)) {
+    return { committed: false, price: input.price, value: undefined };
+  }
+
+  spendRunGold(input.price, (update) => setRunGold(input.draft, update));
+  input.setState(input.draft, (previous) => ({
+    ...previous,
+    firstPurchaseUsed: true,
+    purchasedSlotKeys: [...previous.purchasedSlotKeys, input.slotKey],
+  }));
+  input.acquire();
+  return { committed: true, price: input.price, value: undefined };
+}
 
 interface RefreshShopOfferingsInput<T, TItem> {
+  draft: GameplayDraft;
   price: number;
   refreshesLeft: number;
-  runGold: number;
-  setRunGold: StateUpdater<number>;
-  setState: StateUpdater<T>;
-  mapState: (prev: T, newItems: TItem[]) => T;
-  resample: (draft: GameplayDraft) => TItem[];
+  setState: DraftStateWriter<T>;
+  mapState: (previous: T, newItems: TItem[]) => T;
+  resample: () => TItem[];
 }
 
-function refreshShopOfferings<T, TItem>(input: RefreshShopOfferingsInput<T, TItem>): boolean {
-  return dispatchRunSessionCommand((draft) => {
-    if (input.refreshesLeft <= 0 || input.runGold < input.price) return false;
-    spendRunGold(input.price, (update) =>
-      (input.setRunGold as unknown as (draft: GameplayDraft, value: (previous: number) => number) => void)(
-        draft,
-        update,
-      ),
-    );
-    const newItems = input.resample(draft);
-    (input.setState as unknown as (draft: GameplayDraft, value: (previous: T) => T) => void)(draft, (prev) =>
-      input.mapState(prev, newItems),
-    );
-    return true;
-  });
+export function refreshShopOfferings<T, TItem>(
+  input: RefreshShopOfferingsInput<T, TItem>,
+): ShopTransactionResult<TItem[] | null> {
+  if (input.refreshesLeft <= 0 || input.draft.run.activeRun.runGold < input.price) {
+    return { committed: false, price: input.price, value: null };
+  }
+
+  spendRunGold(input.price, (update) => setRunGold(input.draft, update));
+  const newItems = input.resample();
+  input.setState(input.draft, (previous) => input.mapState(previous, newItems));
+  return { committed: true, price: input.price, value: newItems };
 }
 
-export function markSlotPurchased(keys: string[], slotKey: string): string[] {
-  return keys.includes(slotKey) ? keys : [...keys, slotKey];
-}
-
-export function makeCardRefreshHandler<T>(config: {
-  getPrice: () => number;
-  getRefreshesLeft: () => number;
-  getRunGold: () => number;
-  setRunGold: StateUpdater<number>;
-  getPool: () => BattleCard[];
-  getCurrentItems: () => BattleCard[];
+export function refreshCardShopOfferings<T>(config: {
+  draft: GameplayDraft;
+  price: number;
+  refreshesLeft: number;
+  pool: BattleCard[];
+  currentItems: BattleCard[];
   count: number;
-  setState: StateUpdater<T>;
-  getDeck: () => BattleCard[];
-  getMapState: (prev: T, items: BattleCard[]) => T;
+  setState: DraftStateWriter<T>;
+  mapState: (previous: T, items: BattleCard[]) => T;
   rng: () => number;
-  rngForDraft?: (draft: GameplayDraft) => () => number;
-}): () => boolean {
-  return () =>
-    refreshShopOfferings({
-      price: config.getPrice(),
-      refreshesLeft: config.getRefreshesLeft(),
-      runGold: config.getRunGold(),
-      setRunGold: config.setRunGold,
-      setState: config.setState,
-      mapState: config.getMapState,
-      resample: (draft) =>
-        selectRewardCards(
-          config.getDeck(),
-          config.getPool(),
-          config.count,
-          config.getCurrentItems(),
-          config.rngForDraft?.(draft) ?? config.rng,
-        ),
-    });
-}
-
-export function makeShopRefreshHandler<TState, TItem>(config: {
-  getPrice: () => number;
-  getRefreshesLeft: () => number;
-  getRunGold: () => number;
-  setRunGold: StateUpdater<number>;
-  setState: StateUpdater<TState>;
-  resample: (draft: GameplayDraft) => TItem[];
-  getMapState: (prev: TState, items: TItem[]) => TState;
-}): () => boolean {
-  return () =>
-    refreshShopOfferings({
-      price: config.getPrice(),
-      refreshesLeft: config.getRefreshesLeft(),
-      runGold: config.getRunGold(),
-      setRunGold: config.setRunGold,
-      setState: config.setState,
-      resample: config.resample,
-      mapState: config.getMapState,
-    });
+}): ShopTransactionResult<BattleCard[] | null> {
+  return refreshShopOfferings({
+    draft: config.draft,
+    price: config.price,
+    refreshesLeft: config.refreshesLeft,
+    setState: config.setState,
+    mapState: config.mapState,
+    resample: () =>
+      selectRewardCards(config.draft.run.activeRun.runDeck, config.pool, config.count, config.currentItems, config.rng),
+  });
 }

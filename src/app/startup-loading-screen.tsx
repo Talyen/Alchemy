@@ -1,6 +1,6 @@
 // Minimal startup-only loading bar for the initial main menu reveal.
-// One-shot fill from empty — real asset loading happens in the background and
-// the screen is dismissed once the minimum gate elapses.
+// One-shot fill from empty with intentionally fixed presentation timing; the bar
+// is not a progress meter for the readiness work that controls app reveal.
 import { useState } from "react";
 
 const LOADING_WORDS = [

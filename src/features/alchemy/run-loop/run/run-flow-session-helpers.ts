@@ -2,7 +2,6 @@ import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/loot";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import { createGameplayDraftActions } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import {
   addMaterials,
   clearRunMaterialsEarned,
@@ -15,7 +14,7 @@ import { CONSTANTS } from "../../shared/types";
 /** Clear the persisted battle-active state; presentation cleanup is a post-commit concern. */
 export function clearCombatState(draft?: GameplayDraft) {
   if (draft) {
-    createGameplayDraftActions(draft).battleActions.setHasActiveBattle(false);
+    setHasActiveBattle(draft, false);
     return;
   }
   setHasActiveBattle(false);

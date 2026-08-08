@@ -6,14 +6,14 @@ import { makeDestinationRouteDeps } from "../../../../helpers/destination-route-
 const ROUTE_CASES: Array<{
   destination: Destination;
   expectedScreen: string;
-  shopKind?: "shop" | "alchemist" | "trinket" | "equipment";
+  shopKind?: "merchant" | "alchemist" | "trinket" | "equipment";
   beginMystery?: boolean;
   resetCorruption?: boolean;
   battleType?: "normal" | "elite";
   bossBattle?: boolean;
 }> = [
   { destination: DESTINATIONS.CAMPFIRE, expectedScreen: "campfire" },
-  { destination: DESTINATIONS.MERCHANT_SHOP, expectedScreen: "shop", shopKind: "shop" },
+  { destination: DESTINATIONS.MERCHANT_SHOP, expectedScreen: "shop", shopKind: "merchant" },
   { destination: DESTINATIONS.ALCHEMIST_SHOP, expectedScreen: "alchemist", shopKind: "alchemist" },
   { destination: DESTINATIONS.TRINKET_SHOP, expectedScreen: "trinket-shop", shopKind: "trinket" },
   { destination: DESTINATIONS.EQUIPMENT_SHOP, expectedScreen: "equipment-shop", shopKind: "equipment" },
@@ -36,7 +36,7 @@ describe("routeDestinationChoice", () => {
     }
 
     expect(deps.navigateTo).toHaveBeenCalledWith(testCase.expectedScreen);
-    if (testCase.shopKind) expect(deps.initShop).toHaveBeenCalledWith(testCase.shopKind);
+    if (testCase.shopKind) expect(deps.initializeShop).toHaveBeenCalledWith(testCase.shopKind);
     if (testCase.resetCorruption) expect(deps.resetCorruption).toHaveBeenCalledOnce();
     if (testCase.bossBattle) {
       expect(deps.startBoss).toHaveBeenCalledOnce();

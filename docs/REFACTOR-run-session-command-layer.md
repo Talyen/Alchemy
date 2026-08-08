@@ -155,11 +155,12 @@ Tests:
 
 - `run-session-transaction.test.ts`: delete the two nesting tests; replace with
   "compound mutators publish one commit"; keep the rest.
-- `tests/architecture/run-session-command-boundary.test.ts`: assert dispatch owns the
-  produce, `beginGameplayTransaction`/`commitGameplayTransaction` no longer exist, and
-  write-port exports mutators.
-- `tests/architecture/gameplay-state-aggregate.test.ts`, `persistence-coordinator.test.ts`,
-  `content-system-navigation.test.ts`, `run-domain.test.ts`: confirm/update.
+- `run-session-transaction.test.ts`, `persistence-coordinator.test.ts`,
+  `content-system-navigation.test.ts`, and `run-domain.test.ts` preserve the runtime
+  invariants. The former raw-source architecture assertions were removed after this
+  refactor: import direction now lives in ESLint/dependency-cruiser, port shape in
+  `tests/types/run-architecture-contracts.test.ts`, and bootstrap/resume guarantees in
+  behavioral tests.
 
 Docs (same change): `docs/ARCHITECTURE.md` § Run state + § Persistence API + § Session
 capability ports; AGENTS.md invariant bullets on `dispatchRunSessionCommand()` remain

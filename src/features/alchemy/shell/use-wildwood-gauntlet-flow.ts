@@ -155,7 +155,7 @@ export function useWildwoodGauntletFlow({
     [rng],
   );
 
-  const handleDraftComplete = useCallback(
+  const handleWildwoodDraftComplete = useCallback(
     (draftedCards: BattleCard[]) => {
       if (draftedCards.length < DRAFT_ROUNDS) return;
       dispatchRunSessionCommand((draft) => {
@@ -262,7 +262,7 @@ export function useWildwoodGauntletFlow({
     startNextWildwoodBoss,
     resumeWildwoodRun,
     handleDraftPick,
-    handleDraftComplete,
+    handleWildwoodDraftComplete,
     handleWildwoodRecoveryComplete,
     handleWildwoodRewardComplete,
     handleWildwoodRemoveCard,

@@ -17,9 +17,10 @@ import {
   setRunPlayerHealth,
   setRunTrinkets,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 import type { MaterialInventory } from "@/lib/homestead/types";
+import { playGoldGain, playGoldSpend } from "@/lib/audio";
 
 export function useMysteryFlow(rng: () => number) {
   function beginMysteryEvent(navigateToMystery: () => void) {
@@ -33,34 +34,41 @@ export function useMysteryFlow(rng: () => number) {
   }
 
   function handleMysteryChoice(choice: MysteryChoice) {
-    dispatchRunSessionCommand((draft) => {
-      const runStore = draft.run.activeRun;
+    dispatchRunSessionCommand(
+      (draft) => {
+        const runStore = draft.run.activeRun;
+        const goldSounds: Array<"gain" | "spend"> = [];
 
-      for (const effect of choice.effects) {
-        const result = applyMysteryEffect(effect, {
-          runDeck: runStore.runDeck,
-          runMaxHealth: runStore.runMaxHealth,
-          rng: bindRunRandomSource(rng, draft),
-          setRunDeck,
-          setRunGold,
-          setRunPlayerHealth,
-          setRunTrinkets,
-          setMysteryCardChoices,
-          awardMysteryXP,
-          onAddMaterials: ((nextDraft: GameplayDraft, materials: MaterialInventory) =>
-            awardMaterialsDuringRun(
-              nextDraft,
-              applyMaterialFindBonus(materials, draft.runProfile.effects),
-            )) as unknown as (
-            draftOrMaterials: GameplayDraft | MaterialInventory,
-            materials?: MaterialInventory,
-          ) => void,
-          onAwardGold: addRunGold as unknown as (draftOrAmount: GameplayDraft | number, amount?: number) => void,
-          draft,
-        });
-        if (result.followUp) return;
-      }
-    });
+        for (const effect of choice.effects) {
+          const result = applyMysteryEffect(effect, {
+            runDeck: runStore.runDeck,
+            runMaxHealth: runStore.runMaxHealth,
+            rng: bindRunRandomSource(rng, draft),
+            setRunDeck,
+            setRunGold,
+            setRunPlayerHealth,
+            setRunTrinkets,
+            setMysteryCardChoices,
+            awardMysteryXP,
+            onAddMaterials: (materials: MaterialInventory) =>
+              awardMaterialsDuringRun(draft, applyMaterialFindBonus(materials, draft.runProfile.effects)),
+            onAwardGold: (amount) => addRunGold(draft, amount),
+            draft,
+          });
+          if (result.goldSound) goldSounds.push(result.goldSound);
+          if (result.followUp) return goldSounds;
+        }
+        return goldSounds;
+      },
+      {
+        afterCommit: (goldSounds) => {
+          for (const sound of goldSounds) {
+            if (sound === "gain") playGoldGain();
+            else playGoldSpend();
+          }
+        },
+      },
+    );
   }
 
   function handleMysteryChooseCard(cardId: string) {
