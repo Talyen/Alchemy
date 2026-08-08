@@ -65,7 +65,10 @@ describe("steam platform config", () => {
     expect(pkg.scripts["dist:win"]).toBeUndefined();
     expect(pkg.scripts["package:win:full"]).toBeUndefined();
     expect(pkg.scripts["build:desktop:no-sync"]).toBeUndefined();
-    expect(pkg.scripts["build:web:ci"]).toContain("build-web-ci.mjs");
+    expect(pkg.scripts["build:web:ci"]).toBeUndefined();
+    const vercelConfig = JSON.parse(readFileSync(join(ROOT, "vercel.json"), "utf8")) as { buildCommand?: string };
+    expect(vercelConfig.buildCommand).toContain("ALCHEMY_SKIP_ASSETS=1");
+    expect(vercelConfig.buildCommand).toContain("npm run build");
     expect(pkg.scripts["smoke:preview"]).toContain("smoke-preview.mjs");
     expect(pkg.scripts["check:ship"]).toContain("ALCHEMY_SKIP_ASSETS=1");
     expect(pkg.scripts["check:ship"]).toContain("build:desktop");

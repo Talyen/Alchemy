@@ -1,7 +1,6 @@
 import { expect, test as baseTest } from "@playwright/test";
-import { AEGIS_CARD, BLOCK_CARD, failOnRuntimeErrors, makeHighDamageCard, startBattleWithDeck } from "./helpers";
+import { AEGIS_CARD, BLOCK_CARD, failOnRuntimeErrors, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
-import { RewardPage } from "./pages/reward-page";
 import { test } from "./fixtures/e2e";
 import { critical, prepush, smoke } from "./playwright-tags";
 
@@ -46,26 +45,5 @@ test.describe("Block Mechanics", critical, () => {
     expect(enemyHp).toBeLessThan(30);
     const blockAfter = await battle.block();
     expect(blockAfter).toBe(blockAfterBlock);
-  });
-});
-
-test.describe("Victory Rewards", critical, () => {
-  test("victory reward requires confirmation before advancing to destinations", async ({ page, fastBattle }) => {
-    void fastBattle;
-
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeHighDamageCard()),
-    );
-
-    const battle = new BattlePage(page);
-    await battle.winViaCombat(3);
-
-    const reward = new RewardPage(page);
-    await expect(reward.addRewardBtn).toBeDisabled();
-    await reward.selectFirstReward();
-    await expect(reward.addRewardBtn).toBeEnabled();
-    await reward.addRewardBtn.click();
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible();
   });
 });

@@ -158,7 +158,7 @@ export function reduceSkipTurns(state: BattleState): BattleState {
   };
 }
 
-export function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
+export function resolveDeathsDoorGraceExpiry(state: BattleState): BattleState {
   if (!state.deathsDoorActive) return state;
   const remaining = computeDeathsDoorGraceRemaining(state);
   if (remaining <= 0) {

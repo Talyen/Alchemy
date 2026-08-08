@@ -95,6 +95,14 @@ describe("applyPlayerCombatDamage", () => {
   it("does not reactivate deaths door if already used", () => {
     const state = patchBattleState({ playerHealth: 5, deathsDoorUsed: true, deathsDoorActive: true });
     const result = applyPlayerCombatDamage(state, 20);
+    expect(result.playerHealth).toBe(1);
+    expect(result.deathsDoorActive).toBe(true);
+    expect(result.deathsDoorUsed).toBe(true);
+  });
+
+  it("lethal hit after grace expires kills the player", () => {
+    const state = patchBattleState({ playerHealth: 1, deathsDoorUsed: true, deathsDoorActive: false });
+    const result = applyPlayerCombatDamage(state, 20);
     expect(result.playerHealth).toBe(0);
     expect(result.deathsDoorActive).toBe(false);
   });

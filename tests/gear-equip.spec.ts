@@ -3,6 +3,7 @@ import type { GearInstance } from "@/lib/gear/types";
 import {
   bodyGear,
   createEmptyGearLoadouts,
+  expectItemAtCell,
   gearItemLocator,
   openArmory,
   pointerDrag,
@@ -98,21 +99,11 @@ test.describe("Gear equip", armory, () => {
     await expect(bodySlot.locator("img")).toHaveCount(2);
 
     await bodySlot.dblclick();
-    const firstCell = await page.locator('[data-armory-inventory-cell="1-1"]').boundingBox();
-    expect(firstCell).not.toBeNull();
-    await expect
-      .poll(async () => {
-        const box = await flyover.boundingBox();
-        if (!box) return Number.POSITIVE_INFINITY;
-        return Math.max(Math.abs(box.x - firstCell!.x), Math.abs(box.y - firstCell!.y));
-      })
-      .toBeLessThan(3);
-    await expect(bodyItem).toBeVisible();
+    // The unequip commit places the item at the first free cell; assert the
+    // committed outcome rather than racing the short-lived flyover visual,
+    // which can be frozen mid-flight under parallel load.
+    await expectItemAtCell(page, "Leather Armor", 1, 1);
     await expect(bodySlot.locator("img")).toHaveCount(1);
-    const unequipped = await bodyItem.boundingBox();
-    expect(unequipped).not.toBeNull();
-    expect(Math.abs(unequipped!.x - firstCell!.x)).toBeLessThan(3);
-    expect(Math.abs(unequipped!.y - firstCell!.y)).toBeLessThan(3);
   });
 
   test("keeps the rendered gear footprint when preview-snapping into inventory", async ({ page }) => {

@@ -1,4 +1,4 @@
-/** CI gate on every push (~60-80 tests, ≤3 min). Covers core user paths per area without slow tests. */
+/** CI gate on every push (~70 tests, ~1 min at 4 parallel workers). Covers core user paths per area without slow tests. */
 export const critical = { tag: "@critical" } as const;
 /**
  * Fast subset of the CI critical gate for lefthook pre-push (boot + one battle

@@ -4,7 +4,7 @@ import {
   checkHealthThresholds,
   isFreezeActiveForAspect,
   resetEnemyTurnState,
-  resolveDeathsDoorEndOfEnemyTurn,
+  resolveDeathsDoorGraceExpiry,
 } from "@/lib/battle/enemy-turn-utils";
 import { defaultTalentEffects } from "@/lib/battle";
 import { CARDS_PER_TURN } from "@/lib/game-constants";
@@ -156,7 +156,7 @@ describe("checkHealthThresholds", () => {
   });
 });
 
-describe("resolveDeathsDoorEndOfEnemyTurn", () => {
+describe("resolveDeathsDoorGraceExpiry", () => {
   it("deactivates Death's Door when grace expires", () => {
     const state = makeTestBattleState({
       deathsDoorActive: true,
@@ -165,13 +165,13 @@ describe("resolveDeathsDoorEndOfEnemyTurn", () => {
       playerHealth: 1,
       turn: 2,
     });
-    const result = resolveDeathsDoorEndOfEnemyTurn(state);
+    const result = resolveDeathsDoorGraceExpiry(state);
     expect(result.deathsDoorActive).toBe(false);
     expect(result.playerHealth).toBe(1);
   });
 
   it("no-ops when Death's Door inactive", () => {
     const state = makeTestBattleState();
-    expect(resolveDeathsDoorEndOfEnemyTurn(state)).toBe(state);
+    expect(resolveDeathsDoorGraceExpiry(state)).toBe(state);
   });
 });

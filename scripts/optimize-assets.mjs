@@ -1,11 +1,16 @@
-import { mkdir, readdir, unlink } from "node:fs/promises";
+import { mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import sharp from "sharp";
 
 import { staticAssets } from "./assets/asset-manifest.mjs";
-import { isOutputFresh, processManifestEntries, resolveSourceHash } from "./lib/asset-manifest-cache.mjs";
+import {
+  isOutputFresh,
+  processManifestEntries,
+  removeOrphanOutputs,
+  resolveSourceHash,
+} from "./lib/asset-manifest-cache.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
@@ -189,29 +194,6 @@ function validateAssetTargets(assetEntries) {
   }
 }
 
-/**
- * Delete files in the managed output directory that are not manifest targets.
- * @param {Set<string>} targetNames
- */
-async function removeOrphanOutputs(targetNames) {
-  let entries;
-  try {
-    entries = await readdir(outputDir);
-  } catch {
-    return 0;
-  }
-
-  let removed = 0;
-  for (const name of entries) {
-    if (name === MANIFEST_BASENAME) continue;
-    if (targetNames.has(name)) continue;
-    await unlink(path.join(outputDir, name));
-    removed += 1;
-    console.log(`Removed orphan optimized asset: ${name}`);
-  }
-  return removed;
-}
-
 export async function optimizeAssets() {
   await mkdir(outputDir, { recursive: true });
 
@@ -227,29 +209,35 @@ export async function optimizeAssets() {
     processEntry: optimizeAsset,
   });
 
-  let missingCount = 0;
-  for (const result of results) {
-    if (result.missing) {
-      missingCount += 1;
-      console.error(`Missing art source for ${result.item.target}: ${result.item.source}`);
-    }
+  const missing = results.filter((result) => result.missing);
+  for (const result of missing) {
+    console.error(`Missing art source for ${result.item.target}: ${result.item.source}`);
   }
 
-  if (missingCount === 0) {
-    await removeOrphanOutputs(new Set(Object.keys(nextManifest)));
-  } else {
-    process.exitCode = 1;
+  if (missing.length === 0) {
+    const removed = await removeOrphanOutputs(outputDir, new Set(Object.keys(nextManifest)), {
+      manifestBasename: MANIFEST_BASENAME,
+      label: "optimized asset",
+    });
+    if (removed > 0) {
+      console.log(`Removed ${removed} orphan optimized assets.`);
+    }
   }
 
   console.log(
     `Optimized ${results.length} art assets (${gearAssets.length} gear, ${gearSlotBackgrounds.length} gear slot backgrounds).`,
   );
+  return { ok: missing.length === 0, missing };
 }
 
 if (isMainModule(import.meta.url)) {
-  optimizeAssets().catch((error) => {
-    console.error("Asset optimization failed.");
-    console.error(error);
-    process.exitCode = 1;
-  });
+  optimizeAssets()
+    .then(({ ok }) => {
+      if (!ok) process.exitCode = 1;
+    })
+    .catch((error) => {
+      console.error("Asset optimization failed.");
+      console.error(error);
+      process.exitCode = 1;
+    });
 }

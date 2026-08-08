@@ -642,7 +642,7 @@ describe("endPlayerTurn — haste + Death's Door overlap", () => {
       playerStatuses: defaultPlayerStatusValues({ haste: 1 }),
     });
     const result = endPlayerTurn(state);
-    // haste skip still runs finalizePlayerTurn → resolveDeathsDoorEndOfEnemyTurn
+    // Grace expiry runs at enemy phase start (beginEnemyPhase → resolveDeathsDoorGraceExpiry)
     // turn 2, triggeredTurn 1, graceTurns = 1 → turn - triggeredTurn < graceTurns? 2-1 < 1? no
     // Actually: graceTurns = 1 + deathsDoorExtension(0) = 1. 2 - 1 < 1? false.
     // So Death's Door expires → deathsDoorActive=false

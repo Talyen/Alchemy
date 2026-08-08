@@ -53,7 +53,7 @@ export const HOMESTEAD_CONFIG = {
   // Pinned to the Companions tab's rendered shell height (Playwright-measured
   // at 1920x1080). Keeps the outer shell the same height on every tab so the
   // page doesn't visibly resize on tab switch.
-  shellMinHeightClass: "min-h-[95.26cqh]",
+  shellMinHeightClass: "min-h-[104.3cqh]",
 } as const;
 
 const itemArt: Record<string, string> = {

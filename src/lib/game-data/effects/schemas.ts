@@ -1,7 +1,7 @@
 // Composes BattleCardEffectSchema from per-kind definition modules.
 import { z } from "zod";
 import type { BattleCardEffect } from "../types";
-import { chanceEffectDefinition, createChanceEffectSchema } from "./chance/definition";
+import { chanceEffectDefinition, createChanceEffectSchema } from "./chance-definition";
 import { TEMPLATE_EFFECT_DEFINITIONS } from "./template-definitions";
 
 type DiscriminableKindSchema = z.core.$ZodTypeDiscriminable<"kind">;

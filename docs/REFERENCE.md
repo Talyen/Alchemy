@@ -25,8 +25,7 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 
 ```sh
 npm run dev                 # Vite dev server
-npm run build               # vite build (typecheck is a separate gate; Vercel uses build:web:ci)
-npm run build:web:ci        # typecheck + build with ALCHEMY_SKIP_ASSETS=1 (Vercel)
+npm run build               # vite build (typecheck is a separate gate; Vercel runs vercel.json buildCommand)
 npm run build:desktop       # vite desktop build (runs prebuild:desktop sync)
 npm run package:win         # unpacked Windows app via dist-desktop.mjs (ALCHEMY_PACKAGE_DIR=1)
 npm run dist:desktop        # installers via dist-desktop.mjs (steam/platforms.json targets)
@@ -34,9 +33,9 @@ npm run smoke:preview       # start vite preview and assert HTTP 200 (CI/release
 npm run typecheck           # tsc --noEmit (fast; also in lint:ci and pre-commit)
 npm test                    # Vitest
 npm test -- <path>          # Single test file
-npm run lint:ci             # format:check + typecheck:all + lint + boundaries + architecture smoke + deadcode (full local/CI static gate)
+npm run lint:ci             # format:check + typecheck:all + lint + boundaries + deadcode (full local/CI static gate)
 npm run lint:boundaries     # dependency-cruiser phase / lib edges
-npm run lint:architecture-smoke  # cold ESLint lintFiles smoke (lint:ci)
+npm run lint:architecture-smoke  # optional debugging smoke over representative screens (subsumed by npm run lint; not in lint:ci)
 npm run deadcode            # knip (lint:ci / CI; not default pre-push; in check:push:full via check)
 npm run deadcode:strict     # knip --strict, entry exports, deps excluded (nightly)
 npm run format / format:check  # Prettier via scripts/run-prettier.mjs (shared globs)
@@ -60,18 +59,18 @@ npm run clean:all           # clean + dist/release-desktop + stop stale E2E prev
 
 ### Build commands decision tree
 
-| Intent                                                  | Command                                                      |
-| ------------------------------------------------------- | ------------------------------------------------------------ |
-| Local web/dev                                           | `npm run dev` / `npm run build` (hooks run asset prep)       |
-| Vercel web                                              | `npm run build:web:ci` (typecheck + build, skips asset prep) |
-| Desktop renderer + version/steam/asset sync             | `npm run build:desktop`                                      |
-| Fast desktop renderer (committed assets / CI ship-gate) | `ALCHEMY_SKIP_ASSETS=1 npm run build:desktop`                |
-| Unpacked Windows app (local iterate)                    | `npm run package:win`                                        |
-| Windows/mac/linux installers (CI desktop + release)     | `npm run dist:desktop`                                       |
+| Intent                                                  | Command                                                                 |
+| ------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Local web/dev                                           | `npm run dev` / `npm run build` (hooks run asset prep)                  |
+| Vercel web                                              | `vercel.json` buildCommand: `ALCHEMY_SKIP_ASSETS=1` + typecheck + build |
+| Desktop renderer + version/steam/asset sync             | `npm run build:desktop`                                                 |
+| Fast desktop renderer (committed assets / CI ship-gate) | `ALCHEMY_SKIP_ASSETS=1 npm run build:desktop`                           |
+| Unpacked Windows app (local iterate)                    | `npm run package:win`                                                   |
+| Windows/mac/linux installers (CI desktop + release)     | `npm run dist:desktop`                                                  |
 
 **Skip flag:** `ALCHEMY_SKIP_ASSETS=1` skips only `prepare-assets.mjs` (sharp/ffmpeg/codegen). Version sync, steam app id sync, and the Vite build still run via `prebuild` / `prebuild:desktop`.
 
-CI, Vercel, and release builds set `ALCHEMY_SKIP_ASSETS=1` because optimized outputs are committed. When you change `Raw Assets/` or asset scripts, commit the regenerated outputs (CI `assets` job fails on drift).
+CI, Vercel, and release builds set `ALCHEMY_SKIP_ASSETS=1` because optimized outputs are committed. When you change `Raw Assets/` or asset scripts, commit the regenerated outputs (CI `assets` job fails on drift). All CI jobs except the `assets` drift job sparse-checkout the repo without `Raw Assets/` (the 700 MB raw sources are only needed to regenerate committed outputs).
 
 `predev:desktop` is an alias of `predev` (same stop-server + asset prep).
 
@@ -91,7 +90,7 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 - **Companions** — invulnerable; act at player turn start; persist indefinitely.
 - **Draw / deck** — draw 4 per turn, max hand 7 (overflow skipped); hand cleared before draw; discard reshuffles when draw pile empties; only `consume` cards leave permanently.
 - **Block** — absorbs incoming damage first; halved (not cleared) at the start of the owner's next turn, after the opposing side had a chance to attack into it.
-- **Death's Door** — prevents fatal damage once per battle, leaving player at 1 HP with grace turn(s); CC skip suppressed during grace.
+- **Death's Door** — prevents fatal damage once per battle, leaving player at 1 HP with grace turn(s); during grace, lethal damage floors the player at 1 HP until they heal or grace expires; CC skip suppressed during grace.
 - **Battle RNG** — use `state.rng`, not `Math.random()` (`createBattleState` may pass explicit RNG in tests).
 - **Enemy status** — stack changes go through `addEnemyStatus()` / `setEnemyStatus()` in `src/lib/battle/types.ts`; `braced` enemy trait halves incoming stun.
 - **Static enemy actions** — `enemyAttackEffects` resolve sequentially every turn; no randomized intents.
@@ -107,7 +106,7 @@ Definitions of common terms used in the Alchemy codebase.
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Block**                      | Damage absorption on player/enemy; halves at the start of the owner's next turn after one opposing attack window.                                                                                                                                                   |
 | **Burn**                       | DoT status; deals its stack as damage, then normally decays by half.                                                                                                                                                                                                |
-| **Death's Door**               | Prevents fatal damage once per battle, leaving player at 1 HP with grace turn(s); subsequent damage before healing is lethal.                                                                                                                                       |
+| **Death's Door**               | Prevents fatal damage once per battle, leaving player at 1 HP with grace turn(s); while grace is active lethal hits floor the player at 1 HP (multi-hit and DoT ticks included), and damage becomes lethal once grace expires.                                      |
 | **Homestead**                  | Between-run hub; spend **Materials** on permanent upgrades.                                                                                                                                                                                                         |
 | **Mana**                       | Resource to play cards; resets to `maxMana` each turn (unspent lost unless Wellspring).                                                                                                                                                                             |
 | **Materials**                  | Meta currency for homestead upgrades; in-run earnings via `awardMaterialsDuringRun()`.                                                                                                                                                                              |

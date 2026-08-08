@@ -67,6 +67,29 @@ export function gearItemLocator(page: Page, title: string) {
   return page.locator(`[data-testid="armory-inventory-item"][data-gear-title="${title}"]`);
 }
 
+/**
+ * Waits until the committed gear tile for `title` sits at inventory cell
+ * (col, row). Asserting the settled item position — instead of polling the
+ * transient drag/flyover overlay — keeps drag tests deterministic under
+ * full-suite parallel load.
+ */
+export async function expectItemAtCell(page: Page, title: string, col: number, row: number, tolerance = 3) {
+  const item = gearItemLocator(page, title);
+  const cell = page.locator(`[data-armory-inventory-cell="${col}-${row}"]`);
+  await expect(cell).toBeVisible();
+  await expect
+    .poll(
+      async () => {
+        const itemBox = await item.boundingBox();
+        const cellBox = await cell.boundingBox();
+        if (!itemBox || !cellBox) return Number.POSITIVE_INFINITY;
+        return Math.max(Math.abs(itemBox.x - cellBox.x), Math.abs(itemBox.y - cellBox.y));
+      },
+      { timeout: 5000, message: `"${title}" should settle at inventory cell ${col}-${row}` },
+    )
+    .toBeLessThanOrEqual(tolerance);
+}
+
 export function currencyLocator(page: Page, currencyId: CraftingCurrencyId) {
   return page.locator(`[data-testid="armory-crafting-currency"][data-currency-id="${currencyId}"]`);
 }
@@ -147,4 +170,40 @@ export async function pointerDragToInventory(
   await page.evaluate(() => new Promise(requestAnimationFrame));
   await page.mouse.up();
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+}
+
+/**
+ * Releases the active pointer drag (the mouse is already positioned at the
+ * release point) and captures the drag visual's top edge at the moment its
+ * settle node mounts. Reading the rect inside the page at commit time avoids a
+ * Playwright round-trip race: the settle spring (≈30–60 ms) can finish before
+ * an out-of-page boundingBox() resolves under full-suite parallel load.
+ * Returns the settle frame's top in CSS px, or null if no settle node appeared.
+ */
+export async function releaseDragAndCaptureSettleTop(page: Page): Promise<number | null> {
+  const settleTop = page.evaluate(
+    () =>
+      new Promise<number | null>((resolve) => {
+        const previousNode = document.querySelector<HTMLElement>('[data-testid="armory-gear-drag-visual"]');
+        let observer: MutationObserver | null = null;
+        const fallback = window.setTimeout(() => {
+          observer?.disconnect();
+          const el = document.querySelector<HTMLElement>('[data-testid="armory-gear-drag-visual"]');
+          resolve(el ? el.getBoundingClientRect().top : null);
+        }, 500);
+        observer = new MutationObserver(() => {
+          const el = document.querySelector<HTMLElement>('[data-testid="armory-gear-drag-visual"]');
+          if (!el || el === previousNode) return;
+          window.clearTimeout(fallback);
+          observer?.disconnect();
+          const initialTop = el.getBoundingClientRect().top;
+          window.requestAnimationFrame(() => {
+            resolve(Math.max(initialTop, el.getBoundingClientRect().top));
+          });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      }),
+  );
+  await page.mouse.up();
+  return settleTop;
 }

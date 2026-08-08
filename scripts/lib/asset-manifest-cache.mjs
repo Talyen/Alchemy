@@ -4,7 +4,8 @@
 // Manifest entries also store source mtimeMs + size so unchanged files can
 // skip re-reading/re-hashing when the filesystem fingerprint matches.
 import { createHash } from "node:crypto";
-import { access, readFile, stat } from "node:fs/promises";
+import { access, readFile, readdir, stat, unlink } from "node:fs/promises";
+import path from "node:path";
 
 import { writeTextIfChanged } from "./write-text-if-changed.mjs";
 import { mapPool } from "./map-pool.mjs";
@@ -178,6 +179,36 @@ export async function writeManifestIfChanged(manifestPath, entries) {
   const sorted = sortManifest(entries);
   const content = `${JSON.stringify(sorted, null, 2)}\n`;
   return writeTextIfChanged(manifestPath, content);
+}
+
+/**
+ * Delete files in a fully-managed output directory that are not current targets.
+ * Only intended for directories where every tracked file is a pipeline output;
+ * do not use on directories that also hold manually-curated files.
+ *
+ * @param {string} outputDir
+ * @param {Set<string>} keepNames
+ * @param {{ manifestBasename?: string, label?: string }} [options]
+ * @returns {Promise<number>} number of files removed
+ */
+export async function removeOrphanOutputs(outputDir, keepNames, options = {}) {
+  const { manifestBasename = "", label = "asset" } = options;
+  let entries;
+  try {
+    entries = await readdir(outputDir);
+  } catch {
+    return 0;
+  }
+
+  let removed = 0;
+  for (const name of entries) {
+    if (manifestBasename && name === manifestBasename) continue;
+    if (keepNames.has(name)) continue;
+    await unlink(path.join(outputDir, name));
+    removed += 1;
+    console.log(`Removed orphan ${label}: ${name}`);
+  }
+  return removed;
 }
 
 /**

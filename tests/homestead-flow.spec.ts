@@ -22,36 +22,10 @@ test.describe("Homestead Flow", () => {
       await new HomesteadPage(page).goto();
     });
 
-    test("homestead buildings tab shows all buildings", async ({ page }) => {
-      const homestead = new HomesteadPage(page);
-      await expect(homestead.buildingsTab).toBeVisible();
-      await expect(homestead.farmTab).toBeVisible();
-      await expect(homestead.researchTab).toBeVisible();
-      await expect(homestead.companionsTab).toBeVisible();
-
-      await expect(page.getByText("Blacksmith").first()).toBeVisible({ timeout: 3000 });
-    });
-
     test("building construction button is visible for blacksmiths forge", async ({ page }) => {
       const homestead = new HomesteadPage(page);
       await homestead.switchTab("Buildings");
       await expect(await homestead.constructButton()).toBeVisible({ timeout: 3000 });
-    });
-
-    test("homestead farm tab displays visible farm plots", async ({ page }) => {
-      const homestead = new HomesteadPage(page);
-      await homestead.switchTab("Farm");
-      await expect(page.getByRole("button", { name: /Herb Garden/ })).toBeVisible({ timeout: 3000 });
-      await expect(page.getByRole("img", { name: "Herb Garden" })).toBeVisible();
-      await expect(page.getByRole("button", { name: /Wheat Field/ })).toBeVisible();
-    });
-
-    test("research tab shows all research options", async ({ page }) => {
-      const homestead = new HomesteadPage(page);
-      await homestead.switchTab("Research");
-      await expect(page.getByText("Leyline Energy").first()).toBeVisible({ timeout: 3000 });
-      await expect(page.getByText("Detect Magic").first()).toBeVisible();
-      await expect(page.getByText("Agility Training").first()).toBeVisible();
     });
   });
 
@@ -114,7 +88,9 @@ test.describe("Homestead Flow", () => {
       await homestead.goto();
     });
 
-    test("homestead shell does not resize when switching between tabs", async ({ page }) => {
+    test("homestead shell does not resize when switching between tabs and each tab shows its content", async ({
+      page,
+    }) => {
       const shell = page.locator(".alchemy-shell").first();
       const heights: number[] = [];
       const tabAnchors: Record<"Buildings" | "Farm" | "Research" | "Companions", Locator> = {
@@ -124,13 +100,40 @@ test.describe("Homestead Flow", () => {
         Companions: page.getByText("Undiscovered").first(),
       };
 
+      // Measure only once the shell height has settled so tab transitions do
+      // not produce a mid-animation frame.
+      const settledHeight = async () => {
+        let previous = -1;
+        let height = -1;
+        for (let attempt = 0; attempt < 10; attempt += 1) {
+          height = (await shell.boundingBox())?.height ?? -1;
+          if (height > 0 && height === previous) return height;
+          previous = height;
+          await expect
+            .poll(async () => (await shell.boundingBox())?.height ?? -1, {
+              message: "shell height should settle after tab switch",
+              timeout: 2000,
+            })
+            .toBeGreaterThan(0);
+        }
+        return height;
+      };
+
       for (const tab of ["Buildings", "Farm", "Research", "Companions"] as const) {
         await homestead.switchTab(tab);
         await expect(tabAnchors[tab]).toBeVisible({ timeout: 3000 });
-        const box = await shell.boundingBox();
-        expect(box).not.toBeNull();
-        heights.push(box!.height);
+        heights.push(await settledHeight());
       }
+
+      // Full tab content presence checks (kept with the tab switch so the shell
+      // stays visible while asserting content).
+      await homestead.switchTab("Buildings");
+      await expect(page.getByRole("button", { name: /Blacksmith/ }).first()).toBeVisible({ timeout: 3000 });
+      await homestead.switchTab("Farm");
+      await expect(page.getByRole("button", { name: /Wheat Field/ })).toBeVisible({ timeout: 3000 });
+      await homestead.switchTab("Research");
+      await expect(page.getByText("Detect Magic").first()).toBeVisible({ timeout: 3000 });
+      await expect(page.getByText("Agility Training").first()).toBeVisible();
 
       const max = Math.max(...heights);
       const min = Math.min(...heights);

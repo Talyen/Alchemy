@@ -4,7 +4,7 @@
 
 The default local hook is the pre-push gate: it catches formatting, TypeScript (src _and_ tests), ESLint, a fresh production build, and the small Playwright canary. CI is the comprehensive gate after every push to `main` (and on PRs). Do not require `ci-ok` as a GitHub push gate on `main` — that blocks trunk pushes before CI can run. Rely on local `pre-push` and post-push CI; use `npm run check:push:full` before a high-risk push when you want the full static gate + Vitest locally (still `@prepush` E2E only).
 
-`lefthook` `pre-push` runs `npm run check:push` — format check, `typecheck:all`, ESLint, a production build with committed assets (`ALCHEMY_SKIP_ASSETS=1`), then the **@prepush** E2E subset against that freshly built bundle (includes one animation canary). Building before E2E guarantees the canary never runs against stale `dist/`. Default pre-push skips `lint:boundaries`, `lint:architecture-smoke`, and `deadcode` — those run in CI `lint:ci` and in `check:push:full` via `check`.
+`lefthook` `pre-push` runs `npm run check:push` — format check, `typecheck:all`, ESLint, a production build with committed assets (`ALCHEMY_SKIP_ASSETS=1`), then the **@prepush** E2E subset against that freshly built bundle (includes one animation canary). Building before E2E guarantees the canary never runs against stale `dist/`. Default pre-push skips `lint:boundaries` and `deadcode` — those run in CI `lint:ci` and in `check:push:full` via `check`.
 
 `npm run check:push:full` is the fuller local static+unit gate: `check` (`lint:ci` + Vitest + web build) plus the same **@prepush** E2E canary as the hook. It is **not** CI E2E parity — CI runs `@critical|@prepush` via `npm run test:e2e:prepush:full`. On optional PR branches, wait for `ci-ok` before merging.
 
@@ -23,15 +23,15 @@ Install hooks once: `npm run prepare` (runs on `npm install`).
 
 ### Lint / format / dead-code commands
 
-| Command                           | Role                                                                            |
-| --------------------------------- | ------------------------------------------------------------------------------- |
-| `npm run format` / `format:check` | Prettier via `scripts/run-prettier.mjs`                                         |
-| `npm run lint`                    | ESLint (`eslint.config.js` + `eslint/`)                                         |
-| `npm run lint:boundaries`         | dependency-cruiser phase / lib edges                                            |
-| `npm run lint:architecture-smoke` | Cold ESLint lintFiles smoke (not in Vitest)                                     |
-| `npm run deadcode`                | knip (`lint:ci` / CI; not default `pre-push`; in `check:push:full` via `check`) |
-| `npm run deadcode:strict`         | knip strict + entry exports, deps excluded (nightly)                            |
-| `npm run lint:ci`                 | format:check → typecheck:all → lint → boundaries → smoke → deadcode             |
+| Command                           | Role                                                                                                  |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `npm run format` / `format:check` | Prettier via `scripts/run-prettier.mjs`                                                               |
+| `npm run lint`                    | ESLint (`eslint.config.js` + `eslint/`)                                                               |
+| `npm run lint:boundaries`         | dependency-cruiser phase / lib edges                                                                  |
+| `npm run lint:architecture-smoke` | Optional cold ESLint smoke over representative screens; subsumed by `npm run lint` (not in `lint:ci`) |
+| `npm run deadcode`                | knip (`lint:ci` / CI; not default `pre-push`; in `check:push:full` via `check`)                       |
+| `npm run deadcode:strict`         | knip strict + entry exports, deps excluded (nightly)                                                  |
+| `npm run lint:ci`                 | format:check → typecheck:all → lint → boundaries → deadcode                                           |
 
 First-time Playwright: `npx playwright install chromium`.
 
@@ -119,24 +119,26 @@ Layout: bootstrap helpers in [`tests/e2e/`](tests/e2e/) (`battle-setup.ts`, `arm
 ### Tags (`tests/playwright-tags.ts`)
 
 - **`@prepush`** — fast subset selected into the CI `@critical` command and run by the pre-push hook (`npm run test:e2e:prepush`). App boot + battle canary.
-- **`@critical`** — CI gate on every push (`npm run test:e2e:prepush:full` greps `@critical|@prepush`). One or two fast tests per area covering core gameplay, save integrity, progression locks, difficulty select, combat mechanics, armory in battle, keyboard navigation. **~60-75 tests, ≤3 min on CI.**
+- **`@critical`** — CI gate on every push (`npm run test:e2e:prepush:full` greps `@critical|@prepush`). One or two fast tests per area covering core gameplay, save integrity, progression locks, difficulty select, combat mechanics, armory in battle, keyboard navigation, and the cheap untagged-adjacent flows (options persistence, autosave cadence, destination filtering, mystery completion). **~70 tests, ~1 min on CI at 4 parallel workers.**
 - **`@smoke`** — quick boot/menu checks (alchemy boot + Electron boot).
 - **`@slow`** — intentionally slow specs (animation canaries, drag-and-drop, viewport loops). Runs in full E2E on release; can be run manually with `npm run test:e2e:slow`.
 - **`@armory`** — armory screen / gear interaction specs. Overlaps with `critical` and `slow` on a per-test basis.
 
+The `save-gate` job (`test:ship:e2e`, path-filtered) re-runs the full `save-persistence`/`save-error-paths` specs, including their `@critical` tests; that overlap with the always-on e2e gate is intentional redundancy for save-touching pushes.
+
 ## CI parity
 
-| Job                                             | Local equivalent                                                                                                                    |
-| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| CI `ship-gate`                                  | `ALCHEMY_SKIP_ASSETS=1 npm run build:desktop` (after unit tests pass); uploads `dist-desktop` artifact                              |
-| CI `assets`                                     | `node scripts/prepare-assets.mjs` + git diff on committed outputs (path-filtered on Raw Assets / asset scripts / committed outputs) |
-| CI `save-gate`                                  | `npm run test:ship:e2e` (path-filtered)                                                                                             |
-| CI `desktop-build` / `electron-e2e`             | `npm run dist:desktop` / `npm run test:ship:desktop` (electron reuses ship-gate `dist/`)                                            |
-| CI `e2e` (`@critical` + `@prepush`, every push) | `npm run build && npm run test:e2e:prepush:full`                                                                                    |
-| Pre-push hook                                   | `npm run check:push`                                                                                                                |
-| Tag `v*` release (`e2e-full` + release job)     | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md); release job runs `dist:desktop` once (no `check:ship` rebuild)        |
+| Job                                             | Local equivalent                                                                                                                               |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| CI `ship-gate`                                  | `ALCHEMY_SKIP_ASSETS=1 npm run build:desktop` (path-gated on Electron-related changes, after unit tests pass); uploads `dist-desktop` artifact |
+| CI `assets`                                     | `node scripts/prepare-assets.mjs` + git diff on committed outputs (path-filtered on Raw Assets / asset scripts / committed outputs)            |
+| CI `save-gate`                                  | `npm run test:ship:e2e` (path-filtered)                                                                                                        |
+| CI `desktop-build` / `electron-e2e`             | `npm run dist:desktop` / `npm run test:ship:desktop` (electron reuses ship-gate `dist/`)                                                       |
+| CI `e2e` (`@critical` + `@prepush`, every push) | `npm run build && npm run test:e2e:prepush:full`                                                                                               |
+| Pre-push hook                                   | `npm run check:push`                                                                                                                           |
+| Tag `v*` release (`e2e-full` + release job)     | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md); release job runs `dist:desktop` once (no `check:ship` rebuild)                   |
 
-CI surfaces failures via GitHub check annotations (Vitest `github-actions` / Playwright `github` reporters) and a short job Step Summary from `scripts/ci-summarize-*.mjs`. The `lint` job runs each `lint:ci` stage as its own step so the failed step name identifies format vs typecheck vs ESLint vs boundaries vs knip. Local `check:push:full` matches CI for static analysis + Vitest + web build, but keeps `@prepush` E2E only; the default pre-push hook uses the faster `check:push` subset (no boundaries/knip/architecture-smoke).
+CI surfaces failures via GitHub check annotations (Vitest `github-actions` / Playwright `github` reporters) and a short job Step Summary from `scripts/ci-summarize-*.mjs`. The `lint` job runs each `lint:ci` stage as its own step so the failed step name identifies format vs typecheck vs ESLint vs boundaries vs knip. Local `check:push:full` matches CI for static analysis + Vitest + web build, but keeps `@prepush` E2E only; the default pre-push hook uses the faster `check:push` subset (no boundaries/knip).
 
 Path-filtered jobs (`assets`, `save-gate`, `desktop-build`, `electron-e2e`) are gated by the `changes` job (`dorny/paths-filter`); on `workflow_dispatch` they always run. The `ci-ok` job aggregates every CI job into a single status check for dashboards and optional PR merges — it is not a required push gate on `main`. Shared job setup (Node + `npm ci`) lives in the composite action `.github/actions/setup`. Nightly failures open or update a GitHub issue labeled `nightly-failure`.
 

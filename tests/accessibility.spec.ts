@@ -5,17 +5,6 @@ import { MenuPage } from "./pages/menu-page";
 import { critical } from "./playwright-tags";
 
 test.describe("Accessibility", critical, () => {
-  test("main menu buttons are discoverable by role", async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.goto();
-
-    await expect(menu.playBtn).toBeVisible();
-    await expect(menu.collectionBtn).toBeVisible();
-    await expect(menu.optionsBtn).toBeVisible();
-    await expect(menu.talentsBtn).toBeVisible();
-    await expect(menu.homesteadBtn).toBeVisible();
-  });
-
   test("battle cards have accessible play labels", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;

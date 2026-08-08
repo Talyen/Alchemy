@@ -352,4 +352,47 @@ describe("endPlayerTurn — Death's Door", () => {
     expect(result.state.turnPhase).toBe("player");
     expect(result.state.playerCC.stunSkipTurns).toBe(0);
   });
+
+  it("multi-hit enemy cannot kill through the grace window", () => {
+    const state = battleState({
+      playerHealth: 2,
+      enemyAttackEffects: [
+        { kind: "damage" as const, damageType: "physical" as const, amount: 3 },
+        { kind: "damage" as const, damageType: "physical" as const, amount: 3 },
+      ],
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.playerHealth).toBe(1);
+    expect(result.state.deathsDoorActive).toBe(true);
+    expect(result.state.deathsDoorUsed).toBe(true);
+    expect(result.state.turnPhase).toBe("player");
+  });
+
+  it("DoT tick after a lethal hit cannot kill through the grace window", () => {
+    const state = battleState({
+      playerHealth: 2,
+      playerStatuses: { ...emptyPlayerStatuses, burn: 4 },
+      enemyAttackEffects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 3 }],
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.playerHealth).toBe(1);
+    expect(result.state.deathsDoorActive).toBe(true);
+    expect(result.state.deathsDoorUsed).toBe(true);
+    expect(result.state.playerStatuses.burn).toBe(2);
+  });
+
+  it("lethal hit after grace expires kills the player", () => {
+    const state = battleState({
+      playerHealth: 1,
+      deathsDoorUsed: true,
+      deathsDoorActive: true,
+      deathsDoorTriggeredTurn: 1,
+      deathsDoorGraceTurnsRemaining: 0,
+      turn: 1,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.playerHealth).toBe(0);
+    expect(result.state.deathsDoorActive).toBe(false);
+    expect(result.state.deathsDoorUsed).toBe(true);
+  });
 });

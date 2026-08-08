@@ -10,7 +10,7 @@ import {
   advanceToPlayerTurn,
   reduceSkipTurns,
   resetEnemyTurnState,
-  resolveDeathsDoorEndOfEnemyTurn,
+  resolveDeathsDoorGraceExpiry,
 } from "./enemy-turn-utils";
 
 interface EndPlayerTurnResolutionBase {
@@ -28,8 +28,7 @@ export type EndPlayerTurnResolution =
   | (EndPlayerTurnResolutionBase & { kind: "skipped" | "standard"; enemyTurnStartState: BattleState });
 
 function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
-  let nextState = applyIronwoodBuckler(state, combatTexts);
-  nextState = resolveDeathsDoorEndOfEnemyTurn(nextState);
+  const nextState = applyIronwoodBuckler(state, combatTexts);
   const finalState = advanceToPlayerTurn(nextState, combatTexts);
   return { state: finalState, combatTexts, playerTurnSkipped: finalState.turnPhase === "enemy" };
 }
@@ -48,11 +47,12 @@ function processHasteEarlyTurn(state: BattleState): BattleState {
 
 function beginEnemyPhase(state: BattleState): BattleState {
   const resetState = resetEnemyTurnState(state);
+  const expiryCheckedState = resolveDeathsDoorGraceExpiry(resetState);
   return {
-    ...resetState,
+    ...expiryCheckedState,
     turnPhase: "enemy",
     hand: [],
-    discard: [...resetState.discard, ...resetState.hand],
+    discard: [...expiryCheckedState.discard, ...expiryCheckedState.hand],
   };
 }
 

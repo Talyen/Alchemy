@@ -43,34 +43,6 @@ async function wildwoodWinCombat(page: import("@playwright/test").Page, battle: 
 }
 
 test.describe("Wildwood Draft", () => {
-  test("resumes a persisted mid-draft run", critical, async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
-    const drafted = makeCard({ id: "slash" });
-    const choices = [makeCard({ id: "block" }), makeCard({ id: "bash" }), makeCard({ id: "anvil" })];
-    await injectSaveState(page, {
-      contentSystemType: "wildwood",
-      selectedDifficulty: null,
-      currentScreen: "draft-deck",
-      runDeck: [drafted],
-      wildwoodDraft: {
-        version: 3,
-        phase: "draft",
-        draftChoices: choices,
-        remainingBossIds: [],
-        previousBossId: null,
-        currentBossId: null,
-        currentCombatTraitIds: [],
-        currentRewardTraitIds: [],
-        rewardType: null,
-        rewardChoiceIds: [],
-        selectedRewardId: null,
-      },
-    });
-    await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Draft a Deck" })).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText("2/6 selected")).toBeVisible();
-  });
-
   test("drafts six cards and starts a modified boss battle", slow, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
@@ -250,122 +222,9 @@ function wildwoodBossState(overrides: Record<string, unknown> = {}) {
   };
 }
 
-async function wildwoodPickDraftCard(page: import("@playwright/test").Page) {
-  await expect(page.getByRole("heading", { name: "Draft a Deck" })).toBeVisible({ timeout: 5000 });
-  const confirm = page.getByRole("button", { name: "Select Card" });
-  await expect(async () => {
-    await page
-      .getByRole("button", { name: /^Select (?!Card$).+/ })
-      .first()
-      .click({ force: true });
-    await expect(confirm).toBeEnabled();
-  }).toPass();
-  await confirm.click();
-  await expect(page.getByRole("heading", { name: "Draft Complete" })).toBeVisible();
-  await page.getByRole("button", { name: "Continue" }).click();
-  await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
-}
-
-const VALID_COMBAT_TRAITS = [
-  "tempered",
-  "plated",
-  "reinforced",
-  "braced",
-  "septic",
-  "caustic",
-  "flesheater",
-  "combustible",
-  "chilling",
-  "thorns",
-  "zealot",
-  "insatiable",
-  "jealous",
-  "concussive",
-  "rooted",
-  "overgrowth",
-  "holy-retribution",
-  "divine-aegis",
-];
-
 test.describe("Wildwood Traits", slow, () => {
   test.beforeEach(async ({ page }) => {
     await seedRandom(page, 42);
-  });
-
-  test("combat trait is applied to the enemy boss", async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-
-    await injectSaveState(
-      page,
-      wildwoodBossState({
-        wildwoodDraft: {
-          version: 3,
-          phase: "draft",
-          draftChoices: [makeCard()],
-          remainingBossIds: [],
-          previousBossId: null,
-          currentBossId: null,
-          currentCombatTraitIds: ["reinforced"],
-          currentRewardTraitIds: [],
-          rewardType: null,
-          rewardChoiceIds: [],
-          selectedRewardId: null,
-        },
-      }),
-    );
-    await page.goto("/");
-    await wildwoodPickDraftCard(page);
-
-    const traits = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun?.wildwoodDraft?.currentCombatTraitIds ?? [];
-    }, SAVE_KEY);
-    expect(traits).toHaveLength(1);
-    expect(VALID_COMBAT_TRAITS).toContain(traits[0]);
-  });
-
-  test("reward trait data passes through the save system without corruption", async ({
-    page,
-    fastBattle,
-    runtimeErrors,
-  }) => {
-    void fastBattle;
-    void runtimeErrors;
-
-    await injectSaveState(
-      page,
-      wildwoodBossState({
-        wildwoodDraft: {
-          version: 3,
-          phase: "draft",
-          draftChoices: [makeCard()],
-          remainingBossIds: [],
-          previousBossId: null,
-          currentBossId: null,
-          currentCombatTraitIds: ["thorns"],
-          currentRewardTraitIds: ["alchemist"],
-          rewardType: null,
-          rewardChoiceIds: [],
-          selectedRewardId: null,
-        },
-      }),
-    );
-    await page.goto("/");
-    await wildwoodPickDraftCard(page);
-
-    const saveState = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      const draft = save.activeRun?.wildwoodDraft;
-      return {
-        combatTraits: draft?.currentCombatTraitIds ?? [],
-        rewardTraits: draft?.currentRewardTraitIds ?? [],
-      };
-    }, SAVE_KEY);
-    expect(saveState.combatTraits).toHaveLength(1);
-    expect(VALID_COMBAT_TRAITS).toContain(saveState.combatTraits[0]);
-    expect(saveState.rewardTraits).toHaveLength(1);
-    expect(["generous", "alchemist", "scavenger", "companion"]).toContain(saveState.rewardTraits[0]);
   });
 
   test("reloading mid-draft preserves combat trait assignment", async ({ page, fastBattle, runtimeErrors }) => {

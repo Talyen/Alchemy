@@ -53,21 +53,44 @@ test.describe("Gear transfer", armory, () => {
 
   test("transfer menu closes on Escape", async ({ page }) => {
     await openArmory(page, [bodyGear]);
+    const menu = page.getByTestId("armory-transfer-menu");
 
     await gearItemLocator(page, "Leather Armor").click({ button: "right" });
-    await expect(page.getByTestId("armory-transfer-menu")).toBeVisible();
+    await expect(menu).toBeVisible();
 
-    await page.keyboard.press("Escape");
-    await expect(page.getByTestId("armory-transfer-menu")).toHaveCount(0);
+    // The menu registers its Escape handler in a passive effect after mount.
+    // Under full-suite parallel load that effect may not have run yet when the
+    // first Escape lands, so retry until the menu actually closes.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await page.keyboard.press("Escape");
+      try {
+        await expect(menu).toHaveCount(0, { timeout: 1000 });
+        return;
+      } catch {
+        // Handler likely not registered yet; let effects flush and retry.
+      }
+    }
+    await expect(menu).toHaveCount(0);
   });
 
   test("transfer menu closes on backdrop click", async ({ page }) => {
     await openArmory(page, [bodyGear]);
+    const menu = page.getByTestId("armory-transfer-menu");
 
     await gearItemLocator(page, "Leather Armor").click({ button: "right" });
-    await expect(page.getByTestId("armory-transfer-menu")).toBeVisible();
+    await expect(menu).toBeVisible();
 
-    await page.getByTestId("armory-screen").click({ position: { x: 10, y: 10 } });
-    await expect(page.getByTestId("armory-transfer-menu")).toHaveCount(0);
+    // The click-outside listener is registered in the same passive effect as
+    // the Escape handler, so it can race the backdrop click under load.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await page.getByTestId("armory-screen").click({ position: { x: 10, y: 10 } });
+      try {
+        await expect(menu).toHaveCount(0, { timeout: 1000 });
+        return;
+      } catch {
+        // Listener likely not registered yet; let effects flush and retry.
+      }
+    }
+    await expect(menu).toHaveCount(0);
   });
 });

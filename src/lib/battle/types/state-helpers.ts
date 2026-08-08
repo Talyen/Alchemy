@@ -147,7 +147,9 @@ function computeDamageReduction(baseReduction: number, damageType: string | unde
   return baseReduction;
 }
 
-// Death's Door triggers once per battle. Subsequent zero-health hits maintain state without extra grace.
+// Death's Door triggers once per battle. During the grace window (deathsDoorActive)
+// lethal hits floor the player at 1 HP — you always get a full turn to save yourself.
+// Once grace expires the next lethal hit kills outright.
 // damageReduction subtracts flat damage (e.g., from talents) before applying to health.
 export function applyPlayerCombatDamage(state: BattleState, damage: number, damageType?: string): BattleState {
   if (damage <= 0) return state;
@@ -180,6 +182,9 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number, dama
       deathsDoorTriggeredTurn: state.turn,
       deathsDoorGraceTurnsRemaining: 1 + Math.max(0, state.talentEffects.deathsDoorExtension),
     };
+  }
+  if (state.deathsDoorActive) {
+    return { ...state, playerHealth: 1 };
   }
   return { ...state, playerHealth: 0, deathsDoorActive: false };
 }

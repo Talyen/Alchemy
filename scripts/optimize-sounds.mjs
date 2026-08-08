@@ -29,6 +29,12 @@ const VORBIS_QUALITY = "4";
 // Each entry maps a raw asset (relative to "Raw Assets/Sound Effects/") to an
 // output name in public/sounds/. The script converts WAV → OGG and copies OGG
 // files straight through. Output names are kebab-cased for clean URLs.
+//
+// public/sounds is intentionally PARTIALLY managed: it also holds manually-curated
+// .ogg files with no raw source in "Raw Assets/Sound Effects" (e.g. purchased SFX
+// packs referenced from src/lib/sound-registry.ts). Do not add orphan cleanup here;
+// a blanket sweep would delete those files. Compare with optimize-music.mjs, whose
+// output directory is fully managed.
 const sounds = [
   // ── Cards ──
   { source: "Attacks and Combat/Sword Attacks Hits and Blocks/Sword Attack 1.ogg", target: "sword-attack-1.ogg" },
@@ -148,8 +154,7 @@ async function optimizeSound({ source, target }, storedEntry) {
 export async function optimizeSounds() {
   if (!ffmpegPath) {
     console.error("ffmpeg-static binary not found. Run: npm install");
-    process.exitCode = 1;
-    return;
+    return { ok: false };
   }
 
   await mkdir(outputDir, { recursive: true });
@@ -167,15 +172,17 @@ export async function optimizeSounds() {
   });
 
   console.log(`Processed ${results.length} sounds.`);
-  if (failed) {
-    process.exitCode = 1;
-  }
+  return { ok: !failed };
 }
 
 if (isMainModule(import.meta.url)) {
-  optimizeSounds().catch((error) => {
-    console.error("Sound optimization failed.");
-    console.error(error);
-    process.exitCode = 1;
-  });
+  optimizeSounds()
+    .then(({ ok }) => {
+      if (!ok) process.exitCode = 1;
+    })
+    .catch((error) => {
+      console.error("Sound optimization failed.");
+      console.error(error);
+      process.exitCode = 1;
+    });
 }

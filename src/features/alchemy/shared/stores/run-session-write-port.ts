@@ -9,28 +9,13 @@ import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-st
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunRngStream } from "@/lib/run-rng";
 import type { Destination } from "@/features/alchemy/shared/types";
-import { dispatchRunSessionCommand } from "./run-session-command";
+import { bindWriteAction, dispatchRunSessionCommand } from "./run-session-command";
 import { readGameplayState, type GameplayState } from "./gameplay-state-store";
 import type { DisplayOverrides } from "./run-domain-types";
 
 type RunActions = GameplayState["runActions"];
 export type RunTrinketsUpdate = Parameters<RunActions["setRunTrinkets"]>[0];
 export type RunDeckUpdate = Parameters<RunActions["setRunDeck"]>[0];
-
-function dispatchRunAction<T>(work: (session: GameplayState) => T): T {
-  return dispatchRunSessionCommand(() => work(readGameplayState()));
-}
-
-/**
- * Bind one committed aggregate action method into a command-backed write.
- * `provider(state)` returns a stable action method; the public signature is inferred
- * so callers pass the exact slice-action arguments.
- */
-function bindWriteAction<Args extends unknown[], Ret>(
-  run: (state: GameplayState) => (...args: Args) => Ret,
-): (...args: Args) => Ret {
-  return (...args: Args) => dispatchRunAction((state) => run(state)(...args));
-}
 
 const runActions = (state: GameplayState) => state.runActions;
 const sessionActions = (state: GameplayState) => state.sessionActions;

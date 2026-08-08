@@ -14,16 +14,11 @@ import { MenuPage } from "./pages/menu-page";
 import { critical, prepush, slow } from "./playwright-tags";
 
 test.describe("Menu", critical, () => {
-  test("main menu reports meta run phase", prepush, async ({ page }) => {
+  test("main menu reports the meta run phase and shows all buttons", prepush, async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
     await menu.expectMainMenu();
     await menu.stage.expectRunPhase("meta");
-  });
-
-  test("all menu buttons are visible on the main menu", prepush, async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.goto();
     await expect(menu.playBtn).toBeVisible();
     await expect(menu.collectionBtn).toBeVisible();
     await expect(menu.optionsBtn).toBeVisible();
@@ -34,16 +29,11 @@ test.describe("Menu", critical, () => {
     await expect(page.getByRole("button", { name: /Wildwood Draft/ })).toBeVisible();
   });
 
-  test("active campaign battle reports battle run phase", async ({ page }) => {
-    await startCampaignBattle(page);
-    const menu = new MenuPage(page);
-    await menu.stage.expectRunPhase("battle");
-  });
-
   test("menu shows Resume Run when a campaign battle is active", async ({ page }) => {
     await startCampaignBattle(page);
     const menu = new MenuPage(page);
     const battle = new BattlePage(page);
+    await menu.stage.expectRunPhase("battle");
     await battle.menuBtn.click();
     await page.getByRole("button", { name: "Main Menu" }).click();
     await menu.openGameModeSelect();
@@ -167,7 +157,7 @@ test.describe("Options Screen", () => {
     await expect(page.getByRole("heading", { name: "Clear Save Data" })).toBeHidden();
   });
 
-  test("volume modifications persist in localStorage", async ({ page }) => {
+  test("volume modifications persist in localStorage", critical, async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
     await menu.openOptions();

@@ -178,7 +178,7 @@ describe("applyPlayerCombatDamage", () => {
     expect(next.deathsDoorTriggeredTurn).toBe(3);
   });
 
-  it("does not trigger Death's Door again on second lethal hit", () => {
+  it("does not trigger Death's Door again on second lethal hit during grace", () => {
     const state = makeTestBattleState({
       playerHealth: 10,
       deathsDoorUsed: true,
@@ -187,9 +187,9 @@ describe("applyPlayerCombatDamage", () => {
       turn: 4,
     });
     const next = applyPlayerCombatDamage(state, 20);
-    expect(next.playerHealth).toBe(0);
+    expect(next.playerHealth).toBe(1);
     expect(next.deathsDoorUsed).toBe(true);
-    expect(next.deathsDoorActive).toBe(false);
+    expect(next.deathsDoorActive).toBe(true);
   });
 
   it("is defeated when hit while Death's Door already used and health was already 0", () => {

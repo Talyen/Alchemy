@@ -8,9 +8,9 @@ import {
   primaryRewardInterruptedFlow,
   makeHighDamageCard,
   SAVE_KEY,
-  skipBattleAndClaimReward,
   startBattleWithDeck,
 } from "./helpers";
+import { BattlePage } from "./pages/battle-page";
 import { critical, prepush } from "./playwright-tags";
 
 test.describe("Merchant Shop", () => {
@@ -124,7 +124,7 @@ test.describe("Alchemist Shop", () => {
 
 test.describe("Reward Flow", () => {
   test(
-    "card reward: selecting and adding card works",
+    "card reward: requires confirmation and selecting and adding a card works",
     { ...critical, ...prepush },
     async ({ page, fastBattle, runtimeErrors }) => {
       void fastBattle;
@@ -133,7 +133,15 @@ test.describe("Reward Flow", () => {
         page,
         Array.from({ length: 6 }, () => makeHighDamageCard()),
       );
-      await skipBattleAndClaimReward(page);
+
+      const battle = new BattlePage(page);
+      await battle.winViaCombat(3);
+
+      const reward = new RewardPage(page);
+      await expect(reward.addRewardBtn).toBeDisabled();
+      await reward.selectFirstReward();
+      await expect(reward.addRewardBtn).toBeEnabled();
+      await reward.addRewardBtn.click();
       await new DestinationPage(page).expectVisible();
     },
   );

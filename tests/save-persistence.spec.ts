@@ -219,7 +219,7 @@ test.describe("Save Persistence & Resume", () => {
 });
 
 test.describe("Autosave Cadence", () => {
-  test("save is written after the first end turn in battle", async ({ page, fastBattle, runtimeErrors }) => {
+  test("save is written after the first end turn in battle", critical, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
     await startBattleWithDeck(

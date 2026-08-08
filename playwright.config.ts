@@ -21,9 +21,12 @@ export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.spec.ts",
   testIgnore: "**/electron-smoke.spec.ts",
-  fullyParallel: isPrepush || isNightly || isFullE2eSuite || !isCi,
+  // Every E2E test is state-isolated (each injects its own localStorage), so the
+  // CI gate runs fully parallel for throughput. Disable animations via fastBattle
+  // where applicable; the raw-animation canaries are isolated per-context.
+  fullyParallel: isPrepush || isNightly || isFullE2eSuite || isCi,
   maxFailures,
-  workers: isPrepush ? prepushWorkers : isNightly ? 4 : isCi ? 2 : 4,
+  workers: isPrepush ? prepushWorkers : isNightly ? 4 : isCi ? 4 : 4,
   globalTimeout: 600_000,
   timeout: isCi ? 30_000 : 15_000,
   retries: isCi ? 1 : 0,

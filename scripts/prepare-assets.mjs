@@ -7,7 +7,9 @@ import { isMainModule } from "./lib/is-main-module.mjs";
 
 /**
  * Single in-process orchestrator for predev/prebuild asset prep.
- * Order: optimize art → sync assets → sync gear art → optimize sounds → optimize music.
+ * The three transform pipelines (art, sounds, music) are independent — they write
+ * to disjoint output directories — so they run concurrently. Art must finish before
+ * syncAssets/syncGearArt because those regenerate barrels from its manifest.
  */
 export async function prepareAssets() {
   if (process.env.ALCHEMY_SKIP_ASSETS === "1") {
@@ -15,22 +17,18 @@ export async function prepareAssets() {
     return;
   }
 
-  await optimizeAssets();
-  if (process.exitCode && process.exitCode !== 0) {
-    throw new Error("Art optimization failed.");
-  }
+  const [art, sounds, music] = await Promise.all([optimizeAssets(), optimizeSounds(), optimizeMusic()]);
+
+  const failures = [];
+  if (!art.ok) failures.push("Art optimization failed (see missing-source errors above).");
+  if (!sounds.ok) failures.push("Sound optimization failed.");
+  if (!music.ok) failures.push("Music optimization failed.");
 
   await syncAssets();
   await syncGearArt();
 
-  await optimizeSounds();
-  if (process.exitCode && process.exitCode !== 0) {
-    throw new Error("Sound optimization failed.");
-  }
-
-  await optimizeMusic();
-  if (process.exitCode && process.exitCode !== 0) {
-    throw new Error("Music optimization failed.");
+  if (failures.length > 0) {
+    throw new Error(failures.join(" "));
   }
 }
 

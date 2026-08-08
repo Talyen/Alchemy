@@ -62,7 +62,11 @@ export default defineConfig(({ mode, command }) => {
     build: {
       assetsInlineLimit: 4096,
       sourcemap: sentryEnabled ? "hidden" : false,
-      rollupOptions: {
+      // App domains are still statically imported (no React.lazy — see ARCHITECTURE
+      // § Boot), so this splitting never changes load semantics; it only gives the
+      // browser stable, independently-cached chunks for code that churns at different
+      // rates (vendor vs card data vs battle engine) and shrinks any single parse unit.
+      rolldownOptions: {
         output: {
           // Keep gameplay screens eagerly loaded while letting the browser cache and parse
           // stable vendor libraries separately from frequently changed app code.
@@ -93,10 +97,28 @@ export default defineConfig(({ mode, command }) => {
                 test: /[\\/]node_modules[\\/]/,
                 priority: 10,
               },
+              {
+                name: "game-data",
+                test: /[\\/]src[\\/]lib[\\/]game-data[\\/]/,
+                priority: 9,
+              },
+              {
+                name: "battle-engine",
+                test: /[\\/]src[\\/]lib[\\/]battle[\\/]/,
+                priority: 8,
+              },
+              {
+                name: "validation",
+                test: /[\\/]src[\\/]lib[\\/]validation[\\/]/,
+                priority: 7,
+              },
             ],
           },
         },
       },
+      // Eagerly-loaded app code intentionally stays in one entry chunk; silence the
+      // default 500 kB advisory that conflicts with the no-React.lazy invariant.
+      chunkSizeWarningLimit: 900,
     },
     resolve: {
       alias: {

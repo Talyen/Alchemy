@@ -13,11 +13,6 @@ const armoryViewports = [
 ];
 
 test.describe("Gear layout", { ...armory, ...slow }, () => {
-  test("armory screen opens from the main menu", async ({ page }) => {
-    await openArmory(page, [{ instanceId: "gear-1", definitionId: "leather-armor-basic", affixes: [] }]);
-    await expect(page.getByRole("heading", { name: "Inventory" })).toBeVisible();
-  });
-
   test("opens salvage confirmation from an inventory item", async ({ page }) => {
     await openArmory(page, [bodyGear]);
 
@@ -25,8 +20,8 @@ test.describe("Gear layout", { ...armory, ...slow }, () => {
     await expectSalvageDialog(page);
   });
 
-  for (const viewport of armoryViewports) {
-    test(`uses the same equipment and inventory scale at ${viewport.label}`, async ({ page }) => {
+  test("uses the same equipment and inventory scale at each viewport", async ({ page }) => {
+    for (const viewport of armoryViewports) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await openArmory(page, [bodyGear, { instanceId: "gear-belt", definitionId: "leather-belt-basic", affixes: [] }]);
 
@@ -43,12 +38,12 @@ test.describe("Gear layout", { ...armory, ...slow }, () => {
         };
       });
 
-      expect(sizes.bodyItem.width).toBeCloseTo(sizes.bodySlot.width, 2);
-      expect(sizes.bodyItem.height).toBeCloseTo(sizes.bodySlot.height, 2);
-      expect(sizes.beltItem.width).toBeCloseTo(sizes.beltSlot.width, 2);
-      expect(sizes.beltItem.height).toBeCloseTo(sizes.beltSlot.height, 2);
-    });
-  }
+      expect(sizes.bodyItem.width, viewport.label).toBeCloseTo(sizes.bodySlot.width, 2);
+      expect(sizes.bodyItem.height, viewport.label).toBeCloseTo(sizes.bodySlot.height, 2);
+      expect(sizes.beltItem.width, viewport.label).toBeCloseTo(sizes.beltSlot.width, 2);
+      expect(sizes.beltItem.height, viewport.label).toBeCloseTo(sizes.beltSlot.height, 2);
+    }
+  });
 
   test("scrolls only occupied inventory rows", async ({ page }) => {
     const rings = Array.from({ length: 65 }, (_, index) => ({
@@ -86,8 +81,8 @@ test.describe("Gear layout", { ...armory, ...slow }, () => {
     expect(await board.evaluate((element) => element.scrollTop)).toBe(0);
   });
 
-  for (const viewport of armoryViewports) {
-    test(`contains all Armory boards at ${viewport.label}`, async ({ page }) => {
+  test("contains all Armory boards at each viewport", async ({ page }) => {
+    for (const viewport of armoryViewports) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await openArmory(
         page,
@@ -155,17 +150,17 @@ test.describe("Gear layout", { ...armory, ...slow }, () => {
         };
       });
 
-      expect(result.horizontalOverflow).toBeLessThanOrEqual(1);
-      expect(result.equipmentContained).toBe(true);
-      expect(result.inventoryContained).toBe(true);
-      expect(result.equipmentSlotsOverlap).toBe(false);
-      expect(result.helmCenteredAboveBody).toBe(true);
-      expect(result.beltCenteredBelowBody).toBe(true);
-      expect(result.tabsCentered).toBe(true);
-      expect(result.tabsHaveIcons).toBe(true);
-      expect(result.canReachBottom).toBe(true);
-    });
-  }
+      expect(result.horizontalOverflow, viewport.label).toBeLessThanOrEqual(1);
+      expect(result.equipmentContained, viewport.label).toBe(true);
+      expect(result.inventoryContained, viewport.label).toBe(true);
+      expect(result.equipmentSlotsOverlap, viewport.label).toBe(false);
+      expect(result.helmCenteredAboveBody, viewport.label).toBe(true);
+      expect(result.beltCenteredBelowBody, viewport.label).toBe(true);
+      expect(result.tabsCentered, viewport.label).toBe(true);
+      expect(result.tabsHaveIcons, viewport.label).toBe(true);
+      expect(result.canReachBottom, viewport.label).toBe(true);
+    }
+  });
 
   test("character art container in Armory screen is scaled 10% larger than the player art panel in battle screen", async ({
     page,

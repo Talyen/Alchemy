@@ -178,7 +178,7 @@ Optimized images are committed under `src/assets/optimized/`. Optimized sounds a
 
 ## Deployment
 
-The web build targets Vercel. `vercel.json` runs `npm run build:web:ci` (typecheck + build with `ALCHEMY_SKIP_ASSETS=1`), outputs `dist`, and rewrites routes to `index.html` for the single-page app.
+The web build targets Vercel. `vercel.json` buildCommand exports `ALCHEMY_SKIP_ASSETS=1` then runs typecheck + `vite build`, outputs `dist`, and rewrites routes to `index.html` for the single-page app.
 
 ## Tech Stack
 

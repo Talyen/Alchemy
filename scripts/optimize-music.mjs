@@ -1,8 +1,13 @@
-import { mkdir, copyFile } from "node:fs/promises";
+import { mkdir, copyFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { isOutputFresh, processManifestEntries, resolveSourceHash } from "./lib/asset-manifest-cache.mjs";
+import {
+  isOutputFresh,
+  processManifestEntries,
+  removeOrphanOutputs,
+  resolveSourceHash,
+} from "./lib/asset-manifest-cache.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
@@ -16,24 +21,32 @@ const SCHEMA_VERSION = 2;
 
 const MUSIC_SETTINGS = { mode: "copy" };
 
+// public/Music is fully managed by this script: every file there must come from
+// Raw Assets/Music, so stale outputs can be removed safely. (Unlike public/sounds,
+// which intentionally also holds manually-curated files not produced by the pipeline.)
+const AUDIO_EXTENSIONS = new Set([".mp3", ".ogg", ".wav"]);
+
+async function discoverMusicFiles() {
+  let entries;
+  try {
+    entries = await readdir(sourceDir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  return entries
+    .filter((entry) => entry.isFile() && AUDIO_EXTENSIONS.has(path.extname(entry.name).toLowerCase()))
+    .map((entry) => entry.name)
+    .sort();
+}
+
 export async function optimizeMusic() {
   await mkdir(outputDir, { recursive: true });
 
-  const files = [
-    "Menu 1.mp3",
-    "Menu 2.mp3",
-    "Menu 3.mp3",
-    "Menu 4.mp3",
-    "Battle 1.mp3",
-    "Battle 2.mp3",
-    "Battle 3.mp3",
-    "Battle 4.mp3",
-    "Battle 5.mp3",
-    "The Forge Golem.mp3",
-    "The Frostwarden.mp3",
-    "The Blight Treant.mp3",
-    "The Iron Bear.mp3",
-  ];
+  const files = await discoverMusicFiles();
+  if (files.length === 0) {
+    console.error(`No music files found in ${sourceDir}.`);
+    return { ok: false };
+  }
 
   const { results, failed } = await processManifestEntries({
     entries: files,
@@ -57,16 +70,28 @@ export async function optimizeMusic() {
     },
   });
 
-  console.log(`Processed ${results.length} music files.`);
-  if (failed) {
-    process.exitCode = 1;
+  if (!failed) {
+    const removed = await removeOrphanOutputs(outputDir, new Set(files), {
+      manifestBasename: ".asset-hashes.json",
+      label: "music file",
+    });
+    if (removed > 0) {
+      console.log(`Removed ${removed} orphan music files.`);
+    }
   }
+
+  console.log(`Processed ${results.length} music files.`);
+  return { ok: !failed };
 }
 
 if (isMainModule(import.meta.url)) {
-  optimizeMusic().catch((error) => {
-    console.error("Music optimization failed.");
-    console.error(error);
-    process.exitCode = 1;
-  });
+  optimizeMusic()
+    .then(({ ok }) => {
+      if (!ok) process.exitCode = 1;
+    })
+    .catch((error) => {
+      console.error("Music optimization failed.");
+      console.error(error);
+      process.exitCode = 1;
+    });
 }

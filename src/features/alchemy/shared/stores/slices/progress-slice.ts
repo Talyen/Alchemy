@@ -1,4 +1,12 @@
-import { getGoldMultiplier, getCardKeywords, addTalentXP, filterKeywordsForTalentXP } from "@/lib/game-data";
+import {
+  addTalentXP,
+  filterKeywordsForTalentXP,
+  getCardKeywords,
+  getGoldMultiplier,
+  type BattleCard,
+  type CharacterId,
+  type KeywordId,
+} from "@/lib/game-data";
 import {
   createInitialActiveRunFields,
   runFieldsFromSnapshot,
@@ -7,8 +15,68 @@ import {
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import { defineNestedFieldSetter, type ImmerSet } from "./_field-setter";
 import type { RunDomainDataState } from "../run-domain-types";
-import type { ProgressActions } from "./progress-action-types";
-import { nextRunRngValue } from "@/lib/run-rng";
+import { nextRunRngValue, type RunRngStream } from "@/lib/run-rng";
+import type { ActiveRunData } from "@/lib/active-run-session";
+import type { MaterialInventory } from "@/lib/homestead/types";
+import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
+
+/** Active-run scoped progression actions. Permanent progression lives on the aggregate's runProfile region. */
+export interface ProgressActions {
+  setRunDeck: (action: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
+  setRunGold: (action: number | ((prev: number) => number)) => void;
+  setRunPlayerHealth: (action: number | ((prev: number) => number)) => void;
+  setRunMaxHealth: (action: number | ((prev: number) => number)) => void;
+  setRoomsEncountered: (action: number | ((prev: number) => number)) => void;
+  setCurrentAct: (action: number | ((prev: number) => number)) => void;
+  setDestinationIndexInAct: (action: number | ((prev: number) => number)) => void;
+  setCompletedDestinations: (
+    action:
+      | ActiveRunProgressFields["completedDestinations"]
+      | ((prev: ActiveRunProgressFields["completedDestinations"]) => ActiveRunProgressFields["completedDestinations"]),
+  ) => void;
+  setLastOfferedDestinations: (
+    action:
+      | ActiveRunProgressFields["lastOfferedDestinations"]
+      | ((
+          prev: ActiveRunProgressFields["lastOfferedDestinations"],
+        ) => ActiveRunProgressFields["lastOfferedDestinations"]),
+  ) => void;
+  setDestinationRoundsSinceOffered: (
+    action:
+      | ActiveRunProgressFields["destinationRoundsSinceOffered"]
+      | ((
+          prev: ActiveRunProgressFields["destinationRoundsSinceOffered"],
+        ) => ActiveRunProgressFields["destinationRoundsSinceOffered"]),
+  ) => void;
+  setDestinationOfferState: (state: {
+    lastOfferedDestinations: ActiveRunProgressFields["lastOfferedDestinations"];
+    roundsSinceOffered: ActiveRunProgressFields["destinationRoundsSinceOffered"];
+  }) => void;
+  setRunTrinkets: (action: string[] | ((prev: string[]) => string[])) => void;
+  setEncounteredRunEnemyIds: (action: string[] | ((prev: string[]) => string[])) => void;
+  setSelectedDifficulty: (
+    action:
+      | ActiveRunProgressFields["selectedDifficulty"]
+      | ((prev: ActiveRunProgressFields["selectedDifficulty"]) => ActiveRunProgressFields["selectedDifficulty"]),
+  ) => void;
+  setContentSystemType: (
+    action:
+      | ActiveRunProgressFields["contentSystemType"]
+      | ((prev: ActiveRunProgressFields["contentSystemType"]) => ActiveRunProgressFields["contentSystemType"]),
+  ) => void;
+  setCharacter: (selectedId: CharacterId) => void;
+  resetProgress: () => void;
+  addRunGold: (amount: number) => void;
+  nextRunRandom: (stream: RunRngStream) => number;
+  resetRunXP: () => void;
+  awardCardXP: (card: BattleCard) => void;
+  awardMysteryXP: (keywordId: KeywordId, amount: number) => void;
+  addRunMaterialsEarned: (materials: MaterialInventory) => void;
+  clearRunMaterialsEarned: () => void;
+  initialize: (activeRun: ActiveRunData | null, fallbackCharacterId?: CharacterId) => void;
+  initializeFromResumeSnapshot: (activeRun: ActiveRunProgressFields) => void;
+  hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void;
+}
 
 /** Active-run progression actions (deck, gold, HP, acts, run tallies, RNG). */
 export function defineProgressActions(set: ImmerSet<RunDomainDataState>): ProgressActions {
@@ -122,5 +190,3 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
       }),
   };
 }
-
-export type { ProgressActions } from "./progress-action-types";

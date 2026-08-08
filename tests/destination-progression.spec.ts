@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
-import { injectSaveState, destinationInterruptedFlow, seedRandom } from "./helpers";
+import { injectSaveState, destinationInterruptedFlow, seedRandom, makeCard } from "./helpers";
 import { DestinationPage } from "./pages/destination-page";
 import { MysteryPage } from "./pages/mystery-page";
 import { CorruptionPage } from "./pages/corruption-page";
@@ -27,7 +27,7 @@ test.describe("Destination Progression", () => {
     await expect(page.getByRole("button", { name: "Mystery" })).toBeVisible();
   });
 
-  test("completed destinations do not appear in subsequent choices", async ({ page }) => {
+  test("completed destinations do not appear in subsequent choices", critical, async ({ page }) => {
     await injectSaveState(page, {
       runPlayerHealth: 30,
       runMaxHealth: 30,
@@ -71,40 +71,47 @@ test.describe("Mystery Event Flow", () => {
     await expect(page.getByRole("heading").first()).toBeVisible();
   });
 
-  test("mystery completes and returns to destination choices", async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-    await seedRandom(page, 42);
-    await startAtDestination(page, {}, { forceDestination: "Mystery" });
-    await page.getByRole("button", { name: "Mystery" }).click();
+  test(
+    "mystery completes and returns to destination choices",
+    critical,
+    async ({ page, fastBattle, runtimeErrors }) => {
+      void fastBattle;
+      void runtimeErrors;
+      await seedRandom(page, 42);
+      await startAtDestination(
+        page,
+        { runDeck: Array.from({ length: 6 }, () => makeCard()) },
+        { forceDestination: "Mystery" },
+      );
+      await page.getByRole("button", { name: "Mystery" }).click();
 
-    const mystery = new MysteryPage(page);
-    await mystery.pickFirstChoice();
+      const mystery = new MysteryPage(page);
+      await mystery.pickFirstChoice();
+      await mystery.handleCardOutcome();
 
-    const continueBtn = mystery.continueBtn;
+      // Some outcomes (e.g. card removal) return straight to destination choices;
+      // others show a result view with Continue first.
+      const continueBtn = mystery.continueBtn;
+      await expect
+        .poll(
+          async () => {
+            const hasContinue = await continueBtn.isVisible().catch(() => false);
+            const atDestination = await page
+              .getByRole("heading", { name: "Choose Destination" })
+              .isVisible()
+              .catch(() => false);
+            return hasContinue || atDestination;
+          },
+          { timeout: 10000 },
+        )
+        .toBe(true);
 
-    const addCardBtn = page.getByRole("button", { name: "Add Card" });
-    const removeCardBtn = page.getByRole("button", { name: /^Remove Card$/ });
-    const cardChoice = page.locator("button[aria-label^='Select']");
-
-    await expect(async () => {
-      const hasCardChoice = await cardChoice.isVisible().catch(() => false);
-
-      if (hasCardChoice) {
-        const isAdd = await addCardBtn.isVisible().catch(() => false);
-        const isRemove = await removeCardBtn.isVisible().catch(() => false);
-        if (isAdd || isRemove) {
-          await cardChoice.first().click();
-          if (isAdd) await addCardBtn.click();
-          else await removeCardBtn.click();
-        }
+      if (await continueBtn.isVisible().catch(() => false)) {
+        await continueBtn.click();
       }
-      await expect(continueBtn).toBeVisible({ timeout: 2000 });
-    }).toPass({ timeout: 10000 });
-
-    await continueBtn.click();
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
-  });
+      await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
+    },
+  );
 });
 
 test.describe("Corruption Full Flow", () => {

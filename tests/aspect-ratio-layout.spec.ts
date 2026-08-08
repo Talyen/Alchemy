@@ -73,26 +73,30 @@ async function assertStageFitsViewport(page: import("@playwright/test").Page) {
   expect(bounds.bottom).toBeLessThanOrEqual(bounds.viewportHeight + 1);
 }
 
-for (const { width, height, label } of RESOLUTIONS) {
-  test.describe(`${label}`, slow, () => {
-    test("menu screen fits viewport without overflow", async ({ page }) => {
+test.describe("Common resolutions (1366x768, 1920x1080)", slow, () => {
+  test("menu screen fits viewport without overflow", async ({ page }) => {
+    for (const { width, height } of RESOLUTIONS) {
       await setAspectRatio(page, "16:9");
       await page.setViewportSize({ width, height });
       await page.goto("/");
       await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
-      await assertNoOverflow(page, "Menu");
+      await assertNoOverflow(page, `Menu ${width}x${height}`);
       await assertStageFitsViewport(page);
-    });
+    }
+  });
 
-    test("character-select screen fits viewport without overflow", async ({ page }) => {
+  test("character-select screen fits viewport without overflow", async ({ page }) => {
+    for (const { width, height } of RESOLUTIONS) {
       await setAspectRatio(page, "16:9");
       await page.setViewportSize({ width, height });
       await new MenuPage(page).goToCharacterSelect();
       await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
-      await assertNoOverflow(page, "Character Select");
-    });
+      await assertNoOverflow(page, `Character Select ${width}x${height}`);
+    }
+  });
 
-    test("battle screen cards and controls fit viewport without overflow", async ({ page }) => {
+  test("battle screen cards and controls fit viewport without overflow", async ({ page }) => {
+    for (const { width, height } of RESOLUTIONS) {
       await setAspectRatio(page, "16:9");
       await page.setViewportSize({ width, height });
       await startBattleWithDeck(
@@ -103,7 +107,7 @@ for (const { width, height, label } of RESOLUTIONS) {
       await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible();
       expect(await page.locator('[aria-label^="Play "]').count()).toBeGreaterThanOrEqual(1);
       await waitForHandEntryAnimations(page);
-      await assertNoOverflow(page, "Battle");
+      await assertNoOverflow(page, `Battle ${width}x${height}`);
 
       const maxCardOverflow = await page.evaluate(() =>
         Math.max(
@@ -119,9 +123,9 @@ for (const { width, height, label } of RESOLUTIONS) {
         maxCardOverflow,
         "Hand cards should stay within viewport aside from small rotated-edge drift",
       ).toBeLessThanOrEqual(cardViewportTolerance);
-    });
+    }
   });
-}
+});
 
 const MACBOOK_VIEWPORTS = [
   { width: 1512, height: 982, label: "1512x982" },
@@ -130,8 +134,8 @@ const MACBOOK_VIEWPORTS = [
 ] as const;
 
 test.describe("MacBook and 16:10 stage fitting", slow, () => {
-  for (const { width, height, label } of MACBOOK_VIEWPORTS) {
-    test(`${label} keeps the auto stage inside the viewport`, async ({ page }) => {
+  test("keeps the auto stage inside the viewport at each resolution", async ({ page }) => {
+    for (const { width, height, label } of MACBOOK_VIEWPORTS) {
       await setAspectRatio(page, "auto");
       await page.setViewportSize({ width, height });
       await page.goto("/");
@@ -139,8 +143,8 @@ test.describe("MacBook and 16:10 stage fitting", slow, () => {
 
       await assertNoOverflow(page, `Menu ${label}`);
       await assertStageFitsViewport(page);
-    });
-  }
+    }
+  });
 });
 
 function isIdentityTransform(transform: string): boolean {
@@ -176,8 +180,9 @@ test.describe("Ultra HD 3840x2160 (4K) additional checks", slow, () => {
       ).a,
     }));
     expect(fixedUiMetrics.rootFontSize).toBe(16);
+    // Matches BUTTON_WIDTH_MENU in src/features/alchemy/shared/config/button-tokens.ts.
     expect(fixedUiMetrics.buttonWidth).toBeCloseTo(
-      16.8 * fixedUiMetrics.rootFontSize * fixedUiMetrics.stageTransformScale,
+      19.2 * fixedUiMetrics.rootFontSize * fixedUiMetrics.stageTransformScale,
       0,
     );
     await assertStageFitsViewport(page);

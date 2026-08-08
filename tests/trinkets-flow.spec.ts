@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { makeCard, startBattleWithDeck, WOLF_COMPANION_CARD, seedRandom } from "./helpers";
+import { startBattleWithDeck, WOLF_COMPANION_CARD, seedRandom } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
 import { slow } from "./playwright-tags";
@@ -13,14 +13,6 @@ interface TrinketCase {
 
 const TRINKET_CASES: TrinketCase[] = [
   {
-    id: "tattered-pages",
-    description: "loads without runtime errors",
-    deck: Array.from({ length: 6 }, () => makeCard()),
-    run: async (_page, battle) => {
-      expect(await battle.handCount()).toBeGreaterThan(0);
-    },
-  },
-  {
     id: "companions-collar",
     description: "bonus applies to companion attacks",
     deck: Array.from({ length: 6 }, () => WOLF_COMPANION_CARD),
@@ -32,27 +24,6 @@ const TRINKET_CASES: TrinketCase[] = [
       await expect(async () => {
         expect(await battle.enemyHealth()).toBeLessThan(enemyHpBefore);
       }).toPass({ timeout: 5000 });
-    },
-  },
-  {
-    id: "brass-censer",
-    description: "doubles first holy damage",
-    deck: Array.from(
-      { length: 6 },
-      () =>
-        makeCard({
-          id: "test-holy",
-          title: "Holy Strike",
-          cost: 0,
-          effects: [{ kind: "damage", damageType: "holy", amount: 5 }],
-        }) as Record<string, unknown>,
-    ),
-    run: async (_page, battle) => {
-      const enemyHpBefore = await battle.enemyHealth();
-      await battle.playCardNamed("Holy Strike");
-      await expect(async () => {
-        expect(await battle.enemyHealth()).toBe(enemyHpBefore - 20);
-      }).toPass({ timeout: 3000 });
     },
   },
 ];

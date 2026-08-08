@@ -8,8 +8,10 @@
 import {
   beginGameplayTransaction,
   commitGameplayTransaction,
+  readGameplayState,
   subscribeGameplayCommits,
   useGameplayStateStore,
+  type GameplayState,
 } from "./gameplay-state-store";
 
 let transactionFailed = false;
@@ -48,6 +50,17 @@ export function dispatchRunSessionCommand<T>(execute: () => T, options?: { after
 
 export function subscribeRunSessionCommits(listener: (revision: number) => void): () => void {
   return subscribeGameplayCommits(listener);
+}
+
+/**
+ * Bind one committed aggregate action method into a command-backed write.
+ * `provider(state)` returns a stable action method; the public signature is inferred
+ * so callers pass the exact slice-action arguments.
+ */
+export function bindWriteAction<Args extends unknown[], Ret>(
+  run: (state: GameplayState) => (...args: Args) => Ret,
+): (...args: Args) => Ret {
+  return (...args: Args) => dispatchRunSessionCommand(() => run(readGameplayState())(...args));
 }
 
 export function getRunSessionRevision(): number {

@@ -1,6 +1,6 @@
 // Battle handler: routed recursively in @/lib/battle/effect-handlers/dispatch.ts.
 import { z } from "zod";
-import type { BattleCardEffect } from "../../types";
+import type { BattleCardEffect } from "../types";
 
 export const chanceEffectDefinition = {
   kind: "chance" as const,

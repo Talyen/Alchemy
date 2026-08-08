@@ -1,27 +1,94 @@
 import { expect } from "@playwright/test";
-import { makeCard, startAtDestination, startBattleWithDeck } from "./helpers";
+import { injectSaveState, makeCard } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
 import { critical } from "./playwright-tags";
+
+// Death's Door triggers once per battle: the first lethal hit drops the player
+// to 1 HP with a grace window, and lethal damage stays floored at 1 HP while
+// grace is active (multi-hit and DoT ticks included). Only once grace expires
+// does a lethal hit kill outright. These tests inject a battle that is *already*
+// in Death's Door grace, which makes them fully deterministic and independent
+// of the random enemy.
+const GOBBLIN = {
+  id: "goblin",
+  title: "Goblin",
+  subtitle: "",
+  descriptionLines: [],
+  art: "goblin.webp",
+  enemyType: "normal",
+  traits: [],
+  attackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+};
+
+function deathsDoorGraceState(hand: Array<Record<string, unknown>>) {
+  return {
+    deck: [],
+    hand,
+    discard: [],
+    exhausted: [],
+    mana: 3,
+    maxMana: 3,
+    gold: 15,
+    turn: 2,
+    turnPhase: "player",
+    playerHealth: 1,
+    playerMaxHealth: 30,
+    deathsDoorUsed: true,
+    deathsDoorActive: true,
+    deathsDoorTriggeredTurn: 2,
+    deathsDoorGraceTurnsRemaining: 1,
+    enemyHealth: 40,
+    enemyMaxHealth: 40,
+    currentEnemy: GOBBLIN,
+    enemyAttackEffects: GOBBLIN.attackEffects,
+    playerStatuses: {},
+    enemyStatuses: {},
+    flags: {},
+    discoveredCardIds: ["slash"],
+    difficultyModifiers: [],
+    trinketEffects: {},
+  };
+}
+
+async function startInDeathsDoorGrace(page: import("@playwright/test").Page, hand: Array<Record<string, unknown>>) {
+  await injectSaveState(page, {
+    currentScreen: "battle",
+    runPlayerHealth: 1,
+    runMaxHealth: 30,
+    runDeck: hand,
+    activeCombat: {
+      battleState: deathsDoorGraceState(hand),
+      activeLabyrinthModifiers: [],
+      activeLabyrinthRewardModifiers: [],
+    },
+  });
+  await page.goto("/");
+}
 
 test.describe("Death's Door", () => {
   test("lethal damage after grace expires shows defeat screen", critical, async ({ page, fastBattle }) => {
     void fastBattle;
 
-    await startBattleWithDeck(
+    await startInDeathsDoorGrace(
       page,
       Array.from({ length: 6 }, () => makeCard()),
-      {
-        runPlayerHealth: 1,
-        runMaxHealth: 30,
-      },
     );
     const battle = new BattlePage(page);
+    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
 
-    await battle.endTurn();
-    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 3000 });
+    // Grace floors the first lethal hit at 1 HP, so the player survives the
+    // enemy turn after the trigger with the icon persisting; the second enemy
+    // turn (after grace expires) is lethal.
+    await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
+    await battle.endTurnBtn.click();
+    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
+    await expect.poll(() => battle.playerHealth()).toBe(1);
 
-    await battle.endTurn();
+    // The final lethal hit ends the run — wait for Defeat, not the End Turn
+    // button (it is torn down with the battle screen).
+    await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
+    await battle.endTurnBtn.click();
     await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });
   });
@@ -42,28 +109,12 @@ test.describe("Death's Door", () => {
       ],
     };
 
-    await startAtDestination(
+    await startInDeathsDoorGrace(
       page,
-      {
-        runPlayerHealth: 1,
-        runMaxHealth: 30,
-        runDeck: Array.from({ length: 6 }, () => ({ ...LIFE_SAVING_BREAD })),
-      },
-      { forceDestination: "Normal Combat" },
+      Array.from({ length: 6 }, () => ({ ...LIFE_SAVING_BREAD })),
     );
-
-    const combatBtn = page.getByRole("button", { name: /Combat/ }).first();
-    await expect(combatBtn).toBeVisible({ timeout: 5000 });
-    await combatBtn.click();
-
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
-
     const battle = new BattlePage(page);
-
-    await expect(battle.endTurnBtn).toBeEnabled({ timeout: 3000 });
-
-    await battle.endTurn();
-    await expect(page.getByLabel("Death's Door")).toBeVisible({ timeout: 3000 });
+    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
 
     await battle.playCardNamed("Bread");
 
@@ -71,42 +122,19 @@ test.describe("Death's Door", () => {
     await expect(battle.victoryHeading).toBeVisible({ timeout: 5000 });
   });
 
-  test("Death's Door icon persists across consecutive end turns while at 1 HP", async ({ page, fastBattle }) => {
+  test("Death's Door grace holds the player at 1 HP and the icon persists", async ({ page, fastBattle }) => {
     void fastBattle;
 
-    await startBattleWithDeck(
+    await startInDeathsDoorGrace(
       page,
       Array.from({ length: 6 }, () => makeCard()),
-      {
-        runPlayerHealth: 1,
-        runMaxHealth: 30,
-      },
     );
     const battle = new BattlePage(page);
 
-    await battle.endTurn();
-    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 3000 });
+    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
+    await expect.poll(() => battle.playerHealth()).toBe(1);
 
     await battle.playFirstCard();
-    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 3000 });
-  });
-
-  test("non-lethal damage while in Death's Door stays at 0 HP", async ({ page, fastBattle }) => {
-    void fastBattle;
-
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeCard()),
-      {
-        runPlayerHealth: 1,
-        runMaxHealth: 30,
-      },
-    );
-    const battle = new BattlePage(page);
-
-    await battle.endTurn();
-    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 3000 });
-
-    await expect.poll(() => battle.playerHealth()).toBe(0);
+    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
   });
 });
