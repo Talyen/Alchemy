@@ -128,6 +128,24 @@ describe("asset-manifest-cache", () => {
     expect(await loadManifest(manifestPath)).toEqual(result.nextManifest);
   });
 
+  it("keeps prior mtimeMs/size in the written manifest when the content hash is unchanged", async () => {
+    const dir = await makeTempDir();
+    const manifestPath = path.join(dir, ".asset-hashes.json");
+    const prior = { hash: "same", mtimeMs: 111, size: 222 };
+    await writeManifestIfChanged(manifestPath, { "a.webp": prior });
+
+    const result = await processManifestEntries({
+      entries: [{ target: "a.webp" }],
+      manifestPath,
+      processEntry: async (): Promise<{ entry: ManifestEntry }> => ({
+        entry: { hash: "same", mtimeMs: 999, size: 888 },
+      }),
+    });
+
+    expect(result.nextManifest).toEqual({ "a.webp": prior });
+    expect(await loadManifest(manifestPath)).toEqual({ "a.webp": prior });
+  });
+
   it("does not treat equal mtime with different size as a fast-path hit", async () => {
     const dir = await makeTempDir();
     const sourcePath = path.join(dir, "a.png");

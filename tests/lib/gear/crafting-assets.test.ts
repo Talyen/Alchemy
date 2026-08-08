@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,6 +8,8 @@ import { CRAFTING_CURRENCY_LIST } from "@/lib/gear";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const craftingDir = path.join(rootDir, "Raw Assets", "Crafting");
 const optimizedDir = path.join(rootDir, "src", "assets", "optimized");
+// CI sparse-checkouts omit Raw Assets except in the assets drift job.
+const rawCraftingPresent = existsSync(craftingDir);
 
 function slugify(name: string): string {
   return name
@@ -18,7 +21,7 @@ function slugify(name: string): string {
 }
 
 describe("crafting currency art", () => {
-  it("has one correctly named raw source image per crafting currency", async () => {
+  it.skipIf(!rawCraftingPresent)("has one correctly named raw source image per crafting currency", async () => {
     const entries = await readdir(craftingDir);
     const expected = CRAFTING_CURRENCY_LIST.map((currency) => `${currency.displayName}.jpeg`).sort();
     const actual = entries.filter((name) => /\.(jpe?g|png)$/i.test(name)).sort();

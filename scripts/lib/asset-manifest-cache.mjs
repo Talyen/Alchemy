@@ -251,7 +251,21 @@ export async function processManifestEntries({
   /** @type {Record<string, ManifestEntry>} */
   const nextManifest = {};
   for (const result of results) {
-    if (result.entry) nextManifest[result.key] = result.entry;
+    if (!result.entry) continue;
+    const previous = previousManifest[result.key];
+    // Keep committed fingerprints stable across machines/CI checkouts when the
+    // content hash is unchanged. Fresh checkouts rewrite source mtimes, which
+    // would otherwise dirty .asset-hashes.json on every assets job run.
+    if (
+      previous &&
+      previous.hash === result.entry.hash &&
+      Number.isFinite(previous.mtimeMs) &&
+      Number.isFinite(previous.size)
+    ) {
+      nextManifest[result.key] = previous;
+    } else {
+      nextManifest[result.key] = result.entry;
+    }
   }
   await writeManifestIfChanged(manifestPath, nextManifest);
 
