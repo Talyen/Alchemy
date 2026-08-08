@@ -1,6 +1,12 @@
 /* Inventory grid: INVENTORY_COLS=8, INVENTORY_VISIBLE_ROWS=8 (inventory-layout.ts) */
 .armory-workspace {
-  container-type: size;
+  /*
+    Inline-size only. Height queries (cqh) must pass through to the vr-stage:
+    a full size container here makes the character art's cqh query cycle with
+    this container's own content-driven height and collapse to 0. The width
+    query below still works on an inline-size container.
+  */
+  container-type: inline-size;
   --armory-board-gap: 0.375rem;
   --armory-inventory-cols: 8;
   /*
@@ -13,12 +19,16 @@
 }
 
 .armory-character-art-container {
-  --battle-scene-height-mimic: calc(100cqh + 77px);
-  --battle-to-armory-art-scale: 1.038686;
-  width: clamp(
-    calc(0.2724 * var(--battle-scene-height-mimic) * var(--battle-to-armory-art-scale)),
-    calc(0.2768 * var(--battle-scene-height-mimic) * var(--battle-to-armory-art-scale)),
-    calc(0.4123 * var(--battle-scene-height-mimic) * var(--battle-to-armory-art-scale))
+  /*
+    Battle player art = clamp(28.5,28.9,43.1)cqh of the battle scene, which is
+    the shell content box = 990px of the 1080px stage. Armory art renders 1.1×
+    that. cqh anchors to the vr-stage (definite-height size container) because
+    .armory-workspace only establishes inline-size containment (see above).
+  */
+  --battle-scene-to-stage-height: 0.91667; /* 990px shell content ÷ 1080px stage */
+  --armory-to-battle-art-scale: 1.1;
+  width: calc(
+    clamp(28.5cqh, 28.9cqh, 43.1cqh) * var(--battle-scene-to-stage-height) * var(--armory-to-battle-art-scale)
   );
 }
 
