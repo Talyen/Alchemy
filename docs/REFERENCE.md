@@ -70,7 +70,7 @@ npm run clean:all           # clean + dist/release-desktop + stop stale E2E prev
 
 **Skip flag:** `ALCHEMY_SKIP_ASSETS=1` skips only `prepare-assets.mjs` (sharp/ffmpeg/codegen). Version sync, steam app id sync, and the Vite build still run via `prebuild` / `prebuild:desktop`.
 
-CI, Vercel, and release builds set `ALCHEMY_SKIP_ASSETS=1` because optimized outputs are committed. When you change `Raw Assets/` or asset scripts, commit the regenerated outputs (CI `assets` job fails on drift). All CI jobs except the `assets` drift job sparse-checkout the repo without `Raw Assets/` (the 700 MB raw sources are only needed to regenerate committed outputs).
+CI, Vercel, and release builds set `ALCHEMY_SKIP_ASSETS=1` because optimized outputs are committed. When you change `Raw Assets/` or asset scripts, commit the regenerated outputs (CI `assets` job fails on drift). All CI jobs except the `assets` drift job sparse-checkout the repo without `Raw Assets/` (the 700 MB raw sources are only needed to regenerate committed outputs). Unit tests that assert against raw sources skip when that directory is absent; run them locally with a full checkout.
 
 `predev:desktop` is an alias of `predev` (same stop-server + asset prep).
 
