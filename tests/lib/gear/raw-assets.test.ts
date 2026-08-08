@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,6 +7,8 @@ import { gearBaseItems } from "@/lib/gear/base-items";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const gearDir = path.join(rootDir, "Raw Assets", "Gear");
+// CI sparse-checkouts omit Raw Assets except in the assets drift job.
+const rawGearPresent = existsSync(gearDir);
 
 function slugifyGearName(name: string): string {
   return name
@@ -15,7 +18,7 @@ function slugifyGearName(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
-describe("raw gear assets", () => {
+describe.skipIf(!rawGearPresent)("raw gear assets", () => {
   it("matches catalog rarities for every named gear source file", async () => {
     let entries: string[];
     try {

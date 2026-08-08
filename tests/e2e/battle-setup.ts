@@ -3,7 +3,6 @@ import { expect, type Page } from "@playwright/test";
 import { BattlePage } from "../pages/battle-page";
 import { DestinationPage } from "../pages/destination-page";
 import { MenuPage } from "../pages/menu-page";
-import { RewardPage } from "../pages/reward-page";
 import { STARTING_DECK } from "./cards";
 import { resumeCampaignRun } from "./navigation";
 import { seedRandom } from "./rng";
@@ -68,11 +67,6 @@ export async function startCampaignBattle(page: Page, character: "Knight" | "Ran
   const menu = new MenuPage(page);
   await menu.goto();
   await menu.startCampaign(character);
-}
-
-export async function skipBattleAndClaimReward(page: Page, maxCombatTurns = 3) {
-  await new BattlePage(page).winViaCombat(maxCombatTurns);
-  await new RewardPage(page).claimFirstReward();
 }
 
 export async function assertDefeatFromEndRun(page: Page, options: { returnToMenu?: boolean } = {}) {
