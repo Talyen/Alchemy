@@ -38,22 +38,17 @@ export interface RunOrchestrationPort extends ActiveRunCorePort {
 }
 
 /** Active-run fields and commands used by run-flow orchestration handlers. */
-export type RunFlowRunPort = Pick<
-  RunOrchestrationPort,
-  | "characterId"
-  | "selectedDifficulty"
-  | "runMaxHealth"
-  | "contentSystemType"
-  | "roomsEncountered"
-  | "updateRoomsEncountered"
-  | "currentAct"
-  | "updateCurrentAct"
-  | "updateDestinationIndexInAct"
-  | "updateCompletedDestinations"
-  | "updateRunDeck"
-  | "updateRunTrinkets"
-  | "updateRunPlayerHealth"
->;
+export type RunFlowRunPort = ActiveRunCorePort &
+  Pick<
+    RunOrchestrationPort,
+    | "currentAct"
+    | "updateCurrentAct"
+    | "updateDestinationIndexInAct"
+    | "updateCompletedDestinations"
+    | "updateRunDeck"
+    | "updateRunTrinkets"
+    | "updateRunPlayerHealth"
+  >;
 
 /** Talent effects used by run-flow handlers (currently campfire healing). */
 export interface RunFlowTalentPort {

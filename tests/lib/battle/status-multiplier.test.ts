@@ -1,9 +1,6 @@
-﻿import { describe, expect, it } from "vitest";
-import {
-  applyPlayerDamageStatuses,
-  getEnemyDamageMultiplier,
-  removeHarmfulPlayerStatuses,
-} from "@/lib/battle/status-effects";
+import { describe, expect, it } from "vitest";
+import { applyPlayerDamageStatuses, removeHarmfulPlayerStatuses } from "@/lib/battle/status-player";
+import { getEnemyDamageMultiplier } from "@/lib/battle/status-helpers";
 import { makeTestBattleState } from "../../fixtures/battle";
 import { defaultPlayerStatusValues, defaultTalentEffects, defaultCcState } from "../../fixtures/default-battle-state";
 
@@ -71,7 +68,7 @@ describe("getEnemyDamageMultiplier", () => {
   });
 });
 
-describe("status-effects re-exports", () => {
+describe("player status application", () => {
   it("applyPlayerDamageStatuses adds burn stacks from enemy burn damage", () => {
     const state = makeTestBattleState({
       playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, burn: 1 }),

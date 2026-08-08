@@ -1,6 +1,6 @@
 /**
  * Wish card generation and wish effect resolution.
- * Depends on: @/lib/game-data, ../game-constants, ./draw, ./types, ./combat-text, ./status-effects.
+ * Depends on: @/lib/game-data, ../game-constants, ./draw, ./types, ./combat-text, ./status-player, ./status-helpers.
  * Depended on by: ./effect-handlers, ./damage-riders.
  */
 import { selectRewardCards } from "@/lib/game-data";
@@ -9,7 +9,8 @@ import type { BattleCard } from "@/lib/game-data";
 import { drawFromState } from "./draw";
 import { addGold, applyPlayerHealing, clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
-import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect, getEnemyDamageMultiplier } from "./status-effects";
+import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-player";
+import { getEnemyDamageMultiplier } from "./status-helpers";
 import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
 import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, WISH_CRYSTAL_GOLD_CHANCE, MAX_HAND_SIZE } from "../game-constants";
 import { applyGearKillRewards, gearFrozenDamageMultiplier } from "./gear-effects";

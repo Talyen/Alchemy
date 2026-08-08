@@ -101,7 +101,7 @@ export const specialtyCards = [
   {
     id: "gamblers-shot",
     title: "Gambler's Shot",
-    descriptionLines: ["Deal 1ΓÇô6 Random damage", "Archery"],
+    descriptionLines: ["Deal 1–6 Random damage", "Archery"],
     art: assetRefs.gamblersShot,
     cost: 1,
     tags: ["archery"],

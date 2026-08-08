@@ -2,7 +2,8 @@
  * Secondary damage riders: statuses, lifesteal, forge decay, and combat text.
  */
 import { forgeAppliesToDamageType } from "./damage-calc";
-import { applyDamageStatuses, resolveStunTrigger } from "./status-effects";
+import { applyDamageStatuses } from "./damage-status-riders";
+import { resolveStunTrigger } from "./status-stun-resolve";
 import { mergeCombatText } from "./combat-text";
 import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-effects";
 import { applyGearKillRewards } from "./gear-effects";
@@ -17,9 +18,9 @@ import {
 } from "./damage-rider-leech";
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { addEnemyStatus, addPlayerStatus, clampHealth, type BattleState, type CombatTextEvent } from "./types";
-import { BATTLE_CONFIG, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
+import { BATTLE_CONFIG, HALF_DIVISOR } from "../game-constants";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
-import { decayArmorAfterDamage } from "./status-helpers";
+import { decayArmorAfterDamage, rollPercent } from "./status-helpers";
 
 function applyBurnDamageRiders(
   state: BattleState,
@@ -88,17 +89,11 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
   nextState = applyDamageBlock(nextState, damage, combatTexts);
   nextState = applyHolyTithe(nextState, damage, combatTexts);
 
-  if (
-    nextState.talentEffects.holyBurnChance > 0 &&
-    nextState.rng() * PERCENT_DENOMINATOR < nextState.talentEffects.holyBurnChance
-  ) {
+  if (rollPercent(nextState.talentEffects.holyBurnChance, nextState.rng)) {
     nextState = addEnemyStatus(nextState, "burn", damage);
   }
 
-  if (
-    nextState.talentEffects.holyWishChance > 0 &&
-    nextState.rng() * PERCENT_DENOMINATOR < nextState.talentEffects.holyWishChance
-  ) {
+  if (rollPercent(nextState.talentEffects.holyWishChance, nextState.rng)) {
     nextState = applyWishEffect(nextState, card, 1, combatTexts);
   }
 

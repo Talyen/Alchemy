@@ -1,9 +1,9 @@
 /**
  * Player damage calculation: modifiers, crit, block, and armor mitigation, critical strikes, armor mitigation, and status riders.
- * Depends on: ./status-effects, ./combat-text, ./trinket-effects, ./wish, ./types, ../game-constants.
+ * Depends on: ./status-helpers, ./combat-text, ./trinket-effects, ./wish, ./types, ../game-constants.
  * Depended on by: ./damage, ./damage-riders.
  */
-import { getEnemyDamageMultiplier } from "./status-effects";
+import { getEnemyDamageMultiplier } from "./status-helpers";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { getBattleRng } from "./status-helpers";
 import { computeBaseDamage } from "./damage-calc/damage-type-modifiers";

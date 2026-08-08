@@ -1,9 +1,10 @@
 /**
- * Player status application, harmful status removal, and incoming damage statuses.
- * Depends on: ./status-forge, ./types, ./combat-text, @/lib/game-data, ../game-constants.
+ * Player status application (card effects and enemy-attack statuses), harmful
+ * status removal, and incoming damage statuses.
+ * Depends on: ./status-forge, ./types, ./combat-text, ./status-helpers, @/lib/game-data, ../game-constants.
  */
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
-import type { BattleCardEffect, DamageType } from "@/lib/game-data";
+import type { BattleCardEffect, DamageType, EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import { addPlayerStatus, setFlag, type BattleState, type CombatTextEvent } from "./types";
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { addForgeToPlayer } from "./status-forge";
@@ -26,16 +27,21 @@ function clearHarmfulStatuses(playerStatuses: BattleState["playerStatuses"], sta
   return { nextPlayerStatuses, removed };
 }
 
+/** Shared cleanse heals: sin-eater + heal-on-cleanse, applied whenever harmful statuses are removed. */
+export function applyCleanseHeals(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
+  const nextState = applyHealingWithCombatText(
+    state,
+    state.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
+    combatTexts,
+  );
+  return applyHealingWithCombatText(nextState, nextState.talentEffects.healOnStatusCleanse, combatTexts);
+}
+
 export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]) {
   const { nextPlayerStatuses, removed } = clearHarmfulStatuses(state.playerStatuses, amount);
   let nextState = { ...state, playerStatuses: nextPlayerStatuses };
   if (removed) {
-    nextState = applyHealingWithCombatText(
-      nextState,
-      nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
-      combatTexts,
-    );
-    nextState = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnStatusCleanse, combatTexts);
+    nextState = applyCleanseHeals(nextState, combatTexts);
   }
   return nextState;
 }
@@ -152,4 +158,73 @@ export function applyPlayerDamageStatuses(
     };
   }
   return state;
+}
+
+type DirectPlayerStatusId = Exclude<PlayerStatusId, "stun" | "freeze">;
+type DirectPlayerStatusAttackEffect = Extract<EnemyAttackEffect, { kind: "player-status" }> & {
+  status: DirectPlayerStatusId;
+};
+
+function shouldBlockPreventStatus(state: BattleState, status: DirectPlayerStatusId) {
+  if (state.playerStatuses.block <= 0) return false;
+  if (status === "bleed" && state.talentEffects.blockPreventsBleed) return true;
+  if (status === "poison" && state.talentEffects.blockPreventsPoison) return true;
+  return false;
+}
+
+function applyHarmfulStatusFromAttack(
+  state: BattleState,
+  status: DirectPlayerStatusId,
+  amount: number,
+  blockPreventsStatus: boolean,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (blockPreventsStatus) {
+    return state;
+  }
+  // Plague Doctor boon: prevents the FIRST harmful status application each battle.
+  // Once used (firstHarmfulStatusPrevented flag), subsequent statuses apply normally.
+  if (state.trinketEffects.plagueDoctorImmunity && !state.flags.firstHarmfulStatusPrevented) {
+    return { ...state, flags: { ...state.flags, firstHarmfulStatusPrevented: true } };
+  }
+  const appliedAmount = status === "bleed" ? amount * BLEED_STATUS_MULTIPLIER : amount;
+  const nextState = addPlayerStatus(state, status, appliedAmount);
+  mergeCombatText(combatTexts, {
+    target: "player",
+    kind: "damage",
+    stat: status,
+    amount: appliedAmount,
+  });
+  return nextState;
+}
+
+function applyBeneficialStatusFromAttack(
+  state: BattleState,
+  status: DirectPlayerStatusId,
+  amount: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  mergeCombatText(combatTexts, {
+    target: "player",
+    kind: "status",
+    stat: status,
+    amount,
+  });
+  return addPlayerStatus(state, status, amount);
+}
+
+/** Applies a harmful or beneficial status applied by an enemy attack. */
+export function applyPlayerStatusFromAttack(
+  state: BattleState,
+  effect: DirectPlayerStatusAttackEffect,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  const status = effect.status;
+  const amount = effect.amount;
+  const blockPreventsStatus = shouldBlockPreventStatus(state, status);
+
+  if (harmfulPlayerStatusIds.includes(status)) {
+    return applyHarmfulStatusFromAttack(state, status, amount, blockPreventsStatus, combatTexts);
+  }
+  return applyBeneficialStatusFromAttack(state, status, amount, combatTexts);
 }

@@ -2,7 +2,7 @@
  * Player and enemy DoT ticks. Enemy DoTs run at enemy phase start; player DoTs during enemy resolution.
  * Player stun/freeze threshold-check normally runs when buildup is applied; tick-time
  * resolution remains as a fallback for pre-existing stacks.
- * Depends on: ./status-cc, ./status-helpers, ./status-effects, ./combat-text, ./types, ../game-constants.
+ * Depends on: ./status-cc, ./status-helpers, ./damage-status-riders, ./combat-text, ./types, ../game-constants.
  * Depended on by: ./enemy-turn.
  */
 import {
@@ -14,7 +14,8 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { getEnemyDamageMultiplier, applyPoisonTalentRiders } from "./status-effects";
+import { getEnemyDamageMultiplier } from "./status-helpers";
+import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { decayArmorAfterDamage, decayHalvedStatus, decayPoisonStacks, rollPercent } from "./status-helpers";

@@ -1,14 +1,11 @@
 // Status-related card effect apply handlers.
 import { addEnemyStatus, setEnemyStatus } from "../types";
-import { mergeCombatText, applyHealingWithCombatText } from "../combat-text";
+import { mergeCombatText } from "../combat-text";
 import type { BattleState } from "../types";
 import type { EffectHandler } from "./handler-types";
-import {
-  applyPlayerStatusEffect,
-  tryTriggerEnemyFreeze,
-  resolveStunTrigger,
-  removeHarmfulPlayerStatuses,
-} from "../status-effects";
+import { applyPlayerStatusEffect, applyCleanseHeals, removeHarmfulPlayerStatuses } from "../status-player";
+import { tryTriggerEnemyFreeze } from "../damage-status-riders";
+import { resolveStunTrigger } from "../status-stun-resolve";
 import { dealDamageToEnemy } from "../damage";
 
 export const applyPlayerStatusEffectHandler: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {
@@ -46,17 +43,11 @@ export const applyRemoveHarmfulStatusEffect: EffectHandler = (state, _card, effe
 export const applyRemovePlayerStatusEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
   if (effect.kind !== "remove-player-status") return state;
   if (state.playerStatuses[effect.status] <= 0) return state;
-  let nextState: BattleState = {
+  const nextState: BattleState = {
     ...state,
     playerStatuses: { ...state.playerStatuses, [effect.status]: 0 },
   };
-  nextState = applyHealingWithCombatText(
-    nextState,
-    nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
-    combatTexts,
-  );
-  nextState = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnStatusCleanse, combatTexts);
-  return nextState;
+  return applyCleanseHeals(nextState, combatTexts);
 };
 
 export const applyMultiplyEnemyStatusEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
@@ -97,12 +88,7 @@ export const applyCleansePlayerStatusToDamageEffect: EffectHandler = (
     ...state,
     playerStatuses: { ...state.playerStatuses, [effect.status]: 0 },
   };
-  nextState = applyHealingWithCombatText(
-    nextState,
-    nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
-    combatTexts,
-  );
-  nextState = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnStatusCleanse, combatTexts);
+  nextState = applyCleanseHeals(nextState, combatTexts);
 
   return dealDamageToEnemy(
     nextState,

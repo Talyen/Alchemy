@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyPlayerStatusFromAttack } from "@/lib/battle/status-application";
+import { applyPlayerStatusFromAttack } from "@/lib/battle/status-player";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestBattleState } from "../../fixtures/battle";
 import {

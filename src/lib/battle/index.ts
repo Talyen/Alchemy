@@ -6,7 +6,7 @@ export * from "./draw";
 export * from "./battle-setup";
 export { applyCardEffects } from "./effect-handlers";
 export { mergeCombatText } from "./combat-text";
-export { getEnemyDamageMultiplier } from "./status-effects";
+export { getEnemyDamageMultiplier } from "./status-helpers";
 export { canPlayCard, playBattleCardResolved, computeEffectiveCost, type CardPlayOptions } from "./card-play";
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 export { chooseWishCard } from "./wish";

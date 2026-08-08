@@ -173,6 +173,26 @@ describe("resolveStunTrigger", () => {
     expect(result2.enemyStatuses.stun).toBe(0);
   });
 
+  it("withholds stun rewards when CC immunity clears the stack", () => {
+    const base = makeTestBattleState();
+    const state = {
+      ...base,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyCC: defaultCcState({ cooldown: 1 }),
+      enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
+      talentEffects: { ...makeTestBattleState().talentEffects, blockOnStun: 3 },
+      gearEffects: { ...defaultGearEffects, damageOnStunPhysical: 7 },
+    };
+    const texts = makeTexts();
+    const result = resolveStunTrigger(state, texts);
+    expect(result.enemyStatuses.stun).toBe(0); // immunity clears the stack
+    expect(result.enemyCC.stunSkipTurns).toBe(0); // no skip
+    expect(result.enemyHealth).toBe(30); // no gear damage
+    expect(result.playerStatuses.block).toBe(0); // no stun rewards
+    expect(texts).not.toContainEqual({ target: "player", kind: "status", stat: "block", amount: 3 });
+  });
+
   it("grants block on stun with blockOnStun talent", () => {
     const state = makeTestBattleState({
       enemyHealth: 30,

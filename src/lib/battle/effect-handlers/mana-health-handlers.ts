@@ -2,7 +2,7 @@
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../../game-constants";
 import { applyHealOnManaGain, mergeCombatText, applyHealingWithCombatText } from "../combat-text";
 import { clampHealth, applyPlayerCombatDamage } from "../types";
-import { getEnemyDamageMultiplier } from "../status-effects";
+import { getEnemyDamageMultiplier } from "../status-helpers";
 import type { BattleState, CombatTextEvent } from "../types";
 import type { EffectHandler } from "./handler-types";
 import { processEncounterTraitHealthThreshold } from "../encounter-trait-events";

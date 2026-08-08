@@ -14,7 +14,7 @@ import {
   applyStunManaTalent,
   applyStunStripArmorTalent,
 } from "./talent-effects";
-import { applyEnemyCcImmunityClear, assignEnemyCrowdControlSkip } from "./status-cc";
+import { tryTriggerEnemyCc } from "./status-cc";
 import { applyStunForgeTalent } from "./status-forge";
 import { BATTLE_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
 
@@ -91,22 +91,21 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
 /** Enemy stun threshold — runs immediately when stun stacks are added from damage. */
 export function resolveStunTrigger(state: BattleState, combatTexts?: CombatTextEvent[]) {
   const threshold = STUN_THRESHOLD_FRACTION - state.talentEffects.stunThresholdReduction;
-  if (state.enemyHealth <= 0 || state.enemyStatuses.stun < state.enemyHealth * threshold) return state;
-
-  const immuneClear = applyEnemyCcImmunityClear({
+  const triggered = tryTriggerEnemyCc({
+    preHitHealth: state.enemyHealth,
     nextState: state,
     stat: "stun",
+    stackValue: state.enemyStatuses.stun,
+    thresholdFraction: threshold,
     ccCooldown: state.enemyCC.cooldown,
-  });
-  if (immuneClear) return immuneClear;
-
-  let nextState = assignEnemyCrowdControlSkip({
-    nextState: state,
-    stat: "stun",
     skipDuration: BATTLE_CONFIG.BASE_CC_DURATION + state.talentEffects.stunDurationExtension,
     combatTexts: combatTexts ?? [],
   });
+  if (!triggered) return state;
+  // CC immunity clears the stack without a stun — no stun rewards for a stun that didn't land.
+  if (triggered.kind === "immune") return triggered.state;
 
+  let nextState = triggered.state;
   nextState = applyStunTalentEffects(nextState, combatTexts);
   nextState = applyStunGearEffects(nextState, combatTexts);
   nextState = applyStunTrinketEffects(nextState, combatTexts);

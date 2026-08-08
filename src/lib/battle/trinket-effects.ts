@@ -1,7 +1,7 @@
 /**
  * Resolves passive, combat-time boon triggers.
  * Depends on: types.ts, combat-text.ts, game-constants.ts.
- * Depended on by: damage.ts, enemy-turn.ts, status-effects.ts.
+ * Depended on by: damage.ts, enemy-turn.ts, status-stun-resolve.
  */
 import { PERCENT_DENOMINATOR } from "../game-constants";
 import { addGold, applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";

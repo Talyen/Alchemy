@@ -148,7 +148,7 @@ export function applyDamageBlock(state: BattleState, damage: number, combatTexts
  */
 export function applyHolyTithe(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyGoldChance <= 0) return state;
-  if (getBattleRng(state)() * PERCENT_DENOMINATOR < state.talentEffects.holyGoldChance) {
+  if (rollPercent(state.talentEffects.holyGoldChance, getBattleRng(state))) {
     mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: damage });
     return addGold(state, damage);
   }

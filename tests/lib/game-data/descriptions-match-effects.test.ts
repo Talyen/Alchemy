@@ -19,6 +19,11 @@ import { hasKind, hasLifesteal, validateCardDescriptionParity } from "@/lib/cont
 // ─────────────────────────── Cards ───────────────────────────
 
 describe("card descriptions vs effects", () => {
+  it("keeps Gambler's Shot range punctuation readable", () => {
+    const card = cardLibrary.find((candidate) => candidate.id === "gamblers-shot");
+    expect(card?.descriptionLines).toContain("Deal 1–6 Random damage");
+  });
+
   it.each(cardLibrary.map((c) => [c.id, c.title] as const))("%s — descriptions match effects", (_id, title) => {
     const card = cardLibrary.find((c) => c.title === title)!;
     const issues = validateCardDescriptionParity(card);

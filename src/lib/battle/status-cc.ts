@@ -1,8 +1,10 @@
 /**
  * Crowd-control threshold checks, immunity, and skip-turn assignment.
  * Stun/freeze resolve when buildup crosses the threshold for either side.
+ * Enemy triggers funnel through tryTriggerEnemyCc; the caller applies any
+ * post-trigger payload (stun talents/gear or frozen-heart/gear freeze damage).
  * Depends on: ./combat-text, ./types, ../game-constants.
- * Depended on by: ./status-effects, ./status-ticks.
+ * Depended on by: ./status-stun-resolve, ./damage-status-riders, ./status-ticks, ./enemy-turn-attack.
  */
 import { mergeCombatText } from "./combat-text";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STATUS_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
@@ -141,4 +143,33 @@ export function assignEnemyCrowdControlSkip(input: EnemyCcTriggerInput): BattleS
   });
   if (postTrigger) result = postTrigger(result);
   return result;
+}
+
+export interface EnemyCcTriggerCheckInput {
+  /** Health before the triggering hit — stun/freeze thresholds are checked against pre-hit health. */
+  preHitHealth: number;
+  /** State after the triggering stack was added. */
+  nextState: BattleState;
+  stat: CcStat;
+  stackValue: number;
+  thresholdFraction: number;
+  ccCooldown: number;
+  skipDuration: number;
+  combatTexts: CombatTextEvent[];
+}
+
+export type EnemyCcTriggerResult = { kind: "skip"; state: BattleState } | { kind: "immune"; state: BattleState };
+
+/**
+ * Runs the canonical enemy CC trigger: threshold check against pre-hit health,
+ * then either immunity clear (cooldown) or skip+notice assignment. Returns null
+ * when the threshold is not met. The caller applies post-trigger payload (stun
+ * talents/gear or frozen-heart/gear freeze damage) only on the "skip" branch.
+ */
+export function tryTriggerEnemyCc(input: EnemyCcTriggerCheckInput): EnemyCcTriggerResult | null {
+  const { preHitHealth, nextState, stat, stackValue, thresholdFraction, ccCooldown, skipDuration, combatTexts } = input;
+  if (preHitHealth <= 0 || stackValue < preHitHealth * thresholdFraction) return null;
+  const immuneClear = applyEnemyCcImmunityClear({ nextState, stat, ccCooldown });
+  if (immuneClear) return { kind: "immune", state: immuneClear };
+  return { kind: "skip", state: assignEnemyCrowdControlSkip({ nextState, stat, skipDuration, combatTexts }) };
 }

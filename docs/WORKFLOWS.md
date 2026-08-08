@@ -186,11 +186,10 @@ Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-
 
 1. Define the status type in `src/lib/game-data/types.ts` — extend `PlayerStatusId` or `EnemyStatusId` string unions (discriminated union pattern).
 2. Add tick logic in `src/lib/battle/status-ticks.ts`
-3. Add application logic in `src/lib/battle/status-application.ts`
+3. Add player-side application logic in `src/lib/battle/status-player.ts`; add damage-type status riders in `src/lib/battle/damage-status-riders.ts`
 4. Add CC threshold logic in `src/lib/battle/status-cc.ts`
-5. Register in `src/lib/battle/status-effects.ts`
-6. Add matching keyword in `src/lib/game-data/keywords.ts`
-7. Cover through `tests/lib/battle/status-*.test.ts` tests
+5. Add matching keyword in `src/lib/game-data/keywords.ts`
+6. Cover through `tests/lib/battle/status-*.test.ts` tests
 
 ---
 

@@ -50,11 +50,6 @@ export interface RunSessionNavigationSlice {
   pendingContentSystemType: ContentSystemId;
 }
 
-function pickRunSessionRunSlice(state: GameplayState): RunSessionRunSlice {
-  const { talentXP, unlockedTalents } = state.runProfile;
-  return { ...pickActiveRunView(state.run), talentXP, unlockedTalents };
-}
-
 function pickRunSessionBattleSlice(battle: {
   hasActiveBattle: boolean;
   battleState: BattleState;
@@ -116,10 +111,11 @@ export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigat
 function toRunSession(state: GameplayState, screen?: Screen): RunSession {
   const resolvedScreen = screen ?? state.run.navigation.screen;
   const battle = pickRunSessionBattleSlice(state.battle);
+  const { talentXP, unlockedTalents } = state.runProfile;
   return {
     screen: resolvedScreen,
     phase: getRunPhase(resolvedScreen, battle.hasActiveBattle),
-    run: pickRunSessionRunSlice(state),
+    run: { ...pickActiveRunView(state.run), talentXP, unlockedTalents },
     session: { ...state.session },
     battle,
   };

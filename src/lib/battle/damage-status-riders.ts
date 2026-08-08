@@ -1,3 +1,10 @@
+/**
+ * Applies per-damage-type status riders (burn/poison/bleed/stun/freeze/physical)
+ * when a damage hit lands, and resolves the freeze CC trigger.
+ * Depends on: ./types, ./combat-text, ./talent-effects, ./status-cc, ./status-stun-resolve,
+ * ./status-helpers, ./gear-effects, ./trinket-effects, ../game-constants.
+ * Depended on by: ./status-ticks, ./damage-riders, ./effect-handlers, ./status-player.
+ */
 import type { BattleCardEffect, DamageType } from "@/lib/game-data";
 import {
   addEnemyStatus,
@@ -12,10 +19,9 @@ import {
 } from "./types";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { applyFreezeBlockTalent, applyFreezeStripArmorTalent } from "./talent-effects";
-import { applyEnemyCcImmunityClear, assignEnemyCrowdControlSkip } from "./status-cc";
+import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
-import { getEnemyDamageMultiplier } from "./status-helpers";
-import { decayArmorAfterDamage, rollPercent } from "./status-helpers";
+import { decayArmorAfterDamage, getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
 import { BLEED_STATUS_MULTIPLIER, BATTLE_CONFIG, computeLeechHeal, FREEZE_THRESHOLD_FRACTION } from "../game-constants";
 import { scaledGearLeechHeal, applyGearKillRewards, applyGearProcPhysicalDamage } from "./gear-effects";
 
@@ -191,24 +197,21 @@ export function tryTriggerEnemyFreeze(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const freezeThreshold = FREEZE_THRESHOLD_FRACTION - preHitState.talentEffects.freezeThresholdReduction;
-  if (preHitState.enemyHealth <= 0 || nextState.enemyStatuses.freeze < preHitState.enemyHealth * freezeThreshold) {
-    return nextState;
-  }
-
-  const immuneClear = applyEnemyCcImmunityClear({
+  const triggered = tryTriggerEnemyCc({
+    preHitHealth: preHitState.enemyHealth,
     nextState,
     stat: "freeze",
+    stackValue: nextState.enemyStatuses.freeze,
+    thresholdFraction: freezeThreshold,
     ccCooldown: preHitState.enemyCC.cooldown,
-  });
-  if (immuneClear) return immuneClear;
-
-  const skipDuration = BATTLE_CONFIG.BASE_CC_DURATION + nextState.trinketEffects.freezeDurationExtension;
-  let result = assignEnemyCrowdControlSkip({
-    nextState,
-    stat: "freeze",
-    skipDuration,
+    skipDuration: BATTLE_CONFIG.BASE_CC_DURATION + nextState.trinketEffects.freezeDurationExtension,
     combatTexts,
   });
+  if (!triggered) return nextState;
+  // CC immunity clears the stack without a freeze — no freeze rewards for a freeze that didn't land.
+  if (triggered.kind === "immune") return triggered.state;
+
+  let result = triggered.state;
   result = applyFrozenHeartDamage(result, combatTexts);
   result = applyGearFreezeDamage(preHitState, result, combatTexts);
   result = applyFreezeBlockTalent(result, combatTexts);

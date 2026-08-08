@@ -1,7 +1,7 @@
 // Enemy attack resolution: damage, block, armor, and attack effect dispatch.
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
-import { applyPlayerStatusFromAttack } from "./status-application";
-import { applyPlayerDamageStatuses, resolveStunTrigger } from "./status-effects";
+import { applyPlayerStatusFromAttack, applyPlayerDamageStatuses } from "./status-player";
+import { resolveStunTrigger } from "./status-stun-resolve";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import type { EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import { logError } from "../error-logger";

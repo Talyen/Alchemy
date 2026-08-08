@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/status-damage-riders";
+import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
 import { makeCombatTexts as makeTexts, makeTestBattleState, seededRng } from "../../fixtures/battle";
 import {
   defaultEnemyStatusValues,
@@ -181,6 +181,23 @@ describe("applyDamageStatuses", () => {
     expect(result2.enemyStatuses.freeze).toBe(0);
   });
 
+  it("withholds freeze rewards when CC immunity clears the stack", () => {
+    const state = makeTestBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyCC: defaultCcState({ cooldown: 1 }),
+      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, freeze: 15 }),
+      trinketEffects: defaultTrinketManifest({ ...makeTestBattleState().trinketEffects, frozenHeartDamage: 6 }),
+    });
+    const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
+    const texts = makeTexts();
+    const result = applyDamageStatuses(state, effect, 10, texts);
+    expect(result.enemyStatuses.freeze).toBe(0); // immunity clears the stack
+    expect(result.enemyCC.freezeSkipTurns).toBe(0); // no skip
+    expect(result.enemyHealth).toBe(30); // no frozen-heart damage
+    expect(texts).not.toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 6 });
+  });
+
   it("freeze triggers on glacial-shell enemies when threshold is met", () => {
     const state = makeTestBattleState({
       enemyHealth: 30,
@@ -287,7 +304,7 @@ describe("applyPoisonTalentRiders", () => {
   });
 });
 
-describe("applyDamageStatuses ï¿½ physical riders", () => {
+describe("applyDamageStatuses — physical riders", () => {
   it("detonates bleed when physicalDetonatesBleed is active", () => {
     const state = makeTestBattleState({
       enemyHealth: 30,
@@ -322,7 +339,7 @@ describe("applyDamageStatuses ï¿½ physical riders", () => {
   });
 });
 
-describe("applyDamageStatuses ï¿½ freeze threshold uses pre-hit health", () => {
+describe("applyDamageStatuses — freeze threshold uses pre-hit health", () => {
   it("does not freeze when stacks are below pre-hit threshold", () => {
     const state = makeTestBattleState({
       enemyHealth: 30,

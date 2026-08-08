@@ -6,7 +6,7 @@ import { processEnemyDamageEffect } from "@/lib/battle/enemy-turn-attack";
 import { applyGearKillRewards } from "@/lib/battle/gear-effects";
 import { applyDamageRiders } from "@/lib/battle/damage-riders";
 import { addEnemyStatus } from "@/lib/battle/types";
-import { applyPoisonTalentRiders } from "@/lib/battle/status-damage-riders";
+import { applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { resolvePlayerCrowdControlTrigger } from "@/lib/battle/status-cc";

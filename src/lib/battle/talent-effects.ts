@@ -1,7 +1,7 @@
 /**
- * Leaf talent-effect functions extracted from status-effects.ts for stun/freeze/CC triggers.
+ * Leaf talent-effect functions for stun/freeze/CC triggers.
  * Depends on: ./draw, ./combat-text, ./types, ../game-constants.
- * Depended on by: ./status-stun-resolve, ./status-damage-riders.
+ * Depended on by: ./status-stun-resolve, ./damage-status-riders.
  */
 import { drawFromState } from "./draw";
 import { mergeCombatText } from "./combat-text";
