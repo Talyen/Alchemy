@@ -28,8 +28,6 @@ describe("run domain slice dispatch", () => {
       "setCurrentAct",
       "setDestinationIndexInAct",
       "setCompletedDestinations",
-      "setLastOfferedDestinations",
-      "setDestinationRoundsSinceOffered",
       "setDestinationOfferState",
       "setRunTrinkets",
       "setEncounteredRunEnemyIds",

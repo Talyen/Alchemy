@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { createActiveRunSnapshot } from "@/lib/active-run-session";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import {
   applyRunDefeatTeardown,
@@ -23,6 +22,7 @@ import { getRunSession } from "@/features/alchemy/shared/stores/run-session-mode
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { useRunProfileStore } from "../../../../helpers/gameplay-store-test";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
+import { createGameplayDraftActions } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { cardLibrary, computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -648,7 +648,8 @@ describe("run transitions", () => {
     getBattleStoreView().setHasActiveBattle(true);
     const awardRunEndMaterials = vi.fn(() => emptyInventory());
     const finalizeRunXP = vi.fn();
-    const clearCombatState = () => getBattleStoreView().setHasActiveBattle(false);
+    const clearCombatState = (draft: Parameters<typeof createGameplayDraftActions>[0]) =>
+      createGameplayDraftActions(draft).battleActions.setHasActiveBattle(false);
     const clearCombatPresentation = vi.fn();
     const commits: Array<{ hasActiveRun: boolean; hasActiveBattle: boolean }> = [];
     const unsubscribe = subscribeRunSessionCommits(() => {
@@ -719,34 +720,14 @@ describe("session facade API", () => {
       contentSystemType: "campaign",
     });
     getRunSessionStoreView().setRewardState((prev) => ({ ...prev, destinations: ["Campfire", "Merchant's Shop"] }));
-    const fromStores = snapshotRun(ROUTE_SCREENS.DESTINATION);
-    const explicit = createActiveRunSnapshot({
+    const snapshot = snapshotRun(ROUTE_SCREENS.DESTINATION);
+    expect(snapshot).toMatchObject({
       characterId: "knight",
       runDeck: [],
       runGold: 12,
       runPlayerHealth: 18,
       runMaxHealth: 24,
-      roomsEncountered: getRunProgressStoreView().roomsEncountered,
-      currentAct: getRunProgressStoreView().currentAct,
-      destinationIndexInAct: getRunProgressStoreView().destinationIndexInAct,
-      completedDestinations: getRunProgressStoreView().completedDestinations,
-      lastOfferedDestinations: getRunProgressStoreView().lastOfferedDestinations,
-      destinationRoundsSinceOffered: Object.fromEntries(
-        Object.entries(getRunProgressStoreView().destinationRoundsSinceOffered),
-      ),
-      runTrinkets: getRunProgressStoreView().runTrinkets,
-      encounteredRunEnemyIds: getRunProgressStoreView().encounteredRunEnemyIds,
-      selectedDifficulty: getRunProgressStoreView().selectedDifficulty,
       contentSystemType: "campaign",
-      rng: getRunProgressStoreView().rng,
-      labyrinthMap: getRunSessionStoreView().labyrinthMap,
-      hasActiveBattle: getBattleStoreView().hasActiveBattle,
-      battleState: getBattleStoreView().battleState,
-      labyrinthPendingNode: getRunSessionStoreView().activeLabyrinthPendingNode,
-      activeLabyrinthModifiers: getRunSessionStoreView().activeLabyrinthModifiers,
-      activeLabyrinthRewardModifiers: getRunSessionStoreView().activeLabyrinthRewardModifiers,
-      runTalentXP: getRunProgressStoreView().runTalentXP,
-      runMaterialsEarned: getRunProgressStoreView().runMaterialsEarned,
       currentScreen: ROUTE_SCREENS.DESTINATION,
       interruptedFlow: {
         kind: "destination",
@@ -755,13 +736,7 @@ describe("session facade API", () => {
         lastVictoryEnemyType: null,
         lastVictoryContentSystem: null,
       },
-      shopState: null,
-      alchemistState: null,
-      trinketShopState: null,
-      equipmentShopState: null,
-      wildwoodDraft: null,
     });
-    expect(fromStores).toEqual(explicit);
   });
 
   it("snapshots pending rewards on the rewards screen whenever choices are present", () => {

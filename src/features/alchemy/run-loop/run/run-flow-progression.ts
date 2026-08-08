@@ -3,7 +3,13 @@ import {
   setDestinationOfferState,
   setHasActiveBattle,
   setRewardState,
+  setRoomsEncountered,
+  setCurrentAct,
+  setDestinationIndexInAct,
+  setCompletedDestinations,
+  setMysteryCardChoices,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
@@ -13,10 +19,10 @@ import type { RunFlowHandlerDeps, RunFlowSiblingHandlers } from "./run-flow-hand
 export function createProgressionHandlers(deps: RunFlowHandlerDeps, handlers: RunFlowSiblingHandlers) {
   function prepareNextDestination(destinationIndexInAct: number = 0, onCommitted?: () => void) {
     deps.actions.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
-      dispatchRunSessionCommand(() => {
-        const initialDestinations = deps.contentNav.createInitialDestinations({ destinationIndexInAct });
-        setDestinationOfferState(initialDestinations.offerState);
-        setRewardState(initialDestinations.rewardState);
+      dispatchRunSessionCommand((draft) => {
+        const initialDestinations = deps.contentNav.createInitialDestinations({ destinationIndexInAct }, draft);
+        setDestinationOfferState(draft, initialDestinations.offerState);
+        setRewardState(draft, initialDestinations.rewardState);
       });
       handlers.prepareDestinationScreen();
       onCommitted?.();
@@ -25,17 +31,22 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, handlers: Ru
 
   function handleActComplete(displayMaterials?: MaterialInventory, onRenderedScreenCommit?: () => void) {
     dispatchRunSessionCommand(
-      () => {
-        setHasActiveBattle(false);
+      (draft) => {
+        setHasActiveBattle(draft, false);
         if (deps.run.currentAct >= ACTS_PER_RUN) {
           if (deps.run.selectedDifficulty) {
-            deps.actions.markDifficultyCompleted(deps.run.characterId, deps.run.selectedDifficulty);
+            setCompletedDifficulties(draft, (previous) => ({
+              ...previous,
+              [deps.run.characterId]: previous[deps.run.characterId].includes(deps.run.selectedDifficulty!)
+                ? previous[deps.run.characterId]
+                : [...previous[deps.run.characterId], deps.run.selectedDifficulty!],
+            }));
           }
           return true;
         }
-        deps.run.updateCurrentAct((p) => p + 1);
-        deps.run.updateDestinationIndexInAct(0);
-        deps.run.updateCompletedDestinations([]);
+        setCurrentAct(draft, (p) => p + 1);
+        setDestinationIndexInAct(draft, 0);
+        setCompletedDestinations(draft, []);
         return false;
       },
       {
@@ -53,19 +64,19 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, handlers: Ru
 
   function advanceToNextDestination() {
     dispatchRunSessionCommand(
-      () => {
-        deps.run.updateRoomsEncountered((p) => p + 1);
+      (draft) => {
+        setRoomsEncountered(draft, (p) => p + 1);
         if (deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
-          deps.actions.labyrinthClearNode();
           return true;
         }
-        deps.actions.clearMysteryCardChoices();
+        setMysteryCardChoices(draft, []);
         return false;
       },
       {
         afterCommit: (labyrinth) => {
           clearBattlePresentationUi();
           if (labyrinth) {
+            deps.actions.labyrinthClearNode();
             deps.actions.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
           } else {
             prepareNextDestination();

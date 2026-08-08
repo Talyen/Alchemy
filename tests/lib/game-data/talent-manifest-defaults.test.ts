@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_TALENT_EFFECTS, createEmptyTalentManifest } from "@/lib/game-data";
+import { DEFAULT_TALENT_EFFECTS, createEmptyTalentEffectManifest } from "@/lib/game-data";
 import type { TalentEffectManifest } from "@/lib/game-data";
 
 describe("DEFAULT_TALENT_EFFECTS", () => {
@@ -8,7 +8,7 @@ describe("DEFAULT_TALENT_EFFECTS", () => {
     void _typeCheck;
 
     const defaultKeys = Object.keys(DEFAULT_TALENT_EFFECTS).sort();
-    const emptyKeys = Object.keys(createEmptyTalentManifest()).sort();
+    const emptyKeys = Object.keys(createEmptyTalentEffectManifest()).sort();
     expect(defaultKeys).toEqual(emptyKeys);
   });
 });

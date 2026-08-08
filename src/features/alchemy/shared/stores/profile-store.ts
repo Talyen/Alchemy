@@ -2,13 +2,13 @@ import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import { useShallow } from "zustand/react/shallow";
 import type { PersistenceCodec } from "./persistence-codec";
 import { createDefaultProfileSaveFields, type ProfileSaveFields } from "./profile-store-types";
-import { bindWriteAction } from "./run-session-command";
+import { bindDraftAction, type GameplayDraft } from "./run-session-command";
+import { createGameplayDraftActions } from "./gameplay-state-store";
 import {
   applyGameplayStateUpdate,
   readGameplayState,
   subscribeGameplayCommits,
   useGameplayStateStore,
-  type GameplayState,
   type ProfileStateFields,
 } from "./gameplay-state-store";
 
@@ -32,10 +32,15 @@ function cloneProfileSaveFields(fields: ProfileSaveFields): ProfileSaveFields {
 export const profilePersistenceCodec: PersistenceCodec<ProfileSaveFields> = {
   createDefault: createDefaultProfileSaveFields,
   encode: () => cloneProfileSaveFields(readGameplayState().profile),
-  hydrate: (fields) =>
+  hydrate: (fields, draft) => {
+    if (draft) {
+      Object.assign(draft.profile, cloneProfileSaveFields(fields));
+      return;
+    }
     applyGameplayStateUpdate((state) => {
       Object.assign(state.profile, cloneProfileSaveFields(fields));
-    }),
+    });
+  },
   subscribe: (listener) => subscribeGameplayCommits(() => listener()),
 };
 
@@ -94,10 +99,10 @@ export function useCompletedDifficulties() {
   return useGameplayStateStore((state) => state.profile.completedDifficulties);
 }
 
-const profileActions = (state: GameplayState) => state.profileActions;
+const profileActions = (state: GameplayDraft) => createGameplayDraftActions(state).profileActions;
 
-export const setDiscoveredCardIds = bindWriteAction((s) => profileActions(s).setDiscoveredCardIds);
-export const setEncounteredEnemyIds = bindWriteAction((s) => profileActions(s).setEncounteredEnemyIds);
-export const setDiscoveredTrinketIds = bindWriteAction((s) => profileActions(s).setDiscoveredTrinketIds);
-export const setCompletedDifficulties = bindWriteAction((s) => profileActions(s).setCompletedDifficulties);
-export const setFinishedRunCharacters = bindWriteAction((s) => profileActions(s).setFinishedRunCharacters);
+export const setDiscoveredCardIds = bindDraftAction((s) => profileActions(s).setDiscoveredCardIds);
+export const setEncounteredEnemyIds = bindDraftAction((s) => profileActions(s).setEncounteredEnemyIds);
+export const setDiscoveredTrinketIds = bindDraftAction((s) => profileActions(s).setDiscoveredTrinketIds);
+export const setCompletedDifficulties = bindDraftAction((s) => profileActions(s).setCompletedDifficulties);
+export const setFinishedRunCharacters = bindDraftAction((s) => profileActions(s).setFinishedRunCharacters);

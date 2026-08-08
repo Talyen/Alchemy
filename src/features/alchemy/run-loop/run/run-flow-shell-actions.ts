@@ -3,6 +3,7 @@ import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "
 import type { ScreenTransitionOptions } from "@/features/alchemy/shell/use-screen-transitions";
 import type { VictoryRewardsResult } from "../navigation/victory-flow";
 import type { Screen } from "../../shared/types";
+import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 
 type RunFlowShopKind = "shop" | "alchemist" | "trinket" | "equipment";
 
@@ -16,7 +17,8 @@ export interface RunFlowShellActions {
   /** Prefer bossId via onStartBossById; fall back to generic boss start when missing or rejected. */
   startBoss: (opts?: { bossId?: string | null; modifiers?: DifficultyModifier[] }) => void;
   markDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
-  commitWildwoodVictory: (result: VictoryRewardsResult) => void;
+  /** Update the Wildwood reward handoff in the active command draft. */
+  commitWildwoodVictory: (draftOrResult: GameplayDraft | VictoryRewardsResult, result?: VictoryRewardsResult) => void;
   beginMysteryEvent: (onRenderedScreenCommit?: () => void) => void;
   clearMysteryCardChoices: () => void;
   wildwoodRewardComplete: (onRenderedScreenCommit?: () => void) => void;

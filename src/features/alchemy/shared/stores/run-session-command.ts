@@ -1,66 +1,78 @@
 // Public command boundary for gameplay mutations.
 //
 // Feature code enters the authoritative gameplay aggregate through this module.
-// Keeping the transaction mechanics here preserves one synchronous commit boundary
-// without coupling callers to Zustand or Immer. The nesting depth and draft live in
-// the store; this module owns only the per-transaction failure flag and deferred
+// Each command opens one Immer produce over the committed root, runs its body
+// against one explicit draft (slice actions mutate it in place), and publishes
+// exactly one revision on success. A thrown body discards the draft and skips
 // `afterCommit` effects.
+import { isDraft, produce } from "immer";
+import type { Draft } from "immer";
 import {
-  beginGameplayTransaction,
-  commitGameplayTransaction,
-  readGameplayState,
+  applyGameplayStateUpdate,
   subscribeGameplayCommits,
   useGameplayStateStore,
   type GameplayState,
 } from "./gameplay-state-store";
 
-let transactionFailed = false;
-let transactionEffects: Array<() => void> | null = null;
+export type GameplayDraft = Draft<GameplayState>;
+
+export function isGameplayDraft(value: unknown): value is GameplayDraft {
+  return isDraft(value);
+}
+
+/** Bind an aggregate action without opening a nested command. */
+export function bindDraftAction<Args extends unknown[], Ret>(
+  select: (state: GameplayDraft) => (...args: Args) => Ret,
+): {
+  (draft: GameplayDraft, ...args: Args): Ret;
+  (...args: Args): Ret;
+} {
+  const bound = ((...args: unknown[]) => {
+    const [first, ...rest] = args;
+    if (isGameplayDraft(first)) return select(first)(...(rest as Args));
+    return dispatchRunSessionCommand((draft) => select(draft)(...(args as Args)));
+  }) as {
+    (draft: GameplayDraft, ...args: Args): Ret;
+    (...args: Args): Ret;
+    draftFirst?: true;
+  };
+  bound.draftFirst = true;
+  return bound;
+}
+
+export function invokeDraftAction<Args extends unknown[], Ret>(
+  action: (...args: Args) => Ret,
+  draft: GameplayDraft,
+  ...args: Args
+): Ret {
+  if ((action as typeof action & { draftFirst?: true }).draftFirst) {
+    return (action as unknown as (draft: GameplayDraft, ...args: Args) => Ret)(draft, ...args);
+  }
+  return action(...args);
+}
 
 /**
  * Execute one synchronous gameplay command and publish one committed revision.
- * Pass `afterCommit` for side effects (audio, navigation) that must not run on rollback.
+ * The recipe runs against one Immer draft. A thrown recipe discards that draft;
+ * successful recipes publish one revision before `afterCommit` effects run.
  */
-export function dispatchRunSessionCommand<T>(execute: () => T, options?: { afterCommit?: (result: T) => void }): T {
-  const isOuter = beginGameplayTransaction();
-  if (isOuter) {
-    transactionFailed = false;
-    transactionEffects = [];
-  }
-
+export function dispatchRunSessionCommand<T>(
+  execute: (draft: GameplayDraft) => T,
+  options?: { afterCommit?: (result: T) => void },
+): T {
   let result!: T;
-  try {
-    result = execute();
-    if (options?.afterCommit) transactionEffects?.push(() => options.afterCommit?.(result));
-    return result;
-  } catch (error) {
-    transactionFailed = true;
-    throw error;
-  } finally {
-    const effects = transactionEffects ?? [];
-    const failed = transactionFailed;
-    const finalized = commitGameplayTransaction(!failed);
-    if (finalized) {
-      transactionEffects = null;
-      transactionFailed = false;
-      if (!failed) for (const effect of effects) effect();
-    }
-  }
+  const base = useGameplayStateStore.getState();
+  const next = produce(base, (draft: GameplayDraft) => {
+    result = execute(draft);
+  });
+
+  if (next !== base) applyGameplayStateUpdate(next, true);
+  options?.afterCommit?.(result);
+  return result;
 }
 
 export function subscribeRunSessionCommits(listener: (revision: number) => void): () => void {
   return subscribeGameplayCommits(listener);
-}
-
-/**
- * Bind one committed aggregate action method into a command-backed write.
- * `provider(state)` returns a stable action method; the public signature is inferred
- * so callers pass the exact slice-action arguments.
- */
-export function bindWriteAction<Args extends unknown[], Ret>(
-  run: (state: GameplayState) => (...args: Args) => Ret,
-): (...args: Args) => Ret {
-  return (...args: Args) => dispatchRunSessionCommand(() => run(readGameplayState())(...args));
 }
 
 export function getRunSessionRevision(): number {

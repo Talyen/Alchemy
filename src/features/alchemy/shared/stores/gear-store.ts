@@ -11,7 +11,12 @@ import {
 import { useShallow } from "zustand/react/shallow";
 import type { PersistenceCodec } from "./persistence-codec";
 import type { GearSaveFields, GearStore } from "./gear-store-types";
-import { readGameplayState, subscribeGameplayCommits, useGameplayStateStore } from "./gameplay-state-store";
+import {
+  createGameplayDraftActions,
+  readGameplayState,
+  subscribeGameplayCommits,
+  useGameplayStateStore,
+} from "./gameplay-state-store";
 
 export type { GearSaveFields } from "./gear-store-types";
 
@@ -33,14 +38,25 @@ export const gearPersistenceCodec: PersistenceCodec<GearSaveFields> = {
       craftingCurrencies: state.craftingCurrencies,
     };
   },
-  hydrate: (fields) =>
+  hydrate: (fields, draft) => {
+    if (draft) {
+      createGameplayDraftActions(draft).gearActions.gearInitialize(
+        fields.gearInventories,
+        fields.gearLoadouts,
+        fields.gearBoardPositionsByCharacter,
+        fields.craftingCurrencies,
+        fields.craftingCurrencyBoardPositionsByCharacter,
+      );
+      return;
+    }
     readGameplayState().gearActions.gearInitialize(
       fields.gearInventories,
       fields.gearLoadouts,
       fields.gearBoardPositionsByCharacter,
       fields.craftingCurrencies,
       fields.craftingCurrencyBoardPositionsByCharacter,
-    ),
+    );
+  },
   subscribe: (listener) => subscribeGameplayCommits(() => listener()),
 };
 

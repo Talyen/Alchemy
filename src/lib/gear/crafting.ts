@@ -16,7 +16,7 @@ import {
   type GearAffixRoll,
   type GearRarity,
 } from "./types";
-import { pickAtRandom } from "@/lib/utils";
+import { pickRandom } from "@/lib/utils";
 
 export type CraftingCurrencyId =
   | "discordant-dice"
@@ -155,7 +155,7 @@ function addRandomAffix(item: GearInstance, rng: () => number): GearInstance {
   if (!def) return item;
   const rarity = gearInstanceRarity(item);
   const available = availableAffixesForItem(item);
-  const chosen = pickAtRandom(available, rng);
+  const chosen = pickRandom(available, rng);
   if (!chosen) return item;
   return {
     ...item,
@@ -248,7 +248,7 @@ export function applyCraftingCurrency(
       const upgradeableIndexes = item.affixes.flatMap((affix, index) =>
         affix.value < affixMaxValue(affix, rarity) ? [index] : [],
       );
-      const index = pickAtRandom(upgradeableIndexes, rng);
+      const index = pickRandom(upgradeableIndexes, rng);
       if (index === undefined) return item;
       const affixes = item.affixes.map((affix, affixIndex) =>
         affixIndex === index ? { ...affix, value: affix.value + 1 } : affix,

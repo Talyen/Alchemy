@@ -34,20 +34,6 @@ export interface ProgressActions {
       | ActiveRunProgressFields["completedDestinations"]
       | ((prev: ActiveRunProgressFields["completedDestinations"]) => ActiveRunProgressFields["completedDestinations"]),
   ) => void;
-  setLastOfferedDestinations: (
-    action:
-      | ActiveRunProgressFields["lastOfferedDestinations"]
-      | ((
-          prev: ActiveRunProgressFields["lastOfferedDestinations"],
-        ) => ActiveRunProgressFields["lastOfferedDestinations"]),
-  ) => void;
-  setDestinationRoundsSinceOffered: (
-    action:
-      | ActiveRunProgressFields["destinationRoundsSinceOffered"]
-      | ((
-          prev: ActiveRunProgressFields["destinationRoundsSinceOffered"],
-        ) => ActiveRunProgressFields["destinationRoundsSinceOffered"]),
-  ) => void;
   setDestinationOfferState: (state: {
     lastOfferedDestinations: ActiveRunProgressFields["lastOfferedDestinations"];
     roundsSinceOffered: ActiveRunProgressFields["destinationRoundsSinceOffered"];
@@ -94,8 +80,6 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
     setCurrentAct: setRunField("currentAct"),
     setDestinationIndexInAct: setRunField("destinationIndexInAct"),
     setCompletedDestinations: setRunField("completedDestinations"),
-    setLastOfferedDestinations: setRunField("lastOfferedDestinations"),
-    setDestinationRoundsSinceOffered: setRunField("destinationRoundsSinceOffered"),
     setDestinationOfferState: (offerState) =>
       set((state) => {
         state.activeRun.lastOfferedDestinations = [...offerState.lastOfferedDestinations];

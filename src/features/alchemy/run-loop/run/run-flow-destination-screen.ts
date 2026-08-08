@@ -5,6 +5,8 @@ import {
   commitDestinationClaim,
   setCorruptionResult,
   setRewardState,
+  setRunPlayerHealth,
+  bindRunRandomSource,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { useUiStore } from "../../shared/stores/ui-store";
@@ -20,17 +22,17 @@ export function createDestinationScreenHandlers(deps: RunFlowHandlerDeps, handle
     const bossOnly = state.destinations.length === 1 && state.destinations[0] === CONSTANTS.DESTINATIONS.BOSS_COMBAT;
     if (!bossOnly) return;
     if (state.selectedBossId && getBossById(state.selectedBossId)) return;
-    dispatchRunSessionCommand(() => {
-      const selectedBossId = getBossEnemy([], deps.worldRng).id;
-      setRewardState((prev) => ({ ...prev, selectedBossId }));
+    dispatchRunSessionCommand((draft) => {
+      const selectedBossId = getBossEnemy([], bindRunRandomSource(deps.worldRng, draft)).id;
+      setRewardState(draft, (prev) => ({ ...prev, selectedBossId }));
     });
   }
 
   function handleDestinationChoice(destination: Destination) {
     try {
-      const choice = dispatchRunSessionCommand(() => {
-        if (!beginDestinationClaim(destination)) return null;
-        const rewardState = readRunSession().rewardState;
+      const choice = dispatchRunSessionCommand((draft) => {
+        if (!beginDestinationClaim(draft, destination)) return null;
+        const rewardState = draft.session.rewardState;
         const selectedBossId = destination === CONSTANTS.DESTINATIONS.BOSS_COMBAT ? rewardState.selectedBossId : null;
         return { selectedBossId };
       });
@@ -48,16 +50,16 @@ export function createDestinationScreenHandlers(deps: RunFlowHandlerDeps, handle
         resetCorruption: () => setCorruptionResult(null),
       });
     } catch (error) {
-      dispatchRunSessionCommand(() => cancelDestinationClaim());
+      dispatchRunSessionCommand((draft) => cancelDestinationClaim(draft));
       throw error;
     }
   }
 
   function handleCampfireContinue() {
     dispatchRunSessionCommand(
-      () => {
+      (draft) => {
         const healFraction = getCampfireHealFraction(deps.talents.talentEffects.campfireHealBonus);
-        deps.run.updateRunPlayerHealth((prev) => getCampfireRestHealth(prev, deps.run.runMaxHealth, healFraction));
+        setRunPlayerHealth(draft, (prev) => getCampfireRestHealth(prev, deps.run.runMaxHealth, healFraction));
       },
       {
         afterCommit: () => handlers.advanceToNextDestination(),

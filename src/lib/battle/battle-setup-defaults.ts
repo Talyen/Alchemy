@@ -2,7 +2,7 @@
  * Default placeholder battle state and empty status/flag factories.
  * Depends on: @/lib/game-data, ../game-constants, ./types, ../trinkets.
  */
-import { createEmptyTalentManifest, type TalentEffectManifest } from "@/lib/game-data";
+import { createEmptyTalentEffectManifest, type TalentEffectManifest } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { BASE_ENEMY_HEALTH, FALLBACK_ENEMY_ATTACK, MAX_PLAYER_HEALTH } from "../game-constants";
 import {
@@ -16,7 +16,7 @@ import { defaultTrinketEffects } from "../trinkets";
 import { defaultGearEffects } from "@/lib/gear";
 import { placeholderRng } from "./rng";
 
-export const defaultTalentEffects: TalentEffectManifest = createEmptyTalentManifest();
+export const defaultTalentEffects: TalentEffectManifest = createEmptyTalentEffectManifest();
 
 const skeletonEnemy = {
   id: "skeleton",

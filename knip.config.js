@@ -38,7 +38,6 @@ export default {
     "src/lib/routing/destinations.ts": ["exports"],
     "src/lib/routing/index.ts": ["exports"],
     "src/features/alchemy/meta/screens/armory/parts/grid-styles.ts": ["exports"],
-    "src/lib/game-data/effects/registry.ts": ["exports"],
     "src/lib/gear/grid-packing.ts": ["exports"],
     "src/lib/routing/run-screen-router.ts": ["exports"],
     "src/lib/utils.ts": ["exports", "types"],

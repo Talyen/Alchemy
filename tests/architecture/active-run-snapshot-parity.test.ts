@@ -17,7 +17,6 @@ function extractActiveRunDataKeys(typeSource: string): string[] {
 
 describe("active run snapshot parity", () => {
   const typeKeys = extractActiveRunDataKeys(read("src/lib/active-run-session/types.ts"));
-  const snapshotSource = read("src/lib/active-run-session/snapshot.ts");
   const restoreSource = [
     read("src/features/alchemy/shared/stores/run-transitions.ts"),
     read("src/features/alchemy/shared/stores/restore-active-run-session.ts"),
@@ -28,19 +27,12 @@ describe("active run snapshot parity", () => {
     const codecSource = read("src/features/alchemy/shared/stores/run-resume-codec.ts");
     expect(codecSource).toContain("export function encodeRunResumeSnapshot");
     expect(codecSource).toContain("export function decodeRunResumeSnapshot");
+    expect(codecSource).toContain("...progress");
     expect(read("src/features/alchemy/shared/stores/run-transitions.ts")).toContain("encodeRunResumeSnapshot");
     expect(read("src/features/alchemy/shared/stores/run-transitions.ts")).toContain("decodeRunResumeSnapshot");
   });
 
-  it("serializes every ActiveRunData field in createActiveRunSnapshot", () => {
-    for (const key of typeKeys) {
-      const hasField =
-        snapshotSource.includes(`${key}:`) || snapshotSource.includes(`${key},`) || snapshotSource.includes(`${key} =`);
-      expect(hasField).toBe(true);
-    }
-  });
-
-  const progressViaInitialize = ["session.runActions.initializeFromResumeSnapshot(decoded.progress"];
+  const progressViaInitialize = ["actions.runActions.initializeFromResumeSnapshot(decoded.progress"];
   const restoreFieldSignals: Record<string, string[]> = {
     characterId: progressViaInitialize,
     runDeck: progressViaInitialize,

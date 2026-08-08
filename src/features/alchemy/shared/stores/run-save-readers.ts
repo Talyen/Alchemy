@@ -45,17 +45,23 @@ function readPermanentProgressForSave(): RunProfileSnapshot {
 export const runProfilePersistenceCodec: PersistenceCodec<RunProfileSaveFields> = {
   createDefault: createDefaultRunProfileSaveFields,
   encode: () => encodeRunProfileSnapshot(readPermanentProgressForSave()),
-  hydrate: (fields) =>
+  hydrate: (fields, draft) => {
+    const next = {
+      ...fields,
+      effects: computeHomesteadEffects(
+        fields.constructedBuildings,
+        fields.plantedFarms,
+        fields.completedResearch,
+        fields.bondedCompanions,
+      ),
+    };
+    if (draft) {
+      draft.runProfile = next;
+      return;
+    }
     applyGameplayStateUpdate((state) => {
-      state.runProfile = {
-        ...fields,
-        effects: computeHomesteadEffects(
-          fields.constructedBuildings,
-          fields.plantedFarms,
-          fields.completedResearch,
-          fields.bondedCompanions,
-        ),
-      };
-    }),
+      state.runProfile = next;
+    });
+  },
   subscribe: (listener) => subscribeGameplayCommits(() => listener()),
 };

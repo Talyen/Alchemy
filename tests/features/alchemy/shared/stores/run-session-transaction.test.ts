@@ -18,8 +18,16 @@ import {
   initializeActiveBattle,
   commitBattleTransition,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { createRunRandomSource, setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import {
+  createRunRandomSource,
+  setHasActiveBattle,
+  setRunGold,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  createGameplayDraftActions,
+  readGameplayState,
+  useGameplayStateStore,
+} from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { defaultBattleState } from "@/lib/battle";
 import { placeholderRng } from "@/lib/battle/rng";
 import { createRunRngState } from "@/lib/run-rng";
@@ -52,8 +60,8 @@ describe("run-session transaction coordinator", () => {
     });
 
     const result = dispatchRunSessionCommand(
-      () => {
-        getRunDomainStore().setRunGold(17);
+      (draft) => {
+        createGameplayDraftActions(draft).runActions.setRunGold(17);
         return 17;
       },
       { afterCommit: effect },
@@ -73,9 +81,10 @@ describe("run-session transaction coordinator", () => {
       });
     });
 
-    dispatchRunSessionCommand(() => {
-      getRunDomainStore().setRunGold(125);
-      getRunTransientStore().setHasActiveRun(true);
+    dispatchRunSessionCommand((draft) => {
+      const actions = createGameplayDraftActions(draft);
+      actions.runActions.setRunGold(125);
+      actions.sessionActions.setHasActiveRun(true);
     });
 
     unsubscribe();
@@ -167,11 +176,12 @@ describe("run-session transaction coordinator", () => {
   it("keeps the committed root unchanged until the outer commit", () => {
     const before = useGameplayStateStore.getState();
 
-    dispatchRunSessionCommand(() => {
-      getRunDomainStore().setRunGold(125);
-      getRunTransientStore().setHasActiveRun(true);
+    dispatchRunSessionCommand((draft) => {
+      const actions = createGameplayDraftActions(draft);
+      actions.runActions.setRunGold(125);
+      actions.sessionActions.setHasActiveRun(true);
 
-      expect(readGameplayState().run.activeRun.runGold).toBe(125);
+      expect(draft.run.activeRun.runGold).toBe(125);
       expect(useGameplayStateStore.getState()).toBe(before);
       expect(useGameplayStateStore.getState().run.activeRun.runGold).toBe(0);
       expect(useGameplayStateStore.getState().session.hasActiveRun).toBe(false);
@@ -190,8 +200,8 @@ describe("run-session transaction coordinator", () => {
     });
 
     dispatchRunSessionCommand(
-      () => {
-        getRunDomainStore().setRunGold(42);
+      (draft) => {
+        createGameplayDraftActions(draft).runActions.setRunGold(42);
         return 42;
       },
       { afterCommit: effect },
@@ -205,8 +215,8 @@ describe("run-session transaction coordinator", () => {
 
     expect(() =>
       dispatchRunSessionCommand(
-        () => {
-          getRunDomainStore().setRunGold(42);
+        (draft) => {
+          createGameplayDraftActions(draft).runActions.setRunGold(42);
           throw new Error("transaction failed");
         },
         { afterCommit: effect },
@@ -216,34 +226,21 @@ describe("run-session transaction coordinator", () => {
     expect(effect).not.toHaveBeenCalled();
   });
 
-  it("defers nested post-commit effects until the outer transaction commits", () => {
-    const effect = vi.fn();
-
-    dispatchRunSessionCommand(() => {
-      getRunDomainStore().setRunGold(42);
-      dispatchRunSessionCommand(() => getRunTransientStore().setHasActiveRun(true), { afterCommit: effect });
-      expect(effect).not.toHaveBeenCalled();
-    });
-
-    expect(effect).toHaveBeenCalledOnce();
-  });
-
-  it("collapses nested transactions into the outer commit", () => {
+  it("publishes one commit for compound draft mutations", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
-    dispatchRunSessionCommand(() => {
-      getRunDomainStore().setRunGold(10);
-      dispatchRunSessionCommand(() => {
-        getRunTransientStore().setHasActiveRun(true);
-      });
-      getRunDomainStore().setRunGold(20);
+    dispatchRunSessionCommand((draft) => {
+      setRunGold(draft, 10);
+      setHasActiveBattle(draft, true);
+      setRunGold(draft, 20);
     });
 
     unsubscribe();
 
     expect(commits).toHaveLength(1);
     expect(getRunSessionRevision()).toBeGreaterThanOrEqual(commits[0]);
+    expect(getRunDomainStore().activeRun.runGold).toBe(20);
   });
 
   it("publishes a direct store mutation as one commit", () => {
@@ -260,11 +257,9 @@ describe("run-session transaction coordinator", () => {
   it("publishes one commit for command-backed run writes and RNG", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
-    const rewardsRng = createRunRandomSource("rewards");
-
-    dispatchRunSessionCommand(() => {
-      rewardsRng();
-      setRunGold(7);
+    dispatchRunSessionCommand((draft) => {
+      createRunRandomSource("rewards", draft)();
+      setRunGold(draft, 7);
     });
 
     unsubscribe();
@@ -277,12 +272,10 @@ describe("run-session transaction coordinator", () => {
   it("rolls back command-backed RNG together with gameplay state", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
-    const rewardsRng = createRunRandomSource("rewards");
-
     expect(() =>
-      dispatchRunSessionCommand(() => {
-        rewardsRng();
-        setRunGold(99);
+      dispatchRunSessionCommand((draft) => {
+        createRunRandomSource("rewards", draft)();
+        setRunGold(draft, 99);
         throw new Error("command failed");
       }),
     ).toThrow("command failed");
@@ -299,7 +292,7 @@ describe("run-session transaction coordinator", () => {
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
     const before = getRunSessionRevision();
 
-    dispatchRunSessionCommand(() => {});
+    dispatchRunSessionCommand((draft) => void draft);
 
     unsubscribe();
 
@@ -311,12 +304,13 @@ describe("run-session transaction coordinator", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
-    dispatchRunSessionCommand(() => {
-      getRunDomainStore().setRunGold(125);
-      getRunTransientStore().setHasActiveRun(true);
-      getRunProfileStore().setMaterials({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
-      useProfileStore.getState().setDiscoveredCardIds(["slash"]);
-      useGearStore.getState().addCurrencies({ voidstone: 1 });
+    dispatchRunSessionCommand((draft) => {
+      const actions = createGameplayDraftActions(draft);
+      actions.runActions.setRunGold(125);
+      actions.sessionActions.setHasActiveRun(true);
+      actions.runProfileActions.setMaterials({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
+      actions.profileActions.setDiscoveredCardIds(["slash"]);
+      actions.gearActions.gearAddCurrencies({ voidstone: 1 });
     });
 
     unsubscribe();
@@ -364,12 +358,13 @@ describe("run-session transaction coordinator", () => {
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
     expect(() =>
-      dispatchRunSessionCommand(() => {
-        getRunDomainStore().setRunGold(999);
-        getRunTransientStore().setHasActiveRun(true);
-        getRunProfileStore().setMaterials({ wood: 9, iron: 0, herbs: 0, food: 0, crystal: 0 });
-        useProfileStore.getState().setDiscoveredCardIds(["burn"]);
-        useGearStore.getState().addCurrencies({ voidstone: 9 });
+      dispatchRunSessionCommand((draft) => {
+        const actions = createGameplayDraftActions(draft);
+        actions.runActions.setRunGold(999);
+        actions.sessionActions.setHasActiveRun(true);
+        actions.runProfileActions.setMaterials({ wood: 9, iron: 0, herbs: 0, food: 0, crystal: 0 });
+        actions.profileActions.setDiscoveredCardIds(["burn"]);
+        actions.gearActions.gearAddCurrencies({ voidstone: 9 });
         throw new Error("transaction failed");
       }),
     ).toThrow("transaction failed");

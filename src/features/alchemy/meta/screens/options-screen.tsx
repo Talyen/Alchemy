@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_DIALOG } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
+import { ErrorLogViewer } from "./error-log-viewer";
 
 import {
   ConfirmationDialog,
@@ -54,7 +55,12 @@ export function OptionsScreen({
   dev: DevOptionsProps;
 }) {
   const [tab, setTab] = useState<OptionsTab>("display");
+  const [showErrorLog, setShowErrorLog] = useState(false);
   const tabPanelClass = "col-start-1 row-start-1 pt-6 text-left";
+
+  if (showErrorLog) {
+    return <ErrorLogViewer onClose={() => setShowErrorLog(false)} />;
+  }
 
   return (
     <PageLayout>
@@ -94,7 +100,7 @@ export function OptionsScreen({
             className={cn(tabPanelClass, tab === "other" ? "state-fade" : "pointer-events-none invisible")}
             aria-hidden={tab !== "other"}
           >
-            <OtherOptionsPanel saveData={saveData} dev={dev} />
+            <OtherOptionsPanel saveData={saveData} dev={{ ...dev, onOpenErrorLog: () => setShowErrorLog(true) }} />
           </div>
         </div>
 

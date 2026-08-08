@@ -3,7 +3,7 @@
 // Controllers and UI import from here to avoid deep utility paths.
 export { tokenizeDescription, getHoverId } from "./string";
 export { getCombatTextColorClass, getCombatTextIcon, getPlayerStatusChips, getEnemyStatusChips } from "./battle";
-export { resampleItems, sampleItems } from "./random";
+export { sampleItems } from "./random";
 export {
   DEFAULT_TILT_STRENGTH,
   getCardRect,

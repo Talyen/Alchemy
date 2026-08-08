@@ -22,6 +22,7 @@ import { CONSTANTS, type Destination } from "@/features/alchemy/shared/types";
 import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
+import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   getActiveRewardModifiersForContentSystem,
   applyLabyrinthRewardMaterialModifiers,
@@ -257,28 +258,34 @@ export function commitVictoryRewards(
   result: VictoryRewardsResult,
   deps: CommitVictoryRewardsDeps,
   rng: () => number,
+  draft?: GameplayDraft,
 ): boolean {
+  const withDraft = <T extends unknown[]>(action: (...args: T) => unknown, ...args: T) => {
+    if (!draft) return action(...args);
+    return (action as unknown as (draft: GameplayDraft, ...args: T) => unknown)(draft, ...args);
+  };
   if (deps.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD && deps.battleState.pendingMaterials.crystal > 0) {
-    deps.addHomesteadMaterials(deps.battleState.pendingMaterials);
+    withDraft(deps.addHomesteadMaterials, deps.battleState.pendingMaterials);
   }
 
-  deps.addRunGold(result.goldEarned);
-  syncBattleToRun({ playerHealth: result.playerHealth });
+  withDraft(deps.addRunGold, result.goldEarned);
+  if (draft) syncBattleToRun(draft, { playerHealth: result.playerHealth });
+  else syncBattleToRun({ playerHealth: result.playerHealth });
   if (result.maxHealthDelta > 0) {
-    deps.setRunMaxHealth((prev) => prev + result.maxHealthDelta);
+    withDraft(deps.setRunMaxHealth, (prev) => prev + result.maxHealthDelta);
   }
 
-  deps.setRewardState({
+  withDraft(deps.setRewardState, {
     ...result.rewardState,
     lastVictoryEnemyType: deps.battleState.currentEnemy.enemyType,
     lastVictoryContentSystem: deps.contentSystemType,
   });
-  deps.setDestinationOfferState(result.destinationOfferState);
+  withDraft(deps.setDestinationOfferState, result.destinationOfferState);
   if (shouldGrantCompanionReward(result.labyrinthRewardModifiers)) {
-    deps.setCompanionRewardCards(getCompanionCardChoices(rng));
+    withDraft(deps.setCompanionRewardCards, getCompanionCardChoices(rng));
   } else {
-    deps.setCompanionRewardCards(null);
+    withDraft(deps.setCompanionRewardCards, null);
   }
-  deps.setHasActiveBattle(false);
+  withDraft(deps.setHasActiveBattle, false);
   return result.newGold > deps.battleState.gold;
 }

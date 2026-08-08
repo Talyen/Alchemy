@@ -12,6 +12,20 @@ import { computeTalentEffects } from "@/lib/game-data/talents";
 import type { KeywordId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import type { Destination } from "@/features/alchemy/shared/types";
 import { getRunProgressStoreView } from "./run-domain-store-test";
+import {
+  awardCardXP,
+  setCompletedDestinations,
+  setContentSystemType,
+  setCurrentAct,
+  setDestinationIndexInAct,
+  setDestinationOfferState,
+  setEncounteredRunEnemyIds,
+  setRunDeck,
+  setRunPlayerHealth,
+  setRunTrinkets,
+  setRoomsEncountered,
+  setSelectedDifficulty,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 
 type TestRunPort = RunFlowRunPort &
   ContentNavigationRunPort &
@@ -49,17 +63,17 @@ export function makeRunController() {
     encounteredRunEnemyIds: state.activeRun.encounteredRunEnemyIds,
     lastOfferedDestinations: state.activeRun.lastOfferedDestinations,
     destinationRoundsSinceOffered: state.activeRun.destinationRoundsSinceOffered,
-    updateRunDeck: state.setRunDeck,
-    updateRunPlayerHealth: state.setRunPlayerHealth,
-    updateRoomsEncountered: state.setRoomsEncountered,
-    updateCurrentAct: state.setCurrentAct,
-    updateDestinationIndexInAct: state.setDestinationIndexInAct,
-    updateCompletedDestinations: state.setCompletedDestinations,
-    updateDestinationOfferState: state.setDestinationOfferState,
-    updateRunTrinkets: state.setRunTrinkets,
-    updateEncounteredRunEnemyIds: state.setEncounteredRunEnemyIds,
-    setSelectedDifficulty: state.setSelectedDifficulty,
-    setContentSystemType: state.setContentSystemType,
+    updateRunDeck: setRunDeck,
+    updateRunPlayerHealth: setRunPlayerHealth,
+    updateRoomsEncountered: setRoomsEncountered,
+    updateCurrentAct: setCurrentAct,
+    updateDestinationIndexInAct: setDestinationIndexInAct,
+    updateCompletedDestinations: setCompletedDestinations,
+    updateDestinationOfferState: setDestinationOfferState,
+    updateRunTrinkets: setRunTrinkets,
+    updateEncounteredRunEnemyIds: setEncounteredRunEnemyIds,
+    setSelectedDifficulty,
+    setContentSystemType,
     setCharacter: state.setCharacter,
     addRunGold: state.addRunGold,
   };
@@ -74,7 +88,7 @@ export function makeTalentController() {
     runTalentXP: base.runTalentXP,
     unlockedTalents: base.unlockedTalents,
     talentEffects,
-    awardCardXP: base.awardCardXP,
+    awardCardXP,
     awardMysteryXP: base.awardMysteryXP,
     resetRunXP: base.resetRunXP,
     unlockTalent: base.unlockTalent,

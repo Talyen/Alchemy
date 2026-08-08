@@ -5,7 +5,7 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { buildings, farmPlots, researchUpgrades, visibleFarmPlots } from "@/lib/homestead/data";
 import { computeHomesteadEffects, mergeIntoManifest } from "@/lib/homestead/effects";
 import { applyEndOfRunHomesteadBonuses, applyMaterialFindBonus, getEnemyMaterialLoot } from "@/lib/homestead/loot";
-import { createEmptyTalentManifest } from "@/lib/game-data";
+import { createEmptyTalentEffectManifest } from "@/lib/game-data";
 
 // ─── types ──────────────────────────────────────────────────────
 
@@ -292,7 +292,7 @@ describe("computeHomesteadEffects", () => {
 
 describe("mergeIntoManifest", () => {
   const makeTalentManifest = () => ({
-    ...createEmptyTalentManifest(),
+    ...createEmptyTalentEffectManifest(),
     flatPhysicalDamage: 3,
     startGold: 10,
     startBlock: 2,

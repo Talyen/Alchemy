@@ -1,12 +1,14 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
-import { createEmptyTalentManifest, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
+import { createEmptyTalentEffectManifest, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
   resetRunProgressSlice,
   setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
+import { useGearStore } from "../../../../helpers/gameplay-store-test";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
   setShopState,
@@ -31,10 +33,12 @@ import {
   MIXED_POTION_CARD_ID,
 } from "@/lib/game-constants";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
+import type { GearInstance } from "@/lib/gear";
 
 beforeEach(() => {
   resetRunProgressSlice();
   resetTransientRunUi();
+  useGearStore.getState().reset();
 });
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
@@ -49,7 +53,7 @@ function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
   };
 }
 
-const defaultTalentEffects: TalentEffectManifest = createEmptyTalentManifest();
+const defaultTalentEffects: TalentEffectManifest = createEmptyTalentEffectManifest();
 const testRng = () => 0.5;
 const createInitialShopState = (deck: BattleCard[] = []) => createInitialShopStateImpl(deck, testRng);
 const createInitialAlchemistState = (deck: BattleCard[] = []) => createInitialAlchemistStateImpl(deck, testRng);
@@ -348,6 +352,34 @@ describe("createShopActions", () => {
       expect(getRunProgressStoreView().runGold).toBe(999 - TRINKET_SHOP_TRINKET_PRICE);
       expect(getRunProgressStoreView().runTrinkets).toContain(trinket.id);
       expect(getRunSessionStoreView().trinketShopState.firstPurchaseUsed).toBe(true);
+    });
+  });
+
+  describe("equipment shop", () => {
+    it("persists gold, purchase slot, and gear inventory in one commit", () => {
+      const instance: GearInstance = {
+        instanceId: "shop-helm",
+        definitionId: "leather-helm-basic",
+        affixes: [],
+      };
+      setRunProgress({ runGold: 999, characterId: "knight" });
+      setEquipmentShopState({
+        ...createInitialEquipmentShopState(),
+        gear: [instance],
+      });
+      const actions = buildActions();
+      const commits: number[] = [];
+      const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+
+      const result = actions.handleEquipmentShopBuy(instance);
+
+      unsubscribe();
+
+      expect(result).toBe(true);
+      expect(commits).toHaveLength(1);
+      expect(getRunProgressStoreView().runGold).toBe(999 - actions.getGearBuyPrice(instance));
+      expect(getRunSessionStoreView().equipmentShopState.purchasedSlotKeys).toEqual([instance.instanceId]);
+      expect(useGearStore.getState().inventories.knight).toContainEqual(instance);
     });
   });
 

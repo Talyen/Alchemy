@@ -1,7 +1,8 @@
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/loot";
-import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { createGameplayDraftActions } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import {
   addMaterials,
   clearRunMaterialsEarned,
@@ -12,7 +13,11 @@ import { useUiStore } from "../../shared/stores/ui-store";
 import { CONSTANTS } from "../../shared/types";
 
 /** Clear the persisted battle-active state; presentation cleanup is a post-commit concern. */
-export function clearCombatState() {
+export function clearCombatState(draft?: GameplayDraft) {
+  if (draft) {
+    createGameplayDraftActions(draft).battleActions.setHasActiveBattle(false);
+    return;
+  }
   setHasActiveBattle(false);
 }
 
@@ -21,24 +26,26 @@ export function clearCombatPresentation() {
   useUiStore.getState().clearCardHover();
 }
 
-export function awardRunEndMaterials() {
-  return dispatchRunSessionCommand(() => {
-    const runState = readActiveRun();
+export function awardRunEndMaterials(draft?: GameplayDraft): ReturnType<typeof emptyInventory> {
+  if (!draft) return dispatchRunSessionCommand((nextDraft) => awardRunEndMaterials(nextDraft));
+  const runState = draft.run.activeRun;
+  const runProfile = draft.runProfile;
+  {
     if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-      clearRunMaterialsEarned();
+      clearRunMaterialsEarned(draft);
       const none = emptyInventory();
-      setRunEndMaterials(none);
+      setRunEndMaterials(draft, none);
       return none;
     }
     const runCollected = runState.runMaterialsEarned;
     const homesteadBonus = applyEndOfRunHomesteadBonuses(
       emptyInventory(),
-      readRunProfile().effects,
+      runProfile.effects,
       runState.roomsEncountered,
     );
-    addMaterials(homesteadBonus);
-    setRunEndMaterials(addInventory(runCollected, homesteadBonus));
-    clearRunMaterialsEarned();
+    addMaterials(draft, homesteadBonus);
+    setRunEndMaterials(draft, addInventory(runCollected, homesteadBonus));
+    clearRunMaterialsEarned(draft);
     return homesteadBonus;
-  });
+  }
 }

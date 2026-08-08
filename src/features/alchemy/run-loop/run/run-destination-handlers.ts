@@ -1,7 +1,9 @@
 // Destination routing helpers and reward selection utilities for run flow.
 import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
+import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
 import type { RunDeckUpdate, RunTrinketsUpdate } from "@/features/alchemy/shared/stores/run-session-write-port";
+import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { RewardState } from "../navigation/reward-flow";
@@ -62,29 +64,34 @@ interface RewardSelectionInput {
   type: RewardState["rewardType"];
   setRunDeck: (value: RunDeckUpdate) => void;
   setRunTrinkets: (value: RunTrinketsUpdate) => void;
+  draft?: GameplayDraft;
 }
 
-export function applyRewardSelection({ choice, type, setRunDeck, setRunTrinkets }: RewardSelectionInput) {
+export function applyRewardSelection({ choice, type, setRunDeck, setRunTrinkets, draft }: RewardSelectionInput) {
   if (type === "card") {
-    appendCardToRunWithDiscovery(choice as BattleCard, setRunDeck);
+    appendCardToRunWithDiscovery(choice as BattleCard, setRunDeck, draft);
   } else if (type === "trinket") {
-    appendTrinketToRunWithDiscovery((choice as { id: string }).id, setRunTrinkets);
+    appendTrinketToRunWithDiscovery((choice as { id: string }).id, setRunTrinkets, draft);
   } else if (type === "gear") {
-    const characterId = readActiveRun().characterId;
-    dispatchGearMutationWithRunHealthSync({
+    const characterId = draft?.run.activeRun.characterId ?? readActiveRun().characterId;
+    const gearMutation = {
       characterId,
-      mutate: (gear) => gear.addInstance(choice as GearInstance, characterId),
-    });
+      mutate: (gear: GearStore) => gear.addInstance(choice as GearInstance, characterId),
+      ...(draft ? { draft } : {}),
+    };
+    dispatchGearMutationWithRunHealthSync(gearMutation);
   }
 }
 
 export function applyAlchemistPotion({
   setRunDeck,
   rng,
+  draft,
 }: {
   setRunDeck: (value: RunDeckUpdate) => void;
   rng: () => number;
+  draft?: GameplayDraft;
 }) {
   const potion = getRandomPotionCard(rng);
-  appendCardToRunWithDiscovery(potion, setRunDeck);
+  appendCardToRunWithDiscovery(potion, setRunDeck, draft);
 }

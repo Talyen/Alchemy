@@ -1,16 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  BATTLE_CARD_EFFECT_KINDS,
-  BattleCardEffectSchema,
-  REGISTERED_EFFECT_KINDS,
-  TEMPLATE_EFFECT_DEFINITIONS,
-} from "@/lib/game-data";
+import { BATTLE_CARD_EFFECT_KINDS, BattleCardEffectSchema, TEMPLATE_EFFECT_DEFINITIONS } from "@/lib/game-data";
 
 describe("effect dispatch registry", () => {
-  it("registers every canonical effect kind", () => {
-    expect(REGISTERED_EFFECT_KINDS).toEqual(BATTLE_CARD_EFFECT_KINDS);
-  });
-
   it("template definitions cover all non-chance kinds", () => {
     expect(TEMPLATE_EFFECT_DEFINITIONS).toHaveLength(21);
     const templateKinds = new Set<string>(TEMPLATE_EFFECT_DEFINITIONS.map((def) => def.kind));

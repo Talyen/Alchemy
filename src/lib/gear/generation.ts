@@ -1,5 +1,5 @@
 import { GEAR_AFFIX_COUNT, GEAR_AFFIX_COUNT_MIN_WEIGHT, GEAR_REWARD_RARITY_CHANCE } from "@/lib/game-constants";
-import { createInstanceId, pickAtRandom } from "@/lib/utils";
+import { createInstanceId, pickRandom } from "@/lib/utils";
 import { affixMatchesAffinity, rollAffixValue } from "./affixes";
 import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
 import { gearBaseItemList } from "./base-items";
@@ -78,9 +78,9 @@ export function createGearInstance(definition: GearDefinition, affixes: GearAffi
 }
 
 export function generateDevRandomGearInstance(rng: () => number): GearInstance {
-  const baseItem = pickAtRandom(gearBaseItemList, rng);
+  const baseItem = pickRandom(gearBaseItemList, rng);
   if (!baseItem) throw new Error("gearBaseItemList is empty");
-  const rarity = pickAtRandom(baseItem.availableRarities, rng);
+  const rarity = pickRandom(baseItem.availableRarities, rng);
   if (!rarity) throw new Error(`No rarities configured for ${baseItem.id}`);
   const definition = gearDefinitions[`${baseItem.id}-${rarity}`];
   if (!definition) throw new Error(`Missing gear definition for ${baseItem.id}-${rarity}`);
@@ -100,7 +100,7 @@ function generateGearInstance(
     pool = pool.filter((definition) => definitionOfferFootprintKey(definition) === footprintKey);
   }
   if (pool.length === 0) return null;
-  const definition = pickAtRandom(pool, rng);
+  const definition = pickRandom(pool, rng);
   if (!definition) return null;
   const affixCount = rollAffixCount(rarity, rng);
   const affixes = rollAffixes(definition, affixCount, rng);
@@ -124,7 +124,7 @@ export function generateGearRewardChoices(count: number, rng: () => number, astr
   const seenFullRolls = new Set<string>();
   const seenBaseItemIds = new Set<string>();
   const eligibleFamilies = eligibleOfferFootprintKeys(count);
-  const footprintKey = eligibleFamilies.length > 0 ? (pickAtRandom(eligibleFamilies, rng) ?? null) : null;
+  const footprintKey = eligibleFamilies.length > 0 ? (pickRandom(eligibleFamilies, rng) ?? null) : null;
 
   let attempts = 0;
   const maxDistinctRollAttempts = count * 30;

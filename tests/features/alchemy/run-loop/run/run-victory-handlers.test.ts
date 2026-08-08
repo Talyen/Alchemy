@@ -16,6 +16,7 @@ import {
 } from "../../../../helpers/run-domain-store-test";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
+import { isGameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 
 vi.mock("@/lib/audio", () => ({
   playVictory: vi.fn(),
@@ -194,6 +195,41 @@ describe("createRunFlowHandlers victory paths", () => {
 
     expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.REWARDS, expect.any(Function));
     expect(onWildwoodRewardComplete).not.toHaveBeenCalled();
+  });
+
+  it("commits Wildwood reward handoff in the victory command draft", () => {
+    setRunProgress({
+      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD,
+      runDeck: [],
+      runPlayerHealth: 20,
+      runMaxHealth: 20,
+    });
+    setRunSession({
+      wildwoodDraft: {
+        version: 3 as const,
+        phase: "battle",
+        draftChoices: [],
+        remainingBossIds: [],
+        previousBossId: null,
+        currentBossId: "forge-golem",
+        currentCombatTraitIds: [],
+        currentRewardTraitIds: [],
+        rewardType: null,
+        rewardChoiceIds: [],
+        rewardGearChoices: [],
+        selectedRewardId: null,
+      },
+    });
+    let receivedDraft = false;
+    const commitWildwoodVictory = vi.fn((draftOrResult: unknown) => {
+      receivedDraft = isGameplayDraft(draftOrResult);
+    });
+    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ commitWildwoodVictory }));
+
+    handlers.commitVictoryResult();
+
+    expect(commitWildwoodVictory).toHaveBeenCalledTimes(1);
+    expect(receivedDraft).toBe(true);
   });
 
   it("finishRewards ignores a second call while claim is in flight", () => {

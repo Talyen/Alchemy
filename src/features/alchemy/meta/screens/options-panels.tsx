@@ -47,6 +47,7 @@ export interface SaveDataOptionsProps {
 export interface DevOptionsProps {
   onClearSave?: () => void;
   onUnlockAll: () => void;
+  onOpenErrorLog?: () => void;
 }
 
 // Keeps slider rows consistent so volume settings read as one sound board.
@@ -179,6 +180,19 @@ export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptions
             </div>
             <Button size="lg" onClick={dev.onUnlockAll}>
               Unlock All
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      {import.meta.env.DEV && dev.onOpenErrorLog ? (
+        <div className="rounded-shell-panel border border-primary/40 p-5 surface-muted">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className={controlLabelClass}>Error Log</p>
+              <p className={controlDescriptionClass}>Inspect errors logged during this session for bug reports.</p>
+            </div>
+            <Button size="lg" variant="outline" onClick={dev.onOpenErrorLog}>
+              View Log
             </Button>
           </div>
         </div>

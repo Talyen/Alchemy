@@ -1,8 +1,8 @@
 // Canonical boundary between aggregate run state and persisted resume data.
 // Keeping this translation in one module prevents autosave and boot hydration from
 // growing independent field-by-field mappings.
+import { isPlayerDefeated } from "@/lib/battle";
 import {
-  createActiveRunSnapshot,
   createEmptyRewardState,
   hydrateAlchemistState,
   hydrateEquipmentShopState,
@@ -16,13 +16,16 @@ import {
   serializeShopState,
   serializeTrinketShopState,
   type ActiveRunData,
-  type ActiveRunSnapshotSource,
   type AlchemistState,
   type EquipmentShopState,
   type InterruptedFlow,
   type LabyrinthNodePosition,
+  type PersistedAlchemistState,
   type PersistedBattleTransition,
+  type PersistedEquipmentShopState,
   type PersistedPendingReward,
+  type PersistedShopState,
+  type PersistedTrinketShopState,
   type RewardState,
   type ShopState,
   type TrinketShopState,
@@ -257,35 +260,62 @@ function resolvePendingBattleTransition(activeRun: ActiveRunData): PersistedBatt
   return null;
 }
 
-type ResumeEncodeFields = Pick<
-  ActiveRunSnapshotSource,
-  "currentScreen" | "interruptedFlow" | "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState"
->;
+interface EncodeResumeFields {
+  currentScreen: Screen | null;
+  interruptedFlow: InterruptedFlow;
+  shopState: PersistedShopState | null;
+  alchemistState: PersistedAlchemistState | null;
+  trinketShopState: PersistedTrinketShopState | null;
+  equipmentShopState: PersistedEquipmentShopState | null;
+}
 
-/** Map aggregate session → snapshot source; progress fields spread once (no second ActiveRunData table). */
-function toActiveRunSnapshotSource(source: RunSession, resume: ResumeEncodeFields): ActiveRunSnapshotSource {
+/** Encode the aggregate run read model directly into persisted ActiveRunData. */
+function toActiveRunData(source: RunSession, resume: EncodeResumeFields): ActiveRunData {
   const { run, session, battle } = source;
-  // Drop permanent talent + initialized flags from the session run slice.
-  const progress = pickActiveRunFields(run);
+  // Drop fields joined only for the committed session read model before spreading
+  // the canonical active-run progress projection into persistence.
+  const {
+    initialized: _initialized,
+    talentXP: _talentXP,
+    unlockedTalents: _unlockedTalents,
+    ...activeRunProgress
+  } = run;
+  void _initialized;
+  void _talentXP;
+  void _unlockedTalents;
+  const progress = pickActiveRunFields(activeRunProgress);
+  const activeCombat =
+    battle.hasActiveBattle && battle.battleState.enemyHealth > 0 && !isPlayerDefeated(battle.battleState)
+      ? {
+          battleState: battle.battleState,
+          pendingBattleTransition: battle.pendingBattleTransition ?? null,
+          activeLabyrinthModifiers: progress.contentSystemType === "labyrinth" ? session.activeLabyrinthModifiers : [],
+          activeLabyrinthRewardModifiers:
+            progress.contentSystemType === "labyrinth" ? session.activeLabyrinthRewardModifiers : [],
+        }
+      : null;
+
   return {
     ...progress,
     destinationRoundsSinceOffered: { ...progress.destinationRoundsSinceOffered },
-    labyrinthMap: session.labyrinthMap,
-    hasActiveBattle: battle.hasActiveBattle,
-    battleState: battle.battleState,
-    pendingBattleTransition: battle.pendingBattleTransition,
-    labyrinthPendingNode: session.activeLabyrinthPendingNode,
-    wildwoodDraft: session.wildwoodDraft,
-    activeLabyrinthModifiers: session.activeLabyrinthModifiers,
-    activeLabyrinthRewardModifiers: session.activeLabyrinthRewardModifiers,
-    ...resume,
+    rng: { seed: progress.rng.seed, counters: { ...progress.rng.counters } },
+    labyrinthMap: progress.contentSystemType === "labyrinth" ? session.labyrinthMap : null,
+    labyrinthPendingNode: progress.contentSystemType === "labyrinth" ? session.activeLabyrinthPendingNode : null,
+    wildwoodDraft: progress.contentSystemType === "wildwood" ? session.wildwoodDraft : null,
+    activeCombat,
+    currentScreen: resume.currentScreen,
+    interruptedFlow: resume.interruptedFlow,
+    shopState: resume.shopState,
+    alchemistState: resume.alchemistState,
+    trinketShopState: resume.trinketShopState,
+    equipmentShopState: resume.equipmentShopState,
   };
 }
 
 function encodePersistedShops(
   session: RunSession["session"],
   currentScreen: Screen | null | undefined,
-): Pick<ResumeEncodeFields, "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState"> {
+): Pick<EncodeResumeFields, "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState"> {
   return {
     shopState:
       currentScreen === "shop" || session.shopState.cards.length > 0 ? serializeShopState(session.shopState) : null,
@@ -308,13 +338,11 @@ function encodePersistedShops(
 export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
   const requestedScreen = screen ?? source.screen;
   const currentScreen = resolveEncodeScreen(requestedScreen, source.session) ?? requestedScreen;
-  return createActiveRunSnapshot(
-    toActiveRunSnapshotSource(source, {
-      currentScreen,
-      interruptedFlow: encodeInterruptedFlow(source.session, currentScreen),
-      ...encodePersistedShops(source.session, currentScreen),
-    }),
-  );
+  return toActiveRunData(source, {
+    currentScreen,
+    interruptedFlow: encodeInterruptedFlow(source.session, currentScreen),
+    ...encodePersistedShops(source.session, currentScreen),
+  });
 }
 
 /** Decode persisted resume data into the aggregate session fields. */

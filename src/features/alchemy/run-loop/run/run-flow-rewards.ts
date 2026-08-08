@@ -1,10 +1,10 @@
-import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   beginRewardClaim,
   releaseRewardClaim as releaseRewardClaimState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { bindRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setCompanionRewardCards, setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { playUISound } from "@/lib/audio";
@@ -16,7 +16,6 @@ import {
 } from "../navigation/reward-flow";
 import { applyAlchemistPotion, applyRewardSelection } from "./run-destination-handlers";
 import { CONSTANTS } from "../../shared/types";
-import { getActiveRewardTraits } from "./run-flow-handler-deps";
 import type { RunFlowHandlerDeps, RunFlowSiblingHandlers } from "./run-flow-handler-deps";
 
 export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlowSiblingHandlers) {
@@ -27,19 +26,21 @@ export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlow
 
   function finishRewards() {
     dispatchRunSessionCommand(
-      () => {
-        if (!beginRewardClaim()) return null;
-        const session = readRunSession();
+      (draft) => {
+        if (!beginRewardClaim(draft)) return null;
+        const session = draft.session;
 
         const grantAlchemistReward = shouldGrantAlchemistReward(
           getActiveRewardModifiersForContentSystem(
             deps.run.contentSystemType,
-            getActiveRewardTraits(deps.run.contentSystemType),
+            deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
+              ? (draft.session.wildwoodDraft?.currentRewardTraitIds ?? [])
+              : draft.session.activeLabyrinthRewardModifiers,
           ),
         );
         const result = finalizeRewardState({
-          rewardState: session.rewardState,
-          companionRewardCards: session.companionRewardCards,
+          rewardState: current(session.rewardState),
+          companionRewardCards: session.companionRewardCards ? current(session.companionRewardCards) : null,
         });
 
         // Keep the live offer UI until onRenderedScreenCommit so Victory does not
@@ -47,7 +48,7 @@ export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlow
         // persists companion handoff or destination continuation (not the claimed primary).
 
         const isWildwood = deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD;
-        if (!isWildwood) awardMaterialsDuringRun(result.materials);
+        if (!isWildwood) awardMaterialsDuringRun(draft, result.materials);
 
         if (result.selectedChoice) {
           applyRewardSelection({
@@ -55,10 +56,15 @@ export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlow
             type: result.selectedRewardType,
             setRunDeck: deps.run.updateRunDeck,
             setRunTrinkets: deps.run.updateRunTrinkets,
+            draft,
           });
         }
         if (grantAlchemistReward) {
-          applyAlchemistPotion({ setRunDeck: deps.run.updateRunDeck, rng: deps.rewardRng });
+          applyAlchemistPotion({
+            setRunDeck: deps.run.updateRunDeck,
+            rng: bindRunRandomSource(deps.rewardRng, draft),
+            draft,
+          });
         }
 
         return { result, isWildwood };
@@ -120,3 +126,4 @@ export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlow
     finishRewards,
   };
 }
+import { current } from "immer";

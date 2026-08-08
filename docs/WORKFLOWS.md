@@ -52,7 +52,7 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 
 1. Extend `ActiveRunData` in `src/lib/active-run-session/types.ts` and Zod schema in `src/lib/validation/save-schemas/active-run.ts` (optional fields with defaults in `normalize-active-run-data.ts` often avoid a schema bump). Mid-combat wire shape goes through `PersistedBattleStateSchema` in `save-schemas/persisted-battle-state.ts`.
 2. Add the field to `ActiveRunProgressFields` / hydration in `src/features/alchemy/shared/stores/run-state-init.ts` (mirror `runTalentXP` / `runMaterialsEarned` pattern) when it is active-run progression. Transient resume fields belong in the codec projection instead of the run-domain types. The flat `RunStateFields` patch type is test-only now — if a test needs it, add the key to `tests/helpers/run-domain-store-test.ts`.
-3. Update `ActiveRunSnapshotSource` / `createActiveRunSnapshot()` in `src/lib/active-run-session/snapshot.ts` once — that is the sole field→`ActiveRunData` assembler. Touch `run-resume-codec.ts` only when encode/decode **behavior** changes (interrupted flow, shop gating, mid-claim, screen resolution). Progress fields spread from the aggregate via `toActiveRunSnapshotSource`; do not re-list them in the codec.
+3. Update `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()` in `src/features/alchemy/shared/stores/run-resume-codec.ts` — the codec is the sole `RunSession` → `ActiveRunData` translator. Progress fields spread from the aggregate via `pickActiveRunFields`; do not re-list them. `normalize-active-run-data.ts` keeps the decode-time content-system guards in sync.
 4. Keep `snapshotRun()` and `restoreRun()` as thin lifecycle wrappers around `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()`. `restore-active-run-session.ts` should only apply the decoded session fields. Default trinket-manifest repair for mid-combat resume runs in `restoreRun` via `repairPersistedBattleTrinketManifest` (not Zod). Keep the operation inside `dispatchRunSessionCommand()` so boot/resume is published as one aggregate commit; defer navigation, audio, and presentation work with `afterCommit` or after the command returns.
 5. Run `tests/features/alchemy/shared/storage/active-run.test.ts`, `tests/features/alchemy/shared/stores/run-domain.test.ts` (snapshot parity), the codec / pending-reward tests, plus storage/migration tests.
 
@@ -161,12 +161,12 @@ Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-
 
 1. Keep the command synchronous; do not cross an `await` while mutating run state.
 2. Put audio, navigation, timers, and presentation cleanup in `afterCommit` so failed commands cannot leak non-rollbackable effects.
-3. Use the object form when a result is needed by the post-commit effect:
+3. Pass the draft to every gameplay mutator. Use the object form when a result is needed by the post-commit effect:
 
    ```ts
    dispatchRunSessionCommand({
-     execute: () => {
-       setRunGold((gold) => gold + price);
+     execute: (draft) => {
+       setRunGold(draft, (gold) => gold + price);
        return price;
      },
      afterCommit: (paid) => playPurchaseSound(paid),
@@ -174,7 +174,7 @@ Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-
    ```
 
 4. Run-flow concerns call sibling work through the shared `RunFlowSiblingHandlers` object filled by `createRunFlowHandlers` (for example `handlers.advanceToNextDestination()`). Do not introduce a second dispatch/continuation layer.
-5. Gameplay mutations enter through `dispatchRunSessionCommand()` (or focused write-port commands that wrap it). Do not reach past that boundary into aggregate transaction internals.
+5. Gameplay mutations enter through `dispatchRunSessionCommand()` and focused draft mutators. Do not call a command from inside another command or reach past that boundary into aggregate transaction internals.
 6. `readBattle()` is data-only. Battle mutations use the focused commands exported from `run-session-write-port.ts`; do not spread aggregate battle actions into event-time stores.
 7. If an async battle flow persists an intermediate state, commit `activeCombat.pendingBattleTransition` with it and add a boot resume path. Presentation timers alone are not a gameplay continuation.
 8. `readActiveRun()`, `readRunProfile()`, and `readRunSession()` are data-only. Active-run and profile mutations use focused command-backed write ports; do not pass aggregate actions through React or imperative read ports.

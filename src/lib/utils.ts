@@ -19,12 +19,6 @@ export function randomInt(min: number, max: number, rng: () => number = Math.ran
   return Math.floor(rng() * (max - min + 1) + min);
 }
 
-export function pickAtRandom<T>(items: readonly T[], rng: () => number): T | undefined {
-  if (items.length === 0) return undefined;
-  return items[Math.floor(rng() * items.length)];
-}
-
-// First character uppercased for display labels (damage types, statuses, etc.).
 export function capitalizeWord(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }

@@ -5,14 +5,10 @@ import { createEmptyTalentEffectManifest } from "./manifest-defaults";
 
 const talentById = new Map(talentPool.map((talent) => [talent.id, talent]));
 
-export function createEmptyTalentManifest(): TalentEffectManifest {
-  return createEmptyTalentEffectManifest();
-}
-
 // Collapse unlocked IDs into a flat manifest once per change/battle. Combat code reads
 // numbers/booleans directly, which keeps turn resolution decoupled from talent grid data.
 export function computeTalentEffects(unlockedTalents: UnlockedTalents): TalentEffectManifest {
-  const manifest = createEmptyTalentManifest();
+  const manifest = createEmptyTalentEffectManifest();
 
   for (const [keywordId, talentIds] of Object.entries(unlockedTalents)) {
     for (const talentId of talentIds ?? []) {

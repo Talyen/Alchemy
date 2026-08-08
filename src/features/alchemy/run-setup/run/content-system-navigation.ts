@@ -13,9 +13,10 @@ import {
   setPendingContentSystemType,
   setWildwoodDraft,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setDestinationOfferState, setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readRunSession, readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { bindRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { afterCampaignCharacterResolved } from "@/features/alchemy/shared/run-flow/campaign-start";
 import {
   createDestinationRewardState,
@@ -31,18 +32,24 @@ import { CONSTANTS } from "../../shared/types";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
-  function createInitialDestinations(options?: DestinationOptionsInput): InitialDestinationResult {
+  function createInitialDestinations(
+    options?: DestinationOptionsInput,
+    draft?: GameplayDraft,
+  ): InitialDestinationResult {
+    const run = draft?.run.activeRun ?? deps.run;
+    const destinationRng = draft ? bindRunRandomSource(deps.destinationRng, draft) : deps.destinationRng;
+    const worldRng = draft ? bindRunRandomSource(deps.worldRng, draft) : deps.worldRng;
     const sampled = sampleDestinationChoices(
       deps.getAvailableDestinations(options),
       {
-        lastOfferedDestinations: deps.run.lastOfferedDestinations,
-        roundsSinceOffered: deps.run.destinationRoundsSinceOffered,
+        lastOfferedDestinations: run.lastOfferedDestinations,
+        roundsSinceOffered: run.destinationRoundsSinceOffered,
       },
-      deps.destinationRng,
+      destinationRng,
     );
     return {
       offerState: sampled.offerState,
-      rewardState: createDestinationRewardState(sampled.choices, getBossEnemy([], deps.worldRng).id),
+      rewardState: createDestinationRewardState(sampled.choices, getBossEnemy([], worldRng).id),
     };
   }
 
@@ -56,31 +63,32 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       resetEncounteredEnemies?: boolean;
       draftedDeck?: BattleCard[];
     } = {},
+    draft?: GameplayDraft,
   ) {
-    return dispatchRunSessionCommand(
-      () => {
-        const snapshot = createStartSnapshot(characterId, contentSystemType, options.difficultyId, options.draftedDeck);
-        applyRunStartSnapshot(snapshot);
-        if (options.discoverStarterDeck || characterId === "wildcard") {
-          setDiscoveredCardIds((current) =>
-            appendUniqueMany(
-              current,
-              snapshot.freshDeck.map((c) => c.id),
-            ),
-          );
-        }
-        if (options.resetEncounteredEnemies) {
-          setEncounteredEnemyIds([]);
-        }
-        return snapshot;
+    const applyStart = (nextDraft: GameplayDraft) => {
+      const snapshot = createStartSnapshot(characterId, contentSystemType, options.difficultyId, options.draftedDeck);
+      applyRunStartSnapshot(nextDraft, snapshot);
+      if (options.discoverStarterDeck || characterId === "wildcard") {
+        setDiscoveredCardIds(nextDraft, (current) =>
+          appendUniqueMany(
+            current,
+            snapshot.freshDeck.map((c) => c.id),
+          ),
+        );
+      }
+      if (options.resetEncounteredEnemies) {
+        setEncounteredEnemyIds(nextDraft, []);
+      }
+      return snapshot;
+    };
+
+    if (draft) return applyStart(draft);
+    return dispatchRunSessionCommand(applyStart, {
+      afterCommit: (snapshot) => {
+        if (options.playStartGoldSound && snapshot.runGold > 0) playGoldGain();
+        deps.clearCardHover();
       },
-      {
-        afterCommit: (snapshot) => {
-          if (options.playStartGoldSound && snapshot.runGold > 0) playGoldGain();
-          deps.clearCardHover();
-        },
-      },
-    );
+    });
   }
 
   function createStartSnapshot(
@@ -116,23 +124,39 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
-    return dispatchRunSessionCommand(() => {
-      const snapshot = startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN, {
-        difficultyId,
-        discoverStarterDeck: true,
-        playStartGoldSound: true,
-        resetEncounteredEnemies: true,
-      });
-      const initialDestinations = createInitialDestinations({
-        currentHealth: snapshot.runMaxHealth,
-        currentGold: snapshot.runGold,
-        destinationIndexInAct: 0,
-        maxHealth: snapshot.runMaxHealth,
-      });
-      deps.run.updateDestinationOfferState(initialDestinations.offerState);
-      setRewardState(initialDestinations.rewardState);
-      return { freshDeck: snapshot.freshDeck, totalStartGold: snapshot.runGold };
-    });
+    let startSnapshot: ReturnType<typeof createStartSnapshot> | null = null;
+    return dispatchRunSessionCommand(
+      (draft) => {
+        startSnapshot = startRun(
+          characterId,
+          CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN,
+          {
+            difficultyId,
+            discoverStarterDeck: true,
+            resetEncounteredEnemies: true,
+          },
+          draft,
+        );
+        const initialDestinations = createInitialDestinations(
+          {
+            currentHealth: startSnapshot.runMaxHealth,
+            currentGold: startSnapshot.runGold,
+            destinationIndexInAct: 0,
+            maxHealth: startSnapshot.runMaxHealth,
+          },
+          draft,
+        );
+        setDestinationOfferState(draft, initialDestinations.offerState);
+        setRewardState(draft, initialDestinations.rewardState);
+        return { freshDeck: startSnapshot.freshDeck, totalStartGold: startSnapshot.runGold };
+      },
+      {
+        afterCommit: () => {
+          if ((startSnapshot?.runGold ?? 0) > 0) playGoldGain();
+          deps.clearCardHover();
+        },
+      },
+    );
   }
 
   function initializeLabyrinthRun(characterId: CharacterId) {
@@ -141,24 +165,35 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function initializeWildwoodRun(characterId: CharacterId, initialDeck?: BattleCard[]) {
+    let startSnapshot: ReturnType<typeof createStartSnapshot> | null = null;
     dispatchRunSessionCommand(
-      () => {
+      (draft) => {
         const skipDraft = initialDeck !== undefined && initialDeck.length >= DRAFT_ROUNDS;
-        setWildwoodDraft(createInitialWildwoodDraftState(characterId, deps.worldRng));
+        setWildwoodDraft(
+          draft,
+          createInitialWildwoodDraftState(characterId, bindRunRandomSource(deps.worldRng, draft)),
+        );
         if (skipDraft) {
-          startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, {
-            draftedDeck: initialDeck,
-            discoverStarterDeck: true,
-          });
-          setPendingCharacterId(null);
+          startSnapshot = startRun(
+            characterId,
+            CONSTANTS.CONTENT_SYSTEMS.WILDWOOD,
+            {
+              draftedDeck: initialDeck,
+              discoverStarterDeck: true,
+            },
+            draft,
+          );
+          setPendingCharacterId(draft, null);
           return true;
         }
-        startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, { draftedDeck: [] });
-        setPendingCharacterId(characterId);
+        startSnapshot = startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, { draftedDeck: [] }, draft);
+        setPendingCharacterId(draft, characterId);
         return false;
       },
       {
         afterCommit: (skipDraft) => {
+          if ((startSnapshot?.runGold ?? 0) > 0) playGoldGain();
+          deps.clearCardHover();
           if (skipDraft) {
             deps.onStartNextWildwoodBoss();
           } else {
@@ -187,17 +222,17 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
         deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
       } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
         deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
-          dispatchRunSessionCommand(() => {
-            setRewardState((prev) =>
+          dispatchRunSessionCommand((draft) => {
+            setRewardState(draft, (prev) =>
               restoreOrCreateDestinationRewardState(prev, {
                 availableDestinations: deps.getAvailableDestinations(),
                 offerState: {
                   lastOfferedDestinations: deps.run.lastOfferedDestinations,
                   roundsSinceOffered: deps.run.destinationRoundsSinceOffered,
                 },
-                bossEnemyId: getBossEnemy([], deps.worldRng).id,
-                rng: deps.destinationRng,
-                onSampled: (result) => deps.run.updateDestinationOfferState(result.offerState),
+                bossEnemyId: getBossEnemy([], bindRunRandomSource(deps.worldRng, draft)).id,
+                rng: bindRunRandomSource(deps.destinationRng, draft),
+                onSampled: (result) => setDestinationOfferState(draft, result.offerState),
               }),
             );
           });

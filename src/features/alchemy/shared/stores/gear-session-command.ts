@@ -4,30 +4,32 @@
 import type { CharacterId } from "@/lib/game-data";
 import { flattenGearInventories, type GearInstance, type GearLoadouts } from "@/lib/gear";
 import type { GearStore } from "./gear-store-types";
-import { readGameplayState, type GameplayState } from "./gameplay-state-store";
+import { createGameplayDraftActions, readGameplayState } from "./gameplay-state-store";
 import { dispatchRunSessionCommand } from "./run-session-command";
 import { syncRunMaxHealthFromGearMutation } from "./run-transitions";
+import type { GameplayDraft } from "./run-session-command";
 
 export interface GearHealthSnapshot {
   inventories: GearInstance[];
   loadouts: GearLoadouts;
 }
 
-function gearCommandView(state: GameplayState): GearStore {
+function gearCommandView(state: GameplayDraft): GearStore {
+  const actions = createGameplayDraftActions(state).gearActions;
   return {
     ...state.gear,
-    initialize: state.gearActions.gearInitialize,
-    addInstance: state.gearActions.gearAddInstance,
-    transferToInventory: state.gearActions.gearTransferToInventory,
-    equip: state.gearActions.gearEquip,
-    unequip: state.gearActions.gearUnequip,
-    moveBoardItem: state.gearActions.gearMoveBoardItem,
-    syncBoardPositions: state.gearActions.gearSyncBoardPositions,
-    sortBoard: state.gearActions.gearSortBoard,
-    salvage: state.gearActions.gearSalvage,
-    applyCurrency: state.gearActions.gearApplyCurrency,
-    addCurrencies: state.gearActions.gearAddCurrencies,
-    reset: state.gearActions.gearReset,
+    initialize: actions.gearInitialize,
+    addInstance: actions.gearAddInstance,
+    transferToInventory: actions.gearTransferToInventory,
+    equip: actions.gearEquip,
+    unequip: actions.gearUnequip,
+    moveBoardItem: actions.gearMoveBoardItem,
+    syncBoardPositions: actions.gearSyncBoardPositions,
+    sortBoard: actions.gearSortBoard,
+    salvage: actions.gearSalvage,
+    applyCurrency: actions.gearApplyCurrency,
+    addCurrencies: actions.gearAddCurrencies,
+    reset: actions.gearReset,
   };
 }
 
@@ -49,13 +51,15 @@ export function dispatchGearMutationWithRunHealthSync<T>(options: {
   mutate: (gear: GearStore) => T;
   before?: GearHealthSnapshot;
   syncRunHealth?: boolean;
+  draft?: GameplayDraft;
 }): T {
-  return dispatchRunSessionCommand(() => {
-    const before = options.before ?? snapshotGearHealth();
-    const result = options.mutate(gearCommandView(readGameplayState()));
-    if (options.syncRunHealth ?? readGameplayState().session.hasActiveRun) {
-      const after = snapshotGearHealth();
+  const applyMutation = (state: GameplayDraft): T => {
+    const before = options.before ?? snapshotGearHealth(state.gear);
+    const result = options.mutate(gearCommandView(state));
+    if (options.syncRunHealth ?? state.session.hasActiveRun) {
+      const after = snapshotGearHealth(state.gear);
       syncRunMaxHealthFromGearMutation(
+        state,
         options.characterId,
         before.inventories,
         before.loadouts,
@@ -64,5 +68,8 @@ export function dispatchGearMutationWithRunHealthSync<T>(options: {
       );
     }
     return result;
-  });
+  };
+
+  if (options.draft) return applyMutation(options.draft);
+  return dispatchRunSessionCommand((draft) => applyMutation(draft));
 }

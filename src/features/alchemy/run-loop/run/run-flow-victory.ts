@@ -7,10 +7,11 @@ import {
 import {
   addRunGold,
   awardMaterialsDuringRun,
+  bindRunRandomSource,
   setDestinationOfferState,
   setRunMaxHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setCompanionRewardCards,
   setHasActiveBattle,
@@ -26,43 +27,50 @@ import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
 import { clearCombatPresentation } from "./run-flow-session-helpers";
 
 export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
-  function computeVictoryResult() {
-    const runState = readActiveRun();
+  function computeVictoryResult(draft?: GameplayDraft) {
+    const runState = draft?.run.activeRun ?? readActiveRun();
+    const runProfile = draft?.runProfile ?? readRunProfile();
+    const battleState = draft?.battle.battleState ?? readBattle().battleState;
+    const rewardTraits = draft
+      ? runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
+        ? (draft.session.wildwoodDraft?.currentRewardTraitIds ?? [])
+        : draft.session.activeLabyrinthRewardModifiers
+      : getActiveRewardTraits(runState.contentSystemType);
     return computeVictoryRewards(
       {
         characterId: runState.characterId,
         selectedDifficulty: runState.selectedDifficulty,
-        unlockedTalents: readRunProfile().unlockedTalents,
+        unlockedTalents: runProfile.unlockedTalents,
         runDeck: runState.runDeck,
         runTrinkets: runState.runTrinkets,
         contentSystemType: runState.contentSystemType,
-        activeLabyrinthRewardModifiers: getActiveRewardTraits(runState.contentSystemType),
-        battleState: readBattle().battleState,
+        activeLabyrinthRewardModifiers: rewardTraits,
+        battleState,
         runGold: runState.runGold,
         runPlayerHealth: runState.runPlayerHealth,
         runMaxHealth: runState.runMaxHealth,
         destinationIndexInAct: runState.destinationIndexInAct,
         completedDestinations: runState.completedDestinations,
-        homesteadEffects: readRunProfile().effects,
+        homesteadEffects: runProfile.effects,
         getAvailableDestinations: deps.getAvailableDestinations,
-        bossEnemyId: getBossEnemy([], deps.worldRng).id,
+        bossEnemyId: getBossEnemy([], draft ? bindRunRandomSource(deps.worldRng, draft) : deps.worldRng).id,
         destinationOfferState: {
           lastOfferedDestinations: runState.lastOfferedDestinations,
           roundsSinceOffered: runState.destinationRoundsSinceOffered,
         },
       },
-      deps.rewardRng,
-      deps.destinationRng,
+      draft ? bindRunRandomSource(deps.rewardRng, draft) : deps.rewardRng,
+      draft ? bindRunRandomSource(deps.destinationRng, draft) : deps.destinationRng,
     );
   }
 
   function commitVictoryResult() {
     let goldGained = false;
     dispatchRunSessionCommand(
-      () => {
-        const committedResult = computeVictoryResult();
-        const battleState = readBattle().battleState;
-        const runState = readActiveRun();
+      (draft) => {
+        const committedResult = computeVictoryResult(draft);
+        const battleState = draft.battle.battleState;
+        const runState = draft.run.activeRun;
         goldGained = commitVictoryRewards(
           committedResult,
           {
@@ -76,10 +84,11 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
             setDestinationOfferState,
             setHasActiveBattle,
           },
-          deps.rewardRng,
+          bindRunRandomSource(deps.rewardRng, draft),
+          draft,
         );
         if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-          deps.actions.commitWildwoodVictory(committedResult);
+          deps.actions.commitWildwoodVictory(draft, committedResult);
         }
       },
       {

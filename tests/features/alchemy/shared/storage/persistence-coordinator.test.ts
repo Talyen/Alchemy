@@ -7,13 +7,9 @@ import {
 import { defaultSaveData } from "@/features/alchemy/shared/storage";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { useGearStore, useProfileStore } from "../../../../helpers/gameplay-store-test";
-import {
-  getRunDomainStore,
-  getRunProfileStore,
-  getRunTransientStore,
-  useRunProfileStore,
-} from "../../../../helpers/gameplay-store-test";
+import { getRunProfileStore, useRunProfileStore } from "../../../../helpers/gameplay-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { createGameplayDraftActions } from "@/features/alchemy/shared/stores/gameplay-state-store";
 
 beforeEach(() => {
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
@@ -77,9 +73,10 @@ describe("persistence coordinator", () => {
     const listener = vi.fn();
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
-    dispatchRunSessionCommand(() => {
-      getRunDomainStore().setRunGold(42);
-      getRunTransientStore().setHasActiveRun(true);
+    dispatchRunSessionCommand((draft) => {
+      const actions = createGameplayDraftActions(draft);
+      actions.runActions.setRunGold(42);
+      actions.sessionActions.setHasActiveRun(true);
     });
 
     expect(listener).toHaveBeenCalledOnce();
@@ -90,12 +87,13 @@ describe("persistence coordinator", () => {
     const listener = vi.fn();
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
-    dispatchRunSessionCommand(() => {
-      getRunDomainStore().setRunGold(42);
-      getRunTransientStore().setHasActiveRun(true);
-      useProfileStore.getState().setDiscoveredCardIds(["slash"]);
-      useGearStore.getState().addCurrencies({ voidstone: 1 });
-      getRunProfileStore().setMaterials({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
+    dispatchRunSessionCommand((draft) => {
+      const actions = createGameplayDraftActions(draft);
+      actions.runActions.setRunGold(42);
+      actions.sessionActions.setHasActiveRun(true);
+      actions.profileActions.setDiscoveredCardIds(["slash"]);
+      actions.gearActions.gearAddCurrencies({ voidstone: 1 });
+      actions.runProfileActions.setMaterials({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
     });
 
     expect(listener).toHaveBeenCalledOnce();

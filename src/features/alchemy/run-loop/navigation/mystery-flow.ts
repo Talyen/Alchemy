@@ -18,6 +18,7 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MysteryEffect } from "@/lib/mystery";
 import { sampleItems } from "../../shared/utils";
 import { spendRunGold } from "../run-gold";
+import { invokeDraftAction, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 
 export interface MysteryEffectResult {
   /**
@@ -39,8 +40,17 @@ interface MysteryEffectContext {
   setRunTrinkets: StateUpdater<string[]>;
   setMysteryCardChoices: StateUpdater<BattleCard[] | null>;
   awardMysteryXP: (keyword: KeywordId, amount: number) => void;
-  onAddMaterials: (materials: MaterialInventory) => void;
-  onAwardGold: (amount: number) => void;
+  onAddMaterials: (draftOrMaterials: GameplayDraft | MaterialInventory, materials?: MaterialInventory) => void;
+  onAwardGold: (draftOrAmount: GameplayDraft | number, amount?: number) => void;
+  draft?: GameplayDraft;
+}
+
+function mutate<T>(setter: StateUpdater<T>, draft: GameplayDraft | undefined, value: T | ((previous: T) => T)): void {
+  if (draft) {
+    invokeDraftAction(setter, draft, value);
+    return;
+  }
+  setter(value);
 }
 
 // Applies a single mystery consequence effect to the run state.
@@ -58,7 +68,11 @@ const mysteryApplyHandlers: {
   gainGold: (effect, context) => gainMysteryGold(effect.amount, context),
   loseGold: (effect, context) => loseMysteryGold(effect.amount, context),
   gainXP: (effect, context) => {
-    context.awardMysteryXP(effect.keyword, effect.amount);
+    if (context.draft) {
+      invokeDraftAction(context.awardMysteryXP, context.draft, effect.keyword, effect.amount);
+    } else {
+      context.awardMysteryXP(effect.keyword, effect.amount);
+    }
     return { followUp: null };
   },
   removeCard: (effect, context) => removeMysteryCard(effect.mode, context),
@@ -81,8 +95,8 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
 
 // Shared card reward mutation keeps discovery tracking aligned with deck changes.
 // Note: We use a simpler subset of context keys since we only mutate runDeck.
-function addCardToRun(card: BattleCard, context: Pick<MysteryEffectContext, "setRunDeck">): void {
-  appendCardToRunWithDiscovery(card, context.setRunDeck);
+function addCardToRun(card: BattleCard, context: Pick<MysteryEffectContext, "setRunDeck" | "draft">): void {
+  appendCardToRunWithDiscovery(card, context.setRunDeck, context.draft);
 }
 
 function addSpecificMysteryCard(cardId: string, context: MysteryEffectContext) {
@@ -108,7 +122,9 @@ function offerMysteryCardChoices(
   effect: Extract<MysteryEffect, { kind: "chooseCard" }>,
   context: MysteryEffectContext,
 ): MysteryEffectResult {
-  context.setMysteryCardChoices(
+  mutate(
+    context.setMysteryCardChoices,
+    context.draft,
     selectRewardCards(context.runDeck, getMysteryCardChoicePool(effect.tag), MYSTERY_CARD_CHOICES, [], context.rng),
   );
   return { followUp: "choose-card" };
@@ -116,30 +132,31 @@ function offerMysteryCardChoices(
 
 function healFromMystery(amount: number, chance: number | undefined, context: MysteryEffectContext) {
   if (chance !== undefined && context.rng() >= chance) return { followUp: null };
-  context.setRunPlayerHealth((p) => Math.min(context.runMaxHealth, p + amount));
+  mutate(context.setRunPlayerHealth, context.draft, (p) => Math.min(context.runMaxHealth, p + amount));
   return { followUp: null };
 }
 
 function damageFromMystery(amount: number, context: MysteryEffectContext) {
-  context.setRunPlayerHealth((p) => Math.max(0, p - amount));
+  mutate(context.setRunPlayerHealth, context.draft, (p) => Math.max(0, p - amount));
   return { followUp: null };
 }
 
 function gainMysteryGold(amount: number, context: MysteryEffectContext) {
   if (amount > 0) playGoldGain();
-  context.onAwardGold(amount);
+  if (context.draft) invokeDraftAction(context.onAwardGold, context.draft, amount);
+  else context.onAwardGold(amount);
   return { followUp: null };
 }
 
 function loseMysteryGold(amount: number, context: MysteryEffectContext) {
-  spendRunGold(amount, context.setRunGold);
+  spendRunGold(amount, (update) => mutate(context.setRunGold, context.draft, update));
   return { followUp: null };
 }
 
 function removeMysteryCard(mode: "random" | "choose", context: MysteryEffectContext) {
   // Choice-based removal is handled by the screen picker; this helper only mutates immediately.
   if (mode !== "random") return { followUp: null };
-  context.setRunDeck((p) => {
+  mutate(context.setRunDeck, context.draft, (p) => {
     if (p.length === 0) return p;
     const idx = Math.floor(context.rng() * p.length);
     return p.filter((_, i) => i !== idx);
@@ -148,7 +165,7 @@ function removeMysteryCard(mode: "random" | "choose", context: MysteryEffectCont
 }
 
 function gainMysteryTrinket(trinketId: string, context: MysteryEffectContext) {
-  appendTrinketToRunWithDiscovery(trinketId, context.setRunTrinkets);
+  appendTrinketToRunWithDiscovery(trinketId, context.setRunTrinkets, context.draft);
   return { followUp: null };
 }
 
@@ -161,6 +178,7 @@ function gainRandomMysteryTrinket(context: MysteryEffectContext) {
 function gainMysteryMaterial(material: MaterialId, amount: number, context: MysteryEffectContext) {
   const matInv = emptyInventory();
   matInv[material] = amount;
-  context.onAddMaterials(matInv);
+  if (context.draft) invokeDraftAction(context.onAddMaterials, context.draft, matInv);
+  else context.onAddMaterials(matInv);
   return { followUp: null };
 }

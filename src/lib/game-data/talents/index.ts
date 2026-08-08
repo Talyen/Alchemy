@@ -4,4 +4,4 @@ export * from "./unlock";
 export * from "./choices";
 export { talentPool } from "./pool";
 export { DEFAULT_TALENT_EFFECTS, createEmptyTalentEffectManifest } from "./manifest-defaults";
-export { createEmptyTalentManifest, computeTalentEffects, normalizeUnlockedTalents } from "./compute";
+export { computeTalentEffects, normalizeUnlockedTalents } from "./compute";

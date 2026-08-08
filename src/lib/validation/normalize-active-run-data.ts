@@ -1,5 +1,5 @@
 // Save-load normalization during Zod ActiveRunDataSchema.transform only.
-// Content-system field isolation mirrors encode-time guards in createActiveRunSnapshot.
+// Content-system field isolation mirrors the encode-time guards in run-resume-codec.
 // Scalar defaults and contentSystemType are owned by the Zod schema (.catch / .default).
 import type { ContentSystemId } from "@/lib/content-systems/types";
 

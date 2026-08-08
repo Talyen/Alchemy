@@ -5,6 +5,7 @@
  */
 
 import { useCallback } from "react";
+import { current } from "immer";
 import {
   canEnterLabyrinthNode,
   withCurrentNode,
@@ -75,22 +76,22 @@ export function useLabyrinthController(_screen: Screen, rng: () => number): Laby
   }, [rng]);
 
   const enterNode = useCallback((row: number, col: number, handlers: LabyrinthNodeHandlers): boolean => {
-    const node = dispatchRunSessionCommand(() => {
-      const session = readRunSession();
+    const node = dispatchRunSessionCommand((draft) => {
+      const session = draft.session;
       if (session.activeLabyrinthPendingNode) return null;
 
       const map = session.labyrinthMap;
       const node = map.grid[row]?.[col];
       if (!node || !canEnterLabyrinthNode(map, row, col)) return null;
 
-      setActiveLabyrinthPendingNode({ row, col });
-      return node;
+      setActiveLabyrinthPendingNode(draft, { row, col });
+      return current(node);
     });
     if (!node) return false;
     try {
       routeNodeInteraction(node, handlers);
     } catch (error) {
-      dispatchRunSessionCommand(() => setActiveLabyrinthPendingNode(null));
+      dispatchRunSessionCommand((draft) => setActiveLabyrinthPendingNode(draft, null));
       throw error;
     }
     return true;

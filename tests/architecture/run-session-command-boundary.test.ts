@@ -35,20 +35,27 @@ describe("run-session command boundary", () => {
 
   it("exports the command API as a self-contained module", () => {
     const command = read("src/features/alchemy/shared/stores/run-session-command.ts");
+    const aggregate = read("src/features/alchemy/shared/stores/gameplay-state-store.ts");
     expect(command).toContain("export function dispatchRunSessionCommand");
-    // Transaction logic is inlined here rather than delegated to a separate file.
-    expect(command).toContain("beginGameplayTransaction");
-    expect(command).toContain("commitGameplayTransaction");
-    // The nesting depth and draft live in the store; the command owns only the
-    // failure flag and deferred effects, so it must not re-implement rollback.
-    expect(command).not.toContain("rollbackGameplayTransaction");
+    expect(command).toContain("produce(base");
+    expect(command).toContain("applyGameplayStateUpdate(next, true)");
+    // Commands do not nest or maintain a second transaction/effect coordinator.
+    expect(command).not.toContain("beginGameplayTransaction");
+    expect(command).not.toContain("commitGameplayTransaction");
     expect(command).not.toContain("transactionDepth");
+    expect(command).not.toContain("transactionEffects");
+    expect(command).not.toContain("transactionFailed");
+    expect(command).not.toContain("getGameplayDraft");
+    expect(command).not.toContain("installGameplayDraft");
+    expect(aggregate).not.toContain("activeGameplayDraft");
+    expect(aggregate).not.toContain("getGameplayDraft");
+    expect(aggregate).not.toContain("installGameplayDraft");
   });
 
   it("keeps all session write commands accessible through a single barrel", () => {
     const writePort = read("src/features/alchemy/shared/stores/run-session-write-port.ts");
     // Core sample of every domain section to confirm it's all present. Simple
-    // forwards are bound via `bindWriteAction` (`export const`); compound writes
+    // forwards are bound via `bindDraftAction` (`export const`); compound writes
     // stay `export function`.
     const exported = (name: string) => new RegExp(`export (?:function|const) ${name}`).test(writePort);
     for (const name of [
@@ -64,7 +71,8 @@ describe("run-session command boundary", () => {
     ]) {
       expect(exported(name), `write-port must export ${name}`).toBe(true);
     }
-    expect(writePort).toContain("bindWriteAction");
+    expect(writePort).toContain("bindDraftAction");
+    expect(writePort).not.toContain("bindWriteAction");
   });
 
   it("keeps feature-facing read ports free of aggregate actions", () => {

@@ -12,8 +12,8 @@ import { useUiStore } from "./ui-store";
 import { getCommittedRunSession } from "./run-session-model";
 import { restoreRunSession } from "./restore-active-run-session";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "./run-resume-codec";
-import { dispatchRunSessionCommand } from "./run-session-command";
-import { readGameplayState } from "./gameplay-state-store";
+import { dispatchRunSessionCommand, isGameplayDraft, type GameplayDraft } from "./run-session-command";
+import { createGameplayDraftActions } from "./gameplay-state-store";
 import { initializeActiveBattle, setHasActiveBattle } from "./run-session-write-port";
 
 /** Apply persisted active-run data across the run-lifetime stores atomically. */
@@ -23,22 +23,22 @@ export function restoreRun(
   unlockedTalents: UnlockedTalents,
 ): void {
   const decoded = activeRun ? decodeRunResumeSnapshot(activeRun) : null;
-  dispatchRunSessionCommand(() => {
-    const session = readGameplayState();
-    if (decoded) session.runActions.initializeFromResumeSnapshot(decoded.progress);
-    else session.runActions.initialize(null);
-    session.runProfileActions.applyTalentState(talentXP, unlockedTalents);
+  dispatchRunSessionCommand((draft) => {
+    const actions = createGameplayDraftActions(draft);
+    if (decoded) actions.runActions.initializeFromResumeSnapshot(decoded.progress);
+    else actions.runActions.initialize(null);
+    actions.runProfileActions.applyTalentState(talentXP, unlockedTalents);
     const battleState =
       activeRun?.activeCombat?.battleState != null
         ? repairPersistedBattleTrinketManifest(activeRun.activeCombat.battleState, activeRun.runTrinkets)
         : null;
     const pending = decoded?.pendingBattleTransition ?? null;
-    initializeActiveBattle(battleState, pending);
+    initializeActiveBattle(draft, battleState, pending);
 
-    if (decoded?.screen) session.runActions.setScreen(decoded.screen);
+    if (decoded?.screen) actions.runActions.setScreen(decoded.screen);
     if (!activeRun) return;
 
-    const transient = session.sessionActions;
+    const transient = actions.sessionActions;
     // A resume is a full replacement of transient run state. Clearing first
     // prevents an in-process restore from leaking stale rewards or shop offers.
     transient.clearTransientSession();
@@ -59,42 +59,92 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
 
 /** Apply gear max-health bonus delta after armory gear inventory/loadout mutations during an active run. */
 export function syncRunMaxHealthFromGearMutation(
+  draft: GameplayDraft,
   characterId: CharacterId,
   inventoryBefore: GearInstance[],
   loadoutsBefore: GearLoadouts,
   inventoryAfter: GearInstance[],
   loadoutsAfter: GearLoadouts,
+): void;
+export function syncRunMaxHealthFromGearMutation(
+  characterId: CharacterId,
+  inventoryBefore: GearInstance[],
+  loadoutsBefore: GearLoadouts,
+  inventoryAfter: GearInstance[],
+  loadoutsAfter: GearLoadouts,
+): void;
+export function syncRunMaxHealthFromGearMutation(
+  draftOrCharacterId: GameplayDraft | CharacterId,
+  characterIdOrInventoryBefore: CharacterId | GearInstance[],
+  inventoryBeforeOrLoadoutsBefore: GearInstance[] | GearLoadouts,
+  loadoutsBeforeOrInventoryAfter: GearLoadouts | GearInstance[],
+  inventoryAfterOrLoadoutsAfter?: GearInstance[] | GearLoadouts,
+  loadoutsAfter?: GearLoadouts,
 ): void {
-  const oldBonus = computeGearManifest(characterId, inventoryBefore, loadoutsBefore).maxHealth;
-  const newBonus = computeGearManifest(characterId, inventoryAfter, loadoutsAfter).maxHealth;
+  if (!isGameplayDraft(draftOrCharacterId)) {
+    dispatchRunSessionCommand((draft) =>
+      syncRunMaxHealthFromGearMutation(
+        draft,
+        draftOrCharacterId,
+        characterIdOrInventoryBefore as GearInstance[],
+        inventoryBeforeOrLoadoutsBefore as GearLoadouts,
+        loadoutsBeforeOrInventoryAfter as GearInstance[],
+        inventoryAfterOrLoadoutsAfter as GearLoadouts,
+      ),
+    );
+    return;
+  }
+  const draftState = draftOrCharacterId;
+  const resolvedCharacterId = characterIdOrInventoryBefore as CharacterId;
+  const resolvedInventoryBefore = inventoryBeforeOrLoadoutsBefore as GearInstance[];
+  const resolvedLoadoutsBefore = loadoutsBeforeOrInventoryAfter as GearLoadouts;
+  const resolvedInventoryAfter = inventoryAfterOrLoadoutsAfter as GearInstance[];
+  const resolvedLoadoutsAfter = loadoutsAfter!;
+  const oldBonus = computeGearManifest(resolvedCharacterId, resolvedInventoryBefore, resolvedLoadoutsBefore).maxHealth;
+  const newBonus = computeGearManifest(resolvedCharacterId, resolvedInventoryAfter, resolvedLoadoutsAfter).maxHealth;
   const delta = newBonus - oldBonus;
   if (delta === 0) return;
 
-  const state = readGameplayState();
-  const nextMax = state.run.activeRun.runMaxHealth + delta;
-  state.runActions.setRunMaxHealth(nextMax);
-  state.runActions.setRunPlayerHealth(Math.min(nextMax, state.run.activeRun.runPlayerHealth));
+  const actions = createGameplayDraftActions(draftState);
+  const nextMax = draftState.run.activeRun.runMaxHealth + delta;
+  actions.runActions.setRunMaxHealth(nextMax);
+  actions.runActions.setRunPlayerHealth(Math.min(nextMax, draftState.run.activeRun.runPlayerHealth));
 }
 
 /** Clamp run HP for battle entry and persist before creating BattleState. */
-export function syncRunToBattleStart(playerHealth?: number): number {
-  const state = readGameplayState();
+export function syncRunToBattleStart(draft: GameplayDraft, playerHealth?: number): number;
+export function syncRunToBattleStart(playerHealth?: number): number;
+export function syncRunToBattleStart(draftOrHealth?: GameplayDraft | number, health?: number): number {
+  if (!isGameplayDraft(draftOrHealth)) {
+    return dispatchRunSessionCommand((draft) => syncRunToBattleStart(draft, draftOrHealth));
+  }
+  const state = draftOrHealth;
+  const actions = createGameplayDraftActions(state);
   const startingHealth =
-    playerHealth ??
+    health ??
     getBattleStartPlayerHealth(
       state.run.activeRun.runPlayerHealth,
       state.run.activeRun.runMaxHealth,
       state.run.activeRun.runTrinkets,
     );
-  state.runActions.setRunPlayerHealth(startingHealth);
+  actions.runActions.setRunPlayerHealth(startingHealth);
   return startingHealth;
 }
 
 /** Persist combat HP to run progress after victory or when leaving battle. */
-export function syncBattleToRun(options?: { playerHealth?: number }): void {
-  const session = readGameplayState();
+export function syncBattleToRun(draft: GameplayDraft, options?: { playerHealth?: number }): void;
+export function syncBattleToRun(options?: { playerHealth?: number }): void;
+export function syncBattleToRun(
+  draftOrOptions?: GameplayDraft | { playerHealth?: number },
+  options?: { playerHealth?: number },
+): void {
+  if (!isGameplayDraft(draftOrOptions)) {
+    dispatchRunSessionCommand((draft) => syncBattleToRun(draft, draftOrOptions));
+    return;
+  }
+  const session = draftOrOptions;
   const health = options?.playerHealth ?? session.battle.battleState.playerHealth;
-  session.runActions.setRunPlayerHealth(health);
+  createGameplayDraftActions(session).runActions.setRunPlayerHealth(health);
 }
 
 type LifecycleListener = () => void;
@@ -129,12 +179,12 @@ export function clearBattlePresentationUi(): void {
 
 /** Clear active combat, run progression, session UI, navigation, and presentation (profile survives). */
 export function teardownRun(): void {
-  dispatchRunSessionCommand(() => {
-    const session = readGameplayState();
-    session.runActions.resetProgress();
-    session.runActions.resetNavigation();
-    session.sessionActions.clearTransientSession();
-    initializeActiveBattle(null);
+  dispatchRunSessionCommand((draft) => {
+    const actions = createGameplayDraftActions(draft);
+    actions.runActions.resetProgress();
+    actions.runActions.resetNavigation();
+    actions.sessionActions.clearTransientSession();
+    initializeActiveBattle(draft, null);
   });
   useUiStore.getState().clearCardHover();
   teardownListeners.forEach((listener) => listener());
@@ -151,12 +201,16 @@ export function flushSaveAfterRunEnd(): void {
 }
 
 /** Apply run-end bookkeeping mutations without opening or flushing a transaction. */
-function finalizeRunEndSessionState(options: {
-  awardRunEndMaterials: (displayMaterials?: MaterialInventory | null) => MaterialInventory;
-  finalizeRunXP: () => void;
-  displayMaterials?: MaterialInventory | null;
-}): MaterialInventory {
-  const aggregate = readGameplayState();
+function finalizeRunEndSessionState(
+  options: {
+    awardRunEndMaterials: (draft: GameplayDraft, displayMaterials?: MaterialInventory | null) => MaterialInventory;
+    finalizeRunXP: (draft: GameplayDraft) => void;
+    displayMaterials?: MaterialInventory | null;
+  },
+  draft: GameplayDraft,
+): MaterialInventory {
+  const aggregate = draft;
+  const actions = createGameplayDraftActions(draft);
   const session = aggregate.session;
   // Re-entry guard: run-end rewards are granted once per active run (menu abandon, defeat, victory).
   if (!session.hasActiveRun) {
@@ -164,42 +218,45 @@ function finalizeRunEndSessionState(options: {
   }
 
   const activeChar = aggregate.run.activeRun.characterId;
-  aggregate.profileActions.setFinishedRunCharacters((prev) => {
+  actions.profileActions.setFinishedRunCharacters((prev) => {
     if (prev.includes(activeChar)) return prev;
     return [...prev, activeChar];
   });
 
-  const materials = options.awardRunEndMaterials(options.displayMaterials);
-  options.finalizeRunXP();
+  const materials = options.awardRunEndMaterials(draft, options.displayMaterials);
+  options.finalizeRunXP(draft);
 
-  aggregate.sessionActions.setHasActiveRun(false);
+  actions.sessionActions.setHasActiveRun(false);
   return materials;
 }
 
 /** Shared run-end bookkeeping: materials, XP, save flush, and clear active-run flag. */
 export function finalizeRunEndSession(options: {
-  awardRunEndMaterials: (displayMaterials?: MaterialInventory | null) => MaterialInventory;
-  finalizeRunXP: () => void;
+  awardRunEndMaterials: (draft: GameplayDraft, displayMaterials?: MaterialInventory | null) => MaterialInventory;
+  finalizeRunXP: (draft: GameplayDraft) => void;
   displayMaterials?: MaterialInventory | null;
 }): MaterialInventory {
-  const materials = dispatchRunSessionCommand(() => finalizeRunEndSessionState(options));
+  const materials = dispatchRunSessionCommand((draft) => finalizeRunEndSessionState(options, draft));
   flushSaveAfterRunEnd();
   return materials;
 }
 
 /** Defeat flow: finalize rewards/XP and combat state in one commit, then run side effects. */
 export function applyRunDefeatTeardown(options: {
-  awardRunEndMaterials: (displayMaterials?: MaterialInventory | null) => MaterialInventory;
-  finalizeRunXP: () => void;
-  clearCombatState: () => void;
+  awardRunEndMaterials: (draft: GameplayDraft, displayMaterials?: MaterialInventory | null) => MaterialInventory;
+  finalizeRunXP: (draft: GameplayDraft) => void;
+  clearCombatState: (draft: GameplayDraft) => void;
   clearCombatPresentation?: () => void;
 }): void {
-  dispatchRunSessionCommand(() => {
-    finalizeRunEndSessionState({
-      awardRunEndMaterials: options.awardRunEndMaterials,
-      finalizeRunXP: options.finalizeRunXP,
-    });
-    options.clearCombatState();
+  dispatchRunSessionCommand((draft) => {
+    finalizeRunEndSessionState(
+      {
+        awardRunEndMaterials: options.awardRunEndMaterials,
+        finalizeRunXP: options.finalizeRunXP,
+      },
+      draft,
+    );
+    options.clearCombatState(draft);
   });
   flushSaveAfterRunEnd();
   stopAllSfx();

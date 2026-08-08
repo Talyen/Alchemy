@@ -1,60 +1,51 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { defaultBattleState } from "@/lib/battle";
 import { getStartingDeck } from "@/lib/game-data";
-import { createActiveRunSnapshot } from "@/lib/active-run-session";
-import { decodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
-import { createRunRngState } from "@/lib/run-rng";
+import { type ActiveRunData } from "@/lib/active-run-session";
+import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
+import { getRunSession } from "@/features/alchemy/shared/stores/run-session-model";
+import type { Screen } from "@/lib/routing";
+import {
+  getRunProgressStoreView,
+  getRunSessionStoreView,
+  resetRunDomainStore,
+  setRunProgress,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
+import { useRunBattleDomainStore } from "../../../../helpers/gameplay-store-test";
 
-const TEST_RNG = createRunRngState(() => 0.5);
-
-function makeSource(
-  overrides: Partial<Parameters<typeof createActiveRunSnapshot>[0]> = {},
-): Parameters<typeof createActiveRunSnapshot>[0] {
-  return {
-    characterId: "knight",
-    runDeck: getStartingDeck("knight"),
-    runGold: 42,
-    runPlayerHealth: 18,
-    runMaxHealth: 32,
-    roomsEncountered: 4,
-    currentAct: 2,
-    destinationIndexInAct: 1,
-    completedDestinations: ["Normal Combat", "Campfire"],
-    lastOfferedDestinations: ["Mystery", "Campfire", "Merchant's Shop"],
-    destinationRoundsSinceOffered: { Mystery: 2 },
-    runTrinkets: ["bone-charm"],
-    encounteredRunEnemyIds: ["goblin"],
-    selectedDifficulty: null,
-    contentSystemType: "campaign",
-    rng: TEST_RNG,
-    labyrinthMap: null,
-    hasActiveBattle: false,
-    battleState: defaultBattleState(),
-    labyrinthPendingNode: null,
-    activeLabyrinthModifiers: [],
-    activeLabyrinthRewardModifiers: [],
-    runTalentXP: {},
-    currentScreen: null,
-    interruptedFlow: { kind: "none" },
-    wildwoodDraft: null,
-    runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
-    shopState: null,
-    alchemistState: null,
-    trinketShopState: null,
-    equipmentShopState: null,
-    ...overrides,
-  };
+/** Encode the live store through the canonical resume codec. */
+function encodeState(screen?: Screen): ActiveRunData {
+  return encodeRunResumeSnapshot(getRunSession(screen), screen);
 }
 
-describe("createActiveRunSnapshot", () => {
+beforeEach(() => {
+  resetRunDomainStore();
+});
+
+describe("encodeRunResumeSnapshot", () => {
   it("copies only persisted active-run fields", () => {
     const runDeck = getStartingDeck("knight");
-    const result = createActiveRunSnapshot(
-      makeSource({
-        runDeck,
-      }),
-    );
+    setRunProgress({
+      characterId: "knight",
+      runDeck,
+      runGold: 42,
+      runPlayerHealth: 18,
+      runMaxHealth: 32,
+      roomsEncountered: 4,
+      currentAct: 2,
+      destinationIndexInAct: 1,
+      completedDestinations: ["Normal Combat", "Campfire"],
+      lastOfferedDestinations: ["Mystery", "Campfire", "Merchant's Shop"],
+      destinationRoundsSinceOffered: { Mystery: 2 },
+      runTrinkets: ["bone-charm"],
+      encounteredRunEnemyIds: ["goblin"],
+      runTalentXP: {},
+      runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+    });
+
+    const result = encodeState("menu");
 
     expect(result).toEqual({
       characterId: "knight",
@@ -73,11 +64,11 @@ describe("createActiveRunSnapshot", () => {
       runTalentXP: {},
       selectedDifficulty: null,
       contentSystemType: "campaign",
-      rng: TEST_RNG,
+      rng: getRunProgressStoreView().rng,
       labyrinthMap: null,
       labyrinthPendingNode: null,
       activeCombat: null,
-      currentScreen: null,
+      currentScreen: "menu",
       interruptedFlow: { kind: "none" },
       shopState: null,
       alchemistState: null,
@@ -89,64 +80,33 @@ describe("createActiveRunSnapshot", () => {
   });
 
   it("includes contentSystemType field defaulting to campaign", () => {
-    const runDeck = getStartingDeck("knight");
-    const result = createActiveRunSnapshot(
-      makeSource({
-        runDeck,
-        runGold: 0,
-        runPlayerHealth: 30,
-        runMaxHealth: 30,
-        roomsEncountered: 0,
-        currentAct: 1,
-        destinationIndexInAct: 0,
-        completedDestinations: [],
-        runTrinkets: [],
-        encounteredRunEnemyIds: [],
-        selectedDifficulty: null,
-        contentSystemType: "campaign",
-        labyrinthMap: null,
-      }),
-    );
+    const result = encodeState("menu");
+
     expect(result.contentSystemType).toBe("campaign");
   });
 
   it("can set contentSystemType to labyrinth", () => {
-    const runDeck = getStartingDeck("knight");
-    const result = createActiveRunSnapshot(
-      makeSource({
-        runDeck,
-        runGold: 0,
-        runPlayerHealth: 30,
-        runMaxHealth: 30,
-        roomsEncountered: 0,
-        currentAct: 1,
-        destinationIndexInAct: 0,
-        completedDestinations: [],
-        runTrinkets: [],
-        encounteredRunEnemyIds: [],
-        selectedDifficulty: null,
-        contentSystemType: "labyrinth",
-        labyrinthMap: null,
-      }),
-    );
+    setRunProgress({ contentSystemType: "labyrinth" });
+
+    const result = encodeState("menu");
+
     expect(result.contentSystemType).toBe("labyrinth");
   });
 
   it("persists active campaign combat state", () => {
     const battleState = { ...defaultBattleState(), turn: 3, playerHealth: 12 };
-    const result = createActiveRunSnapshot(makeSource({ hasActiveBattle: true, battleState }));
+    useRunBattleDomainStore.setState({ hasActiveBattle: true, battleState });
+
+    const result = encodeState();
 
     expect(result.activeCombat?.battleState).toBe(battleState);
   });
 
   it("persists the current state during enemy phase instead of reverting to battle start", () => {
     const enemyPhaseState = { ...defaultBattleState(), turn: 2, turnPhase: "enemy" as const, hand: [] };
-    const result = createActiveRunSnapshot(
-      makeSource({
-        hasActiveBattle: true,
-        battleState: enemyPhaseState,
-      }),
-    );
+    useRunBattleDomainStore.setState({ hasActiveBattle: true, battleState: enemyPhaseState });
+
+    const result = encodeState();
 
     expect(result.activeCombat?.battleState).toBe(enemyPhaseState);
     expect(result.activeCombat!.battleState.turn).toBe(2);
@@ -156,17 +116,17 @@ describe("createActiveRunSnapshot", () => {
   it("persists the computed enemy-turn continuation with the intermediate state", () => {
     const resultState = { ...defaultBattleState(), turn: 3, playerHealth: 20, turnPhase: "player" as const };
     const enemyPhaseState = { ...defaultBattleState(), turn: 2, turnPhase: "enemy" as const, hand: [] };
-    const result = createActiveRunSnapshot(
-      makeSource({
-        hasActiveBattle: true,
-        battleState: enemyPhaseState,
-        pendingBattleTransition: {
-          kind: "enemy-turn",
-          resultState,
-          playerTurnSkipped: false,
-        },
-      }),
-    );
+    useRunBattleDomainStore.setState({
+      hasActiveBattle: true,
+      battleState: enemyPhaseState,
+      pendingBattleTransition: {
+        kind: "enemy-turn",
+        resultState,
+        playerTurnSkipped: false,
+      },
+    });
+
+    const result = encodeState();
 
     expect(result.activeCombat?.pendingBattleTransition).toEqual({
       kind: "enemy-turn",
@@ -176,13 +136,12 @@ describe("createActiveRunSnapshot", () => {
   });
 
   it("marks enemy-phase saves without a pending transition for boot recovery", () => {
-    const activeRun = createActiveRunSnapshot(
-      makeSource({
-        hasActiveBattle: true,
-        battleState: { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] },
-      }),
-    );
+    useRunBattleDomainStore.setState({
+      hasActiveBattle: true,
+      battleState: { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] },
+    });
 
+    const activeRun = encodeState();
     const decoded = decodeRunResumeSnapshot(activeRun);
 
     expect(decoded.pendingBattleTransition).toEqual({ kind: "legacy-enemy-turn" });
@@ -190,15 +149,15 @@ describe("createActiveRunSnapshot", () => {
   });
 
   it("persists labyrinth pending node and modifiers during combat", () => {
-    const result = createActiveRunSnapshot(
-      makeSource({
-        contentSystemType: "labyrinth",
-        hasActiveBattle: true,
-        labyrinthPendingNode: { row: 1, col: 2 },
-        activeLabyrinthModifiers: ["tempered"],
-        activeLabyrinthRewardModifiers: ["generous"],
-      }),
-    );
+    setRunProgress({ contentSystemType: "labyrinth" });
+    setRunSession({
+      activeLabyrinthPendingNode: { row: 1, col: 2 },
+      activeLabyrinthModifiers: ["tempered"],
+      activeLabyrinthRewardModifiers: ["generous"],
+    });
+    useRunBattleDomainStore.setState({ hasActiveBattle: true });
+
+    const result = encodeState();
 
     expect(result.labyrinthPendingNode).toEqual({ row: 1, col: 2 });
     expect(result.activeCombat?.activeLabyrinthModifiers).toEqual(["tempered"]);
@@ -206,45 +165,46 @@ describe("createActiveRunSnapshot", () => {
   });
 
   it("skips active combat when enemy health is zero", () => {
-    const battleState = { ...defaultBattleState(), turn: 5, enemyHealth: 0 };
-    const result = createActiveRunSnapshot(makeSource({ hasActiveBattle: true, battleState }));
+    useRunBattleDomainStore.setState({
+      hasActiveBattle: true,
+      battleState: { ...defaultBattleState(), turn: 5, enemyHealth: 0 },
+    });
+
+    const result = encodeState();
 
     expect(result.activeCombat).toBeNull();
   });
 
   it("skips active combat when player is defeated", () => {
-    const battleState = {
-      ...defaultBattleState(),
-      turn: 3,
-      playerHealth: 0,
-      deathsDoorUsed: true,
-      deathsDoorActive: false,
-    };
-    const result = createActiveRunSnapshot(makeSource({ hasActiveBattle: true, battleState }));
+    useRunBattleDomainStore.setState({
+      hasActiveBattle: true,
+      battleState: {
+        ...defaultBattleState(),
+        turn: 3,
+        playerHealth: 0,
+        deathsDoorUsed: true,
+        deathsDoorActive: false,
+      },
+    });
+
+    const result = encodeState();
 
     expect(result.activeCombat).toBeNull();
   });
 
   it("persists runTalentXP", () => {
     const runTalentXP = { burn: 10, poison: 5 };
-    const result = createActiveRunSnapshot(makeSource({ runTalentXP }));
+    setRunProgress({ runTalentXP });
+
+    const result = encodeState();
 
     expect(result.runTalentXP).toEqual(runTalentXP);
   });
 
   it("persists destination resume fields", () => {
-    const result = createActiveRunSnapshot(
-      makeSource({
-        currentScreen: "destination",
-        interruptedFlow: {
-          kind: "destination",
-          destinations: ["Campfire", "Merchant's Shop"],
-          selectedBossId: null,
-          lastVictoryEnemyType: null,
-          lastVictoryContentSystem: null,
-        },
-      }),
-    );
+    getRunSessionStoreView().setRewardState((prev) => ({ ...prev, destinations: ["Campfire", "Merchant's Shop"] }));
+
+    const result = encodeState("destination");
 
     expect(result.currentScreen).toBe("destination");
     expect(result.interruptedFlow).toEqual({
@@ -271,8 +231,10 @@ describe("createActiveRunSnapshot", () => {
       rewardGearChoices: [],
       selectedRewardId: "slash",
     };
+    setRunProgress({ contentSystemType: "wildwood" });
+    setRunSession({ wildwoodDraft });
 
-    const result = createActiveRunSnapshot(makeSource({ contentSystemType: "wildwood", wildwoodDraft }));
+    const result = encodeState();
 
     expect(result.wildwoodDraft).toEqual(wildwoodDraft);
   });

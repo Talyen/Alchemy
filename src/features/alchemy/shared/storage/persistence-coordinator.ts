@@ -23,10 +23,10 @@ export function encodeAlchemyPersistenceFields(): AlchemyPersistenceFields {
 
 export function hydrateAlchemyPersistenceFields(fields: AlchemyPersistenceFields): void {
   settingsPersistenceCodec.hydrate(fields);
-  dispatchRunSessionCommand(() => {
-    profilePersistenceCodec.hydrate(fields);
-    gearPersistenceCodec.hydrate(fields);
-    runProfilePersistenceCodec.hydrate(fields);
+  dispatchRunSessionCommand((draft) => {
+    profilePersistenceCodec.hydrate(fields, draft);
+    gearPersistenceCodec.hydrate(fields, draft);
+    runProfilePersistenceCodec.hydrate(fields, draft);
   });
 }
 

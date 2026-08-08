@@ -6,7 +6,7 @@
 // operations.
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { produce } from "immer";
+import type { Draft } from "immer";
 import type { CharacterId, DifficultyId, KeywordId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import type { CollectionTab } from "@/features/alchemy/shared/types";
 import type { ProfileSaveFields } from "./profile-store-types";
@@ -35,7 +35,7 @@ export interface ProfileStateFields extends ProfileSaveFields {
   collectionPages: Record<CollectionTab, number>;
 }
 
-export interface ProfileActions {
+interface ProfileActions {
   setDiscoveredCardIds: ProfileStoreSet<string[]>;
   setEncounteredEnemyIds: ProfileStoreSet<string[]>;
   setDiscoveredTrinketIds: ProfileStoreSet<string[]>;
@@ -85,7 +85,7 @@ export interface GameplayState {
   gearActions: GearAggregateActions;
 }
 
-export interface TalentActions {
+interface TalentActions {
   unlockTalent: (keywordId: KeywordId, talentId: string) => void;
   unlockAllTalents: () => void;
   resetUnlockedTalents: () => void;
@@ -94,41 +94,69 @@ export interface TalentActions {
   mergeRunTalentXPIntoProfile: (runTalentXP: TalentXP, multiplier: number) => TalentXP;
 }
 
-let transactionDepth = 0;
-let transactionDraft: GameplayState | null = null;
 type StateUpdate = GameplayState | Partial<GameplayState> | ((state: GameplayState) => unknown);
-let rawSet: ((partial: StateUpdate, replace?: boolean) => void) | null = null;
-let rawGet: (() => GameplayState) | null = null;
-const gameplayCommitListeners = new Set<(revision: number) => void>();
+let publishGameplayState: ((partial: StateUpdate, replace?: boolean) => void) | null = null;
 
-function transactionAwareGet(): GameplayState {
-  return transactionDraft ?? rawGet!();
+function readActiveGameplayState(): GameplayState {
+  return useGameplayStateStore.getState();
 }
 
 type RootSet = (partial: StateUpdate, replace?: boolean) => void;
 
-function transactionAwareSet(partial: Parameters<RootSet>[0], replace?: boolean): void {
-  if (!transactionDraft) {
-    rawSet!(partial, replace);
-    return;
-  }
+function applyActiveGameplayStateUpdate(partial: Parameters<RootSet>[0], replace?: boolean): void {
+  publishGameplayState!(partial, replace);
+}
 
-  const current = transactionDraft;
-  if (typeof partial === "function") {
-    transactionDraft = produce(current, (draft: GameplayState) => {
-      const result = partial(draft);
-      if (result && result !== draft) Object.assign(draft, result);
-    });
-    return;
-  }
+interface GameplayActionGroups {
+  runActions: GameplayState["runActions"];
+  sessionActions: GameplayState["sessionActions"];
+  battleActions: GameplayState["battleActions"];
+  runProfileActions: GameplayState["runProfileActions"];
+  profileActions: GameplayState["profileActions"];
+  gearActions: GameplayState["gearActions"];
+}
 
-  transactionDraft = produce(current, (draft: GameplayState) => {
-    if (replace) {
-      Object.assign(draft, partial);
-      return;
-    }
-    Object.assign(draft, partial);
-  });
+function createActionGroups(rootSet: RootSet, rootGet: () => GameplayState): GameplayActionGroups {
+  const createNestedSet =
+    <T extends object>(select: (state: GameplayState) => T) =>
+    (partial: T | Partial<T> | ((state: T) => unknown), replace = false): void => {
+      rootSet((state) => {
+        const slice = select(state);
+        const next = typeof partial === "function" ? partial(slice) : partial;
+        if (!next || typeof next !== "object" || next === slice) return;
+        void replace;
+        Object.assign(slice, next);
+      });
+    };
+  const setRun = createNestedSet((state) => state.run);
+  const setSession = createNestedSet((state) => state.session);
+  const setBattle = createNestedSet((state) => state.battle);
+  const setRunProfile = createNestedSet((state) => state.runProfile);
+  const setProfile = createNestedSet((state) => state.profile);
+  const setGear = createNestedSet((state) => state.gear);
+  const gearActions = createGearActions(setGear, () => rootGet().gear);
+
+  return {
+    runActions: { ...defineProgressActions(setRun), ...defineNavigationActions(setRun) },
+    sessionActions: defineSessionActions(setSession),
+    battleActions: defineBattleActions(setBattle),
+    runProfileActions: { ...createHomesteadProfileActions(setRunProfile), ...createTalentActions(setRunProfile) },
+    profileActions: createProfileActions(setProfile),
+    gearActions: {
+      gearInitialize: gearActions.initialize,
+      gearAddInstance: gearActions.addInstance,
+      gearTransferToInventory: gearActions.transferToInventory,
+      gearEquip: gearActions.equip,
+      gearUnequip: gearActions.unequip,
+      gearMoveBoardItem: gearActions.moveBoardItem,
+      gearSyncBoardPositions: gearActions.syncBoardPositions,
+      gearSortBoard: gearActions.sortBoard,
+      gearSalvage: gearActions.salvage,
+      gearApplyCurrency: gearActions.applyCurrency,
+      gearAddCurrencies: gearActions.addCurrencies,
+      gearReset: gearActions.reset,
+    },
+  };
 }
 
 function createInitialProfileState(): ProfileStateFields {
@@ -214,66 +242,25 @@ function createProfileActions(set: (fn: (state: ProfileStateFields) => void) => 
 }
 
 export const useGameplayStateStore = create<GameplayState>()(
-  immer((set, get) => {
-    rawGet = get;
-    rawSet = (partial) => {
-      if (typeof partial === "function") {
-        set((state) => {
+  immer((set) => {
+    publishGameplayState = (partial) => {
+      set((state) => {
+        if (typeof partial === "function") {
           const result = partial(state);
           if (result && result !== state) Object.assign(state, result);
-          state.revision += 1;
-        });
-        for (const listener of gameplayCommitListeners) listener(get().revision);
-        return;
-      }
-      set((state) => {
-        Object.assign(state, partial);
+        } else {
+          Object.assign(state, partial);
+        }
         state.revision += 1;
       });
-      for (const listener of gameplayCommitListeners) listener(get().revision);
     };
-    const rootSet = transactionAwareSet;
-    const rootGet = transactionAwareGet;
     const runDomain = createInitialRunDomainData();
     const session = createInitialSessionFields();
     const battle = createInitialBattleFields();
     const profile = createInitialPermanentFields();
     const collection = createInitialProfileState();
     const gear = initialGearState;
-    const createNestedSet =
-      <T extends object>(select: (state: GameplayState) => T) =>
-      (partial: T | Partial<T> | ((state: T) => unknown), replace = false): void => {
-        rootSet((state) => {
-          const slice = select(state);
-          const next = typeof partial === "function" ? partial(slice) : partial;
-          if (!next || typeof next !== "object" || next === slice) return;
-          // Slice setters historically accept a `replace` flag, but nested
-          // domain setters only ever receive partial domain updates. Keeping
-          // the existing fields avoids dynamically deleting keys from a draft.
-          void replace;
-          Object.assign(slice, next);
-        });
-      };
-    const setRun = createNestedSet((state) => state.run);
-    const setSession = createNestedSet((state) => state.session);
-    const setBattle = createNestedSet((state) => state.battle);
-    const setRunProfile = createNestedSet((state) => state.runProfile);
-    const setProfile = createNestedSet((state) => state.profile);
-    const getGear = () => rootGet().gear;
-    const setGear = createNestedSet((state) => state.gear);
-
-    const runActions = {
-      ...defineProgressActions(setRun),
-      ...defineNavigationActions(setRun),
-    };
-    const sessionActions = defineSessionActions(setSession);
-    const battleActions = defineBattleActions(setBattle);
-    const runProfileActions = {
-      ...createHomesteadProfileActions(setRunProfile),
-      ...createTalentActions(setRunProfile),
-    };
-    const profileActions = createProfileActions(setProfile);
-    const gearActions = createGearActions(setGear, getGear);
+    const actions = createActionGroups(applyActiveGameplayStateUpdate, readActiveGameplayState);
 
     return {
       revision: 0,
@@ -283,67 +270,32 @@ export const useGameplayStateStore = create<GameplayState>()(
       runProfile: profile,
       profile: collection,
       gear,
-      runActions,
-      sessionActions,
-      battleActions,
-      runProfileActions,
-      profileActions,
-      gearActions: {
-        gearInitialize: gearActions.initialize,
-        gearAddInstance: gearActions.addInstance,
-        gearTransferToInventory: gearActions.transferToInventory,
-        gearEquip: gearActions.equip,
-        gearUnequip: gearActions.unequip,
-        gearMoveBoardItem: gearActions.moveBoardItem,
-        gearSyncBoardPositions: gearActions.syncBoardPositions,
-        gearSortBoard: gearActions.sortBoard,
-        gearSalvage: gearActions.salvage,
-        gearApplyCurrency: gearActions.applyCurrency,
-        gearAddCurrencies: gearActions.addCurrencies,
-        gearReset: gearActions.reset,
-      },
+      ...actions,
     };
   }),
 );
 
 export function readGameplayState(): GameplayState {
-  return transactionAwareGet();
+  return readActiveGameplayState();
 }
 
-/**
- * Open a gameplay transaction. Returns true when this call opens the outermost
- * (first) level of nesting; the command boundary uses that to (re)initialize its
- * per-transaction effect list. The single depth counter lives here so the store
- * and the command never drift on when the draft is finally published.
- */
-export function beginGameplayTransaction(): boolean {
-  const isOuter = transactionDepth === 0;
-  if (isOuter) transactionDraft = useGameplayStateStore.getState();
-  transactionDepth += 1;
-  return isOuter;
-}
-
-/**
- * Close one transaction level. Returns true when this closes the outermost level
- * and the aggregate was published (on success) or discarded (on rollback).
- * Nested levels only decrement the depth and never publish the draft.
- */
-export function commitGameplayTransaction(success: boolean): boolean {
-  transactionDepth -= 1;
-  if (transactionDepth > 0) return false;
-  const next = transactionDraft;
-  const previous = useGameplayStateStore.getState();
-  transactionDraft = null;
-  transactionDepth = 0;
-  if (success && next && next !== previous) rawSet!(next, true);
-  return true;
+/** Create action groups whose setters mutate the supplied Immer draft in place. */
+export function createGameplayDraftActions(draft: Draft<GameplayState>): GameplayActionGroups {
+  const draftSet: RootSet = (partial) => {
+    if (typeof partial === "function") {
+      const result = partial(draft);
+      if (result && result !== draft) Object.assign(draft, result);
+      return;
+    }
+    Object.assign(draft, partial);
+  };
+  return createActionGroups(draftSet, () => draft);
 }
 
 export function applyGameplayStateUpdate(partial: StateUpdate, replace?: boolean): void {
-  transactionAwareSet(partial, replace);
+  applyActiveGameplayStateUpdate(partial, replace);
 }
 
 export function subscribeGameplayCommits(listener: (revision: number) => void): () => void {
-  gameplayCommitListeners.add(listener);
-  return () => gameplayCommitListeners.delete(listener);
+  return useGameplayStateStore.subscribe((state) => listener(state.revision));
 }
