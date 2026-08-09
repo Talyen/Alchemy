@@ -50,14 +50,66 @@ describe("createMixedPotion", () => {
     expect(mixed.descriptionLines).toContain("Consume");
   });
 
-  it("deduplicates description lines when mixing different potions", () => {
+  it("combines description lines and normalizes Consume to one final line", () => {
     const mixed = createMixedPotion(healPotion, firePotion);
 
-    expect(mixed.descriptionLines).toContain("Heal 5 Health");
-    expect(mixed.descriptionLines).toContain("Deal 8 Burn damage");
-    expect(mixed.descriptionLines).toContain("Consume");
-    // Consume should appear exactly once
-    expect(mixed.descriptionLines.filter((l) => l === "Consume")).toHaveLength(1);
+    expect(mixed.descriptionLines).toEqual(["Heal 5 Health", "Deal 8 Burn damage", "Consume"]);
+  });
+
+  it("preserves repeated description lines from different cards to match concatenated effects", () => {
+    const manaPotionA = makePotion({
+      id: "mana-potion-a",
+      descriptionLines: ["Restore 2 Mana", "Consume"],
+      effects: [{ kind: "restore-mana", amount: 2 }],
+    });
+    const manaPotionB = makePotion({
+      id: "mana-potion-b",
+      descriptionLines: ["Restore 2 Mana", "Consume"],
+      effects: [{ kind: "restore-mana", amount: 2 }],
+    });
+    const mixed = createMixedPotion(manaPotionA, manaPotionB);
+
+    expect(mixed.effects).toHaveLength(2);
+    expect(mixed.descriptionLines).toEqual(["Restore 2 Mana", "Restore 2 Mana", "Consume"]);
+  });
+
+  it("applies potencyBonus to effects and matching description numbers", () => {
+    const mixed = createMixedPotion(healPotion, firePotion, 2);
+
+    expect(mixed.effects[0]).toEqual({ kind: "heal", amount: 7 });
+    expect(mixed.effects[1]).toEqual({ kind: "damage", damageType: "burn", amount: 10 });
+    expect(mixed.descriptionLines).toEqual(["Heal 7 Health", "Deal 10 Burn damage", "Consume"]);
+  });
+
+  it("does not mutate non-effect numbers in card descriptions", () => {
+    const complexPotion = makePotion({
+      id: "complex-potion",
+      descriptionLines: ["Deal 10 damage for 2 turns", "Consume"],
+      effects: [{ kind: "damage", damageType: "poison", amount: 10 }],
+    });
+    const mixed = createMixedPotion(complexPotion, complexPotion, 3);
+
+    // Amount doubles (10 * 2 + 3 = 23), but "2 turns" is untouched
+    expect(mixed.effects[0]).toEqual({ kind: "damage", damageType: "poison", amount: 23 });
+    expect(mixed.descriptionLines).toEqual(["Deal 23 damage for 2 turns", "Consume"]);
+  });
+
+  it("does not cascade-replace numbers when a scaled amount matches another base effect amount", () => {
+    const multiEffectPotion = makePotion({
+      id: "hybrid-potion",
+      descriptionLines: ["Deal 5 Fire damage", "Gain 10 Block", "Consume"],
+      effects: [
+        { kind: "damage", damageType: "burn", amount: 5 },
+        { kind: "player-status", status: "block", amount: 10 },
+      ],
+    });
+    // Doubling: 5 -> 10, 10 -> 20.
+    // In old buggy logic: 5 -> 10, then pass for 10 converted the "10" (which was 5) into 20!
+    const mixed = createMixedPotion(multiEffectPotion, multiEffectPotion);
+
+    expect(mixed.effects[0]).toEqual({ kind: "damage", damageType: "burn", amount: 10 });
+    expect(mixed.effects[1]).toEqual({ kind: "player-status", status: "block", amount: 20 });
+    expect(mixed.descriptionLines).toEqual(["Deal 10 Fire damage", "Gain 20 Block", "Consume"]);
   });
 
   it("throws when mixing with an existing Mixed Potion", () => {
@@ -136,6 +188,13 @@ describe("applyMixToDeck", () => {
     const result = applyMixToDeck(deck, 0, 1, mixed);
 
     expect(result[result.length - 1].id).toBe(mixed.id);
+  });
+
+  it("throws on identical indices or out-of-bounds indices", () => {
+    const deck = [potionA, potionB, potionC];
+    expect(() => applyMixToDeck(deck, 1, 1, mixed)).toThrow("Invalid potion indices for mixing");
+    expect(() => applyMixToDeck(deck, -1, 1, mixed)).toThrow("Invalid potion indices for mixing");
+    expect(() => applyMixToDeck(deck, 0, 5, mixed)).toThrow("Invalid potion indices for mixing");
   });
 });
 

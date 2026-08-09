@@ -11,7 +11,7 @@ import type {
 } from "@/lib/active-run-session";
 import { filterValidDestinations, type Destination } from "@/lib/routing";
 import { createEmptyRewardState } from "@/lib/active-run-session/reward-types";
-import { defineNestedFieldSetter, type ImmerSet } from "./_field-setter";
+import { defineFieldSetter, type ImmerSet } from "./_field-setter";
 import { createInitialSessionFields, type RunSessionFields } from "../run-domain-types";
 
 export interface SessionActions {
@@ -55,7 +55,7 @@ export interface SessionActions {
 
 /** Transient run-session actions over root-level {@link RunSessionFields}. */
 export function defineSessionActions(set: ImmerSet<RunSessionFields>): SessionActions {
-  const setField = defineNestedFieldSetter<RunSessionFields, RunSessionFields>(set, (state) => state);
+  const setField = defineFieldSetter(set);
 
   return {
     setHasActiveRun: setField("hasActiveRun"),

@@ -6,10 +6,9 @@ import {
   setTrinketShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { TalentEffectManifest, TrinketEntry } from "@/lib/game-data";
-import { purchaseShopOffering, refreshShopOfferings } from "../shop-transactions";
+import { computeMerchantRefreshPrice, computeTrinketBuyPrice } from "./shop-pricing";
+import { playShopSpendFeedback, purchaseShopOffering, refreshShopOfferings } from "./shop-transactions";
 import type { TrinketShopCommands } from "./shop-action-types";
-import { playShopSpendFeedback } from "./shop-feedback";
-import { computeMerchantRefreshPrice, computeTrinketBuyPrice } from "./shop-price-selectors";
 import { createInitialTrinketShopState, resampleTrinketShopOfferings, type TrinketShopState } from "./shop-state-init";
 
 export function createTrinketShopCommands({

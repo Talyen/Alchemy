@@ -12,7 +12,6 @@ export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Forge", keywordId: "forge" },
   { match: "Armor", keywordId: "armor" },
   { match: "Health", keywordId: "health" },
-  { match: "Burn", keywordId: "burn" },
   { match: "Gold", keywordId: "gold" },
   { match: "Holy", keywordId: "holy" },
   { match: "Wish", keywordId: "wish" },
@@ -36,9 +35,12 @@ export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Mana Crystal", keywordId: "mana" },
   { match: "Mana", keywordId: "mana" },
   { match: "Nature", keywordId: "nature" },
-  { match: "Companion", keywordId: "companion" },
   { match: "Archery", keywordId: "archery" },
 ];
+
+export const keywordAliasMap = new Map<string, KeywordId>(
+  keywordAliases.map((alias) => [alias.match.toLowerCase(), alias.keywordId]),
+);
 
 // Pre-compiled regex for keyword highlighting so card description rendering
 // does not rebuild this expression on every render.

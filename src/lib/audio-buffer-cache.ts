@@ -2,8 +2,7 @@
 // Depends on sound registries and the shared audio state.
 // Used by SFX playback to keep repeated combat/UI sounds instant after first decode.
 import { battleEventSounds, cardSounds, enemyAttackSounds, stingerSounds, uiSounds } from "./sound-registry";
-import { MASTER_GAIN } from "./game-constants";
-import { audioState } from "./audio-state";
+import { audioState, syncMasterGain } from "./audio-state";
 import { logError } from "./error-logger";
 
 // Configuration for local buffer caching and preloading.
@@ -27,8 +26,7 @@ export function getAudioContext(): AudioContext {
     audioState.masterGain = audioState.context.createGain();
     audioState.masterGain.connect(audioState.context.destination);
 
-    // Cascades: masterGain = constant_master_gain * user_master_volume
-    audioState.masterGain.gain.value = audioState.muted ? 0 : MASTER_GAIN * audioState.masterVolume;
+    syncMasterGain();
   }
   return audioState.context;
 }

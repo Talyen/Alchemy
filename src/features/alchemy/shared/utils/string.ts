@@ -1,7 +1,7 @@
 // Description tokenization for keyword-highlighted rules text.
 // Depends on keyword alias metadata and description part types.
 // Used by card/detail UI so keyword matching stays consistent across descriptions.
-import { keywordAliases, keywordPattern } from "../config";
+import { keywordAliasMap, keywordPattern } from "../config";
 import type { DescriptionPart } from "../types";
 
 export function tokenizeDescription(line: string) {
@@ -13,9 +13,7 @@ export function tokenizeDescription(line: string) {
   for (const match of matches) {
     const matchedText = match[0];
     const matchIndex = match.index ?? 0;
-    const keywordId = keywordAliases.find(
-      (alias) => alias.match.toLowerCase() === matchedText.toLowerCase(),
-    )?.keywordId;
+    const keywordId = keywordAliasMap.get(matchedText.toLowerCase());
     if (matchIndex > lastIndex) pieces.push({ text: line.slice(lastIndex, matchIndex) });
     if (keywordId) pieces.push({ text: matchedText, keywordId });
     else pieces.push({ text: matchedText });

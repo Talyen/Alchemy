@@ -13,7 +13,7 @@ import {
   type ActiveRunProgressFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
-import { defineNestedFieldSetter, type ImmerSet } from "./_field-setter";
+import { defineFieldSetter, type ImmerSet } from "./_field-setter";
 import type { RunDomainDataState } from "../run-domain-types";
 import { nextRunRngValue, type RunRngStream } from "@/lib/run-rng";
 import type { ActiveRunData } from "@/lib/active-run-session";
@@ -66,10 +66,7 @@ export interface ProgressActions {
 
 /** Active-run progression actions (deck, gold, HP, acts, run tallies, RNG). */
 export function defineProgressActions(set: ImmerSet<RunDomainDataState>): ProgressActions {
-  const setRunField = defineNestedFieldSetter<ActiveRunProgressFields, RunDomainDataState>(
-    set,
-    (state) => state.activeRun,
-  );
+  const setRunField = defineFieldSetter(set, (state) => state.activeRun);
 
   return {
     setRunDeck: setRunField("runDeck"),

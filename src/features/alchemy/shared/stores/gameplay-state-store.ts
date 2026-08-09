@@ -18,6 +18,7 @@ import { defineSessionActions, type SessionActions } from "./slices/session-slic
 import { defineBattleActions, type BattleActions } from "./slices/battle-slice";
 import { defineNavigationActions, type NavigationActions } from "./slices/navigation-slice";
 import { createHomesteadProfileActions, type HomesteadProfileActions } from "./slices/progress-homestead-actions";
+import { defineFieldSetter } from "./slices/_field-setter";
 import {
   computeRunEndTalentXPSnapshot,
   mergeRunTalentXPIntoPermanent,
@@ -232,18 +233,14 @@ function createTalentActions(set: (fn: (state: PermanentProgressFields) => void)
 }
 
 function createProfileActions(set: (fn: (state: ProfileStateFields) => void) => void): ProfileActions {
-  const update = <T>(key: keyof ProfileStateFields, value: T | ((previous: T) => T)) =>
-    set((state) => {
-      const previous = state[key] as T;
-      (state[key] as T) = typeof value === "function" ? (value as (previous: T) => T)(previous) : value;
-    });
+  const setField = defineFieldSetter(set);
 
   return {
-    setDiscoveredCardIds: (value) => update("discoveredCardIds", value),
-    setEncounteredEnemyIds: (value) => update("encounteredEnemyIds", value),
-    setDiscoveredTrinketIds: (value) => update("discoveredTrinketIds", value),
-    setCompletedDifficulties: (value) => update("completedDifficulties", value),
-    setFinishedRunCharacters: (value) => update("finishedRunCharacters", value),
+    setDiscoveredCardIds: setField("discoveredCardIds"),
+    setEncounteredEnemyIds: setField("encounteredEnemyIds"),
+    setDiscoveredTrinketIds: setField("discoveredTrinketIds"),
+    setCompletedDifficulties: setField("completedDifficulties"),
+    setFinishedRunCharacters: setField("finishedRunCharacters"),
     setCollectionPage: (tab, page) =>
       set((state) => {
         state.collectionPages[tab] = Math.max(0, page);

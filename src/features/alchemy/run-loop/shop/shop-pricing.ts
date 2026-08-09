@@ -1,6 +1,19 @@
-// Shared shop price computation for purchases, services, and refreshes.
-import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
+// Shop price calculations, gear pricing, and price selectors.
+import {
+  ALCHEMIST_MIX_PRICE,
+  ALCHEMIST_POTION_PRICE,
+  ALCHEMIST_REFRESH_PRICE,
+  EQUIPMENT_SHOP_ASTRAL_PRICE,
+  EQUIPMENT_SHOP_BASIC_PRICE,
+  SHOP_CARD_PRICE,
+  SHOP_REFRESH_PRICE,
+  SHOP_REMOVE_PRICE,
+  TRINKET_SHOP_TRINKET_PRICE,
+} from "@/lib/game-constants";
+import { type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import { isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
+import { gearDefinitions, type GearInstance } from "@/lib/gear";
+import { computeTrinketManifest } from "@/lib/trinkets";
 
 export interface ShopBuyPriceInput {
   basePrice: number;
@@ -8,6 +21,17 @@ export interface ShopBuyPriceInput {
   apothecaryDiscount?: number;
   merchantsFavorDiscount?: number;
   firstPurchaseUsed: boolean;
+}
+
+export interface ShopBuyPriceContext {
+  talentEffects: TalentEffectManifest;
+  runTrinkets: string[];
+  firstPurchaseUsed: boolean;
+}
+
+export function getEquipmentShopPrice(instance: GearInstance): number {
+  const rarity = gearDefinitions[instance.definitionId]?.rarity;
+  return rarity === "astral" ? EQUIPMENT_SHOP_ASTRAL_PRICE : EQUIPMENT_SHOP_BASIC_PRICE;
 }
 
 export function computeShopBuyPrice(input: ShopBuyPriceInput): number {
@@ -42,4 +66,49 @@ export function getGenericBuyTalentDiscounts(talents: Pick<TalentEffectManifest,
   apothecaryDiscount: number;
 } {
   return { haggleDiscount: talents.shopCardDiscount, apothecaryDiscount: 0 };
+}
+
+function computeBuyPrice(
+  basePrice: number,
+  discounts: { haggleDiscount: number; apothecaryDiscount: number },
+  context: ShopBuyPriceContext,
+): number {
+  return computeShopBuyPrice({
+    basePrice,
+    ...discounts,
+    merchantsFavorDiscount: computeTrinketManifest(context.runTrinkets).merchantsFavorDiscount,
+    firstPurchaseUsed: context.firstPurchaseUsed,
+  });
+}
+
+export function computeMerchantCardBuyPrice(card: BattleCard, context: ShopBuyPriceContext): number {
+  return computeBuyPrice(SHOP_CARD_PRICE, getCardBuyTalentDiscounts(card, context.talentEffects), context);
+}
+
+export function computeAlchemistPotionBuyPrice(card: BattleCard, context: ShopBuyPriceContext): number {
+  return computeBuyPrice(ALCHEMIST_POTION_PRICE, getCardBuyTalentDiscounts(card, context.talentEffects), context);
+}
+
+export function computeTrinketBuyPrice(context: ShopBuyPriceContext): number {
+  return computeBuyPrice(TRINKET_SHOP_TRINKET_PRICE, getGenericBuyTalentDiscounts(context.talentEffects), context);
+}
+
+export function computeGearBuyPrice(instance: GearInstance, context: ShopBuyPriceContext): number {
+  return computeBuyPrice(getEquipmentShopPrice(instance), getGenericBuyTalentDiscounts(context.talentEffects), context);
+}
+
+export function computeMerchantRefreshPrice(talentEffects: TalentEffectManifest, refreshesLeft: number): number {
+  return computeShopRefreshPrice(SHOP_REFRESH_PRICE, talentEffects.shopFreeRefresh, refreshesLeft);
+}
+
+export function computeAlchemistRefreshPrice(talentEffects: TalentEffectManifest, refreshesLeft: number): number {
+  return computeShopRefreshPrice(ALCHEMIST_REFRESH_PRICE, talentEffects.shopFreeRefresh, refreshesLeft);
+}
+
+export function computeRemoveCardPrice(talentEffects: TalentEffectManifest): number {
+  return computeShopServicePrice(SHOP_REMOVE_PRICE, talentEffects.removeCardDiscount);
+}
+
+export function computeMixPotionPrice(talentEffects: TalentEffectManifest): number {
+  return computeShopServicePrice(ALCHEMIST_MIX_PRICE, talentEffects.mixPotionDiscount);
 }

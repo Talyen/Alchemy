@@ -2,7 +2,7 @@ import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import type { BattleState } from "@/lib/battle";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import { createInitialBattleFields, type DisplayOverrides, type RunDomainBattleState } from "../run-domain-types";
-import { defineNestedFieldSetter, type ImmerSet } from "./_field-setter";
+import { defineFieldSetter, type ImmerSet } from "./_field-setter";
 
 function hydrateBattleState(battleState: BattleState): BattleState {
   return {
@@ -41,7 +41,7 @@ export interface BattleActions {
 
 /** Active-combat actions over root-level {@link RunDomainBattleState}. */
 export function defineBattleActions(set: ImmerSet<RunDomainBattleState>): BattleActions {
-  const setField = defineNestedFieldSetter<RunDomainBattleState, RunDomainBattleState>(set, (state) => state);
+  const setField = defineFieldSetter(set);
 
   return {
     setSyncedBattleState: (action) =>

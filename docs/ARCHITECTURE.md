@@ -137,7 +137,7 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 
 `useShopController` memoizes one domain-shaped command surface: `initialize(kind)` plus `merchant`, `alchemist`, `trinket`, and `equipment` command groups. `create-shop-actions.ts` is composition only; each shop's initialization, purchases, services, refreshes, and live price selectors belong to its matching `*-shop-commands.ts` module. Route assembly consumes the nested groups directly, while destination and Labyrinth routing receive only the shared `initialize(kind)` capability.
 
-Shared recipes in `run-loop/shop-transactions.ts` operate on the active command draft and return an explicit `ShopTransactionResult`; they do not dispatch commands or play audio. Domain commands calculate guarded prices from that same draft, own the single `dispatchRunSessionCommand()` boundary, and trigger spend feedback only after the command returns. Equipment acquisition remains in `equipment-shop-commands.ts` and must use `dispatchGearMutationWithRunHealthSync()` so permanent Gear and active-run health commit atomically.
+Shared recipes in `run-loop/shop/shop-transactions.ts` operate on the active command draft and return an explicit `ShopTransactionResult`; they do not dispatch commands or play audio. Domain commands calculate guarded prices from that same draft, own the single `dispatchRunSessionCommand()` boundary, and trigger spend feedback only after the command returns. Equipment acquisition remains in `equipment-shop-commands.ts` and must use `dispatchGearMutationWithRunHealthSync()` so permanent Gear and active-run health commit atomically.
 
 ## Settings and meta profile
 

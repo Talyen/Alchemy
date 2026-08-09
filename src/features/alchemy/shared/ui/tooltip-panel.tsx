@@ -95,33 +95,36 @@ export function measureTooltipPlacement(
 
 function useTooltipPlacementMeasure(padding: number, trigger?: unknown) {
   const ref = useRef<HTMLDivElement>(null);
-  const [flip, setFlip] = useState(false);
-  const [dx, setDx] = useState(0);
-  const [prevTrigger, setPrevTrigger] = useState(trigger);
-
-  if (trigger !== prevTrigger) {
-    setPrevTrigger(trigger);
-    setFlip(false);
-    setDx(0);
-  }
+  const [placement, setPlacement] = useState<{ flip: boolean; dx: number }>({ flip: false, dx: 0 });
+  const prevTriggerRef = useRef(trigger);
 
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
 
+    const triggerChanged = prevTriggerRef.current !== trigger;
+    if (triggerChanged) {
+      prevTriggerRef.current = trigger;
+    }
+
     const rect = el.getBoundingClientRect();
     const bounds = getVrStageBounds();
 
-    if (!flip && rect.top < bounds.top + padding) {
-      setFlip(true);
+    const isFlipped = triggerChanged ? false : placement.flip;
+    if (!isFlipped && rect.top < bounds.top + padding) {
+      const { dx } = measureTooltipPlacement(rect, padding, bounds);
+      setPlacement({ flip: true, dx });
       return;
     }
 
     const { dx: nextDx } = measureTooltipPlacement(rect, padding, bounds);
-    setDx(nextDx);
-  }, [flip, padding, trigger]);
+    setPlacement((prev) => {
+      const nextFlip = triggerChanged ? false : prev.flip;
+      return prev.flip === nextFlip && prev.dx === nextDx ? prev : { flip: nextFlip, dx: nextDx };
+    });
+  }, [placement.flip, padding, trigger]);
 
-  return { ref, flip, dx };
+  return { ref, flip: placement.flip, dx: placement.dx };
 }
 
 // Standard layout measurement hook for tooltips that flip below if clipping.
@@ -149,37 +152,31 @@ export function tooltipSideAnchorClass(placement: SidePlacement): string {
 export function useTooltipSidePlacement(preferred: SidePlacement, trigger?: unknown, padding = 8) {
   const ref = useRef<HTMLDivElement>(null);
   const [placement, setPlacement] = useState<SidePlacement>(preferred);
-  const [prevTrigger, setPrevTrigger] = useState(trigger);
-
-  if (trigger !== prevTrigger) {
-    setPrevTrigger(trigger);
-    setPlacement(preferred);
-  }
+  const prevTriggerRef = useRef(trigger);
 
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
 
+    const triggerChanged = prevTriggerRef.current !== trigger;
+    if (triggerChanged) {
+      prevTriggerRef.current = trigger;
+    }
+
+    const currentPlacement = triggerChanged ? preferred : placement;
     const rect = el.getBoundingClientRect();
     const bounds = getVrStageBounds();
 
-    if (placement === "side-end" && rect.left < bounds.left + padding) {
-      setPlacement("side-start");
-      return;
+    let nextPlacement = currentPlacement;
+    if (currentPlacement === "side-end" && rect.left < bounds.left + padding) {
+      nextPlacement = "side-start";
+    } else if (currentPlacement === "side-start" && rect.right > bounds.right - padding) {
+      nextPlacement = "side-end";
+    } else if (rect.left < bounds.left + padding && rect.right > bounds.right - padding) {
+      nextPlacement = preferred;
     }
 
-    if (placement === "side-start" && rect.right > bounds.right - padding) {
-      setPlacement("side-end");
-      return;
-    }
-
-    if (
-      (placement === "side-start" || placement === "side-end") &&
-      rect.left < bounds.left + padding &&
-      rect.right > bounds.right - padding
-    ) {
-      setPlacement(preferred);
-    }
+    setPlacement((prev) => (prev === nextPlacement ? prev : nextPlacement));
   }, [placement, padding, preferred, trigger]);
 
   return { ref, placement };

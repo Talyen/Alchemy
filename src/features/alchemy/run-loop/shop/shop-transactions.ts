@@ -1,8 +1,9 @@
-// Shared draft-level shop recipes. Callers own the surrounding command and post-commit feedback.
+// Shared draft-level shop recipes and spend feedback.
 import { selectRewardCards, type BattleCard } from "@/lib/game-data";
+import { playGoldSpend } from "@/lib/audio";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { spendRunGold } from "./run-gold";
+import { spendRunGold } from "../run-gold";
 
 type StateUpdate<T> = T | ((previous: T) => T);
 export type DraftStateWriter<T> = (draft: GameplayDraft, value: StateUpdate<T>) => void;
@@ -11,6 +12,10 @@ export interface ShopTransactionResult<T = undefined> {
   committed: boolean;
   price: number;
   value: T;
+}
+
+export function playShopSpendFeedback(result: Pick<ShopTransactionResult<unknown>, "committed" | "price">): void {
+  if (result.committed && result.price > 0) playGoldSpend();
 }
 
 interface PurchaseShopOfferingInput<TState extends { firstPurchaseUsed: boolean; purchasedSlotKeys: string[] }> {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { refreshCardShopOfferings, refreshShopOfferings } from "@/features/alchemy/run-loop/shop-transactions";
+import { refreshCardShopOfferings, refreshShopOfferings } from "@/features/alchemy/run-loop/shop/shop-transactions";
 import { createInitialShopState } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import {
   createRunSessionCommand,

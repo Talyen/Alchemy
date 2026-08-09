@@ -15,14 +15,6 @@ interface PlaySoundOptions {
   trackForCleanup?: boolean;
 }
 
-// Grouped local constants and settings for SFX playback.
-const SFX_CONFIG = {
-  MS_PER_SECOND: 1000,
-  GOLD_GAIN_CARD_KEY: "steal",
-  VOLUME_DEFAULT: 1.0,
-  DELAY_DEFAULT: 0.0,
-} as const;
-
 // Battle-tracked sources stopped by stopAllSfx so combat audio cannot leak across rooms.
 const activeSfxSources = new Set<AudioBufferSourceNode>();
 
@@ -31,12 +23,7 @@ let sfxStopToken = 0;
 
 // Shared source-node setup so both sync and async paths don't duplicate code.
 // Sets up the gain nodes and links them to the master audio context.
-function playDecodedBuffer(
-  buffer: AudioBuffer,
-  volume: number,
-  delay: number = SFX_CONFIG.DELAY_DEFAULT,
-  trackForCleanup: boolean = true,
-) {
+function playDecodedBuffer(buffer: AudioBuffer, volume: number, delay: number = 0, trackForCleanup: boolean = true) {
   const ctx = getAudioContext();
   const source = ctx.createBufferSource();
   source.buffer = buffer;
@@ -76,18 +63,13 @@ export function stopAllSfx() {
 // delay of loadSoundBuffer, preventing lag between user interaction and audio response.
 function playBuffer(
   name: string,
-  {
-    volume = SFX_CONFIG.VOLUME_DEFAULT,
-    delay = SFX_CONFIG.DELAY_DEFAULT,
-    cooldownMs = SFX_COOLDOWN_MS,
-    trackForCleanup = true,
-  }: PlaySoundOptions = {},
+  { volume = 1.0, delay = 0, cooldownMs = SFX_COOLDOWN_MS, trackForCleanup = true }: PlaySoundOptions = {},
 ) {
   if (audioState.muted) return;
   if (!audioState.audioUnlocked) return;
 
   const playToken = sfxStopToken;
-  const scheduledAt = performance.now() + delay * SFX_CONFIG.MS_PER_SECOND;
+  const scheduledAt = performance.now() + delay * 1000;
   const last = audioState.lastPlayedAt.get(name) ?? 0;
 
   // Rate-limiting check to prevent loud, rapid-fire overlapping plays of the exact same sound.
@@ -116,18 +98,14 @@ export function playCardSound(cardId: string) {
   playBuffer(sound);
 }
 
-// Reuses Steal's coin flourish for generic gold gains.
+// Plays gold gain sound effect.
 export function playGoldGain() {
-  const sound = pickRandom(cardSounds[SFX_CONFIG.GOLD_GAIN_CARD_KEY] ?? []);
-  if (!sound) return;
-  playBuffer(sound);
+  playBattleEvent("gainGold");
 }
 
-// Reuses Steal's coin flourish for generic gold spending.
+// Plays gold spend sound effect.
 export function playGoldSpend() {
-  const sound = pickRandom(cardSounds[SFX_CONFIG.GOLD_GAIN_CARD_KEY] ?? []);
-  if (!sound) return;
-  playBuffer(sound);
+  playBattleEvent("gainGold");
 }
 
 // Plays an enemy-specific attack sound when one is registered.

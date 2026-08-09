@@ -20,6 +20,7 @@ import {
   moveBoardItemForState,
   sortBoardForCharacter,
   omitGearPosition,
+  positionsByCharacterEqual,
   EMPTY_CRAFTING_CURRENCIES,
 } from "@/lib/gear";
 import type { GearStore } from "./gear-store-types";
@@ -33,24 +34,6 @@ export type GearActions = Omit<GearStore, keyof GearStateFields>;
 
 type SetState = (partial: Partial<GearStateFields> | ((state: GearStateFields) => unknown), replace?: boolean) => void;
 type GetState = () => GearStateFields;
-
-function boardPositionRegistriesEqual(
-  left: Record<string, Record<string, { col: number; row: number } | undefined>>,
-  right: Record<string, Record<string, { col: number; row: number } | undefined>>,
-): boolean {
-  const characterIds = new Set([...Object.keys(left), ...Object.keys(right)]);
-  for (const characterId of characterIds) {
-    const leftPositions = left[characterId] ?? {};
-    const rightPositions = right[characterId] ?? {};
-    const positionIds = new Set([...Object.keys(leftPositions), ...Object.keys(rightPositions)]);
-    for (const positionId of positionIds) {
-      const leftPosition = leftPositions[positionId];
-      const rightPosition = rightPositions[positionId];
-      if (leftPosition?.col !== rightPosition?.col || leftPosition?.row !== rightPosition?.row) return false;
-    }
-  }
-  return true;
-}
 
 function extractInstanceFromOtherOwner(
   inventories: GearInventories,
@@ -199,8 +182,8 @@ export function createGearActions(set: SetState, get: GetState): GearActions {
       set((state) => Object.assign(state, moveBoardItemForState(state, characterId, item, col, row)));
       const after = get();
       return (
-        !boardPositionRegistriesEqual(before.boardPositionsByCharacter, after.boardPositionsByCharacter) ||
-        !boardPositionRegistriesEqual(before.currencyBoardPositionsByCharacter, after.currencyBoardPositionsByCharacter)
+        !positionsByCharacterEqual(before.boardPositionsByCharacter, after.boardPositionsByCharacter) ||
+        !positionsByCharacterEqual(before.currencyBoardPositionsByCharacter, after.currencyBoardPositionsByCharacter)
       );
     },
     syncBoardPositions: () => set((state) => Object.assign(state, updateGearStateAndSync(state, {}))),

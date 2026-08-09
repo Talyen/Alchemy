@@ -8,7 +8,7 @@ export interface NavigationActions {
 }
 
 export function defineNavigationActions(set: ImmerSet<RunDomainDataState>): NavigationActions {
-  const setField = defineFieldSetter<{ screen: Screen }, RunDomainDataState>(set, "navigation");
+  const setField = defineFieldSetter(set, (state) => state.navigation);
 
   return {
     setScreen: setField("screen"),

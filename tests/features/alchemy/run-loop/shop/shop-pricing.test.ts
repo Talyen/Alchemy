@@ -4,9 +4,9 @@ import {
   computeShopRefreshPrice,
   computeShopServicePrice,
   getCardBuyTalentDiscounts,
+  getEquipmentShopPrice,
   getGenericBuyTalentDiscounts,
 } from "@/features/alchemy/run-loop/shop/shop-pricing";
-import { getEquipmentShopPrice } from "@/features/alchemy/run-loop/shop/shop-gear-pricing";
 import {
   EQUIPMENT_SHOP_ASTRAL_PRICE,
   EQUIPMENT_SHOP_BASIC_PRICE,

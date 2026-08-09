@@ -7,10 +7,9 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { TalentEffectManifest } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
-import { purchaseShopOffering, refreshShopOfferings } from "../shop-transactions";
+import { computeGearBuyPrice, computeMerchantRefreshPrice } from "./shop-pricing";
+import { playShopSpendFeedback, purchaseShopOffering, refreshShopOfferings } from "./shop-transactions";
 import type { EquipmentShopCommands } from "./shop-action-types";
-import { playShopSpendFeedback } from "./shop-feedback";
-import { computeGearBuyPrice, computeMerchantRefreshPrice } from "./shop-price-selectors";
 import {
   createInitialEquipmentShopState,
   resampleEquipmentShopOfferings,
