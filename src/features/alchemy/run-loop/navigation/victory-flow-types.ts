@@ -52,11 +52,4 @@ export interface VictoryRewardsResult {
 export interface CommitVictoryRewardsDeps {
   battleState: BattleState;
   contentSystemType: ContentSystemId;
-  addHomesteadMaterials: (materials: MaterialInventory) => void;
-  addRunGold: (amount: number) => void;
-  setRunMaxHealth: (fn: (prev: number) => number) => void;
-  setRewardState: (state: RewardState) => void;
-  setCompanionRewardCards: (cards: BattleCard[] | null) => void;
-  setDestinationOfferState: (state: DestinationOfferState) => void;
-  setHasActiveBattle: (active: boolean) => void;
 }

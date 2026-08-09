@@ -19,7 +19,7 @@ import {
   commitBattleTransition,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
-  createRunRandomSource,
+  createDraftRunRandomSource,
   setHasActiveBattle,
   setRunGold,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -100,10 +100,13 @@ describe("run-session transaction coordinator", () => {
     const intermediate = { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] };
     const resultState = { ...defaultBattleState(), turn: 2, playerHealth: 18 };
 
-    beginBattleTransition(
-      intermediate,
-      { kind: "enemy-turn", resultState, playerTurnSkipped: false },
-      { hand: [], turnPhase: "enemy" },
+    dispatchRunSessionCommand((draft) =>
+      beginBattleTransition(
+        draft,
+        intermediate,
+        { kind: "enemy-turn", resultState, playerTurnSkipped: false },
+        { hand: [], turnPhase: "enemy" },
+      ),
     );
 
     unsubscribe();
@@ -122,11 +125,13 @@ describe("run-session transaction coordinator", () => {
     const resultState = { ...defaultBattleState(), turn: 2, playerHealth: 18 };
     const intermediate = { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] };
 
-    initializeActiveBattle(intermediate, {
-      kind: "enemy-turn",
-      resultState,
-      playerTurnSkipped: false,
-    });
+    dispatchRunSessionCommand((draft) =>
+      initializeActiveBattle(draft, intermediate, {
+        kind: "enemy-turn",
+        resultState,
+        playerTurnSkipped: false,
+      }),
+    );
 
     expect(readGameplayState().battle.pendingTransitionResumeRequired).toBe(true);
     const pending = readGameplayState().battle.pendingBattleTransition;
@@ -138,9 +143,12 @@ describe("run-session transaction coordinator", () => {
       expect(pending.resultState.rng).not.toBe(placeholderRng);
     }
 
-    commitBattleTransition(
-      pending?.kind === "enemy-turn" ? pending.resultState : readGameplayState().battle.battleState,
-      null,
+    dispatchRunSessionCommand((draft) =>
+      commitBattleTransition(
+        draft,
+        pending?.kind === "enemy-turn" ? pending.resultState : readGameplayState().battle.battleState,
+        null,
+      ),
     );
 
     expect(readGameplayState().battle.pendingTransitionResumeRequired).toBe(false);
@@ -153,11 +161,13 @@ describe("run-session transaction coordinator", () => {
     const strippedBattle = JSON.parse(JSON.stringify({ ...defaultBattleState(), turn: 5, playerHealth: 20 }));
     const strippedResult = JSON.parse(JSON.stringify({ ...defaultBattleState(), turn: 6, playerHealth: 19 }));
 
-    initializeActiveBattle(strippedBattle, {
-      kind: "enemy-turn",
-      resultState: strippedResult,
-      playerTurnSkipped: false,
-    });
+    dispatchRunSessionCommand((draft) =>
+      initializeActiveBattle(draft, strippedBattle, {
+        kind: "enemy-turn",
+        resultState: strippedResult,
+        playerTurnSkipped: false,
+      }),
+    );
 
     const battle = readGameplayState().battle;
     expect(battle.battleState.rng).not.toBe(placeholderRng);
@@ -258,7 +268,7 @@ describe("run-session transaction coordinator", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
     dispatchRunSessionCommand((draft) => {
-      createRunRandomSource("rewards", draft)();
+      createDraftRunRandomSource(draft, "rewards")();
       setRunGold(draft, 7);
     });
 
@@ -274,7 +284,7 @@ describe("run-session transaction coordinator", () => {
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
     expect(() =>
       dispatchRunSessionCommand((draft) => {
-        createRunRandomSource("rewards", draft)();
+        createDraftRunRandomSource(draft, "rewards")();
         setRunGold(draft, 99);
         throw new Error("command failed");
       }),

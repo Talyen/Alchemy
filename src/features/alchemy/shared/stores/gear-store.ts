@@ -17,10 +17,11 @@ import {
   subscribeGameplayCommits,
   useGameplayStateStore,
 } from "./gameplay-state-store";
+import type { GameplayDraft } from "./run-session-command";
 
 export type { GearSaveFields } from "./gear-store-types";
 
-export const gearPersistenceCodec: PersistenceCodec<GearSaveFields> = {
+export const gearPersistenceCodec: PersistenceCodec<GearSaveFields, [draft: GameplayDraft]> = {
   createDefault: () => ({
     gearInventories: createEmptyGearInventories(),
     gearLoadouts: createEmptyGearLoadouts(),
@@ -39,17 +40,7 @@ export const gearPersistenceCodec: PersistenceCodec<GearSaveFields> = {
     };
   },
   hydrate: (fields, draft) => {
-    if (draft) {
-      createGameplayDraftActions(draft).gearActions.gearInitialize(
-        fields.gearInventories,
-        fields.gearLoadouts,
-        fields.gearBoardPositionsByCharacter,
-        fields.craftingCurrencies,
-        fields.craftingCurrencyBoardPositionsByCharacter,
-      );
-      return;
-    }
-    readGameplayState().gearActions.gearInitialize(
+    createGameplayDraftActions(draft).gearActions.gearInitialize(
       fields.gearInventories,
       fields.gearLoadouts,
       fields.gearBoardPositionsByCharacter,

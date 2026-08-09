@@ -12,7 +12,7 @@ import { useUiStore } from "./ui-store";
 import { getCommittedRunSession } from "./run-session-model";
 import { restoreRunSession } from "./restore-active-run-session";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "./run-resume-codec";
-import { dispatchRunSessionCommand, isGameplayDraft, type GameplayDraft } from "./run-session-command";
+import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
 import { createGameplayDraftActions } from "./gameplay-state-store";
 import { initializeActiveBattle, setHasActiveBattle } from "./run-session-write-port";
 
@@ -65,86 +65,36 @@ export function syncRunMaxHealthFromGearMutation(
   loadoutsBefore: GearLoadouts,
   inventoryAfter: GearInstance[],
   loadoutsAfter: GearLoadouts,
-): void;
-export function syncRunMaxHealthFromGearMutation(
-  characterId: CharacterId,
-  inventoryBefore: GearInstance[],
-  loadoutsBefore: GearLoadouts,
-  inventoryAfter: GearInstance[],
-  loadoutsAfter: GearLoadouts,
-): void;
-export function syncRunMaxHealthFromGearMutation(
-  draftOrCharacterId: GameplayDraft | CharacterId,
-  characterIdOrInventoryBefore: CharacterId | GearInstance[],
-  inventoryBeforeOrLoadoutsBefore: GearInstance[] | GearLoadouts,
-  loadoutsBeforeOrInventoryAfter: GearLoadouts | GearInstance[],
-  inventoryAfterOrLoadoutsAfter?: GearInstance[] | GearLoadouts,
-  loadoutsAfter?: GearLoadouts,
 ): void {
-  if (!isGameplayDraft(draftOrCharacterId)) {
-    dispatchRunSessionCommand((draft) =>
-      syncRunMaxHealthFromGearMutation(
-        draft,
-        draftOrCharacterId,
-        characterIdOrInventoryBefore as GearInstance[],
-        inventoryBeforeOrLoadoutsBefore as GearLoadouts,
-        loadoutsBeforeOrInventoryAfter as GearInstance[],
-        inventoryAfterOrLoadoutsAfter as GearLoadouts,
-      ),
-    );
-    return;
-  }
-  const draftState = draftOrCharacterId;
-  const resolvedCharacterId = characterIdOrInventoryBefore as CharacterId;
-  const resolvedInventoryBefore = inventoryBeforeOrLoadoutsBefore as GearInstance[];
-  const resolvedLoadoutsBefore = loadoutsBeforeOrInventoryAfter as GearLoadouts;
-  const resolvedInventoryAfter = inventoryAfterOrLoadoutsAfter as GearInstance[];
-  const resolvedLoadoutsAfter = loadoutsAfter!;
-  const oldBonus = computeGearManifest(resolvedCharacterId, resolvedInventoryBefore, resolvedLoadoutsBefore).maxHealth;
-  const newBonus = computeGearManifest(resolvedCharacterId, resolvedInventoryAfter, resolvedLoadoutsAfter).maxHealth;
+  const oldBonus = computeGearManifest(characterId, inventoryBefore, loadoutsBefore).maxHealth;
+  const newBonus = computeGearManifest(characterId, inventoryAfter, loadoutsAfter).maxHealth;
   const delta = newBonus - oldBonus;
   if (delta === 0) return;
 
-  const actions = createGameplayDraftActions(draftState);
-  const nextMax = draftState.run.activeRun.runMaxHealth + delta;
+  const actions = createGameplayDraftActions(draft);
+  const nextMax = draft.run.activeRun.runMaxHealth + delta;
   actions.runActions.setRunMaxHealth(nextMax);
-  actions.runActions.setRunPlayerHealth(Math.min(nextMax, draftState.run.activeRun.runPlayerHealth));
+  actions.runActions.setRunPlayerHealth(Math.min(nextMax, draft.run.activeRun.runPlayerHealth));
 }
 
 /** Clamp run HP for battle entry and persist before creating BattleState. */
-export function syncRunToBattleStart(draft: GameplayDraft, playerHealth?: number): number;
-export function syncRunToBattleStart(playerHealth?: number): number;
-export function syncRunToBattleStart(draftOrHealth?: GameplayDraft | number, health?: number): number {
-  if (!isGameplayDraft(draftOrHealth)) {
-    return dispatchRunSessionCommand((draft) => syncRunToBattleStart(draft, draftOrHealth));
-  }
-  const state = draftOrHealth;
-  const actions = createGameplayDraftActions(state);
+export function syncRunToBattleStart(draft: GameplayDraft, playerHealth?: number): number {
+  const actions = createGameplayDraftActions(draft);
   const startingHealth =
-    health ??
+    playerHealth ??
     getBattleStartPlayerHealth(
-      state.run.activeRun.runPlayerHealth,
-      state.run.activeRun.runMaxHealth,
-      state.run.activeRun.runTrinkets,
+      draft.run.activeRun.runPlayerHealth,
+      draft.run.activeRun.runMaxHealth,
+      draft.run.activeRun.runTrinkets,
     );
   actions.runActions.setRunPlayerHealth(startingHealth);
   return startingHealth;
 }
 
 /** Persist combat HP to run progress after victory or when leaving battle. */
-export function syncBattleToRun(draft: GameplayDraft, options?: { playerHealth?: number }): void;
-export function syncBattleToRun(options?: { playerHealth?: number }): void;
-export function syncBattleToRun(
-  draftOrOptions?: GameplayDraft | { playerHealth?: number },
-  options?: { playerHealth?: number },
-): void {
-  if (!isGameplayDraft(draftOrOptions)) {
-    dispatchRunSessionCommand((draft) => syncBattleToRun(draft, draftOrOptions));
-    return;
-  }
-  const session = draftOrOptions;
-  const health = options?.playerHealth ?? session.battle.battleState.playerHealth;
-  createGameplayDraftActions(session).runActions.setRunPlayerHealth(health);
+export function syncBattleToRun(draft: GameplayDraft, options?: { playerHealth?: number }): void {
+  const health = options?.playerHealth ?? draft.battle.battleState.playerHealth;
+  createGameplayDraftActions(draft).runActions.setRunPlayerHealth(health);
 }
 
 type LifecycleListener = () => void;
@@ -167,7 +117,7 @@ export function onClearBattlePresentation(listener: LifecycleListener): () => vo
 
 /** Clear the battle-active flag and battle-related presentation state. */
 export function clearBattleUi(): void {
-  setHasActiveBattle(false);
+  dispatchRunSessionCommand((draft) => setHasActiveBattle(draft, false));
   clearBattlePresentationUi();
 }
 

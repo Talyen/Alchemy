@@ -7,21 +7,24 @@ import {
   finalizeRunEndSession,
   flushSaveAfterRunEnd,
   restoreRun,
-  syncBattleToRun,
-  syncRunMaxHealthFromGearMutation,
-  syncRunToBattleStart,
+  syncBattleToRun as mutateBattleToRun,
+  syncRunMaxHealthFromGearMutation as mutateRunMaxHealthFromGearMutation,
+  syncRunToBattleStart as mutateRunToBattleStart,
   teardownRun,
 } from "@/features/alchemy/shared/stores/run-transitions";
 import { getCombinedRunGold, getCurrentRunPhase } from "../../../../helpers/run-session-assertions";
 import {
-  applyRunStartSnapshot,
-  finalizeRunXP,
-  unlockAllTalents,
+  applyRunStartSnapshot as mutateRunStartSnapshot,
+  finalizeRunXP as mutateFinalizeRunXP,
+  unlockAllTalents as mutateUnlockAllTalents,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { getRunSession } from "@/features/alchemy/shared/stores/run-session-model";
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { useRunProfileStore } from "../../../../helpers/gameplay-store-test";
-import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  createRunSessionCommand,
+  subscribeRunSessionCommits,
+} from "@/features/alchemy/shared/stores/run-session-command";
 import { createGameplayDraftActions } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { cardLibrary, computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
@@ -29,6 +32,13 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 import { createRunRngState } from "@/lib/run-rng";
 import { createCompleteActiveRunData } from "./active-run-data-fixture";
+
+const syncBattleToRun = createRunSessionCommand(mutateBattleToRun);
+const syncRunMaxHealthFromGearMutation = createRunSessionCommand(mutateRunMaxHealthFromGearMutation);
+const syncRunToBattleStart = createRunSessionCommand(mutateRunToBattleStart);
+const applyRunStartSnapshot = createRunSessionCommand(mutateRunStartSnapshot);
+const finalizeRunXP = createRunSessionCommand(mutateFinalizeRunXP);
+const unlockAllTalents = createRunSessionCommand(mutateUnlockAllTalents);
 
 vi.mock("@/features/alchemy/shared/storage/flush-save", () => ({
   flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),

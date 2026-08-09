@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { playUISound } from "@/lib/audio";
 import { useLatestRef } from "../../../shared/hooks";
 import type { DragDestination, DragPoint, DragRect } from "./drag-types";
@@ -7,9 +8,7 @@ import {
   buildHeldDragVisual,
   buildFlyoverDragVisual,
   createPendingBoardDrag,
-  finishBoardDrag,
   shouldReusePendingDrag,
-  setupHeldDragListeners,
 } from "./board-drag-lifecycle";
 import {
   buildActiveBoardDragVisual,
@@ -23,7 +22,30 @@ import type {
   PendingBoardDrag,
   UseBoardDragOptions,
 } from "./board-drag-types";
+
 export type { BoardDragVisual, DragOrigin, UseBoardDragOptions } from "./board-drag-types";
+
+type BoardDragSession<TId extends string, TItem, TOrigin extends DragOrigin> =
+  | { phase: "idle" }
+  | { phase: "armed"; item: TItem; pending: PendingBoardDrag<TId, TOrigin> }
+  | {
+      phase: "dragging";
+      item: TItem;
+      pending: PendingBoardDrag<TId, TOrigin>;
+      visual: BoardDragVisual<TId, TOrigin>;
+    }
+  | { phase: "held"; item: TItem; visual: BoardDragVisual<TId, TOrigin>; token: number }
+  | {
+      phase: "animating";
+      item: TItem;
+      visual: BoardDragVisual<TId, TOrigin>;
+      durationMs: number;
+      commit: (() => void) | null;
+    };
+
+const IDLE_SESSION = { phase: "idle" } as const;
+const SETTLE_CLEAR_DELAY_MS = 1000;
+
 export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrigin = DragOrigin>({
   itemLookup,
   getItemId,
@@ -38,26 +60,19 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
   onClear,
   boardObstacles = [],
 }: UseBoardDragOptions<TId, TItem, TOrigin>) {
-  const [activeId, setActiveId] = useState<TId | null>(null);
-  const [dragVisual, setDragVisual] = useState<BoardDragVisual<TId, TOrigin> | null>(null);
-  const pendingDragRef = useRef<PendingBoardDrag<TId, TOrigin> | null>(null);
-  const activeDragRef = useRef<BoardDragVisual<TId, TOrigin> | null>(null);
-  const cleanupTimerRef = useRef<number | null>(null);
-  const pendingCommitRef = useRef<(() => void) | null>(null);
-  const heldCleanupRef = useRef<(() => void) | null>(null);
-  const beginHeldRef = useRef<(item: TItem, source: DragRect) => void>(() => {});
+  const [session, setSession] = useState<BoardDragSession<TId, TItem, TOrigin>>(IDLE_SESSION);
+  const sessionRef = useRef<BoardDragSession<TId, TItem, TOrigin>>(IDLE_SESSION);
+  const heldTokenRef = useRef(0);
   const boardObstaclesRef = useLatestRef(boardObstacles);
-  useEffect(
-    () => () => {
-      if (cleanupTimerRef.current !== null) {
-        window.clearTimeout(cleanupTimerRef.current);
-      }
-      pendingCommitRef.current = null;
-      heldCleanupRef.current?.();
-      heldCleanupRef.current = null;
-    },
-    [],
-  );
+  const onCommitRef = useLatestRef(onCommit);
+  const onCancelRef = useLatestRef(onCancel);
+  const onClearRef = useLatestRef(onClear);
+
+  const publishSession = useCallback((next: BoardDragSession<TId, TItem, TOrigin>) => {
+    sessionRef.current = next;
+    setSession(next);
+  }, []);
+
   const getInventoryDestination = useCallback(
     (id: TId, freeRect: DragRect, requireProximity = true): DragDestination | null => {
       return resolveInventoryDestination({
@@ -72,6 +87,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
     },
     [boardObstaclesRef, getFootprint, inventoryBoardRef, itemLookup, occupiedRows],
   );
+
   const getDragDestination = useCallback(
     (id: TId, freeRect: DragRect, pointer: DragPoint): DragDestination | null => {
       return resolvePointerDestination({
@@ -86,25 +102,121 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
     },
     [externalDestinations, getInventoryDestination, inventoryBoardRef, resolveExternalDestination],
   );
+
   const clearDragState = useCallback(() => {
-    if (cleanupTimerRef.current !== null) {
-      window.clearTimeout(cleanupTimerRef.current);
-      cleanupTimerRef.current = null;
-    }
-    heldCleanupRef.current?.();
-    heldCleanupRef.current = null;
-    pendingDragRef.current = null;
-    setActiveId(null);
-    setDragVisual(null);
-    activeDragRef.current = null;
-    pendingCommitRef.current = null;
-    onClear?.();
-  }, [onClear]);
+    publishSession(IDLE_SESSION);
+    onClearRef.current?.();
+  }, [onClearRef, publishSession]);
+
+  const completeDragAnimation = useCallback(() => {
+    const current = sessionRef.current;
+    if (current.phase !== "animating") return;
+    publishSession(IDLE_SESSION);
+    const commit = current.commit;
+    commit?.();
+    onClearRef.current?.();
+  }, [onClearRef, publishSession]);
+
+  const commitDestination = useCallback(
+    (visual: BoardDragVisual<TId, TOrigin>, destination: DragDestination): BoardDragCommitResult<TItem> => {
+      const result = onCommitRef.current({ id: visual.id, origin: visual.origin, destination });
+      playUISound("gearMove");
+      return result;
+    },
+    [onCommitRef],
+  );
+
+  const beginHeld = useCallback(
+    (item: TItem, source: DragRect) => {
+      const id = getItemId(item);
+      const origin = getOrigin(item);
+      heldTokenRef.current += 1;
+      publishSession({
+        phase: "held",
+        item,
+        visual: buildHeldDragVisual(id, origin, source, null, getDragDestination),
+        token: heldTokenRef.current,
+      });
+    },
+    [getDragDestination, getItemId, getOrigin, publishSession],
+  );
+
+  const heldToken = session.phase === "held" ? session.token : null;
+  const heldId = session.phase === "held" ? session.visual.id : null;
+  useEffect(() => {
+    if (heldToken === null || heldId === null) return;
+    const id = heldId;
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const current = sessionRef.current;
+      if (current.phase !== "held") return;
+      const pointer = { x: event.clientX, y: event.clientY };
+      const visual = buildHeldDragVisual(id, current.visual.origin, current.visual.source, pointer, getDragDestination);
+      publishSession({ ...current, visual });
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const current = sessionRef.current;
+      if (current.phase !== "held") return;
+      event.stopPropagation();
+      event.preventDefault();
+      const pointer = { x: event.clientX, y: event.clientY };
+      const visual = buildHeldDragVisual(id, current.visual.origin, current.visual.source, pointer, getDragDestination);
+      const destination = visual.destination;
+      if (!destination) {
+        onCancelRef.current?.(id);
+        clearDragState();
+        return;
+      }
+      const result = commitDestination(visual, destination);
+      if (result?.heldItem) {
+        beginHeld(result.heldItem.item, result.heldItem.source);
+        return;
+      }
+      publishSession({
+        phase: "animating",
+        item: current.item,
+        visual: { ...visual, rect: destination.rect, settling: true, releaseRect: visual.rect },
+        durationMs: SETTLE_CLEAR_DELAY_MS,
+        commit: null,
+      });
+    };
+
+    const unsubscribeEscape = pushEscapeHandler({
+      id: "armory-board-drag",
+      priority: ESCAPE_PRIORITY.ARMORY_TRANSIENT,
+      onEscape: () => {
+        onCancelRef.current?.(id);
+        clearDragState();
+      },
+    });
+    document.addEventListener("pointermove", handlePointerMove);
+    document.addEventListener("pointerdown", handlePointerDown, { capture: true });
+    return () => {
+      unsubscribeEscape();
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerdown", handlePointerDown, { capture: true });
+    };
+  }, [
+    beginHeld,
+    clearDragState,
+    commitDestination,
+    getDragDestination,
+    heldId,
+    heldToken,
+    onCancelRef,
+    publishSession,
+  ]);
+
+  useEffect(() => {
+    if (session.phase !== "animating") return;
+    const timer = window.setTimeout(completeDragAnimation, session.durationMs);
+    return () => window.clearTimeout(timer);
+  }, [completeDragAnimation, session]);
+
   useEffect(() => {
     function clearHeldDragOnBlur() {
-      // Flyovers schedule their real equip/unequip in pendingCommitRef; aborting
-      // them on alt-tab would silently drop the deferred mutation.
-      if (pendingCommitRef.current || activeDragRef.current?.flyover) return;
+      if (sessionRef.current.phase === "animating") return;
       clearDragState();
     }
     function handleVisibilityChange() {
@@ -117,84 +229,18 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [clearDragState]);
-  const completeDragAnimation = useCallback(() => {
-    if (cleanupTimerRef.current !== null) {
-      window.clearTimeout(cleanupTimerRef.current);
-      cleanupTimerRef.current = null;
-    }
-    heldCleanupRef.current?.();
-    heldCleanupRef.current = null;
-    setActiveId(null);
-    setDragVisual(null);
-    activeDragRef.current = null;
-    const pendingCommit = pendingCommitRef.current;
-    pendingCommitRef.current = null;
-    pendingCommit?.();
-    onClear?.();
-  }, [onClear]);
-  const clearDragAfterAnimation = useCallback(
-    (delay = 1000) => {
-      if (cleanupTimerRef.current !== null) window.clearTimeout(cleanupTimerRef.current);
-      cleanupTimerRef.current = window.setTimeout(() => {
-        completeDragAnimation();
-      }, delay);
-    },
-    [completeDragAnimation],
-  );
-  const commitDestination = useCallback(
-    (visual: BoardDragVisual<TId, TOrigin>, destination: DragDestination): BoardDragCommitResult<TItem> => {
-      const result = onCommit({ id: visual.id, origin: visual.origin, destination });
-      playUISound("gearMove");
-      return result;
-    },
-    [onCommit],
-  );
-  const beginHeld = useCallback(
-    (item: TItem, source: DragRect) => {
-      if (cleanupTimerRef.current !== null) {
-        window.clearTimeout(cleanupTimerRef.current);
-        cleanupTimerRef.current = null;
-      }
-      heldCleanupRef.current?.();
-      pendingCommitRef.current = null;
-      pendingDragRef.current = null;
-      const id = getItemId(item);
-      const origin = getOrigin(item);
-      const buildVisual = (pointer: DragPoint | null) =>
-        buildHeldDragVisual(id, origin, source, pointer, getDragDestination);
-      const initial = buildVisual(null);
-      activeDragRef.current = initial;
-      setActiveId(id);
-      setDragVisual(initial);
-      heldCleanupRef.current = setupHeldDragListeners({
-        id,
-        buildVisual,
-        activeDragRef,
-        setDragVisual,
-        heldCleanupRef,
-        commitDestination,
-        onCancel,
-        clearDragState,
-        clearDragAfterAnimation,
-        beginHeldRef,
-      });
-    },
-    [clearDragAfterAnimation, clearDragState, commitDestination, getDragDestination, getItemId, getOrigin, onCancel],
-  );
-  useEffect(() => {
-    beginHeldRef.current = beginHeld;
-  }, [beginHeld]);
+
   const updateActiveDrag = useCallback(
     (pointer: DragPoint, pointerId: number) => {
-      const pending = pendingDragRef.current;
-      if (!pending || pending.pointerId !== pointerId) return;
-      if (!activeDragRef.current) {
-        const dist = Math.hypot(pointer.x - pending.pointerStart.x, pointer.y - pending.pointerStart.y);
-        if (dist < DRAG_POINTER_ACTIVATE_DISTANCE_PX) {
-          return;
-        }
+      const current = sessionRef.current;
+      if ((current.phase !== "armed" && current.phase !== "dragging") || current.pending.pointerId !== pointerId) {
+        return;
+      }
+      const pending = current.pending;
+      if (current.phase === "armed") {
+        const distance = Math.hypot(pointer.x - pending.pointerStart.x, pointer.y - pending.pointerStart.y);
+        if (distance < DRAG_POINTER_ACTIVATE_DISTANCE_PX) return;
         playUISound("gearMove");
-        setActiveId(pending.id);
       }
       const previewRect: DragRect = {
         left: Math.round(pointer.x - pending.offset.x),
@@ -203,72 +249,83 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
         height: pending.source.height,
       };
       const candidate = getDragDestination(pending.id, previewRect, pointer);
-      const previousDestination = activeDragRef.current?.destination ?? null;
-      const visual = buildActiveBoardDragVisual({
-        pending,
-        pointer,
-        candidate,
-        previousDestination,
-      });
-      activeDragRef.current = visual;
-      setDragVisual(visual);
+      const previousDestination = current.phase === "dragging" ? current.visual.destination : null;
+      const visual = buildActiveBoardDragVisual({ pending, pointer, candidate, previousDestination });
+      publishSession({ phase: "dragging", item: current.item, pending, visual });
     },
-    [getDragDestination],
+    [getDragDestination, publishSession],
   );
+
   const beginPointer = useCallback(
     (item: TItem, source: DragRect, pointer: DragPoint, pointerId: number) => {
       const itemId = getItemId(item);
-      if (cleanupTimerRef.current !== null) {
-        window.clearTimeout(cleanupTimerRef.current);
-        cleanupTimerRef.current = null;
-      }
-      if (shouldReusePendingDrag(pendingDragRef.current, itemId, pointer)) {
-        pendingDragRef.current = { ...pendingDragRef.current, pointerId, pointerStart: pointer };
+      const current = sessionRef.current;
+      if (current.phase === "armed" && shouldReusePendingDrag(current.pending, itemId, pointer)) {
+        publishSession({
+          phase: "armed",
+          item: current.item,
+          pending: { ...current.pending, pointerId, pointerStart: pointer },
+        });
         return;
       }
-      heldCleanupRef.current?.();
-      heldCleanupRef.current = null;
-      pendingCommitRef.current = null;
-      activeDragRef.current = null;
-      setDragVisual(null);
-      setActiveId(null);
-      pendingDragRef.current = createPendingBoardDrag({
-        id: itemId,
-        origin: getOrigin(item),
-        source,
-        pointerId,
-        pointer,
+      publishSession({
+        phase: "armed",
+        item,
+        pending: createPendingBoardDrag({ id: itemId, origin: getOrigin(item), source, pointerId, pointer }),
       });
     },
-    [getItemId, getOrigin],
+    [getItemId, getOrigin, publishSession],
   );
+
   const movePointer = useCallback(
-    (pointer: DragPoint, pointerId: number) => {
-      updateActiveDrag(pointer, pointerId);
-    },
+    (pointer: DragPoint, pointerId: number) => updateActiveDrag(pointer, pointerId),
     [updateActiveDrag],
   );
+
   const finishPointer = useCallback(
     (pointer: DragPoint, pointerId: number, cancelled = false) => {
       if (!cancelled) updateActiveDrag(pointer, pointerId);
-      const visual = activeDragRef.current;
-      const pending = pendingDragRef.current;
-      pendingDragRef.current = null;
-      if (!visual || !pending) return;
-      finishBoardDrag({
-        visual,
-        pending,
-        cancelled,
-        onCancel,
-        commitDestination,
-        beginHeldRef,
-        activeDragRef,
-        setDragVisual,
-        clearDragAfterAnimation,
+      const current = sessionRef.current;
+      if (current.phase === "armed") {
+        if (current.pending.pointerId === pointerId) publishSession(IDLE_SESSION);
+        return;
+      }
+      if (current.phase !== "dragging") return;
+      const releaseRect = current.visual.rect;
+      if (cancelled) onCancelRef.current?.(current.pending.id);
+      const destination = cancelled ? null : current.visual.destination;
+      if (!destination) {
+        publishSession({
+          phase: "animating",
+          item: current.item,
+          visual: {
+            ...current.visual,
+            rect: current.visual.source,
+            destination: null,
+            settling: true,
+            releaseRect,
+          },
+          durationMs: SETTLE_CLEAR_DELAY_MS,
+          commit: null,
+        });
+        return;
+      }
+      const result = commitDestination(current.visual, destination);
+      if (result?.heldItem) {
+        beginHeld(result.heldItem.item, result.heldItem.source);
+        return;
+      }
+      publishSession({
+        phase: "animating",
+        item: current.item,
+        visual: { ...current.visual, rect: destination.rect, settling: true, releaseRect },
+        durationMs: SETTLE_CLEAR_DELAY_MS,
+        commit: null,
       });
     },
-    [clearDragAfterAnimation, commitDestination, onCancel, updateActiveDrag],
+    [beginHeld, commitDestination, onCancelRef, publishSession, updateActiveDrag],
   );
+
   const flyoverTo = useCallback(
     (
       item: TItem,
@@ -277,32 +334,41 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       source?: DragRect,
       holdMs = DOUBLE_CLICK_FLYOVER_CLEAR_DELAY_MS,
     ) => {
-      const visual = buildFlyoverDragVisual<TId, TOrigin>({
-        id: getItemId(item),
-        origin: getOrigin(item),
-        destination,
-        ...(source ? { source } : {}),
+      publishSession({
+        phase: "animating",
+        item,
+        visual: buildFlyoverDragVisual<TId, TOrigin>({
+          id: getItemId(item),
+          origin: getOrigin(item),
+          destination,
+          ...(source ? { source } : {}),
+        }),
+        durationMs: holdMs,
+        commit,
       });
-      activeDragRef.current = visual;
-      setActiveId(getItemId(item));
-      setDragVisual(visual);
       playUISound("gearMove");
-      pendingCommitRef.current = commit;
-      clearDragAfterAnimation(holdMs);
     },
-    [clearDragAfterAnimation, getItemId, getOrigin],
+    [getItemId, getOrigin, publishSession],
   );
+
+  const visual =
+    session.phase === "dragging" || session.phase === "held" || session.phase === "animating" ? session.visual : null;
+  const activeId = visual?.id ?? null;
+  const activeItem = session.phase === "idle" || session.phase === "armed" ? null : session.item;
+
   return {
     activeId,
-    dragVisual,
-    isAnimating: !!dragVisual?.settling,
-    isDraggingActive: !!activeId && (!dragVisual || (!dragVisual.settling && !dragVisual.releasing)),
+    activeItem,
+    dragVisual: visual,
+    isAnimating: session.phase === "animating",
+    isDraggingActive: session.phase === "dragging" || session.phase === "held",
     beginPointer,
     beginHeld,
     movePointer,
     finishPointer,
     flyoverTo,
     clearDragState,
+    completeDragAnimation,
     getInventoryDestination,
   };
 }

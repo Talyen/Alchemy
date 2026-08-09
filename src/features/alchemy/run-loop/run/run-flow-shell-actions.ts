@@ -17,7 +17,7 @@ export interface RunFlowShellActions {
   startBoss: (opts?: { bossId?: string | null; modifiers?: DifficultyModifier[] }) => void;
   markDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
   /** Update the Wildwood reward handoff in the active command draft. */
-  commitWildwoodVictory: (draftOrResult: GameplayDraft | VictoryRewardsResult, result?: VictoryRewardsResult) => void;
+  commitWildwoodVictory: (draft: GameplayDraft, result: VictoryRewardsResult) => void;
   beginMysteryEvent: (onRenderedScreenCommit?: () => void) => void;
   clearMysteryCardChoices: () => void;
   wildwoodRewardComplete: (onRenderedScreenCommit?: () => void) => void;

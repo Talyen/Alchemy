@@ -27,6 +27,38 @@ function mockDomRect(partial: Partial<DOMRect>): DOMRect {
 }
 
 describe("useBoardDrag", () => {
+  it("keeps an armed item inactive and clears it when the pointer is released without dragging", () => {
+    const inventoryBoardRef = { current: null };
+    const { result } = renderHook(() =>
+      useBoardDrag({
+        itemLookup: { id: "item-1" },
+        getItemId: (item) => item.id,
+        getOrigin: () => ({ kind: "inventory", placement: { col: 0, row: 0 } }),
+        getFootprint: () => ({ w: 1, h: 1 }),
+        inventoryBoardRef,
+        occupiedRows: 0,
+        onCommit: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      result.current.beginPointer({ id: "item-1" }, { left: 10, top: 20, width: 50, height: 50 }, { x: 15, y: 25 }, 1);
+    });
+
+    expect(result.current.activeId).toBeNull();
+    expect(result.current.activeItem).toBeNull();
+    expect(result.current.dragVisual).toBeNull();
+
+    act(() => {
+      result.current.finishPointer({ x: 15, y: 25 }, 1);
+    });
+
+    expect(result.current.activeId).toBeNull();
+    expect(result.current.activeItem).toBeNull();
+    expect(result.current.dragVisual).toBeNull();
+    expect(result.current.isDraggingActive).toBe(false);
+  });
+
   it("does not mutate document.body.style.cursor during drag", () => {
     const onCommit = vi.fn();
     const originalCursor = document.body.style.cursor;
@@ -267,6 +299,8 @@ describe("useBoardDrag", () => {
         { left: 0, top: 0, width: 20, height: 20 },
         50,
       );
+    });
+    act(() => {
       vi.advanceTimersByTime(50);
     });
 

@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import { GameOverScreen, RunVictoryScreen } from "@/features/alchemy/run-loop/screens";
 import { useGameOverScreenData, useRunVictoryScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
-import type { RunEndRouteCtx } from "./route-ctx";
+import type { RunEndCommands, RunEndRouteCtx } from "./route-ctx";
 
-function GameOverScreenRoute({ commands }: { commands: RunEndRouteCtx["routeCommands"]["runEnd"] }) {
+function GameOverScreenRoute({ commands }: { commands: RunEndCommands }) {
   const r = useGameOverScreenData();
   return (
     <GameOverScreen
@@ -15,7 +15,7 @@ function GameOverScreenRoute({ commands }: { commands: RunEndRouteCtx["routeComm
   );
 }
 
-function RunVictoryScreenRoute({ commands }: { commands: RunEndRouteCtx["routeCommands"]["runEnd"] }) {
+function RunVictoryScreenRoute({ commands }: { commands: RunEndCommands }) {
   const r = useRunVictoryScreenData();
   return (
     <RunVictoryScreen

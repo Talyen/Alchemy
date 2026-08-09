@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   EMPTY_CRAFTING_CURRENCIES,
   buildArmoryBoardView,
@@ -17,13 +17,11 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { PageLayout } from "../../shared/ui/shared-ui";
 import {
-  useArmoryGearDrag,
-  useArmoryCurrencyDrag,
+  useArmoryBoardDrag,
   ArmoryCharacterTabs,
   useArmoryTargetingEvents,
   ArmoryOverlays,
   type TransferMenuState,
-  type DragRect,
   ArmoryScreenHeader,
   ArmoryWorkspaceGrid,
   useArmoryResetEffects,
@@ -108,14 +106,6 @@ export function ArmoryScreen({
     },
     [characterId, onMoveBoardItem],
   );
-  const beginHeldCurrencyRef = useRef<
-    | ((
-        currencyId: CraftingCurrencyId,
-        origin: { kind: "inventory"; placement: InventoryPlacement },
-        source: DragRect,
-      ) => void)
-    | null
-  >(null);
   const inventoryById = useMemo(
     () => new Map(characterInventory.map((item) => [item.instanceId, item])),
     [characterInventory],
@@ -157,7 +147,9 @@ export function ArmoryScreen({
   );
   const {
     draggedGear,
-    dragVisual,
+    draggedCurrencyId,
+    gearDragVisual,
+    currencyDragVisual,
     secondaryDragVisuals,
     isDraggingActive,
     beginGearPointer,
@@ -165,10 +157,13 @@ export function ArmoryScreen({
     finishGearPointer,
     handleGearDoubleClick,
     clearDragState,
+    completeDragAnimation,
     clearSecondaryDragState,
     abortGearDragIfDragging,
-    beginHeldGear,
-  } = useArmoryGearDrag({
+    beginCurrencyPointer,
+    moveCurrencyPointer,
+    finishCurrencyPointer,
+  } = useArmoryBoardDrag({
     characterId,
     editable,
     loadout,
@@ -180,34 +175,8 @@ export function ArmoryScreen({
     onEquip: handleEquipWithSwap,
     onUnequip,
     onMoveItem: handleMoveItem,
-    onHoldCurrency: (currencyId, origin, source) => beginHeldCurrencyRef.current?.(currencyId, origin, source),
-  });
-  const {
-    draggedCurrencyId,
-    dragVisual: currencyDragVisual,
-    isDraggingActive: isCurrencyDraggingActive,
-    beginCurrencyPointer,
-    moveCurrencyPointer,
-    finishCurrencyPointer,
-    beginHeldCurrency,
-    clearDragState: clearCurrencyDragState,
-  } = useArmoryCurrencyDrag({
-    editable,
-    occupiedRows: boardView.occupiedRows,
-    inventoryBoardRef,
     onMoveCurrency: handleMoveCurrency,
-    packedItems: boardView.packedInventory.items,
-    packedCurrencies: boardView.packedCurrencies,
-    inventoryById,
-    onSwapWithItem: (item, rect) => {
-      if (item.kind === "gear") {
-        beginHeldGear({ instance: item.instance, origin: item.origin }, rect);
-      }
-    },
   });
-  useEffect(() => {
-    beginHeldCurrencyRef.current = beginHeldCurrency;
-  }, [beginHeldCurrency]);
   const secondaryDragInstanceIds = secondaryDragVisuals.flatMap((v) => (v.instance ? [v.instance.instanceId] : []));
   const clearTargeting = useCallback(() => {
     resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setCursorPoint });
@@ -294,7 +263,6 @@ export function ArmoryScreen({
           draggedCurrencyId={draggedCurrencyId}
           secondaryDragInstanceIds={secondaryDragInstanceIds}
           isDraggingActive={isDraggingActive}
-          isCurrencyDraggingActive={isCurrencyDraggingActive}
           salvageMode={salvageMode}
           activeCurrencyId={activeCurrencyId}
           characterInventory={characterInventory}
@@ -324,7 +292,7 @@ export function ArmoryScreen({
         <ArmoryOverlays
           salvageTarget={salvageTarget}
           currencyDragVisual={currencyDragVisual}
-          dragVisual={dragVisual}
+          dragVisual={gearDragVisual}
           secondaryDragVisuals={secondaryDragVisuals}
           activeCurrencyId={activeCurrencyId}
           cursorPoint={cursorPoint}
@@ -335,8 +303,8 @@ export function ArmoryScreen({
           onSalvage={onSalvage}
           onTransferGear={onTransferGear}
           onClearSalvageTarget={() => setSalvageTarget(null)}
-          onClearCurrencyDragState={clearCurrencyDragState}
           onClearDragState={clearDragState}
+          onCompleteDragAnimation={completeDragAnimation}
           onClearSecondaryDragState={clearSecondaryDragState}
           onCloseTransferMenu={() => setTransferMenu(null)}
         />

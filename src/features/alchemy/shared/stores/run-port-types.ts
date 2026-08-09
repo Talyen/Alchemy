@@ -1,6 +1,7 @@
 import type { BattleCard, CharacterId, DifficultyId, TalentEffectManifest, TalentXP } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { Destination } from "@/features/alchemy/shared/types";
+import type { GameplayDraft } from "./run-session-command";
 
 /** Shared active-run identity fields used by battle and run-flow orchestration. */
 export interface ActiveRunCorePort {
@@ -88,5 +89,5 @@ export interface BattleRunPort extends ActiveRunCorePort {
 
 export interface BattleTalentPort {
   talentEffects: TalentEffectManifest;
-  awardCardXP: (card: BattleCard) => void;
+  awardCardXP: (draft: GameplayDraft, card: BattleCard) => void;
 }

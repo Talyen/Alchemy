@@ -36,7 +36,7 @@ describe("createBattleInit", () => {
       resetBattleSession,
     } as unknown as ReturnType<typeof createBattleSession>;
 
-    return createBattleInit(ctx, session, () => 0.5);
+    return createBattleInit(ctx, session);
   }
 
   it("merges talent and homestead manifests into battle state", () => {

@@ -5,7 +5,7 @@ import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/profile-s
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
-  bindRunRandomSource,
+  createDraftRunRandomSource,
   setAlchemistState,
   setRunDeck,
   setRunGold,
@@ -26,10 +26,8 @@ import { createInitialAlchemistState, type AlchemistState } from "./shop-state-i
 
 export function createAlchemistShopCommands({
   talentEffects,
-  rng,
 }: {
   talentEffects: TalentEffectManifest;
-  rng: () => number;
 }): AlchemistShopCommands {
   const getPotionBuyPrice = (card: BattleCard) =>
     computeAlchemistPotionBuyPrice(card, {
@@ -44,7 +42,7 @@ export function createAlchemistShopCommands({
     dispatchRunSessionCommand((draft) =>
       setAlchemistState(
         draft,
-        createInitialAlchemistState(draft.run.activeRun.runDeck, bindRunRandomSource(rng, draft)),
+        createInitialAlchemistState(draft.run.activeRun.runDeck, createDraftRunRandomSource(draft, "shops")),
       ),
     );
   }
@@ -63,7 +61,7 @@ export function createAlchemistShopCommands({
         state,
         setState: setAlchemistState,
         slotKey,
-        acquire: () => appendCardToRunWithDiscovery(card, setRunDeck, draft),
+        acquire: () => appendCardToRunWithDiscovery(draft, card),
       });
     });
     playShopSpendFeedback(result);
@@ -113,7 +111,7 @@ export function createAlchemistShopCommands({
         currentItems: state.potions,
         count: ALCHEMIST_POTIONS_OFFERED,
         setState: setAlchemistState,
-        rng: bindRunRandomSource(rng, draft),
+        rng: createDraftRunRandomSource(draft, "shops"),
         mapState: (previous, potions) => ({
           ...previous,
           potions,

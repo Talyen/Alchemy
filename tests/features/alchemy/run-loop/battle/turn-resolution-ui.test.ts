@@ -16,10 +16,10 @@ const clearBattleTransition = vi.fn();
 const setBattleState = vi.fn();
 
 vi.mock("@/features/alchemy/shared/stores/run-session-write-port", () => ({
-  beginBattleTransition: (...args: unknown[]) => beginBattleTransition(...args),
-  commitBattleTransition: (...args: unknown[]) => commitBattleTransition(...args),
-  clearBattleTransition: (...args: unknown[]) => clearBattleTransition(...args),
-  setBattleState: (...args: unknown[]) => setBattleState(...args),
+  beginBattleTransition: (_draft: unknown, ...args: unknown[]) => beginBattleTransition(...args),
+  commitBattleTransition: (_draft: unknown, ...args: unknown[]) => commitBattleTransition(...args),
+  clearBattleTransition: (_draft: unknown, ...args: unknown[]) => clearBattleTransition(...args),
+  setBattleState: (_draft: unknown, ...args: unknown[]) => setBattleState(...args),
 }));
 
 vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", () => ({

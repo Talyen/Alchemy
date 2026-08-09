@@ -3,7 +3,7 @@ import { spendRunGold } from "@/features/alchemy/run-loop/run-gold";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
-  bindRunRandomSource,
+  createDraftRunRandomSource,
   setRunDeck,
   setRunGold,
   setShopState,
@@ -23,10 +23,8 @@ import { createInitialShopState, type ShopState } from "./shop-state-init";
 
 export function createMerchantShopCommands({
   talentEffects,
-  rng,
 }: {
   talentEffects: TalentEffectManifest;
-  rng: () => number;
 }): MerchantShopCommands {
   const getCardBuyPrice = (card: BattleCard) =>
     computeMerchantCardBuyPrice(card, {
@@ -39,7 +37,10 @@ export function createMerchantShopCommands({
 
   function initialize(): void {
     dispatchRunSessionCommand((draft) =>
-      setShopState(draft, createInitialShopState(draft.run.activeRun.runDeck, bindRunRandomSource(rng, draft))),
+      setShopState(
+        draft,
+        createInitialShopState(draft.run.activeRun.runDeck, createDraftRunRandomSource(draft, "shops")),
+      ),
     );
   }
 
@@ -57,7 +58,7 @@ export function createMerchantShopCommands({
         state,
         setState: setShopState,
         slotKey,
-        acquire: () => appendCardToRunWithDiscovery(card, setRunDeck, draft),
+        acquire: () => appendCardToRunWithDiscovery(draft, card),
       });
     });
     playShopSpendFeedback(result);
@@ -92,7 +93,7 @@ export function createMerchantShopCommands({
         currentItems: state.cards,
         count: SHOP_CARDS_OFFERED,
         setState: setShopState,
-        rng: bindRunRandomSource(rng, draft),
+        rng: createDraftRunRandomSource(draft, "shops"),
         mapState: (previous, cards) => ({
           ...previous,
           cards,

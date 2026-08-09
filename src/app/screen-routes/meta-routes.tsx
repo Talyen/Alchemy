@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { platform } from "@/lib/platform";
+import { isDesktop, quitDesktopApp } from "@/lib/platform";
 import { menuLogo, menuLogoVariants } from "@/lib/game-data";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import {
@@ -19,11 +19,11 @@ import {
   useHomesteadProgressSlice,
   useTalentProgressSlice,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
-import type { MetaRouteCtx } from "./route-ctx";
+import type { MetaCommands, MetaRouteCtx } from "./route-ctx";
 import { useHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-store";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 
-function MenuScreenRoute({ commands }: { commands: MetaRouteCtx["routeCommands"]["meta"] }) {
+function MenuScreenRoute({ commands }: { commands: MetaCommands }) {
   const { hasUnspentTalents, hasAffordableHomestead } = useAppScreenChrome();
   const isArmoryLocked = !useHasAnyOwnedGear();
   return (
@@ -34,7 +34,7 @@ function MenuScreenRoute({ commands }: { commands: MetaRouteCtx["routeCommands"]
       onHomestead={() => commands.goToScreen("homestead")}
       onTalents={() => commands.goToScreen("talents")}
       onArmory={() => commands.goToScreen("armory")}
-      {...(platform.canQuit ? { onQuit: () => platform.quit() } : {})}
+      {...(isDesktop() ? { onQuit: quitDesktopApp } : {})}
       logoSrc={menuLogo}
       logoSrcVariants={menuLogoVariants}
       hasUnspentTalents={hasUnspentTalents}
@@ -68,7 +68,7 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattl
   );
 }
 
-function GameModeSelectScreenRoute({ commands }: { commands: MetaRouteCtx["routeCommands"]["meta"] }) {
+function GameModeSelectScreenRoute({ commands }: { commands: MetaCommands }) {
   const hasActiveRun = useHasActiveRun();
   const activeContentSystemType = useContentSystemType();
   return (
@@ -129,7 +129,7 @@ function TalentsScreenRoute({
   commands,
   onOpenBattleMenu,
 }: {
-  commands: MetaRouteCtx["routeCommands"]["meta"];
+  commands: MetaCommands;
   onOpenBattleMenu: MetaRouteCtx["onOpenBattleMenu"];
 }) {
   const { talentXP, unlockedTalents } = useTalentProgressSlice();

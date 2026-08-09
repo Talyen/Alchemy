@@ -28,11 +28,9 @@ beforeEach(() => {
 });
 
 describe("useMysteryFlow", () => {
-  const rng = () => 0.5;
-
   it("beginMysteryEvent stores an event and navigates", () => {
     const navigate = vi.fn();
-    const { result } = renderHook(() => useMysteryFlow(rng));
+    const { result } = renderHook(() => useMysteryFlow());
 
     act(() => {
       result.current.beginMysteryEvent(navigate);
@@ -44,7 +42,7 @@ describe("useMysteryFlow", () => {
   });
 
   it("handleMysteryChoice applies heal effects without follow-up", () => {
-    const { result } = renderHook(() => useMysteryFlow(rng));
+    const { result } = renderHook(() => useMysteryFlow());
     const healthBefore = getRunProgressStoreView().runPlayerHealth;
 
     act(() => {
@@ -60,7 +58,7 @@ describe("useMysteryFlow", () => {
   });
 
   it("handleMysteryChoice stops when chooseCard requires follow-up UI", () => {
-    const { result } = renderHook(() => useMysteryFlow(rng));
+    const { result } = renderHook(() => useMysteryFlow());
 
     act(() => {
       result.current.handleMysteryChoice({
@@ -74,7 +72,7 @@ describe("useMysteryFlow", () => {
 
   it("plays gold sounds only after the choice commits", () => {
     setRunProgress({ runGold: 20 });
-    const { result } = renderHook(() => useMysteryFlow(rng));
+    const { result } = renderHook(() => useMysteryFlow());
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
     vi.mocked(playGoldGain).mockImplementationOnce(() => {
@@ -102,7 +100,7 @@ describe("useMysteryFlow", () => {
 
   it("rolls back state and skips gold sounds when a later effect throws", () => {
     setRunProgress({ runGold: 20 });
-    const { result } = renderHook(() => useMysteryFlow(rng));
+    const { result } = renderHook(() => useMysteryFlow());
 
     expect(() =>
       act(() => {

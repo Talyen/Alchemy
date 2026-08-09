@@ -2,11 +2,11 @@
 import { useEffect } from "react";
 import type { CharacterId } from "@/lib/game-data";
 import { getSteamRichPresenceLabel, type RunPhase } from "@/lib/routing";
-import { platform } from "@/lib/platform";
+import { setSteamRichPresence } from "@/lib/platform";
 import type { Screen } from "@/features/alchemy/shared/types";
 
 export function useSteamRichPresence(screen: Screen, runPhase: RunPhase, characterId: CharacterId) {
   useEffect(() => {
-    void platform.steam.setRichPresence("steam_display", getSteamRichPresenceLabel(screen, runPhase, characterId));
+    void setSteamRichPresence("steam_display", getSteamRichPresenceLabel(screen, runPhase, characterId));
   }, [screen, runPhase, characterId]);
 }

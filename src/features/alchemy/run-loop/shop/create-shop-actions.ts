@@ -12,7 +12,6 @@ export function createShopActions(deps: CreateShopActionsDeps): ShopActions {
   const equipment = createEquipmentShopCommands({
     talentEffects: deps.talentEffects,
     gearAstralChanceBonus: deps.homesteadEffects.gearAstralChanceBonus,
-    rng: deps.rng,
   });
 
   const initializers: Record<ShopKind, () => void> = {

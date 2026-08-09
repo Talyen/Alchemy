@@ -16,7 +16,8 @@ import {
 } from "../../../../helpers/run-domain-store-test";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
-import { isGameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { isDraft } from "immer";
 
 vi.mock("@/lib/audio", () => ({
   playVictory: vi.fn(),
@@ -53,7 +54,7 @@ describe("createRunFlowHandlers victory paths", () => {
     });
     const herbsBefore = useRunProfileStore.getState().materialInventory.herbs;
 
-    const mats = makeHandlers().awardRunEndMaterials();
+    const mats = dispatchRunSessionCommand(makeHandlers().awardRunEndMaterials);
 
     expect(mats.herbs).toBe(4);
     expect(useRunProfileStore.getState().materialInventory.herbs).toBe(herbsBefore + 4);
@@ -62,9 +63,9 @@ describe("createRunFlowHandlers victory paths", () => {
 
   it("awardRunEndMaterials includes materials collected during the run on the summary", () => {
     setRunProgress({ roomsEncountered: 2, currentAct: 1 });
-    addRunMaterialsEarned({ ...emptyInventory(), wood: 5, herbs: 2 });
+    dispatchRunSessionCommand((draft) => addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5, herbs: 2 }));
 
-    makeHandlers().awardRunEndMaterials();
+    dispatchRunSessionCommand(makeHandlers().awardRunEndMaterials);
 
     expect(getRunSessionStoreView().runEndMaterials.wood).toBe(5);
     expect(getRunSessionStoreView().runEndMaterials.herbs).toBe(2);
@@ -74,7 +75,7 @@ describe("createRunFlowHandlers victory paths", () => {
   it("awardRunEndMaterials adds no homestead bonus with default effects", () => {
     setRunProgress({ roomsEncountered: 6, currentAct: 2 });
 
-    const mats = makeHandlers().awardRunEndMaterials();
+    const mats = dispatchRunSessionCommand(makeHandlers().awardRunEndMaterials);
 
     expect(mats).toEqual(emptyInventory());
     expect(getRunSessionStoreView().runEndMaterials).toEqual(emptyInventory());
@@ -85,9 +86,9 @@ describe("createRunFlowHandlers victory paths", () => {
     useRunProfileStore.setState((profile) => {
       profile.effects.endRunHerbsPerRoom = 2;
     });
-    addRunMaterialsEarned({ ...emptyInventory(), wood: 5 });
+    dispatchRunSessionCommand((draft) => addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 }));
 
-    const materials = makeHandlers().awardRunEndMaterials();
+    const materials = dispatchRunSessionCommand(makeHandlers().awardRunEndMaterials);
 
     expect(materials).toEqual(emptyInventory());
     expect(readActiveRun().runMaterialsEarned).toEqual(emptyInventory());
@@ -95,7 +96,7 @@ describe("createRunFlowHandlers victory paths", () => {
 
   it("clearCombatState clears battle flag", () => {
     getBattleStoreView().setHasActiveBattle(true);
-    makeHandlers().clearCombatState();
+    dispatchRunSessionCommand(makeHandlers().clearCombatState);
     expect(getBattleStoreView().hasActiveBattle).toBe(false);
   });
 
@@ -222,7 +223,7 @@ describe("createRunFlowHandlers victory paths", () => {
     });
     let receivedDraft = false;
     const commitWildwoodVictory = vi.fn((draftOrResult: unknown) => {
-      receivedDraft = isGameplayDraft(draftOrResult);
+      receivedDraft = isDraft(draftOrResult);
     });
     const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ commitWildwoodVictory }));
 

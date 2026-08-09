@@ -2,8 +2,8 @@ import type { buildArmoryBoardView, CraftingCurrencyId, GearInstance, GearLoadou
 import type { CharacterId } from "@/lib/game-data";
 import { CharacterAndEquipmentPanel } from "./character-panel";
 import { InventoryPanel } from "./inventory-panel";
-import type { CurrencyPointerEnd, CurrencyPointerMove, CurrencyPointerStart } from "./use-armory-currency-drag";
-import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "./use-armory-gear-drag";
+import type { CurrencyPointerEnd, CurrencyPointerMove, CurrencyPointerStart } from "./use-armory-board-drag";
+import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "./armory-gear-drag-types";
 import type { ArmoryCursorPoint } from "./armory-screen-types";
 
 interface WorkspaceGridProps {
@@ -17,7 +17,6 @@ interface WorkspaceGridProps {
   draggedCurrencyId: CraftingCurrencyId | null;
   secondaryDragInstanceIds: string[];
   isDraggingActive: boolean;
-  isCurrencyDraggingActive: boolean;
   salvageMode: boolean;
   activeCurrencyId: CraftingCurrencyId | null;
   characterInventory: GearInstance[];
@@ -83,7 +82,7 @@ export function ArmoryWorkspaceGrid(props: WorkspaceGridProps) {
           draggedInstanceId={props.draggedGear?.instanceId ?? null}
           draggedCurrencyId={props.draggedCurrencyId}
           secondaryDragInstanceIds={props.secondaryDragInstanceIds}
-          isDraggingActive={props.isDraggingActive || props.isCurrencyDraggingActive}
+          isDraggingActive={props.isDraggingActive}
           boardRef={props.inventoryBoardRef}
           salvageMode={props.salvageMode}
           activeCurrencyId={props.activeCurrencyId}

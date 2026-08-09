@@ -13,9 +13,9 @@ import {
   generateLabyrinthMap,
 } from "@/lib/content-systems/labyrinth/map-generation";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthNode } from "@/lib/content-systems/types";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
+  createDraftRunRandomSource,
   setActiveLabyrinthPendingNode,
   setLabyrinthMap,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -69,11 +69,13 @@ function routeNodeInteraction(node: LabyrinthNode, handlers: LabyrinthNodeHandle
 }
 
 /** Pending node is owned by the session store — no local ref twin that can diverge after teardown. */
-export function useLabyrinthController(_screen: Screen, rng: () => number): LabyrinthController {
+export function useLabyrinthController(_screen: Screen): LabyrinthController {
   const resetMap = useCallback(() => {
-    setActiveLabyrinthPendingNode(null);
-    setLabyrinthMap(generateLabyrinthMap(rng));
-  }, [rng]);
+    dispatchRunSessionCommand((draft) => {
+      setActiveLabyrinthPendingNode(draft, null);
+      setLabyrinthMap(draft, generateLabyrinthMap(createDraftRunRandomSource(draft, "world")));
+    });
+  }, []);
 
   const enterNode = useCallback((row: number, col: number, handlers: LabyrinthNodeHandlers): boolean => {
     const node = dispatchRunSessionCommand((draft) => {
@@ -98,23 +100,28 @@ export function useLabyrinthController(_screen: Screen, rng: () => number): Laby
   }, []);
 
   const onNodeCleared = useCallback(() => {
-    const pending = readRunSession().activeLabyrinthPendingNode;
-    setActiveLabyrinthPendingNode(null);
+    const pending = dispatchRunSessionCommand((draft) => {
+      const pendingNode = draft.session.activeLabyrinthPendingNode;
+      setActiveLabyrinthPendingNode(draft, null);
+      if (pendingNode)
+        setLabyrinthMap(draft, (previous) => withCurrentNode(previous, pendingNode.row, pendingNode.col));
+      return pendingNode;
+    });
     if (!pending) {
       console.warn("[useLabyrinthController] onNodeCleared called without a pending node");
-      return;
     }
-    setLabyrinthMap((prev) => withCurrentNode(prev, pending.row, pending.col));
   }, []);
 
   const onNodeFailed = useCallback(() => {
-    const pending = readRunSession().activeLabyrinthPendingNode;
-    setActiveLabyrinthPendingNode(null);
+    const pending = dispatchRunSessionCommand((draft) => {
+      const pendingNode = draft.session.activeLabyrinthPendingNode;
+      setActiveLabyrinthPendingNode(draft, null);
+      if (pendingNode) setLabyrinthMap(draft, withFailedNode(current(draft.session.labyrinthMap), pendingNode));
+      return pendingNode;
+    });
     if (!pending) {
       console.warn("[useLabyrinthController] onNodeFailed called without a pending node");
-      return;
     }
-    setLabyrinthMap(withFailedNode(readRunSession().labyrinthMap, pending));
   }, []);
 
   return { enterNode, onNodeCleared, onNodeFailed, resetMap };

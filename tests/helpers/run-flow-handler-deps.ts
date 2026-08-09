@@ -34,9 +34,6 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     run = makeRunController(),
     talents = makeTalentController(),
     getAvailableDestinations = () => [],
-    rewardRng = () => 0.5,
-    destinationRng = () => 0.5,
-    worldRng = () => 0.5,
     actions: actionsOverride,
     navigateTo = () => {},
     transition = () => {},
@@ -103,8 +100,5 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     talents,
     actions,
     getAvailableDestinations,
-    rewardRng,
-    destinationRng,
-    worldRng,
   };
 }

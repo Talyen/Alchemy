@@ -26,6 +26,7 @@ import {
   setRoomsEncountered,
   setSelectedDifficulty,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 type TestRunPort = RunFlowRunPort &
   ContentNavigationRunPort &
@@ -63,17 +64,17 @@ export function makeRunController() {
     encounteredRunEnemyIds: state.activeRun.encounteredRunEnemyIds,
     lastOfferedDestinations: state.activeRun.lastOfferedDestinations,
     destinationRoundsSinceOffered: state.activeRun.destinationRoundsSinceOffered,
-    updateRunDeck: setRunDeck,
-    updateRunPlayerHealth: setRunPlayerHealth,
-    updateRoomsEncountered: setRoomsEncountered,
-    updateCurrentAct: setCurrentAct,
-    updateDestinationIndexInAct: setDestinationIndexInAct,
-    updateCompletedDestinations: setCompletedDestinations,
-    updateDestinationOfferState: setDestinationOfferState,
-    updateRunTrinkets: setRunTrinkets,
-    updateEncounteredRunEnemyIds: setEncounteredRunEnemyIds,
-    setSelectedDifficulty,
-    setContentSystemType,
+    updateRunDeck: createRunSessionCommand(setRunDeck),
+    updateRunPlayerHealth: createRunSessionCommand(setRunPlayerHealth),
+    updateRoomsEncountered: createRunSessionCommand(setRoomsEncountered),
+    updateCurrentAct: createRunSessionCommand(setCurrentAct),
+    updateDestinationIndexInAct: createRunSessionCommand(setDestinationIndexInAct),
+    updateCompletedDestinations: createRunSessionCommand(setCompletedDestinations),
+    updateDestinationOfferState: createRunSessionCommand(setDestinationOfferState),
+    updateRunTrinkets: createRunSessionCommand(setRunTrinkets),
+    updateEncounteredRunEnemyIds: createRunSessionCommand(setEncounteredRunEnemyIds),
+    setSelectedDifficulty: createRunSessionCommand(setSelectedDifficulty),
+    setContentSystemType: createRunSessionCommand(setContentSystemType),
     setCharacter: state.setCharacter,
     addRunGold: state.addRunGold,
   };

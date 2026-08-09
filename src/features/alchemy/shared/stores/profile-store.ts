@@ -5,7 +5,6 @@ import { createDefaultProfileSaveFields, type ProfileSaveFields } from "./profil
 import { bindDraftAction, type GameplayDraft } from "./run-session-command";
 import { createGameplayDraftActions } from "./gameplay-state-store";
 import {
-  applyGameplayStateUpdate,
   readGameplayState,
   subscribeGameplayCommits,
   useGameplayStateStore,
@@ -29,18 +28,10 @@ function cloneProfileSaveFields(fields: ProfileSaveFields): ProfileSaveFields {
   };
 }
 
-export const profilePersistenceCodec: PersistenceCodec<ProfileSaveFields> = {
+export const profilePersistenceCodec: PersistenceCodec<ProfileSaveFields, [draft: GameplayDraft]> = {
   createDefault: createDefaultProfileSaveFields,
   encode: () => cloneProfileSaveFields(readGameplayState().profile),
-  hydrate: (fields, draft) => {
-    if (draft) {
-      Object.assign(draft.profile, cloneProfileSaveFields(fields));
-      return;
-    }
-    applyGameplayStateUpdate((state) => {
-      Object.assign(state.profile, cloneProfileSaveFields(fields));
-    });
-  },
+  hydrate: (fields, draft) => Object.assign(draft.profile, cloneProfileSaveFields(fields)),
   subscribe: (listener) => subscribeGameplayCommits(() => listener()),
 };
 

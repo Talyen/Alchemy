@@ -26,14 +26,7 @@ vi.mock("@/lib/audio", async (importOriginal) => {
 });
 
 vi.mock("@/lib/platform", () => ({
-  platform: {
-    isDesktop: false,
-    canQuit: false,
-    setDisplayMode: vi.fn(),
-    quit: vi.fn(),
-    steam: { isInitialized: false, playerName: null, init: vi.fn(), setRichPresence: vi.fn() },
-    cloud: { isAvailable: false, read: vi.fn(), write: vi.fn() },
-  },
+  setSteamRichPresence: vi.fn(),
 }));
 
 beforeEach(() => {

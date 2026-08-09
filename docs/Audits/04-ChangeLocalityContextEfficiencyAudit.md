@@ -61,6 +61,6 @@ Optional discovery aids — choose your own probes. See also the [measurable swe
 - **Authored co-change clusters:** capped history samples excluding `dist/`, assets, and generated files; confirm in diffs.
 - **Repeated policy and commands:** duplicated rules, versions, flags, or command sequences across `AGENTS.md`, `docs/`, `CONTRIBUTING.md`, and `scripts/` that can link to one owner.
 - **Non-local review surface:** frequently changed authored owners whose diffs repeatedly require unrelated sections; route genuine ownership drift to `14-StateGravityOwnershipAudit.md`.
-- **Single-use abstractions forcing fan-out:** `npm run audit:single-use` as a supporting signal (not sole evidence).
+- **Single-use abstractions forcing fan-out:** confirm from concrete call sites and co-change history; one consumer alone is not evidence of harmful fan-out.
 - **Test/fixture amplification:** one behavior change requires avoidable updates across parallel fixtures, test harnesses, or tier-specific setup.
 - **Generated-source ambiguity:** agents must inspect or edit both authored inputs and generated products because ownership or regeneration guidance is unclear.

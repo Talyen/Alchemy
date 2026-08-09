@@ -33,7 +33,6 @@ export function useRunFlowEngine({
   labyrinthClearNode,
   labyrinthFailNode,
   onMarkDifficultyCompleted,
-  randomSources,
 }: RunNavigationDeps) {
   const orchestration = useRunOrchestrationPort();
   const talentEffects = useTalentEffects();
@@ -64,7 +63,6 @@ export function useRunFlowEngine({
     onStartBossById: battle.onStartBossById,
     setHasActiveBattle,
     clearCardHover,
-    rng: randomSources.world,
   });
 
   const contentNav = useContentSystemNavigation({
@@ -79,14 +77,11 @@ export function useRunFlowEngine({
     onStartBattle: battle.onStartBattle,
     getAvailableDestinations: destinations.getAvailableDestinations,
     onResumeWildwood: wildwood.resumeWildwoodRun,
-    destinationRng: randomSources.destinations,
-    worldRng: randomSources.world,
     clearCardHover,
   });
 
   const mystery = useMysteryEventNavigation({
     navigateTo,
-    eventsRng: randomSources.events,
   });
 
   const actions = useMemo((): RunFlowShellActions => {
@@ -130,19 +125,8 @@ export function useRunFlowEngine({
         talents: flowTalents,
         actions,
         getAvailableDestinations: destinations.getAvailableDestinations,
-        rewardRng: randomSources.rewards,
-        destinationRng: randomSources.destinations,
-        worldRng: randomSources.world,
       }),
-    [
-      orchestration,
-      flowTalents,
-      actions,
-      destinations.getAvailableDestinations,
-      randomSources.rewards,
-      randomSources.destinations,
-      randomSources.world,
-    ],
+    [orchestration, flowTalents, actions, destinations.getAvailableDestinations],
   );
 
   const corruption = useMemo(
@@ -150,21 +134,19 @@ export function useRunFlowEngine({
       createCorruptionFlowHandlers({
         getRunDeck: () => readActiveRun().runDeck,
         updateRunDeck: setRunDeck,
-        eventsRng: randomSources.events,
         advanceToNextDestination: flowHandlers.advanceToNextDestination,
       }),
-    [randomSources.events, flowHandlers.advanceToNextDestination],
+    [flowHandlers.advanceToNextDestination],
   );
 
   const teardown = useMemo(
     () =>
       createRunTeardown({
         cancelPending,
-        setHasActiveBattle,
         clearCardHover,
         navigateTo,
       }),
-    [cancelPending, setHasActiveBattle, clearCardHover, navigateTo],
+    [cancelPending, clearCardHover, navigateTo],
   );
 
   const handleMysteryContinue = useCallback(() => {

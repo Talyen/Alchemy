@@ -9,7 +9,7 @@ import {
   addRunGold,
   awardMaterialsDuringRun,
   awardMysteryXP,
-  bindRunRandomSource,
+  createDraftRunRandomSource,
   setMysteryCardChoices,
   setMysteryEvent,
   setRunDeck,
@@ -22,11 +22,11 @@ import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { playGoldGain, playGoldSpend } from "@/lib/audio";
 
-export function useMysteryFlow(rng: () => number) {
+export function useMysteryFlow() {
   function beginMysteryEvent(navigateToMystery: () => void) {
     dispatchRunSessionCommand(
       (draft) => {
-        setMysteryEvent(draft, pickMysteryEvent(bindRunRandomSource(rng, draft)));
+        setMysteryEvent(draft, pickMysteryEvent(createDraftRunRandomSource(draft, "events")));
         setMysteryCardChoices(draft, null);
       },
       { afterCommit: navigateToMystery },
@@ -43,7 +43,7 @@ export function useMysteryFlow(rng: () => number) {
           const result = applyMysteryEffect(effect, {
             runDeck: runStore.runDeck,
             runMaxHealth: runStore.runMaxHealth,
-            rng: bindRunRandomSource(rng, draft),
+            rng: createDraftRunRandomSource(draft, "events"),
             setRunDeck,
             setRunGold,
             setRunPlayerHealth,
@@ -75,7 +75,7 @@ export function useMysteryFlow(rng: () => number) {
     dispatchRunSessionCommand((draft) => {
       const card = cardLibrary.find((c) => c.id === cardId);
       if (card) {
-        appendCardToRunWithDiscovery(card, setRunDeck, draft);
+        appendCardToRunWithDiscovery(draft, card);
       }
       setMysteryCardChoices(draft, null);
     });
@@ -88,7 +88,7 @@ export function useMysteryFlow(rng: () => number) {
   }
 
   function clearCardChoices() {
-    setMysteryCardChoices(null);
+    dispatchRunSessionCommand((draft) => setMysteryCardChoices(draft, null));
   }
 
   return {

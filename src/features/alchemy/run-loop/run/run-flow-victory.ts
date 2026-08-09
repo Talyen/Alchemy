@@ -1,41 +1,23 @@
-import {
-  readActiveRun,
-  readBattle,
-  readRunProfile,
-  readRunSession,
-} from "@/features/alchemy/shared/stores/run-session-read-port";
-import {
-  addRunGold,
-  awardMaterialsDuringRun,
-  bindRunRandomSource,
-  setDestinationOfferState,
-  setRunMaxHealth,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  setCompanionRewardCards,
-  setHasActiveBattle,
-  setRewardState,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { playGoldGain, playVictory, stopAllSfx } from "@/lib/audio";
 import { VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
 import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { computeVictoryRewards, commitVictoryRewards } from "../navigation/victory-flow";
 import { CONSTANTS } from "../../shared/types";
-import { getActiveRewardTraits } from "./run-flow-handler-deps";
 import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
 import { clearCombatPresentation } from "./run-flow-session-helpers";
 
 export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
-  function computeVictoryResult(draft?: GameplayDraft) {
-    const runState = draft?.run.activeRun ?? readActiveRun();
-    const runProfile = draft?.runProfile ?? readRunProfile();
-    const battleState = draft?.battle.battleState ?? readBattle().battleState;
-    const rewardTraits = draft
-      ? runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
+  function computeVictoryResult(draft: GameplayDraft) {
+    const runState = draft.run.activeRun;
+    const runProfile = draft.runProfile;
+    const battleState = draft.battle.battleState;
+    const rewardTraits =
+      runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
         ? (draft.session.wildwoodDraft?.currentRewardTraitIds ?? [])
-        : draft.session.activeLabyrinthRewardModifiers
-      : getActiveRewardTraits(runState.contentSystemType);
+        : draft.session.activeLabyrinthRewardModifiers;
     return computeVictoryRewards(
       {
         characterId: runState.characterId,
@@ -53,14 +35,14 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
         completedDestinations: runState.completedDestinations,
         homesteadEffects: runProfile.effects,
         getAvailableDestinations: deps.getAvailableDestinations,
-        bossEnemyId: getBossEnemy([], draft ? bindRunRandomSource(deps.worldRng, draft) : deps.worldRng).id,
+        bossEnemyId: getBossEnemy([], createDraftRunRandomSource(draft, "world")).id,
         destinationOfferState: {
           lastOfferedDestinations: runState.lastOfferedDestinations,
           roundsSinceOffered: runState.destinationRoundsSinceOffered,
         },
       },
-      draft ? bindRunRandomSource(deps.rewardRng, draft) : deps.rewardRng,
-      draft ? bindRunRandomSource(deps.destinationRng, draft) : deps.destinationRng,
+      createDraftRunRandomSource(draft, "rewards"),
+      createDraftRunRandomSource(draft, "destinations"),
     );
   }
 
@@ -72,20 +54,13 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
         const battleState = draft.battle.battleState;
         const runState = draft.run.activeRun;
         goldGained = commitVictoryRewards(
+          draft,
           committedResult,
           {
             battleState,
             contentSystemType: runState.contentSystemType,
-            addHomesteadMaterials: awardMaterialsDuringRun,
-            addRunGold,
-            setRunMaxHealth,
-            setRewardState,
-            setCompanionRewardCards,
-            setDestinationOfferState,
-            setHasActiveBattle,
           },
-          bindRunRandomSource(deps.rewardRng, draft),
-          draft,
+          createDraftRunRandomSource(draft, "rewards"),
         );
         if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
           deps.actions.commitWildwoodVictory(draft, committedResult);

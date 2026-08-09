@@ -5,11 +5,19 @@ import {
   appendTrinketToRunWithDiscovery,
 } from "@/features/alchemy/run-loop/run/deck-mutations";
 import type { BattleCard } from "@/lib/game-data";
+import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 
 const discoveryMocks = vi.hoisted(() => ({
   setDiscoveredCardIds: vi.fn(),
   setDiscoveredTrinketIds: vi.fn(),
+  setRunDeck: vi.fn(),
+  setRunTrinkets: vi.fn(),
 }));
+
+vi.mock("@/features/alchemy/shared/stores/run-session-write-port", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-session-write-port")>();
+  return { ...actual, setRunDeck: discoveryMocks.setRunDeck, setRunTrinkets: discoveryMocks.setRunTrinkets };
+});
 
 vi.mock("@/features/alchemy/shared/stores/profile-store", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/profile-store")>();
@@ -23,43 +31,44 @@ vi.mock("@/features/alchemy/shared/stores/profile-store", async (importOriginal)
 beforeEach(() => {
   discoveryMocks.setDiscoveredCardIds.mockClear();
   discoveryMocks.setDiscoveredTrinketIds.mockClear();
+  discoveryMocks.setRunDeck.mockClear();
+  discoveryMocks.setRunTrinkets.mockClear();
 });
 
 describe("appendCardToRunWithDiscovery", () => {
   it("appends card to deck and updates discovered IDs", () => {
     const card = makeDiscoveryCard();
-    const setRunDeck = vi.fn();
+    const draft = {} as GameplayDraft;
+    appendCardToRunWithDiscovery(draft, card);
 
-    appendCardToRunWithDiscovery(card, setRunDeck);
-
-    const deckUpdater = setRunDeck.mock.calls[0][0];
+    const deckUpdater = discoveryMocks.setRunDeck.mock.calls[0][1];
     expect(deckUpdater([{ id: "stab" } as BattleCard])).toEqual([{ id: "stab" }, card]);
 
-    const discUpdater = discoveryMocks.setDiscoveredCardIds.mock.calls[0][0];
+    const discUpdater = discoveryMocks.setDiscoveredCardIds.mock.calls[0][1];
     expect(discUpdater(["stab"])).toEqual(["stab", "fireball"]);
   });
 
   it("does not duplicate discovered card ids", () => {
     const card = makeDiscoveryCard();
 
-    appendCardToRunWithDiscovery(card, vi.fn());
-    appendCardToRunWithDiscovery(card, vi.fn());
+    const draft = {} as GameplayDraft;
+    appendCardToRunWithDiscovery(draft, card);
+    appendCardToRunWithDiscovery(draft, card);
 
-    const secondUpdater = discoveryMocks.setDiscoveredCardIds.mock.calls[1][0];
+    const secondUpdater = discoveryMocks.setDiscoveredCardIds.mock.calls[1][1];
     expect(secondUpdater(["fireball"])).toEqual(["fireball"]);
   });
 });
 
 describe("appendTrinketToRunWithDiscovery", () => {
   it("appends boon and discovers it", () => {
-    const setRunTrinkets = vi.fn();
+    const draft = {} as GameplayDraft;
+    appendTrinketToRunWithDiscovery(draft, "bone-charm");
 
-    appendTrinketToRunWithDiscovery("bone-charm", setRunTrinkets);
-
-    const boonUpdater = setRunTrinkets.mock.calls[0][0];
+    const boonUpdater = discoveryMocks.setRunTrinkets.mock.calls[0][1];
     expect(boonUpdater([])).toEqual(["bone-charm"]);
 
-    const discUpdater = discoveryMocks.setDiscoveredTrinketIds.mock.calls[0][0];
+    const discUpdater = discoveryMocks.setDiscoveredTrinketIds.mock.calls[0][1];
     expect(discUpdater([])).toEqual(["bone-charm"]);
   });
 });

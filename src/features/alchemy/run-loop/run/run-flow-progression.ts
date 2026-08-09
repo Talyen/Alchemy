@@ -8,7 +8,7 @@ import {
   setDestinationIndexInAct,
   setCompletedDestinations,
   setMysteryCardChoices,
-  bindRunRandomSource,
+  createDraftRunRandomSource,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
@@ -30,8 +30,8 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, handlers: Ru
             lastOfferedDestinations: run.lastOfferedDestinations,
             roundsSinceOffered: run.destinationRoundsSinceOffered,
           },
-          bossEnemyId: getBossEnemy([], bindRunRandomSource(deps.worldRng, draft)).id,
-          rng: bindRunRandomSource(deps.destinationRng, draft),
+          bossEnemyId: getBossEnemy([], createDraftRunRandomSource(draft, "world")).id,
+          rng: createDraftRunRandomSource(draft, "destinations"),
         });
         setDestinationOfferState(draft, initialDestinations.offerState);
         setRewardState(draft, initialDestinations.rewardState);

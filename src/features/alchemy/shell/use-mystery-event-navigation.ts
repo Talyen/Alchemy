@@ -6,12 +6,10 @@ import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-myste
 
 export function useMysteryEventNavigation({
   navigateTo,
-  eventsRng,
 }: {
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
-  eventsRng: () => number;
 }) {
-  const mystery = useMysteryFlow(eventsRng);
+  const mystery = useMysteryFlow();
 
   const beginMysteryEvent = useCallback(
     (onRenderedScreenCommit?: () => void) => {

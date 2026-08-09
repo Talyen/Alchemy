@@ -5,7 +5,7 @@
 // against one explicit draft (slice actions mutate it in place), and publishes
 // exactly one revision on success. A thrown body discards the draft and skips
 // `afterCommit` effects.
-import { isDraft, produce } from "immer";
+import { produce } from "immer";
 import type { Draft } from "immer";
 import {
   applyGameplayStateUpdate,
@@ -16,39 +16,11 @@ import {
 
 export type GameplayDraft = Draft<GameplayState>;
 
-export function isGameplayDraft(value: unknown): value is GameplayDraft {
-  return isDraft(value);
-}
-
-/** Bind an aggregate action without opening a nested command. */
+/** Bind an aggregate action as an explicit draft-first mutator. */
 export function bindDraftAction<Args extends unknown[], Ret>(
   select: (state: GameplayDraft) => (...args: Args) => Ret,
-): {
-  (draft: GameplayDraft, ...args: Args): Ret;
-  (...args: Args): Ret;
-} {
-  const bound = ((...args: unknown[]) => {
-    const [first, ...rest] = args;
-    if (isGameplayDraft(first)) return select(first)(...(rest as Args));
-    return dispatchRunSessionCommand((draft) => select(draft)(...(args as Args)));
-  }) as {
-    (draft: GameplayDraft, ...args: Args): Ret;
-    (...args: Args): Ret;
-    draftFirst?: true;
-  };
-  bound.draftFirst = true;
-  return bound;
-}
-
-export function invokeDraftAction<Args extends unknown[], Ret>(
-  action: (...args: Args) => Ret,
-  draft: GameplayDraft,
-  ...args: Args
-): Ret {
-  if ((action as typeof action & { draftFirst?: true }).draftFirst) {
-    return (action as unknown as (draft: GameplayDraft, ...args: Args) => Ret)(draft, ...args);
-  }
-  return action(...args);
+): (draft: GameplayDraft, ...args: Args) => Ret {
+  return (draft, ...args) => select(draft)(...args);
 }
 
 /**
@@ -69,6 +41,13 @@ export function dispatchRunSessionCommand<T>(
   if (next !== base) applyGameplayStateUpdate(next, true);
   options?.afterCommit?.(result);
   return result;
+}
+
+/** Adapt one draft mutator into an explicit event-time command. */
+export function createRunSessionCommand<Args extends unknown[], Ret>(
+  mutate: (draft: GameplayDraft, ...args: Args) => Ret,
+): (...args: Args) => Ret {
+  return (...args) => dispatchRunSessionCommand((draft) => mutate(draft, ...args));
 }
 
 export function subscribeRunSessionCommits(listener: (revision: number) => void): () => void {

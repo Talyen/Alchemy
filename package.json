@@ -34,7 +34,6 @@
     "generate:patch-notes": "node scripts/generate-patch-notes.mjs",
     "content:audit": "node scripts/content-audit.mjs",
     "audit:all": "node scripts/audit-all.mjs",
-    "audit:single-use": "node scripts/audit-single-use.mjs",
     "sync:changelog": "node scripts/sync-changelog.mjs",
     "sync:version": "node scripts/sync-version-metadata.mjs",
     "sync:steam-appid": "node scripts/sync-steam-appid.mjs",

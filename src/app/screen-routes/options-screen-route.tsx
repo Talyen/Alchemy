@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- route mapping table colocated here */
 import type { ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { platform } from "@/lib/platform";
+import { isDesktop } from "@/lib/platform";
 import { OptionsScreen } from "@/features/alchemy/meta/screens";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { useSettingsActions } from "@/features/alchemy/shared/stores/store-actions";
@@ -39,7 +39,7 @@ function OptionsScreenRoute({
         onAspectRatioChange: actions.setSelectedAspectRatio,
         displayMode: settings.displayMode,
         onDisplayModeChange: actions.setDisplayMode,
-        showDisplayMode: platform.isDesktop,
+        showDisplayMode: isDesktop(),
         brightness: settings.brightness,
         onBrightnessChange: actions.setBrightness,
       }}

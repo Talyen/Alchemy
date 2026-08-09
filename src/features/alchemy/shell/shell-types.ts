@@ -25,12 +25,6 @@ export interface RunNavigationDeps {
   transition: (nextScreen: Screen, options?: ScreenTransitionOptions) => void;
   cancelPending: () => void;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
-  randomSources: {
-    rewards: () => number;
-    destinations: () => number;
-    events: () => number;
-    world: () => number;
-  };
   battle: BattleLauncherDeps;
   initializeShop: (kind: ShopKind) => void;
   labyrinthClearNode: () => void;

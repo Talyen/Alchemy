@@ -10,7 +10,7 @@ import {
   setWildwoodDraft,
   setDestinationOfferState,
   setRewardState,
-  bindRunRandomSource,
+  createDraftRunRandomSource,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
@@ -62,8 +62,8 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
             lastOfferedDestinations: run.lastOfferedDestinations,
             roundsSinceOffered: run.destinationRoundsSinceOffered,
           },
-          bossEnemyId: getBossEnemy([], bindRunRandomSource(deps.worldRng, draft)).id,
-          rng: bindRunRandomSource(deps.destinationRng, draft),
+          bossEnemyId: getBossEnemy([], createDraftRunRandomSource(draft, "world")).id,
+          rng: createDraftRunRandomSource(draft, "destinations"),
         });
         setDestinationOfferState(draft, initialDestinations.offerState);
         setRewardState(draft, initialDestinations.rewardState);
@@ -96,7 +96,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
         applyRunStartToDraft(draft, startSnapshot);
         setWildwoodDraft(
           draft,
-          createInitialWildwoodDraftState(characterId, bindRunRandomSource(deps.worldRng, draft)),
+          createInitialWildwoodDraftState(characterId, createDraftRunRandomSource(draft, "world")),
         );
         setPendingCharacterId(draft, characterId);
       },
@@ -136,8 +136,8 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
                   lastOfferedDestinations: run.lastOfferedDestinations,
                   roundsSinceOffered: run.destinationRoundsSinceOffered,
                 },
-                bossEnemyId: getBossEnemy([], bindRunRandomSource(deps.worldRng, draft)).id,
-                rng: bindRunRandomSource(deps.destinationRng, draft),
+                bossEnemyId: getBossEnemy([], createDraftRunRandomSource(draft, "world")).id,
+                rng: createDraftRunRandomSource(draft, "destinations"),
                 onSampled: (result) => setDestinationOfferState(draft, result.offerState),
               }),
             );
@@ -148,7 +148,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       }
       return;
     }
-    setPendingContentSystemType(systemId);
+    dispatchRunSessionCommand((draft) => setPendingContentSystemType(draft, systemId));
     deps.navigateTo(CONSTANTS.SCREENS.CHARACTER_SELECT);
   }
 
@@ -173,7 +173,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     }
 
     if (selectedId === "wildcard") {
-      setPendingCharacterId(selectedId);
+      dispatchRunSessionCommand((draft) => setPendingCharacterId(draft, selectedId));
       deps.draftedDeckRef.current = null;
       deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
       return;
@@ -190,7 +190,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     }
 
     afterCampaignCharacterResolved(selectedId, noviceCampaignDeps(), () => {
-      setPendingCharacterId(selectedId);
+      dispatchRunSessionCommand((draft) => setPendingCharacterId(draft, selectedId));
       deps.navigateTo(CONSTANTS.SCREENS.DIFFICULTY_SELECT);
     });
   }
@@ -234,7 +234,9 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     const { freshDeck, totalStartGold } = initializeRunForDifficulty(selectedId, difficultyId);
     const modifiers = getDifficultyModifiers(selectedId, difficultyId);
     deps.onStartBattle(freshDeck, totalStartGold, DEFAULT_BATTLE_ENEMY_TYPE, modifiers);
-    deps.navigateTo(CONSTANTS.SCREENS.BATTLE, () => setPendingCharacterId(null));
+    deps.navigateTo(CONSTANTS.SCREENS.BATTLE, () =>
+      dispatchRunSessionCommand((draft) => setPendingCharacterId(draft, null)),
+    );
   }
 
   function handleBackFromDifficultySelect() {

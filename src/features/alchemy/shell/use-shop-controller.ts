@@ -5,15 +5,10 @@ import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-
 export function useShopController({
   talentEffects,
   homesteadEffects,
-  rng,
 }: {
   talentEffects: TalentEffectManifest;
   homesteadEffects: HomesteadEffectManifest;
-  rng: () => number;
 }) {
-  return useMemo(
-    () => createShopActions({ talentEffects, homesteadEffects, rng }),
-    [talentEffects, homesteadEffects, rng],
-  );
+  return useMemo(() => createShopActions({ talentEffects, homesteadEffects }), [talentEffects, homesteadEffects]);
 }
 import { useMemo } from "react";

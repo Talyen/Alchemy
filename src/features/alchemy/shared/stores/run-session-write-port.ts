@@ -1,7 +1,7 @@
 // Public gameplay write capability for feature code.
 // All write functions are grouped by domain in this single barrel — import from here only.
-// Trivial single-action writes are bound through `bindDraftAction` so the public seam
-// stays a one-line list of names; compound cross-lifetime writes stay explicit below.
+// Every export is an explicit draft-first mutator. Event handlers own the surrounding
+// `dispatchRunSessionCommand`; compound recipes compose these helpers without nesting.
 import { getDifficultyXPMultiplier } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
@@ -9,13 +9,9 @@ import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-st
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunRngStream } from "@/lib/run-rng";
 import type { Destination } from "@/features/alchemy/shared/types";
-import { bindDraftAction, dispatchRunSessionCommand, isGameplayDraft, type GameplayDraft } from "./run-session-command";
+import { bindDraftAction, type GameplayDraft } from "./run-session-command";
 import { createGameplayDraftActions, readGameplayState } from "./gameplay-state-store";
 import type { DisplayOverrides } from "./run-domain-types";
-
-type RunActions = GameplayDraft["runActions"];
-export type RunTrinketsUpdate = Parameters<RunActions["setRunTrinkets"]>[0];
-export type RunDeckUpdate = Parameters<RunActions["setRunDeck"]>[0];
 
 const draftActions = (state: GameplayDraft) => createGameplayDraftActions(state);
 const runActions = (state: GameplayDraft) => draftActions(state).runActions;
@@ -48,20 +44,13 @@ export const addRunMaterialsEarned = bindDraftAction((s) => runActions(s).addRun
 export const clearRunMaterialsEarned = bindDraftAction((s) => runActions(s).clearRunMaterialsEarned);
 
 /** Draw from a persisted run stream without exposing the aggregate action. */
-type RunRandomSource = (() => number) & { bindDraft?: (draft: GameplayDraft) => () => number };
-
-export function createRunRandomSource(stream: RunRngStream, draft?: GameplayDraft): RunRandomSource {
-  if (draft) {
-    const nextRunRandom = draftActions(draft).runActions.nextRunRandom;
-    return () => nextRunRandom(stream);
-  }
-  const source: RunRandomSource = () => readGameplayState().runActions.nextRunRandom(stream);
-  source.bindDraft = (draft) => createRunRandomSource(stream, draft);
-  return source;
+export function createRunRandomSource(stream: RunRngStream): () => number {
+  return () => readGameplayState().runActions.nextRunRandom(stream);
 }
 
-export function bindRunRandomSource(source: () => number, draft: GameplayDraft): () => number {
-  return (source as RunRandomSource).bindDraft?.(draft) ?? source;
+export function createDraftRunRandomSource(draft: GameplayDraft, stream: RunRngStream): () => number {
+  const nextRunRandom = draftActions(draft).runActions.nextRunRandom;
+  return () => nextRunRandom(stream);
 }
 
 // ---------------------------------------------------------------------------
@@ -69,19 +58,9 @@ export function bindRunRandomSource(source: () => number, draft: GameplayDraft):
 // ---------------------------------------------------------------------------
 
 /** Persist homestead materials and track totals for the run-end summary screen. */
-export function awardMaterialsDuringRun(draft: GameplayDraft, materials: MaterialInventory): void;
-export function awardMaterialsDuringRun(materials: MaterialInventory): void;
-export function awardMaterialsDuringRun(
-  draftOrMaterials: GameplayDraft | MaterialInventory,
-  materials?: MaterialInventory,
-): void {
-  if (!isGameplayDraft(draftOrMaterials)) {
-    dispatchRunSessionCommand((draft) => awardMaterialsDuringRun(draft, draftOrMaterials));
-    return;
-  }
-  const draft = draftOrMaterials;
-  draftActions(draft).runProfileActions.addMaterials(materials!);
-  draftActions(draft).runActions.addRunMaterialsEarned(materials!);
+export function awardMaterialsDuringRun(draft: GameplayDraft, materials: MaterialInventory): void {
+  draftActions(draft).runProfileActions.addMaterials(materials);
+  draftActions(draft).runActions.addRunMaterialsEarned(materials);
 }
 
 export const setMaterials = bindDraftAction((s) => runProfileActions(s).setMaterials);
@@ -94,11 +73,7 @@ export const unlockTalent = bindDraftAction((s) => runProfileActions(s).unlockTa
 export const resetUnlockedTalents = bindDraftAction((s) => runProfileActions(s).resetUnlockedTalents);
 
 /** Dev unlock-all: max every talent and drop pending run XP so run-end cannot merge on top. */
-export function unlockAllTalents(draft?: GameplayDraft): void {
-  if (!draft || !isGameplayDraft(draft)) {
-    dispatchRunSessionCommand((nextDraft) => unlockAllTalents(nextDraft));
-    return;
-  }
+export function unlockAllTalents(draft: GameplayDraft): void {
   draftActions(draft).runProfileActions.unlockAllTalents();
   draftActions(draft).runActions.resetRunXP();
 }
@@ -108,11 +83,7 @@ export function unlockAllTalents(draft?: GameplayDraft): void {
  * run-end snapshot the game-over / victory screens read. Idempotent: a second
  * call with no run XP left clears the snapshot instead of double-counting.
  */
-export function finalizeRunXP(draft?: GameplayDraft): void {
-  if (!draft || !isGameplayDraft(draft)) {
-    dispatchRunSessionCommand((nextDraft) => finalizeRunXP(nextDraft));
-    return;
-  }
+export function finalizeRunXP(draft: GameplayDraft): void {
   const actions = draftActions(draft);
   const runTalentXP = draft.run.activeRun.runTalentXP;
   if (Object.keys(runTalentXP).length === 0) {
@@ -152,25 +123,8 @@ export function initializeActiveBattle(
   draft: GameplayDraft,
   battleState: BattleState | null,
   pendingBattleTransition?: PersistedBattleTransition | null,
-): void;
-export function initializeActiveBattle(
-  battleState: BattleState | null,
-  pendingBattleTransition?: PersistedBattleTransition | null,
-): void;
-export function initializeActiveBattle(
-  draftOrBattleState: GameplayDraft | BattleState | null,
-  battleStateOrPending?: BattleState | PersistedBattleTransition | null,
-  pendingBattleTransition?: PersistedBattleTransition | null,
 ): void {
-  if (!isGameplayDraft(draftOrBattleState)) {
-    dispatchRunSessionCommand((draft) =>
-      initializeActiveBattle(draft, draftOrBattleState, battleStateOrPending as PersistedBattleTransition | null),
-    );
-    return;
-  }
-  const draft = draftOrBattleState;
   const actions = draftActions(draft);
-  const battleState = battleStateOrPending as BattleState | null;
   if (!battleState) {
     actions.battleActions.initializeActiveBattle(null, null);
     return;
@@ -186,27 +140,10 @@ export function commitBattleTransition(
   draft: GameplayDraft,
   battleState: BattleState,
   pendingBattleTransition: PersistedBattleTransition | null,
-): void;
-export function commitBattleTransition(
-  battleState: BattleState,
-  pendingBattleTransition: PersistedBattleTransition | null,
-): void;
-export function commitBattleTransition(
-  draftOrBattleState: GameplayDraft | BattleState,
-  battleStateOrPending: BattleState | PersistedBattleTransition | null,
-  pendingBattleTransition?: PersistedBattleTransition | null,
 ): void {
-  if (!isGameplayDraft(draftOrBattleState)) {
-    dispatchRunSessionCommand((draft) =>
-      commitBattleTransition(draft, draftOrBattleState, battleStateOrPending as PersistedBattleTransition | null),
-    );
-    return;
-  }
-  const draft = draftOrBattleState;
-  const battleState = battleStateOrPending as BattleState;
   const battle = draftActions(draft).battleActions;
   battle.setSyncedBattleState(battleState);
-  battle.setPendingBattleTransition(pendingBattleTransition ?? null);
+  battle.setPendingBattleTransition(pendingBattleTransition);
   battle.clearPendingTransitionResumeRequired();
 }
 
@@ -216,43 +153,14 @@ export function beginBattleTransition(
   battleState: BattleState,
   pendingBattleTransition: PersistedBattleTransition,
   displayOverrides: DisplayOverrides,
-): void;
-export function beginBattleTransition(
-  battleState: BattleState,
-  pendingBattleTransition: PersistedBattleTransition,
-  displayOverrides: DisplayOverrides,
-): void;
-export function beginBattleTransition(
-  draftOrBattleState: GameplayDraft | BattleState,
-  battleStateOrPending: BattleState | PersistedBattleTransition,
-  pendingOrDisplay: PersistedBattleTransition | DisplayOverrides,
-  displayOverrides?: DisplayOverrides,
 ): void {
-  if (!isGameplayDraft(draftOrBattleState)) {
-    dispatchRunSessionCommand((draft) =>
-      beginBattleTransition(
-        draft,
-        draftOrBattleState,
-        battleStateOrPending as PersistedBattleTransition,
-        pendingOrDisplay as DisplayOverrides,
-      ),
-    );
-    return;
-  }
-  const draft = draftOrBattleState;
-  const battleState = battleStateOrPending as BattleState;
-  const pendingBattleTransition = pendingOrDisplay as PersistedBattleTransition;
   const battle = draftActions(draft).battleActions;
   battle.setSyncedBattleState(battleState);
   battle.setPendingBattleTransition(pendingBattleTransition);
-  battle.setDisplayOverrides(displayOverrides!);
+  battle.setDisplayOverrides(displayOverrides);
 }
 
-export function clearBattleTransition(draft?: GameplayDraft): void {
-  if (!draft || !isGameplayDraft(draft)) {
-    dispatchRunSessionCommand((nextDraft) => clearBattleTransition(nextDraft));
-    return;
-  }
+export function clearBattleTransition(draft: GameplayDraft): void {
   const battle = draftActions(draft).battleActions;
   battle.setPendingBattleTransition(null);
   battle.clearPendingTransitionResumeRequired();
@@ -267,21 +175,11 @@ export const setPendingContentSystemType = bindDraftAction((s) => sessionActions
 export const setWildwoodDraft = bindDraftAction((s) => sessionActions(s).setWildwoodDraft);
 
 /** Start a fresh run: seed active-run progress, drop the previous run-end XP snapshot, flag the run active. */
-export function applyRunStartSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): void;
-export function applyRunStartSnapshot(snapshot: RunStartSnapshot): void;
-export function applyRunStartSnapshot(
-  draftOrSnapshot: GameplayDraft | RunStartSnapshot,
-  snapshot?: RunStartSnapshot,
-): void {
-  if (!isGameplayDraft(draftOrSnapshot)) {
-    dispatchRunSessionCommand((draft) => applyRunStartSnapshot(draft, draftOrSnapshot));
-    return;
-  }
-  const draft = draftOrSnapshot;
+export function applyRunStartSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): void {
   const actions = draftActions(draft);
-  actions.runActions.hydrateFromSnapshot(snapshot!);
+  actions.runActions.hydrateFromSnapshot(snapshot);
   actions.sessionActions.setRunEndTalentXP({});
-  actions.sessionActions.setHasActiveRun(snapshot!.hasActiveRun);
+  actions.sessionActions.setHasActiveRun(snapshot.hasActiveRun);
 }
 
 // ---------------------------------------------------------------------------
@@ -298,27 +196,17 @@ export const setRunEndMaterials = bindDraftAction((s) => sessionActions(s).setRu
 export const setCorruptionResult = bindDraftAction((s) => sessionActions(s).setCorruptionResult);
 
 /** Commit destination claim across session + active-run progress (cross-lifetime). */
-export function commitDestinationClaim(draft: GameplayDraft, destination: Destination): boolean;
-export function commitDestinationClaim(destination: Destination): boolean;
-export function commitDestinationClaim(
-  draftOrDestination: GameplayDraft | Destination,
-  destination?: Destination,
-): boolean {
-  if (!isGameplayDraft(draftOrDestination)) {
-    return dispatchRunSessionCommand((draft) => commitDestinationClaim(draft, draftOrDestination));
-  }
-  const draft = draftOrDestination;
+export function commitDestinationClaim(draft: GameplayDraft, destination: Destination): boolean {
   const actions = draftActions(draft);
-  const claimedDestination = destination!;
   const transient = draft.session;
-  if (transient.pendingDestinationClaim !== claimedDestination) return false;
-  if (!transient.rewardState.destinations.includes(claimedDestination)) {
+  if (transient.pendingDestinationClaim !== destination) return false;
+  if (!transient.rewardState.destinations.includes(destination)) {
     actions.sessionActions.cancelDestinationClaim();
     return false;
   }
   actions.sessionActions.setRewardState((prev) => ({ ...prev, destinations: [] }));
   actions.sessionActions.cancelDestinationClaim();
-  actions.runActions.setCompletedDestinations((prev) => [...prev, claimedDestination]);
+  actions.runActions.setCompletedDestinations((prev) => [...prev, destination]);
   actions.runActions.setDestinationIndexInAct((prev) => prev + 1);
   return true;
 }

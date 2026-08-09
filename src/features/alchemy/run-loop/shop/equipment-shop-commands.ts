@@ -1,7 +1,10 @@
-import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
+import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
-import { bindRunRandomSource, setEquipmentShopState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  createDraftRunRandomSource,
+  setEquipmentShopState,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { TalentEffectManifest } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import { purchaseShopOffering, refreshShopOfferings } from "../shop-transactions";
@@ -17,11 +20,9 @@ import {
 export function createEquipmentShopCommands({
   talentEffects,
   gearAstralChanceBonus,
-  rng,
 }: {
   talentEffects: TalentEffectManifest;
   gearAstralChanceBonus: number;
-  rng: () => number;
 }): EquipmentShopCommands {
   const getBuyPrice = (instance: GearInstance) =>
     computeGearBuyPrice(instance, {
@@ -35,7 +36,7 @@ export function createEquipmentShopCommands({
     dispatchRunSessionCommand((draft) =>
       setEquipmentShopState(
         draft,
-        createInitialEquipmentShopState(bindRunRandomSource(rng, draft), gearAstralChanceBonus),
+        createInitialEquipmentShopState(createDraftRunRandomSource(draft, "shops"), gearAstralChanceBonus),
       ),
     );
   }
@@ -56,8 +57,7 @@ export function createEquipmentShopCommands({
         slotKey: instance.instanceId,
         acquire: () => {
           const characterId = draft.run.activeRun.characterId;
-          dispatchGearMutationWithRunHealthSync({
-            draft,
+          mutateGearWithRunHealthSync(draft, {
             characterId,
             mutate: (gear) => gear.addInstance(instance, characterId),
           });
@@ -76,7 +76,8 @@ export function createEquipmentShopCommands({
         price: getRefreshPrice(state.refreshesLeft),
         refreshesLeft: state.refreshesLeft,
         setState: setEquipmentShopState,
-        resample: () => resampleEquipmentShopOfferings(bindRunRandomSource(rng, draft), gearAstralChanceBonus),
+        resample: () =>
+          resampleEquipmentShopOfferings(createDraftRunRandomSource(draft, "shops"), gearAstralChanceBonus),
         mapState: (previous, gear) => ({
           ...previous,
           gear,

@@ -46,6 +46,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-model";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 async function wipeUnsupportedSaveAndReload() {
   const cleared = await clearAlchemySaveData();
@@ -216,7 +217,9 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
     const prev = readProfileStore().completedDifficulties;
     const current = prev[characterId];
     if (current.includes(difficultyId)) return;
-    setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
+    dispatchRunSessionCommand((draft) =>
+      setCompletedDifficulties(draft, { ...prev, [characterId]: [...current, difficultyId] }),
+    );
   }
 
   const screen = useActiveRunScreenValue();

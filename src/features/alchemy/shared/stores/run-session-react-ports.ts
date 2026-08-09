@@ -37,7 +37,20 @@ import type {
   RunFlowTalentPort,
   RunOrchestrationPort,
 } from "./run-port-types";
+import { createRunSessionCommand } from "./run-session-command";
 import { setHasActiveBattle as setHasActiveBattleCommand } from "./run-session-write-port";
+
+const commandSetCurrentAct = createRunSessionCommand(setCurrentAct);
+const commandSetDestinationIndexInAct = createRunSessionCommand(setDestinationIndexInAct);
+const commandSetCompletedDestinations = createRunSessionCommand(setCompletedDestinations);
+const commandSetRoomsEncountered = createRunSessionCommand(setRoomsEncountered);
+const commandSetRunDeck = createRunSessionCommand(setRunDeck);
+const commandSetRunTrinkets = createRunSessionCommand(setRunTrinkets);
+const commandSetRunPlayerHealth = createRunSessionCommand(setRunPlayerHealth);
+const commandSetDestinationOfferState = createRunSessionCommand(setDestinationOfferState);
+const commandSetEncounteredRunEnemyIds = createRunSessionCommand(setEncounteredRunEnemyIds);
+const commandSetScreen = createRunSessionCommand(setScreen);
+const commandSetHasActiveBattle = createRunSessionCommand(setHasActiveBattleCommand);
 
 export function useTalentEffects(): TalentEffectManifest {
   const unlockedTalents = useGameplayStateStore((state) => state.runProfile.unlockedTalents);
@@ -49,14 +62,14 @@ export function useRunOrchestrationPort(): RunOrchestrationPort {
   return useGameplayStateStore(
     useShallow((state) => ({
       ...pickActiveRunFields(state.run.activeRun),
-      updateCurrentAct: setCurrentAct,
-      updateDestinationIndexInAct: setDestinationIndexInAct,
-      updateCompletedDestinations: setCompletedDestinations,
-      updateRoomsEncountered: setRoomsEncountered,
-      updateRunDeck: setRunDeck,
-      updateRunTrinkets: setRunTrinkets,
-      updateRunPlayerHealth: setRunPlayerHealth,
-      updateDestinationOfferState: setDestinationOfferState,
+      updateCurrentAct: commandSetCurrentAct,
+      updateDestinationIndexInAct: commandSetDestinationIndexInAct,
+      updateCompletedDestinations: commandSetCompletedDestinations,
+      updateRoomsEncountered: commandSetRoomsEncountered,
+      updateRunDeck: commandSetRunDeck,
+      updateRunTrinkets: commandSetRunTrinkets,
+      updateRunPlayerHealth: commandSetRunPlayerHealth,
+      updateDestinationOfferState: commandSetDestinationOfferState,
     })),
   );
 }
@@ -69,10 +82,10 @@ export function useBattleRunPort(): BattleRunPort {
       runMaxHealth: state.run.activeRun.runMaxHealth,
       runTrinkets: state.run.activeRun.runTrinkets,
       roomsEncountered: state.run.activeRun.roomsEncountered,
-      updateRoomsEncountered: setRoomsEncountered,
+      updateRoomsEncountered: commandSetRoomsEncountered,
       contentSystemType: state.run.activeRun.contentSystemType,
       encounteredRunEnemyIds: state.run.activeRun.encounteredRunEnemyIds,
-      updateEncounteredRunEnemyIds: setEncounteredRunEnemyIds,
+      updateEncounteredRunEnemyIds: commandSetEncounteredRunEnemyIds,
       runDeck: state.run.activeRun.runDeck,
       runGold: state.run.activeRun.runGold,
     })),
@@ -102,7 +115,7 @@ export function useActiveRunScreen() {
   return useGameplayStateStore(
     useShallow((state) => ({
       screen: state.run.navigation.screen,
-      setScreen,
+      setScreen: commandSetScreen,
     })),
   );
 }
@@ -124,7 +137,7 @@ export function useDisplayOverrides(): DisplayOverrides {
 }
 
 export function useSetHasActiveBattle(): (active: boolean) => void {
-  return setHasActiveBattleCommand;
+  return commandSetHasActiveBattle;
 }
 
 export function useBondedCompanions() {

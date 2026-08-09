@@ -1,8 +1,5 @@
-import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
-import { CONSTANTS, type Destination } from "../../shared/types";
+import type { Destination } from "../../shared/types";
 import type { RunFlowShellActions } from "./run-flow-shell-actions";
 import type { RunFlowRunPort, RunFlowTalentPort } from "@/features/alchemy/shared/stores/run-port-types";
 
@@ -25,15 +22,4 @@ export interface RunFlowHandlerDeps {
     destinationIndexInAct?: number;
     maxHealth?: number;
   }) => Destination[];
-  rewardRng: () => number;
-  destinationRng: () => number;
-  worldRng: () => number;
-}
-
-export function getActiveRewardTraits(contentSystemType: ContentSystemId): EncounterRewardTraitId[] {
-  const session = readRunSession();
-  if (contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-    return session.wildwoodDraft?.currentRewardTraitIds ?? [];
-  }
-  return session.activeLabyrinthRewardModifiers;
 }

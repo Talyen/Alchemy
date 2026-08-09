@@ -5,7 +5,8 @@ import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/ho
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { createInitialPermanentFields } from "@/features/alchemy/shared/stores/run-state-init";
 import type { PersistenceCodec } from "./persistence-codec";
-import { applyGameplayStateUpdate, readGameplayState, subscribeGameplayCommits } from "./gameplay-state-store";
+import { readGameplayState, subscribeGameplayCommits } from "./gameplay-state-store";
+import type { GameplayDraft } from "./run-session-command";
 
 export interface RunProfileSaveFields {
   talentXP: TalentXP;
@@ -42,7 +43,7 @@ function readPermanentProgressForSave(): RunProfileSnapshot {
   return readGameplayState().runProfile;
 }
 
-export const runProfilePersistenceCodec: PersistenceCodec<RunProfileSaveFields> = {
+export const runProfilePersistenceCodec: PersistenceCodec<RunProfileSaveFields, [draft: GameplayDraft]> = {
   createDefault: createDefaultRunProfileSaveFields,
   encode: () => encodeRunProfileSnapshot(readPermanentProgressForSave()),
   hydrate: (fields, draft) => {
@@ -55,13 +56,7 @@ export const runProfilePersistenceCodec: PersistenceCodec<RunProfileSaveFields> 
         fields.bondedCompanions,
       ),
     };
-    if (draft) {
-      draft.runProfile = next;
-      return;
-    }
-    applyGameplayStateUpdate((state) => {
-      state.runProfile = next;
-    });
+    draft.runProfile = next;
   },
   subscribe: (listener) => subscribeGameplayCommits(() => listener()),
 };

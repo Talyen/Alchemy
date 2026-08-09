@@ -8,12 +8,8 @@ import {
   releaseRewardClaim,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import {
-  dispatchRunSessionCommand,
-  isGameplayDraft,
-  type GameplayDraft,
-} from "@/features/alchemy/shared/stores/run-session-command";
-import { bindRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/profile-store";
 import type { WildwoodRunPort } from "@/features/alchemy/shared/stores/run-port-types";
 import { type BattleCard, type DifficultyModifier } from "@/lib/game-data";
@@ -42,7 +38,6 @@ interface UseWildwoodGauntletFlowOptions {
   ) => boolean;
   setHasActiveBattle: (active: boolean) => void;
   clearCardHover: () => void;
-  rng: () => number;
 }
 
 export function useWildwoodGauntletFlow({
@@ -51,7 +46,6 @@ export function useWildwoodGauntletFlow({
   onStartBossById,
   setHasActiveBattle,
   clearCardHover,
-  rng,
 }: UseWildwoodGauntletFlowOptions) {
   const startNextWildwoodBoss = useCallback(
     (onRenderedScreenCommit?: () => void) => {
@@ -59,7 +53,7 @@ export function useWildwoodGauntletFlow({
         (draft) => {
           const state = draft.session.wildwoodDraft;
           if (!state) return null;
-          const draftRng = bindRunRandomSource(rng, draft);
+          const draftRng = createDraftRunRandomSource(draft, "world");
           const draw = drawWildwoodBoss(state.remainingBossIds, state.currentBossId ?? state.previousBossId, draftRng);
           const modifierId = pickWildwoodModifier(draftRng);
           const rewardTraitId = pickWildwoodRewardTrait(draftRng);
@@ -102,7 +96,7 @@ export function useWildwoodGauntletFlow({
         },
       );
     },
-    [clearCardHover, navigateTo, onStartBossById, rng, setHasActiveBattle],
+    [clearCardHover, navigateTo, onStartBossById, setHasActiveBattle],
   );
 
   const resumeWildwoodRun = useCallback(() => {
@@ -133,27 +127,22 @@ export function useWildwoodGauntletFlow({
     navigateTo(routeByPhase[state.phase]);
   }, [navigateTo, onStartBossById]);
 
-  const handleDraftPick = useCallback(
-    (card: BattleCard) => {
-      dispatchRunSessionCommand((draft) => {
-        const state = draft.session.wildwoodDraft;
-        const activeRun = draft.run.activeRun;
-        if (activeRun.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD || state?.phase !== "draft") return;
-        const nextDeck = [...activeRun.runDeck, card];
-        const draftRng = bindRunRandomSource(rng, draft);
-        setRunDeck(draft, nextDeck);
-        setDiscoveredCardIds(draft, (current) => appendUnique(current, card.id));
-        setWildwoodDraft(draft, {
-          ...state,
-          draftChoices:
-            nextDeck.length >= DRAFT_ROUNDS
-              ? []
-              : createWildwoodDraftChoices(activeRun.characterId, nextDeck, draftRng),
-        });
+  const handleDraftPick = useCallback((card: BattleCard) => {
+    dispatchRunSessionCommand((draft) => {
+      const state = draft.session.wildwoodDraft;
+      const activeRun = draft.run.activeRun;
+      if (activeRun.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD || state?.phase !== "draft") return;
+      const nextDeck = [...activeRun.runDeck, card];
+      const draftRng = createDraftRunRandomSource(draft, "world");
+      setRunDeck(draft, nextDeck);
+      setDiscoveredCardIds(draft, (current) => appendUnique(current, card.id));
+      setWildwoodDraft(draft, {
+        ...state,
+        draftChoices:
+          nextDeck.length >= DRAFT_ROUNDS ? [] : createWildwoodDraftChoices(activeRun.characterId, nextDeck, draftRng),
       });
-    },
-    [rng],
-  );
+    });
+  }, []);
 
   const handleWildwoodDraftComplete = useCallback(
     (draftedCards: BattleCard[]) => {
@@ -187,18 +176,20 @@ export function useWildwoodGauntletFlow({
       if (!state) {
         // settleClaimSurface already releases; fall back when no commit callback was passed.
         if (onRenderedScreenCommit) onRenderedScreenCommit();
-        else releaseRewardClaim();
+        else dispatchRunSessionCommand((draft) => releaseRewardClaim(draft));
         return;
       }
       if (canOfferWildwoodRemoval(readActiveRun().runDeck.length)) {
-        setWildwoodDraft({
-          ...state,
-          phase: "removal",
-          rewardType: null,
-          rewardChoiceIds: [],
-          rewardGearChoices: [],
-          selectedRewardId: null,
-        });
+        dispatchRunSessionCommand((draft) =>
+          setWildwoodDraft(draft, {
+            ...state,
+            phase: "removal",
+            rewardType: null,
+            rewardChoiceIds: [],
+            rewardGearChoices: [],
+            selectedRewardId: null,
+          }),
+        );
         navigateTo(CONSTANTS.SCREENS.WILDWOOD_REMOVAL, onRenderedScreenCommit);
         return;
       }
@@ -225,38 +216,25 @@ export function useWildwoodGauntletFlow({
     (id: string) => {
       const state = readRunSession().wildwoodDraft;
       if (run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD && state) {
-        setWildwoodDraft({ ...state, selectedRewardId: id });
+        dispatchRunSessionCommand((draft) => setWildwoodDraft(draft, { ...state, selectedRewardId: id }));
       }
     },
     [run.contentSystemType],
   );
 
-  const commitWildwoodVictory = useCallback(
-    (draftOrResult: GameplayDraft | VictoryRewardsResult, result?: VictoryRewardsResult) => {
-      const commit = (draft: GameplayDraft, committedResult: VictoryRewardsResult) => {
-        const wildwood = draft.session.wildwoodDraft;
-        if (!wildwood) return;
-        const rewardType = committedResult.rewardState.rewardType;
-        setWildwoodDraft(draft, {
-          ...wildwood,
-          phase: "recovery",
-          rewardType,
-          rewardChoiceIds: rewardType === "gear" ? [] : committedResult.rewardState.choices.map((choice) => choice.id),
-          rewardGearChoices: rewardType === "gear" ? committedResult.rewardState.choices : [],
-          selectedRewardId: null,
-        });
-      };
-
-      if (isGameplayDraft(draftOrResult)) {
-        if (result) commit(draftOrResult, result);
-        return;
-      }
-      if (!result) {
-        dispatchRunSessionCommand((draft) => commit(draft, draftOrResult));
-      }
-    },
-    [],
-  );
+  const commitWildwoodVictory = useCallback((draft: GameplayDraft, result: VictoryRewardsResult) => {
+    const wildwood = draft.session.wildwoodDraft;
+    if (!wildwood) return;
+    const rewardType = result.rewardState.rewardType;
+    setWildwoodDraft(draft, {
+      ...wildwood,
+      phase: "recovery",
+      rewardType,
+      rewardChoiceIds: rewardType === "gear" ? [] : result.rewardState.choices.map((choice) => choice.id),
+      rewardGearChoices: rewardType === "gear" ? result.rewardState.choices : [],
+      selectedRewardId: null,
+    });
+  }, []);
 
   return {
     startNextWildwoodBoss,

@@ -9,8 +9,7 @@ describe("useShopController", () => {
   it("preserves command identities while its inputs are unchanged", () => {
     const talentEffects = createEmptyTalentEffectManifest();
     const homesteadEffects = defaultHomesteadEffects;
-    const rng = () => 0.5;
-    const { result, rerender } = renderHook(() => useShopController({ talentEffects, homesteadEffects, rng }));
+    const { result, rerender } = renderHook(() => useShopController({ talentEffects, homesteadEffects }));
     const initial = result.current;
 
     rerender();

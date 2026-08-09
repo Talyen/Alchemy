@@ -23,7 +23,7 @@ import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import { logError } from "@/lib/error-logger";
 import { useBattlePresentationStore } from "./battle-presentation-store";
-import { dispatchRunSessionCommand, invokeDraftAction } from "@/features/alchemy/shared/stores/run-session-command";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 const BATTLE_CARD_PLAY_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
@@ -129,7 +129,7 @@ export function createBattleCardPlay(
         dispatchRunSessionCommand(
           (draft) => {
             setBattleState(draft, resolution.state);
-            invokeDraftAction(ctx.talents.awardCardXP, draft, card);
+            ctx.talents.awardCardXP(draft, card);
           },
           {
             afterCommit: () => {

@@ -3,8 +3,11 @@ import {
   beginRewardClaim,
   releaseRewardClaim as releaseRewardClaimState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { bindRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  createRunSessionCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/run-session-command";
+import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setCompanionRewardCards, setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { playUISound } from "@/lib/audio";
@@ -18,9 +21,13 @@ import { applyAlchemistPotion, applyRewardSelection } from "./run-destination-ha
 import { CONSTANTS } from "../../shared/types";
 import type { RunFlowHandlerDeps, RunFlowSiblingHandlers } from "./run-flow-handler-deps";
 
+const commandSetRewardState = createRunSessionCommand(setRewardState);
+const commandSetCompanionRewardCards = createRunSessionCommand(setCompanionRewardCards);
+const commandReleaseRewardClaim = createRunSessionCommand(releaseRewardClaimState);
+
 export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlowSiblingHandlers) {
   function selectRewardChoice(id: string) {
-    setRewardState((prev) => ({ ...prev, selectedId: id }));
+    commandSetRewardState((prev) => ({ ...prev, selectedId: id }));
     deps.actions.selectRewardChoice(id);
   }
 
@@ -54,16 +61,13 @@ export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlow
           applyRewardSelection({
             choice: result.selectedChoice,
             type: result.selectedRewardType,
-            setRunDeck: deps.run.updateRunDeck,
-            setRunTrinkets: deps.run.updateRunTrinkets,
             draft,
           });
         }
         if (grantAlchemistReward) {
           applyAlchemistPotion({
-            setRunDeck: deps.run.updateRunDeck,
-            rng: bindRunRandomSource(deps.rewardRng, draft),
             draft,
+            rng: createDraftRunRandomSource(draft, "rewards"),
           });
         }
 
@@ -75,9 +79,9 @@ export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlow
           const { result, isWildwood } = commit;
 
           const settleClaimSurface = () => {
-            setRewardState(result.nextRewardState);
-            if (result.clearCompanionRewardCards) setCompanionRewardCards(null);
-            releaseRewardClaimState();
+            commandSetRewardState(result.nextRewardState);
+            if (result.clearCompanionRewardCards) commandSetCompanionRewardCards(null);
+            commandReleaseRewardClaim();
           };
 
           if (result.selectedChoice) playUISound("talentUnlock");
@@ -95,25 +99,25 @@ export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlow
               navigateTo: (screen, onCommit) => {
                 deps.actions.navigateTo(screen, () => {
                   onCommit?.();
-                  releaseRewardClaimState();
+                  commandReleaseRewardClaim();
                 });
               },
               completeRunVictory: (materials, onCommit) => {
                 handlers.completeRunVictory(materials, () => {
                   onCommit?.();
-                  releaseRewardClaimState();
+                  commandReleaseRewardClaim();
                 });
               },
               handleActComplete: (materials) => {
                 handlers.handleActComplete(materials, () => {
                   // prepareNextDestination / victory commit overwrite offer state;
                   // only the claim lock must be released here.
-                  releaseRewardClaimState();
+                  commandReleaseRewardClaim();
                 });
               },
               labyrinthClearNode: deps.actions.labyrinthClearNode,
-              setCompanionRewardCards,
-              setRewardState,
+              setCompanionRewardCards: commandSetCompanionRewardCards,
+              setRewardState: commandSetRewardState,
             },
           );
         },

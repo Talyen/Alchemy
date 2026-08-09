@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useArmoryGearDrag } from "@/features/alchemy/meta/screens/armory/use-armory-gear-drag";
+import { useArmoryBoardDrag as useArmoryGearDrag } from "@/features/alchemy/meta/screens/armory/use-armory-board-drag";
 import type { GearInstance, GearLoadout } from "@/lib/gear";
 
 vi.mock("@/lib/audio", () => ({

@@ -2,8 +2,7 @@ import { appendTrinketToRunWithDiscovery } from "@/features/alchemy/run-loop/run
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
-  bindRunRandomSource,
-  setRunTrinkets,
+  createDraftRunRandomSource,
   setTrinketShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { TalentEffectManifest, TrinketEntry } from "@/lib/game-data";
@@ -15,10 +14,8 @@ import { createInitialTrinketShopState, resampleTrinketShopOfferings, type Trink
 
 export function createTrinketShopCommands({
   talentEffects,
-  rng,
 }: {
   talentEffects: TalentEffectManifest;
-  rng: () => number;
 }): TrinketShopCommands {
   const getBuyPrice = (_trinket: TrinketEntry) =>
     computeTrinketBuyPrice({
@@ -30,7 +27,7 @@ export function createTrinketShopCommands({
 
   function initialize(): void {
     dispatchRunSessionCommand((draft) =>
-      setTrinketShopState(draft, createInitialTrinketShopState(bindRunRandomSource(rng, draft))),
+      setTrinketShopState(draft, createInitialTrinketShopState(createDraftRunRandomSource(draft, "shops"))),
     );
   }
 
@@ -48,7 +45,7 @@ export function createTrinketShopCommands({
         state,
         setState: setTrinketShopState,
         slotKey,
-        acquire: () => appendTrinketToRunWithDiscovery(trinket.id, setRunTrinkets, draft),
+        acquire: () => appendTrinketToRunWithDiscovery(draft, trinket.id),
       });
     });
     playShopSpendFeedback(result);
@@ -63,7 +60,7 @@ export function createTrinketShopCommands({
         price: getRefreshPrice(state.refreshesLeft),
         refreshesLeft: state.refreshesLeft,
         setState: setTrinketShopState,
-        resample: () => resampleTrinketShopOfferings(bindRunRandomSource(rng, draft)),
+        resample: () => resampleTrinketShopOfferings(createDraftRunRandomSource(draft, "shops")),
         mapState: (previous, trinkets) => ({
           ...previous,
           trinkets,

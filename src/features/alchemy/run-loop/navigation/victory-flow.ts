@@ -20,6 +20,15 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { CONSTANTS, type Destination } from "@/features/alchemy/shared/types";
 import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import {
+  addRunGold,
+  awardMaterialsDuringRun,
+  setCompanionRewardCards,
+  setDestinationOfferState,
+  setHasActiveBattle,
+  setRewardState,
+  setRunMaxHealth,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
@@ -255,37 +264,32 @@ export function computeVictoryRewards(
 }
 
 export function commitVictoryRewards(
+  draft: GameplayDraft,
   result: VictoryRewardsResult,
   deps: CommitVictoryRewardsDeps,
   rng: () => number,
-  draft?: GameplayDraft,
 ): boolean {
-  const withDraft = <T extends unknown[]>(action: (...args: T) => unknown, ...args: T) => {
-    if (!draft) return action(...args);
-    return (action as unknown as (draft: GameplayDraft, ...args: T) => unknown)(draft, ...args);
-  };
   if (deps.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD && deps.battleState.pendingMaterials.crystal > 0) {
-    withDraft(deps.addHomesteadMaterials, deps.battleState.pendingMaterials);
+    awardMaterialsDuringRun(draft, deps.battleState.pendingMaterials);
   }
 
-  withDraft(deps.addRunGold, result.goldEarned);
-  if (draft) syncBattleToRun(draft, { playerHealth: result.playerHealth });
-  else syncBattleToRun({ playerHealth: result.playerHealth });
+  addRunGold(draft, result.goldEarned);
+  syncBattleToRun(draft, { playerHealth: result.playerHealth });
   if (result.maxHealthDelta > 0) {
-    withDraft(deps.setRunMaxHealth, (prev) => prev + result.maxHealthDelta);
+    setRunMaxHealth(draft, (prev) => prev + result.maxHealthDelta);
   }
 
-  withDraft(deps.setRewardState, {
+  setRewardState(draft, {
     ...result.rewardState,
     lastVictoryEnemyType: deps.battleState.currentEnemy.enemyType,
     lastVictoryContentSystem: deps.contentSystemType,
   });
-  withDraft(deps.setDestinationOfferState, result.destinationOfferState);
+  setDestinationOfferState(draft, result.destinationOfferState);
   if (shouldGrantCompanionReward(result.labyrinthRewardModifiers)) {
-    withDraft(deps.setCompanionRewardCards, getCompanionCardChoices(rng));
+    setCompanionRewardCards(draft, getCompanionCardChoices(rng));
   } else {
-    withDraft(deps.setCompanionRewardCards, null);
+    setCompanionRewardCards(draft, null);
   }
-  withDraft(deps.setHasActiveBattle, false);
+  setHasActiveBattle(draft, false);
   return result.newGold > deps.battleState.gold;
 }

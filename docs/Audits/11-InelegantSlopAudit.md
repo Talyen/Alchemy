@@ -65,5 +65,5 @@ Optional discovery aids — choose your own probes.
 - **Ceremony naming:** `Manager` / `Helper` / `Coordinator` / `Wrapper` / `Factory` nouns around one function.
 - **Deep nesting:** >3 nested levels in hot files where early returns would suffice.
 - **Defensive cast stacks:** `as unknown as`, nested `??`, optional chains that paper over missing validation.
-- **Single-use abstractions:** `npm run audit:single-use` (unused API narrowing primarily owned by `05-DeadCodeAudit.md`).
+- **Single-use abstractions:** confirm ceremony from concrete call sites; unused API narrowing remains owned by `05-DeadCodeAudit.md`.
 - **Names & React shape:** domain vocabulary already used in the module; explicit Props types; plain function components.

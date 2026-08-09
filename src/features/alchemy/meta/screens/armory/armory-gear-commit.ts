@@ -1,11 +1,4 @@
-import type {
-  CraftingCurrencyId,
-  GearInstance,
-  GearSlot,
-  InventoryPlacement,
-  PackedCurrencyItem,
-  PackedInventory,
-} from "@/lib/gear";
+import type { GearInstance, GearSlot, InventoryPlacement, PackedCurrencyItem, PackedInventory } from "@/lib/gear";
 import { footprintForInstance } from "@/lib/gear";
 import { overlaps } from "@/lib/gear/grid-packing";
 import type { CharacterId } from "@/lib/game-data";
@@ -27,13 +20,6 @@ export interface GearCommitEnv {
   ) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onMoveItem: (instanceId: string, col: number, row: number) => void;
-  onHoldCurrency:
-    | ((
-        currencyId: CraftingCurrencyId,
-        origin: { kind: "inventory"; placement: InventoryPlacement },
-        source: DragRect,
-      ) => void)
-    | undefined;
   maybeLaunchSwapAnimations: (
     instance: GearInstance,
     slot: GearSlot,
@@ -131,6 +117,7 @@ function handleGearInventoryDestination({
       return {
         heldItem: {
           item: {
+            kind: "gear" as const,
             instance: occupantInstance,
             origin: { kind: "inventory" as const, placement: { col: occupant.col, row: occupant.row } },
           },
@@ -138,12 +125,17 @@ function handleGearInventoryDestination({
         },
       };
     }
-  } else if (occupantCurrency && env.onHoldCurrency) {
-    env.onHoldCurrency(
-      occupantCurrency.currencyId,
-      { kind: "inventory", placement: { col: occupantCurrency.col, row: occupantCurrency.row } },
-      destination.rect,
-    );
+  } else if (occupantCurrency) {
+    return {
+      heldItem: {
+        item: {
+          kind: "currency" as const,
+          currencyId: occupantCurrency.currencyId,
+          origin: { kind: "inventory" as const, placement: { col: occupantCurrency.col, row: occupantCurrency.row } },
+        },
+        source: destination.rect,
+      },
+    };
   }
   return undefined;
 }

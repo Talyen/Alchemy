@@ -18,6 +18,7 @@ import {
 import { setMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 // ── Game Menu State ──
 
@@ -179,12 +180,23 @@ export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | 
 
   const unlockAllDevMode = useCallback(() => {
     if (!isAlchemyDevBuild()) return;
-    setDiscoveredCardIds(cardLibrary.map((card) => card.id));
-    setEncounteredEnemyIds(enemyBestiary.map((enemy) => enemy.id));
-    setDiscoveredTrinketIds(trinketLibrary.map((boon) => boon.id));
-    setFinishedRunCharacters(["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
+    dispatchRunSessionCommand((draft) => {
+      setDiscoveredCardIds(
+        draft,
+        cardLibrary.map((card) => card.id),
+      );
+      setEncounteredEnemyIds(
+        draft,
+        enemyBestiary.map((enemy) => enemy.id),
+      );
+      setDiscoveredTrinketIds(
+        draft,
+        trinketLibrary.map((boon) => boon.id),
+      );
+      setFinishedRunCharacters(draft, ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
+      setMaterials(draft, { wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
+    });
     run.unlockAllTalents();
-    setMaterials({ wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
   }, [run]);
 
   return { clearSaveData, unlockAllDevMode };

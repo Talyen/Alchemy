@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- overlay components and tiny route helpers are colocated here. */
 import { GameMenu, HamburgerTrigger } from "@/features/alchemy/shared/ui/shared-ui";
 import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-particles";
-import { platform } from "@/lib/platform";
+import { isDesktop, quitDesktopApp } from "@/lib/platform";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
 import type { useReturnToRunNavigation } from "@/app/use-app-navigation";
@@ -62,8 +62,8 @@ export function UnsupportedSaveOverlay({
 }) {
   return (
     <UnsupportedSaveVersionScreen
-      canQuit={platform.canQuit}
-      onQuit={() => platform.quit()}
+      canQuit={isDesktop()}
+      onQuit={quitDesktopApp}
       onDeleteSaveAndContinue={onDeleteSaveAndContinue}
       deleting={deleting}
     />

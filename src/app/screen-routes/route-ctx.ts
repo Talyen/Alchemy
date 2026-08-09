@@ -2,6 +2,12 @@
 import type { AlchemyRouteCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import type { RenderAlchemyScreenProps } from "./index";
 
+export type MetaCommands = AlchemyRouteCommands["meta"];
+export type RunSetupCommands = AlchemyRouteCommands["runSetup"];
+export type RunLoopCommands = AlchemyRouteCommands["runLoop"];
+export type BattleCommands = AlchemyRouteCommands["battle"];
+export type RunEndCommands = AlchemyRouteCommands["runEnd"];
+
 export interface MetaRouteCtx {
   routeCommands: Pick<AlchemyRouteCommands, "meta">;
   onOpenBattleMenu: RenderAlchemyScreenProps["onOpenBattleMenu"];

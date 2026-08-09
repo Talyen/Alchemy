@@ -32,22 +32,6 @@ type FootprintFn<TId extends string, TItem> = (id: TId, lookup: TItem | undefine
 
 export type BoardDragCommitResult<TItem> = { heldItem?: { item: TItem; source: DragRect } } | undefined;
 
-export interface FsmDragRefs<TId extends string, TOrigin extends DragOrigin, TItem> {
-  id: TId;
-  buildVisual: (pointer: DragPoint | null) => BoardDragVisual<TId, TOrigin>;
-  activeDragRef: { current: BoardDragVisual<TId, TOrigin> | null };
-  setDragVisual: (visual: BoardDragVisual<TId, TOrigin> | null) => void;
-  heldCleanupRef: { current: (() => void) | null };
-  commitDestination: (
-    visual: BoardDragVisual<TId, TOrigin>,
-    destination: DragDestination,
-  ) => BoardDragCommitResult<TItem>;
-  onCancel: ((id: TId) => void) | undefined;
-  clearDragState: () => void;
-  clearDragAfterAnimation: (delay?: number) => void;
-  beginHeldRef: { current: (item: TItem, source: DragRect) => void };
-}
-
 export interface UseBoardDragOptions<TId extends string, TItem, TOrigin extends DragOrigin> {
   itemLookup: TItem | undefined;
   getItemId: (item: TItem) => TId;

@@ -4,9 +4,9 @@ import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type Diffi
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
-  bindRunRandomSource,
+  createDraftRunRandomSource,
   initializeActiveBattle,
   setEncounteredRunEnemyIds,
   setRoomsEncountered,
@@ -21,19 +21,15 @@ import { readGearManifestForCharacter } from "../../shared/stores/gear-store";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
 
-export function createBattleInit(
-  ctx: BattleControllerContext,
-  session: ReturnType<typeof createBattleSession>,
-  rng: () => number,
-) {
+export function createBattleInit(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
   function createBattleForEnemy(
     enemy: BestiaryEntry,
     deck: BattleCard[],
     gold: number,
     playerHealth: number,
     roomsEncountered: number,
+    battleRng: () => number,
     modifiers?: DifficultyModifier[],
-    battleRng: () => number = rng,
   ) {
     const run = readActiveRun();
     const gearEffects = readGearManifestForCharacter(run.characterId);
@@ -56,9 +52,15 @@ export function createBattleInit(
     });
   }
 
-  function beginBattle(enemy: BestiaryEntry, deck: BattleCard[], gold: number, modifiers?: DifficultyModifier[]) {
+  function beginBattle(
+    resolveEnemy: (draft: GameplayDraft) => BestiaryEntry,
+    deck: BattleCard[] | undefined,
+    gold: number | undefined,
+    modifiers?: DifficultyModifier[],
+  ) {
     dispatchRunSessionCommand(
       (draft) => {
+        const enemy = resolveEnemy(draft);
         const startingHealth = syncRunToBattleStart(draft);
         const run = draft.run.activeRun;
         const nextRoomsEncountered = run.roomsEncountered + 1;
@@ -67,12 +69,12 @@ export function createBattleInit(
         const battleEnemy = encounterTraitIds.length > 0 ? appendEncounterTraits(enemy, encounterTraitIds) : enemy;
         const nextBattleState = createBattleForEnemy(
           battleEnemy,
-          deck,
-          gold,
+          deck ?? run.runDeck,
+          gold ?? run.runGold,
           startingHealth,
           nextRoomsEncountered,
+          createDraftRunRandomSource(draft, "world"),
           modifiers,
-          bindRunRandomSource(rng, draft),
         );
         initializeActiveBattle(draft, nextBattleState, null);
         setEncounteredRunEnemyIds(draft, (current) => appendUnique(current, enemy.id));
@@ -121,18 +123,26 @@ export function createBattleInit(
     enemyType: "normal" | "elite" = "normal",
     modifiers?: DifficultyModifier[],
   ) {
-    const run = readActiveRun();
     beginBattle(
-      getCurrentEnemy(enemyType, run.encounteredRunEnemyIds, rng),
-      deck ?? run.runDeck,
-      gold ?? run.runGold,
+      (draft) =>
+        getCurrentEnemy(
+          enemyType,
+          draft.run.activeRun.encounteredRunEnemyIds,
+          createDraftRunRandomSource(draft, "world"),
+        ),
+      deck,
+      gold,
       modifiers,
     );
   }
 
   function startBossBattle(modifiers?: DifficultyModifier[]) {
-    const run = readActiveRun();
-    beginBattle(getBossEnemy(run.encounteredRunEnemyIds, rng), run.runDeck, run.runGold, modifiers);
+    beginBattle(
+      (draft) => getBossEnemy(draft.run.activeRun.encounteredRunEnemyIds, createDraftRunRandomSource(draft, "world")),
+      undefined,
+      undefined,
+      modifiers,
+    );
   }
 
   function startBossById(
@@ -145,11 +155,10 @@ export function createBattleInit(
       console.warn(`startBossById: boss "${bossId}" not found`);
       return false;
     }
-    const run = readActiveRun();
     beginBattle(
-      wildwoodModifierId ? withWildwoodModifier(boss, wildwoodModifierId) : boss,
-      run.runDeck,
-      run.runGold,
+      () => (wildwoodModifierId ? withWildwoodModifier(boss, wildwoodModifierId) : boss),
+      undefined,
+      undefined,
       modifiers,
     );
     return true;

@@ -1,6 +1,5 @@
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/loot";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   addMaterials,
@@ -12,12 +11,8 @@ import { useUiStore } from "../../shared/stores/ui-store";
 import { CONSTANTS } from "../../shared/types";
 
 /** Clear the persisted battle-active state; presentation cleanup is a post-commit concern. */
-export function clearCombatState(draft?: GameplayDraft) {
-  if (draft) {
-    setHasActiveBattle(draft, false);
-    return;
-  }
-  setHasActiveBattle(false);
+export function clearCombatState(draft: GameplayDraft) {
+  setHasActiveBattle(draft, false);
 }
 
 /** Clear transient combat presentation after the gameplay state has committed. */
@@ -25,8 +20,7 @@ export function clearCombatPresentation() {
   useUiStore.getState().clearCardHover();
 }
 
-export function awardRunEndMaterials(draft?: GameplayDraft): ReturnType<typeof emptyInventory> {
-  if (!draft) return dispatchRunSessionCommand((nextDraft) => awardRunEndMaterials(nextDraft));
+export function awardRunEndMaterials(draft: GameplayDraft): ReturnType<typeof emptyInventory> {
   const runState = draft.run.activeRun;
   const runProfile = draft.runProfile;
   {

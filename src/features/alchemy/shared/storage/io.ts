@@ -2,13 +2,14 @@
 // Depends on: SAVE_KEY (game-constants), Zod validation schemas (lib/validation), save defaults.
 // Used by: use-app-save-state.ts (loadAlchemySaveState), App.tsx (loadAlchemySaveState).
 import { SAVE_KEY } from "@/lib/game-constants";
-import { platform } from "@/lib/platform";
+import { createPlatformSaveBackend, type SaveBackend } from "@/lib/platform-save-backend";
 
 import {
   SaveDataSchema,
   safeParseWithErrors,
   getRawContentVersion,
   getRawSaveSchemaVersion,
+  isTombstonedCardId,
   isUnsupportedFutureContentData,
   isUnsupportedFutureSaveData,
   type ParsedSaveData,
@@ -17,21 +18,13 @@ import type { SaveData } from "./types";
 import { logError } from "@/lib/error-logger";
 import { defaultSaveData } from "./defaults";
 import { toActiveRunData } from "@/lib/active-run-session";
-import { isTombstonedCardId } from "@/lib/validation";
 
-class SaveSessionState {
-  private writesDisabledForSession = false;
+let writesDisabledForSession = false;
+let saveBackend: SaveBackend = createPlatformSaveBackend();
 
-  public setWritesDisabled(disabled: boolean) {
-    this.writesDisabledForSession = disabled;
-  }
-
-  public isWritesDisabled() {
-    return this.writesDisabledForSession;
-  }
+export function configureSaveBackend(backend: SaveBackend): void {
+  saveBackend = backend;
 }
-
-const saveSessionState = new SaveSessionState();
 
 // Keeps storage failures readable without crashing gameplay when browsers block persistence.
 function logStorageFailure(message: string, error?: unknown) {
@@ -76,106 +69,58 @@ function hydrateActiveRunDeck(activeRun: ParsedSaveData["activeRun"]): SaveData[
   });
 }
 
-async function readLocalRaw(key: string): Promise<string | null> {
-  const local = await platform.storage.readLocal(key);
-  if (!local.ok) {
-    logStorageFailure("LocalStorage read failed", local.error);
-    return null;
-  }
-  return local.data;
-}
-
 async function collectSaveCandidates(): Promise<string[]> {
-  if (!platform.isDesktop) {
-    const local = await readLocalRaw(SAVE_KEY);
-    return local ? [local] : [];
-  }
-
-  const candidates: string[] = [];
-
-  // Desktop local candidates, in preference order (local, bak.1, bak.2, bak.3).
-  const localCandidates = await platform.storage.listSaveCandidates();
-  candidates.push(...localCandidates);
-
-  // Cloud as the final fallback.
-  const cloud = await platform.storage.readCloudFallback();
-  if (cloud) candidates.push(cloud);
-
-  // Deduplicate by payload so identical copies don't waste a Zod parse.
-  const seen = new Set<string>();
-  return candidates.filter((c) => {
-    if (seen.has(c)) return false;
-    seen.add(c);
-    return true;
-  });
+  const result = await saveBackend.readCandidates(SAVE_KEY);
+  if (result.ok) return result.candidates;
+  logStorageFailure("Save candidates could not be read", result.error);
+  return [];
 }
 
 async function writeStorageItem(key: string, value: string): Promise<{ ok: true } | { ok: false; error: unknown }> {
-  const result = await platform.storage.writeLocal(key, value);
+  const result = await saveBackend.write(key, value);
   if (result.ok) return { ok: true };
   return { ok: false, error: result.error };
 }
 
 async function removeStorageItem(key: string): Promise<{ ok: true } | { ok: false; error: unknown }> {
-  const result = await platform.storage.removeLocal(key);
+  const result = await saveBackend.clear(key);
   if (result.ok) return { ok: true };
   return { ok: false, error: result.error };
 }
 
-function parseCandidates(candidates: string[]): Array<{ parsed: Partial<SaveData> }> {
-  const parsed: Array<{ parsed: Partial<SaveData> }> = [];
-  for (const c of candidates) {
+function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
+  let futureSchema = 0;
+  let futureContent = 0;
+
+  for (const candidate of candidates) {
+    let parsed: unknown;
     try {
-      parsed.push({ parsed: JSON.parse(c) as Partial<SaveData> });
+      parsed = JSON.parse(candidate) as unknown;
     } catch (error) {
-      // Not valid JSON; try the next candidate.
       logStorageFailure("Save candidate JSON parse failed, trying next candidate", error);
-    }
-  }
-  return parsed;
-}
-
-function filterFutureCandidates(parsedCandidates: Array<{ parsed: Partial<SaveData> }>): {
-  valid: Array<{ parsed: Partial<SaveData> }>;
-  futureSchema: number;
-  futureContent: number;
-} {
-  let foundFutureSchema = false;
-  let foundFutureContent = false;
-  let maxSchemaVersion = 0;
-  let maxContentVersion = 0;
-  const valid: Array<{ parsed: Partial<SaveData> }> = [];
-  for (const c of parsedCandidates) {
-    if (isUnsupportedFutureSaveData(c.parsed)) {
-      foundFutureSchema = true;
-      maxSchemaVersion = Math.max(maxSchemaVersion, getRawSaveSchemaVersion(c.parsed));
       continue;
     }
-    if (isUnsupportedFutureContentData(c.parsed)) {
-      foundFutureContent = true;
-      maxContentVersion = Math.max(maxContentVersion, getRawContentVersion(c.parsed));
+
+    if (isUnsupportedFutureSaveData(parsed)) {
+      futureSchema = Math.max(futureSchema, getRawSaveSchemaVersion(parsed));
       continue;
     }
-    valid.push(c);
-  }
-  return {
-    valid,
-    futureSchema: foundFutureSchema ? maxSchemaVersion : 0,
-    futureContent: foundFutureContent ? maxContentVersion : 0,
-  };
-}
+    if (isUnsupportedFutureContentData(parsed)) {
+      futureContent = Math.max(futureContent, getRawContentVersion(parsed));
+      continue;
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      logStorageFailure("Save candidate root was not an object, trying next candidate");
+      continue;
+    }
 
-function returnFirstValid(validCandidates: Array<{ parsed: Partial<SaveData> }>): SaveLoadState | null {
-  if (validCandidates.length === 0) return null;
-  saveSessionState.setWritesDisabled(false);
-  for (const c of validCandidates) {
-    const result = safeParseWithErrors(SaveDataSchema, c.parsed);
+    const result = safeParseWithErrors(SaveDataSchema, parsed);
     if (!result.success) {
       logStorageFailure("Save candidate failed validation, trying next candidate", result.error);
       continue;
     }
     const data = result.data;
-    const warnings = collectSaveRepairWarnings(c.parsed, data);
+    const warnings = collectSaveRepairWarnings(parsed, data);
     for (const ve of result.errors) {
       warnings.push(`Field "${ve.path}" was corrupt: ${ve.message}`);
     }
@@ -183,7 +128,29 @@ function returnFirstValid(validCandidates: Array<{ parsed: Partial<SaveData> }>)
     if (warnings.length > 0) console.warn("Save data was normalized during load", warnings);
     return { data: hydrated, status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" } };
   }
-  return null;
+
+  if (futureSchema) {
+    return {
+      data: defaultSaveData,
+      status: { kind: "unsupported-newer-schema", detectedSchemaVersion: futureSchema },
+    };
+  }
+  if (futureContent) {
+    return {
+      data: defaultSaveData,
+      status: { kind: "unsupported-newer-content", detectedContentVersion: futureContent },
+    };
+  }
+  return { data: defaultSaveData, status: { kind: "corrupt" } };
+}
+
+function applySaveWritePolicy(result: SaveLoadState): SaveLoadState {
+  if (result.status.kind === "unsupported-newer-schema" || result.status.kind === "unsupported-newer-content") {
+    writesDisabledForSession = true;
+  } else if (result.status.kind === "ok") {
+    writesDisabledForSession = false;
+  }
+  return result;
 }
 
 // Loads save data plus status. On desktop, candidates are walked in preference
@@ -193,7 +160,7 @@ function returnFirstValid(validCandidates: Array<{ parsed: Partial<SaveData> }>)
 // every candidate fails do we fall back to defaultSaveData.
 export async function loadAlchemySaveState(): Promise<SaveLoadState> {
   if (typeof window === "undefined") {
-    return { data: defaultSaveData, status: { kind: "ok" } };
+    return applySaveWritePolicy({ data: defaultSaveData, status: { kind: "ok" } });
   }
 
   let candidates: string[];
@@ -201,31 +168,14 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
     candidates = await collectSaveCandidates();
   } catch (error) {
     logStorageFailure("Save candidates could not be read, falling back to defaults", error);
-    return { data: defaultSaveData, status: { kind: "corrupt" } };
+    return applySaveWritePolicy({ data: defaultSaveData, status: { kind: "corrupt" } });
   }
 
-  if (candidates.length === 0) return { data: defaultSaveData, status: { kind: "ok" } };
-
-  const parsedCandidates = parseCandidates(candidates);
-  if (parsedCandidates.length === 0) return { data: defaultSaveData, status: { kind: "corrupt" } };
-
-  const { valid, futureSchema, futureContent } = filterFutureCandidates(parsedCandidates);
-  if (valid.length === 0) {
-    saveSessionState.setWritesDisabled(true);
-    if (futureSchema)
-      return {
-        data: defaultSaveData,
-        status: { kind: "unsupported-newer-schema", detectedSchemaVersion: futureSchema },
-      };
-    if (futureContent)
-      return {
-        data: defaultSaveData,
-        status: { kind: "unsupported-newer-content", detectedContentVersion: futureContent },
-      };
-    return { data: defaultSaveData, status: { kind: "corrupt" } };
+  if (candidates.length === 0) {
+    return applySaveWritePolicy({ data: defaultSaveData, status: { kind: "ok" } });
   }
 
-  return returnFirstValid(valid) ?? { data: defaultSaveData, status: { kind: "corrupt" } };
+  return applySaveWritePolicy(evaluateSaveCandidates(candidates));
 }
 
 // Serializes overlapping saves so desktop IPC tmp writes never interleave.
@@ -251,14 +201,14 @@ export async function saveAlchemySaveData(data: SaveData) {
   if (typeof window === "undefined") {
     return;
   }
-  if (saveSessionState.isWritesDisabled()) return;
+  if (writesDisabledForSession) return;
 
   coalescedSave = data;
   const run = saveWriteChain.then(async () => {
     while (coalescedSave !== null && !clearPending) {
       const snapshot = coalescedSave;
       coalescedSave = null;
-      if (saveSessionState.isWritesDisabled()) return;
+      if (writesDisabledForSession) return;
       await writeSaveSnapshot(snapshot);
     }
   });
@@ -282,7 +232,7 @@ export async function clearAlchemySaveData(): Promise<boolean> {
     try {
       const result = await removeStorageItem(SAVE_KEY);
       if (result.ok) {
-        saveSessionState.setWritesDisabled(false);
+        writesDisabledForSession = false;
         cleared = true;
         return;
       }

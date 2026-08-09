@@ -4,9 +4,16 @@ import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/myste
 import { cardLibrary, getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import * as cardPools from "@/lib/game-data/cards/card-pools";
+import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+
+vi.mock("@/features/alchemy/shared/stores/profile-store", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/profile-store")>();
+  return { ...actual, setDiscoveredCardIds: vi.fn(), setDiscoveredTrinketIds: vi.fn() };
+});
 
 function minimalContext(overrides: { runDeck?: BattleCard[] } = {}) {
   return {
+    draft: {} as GameplayDraft,
     runDeck: overrides.runDeck,
     runMaxHealth: 30,
     rng: vi.fn(() => 0.5),
@@ -36,12 +43,12 @@ describe("applyMysteryEffect", () => {
 
     const healContext = minimalContext();
     applyMysteryEffect({ kind: "healHealth", amount: 5 }, healContext);
-    const healUpdater = healContext.setRunPlayerHealth.mock.calls[0][0];
+    const healUpdater = healContext.setRunPlayerHealth.mock.calls[0][1];
     expect(healUpdater(20)).toBe(25);
 
     const damageContext = minimalContext();
     applyMysteryEffect({ kind: "damageHealth", amount: 3 }, damageContext);
-    const damageUpdater = damageContext.setRunPlayerHealth.mock.calls[0][0];
+    const damageUpdater = damageContext.setRunPlayerHealth.mock.calls[0][1];
     expect(damageUpdater(20)).toBe(17);
 
     const gainGoldContext = minimalContext();
@@ -51,13 +58,13 @@ describe("applyMysteryEffect", () => {
 
     const loseGoldContext = minimalContext();
     const loseGoldResult = applyMysteryEffect({ kind: "loseGold", amount: 5 }, loseGoldContext);
-    const goldUpdater = loseGoldContext.setRunGold.mock.calls[0][0];
+    const goldUpdater = loseGoldContext.setRunGold.mock.calls[0][1];
     expect(goldUpdater(20)).toBe(15);
     expect(loseGoldResult.goldSound).toBe("spend");
 
     const gainXpContext = minimalContext();
     applyMysteryEffect({ kind: "gainXP", keyword: "physical", amount: 1 }, gainXpContext);
-    expect(gainXpContext.awardMysteryXP).toHaveBeenCalledWith("physical", 1);
+    expect(gainXpContext.awardMysteryXP).toHaveBeenCalledWith(gainXpContext.draft, "physical", 1);
 
     const removeContext = minimalContext({ runDeck: [slash] });
     applyMysteryEffect({ kind: "removeCard", mode: "random" }, removeContext);
@@ -87,7 +94,7 @@ describe("applyMysteryEffect", () => {
     applyMysteryEffect({ kind: "chooseCard", tag: "archery" }, context);
 
     expect(context.setMysteryCardChoices).toHaveBeenCalledTimes(1);
-    const offered = context.setMysteryCardChoices.mock.calls[0][0];
+    const offered = context.setMysteryCardChoices.mock.calls[0][1];
     expect(offered.length).toBeGreaterThan(0);
     for (const card of offered) {
       const libraryCard = cardLibrary.find((c) => c.id === card.id);
@@ -100,7 +107,7 @@ describe("applyMysteryEffect", () => {
     for (let i = 0; i < 30; i++) {
       const context = minimalContext();
       applyMysteryEffect({ kind: "chooseCard" }, context);
-      const offered = context.setMysteryCardChoices.mock.calls[0][0];
+      const offered = context.setMysteryCardChoices.mock.calls[0][1];
       if (offered.some((card: BattleCard) => !getCardKeywords(card).includes("archery"))) {
         sawNonArchery = true;
         break;
@@ -120,7 +127,7 @@ describe("applyMysteryEffect", () => {
       applyMysteryEffect({ kind: "chooseCard", tag: "archery" }, context);
 
       expect(context.setMysteryCardChoices).toHaveBeenCalledTimes(1);
-      const offered = context.setMysteryCardChoices.mock.calls[0][0];
+      const offered = context.setMysteryCardChoices.mock.calls[0][1];
       expect(offered.length).toBeGreaterThan(0);
       expect(offered.every((card: BattleCard) => card.id === "slash")).toBe(true);
     } finally {

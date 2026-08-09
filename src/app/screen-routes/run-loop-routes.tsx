@@ -33,10 +33,15 @@ import {
 } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { useIsWildwoodRun, useTalentEffects } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { getCampfireHealFraction } from "@/lib/game-constants";
-import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
+import type { BattleCommands, BattleRouteCtx, RunLoopCommands, RunLoopRouteCtx } from "./route-ctx";
 
-function BattleScreenRoute({ routeCommands, onOpenBattleMenu }: BattleRouteCtx) {
-  const commands = routeCommands.battle;
+function BattleScreenRoute({
+  commands,
+  onOpenBattleMenu,
+}: {
+  commands: BattleCommands;
+  onOpenBattleMenu: BattleRouteCtx["onOpenBattleMenu"];
+}) {
   const { heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
   const { battleScreenData, cardTransfers, hiddenHandCardKeys, cardTransferInProgress, playableHandCardKeys } =
     useBattleScreenRouteData();
@@ -62,8 +67,6 @@ function BattleScreenRoute({ routeCommands, onOpenBattleMenu }: BattleRouteCtx) 
     />
   );
 }
-
-type RunLoopCommands = RunLoopRouteCtx["routeCommands"]["runLoop"];
 
 function LabyrinthMapScreenRoute({
   commands,
@@ -270,7 +273,7 @@ export const runLoopScreenRoutes: {
   corruption: (ctx: RunLoopRouteCtx) => ReactNode;
 } = {
   battle: ({ routeCommands, onOpenBattleMenu }) => (
-    <BattleScreenRoute routeCommands={routeCommands} onOpenBattleMenu={onOpenBattleMenu} />
+    <BattleScreenRoute commands={routeCommands.battle} onOpenBattleMenu={onOpenBattleMenu} />
   ),
   "labyrinth-map": ({ routeCommands, onOpenBattleMenu }) => (
     <LabyrinthMapScreenRoute commands={routeCommands.runLoop.labyrinth} onOpenBattleMenu={onOpenBattleMenu} />

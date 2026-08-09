@@ -14,7 +14,7 @@ import { playUISound } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 import { GearTooltipPortal } from "../gear-tooltip-portal";
 import { packedItemStyle } from "./grid-styles";
-import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "../use-armory-gear-drag";
+import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "../armory-gear-drag-types";
 
 import { buildTileHandlers, TileContent, useDragEndFeedback } from "./inventory-tile-helpers";
 

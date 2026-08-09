@@ -33,7 +33,7 @@ Identify confirmed obsolete authored surface and clean up the complete deletion 
 Optional discovery aids — choose your own probes. See also the [measurable sweep map](README.md#measurable-sweep-map-npm-run-auditall).
 
 - **Strict deadcode:** `npm run deadcode:strict`
-- **Single-use exports:** `npm run audit:single-use`
+- **Single-use exports:** inspect concrete call sites after dead-code discovery; one consumer alone does not make an export obsolete.
 - **Unreferenced types & components:** declared in `src/features` / `src/lib` with no remaining import sites.
 - **Unread React state:** `useState` / store fields written but never read.
 - **Uncalled private helpers:** local functions in large modules with zero call sites.

@@ -1,13 +1,13 @@
-// Boots persisted save state after optional Steam init so desktop cloud merge can run.
-import { platform } from "@/lib/platform";
-import { loadAlchemySaveState, type SaveLoadState } from "./io";
+// Boots persisted save state after optional Steam init so desktop cloud sync can run.
+import { initializeSteam, isDesktop } from "@/lib/platform";
+import { createPlatformSaveBackend } from "@/lib/platform-save-backend";
+import { configureSaveBackend, loadAlchemySaveState, type SaveLoadState } from "./io";
 import type { SaveData } from "./types";
 import { hydrateAlchemyPersistenceFields } from "./persistence-coordinator";
 
 export async function bootstrapAlchemySaveState(): Promise<SaveLoadState> {
-  if (platform.isDesktop) {
-    await platform.steam.init();
-  }
+  const steam = isDesktop() ? await initializeSteam() : { playerName: null, cloudSyncEnabled: false };
+  configureSaveBackend(createPlatformSaveBackend({ cloudSyncEnabled: steam.cloudSyncEnabled }));
   return loadAlchemySaveState();
 }
 

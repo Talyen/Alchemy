@@ -28,7 +28,6 @@ interface UseBattleControllerProps {
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   onBattleVictory?: () => void;
   onBattleDefeat?: () => void;
-  rng: () => number;
   measureElementRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
 }
@@ -42,7 +41,6 @@ export function useBattleController({
   setHoveredCardId,
   onBattleVictory,
   onBattleDefeat,
-  rng,
   measureElementRect = defaultMeasureElementRect,
   measureVisualCardRect = defaultMeasureVisualCardRect,
 }: UseBattleControllerProps) {
@@ -78,7 +76,7 @@ export function useBattleController({
     const transferDeps = createBattleTransferDeps(ctx, session.isCurrentBattleSession);
     const endTurnUi = createBattleEndTurnUi(ctx, session, transferDeps);
     const cardPlay = createBattleCardPlay(ctx, session, transferDeps);
-    const init = createBattleInit(ctx, session, rng);
+    const init = createBattleInit(ctx, session);
     const devOutcomes = createBattleDevOutcomes(ctx, session);
 
     return {
@@ -88,7 +86,7 @@ export function useBattleController({
       init,
       devOutcomes,
     };
-  }, [ctx, rng]);
+  }, [ctx]);
 
   const hiddenHandCardKeys = useBattlePresentationStore((s) => s.hiddenHandCardKeys);
   const cardTransferInProgress = useBattlePresentationStore((s) => s.cardTransferInProgress);

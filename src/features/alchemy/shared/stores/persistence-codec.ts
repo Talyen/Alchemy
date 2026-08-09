@@ -1,9 +1,7 @@
-import type { GameplayDraft } from "./run-session-command";
-
 // Store-owned boundary for translating a domain's runtime state to and from save fields.
-export interface PersistenceCodec<TSaveFields> {
+export interface PersistenceCodec<TSaveFields, THydrateArgs extends unknown[] = []> {
   createDefault: () => TSaveFields;
   encode: () => TSaveFields;
-  hydrate: (fields: TSaveFields, draft?: GameplayDraft) => void;
+  hydrate: (fields: TSaveFields, ...args: THydrateArgs) => void;
   subscribe: (listener: () => void) => () => void;
 }

@@ -7,7 +7,6 @@ export type ShopKind = "merchant" | "alchemist" | "trinket" | "equipment";
 export interface CreateShopActionsDeps {
   talentEffects: TalentEffectManifest;
   homesteadEffects: HomesteadEffectManifest;
-  rng: () => number;
 }
 
 export interface MerchantShopCommands {

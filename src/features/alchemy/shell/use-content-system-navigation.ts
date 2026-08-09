@@ -19,8 +19,6 @@ export function useContentSystemNavigation({
   onStartBattle,
   getAvailableDestinations,
   onResumeWildwood,
-  destinationRng,
-  worldRng,
   clearCardHover,
 }: ContentSystemNavigationHookDeps) {
   const draftedDeckRef = useRef<BattleCard[] | null>(null);
@@ -39,8 +37,6 @@ export function useContentSystemNavigation({
         onStartBattle,
         getAvailableDestinations,
         onResumeWildwood,
-        destinationRng,
-        worldRng,
         clearCardHover,
       }),
     [
@@ -55,8 +51,6 @@ export function useContentSystemNavigation({
       onStartBattle,
       getAvailableDestinations,
       onResumeWildwood,
-      destinationRng,
-      worldRng,
       clearCardHover,
     ],
   );

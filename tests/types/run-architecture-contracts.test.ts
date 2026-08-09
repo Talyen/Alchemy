@@ -12,8 +12,25 @@ import type {
 } from "@/features/alchemy/shared/stores/run-port-types";
 import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/run-screen-data";
 import type { useRunOrchestrationPort } from "@/features/alchemy/shared/stores/run-session-react-ports";
+import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+
+type WritePort = Omit<
+  typeof import("@/features/alchemy/shared/stores/run-session-write-port"),
+  "createRunRandomSource"
+>;
+type NonDraftFirstWrite = {
+  [Key in keyof WritePort]: WritePort[Key] extends (...args: infer Args) => unknown
+    ? Args extends [GameplayDraft, ...unknown[]]
+      ? never
+      : Key
+    : never;
+}[keyof WritePort];
 
 describe("run architecture type contracts", () => {
+  it("keeps every gameplay write-port mutation draft-first", () => {
+    expectTypeOf<NonDraftFirstWrite>().toEqualTypeOf<never>();
+  });
+
   it("keeps battle and run-flow controllers on capability-specific ports", () => {
     type BattleProps = Parameters<typeof useBattleController>[0];
 
@@ -25,6 +42,7 @@ describe("run architecture type contracts", () => {
   });
 
   it("keeps display data out of the shell command controller", () => {
+    type RouteCommands = AlchemyRunCommands["routeCommands"];
     type ForbiddenDisplayKeys = Extract<
       keyof AlchemyRunCommands,
       | "battleState"
@@ -41,6 +59,22 @@ describe("run architecture type contracts", () => {
     expectTypeOf<ForbiddenDisplayKeys>().toEqualTypeOf<never>();
     expectTypeOf<AlchemyRunCommands>().toHaveProperty("routeCommands");
     expectTypeOf<AlchemyRunCommands>().toHaveProperty("screen");
+    expectTypeOf<keyof RouteCommands>().toEqualTypeOf<"meta" | "runSetup" | "runLoop" | "battle" | "runEnd">();
+  });
+
+  it("keeps route commands isolated by phase", () => {
+    type RouteCommands = AlchemyRunCommands["routeCommands"];
+    type RunLoopCrossPhaseKeys = Extract<
+      keyof RouteCommands["runLoop"],
+      "handleCardClick" | "handleCharacterSelect" | "goToScreen"
+    >;
+    type MetaCrossPhaseKeys = Extract<
+      keyof RouteCommands["meta"],
+      "handleCardClick" | "handleCharacterSelect" | "continueFromRunEnd"
+    >;
+
+    expectTypeOf<RunLoopCrossPhaseKeys>().toEqualTypeOf<never>();
+    expectTypeOf<MetaCrossPhaseKeys>().toEqualTypeOf<never>();
   });
 
   it("keeps screen data contracts exact and screen-specific", () => {

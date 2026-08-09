@@ -238,4 +238,21 @@ test.describe("Gear drag positions", { ...armory, ...slow }, () => {
     const dragVisual = page.getByTestId("armory-gear-drag-visual");
     await expect(dragVisual).toBeVisible();
   });
+
+  test("dragging gear onto a currency picks up the currency in the same session", async ({ page }) => {
+    await openArmory(page, {
+      inventory: [ringGear],
+      craftingCurrencies: { "discordant-dice": 1 },
+    });
+
+    const gear = gearItemLocator(page, "Ruby Ring");
+    const currency = currencyLocator(page, "discordant-dice");
+
+    await expect(gear).toBeVisible();
+    await expect(currency).toBeVisible();
+    await pointerDrag(page, gear, currency);
+
+    await expect(page.getByTestId("armory-currency-drag-visual")).toBeVisible();
+    await expect(page.getByTestId("armory-gear-drag-visual")).toHaveCount(0);
+  });
 });

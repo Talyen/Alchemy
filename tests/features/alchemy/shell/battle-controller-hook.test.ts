@@ -25,8 +25,6 @@ vi.mock("@/lib/audio", async (importOriginal) => {
   };
 });
 
-const TEST_RNG = () => 0.5;
-
 beforeEach(() => {
   resetRunProgressSlice();
   resetRunBattleSlice();
@@ -43,7 +41,6 @@ function renderBattleController(screen: Screen = ROUTE_SCREENS.BATTLE) {
         homesteadEffects: defaultHomesteadEffects,
         screen: currentScreen,
         setHoveredCardId: vi.fn(),
-        rng: TEST_RNG,
       }),
     { initialProps: { screen } },
   );

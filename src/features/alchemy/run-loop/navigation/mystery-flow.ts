@@ -11,13 +11,14 @@ import {
   type KeywordId,
 } from "@/lib/game-data";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
-import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "../run/deck-mutations";
+import { appendUnique } from "@/lib/utils";
+import { setDiscoveredCardIds, setDiscoveredTrinketIds } from "../../shared/stores/profile-store";
 import type { MaterialId, MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MysteryEffect } from "@/lib/mystery";
 import { sampleItems } from "../../shared/utils";
 import { spendRunGold } from "../run-gold";
-import { invokeDraftAction, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 
 export interface MysteryEffectResult {
   /**
@@ -28,29 +29,25 @@ export interface MysteryEffectResult {
   goldSound?: "gain" | "spend";
 }
 
-type StateUpdater<T> = (value: T | ((previous: T) => T)) => void;
+type DraftStateUpdater<T> = (draft: GameplayDraft, value: T | ((previous: T) => T)) => void;
 
 interface MysteryEffectContext {
   runDeck?: BattleCard[];
   runMaxHealth: number;
   rng: () => number;
-  setRunDeck: StateUpdater<BattleCard[]>;
-  setRunGold: StateUpdater<number>;
-  setRunPlayerHealth: StateUpdater<number>;
-  setRunTrinkets: StateUpdater<string[]>;
-  setMysteryCardChoices: StateUpdater<BattleCard[] | null>;
-  awardMysteryXP: (keyword: KeywordId, amount: number) => void;
+  setRunDeck: DraftStateUpdater<BattleCard[]>;
+  setRunGold: DraftStateUpdater<number>;
+  setRunPlayerHealth: DraftStateUpdater<number>;
+  setRunTrinkets: DraftStateUpdater<string[]>;
+  setMysteryCardChoices: DraftStateUpdater<BattleCard[] | null>;
+  awardMysteryXP: (draft: GameplayDraft, keyword: KeywordId, amount: number) => void;
   onAddMaterials: (materials: MaterialInventory) => void;
   onAwardGold: (amount: number) => void;
-  draft?: GameplayDraft;
+  draft: GameplayDraft;
 }
 
-function mutate<T>(setter: StateUpdater<T>, draft: GameplayDraft | undefined, value: T | ((previous: T) => T)): void {
-  if (draft) {
-    invokeDraftAction(setter, draft, value);
-    return;
-  }
-  setter(value);
+function mutate<T>(setter: DraftStateUpdater<T>, draft: GameplayDraft, value: T | ((previous: T) => T)): void {
+  setter(draft, value);
 }
 
 // Applies a single mystery consequence effect to the run state.
@@ -68,11 +65,7 @@ const mysteryApplyHandlers: {
   gainGold: (effect, context) => gainMysteryGold(effect.amount, context),
   loseGold: (effect, context) => loseMysteryGold(effect.amount, context),
   gainXP: (effect, context) => {
-    if (context.draft) {
-      invokeDraftAction(context.awardMysteryXP, context.draft, effect.keyword, effect.amount);
-    } else {
-      context.awardMysteryXP(effect.keyword, effect.amount);
-    }
+    context.awardMysteryXP(context.draft, effect.keyword, effect.amount);
     return { followUp: null };
   },
   removeCard: (effect, context) => removeMysteryCard(effect.mode, context),
@@ -96,7 +89,8 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
 // Shared card reward mutation keeps discovery tracking aligned with deck changes.
 // Note: We use a simpler subset of context keys since we only mutate runDeck.
 function addCardToRun(card: BattleCard, context: Pick<MysteryEffectContext, "setRunDeck" | "draft">): void {
-  appendCardToRunWithDiscovery(card, context.setRunDeck, context.draft);
+  context.setRunDeck(context.draft, (previous) => [...previous, card]);
+  setDiscoveredCardIds(context.draft, (current) => appendUnique(current, card.id));
 }
 
 function addSpecificMysteryCard(cardId: string, context: MysteryEffectContext) {
@@ -165,7 +159,8 @@ function removeMysteryCard(mode: "random" | "choose", context: MysteryEffectCont
 }
 
 function gainMysteryTrinket(trinketId: string, context: MysteryEffectContext) {
-  appendTrinketToRunWithDiscovery(trinketId, context.setRunTrinkets, context.draft);
+  context.setRunTrinkets(context.draft, (previous) => [...previous, trinketId]);
+  setDiscoveredTrinketIds(context.draft, (current) => appendUnique(current, trinketId));
   return { followUp: null };
 }
 

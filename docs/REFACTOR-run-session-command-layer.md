@@ -1,8 +1,10 @@
 # Refactor: collapse the run-session command/transaction layer
 
-Status: implemented
+Status: implemented (including draft-only follow-up)
 Owner: run-session / persistence seam
 Touches: `src/features/alchemy/shared/stores/**`, `docs/ARCHITECTURE.md`, `tests/**`
+
+Completion note: the final compatibility layer was removed in August 2026. Write-port and lifecycle mutators now require a draft, event-time callers own an explicit command boundary, persistence hydration has a draft-required codec contract, and command recipes use `createDraftRunRandomSource(draft, stream)`. The former `bindDraftAction` overload detection, `isGameplayDraft`, `invokeDraftAction`, optional-draft helpers, and RNG rebinding metadata no longer exist.
 
 ## Why
 

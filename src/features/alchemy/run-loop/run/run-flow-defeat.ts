@@ -11,6 +11,7 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import { CONSTANTS } from "../../shared/types";
 import { awardRunEndMaterials, clearCombatPresentation, clearCombatState } from "./run-flow-session-helpers";
 import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 export function createDefeatHandlers(deps: RunFlowHandlerDeps) {
   function endRunAndShowGameOver() {
@@ -27,7 +28,7 @@ export function createDefeatHandlers(deps: RunFlowHandlerDeps) {
     const runState = readActiveRun();
     if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
       stopAllSfx();
-      clearCombatState();
+      dispatchRunSessionCommand(clearCombatState);
       clearCombatPresentation();
       deps.actions.labyrinthFailNode();
       deps.actions.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);

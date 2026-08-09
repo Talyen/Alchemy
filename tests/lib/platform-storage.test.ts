@@ -1,22 +1,38 @@
+// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { platform } from "@/lib/platform";
+import { createPlatformSaveBackend } from "@/lib/platform-save-backend";
+
+type DesktopApi = NonNullable<Window["alchemyDesktop"]>;
+
+function installDesktopApi(overrides: Partial<DesktopApi> = {}): DesktopApi {
+  const api: DesktopApi = {
+    isDesktop: true,
+    setDisplayMode: vi.fn().mockResolvedValue(undefined),
+    quit: vi.fn().mockResolvedValue(undefined),
+    listSaveCandidates: vi.fn().mockResolvedValue([]),
+    writeSave: vi.fn().mockResolvedValue(true),
+    clearSave: vi.fn().mockResolvedValue(true),
+    steamGetName: vi.fn().mockResolvedValue(null),
+    steamSetRichPresence: vi.fn().mockResolvedValue(false),
+    steamCloudRead: vi.fn().mockResolvedValue(null),
+    steamCloudWrite: vi.fn().mockResolvedValue(false),
+    steamCloudDelete: vi.fn().mockResolvedValue(false),
+    ...overrides,
+  };
+  window.alchemyDesktop = api;
+  return api;
+}
 
 function createMockStorage() {
   const data = new Map<string, string>();
   return {
     getItem: (key: string) => data.get(key) ?? null,
-    setItem: (key: string, value: string) => {
-      data.set(key, value);
-    },
-    removeItem: (key: string) => {
-      data.delete(key);
-    },
-    clear: () => data.clear(),
+    setItem: (key: string, value: string) => data.set(key, value),
+    removeItem: (key: string) => data.delete(key),
   };
 }
 
-describe("platform.storage", () => {
-  const originalDesktop = window.alchemyDesktop;
+describe("platform save backend", () => {
   const originalLocalStorage = window.localStorage;
 
   beforeEach(() => {
@@ -24,54 +40,88 @@ describe("platform.storage", () => {
     Object.defineProperty(window, "localStorage", {
       value: createMockStorage(),
       configurable: true,
-      writable: true,
     });
   });
 
   afterEach(() => {
-    window.alchemyDesktop = originalDesktop;
+    vi.restoreAllMocks();
+    window.alchemyDesktop = undefined;
     Object.defineProperty(window, "localStorage", {
       value: originalLocalStorage,
       configurable: true,
-      writable: true,
     });
   });
 
-  it("reads and writes via localStorage on web", async () => {
-    const write = await platform.storage.writeLocal("alchemy-test", '{"ok":true}');
-    expect(write.ok).toBe(true);
-    const read = await platform.storage.readLocal("alchemy-test");
-    expect(read.ok).toBe(true);
-    if (read.ok) expect(read.data).toBe('{"ok":true}');
+  it("reads, writes, and clears browser storage", async () => {
+    const backend = createPlatformSaveBackend();
+
+    await expect(backend.write("alchemy-test", '{"ok":true}')).resolves.toEqual({ ok: true });
+    await expect(backend.readCandidates("alchemy-test")).resolves.toEqual({
+      ok: true,
+      candidates: ['{"ok":true}'],
+    });
+    await expect(backend.clear("alchemy-test")).resolves.toEqual({ ok: true });
+    await expect(backend.readCandidates("alchemy-test")).resolves.toEqual({ ok: true, candidates: [] });
   });
 
-  it("reads via localStorage on web", async () => {
-    window.localStorage.setItem("test", '{"web":true}');
-    const read = await platform.storage.readLocal("test");
-    expect(read.ok).toBe(true);
-    if (read.ok) expect(read.data).toBe('{"web":true}');
+  it("orders desktop primary, backups, then cloud and deduplicates payloads", async () => {
+    installDesktopApi({
+      listSaveCandidates: vi.fn().mockResolvedValue(["primary", "backup", "primary"]),
+      steamCloudRead: vi.fn().mockResolvedValue("cloud"),
+    });
+
+    await expect(createPlatformSaveBackend().readCandidates("ignored")).resolves.toEqual({
+      ok: true,
+      candidates: ["primary", "backup", "cloud"],
+    });
   });
 
-  it("warns when Steam Cloud read fails without throwing", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    window.alchemyDesktop = {
-      isDesktop: true,
-      setDisplayMode: async () => undefined,
-      quit: async () => undefined,
-      listSaveCandidates: async () => [],
-      writeSave: async () => true,
-      clearSave: async () => true,
-      steamGetName: async () => null,
-      steamSetRichPresence: async () => false,
-      steamCloudRead: async () => {
-        throw new Error("cloud unavailable");
-      },
-      steamCloudWrite: async () => false,
-      steamCloudDelete: async () => false,
-    };
+  it("writes desktop local before cloud and treats cloud failure as non-fatal", async () => {
+    const order: string[] = [];
+    installDesktopApi({
+      writeSave: vi.fn().mockImplementation(async () => {
+        order.push("local");
+        return true;
+      }),
+      steamCloudWrite: vi.fn().mockImplementation(async () => {
+        order.push("cloud");
+        return false;
+      }),
+    });
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
-    await expect(platform.cloud.read("save.json")).resolves.toBeNull();
-    expect(warn).toHaveBeenCalledWith("Steam Cloud read failed", expect.any(Error));
-    warn.mockRestore();
+    await expect(createPlatformSaveBackend({ cloudSyncEnabled: true }).write("ignored", "payload")).resolves.toEqual({
+      ok: true,
+    });
+    expect(order).toEqual(["local", "cloud"]);
+  });
+
+  it("fails closed without clearing local data when cloud deletion fails", async () => {
+    const clearSave = vi.fn().mockResolvedValue(true);
+    installDesktopApi({
+      clearSave,
+      steamCloudDelete: vi.fn().mockResolvedValue(false),
+    });
+
+    const result = await createPlatformSaveBackend({ cloudSyncEnabled: true }).clear("ignored");
+    expect(result.ok).toBe(false);
+    expect(clearSave).not.toHaveBeenCalled();
+  });
+
+  it("clears cloud before the desktop backup ring", async () => {
+    const order: string[] = [];
+    installDesktopApi({
+      steamCloudDelete: vi.fn().mockImplementation(async () => {
+        order.push("cloud");
+        return true;
+      }),
+      clearSave: vi.fn().mockImplementation(async () => {
+        order.push("local");
+        return true;
+      }),
+    });
+
+    await expect(createPlatformSaveBackend({ cloudSyncEnabled: true }).clear("ignored")).resolves.toEqual({ ok: true });
+    expect(order).toEqual(["cloud", "local"]);
   });
 });

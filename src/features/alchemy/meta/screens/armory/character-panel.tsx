@@ -7,7 +7,7 @@ import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { SlotButton } from "./parts/slot-button";
 import { EQUIP_SLOTS, equipmentSlotStyle } from "./parts/grid-styles";
-import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "./use-armory-gear-drag";
+import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "./armory-gear-drag-types";
 
 export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPanel({
   characterId,

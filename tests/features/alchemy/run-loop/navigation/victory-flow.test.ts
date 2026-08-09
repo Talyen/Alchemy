@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   computeVictoryRewardState,
   withSelectedBossForDestinations,
@@ -11,6 +11,11 @@ import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/r
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import type { Destination } from "@/features/alchemy/shared/types";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { resetRunDomainStore } from "../../../../helpers/gameplay-store-test";
+
+beforeEach(() => resetRunDomainStore());
 
 vi.mock("@/lib/utils", async () => {
   const actual = await vi.importActual<typeof import("@/lib/utils")>("@/lib/utils");
@@ -423,59 +428,48 @@ describe("commitVictoryRewards", () => {
     return {
       battleState: baseBattleState({ gold: 5, pendingMaterials: emptyInventory() }),
       contentSystemType: "campaign" as const,
-      addHomesteadMaterials: vi.fn(),
-      addRunGold: vi.fn(),
-      setRunMaxHealth: vi.fn(),
-      setRewardState: vi.fn(),
-      setCompanionRewardCards: vi.fn(),
-      setDestinationOfferState: vi.fn(),
-      setHasActiveBattle: vi.fn(),
       ...overrides,
     };
   }
 
+  function commit(result = victoryResult(), deps = commitDeps()) {
+    return dispatchRunSessionCommand((draft) => commitVictoryRewards(draft, result, deps, testRng));
+  }
+
   it("reports gold gain when post-reward gold exceeds battle gold", () => {
-    expect(commitVictoryRewards(victoryResult(), commitDeps(), testRng)).toBe(true);
+    expect(commit()).toBe(true);
   });
 
   it("reports no gold gain when gold did not increase", () => {
-    expect(commitVictoryRewards(victoryResult({ newGold: 5, goldEarned: 0 }), commitDeps(), testRng)).toBe(false);
+    expect(commit(victoryResult({ newGold: 5, goldEarned: 0 }))).toBe(false);
   });
 
   it("adds pending crystal materials to homestead", () => {
-    const addHomesteadMaterials = vi.fn();
     const materials = { ...emptyInventory(), crystal: 2 };
-    commitVictoryRewards(
+    commit(
       victoryResult(),
       commitDeps({
         battleState: baseBattleState({ pendingMaterials: materials }),
-        addHomesteadMaterials,
       }),
-      testRng,
     );
-    expect(addHomesteadMaterials).toHaveBeenCalledWith(materials);
+    expect(readGameplayState().runProfile.materialInventory.crystal).toBe(2);
   });
 
   it("stamps victory routing context onto reward state", () => {
-    const setRewardState = vi.fn();
     const battleState = baseBattleState({
       currentEnemy: { id: "boss", enemyType: "boss" },
       pendingMaterials: emptyInventory(),
     });
-    commitVictoryRewards(
+    commit(
       victoryResult(),
       commitDeps({
         battleState,
         contentSystemType: "labyrinth",
-        setRewardState,
-      }),
-      testRng,
-    );
-    expect(setRewardState).toHaveBeenCalledWith(
-      expect.objectContaining({
-        lastVictoryEnemyType: "boss",
-        lastVictoryContentSystem: "labyrinth",
       }),
     );
+    expect(readGameplayState().session.rewardState).toMatchObject({
+      lastVictoryEnemyType: "boss",
+      lastVictoryContentSystem: "labyrinth",
+    });
   });
 });

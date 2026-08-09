@@ -1,5 +1,5 @@
 /**
- * Run measurable audit probes (knip, single-use, madge, complexity, amplification)
+ * Run measurable audit probes (knip, madge, complexity, amplification)
  * as a periodic sweep. Agent audit guides: docs/Audits/README.md.
  * Run: node scripts/audit-all.mjs
  *
@@ -17,7 +17,6 @@ const ROOT = path.resolve(path.dirname(currentFile), "..");
 
 const STEPS = [
   { name: "knip (deadcode:strict)", cmd: "npm", args: ["run", "deadcode:strict"], timeout: 180_000 },
-  { name: "single-use abstractions", cmd: "node", args: ["scripts/audit-single-use.mjs"], timeout: 120_000 },
   {
     name: "madge (circular)",
     cmd: "npx",

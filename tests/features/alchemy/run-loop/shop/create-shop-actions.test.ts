@@ -7,15 +7,23 @@ import {
   resetRunProgressSlice,
   setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
-import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  createRunSessionCommand,
+  subscribeRunSessionCommits,
+} from "@/features/alchemy/shared/stores/run-session-command";
 import { useGearStore } from "../../../../helpers/gameplay-store-test";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
-  setShopState,
-  setAlchemistState,
-  setTrinketShopState,
-  setEquipmentShopState,
+  setShopState as mutateShopState,
+  setAlchemistState as mutateAlchemistState,
+  setTrinketShopState as mutateTrinketShopState,
+  setEquipmentShopState as mutateEquipmentShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+
+const setShopState = createRunSessionCommand(mutateShopState);
+const setAlchemistState = createRunSessionCommand(mutateAlchemistState);
+const setTrinketShopState = createRunSessionCommand(mutateTrinketShopState);
+const setEquipmentShopState = createRunSessionCommand(mutateEquipmentShopState);
 import {
   createInitialShopState as createInitialShopStateImpl,
   createInitialAlchemistState as createInitialAlchemistStateImpl,
@@ -34,6 +42,7 @@ import {
 } from "@/lib/game-constants";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import type { GearInstance } from "@/lib/gear";
+import { createRunRngState } from "@/lib/run-rng";
 
 vi.mock("@/lib/audio", () => ({
   playGoldSpend: vi.fn(),
@@ -78,7 +87,6 @@ function buildActions(
     gearAstralChanceBonus: number;
     trinketIds: string[];
   }>,
-  rng: () => number = testRng,
 ) {
   if (overrides?.trinketIds) {
     getRunProgressStoreView().setRunTrinkets(() => overrides.trinketIds!);
@@ -87,7 +95,6 @@ function buildActions(
   const talentEffects = { ...defaultTalentEffects, ...overrides?.talentEffects } as TalentEffectManifest;
   return createShopActions({
     talentEffects,
-    rng,
     homesteadEffects: { ...defaultHomesteadEffects, gearAstralChanceBonus: overrides?.gearAstralChanceBonus ?? 0 },
   });
 }
@@ -479,35 +486,39 @@ describe("createShopActions", () => {
     });
   });
 
-  describe("injected rng", () => {
-    it("supports deterministic rng for equipment shop init", () => {
+  describe("persisted RNG stream", () => {
+    it("replays equipment shop init from the same RNG state", () => {
       const rng = () => 0.5;
-      setRunProgress({ runGold: 999 });
+      const rngState = createRunRngState(rng);
+      setRunProgress({ runGold: 999, rng: rngState });
 
       setEquipmentShopState(createInitialEquipmentShopState(rng));
-      const firstActions = buildActions({}, rng);
+      const firstActions = buildActions();
       firstActions.equipment.initialize();
       const firstGear = getRunSessionStoreView().equipmentShopState.gear.map((g) => g.definitionId);
 
       setEquipmentShopState(createInitialEquipmentShopState(rng));
-      const secondActions = buildActions({}, rng);
+      setRunProgress({ rng: rngState });
+      const secondActions = buildActions();
       secondActions.equipment.initialize();
       const secondGear = getRunSessionStoreView().equipmentShopState.gear.map((g) => g.definitionId);
 
       expect(firstGear).toEqual(secondGear);
     });
 
-    it("supports deterministic rng for trinket shop init and refresh", () => {
+    it("replays trinket init and refresh from the same RNG state", () => {
       const rng = () => 0.25;
-      setRunProgress({ runGold: 999 });
+      const rngState = createRunRngState(rng);
+      setRunProgress({ runGold: 999, rng: rngState });
       setTrinketShopState(createInitialTrinketShopState(rng));
 
-      const actions = buildActions({}, rng);
+      const actions = buildActions();
       actions.trinket.initialize();
       const firstTrinkets = getRunSessionStoreView().trinketShopState.trinkets.map((t) => t.id);
 
       setTrinketShopState(createInitialTrinketShopState(rng));
-      const replayActions = buildActions({}, rng);
+      setRunProgress({ rng: rngState });
+      const replayActions = buildActions();
       replayActions.trinket.initialize();
       const secondTrinkets = getRunSessionStoreView().trinketShopState.trinkets.map((t) => t.id);
 
@@ -517,7 +528,8 @@ describe("createShopActions", () => {
         ...createInitialTrinketShopState(rng),
         refreshesLeft: 1,
       });
-      const refreshActions = buildActions({}, rng);
+      setRunProgress({ rng: rngState });
+      const refreshActions = buildActions();
       refreshActions.trinket.refresh();
       const refreshedTrinkets = getRunSessionStoreView().trinketShopState.trinkets.map((t) => t.id);
 
@@ -525,7 +537,8 @@ describe("createShopActions", () => {
         ...createInitialTrinketShopState(rng),
         refreshesLeft: 1,
       });
-      const replayRefreshActions = buildActions({}, rng);
+      setRunProgress({ rng: rngState });
+      const replayRefreshActions = buildActions();
       replayRefreshActions.trinket.refresh();
       const replayedTrinkets = getRunSessionStoreView().trinketShopState.trinkets.map((t) => t.id);
 

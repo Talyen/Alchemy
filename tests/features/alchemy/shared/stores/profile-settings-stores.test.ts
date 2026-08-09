@@ -3,6 +3,7 @@ import { profilePersistenceCodec } from "@/features/alchemy/shared/stores/profil
 import { useProfileStore } from "../../../../helpers/gameplay-store-test";
 import { settingsPersistenceCodec, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { defaultSaveData, type SaveData } from "@/features/alchemy/shared/storage";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 function makeSave(overrides: Partial<SaveData> = {}): SaveData {
   return { ...defaultSaveData, ...overrides };
@@ -24,15 +25,18 @@ describe("profile store", () => {
   });
 
   it("hydrates only profile fields from save data", () => {
-    profilePersistenceCodec.hydrate(
-      makeSave({
-        discoveredCardIds: ["card-a"],
-        encounteredEnemyIds: ["goblin"],
-        completedDifficulties: {
-          ...defaultSaveData.completedDifficulties,
-          knight: ["difficulty-1"],
-        },
-      }),
+    dispatchRunSessionCommand((draft) =>
+      profilePersistenceCodec.hydrate(
+        makeSave({
+          discoveredCardIds: ["card-a"],
+          encounteredEnemyIds: ["goblin"],
+          completedDifficulties: {
+            ...defaultSaveData.completedDifficulties,
+            knight: ["difficulty-1"],
+          },
+        }),
+        draft,
+      ),
     );
 
     const profile = useProfileStore.getState();

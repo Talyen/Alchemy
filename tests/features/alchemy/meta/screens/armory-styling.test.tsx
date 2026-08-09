@@ -181,8 +181,8 @@ describe("Armory Styling TDD", () => {
         onSalvage={onSalvage}
         onTransferGear={vi.fn().mockReturnValue(false)}
         onClearSalvageTarget={vi.fn()}
-        onClearCurrencyDragState={vi.fn()}
         onClearDragState={vi.fn()}
+        onCompleteDragAnimation={vi.fn()}
         onClearSecondaryDragState={vi.fn()}
         onCloseTransferMenu={vi.fn()}
       />,
@@ -209,8 +209,8 @@ describe("Armory Styling TDD", () => {
         onSalvage={onSalvage}
         onTransferGear={vi.fn().mockReturnValue(false)}
         onClearSalvageTarget={vi.fn()}
-        onClearCurrencyDragState={vi.fn()}
         onClearDragState={vi.fn()}
+        onCompleteDragAnimation={vi.fn()}
         onClearSecondaryDragState={vi.fn()}
         onCloseTransferMenu={vi.fn()}
       />,

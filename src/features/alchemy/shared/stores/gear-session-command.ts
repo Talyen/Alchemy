@@ -51,25 +51,31 @@ export function dispatchGearMutationWithRunHealthSync<T>(options: {
   mutate: (gear: GearStore) => T;
   before?: GearHealthSnapshot;
   syncRunHealth?: boolean;
-  draft?: GameplayDraft;
 }): T {
-  const applyMutation = (state: GameplayDraft): T => {
-    const before = options.before ?? snapshotGearHealth(state.gear);
-    const result = options.mutate(gearCommandView(state));
-    if (options.syncRunHealth ?? state.session.hasActiveRun) {
-      const after = snapshotGearHealth(state.gear);
-      syncRunMaxHealthFromGearMutation(
-        state,
-        options.characterId,
-        before.inventories,
-        before.loadouts,
-        after.inventories,
-        after.loadouts,
-      );
-    }
-    return result;
-  };
+  return dispatchRunSessionCommand((draft) => mutateGearWithRunHealthSync(draft, options));
+}
 
-  if (options.draft) return applyMutation(options.draft);
-  return dispatchRunSessionCommand((draft) => applyMutation(draft));
+export function mutateGearWithRunHealthSync<T>(
+  draft: GameplayDraft,
+  options: {
+    characterId: CharacterId;
+    mutate: (gear: GearStore) => T;
+    before?: GearHealthSnapshot;
+    syncRunHealth?: boolean;
+  },
+): T {
+  const before = options.before ?? snapshotGearHealth(draft.gear);
+  const result = options.mutate(gearCommandView(draft));
+  if (options.syncRunHealth ?? draft.session.hasActiveRun) {
+    const after = snapshotGearHealth(draft.gear);
+    syncRunMaxHealthFromGearMutation(
+      draft,
+      options.characterId,
+      before.inventories,
+      before.loadouts,
+      after.inventories,
+      after.loadouts,
+    );
+  }
+  return result;
 }

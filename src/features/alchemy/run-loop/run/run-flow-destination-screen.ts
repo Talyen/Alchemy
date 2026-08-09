@@ -6,7 +6,7 @@ import {
   setCorruptionResult,
   setRewardState,
   setRunPlayerHealth,
-  bindRunRandomSource,
+  createDraftRunRandomSource,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { useUiStore } from "../../shared/stores/ui-store";
@@ -23,7 +23,7 @@ export function createDestinationScreenHandlers(deps: RunFlowHandlerDeps, handle
     if (!bossOnly) return;
     if (state.selectedBossId && getBossById(state.selectedBossId)) return;
     dispatchRunSessionCommand((draft) => {
-      const selectedBossId = getBossEnemy([], bindRunRandomSource(deps.worldRng, draft)).id;
+      const selectedBossId = getBossEnemy([], createDraftRunRandomSource(draft, "world")).id;
       setRewardState(draft, (prev) => ({ ...prev, selectedBossId }));
     });
   }
@@ -39,7 +39,7 @@ export function createDestinationScreenHandlers(deps: RunFlowHandlerDeps, handle
       if (!choice) return;
       useUiStore.getState().clearCardHover();
       const commitDestinationProgress = () => {
-        commitDestinationClaim(destination);
+        dispatchRunSessionCommand((draft) => commitDestinationClaim(draft, destination));
       };
       routeDestinationChoice(destination, {
         navigateTo: (screen) => deps.actions.navigateTo(screen, commitDestinationProgress),
@@ -47,7 +47,7 @@ export function createDestinationScreenHandlers(deps: RunFlowHandlerDeps, handle
         initializeShop: deps.actions.initializeShop,
         startBattle: deps.actions.startBattle,
         startBoss: (opts) => deps.actions.startBoss({ ...opts, bossId: choice.selectedBossId }),
-        resetCorruption: () => setCorruptionResult(null),
+        resetCorruption: () => dispatchRunSessionCommand((draft) => setCorruptionResult(draft, null)),
       });
     } catch (error) {
       dispatchRunSessionCommand((draft) => cancelDestinationClaim(draft));

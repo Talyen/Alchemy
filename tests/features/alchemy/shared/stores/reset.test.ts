@@ -8,18 +8,6 @@ vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
   };
 });
 
-vi.mock("@/lib/platform", () => ({
-  platform: {
-    isDesktop: false,
-    canQuit: false,
-    setDisplayMode: vi.fn(),
-    quit: vi.fn(),
-    steam: { isInitialized: false, playerName: null, init: vi.fn(), setRichPresence: vi.fn() },
-    cloud: { isAvailable: false, read: vi.fn(), write: vi.fn() },
-    storage: { removeLocal: vi.fn().mockResolvedValue({ ok: true }) },
-  },
-}));
-
 import { clearAllPersistentGameData, resetActiveRunStores } from "@/features/alchemy/shared/stores/reset";
 import { useProfileStore } from "../../../../helpers/gameplay-store-test";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";

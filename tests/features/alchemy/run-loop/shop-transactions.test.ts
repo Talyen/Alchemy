@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { refreshCardShopOfferings, refreshShopOfferings } from "@/features/alchemy/run-loop/shop-transactions";
 import { createInitialShopState } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import {
+  createRunSessionCommand,
   dispatchRunSessionCommand,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import { setShopState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setShopState as mutateShopState } from "@/features/alchemy/shared/stores/run-session-write-port";
+const setShopState = createRunSessionCommand(mutateShopState);
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { selectRewardCards, type BattleCard } from "@/lib/game-data";
 import type { ShopState } from "@/lib/active-run-session";
@@ -45,7 +47,7 @@ describe("refreshShopOfferings", () => {
         draft,
         price: 5,
         refreshesLeft: draft.session.shopState.refreshesLeft,
-        setState: setShopState,
+        setState: mutateShopState,
         resample: () => newItems,
         mapState: (previous, items) => ({
           ...previous,
@@ -77,7 +79,7 @@ describe("refreshShopOfferings", () => {
         draft,
         price: 5,
         refreshesLeft: draft.session.shopState.refreshesLeft,
-        setState: setShopState,
+        setState: mutateShopState,
         resample: () => newItems,
         mapState: (previous, items) => ({ ...previous, cards: items }),
       }),
@@ -117,7 +119,7 @@ describe("refreshCardShopOfferings", () => {
         pool,
         currentItems: draft.session.shopState.cards,
         count: 2,
-        setState: setShopState,
+        setState: mutateShopState,
         rng,
         mapState: (previous, cards) => ({ ...previous, cards }),
       }),

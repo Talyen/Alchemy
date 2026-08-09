@@ -19,8 +19,8 @@ import { CURRENCY_COUNT_LABEL_CLASS } from "./parts/currency-styles";
 import { ArmoryCurrencyCursor } from "./armory-currency-targeting";
 import { ArmoryTransferMenu, type TransferMenuState } from "./armory-transfer-menu";
 import { playUISound } from "@/lib/audio";
-import type { GearDragVisual } from "./use-armory-gear-drag";
-import type { CurrencyDragVisual } from "./use-armory-currency-drag";
+import type { GearDragVisual } from "./armory-gear-drag-types";
+import type { CurrencyDragVisual } from "./use-armory-board-drag";
 
 interface Props {
   salvageTarget: GearInstance | null;
@@ -36,8 +36,8 @@ interface Props {
   onSalvage: (instanceId: string) => boolean;
   onTransferGear: (instanceId: string, targetCharacterId: CharacterId) => boolean;
   onClearSalvageTarget: () => void;
-  onClearCurrencyDragState: () => void;
   onClearDragState: () => void;
+  onCompleteDragAnimation: () => void;
   onClearSecondaryDragState: () => void;
   onCloseTransferMenu: () => void;
 }
@@ -88,6 +88,7 @@ function renderDragVisualPortal(
   isFlyoverEquip: boolean,
   onComplete: () => void,
   testId?: string,
+  key?: string,
 ) {
   const instance = visual.instance!;
   const def = gearDefinitions[instance.definitionId];
@@ -96,6 +97,7 @@ function renderDragVisualPortal(
   const colors = getGearInstanceShineColors(instance);
   return (
     <DragVisualPortal
+      key={key}
       visual={visual}
       {...(testId ? { testId } : {})}
       onComplete={onComplete}
@@ -130,8 +132,8 @@ export function ArmoryOverlays(props: Props) {
     onSalvage,
     onTransferGear,
     onClearSalvageTarget,
-    onClearCurrencyDragState,
     onClearDragState,
+    onCompleteDragAnimation,
     onClearSecondaryDragState,
     onCloseTransferMenu,
   } = props;
@@ -151,7 +153,7 @@ export function ArmoryOverlays(props: Props) {
           visual={props.currencyDragVisual}
           testId="armory-currency-drag-visual"
           className="border border-stone-500/40"
-          onComplete={onClearCurrencyDragState}
+          onComplete={onCompleteDragAnimation}
         >
           <div className="relative h-full w-full">
             <img
@@ -169,12 +171,18 @@ export function ArmoryOverlays(props: Props) {
         ? renderDragVisualPortal(
             dragVisual,
             !!(dragVisual.flyover && dragVisual.destination?.kind === "equipment"),
-            onClearDragState,
+            dragVisual.settling || dragVisual.flyover ? onCompleteDragAnimation : onClearDragState,
           )
         : null}
       {secondaryDragVisuals.map((visual) =>
         visual.instance
-          ? renderDragVisualPortal(visual, false, onClearSecondaryDragState, "armory-gear-swap-visual")
+          ? renderDragVisualPortal(
+              visual,
+              false,
+              onClearSecondaryDragState,
+              "armory-gear-swap-visual",
+              visual.instance.instanceId,
+            )
           : null,
       )}
       <ArmoryCurrencyCursor activeCurrencyId={props.activeCurrencyId} cursorPoint={props.cursorPoint} />
