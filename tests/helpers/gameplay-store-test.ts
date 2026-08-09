@@ -1,5 +1,4 @@
 import {
-  applyGameplayStateUpdate,
   readGameplayState,
   useGameplayStateStore,
   type GameplayState,
@@ -31,6 +30,14 @@ interface StoreFacade<S> {
   getState: () => S;
   getInitialState: () => S;
   setState: (partial: Partial<S> | S | ((state: S) => unknown), replace?: boolean) => void;
+}
+
+/** Test-only aggregate mutation seam; production commands publish directly through Zustand. */
+export function applyGameplayStateUpdate(partial: (state: GameplayState) => void): void {
+  useGameplayStateStore.setState((state) => {
+    partial(state);
+    state.revision += 1;
+  });
 }
 
 function runDomainView(state: GameplayState): RunDomainStore {

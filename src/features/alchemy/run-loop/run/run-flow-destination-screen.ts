@@ -1,33 +1,25 @@
-import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
   beginDestinationClaim,
   cancelDestinationClaim,
   commitDestinationClaim,
   setCorruptionResult,
-  setRewardState,
   setRunPlayerHealth,
-  createDraftRunRandomSource,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { getCampfireHealFraction, getCampfireRestHealth } from "@/lib/game-constants";
-import { getBossEnemy, getBossById } from "@/features/alchemy/shared/config";
 import { routeDestinationChoice } from "./run-destination-handlers";
 import { CONSTANTS, type Destination } from "../../shared/types";
-import type { RunFlowHandlerDeps, RunFlowSiblingHandlers } from "./run-flow-handler-deps";
+import type { AdvanceToNextDestination, RunFlowHandlerDeps } from "./run-flow-handler-deps";
 
-export function createDestinationScreenHandlers(deps: RunFlowHandlerDeps, handlers: RunFlowSiblingHandlers) {
-  function prepareDestinationScreen() {
-    const state = readRunSession().rewardState;
-    const bossOnly = state.destinations.length === 1 && state.destinations[0] === CONSTANTS.DESTINATIONS.BOSS_COMBAT;
-    if (!bossOnly) return;
-    if (state.selectedBossId && getBossById(state.selectedBossId)) return;
-    dispatchRunSessionCommand((draft) => {
-      const selectedBossId = getBossEnemy([], createDraftRunRandomSource(draft, "world")).id;
-      setRewardState(draft, (prev) => ({ ...prev, selectedBossId }));
-    });
-  }
+interface DestinationCallbacks {
+  advanceToNextDestination: AdvanceToNextDestination;
+}
 
+export function createDestinationScreenHandlers(
+  deps: RunFlowHandlerDeps,
+  { advanceToNextDestination }: DestinationCallbacks,
+) {
   function handleDestinationChoice(destination: Destination) {
     try {
       const choice = dispatchRunSessionCommand((draft) => {
@@ -62,13 +54,12 @@ export function createDestinationScreenHandlers(deps: RunFlowHandlerDeps, handle
         setRunPlayerHealth(draft, (prev) => getCampfireRestHealth(prev, deps.run.runMaxHealth, healFraction));
       },
       {
-        afterCommit: () => handlers.advanceToNextDestination(),
+        afterCommit: advanceToNextDestination,
       },
     );
   }
 
   return {
-    prepareDestinationScreen,
     handleDestinationChoice,
     handleCampfireContinue,
   };

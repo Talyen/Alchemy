@@ -1,5 +1,4 @@
 // Test helpers for run-lifetime reads/writes against the authoritative aggregate.
-import { applyGameplayStateUpdate } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { createInitialSessionFields, type RunSessionFields } from "@/features/alchemy/shared/stores/run-domain-types";
 import type { ActiveRunProgressFields, PermanentProgressFields } from "@/features/alchemy/shared/stores/run-state-init";
 import {
@@ -8,6 +7,7 @@ import {
   getNavigationStoreView,
   getRunProfileStoreView,
   getRunSessionStoreView,
+  applyGameplayStateUpdate,
   resetRunBattleSlice,
   resetRunDomainStore,
   resetRunNavigationSlice,

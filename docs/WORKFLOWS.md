@@ -173,7 +173,7 @@ Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-
    });
    ```
 
-4. Run-flow concerns call sibling work through the shared `RunFlowSiblingHandlers` object filled by `createRunFlowHandlers` (for example `handlers.advanceToNextDestination()`). Do not introduce a second dispatch/continuation layer.
+4. Run-flow concern factories receive only the explicit callbacks they need from already-created concerns (for example, destination handlers receive `advanceToNextDestination`). Keep this wiring at `createRunFlowHandlers`; do not introduce a mutable sibling-handler bag or a second dispatch/continuation layer.
 5. Gameplay mutations enter through `dispatchRunSessionCommand()` and focused draft mutators. Do not call a command from inside another command or reach past that boundary into aggregate transaction internals.
 6. `readBattle()` is data-only. Battle mutations use the focused commands exported from `run-session-write-port.ts`; do not spread aggregate battle actions into event-time stores.
 7. If an async battle flow persists an intermediate state, commit `activeCombat.pendingBattleTransition` with it and add a boot resume path. Presentation timers alone are not a gameplay continuation.

@@ -7,12 +7,7 @@
 // `afterCommit` effects.
 import { produce } from "immer";
 import type { Draft } from "immer";
-import {
-  applyGameplayStateUpdate,
-  subscribeGameplayCommits,
-  useGameplayStateStore,
-  type GameplayState,
-} from "./gameplay-state-store";
+import { subscribeGameplayCommits, useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
 
 export type GameplayDraft = Draft<GameplayState>;
 
@@ -38,7 +33,9 @@ export function dispatchRunSessionCommand<T>(
     result = execute(draft);
   });
 
-  if (next !== base) applyGameplayStateUpdate(next, true);
+  if (next !== base) {
+    useGameplayStateStore.setState({ ...next, revision: base.revision + 1 }, true);
+  }
   options?.afterCommit?.(result);
   return result;
 }

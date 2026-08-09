@@ -13,13 +13,29 @@ import {
 import { setCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { createInitialDestinationResult } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { getBossEnemy } from "@/features/alchemy/shared/config";
+import { getBossById, getBossEnemy } from "@/features/alchemy/shared/config";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
 import { CONSTANTS } from "../../shared/types";
-import type { RunFlowHandlerDeps, RunFlowSiblingHandlers } from "./run-flow-handler-deps";
+import type { CompleteRunVictory, RunFlowHandlerDeps } from "./run-flow-handler-deps";
 
-export function createProgressionHandlers(deps: RunFlowHandlerDeps, handlers: RunFlowSiblingHandlers) {
+interface ProgressionCallbacks {
+  completeRunVictory: CompleteRunVictory;
+}
+
+export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRunVictory }: ProgressionCallbacks) {
+  function prepareDestinationScreen() {
+    const state = readRunSession().rewardState;
+    const bossOnly = state.destinations.length === 1 && state.destinations[0] === CONSTANTS.DESTINATIONS.BOSS_COMBAT;
+    if (!bossOnly) return;
+    if (state.selectedBossId && getBossById(state.selectedBossId)) return;
+    dispatchRunSessionCommand((draft) => {
+      const selectedBossId = getBossEnemy([], createDraftRunRandomSource(draft, "world")).id;
+      setRewardState(draft, (prev) => ({ ...prev, selectedBossId }));
+    });
+  }
+
   function prepareNextDestination(destinationIndexInAct: number = 0, onCommitted?: () => void) {
     deps.actions.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
       dispatchRunSessionCommand((draft) => {
@@ -36,7 +52,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, handlers: Ru
         setDestinationOfferState(draft, initialDestinations.offerState);
         setRewardState(draft, initialDestinations.rewardState);
       });
-      handlers.prepareDestinationScreen();
+      prepareDestinationScreen();
       onCommitted?.();
     });
   }
@@ -65,7 +81,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, handlers: Ru
         afterCommit: (runComplete) => {
           clearBattlePresentationUi();
           if (runComplete) {
-            handlers.completeRunVictory(displayMaterials ?? null, onRenderedScreenCommit);
+            completeRunVictory(displayMaterials ?? null, onRenderedScreenCommit);
           } else {
             prepareNextDestination(0, onRenderedScreenCommit);
           }
@@ -100,6 +116,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, handlers: Ru
 
   return {
     prepareNextDestination,
+    prepareDestinationScreen,
     handleActComplete,
     advanceToNextDestination,
   };

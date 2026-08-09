@@ -19,13 +19,21 @@ import {
 } from "../navigation/reward-flow";
 import { applyAlchemistPotion, applyRewardSelection } from "./run-destination-handlers";
 import { CONSTANTS } from "../../shared/types";
-import type { RunFlowHandlerDeps, RunFlowSiblingHandlers } from "./run-flow-handler-deps";
+import type { CompleteRunVictory, HandleActComplete, RunFlowHandlerDeps } from "./run-flow-handler-deps";
 
 const commandSetRewardState = createRunSessionCommand(setRewardState);
 const commandSetCompanionRewardCards = createRunSessionCommand(setCompanionRewardCards);
 const commandReleaseRewardClaim = createRunSessionCommand(releaseRewardClaimState);
 
-export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlowSiblingHandlers) {
+interface RewardCallbacks {
+  completeRunVictory: CompleteRunVictory;
+  handleActComplete: HandleActComplete;
+}
+
+export function createRewardHandlers(
+  deps: RunFlowHandlerDeps,
+  { completeRunVictory, handleActComplete }: RewardCallbacks,
+) {
   function selectRewardChoice(id: string) {
     commandSetRewardState((prev) => ({ ...prev, selectedId: id }));
     deps.actions.selectRewardChoice(id);
@@ -103,13 +111,13 @@ export function createRewardHandlers(deps: RunFlowHandlerDeps, handlers: RunFlow
                 });
               },
               completeRunVictory: (materials, onCommit) => {
-                handlers.completeRunVictory(materials, () => {
+                completeRunVictory(materials, () => {
                   onCommit?.();
                   commandReleaseRewardClaim();
                 });
               },
               handleActComplete: (materials) => {
-                handlers.handleActComplete(materials, () => {
+                handleActComplete(materials, () => {
                   // prepareNextDestination / victory commit overwrite offer state;
                   // only the claim lock must be released here.
                   commandReleaseRewardClaim();

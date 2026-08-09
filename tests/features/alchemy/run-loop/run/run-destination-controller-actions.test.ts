@@ -5,7 +5,7 @@ import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
-import { getRunSessionStoreView } from "../../../../helpers/run-domain-store-test";
+import { getRunProgressStoreView, getRunSessionStoreView } from "../../../../helpers/run-domain-store-test";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 
 beforeEach(() => {
@@ -36,5 +36,15 @@ describe("run destination controller actions", () => {
 
     createRunFlowHandlers(makeFlowHandlerDeps()).prepareDestinationScreen();
     expect(getRunSessionStoreView().rewardState.selectedBossId).toBe("mimic");
+  });
+
+  it("continues from campfire through the progression handler", () => {
+    const navigateTo = vi.fn();
+    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
+
+    handlers.handleCampfireContinue();
+
+    expect(getRunProgressStoreView().roomsEncountered).toBe(1);
+    expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.DESTINATION, expect.any(Function));
   });
 });

@@ -73,6 +73,7 @@ describe("run-session transaction coordinator", () => {
 
   it("publishes one commit after multiple store mutations", () => {
     const commits: Array<{ revision: number; gold: number; hasActiveRun: boolean }> = [];
+    const beforeRevision = getRunSessionRevision();
     const unsubscribe = subscribeRunSessionCommits((revision) => {
       commits.push({
         revision,
@@ -91,7 +92,7 @@ describe("run-session transaction coordinator", () => {
 
     expect(commits).toHaveLength(1);
     expect(commits[0]).toMatchObject({ gold: 125, hasActiveRun: true });
-    expect(commits[0].revision).toBeGreaterThan(0);
+    expect(commits[0].revision).toBe(beforeRevision + 1);
   });
 
   it("persists a battle continuation with the intermediate state in one commit", () => {

@@ -95,22 +95,14 @@ interface TalentActions {
 }
 
 type StateUpdate = GameplayState | Partial<GameplayState> | ((state: GameplayState) => unknown);
-let publishGameplayState: ((partial: StateUpdate, replace?: boolean) => void) | null = null;
 
 function readActiveGameplayState(): GameplayState {
   return useGameplayStateStore.getState();
 }
 
-type RootSet = (partial: StateUpdate, replace?: boolean) => void;
+type RootSet = (partial: StateUpdate) => void;
 
-function applyActiveGameplayStateUpdate(partial: Parameters<RootSet>[0], replace?: boolean): void {
-  publishGameplayState!(partial, replace);
-}
-
-type NestedSet<State extends object> = (
-  partial: State | Partial<State> | ((state: State) => unknown),
-  replace?: boolean,
-) => void;
+type NestedSet<State extends object> = (partial: State | Partial<State> | ((state: State) => unknown)) => void;
 
 interface GameplayActionGroups {
   runActions: GameplayState["runActions"];
@@ -122,12 +114,11 @@ interface GameplayActionGroups {
 }
 
 function createNestedSet<T extends object>(rootSet: RootSet, select: (state: GameplayState) => T): NestedSet<T> {
-  return (partial, replace = false) => {
+  return (partial) => {
     rootSet((state) => {
       const slice = select(state);
       const next = typeof partial === "function" ? partial(slice) : partial;
       if (!next || typeof next !== "object" || next === slice) return;
-      void replace;
       Object.assign(slice, next);
     });
   };
@@ -270,8 +261,8 @@ function createProfileActions(set: (fn: (state: ProfileStateFields) => void) => 
 }
 
 export const useGameplayStateStore = create<GameplayState>()(
-  immer((set) => {
-    publishGameplayState = (partial) => {
+  immer((set, get) => {
+    const commitRootUpdate: RootSet = (partial) => {
       set((state) => {
         if (typeof partial === "function") {
           const result = partial(state);
@@ -288,7 +279,7 @@ export const useGameplayStateStore = create<GameplayState>()(
     const profile = createInitialPermanentFields();
     const collection = createInitialProfileState();
     const gear = initialGearState;
-    const actions = createActionGroups(applyActiveGameplayStateUpdate, readActiveGameplayState);
+    const actions = createActionGroups(commitRootUpdate, get);
 
     return {
       revision: 0,
@@ -352,10 +343,6 @@ export function createGameplayDraftProfileActions(draft: Draft<GameplayState>): 
 /** Create only the gear action group for a draft command. */
 export function createGameplayDraftGearActions(draft: Draft<GameplayState>): GameplayState["gearActions"] {
   return createGearActionGroup(createDraftRootSet(draft), () => draft);
-}
-
-export function applyGameplayStateUpdate(partial: StateUpdate, replace?: boolean): void {
-  applyActiveGameplayStateUpdate(partial, replace);
 }
 
 export function subscribeGameplayCommits(listener: (revision: number) => void): () => void {
