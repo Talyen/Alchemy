@@ -9,10 +9,10 @@ import type { CraftingCurrencyBoardPositions, CraftingCurrencyBoardPositionsByCh
 import { buildArmoryBoardView } from "./board-view";
 import type { BoardSourceState } from "./store-state";
 
-export type PositionRegistry = Record<string, { col: number; row: number }>;
+type PositionRegistry = Record<string, { col: number; row: number }>;
 export type CharacterPositionRegistry = Record<CharacterId, PositionRegistry>;
 
-export function positionsEqual(left: PositionRegistry, right: PositionRegistry): boolean {
+function positionsEqual(left: PositionRegistry, right: PositionRegistry): boolean {
   const leftKeys = Object.keys(left);
   if (leftKeys.length !== Object.keys(right).length) return false;
   return leftKeys.every((k) => left[k]?.col === right[k]?.col && left[k]?.row === right[k]?.row);
