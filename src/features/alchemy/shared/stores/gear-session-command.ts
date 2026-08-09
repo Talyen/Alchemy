@@ -4,7 +4,7 @@
 import type { CharacterId } from "@/lib/game-data";
 import { flattenGearInventories, type GearInstance, type GearLoadouts } from "@/lib/gear";
 import type { GearStore } from "./gear-store-types";
-import { createGameplayDraftActions, readGameplayState } from "./gameplay-state-store";
+import { createGameplayDraftGearActions, readGameplayState } from "./gameplay-state-store";
 import { dispatchRunSessionCommand } from "./run-session-command";
 import { syncRunMaxHealthFromGearMutation } from "./run-transitions";
 import type { GameplayDraft } from "./run-session-command";
@@ -15,7 +15,7 @@ export interface GearHealthSnapshot {
 }
 
 function gearCommandView(state: GameplayDraft): GearStore {
-  const actions = createGameplayDraftActions(state).gearActions;
+  const actions = createGameplayDraftGearActions(state);
   return {
     ...state.gear,
     initialize: actions.gearInitialize,

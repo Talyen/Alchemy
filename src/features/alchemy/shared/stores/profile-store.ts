@@ -3,7 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import type { PersistenceCodec } from "./persistence-codec";
 import { createDefaultProfileSaveFields, type ProfileSaveFields } from "./profile-store-types";
 import { bindDraftAction, type GameplayDraft } from "./run-session-command";
-import { createGameplayDraftActions } from "./gameplay-state-store";
+import { createGameplayDraftProfileActions } from "./gameplay-state-store";
 import {
   readGameplayState,
   subscribeGameplayCommits,
@@ -90,7 +90,7 @@ export function useCompletedDifficulties() {
   return useGameplayStateStore((state) => state.profile.completedDifficulties);
 }
 
-const profileActions = (state: GameplayDraft) => createGameplayDraftActions(state).profileActions;
+const profileActions = (state: GameplayDraft) => createGameplayDraftProfileActions(state);
 
 export const setDiscoveredCardIds = bindDraftAction((s) => profileActions(s).setDiscoveredCardIds);
 export const setEncounteredEnemyIds = bindDraftAction((s) => profileActions(s).setEncounteredEnemyIds);

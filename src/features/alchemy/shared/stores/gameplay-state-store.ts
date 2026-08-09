@@ -107,6 +107,11 @@ function applyActiveGameplayStateUpdate(partial: Parameters<RootSet>[0], replace
   publishGameplayState!(partial, replace);
 }
 
+type NestedSet<State extends object> = (
+  partial: State | Partial<State> | ((state: State) => unknown),
+  replace?: boolean,
+) => void;
+
 interface GameplayActionGroups {
   runActions: GameplayState["runActions"];
   sessionActions: GameplayState["sessionActions"];
@@ -116,46 +121,69 @@ interface GameplayActionGroups {
   gearActions: GameplayState["gearActions"];
 }
 
-function createActionGroups(rootSet: RootSet, rootGet: () => GameplayState): GameplayActionGroups {
-  const createNestedSet =
-    <T extends object>(select: (state: GameplayState) => T) =>
-    (partial: T | Partial<T> | ((state: T) => unknown), replace = false): void => {
-      rootSet((state) => {
-        const slice = select(state);
-        const next = typeof partial === "function" ? partial(slice) : partial;
-        if (!next || typeof next !== "object" || next === slice) return;
-        void replace;
-        Object.assign(slice, next);
-      });
-    };
-  const setRun = createNestedSet((state) => state.run);
-  const setSession = createNestedSet((state) => state.session);
-  const setBattle = createNestedSet((state) => state.battle);
-  const setRunProfile = createNestedSet((state) => state.runProfile);
-  const setProfile = createNestedSet((state) => state.profile);
-  const setGear = createNestedSet((state) => state.gear);
-  const gearActions = createGearActions(setGear, () => rootGet().gear);
+function createNestedSet<T extends object>(rootSet: RootSet, select: (state: GameplayState) => T): NestedSet<T> {
+  return (partial, replace = false) => {
+    rootSet((state) => {
+      const slice = select(state);
+      const next = typeof partial === "function" ? partial(slice) : partial;
+      if (!next || typeof next !== "object" || next === slice) return;
+      void replace;
+      Object.assign(slice, next);
+    });
+  };
+}
 
+function createRunActionGroup(rootSet: RootSet): GameplayState["runActions"] {
+  const setRun = createNestedSet(rootSet, (state) => state.run);
+  return { ...defineProgressActions(setRun), ...defineNavigationActions(setRun) };
+}
+
+function createSessionActionGroup(rootSet: RootSet): GameplayState["sessionActions"] {
+  return defineSessionActions(createNestedSet(rootSet, (state) => state.session));
+}
+
+function createBattleActionGroup(rootSet: RootSet): GameplayState["battleActions"] {
+  return defineBattleActions(createNestedSet(rootSet, (state) => state.battle));
+}
+
+function createRunProfileActionGroup(rootSet: RootSet): GameplayState["runProfileActions"] {
+  const setRunProfile = createNestedSet(rootSet, (state) => state.runProfile);
+  return { ...createHomesteadProfileActions(setRunProfile), ...createTalentActions(setRunProfile) };
+}
+
+function createProfileActionGroup(rootSet: RootSet): GameplayState["profileActions"] {
+  return createProfileActions(createNestedSet(rootSet, (state) => state.profile));
+}
+
+function createGearActionGroup(rootSet: RootSet, rootGet: () => GameplayState): GameplayState["gearActions"] {
+  const gearActions = createGearActions(
+    createNestedSet(rootSet, (state) => state.gear),
+    () => rootGet().gear,
+  );
   return {
-    runActions: { ...defineProgressActions(setRun), ...defineNavigationActions(setRun) },
-    sessionActions: defineSessionActions(setSession),
-    battleActions: defineBattleActions(setBattle),
-    runProfileActions: { ...createHomesteadProfileActions(setRunProfile), ...createTalentActions(setRunProfile) },
-    profileActions: createProfileActions(setProfile),
-    gearActions: {
-      gearInitialize: gearActions.initialize,
-      gearAddInstance: gearActions.addInstance,
-      gearTransferToInventory: gearActions.transferToInventory,
-      gearEquip: gearActions.equip,
-      gearUnequip: gearActions.unequip,
-      gearMoveBoardItem: gearActions.moveBoardItem,
-      gearSyncBoardPositions: gearActions.syncBoardPositions,
-      gearSortBoard: gearActions.sortBoard,
-      gearSalvage: gearActions.salvage,
-      gearApplyCurrency: gearActions.applyCurrency,
-      gearAddCurrencies: gearActions.addCurrencies,
-      gearReset: gearActions.reset,
-    },
+    gearInitialize: gearActions.initialize,
+    gearAddInstance: gearActions.addInstance,
+    gearTransferToInventory: gearActions.transferToInventory,
+    gearEquip: gearActions.equip,
+    gearUnequip: gearActions.unequip,
+    gearMoveBoardItem: gearActions.moveBoardItem,
+    gearSyncBoardPositions: gearActions.syncBoardPositions,
+    gearSortBoard: gearActions.sortBoard,
+    gearSalvage: gearActions.salvage,
+    gearApplyCurrency: gearActions.applyCurrency,
+    gearAddCurrencies: gearActions.addCurrencies,
+    gearReset: gearActions.reset,
+  };
+}
+
+function createActionGroups(rootSet: RootSet, rootGet: () => GameplayState): GameplayActionGroups {
+  return {
+    runActions: createRunActionGroup(rootSet),
+    sessionActions: createSessionActionGroup(rootSet),
+    battleActions: createBattleActionGroup(rootSet),
+    runProfileActions: createRunProfileActionGroup(rootSet),
+    profileActions: createProfileActionGroup(rootSet),
+    gearActions: createGearActionGroup(rootSet, rootGet),
   };
 }
 
@@ -281,7 +309,12 @@ export function readGameplayState(): GameplayState {
 
 /** Create action groups whose setters mutate the supplied Immer draft in place. */
 export function createGameplayDraftActions(draft: Draft<GameplayState>): GameplayActionGroups {
-  const draftSet: RootSet = (partial) => {
+  const draftSet = createDraftRootSet(draft);
+  return createActionGroups(draftSet, () => draft);
+}
+
+function createDraftRootSet(draft: Draft<GameplayState>): RootSet {
+  return (partial) => {
     if (typeof partial === "function") {
       const result = partial(draft);
       if (result && result !== draft) Object.assign(draft, result);
@@ -289,7 +322,36 @@ export function createGameplayDraftActions(draft: Draft<GameplayState>): Gamepla
     }
     Object.assign(draft, partial);
   };
-  return createActionGroups(draftSet, () => draft);
+}
+
+/** Create only the run action group for a draft command. */
+export function createGameplayDraftRunActions(draft: Draft<GameplayState>): GameplayState["runActions"] {
+  return createRunActionGroup(createDraftRootSet(draft));
+}
+
+/** Create only the transient-session action group for a draft command. */
+export function createGameplayDraftSessionActions(draft: Draft<GameplayState>): GameplayState["sessionActions"] {
+  return createSessionActionGroup(createDraftRootSet(draft));
+}
+
+/** Create only the battle action group for a draft command. */
+export function createGameplayDraftBattleActions(draft: Draft<GameplayState>): GameplayState["battleActions"] {
+  return createBattleActionGroup(createDraftRootSet(draft));
+}
+
+/** Create only the run-profile action group for a draft command. */
+export function createGameplayDraftRunProfileActions(draft: Draft<GameplayState>): GameplayState["runProfileActions"] {
+  return createRunProfileActionGroup(createDraftRootSet(draft));
+}
+
+/** Create only the profile action group for a draft command. */
+export function createGameplayDraftProfileActions(draft: Draft<GameplayState>): GameplayState["profileActions"] {
+  return createProfileActionGroup(createDraftRootSet(draft));
+}
+
+/** Create only the gear action group for a draft command. */
+export function createGameplayDraftGearActions(draft: Draft<GameplayState>): GameplayState["gearActions"] {
+  return createGearActionGroup(createDraftRootSet(draft), () => draft);
 }
 
 export function applyGameplayStateUpdate(partial: StateUpdate, replace?: boolean): void {

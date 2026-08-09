@@ -12,7 +12,7 @@ import { useShallow } from "zustand/react/shallow";
 import type { PersistenceCodec } from "./persistence-codec";
 import type { GearSaveFields, GearStore } from "./gear-store-types";
 import {
-  createGameplayDraftActions,
+  createGameplayDraftGearActions,
   readGameplayState,
   subscribeGameplayCommits,
   useGameplayStateStore,
@@ -40,7 +40,7 @@ export const gearPersistenceCodec: PersistenceCodec<GearSaveFields, [draft: Game
     };
   },
   hydrate: (fields, draft) => {
-    createGameplayDraftActions(draft).gearActions.gearInitialize(
+    createGameplayDraftGearActions(draft).gearInitialize(
       fields.gearInventories,
       fields.gearLoadouts,
       fields.gearBoardPositionsByCharacter,
