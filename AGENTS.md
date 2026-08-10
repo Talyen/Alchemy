@@ -27,6 +27,7 @@ For non-trivial work, find and read only the docs that match the task; prefer sp
 | Armory / gear                                     | [docs/ARMORY.md](./docs/ARMORY.md)               |
 | FPS / hitch profiling (on-demand)                 | [docs/PERFORMANCE.md](./docs/PERFORMANCE.md)     |
 | Steam release process                             | [docs/RELEASE.md](./docs/RELEASE.md)             |
+| CI fixer bot (Tier A/B, auto-merge)               | [docs/CI-FIXER.md](./docs/CI-FIXER.md)           |
 | Audits                                            | [docs/Audits/README.md](./docs/Audits/README.md) |
 
 ## Verification

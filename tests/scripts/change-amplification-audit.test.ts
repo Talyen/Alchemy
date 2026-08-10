@@ -6,15 +6,15 @@ const repoRoot = path.resolve(__dirname, "..", "..");
 
 describe("change amplification audit", () => {
   it("runs on Windows-safe paths and accepts a since argument", () => {
-    const output = execFileSync(process.execPath, ["scripts/audit-change-amplification.mjs", "--since=6 months ago"], {
+    const output = execFileSync(process.execPath, ["scripts/audit-change-amplification.mjs", "--since=1 week ago"], {
       cwd: repoRoot,
       encoding: "utf8",
     });
 
-    expect(output).toContain("Since: 6 months ago");
+    expect(output).toContain("Since: 1 week ago");
     expect(output).toContain("clean:");
     expect(output).toContain("Co-edit signal:");
-  }, 30_000);
+  });
 });
 
 describe("asset manifest", () => {
