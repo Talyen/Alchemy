@@ -54,7 +54,8 @@ export function preloadImagesWhenIdle(srcs: string[]): void {
   const uniqueSrcs = Array.from(new Set(srcs.filter(Boolean)));
   let index = 0;
 
-  function preloadNextBatch() {
+  function preloadNextBatch(): void {
+    if (index >= uniqueSrcs.length) return;
     void preloadImages(uniqueSrcs.slice(index, index + IMAGE_PRELOAD_BATCH_SIZE));
     index += IMAGE_PRELOAD_BATCH_SIZE;
     if (index < uniqueSrcs.length) schedulePreloadBatch(preloadNextBatch);
@@ -67,11 +68,11 @@ export function preloadImagesWhenIdle(srcs: string[]): void {
 // do not expose requestIdleCallback.
 function schedulePreloadBatch(callback: () => void): void {
   if ("requestIdleCallback" in globalThis) {
-    (globalThis as Window & typeof globalThis).requestIdleCallback(callback, {
+    (globalThis as Window & typeof globalThis).requestIdleCallback(() => callback(), {
       timeout: IMAGE_PRELOAD_IDLE_TIMEOUT,
     });
     return;
   }
 
-  globalThis.setTimeout(callback, 0);
+  globalThis.setTimeout(() => callback(), 0);
 }

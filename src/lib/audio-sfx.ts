@@ -105,7 +105,7 @@ export function playGoldGain() {
 
 // Plays gold spend sound effect.
 export function playGoldSpend() {
-  playBattleEvent("gainGold");
+  playUISound("shopBuy");
 }
 
 // Plays an enemy-specific attack sound when one is registered.

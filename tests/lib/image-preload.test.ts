@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 interface MockImage {
@@ -38,6 +39,7 @@ beforeEach(() => {
 
   vi.stubGlobal("requestIdleCallback", (cb: () => void) => {
     idleCallbacks.push(cb);
+    return idleCallbacks.length;
   });
 });
 
@@ -87,9 +89,17 @@ describe("preloadImage", () => {
     await expect(p2).resolves.toBeUndefined();
     expect(mockImageInstances.length).toBe(1);
   });
+
+  it("handles empty string safely", async () => {
+    await expect(preloadImage("")).resolves.toBeUndefined();
+  });
 });
 
 describe("preloadImages", () => {
+  it("resolves when empty array is passed", async () => {
+    await expect(preloadImages([])).resolves.toBeUndefined();
+  });
+
   it("starts each image immediately and resolves after all images decode", async () => {
     const srcs = [uniqueUrl(), uniqueUrl(), uniqueUrl()];
     const promise = preloadImages(srcs);

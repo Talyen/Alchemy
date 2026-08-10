@@ -121,6 +121,8 @@ export function useWildwoodRemovalScreenData(): ScreenData<"wildwood-removal"> {
   return useMemo(() => ({ runDeck }), [runDeck]);
 }
 
+const EMPTY_PRELOAD_URLS: string[] = [];
+
 /**
  * Screen-aware asset URL extractor used by the asset preloader. Returns a clean
  * array of image URL strings for the active screen without intermediate objects.
@@ -132,10 +134,20 @@ export function useScreenAssetPreloadUrls(screen: Screen): string[] {
     screen === "alchemist" ? state.session.alchemistState : null,
   );
   const mysteryEvent = useGameplayStateStore((state) => (screen === "mystery" ? state.session.mysteryEvent : null));
-  const battleArtKey = useGameplayStateStore((state) =>
-    screen === "battle"
-      ? [state.battle.battleState.currentEnemy.art, ...state.battle.battleState.hand.map((card) => card.art)].join("|")
-      : "",
+  const battleArtUrls = useGameplayStateStore(
+    useShallow((state) => {
+      if (screen !== "battle") return EMPTY_PRELOAD_URLS;
+      const battle = state.battle.battleState;
+      if (!battle) return EMPTY_PRELOAD_URLS;
+      const urls: string[] = [];
+      if (battle.currentEnemy?.art) {
+        urls.push(battle.currentEnemy.art);
+      }
+      for (const card of battle.hand) {
+        if (card.art) urls.push(card.art);
+      }
+      return urls;
+    }),
   );
 
   return useMemo(() => {
@@ -165,9 +177,9 @@ export function useScreenAssetPreloadUrls(screen: Screen): string[] {
     if (mysteryEvent?.art) {
       urls.push(mysteryEvent.art);
     }
-    if (battleArtKey) {
-      urls.push(...battleArtKey.split("|").filter(Boolean));
+    if (battleArtUrls.length > 0) {
+      urls.push(...battleArtUrls);
     }
     return urls;
-  }, [rewardState, shopState, alchemistState, mysteryEvent, battleArtKey]);
+  }, [rewardState, shopState, alchemistState, mysteryEvent, battleArtUrls]);
 }

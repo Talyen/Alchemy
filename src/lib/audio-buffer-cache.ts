@@ -120,6 +120,7 @@ function preloadSoundsWhenIdle(names: string[]) {
   let index = 0;
 
   function preloadNextBatch() {
+    if (index >= names.length) return;
     preloadSounds(names.slice(index, index + BUFFER_CACHE_CONFIG.PRELOAD_BATCH_SIZE));
     index += BUFFER_CACHE_CONFIG.PRELOAD_BATCH_SIZE;
 
@@ -134,9 +135,11 @@ function preloadSoundsWhenIdle(names: string[]) {
 // Uses browser idle time when available and falls back for environments without it (e.g. testing context).
 function schedulePreloadBatch(callback: () => void) {
   if ("requestIdleCallback" in window) {
-    window.requestIdleCallback(callback, { timeout: BUFFER_CACHE_CONFIG.IDLE_CALLBACK_TIMEOUT_MS });
+    window.requestIdleCallback(() => callback(), {
+      timeout: BUFFER_CACHE_CONFIG.IDLE_CALLBACK_TIMEOUT_MS,
+    });
     return;
   }
 
-  globalThis.setTimeout(callback, 0);
+  globalThis.setTimeout(() => callback(), 0);
 }

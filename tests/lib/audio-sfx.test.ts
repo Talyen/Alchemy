@@ -109,8 +109,9 @@ describe("playGoldGain", () => {
 });
 
 describe("playGoldSpend", () => {
-  it("plays gold spend audio", () => {
+  it("plays gold spend audio via shopBuy sound", () => {
     playGoldSpend();
+    expect(audioBufferCache.getCachedBuffer).toHaveBeenCalledWith("coin-jingle-small.ogg");
     expectLastSourceStarted();
   });
 });

@@ -1,5 +1,12 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { getAudioContext, resumeAudioContext, loadSoundBuffer, preloadSounds } from "@/lib/audio-buffer-cache";
+import {
+  getAudioContext,
+  resumeAudioContext,
+  loadSoundBuffer,
+  preloadSounds,
+  preloadAllSounds,
+} from "@/lib/audio-buffer-cache";
 import { audioState } from "@/lib/audio-state";
 
 beforeEach(() => {
@@ -139,5 +146,41 @@ describe("preloadSounds", () => {
       vi.fn(() => new Promise(() => {})),
     );
     preloadSounds(["a.ogg", "b.ogg"]);
+  });
+});
+
+describe("preloadAllSounds", () => {
+  it("schedules sound preloading in batches across idle callbacks", () => {
+    const fetchMock = vi.fn(() => new Promise<Response>(() => {}));
+    vi.stubGlobal("fetch", fetchMock);
+    const mockCtx = {
+      createGain: vi.fn(() => ({ gain: { value: 0 }, connect: vi.fn() })),
+      destination: "dest",
+      state: "running",
+    } as unknown as Partial<AudioContext>;
+    vi.stubGlobal(
+      "AudioContext",
+      class {
+        constructor() {
+          return mockCtx;
+        }
+      },
+    );
+
+    const callbacks: IdleRequestCallback[] = [];
+    window.requestIdleCallback = vi.fn((cb: IdleRequestCallback) => {
+      callbacks.push(cb);
+      return 1;
+    });
+
+    preloadAllSounds();
+    expect(fetchMock).toHaveBeenCalled();
+    expect(callbacks.length).toBe(1);
+
+    const countFirstBatch = fetchMock.mock.calls.length;
+    callbacks[0]({ didTimeout: false, timeRemaining: () => 50 });
+
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(countFirstBatch);
+    expect(callbacks.length).toBe(2);
   });
 });
