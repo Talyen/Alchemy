@@ -19,8 +19,7 @@ import { CURRENCY_COUNT_LABEL_CLASS } from "./parts/currency-styles";
 import { ArmoryCurrencyCursor } from "./armory-currency-targeting";
 import { ArmoryTransferMenu, type TransferMenuState } from "./armory-transfer-menu";
 import { playUISound } from "@/lib/audio";
-import type { GearDragVisual } from "./armory-gear-drag-types";
-import type { CurrencyDragVisual } from "./use-armory-board-drag";
+import type { GearDragVisual, CurrencyDragVisual } from "./armory-drag-types";
 
 interface Props {
   salvageTarget: GearInstance | null;

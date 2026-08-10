@@ -12,54 +12,30 @@ import {
   type PackedInventory,
   type PackedInventoryItem,
 } from "@/lib/gear";
-import { overlaps } from "@/lib/gear/grid-packing";
 import { useLatestRef } from "../../../shared/hooks";
 import { useBoardDrag } from "./use-board-drag";
-import type { DragDestination, DragPoint, DragRect } from "./drag-types";
+import type {
+  ArmoryDragItem,
+  ArmoryDragOrigin,
+  CurrencyDragOrigin,
+  DragPoint,
+  DragRect,
+  GearDragOrigin,
+  GearDragVisual,
+} from "./armory-drag-types";
 import {
   resolveEquipmentSlotAtPointer,
   calculateSecondaryDisplacedItems,
   buildSecondaryDragVisuals,
-} from "./armory-drag-helpers";
-import { handleGearCommit, type GearCommitEnv } from "./armory-gear-commit";
-import { handleGearDoubleClickAction } from "./armory-gear-double-click";
+  handleGearCommit,
+  handleCurrencyCommit,
+  handleGearDoubleClickAction,
+  type ArmoryDragEnv,
+  type HeldDragResult,
+} from "./armory-gear-actions";
 import { DOUBLE_CLICK_FLYOVER_CLEAR_DELAY_MS, EQUIPMENT_SNAP_INSET_RATIO } from "./drag-constants";
-import type { GearDragOrigin, GearDragVisual } from "./armory-gear-drag-types";
 
 const CURRENCY_FOOTPRINT = { w: 1, h: 1 };
-
-export interface CurrencyDragOrigin {
-  kind: "inventory";
-  placement: InventoryPlacement;
-}
-
-export type ArmoryDragItem =
-  | { kind: "gear"; instance: GearInstance; origin: GearDragOrigin }
-  | { kind: "currency"; currencyId: CraftingCurrencyId; origin: CurrencyDragOrigin };
-
-type ArmoryDragOrigin = GearDragOrigin | CurrencyDragOrigin;
-
-export interface CurrencyDragVisual {
-  currencyId: CraftingCurrencyId;
-  source: DragRect;
-  rect: DragRect;
-  origin: CurrencyDragOrigin;
-  destination: DragDestination | null;
-  settling?: boolean | undefined;
-  releasing?: boolean | undefined;
-  flyover?: boolean | undefined;
-  releaseRect?: DragRect | undefined;
-}
-
-export type CurrencyPointerStart = (
-  currencyId: CraftingCurrencyId,
-  origin: CurrencyDragOrigin,
-  rect: DOMRect,
-  pointer: DragPoint,
-  pointerId: number,
-) => void;
-export type CurrencyPointerMove = (pointer: DragPoint, pointerId: number) => void;
-export type CurrencyPointerEnd = (pointer: DragPoint, pointerId: number, cancelled?: boolean) => void;
 
 interface UseArmoryBoardDragOptions {
   characterId: CharacterId;
@@ -85,8 +61,11 @@ function itemId(item: ArmoryDragItem): string {
   return item.kind === "gear" ? item.instance.instanceId : item.currencyId;
 }
 
-function isCurrencyId(id: string, packedCurrencies: PackedCurrencyItem[]): id is CraftingCurrencyId {
-  return packedCurrencies.some((currency) => currency.currencyId === id);
+function toHeldDragItem(held: HeldDragResult): ArmoryDragItem {
+  if (held.kind === "gear") {
+    return { kind: "gear", instance: held.item, origin: held.origin };
+  }
+  return { kind: "currency", currencyId: held.item.currencyId, origin: held.origin };
 }
 
 export function useArmoryBoardDrag({
@@ -105,7 +84,6 @@ export function useArmoryBoardDrag({
 }: UseArmoryBoardDragOptions) {
   const activeIdRef = useRef<string | null>(null);
   const isFlyoverRef = useRef(false);
-  const packedInventoryRef = useLatestRef(packedInventory);
   const packedCurrenciesRef = useLatestRef(packedCurrencies);
   const [secondaryDragVisuals, setSecondaryDragVisuals] = useState<GearDragVisual[]>([]);
   const secondaryCleanupTimerRef = useRef<number | null>(null);
@@ -151,8 +129,33 @@ export function useArmoryBoardDrag({
     [inventoryById, launchSecondarySwapAnimations, loadout, packedInventory.items],
   );
 
-  const fsm = useBoardDrag<string, ArmoryDragItem, ArmoryDragOrigin>({
-    itemLookup: undefined,
+  const buildEnv = useCallback((): ArmoryDragEnv => {
+    return {
+      characterId,
+      inventoryById,
+      packedInventory,
+      packedCurrencies: packedCurrenciesRef.current,
+      inventoryBoard: inventoryBoardRef.current,
+      onEquip,
+      onUnequip,
+      onMoveItem,
+      onMoveCurrency,
+      maybeLaunchSwapAnimations,
+    };
+  }, [
+    characterId,
+    inventoryById,
+    inventoryBoardRef,
+    maybeLaunchSwapAnimations,
+    onEquip,
+    onMoveCurrency,
+    onMoveItem,
+    onUnequip,
+    packedCurrenciesRef,
+    packedInventory,
+  ]);
+
+  const fsm = useBoardDrag<ArmoryDragItem, ArmoryDragOrigin>({
     getItemId: itemId,
     getOrigin: (item) => item.origin,
     getFootprint: (id) => {
@@ -175,73 +178,18 @@ export function useArmoryBoardDrag({
       });
     },
     onCommit: ({ id, origin, destination }) => {
+      const env = buildEnv();
       const instance = inventoryById.get(id);
-      if (instance) {
-        const env: GearCommitEnv = {
-          characterId,
-          inventoryById,
-          packedInventoryRef,
-          packedCurrenciesRef,
-          inventoryBoardRef,
-          onEquip,
-          onUnequip,
-          onMoveItem,
-          maybeLaunchSwapAnimations,
-        };
-        const result = handleGearCommit({ id, origin, destination, instance, env });
-        if (result?.heldItem) {
-          return {
-            heldItem: {
-              item: result.heldItem.item,
-              source: result.heldItem.source,
-            },
-          };
-        }
-        return undefined;
-      }
-
-      if (!isCurrencyId(id, packedCurrenciesRef.current) || destination.kind !== "inventory") return undefined;
-      const currencyOrigin = origin as CurrencyDragOrigin;
-      if (
-        currencyOrigin.placement.col === destination.placement.col &&
-        currencyOrigin.placement.row === destination.placement.row
-      ) {
-        return undefined;
-      }
-      const { col, row } = destination.placement;
-      const occupant = packedInventoryRef.current.items.find((item) =>
-        overlaps({ col, row, w: 1, h: 1 }, { col: item.col, row: item.row, w: item.w, h: item.h }),
-      );
-      const occupantInstance = occupant ? inventoryById.get(occupant.item.instanceId) : undefined;
-      const occupantCurrency = packedCurrenciesRef.current.find(
-        (currency) => currency.currencyId !== id && currency.col === col && currency.row === row,
-      );
-      onMoveCurrency(id, col, row);
-      if (occupant && occupantInstance) {
-        return {
-          heldItem: {
-            item: {
-              kind: "gear",
-              instance: occupantInstance,
-              origin: { kind: "inventory", placement: { col: occupant.col, row: occupant.row } },
-            },
-            source: destination.rect,
-          },
-        };
-      }
-      if (occupantCurrency) {
-        return {
-          heldItem: {
-            item: {
-              kind: "currency",
-              currencyId: occupantCurrency.currencyId,
-              origin: { kind: "inventory", placement: { col: occupantCurrency.col, row: occupantCurrency.row } },
-            },
-            source: destination.rect,
-          },
-        };
-      }
-      return undefined;
+      const result = instance
+        ? handleGearCommit({ id, origin, destination, instance, env })
+        : handleCurrencyCommit({
+            id: id as CraftingCurrencyId,
+            origin: origin as CurrencyDragOrigin,
+            destination,
+            env,
+          });
+      if (!result?.heldItem) return undefined;
+      return { heldItem: { item: toHeldDragItem(result.heldItem), source: result.heldItem.source } };
     },
   });
   const {
@@ -280,8 +228,14 @@ export function useArmoryBoardDrag({
     },
     [beginPointer, editable],
   );
-  const beginCurrencyPointer = useCallback<CurrencyPointerStart>(
-    (currencyId, origin, rect, pointer, pointerId) => {
+  const beginCurrencyPointer = useCallback(
+    (
+      currencyId: CraftingCurrencyId,
+      origin: CurrencyDragOrigin,
+      rect: DOMRect,
+      pointer: DragPoint,
+      pointerId: number,
+    ) => {
       if (!editable) return;
       beginPointer(
         { kind: "currency", currencyId, origin },
@@ -300,37 +254,21 @@ export function useArmoryBoardDrag({
         instance,
         origin,
         source,
-        characterId,
+        env: buildEnv(),
         loadout,
         boardObstacles,
-        inventoryBoard: inventoryBoardRef.current,
         flyoverTo: (item, destination, commit, flyoverSource) =>
           flyoverTo({ kind: "gear", ...item }, destination, commit, flyoverSource),
-        onEquip,
-        onUnequip,
-        onMoveItem,
-        maybeLaunchSwapAnimations,
       });
     },
-    [
-      boardObstacles,
-      characterId,
-      editable,
-      flyoverTo,
-      inventoryBoardRef,
-      loadout,
-      maybeLaunchSwapAnimations,
-      onEquip,
-      onMoveItem,
-      onUnequip,
-    ],
+    [boardObstacles, buildEnv, editable, flyoverTo, loadout],
   );
 
   const activeGear = activeItem?.kind === "gear" ? activeItem.instance : null;
   const activeCurrency = activeItem?.kind === "currency" ? activeItem.currencyId : null;
   const gearDragVisual: GearDragVisual | null =
     dragVisual && activeGear ? { ...dragVisual, instance: activeGear, origin: dragVisual.origin } : null;
-  const currencyDragVisual: CurrencyDragVisual | null =
+  const currencyDragVisual =
     dragVisual && activeCurrency && dragVisual.origin.kind === "inventory"
       ? { ...dragVisual, currencyId: activeCurrency, origin: dragVisual.origin }
       : null;

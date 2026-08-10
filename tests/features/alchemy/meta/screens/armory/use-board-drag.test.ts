@@ -2,7 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useBoardDrag } from "@/features/alchemy/meta/screens/armory/use-board-drag";
-import type { DragRect } from "@/features/alchemy/meta/screens/armory/drag-types";
+import type { DragRect } from "@/features/alchemy/meta/screens/armory/armory-drag-types";
 
 vi.mock("@/lib/audio", () => ({
   playUISound: vi.fn(),
@@ -31,8 +31,7 @@ describe("useBoardDrag", () => {
     const inventoryBoardRef = { current: null };
     const { result } = renderHook(() =>
       useBoardDrag({
-        itemLookup: { id: "item-1" },
-        getItemId: (item) => item.id,
+        getItemId: (item: { id: string }) => item.id,
         getOrigin: () => ({ kind: "inventory", placement: { col: 0, row: 0 } }),
         getFootprint: () => ({ w: 1, h: 1 }),
         inventoryBoardRef,
@@ -66,8 +65,7 @@ describe("useBoardDrag", () => {
 
     const { result } = renderHook(() =>
       useBoardDrag({
-        itemLookup: { id: "item-1" },
-        getItemId: (item) => item.id,
+        getItemId: (item: { id: string }) => item.id,
         getOrigin: () => ({ kind: "inventory", placement: { col: 0, row: 0 } }),
         getFootprint: () => ({ w: 1, h: 1 }),
         inventoryBoardRef,
@@ -95,8 +93,7 @@ describe("useBoardDrag", () => {
 
     const { result } = renderHook(() =>
       useBoardDrag({
-        itemLookup: { id: "item-1" },
-        getItemId: (item) => item.id,
+        getItemId: (item: { id: string }) => item.id,
         getOrigin: () => ({ kind: "inventory", placement: { col: 0, row: 0 } }),
         getFootprint: () => ({ w: 1, h: 1 }),
         inventoryBoardRef,
@@ -151,8 +148,7 @@ describe("useBoardDrag", () => {
 
     const { result } = renderHook(() =>
       useBoardDrag({
-        itemLookup: { id: "item-1" },
-        getItemId: (item) => item.id,
+        getItemId: (item: { id: string }) => item.id,
         getOrigin: () => ({ kind: "inventory", placement: { col: 0, row: 0 } }),
         getFootprint: () => ({ w: 1, h: 1 }),
         inventoryBoardRef,
@@ -208,8 +204,7 @@ describe("useBoardDrag", () => {
 
     const { result } = renderHook(() =>
       useBoardDrag({
-        itemLookup: { id: "item-1" },
-        getItemId: (item) => item.id,
+        getItemId: (item: { id: string }) => item.id,
         getOrigin: () => ({ kind: "inventory", placement: { col: 0, row: 0 } }),
         getFootprint: () => ({ w: 1, h: 1 }),
         inventoryBoardRef,
@@ -256,8 +251,7 @@ describe("useBoardDrag", () => {
 
     const { result } = renderHook(() =>
       useBoardDrag({
-        itemLookup: { id: "item-1" },
-        getItemId: (item) => item.id,
+        getItemId: (item: { id: string }) => item.id,
         getOrigin: () => ({ kind: "inventory", placement: { col: 1, row: 1 } }),
         getFootprint: () => ({ w: 1, h: 1 }),
         inventoryBoardRef,
@@ -312,8 +306,7 @@ describe("useBoardDrag", () => {
     const inventoryBoardRef = { current: null };
     const { result } = renderHook(() =>
       useBoardDrag({
-        itemLookup: { id: "item-1" },
-        getItemId: (item) => item.id,
+        getItemId: (item: { id: string }) => item.id,
         getOrigin: () => ({ kind: "inventory", placement: { col: 0, row: 0 } }),
         getFootprint: () => ({ w: 1, h: 1 }),
         inventoryBoardRef,
@@ -341,8 +334,7 @@ describe("useBoardDrag", () => {
     const inventoryBoardRef = { current: null };
     const { result } = renderHook(() =>
       useBoardDrag({
-        itemLookup: { id: "item-1" },
-        getItemId: (item) => item.id,
+        getItemId: (item: { id: string }) => item.id,
         getOrigin: () => ({ kind: "inventory", placement: { col: 0, row: 0 } }),
         getFootprint: () => ({ w: 1, h: 1 }),
         inventoryBoardRef,
@@ -384,8 +376,7 @@ describe("useBoardDrag", () => {
     const inventoryBoardRef = { current: null };
     const { result } = renderHook(() =>
       useBoardDrag({
-        itemLookup: { id: "item-1" },
-        getItemId: (item) => item.id,
+        getItemId: (item: { id: string }) => item.id,
         getOrigin: () => ({ kind: "inventory", placement: { col: 0, row: 0 } }),
         getFootprint: () => ({ w: 1, h: 1 }),
         inventoryBoardRef,

@@ -2,8 +2,8 @@ import type { buildArmoryBoardView, CraftingCurrencyId, GearInstance, GearLoadou
 import type { CharacterId } from "@/lib/game-data";
 import { CharacterAndEquipmentPanel } from "./character-panel";
 import { InventoryPanel } from "./inventory-panel";
-import type { CurrencyPointerEnd, CurrencyPointerMove, CurrencyPointerStart } from "./use-armory-board-drag";
-import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "./armory-gear-drag-types";
+import type { CurrencyPointerEnd, CurrencyPointerMove, CurrencyPointerStart } from "./armory-drag-types";
+import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "./armory-drag-types";
 import type { ArmoryCursorPoint } from "./armory-screen-types";
 
 interface WorkspaceGridProps {

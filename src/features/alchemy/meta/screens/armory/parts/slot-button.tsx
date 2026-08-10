@@ -17,7 +17,7 @@ import {
   VALID_TARGET_RING,
   VALID_TARGET_SHADOW,
 } from "../targeting-highlight";
-import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "../armory-gear-drag-types";
+import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "../armory-drag-types";
 
 import { buildSlotHandlers, isSlotCompatible, SlotContent } from "./slot-button-helpers";
 

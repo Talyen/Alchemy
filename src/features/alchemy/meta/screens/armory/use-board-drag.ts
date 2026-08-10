@@ -2,43 +2,43 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { playUISound } from "@/lib/audio";
 import { useLatestRef } from "../../../shared/hooks";
-import type { DragDestination, DragPoint, DragRect } from "./drag-types";
-import { DOUBLE_CLICK_FLYOVER_CLEAR_DELAY_MS, DRAG_POINTER_ACTIVATE_DISTANCE_PX } from "./drag-constants";
-import {
-  buildHeldDragVisual,
-  buildFlyoverDragVisual,
-  createPendingBoardDrag,
-  shouldReusePendingDrag,
-} from "./board-drag-lifecycle";
-import {
-  buildActiveBoardDragVisual,
-  resolveInventoryDestination,
-  resolvePointerDestination,
-} from "./board-drag-destination";
 import type {
   BoardDragCommitResult,
   BoardDragVisual,
+  DragDestination,
+  DragPoint,
   DragOrigin,
+  DragRect,
   PendingBoardDrag,
   UseBoardDragOptions,
-} from "./board-drag-types";
+} from "./armory-drag-types";
+import { DOUBLE_CLICK_FLYOVER_CLEAR_DELAY_MS, DRAG_POINTER_ACTIVATE_DISTANCE_PX } from "./drag-constants";
+import {
+  buildActiveBoardDragVisual,
+  buildFlyoverDragVisual,
+  buildHeldDragVisual,
+  createPendingBoardDrag,
+  resolveInventoryDestination,
+  resolvePointerDestination,
+  shouldReusePendingDrag,
+} from "./board-drag-math";
 
-export type { BoardDragVisual, DragOrigin, UseBoardDragOptions } from "./board-drag-types";
+export type { BoardDragVisual, DragOrigin, UseBoardDragOptions } from "./armory-drag-types";
 
-type BoardDragSession<TId extends string, TItem, TOrigin extends DragOrigin> =
+type BoardDragSession<TItem, TOrigin extends DragOrigin> =
   | { phase: "idle" }
-  | { phase: "armed"; item: TItem; pending: PendingBoardDrag<TId, TOrigin> }
+  | { phase: "armed"; item: TItem; pending: PendingBoardDrag<TOrigin> }
   | {
       phase: "dragging";
       item: TItem;
-      pending: PendingBoardDrag<TId, TOrigin>;
-      visual: BoardDragVisual<TId, TOrigin>;
+      pending: PendingBoardDrag<TOrigin>;
+      visual: BoardDragVisual<TOrigin>;
     }
-  | { phase: "held"; item: TItem; visual: BoardDragVisual<TId, TOrigin>; token: number }
+  | { phase: "held"; item: TItem; visual: BoardDragVisual<TOrigin>; token: number }
   | {
       phase: "animating";
       item: TItem;
-      visual: BoardDragVisual<TId, TOrigin>;
+      visual: BoardDragVisual<TOrigin>;
       durationMs: number;
       commit: (() => void) | null;
     };
@@ -46,38 +46,36 @@ type BoardDragSession<TId extends string, TItem, TOrigin extends DragOrigin> =
 const IDLE_SESSION = { phase: "idle" } as const;
 const SETTLE_CLEAR_DELAY_MS = 1000;
 
-export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrigin = DragOrigin>({
-  itemLookup,
+export function useBoardDrag<TItem, TOrigin extends DragOrigin>({
   getItemId,
   getOrigin,
   getFootprint,
   inventoryBoardRef,
   occupiedRows,
-  externalDestinations,
   resolveExternalDestination,
   onCommit,
   onCancel,
   onClear,
   boardObstacles = [],
-}: UseBoardDragOptions<TId, TItem, TOrigin>) {
-  const [session, setSession] = useState<BoardDragSession<TId, TItem, TOrigin>>(IDLE_SESSION);
-  const sessionRef = useRef<BoardDragSession<TId, TItem, TOrigin>>(IDLE_SESSION);
+}: UseBoardDragOptions<TItem, TOrigin>) {
+  const [session, setSession] = useState<BoardDragSession<TItem, TOrigin>>(IDLE_SESSION);
+  const sessionRef = useRef<BoardDragSession<TItem, TOrigin>>(IDLE_SESSION);
   const heldTokenRef = useRef(0);
   const boardObstaclesRef = useLatestRef(boardObstacles);
   const onCommitRef = useLatestRef(onCommit);
   const onCancelRef = useLatestRef(onCancel);
   const onClearRef = useLatestRef(onClear);
 
-  const publishSession = useCallback((next: BoardDragSession<TId, TItem, TOrigin>) => {
+  const publishSession = useCallback((next: BoardDragSession<TItem, TOrigin>) => {
     sessionRef.current = next;
     setSession(next);
   }, []);
 
   const getInventoryDestination = useCallback(
-    (id: TId, freeRect: DragRect, requireProximity = true): DragDestination | null => {
+    (id: string, freeRect: DragRect, requireProximity = true): DragDestination | null => {
       return resolveInventoryDestination({
         board: inventoryBoardRef.current,
-        footprint: getFootprint(id, itemLookup),
+        footprint: getFootprint(id),
         freeRect,
         requireProximity,
         occupiedRows,
@@ -85,22 +83,21 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
         draggedInstanceId: id,
       });
     },
-    [boardObstaclesRef, getFootprint, inventoryBoardRef, itemLookup, occupiedRows],
+    [boardObstaclesRef, getFootprint, inventoryBoardRef, occupiedRows],
   );
 
   const getDragDestination = useCallback(
-    (id: TId, freeRect: DragRect, pointer: DragPoint): DragDestination | null => {
+    (id: string, freeRect: DragRect, pointer: DragPoint): DragDestination | null => {
       return resolvePointerDestination({
         id,
         freeRect,
         pointer,
         board: inventoryBoardRef.current,
-        externalDestinations,
         resolveExternalDestination,
         getInventoryDestination,
       });
     },
-    [externalDestinations, getInventoryDestination, inventoryBoardRef, resolveExternalDestination],
+    [getInventoryDestination, inventoryBoardRef, resolveExternalDestination],
   );
 
   const clearDragState = useCallback(() => {
@@ -118,7 +115,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
   }, [onClearRef, publishSession]);
 
   const commitDestination = useCallback(
-    (visual: BoardDragVisual<TId, TOrigin>, destination: DragDestination): BoardDragCommitResult<TItem> => {
+    (visual: BoardDragVisual<TOrigin>, destination: DragDestination): BoardDragCommitResult<TItem> => {
       const result = onCommitRef.current({ id: visual.id, origin: visual.origin, destination });
       playUISound("gearMove");
       return result;
@@ -337,7 +334,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       publishSession({
         phase: "animating",
         item,
-        visual: buildFlyoverDragVisual<TId, TOrigin>({
+        visual: buildFlyoverDragVisual<TOrigin>({
           id: getItemId(item),
           origin: getOrigin(item),
           destination,

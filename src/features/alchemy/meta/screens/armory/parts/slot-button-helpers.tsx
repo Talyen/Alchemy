@@ -13,7 +13,7 @@ import { playUISound } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 import { GearSlotArt } from "./gear-slot-art";
 import { VALID_TARGET_SHADOW } from "../targeting-highlight";
-import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "../armory-gear-drag-types";
+import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "../armory-drag-types";
 
 function dismissWhenFocusLeaves(event: FocusEvent<HTMLDivElement>, dismiss: () => void) {
   if (!event.currentTarget.contains(event.relatedTarget)) dismiss();

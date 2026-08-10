@@ -7,7 +7,7 @@ import { TooltipBody, TooltipHeader } from "../../../../shared/ui/tooltip-panel"
 import { ARMORY_TOOLTIP_WIDTH } from "../gear-tooltip-content";
 import { packedItemStyle } from "./grid-styles";
 import { CURRENCY_COUNT_LABEL_CLASS } from "./currency-styles";
-import type { CurrencyPointerEnd, CurrencyPointerMove, CurrencyPointerStart } from "../use-armory-board-drag";
+import type { CurrencyPointerEnd, CurrencyPointerMove, CurrencyPointerStart } from "../armory-drag-types";
 
 export const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
   currencyId,

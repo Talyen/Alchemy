@@ -4,8 +4,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { InventoryGearTile } from "@/features/alchemy/meta/screens/armory/parts/inventory-tile";
 import { SlotButton } from "@/features/alchemy/meta/screens/armory/parts/slot-button";
 import { DragVisualPortal } from "@/features/alchemy/meta/screens/armory/armory-drag-visual-portal";
-import { readInventoryBoardMetrics } from "@/features/alchemy/meta/screens/armory/read-inventory-board-metrics";
-import { placeInventoryTileFromMetrics } from "@/features/alchemy/meta/screens/armory/board-drag-math";
+import {
+  readInventoryBoardMetrics,
+  placeInventoryTileFromMetrics,
+} from "@/features/alchemy/meta/screens/armory/board-drag-math";
 import { SALVAGE_TARGET_SHADOW } from "@/features/alchemy/meta/screens/armory/targeting-highlight";
 import { GearTooltipContent } from "@/features/alchemy/meta/screens/armory/gear-tooltip-content";
 import { ArmoryTransferMenu } from "@/features/alchemy/meta/screens/armory/armory-transfer-menu";

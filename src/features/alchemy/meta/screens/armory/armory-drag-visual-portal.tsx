@@ -3,16 +3,7 @@ import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { DOUBLE_CLICK_FLYOVER_MS, MAGNET_RELEASE_EASE_MS } from "./drag-constants";
-import type { DragRect } from "./drag-types";
-
-export interface DragVisualBase {
-  source: DragRect;
-  rect: DragRect;
-  releaseRect?: DragRect | undefined;
-  settling?: boolean | undefined;
-  releasing?: boolean | undefined;
-  flyover?: boolean | undefined;
-}
+import type { DragRect, DragVisualBase } from "./armory-drag-types";
 
 function computeDragTransition(visual: DragVisualBase): Record<string, unknown> {
   if (!visual.settling && !visual.releasing && !visual.flyover) return { duration: 0 };

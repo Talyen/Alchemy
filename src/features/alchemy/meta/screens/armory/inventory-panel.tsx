@@ -14,8 +14,8 @@ import { CraftingCurrencyTile } from "./parts/currency-tile";
 import { InventoryGearTile } from "./parts/inventory-tile";
 import { packedItemStyle } from "./parts/grid-styles";
 import { useInventoryScrollDrag } from "./use-inventory-scroll-drag";
-import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "./armory-gear-drag-types";
-import type { CurrencyPointerEnd, CurrencyPointerMove, CurrencyPointerStart } from "./use-armory-board-drag";
+import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "./armory-drag-types";
+import type { CurrencyPointerEnd, CurrencyPointerMove, CurrencyPointerStart } from "./armory-drag-types";
 
 export const InventoryPanel = memo(function InventoryPanel({
   packedItems,
