@@ -5,12 +5,23 @@ import { baseHomesteadSave } from "../fixtures/saves";
 
 export async function injectMidCombatSave(page: Page) {
   // Keep this fixture free of runtime battle imports so Playwright never loads game art during test discovery.
+  // Include a playable hand + mana and disable auto-end-turn so resume assertions are not racing the
+  // auto-end timer into Defeat (empty hand + autoEndTurn:true was flaky on CI).
+  const slash = {
+    id: "slash",
+    title: "Slash",
+    descriptionLines: ["Deal 6 Physical damage"],
+    art: "slash.webp",
+    cost: 1,
+    effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+    uid: 1,
+  };
   const battleState = {
     deck: [],
-    hand: [],
+    hand: [slash],
     discard: [],
     exhausted: [],
-    mana: 0,
+    mana: 3,
     maxMana: 3,
     gold: 15,
     turn: 2,
@@ -39,19 +50,10 @@ export async function injectMidCombatSave(page: Page) {
   };
   const save = {
     ...baseHomesteadSave,
+    autoEndTurn: false,
     activeRun: {
       characterId: "knight",
-      runDeck: [
-        {
-          id: "slash",
-          title: "Slash",
-          descriptionLines: ["Deal 6 Physical damage"],
-          art: "slash.webp",
-          cost: 1,
-          effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-          uid: 1,
-        },
-      ],
+      runDeck: [slash],
       runGold: 15,
       runPlayerHealth: 18,
       runMaxHealth: 30,
