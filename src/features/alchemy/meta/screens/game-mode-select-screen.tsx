@@ -16,12 +16,80 @@ import {
 
 const GAME_MODE_IDS: readonly GameModeId[] = ["campaign", "labyrinth", "wildwood"];
 
+type GameModeMeta = (typeof gameModeMeta)[string];
+
 function handleModeSelect(modeId: GameModeId, isLocked: boolean, setSelectedModeId: (id: GameModeId) => void) {
   if (isLocked) {
     playUISound("error");
   } else {
     setSelectedModeId(modeId);
   }
+}
+
+function GameModeTile({
+  modeId,
+  index,
+  meta,
+  isLocked,
+  isSelected,
+  isHovered,
+  onHoverStart,
+  onHoverEnd,
+  onSelect,
+}: {
+  modeId: GameModeId;
+  index: number;
+  meta: GameModeMeta;
+  isLocked: boolean;
+  isSelected: boolean;
+  isHovered: boolean;
+  onHoverStart: () => void;
+  onHoverEnd: () => void;
+  onSelect: () => void;
+}) {
+  // Each tile owns its tooltip anchor so the lock tooltip positions beside the
+  // hovered tile — a ref shared across the list would resolve to the last tile.
+  const tileRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <StaggerItem index={index} className="relative">
+      <div ref={tileRef} className="relative">
+        <PressableSound>
+          <TiltSurface
+            as="button"
+            tiltEnabled={!isLocked}
+            ariaLabel={meta.title}
+            ariaPressed={isSelected}
+            selected={isSelected}
+            onClick={onSelect}
+            onMouseEnter={onHoverStart}
+            onMouseLeave={onHoverEnd}
+            className={cn(
+              "flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-8 pt-6 pb-7 text-left",
+              isLocked && "cursor-not-allowed opacity-50 grayscale-[30%]",
+            )}
+          >
+            <img
+              src={meta.art}
+              alt=""
+              aria-hidden
+              className="w-full max-w-[39.11cqh] rounded-shell-card object-contain"
+            />
+            <h2 className={cn("font-sans", sectionTitleClass)}>{meta.title}</h2>
+            <p className={bodyTextClass}>{meta.description}</p>
+          </TiltSurface>
+        </PressableSound>
+        {isHovered && isLocked && (
+          <PortaledTooltip triggerRef={tileRef} visible width="w-64" className="text-center">
+            <TooltipHeader>{meta.title}</TooltipHeader>
+            <TooltipBody>
+              <p>{getGameModeUnlockMessage(modeId)}</p>
+            </TooltipBody>
+          </PortaledTooltip>
+        )}
+      </div>
+    </StaggerItem>
+  );
 }
 
 export function GameModeSelectScreen({
@@ -41,7 +109,6 @@ export function GameModeSelectScreen({
 }) {
   const [selectedModeId, setSelectedModeId] = useState<GameModeId | null>(null);
   const [hoveredModeId, setHoveredModeId] = useState<GameModeId | null>(null);
-  const modeTileRef = useRef<HTMLDivElement>(null);
   const finishedRunCharacters = useFinishedRunCharacters();
 
   const handlers: Record<GameModeId, () => void> = {
@@ -68,46 +135,20 @@ export function GameModeSelectScreen({
           if (!meta) return null;
           const isLocked = !isGameModeUnlocked(modeId, finishedRunCharacters);
           const isSelected = selectedModeId === modeId;
-          const selectMode = () => handleModeSelect(modeId, isLocked, setSelectedModeId);
 
           return (
-            <StaggerItem key={modeId} index={index} className="relative">
-              <div ref={modeTileRef} className="relative">
-                <PressableSound>
-                  <TiltSurface
-                    as="button"
-                    tiltEnabled={!isLocked}
-                    ariaLabel={meta.title}
-                    ariaPressed={isSelected}
-                    selected={isSelected}
-                    onClick={selectMode}
-                    onMouseEnter={() => setHoveredModeId(modeId)}
-                    onMouseLeave={() => setHoveredModeId(null)}
-                    className={cn(
-                      "flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-8 pt-6 pb-7 text-left",
-                      isLocked && "cursor-not-allowed opacity-50 grayscale-[30%]",
-                    )}
-                  >
-                    <img
-                      src={meta.art}
-                      alt=""
-                      aria-hidden
-                      className="w-full max-w-[39.11cqh] rounded-shell-card object-contain"
-                    />
-                    <h2 className={cn("font-sans", sectionTitleClass)}>{meta.title}</h2>
-                    <p className={bodyTextClass}>{meta.description}</p>
-                  </TiltSurface>
-                </PressableSound>
-                {hoveredModeId === modeId && isLocked && (
-                  <PortaledTooltip triggerRef={modeTileRef} visible width="w-64" className="text-center">
-                    <TooltipHeader>{meta.title}</TooltipHeader>
-                    <TooltipBody>
-                      <p>{getGameModeUnlockMessage(modeId)}</p>
-                    </TooltipBody>
-                  </PortaledTooltip>
-                )}
-              </div>
-            </StaggerItem>
+            <GameModeTile
+              key={modeId}
+              modeId={modeId}
+              index={index}
+              meta={meta}
+              isLocked={isLocked}
+              isSelected={isSelected}
+              isHovered={hoveredModeId === modeId}
+              onHoverStart={() => setHoveredModeId(modeId)}
+              onHoverEnd={() => setHoveredModeId(null)}
+              onSelect={() => handleModeSelect(modeId, isLocked, setSelectedModeId)}
+            />
           );
         })}
       </StaggerGroup>

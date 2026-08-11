@@ -55,6 +55,14 @@ test.describe("Progression Locks", () => {
       const labyrinthCard = page.getByRole("button", { name: /The Labyrinth/ });
       await labyrinthCard.hover();
       await expect(page.getByText("Finish a Run as the Rogue to unlock")).toBeVisible();
+      // The lock tooltip must anchor to the hovered tile — not the last tile in
+      // the list, which a ref shared across the tiles would resolve to.
+      const labyrinthTooltip = page.locator(".hover-popup-panel", { hasText: "Finish a Run as the Rogue to unlock" });
+      const labyrinthBox = (await labyrinthCard.boundingBox())!;
+      const labyrinthTooltipBox = (await labyrinthTooltip.boundingBox())!;
+      const labyrinthTooltipCenterX = labyrinthTooltipBox.x + labyrinthTooltipBox.width / 2;
+      const labyrinthCenterX = labyrinthBox.x + labyrinthBox.width / 2;
+      expect(Math.abs(labyrinthTooltipCenterX - labyrinthCenterX)).toBeLessThanOrEqual(labyrinthBox.width);
 
       const wildwoodCard = page.getByRole("button", { name: /Wildwood Draft/ });
       await wildwoodCard.hover();
