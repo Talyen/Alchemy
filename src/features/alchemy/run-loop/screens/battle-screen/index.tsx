@@ -15,6 +15,8 @@ import { getEnemyStatusChips, getPlayerStatusChips } from "../../../shared/utils
 import { isAlchemyDevBuild } from "../../../shared/utils/dev-mode";
 import { BackgroundParticles } from "../../../shared/ui/background-particles";
 
+const BATTLE_PARTICLE_COLORS = ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"] as const;
+
 interface BattleScreenProps {
   battleScreenData: BattleScreenData;
   heroArt: string;
@@ -72,7 +74,7 @@ export function BattleScreen(props: BattleScreenProps) {
 
   const isBossBattle = battleState.currentEnemy.enemyType === "boss";
   const particleAlpha = isBossBattle ? BATTLE_PARTICLE_ALPHA_BOSS : BATTLE_PARTICLE_ALPHA_NORMAL;
-  const particleColors = ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"] as const;
+  const particleColors = BATTLE_PARTICLE_COLORS;
 
   const playerStatusChips = useMemo(() => getPlayerStatusChips(displayState), [displayState]);
   const enemyStatusChips = useMemo(() => getEnemyStatusChips(battleState), [battleState]);
