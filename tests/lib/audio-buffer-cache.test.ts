@@ -6,6 +6,7 @@ import {
   loadSoundBuffer,
   preloadSounds,
   preloadAllSounds,
+  preloadBattleSounds,
 } from "@/lib/audio-buffer-cache";
 import { audioState } from "@/lib/audio-state";
 
@@ -149,6 +150,18 @@ describe("preloadSounds", () => {
   });
 });
 
+describe("preloadBattleSounds", () => {
+  it("prioritizes the visible hand and current enemy sound set", () => {
+    const fetchMock = vi.fn((_url: RequestInfo | URL) => new Promise<Response>(() => {}));
+    vi.stubGlobal("fetch", fetchMock);
+    preloadBattleSounds(["slash", "frostbolt"], "skeleton");
+    const urls = fetchMock.mock.calls.map(([url]) => String(url));
+    expect(urls.some((url) => url.endsWith("sword-attack-1.ogg"))).toBe(true);
+    expect(urls.some((url) => url.endsWith("ice-throw-1.ogg"))).toBe(true);
+    expect(urls.some((url) => url.endsWith("swish-hit.ogg"))).toBe(true);
+  });
+});
+
 describe("preloadAllSounds", () => {
   it("schedules sound preloading in batches across idle callbacks", () => {
     const fetchMock = vi.fn(() => new Promise<Response>(() => {}));
@@ -177,10 +190,8 @@ describe("preloadAllSounds", () => {
     expect(fetchMock).toHaveBeenCalled();
     expect(callbacks.length).toBe(1);
 
-    const countFirstBatch = fetchMock.mock.calls.length;
     callbacks[0]({ didTimeout: false, timeRemaining: () => 50 });
 
-    expect(fetchMock.mock.calls.length).toBeGreaterThan(countFirstBatch);
     expect(callbacks.length).toBe(2);
   });
 });

@@ -98,7 +98,7 @@ describe("startBackgroundParticles", () => {
     rafSpy.mockRestore();
   });
 
-  it("sizes the backing store from rendered pixels instead of unscaled virtual dimensions", () => {
+  it("caps the rendered-pixel backing store to protect high-DPR frame pacing", () => {
     vi.stubGlobal("devicePixelRatio", 2);
     const { canvas, parent } = makeMockCanvas();
     vi.mocked(parent.getBoundingClientRect).mockReturnValue({ width: 1440, height: 810 } as DOMRect);
@@ -106,8 +106,9 @@ describe("startBackgroundParticles", () => {
 
     const cleanup = startBackgroundParticles({ current: canvas } as never, "embers");
 
-    expect(canvas.width).toBe(2880);
-    expect(canvas.height).toBe(1620);
+    expect(canvas.width * canvas.height).toBeLessThanOrEqual(3_000_000);
+    expect(canvas.width).toBeGreaterThan(1920);
+    expect(canvas.height).toBeGreaterThan(1080);
     cleanup();
     rafSpy.mockRestore();
   });

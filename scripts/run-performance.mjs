@@ -15,8 +15,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const METRIC_SCENARIOS = ["battle-effects", "battle-end-turn", "armory-drag"];
-const DIAG_SCENARIOS = ["battle-art-diag"];
+const METRIC_SCENARIOS = [
+  "battle-effects",
+  "battle-end-turn",
+  "armory-drag",
+  "talents-effects",
+  "collection-tabs",
+  "options-brightness",
+];
+const DIAG_SCENARIOS = ["memory-soak", "battle-art-diag"];
 const SCENARIOS = [...METRIC_SCENARIOS, ...DIAG_SCENARIOS];
 const DEFAULT_SCENARIO = "battle-effects";
 
@@ -27,6 +34,7 @@ function parseArgs(argv) {
     all: false,
     trace: false,
     electron: false,
+    cold: false,
     compare: null,
     skipBuild: false,
     help: false,
@@ -36,6 +44,7 @@ function parseArgs(argv) {
     if (a === "--help" || a === "-h") args.help = true;
     else if (a === "--trace") args.trace = true;
     else if (a === "--electron") args.electron = true;
+    else if (a === "--cold") args.cold = true;
     else if (a === "--skip-build") args.skipBuild = true;
     else if (a === "--all") args.all = true;
     else if (a === "--scenario") args.scenario = argv[++i];
@@ -61,10 +70,11 @@ Usage:
 
 Options:
   --scenario <id>   One of: ${SCENARIOS.join(", ")} (default: ${DEFAULT_SCENARIO})
-  --all             Run metric scenarios (${METRIC_SCENARIOS.join(", ")}; excludes battle-art-diag)
+  --all             Run metric scenarios (${METRIC_SCENARIOS.join(", ")}; excludes diagnostics)
   --runs <n>        Measured repetitions (default 1; warm-up still runs)
   --trace           CDP deep-trace mode (targets not authoritative)
   --electron        Confirm on shipping Electron runtime (separate from Chromium)
+  --cold            Skip warm-up and relaunch Electron for every measured run
   --skip-build      Reuse existing dist/ (must already exist)
   --compare a b     Diff two prior report directories
   --help            Show this help
@@ -231,6 +241,11 @@ function main() {
     process.exit(1);
   }
 
+  if (args.cold && !args.electron) {
+    console.error("--cold currently requires --electron so every run can use a fresh app process.");
+    process.exit(1);
+  }
+
   if (args.scenario && !SCENARIOS.includes(args.scenario)) {
     console.error(`Unknown scenario "${args.scenario}". Expected one of: ${SCENARIOS.join(", ")}`);
     process.exit(1);
@@ -260,6 +275,7 @@ function main() {
     PLAYWRIGHT_PERF_PORT: process.env.PLAYWRIGHT_PERF_PORT ?? "4176",
     PLAYWRIGHT_PERF_TRACE: args.trace ? "1" : "",
     PLAYWRIGHT_PERF_ELECTRON: args.electron ? "1" : "",
+    PLAYWRIGHT_PERF_COLD: args.cold ? "1" : "",
     PERF_RUNS: String(args.runs ?? 1),
     PERF_SCENARIO: scenario ?? "",
     ...(process.env.PERF_MEASURE_MS ? { PERF_MEASURE_MS: process.env.PERF_MEASURE_MS } : {}),
@@ -271,7 +287,7 @@ function main() {
   const grepArgs = args.all ? ["--grep", `/${METRIC_SCENARIOS.join("|")}/`] : scenario ? ["--grep", scenario] : [];
   console.log(`\nProfiling → ${outDir}`);
   console.log(
-    `Runtime: ${args.electron ? "electron" : "chromium"} | Trace: ${args.trace ? "yes" : "no"} | Scenario: ${args.all ? METRIC_SCENARIOS.join(",") : (scenario ?? "all")} | Runs: ${env.PERF_RUNS}`,
+    `Runtime: ${args.electron ? "electron" : "chromium"} | Cold: ${args.cold ? "yes" : "no"} | Trace: ${args.trace ? "yes" : "no"} | Scenario: ${args.all ? METRIC_SCENARIOS.join(",") : (scenario ?? "all")} | Runs: ${env.PERF_RUNS}`,
   );
 
   const result = spawnSync("npx", ["playwright", "test", "--config", "playwright.performance.config.ts", ...grepArgs], {

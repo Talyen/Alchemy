@@ -1,5 +1,5 @@
 // App-level display values for screen routes (character art, layout mode).
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import {
   cardLibrary,
   characterArt,
@@ -116,29 +116,47 @@ export function AppScreenChromeProvider({
   const { talentXP, unlockedTalents } = useTalentProgressSlice();
   const heroArt = characterArt[characterId];
   const playerName = characters[characterId].name;
-  const hasUnspentTalentsBadge = hasUnspentTalents(talentXP, unlockedTalents);
+  const hasUnspentTalentsBadge = useMemo(
+    () => hasUnspentTalents(talentXP, unlockedTalents),
+    [talentXP, unlockedTalents],
+  );
 
   const { materialInventory, constructedBuildings, plantedFarms, completedResearch, bondedCompanions } =
     useHomesteadProgressSlice();
   const { discoveredCardIds } = useProfileDiscoverySlice();
-  const hasAffordableHomestead = hasAffordableHomesteadUpgrade({
-    materialInventory,
-    constructedBuildings,
-    plantedFarms,
-    completedResearch,
-    bondedCompanions,
-    discoveredCardIds,
-  });
+  const hasAffordableHomestead = useMemo(
+    () =>
+      hasAffordableHomesteadUpgrade({
+        materialInventory,
+        constructedBuildings,
+        plantedFarms,
+        completedResearch,
+        bondedCompanions,
+        discoveredCardIds,
+      }),
+    [bondedCompanions, completedResearch, constructedBuildings, discoveredCardIds, materialInventory, plantedFarms],
+  );
 
-  const value: AppScreenChrome = {
-    heroArt,
-    playerName,
-    aspectMode,
-    stagePixelRatio,
-    hasUnspentTalents: hasUnspentTalentsBadge,
-    hasAffordableHomestead,
-    returnToRunScreen,
-  };
+  const value = useMemo<AppScreenChrome>(
+    () => ({
+      heroArt,
+      playerName,
+      aspectMode,
+      stagePixelRatio,
+      hasUnspentTalents: hasUnspentTalentsBadge,
+      hasAffordableHomestead,
+      returnToRunScreen,
+    }),
+    [
+      aspectMode,
+      hasAffordableHomestead,
+      hasUnspentTalentsBadge,
+      heroArt,
+      playerName,
+      returnToRunScreen,
+      stagePixelRatio,
+    ],
+  );
 
   return <AppScreenChromeContext.Provider value={value}>{children}</AppScreenChromeContext.Provider>;
 }

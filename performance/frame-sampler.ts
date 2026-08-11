@@ -1,17 +1,19 @@
 import type { Page } from "@playwright/test";
-import { extractHitchEvents, type FrameSampleRaw, type LongTaskSample } from "./metrics";
+import { extractHitchEvents, type FrameSampleRaw, type InputEventSample, type LongTaskSample } from "./metrics";
 
 declare global {
   interface Window {
     __alchemyPerf?: {
       frameTimes: number[];
       longTasks: LongTaskSample[];
+      inputEvents: InputEventSample[];
       phaseMarks: Array<{ time: number; phase: string }>;
       phase: string;
       lastTs: number;
       startTs: number;
       rafId: number | null;
       observer: PerformanceObserver | null;
+      eventObserver: PerformanceObserver | null;
       running: boolean;
     };
   }
@@ -24,12 +26,14 @@ export async function installFrameSampler(page: Page): Promise<void> {
     window.__alchemyPerf = {
       frameTimes: [],
       longTasks: [],
+      inputEvents: [],
       phaseMarks: [],
       phase: "idle",
       lastTs: 0,
       startTs: 0,
       rafId: null,
       observer: null,
+      eventObserver: null,
       running: false,
     };
   });
@@ -53,6 +57,7 @@ export async function startFrameSampler(page: Page): Promise<void> {
     if (perf.running) return;
     perf.frameTimes = [];
     perf.longTasks = [];
+    perf.inputEvents = [];
     perf.phaseMarks = [];
     perf.running = true;
     perf.startTs = performance.now();
@@ -80,6 +85,30 @@ export async function startFrameSampler(page: Page): Promise<void> {
       perf.observer = null;
     }
 
+    try {
+      perf.eventObserver = new PerformanceObserver((list) => {
+        for (const rawEntry of list.getEntries()) {
+          const entry = rawEntry as PerformanceEntry & {
+            processingStart?: number;
+            interactionId?: number;
+          };
+          const interactionId = entry.interactionId ?? 0;
+          if (entry.startTime < perf.startTs || interactionId === 0) continue;
+          perf.inputEvents.push({
+            name: entry.name,
+            startTime: entry.startTime - perf.startTs,
+            duration: entry.duration,
+            inputDelay: Math.max(0, (entry.processingStart ?? entry.startTime) - entry.startTime),
+            interactionId,
+            phase: perf.phase,
+          });
+        }
+      });
+      perf.eventObserver.observe({ type: "event", buffered: false, durationThreshold: 16 } as PerformanceObserverInit);
+    } catch {
+      perf.eventObserver = null;
+    }
+
     const tick = (ts: number) => {
       if (!perf.running) return;
       if (perf.lastTs > 0) {
@@ -96,7 +125,7 @@ export async function stopFrameSampler(page: Page): Promise<FrameSampleRaw> {
   const sample = await page.evaluate(() => {
     const perf = window.__alchemyPerf;
     if (!perf || !perf.running) {
-      return { frameTimes: [], longTasks: [], durationMs: 0, phaseMarks: [], hitchEvents: [] };
+      return { frameTimes: [], longTasks: [], inputEvents: [], durationMs: 0, phaseMarks: [], hitchEvents: [] };
     }
     perf.running = false;
     if (perf.rafId !== null) {
@@ -111,10 +140,19 @@ export async function stopFrameSampler(page: Page): Promise<FrameSampleRaw> {
       }
       perf.observer = null;
     }
+    if (perf.eventObserver) {
+      try {
+        perf.eventObserver.disconnect();
+      } catch {
+        // ignore
+      }
+      perf.eventObserver = null;
+    }
     const durationMs = performance.now() - perf.startTs;
     return {
       frameTimes: [...perf.frameTimes],
       longTasks: [...perf.longTasks],
+      inputEvents: [...perf.inputEvents],
       durationMs,
       phaseMarks: [...perf.phaseMarks],
     };

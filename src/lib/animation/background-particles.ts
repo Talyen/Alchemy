@@ -63,6 +63,16 @@ const CONFIGS: Record<ParticleVariant, BackgroundParticleConfig> = {
   },
 };
 
+const MAX_PARTICLE_BACKING_SCALE = 1.5;
+const MAX_PARTICLE_BACKING_PIXELS = 3_000_000;
+
+export function resolveParticleBackingScale(width: number, height: number, requestedScale: number): number {
+  const safeWidth = Math.max(1, width);
+  const safeHeight = Math.max(1, height);
+  const pixelLimitedScale = Math.sqrt(MAX_PARTICLE_BACKING_PIXELS / (safeWidth * safeHeight));
+  return Math.max(1, Math.min(requestedScale, MAX_PARTICLE_BACKING_SCALE, pixelLimitedScale));
+}
+
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
@@ -87,11 +97,11 @@ function spawnParticle(width: number, height: number, config: BackgroundParticle
   };
 }
 
-function updateParticle(p: BackgroundParticle, dt: number, width: number, height: number): void {
+function updateParticle(p: BackgroundParticle, dt: number, now: number, width: number, height: number): void {
   const fadeMargin = height * 0.15;
 
   p.y -= p.speed * dt;
-  p.x += Math.sin(p.swayOffset + performance.now() * 0.001 * p.swaySpeed) * 0.3 * dt;
+  p.x += Math.sin(p.swayOffset + now * 0.001 * p.swaySpeed) * 0.3 * dt;
 
   if (p.y < -fadeMargin) {
     p.y = height + fadeMargin;
@@ -147,7 +157,7 @@ export function startBackgroundParticles(
     const scaleX = w > 0 ? renderedBounds.width / w : 1;
     const scaleY = h > 0 ? renderedBounds.height / h : 1;
     const renderedScale = Math.max(scaleX, scaleY);
-    backingScale = Math.max(1, renderedScale * (devicePixelRatio || 1));
+    backingScale = resolveParticleBackingScale(w, h, renderedScale * (devicePixelRatio || 1));
     activeCanvas.width = Math.max(1, Math.round(w * backingScale));
     activeCanvas.height = Math.max(1, Math.round(h * backingScale));
     activeCanvas.style.width = `${w}px`;
@@ -183,7 +193,7 @@ export function startBackgroundParticles(
     activeCtx.clearRect(0, 0, w, h);
 
     for (const p of particles) {
-      updateParticle(p, dt, w, h);
+      updateParticle(p, dt, now, w, h);
       renderParticle(activeCtx, p);
     }
 

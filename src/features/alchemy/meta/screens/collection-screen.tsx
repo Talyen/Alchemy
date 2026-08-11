@@ -1,7 +1,6 @@
 // Collection screen with tabs (cards / bestiary / boons) and paginated grid.
-// All three tab grids are rendered simultaneously (preloaded) — only the active
-// one is visible, so switching tabs is instant with no image re-loading.
-import { cn } from "@/lib/utils";
+// The active grid alone is mounted. Art remains globally predecoded at boot, so
+// tab switches stay instant without retaining three grids of interactive DOM.
 import { collectionShellWidthClass } from "../../shared/config";
 import { HamburgerTrigger, PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/shared-ui";
 import {
@@ -11,8 +10,6 @@ import {
   CollectionPagination,
 } from "../../shared/ui/collection-ui";
 import type { CollectionTab } from "../../shared/types";
-
-const COLLECTION_TABS: CollectionTab[] = ["cards", "bestiary", "trinkets"];
 
 export function CollectionScreen({
   onOpenMenu,
@@ -52,25 +49,15 @@ export function CollectionScreen({
         <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
 
         <div className="mt-6 flex min-h-[71.11cqh] flex-col items-center overflow-visible">
-          <div className="grid min-h-[60cqh] w-full grid-cols-1 overflow-visible">
-            {COLLECTION_TABS.map((tab) => (
-              <div
-                key={tab}
-                className={cn(
-                  "motion-crossfade col-start-1 row-start-1 overflow-visible",
-                  collectionTab === tab ? "opacity-100" : "motion-crossfade-hidden pointer-events-none opacity-0",
-                )}
-              >
-                <CollectionGrid
-                  collectionTab={tab}
-                  discoveredCardIds={discoveredCardIds}
-                  encounteredEnemyIds={encounteredEnemyIds}
-                  discoveredTrinketIds={discoveredTrinketIds}
-                  page={collectionPages[tab]}
-                  bondedCompanions={bondedCompanions}
-                />
-              </div>
-            ))}
+          <div className="min-h-[60cqh] w-full overflow-visible">
+            <CollectionGrid
+              collectionTab={collectionTab}
+              discoveredCardIds={discoveredCardIds}
+              encounteredEnemyIds={encounteredEnemyIds}
+              discoveredTrinketIds={discoveredTrinketIds}
+              page={activePage}
+              bondedCompanions={bondedCompanions}
+            />
           </div>
         </div>
 

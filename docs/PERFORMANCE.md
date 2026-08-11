@@ -26,13 +26,19 @@ npm run perf:trace -- --scenario battle-effects
 # Confirm on Electron (keep separate from Chromium numbers)
 npm run perf -- --electron --scenario battle-end-turn
 
+# Measure first-use latency in a fresh shipping runtime (no warm-up)
+npm run perf -- --electron --cold --scenario battle-effects
+
+# Long navigation soak with before/after runtime snapshots (diagnostic)
+npm run perf -- --scenario memory-soak
+
 # Compare two prior report directories
 npm run perf:compare -- reports/performance/<before> reports/performance/<after>
 ```
 
 Reports land under `reports/performance/<timestamp>-<runtime>/` (gitignored):
 
-- `summary.md` — human-readable target table, aggregates, worst gaps, long tasks
+- `summary.md` — targets, aggregates, worst gaps, long tasks, input timing, and runtime deltas
 - `results.json` — machine-readable aggregates
 - `environment.json` — OS, commit, dirty tree, viewport, DPR, refresh estimate
 - `runs/<scenario>-<n>.json` — per-repetition metrics
@@ -46,8 +52,10 @@ Reuse an existing `dist/` with `--skip-build` when iterating on the harness itse
 
 Keep ordinary profiling at the default **one measured run per scenario** to limit
 local CPU/GPU use. The harness also performs one unmeasured warm-up so cold JIT,
-layout, and asset initialization do not contaminate the recorded sample. Increase
-`--runs` only when explicitly requested for statistical investigation.
+layout, and asset initialization do not contaminate the recorded sample. Pass
+`--electron --cold` to intentionally measure first use; each repetition launches a
+fresh Electron process and skips warm-up. Increase `--runs` only when explicitly
+requested for statistical investigation.
 
 Short smoke / harness iteration (not for baselines):
 
@@ -57,14 +65,18 @@ PERF_MEASURE_MS=8000 PERF_MIN_FRAMES=50 npm run perf -- --scenario battle-end-tu
 
 ## Scenarios
 
-| Id                | Profile    | What it exercises                                                                                                                                                   |
-| ----------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `battle-effects`  | continuous | Dense multi-type hand (dual-hit / heal+damage / statuses), play several cards per turn so combat texts overlap, then end turn (**default** for bare `npm run perf`) |
-| `battle-end-turn` | transition | One play → wait for play FX to finish → end turn → draw (isolates discard / enemy / redraw)                                                                         |
-| `armory-drag`     | continuous | Large inventory scroll + multi-step pointer drags                                                                                                                   |
-| `battle-art-diag` | (diag)     | Art readiness diagnostics only — not included in `--all` metrics                                                                                                    |
+| Id                   | Profile    | What it exercises                                                                                                                                                   |
+| -------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `battle-effects`     | continuous | Dense multi-type hand (dual-hit / heal+damage / statuses), play several cards per turn so combat texts overlap, then end turn (**default** for bare `npm run perf`) |
+| `battle-end-turn`    | transition | One play → wait for play FX to finish → end turn → draw (isolates discard / enemy / redraw)                                                                         |
+| `armory-drag`        | continuous | Large inventory scroll + multi-step pointer drags                                                                                                                   |
+| `talents-effects`    | continuous | Switch talent trees and hover unlockable nodes while particles and animated effects remain active                                                                   |
+| `collection-tabs`    | transition | Switch among populated bestiary, trinket, and card grids and exercise hover rendering                                                                               |
+| `options-brightness` | continuous | Alternate dim and bright display settings while ambient animation remains active                                                                                    |
+| `memory-soak`        | (diag)     | Repeated collection/talent navigation for runtime and DOM growth diagnosis; excluded from `--all`                                                                   |
+| `battle-art-diag`    | (diag)     | Art readiness diagnostics only; excluded from `--all`                                                                                                               |
 
-`--all` runs the three metric scenarios above. All scenarios keep **real animations** (no `enableFastMode` / `fastBattle`). Setup and navigation are excluded from the measured window. Every loop includes one warm-up iteration before measured runs (including `--trace`). Battle decks use real `cardLibrary` ids so `hydrateCard` attaches production art — do not use E2E `placeholder` stubs here. `battle-effects` uses cost-0 multi-effect cards so a full hand can fire in one turn without mana gating; damage stays low so the fight lasts.
+`--all` runs the six metric scenarios above. All scenarios keep **real animations** (no `enableFastMode` / `fastBattle`). Setup and navigation are excluded from the measured window. Every ordinary loop includes one warm-up iteration before measured runs (including `--trace`); `--cold` skips it. Battle decks use real `cardLibrary` ids so `hydrateCard` attaches production art — do not use E2E `placeholder` stubs here. `battle-effects` uses cost-0 multi-effect cards so a full hand can fire in one turn without mana gating; damage stays low so the fight lasts.
 
 ## Metrics
 
@@ -80,6 +92,8 @@ Collected via `requestAnimationFrame` timestamps and `PerformanceObserver` long 
 | ≥50 ms hitches / ≥100 ms stalls    | Perceptible stutters                               |
 | ≥50 ms long tasks                  | Main-thread blocking                               |
 | Max / worst frame gaps             | Largest individual stalls                          |
+| Event duration / input delay       | Browser Event Timing for sampled user interactions |
+| Before/after runtime snapshot      | Heap, DOM/media nodes, and Electron working set    |
 
 Phases (`play-card`, `damage-feedback`, `enemy-turn`, `draw-hand`, `armory-scroll`, `armory-drag`) label long tasks in the report.
 
@@ -148,6 +162,7 @@ Measure → identify failing scenario/phase → perf:trace that scenario → opt
 - Trace mode adds overhead — do not treat its FPS numbers as authoritative.
 - Never compare Chromium and Electron results as if they were the same environment.
 - Local Electron profiling keeps the GPU enabled (`enableGpu`); CI Electron smoke still uses `--disable-gpu`.
+- Runtime deltas are diagnostic signals, not automatic leak verdicts. Allow for garbage collection and confirm suspicious monotonic growth across repeated runs.
 - A 60 Hz panel cannot report sustained 120+ FPS; use a high-refresh display for that class of measurement.
 
 ## Layout

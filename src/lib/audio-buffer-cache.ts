@@ -8,8 +8,8 @@ import { logError } from "./error-logger";
 // Configuration for local buffer caching and preloading.
 const BUFFER_CACHE_CONFIG = {
   SOUNDS_BASE_PATH: "sounds/",
-  IDLE_CALLBACK_TIMEOUT_MS: 1000,
-  PRELOAD_BATCH_SIZE: 4,
+  IDLE_CALLBACK_TIMEOUT_MS: 5000,
+  PRELOAD_BATCH_SIZE: 1,
 } as const;
 
 // In-memory cache for fully decoded AudioBuffer objects.
@@ -95,6 +95,23 @@ export function preloadSounds(names: string[]) {
   });
 }
 
+/** Warm the sounds a battle can use before its first interactive frame. */
+export function preloadBattleSounds(cardIds: readonly string[], enemyId: string) {
+  const names = new Set<string>([
+    battleEventSounds.drawTransfer,
+    battleEventSounds.enemyHit,
+    battleEventSounds.playerHit,
+    battleEventSounds.blockAbsorb,
+    battleEventSounds.critHit,
+    battleEventSounds.endTurn,
+  ]);
+  for (const cardId of cardIds) {
+    for (const name of cardSounds[cardId] ?? []) names.add(name);
+  }
+  for (const name of enemyAttackSounds[enemyId] ?? []) names.add(name);
+  preloadSounds([...names]);
+}
+
 // Collects every registered sound and decodes it gradually after startup.
 export function preloadAllSounds() {
   getAudioContext();
@@ -135,9 +152,19 @@ function preloadSoundsWhenIdle(names: string[]) {
 // Uses browser idle time when available and falls back for environments without it (e.g. testing context).
 function schedulePreloadBatch(callback: () => void) {
   if ("requestIdleCallback" in window) {
-    window.requestIdleCallback(() => callback(), {
-      timeout: BUFFER_CACHE_CONFIG.IDLE_CALLBACK_TIMEOUT_MS,
-    });
+    window.requestIdleCallback(
+      () => {
+        const scheduling = navigator as Navigator & { scheduling?: { isInputPending?: () => boolean } };
+        if (scheduling.scheduling?.isInputPending?.()) {
+          schedulePreloadBatch(callback);
+          return;
+        }
+        callback();
+      },
+      {
+        timeout: BUFFER_CACHE_CONFIG.IDLE_CALLBACK_TIMEOUT_MS,
+      },
+    );
     return;
   }
 

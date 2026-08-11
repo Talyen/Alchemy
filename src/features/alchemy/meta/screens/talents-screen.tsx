@@ -1,6 +1,5 @@
 // Talent tree screen — spend XP to unlock keyword-specific talents.
 import { useState, useMemo } from "react";
-import { cn } from "@/lib/utils";
 import { RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -114,27 +113,20 @@ export function TalentsScreen({
               </mask>
             </defs>
           </svg>
-          {Object.entries(talentBackgroundArt).map(([kw, art]) => {
-            if (!art) return null;
-            const isSelected = selectedKeyword === kw;
-            return (
-              <div
-                key={kw}
-                className={cn(
-                  "absolute inset-0 overflow-hidden transition-opacity duration-300 ease-in-out",
-                  isSelected ? "opacity-100" : "pointer-events-none opacity-0",
-                )}
-                style={{
-                  backgroundImage: `url(${art})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  filter: "brightness(0.9)",
-                  maskImage: `url(#${MASK_ID})`,
-                  WebkitMaskImage: `url(#${MASK_ID})`,
-                }}
-              />
-            );
-          })}
+          {talentBackgroundArt[selectedKeyword] ? (
+            <div
+              key={selectedKeyword}
+              className="state-fade absolute inset-0 overflow-hidden"
+              style={{
+                backgroundImage: `url(${talentBackgroundArt[selectedKeyword]})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                filter: "brightness(0.9)",
+                maskImage: `url(#${MASK_ID})`,
+                WebkitMaskImage: `url(#${MASK_ID})`,
+              }}
+            />
+          ) : null}
 
           <TalentTree
             key={selectedKeyword}

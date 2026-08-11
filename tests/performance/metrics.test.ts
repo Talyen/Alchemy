@@ -177,6 +177,7 @@ describe("renderSummaryMarkdown", () => {
       branch: "main",
       traceMode: false,
       runsPerScenario: 5,
+      coldMode: false,
       scenarios: ["battle-effects"],
     };
     const aggregates: ScenarioAggregate[] = [

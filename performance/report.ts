@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
-import type { FrameMetrics, TargetCheck, TargetProfile } from "./metrics";
+import type { FrameMetrics, InputEventSample, TargetCheck, TargetProfile } from "./metrics";
 import type { MetricDelta } from "./compare";
 
 export interface ScenarioRunResult {
@@ -13,6 +13,18 @@ export interface ScenarioRunResult {
   targets: TargetCheck[];
   tracePath?: string;
   notes?: string[];
+  runtimeBefore?: RuntimeSnapshot;
+  runtimeAfter?: RuntimeSnapshot;
+  inputEvents?: InputEventSample[];
+}
+
+export interface RuntimeSnapshot {
+  jsHeapUsedBytes?: number;
+  domNodes: number;
+  images: number;
+  canvases: number;
+  audioElements: number;
+  electronWorkingSetKB?: number;
 }
 
 export interface ScenarioAggregate {
@@ -37,6 +49,7 @@ export interface EnvironmentInfo {
   branch: string;
   traceMode: boolean;
   runsPerScenario: number;
+  coldMode: boolean;
   scenarios: string[];
   browser?: string;
 }
@@ -128,6 +141,7 @@ export function renderSummaryMarkdown(options: {
   }
   lines.push(`- **Trace mode:** ${environment.traceMode ? "yes (targets not authoritative)" : "no"}`);
   lines.push(`- **Runs per scenario:** ${environment.runsPerScenario}`);
+  lines.push(`- **Cold mode:** ${environment.coldMode ? "yes (no warm-up; fresh Electron process per run)" : "no"}`);
   lines.push("");
 
   if (environment.traceMode) {
@@ -199,6 +213,24 @@ export function renderSummaryMarkdown(options: {
       );
       if (run.tracePath) {
         lines.push(`| | | Trace: \`${run.tracePath}\` | | | | | |`);
+      }
+      if (run.runtimeBefore && run.runtimeAfter) {
+        const heapDelta =
+          run.runtimeBefore.jsHeapUsedBytes !== undefined && run.runtimeAfter.jsHeapUsedBytes !== undefined
+            ? (run.runtimeAfter.jsHeapUsedBytes - run.runtimeBefore.jsHeapUsedBytes) / 1_048_576
+            : null;
+        const workingSetDelta =
+          run.runtimeBefore.electronWorkingSetKB !== undefined && run.runtimeAfter.electronWorkingSetKB !== undefined
+            ? (run.runtimeAfter.electronWorkingSetKB - run.runtimeBefore.electronWorkingSetKB) / 1024
+            : null;
+        lines.push(
+          `| | | Runtime Δ: ${heapDelta === null ? "heap n/a" : `${fmt(heapDelta, 1)} MiB heap`}, ${workingSetDelta === null ? "working set n/a" : `${fmt(workingSetDelta, 1)} MiB working set`}, ${run.runtimeAfter.domNodes - run.runtimeBefore.domNodes} DOM nodes, ${run.runtimeAfter.images - run.runtimeBefore.images} images, ${run.runtimeAfter.canvases - run.runtimeBefore.canvases} canvases, ${run.runtimeAfter.audioElements - run.runtimeBefore.audioElements} audio elements | | | | | |`,
+        );
+      }
+      if (run.inputEvents && run.inputEvents.length > 0) {
+        const worstInput = Math.max(...run.inputEvents.map((event) => event.duration));
+        const worstDelay = Math.max(...run.inputEvents.map((event) => event.inputDelay));
+        lines.push(`| | | Input max: ${fmt(worstInput, 1)} ms event / ${fmt(worstDelay, 1)} ms delay | | | | | |`);
       }
     }
     lines.push("");

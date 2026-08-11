@@ -1,6 +1,6 @@
 // Root app shell for save data, audio/display side effects, routing, and global layout.
 // Depends on alchemy controllers, homestead state, screen modules, assets, and platform/audio helpers.
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { type CharacterId, type DifficultyId } from "@/lib/game-data";
 import {
@@ -60,6 +60,7 @@ function AppMainContent({
   stagePixelRatio,
   stageStyle,
   aspectMode,
+  brightness,
   run,
 }: {
   saveBlockedByNewerVersion: boolean;
@@ -67,6 +68,7 @@ function AppMainContent({
   stagePixelRatio: number;
   stageStyle: React.CSSProperties;
   aspectMode: "standard" | "narrow" | "ultrawide";
+  brightness: number;
   run: AlchemyRunCommands;
 }) {
   const finishedRunCharacters = useFinishedRunCharacters();
@@ -107,6 +109,15 @@ function AppMainContent({
 
   const homesteadEffects = useHomesteadEffects();
   const homesteadBondedCompanions = useBondedCompanions();
+  const cardDescriptionContext = useMemo(
+    () => ({
+      flatPhysicalDamage: homesteadEffects.flatPhysicalDamage,
+      companionDamage: homesteadEffects.companionDamage,
+      companionBondLevels: homesteadBondedCompanions,
+      potionPotency: 1 + homesteadEffects.potionPotency,
+    }),
+    [homesteadBondedCompanions, homesteadEffects],
+  );
 
   const isBossBattle = renderedScreen === "battle" && battle.battleState.currentEnemy.enemyType === "boss";
   const { particleColors, particleAlphaMultiplier } = getScreenParticleConfig(renderedScreen, isBossBattle);
@@ -125,14 +136,7 @@ function AppMainContent({
     <UnsupportedSaveOverlay onDeleteSaveAndContinue={handleDeleteUnsupportedSave} deleting={deletingUnsupportedSave} />
   ) : (
     <div key={renderedScreen} className={cn(pagePhaseClass, "h-full w-full overflow-hidden")}>
-      <CardDescriptionProvider
-        cardDescriptionContext={{
-          flatPhysicalDamage: homesteadEffects.flatPhysicalDamage,
-          companionDamage: homesteadEffects.companionDamage,
-          companionBondLevels: homesteadBondedCompanions,
-          potionPotency: 1 + homesteadEffects.potionPotency,
-        }}
-      >
+      <CardDescriptionProvider cardDescriptionContext={cardDescriptionContext}>
         <AppScreenChromeProvider
           aspectMode={aspectMode}
           stagePixelRatio={stagePixelRatio}
@@ -171,6 +175,11 @@ function AppMainContent({
         />
         {content}
         <AppHamburgerTrigger renderedScreen={renderedScreen} onOpenMenu={gameMenu.openBattleMenu} />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-[90] bg-black"
+          style={{ opacity: Math.max(0, 1 - brightness / 100) }}
+        />
       </div>
       <GameMenuOverlay
         saveBlockedByNewerVersion={saveBlockedByNewerVersion}
@@ -239,6 +248,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
             stagePixelRatio={stagePixelRatio}
             stageStyle={stageStyle}
             aspectMode={aspectMode}
+            brightness={settings.brightness}
             run={run}
           />
           <div id="tooltip-root" className="pointer-events-none absolute inset-0 z-30" />

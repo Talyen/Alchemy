@@ -116,7 +116,7 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 - **Enemy turn:** `endPlayerTurn()` → one committed intermediate state + persisted continuation → presentation delays → one committed result state.
 - **Screen transition:** `navigateTo` → `navigation.screen` → `renderAlchemyScreenRoute()`.
 - **Run-loop screens:** `screen-routes` call their screen-specific read hook for display props; `routeCommands` from the shell controller provide actions — no second data bus through `useAlchemyRunController` for shop/rewards/mystery/labyrinth fields.
-- **Shell preload / autosave:** App warms the centralized `allGameArt` manifest before reveal; autosave and chrome read needed fields through capability modules, not controller state re-exports.
+- **Shell preload / autosave:** App warms the centralized `allGameArt` manifest before reveal; autosave and chrome read needed fields through capability modules, not controller state re-exports. Critical UI sounds load eagerly. Battle initialization then prioritizes the visible hand and current enemy sounds; the remaining manifest decodes one item at a time during input-idle work so background audio warming cannot compete with interaction frames.
 
 ## Controller entry points
 

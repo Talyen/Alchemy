@@ -13,6 +13,15 @@ export interface HitchEvent {
   phase: string;
 }
 
+export interface InputEventSample {
+  name: string;
+  startTime: number;
+  duration: number;
+  inputDelay: number;
+  interactionId: number;
+  phase: string;
+}
+
 export interface FrameSampleRaw {
   /** Consecutive rAF timestamp deltas in ms. */
   frameTimes: number[];
@@ -23,6 +32,7 @@ export interface FrameSampleRaw {
   phaseMarks: Array<{ time: number; phase: string }>;
   /** Worst frame gaps ≥50 ms with phase attribution. */
   hitchEvents?: HitchEvent[];
+  inputEvents?: InputEventSample[];
 }
 
 export interface FrameMetrics {

@@ -131,9 +131,11 @@ export function useAppDisplayEffects({ displayMode, brightness, stageRef }: AppD
   useLayoutEffect(() => {
     const el = stageRef.current;
     if (el) {
+      // Dimming is handled by a cheap black overlay in App. Values above 100 still
+      // need the stage filter to preserve exact brightness multiplication semantics.
       const brightnessFactor = brightness / 100;
       // eslint-disable-next-line react-compiler/react-compiler -- intentional DOM mutation inside useLayoutEffect
-      el.style.filter = brightness === 100 ? "" : `brightness(${brightnessFactor})`;
+      el.style.filter = brightness > 100 ? `brightness(${brightnessFactor})` : "";
     }
   }, [brightness, stageRef]);
 }

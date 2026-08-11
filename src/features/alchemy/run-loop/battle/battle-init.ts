@@ -3,7 +3,7 @@ import { createBattleState, type CombatTextEvent } from "@/lib/battle";
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";
-import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
@@ -17,6 +17,7 @@ import { appendUnique } from "@/lib/utils";
 import { readProfileStore, setEncounteredEnemyIds } from "../../shared/stores/profile-store";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
+import { preloadBattleSounds } from "@/lib/audio";
 import { readGearManifestForCharacter } from "../../shared/stores/gear-store";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
@@ -101,6 +102,11 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
       },
       {
         afterCommit: (startingTexts) => {
+          const battleState = readBattle().battleState;
+          preloadBattleSounds(
+            battleState.hand.map((card) => card.id),
+            battleState.currentEnemy.id,
+          );
           if (typeof session.prepareBattleSessionForStart === "function") {
             session.prepareBattleSessionForStart();
           } else {

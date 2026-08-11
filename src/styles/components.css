@@ -27,10 +27,17 @@
   }
 
   .talent-node-glass {
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    background-color: color-mix(in srgb, var(--color-background) 30%, transparent);
+    background-color: color-mix(in srgb, var(--color-background) 72%, transparent);
     background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05));
+  }
+
+  [data-testid="armory-screen"] .shine-border {
+    animation-play-state: paused;
+  }
+
+  [data-testid="armory-screen"] :is(:hover, :focus-visible, :focus-within) > .shine-border {
+    animation-play-state: running;
+    will-change: background-position;
   }
 
   .talent-node-glass--bordered {

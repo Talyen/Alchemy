@@ -61,6 +61,8 @@ export function useBoardDrag<TItem, TOrigin extends DragOrigin>({
   const [session, setSession] = useState<BoardDragSession<TItem, TOrigin>>(IDLE_SESSION);
   const sessionRef = useRef<BoardDragSession<TItem, TOrigin>>(IDLE_SESSION);
   const heldTokenRef = useRef(0);
+  const pointerFrameRef = useRef<number | null>(null);
+  const pendingPointerRef = useRef<{ pointer: DragPoint; pointerId: number } | null>(null);
   const boardObstaclesRef = useLatestRef(boardObstacles);
   const onCommitRef = useLatestRef(onCommit);
   const onCancelRef = useLatestRef(onCancel);
@@ -101,6 +103,11 @@ export function useBoardDrag<TItem, TOrigin extends DragOrigin>({
   );
 
   const clearDragState = useCallback(() => {
+    if (pointerFrameRef.current !== null) {
+      cancelAnimationFrame(pointerFrameRef.current);
+      pointerFrameRef.current = null;
+    }
+    pendingPointerRef.current = null;
     publishSession(IDLE_SESSION);
     onClearRef.current?.();
   }, [onClearRef, publishSession]);
@@ -253,6 +260,13 @@ export function useBoardDrag<TItem, TOrigin extends DragOrigin>({
     [getDragDestination, publishSession],
   );
 
+  const flushPointerMove = useCallback(() => {
+    pointerFrameRef.current = null;
+    const pending = pendingPointerRef.current;
+    pendingPointerRef.current = null;
+    if (pending) updateActiveDrag(pending.pointer, pending.pointerId);
+  }, [updateActiveDrag]);
+
   const beginPointer = useCallback(
     (item: TItem, source: DragRect, pointer: DragPoint, pointerId: number) => {
       const itemId = getItemId(item);
@@ -275,13 +289,27 @@ export function useBoardDrag<TItem, TOrigin extends DragOrigin>({
   );
 
   const movePointer = useCallback(
-    (pointer: DragPoint, pointerId: number) => updateActiveDrag(pointer, pointerId),
-    [updateActiveDrag],
+    (pointer: DragPoint, pointerId: number) => {
+      // Activate immediately once the threshold is crossed so the drag never feels
+      // one frame late; subsequent raw pointer events are coalesced to one per frame.
+      if (sessionRef.current.phase === "armed") {
+        updateActiveDrag(pointer, pointerId);
+        return;
+      }
+      pendingPointerRef.current = { pointer, pointerId };
+      pointerFrameRef.current ??= requestAnimationFrame(flushPointerMove);
+    },
+    [flushPointerMove, updateActiveDrag],
   );
 
   const finishPointer = useCallback(
     (pointer: DragPoint, pointerId: number, cancelled = false) => {
-      if (!cancelled) updateActiveDrag(pointer, pointerId);
+      if (pointerFrameRef.current !== null) {
+        cancelAnimationFrame(pointerFrameRef.current);
+        pointerFrameRef.current = null;
+      }
+      pendingPointerRef.current = null;
+      updateActiveDrag(pointer, pointerId);
       const current = sessionRef.current;
       if (current.phase === "armed") {
         if (current.pending.pointerId === pointerId) publishSession(IDLE_SESSION);
@@ -321,6 +349,13 @@ export function useBoardDrag<TItem, TOrigin extends DragOrigin>({
       });
     },
     [beginHeld, commitDestination, onCancelRef, publishSession, updateActiveDrag],
+  );
+
+  useEffect(
+    () => () => {
+      if (pointerFrameRef.current !== null) cancelAnimationFrame(pointerFrameRef.current);
+    },
+    [],
   );
 
   const flyoverTo = useCallback(

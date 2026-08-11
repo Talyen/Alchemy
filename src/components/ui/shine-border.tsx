@@ -58,10 +58,7 @@ export function ShineBorder({
           ...style,
         } as CSSProperties
       }
-      className={cn(
-        "pointer-events-none absolute inset-0 animate-shine rounded-[inherit] will-change-[background-position]",
-        className,
-      )}
+      className={cn("shine-border pointer-events-none absolute inset-0 animate-shine rounded-[inherit]", className)}
       {...props}
     />
   );

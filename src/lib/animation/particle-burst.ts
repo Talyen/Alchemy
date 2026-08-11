@@ -6,8 +6,6 @@ interface Particle {
   y: number;
   vx: number;
   vy: number;
-  rot: number;
-  rotSpeed: number;
   alpha: number;
   size: number;
   color: string;
@@ -40,8 +38,6 @@ function sampleParticles(
         y,
         vx: (Math.random() - 0.5) * 6,
         vy: (Math.random() - 0.5) * 6,
-        rot: Math.random() * Math.PI * 2,
-        rotSpeed: (Math.random() - 0.5) * 0.1,
         alpha: 1,
         size: 1 + Math.random() * 3,
         color: `rgb(${r},${g},${b})`,
@@ -53,13 +49,9 @@ function sampleParticles(
 }
 
 function drawParticle(ctx: CanvasRenderingContext2D, p: Particle): void {
-  ctx.save();
-  ctx.translate(p.x, p.y);
-  ctx.rotate(p.rot);
   ctx.globalAlpha = p.alpha;
   ctx.fillStyle = p.color;
-  ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
-  ctx.restore();
+  ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
 }
 
 function stepParticle(p: Particle, dt: number): void {
@@ -68,14 +60,13 @@ function stepParticle(p: Particle, dt: number): void {
   p.vx *= 0.97;
   p.vy *= 0.97;
   p.vy += 0 * dt;
-  p.rot += p.rotSpeed * dt;
 }
 
 export function createParticles(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  maxParticles: number = 1600,
+  maxParticles: number = 800,
 ): Particle[] {
   // Convert already-rendered canvas pixels into particles so the caller can sample card art
   // once, clear the canvas, and let the burst replace the original image visually.

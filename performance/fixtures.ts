@@ -19,17 +19,28 @@ import {
   writeRunResult,
   writeSummaryMarkdown,
   type EnvironmentInfo,
+  type RuntimeSnapshot,
   type ScenarioAggregate,
   type ScenarioRunResult,
 } from "./report";
 import { PERF_VIEWPORT } from "./viewport";
 
-export const SCENARIO_IDS = ["battle-effects", "battle-end-turn", "armory-drag", "battle-art-diag"] as const;
+export const SCENARIO_IDS = [
+  "battle-effects",
+  "battle-end-turn",
+  "armory-drag",
+  "talents-effects",
+  "collection-tabs",
+  "options-brightness",
+  "memory-soak",
+  "battle-art-diag",
+] as const;
 export type ScenarioId = (typeof SCENARIO_IDS)[number];
 
 const isElectron = process.env.PLAYWRIGHT_PERF_ELECTRON === "1";
 const isTrace = process.env.PLAYWRIGHT_PERF_TRACE === "1";
 const runsPerScenario = Number.parseInt(process.env.PERF_RUNS ?? "1", 10);
+const isCold = process.env.PLAYWRIGHT_PERF_COLD === "1";
 
 interface PerfFixtures {
   perfPage: Page;
@@ -112,39 +123,47 @@ export const test = base.extend<PerfFixtures>({
 
       const measuredSamples: FrameSampleRaw[] = [];
       const runResults: ScenarioRunResult[] = [];
-      // Always include one warm-up so cold JIT/layout does not bias the first sample.
-      const totalLoops = runsPerScenario + 1;
+      // Ordinary profiles include a warm-up. Cold mode intentionally measures first use.
+      const totalLoops = runsPerScenario + (isCold ? 0 : 1);
+      let activePage = perfPage;
 
       for (let i = 0; i < totalLoops; i++) {
-        const isWarmup = i === 0;
-        const runIndex = i;
+        const isWarmup = !isCold && i === 0;
+        const runIndex = isCold ? i + 1 : i;
         const measured = !isWarmup;
 
+        if (isCold && isElectron && i > 0) {
+          await electronApp?.close().catch(() => undefined);
+          electronApp = null;
+          activePage = await launchElectronPage();
+        }
+
         // Fresh navigation context per repetition via setup.
-        await setup(perfPage);
-        await assertBattleCardArtIfPresent(perfPage);
-        await installFrameSampler(perfPage);
+        await setup(activePage);
+        await assertBattleCardArtIfPresent(activePage);
+        await installFrameSampler(activePage);
 
         // Capture display metadata once.
         if (i === 0) {
-          await captureDisplayEnv(perfPage);
+          await captureDisplayEnv(activePage);
         }
 
         let tracePath: string | undefined;
         let cdpSession: Awaited<ReturnType<typeof startCdpTrace>> | null = null;
         if (isTrace && measured) {
-          cdpSession = await startCdpTrace(perfPage);
+          cdpSession = await startCdpTrace(activePage);
         }
 
+        const runtimeBefore = measured ? await collectRuntimeSnapshot(activePage) : undefined;
         if (measured) {
-          await startFrameSampler(perfPage);
+          await startFrameSampler(activePage);
         }
 
         const phase = async (name: string) => {
-          if (measured) await setPerfPhase(perfPage, name);
+          if (measured) await setPerfPhase(activePage, name);
         };
 
-        await interact(perfPage, phase);
+        await interact(activePage, phase);
 
         let sample: FrameSampleRaw = {
           frameTimes: [],
@@ -153,7 +172,7 @@ export const test = base.extend<PerfFixtures>({
           phaseMarks: [],
         };
         if (measured) {
-          sample = await stopFrameSampler(perfPage);
+          sample = await stopFrameSampler(activePage);
           measuredSamples.push(sample);
         }
 
@@ -166,6 +185,7 @@ export const test = base.extend<PerfFixtures>({
 
         if (measured) {
           const metrics = computeMetrics(sample, { minFrames });
+          const runtimeAfter = await collectRuntimeSnapshot(activePage);
           const targets = classifyTargets(metrics, profile);
           const result: ScenarioRunResult = {
             scenario,
@@ -176,6 +196,9 @@ export const test = base.extend<PerfFixtures>({
             targets,
             ...(tracePath ? { tracePath } : {}),
             ...(metrics.valid ? {} : { notes: [metrics.invalidReason ?? "invalid"] }),
+            ...(runtimeBefore ? { runtimeBefore } : {}),
+            runtimeAfter,
+            inputEvents: sample.inputEvents ?? [],
           };
           writeRunResult(result);
           runResults.push(result);
@@ -230,8 +253,14 @@ async function captureDisplayEnv(page: Page): Promise<void> {
         if (last > 0) samples.push(ts - last);
         last = ts;
         if (samples.length >= 20) {
-          const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
-          estimatedRefreshHz = avg > 0 ? Math.round(1000 / avg) : undefined;
+          // A setup/navigation gap can land in this short sample. The median
+          // reflects steady vsync cadence without letting one stall report 14 Hz
+          // on a renderer that is otherwise delivering 60 FPS.
+          const sorted = [...samples].sort((a, b) => a - b);
+          const midpoint = Math.floor(sorted.length / 2);
+          const interval =
+            sorted.length % 2 === 0 ? (sorted[midpoint - 1]! + sorted[midpoint]!) / 2 : sorted[midpoint]!;
+          estimatedRefreshHz = interval > 0 ? Math.round(1000 / interval) : undefined;
           resolve({
             devicePixelRatio: window.devicePixelRatio,
             estimatedRefreshHz,
@@ -266,6 +295,24 @@ function getOutputDirSafe(): string {
   }
 }
 
+async function collectRuntimeSnapshot(page: Page): Promise<RuntimeSnapshot> {
+  const renderer = await page.evaluate(() => {
+    const memory = performance as Performance & { memory?: { usedJSHeapSize?: number } };
+    return {
+      ...(memory.memory?.usedJSHeapSize !== undefined ? { jsHeapUsedBytes: memory.memory.usedJSHeapSize } : {}),
+      domNodes: document.getElementsByTagName("*").length,
+      images: document.images.length,
+      canvases: document.getElementsByTagName("canvas").length,
+      audioElements: document.getElementsByTagName("audio").length,
+    };
+  });
+  if (!isElectron || !electronApp) return renderer;
+  const electronWorkingSetKB = await electronApp
+    .evaluate(({ app }) => app.getAppMetrics().reduce((sum, metric) => sum + metric.memory.workingSetSize, 0))
+    .catch(() => undefined);
+  return { ...renderer, ...(electronWorkingSetKB !== undefined ? { electronWorkingSetKB } : {}) };
+}
+
 export function getRunsPerScenario(): number {
   return runsPerScenario;
 }
@@ -283,6 +330,7 @@ export function buildEnvironmentInfo(scenarios: string[]): EnvironmentInfo {
     ...git,
     traceMode: isTrace,
     runsPerScenario,
+    coldMode: isCold,
     scenarios,
   };
 }
