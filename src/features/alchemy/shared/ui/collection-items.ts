@@ -63,65 +63,63 @@ export function getCollectionPageItems({
   bondedCompanions?: Record<string, number>;
   page: number;
 }) {
-  const items = getCollectionItems({
-    collectionTab,
-    discoveredCardIds,
-    encounteredEnemyIds,
-    discoveredTrinketIds,
-    bondedCompanions,
-  });
   const pageSize = getCollectionPageSize(collectionTab);
-  return items.slice(page * pageSize, (page + 1) * pageSize);
+  const start = page * pageSize;
+  if (collectionTab === "cards") {
+    return getCardItems(discoveredCardIds, bondedCompanions, start, pageSize);
+  }
+  if (collectionTab === "bestiary") {
+    return getBestiaryItems(encounteredEnemyIds, start, pageSize);
+  }
+  return getTrinketItems(discoveredTrinketIds, start, pageSize);
 }
 
 export function getCollectionFillerCount(itemCount: number, collectionTab: CollectionTab) {
   return Math.max(0, getCollectionPageSize(collectionTab) - itemCount);
 }
 
-function getCollectionItems({
-  collectionTab,
-  discoveredCardIds,
-  encounteredEnemyIds,
-  discoveredTrinketIds,
-  bondedCompanions = {},
-}: {
-  collectionTab: CollectionTab;
-  discoveredCardIds: string[];
-  encounteredEnemyIds: string[];
-  discoveredTrinketIds: string[];
-  bondedCompanions?: Record<string, number>;
-}) {
-  if (collectionTab === "cards") return getCardItems(discoveredCardIds, bondedCompanions);
-  if (collectionTab === "bestiary") return getBestiaryItems(encounteredEnemyIds);
-  return getTrinketItems(discoveredTrinketIds);
+function sortByTitle<T extends { title: string }>(entries: T[]): T[] {
+  return [...entries].sort((a, b) => a.title.localeCompare(b.title));
 }
 
-function getCardItems(discoveredCardIds: string[], bondedCompanions: Record<string, number> = {}) {
-  return [...cardLibrary]
-    .sort((a, b) => a.title.localeCompare(b.title))
-    .map((card) => {
-      const discovered = discoveredCardIds.includes(card.id);
-      const descriptionLines = discovered
-        ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions })
-        : [COLLECTION_ITEMS_CONFIG.hiddenCardDescription];
-      return {
-        id: card.id,
-        title: discovered ? card.title : COLLECTION_ITEMS_CONFIG.hiddenTitle,
-        subtitle: undefined,
-        descriptionLines,
-        art: card.art,
-        discovered,
-        hoverScope: "collection-card" as const,
-        frameType: "card" as const,
-      };
-    });
+function shapeCardItem(
+  card: (typeof cardLibrary)[number],
+  discovered: boolean,
+  bondedCompanions: Record<string, number>,
+): CollectionTileItem {
+  const descriptionLines = discovered
+    ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions })
+    : [COLLECTION_ITEMS_CONFIG.hiddenCardDescription];
+  return {
+    id: card.id,
+    title: discovered ? card.title : COLLECTION_ITEMS_CONFIG.hiddenTitle,
+    subtitle: undefined,
+    descriptionLines,
+    art: card.art,
+    discovered,
+    hoverScope: "collection-card",
+    frameType: "card",
+  };
 }
 
-function getBestiaryItems(encounteredEnemyIds: string[]) {
-  return [...enemyBestiary]
-    .sort((a, b) => a.title.localeCompare(b.title))
+function getCardItems(
+  discoveredCardIds: string[],
+  bondedCompanions: Record<string, number> = {},
+  start: number,
+  pageSize: number,
+): CollectionTileItem[] {
+  const discoveredSet = new Set(discoveredCardIds);
+  return sortByTitle(cardLibrary)
+    .slice(start, start + pageSize)
+    .map((card) => shapeCardItem(card, discoveredSet.has(card.id), bondedCompanions));
+}
+
+function getBestiaryItems(encounteredEnemyIds: string[], start: number, pageSize: number): CollectionTileItem[] {
+  const encounteredSet = new Set(encounteredEnemyIds);
+  return sortByTitle(enemyBestiary)
+    .slice(start, start + pageSize)
     .map((entry: BestiaryEntry) => {
-      const discovered = encounteredEnemyIds.includes(entry.id);
+      const discovered = encounteredSet.has(entry.id);
       return {
         id: entry.id,
         title: discovered ? entry.title : COLLECTION_ITEMS_CONFIG.hiddenTitle,
@@ -129,18 +127,19 @@ function getBestiaryItems(encounteredEnemyIds: string[]) {
         descriptionLines: discovered ? entry.descriptionLines : [COLLECTION_ITEMS_CONFIG.hiddenEnemyDescription],
         art: entry.art,
         discovered,
-        hoverScope: "collection-bestiary" as const,
-        frameType: "bestiary" as const,
+        hoverScope: "collection-bestiary",
+        frameType: "bestiary",
         enemyEntry: entry,
       };
     });
 }
 
-function getTrinketItems(discoveredTrinketIds: string[]) {
-  return [...trinketLibrary]
-    .sort((a, b) => a.title.localeCompare(b.title))
+function getTrinketItems(discoveredTrinketIds: string[], start: number, pageSize: number): CollectionTileItem[] {
+  const discoveredSet = new Set(discoveredTrinketIds);
+  return sortByTitle(trinketLibrary)
+    .slice(start, start + pageSize)
     .map((entry: TrinketEntry) => {
-      const discovered = discoveredTrinketIds.includes(entry.id);
+      const discovered = discoveredSet.has(entry.id);
       return {
         id: entry.id,
         title: discovered ? entry.title : COLLECTION_ITEMS_CONFIG.hiddenTitle,
