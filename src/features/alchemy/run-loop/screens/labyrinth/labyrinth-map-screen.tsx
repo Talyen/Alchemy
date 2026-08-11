@@ -3,7 +3,7 @@
  * Depends on: labyrinth/data.ts, modifiers.ts, run-session reads, Lucide icons, UI components
  * Depended on by: render-alchemy-screen.tsx
  */
-import { type CSSProperties, useState } from "react";
+import { type CSSProperties, useCallback, useRef, useState } from "react";
 
 import { HamburgerTrigger, ScreenDescription, ScreenHeader, StaggerGroup } from "../../../shared/ui/shared-ui";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
@@ -21,6 +21,8 @@ interface Props {
 
 export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Props) {
   const [hoveredNode, setHoveredNode] = useState<HoveredLabyrinthNode | null>(null);
+  const tooltipAnchorRef = useRef<HTMLDivElement>(null);
+  const handleNodeLeave = useCallback(() => setHoveredNode(null), []);
 
   if (!labyrinthMap) {
     return null;
@@ -59,7 +61,7 @@ export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Pr
                     labyrinthMap={labyrinthMap}
                     onNodeClick={onNodeClick}
                     onHover={setHoveredNode}
-                    onLeave={() => setHoveredNode(null)}
+                    onLeave={handleNodeLeave}
                   />
                 ) : null,
               ),
@@ -68,6 +70,7 @@ export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Pr
             {hoveredNode ? (
               <div
                 key={`${hoveredNode.row}-${hoveredNode.col}`}
+                ref={tooltipAnchorRef}
                 className="pointer-events-none absolute z-[60] flex h-[var(--labyrinth-node-size)] w-[var(--labyrinth-node-size)] -translate-x-1/2 -translate-y-1/2 items-center justify-center"
                 style={positionStyle(hoveredNode.row, hoveredNode.col, labyrinthMap.rows, labyrinthMap.cols)}
               >
@@ -75,6 +78,8 @@ export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Pr
                   type={hoveredNode.type}
                   modifiers={hoveredNode.modifiers}
                   rewardModifiers={hoveredNode.rewardModifiers}
+                  triggerRef={tooltipAnchorRef}
+                  visible
                 />
               </div>
             ) : null}

@@ -1,6 +1,6 @@
 // Wish selection overlay for battle.
 import type { CSSProperties } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { Button } from "@/components/ui/button";
@@ -63,11 +63,14 @@ export function WishOverlay({ battleState, actions }: { battleState: BattleScree
     onWishChoiceRef.current = onWishChoice;
   }, [onWishChoice]);
 
-  const descriptionContext = {
-    ...battleState.talentEffects,
-    companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
-    companionDamageBuff: battleState.companionDamageBuff,
-  };
+  const descriptionContext = useMemo(
+    () => ({
+      ...battleState.talentEffects,
+      companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
+      companionDamageBuff: battleState.companionDamageBuff,
+    }),
+    [battleState.talentEffects, battleState.trinketEffects.companionDamageBonus, battleState.companionDamageBuff],
+  );
 
   function resolveWish(card: BattleCard | null) {
     if (resolvingRef.current) return;
