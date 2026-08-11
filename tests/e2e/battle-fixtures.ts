@@ -2,7 +2,7 @@
 // Deliberately free of runtime battle imports so Playwright never loads game
 // art during test discovery (see mid-combat-save.ts). Shared by defeat,
 // Death's Door grace, and mid-combat resume flows.
-export const GOBBLIN_ENEMY = {
+const GOBBLIN_ENEMY = {
   id: "goblin",
   title: "Goblin",
   subtitle: "",
