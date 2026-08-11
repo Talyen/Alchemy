@@ -1,8 +1,9 @@
 // Shared homestead tile layout: hover shell, tilt surface, and footer slot.
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { StaggerItem } from "../../../shared/ui/shared-ui";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";
+import { type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { HOMESTEAD_CONFIG } from "./helpers";
 
 export function HomesteadTileFrame({
@@ -22,7 +23,7 @@ export function HomesteadTileFrame({
   index: number;
   hoveredItemId: string | null;
   setHoveredItemId: (id: string | null) => void;
-  detailTooltip: ReactNode;
+  detailTooltip: (ctx: PopupContext) => ReactNode;
   surfaceClassName: string;
   imageSrc: string;
   imageAlt: string;
@@ -30,26 +31,33 @@ export function HomesteadTileFrame({
   footer: ReactNode;
   wrapperClassName?: string;
 }) {
+  const frameRef = useRef<HTMLDivElement>(null);
+
   return (
-    <StaggerItem
-      index={index}
-      className={cn("relative flex flex-col items-center", index < HOMESTEAD_CONFIG.compilationFillerCount && "mb-2")}
+    <div
+      ref={frameRef}
+      className="relative"
       onMouseEnter={() => setHoveredItemId(id)}
       onMouseLeave={() => setHoveredItemId(null)}
     >
-      {hoveredItemId === id ? detailTooltip : null}
-      <div className={cn("group w-full overflow-hidden rounded-shell-card p-3", wrapperClassName)}>
-        <TiltSurface
-          className={cn(
-            "relative mx-auto flex items-center justify-center overflow-hidden rounded-shell-card bg-stone-900",
-            surfaceClassName,
-          )}
-        >
-          <img src={imageSrc} alt={imageAlt} className={imageClassName} />
-        </TiltSurface>
-      </div>
-      {footer}
-    </StaggerItem>
+      <StaggerItem
+        index={index}
+        className={cn("relative flex flex-col items-center", index < HOMESTEAD_CONFIG.compilationFillerCount && "mb-2")}
+      >
+        {detailTooltip({ visible: hoveredItemId === id, triggerRef: frameRef })}
+        <div className={cn("group w-full overflow-hidden rounded-shell-card p-3", wrapperClassName)}>
+          <TiltSurface
+            className={cn(
+              "relative mx-auto flex items-center justify-center overflow-hidden rounded-shell-card bg-stone-900",
+              surfaceClassName,
+            )}
+          >
+            <img src={imageSrc} alt={imageAlt} className={imageClassName} />
+          </TiltSurface>
+        </div>
+        {footer}
+      </StaggerItem>
+    </div>
   );
 }
 

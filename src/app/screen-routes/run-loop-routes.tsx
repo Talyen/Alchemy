@@ -235,6 +235,7 @@ function MysteryScreenRoute({ commands }: { commands: RunLoopCommands["mystery"]
       event={r.mysteryEvent}
       runDeck={r.runDeck}
       mysteryCardChoices={r.mysteryCardChoices}
+      mysteryGrantedTrinketIds={r.mysteryGrantedTrinketIds}
       onChoose={commands.handleChoice}
       onChooseCard={commands.handleChooseCard}
       onRemoveCard={commands.handleRemoveCard}

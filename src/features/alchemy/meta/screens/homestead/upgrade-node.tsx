@@ -5,6 +5,7 @@ import { canAfford } from "@/lib/homestead/inventory";
 import { Button } from "@/components/ui/button";
 import { DetailPopup } from "../../../shared/ui/card-popup";
 import { DisabledTooltip } from "../../../shared/ui/shared-ui";
+import { type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
 import { matIconMap, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
 import { HOMESTEAD_CONFIG, type GoalItem, MaterialCost, getArt, renderTextWithMaterials } from "./helpers";
@@ -38,7 +39,7 @@ export function HomesteadUpgradeNode({
   const itemAffordable = !isCompleted && canAfford(materialInventory, itemCost);
   const costItems = MATERIAL_IDS.filter((m) => (itemCost[m] ?? 0) > 0);
 
-  const detailTooltip = useTooltipContent(hoveredItemId, item, displayTierIndex);
+  const detailTooltip = useTooltipContent(item, displayTierIndex);
   const hasCost = MATERIAL_IDS.some((m) => (itemCost[m] ?? 0) > 0);
 
   const footer = isCompleted ? (
@@ -94,9 +95,8 @@ function buildFarmYieldNodes(farm: { yield: Record<string, number> }): ReactNode
   return nodes;
 }
 
-function useTooltipContent(hoveredItemId: string | null, item: GoalItem, displayTierIndex: number): ReactNode {
+function useTooltipContent(item: GoalItem, displayTierIndex: number): (ctx: PopupContext) => ReactNode {
   return useMemo(() => {
-    if (hoveredItemId !== item.data.id) return null;
     const nodes: ReactNode[] = [];
     const farm = item.kind === "farm" ? item.data : null;
     const currentTier = item.data.tiers[displayTierIndex];
@@ -124,14 +124,16 @@ function useTooltipContent(hoveredItemId: string | null, item: GoalItem, display
       }
     }
 
-    return (
+    return ({ visible, triggerRef }) => (
       <DetailPopup
         idPrefix={item.data.id}
         title={item.data.title}
         subtitle={undefined}
         descriptionLines={item.data.description ? [item.data.description] : []}
         descriptionNodes={nodes}
+        visible={visible}
+        triggerRef={triggerRef}
       />
     );
-  }, [hoveredItemId, item, displayTierIndex]);
+  }, [item, displayTierIndex]);
 }

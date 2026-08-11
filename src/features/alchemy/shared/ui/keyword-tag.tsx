@@ -6,7 +6,9 @@ import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-c
 import { cn } from "@/lib/utils";
 
 import { keywordIcons } from "../config";
-import { TooltipBody, TooltipPanel, useTooltipViewportClamp } from "./tooltip-panel";
+import { PortaledTooltip } from "./portaled-tooltip";
+import { TooltipBody } from "./tooltip-panel";
+import { useHoverVisible } from "./use-hover-visible";
 
 export function KeywordTag({
   keywordId,
@@ -21,7 +23,8 @@ export function KeywordTag({
   className?: string;
   showTooltip?: boolean;
 }) {
-  const { ref, flip, dx } = useTooltipViewportClamp(8, keywordId);
+  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
+    useHoverVisible<HTMLSpanElement>();
 
   const def = keywordDefinitions[keywordId];
   const Icon = keywordIcons[keywordId];
@@ -46,19 +49,21 @@ export function KeywordTag({
   if (!showTooltip) return tag;
 
   return (
-    <span className="group/keyword relative inline-flex items-center">
+    <span
+      ref={triggerRef}
+      className="relative inline-flex items-center"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocusCapture={onFocusCapture}
+      onBlurCapture={onBlurCapture}
+    >
       <span className="cursor-help">{tag}</span>
-      <TooltipPanel
-        ref={ref}
-        flip={flip}
-        style={dx !== 0 ? { marginLeft: dx } : undefined}
-        className="pointer-events-none opacity-0 group-hover/keyword:opacity-100"
-      >
+      <PortaledTooltip triggerRef={triggerRef} visible={visible}>
         <span className="flex items-center gap-2 text-sm font-semibold">
           <KeywordTag keywordId={keywordId} showIcon />
         </span>
         <TooltipBody>{def.description}</TooltipBody>
-      </TooltipPanel>
+      </PortaledTooltip>
     </span>
   );
 }

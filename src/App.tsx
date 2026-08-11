@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { type CharacterId, type DifficultyId } from "@/lib/game-data";
+import type { Screen } from "@/lib/routing";
 import {
   AppBackgroundParticles,
   AppScreenChromeProvider,
@@ -25,6 +26,7 @@ import {
   getScreenParticleConfig,
 } from "@/app/app-shell";
 import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
+import { setTooltipRoot } from "@/features/alchemy/shared/ui/tooltip-root";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -62,6 +64,9 @@ function AppMainContent({
   aspectMode,
   brightness,
   run,
+  renderedScreen,
+  pagePhase,
+  tooltipBlocked,
 }: {
   saveBlockedByNewerVersion: boolean;
   vrStageRef: React.RefObject<HTMLDivElement | null>;
@@ -70,14 +75,13 @@ function AppMainContent({
   aspectMode: "standard" | "narrow" | "ultrawide";
   brightness: number;
   run: AlchemyRunCommands;
+  renderedScreen: Screen;
+  pagePhase: "enter" | "exit";
+  tooltipBlocked: boolean;
 }) {
   const finishedRunCharacters = useFinishedRunCharacters();
   const isArmoryLocked = useIsArmoryLocked();
-  const { screen: controllerScreen, commitPendingTransition } = run;
-  const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(
-    controllerScreen,
-    commitPendingTransition,
-  );
+  const { screen: controllerScreen } = run;
   const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
   const { battle } = useRunSessionBattleContext(controllerScreen);
   const gameMenu = useGameMenuState();
@@ -235,6 +239,11 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
     onMarkDifficultyCompleted: handleMarkDifficultyCompleted,
   });
 
+  const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(
+    run.screen,
+    run.commitPendingTransition,
+  );
+
   const saveBlockedByNewerVersion =
     saveLoadStatus.kind === "unsupported-newer-schema" || saveLoadStatus.kind === "unsupported-newer-content";
 
@@ -250,8 +259,15 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
             aspectMode={aspectMode}
             brightness={settings.brightness}
             run={run}
+            renderedScreen={renderedScreen}
+            pagePhase={pagePhase}
+            tooltipBlocked={tooltipBlocked}
           />
-          <div id="tooltip-root" className="pointer-events-none absolute inset-0 z-30" />
+          <div
+            ref={(el) => setTooltipRoot(el)}
+            id="tooltip-root"
+            className={cn("pointer-events-none fixed inset-0 z-[130]", tooltipBlocked && "tooltips-disabled")}
+          />
         </div>
       </div>
     </ErrorBoundary>

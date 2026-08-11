@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 import { SHINE_PALETTES } from "../../config";
 import { DescriptionLines } from "../card-description-ui";
 import { EnemyTooltip } from "../enemy-tooltip";
-import { TooltipHeader, TooltipPanel } from "../tooltip-panel";
+import { TooltipHeader } from "../tooltip-panel";
+import { PortaledTooltip } from "../portaled-tooltip";
 
 const ACTOR_PANEL_CONFIG = {
   deathDoorShineDurationSeconds: 4,
@@ -47,10 +48,10 @@ export function ActorTooltip({
 
   if (!descriptionLines) return null;
   return (
-    <TooltipPanel className="opacity-0 transition-opacity duration-150 group-hover/art-wrapper:opacity-100">
+    <PortaledTooltip triggerRef={triggerRef} visible={visible}>
       <TooltipHeader>{title}</TooltipHeader>
       <DescriptionLines lines={descriptionLines} idPrefix={`enemy-${title}`} />
-    </TooltipPanel>
+    </PortaledTooltip>
   );
 }
 

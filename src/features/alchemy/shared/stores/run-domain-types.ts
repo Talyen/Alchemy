@@ -87,6 +87,7 @@ export function createInitialSessionFields(): RunSessionFields {
     equipmentShopState: emptyEquipmentShop,
     mysteryEvent: null,
     mysteryCardChoices: null,
+    mysteryGrantedTrinketIds: [],
   };
 }
 
@@ -131,4 +132,6 @@ export interface RunSessionFields {
   equipmentShopState: EquipmentShopState;
   mysteryEvent: MysteryEvent | null;
   mysteryCardChoices: BattleCard[] | null;
+  /** Trinket ids actually granted by gainRandomTrinket effects in the current mystery event, in effect order. */
+  mysteryGrantedTrinketIds: string[];
 }

@@ -233,6 +233,7 @@ export const setEquipmentShopState = bindDraftAction((s) => sessionActions(s).se
 
 export const setMysteryEvent = bindDraftAction((s) => sessionActions(s).setMysteryEvent);
 export const setMysteryCardChoices = bindDraftAction((s) => sessionActions(s).setMysteryCardChoices);
+export const setMysteryGrantedTrinketIds = bindDraftAction((s) => sessionActions(s).setMysteryGrantedTrinketIds);
 
 // ---------------------------------------------------------------------------
 // Labyrinth

@@ -84,7 +84,8 @@ test.describe("Keyboard Navigation", critical, () => {
 
     const talentsBtn = menu.getByRole("button", { name: "Talents" });
     await talentsBtn.hover();
-    const tooltip = menu.getByText("Finish a Run as the Knight to unlock");
+    // Tooltips render root-scale in the #tooltip-root overlay, not inside the menu element.
+    const tooltip = page.getByText("Finish a Run as the Knight to unlock");
     await expect(tooltip).toBeVisible({ timeout: 3000 });
 
     const btnBox = await talentsBtn.boundingBox();

@@ -40,6 +40,12 @@ export function decayPoisonStacks(stacks: number): number {
   return Math.max(0, stacks - decay);
 }
 
+/** Burn damage bonus vs bleeding enemies — shared by card damage calc and burn ticks. */
+export function getBurnBonusToBleedingMultiplier(state: Pick<BattleState, "enemyStatuses" | "gearEffects">): number {
+  if (state.enemyStatuses.bleed <= 0 || state.gearEffects.burnDamageBonusToBleedingPercent <= 0) return 1;
+  return 1 + state.gearEffects.burnDamageBonusToBleedingPercent / PERCENT_DENOMINATOR;
+}
+
 /** Trait weakness/resistance — first matching trait wins, then CC bonuses. */
 export function getEnemyDamageMultiplier(
   state: Pick<BattleState, "currentEnemy" | "enemyCC" | "talentEffects">,

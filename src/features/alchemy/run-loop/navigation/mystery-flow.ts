@@ -40,6 +40,7 @@ interface MysteryEffectContext {
   setRunPlayerHealth: DraftStateUpdater<number>;
   setRunTrinkets: DraftStateUpdater<string[]>;
   setMysteryCardChoices: DraftStateUpdater<BattleCard[] | null>;
+  setMysteryGrantedTrinketIds: DraftStateUpdater<string[]>;
   awardMysteryXP: (draft: GameplayDraft, keyword: KeywordId, amount: number) => void;
   onAddMaterials: (materials: MaterialInventory) => void;
   onAwardGold: (amount: number) => void;
@@ -166,7 +167,9 @@ function gainMysteryTrinket(trinketId: string, context: MysteryEffectContext) {
 
 function gainRandomMysteryTrinket(context: MysteryEffectContext) {
   const randomBoon = sampleItems(trinketLibrary, 1, context.rng)[0];
-  if (randomBoon) gainMysteryTrinket(randomBoon.id, context);
+  if (!randomBoon) return { followUp: null };
+  gainMysteryTrinket(randomBoon.id, context);
+  context.setMysteryGrantedTrinketIds(context.draft, (previous) => [...previous, randomBoon.id]);
   return { followUp: null };
 }
 

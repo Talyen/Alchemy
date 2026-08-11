@@ -38,7 +38,21 @@ describe("useMysteryFlow", () => {
 
     expect(getRunSessionStoreView().mysteryEvent).not.toBeNull();
     expect(getRunSessionStoreView().mysteryCardChoices).toBeNull();
+    expect(getRunSessionStoreView().mysteryGrantedTrinketIds).toEqual([]);
     expect(navigate).toHaveBeenCalledOnce();
+  });
+
+  it("handleMysteryChoice records ids granted by gainRandomTrinket effects", () => {
+    const { result } = renderHook(() => useMysteryFlow());
+
+    act(() => {
+      result.current.handleMysteryChoice({
+        label: "Explore",
+        effects: [{ kind: "gainRandomTrinket" }],
+      });
+    });
+
+    expect(getRunSessionStoreView().mysteryGrantedTrinketIds).toHaveLength(1);
   });
 
   it("handleMysteryChoice applies heal effects without follow-up", () => {

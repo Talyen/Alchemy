@@ -3,7 +3,7 @@
  * Depends on: ./status-helpers, ./combat-text, ./trinket-effects, ./wish, ./types, ../game-constants.
  * Depended on by: ./damage, ./damage-riders.
  */
-import { getEnemyDamageMultiplier } from "./status-helpers";
+import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier } from "./status-helpers";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { getBattleRng } from "./status-helpers";
 import { computeBaseDamage } from "./damage-calc/damage-type-modifiers";
@@ -106,13 +106,8 @@ function applyArcheryMultiplier(damage: number, state: BattleState): number {
 }
 
 function computeBurnMultiplier(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleState): number {
-  if (
-    effect.damageType !== "burn" ||
-    state.enemyStatuses.bleed <= 0 ||
-    state.gearEffects.burnDamageBonusToBleedingPercent <= 0
-  )
-    return 1;
-  return 1 + state.gearEffects.burnDamageBonusToBleedingPercent / PERCENT_DENOMINATOR;
+  if (effect.damageType !== "burn") return 1;
+  return getBurnBonusToBleedingMultiplier(state);
 }
 
 /**

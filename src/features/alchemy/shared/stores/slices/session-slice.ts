@@ -44,6 +44,11 @@ export interface SessionActions {
       | RunSessionFields["mysteryCardChoices"]
       | ((prev: RunSessionFields["mysteryCardChoices"]) => RunSessionFields["mysteryCardChoices"]),
   ) => void;
+  setMysteryGrantedTrinketIds: (
+    ids:
+      | RunSessionFields["mysteryGrantedTrinketIds"]
+      | ((prev: RunSessionFields["mysteryGrantedTrinketIds"]) => RunSessionFields["mysteryGrantedTrinketIds"]),
+  ) => void;
   clearTransientSession: () => void;
 
   /**
@@ -106,10 +111,8 @@ export function defineSessionActions(set: ImmerSet<RunSessionFields>): SessionAc
     setTrinketShopState: setField("trinketShopState"),
     setEquipmentShopState: setField("equipmentShopState"),
     setMysteryEvent: setField("mysteryEvent"),
-    setMysteryCardChoices: (choices) =>
-      set((state) => {
-        state.mysteryCardChoices = typeof choices === "function" ? choices(state.mysteryCardChoices) : choices;
-      }),
+    setMysteryCardChoices: setField("mysteryCardChoices"),
+    setMysteryGrantedTrinketIds: setField("mysteryGrantedTrinketIds"),
 
     clearTransientSession: () =>
       set((state) => {

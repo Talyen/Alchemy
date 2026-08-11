@@ -84,6 +84,7 @@ export function useMysteryScreenData(): ScreenData<"mystery"> {
     useShallow((state) => ({
       mysteryEvent: state.session.mysteryEvent,
       mysteryCardChoices: state.session.mysteryCardChoices,
+      mysteryGrantedTrinketIds: state.session.mysteryGrantedTrinketIds,
     })),
   );
   return useMemo(() => ({ ...mystery, runDeck }), [mystery, runDeck]);

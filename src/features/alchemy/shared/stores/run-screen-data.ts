@@ -57,6 +57,7 @@ interface DestinationScreenData {
 interface MysteryScreenData {
   mysteryEvent: MysteryEvent | null;
   mysteryCardChoices: BattleCard[] | null;
+  mysteryGrantedTrinketIds: string[];
   runDeck: BattleCard[];
 }
 

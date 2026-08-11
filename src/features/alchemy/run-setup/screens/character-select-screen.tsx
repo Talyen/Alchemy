@@ -1,7 +1,7 @@
 // Hero selection screen with character art, keyword previews, tilt, and shimmer feedback.
 // Depends on character game data, shared alchemy UI, and hover shimmer hooks.
 // Used when beginning a fresh run before destination routing starts.
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   characterArt,
@@ -14,13 +14,8 @@ import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { renderColoredKeywords } from "../../shared/ui/card-description-ui";
 import { ScreenHeader, ActionButtonRow, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
-import {
-  TooltipBody,
-  TooltipHeader,
-  TooltipPanel,
-  TooltipSubheader,
-  useTooltipFlip,
-} from "../../shared/ui/tooltip-panel";
+import { TooltipBody, TooltipHeader, TooltipSubheader } from "../../shared/ui/tooltip-panel";
+import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
 import { cardSurfaceClass } from "@/features/alchemy/shared/config";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
@@ -49,13 +44,13 @@ function CharacterCard({
   unlockRequirementText: string;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
-  const { ref: tooltipRef, flip } = useTooltipFlip(showTooltip);
+  const cardWrapperRef = useRef<HTMLDivElement>(null);
   const char = characters[id];
   const art = characterArt[char.id];
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <div className={cn("relative", charCardWidthClass)}>
+      <div ref={cardWrapperRef} className={cn("relative", charCardWidthClass)}>
         <TiltSurface
           as="button"
           ariaLabel={isLocked ? `${char.name} (Locked)` : `Select ${char.name}`}
@@ -89,7 +84,7 @@ function CharacterCard({
           />
         </TiltSurface>
         {showTooltip ? (
-          <TooltipPanel width="w-80" ref={tooltipRef} visible flip={flip}>
+          <PortaledTooltip triggerRef={cardWrapperRef} visible width="w-80">
             <TooltipHeader>{char.name}</TooltipHeader>
 
             {isLocked ? (
@@ -133,7 +128,7 @@ function CharacterCard({
                 )}
               </>
             )}
-          </TooltipPanel>
+          </PortaledTooltip>
         ) : null}
       </div>
       <p className={cn("mt-1 font-sans text-2xl font-bold text-amber-100/90", isLocked && "text-muted-foreground/60")}>

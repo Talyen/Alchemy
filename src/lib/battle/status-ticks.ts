@@ -13,7 +13,7 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { getEnemyDamageMultiplier } from "./status-helpers";
+import { getEnemyDamageMultiplier, getBurnBonusToBleedingMultiplier } from "./status-helpers";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
@@ -47,10 +47,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (damage <= 0) return state;
   // Burn has a talent chance to DOUBLE instead of halving — intentional for
   // burn-focused builds. Armor decay after burn only triggers if damage > 0.
-  let multiplier = getEnemyDamageMultiplier(state, "burn");
-  if (state.enemyStatuses.bleed > 0 && state.gearEffects.burnDamageBonusToBleedingPercent > 0) {
-    multiplier *= 1 + state.gearEffects.burnDamageBonusToBleedingPercent / 100;
-  }
+  const multiplier = getEnemyDamageMultiplier(state, "burn") * getBurnBonusToBleedingMultiplier(state);
   const finalDamage = Math.round(damage * multiplier);
   mergeCombatText(combatTexts, {
     target: "enemy",

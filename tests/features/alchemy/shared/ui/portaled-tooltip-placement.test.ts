@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildPortaledTooltipStyle,
+  buildSideTooltipStyle,
   measurePortaledTooltipPlacement,
   shouldPlacePortaledTooltipBelow,
 } from "@/features/alchemy/shared/ui/portaled-tooltip-placement";
@@ -54,5 +55,41 @@ describe("buildPortaledTooltipStyle", () => {
     const style = buildPortaledTooltipStyle(anchor, false, 8, narrowStage);
 
     expect(style.left).toBe("clamp(252px, 200px, 748px)");
+  });
+});
+
+describe("buildSideTooltipStyle", () => {
+  const anchor = { centerX: 300, top: 200, bottom: 280 };
+  const triggerRect = { left: 250, right: 350 };
+  const tooltipRect = { width: 200, height: 120 };
+  const stage = { top: 0, left: 0, right: 1280, bottom: 720 };
+
+  it("places side-end to the right of the trigger", () => {
+    const { side, style } = buildSideTooltipStyle(anchor, triggerRect, tooltipRect, "side-end", stage);
+
+    expect(side).toBe("side-end");
+    expect(style.left).toBe("358px");
+  });
+
+  it("places side-start to the left of the trigger", () => {
+    const { side, style } = buildSideTooltipStyle(anchor, triggerRect, tooltipRect, "side-start", stage);
+
+    expect(side).toBe("side-start");
+    expect(style.left).toBe("42px");
+  });
+
+  it("flips side-end to side-start when clipped on the right", () => {
+    const nearEdgeTrigger = { left: 1100, right: 1200 };
+    const { side, style } = buildSideTooltipStyle(anchor, nearEdgeTrigger, tooltipRect, "side-end", stage);
+
+    expect(side).toBe("side-start");
+    expect(style.left).toBe("892px");
+  });
+
+  it("clamps vertical center inside the stage", () => {
+    const topAnchor = { centerX: 300, top: 4, bottom: 40 };
+    const { style } = buildSideTooltipStyle(topAnchor, triggerRect, tooltipRect, "side-end", stage);
+
+    expect(style.top).toBe("68px");
   });
 });

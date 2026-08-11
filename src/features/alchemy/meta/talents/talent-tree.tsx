@@ -1,6 +1,15 @@
 // Interactive talent tree — keyword-level XP progress, unlock buttons, and reveal animations.
 // Depends on game-data keywords, shared UI primitives, and talent XP math.
-import { Fragment, useCallback, useMemo, useState, type ComponentType, type CSSProperties } from "react";
+import {
+  Fragment,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+  type CSSProperties,
+  type RefObject,
+} from "react";
 
 import { Lock } from "lucide-react";
 import { keywordDefinitions } from "@/lib/game-data";
@@ -8,7 +17,8 @@ import { cn } from "@/lib/utils";
 import type { TalentDefinition } from "@/lib/game-data";
 import { getKeywordShineColors, keywordIcons } from "@/features/alchemy/shared/config";
 import { tokenizeDescription } from "../../shared/utils";
-import { TooltipPanel, TooltipHeader, TooltipBody, useTooltipViewportClamp } from "../../shared/ui/tooltip-panel";
+import { TooltipHeader, TooltipBody } from "../../shared/ui/tooltip-panel";
+import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
 import { ShineBorder } from "@/components/ui/shine-border";
 import type { KeywordId } from "@/lib/game-data";
 import { TALENT_UNLOCK_ANIMATION_MS, TALENT_UNLOCK_SETTLE_MS } from "@/lib/game-constants";
@@ -25,19 +35,19 @@ export interface TalentLayoutProps {
   onUnlockBegin?: (talentId: string) => void;
 }
 
-function TalentNodeTooltip({ talent }: { talent: TalentDefinition }) {
-  const { ref, flip, dx } = useTooltipViewportClamp(8, talent.id);
+function TalentNodeTooltip({
+  talent,
+  triggerRef,
+  visible,
+}: {
+  talent: TalentDefinition;
+  triggerRef: RefObject<HTMLElement | null>;
+  visible: boolean;
+}) {
   const descParts = tokenizeDescription(talent.description);
 
   return (
-    <TooltipPanel
-      ref={ref}
-      flip={flip}
-      width="w-60"
-      visible
-      className="z-50"
-      style={dx !== 0 ? { marginLeft: dx } : undefined}
-    >
+    <PortaledTooltip triggerRef={triggerRef} visible={visible} width="w-60">
       <TooltipHeader>{talent.name ?? "Talent"}</TooltipHeader>
       <TooltipBody className="max-w-60">
         {descParts.map((part, i) =>
@@ -50,7 +60,7 @@ function TalentNodeTooltip({ talent }: { talent: TalentDefinition }) {
           ),
         )}
       </TooltipBody>
-    </TooltipPanel>
+    </PortaledTooltip>
   );
 }
 
@@ -163,6 +173,7 @@ export function TalentTree({
   const [hoveredTalentId, setHoveredTalentId] = useState<string | null>(null);
   const [unlockingTalentId, setUnlockingTalentId] = useState<string | null>(null);
   const [settlingTalentId, setSettlingTalentId] = useState<string | null>(null);
+  const tooltipAnchorRef = useRef<HTMLDivElement>(null);
   const unlockedIds = useMemo(() => new Set(unlockedTalents.map((t) => t.id)), [unlockedTalents]);
   const choiceIds = useMemo(() => new Set(choices?.map((c) => c.id) ?? []), [choices]);
   const nodes = allTalents;
@@ -233,10 +244,11 @@ export function TalentTree({
         {hoveredTalent && hoveredPos && !unlockingTalentId ? (
           <div
             key={hoveredTalent.id}
+            ref={tooltipAnchorRef}
             className="pointer-events-none absolute z-[70] h-[8.64%] w-[8.64%]"
             style={talentNodePositionStyle(hoveredPos.left, hoveredPos.top)}
           >
-            <TalentNodeTooltip talent={hoveredTalent} />
+            <TalentNodeTooltip talent={hoveredTalent} triggerRef={tooltipAnchorRef} visible />
           </div>
         ) : null}
       </div>

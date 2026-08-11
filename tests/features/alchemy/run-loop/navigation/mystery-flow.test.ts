@@ -22,6 +22,7 @@ function minimalContext(overrides: { runDeck?: BattleCard[] } = {}) {
     setRunPlayerHealth: vi.fn(),
     setRunTrinkets: vi.fn(),
     setMysteryCardChoices: vi.fn(),
+    setMysteryGrantedTrinketIds: vi.fn(),
     awardMysteryXP: vi.fn(),
     onAddMaterials: vi.fn(),
     onAwardGold: vi.fn(),
@@ -77,6 +78,12 @@ describe("applyMysteryEffect", () => {
     const randomTrinketContext = minimalContext();
     applyMysteryEffect({ kind: "gainRandomTrinket" }, randomTrinketContext);
     expect(randomTrinketContext.setRunTrinkets).toHaveBeenCalledOnce();
+    expect(randomTrinketContext.setMysteryGrantedTrinketIds).toHaveBeenCalledOnce();
+    const trinketUpdater = randomTrinketContext.setRunTrinkets.mock.calls[0][1];
+    const grantedUpdater = randomTrinketContext.setMysteryGrantedTrinketIds.mock.calls[0][1];
+    const grantedIds = grantedUpdater([]) as string[];
+    expect(grantedIds).toHaveLength(1);
+    expect(trinketUpdater([])).toEqual(grantedIds);
 
     const materialContext = minimalContext();
     applyMysteryEffect({ kind: "gainMaterial", material: "wood", amount: 1 }, materialContext);

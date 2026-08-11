@@ -5,6 +5,7 @@ import { canAfford } from "@/lib/homestead/inventory";
 import { Button } from "@/components/ui/button";
 import { DetailPopup } from "../../../shared/ui/card-popup";
 import { DisabledTooltip } from "../../../shared/ui/shared-ui";
+import { type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
 import { type BattleCard, type CompanionId } from "@/lib/game-data";
 import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
@@ -44,13 +45,11 @@ function getCompanionFooter(
 }
 
 function getCompanionTooltip(
-  hoveredItemId: string | null,
   card: BattleCard,
   discovered: boolean,
   bondedCompanions: Record<CompanionId, number>,
-): ReactNode {
-  if (hoveredItemId !== card.id) return null;
-  return (
+): (ctx: PopupContext) => ReactNode {
+  return ({ visible, triggerRef }) => (
     <DetailPopup
       idPrefix={card.id}
       title={discovered ? card.title : "Undiscovered"}
@@ -60,6 +59,8 @@ function getCompanionTooltip(
           ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions })
           : ["Discover this card during a run to reveal it here."]
       }
+      visible={visible}
+      triggerRef={triggerRef}
     />
   );
 }
@@ -96,7 +97,7 @@ export function CompanionCardNode({
   }
   const bondAffordable = discovered && !isComplete && canAfford(materialInventory, bondCost);
 
-  const detailTooltip = getCompanionTooltip(hoveredItemId, card, discovered, bondedCompanions);
+  const detailTooltip = getCompanionTooltip(card, discovered, bondedCompanions);
   const footer = getCompanionFooter(discovered, isComplete, card, currentLevel, bondCost, bondAffordable, onBond);
 
   return (

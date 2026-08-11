@@ -44,11 +44,10 @@ describe("RemoveCardPanel Card Tooltips in Grid", () => {
     const descriptionSpan = screen.getByText(/Deal/);
     expect(descriptionSpan).toBeTruthy();
 
+    // Card popups render root-scale in the tooltip overlay (document.body when
+    // the overlay root is not mounted), not inside the grid item.
     const tooltipPanel = descriptionSpan.closest(".hover-popup-panel");
     expect(tooltipPanel).toBeTruthy();
-
-    const staggerItem = topRowCardButton.closest(".stagger-item");
-    expect(staggerItem).toBeTruthy();
-    expect(staggerItem?.querySelector(".hover-popup-panel")).toBeTruthy();
+    expect(document.querySelector(".hover-popup-panel.pointer-events-auto")).toBeTruthy();
   });
 });

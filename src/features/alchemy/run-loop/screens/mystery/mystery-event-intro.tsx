@@ -11,7 +11,8 @@ import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { MysteryEffectList } from "../../../shared/ui/mystery-effect-badge";
 import { ScreenHeader, StaggerGroup, StaggerItem } from "../../../shared/ui/shared-ui";
-import { TooltipPanel } from "../../../shared/ui/tooltip-panel";
+import { PortaledTooltip } from "../../../shared/ui/portaled-tooltip";
+import { useHoverVisible } from "../../../shared/ui/use-hover-visible";
 
 const CONFIG = {
   EVENT_IMAGE_WIDTH: 900,
@@ -32,8 +33,18 @@ function MysteryEventChoiceButton({
   choice: MysteryChoice;
   onPick: (choice: MysteryChoice) => void;
 } & LookupProps) {
+  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
+    useHoverVisible<HTMLDivElement>();
+
   return (
-    <div className="group relative">
+    <div
+      ref={triggerRef}
+      className="relative"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocusCapture={onFocusCapture}
+      onBlurCapture={onBlurCapture}
+    >
       <Button
         size="lg"
         variant="outline"
@@ -43,17 +54,14 @@ function MysteryEventChoiceButton({
       >
         {choice.label}
       </Button>
-      <TooltipPanel
-        width="w-[28.44cqh]"
-        className="pointer-events-none opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
-      >
+      <PortaledTooltip triggerRef={triggerRef} visible={visible} width="w-[19.2rem]" maxWidthFraction={0.4}>
         <MysteryEffectList
           effects={choice.effects}
           findCard={findCard}
           findTrinket={findTrinket}
           choiceLabel={choice.label}
         />
-      </TooltipPanel>
+      </PortaledTooltip>
     </div>
   );
 }

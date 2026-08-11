@@ -32,14 +32,16 @@ export function PurchasableTrinketItem({
       className={cn(cardSurfaceClass, collectionTileWidthClass, "aspect-square")}
       imageClassName="absolute inset-0 h-full w-full rounded-shell-hero object-cover"
       interactive={!purchased}
-      popup={
+      popup={({ visible, triggerRef }) => (
         <DetailPopup
           idPrefix={trinket.id}
           title={trinket.title}
           subtitle={undefined}
           descriptionLines={trinket.descriptionLines}
+          visible={visible}
+          triggerRef={triggerRef}
         />
-      }
+      )}
     />
   );
 

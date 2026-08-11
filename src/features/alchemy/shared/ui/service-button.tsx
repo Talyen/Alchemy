@@ -4,16 +4,18 @@
 import type { ComponentType, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { GoldCost } from "./display-elements";
-import { TooltipPanel } from "./tooltip-panel";
+import { PortaledTooltip } from "./portaled-tooltip";
+import { useHoverVisible } from "./use-hover-visible";
 
 export function DisabledTooltip({ show, message, children }: { show: boolean; message: string; children: ReactNode }) {
+  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
   if (!show) return <>{children}</>;
   return (
-    <div className="group relative">
+    <div ref={triggerRef} className="relative" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       {children}
-      <TooltipPanel width="w-auto" className="pointer-events-none whitespace-nowrap opacity-0 group-hover:opacity-100">
+      <PortaledTooltip triggerRef={triggerRef} visible={visible} width="w-auto" className="whitespace-nowrap">
         <p className="text-base leading-none text-foreground">{message}</p>
-      </TooltipPanel>
+      </PortaledTooltip>
     </div>
   );
 }

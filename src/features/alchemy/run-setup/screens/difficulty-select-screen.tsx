@@ -29,7 +29,8 @@ import {
   sectionTitleClass,
   tiltSurfaceSelectedRingClass,
 } from "@/features/alchemy/shared/config";
-import { TooltipPanel } from "../../shared/ui/tooltip-panel";
+import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
+import { useHoverVisible } from "../../shared/ui/use-hover-visible";
 import { useUiStore } from "../../shared/stores/ui-store";
 
 const DIFFICULTY_CONFIG = {
@@ -86,9 +87,15 @@ function DifficultyCard({
   const showTilt = !locked;
   const DIFFICULTY_ART: Record<string, string> = { "difficulty-1": difficulty1Art, "difficulty-2": difficulty2Art };
   const diffArt = DIFFICULTY_ART[difficultyId] ?? difficulty3Art;
+  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
 
   return (
-    <div className="group relative flex flex-col items-center">
+    <div
+      ref={triggerRef}
+      className="relative flex flex-col items-center"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
       <PressableSound {...(locked ? { hoverSound: false as const } : {})}>
         <button
           type="button"
@@ -139,9 +146,9 @@ function DifficultyCard({
       </PressableSound>
 
       {locked && (
-        <TooltipPanel className="pointer-events-none opacity-0 group-hover:opacity-100">
+        <PortaledTooltip triggerRef={triggerRef} visible={visible}>
           <p className={bodyTextClass}>Clear Previous Difficulty to Unlock</p>
-        </TooltipPanel>
+        </PortaledTooltip>
       )}
     </div>
   );

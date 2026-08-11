@@ -1,5 +1,6 @@
 // Hover tooltip for a labyrinth map node, including modifier breakdown.
 
+import type { RefObject } from "react";
 import type {
   EncounterCombatTraitId,
   EncounterRewardTraitId,
@@ -8,23 +9,19 @@ import type {
 } from "@/lib/content-systems/types";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { NODE_TYPE_LABELS, NODE_TYPE_TOOLTIPS } from "@/lib/content-systems/labyrinth/data";
-import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
 import { renderColoredKeywords } from "../../../shared/ui/card-description-ui";
-import {
-  TooltipBody,
-  TooltipHeader,
-  TooltipPanel,
-  TooltipSection,
-  useTooltipViewportClamp,
-} from "../../../shared/ui/tooltip-panel";
+import { TooltipBody, TooltipHeader, TooltipSection } from "../../../shared/ui/tooltip-panel";
+import { PortaledTooltip } from "../../../shared/ui/portaled-tooltip";
 import { tooltipBodyClass } from "@/features/alchemy/shared/config";
 
 interface Props {
   type: LabyrinthNodeType;
   modifiers: EncounterCombatTraitId[];
   rewardModifiers: EncounterRewardTraitId[];
+  triggerRef: RefObject<HTMLElement | null>;
+  visible: boolean;
 }
 
 function ModifierTooltipCard({ modifier, variant }: { modifier: EncounterTraitId; variant: "enemy" | "reward" }) {
@@ -42,23 +39,17 @@ function ModifierTooltipCard({ modifier, variant }: { modifier: EncounterTraitId
   );
 }
 
-export function LabyrinthNodeTooltip({ type, modifiers, rewardModifiers }: Props) {
-  const { ref, flip, dx } = useTooltipViewportClamp(LABYRINTH_MAP_UI.tooltipPadding, [
-    type,
-    modifiers,
-    rewardModifiers,
-  ]);
-
+export function LabyrinthNodeTooltip({ type, modifiers, rewardModifiers, triggerRef, visible }: Props) {
   const enemyModifiers = modifiers;
   const hasModifiers = enemyModifiers.length > 0 || rewardModifiers.length > 0;
 
   return (
-    <TooltipPanel
-      ref={ref}
-      flip={flip}
-      width="w-[28.44cqh]"
-      className="z-50 rounded-shell-tooltip"
-      style={dx !== 0 ? { marginLeft: dx } : undefined}
+    <PortaledTooltip
+      triggerRef={triggerRef}
+      visible={visible}
+      width="w-[19.2rem]"
+      maxWidthFraction={0.4}
+      className="rounded-shell-tooltip"
     >
       <TooltipHeader>{NODE_TYPE_LABELS[type]}</TooltipHeader>
       <TooltipBody>
@@ -76,6 +67,6 @@ export function LabyrinthNodeTooltip({ type, modifiers, rewardModifiers }: Props
           </div>
         </TooltipSection>
       ) : null}
-    </TooltipPanel>
+    </PortaledTooltip>
   );
 }

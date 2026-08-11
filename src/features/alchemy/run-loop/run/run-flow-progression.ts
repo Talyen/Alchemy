@@ -97,7 +97,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
         if (deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
           return true;
         }
-        setMysteryCardChoices(draft, []);
+        setMysteryCardChoices(draft, null);
         return false;
       },
       {

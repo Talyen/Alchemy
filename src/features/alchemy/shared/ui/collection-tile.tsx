@@ -78,13 +78,14 @@ function CollectionTilePopup({
       <EnemyTooltip entry={item.enemyEntry} discovered={item.discovered} triggerRef={triggerRef} visible={hovered} />
     );
   }
-  if (!hovered) return null;
   return (
     <DetailPopup
       idPrefix={item.id}
       title={item.title}
       subtitle={item.subtitle}
       descriptionLines={item.descriptionLines}
+      triggerRef={triggerRef}
+      visible={hovered}
     />
   );
 }

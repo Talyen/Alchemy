@@ -88,6 +88,7 @@ describe("run domain slice dispatch", () => {
       "setEquipmentShopState",
       "setMysteryEvent",
       "setMysteryCardChoices",
+      "setMysteryGrantedTrinketIds",
       "clearTransientSession",
       "applyDestinationChoices",
     ]);

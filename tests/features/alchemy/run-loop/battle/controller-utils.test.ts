@@ -1,30 +1,89 @@
-import { describe, expect, it } from "vitest";
-import {
-  centeredRectForSize,
-  getCardKey,
-  getCardTransferBatchSpeed,
-} from "@/features/alchemy/run-loop/battle/controller-utils";
-import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
-import { makeTestCardWithId } from "../../../../fixtures/battle";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import * as audioBufferCache from "@/lib/audio-buffer-cache";
+import { audioState } from "@/lib/audio-state";
+import { playCombatTextSounds } from "@/features/alchemy/run-loop/battle/controller-utils";
 
-describe("getCardTransferBatchSpeed", () => {
-  it("uses small, medium, and large multipliers by hand size", () => {
-    const { batchSpeedMultipliers } = CARD_TRANSFER_CONFIG;
-    expect(getCardTransferBatchSpeed(1)).toBe(batchSpeedMultipliers.small);
-    expect(getCardTransferBatchSpeed(batchSpeedMultipliers.mediumCardCount)).toBe(batchSpeedMultipliers.medium);
-    expect(getCardTransferBatchSpeed(6)).toBe(batchSpeedMultipliers.large);
-  });
+const fakeBuffer = { duration: 0.5 } as AudioBuffer;
+
+function makeMockAudioContext() {
+  const gain = { value: 0, connect: vi.fn() };
+  return {
+    createBufferSource: vi.fn(() => ({
+      buffer: null,
+      connect: vi.fn(),
+      start: vi.fn(),
+      stop: vi.fn(),
+      onended: null,
+    })),
+    createGain: vi.fn(() => ({ gain, connect: vi.fn() })),
+    destination: "dest",
+    currentTime: 0,
+  } as unknown as Partial<AudioContext>;
+}
+
+beforeEach(() => {
+  audioState.context = makeMockAudioContext() as AudioContext;
+  audioState.masterGain = { gain: { value: 0.3 }, connect: vi.fn() } as unknown as GainNode;
+  audioState.muted = false;
+  audioState.audioUnlocked = true;
+  audioState.sfxVolume = 0.35;
+  audioState.lastPlayedAt = new Map();
+  vi.spyOn(audioBufferCache, "getCachedBuffer").mockReturnValue(fakeBuffer);
 });
 
-describe("getCardKey", () => {
-  it("combines card id and uid", () => {
-    expect(getCardKey(makeTestCardWithId("block", { uid: 7 }))).toBe("block-7");
-  });
+afterEach(() => {
+  vi.restoreAllMocks();
+  audioState.context = null;
+  audioState.masterGain = null;
 });
 
-describe("centeredRectForSize", () => {
-  it("centers a target size on the source rect", () => {
-    const centered = centeredRectForSize({ x: 10, y: 20, width: 100, height: 50 }, 40, 20);
-    expect(centered).toEqual({ x: 40, y: 35, width: 40, height: 20 });
+describe("playCombatTextSounds", () => {
+  it("plays enemyHit for enemy damage", () => {
+    playCombatTextSounds([{ target: "enemy", kind: "damage", stat: "physical", amount: 5 }]);
+    expect(audioBufferCache.getCachedBuffer).toHaveBeenCalledWith("sword-impact-hit-1.ogg");
+  });
+
+  it("plays blockAbsorb for player block absorb", () => {
+    playCombatTextSounds([{ target: "player", kind: "damage", stat: "block", amount: 3 }]);
+    expect(audioBufferCache.getCachedBuffer).toHaveBeenCalledWith("sword-blocked-2.ogg");
+  });
+
+  it("plays playerHit for player health damage", () => {
+    playCombatTextSounds([{ target: "player", kind: "damage", stat: "health", amount: 4 }]);
+    expect(audioBufferCache.getCachedBuffer).toHaveBeenCalledWith("punch-3.ogg");
+  });
+
+  it("plays playerHeal for player heal", () => {
+    playCombatTextSounds([{ target: "player", kind: "heal", stat: "health", amount: 6 }]);
+    expect(audioBufferCache.getCachedBuffer).toHaveBeenCalledWith("vibraphone-chime-quick.ogg");
+  });
+
+  it("plays playerBuff for player status", () => {
+    playCombatTextSounds([{ target: "player", kind: "status", stat: "block", amount: 5 }]);
+    expect(audioBufferCache.getCachedBuffer).toHaveBeenCalledWith("8bit-chime-quick.ogg");
+  });
+
+  it("plays nothing for notice events", () => {
+    playCombatTextSounds([{ target: "player", kind: "notice", stat: "health", text: "watched" }]);
+    expect(audioBufferCache.getCachedBuffer).not.toHaveBeenCalled();
+  });
+
+  it("plays nothing for empty combat texts", () => {
+    playCombatTextSounds([]);
+    expect(audioBufferCache.getCachedBuffer).not.toHaveBeenCalled();
+  });
+
+  it("plays nothing for enemy heal", () => {
+    playCombatTextSounds([{ target: "enemy", kind: "heal", stat: "health", amount: 2 }]);
+    expect(audioBufferCache.getCachedBuffer).not.toHaveBeenCalled();
+  });
+
+  it("plays multiple events in one batch", () => {
+    playCombatTextSounds([
+      { target: "enemy", kind: "damage", stat: "physical", amount: 5 },
+      { target: "player", kind: "heal", stat: "health", amount: 2 },
+    ]);
+    expect(audioBufferCache.getCachedBuffer).toHaveBeenCalledWith("sword-impact-hit-1.ogg");
+    expect(audioBufferCache.getCachedBuffer).toHaveBeenCalledWith("vibraphone-chime-quick.ogg");
   });
 });

@@ -1,12 +1,15 @@
 // Hover detail popup for cards and collection tiles.
-// Depends on direct layout measurement, shared popup styles, and description rendering.
+// Rendered root-scale via PortaledTooltip, sized to the trigger's rendered
+// width, and interactive (pointer-events-auto) so nested keyword tooltips
+// stay reachable.
 // Used by battle cards, shop cards, and collection previews.
-import { type ReactNode } from "react";
+import { type ReactNode, type RefObject } from "react";
 
 import type { BattleCard } from "@/lib/game-data";
 
 import { DescriptionLines } from "./card-description-ui";
-import { TooltipBody, TooltipHeader, TooltipPanel, useTooltipFlip } from "./tooltip-panel";
+import { PortaledTooltip } from "./portaled-tooltip";
+import { TooltipBody, TooltipHeader } from "./tooltip-panel";
 
 export function DetailPopup({
   idPrefix,
@@ -15,6 +18,8 @@ export function DetailPopup({
   descriptionLines,
   descriptionNodes,
   card,
+  triggerRef,
+  visible,
 }: {
   idPrefix: string;
   title: ReactNode;
@@ -22,17 +27,23 @@ export function DetailPopup({
   descriptionLines: string[];
   descriptionNodes?: ReactNode[];
   card?: Pick<BattleCard, "corruptedValuePositions">;
+  triggerRef: RefObject<HTMLElement | null>;
+  visible: boolean;
 }) {
-  const { ref, flip } = useTooltipFlip();
-
   return (
-    <TooltipPanel ref={ref} flip={flip} width="w-full" className="pointer-events-auto rounded-shell-tooltip">
+    <PortaledTooltip
+      triggerRef={triggerRef}
+      visible={visible}
+      matchTriggerWidth
+      pointerEventsAuto
+      className="rounded-shell-tooltip"
+    >
       <TooltipHeader>{title}</TooltipHeader>
       {subtitle ? <p className="mt-1 text-xs tracking-widest text-amber-100/80 uppercase">{subtitle}</p> : null}
       <DescriptionLines lines={descriptionLines} idPrefix={idPrefix} {...(card ? { card } : {})} />
       {descriptionNodes?.map((node, i) => (
         <TooltipBody key={i}>{node}</TooltipBody>
       ))}
-    </TooltipPanel>
+    </PortaledTooltip>
   );
 }

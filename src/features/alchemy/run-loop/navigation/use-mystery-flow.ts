@@ -12,6 +12,7 @@ import {
   createDraftRunRandomSource,
   setMysteryCardChoices,
   setMysteryEvent,
+  setMysteryGrantedTrinketIds,
   setRunDeck,
   setRunGold,
   setRunPlayerHealth,
@@ -28,6 +29,7 @@ export function useMysteryFlow() {
       (draft) => {
         setMysteryEvent(draft, pickMysteryEvent(createDraftRunRandomSource(draft, "events")));
         setMysteryCardChoices(draft, null);
+        setMysteryGrantedTrinketIds(draft, []);
       },
       { afterCommit: navigateToMystery },
     );
@@ -49,6 +51,7 @@ export function useMysteryFlow() {
             setRunPlayerHealth,
             setRunTrinkets,
             setMysteryCardChoices,
+            setMysteryGrantedTrinketIds,
             awardMysteryXP,
             onAddMaterials: (materials: MaterialInventory) =>
               awardMaterialsDuringRun(draft, applyMaterialFindBonus(materials, draft.runProfile.effects)),

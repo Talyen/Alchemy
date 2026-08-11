@@ -98,14 +98,16 @@ function TrinketRewardButton({
       selected={selected}
       onClick={onClick}
       ariaLabel={`Select ${trinket.title}`}
-      popup={
+      popup={({ visible, triggerRef }) => (
         <DetailPopup
           idPrefix={trinket.id}
           title={trinket.title}
           subtitle={undefined}
           descriptionLines={trinket.descriptionLines}
+          visible={visible}
+          triggerRef={triggerRef}
         />
-      }
+      )}
       as="button"
     />
   );
@@ -135,14 +137,16 @@ function GearRewardButton({
       selected={selected}
       onClick={onClick}
       ariaLabel={`Select ${title}`}
-      popup={
+      popup={({ visible, triggerRef }) => (
         <DetailPopup
           idPrefix={instance.instanceId}
           title={title}
           subtitle="Permanent Gear"
           descriptionLines={descriptionLines}
+          visible={visible}
+          triggerRef={triggerRef}
         />
-      }
+      )}
       as="button"
     />
   );

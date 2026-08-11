@@ -1,5 +1,6 @@
 // Extracted utility functions for battle controller card measurement, transfer timing, scene rects, and companion audio.
-import { playCardSound } from "@/lib/audio";
+import { playBattleEvent, playCardSound } from "@/lib/audio";
+import type { CombatTextEvent } from "@/lib/battle";
 import { CARD_TRANSFER_CONFIG, COMPANION_SOUND_CARD_IDS } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardRect } from "../../shared/types";
@@ -32,6 +33,26 @@ export function viewportRectToBattleSceneRect(rect: CardRect, sceneRect: BattleS
 export function playCompanionSound(companionId: string) {
   const soundCardId = COMPANION_SOUND_CARD_IDS[companionId];
   if (soundCardId) playCardSound(soundCardId);
+}
+
+// Plays battle-event impact sounds (hit, block absorb, heal, buff) based on
+// resolved combat text. The per-sound cooldown in the audio engine prevents
+// multi-hit cards from stacking identical impact sounds too rapidly.
+export function playCombatTextSounds(combatTexts: CombatTextEvent[]) {
+  for (const ct of combatTexts) {
+    if (ct.kind === "notice") continue;
+    if (ct.kind === "damage" && ct.target === "enemy") {
+      playBattleEvent("enemyHit");
+    } else if (ct.kind === "damage" && ct.target === "player" && ct.stat === "block") {
+      playBattleEvent("blockAbsorb");
+    } else if (ct.kind === "damage" && ct.target === "player") {
+      playBattleEvent("playerHit");
+    } else if (ct.kind === "heal" && ct.target === "player") {
+      playBattleEvent("playerHeal");
+    } else if (ct.kind === "status" && ct.target === "player") {
+      playBattleEvent("playerBuff");
+    }
+  }
 }
 
 export function transferCardIntervalSeconds(

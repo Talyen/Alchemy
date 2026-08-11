@@ -1,10 +1,15 @@
 // Shared art tile surface for selectable rewards and purchasable collection items.
-import type { ReactNode } from "react";
+import { useRef, type RefObject, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
 import { TiltSurface } from "./tilt-surface";
 import { useInteractiveCard } from "./use-interactive-card";
+
+export interface PopupContext {
+  visible: boolean;
+  triggerRef: RefObject<HTMLElement | null>;
+}
 
 interface InteractiveArtTileProps {
   id: string;
@@ -13,7 +18,7 @@ interface InteractiveArtTileProps {
   art: string | undefined;
   className: string;
   imageClassName: string;
-  popup?: ReactNode;
+  popup?: (ctx: PopupContext) => ReactNode;
   as?: "button" | "div";
   interactive?: boolean;
   selected?: boolean;
@@ -35,15 +40,20 @@ export function InteractiveArtTile({
   onClick,
   ariaLabel,
 }: InteractiveArtTileProps) {
+  const tileRef = useRef<HTMLDivElement>(null);
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(interactionKey, id);
 
   return (
     <div
+      ref={tileRef}
       className="relative"
       onMouseEnter={interactive ? onHoverStart : undefined}
       onMouseLeave={interactive ? onHoverEnd : undefined}
     >
-      {interactive && isHovered ? popup : null}
+      {/* The ref is only read inside layout effects in PortaledTooltip's placement
+          hook, never during render; passing it to the popup factory is safe. */}
+      {/* eslint-disable-next-line react-hooks/refs */}
+      {interactive && popup ? popup({ visible: isHovered, triggerRef: tileRef }) : null}
       <TiltSurface
         as={as}
         className={cn(className, "group")}

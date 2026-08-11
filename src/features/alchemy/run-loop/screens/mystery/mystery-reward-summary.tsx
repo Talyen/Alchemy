@@ -1,5 +1,5 @@
 // Mystery consequence reward summary after run state has been updated.
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { type MaterialId } from "@/lib/homestead/types";
@@ -41,11 +41,14 @@ function MysteryRewardEffectItem({
   runDeck,
   findCard,
   findTrinket,
+  grantedTrinketId,
 }: {
   effect: MysteryEffect;
   runDeck: BattleCard[];
+  grantedTrinketId: string | undefined;
 } & LookupProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const trinketRef = useRef<HTMLDivElement>(null);
 
   function renderCardReward(card: BattleCard) {
     return (
@@ -70,6 +73,38 @@ function MysteryRewardEffectItem({
     );
   }
 
+  function renderTrinketReward(boon: TrinketEntry) {
+    return (
+      <div className="flex flex-col items-center gap-3">
+        <div
+          ref={trinketRef}
+          className="relative"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <DetailPopup
+            idPrefix={boon.id}
+            title={boon.title}
+            subtitle={undefined}
+            descriptionLines={boon.descriptionLines}
+            visible={isHovered}
+            triggerRef={trinketRef}
+          />
+          <TiltSurface className={cn(cardSurfaceClass, collectionTileWidthClass)}>
+            <img
+              src={boon.art}
+              alt={boon.title}
+              className="block aspect-square w-full rounded-shell-hero"
+              loading="eager"
+            />
+          </TiltSurface>
+        </div>
+        <p className={controlLabelClass}>{boon.title}</p>
+        <p className={bodyTextClass}>Added {boon.title} to your Inventory</p>
+      </div>
+    );
+  }
+
   const rewardRenderers: Record<string, () => ReactNode> = {
     addCard: () => {
       const card = findCard((effect as { cardId: string }).cardId);
@@ -81,33 +116,13 @@ function MysteryRewardEffectItem({
     },
     gainTrinket: () => {
       const boon = findTrinket((effect as { trinketId: string }).trinketId);
-      if (!boon) return null;
-      return (
-        <div className="flex flex-col items-center gap-3">
-          <div className="relative" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-            {isHovered ? (
-              <DetailPopup
-                idPrefix={boon.id}
-                title={boon.title}
-                subtitle={undefined}
-                descriptionLines={boon.descriptionLines}
-              />
-            ) : null}
-            <TiltSurface className={cn(cardSurfaceClass, collectionTileWidthClass)}>
-              <img
-                src={boon.art}
-                alt={boon.title}
-                className="block aspect-square w-full rounded-shell-hero"
-                loading="eager"
-              />
-            </TiltSurface>
-          </div>
-          <p className={controlLabelClass}>{boon.title}</p>
-          <p className={bodyTextClass}>Added {boon.title} to your Inventory</p>
-        </div>
-      );
+      return boon ? renderTrinketReward(boon) : null;
     },
-    gainRandomTrinket: () => <p className={controlLabelClass}>Gained a random trinket</p>,
+    gainRandomTrinket: () => {
+      const boon = grantedTrinketId ? findTrinket(grantedTrinketId) : undefined;
+      if (!boon) return <p className={controlLabelClass}>Gained a random trinket</p>;
+      return renderTrinketReward(boon);
+    },
     gainGold: () => renderFoundOrLost(effect, "Found"),
     gainMaterial: () => renderFoundOrLost(effect, "Found"),
     loseGold: () => renderFoundOrLost(effect, "Lost"),
@@ -130,11 +145,13 @@ export function MysteryRewardSummary({
   runDeck,
   findCard,
   findTrinket,
+  grantedTrinketIds,
   onContinue,
   eventTitle,
 }: {
   choice: MysteryChoice;
   runDeck: BattleCard[];
+  grantedTrinketIds: string[];
   onContinue: () => void;
   eventTitle: string;
 } & LookupProps) {
@@ -152,17 +169,29 @@ export function MysteryRewardSummary({
     }
   }
 
+  let randomTrinketCursor = 0;
+
   return (
     <StaggerGroup className="space-y-6 text-center">
       <StaggerItem index={0}>
         <ScreenHeader title={eventTitle} />
       </StaggerItem>
 
-      {otherEffects.map((effect, i) => (
-        <StaggerItem key={i} index={i + 1}>
-          <MysteryRewardEffectItem effect={effect} runDeck={runDeck} findCard={findCard} findTrinket={findTrinket} />
-        </StaggerItem>
-      ))}
+      {otherEffects.map((effect, i) => {
+        const grantedTrinketId =
+          effect.kind === "gainRandomTrinket" ? grantedTrinketIds[randomTrinketCursor++] : undefined;
+        return (
+          <StaggerItem key={i} index={i + 1}>
+            <MysteryRewardEffectItem
+              effect={effect}
+              runDeck={runDeck}
+              findCard={findCard}
+              findTrinket={findTrinket}
+              grantedTrinketId={grantedTrinketId}
+            />
+          </StaggerItem>
+        );
+      })}
 
       {resourceEffects.length > 0 ? (
         <StaggerItem index={otherEffects.length + 1}>

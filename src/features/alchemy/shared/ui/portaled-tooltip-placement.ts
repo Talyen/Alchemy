@@ -6,6 +6,11 @@ export interface PortaledTooltipAnchor {
   bottom: number;
 }
 
+export type PortaledTooltipSide = "side-start" | "side-end";
+
+/** "above" flips above/below the trigger; side placements anchor beside it. */
+export type PortaledTooltipPlacement = "above" | PortaledTooltipSide;
+
 const VR_STAGE_SELECTOR = '[data-testid="vr-stage"]';
 const DEFAULT_HORIZONTAL_INSET = 152;
 
@@ -63,9 +68,49 @@ export function measurePortaledTooltipPlacement(
   };
 }
 
-export function usePortaledTooltipPlacement(triggerRef: RefObject<HTMLElement | null>, active: boolean, padding = 8) {
+/** Position a tooltip beside the trigger, flipping to the other side when clipped. */
+export function buildSideTooltipStyle(
+  anchor: PortaledTooltipAnchor,
+  triggerRect: Pick<DOMRect, "left" | "right">,
+  tooltipRect: Pick<DOMRect, "width" | "height">,
+  preferredSide: PortaledTooltipSide,
+  stage: Pick<DOMRect, "left" | "right" | "top" | "bottom"> = getVrStageBounds(),
+  padding = 8,
+): { side: PortaledTooltipSide; style: CSSProperties } {
+  let side = preferredSide;
+  let left = side === "side-end" ? triggerRect.right + padding : triggerRect.left - padding - tooltipRect.width;
+
+  if (side === "side-end" && left + tooltipRect.width + padding > stage.right) {
+    side = "side-start";
+    left = triggerRect.left - padding - tooltipRect.width;
+  } else if (side === "side-start" && left < stage.left + padding) {
+    side = "side-end";
+    left = triggerRect.right + padding;
+  }
+
+  left = Math.max(stage.left + padding, Math.min(left, stage.right - padding - tooltipRect.width));
+
+  // Vertically center on the trigger, clamped inside the stage. The panel is
+  // translateY(-50%)-centered via CSS, so `top` is the center line.
+  const halfHeight = tooltipRect.height / 2;
+  const centerY = (anchor.top + anchor.bottom) / 2;
+  const minTop = stage.top + halfHeight + padding;
+  const maxTop = stage.bottom - halfHeight - padding;
+  const top = Math.min(Math.max(centerY, minTop), Math.max(minTop, maxTop));
+
+  return { side, style: { left: `${left}px`, top: `${top}px` } };
+}
+
+export function usePortaledTooltipPlacement(
+  triggerRef: RefObject<HTMLElement | null>,
+  active: boolean,
+  padding = 8,
+  placement: PortaledTooltipPlacement = "above",
+  matchTriggerWidth = false,
+) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [placeBelow, setPlaceBelow] = useState(false);
+  const [tooltipSide, setTooltipSide] = useState<PortaledTooltipSide | null>(null);
   const [tooltipStyle, setTooltipStyle] = useState<CSSProperties | undefined>(undefined);
 
   useLayoutEffect(() => {
@@ -88,9 +133,18 @@ export function usePortaledTooltipPlacement(triggerRef: RefObject<HTMLElement | 
         top: triggerRect.top,
         bottom: triggerRect.bottom,
       };
-      const measured = measurePortaledTooltipPlacement(anchor, tooltipRect, stage, padding);
-      setPlaceBelow(measured.placeBelow);
-      setTooltipStyle(measured.style);
+
+      if (placement === "above") {
+        const measured = measurePortaledTooltipPlacement(anchor, tooltipRect, stage, padding);
+        setTooltipSide(null);
+        setPlaceBelow(measured.placeBelow);
+        setTooltipStyle(matchTriggerWidth ? { ...measured.style, width: `${triggerRect.width}px` } : measured.style);
+      } else {
+        const { side, style } = buildSideTooltipStyle(anchor, triggerRect, tooltipRect, placement, stage, padding);
+        setTooltipSide(side);
+        setPlaceBelow(false);
+        setTooltipStyle(matchTriggerWidth ? { ...style, width: `${triggerRect.width}px` } : style);
+      }
     };
 
     updatePlacement();
@@ -109,7 +163,7 @@ export function usePortaledTooltipPlacement(triggerRef: RefObject<HTMLElement | 
       document.removeEventListener("scroll", onScrollOrResize, true);
       resizeObserver?.disconnect();
     };
-  }, [active, triggerRef, padding]);
+  }, [active, triggerRef, padding, placement, matchTriggerWidth]);
 
-  return { tooltipRef, placeBelow, tooltipStyle };
+  return { tooltipRef, placeBelow, tooltipSide, tooltipStyle };
 }

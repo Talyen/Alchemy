@@ -16,7 +16,7 @@ import { CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
 import { animateCardActivation } from "./card-transfer-animations";
 import { getCardRect, getHoverId } from "../../shared/utils";
 import { applyCombatTextPortraitFeedback, shouldPlayCardGoldGain } from "./battle-feedback";
-import { getCardKey } from "./controller-utils";
+import { getCardKey, playCombatTextSounds } from "./controller-utils";
 import { runHandDrawSequence } from "./draw-sequence";
 import { getBattleSessionStore, type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
@@ -103,6 +103,7 @@ export function createBattleCardPlay(
     if (shouldPlayCardGoldGain(prePlayState, postPlayState, card)) playGoldGain();
     const store = getStore();
     applyCombatTextPortraitFeedback(combatTexts, store);
+    playCombatTextSounds(combatTexts);
   }
 
   function handlePlayCard(

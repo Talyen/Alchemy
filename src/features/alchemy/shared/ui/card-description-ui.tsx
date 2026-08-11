@@ -10,7 +10,9 @@ import { cn } from "@/lib/utils";
 
 import { tokenizeDescription } from "../utils";
 import { KeywordTag } from "./keyword-tag";
-import { TooltipBody, TooltipPanel, useTooltipViewportClamp } from "./tooltip-panel";
+import { TooltipBody } from "./tooltip-panel";
+import { PortaledTooltip } from "./portaled-tooltip";
+import { useHoverVisible } from "./use-hover-visible";
 import { getCorruptedValueOffsets, splitCorruptedNumericParts } from "./card-text";
 
 export function renderColoredKeywords(description: string) {
@@ -29,22 +31,25 @@ export function renderColoredKeywords(description: string) {
 
 export function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId; matchedText: string }) {
   const definition = keywordDefinitions[keywordId];
-  const { ref, flip, dx } = useTooltipViewportClamp(8, keywordId);
+  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
+    useHoverVisible<HTMLSpanElement>();
 
   return (
-    <span className="group/keyword relative inline-flex items-center">
+    <span
+      ref={triggerRef}
+      className="relative inline-flex items-center"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocusCapture={onFocusCapture}
+      onBlurCapture={onBlurCapture}
+    >
       <span className={cn("cursor-help font-semibold", definition.colorClass)}>{matchedText}</span>
-      <TooltipPanel
-        ref={ref}
-        flip={flip}
-        style={dx !== 0 ? { marginLeft: dx } : undefined}
-        className="pointer-events-none opacity-0 group-hover/keyword:opacity-100"
-      >
+      <PortaledTooltip triggerRef={triggerRef} visible={visible}>
         <span className="flex items-center gap-2 text-sm font-semibold">
           <KeywordTag keywordId={keywordId} />
         </span>
         <TooltipBody>{renderColoredKeywords(definition.description)}</TooltipBody>
-      </TooltipPanel>
+      </PortaledTooltip>
     </span>
   );
 }

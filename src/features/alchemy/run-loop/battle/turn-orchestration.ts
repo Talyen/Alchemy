@@ -22,7 +22,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import { applyCombatTextPortraitFeedback, shouldHurtEnemyFromCombatTexts } from "./battle-feedback";
-import { playCompanionSound } from "./controller-utils";
+import { playCompanionSound, playCombatTextSounds } from "./controller-utils";
 import { runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
 import { getBattleSessionStore, type createBattleSession } from "./battle-session";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
@@ -77,6 +77,7 @@ export function createTurnOrchestration(
           const store = getBattleSessionStore();
           store.showCombatTexts(texts);
           applyCombatTextPortraitFeedback(texts, store);
+          playCombatTextSounds(texts);
         }
       });
     }, COMPANION_ATTACK_DELAY);
@@ -108,6 +109,7 @@ export function resolveEndTurn(currentState: BattleState, session: number, orch:
         const store = getBattleSessionStore();
         store.showCombatTexts(companionTexts);
         applyCombatTextPortraitFeedback(companionTexts, store);
+        playCombatTextSounds(companionTexts);
       }
       orch.handleVictoryDefeat("victory");
       return false;
@@ -232,6 +234,7 @@ export async function executeEnemyPhase(
   if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
   if (combatTexts.length > 0) getBattleSessionStore().showCombatTexts(combatTexts);
   applyCombatTextPortraitFeedback(playerTexts, getBattleSessionStore());
+  playCombatTextSounds(playerTexts);
   await delay(ENEMY_ATTACK_RECOVERY_DELAY);
   if (!orch.isCurrentBattleSession(session)) return;
   markBattleStage("enemy-end");

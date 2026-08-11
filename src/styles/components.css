@@ -91,15 +91,11 @@
 
   .hover-popup-panel {
     box-shadow: 0 8px 24px color-mix(in srgb, var(--color-background) 75%, transparent);
-    transition: transform 160ms var(--ease-out-expo);
-    will-change: transform;
-  }
-
-  .stagger-item:has(.hover-popup-panel[data-visible]),
-  [class*="group"]:has(.hover-popup-panel):is(:hover, :focus-within),
-  div:has(> .hover-popup-panel):is(:hover, :focus-within) {
-    position: relative;
-    z-index: 50;
+    opacity: 0;
+    transition:
+      transform 160ms var(--ease-out-expo),
+      opacity 160ms var(--ease-out-expo);
+    will-change: transform, opacity;
   }
 
   .hover-popup-panel[data-placement="above"],
@@ -118,15 +114,11 @@
     transform: translateY(-50%);
   }
 
-  [class*="group"]:is(:hover, :focus-within) .hover-popup-panel,
-  :has(> .hover-popup-panel):is(:hover, :focus-within) > .hover-popup-panel,
   .hover-popup-panel[data-visible] {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
 
-  [class*="group"]:is(:hover, :focus-within) .hover-popup-panel[data-placement^="side-"],
-  :has(> .hover-popup-panel):is(:hover, :focus-within) > .hover-popup-panel[data-placement^="side-"],
   .hover-popup-panel[data-placement^="side-"][data-visible] {
     opacity: 1;
     transform: translateY(-50%);

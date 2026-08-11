@@ -36,7 +36,9 @@ export function PurchasableGearItem({
       className={cn(cardSurfaceClass, collectionTileWidthClass, gearInstanceAspectClass(definition))}
       imageClassName="absolute inset-0 h-full w-full rounded-shell-hero object-cover"
       interactive={!purchased}
-      popup={<GearDetailPopup definition={definition} instance={instance} />}
+      popup={({ visible, triggerRef }) => (
+        <GearDetailPopup definition={definition} instance={instance} visible={visible} triggerRef={triggerRef} />
+      )}
     />
   );
 

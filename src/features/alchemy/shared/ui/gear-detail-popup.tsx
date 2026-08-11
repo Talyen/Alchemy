@@ -1,20 +1,30 @@
+import { type RefObject } from "react";
 import { type GearDefinition, type GearInstance } from "@/lib/gear";
 
 import { GearTooltipContent } from "./gear-tooltip-content";
-import { TooltipPanel, useTooltipFlip } from "./tooltip-panel";
+import { PortaledTooltip } from "./portaled-tooltip";
 
 export function GearDetailPopup({
   definition,
   instance,
+  triggerRef,
+  visible,
 }: {
   definition: GearDefinition | undefined;
   instance: GearInstance;
+  triggerRef: RefObject<HTMLElement | null>;
+  visible: boolean;
 }) {
-  const { ref, flip } = useTooltipFlip();
   if (!definition) return null;
   return (
-    <TooltipPanel ref={ref} flip={flip} width="w-full" className="pointer-events-auto rounded-shell-tooltip">
+    <PortaledTooltip
+      triggerRef={triggerRef}
+      visible={visible}
+      matchTriggerWidth
+      pointerEventsAuto
+      className="rounded-shell-tooltip"
+    >
       <GearTooltipContent definition={definition} instance={instance} />
-    </TooltipPanel>
+    </PortaledTooltip>
   );
 }

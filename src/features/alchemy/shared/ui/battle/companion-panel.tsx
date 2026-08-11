@@ -5,7 +5,9 @@ import type { CompanionDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { cardSurfaceClass } from "../../config";
-import { TooltipHeader, TooltipPanel } from "../tooltip-panel";
+import { TooltipHeader } from "../tooltip-panel";
+import { PortaledTooltip } from "../portaled-tooltip";
+import { useHoverVisible } from "../use-hover-visible";
 import { formatCompanionTurnStartLine } from "@/features/alchemy/shared/utils";
 import { DescriptionLines } from "../card-description-ui";
 import { TiltSurface } from "../tilt-surface";
@@ -30,11 +32,16 @@ export function CompanionPanel({
   shaking?: boolean;
   damageBonus?: number;
 }) {
+  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
+
   return (
     <div
-      className="companion-enter group/companion relative"
+      ref={triggerRef}
+      className="companion-enter relative"
       data-testid="active-companion"
       aria-label={`Active companion: ${companion.title}`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       <TiltSurface
         className={cn(
@@ -50,13 +57,13 @@ export function CompanionPanel({
           loading="eager"
         />
       </TiltSurface>
-      <TooltipPanel className="opacity-0 group-hover/companion:opacity-100">
+      <PortaledTooltip triggerRef={triggerRef} visible={visible}>
         <TooltipHeader>{companion.title}</TooltipHeader>
         <DescriptionLines
           lines={getCompanionDescriptionLines(companion, damageBonus)}
           idPrefix={`companion-${companion.id}`}
         />
-      </TooltipPanel>
+      </PortaledTooltip>
     </div>
   );
 }

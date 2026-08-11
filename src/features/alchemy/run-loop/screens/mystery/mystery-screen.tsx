@@ -24,6 +24,7 @@ export function MysteryScreen({
   event,
   runDeck,
   mysteryCardChoices,
+  mysteryGrantedTrinketIds,
   onChoose,
   onChooseCard,
   onRemoveCard,
@@ -34,6 +35,7 @@ export function MysteryScreen({
   event: MysteryEvent;
   runDeck: BattleCard[];
   mysteryCardChoices: BattleCard[] | null;
+  mysteryGrantedTrinketIds: string[];
   onChoose: (choice: MysteryChoice) => void;
   onChooseCard: (cardId: string) => void;
   onRemoveCard: (index: number) => void;
@@ -104,6 +106,7 @@ export function MysteryScreen({
           runDeck={runDeck}
           findCard={findCard}
           findTrinket={findTrinket}
+          grantedTrinketIds={mysteryGrantedTrinketIds}
           onContinue={onContinue}
           eventTitle={event.title}
         />

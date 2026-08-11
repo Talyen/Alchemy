@@ -125,15 +125,31 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared
 
 ## Hover tooltips
 
-Clip bounds are `[data-testid="vr-stage"]` (fallback: `documentElement`), not the raw browser window. Prefer above; flip below when the tooltip would clip the stage top.
+Every hover tooltip renders in the root-space `#tooltip-root` overlay (registered
+in `App.tsx`) at constant CSS-pixel scale, so it never shrinks with the vr-stage
+transform and cannot be clipped by `overflow-hidden` ancestors. Clip/placement
+bounds are `[data-testid="vr-stage"]` (fallback: `documentElement`), not the raw
+browser window. Prefer above; flip below when the tooltip would clip the stage top;
+`side-start` / `side-end` anchor beside the trigger (locked menu items).
 
-| Case                                                                                                 | Use                                                                                                                          |
-| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Tall tooltips inside `overflow-hidden` scenes (battle enemies, armory gear/currency, bestiary tiles) | `PortaledTooltip` / `EnemyTooltip` / `GearTooltipPortal` — `createPortal` to `document.body` + `usePortaledTooltipPlacement` |
-| Smaller in-DOM hover panels that already opt into flip                                               | `useTooltipFlip`, `useTooltipViewportClamp`, or `useTooltipSidePlacement` on `TooltipPanel`                                  |
-| Tiny labels that never near an edge                                                                  | Plain `TooltipPanel` without measurement hooks                                                                               |
+Build tooltips with `PortaledTooltip` (`src/features/alchemy/shared/ui/portaled-tooltip.tsx`):
 
-Placement helpers live in `src/features/alchemy/shared/ui/portaled-tooltip-placement.ts` and `tooltip-panel.tsx`.
+| Need                                                                           | Prop / helper                                                                           |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| Basic hover tooltip (pointer-events-none, no handoff)                          | `triggerRef` + `visible`; drive hover with `useHoverVisible()` (`use-hover-visible.ts`) |
+| Card/gear popups sized to their trigger and interactive (nested keyword hover) | `matchTriggerWidth` + `pointerEventsAuto` (see `DetailPopup` / `GearDetailPopup`)       |
+| Placement beside the trigger                                                   | `placement="side-start"` / `"side-end"` (flips to the other side when clipped)          |
+| Small-window guard                                                             | `maxWidthFraction` — cap against a fraction of the vr-stage width                       |
+
+State-driven triggers (mount on hover) render `PortaledTooltip` only while hovered;
+CSS-hover converts use `useHoverVisible()` and always mount, letting
+`PortaledTooltip` keep the panel mounted through a short fade-out. Interactive
+popups stay open while the pointer is over the trigger OR the panel (hover handoff).
+
+`EnemyTooltip`, `GearTooltipPortal`, `DetailPopup`, and `GearDetailPopup` wrap
+`PortaledTooltip` with their own content. Placement helpers live in
+`src/features/alchemy/shared/ui/portaled-tooltip-placement.ts`; content slots
+(`TooltipHeader` / `TooltipBody` / `TooltipSection`) live in `tooltip-panel.tsx`.
 
 ---
 
