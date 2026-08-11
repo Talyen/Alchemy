@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
-import { injectSaveState, destinationInterruptedFlow, seedRandom, makeCard } from "./helpers";
+import { injectSaveState, destinationInterruptedFlow, seedRandom, makeCard, startAtDestination } from "./helpers";
 import { DestinationPage } from "./pages/destination-page";
 import { MysteryPage } from "./pages/mystery-page";
 import { CorruptionPage } from "./pages/corruption-page";
@@ -153,23 +153,3 @@ test.describe("Corruption Full Flow", () => {
     expect(await playableCards.count()).toBeGreaterThan(0);
   });
 });
-
-async function startAtDestination(
-  page: import("@playwright/test").Page,
-  overrides: Record<string, any> = {},
-  options: { forceDestination?: string } = {},
-) {
-  const choices = options.forceDestination ? [options.forceDestination] : ["Normal Combat"];
-  await injectSaveState(page, {
-    runPlayerHealth: 30,
-    runMaxHealth: 30,
-    roomsEncountered: 0,
-    destinationIndexInAct: 0,
-    completedDestinations: [],
-    currentScreen: "destination",
-    interruptedFlow: destinationInterruptedFlow(choices),
-    ...overrides,
-  });
-  await page.goto("/");
-  await new DestinationPage(page).expectVisible();
-}

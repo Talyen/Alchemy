@@ -17,6 +17,41 @@ async function pickDraftCard(page: import("@playwright/test").Page) {
   await confirm.click();
 }
 
+/** Default resumable draft state with the shared inert fields; override draftChoices etc. */
+function wildwoodDraftDefaults(overrides: Record<string, unknown> = {}) {
+  return {
+    version: 3,
+    phase: "draft",
+    draftChoices: [makeCard({ id: "boss-killer-final" })],
+    remainingBossIds: [],
+    previousBossId: null,
+    currentBossId: null,
+    currentCombatTraitIds: [],
+    currentRewardTraitIds: [],
+    rewardType: null,
+    rewardChoiceIds: [],
+    selectedRewardId: null,
+    ...overrides,
+  };
+}
+
+/** Full save-state for a mid-draft wildwood run; merge per-test overrides. */
+function wildwoodBossState(overrides: Record<string, unknown> = {}) {
+  return {
+    contentSystemType: "wildwood",
+    selectedDifficulty: null,
+    currentScreen: "draft-deck",
+    runPlayerHealth: 30,
+    runMaxHealth: 30,
+    runDeck: Array.from({ length: 5 }, (_, index) => ({
+      ...makeCard({ id: `boss-killer-${index}` }),
+      effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
+    })),
+    wildwoodDraft: wildwoodDraftDefaults(),
+    ...overrides,
+  };
+}
+
 async function wildwoodWinCombat(page: import("@playwright/test").Page, battle: BattlePage, maxTurns = 6) {
   for (let turn = 0; turn < maxTurns; turn++) {
     if (await battle.isBattleOver()) break;
@@ -52,25 +87,13 @@ test.describe("Wildwood Draft", () => {
       makeCard({ id: "bash", title: "Bash" }),
       makeCard({ id: "anvil", title: "Anvil" }),
     ];
-    await injectSaveState(page, {
-      contentSystemType: "wildwood",
-      selectedDifficulty: null,
-      currentScreen: "draft-deck",
-      runDeck: draftedCards,
-      wildwoodDraft: {
-        version: 3,
-        phase: "draft",
-        draftChoices: finalChoices,
-        remainingBossIds: [],
-        previousBossId: null,
-        currentBossId: null,
-        currentCombatTraitIds: [],
-        currentRewardTraitIds: [],
-        rewardType: null,
-        rewardChoiceIds: [],
-        selectedRewardId: null,
-      },
-    });
+    await injectSaveState(
+      page,
+      wildwoodBossState({
+        runDeck: draftedCards,
+        wildwoodDraft: wildwoodDraftDefaults({ draftChoices: finalChoices }),
+      }),
+    );
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Draft a Deck" })).toBeVisible({ timeout: 5000 });
 
@@ -91,27 +114,15 @@ test.describe("Wildwood Draft", () => {
       ...makeHighDamageCard(),
       effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
     };
-    await injectSaveState(page, {
-      contentSystemType: "wildwood",
-      selectedDifficulty: null,
-      currentScreen: "draft-deck",
-      runPlayerHealth: 10,
-      runMaxHealth: 30,
-      runDeck: Array.from({ length: 5 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
-      wildwoodDraft: {
-        version: 3,
-        phase: "draft",
-        draftChoices: [{ ...bossKiller, id: "boss-killer-final" }],
-        remainingBossIds: [],
-        previousBossId: null,
-        currentBossId: null,
-        currentCombatTraitIds: [],
-        currentRewardTraitIds: [],
-        rewardType: null,
-        rewardChoiceIds: [],
-        selectedRewardId: null,
-      },
-    });
+    await injectSaveState(
+      page,
+      wildwoodBossState({
+        runPlayerHealth: 10,
+        runMaxHealth: 30,
+        runDeck: Array.from({ length: 5 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
+        wildwoodDraft: wildwoodDraftDefaults({ draftChoices: [{ ...bossKiller, id: "boss-killer-final" }] }),
+      }),
+    );
     await page.goto("/");
 
     await pickDraftCard(page);
@@ -152,27 +163,15 @@ test.describe("Wildwood Draft", () => {
         ...makeHighDamageCard(),
         effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
       };
-      await injectSaveState(page, {
-        contentSystemType: "wildwood",
-        selectedDifficulty: null,
-        currentScreen: "draft-deck",
-        runPlayerHealth: 10,
-        runMaxHealth: 30,
-        runDeck: Array.from({ length: 5 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
-        wildwoodDraft: {
-          version: 3,
-          phase: "draft",
-          draftChoices: [{ ...bossKiller, id: "boss-killer-final" }],
-          remainingBossIds: [],
-          previousBossId: null,
-          currentBossId: null,
-          currentCombatTraitIds: [],
-          currentRewardTraitIds: [],
-          rewardType: null,
-          rewardChoiceIds: [],
-          selectedRewardId: null,
-        },
-      });
+      await injectSaveState(
+        page,
+        wildwoodBossState({
+          runPlayerHealth: 10,
+          runMaxHealth: 30,
+          runDeck: Array.from({ length: 5 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
+          wildwoodDraft: wildwoodDraftDefaults({ draftChoices: [{ ...bossKiller, id: "boss-killer-final" }] }),
+        }),
+      );
       await page.goto("/");
 
       await pickDraftCard(page);
@@ -194,34 +193,6 @@ test.describe("Wildwood Draft", () => {
   );
 });
 
-function wildwoodBossState(overrides: Record<string, unknown> = {}) {
-  return {
-    contentSystemType: "wildwood",
-    selectedDifficulty: null,
-    currentScreen: "draft-deck",
-    runPlayerHealth: 30,
-    runMaxHealth: 30,
-    runDeck: Array.from({ length: 5 }, (_, index) => ({
-      ...makeCard({ id: `boss-killer-${index}` }),
-      effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
-    })),
-    wildwoodDraft: {
-      version: 3,
-      phase: "draft",
-      draftChoices: [makeCard({ id: "boss-killer-final" })],
-      remainingBossIds: [],
-      previousBossId: null,
-      currentBossId: null,
-      currentCombatTraitIds: [],
-      currentRewardTraitIds: [],
-      rewardType: null,
-      rewardChoiceIds: [],
-      selectedRewardId: null,
-    },
-    ...overrides,
-  };
-}
-
 test.describe("Wildwood Traits", slow, () => {
   test.beforeEach(async ({ page }) => {
     await seedRandom(page, 42);
@@ -234,19 +205,7 @@ test.describe("Wildwood Traits", slow, () => {
     await injectSaveState(
       page,
       wildwoodBossState({
-        wildwoodDraft: {
-          version: 3,
-          phase: "draft",
-          draftChoices: [makeCard()],
-          remainingBossIds: [],
-          previousBossId: null,
-          currentBossId: null,
-          currentCombatTraitIds: ["zealot"],
-          currentRewardTraitIds: [],
-          rewardType: null,
-          rewardChoiceIds: [],
-          selectedRewardId: null,
-        },
+        wildwoodDraft: wildwoodDraftDefaults({ draftChoices: [makeCard()], currentCombatTraitIds: ["zealot"] }),
       }),
     );
     await page.goto("/");

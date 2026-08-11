@@ -17,6 +17,20 @@ describe("affix catalog guard", () => {
     }
   });
 
+  it("every effectKey in GEAR_EFFECT_KEYS is referenced by at least one affix", () => {
+    const used = new Set<string>();
+    for (const definition of Object.values(gearAffixCatalog)) {
+      used.add(definition.effectKey);
+    }
+    const unused = [...new Set<string>(GEAR_EFFECT_KEYS)].filter((key) => !used.has(key));
+    expect(unused).toEqual([]);
+  });
+
+  it("GEAR_EFFECT_KEYS is non-empty and has unique entries", () => {
+    expect(GEAR_EFFECT_KEYS.length).toBeGreaterThan(0);
+    expect(new Set(GEAR_EFFECT_KEYS).size).toBe(GEAR_EFFECT_KEYS.length);
+  });
+
   it("tags every affix with offensive or defensive aspect", () => {
     for (const definition of Object.values(gearAffixCatalog)) {
       expect(["offensive", "defensive"]).toContain(definition.aspect);

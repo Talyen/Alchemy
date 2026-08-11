@@ -2,6 +2,7 @@
 import type { Page } from "@playwright/test";
 import { SAVE_KEY } from "@/lib/game-constants";
 import { baseHomesteadSave } from "../fixtures/saves";
+import { makeGoblinBattleState } from "./battle-fixtures";
 
 export async function injectMidCombatSave(page: Page) {
   // Keep this fixture free of runtime battle imports so Playwright never loads game art during test discovery.
@@ -16,38 +17,11 @@ export async function injectMidCombatSave(page: Page) {
     effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
     uid: 1,
   };
-  const battleState = {
-    deck: [],
+  const battleState = makeGoblinBattleState({
     hand: [slash],
-    discard: [],
-    exhausted: [],
-    mana: 3,
-    maxMana: 3,
-    gold: 15,
-    turn: 2,
-    turnPhase: "player",
     playerHealth: 18,
-    playerMaxHealth: 30,
-    enemyHealth: 40,
-    enemyMaxHealth: 40,
-    currentEnemy: {
-      id: "goblin",
-      title: "Goblin",
-      subtitle: "",
-      descriptionLines: [],
-      art: "goblin.webp",
-      enemyType: "normal",
-      traits: [],
-      attackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-    },
-    enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-    playerStatuses: {},
-    enemyStatuses: {},
-    flags: {},
-    discoveredCardIds: ["slash"],
-    difficultyModifiers: [],
     trinketEffects: { extraDrawPerBattle: 1 },
-  };
+  });
   const save = {
     ...baseHomesteadSave,
     autoEndTurn: false,

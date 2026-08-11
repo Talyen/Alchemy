@@ -5,6 +5,7 @@ import {
   injectBossState,
   assertDefeatFromEndRun,
   makeCard,
+  makeGoblinBattleState,
   startAtDestination,
   startBattleWithDeck,
   SAVE_KEY,
@@ -97,41 +98,15 @@ test.describe("Run Outcomes", () => {
     test("after defeat by lethal damage, Continue returns to menu", critical, async ({ page, fastBattle }) => {
       void fastBattle;
 
-      const battleState = {
-        deck: [],
+      const battleState = makeGoblinBattleState({
         hand: [],
-        discard: [],
-        exhausted: [],
         mana: 0,
-        maxMana: 3,
-        gold: 15,
         turn: 1,
-        turnPhase: "player",
         playerHealth: 1,
-        playerMaxHealth: 30,
         // Knight Death's Door would otherwise absorb the lethal hit.
         deathsDoorUsed: true,
         deathsDoorActive: false,
-        enemyHealth: 40,
-        enemyMaxHealth: 40,
-        currentEnemy: {
-          id: "goblin",
-          title: "Goblin",
-          subtitle: "",
-          descriptionLines: [],
-          art: "goblin.webp",
-          enemyType: "normal",
-          traits: [],
-          attackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-        },
-        enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-        playerStatuses: {},
-        enemyStatuses: {},
-        flags: {},
-        discoveredCardIds: ["slash"],
-        difficultyModifiers: [],
-        trinketEffects: {},
-      };
+      });
 
       await injectSaveState(page, {
         currentScreen: "battle",

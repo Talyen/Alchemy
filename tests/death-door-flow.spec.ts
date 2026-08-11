@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { injectSaveState, makeCard } from "./helpers";
+import { injectSaveState, makeCard, makeGoblinBattleState } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
 import { critical } from "./playwright-tags";
@@ -10,45 +10,15 @@ import { critical } from "./playwright-tags";
 // does a lethal hit kill outright. These tests inject a battle that is *already*
 // in Death's Door grace, which makes them fully deterministic and independent
 // of the random enemy.
-const GOBBLIN = {
-  id: "goblin",
-  title: "Goblin",
-  subtitle: "",
-  descriptionLines: [],
-  art: "goblin.webp",
-  enemyType: "normal",
-  traits: [],
-  attackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-};
-
 function deathsDoorGraceState(hand: Array<Record<string, unknown>>) {
-  return {
-    deck: [],
+  return makeGoblinBattleState({
     hand,
-    discard: [],
-    exhausted: [],
-    mana: 3,
-    maxMana: 3,
-    gold: 15,
-    turn: 2,
-    turnPhase: "player",
     playerHealth: 1,
-    playerMaxHealth: 30,
     deathsDoorUsed: true,
     deathsDoorActive: true,
     deathsDoorTriggeredTurn: 2,
     deathsDoorGraceTurnsRemaining: 1,
-    enemyHealth: 40,
-    enemyMaxHealth: 40,
-    currentEnemy: GOBBLIN,
-    enemyAttackEffects: GOBBLIN.attackEffects,
-    playerStatuses: {},
-    enemyStatuses: {},
-    flags: {},
-    discoveredCardIds: ["slash"],
-    difficultyModifiers: [],
-    trinketEffects: {},
-  };
+  });
 }
 
 async function startInDeathsDoorGrace(page: import("@playwright/test").Page, hand: Array<Record<string, unknown>>) {

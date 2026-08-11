@@ -5,14 +5,22 @@ import { MenuPage } from "./pages/menu-page";
 import { BattlePage } from "./pages/battle-page";
 import { critical } from "./playwright-tags";
 
-test.describe("Difficulty Select", critical, () => {
-  test.beforeEach(async ({ page }) => {
-    await page.addInitScript((saveKey) => {
+/** Unlocks difficulty-1..N for Knight and Wizard so difficulty cards are selectable. */
+async function unlockDifficulties(page: import("@playwright/test").Page, difficultyIds: string[]) {
+  await page.addInitScript(
+    ({ saveKey, ids }) => {
       const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      save.completedDifficulties = { knight: ["difficulty-1"], wizard: ["difficulty-1"] };
+      save.completedDifficulties = { knight: [...ids], wizard: [...ids] };
       save.finishedRunCharacters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
       localStorage.setItem(saveKey, JSON.stringify(save));
-    }, SAVE_KEY);
+    },
+    { saveKey: SAVE_KEY, ids: difficultyIds },
+  );
+}
+
+test.describe("Difficulty Select", critical, () => {
+  test.beforeEach(async ({ page }) => {
+    await unlockDifficulties(page, ["difficulty-1"]);
   });
 
   test("difficulty screen shows all three cards with correct unlock states", async ({ page }) => {
@@ -80,15 +88,7 @@ const ENEMY_BASE_HEALTH = 30;
 
 test.describe("Difficulty Modifier Effects", () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      save.completedDifficulties = {
-        knight: ["difficulty-1", "difficulty-2"],
-        wizard: ["difficulty-1", "difficulty-2"],
-      };
-      save.finishedRunCharacters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
-      localStorage.setItem(saveKey, JSON.stringify(save));
-    }, SAVE_KEY);
+    await unlockDifficulties(page, ["difficulty-1", "difficulty-2"]);
   });
 
   test("Novice difficulty has no enemy health modifier", async ({ page, fastBattle }) => {
