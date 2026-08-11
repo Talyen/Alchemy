@@ -1,11 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  useRewardsScreenData,
-  useScreenAssetPreloadUrls,
-  useShopScreenData,
-} from "@/features/alchemy/shared/stores/use-run-screen-data";
+import { useRewardsScreenData, useShopScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
   getRunSessionStoreView,
@@ -54,14 +50,5 @@ describe("screen-specific run data hooks", () => {
     });
 
     expect(renders).toBe(1);
-  });
-
-  it("preload projection extracts asset URLs for active screen", () => {
-    const { result } = renderHook(() => useScreenAssetPreloadUrls("shop"));
-
-    const expectedShopUrls = getRunSessionStoreView()
-      .shopState.cards.map((card) => card.art)
-      .filter(Boolean);
-    expect(result.current).toEqual(expectedShopUrls);
   });
 });

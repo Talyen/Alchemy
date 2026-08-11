@@ -2,8 +2,6 @@
 // fields required by its screen, and its return type describes exactly that data.
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { gearDefinitions } from "@/lib/gear";
-import type { Screen } from "@/lib/routing";
 import { useGameplayStateStore } from "./gameplay-state-store";
 import type { RunDataScreen, RunScreenDataByScreen } from "./run-screen-data";
 import type { RewardState } from "@/lib/active-run-session";
@@ -119,67 +117,4 @@ export function useRunVictoryScreenData(): ScreenData<"run-victory"> {
 export function useWildwoodRemovalScreenData(): ScreenData<"wildwood-removal"> {
   const runDeck = useGameplayStateStore((state) => state.run.activeRun.runDeck);
   return useMemo(() => ({ runDeck }), [runDeck]);
-}
-
-const EMPTY_PRELOAD_URLS: string[] = [];
-
-/**
- * Screen-aware asset URL extractor used by the asset preloader. Returns a clean
- * array of image URL strings for the active screen without intermediate objects.
- */
-export function useScreenAssetPreloadUrls(screen: Screen): string[] {
-  const rewardState = useGameplayStateStore((state) => (screen === "rewards" ? state.session.rewardState : null));
-  const shopState = useGameplayStateStore((state) => (screen === "shop" ? state.session.shopState : null));
-  const alchemistState = useGameplayStateStore((state) =>
-    screen === "alchemist" ? state.session.alchemistState : null,
-  );
-  const mysteryEvent = useGameplayStateStore((state) => (screen === "mystery" ? state.session.mysteryEvent : null));
-  const battleArtUrls = useGameplayStateStore(
-    useShallow((state) => {
-      if (screen !== "battle") return EMPTY_PRELOAD_URLS;
-      const battle = state.battle.battleState;
-      if (!battle) return EMPTY_PRELOAD_URLS;
-      const urls: string[] = [];
-      if (battle.currentEnemy?.art) {
-        urls.push(battle.currentEnemy.art);
-      }
-      for (const card of battle.hand) {
-        if (card.art) urls.push(card.art);
-      }
-      return urls;
-    }),
-  );
-
-  return useMemo(() => {
-    const urls: string[] = [];
-    if (rewardState) {
-      if (rewardState.rewardType === "gear") {
-        for (const choice of rewardState.choices) {
-          const art = gearDefinitions[choice.definitionId]?.art;
-          if (art) urls.push(art);
-        }
-      } else {
-        for (const choice of rewardState.choices) {
-          if (choice.art) urls.push(choice.art);
-        }
-      }
-    }
-    if (shopState) {
-      for (const card of shopState.cards) {
-        if (card.art) urls.push(card.art);
-      }
-    }
-    if (alchemistState) {
-      for (const potion of alchemistState.potions) {
-        if (potion.art) urls.push(potion.art);
-      }
-    }
-    if (mysteryEvent?.art) {
-      urls.push(mysteryEvent.art);
-    }
-    if (battleArtUrls.length > 0) {
-      urls.push(...battleArtUrls);
-    }
-    return urls;
-  }, [rewardState, shopState, alchemistState, mysteryEvent, battleArtUrls]);
 }

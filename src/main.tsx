@@ -8,6 +8,7 @@ import App from "./App";
 import "./index.css";
 import { cursorArt } from "./lib/game-data/assets";
 import { initializeRendererCrashReporting } from "./lib/crash-reporting";
+import "@/features/alchemy/shared/stores/error-log-store";
 
 initializeRendererCrashReporting();
 
@@ -45,5 +46,4 @@ const idle: (cb: () => void) => void =
     : (cb) => globalThis.setTimeout(cb, 0);
 idle(() => {
   void import("./lib/validate-startup").then((m) => m.runStartupValidation());
-  void import("@/features/alchemy/shared/stores/error-log-store");
 });

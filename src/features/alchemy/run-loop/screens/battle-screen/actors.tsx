@@ -6,21 +6,21 @@ import { cn } from "@/lib/utils";
 
 import { ArtPanel, CompanionPanel, CombatTextRail } from "../../../shared/ui/battle-ui";
 import { battleActorSectionClass, bossCardWidthClass } from "@/features/alchemy/shared/config";
-import type { BattleFeedbackProps, BattleHoverProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import type { BattleFeedbackProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 
 export function BattleActors({
   view,
-  hover,
   feedback,
   refs,
 }: {
   view: RequiredBattleViewProps;
-  hover: BattleHoverProps;
   feedback: BattleFeedbackProps;
   refs: BattleRefsProps;
 }) {
   const { battleState, heroArt, playerName, aspectMode } = view;
-  const { shimmerState, maybeTriggerShimmer: onHoverShimmer } = hover;
+  const shimmerState = useUiStore((state) => state.shimmerState);
+  const onHoverShimmer = useUiStore((state) => state.maybeTriggerShimmer);
   const {
     playerStatusChips,
     enemyStatusChips,

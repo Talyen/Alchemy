@@ -18,15 +18,23 @@ export function useEasedHealth({
 }) {
   const [displayHealth, setDisplayHealth] = useState(from);
   const [progressTarget, setProgressTarget] = useState(from);
+  const [syncedInput, setSyncedInput] = useState({ active, from });
   const frameRef = useRef<number | null>(null);
   const onFinishedRef = useRef(onFinished);
   const inactiveFrom = active ? null : from;
+
+  // Adjust animation state during render when its origin changes. React retries this
+  // render before committing, so activation cannot paint a stale previous origin.
+  if (syncedInput.active !== active || syncedInput.from !== from) {
+    setSyncedInput({ active, from });
+    setDisplayHealth(from);
+    setProgressTarget(from);
+  }
 
   useEffect(() => {
     onFinishedRef.current = onFinished;
   }, [onFinished]);
 
-  // When inactive, mirror `from` without an effect setState (key off inactiveFrom).
   const shownHealth = inactiveFrom ?? displayHealth;
   const shownProgress = inactiveFrom ?? progressTarget;
 
@@ -42,11 +50,17 @@ export function useEasedHealth({
     frameRef.current = requestAnimationFrame(() => {
       const startTime = performance.now();
       setProgressTarget(to);
+      setDisplayHealth(from);
 
+      let lastDispatched = from;
       function animate() {
         const progress = Math.min(1, (performance.now() - startTime) / durationMs);
         const eased = 1 - Math.pow(1 - progress, 3);
-        setDisplayHealth(Math.round(from + (to - from) * eased));
+        const nextValue = Math.round(from + (to - from) * eased);
+        if (nextValue !== lastDispatched) {
+          lastDispatched = nextValue;
+          setDisplayHealth(nextValue);
+        }
         if (progress < 1) {
           frameRef.current = requestAnimationFrame(animate);
         } else {

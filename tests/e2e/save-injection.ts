@@ -205,6 +205,14 @@ export async function injectBossState(page: Page, act = 1) {
     completedDestinations: Array.from({ length: 7 }, () => "Normal Combat"),
     runPlayerHealth: 30,
     runMaxHealth: 30,
+    currentScreen: "destination",
+    interruptedFlow: {
+      kind: "destination",
+      destinations: ["Boss Combat"],
+      selectedBossId: act === 1 ? "forge-golem" : act === 2 ? "frostwarden" : "blight-treant",
+      lastVictoryEnemyType: null,
+      lastVictoryContentSystem: null,
+    },
   });
 }
 

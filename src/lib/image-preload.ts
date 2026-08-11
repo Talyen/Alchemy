@@ -1,6 +1,6 @@
 // Image preloading helpers for warming likely-next game art without blocking the
 // current interaction. Used by the app shell to reduce visible image pop-in.
-import { IMAGE_PRELOAD_BATCH_SIZE, IMAGE_PRELOAD_IDLE_TIMEOUT } from "./game-constants";
+import { IMAGE_PRELOAD_BATCH_SIZE } from "./game-constants";
 
 // Cache storing in-flight and completed load promises by image source URL.
 const imageLoads = new Map<string, Promise<void>>();
@@ -48,31 +48,30 @@ export function preloadImages(srcs: readonly string[]): Promise<void> {
   return Promise.all(srcs.map(preloadImage)).then(() => undefined);
 }
 
-// Spreads speculative image decoding across idle time so menu and battle input
-// remain responsive while future screen art is prepared.
-export function preloadImagesWhenIdle(srcs: string[]): void {
+// Warms the complete set while yielding between bounded batches. Startup awaits this
+// function before revealing the app, so gameplay still begins with every asset decoded;
+// the yields only keep the loading presentation responsive during the up-front work.
+export async function preloadImagesInBatches(
+  srcs: readonly string[],
+  batchSize = IMAGE_PRELOAD_BATCH_SIZE,
+): Promise<void> {
   const uniqueSrcs = Array.from(new Set(srcs.filter(Boolean)));
-  let index = 0;
+  const resolvedBatchSize = Math.max(1, Math.floor(batchSize));
 
-  function preloadNextBatch(): void {
-    if (index >= uniqueSrcs.length) return;
-    void preloadImages(uniqueSrcs.slice(index, index + IMAGE_PRELOAD_BATCH_SIZE));
-    index += IMAGE_PRELOAD_BATCH_SIZE;
-    if (index < uniqueSrcs.length) schedulePreloadBatch(preloadNextBatch);
+  for (let index = 0; index < uniqueSrcs.length; index += resolvedBatchSize) {
+    await preloadImages(uniqueSrcs.slice(index, index + resolvedBatchSize));
+    if (index + resolvedBatchSize < uniqueSrcs.length) {
+      await yieldToBrowser();
+    }
   }
-
-  schedulePreloadBatch(preloadNextBatch);
 }
 
-// Uses idle callbacks when available and falls back to a timer in browsers that
-// do not expose requestIdleCallback.
-function schedulePreloadBatch(callback: () => void): void {
-  if ("requestIdleCallback" in globalThis) {
-    (globalThis as Window & typeof globalThis).requestIdleCallback(() => callback(), {
-      timeout: IMAGE_PRELOAD_IDLE_TIMEOUT,
-    });
-    return;
-  }
-
-  globalThis.setTimeout(() => callback(), 0);
+function yieldToBrowser(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => resolve());
+      return;
+    }
+    globalThis.setTimeout(resolve, 0);
+  });
 }

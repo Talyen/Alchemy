@@ -9,7 +9,7 @@ import {
 } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
-import { critical } from "./playwright-tags";
+import { critical, slow } from "./playwright-tags";
 
 const DOT_STATUS_CASES = [
   {
@@ -41,9 +41,11 @@ const CC_STATUS_CASES = [
 // Goblin's trinket-hoarder doubles burn; play+tick can kill and leave this suite on Victory.
 const DOT_ENCOUNTER_OVERRIDES = { encounteredRunEnemyIds: ["goblin"] };
 
-test.describe("Damage-over-Time Status Effects", critical, () => {
+test.describe("Damage-over-Time Status Effects", () => {
   for (const statusCase of DOT_STATUS_CASES) {
-    test(statusCase.name, async ({ page, fastBattle, runtimeErrors }) => {
+    const gate = statusCase.damageType === "burn" ? critical : slow;
+
+    test(statusCase.name, gate, async ({ page, fastBattle, runtimeErrors }) => {
       void fastBattle;
       void runtimeErrors;
 
@@ -76,9 +78,11 @@ test.describe("Damage-over-Time Status Effects", critical, () => {
   }
 });
 
-test.describe("Crowd Control Status Effects", critical, () => {
+test.describe("Crowd Control Status Effects", () => {
   for (const statusCase of CC_STATUS_CASES) {
-    test(statusCase.name, async ({ page, fastBattle, runtimeErrors }) => {
+    const gate = statusCase.damageType === "stun" ? critical : slow;
+
+    test(statusCase.name, gate, async ({ page, fastBattle, runtimeErrors }) => {
       void fastBattle;
       void runtimeErrors;
 

@@ -9,14 +9,7 @@ import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
 import { HamburgerTrigger, PageLayout } from "../../../shared/ui/shared-ui";
 import { WishOverlay } from "./wish-overlay";
-import type {
-  BattleActionsProps,
-  BattleFeedbackProps,
-  BattleHoverProps,
-  BattleRefsProps,
-  BattleScreenData,
-  BattleScreenState,
-} from "./types";
+import type { BattleActionsProps, BattleFeedbackProps, BattleRefsProps, BattleScreenData } from "./types";
 import { BATTLE_PARTICLE_ALPHA_BOSS, BATTLE_PARTICLE_ALPHA_NORMAL } from "@/lib/game-constants";
 import { getEnemyStatusChips, getPlayerStatusChips } from "../../../shared/utils";
 import { isAlchemyDevBuild } from "../../../shared/utils/dev-mode";
@@ -72,9 +65,6 @@ export function BattleScreen(props: BattleScreenProps) {
     companionShaking,
     playerHurtFlashToken,
     enemyHurtFlashToken,
-    hoveredCardId,
-    shimmerState,
-    maybeTriggerShimmer,
     activeLabyrinthModifiers,
   } = battleScreenData;
 
@@ -96,51 +86,79 @@ export function BattleScreen(props: BattleScreenProps) {
     [floatingCombatTexts],
   );
 
-  const view = {
-    battleState: displayState as BattleScreenState,
-    heroArt,
-    playerName,
-    aspectMode,
-    stagePixelRatio,
-  };
+  const view = useMemo(
+    () => ({
+      battleState: displayState,
+      heroArt,
+      playerName,
+      aspectMode,
+      stagePixelRatio,
+    }),
+    [displayState, heroArt, playerName, aspectMode, stagePixelRatio],
+  );
 
-  const hover: BattleHoverProps = {
-    hoveredCardId,
-    shimmerState,
-    maybeTriggerShimmer,
-  };
+  const feedback: BattleFeedbackProps = useMemo(
+    () => ({
+      playerStatusChips,
+      enemyStatusChips,
+      playerCombatTexts,
+      enemyCombatTexts,
+      cardGhosts,
+      playerShaking,
+      enemyShaking,
+      companionShaking,
+      playerHurtFlashToken,
+      enemyHurtFlashToken,
+      activeLabyrinthModifiers,
+    }),
+    [
+      playerStatusChips,
+      enemyStatusChips,
+      playerCombatTexts,
+      enemyCombatTexts,
+      cardGhosts,
+      playerShaking,
+      enemyShaking,
+      companionShaking,
+      playerHurtFlashToken,
+      enemyHurtFlashToken,
+      activeLabyrinthModifiers,
+    ],
+  );
 
-  const feedback: BattleFeedbackProps = {
-    playerStatusChips,
-    enemyStatusChips,
-    playerCombatTexts,
-    enemyCombatTexts,
-    cardGhosts,
-    playerShaking,
-    enemyShaking,
-    companionShaking,
-    playerHurtFlashToken,
-    enemyHurtFlashToken,
-    activeLabyrinthModifiers,
-  };
-
-  const actions: BattleActionsProps = {
-    onCardClick,
-    onOpenMenu,
-    onWishChoice,
-    onRemoveCardGhost,
-    onSkipCombatDevMode,
-    onEndTurn,
-    hiddenHandCardKeys,
-    cardTransferInProgress,
-    playableHandCardKeys,
-    revealedCardKeys,
-    isDevMode: isAlchemyDevBuild(),
-  };
+  const isDev = isAlchemyDevBuild();
+  const actions: BattleActionsProps = useMemo(
+    () => ({
+      onCardClick,
+      onOpenMenu,
+      onWishChoice,
+      onRemoveCardGhost,
+      onSkipCombatDevMode,
+      onEndTurn,
+      hiddenHandCardKeys,
+      cardTransferInProgress,
+      playableHandCardKeys,
+      revealedCardKeys,
+      isDevMode: isDev,
+    }),
+    [
+      onCardClick,
+      onOpenMenu,
+      onWishChoice,
+      onRemoveCardGhost,
+      onSkipCombatDevMode,
+      onEndTurn,
+      hiddenHandCardKeys,
+      cardTransferInProgress,
+      playableHandCardKeys,
+      revealedCardKeys,
+      isDev,
+    ],
+  );
 
   const { battleSceneRef: sceneRef } = refs;
   const { onRemoveCardGhost: removeGhost } = actions;
-  const requiredView = { ...view, aspectMode };
+  const requiredView = useMemo(() => ({ ...view, aspectMode }), [view, aspectMode]);
 
   return (
     <PageLayout>
@@ -159,7 +177,7 @@ export function BattleScreen(props: BattleScreenProps) {
             data-testid="battle-scene"
             className="[container-type:size] absolute inset-0 overflow-hidden"
           >
-            <BattleActors view={requiredView} hover={hover} feedback={feedback} refs={refs} />
+            <BattleActors view={requiredView} feedback={feedback} refs={refs} />
 
             <BattleBottomBar view={requiredView} refs={refs} actions={actions} />
 

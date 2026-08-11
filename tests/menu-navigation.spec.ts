@@ -11,10 +11,10 @@ import {
 import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
 import { MenuPage } from "./pages/menu-page";
-import { critical, prepush, slow } from "./playwright-tags";
+import { critical, slow } from "./playwright-tags";
 
 test.describe("Menu", critical, () => {
-  test("main menu reports the meta run phase and shows all buttons", prepush, async ({ page }) => {
+  test("main menu reports the meta run phase and shows all buttons", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
     await menu.expectMainMenu();

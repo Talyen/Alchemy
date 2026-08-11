@@ -125,28 +125,23 @@ function replaceCurrentTrack(key: string, track: string, volume: number) {
 }
 
 // Starts a keyed track with the standard delayed fade-in used for scene transitions.
-// Leverages requestAnimationFrame for smooth volume interpolation.
+// Uses a short interval so volume interpolation can continue when animation frames are paused.
 function startTrack(key: string, track: string) {
   const el = replaceCurrentTrack(key, track, MUSIC_CONFIG.VOLUME_MIN);
   const boost = BOSS_MUSIC_KEYS.has(key) ? BOSS_MUSIC_VOLUME_BOOST : 1;
   const startTime = performance.now();
 
-  function fadeIn() {
+  const timer = setInterval(() => {
     const elapsed = performance.now() - startTime;
-    if (elapsed < FADE_IN_DELAY) {
-      requestAnimationFrame(fadeIn);
-      return;
-    }
+    if (elapsed < FADE_IN_DELAY) return;
     const t = Math.min(1, (elapsed - FADE_IN_DELAY) / FADE_IN_DURATION);
     if (audioState.currentMusic === el) {
       el.volume = audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * t * boost;
     }
-    if (t < 1) {
-      requestAnimationFrame(fadeIn);
+    if (t >= 1) {
+      clearInterval(timer);
     }
-  }
-
-  requestAnimationFrame(fadeIn);
+  }, 30);
 }
 
 // Starts a keyed music group immediately (no crossfade), choosing one registered track
@@ -175,27 +170,26 @@ function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newKey: string, newTra
   const oldVol = oldTrack.volume;
   const startTime = performance.now();
 
-  function fadeOut() {
+  const timer = setInterval(() => {
     // If a newer music transition has taken precedence, abort the current animation loop.
-    if (transitionToken !== musicTransitionToken) return;
+    if (transitionToken !== musicTransitionToken) {
+      clearInterval(timer);
+      return;
+    }
 
     const elapsed = performance.now() - startTime;
     const t = Math.min(1, elapsed / FADE_OUT_DURATION);
     oldTrack.volume = Math.max(MUSIC_CONFIG.VOLUME_MIN, oldVol * (1 - t));
 
-    if (t < 1) {
-      requestAnimationFrame(fadeOut);
-      return;
+    if (t >= 1) {
+      clearInterval(timer);
+      oldTrack.pause();
+      if (audioState.currentMusic === oldTrack) {
+        audioState.currentMusic = null;
+      }
+      startTrack(newKey, newTrack);
     }
-
-    oldTrack.pause();
-    if (audioState.currentMusic === oldTrack) {
-      audioState.currentMusic = null;
-    }
-    startTrack(newKey, newTrack);
-  }
-
-  requestAnimationFrame(fadeOut);
+  }, 30);
 }
 
 export function playMusic(key: string) {

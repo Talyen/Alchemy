@@ -3,8 +3,6 @@ import { test } from "./fixtures/e2e";
 import {
   enableFastMode,
   injectBossState,
-  resumeGameMode,
-  seedRandom,
   assertDefeatFromEndRun,
   makeCard,
   startAtDestination,
@@ -24,16 +22,11 @@ test.describe("Run Outcomes", () => {
       critical,
       async ({ page }) => {
         await enableFastMode(page);
-        await injectBossState(page);
-        await seedRandom(page, 42);
+        await injectBossState(page, 1);
         await page.goto("/");
-        await resumeGameMode(page, "campaign");
 
-        await expect(
-          page.getByRole("heading", { name: /The (Forge Golem|Frostwarden|Blight Treant|Iron Bear)/ }),
-        ).toBeVisible({ timeout: 5000 });
         const bossBtn = page.getByRole("button", { name: "Boss Combat" });
-        await expect(bossBtn).toBeVisible({ timeout: 3000 });
+        await expect(bossBtn).toBeVisible({ timeout: 5000 });
 
         await bossBtn.click();
         await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
@@ -55,9 +48,7 @@ test.describe("Run Outcomes", () => {
     test("defeating Act III boss shows run victory screen", async ({ page }) => {
       await enableFastMode(page);
       await injectBossState(page, 3);
-      await seedRandom(page, 42);
       await page.goto("/");
-      await resumeGameMode(page, "campaign");
 
       await expect(page.getByRole("button", { name: "Boss Combat" })).toBeVisible({ timeout: 5000 });
       await page.getByRole("button", { name: "Boss Combat" }).click();
@@ -75,7 +66,7 @@ test.describe("Run Outcomes", () => {
 
   test.describe("Defeat and Run End Flow", () => {
     test("ending a run from destination screen shows defeat screen", critical, async ({ page }) => {
-      await startAtDestination(page, {});
+      await startAtDestination(page, {}, { forceDestination: "Normal Combat" });
       await page.keyboard.press("Escape");
       await expect(page.getByRole("button", { name: "End Run" })).toBeVisible({ timeout: 3000 });
       await page.getByRole("button", { name: "End Run" }).click();

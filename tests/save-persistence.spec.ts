@@ -1,6 +1,7 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
 import {
+  enableFastMode,
   injectSaveState,
   destinationInterruptedFlow,
   openGameModeSelect,
@@ -238,6 +239,7 @@ test.describe("Autosave Cadence", () => {
   test("save is written after claiming a reward", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
+    await enableFastMode(page);
     await startBattleWithDeck(
       page,
       Array.from({ length: 6 }, () => makeHighDamageCard()),

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
+import { SHAKE_DURATION } from "@/lib/game-constants";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
 import {
@@ -44,6 +45,18 @@ describe("battle-presentation-store", () => {
     useBattlePresentationStore.getState().shakeEnemy();
     expect(useBattlePresentationStore.getState().enemyShaking).toBe(true);
     await vi.advanceTimersByTimeAsync(500);
+    expect(useBattlePresentationStore.getState().enemyShaking).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it("restarts a shake timer so an older hit cannot clear a newer shake", async () => {
+    vi.useFakeTimers();
+    useBattlePresentationStore.getState().shakeEnemy();
+    await vi.advanceTimersByTimeAsync(SHAKE_DURATION - 100);
+    useBattlePresentationStore.getState().shakeEnemy();
+    await vi.advanceTimersByTimeAsync(150);
+    expect(useBattlePresentationStore.getState().enemyShaking).toBe(true);
+    await vi.advanceTimersByTimeAsync(SHAKE_DURATION - 149);
     expect(useBattlePresentationStore.getState().enemyShaking).toBe(false);
     vi.useRealTimers();
   });

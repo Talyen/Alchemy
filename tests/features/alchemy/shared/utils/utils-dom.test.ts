@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest";
-import { getBattleCardPlayTarget, getCardRect } from "@/features/alchemy/shared/utils/dom";
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  clearTiltFromEvent,
+  getBattleCardPlayTarget,
+  getCardRect,
+  setTiltFromEvent,
+} from "@/features/alchemy/shared/utils/dom";
 import type { BattleCard } from "@/lib/game-data";
 
 function makeCard(effects: BattleCard["effects"]): BattleCard {
@@ -66,5 +72,38 @@ describe("getCardRect", () => {
     } as DOMRect;
     const cardRect = getCardRect(rect);
     expect(cardRect).toEqual({ x: 10, y: 20, width: 100, height: 150 });
+  });
+});
+
+describe("tilt geometry", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("refreshes the target rectangle for each animation frame", () => {
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+
+    const target = document.createElement("div");
+    const getBoundingClientRect = vi
+      .spyOn(target, "getBoundingClientRect")
+      .mockReturnValueOnce(new DOMRect(0, 0, 100, 100))
+      .mockReturnValueOnce(new DOMRect(100, 0, 100, 100));
+
+    setTiltFromEvent({ currentTarget: target, clientX: 50, clientY: 50 } as never);
+    frames.shift()?.(0);
+    expect(target.style.getPropertyValue("--tilt-rotate-y")).toBe("0deg");
+
+    setTiltFromEvent({ currentTarget: target, clientX: 150, clientY: 50 } as never);
+    frames.shift()?.(16);
+    expect(target.style.getPropertyValue("--tilt-rotate-y")).toBe("0deg");
+    expect(getBoundingClientRect).toHaveBeenCalledTimes(2);
+
+    clearTiltFromEvent({ currentTarget: target } as never);
   });
 });

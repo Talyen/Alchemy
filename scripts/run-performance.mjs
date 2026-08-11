@@ -3,7 +3,7 @@
  * On-demand FPS / hitch profiling runner.
  * Usage:
  *   node scripts/run-performance.mjs
- *   node scripts/run-performance.mjs --scenario armory-drag --runs 5
+ *   node scripts/run-performance.mjs --scenario armory-drag
  *   node scripts/run-performance.mjs --all
  *   node scripts/run-performance.mjs --trace --scenario battle-effects
  *   node scripts/run-performance.mjs --compare reports/performance/a reports/performance/b
@@ -53,7 +53,7 @@ function printHelp() {
 
 Usage:
   npm run perf
-  npm run perf -- --scenario armory-drag --runs 5
+  npm run perf -- --scenario armory-drag
   npm run perf -- --all
   npm run perf:trace -- --scenario battle-effects
   npm run perf:compare -- <beforeDir> <afterDir>

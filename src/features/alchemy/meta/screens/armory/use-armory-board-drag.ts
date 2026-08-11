@@ -129,30 +129,38 @@ export function useArmoryBoardDrag({
     [inventoryById, launchSecondarySwapAnimations, loadout, packedInventory.items],
   );
 
+  const inventoryByIdRef = useLatestRef(inventoryById);
+  const packedInventoryRef = useLatestRef(packedInventory);
+  const onEquipRef = useLatestRef(onEquip);
+  const onUnequipRef = useLatestRef(onUnequip);
+  const onMoveItemRef = useLatestRef(onMoveItem);
+  const onMoveCurrencyRef = useLatestRef(onMoveCurrency);
+  const maybeLaunchSwapAnimationsRef = useLatestRef(maybeLaunchSwapAnimations);
+
   const buildEnv = useCallback((): ArmoryDragEnv => {
     return {
       characterId,
-      inventoryById,
-      packedInventory,
+      inventoryById: inventoryByIdRef.current,
+      packedInventory: packedInventoryRef.current,
       packedCurrencies: packedCurrenciesRef.current,
       inventoryBoard: inventoryBoardRef.current,
-      onEquip,
-      onUnequip,
-      onMoveItem,
-      onMoveCurrency,
-      maybeLaunchSwapAnimations,
+      onEquip: (...args) => onEquipRef.current(...args),
+      onUnequip: (...args) => onUnequipRef.current(...args),
+      onMoveItem: (...args) => onMoveItemRef.current(...args),
+      onMoveCurrency: (...args) => onMoveCurrencyRef.current(...args),
+      maybeLaunchSwapAnimations: (...args) => maybeLaunchSwapAnimationsRef.current(...args),
     };
   }, [
     characterId,
-    inventoryById,
     inventoryBoardRef,
-    maybeLaunchSwapAnimations,
-    onEquip,
-    onMoveCurrency,
-    onMoveItem,
-    onUnequip,
+    inventoryByIdRef,
+    maybeLaunchSwapAnimationsRef,
+    onEquipRef,
+    onMoveCurrencyRef,
+    onMoveItemRef,
+    onUnequipRef,
     packedCurrenciesRef,
-    packedInventory,
+    packedInventoryRef,
   ]);
 
   const fsm = useBoardDrag<ArmoryDragItem, ArmoryDragOrigin>({

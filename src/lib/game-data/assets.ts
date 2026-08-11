@@ -69,9 +69,7 @@ const assetModules = import.meta.glob("@/assets/optimized/*.webp", {
   eager: true,
   import: "default",
 });
-export const allGameArt = Object.entries(assetModules)
-  .filter(([path]) => !path.includes("/mystery-"))
-  .map(([, url]) => url as string);
+export const allGameArt = Object.values(assetModules) as string[];
 
 export const talentBackgroundArt: Partial<Record<KeywordId, string>> = {
   physical: assetRefs.talentBgPhysical,

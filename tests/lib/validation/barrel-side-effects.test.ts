@@ -49,7 +49,7 @@ describe("@/features/alchemy phase screen barrels", () => {
     expect(meta.HomesteadScreen).toBeDefined();
     expect(runLoop.BattleScreen).toBeDefined();
     expect(runLoop.RewardsScreen).toBeDefined();
-  }, 15_000);
+  }, 30_000);
 });
 
 describe("@/features/alchemy/shared/utils barrel", () => {

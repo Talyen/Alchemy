@@ -12,9 +12,9 @@ Use this when you are actively optimizing frame pacing and need repeatable numbe
 # Production build + battle-effects (1 warm-up + 1 measured)
 npm run perf
 
-# Other scenarios / multi-rep baselines
+# Other scenarios (each defaults to 1 warm-up + 1 measured run)
 npm run perf -- --scenario battle-end-turn
-npm run perf -- --scenario armory-drag --runs 5
+npm run perf -- --scenario armory-drag
 npm run perf -- --all
 
 # Opt-in art diagnostics (no metrics aggregate)
@@ -43,6 +43,11 @@ Headed Chromium uses a **1440×900** viewport (MacBook Air 13" logical / 16:10) 
 Open a deep trace in Chrome: DevTools → Performance → Load profile → select the `.json` file.
 
 Reuse an existing `dist/` with `--skip-build` when iterating on the harness itself.
+
+Keep ordinary profiling at the default **one measured run per scenario** to limit
+local CPU/GPU use. The harness also performs one unmeasured warm-up so cold JIT,
+layout, and asset initialization do not contaminate the recorded sample. Increase
+`--runs` only when explicitly requested for statistical investigation.
 
 Short smoke / harness iteration (not for baselines):
 

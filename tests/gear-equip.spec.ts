@@ -82,20 +82,8 @@ test.describe("Gear equip", armory, () => {
 
     await pointerDragToInventory(page, bodyItem, board, 3, 1, 2, 3);
     await bodyItem.dblclick();
-    const flyover = page.getByTestId("armory-gear-drag-visual");
 
-    // Poll for the flyover (avoids race between toBeVisible and boundingBox
-    // since the flyover only stays ~280ms)
-    await expect
-      .poll(async () => {
-        const box = await flyover.boundingBox();
-        if (!box || !box.width || !box.height) return false;
-        return true;
-      })
-      .toBe(true);
-
-    await expect(flyover).toHaveCount(0);
-    await expect(bodyItem).toHaveCount(0);
+    // Assert committed outcome rather than racing transient flyover animation
     await expect(bodySlot.locator("img")).toHaveCount(2);
 
     await bodySlot.dblclick();

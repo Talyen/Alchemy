@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { preloadImages } from "@/lib/image-preload";
+import { preloadImagesInBatches } from "@/lib/image-preload";
 import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
 import { useInitialLoadReady } from "@/app/use-app-effects";
 
@@ -12,7 +12,7 @@ vi.mock("@/lib/game-data", async (importOriginal) => ({
 
 vi.mock("@/lib/image-preload", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/image-preload")>()),
-  preloadImages: vi.fn(),
+  preloadImagesInBatches: vi.fn(),
 }));
 
 vi.mock("@/features/alchemy/shared/utils", async (importOriginal) => ({
@@ -43,7 +43,7 @@ describe("useInitialLoadReady", () => {
   it("waits for the fixed minimum, all game art, and fonts before revealing the app", async () => {
     const images = deferred();
     const fonts = deferred();
-    vi.mocked(preloadImages).mockReturnValue(images.promise);
+    vi.mocked(preloadImagesInBatches).mockReturnValue(images.promise);
     Object.defineProperty(document, "fonts", {
       configurable: true,
       value: { ready: fonts.promise },
@@ -51,7 +51,7 @@ describe("useInitialLoadReady", () => {
 
     const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 650 }));
 
-    expect(preloadImages).toHaveBeenCalledWith(["first.webp", "second.webp"]);
+    expect(preloadImagesInBatches).toHaveBeenCalledWith(["first.webp", "second.webp"]);
     expect(result.current).toBe(false);
 
     await act(async () => {
@@ -75,7 +75,7 @@ describe("useInitialLoadReady", () => {
 
   it("keeps warming assets when the test-only presentation gate is skipped", () => {
     vi.mocked(shouldSkipStartupLoadingGate).mockReturnValue(true);
-    vi.mocked(preloadImages).mockReturnValue(new Promise<void>(() => {}));
+    vi.mocked(preloadImagesInBatches).mockReturnValue(new Promise<void>(() => {}));
     Object.defineProperty(document, "fonts", {
       configurable: true,
       value: { ready: new Promise<void>(() => {}) },
@@ -84,6 +84,6 @@ describe("useInitialLoadReady", () => {
     const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 650 }));
 
     expect(result.current).toBe(true);
-    expect(preloadImages).toHaveBeenCalledWith(["first.webp", "second.webp"]);
+    expect(preloadImagesInBatches).toHaveBeenCalledWith(["first.webp", "second.webp"]);
   });
 });

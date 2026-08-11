@@ -4,7 +4,7 @@ import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-po
 import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import type { CombatTextEvent } from "@/lib/battle";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
-import { delay } from "@/lib/animation/game-timer";
+import { resolveGameDelay, TimerGroup } from "@/lib/animation/game-timer";
 import type { CardGhost, CardTransfer, FloatingCombatText } from "../../shared/types";
 
 function getCombatTextDisplayText(event: CombatTextEvent): string {
@@ -53,6 +53,27 @@ const combatTextLifetimeMs = COMBAT_TEXT_LIFETIME_MS;
 const combatTextLaneDelayMs = COMBAT_TEXT_LANE_DELAY_MS;
 
 let combatTextSequence = 0;
+const combatTextTimers = new TimerGroup();
+const shakeTimers = new TimerGroup();
+type ShakeTarget = "enemy" | "player" | "companion";
+const shakeTimerCancels = new Map<ShakeTarget, () => void>();
+
+function scheduleShakeReset(target: ShakeTarget, reset: () => void) {
+  shakeTimerCancels.get(target)?.();
+  shakeTimerCancels.set(
+    target,
+    shakeTimers.setTimeout(() => {
+      shakeTimerCancels.delete(target);
+      reset();
+    }, shakeDuration),
+  );
+}
+
+function clearPresentationTimers() {
+  combatTextTimers.clearAll();
+  shakeTimers.clearAll();
+  shakeTimerCancels.clear();
+}
 
 function shouldShowFloatingCombatText(sequence: number): boolean {
   if (sequence !== combatTextSequence) return false;
@@ -88,17 +109,17 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
 
   shakeEnemy: () => {
     set({ enemyShaking: true });
-    setTimeout(() => set({ enemyShaking: false }), shakeDuration);
+    scheduleShakeReset("enemy", () => set({ enemyShaking: false }));
   },
 
   shakePlayer: () => {
     set({ playerShaking: true });
-    setTimeout(() => set({ playerShaking: false }), shakeDuration);
+    scheduleShakeReset("player", () => set({ playerShaking: false }));
   },
 
   shakeCompanion: () => {
     set({ companionShaking: true });
-    setTimeout(() => set({ companionShaking: false }), shakeDuration);
+    scheduleShakeReset("companion", () => set({ companionShaking: false }));
   },
 
   hurtPlayer: () => set((s) => ({ playerHurtFlashToken: s.playerHurtFlashToken + 1 })),
@@ -124,21 +145,20 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
 
     for (const entry of nextEntries) {
       const entryDelay = entry.lane * combatTextLaneDelayMs;
-      void delay(entryDelay)
-        .then(() => {
-          if (!shouldShowFloatingCombatText(sequence)) return;
-          set((s) => ({ floatingCombatTexts: [...s.floatingCombatTexts, entry] }));
-          return delay(combatTextLifetimeMs);
-        })
-        .then((res) => {
-          if (res === undefined || sequence !== combatTextSequence) return;
+      combatTextTimers.setTimeout(() => {
+        if (!shouldShowFloatingCombatText(sequence)) return;
+        set((s) => ({ floatingCombatTexts: [...s.floatingCombatTexts, entry] }));
+        combatTextTimers.setTimeout(() => {
+          if (sequence !== combatTextSequence) return;
           set((s) => ({ floatingCombatTexts: s.floatingCombatTexts.filter((c) => c.id !== entry.id) }));
-        });
+        }, resolveGameDelay(combatTextLifetimeMs));
+      }, resolveGameDelay(entryDelay));
     }
   },
 
   clearFloatingCombatTexts: () => {
     invalidateCombatTextSequence();
+    combatTextTimers.clearAll();
     set({ floatingCombatTexts: [] });
   },
 
@@ -167,6 +187,7 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
 
   resetPresentation: () => {
     invalidateCombatTextSequence();
+    clearPresentationTimers();
     set({
       cardGhosts: [],
       floatingCombatTexts: [],

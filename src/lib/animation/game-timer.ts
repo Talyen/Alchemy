@@ -4,8 +4,11 @@
 import { isAnimationDisabled, ANIMATION_DISABLED_DURATION } from "@/lib/animation/animation-prefs";
 
 export function delay(ms: number): Promise<void> {
-  const actual = isAnimationDisabled() ? ANIMATION_DISABLED_DURATION : ms;
-  return new Promise((resolve) => setTimeout(resolve, actual));
+  return new Promise((resolve) => setTimeout(resolve, resolveGameDelay(ms)));
+}
+
+export function resolveGameDelay(ms: number): number {
+  return isAnimationDisabled() ? ANIMATION_DISABLED_DURATION : ms;
 }
 
 export class TimerGroup {

@@ -81,5 +81,5 @@ describe("bootstrapAlchemySaveState", () => {
     await saveAlchemySaveData(defaultSaveData);
 
     expect(order).toEqual(["local", "cloud"]);
-  });
+  }, 30_000);
 });

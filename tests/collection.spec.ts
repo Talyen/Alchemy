@@ -1,10 +1,10 @@
 import { expect, test } from "./fixtures/e2e";
 import { injectHomestead } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
-import { critical, prepush } from "./playwright-tags";
+import { critical } from "./playwright-tags";
 
 test.describe("Collection", critical, () => {
-  test("collection shows all three tabs with content and card inspection works", prepush, async ({ page }) => {
+  test("collection shows all three tabs with content and card inspection works", async ({ page }) => {
     await injectHomestead(page, { discoveredCardIds: ["anvil"] });
     const menu = new MenuPage(page);
     await menu.goto();

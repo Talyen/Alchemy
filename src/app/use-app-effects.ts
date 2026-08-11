@@ -16,12 +16,10 @@ import { audioState } from "@/lib/audio-state";
 import { getBossMusicKey, invalidateCacheForKey } from "@/lib/audio-music";
 import { logError } from "@/lib/error-logger";
 import { allGameArt } from "@/lib/game-data";
-import { preloadImages } from "@/lib/image-preload";
+import { preloadImagesInBatches } from "@/lib/image-preload";
 import type { DisplayMode, Screen } from "@/features/alchemy/shared/types";
-import { pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-react-ports";
-import { useScreenAssetPreloadUrls } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
 
 // ── Audio Effects ──
@@ -135,7 +133,7 @@ export function useAppDisplayEffects({ displayMode, brightness, stageRef }: AppD
     if (el) {
       const brightnessFactor = brightness / 100;
       // eslint-disable-next-line react-compiler/react-compiler -- intentional DOM mutation inside useLayoutEffect
-      el.style.filter = `brightness(${brightnessFactor})`;
+      el.style.filter = brightness === 100 ? "" : `brightness(${brightnessFactor})`;
     }
   }, [brightness, stageRef]);
 }
@@ -181,26 +179,6 @@ export function useGlobalErrorHandlers(): void {
   }, []);
 }
 
-// ── Screen Asset Preload Effects ──
-
-interface ScreenAssetPreloadOptions {
-  heroArt: string;
-  screen: Screen;
-}
-
-export function useScreenAssetPreloadEffects({ heroArt, screen }: ScreenAssetPreloadOptions) {
-  const screenAssetUrls = useScreenAssetPreloadUrls(screen);
-
-  useEffect(() => {
-    const priorityImages = [heroArt];
-    if (screen === "battle") {
-      priorityImages.push(pileDrawArt, pileDiscardArt);
-    }
-    priorityImages.push(...screenAssetUrls);
-    void preloadImages(priorityImages);
-  }, [heroArt, screen, screenAssetUrls]);
-}
-
 // ── Initial Load Readiness Gate ──
 
 // Keeps the loader presentation on its fixed minimum timing while decoding all
@@ -220,7 +198,7 @@ export function useInitialLoadReady({ minDurationMs = INITIAL_LOAD_MIN_DURATION_
         });
     const timer = skipGate ? undefined : window.setTimeout(resolveMinimumDuration, minDurationMs);
 
-    void Promise.all([minimumDuration, preloadImages(allGameArt), waitForFonts()]).then(() => {
+    void Promise.all([minimumDuration, preloadImagesInBatches(allGameArt), waitForFonts()]).then(() => {
       if (!cancelled) setReady(true);
     });
 

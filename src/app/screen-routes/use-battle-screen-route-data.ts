@@ -4,7 +4,6 @@ import { useShallow } from "zustand/react/shallow";
 import { useActiveRunScreenValue, useDisplayOverrides } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-model";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { getPlayableHandCardKeysExcludingHidden } from "@/features/alchemy/run-loop/battle/playable-hand";
 import type { BattleScreenData } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 
@@ -30,14 +29,6 @@ export function useBattleScreenRouteData() {
       cardTransferInProgress: s.cardTransferInProgress,
     })),
   );
-  const { hoveredCardId, shimmerState, maybeTriggerShimmer } = useUiStore(
-    useShallow((s) => ({
-      hoveredCardId: s.hoveredCardId,
-      shimmerState: s.shimmerState,
-      maybeTriggerShimmer: s.maybeTriggerShimmer,
-    })),
-  );
-
   const battleScreenData: BattleScreenData = useMemo(
     () => ({
       battleState,
@@ -50,9 +41,6 @@ export function useBattleScreenRouteData() {
       companionShaking: battlePresentation.companionShaking,
       playerHurtFlashToken: battlePresentation.playerHurtFlashToken,
       enemyHurtFlashToken: battlePresentation.enemyHurtFlashToken,
-      hoveredCardId,
-      shimmerState,
-      maybeTriggerShimmer,
       activeLabyrinthModifiers,
     }),
     [
@@ -66,9 +54,6 @@ export function useBattleScreenRouteData() {
       battlePresentation.companionShaking,
       battlePresentation.playerHurtFlashToken,
       battlePresentation.enemyHurtFlashToken,
-      hoveredCardId,
-      shimmerState,
-      maybeTriggerShimmer,
       activeLabyrinthModifiers,
     ],
   );

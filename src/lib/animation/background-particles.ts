@@ -83,7 +83,7 @@ function spawnParticle(width: number, height: number, config: BackgroundParticle
     swayAmplitude: 10 + Math.random() * 30,
     swaySpeed: 0.2 + Math.random() * 0.4,
     swayOffset: Math.random() * Math.PI * 2,
-    color: (rawColor ?? "rgba(255, 200, 80, X)").replace("X", "1"),
+    color: rawColor ?? "rgba(255, 200, 80, 1)",
   };
 }
 
@@ -138,18 +138,23 @@ export function startBackgroundParticles(
   let running = true;
   let particles: BackgroundParticle[] = [];
   let lastTime = performance.now();
-  const dpr = devicePixelRatio || 1;
+  let backingScale = 1;
 
   function resize() {
     const w = activeParent.clientWidth;
     const h = activeParent.clientHeight;
-    activeCanvas.width = w * dpr;
-    activeCanvas.height = h * dpr;
+    const renderedBounds = activeParent.getBoundingClientRect();
+    const scaleX = w > 0 ? renderedBounds.width / w : 1;
+    const scaleY = h > 0 ? renderedBounds.height / h : 1;
+    const renderedScale = Math.max(scaleX, scaleY);
+    backingScale = Math.max(1, renderedScale * (devicePixelRatio || 1));
+    activeCanvas.width = Math.max(1, Math.round(w * backingScale));
+    activeCanvas.height = Math.max(1, Math.round(h * backingScale));
     activeCanvas.style.width = `${w}px`;
     activeCanvas.style.height = `${h}px`;
-    activeCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    activeCtx.setTransform(backingScale, 0, 0, backingScale, 0, 0);
     const config = CONFIGS[variant];
-    const resolvedColors = colors ?? config.colors;
+    const resolvedColors = (colors ?? config.colors).map((c) => c.replace("X", "1"));
     const mult = alphaMultiplier ?? 1;
     const patchedConfig = {
       ...config,
@@ -164,13 +169,16 @@ export function startBackgroundParticles(
 
   const ro = new ResizeObserver(resize);
   ro.observe(activeParent);
+  window.addEventListener("resize", resize);
+
+  let animFrameId: number | null = null;
 
   function frame(now: number) {
-    if (!running) return;
+    if (!running || document.hidden) return;
     const dt = Math.min((now - lastTime) / 16.67, 3);
     lastTime = now;
-    const w = activeCanvas.width / dpr;
-    const h = activeCanvas.height / dpr;
+    const w = activeCanvas.width / backingScale;
+    const h = activeCanvas.height / backingScale;
 
     activeCtx.clearRect(0, 0, w, h);
 
@@ -179,13 +187,25 @@ export function startBackgroundParticles(
       renderParticle(activeCtx, p);
     }
 
-    requestAnimationFrame(frame);
+    animFrameId = requestAnimationFrame(frame);
   }
 
-  requestAnimationFrame(frame);
+  function handleVisibilityChange() {
+    if (!document.hidden && running) {
+      lastTime = performance.now();
+      if (animFrameId !== null) cancelAnimationFrame(animFrameId);
+      animFrameId = requestAnimationFrame(frame);
+    }
+  }
+
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+  animFrameId = requestAnimationFrame(frame);
 
   return () => {
     running = false;
+    if (animFrameId !== null) cancelAnimationFrame(animFrameId);
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+    window.removeEventListener("resize", resize);
     ro.disconnect();
     onStop?.();
   };

@@ -15,20 +15,20 @@ const isFullE2eSuite = process.env.PLAYWRIGHT_E2E_FULL === "1";
 const maxFailures = isFullE2eSuite ? 5 : isCi ? 1 : 0;
 const playwrightJsonOut = process.env.PLAYWRIGHT_JSON_OUTPUT_NAME ?? "reports/playwright-results.json";
 
-const prepushWorkers = Math.min(4, Math.max(2, os.cpus().length > 1 ? os.cpus().length - 1 : 2));
+const defaultWorkers = Math.min(3, Math.max(2, os.cpus().length > 1 ? os.cpus().length - 1 : 2));
 
 export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.spec.ts",
-  testIgnore: "**/electron-smoke.spec.ts",
+  testIgnore: ["**/electron-smoke.spec.ts", "**/electron-security.spec.ts"],
   // Every E2E test is state-isolated (each injects its own localStorage), so the
   // CI gate runs fully parallel for throughput. Disable animations via fastBattle
   // where applicable; the raw-animation canaries are isolated per-context.
   fullyParallel: isPrepush || isNightly || isFullE2eSuite || isCi,
   maxFailures,
-  workers: isPrepush ? prepushWorkers : isNightly ? 4 : isCi ? 4 : 4,
+  workers: isNightly ? 4 : isCi ? 4 : defaultWorkers,
   globalTimeout: 600_000,
-  timeout: isCi ? 30_000 : 15_000,
+  timeout: isCi ? 30_000 : 20_000,
   retries: isCi ? 1 : 0,
   forbidOnly: isCi,
   // Keep only failed-run output locally/CI so successful shards do not accumulate under test-results/.

@@ -6,13 +6,12 @@ import { useUiStore } from "../stores/ui-store";
 import { getHoverId } from "../utils";
 
 export function useInteractiveCard(scope: string, itemId: string) {
-  const hoveredCardId = useUiStore((s) => s.hoveredCardId);
-  const setHoveredCardId = useUiStore((s) => s.setHoveredCardId);
-  const shimmerState = useUiStore((s) => s.shimmerState);
-  const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
-
   const hoverId = getHoverId(scope, itemId);
-  const isHovered = hoveredCardId === hoverId;
+  const isHovered = useUiStore((s) => s.hoveredCardId === hoverId);
+  const setHoveredCardId = useUiStore((s) => s.setHoveredCardId);
+  const shimmerActive = useUiStore((s) => s.shimmerState?.cardId === hoverId);
+  const shimmerToken = useUiStore((s) => (s.shimmerState?.cardId === hoverId ? s.shimmerState.token : undefined));
+  const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
 
   const onHoverStart = useCallback(() => {
     setHoveredCardId(hoverId);
@@ -28,7 +27,7 @@ export function useInteractiveCard(scope: string, itemId: string) {
     isHovered,
     onHoverStart,
     onHoverEnd,
-    shimmerActive: shimmerState?.cardId === hoverId,
-    shimmerToken: shimmerState?.token,
+    shimmerActive,
+    shimmerToken,
   };
 }

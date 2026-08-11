@@ -25,7 +25,7 @@ export async function selectGameMode(page: Page, mode: GameMode, action: "Play" 
   await actionButton.click();
 }
 
-export async function resumeGameMode(page: Page, mode: Exclude<GameMode, "wildwood"> = "campaign") {
+async function resumeGameMode(page: Page, mode: Exclude<GameMode, "wildwood"> = "campaign") {
   await selectGameMode(page, mode, "Resume");
 }
 

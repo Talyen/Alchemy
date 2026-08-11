@@ -6,9 +6,8 @@ import type { BattleCard } from "@/lib/game-data";
 import type { CardRect } from "../types";
 
 interface TiltFrame {
-  rect: DOMRect;
-  x: number;
-  y: number;
+  clientX: number;
+  clientY: number;
   rafId: number | null;
 }
 
@@ -24,10 +23,9 @@ export function setTiltFromEvent(event: MouseEvent<HTMLElement>) {
   // Tilt updates are batched through requestAnimationFrame so rapid mousemove events do
   // not write CSS variables more often than the browser can paint.
   const target = event.currentTarget;
-  const frame = tiltFrames.get(target) ?? { rect: target.getBoundingClientRect(), x: 0.5, y: 0.5, rafId: null };
-  frame.rect = target.getBoundingClientRect();
-  frame.x = (event.clientX - frame.rect.left) / frame.rect.width;
-  frame.y = (event.clientY - frame.rect.top) / frame.rect.height;
+  const frame = tiltFrames.get(target) ?? { clientX: event.clientX, clientY: event.clientY, rafId: null };
+  frame.clientX = event.clientX;
+  frame.clientY = event.clientY;
   tiltFrames.set(target, frame);
   target.classList.add("tilt-active");
 
@@ -38,9 +36,12 @@ export function setTiltFromEvent(event: MouseEvent<HTMLElement>) {
   frame.rafId = requestAnimationFrame(() => {
     const latest = tiltFrames.get(target);
     if (!latest) return;
+    const rect = target.getBoundingClientRect();
+    const x = rect.width === 0 ? 0.5 : (latest.clientX - rect.left) / rect.width;
+    const y = rect.height === 0 ? 0.5 : (latest.clientY - rect.top) / rect.height;
     const strength = Number(target.dataset.tiltStrength ?? DEFAULT_TILT_STRENGTH);
-    target.style.setProperty("--tilt-rotate-y", `${(latest.x - 0.5) * strength}deg`);
-    target.style.setProperty("--tilt-rotate-x", `${(0.5 - latest.y) * strength}deg`);
+    target.style.setProperty("--tilt-rotate-y", `${(x - 0.5) * strength}deg`);
+    target.style.setProperty("--tilt-rotate-x", `${(0.5 - y) * strength}deg`);
     latest.rafId = null;
   });
 }

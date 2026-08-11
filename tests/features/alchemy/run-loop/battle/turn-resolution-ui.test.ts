@@ -29,7 +29,8 @@ vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", () => ({
   }),
 }));
 
-vi.mock("@/lib/animation/game-timer", () => ({
+vi.mock("@/lib/animation/game-timer", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/animation/game-timer")>()),
   delay: vi.fn(async () => {}),
 }));
 

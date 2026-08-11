@@ -2,7 +2,7 @@
 // Depends on alchemy controllers, homestead state, screen modules, assets, and platform/audio helpers.
 import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { characterArt, type CharacterId, type DifficultyId } from "@/lib/game-data";
+import { type CharacterId, type DifficultyId } from "@/lib/game-data";
 import {
   AppBackgroundParticles,
   AppScreenChromeProvider,
@@ -22,7 +22,6 @@ import {
   useIsArmoryLocked,
   useRenderedScreenTransition,
   useReturnToRunNavigation,
-  useScreenAssetPreloadEffects,
   getScreenParticleConfig,
 } from "@/app/app-shell";
 import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
@@ -33,7 +32,6 @@ import { clearAlchemySaveData, type SaveLoadState } from "@/features/alchemy/sha
 import { readProfileStore, setCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
 import {
-  useActiveRunCharacterId,
   useActiveRunScreenValue,
   useBondedCompanions,
   useHomesteadEffects,
@@ -80,8 +78,6 @@ function AppMainContent({
   );
   const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
   const { battle } = useRunSessionBattleContext(controllerScreen);
-  const characterId = useActiveRunCharacterId();
-
   const gameMenu = useGameMenuState();
   useAppKeyboardShortcuts({
     renderedScreen,
@@ -91,13 +87,7 @@ function AppMainContent({
   });
   const nav = useReturnToRunNavigation({ run, renderedScreen });
 
-  const heroArt = characterArt[characterId];
   const rewardsData = useRewardsScreenData();
-
-  useScreenAssetPreloadEffects({
-    heroArt,
-    screen: run.screen,
-  });
 
   const isAutosaveAllowed = (): boolean => {
     if (runPhase === "runEnd") return false;

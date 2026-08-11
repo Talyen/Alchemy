@@ -14,7 +14,6 @@ export {
   useAppDisplayEffects,
   useGlobalErrorHandlers,
   useInitialLoadReady,
-  useScreenAssetPreloadEffects,
   getScreenParticleConfig,
 } from "./use-app-effects";
 export {

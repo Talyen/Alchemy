@@ -1,86 +1,90 @@
 import { expect, test } from "./fixtures/e2e";
 import { enableFastMode, injectHomestead } from "./helpers";
-import { critical } from "./playwright-tags";
+import { critical, slow } from "./playwright-tags";
 
-test.describe("Progression Locks", critical, () => {
+test.describe("Progression Locks", () => {
   test.beforeEach(async ({ page }) => {
     await enableFastMode(page);
   });
 
-  test("clean save gates Talents, Homestead, Armory, Labyrinth, Wildwood, and Rogue class", async ({ page }) => {
-    // 1. Inject an empty homestead save where finishedRunCharacters is empty
-    await injectHomestead(page, { finishedRunCharacters: [] });
-    await page.goto("/");
+  test(
+    "clean save gates Talents, Homestead, Armory, Labyrinth, Wildwood, and Rogue class",
+    critical,
+    async ({ page }) => {
+      // 1. Inject an empty homestead save where finishedRunCharacters is empty
+      await injectHomestead(page, { finishedRunCharacters: [] });
+      await page.goto("/");
 
-    // 2. Verify Talents button is locked and shows tooltip on hover
-    const talentsBtn = page.getByRole("button", { name: "Talents" });
-    await expect(talentsBtn).toBeVisible();
-    await expect(talentsBtn).toHaveClass(/(?<!\S)opacity-50(?!\S)/);
-    await talentsBtn.hover();
-    await expect(page.getByText("Finish a Run as the Knight to unlock")).toBeVisible();
+      // 2. Verify Talents button is locked and shows tooltip on hover
+      const talentsBtn = page.getByRole("button", { name: "Talents" });
+      await expect(talentsBtn).toBeVisible();
+      await expect(talentsBtn).toHaveClass(/(?<!\S)opacity-50(?!\S)/);
+      await talentsBtn.hover();
+      await expect(page.getByText("Finish a Run as the Knight to unlock")).toBeVisible();
 
-    // Clicking it does not navigate to Talents
-    await talentsBtn.click({ force: true });
-    await expect(page.getByText("Choose Your Adventure")).toBeHidden();
-    await expect(page.getByRole("heading", { name: "Talents" })).toBeHidden();
+      // Clicking it does not navigate to Talents
+      await talentsBtn.click({ force: true });
+      await expect(page.getByText("Choose Your Adventure")).toBeHidden();
+      await expect(page.getByRole("heading", { name: "Talents" })).toBeHidden();
 
-    // 3. Verify Homestead button is locked and shows tooltip on hover
-    const homesteadBtn = page.getByRole("button", { name: "Homestead" });
-    await expect(homesteadBtn).toBeVisible();
-    await expect(homesteadBtn).toHaveClass(/(?<!\S)opacity-50(?!\S)/);
-    await homesteadBtn.hover();
-    await expect(page.getByText("Finish a Run as the Knight to unlock")).toBeVisible();
+      // 3. Verify Homestead button is locked and shows tooltip on hover
+      const homesteadBtn = page.getByRole("button", { name: "Homestead" });
+      await expect(homesteadBtn).toBeVisible();
+      await expect(homesteadBtn).toHaveClass(/(?<!\S)opacity-50(?!\S)/);
+      await homesteadBtn.hover();
+      await expect(page.getByText("Finish a Run as the Knight to unlock")).toBeVisible();
 
-    // Clicking it does not navigate to Homestead
-    await homesteadBtn.click({ force: true });
-    await expect(page.getByRole("heading", { name: "Homestead" })).toBeHidden();
+      // Clicking it does not navigate to Homestead
+      await homesteadBtn.click({ force: true });
+      await expect(page.getByRole("heading", { name: "Homestead" })).toBeHidden();
 
-    // 4. Verify Armory button is locked and shows tooltip on hover
-    const armoryBtn = page.getByRole("button", { name: "Armory" });
-    await expect(armoryBtn).toBeVisible();
-    await expect(armoryBtn).toHaveClass(/(?<!\S)opacity-50(?!\S)/);
-    await armoryBtn.hover();
-    await expect(page.getByText("Find Gear to unlock")).toBeVisible();
+      // 4. Verify Armory button is locked and shows tooltip on hover
+      const armoryBtn = page.getByRole("button", { name: "Armory" });
+      await expect(armoryBtn).toBeVisible();
+      await expect(armoryBtn).toHaveClass(/(?<!\S)opacity-50(?!\S)/);
+      await armoryBtn.hover();
+      await expect(page.getByText("Find Gear to unlock")).toBeVisible();
 
-    await armoryBtn.click({ force: true });
-    await expect(page.getByRole("heading", { name: "Armory" })).toBeHidden();
+      await armoryBtn.click({ force: true });
+      await expect(page.getByRole("heading", { name: "Armory" })).toBeHidden();
 
-    // 5. Click Play and verify Labyrinth and Wildwood are locked
-    await page.getByRole("button", { name: "Play" }).click();
-    await expect(page.getByRole("heading", { name: "Choose Your Adventure" })).toBeVisible();
+      // 5. Click Play and verify Labyrinth and Wildwood are locked
+      await page.getByRole("button", { name: "Play" }).click();
+      await expect(page.getByRole("heading", { name: "Choose Your Adventure" })).toBeVisible();
 
-    const labyrinthCard = page.getByRole("button", { name: /The Labyrinth/ });
-    await labyrinthCard.hover();
-    await expect(page.getByText("Finish a Run as the Rogue to unlock")).toBeVisible();
+      const labyrinthCard = page.getByRole("button", { name: /The Labyrinth/ });
+      await labyrinthCard.hover();
+      await expect(page.getByText("Finish a Run as the Rogue to unlock")).toBeVisible();
 
-    const wildwoodCard = page.getByRole("button", { name: /Wildwood Draft/ });
-    await wildwoodCard.hover();
-    await expect(page.getByText("Finish a Run as the Ranger to unlock")).toBeVisible();
+      const wildwoodCard = page.getByRole("button", { name: /Wildwood Draft/ });
+      await wildwoodCard.hover();
+      await expect(page.getByText("Finish a Run as the Ranger to unlock")).toBeVisible();
 
-    // 6. Start Campaign and check character selection screen locks
-    await page.getByRole("button", { name: /The Campaign/ }).click();
-    await page.getByRole("button", { name: "Play", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
+      // 6. Start Campaign and check character selection screen locks
+      await page.getByRole("button", { name: /The Campaign/ }).click();
+      await page.getByRole("button", { name: "Play", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
 
-    // Rogue is locked, Knight is unlocked
-    const knightCard = page.getByRole("button", { name: "Select Knight" });
-    const rogueCard = page.getByRole("button", { name: "Rogue (Locked)" });
-    await expect(knightCard).toBeVisible();
-    await expect(rogueCard).toBeVisible();
+      // Rogue is locked, Knight is unlocked
+      const knightCard = page.getByRole("button", { name: "Select Knight" });
+      const rogueCard = page.getByRole("button", { name: "Rogue (Locked)" });
+      await expect(knightCard).toBeVisible();
+      await expect(rogueCard).toBeVisible();
 
-    await rogueCard.hover();
-    await expect(page.getByText("Finish a Run as the Knight to unlock")).toBeVisible();
+      await rogueCard.hover();
+      await expect(page.getByText("Finish a Run as the Knight to unlock")).toBeVisible();
 
-    // Selecting Rogue does not enable Continue
-    await rogueCard.click({ force: true });
-    await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
+      // Selecting Rogue does not enable Continue
+      await rogueCard.click({ force: true });
+      await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
 
-    // Selecting Knight enables Continue
-    await knightCard.click();
-    await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
-  });
+      // Selecting Knight enables Continue
+      await knightCard.click();
+      await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
+    },
+  );
 
-  test("finishing run as Knight unlocks Rogue class, Talents, and Homestead", async ({ page }) => {
+  test("finishing run as Knight unlocks Rogue class, Talents, and Homestead", slow, async ({ page }) => {
     // 1. Inject a save where Knight run is completed
     await injectHomestead(page, { finishedRunCharacters: ["knight"] });
     await page.goto("/");
@@ -118,7 +122,7 @@ test.describe("Progression Locks", critical, () => {
     await expect(page.getByText("Finish a Run as the Rogue to unlock")).toBeVisible();
   });
 
-  test("finishing run as Rogue unlocks Wizard class and Labyrinth mode", async ({ page }) => {
+  test("finishing run as Rogue unlocks Wizard class and Labyrinth mode", slow, async ({ page }) => {
     // 1. Inject Rogue run completed
     await injectHomestead(page, { finishedRunCharacters: ["knight", "rogue"] });
     await page.goto("/");
@@ -138,7 +142,7 @@ test.describe("Progression Locks", critical, () => {
     await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
   });
 
-  test("finishing run as Ranger unlocks Alchemist class and Wildwood mode", async ({ page }) => {
+  test("finishing run as Ranger unlocks Alchemist class and Wildwood mode", slow, async ({ page }) => {
     // 1. Inject Ranger run completed
     await injectHomestead(page, { finishedRunCharacters: ["knight", "rogue", "wizard", "ranger"] });
     await page.goto("/");

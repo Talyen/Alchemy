@@ -11,7 +11,7 @@ import {
   startBattleWithDeck,
 } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
-import { critical, prepush } from "./playwright-tags";
+import { critical } from "./playwright-tags";
 
 test.describe("Merchant Shop", () => {
   test.describe("with sufficient gold", () => {
@@ -19,7 +19,7 @@ test.describe("Merchant Shop", () => {
       await new ShopPage(page).enterFromDestination(9999, "Merchant's Shop");
     });
 
-    test("buying a card deducts gold and marks as purchased", { ...critical, ...prepush }, async ({ page }) => {
+    test("buying a card deducts gold and marks as purchased", critical, async ({ page }) => {
       const shop = new ShopPage(page);
       await shop.stage.expectRunPhase("runLoop");
       const goldBefore = await shop.gold();
@@ -125,7 +125,7 @@ test.describe("Alchemist Shop", () => {
 test.describe("Reward Flow", () => {
   test(
     "card reward: requires confirmation and selecting and adding a card works",
-    { ...critical, ...prepush },
+    critical,
     async ({ page, fastBattle, runtimeErrors }) => {
       void fastBattle;
       void runtimeErrors;

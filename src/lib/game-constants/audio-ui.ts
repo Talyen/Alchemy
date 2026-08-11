@@ -21,7 +21,6 @@ export const SFX_COOLDOWN_MS = 80;
 
 // ============ Image / Asset Preloading ============
 export const IMAGE_PRELOAD_BATCH_SIZE = 4;
-export const IMAGE_PRELOAD_IDLE_TIMEOUT = 900;
 
 // ============ Screen Transitions ============
 export const PAGE_EXIT_MS = 130;

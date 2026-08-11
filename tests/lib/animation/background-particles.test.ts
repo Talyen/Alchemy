@@ -38,6 +38,7 @@ function makeMockCanvas(mockCtx?: Partial<CanvasRenderingContext2D>) {
   const parent = {
     clientWidth: 1920,
     clientHeight: 1080,
+    getBoundingClientRect: vi.fn(() => ({ width: 1920, height: 1080 })),
   };
   Object.defineProperty(canvas, "parentElement", { value: parent });
   return { canvas, ctx, parent } as unknown as {
@@ -94,6 +95,20 @@ describe("startBackgroundParticles", () => {
 
     expect(() => startBackgroundParticles(ref as never, "dust")).not.toThrow();
 
+    rafSpy.mockRestore();
+  });
+
+  it("sizes the backing store from rendered pixels instead of unscaled virtual dimensions", () => {
+    vi.stubGlobal("devicePixelRatio", 2);
+    const { canvas, parent } = makeMockCanvas();
+    vi.mocked(parent.getBoundingClientRect).mockReturnValue({ width: 1440, height: 810 } as DOMRect);
+    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(1);
+
+    const cleanup = startBackgroundParticles({ current: canvas } as never, "embers");
+
+    expect(canvas.width).toBe(2880);
+    expect(canvas.height).toBe(1620);
+    cleanup();
     rafSpy.mockRestore();
   });
 

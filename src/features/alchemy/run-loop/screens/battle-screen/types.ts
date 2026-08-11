@@ -40,12 +40,6 @@ interface BattleScreenViewProps {
   stagePixelRatio: number;
 }
 
-export interface BattleHoverProps {
-  hoveredCardId: string | null;
-  shimmerState: { cardId: string; token: number } | null;
-  maybeTriggerShimmer: (cardId: string) => void;
-}
-
 export interface BattleFeedbackProps {
   playerStatusChips: StatusChip[];
   enemyStatusChips: StatusChip[];
@@ -90,8 +84,5 @@ export interface BattleScreenData {
   companionShaking: boolean;
   playerHurtFlashToken: number;
   enemyHurtFlashToken: number;
-  hoveredCardId: string | null;
-  shimmerState: BattleHoverProps["shimmerState"];
-  maybeTriggerShimmer: (cardId: string) => void;
   activeLabyrinthModifiers: EncounterCombatTraitId[];
 }

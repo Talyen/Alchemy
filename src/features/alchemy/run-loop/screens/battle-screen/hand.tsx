@@ -1,7 +1,7 @@
 // Player hand fan for battle cards.
 // Depends on battle controller playability props and hand layout constants.
 // Used by BattleBottomBar to render playable cards and animation refs.
-import { type CSSProperties, type MouseEvent, type RefObject, useLayoutEffect, useRef } from "react";
+import { type CSSProperties, type MouseEvent, type RefObject, useLayoutEffect, useMemo, useRef } from "react";
 
 import {
   HAND_CARD_BASE_Z_INDEX,
@@ -118,11 +118,14 @@ export function BattleHand({
   const { hiddenHandCardKeys, playableHandCardKeys, revealedCardKeys, onCardClick } = actions;
   const handWidthClass = handCardWidthClass;
 
-  const descriptionContext = {
-    ...battleState.talentEffects,
-    companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
-    companionDamageBuff: battleState.companionDamageBuff,
-  };
+  const descriptionContext = useMemo(
+    () => ({
+      ...battleState.talentEffects,
+      companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
+      companionDamageBuff: battleState.companionDamageBuff,
+    }),
+    [battleState.talentEffects, battleState.trinketEffects.companionDamageBonus, battleState.companionDamageBuff],
+  );
 
   return (
     <div className={battleHandContainerClass} aria-label="Player hand">

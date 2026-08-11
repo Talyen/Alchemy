@@ -25,29 +25,21 @@ function uniqueUrl(): string {
 }
 
 const mockImageInstances: MockImage[] = [];
-const idleCallbacks: Array<() => void> = [];
-
 beforeEach(() => {
   mockImageInstances.length = 0;
-  idleCallbacks.length = 0;
 
   vi.stubGlobal("Image", function () {
     const instance = createMockImage();
     mockImageInstances.push(instance);
     return instance;
   } as unknown as typeof Image);
-
-  vi.stubGlobal("requestIdleCallback", (cb: () => void) => {
-    idleCallbacks.push(cb);
-    return idleCallbacks.length;
-  });
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const { preloadImage, preloadImages, preloadImagesWhenIdle } = await import("@/lib/image-preload");
+const { preloadImage, preloadImages, preloadImagesInBatches } = await import("@/lib/image-preload");
 
 describe("preloadImage", () => {
   it("creates an Image and sets decoding to async", async () => {
@@ -122,51 +114,33 @@ describe("preloadImages", () => {
   });
 });
 
-describe("preloadImagesWhenIdle", () => {
-  it("schedules a batch via requestIdleCallback", () => {
-    preloadImagesWhenIdle([uniqueUrl()]);
-    expect(idleCallbacks.length).toBe(1);
-  });
-
-  it("loads first batch when idle callback fires", () => {
-    const srcs = [uniqueUrl(), uniqueUrl(), uniqueUrl(), uniqueUrl(), uniqueUrl()];
-    preloadImagesWhenIdle(srcs);
-    expect(idleCallbacks.length).toBe(1);
-    idleCallbacks[0]();
-    expect(mockImageInstances.length).toBe(4);
-  });
-
-  it("loads all images across multiple batches", () => {
-    const srcs = [uniqueUrl(), uniqueUrl(), uniqueUrl(), uniqueUrl(), uniqueUrl()];
-    preloadImagesWhenIdle(srcs);
-    idleCallbacks[0]();
-    expect(idleCallbacks.length).toBe(2);
-    idleCallbacks[1]();
-    expect(mockImageInstances.length).toBe(5);
-  });
-
-  it("deduplicates srcs", () => {
-    const src = uniqueUrl();
-    preloadImagesWhenIdle([src, src, uniqueUrl()]);
-    idleCallbacks[0]();
-    expect(mockImageInstances.length).toBe(2);
-  });
-
-  it("filters out empty srcs", () => {
-    preloadImagesWhenIdle([uniqueUrl(), "", uniqueUrl()]);
-    idleCallbacks[0]();
-    expect(mockImageInstances.length).toBe(2);
-  });
-
-  it("falls back to setTimeout when requestIdleCallback is not available", async () => {
-    vi.unstubAllGlobals();
-    const timeoutCallbacks: Array<() => void> = [];
-    vi.stubGlobal("setTimeout", (cb: () => void) => {
-      timeoutCallbacks.push(cb);
+describe("preloadImagesInBatches", () => {
+  it("waits for each bounded batch and yields before starting the next", async () => {
+    const frameCallbacks: FrameRequestCallback[] = [];
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      frameCallbacks.push(callback);
+      return frameCallbacks.length;
     });
+    const srcs = [uniqueUrl(), uniqueUrl(), uniqueUrl()];
+    const promise = preloadImagesInBatches(srcs, 2);
 
-    const { preloadImagesWhenIdle: idleFallback } = await import("@/lib/image-preload");
-    idleFallback([uniqueUrl()]);
-    expect(timeoutCallbacks.length).toBe(1);
+    expect(mockImageInstances).toHaveLength(2);
+    mockImageInstances[0].onload?.();
+    mockImageInstances[1].onload?.();
+    await vi.waitFor(() => expect(frameCallbacks).toHaveLength(1));
+    expect(mockImageInstances).toHaveLength(2);
+
+    frameCallbacks[0]!(performance.now());
+    await vi.waitFor(() => expect(mockImageInstances).toHaveLength(3));
+    mockImageInstances[2].onload?.();
+    await expect(promise).resolves.toBeUndefined();
+  });
+
+  it("deduplicates sources before warming", async () => {
+    const src = uniqueUrl();
+    const promise = preloadImagesInBatches([src, src], 2);
+    expect(mockImageInstances).toHaveLength(1);
+    mockImageInstances[0].onload?.();
+    await expect(promise).resolves.toBeUndefined();
   });
 });
