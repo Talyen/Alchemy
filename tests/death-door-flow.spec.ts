@@ -37,7 +37,7 @@ async function startInDeathsDoorGrace(page: import("@playwright/test").Page, han
 }
 
 test.describe("Death's Door", () => {
-  test("lethal damage after grace expires shows defeat screen", critical, async ({ page, fastBattle }) => {
+  test("grace floors damage at 1 HP and expiry ends the run with defeat", critical, async ({ page, fastBattle }) => {
     void fastBattle;
 
     await startInDeathsDoorGrace(
@@ -46,6 +46,11 @@ test.describe("Death's Door", () => {
     );
     const battle = new BattlePage(page);
     await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
+
+    // Playing a card while grace is active keeps the icon and floors health at 1.
+    await battle.playFirstCard();
+    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
+    await expect.poll(() => battle.playerHealth()).toBe(1);
 
     // Grace floors the first lethal hit at 1 HP, so the player survives the
     // enemy turn after the trigger with the icon persisting; the second enemy
@@ -90,21 +95,5 @@ test.describe("Death's Door", () => {
 
     await expect.poll(() => battle.playerHealth()).toBeGreaterThan(0);
     await expect(battle.victoryHeading).toBeVisible({ timeout: 5000 });
-  });
-
-  test("Death's Door grace holds the player at 1 HP and the icon persists", async ({ page, fastBattle }) => {
-    void fastBattle;
-
-    await startInDeathsDoorGrace(
-      page,
-      Array.from({ length: 6 }, () => makeCard()),
-    );
-    const battle = new BattlePage(page);
-
-    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
-    await expect.poll(() => battle.playerHealth()).toBe(1);
-
-    await battle.playFirstCard();
-    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
   });
 });

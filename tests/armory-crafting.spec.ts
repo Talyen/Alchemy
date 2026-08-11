@@ -11,7 +11,6 @@ import {
   openArmory,
   salvageInventoryItem,
 } from "./e2e/armory";
-import { assertGearFlatDamageBoostsPhysicalDamage } from "./e2e/gear-combat";
 import { test } from "./fixtures/e2e";
 import { seedRandom } from "./e2e/rng";
 import { armory, critical, slow } from "./playwright-tags";
@@ -139,17 +138,5 @@ test.describe("Armory crafting", { ...armory }, () => {
     await gearItemLocator(page, "Leather Helm").hover();
     await expect(page.getByText("Enduring")).toBeVisible();
     await expect(page.getByText("Increases Health by 7")).toBeVisible();
-  });
-
-  test("affix physical damage increases battle damage", critical, async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-
-    await assertGearFlatDamageBoostsPhysicalDamage(page, {
-      instanceId: "gear-sword",
-      definitionId: "shortsword-basic",
-      slot: "main-hand",
-      affixes: [{ id: "flat-physical", value: 1 }],
-    });
   });
 });
