@@ -3,13 +3,12 @@ import {
   addEnemyStatus,
   addGold,
   addPlayerStatus,
-  applyPlayerHealing,
   setFlag,
   type BattleState,
   type CombatTextEvent,
   type EnemyMitigation,
 } from "./types";
-import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
+import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { scaledGearLeechHeal } from "./gear-effects";
 import { rollPercent, getBattleRng } from "./status-helpers";
 import { computeLeechHeal, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
@@ -20,11 +19,7 @@ export function rollTalentChance(chance: number, state: { rng?: () => number }):
 
 function executePlayerHealing(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   if (amount <= 0) return state;
-  const healAmount = Math.round(amount * state.talentEffects.healMultiplier);
-  mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
-  const nextState = applyPlayerHealing(state, healAmount);
-  emitOverhealBlockText(state, nextState, combatTexts);
-  return nextState;
+  return applyHealingWithCombatText(state, Math.round(amount * state.talentEffects.healMultiplier), combatTexts);
 }
 
 function applyLeechBleedRider(state: BattleState, damage: number): BattleState {

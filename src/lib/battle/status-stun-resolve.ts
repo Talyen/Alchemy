@@ -5,7 +5,7 @@
 import { clampHealth, addPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 import { mergeCombatText } from "./combat-text";
 import { applyLuckyCloverGold } from "./trinket-effects";
-import { applyGearKillRewards, applyGearProcPhysicalDamage } from "./gear-effects";
+import { applyGearCcPhysicalDamage } from "./gear-effects";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import {
   applyStunBlockTalent,
@@ -30,16 +30,9 @@ function applyStunTalentEffects(state: BattleState, combatTexts?: CombatTextEven
 }
 
 function applyStunGearDamage(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
-  const gear = state.gearEffects;
-  if (gear.damageOnStunPhysical <= 0) return state;
-  const enemyWasAlive = state.enemyHealth > 0;
-  const finalDamage = applyGearProcPhysicalDamage(state, gear.damageOnStunPhysical);
-  let next = { ...state, enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth) };
-  if (combatTexts)
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "physical", amount: finalDamage });
-  next = applyLuckyCloverGold(next, finalDamage, combatTexts ?? []);
-  if (enemyWasAlive && next.enemyHealth <= 0) next = applyGearKillRewards(next, true, combatTexts ?? []);
-  return next;
+  return applyGearCcPhysicalDamage(state, state.gearEffects.damageOnStunPhysical, combatTexts ?? [], {
+    grantLuckyClover: true,
+  });
 }
 
 function applyStunGearEffects(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {

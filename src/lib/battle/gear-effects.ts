@@ -1,8 +1,9 @@
 import type { GearEffectManifest } from "@/lib/gear";
 import { PERCENT_DENOMINATOR } from "../game-constants";
-import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
+import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { getEnemyDamageMultiplier } from "./status-helpers";
-import { applyPlayerHealing, scaleGoldReward, type BattleState, type CombatTextEvent } from "./types";
+import { applyLuckyCloverGold } from "./trinket-effects";
+import { clampHealth, scaleGoldReward, type BattleState, type CombatTextEvent } from "./types";
 
 export function applyGearKillRewards(
   state: BattleState,
@@ -13,16 +14,10 @@ export function applyGearKillRewards(
   let nextState = state;
   const { healOnKill, goldOnKill, healOnBurnEnemyDefeated } = state.gearEffects;
   if (healOnKill > 0) {
-    const prevState = nextState;
-    nextState = applyPlayerHealing(nextState, healOnKill);
-    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healOnKill });
-    emitOverhealBlockText(prevState, nextState, combatTexts);
+    nextState = applyHealingWithCombatText(nextState, healOnKill, combatTexts);
   }
   if (healOnBurnEnemyDefeated > 0 && state.enemyStatuses.burn > 0) {
-    const prevState = nextState;
-    nextState = applyPlayerHealing(nextState, healOnBurnEnemyDefeated);
-    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healOnBurnEnemyDefeated });
-    emitOverhealBlockText(prevState, nextState, combatTexts);
+    nextState = applyHealingWithCombatText(nextState, healOnBurnEnemyDefeated, combatTexts);
   }
   if (goldOnKill > 0) {
     const adjustedGold = scaleGoldReward(goldOnKill, nextState.gearEffects);
@@ -45,4 +40,37 @@ export function applyGearProcPhysicalDamage(state: BattleState, baseDamage: numb
 export function scaledGearLeechHeal(baseHeal: number, gear: GearEffectManifest): number {
   if (gear.leechHealBonusPercent <= 0) return baseHeal;
   return Math.round(baseHeal * (1 + gear.leechHealBonusPercent / PERCENT_DENOMINATOR));
+}
+
+/**
+ * Deals gear-on-Crowd-Control physical damage (freeze / stun procs), clamping
+ * enemy health and paying kill rewards when the hit is lethal. Freeze keeps
+ * lucky-clover gold off by default; stun opts in via `grantLuckyClover`.
+ */
+export function applyGearCcPhysicalDamage(
+  state: BattleState,
+  gearDamage: number,
+  combatTexts: CombatTextEvent[],
+  options: { grantLuckyClover?: boolean } = {},
+): BattleState {
+  if (gearDamage <= 0) return state;
+  const enemyWasAlive = state.enemyHealth > 0;
+  const finalDamage = applyGearProcPhysicalDamage(state, gearDamage);
+  mergeCombatText(combatTexts, {
+    target: "enemy",
+    kind: "damage",
+    stat: "physical",
+    amount: finalDamage,
+  });
+  let nextState = {
+    ...state,
+    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
+  };
+  if (options.grantLuckyClover) {
+    nextState = applyLuckyCloverGold(nextState, finalDamage, combatTexts);
+  }
+  if (enemyWasAlive && nextState.enemyHealth <= 0) {
+    nextState = applyGearKillRewards(nextState, true, combatTexts);
+  }
+  return nextState;
 }

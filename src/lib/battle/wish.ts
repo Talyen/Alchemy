@@ -7,8 +7,8 @@ import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
 import { drawFromState } from "./draw";
-import { addGold, applyPlayerHealing, clampHealth, type BattleState, type CombatTextEvent } from "./types";
-import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
+import { addGold, clampHealth, type BattleState, type CombatTextEvent } from "./types";
+import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-player";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
@@ -117,15 +117,7 @@ function applyWishHealthAndStatusTriggers(state: BattleState, combatTexts: Comba
   let nextState = state;
   const healthGain = nextState.talentEffects.healthOnWish + nextState.gearEffects.healthOnWish;
   if (healthGain > 0) {
-    const prevState = nextState;
-    nextState = applyPlayerHealing(nextState, healthGain);
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "heal",
-      stat: "health",
-      amount: healthGain,
-    });
-    emitOverhealBlockText(prevState, nextState, combatTexts);
+    nextState = applyHealingWithCombatText(nextState, healthGain, combatTexts);
   }
   if (nextState.talentEffects.removeHarmfulStatusOnWish) {
     nextState = removeHarmfulPlayerStatuses(nextState, 1, combatTexts);
