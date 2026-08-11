@@ -7,7 +7,6 @@
  */
 import {
   applyPlayerCombatDamage,
-  applyPlayerHealing,
   clampHealth,
   setEnemyStatus,
   setPlayerStatus,
@@ -16,12 +15,32 @@ import {
 } from "./types";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
-import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
+import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { decayArmorAfterDamage, decayHalvedStatus, decayPoisonStacks, rollPercent } from "./status-helpers";
 import { computeLeechHeal, HALF_DIVISOR, POISON_GAIN_AMOUNT } from "../game-constants";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 import { applyEnemyLeechHealing } from "./enemy-turn-attack";
+
+/** Shared enemy DoT tail: clamp health, apply next stacks, optional riders, armor decay, trait threshold. */
+function dealEnemyDotTick(
+  state: BattleState,
+  status: "burn" | "poison" | "bleed",
+  finalDamage: number,
+  nextStacks: number,
+  combatTexts: CombatTextEvent[],
+  applyRiders?: (state: BattleState) => BattleState,
+): BattleState {
+  const previousHealth = state.enemyHealth;
+  let nextState: BattleState = {
+    ...state,
+    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
+  };
+  nextState = setEnemyStatus(nextState, status, nextStacks);
+  if (applyRiders) nextState = applyRiders(nextState);
+  nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
+  return processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
+}
 
 function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.burn;
@@ -45,29 +64,12 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   } else {
     nextBurn = decayHalvedStatus(nextBurn);
   }
-  const previousHealth = state.enemyHealth;
-  let nextState: BattleState = {
-    ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
-  };
-  nextState = setEnemyStatus(nextState, "burn", nextBurn);
-  nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
-  return processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
+  return dealEnemyDotTick(state, "burn", finalDamage, nextBurn, combatTexts);
 }
 
 function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance, state.rng)) return state;
-  const leechHeal = computeLeechHeal(damage);
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "heal",
-    stat: "health",
-    amount: leechHeal,
-  });
-  const prevState = state;
-  const nextState = applyPlayerHealing(state, leechHeal);
-  emitOverhealBlockText(prevState, nextState, combatTexts);
-  return nextState;
+  return applyHealingWithCombatText(state, computeLeechHeal(damage), combatTexts);
 }
 
 function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -90,16 +92,9 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
       nextPoison = decayPoisonStacks(nextPoison);
     }
   }
-  const previousHealth = state.enemyHealth;
-  let nextState: BattleState = {
-    ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
-  };
-  nextState = setEnemyStatus(nextState, "poison", nextPoison);
-  nextState = applyParasiticBloomLeech(nextState, finalDamage, combatTexts);
-  nextState = applyPoisonTalentRiders(nextState, finalDamage, combatTexts);
-  nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
-  return processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
+  return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState) =>
+    applyPoisonTalentRiders(applyParasiticBloomLeech(nextState, finalDamage, combatTexts), finalDamage, combatTexts),
+  );
 }
 
 function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -111,33 +106,19 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const multiplier = getEnemyDamageMultiplier(state, "bleed");
   const finalDamage = Math.round(damage * multiplier);
   const leechAmount = state.pendingBleedLeechHealing;
-  const previousHealth = state.enemyHealth;
-  let nextState: BattleState = {
-    ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
-    pendingBleedLeechHealing: 0,
-  };
-  nextState = setEnemyStatus(nextState, "bleed", 0);
-  if (leechAmount > 0) {
-    const leechHeal = computeLeechHeal(leechAmount);
-    const prevState = nextState;
-    nextState = applyPlayerHealing(nextState, leechHeal);
+  return dealEnemyDotTick(state, "bleed", finalDamage, 0, combatTexts, (nextState) => {
+    let next = { ...nextState, pendingBleedLeechHealing: 0 };
+    if (leechAmount > 0) {
+      next = applyHealingWithCombatText(next, computeLeechHeal(leechAmount), combatTexts);
+    }
     mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "heal",
-      stat: "health",
-      amount: leechHeal,
+      target: "enemy",
+      kind: "damage",
+      stat: "bleed",
+      amount: finalDamage,
     });
-    emitOverhealBlockText(prevState, nextState, combatTexts);
-  }
-  mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: "damage",
-    stat: "bleed",
-    amount: finalDamage,
+    return next;
   });
-  nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
-  return processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
 }
 
 export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -145,6 +126,30 @@ export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEve
   nextState = tickPoison(nextState, combatTexts);
   nextState = tickBleed(nextState, combatTexts);
   return nextState;
+}
+
+/** Shared player DoT tail: apply damage + next stacks, optional riders, damage text, armor decay. */
+function dealPlayerDotTick(
+  state: BattleState,
+  reducedDamage: number,
+  status: "burn" | "poison" | "bleed",
+  nextStacks: number,
+  combatTexts: CombatTextEvent[],
+  damageType?: string,
+  applyRiders?: (state: BattleState) => BattleState,
+): BattleState {
+  let nextState = setPlayerStatus(applyPlayerCombatDamage(state, reducedDamage, damageType), status, nextStacks);
+  if (applyRiders) nextState = applyRiders(nextState);
+  const healthLost = state.playerHealth - nextState.playerHealth;
+  if (healthLost > 0) {
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "damage",
+      stat: status,
+      amount: healthLost,
+    });
+  }
+  return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
 }
 
 function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -158,39 +163,21 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const reducedDamage = state.talentEffects.armorMitigatesBurn
     ? Math.max(0, afterBlockReduction - state.playerStatuses.armor)
     : afterBlockReduction;
-  const nextState = setPlayerStatus(
-    applyPlayerCombatDamage(state, reducedDamage, "burn"),
+  return dealPlayerDotTick(
+    state,
+    reducedDamage,
     "burn",
     decayHalvedStatus(state.playerStatuses.burn),
+    combatTexts,
+    "burn",
   );
-  const healthLost = state.playerHealth - nextState.playerHealth;
-  if (healthLost > 0) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "damage",
-      stat: "burn",
-      amount: healthLost,
-    });
-  }
-  return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
 }
 
 function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.poison;
   if (damage <= 0) return state;
   const reducedDamage = state.talentEffects.receiveHalfPoisonDamage ? Math.round(damage / HALF_DIVISOR) : damage;
-  const nextPoison = decayPoisonStacks(state.playerStatuses.poison);
-  const nextState = setPlayerStatus(applyPlayerCombatDamage(state, reducedDamage), "poison", nextPoison);
-  const healthLost = state.playerHealth - nextState.playerHealth;
-  if (healthLost > 0) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "damage",
-      stat: "poison",
-      amount: healthLost,
-    });
-  }
-  return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
+  return dealPlayerDotTick(state, reducedDamage, "poison", decayPoisonStacks(state.playerStatuses.poison), combatTexts);
 }
 
 function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -202,22 +189,14 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const finalDamage = state.talentEffects.receiveHalfBleedDamage
     ? Math.round(reducedDamage / HALF_DIVISOR)
     : reducedDamage;
-  let nextState = setPlayerStatus(applyPlayerCombatDamage(state, finalDamage), "bleed", 0);
-  const enemyLeechDamage = Math.min(state.pendingEnemyBleedLeechHealing, state.playerHealth - nextState.playerHealth);
-  if (enemyLeechDamage > 0) {
-    nextState = applyEnemyLeechHealing(nextState, enemyLeechDamage, combatTexts);
-  }
-  nextState = { ...nextState, pendingEnemyBleedLeechHealing: 0 };
-  const healthLost = state.playerHealth - nextState.playerHealth;
-  if (healthLost > 0) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "damage",
-      stat: "bleed",
-      amount: healthLost,
-    });
-  }
-  return decayArmorAfterDamage(nextState, finalDamage, "player", combatTexts);
+  return dealPlayerDotTick(state, finalDamage, "bleed", 0, combatTexts, undefined, (nextState) => {
+    const enemyLeechDamage = Math.min(state.pendingEnemyBleedLeechHealing, state.playerHealth - nextState.playerHealth);
+    let next = nextState;
+    if (enemyLeechDamage > 0) {
+      next = applyEnemyLeechHealing(next, enemyLeechDamage, combatTexts);
+    }
+    return { ...next, pendingEnemyBleedLeechHealing: 0 };
+  });
 }
 
 export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
