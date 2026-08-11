@@ -1,7 +1,14 @@
 // Interactive battle-card button with tilt, shimmer, selection, and detail popup behavior.
 // Depends on card description context, shared card styling, and tilt utilities.
 // Used by hand cards, shop cards, rewards, and collection-adjacent selection flows.
-import { type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerEvent, type Ref } from "react";
+import {
+  type CSSProperties,
+  type MouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type Ref,
+  type RefObject,
+  useRef,
+} from "react";
 
 import type { BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
@@ -49,13 +56,12 @@ export function BattleCardButton(props: BattleCardButtonProps) {
     dragging = false,
   } = props;
   const inheritedDescriptionContext = useCardDescriptionContext();
-  const descriptionLines = getEffectiveCardDescriptionLines(
-    card,
-    props.descriptionContext ?? inheritedDescriptionContext,
-  );
+  const descriptionContext = props.descriptionContext ?? inheritedDescriptionContext;
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
+      ref={wrapperRef}
       className={cn("relative", wrapperClassName, dragging && "pointer-events-none")}
       data-hand-card={wrapperDataCardKey ? "true" : undefined}
       data-hand-card-id={wrapperDataCardKey}
@@ -63,7 +69,12 @@ export function BattleCardButton(props: BattleCardButtonProps) {
       onMouseEnter={onHoverStart}
       onMouseLeave={onHoverEnd}
     >
-      <CardHoverPopup card={card} hovered={hovered} dragging={dragging} descriptionLines={descriptionLines} />
+      <CardHoverPopup
+        card={card}
+        visible={hovered && !dragging}
+        triggerRef={wrapperRef}
+        descriptionContext={descriptionContext}
+      />
       <CardButtonSurface {...props} />
     </div>
   );
@@ -71,18 +82,26 @@ export function BattleCardButton(props: BattleCardButtonProps) {
 
 function CardHoverPopup({
   card,
-  hovered,
-  dragging,
-  descriptionLines,
-}: Pick<BattleCardButtonProps, "card" | "hovered" | "dragging"> & { descriptionLines: string[] }) {
-  if (!hovered || dragging) return null;
-
+  visible,
+  triggerRef,
+  descriptionContext,
+}: Pick<BattleCardButtonProps, "card"> & {
+  visible: boolean;
+  triggerRef: RefObject<HTMLElement | null>;
+  descriptionContext: CardDescriptionContext;
+}) {
+  // Description formatting allocates an effect-cursor and scans every line, so
+  // only build it for the card actually being hovered — the render-body call
+  // was running for every hand card on every re-render.
+  const descriptionLines = visible ? getEffectiveCardDescriptionLines(card, descriptionContext) : [];
   return (
     <DetailPopup
       idPrefix={card.id}
       title={<CardTitle card={card} />}
       subtitle={undefined}
       descriptionLines={descriptionLines}
+      visible={visible}
+      triggerRef={triggerRef}
       {...(card.corrupted ? { card } : {})}
     />
   );
