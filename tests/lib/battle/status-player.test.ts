@@ -173,6 +173,17 @@ describe("applyPlayerDamageStatuses", () => {
     expect(result.playerStatuses.bleed).toBe(12);
   });
 
+  it("adds freeze stacks equal to actual damage dealt, halved only once", () => {
+    const state = patchBattleState({
+      playerStatuses: defaultPlayerStatusValues({ freeze: 0 }),
+      talentEffects: { ...patchBattleState().talentEffects, receiveHalfFreezeBuildUp: true },
+    });
+    // actualDamage is already halved by the talent in computeMitigatedDamage;
+    // the buildup must not be halved a second time.
+    const result = applyPlayerDamageStatuses(state, { damageType: "freeze" }, 5);
+    expect(result.playerStatuses.freeze).toBe(5);
+  });
+
   it("does nothing when actual damage is zero", () => {
     const state = patchBattleState({
       playerStatuses: defaultPlayerStatusValues({ burn: 3 }),

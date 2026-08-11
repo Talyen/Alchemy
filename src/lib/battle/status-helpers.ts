@@ -40,11 +40,6 @@ export function decayPoisonStacks(stacks: number): number {
   return Math.max(0, stacks - decay);
 }
 
-/** Halves freeze stack gain when the player talent is active. */
-export function scaleFreezeBuildUp(amount: number, halfBuildUp: boolean): number {
-  return halfBuildUp ? Math.round(amount / HALF_DIVISOR) : amount;
-}
-
 /** Trait weakness/resistance — first matching trait wins, then CC bonuses. */
 export function getEnemyDamageMultiplier(
   state: Pick<BattleState, "currentEnemy" | "enemyCC" | "talentEffects">,
