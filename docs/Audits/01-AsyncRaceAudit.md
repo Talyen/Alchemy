@@ -4,7 +4,7 @@
 
 ## Intent
 
-Investigate high-risk candidates and fix confirmed lifetime/race issues across the complete async chain. Once confirmed, follow the operation through UI, controller, store, persistence, IPC, and completion consumers as applicable. Do not add abort controllers, mutex helpers, or concurrency tests without a demonstrated lifetime/race issue. Bounded sequencing or cancellation work may ship under the structural-fix policy in [README.md](README.md); new concurrency architecture remains a proposal. If the scope is large, phase the plan.
+Follow confirmed lifetime/race issues through UI, controller, store, persistence, IPC, and completion consumers. Do not add concurrency machinery or tests without a demonstrated failure.
 
 ## Hard stops
 

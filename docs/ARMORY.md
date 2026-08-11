@@ -4,93 +4,24 @@ The Armory is the permanent meta-progression screen for managing **Gear** (per-c
 
 > **Related:** [ARCHITECTURE.md § Permanent Gear](./ARCHITECTURE.md#permanent-gear-gear-store), [REFERENCE.md § Domain Glossary](./REFERENCE.md#domain-glossary), [WORKFLOWS.md § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
 
-## Layout (`src/features/alchemy/meta/screens/armory/`)
+## Layout
 
-| File                            | Role                                                                                                                                                                                                                                                         |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `use-armory-controller.ts`      | Facade hook: reads `useGearArmorySlice`, routes gear mutations through `dispatchGearMutationWithRunHealthSync` / `dispatchRunSessionCommand` with HP-sync + save-flush side effects, and exposes board movement to the route. Consumed by `meta-routes.tsx`. |
-| `use-armory-board-drag.ts`      | Sole Armory drag owner for gear and currency: domain-specific destinations/commits, cross-type held-item chaining, secondary gear animation, and double-click flyover.                                                                                       |
-| `use-board-drag.ts`             | Typed primary-session core: `idle` / `armed` / `dragging` / `held` / `animating`, magnet snap, hysteresis, animation completion, and held-item listeners.                                                                                                    |
-| `board-drag-math.ts`            | Pure helpers: `readInventoryBoardMetrics`, `placeInventoryTileFromMetrics`, `applyMagnetHysteresis`, `sameDestinationIdentity`, drag-visual/pending-drag builders, and pointer → destination resolution.                                                     |
-| `armory-drag-types.ts`          | Single leaf module for all drag-and-drop types (geometry, destinations, visuals, pointer wiring, FSM shapes).                                                                                                                                                |
-| `armory-gear-actions.ts`        | Gear/currency commit logic, slot resolution, swap/displacement animations, and double-click flyover — the former per-feature drag helper/commit files.                                                                                                       |
-| `armory-character-tabs.tsx`     | Character tab strip with locked/unlocked state.                                                                                                                                                                                                              |
-| `armory-currency-targeting.tsx` | Follow-cursor targeting visual.                                                                                                                                                                                                                              |
-| `armory-drag-visual-portal.tsx` | Shared gear/currency drag animation portal.                                                                                                                                                                                                                  |
-| `armory-overlays.tsx`           | Salvage confirmation, drag visuals, currency cursor, and transfer menu composition.                                                                                                                                                                          |
-| `gear-tooltip-portal.tsx`       | Shared portaled gear tooltip rendering for inventory and equipment tiles (uses shared `PortaledTooltip`).                                                                                                                                                    |
-| `resolve-equip-swap.ts`         | Pure function: given an incoming instance, target slot, and vacated placement, decide whether the displaced item fits.                                                                                                                                       |
-| `character-panel.tsx`           | `CharacterAndEquipmentPanel`: character art + 10 `SlotButton`s.                                                                                                                                                                                              |
-| `inventory-panel.tsx`           | `InventoryPanel`: currency stacks + `InventoryGearTile`s.                                                                                                                                                                                                    |
-| `parts/grid-styles.ts`          | `SLOT_LABELS`, `EQUIP_SLOT_PLACEMENT`, `equipmentSlotStyle`, `packedItemStyle`.                                                                                                                                                                              |
-| `parts/slot-button.tsx`         | `SlotButton` (single equipment slot tile).                                                                                                                                                                                                                   |
-| `parts/inventory-tile.tsx`      | `InventoryGearTile` (single gear tile in the inventory).                                                                                                                                                                                                     |
-| `parts/currency-tile.tsx`       | `CraftingCurrencyTile` (single crafting currency tile).                                                                                                                                                                                                      |
+The screen implementation lives under `src/features/alchemy/meta/screens/armory/`. Start from these owners instead of relying on an exhaustive file inventory:
+
+- `use-armory-controller.ts` — read facade and mutation/HP-sync/save-flush boundary consumed by the route.
+- `use-armory-board-drag.ts` and `use-board-drag.ts` — Armory-specific carried-item policy over the single typed drag session.
+- `board-drag-math.ts`, `armory-drag-types.ts`, and `resolve-equip-swap.ts` — pure geometry, session types, and swap decisions.
+- `armory-gear-actions.ts` — Gear/currency commit policy and displacement/flyover outcomes.
+- Panels, parts, overlays, portals, and targeting modules — presentation only; they receive domain state and commands through props.
 
 ## Data model
 
-```ts
-type GearSlot =
-  | "body"
-  | "helm"
-  | "boots"
-  | "gloves"
-  | "belt"
-  | "main-hand"
-  | "off-hand"
-  | "left-ring"
-  | "right-ring"
-  | "amulet"; // 10 slots
+`src/lib/gear/types.ts`, `types-core.ts`, and `crafting-types.ts` are authoritative. Durable invariants:
 
-type GearRarity = "basic" | "astral";
-
-type GearAffixRoll = { id: GearAffixId; value: number };
-
-type GearDefinition = {
-  id: string; // stable id, combined with rarity
-  baseItemId: GearBaseItemId;
-  rarity: GearRarity | null; // null for generic templates
-  title: string;
-  compatibleSlots: GearSlot[];
-  requiresTwoHands: boolean;
-  affinityKeywords: KeywordId[];
-  salvageValue: MaterialInventory;
-  art: string;
-  descriptionLines: string[];
-  rangedWeapon?: boolean;
-  quiver?: boolean;
-};
-
-type GearInstance = {
-  // saved with the player
-  instanceId: string; // uuid per drop / per save
-  definitionId: string; // → GearDefinition
-  affixes: GearAffixRoll[];
-};
-
-type GearInventory = GearInstance[];
-type GearInventories = Record<CharacterId, GearInventory>; // per-character
-type GearLoadout = Record<GearSlot, string | null>;
-type GearLoadouts = Record<CharacterId, GearLoadout>;
-
-type GearBoardPosition = { col: number; row: number }; // 1-indexed
-type GearBoardPositions = Record<string, GearBoardPosition>;
-type GearBoardPositionsByCharacter = Record<CharacterId, GearBoardPositions>;
-```
-
-Crafting currencies are simpler:
-
-```ts
-type CraftingCurrencyId =
-  | "discordant-dice"
-  | "sprig-of-growth"
-  | "voidstone"
-  | "ascension-seal"
-  | "severance-maw"
-  | "smiths-whetstone";
-type CraftingCurrencyBoardPositions = Partial<Record<CraftingCurrencyId, { col: number; row: number }>>;
-type CraftingCurrencyBoardPositionsByCharacter = Record<CharacterId, CraftingCurrencyBoardPositions>;
-```
+- A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and rolled `affixes`; it never embeds definition objects or art URLs.
+- Inventories, loadouts, and Gear/currency board positions are keyed by character. A loadout maps each slot to at most one instance ID.
+- Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata.
+- Board positions are one-indexed persisted hints. Sanitizers and packers repair missing, invalid, or colliding positions.
 
 ## State flow
 
@@ -136,7 +67,7 @@ type CraftingCurrencyBoardPositionsByCharacter = Record<CharacterId, CraftingCur
 - **`Armory lock`** — computed at the app layer: `useIsArmoryLocked() = !useHasAnyOwnedGear()` (in `app-overlays.tsx`); `MenuScreen` receives a `locked` prop, it does not read the store.
 - **`ArmoryScreen`** — reads `inventories`, `loadouts`, `craftingCurrencies`, and board position slices via `useGearArmorySlice`.
 - **`useArmoryController`** — facade hook that bundles the read-only slice plus the mutation callbacks.
-- **Battle** — `computeGearManifest(characterId, inventory, loadouts)` is called in `battle-init.ts` and produces a flat `GearEffectManifest` (64 numeric keys) that is copied into `BattleState.gearEffects` and frozen at battle start.
+- **Battle** — `computeGearManifest(characterId, inventory, loadouts)` is called in `battle-init.ts` and produces a flat `GearEffectManifest` copied into `BattleState.gearEffects` at battle start.
 - **Run start** — `content-system-navigation.ts` snapshots `computeGearManifest.maxHealth` into `RunStartSnapshot.gearMaxHealthBonus`.
 
 ### Write paths
@@ -167,14 +98,7 @@ The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not mutate gear
 
 ## Board packing
 
-The inventory is an **8-column × 8-row** board (the `INVENTORY_COLS` × `INVENTORY_VISIBLE_ROWS` constants). Gear footprints are defined per-slot in `GEAR_FOOTPRINT` (`src/lib/gear/footprints.ts`):
-
-| slot  | w × h | slot                            | w × h |
-| ----- | ----- | ------------------------------- | ----- |
-| body  | 2 × 3 | main-hand                       | 2 × 3 |
-| helm  | 2 × 2 | off-hand                        | 2 × 3 |
-| boots | 2 × 2 | gloves                          | 2 × 2 |
-| belt  | 2 × 1 | amulet / left-ring / right-ring | 1 × 1 |
+Board dimensions come from `INVENTORY_COLS` / `INVENTORY_VISIBLE_ROWS`; per-slot footprints come from `GEAR_FOOTPRINT` in `src/lib/gear/footprints.ts`. Do not duplicate their current numeric values in layout code or documentation.
 
 All grid layout logic lives in **`src/lib/gear/grid-packing.ts`** (pure, framework-agnostic). The store, the screen, and the drag hooks all delegate to it:
 
@@ -185,9 +109,9 @@ All grid layout logic lives in **`src/lib/gear/grid-packing.ts`** (pure, framewo
 
 ## Battle integration
 
-Gear effects are **snapshotted** at battle start. `computeGearManifest(characterId, inventory, loadouts)` flattens all equipped gear into a 64-key `GearEffectManifest` (a record of numbers) which is copied into `BattleState.gearEffects` and frozen. Battle code never reads the gear aggregate during a fight — it reads `state.gearEffects.X` only.
+Gear effects are **snapshotted** at battle start. `computeGearManifest(characterId, inventory, loadouts)` flattens equipped Gear into `BattleState.gearEffects`. Battle code never reads the Gear aggregate during a fight.
 
-The 64 effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest.ts`). Each entry in `gearAffixCatalog` declares its `effectKey: keyof GearEffectManifest`. The architecture guard `tests/architecture/gear-affix-effect-keys.test.ts` asserts:
+Effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest.ts`). Each entry in `gearAffixCatalog` declares its `effectKey: keyof GearEffectManifest`. The architecture guard `tests/architecture/gear-affix-effect-keys.test.ts` asserts:
 
 - Every `effectKey` in the catalog is a member of `GEAR_EFFECT_KEYS` (catches silent zero-roll typos).
 - Every key in `GEAR_EFFECT_KEYS` is referenced by at least one affix.
@@ -201,18 +125,11 @@ When a board item is dropped onto another board item, the first item is committe
 
 `useBoardDrag` owns held-mode document listeners, Escape registration, visibility/blur cleanup, and animation completion as resources derived from the active phase. Geometry stays pure in `board-drag-math.ts`. Secondary gear swap flyovers remain a separate visual array because they are animations, not additional primary sessions.
 
-Magnet constants (all in `useBoardDrag` + re-exported from `board-drag-math`):
-
-- `INVENTORY_SNAP_RADIUS_CELLS = 0.28` — the proximity check between the free rect and the destination cell.
-- `MAGNET_SWITCH_MARGIN_PX = 14` — the new candidate must be at least this much closer to win the switch.
-- `MAGNET_RELEASE_HYSTERESIS_PX = 18` — the previous destination's grip weakens when the free rect is far from it.
-- `DOUBLE_CLICK_FLYOVER_MS = 280` — duration of the double-click flyover animation.
-- `MAGNET_RELEASE_EASE_MS = 140` — duration of the magnet-release animation.
-- `DRAG_POINTER_ACTIVATE_DISTANCE_PX = 4` — pointer must travel this far before the drag begins.
+Drag thresholds and animation timings live with `useBoardDrag` and are re-exported from `board-drag-math` when pure tests need them. Keep snap radius, destination-switch margin, release hysteresis, pointer activation, and flyover/release timing centralized there rather than copying their current numeric values into documentation.
 
 ## Persistence
 
-Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alchemy/shared/storage/build-save-data-from-stores.ts`) which serializes the 5 gear fields. The current schema is **v10**:
+Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alchemy/shared/storage/build-save-data-from-stores.ts`), which serializes five Gear-owned fields:
 
 | Field                                       | Notes                                                                                                     |
 | ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
@@ -222,33 +139,16 @@ Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alche
 | `craftingCurrencyBoardPositionsByCharacter` | `Record<CharacterId, Partial<Record<CraftingCurrencyId, { col, row }>>>` — per-character currency layout. |
 | `craftingCurrencies`                        | `Record<CraftingCurrencyId, number>`.                                                                     |
 
-`LAUNCH_SAVE_SCHEMA_VERSION` and `CURRENT_SAVE_SCHEMA_VERSION` are both **10** pre-launch. `migrateSaveDataToCurrent` stamps the current version; there are no schema step functions until launch.
+Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md) and `src/lib/validation/metadata.ts` own the supported floor and current version. Gear shape changes follow that migration contract: safe additive fields may use schema defaults, while transforms require a versioned migration.
 
 `use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes through `subscribeAlchemyPersistence`, which combines settings changes with the committed gameplay-session signal (run domain, transient/battle state, run profile, profile, and gear); changes are debounced before writing. `buildAlchemySaveDataFromStores` assembles the snapshot through `encodeAlchemyPersistenceFields`. The gear mutation callbacks in `useArmoryController` also call `flushAlchemySaveNow` after mutations during an active run.
 
 ## Tests
 
-| Path                                                                                                                  | Role                                                                                                                                                                                                                                             |
-| --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `tests/lib/gear/gear.test.ts`                                                                                         | Slot compatibility, equip/swap, hand conflict, salvage, normalize.                                                                                                                                                                               |
-| `tests/lib/gear/affixes.test.ts`                                                                                      | Affix roll, value, normalize, effect mapping.                                                                                                                                                                                                    |
-| `tests/lib/gear/crafting.test.ts`                                                                                     | Currency apply, canApply, salvage yield.                                                                                                                                                                                                         |
-| `tests/lib/gear/grid-packing.test.ts`                                                                                 | Packing, preservation, swap, displaced re-placement, edge cases.                                                                                                                                                                                 |
-| `tests/lib/gear/gear-shine.test.ts`                                                                                   | Astral-rarity shine colors.                                                                                                                                                                                                                      |
-| `tests/lib/gear/display.test.ts`                                                                                      | Tooltip / description / title helpers.                                                                                                                                                                                                           |
-| `tests/lib/gear/generation.test.ts`                                                                                   | `generateGearRewardChoices`, `createGearInstance`.                                                                                                                                                                                               |
-| `tests/features/alchemy/shared/stores/gear-store.test.ts`                                                             | Init, equip, unequip, salvage, board-position swap, transfer, crafting, cross-character equip.                                                                                                                                                   |
-| `tests/features/alchemy/shared/stores/gear-crafting.test.ts`                                                          | Crafting integration: apply, salvage yield, normalization.                                                                                                                                                                                       |
-| `tests/features/alchemy/meta/screens/armory-screen.test.tsx`                                                          | Integration coverage for render, character switching, salvage mode, currency targeting, double-click swap animations, transfer menu, tooltips, browse-only, locked characters, two-handed off-hand dimming, and dev spawn.                       |
-| `tests/lib/gear/board-view.test.ts`                                                                                   | Mixed board view and saved-position packing.                                                                                                                                                                                                     |
-| `tests/lib/gear/inventory-placement.test.ts`                                                                          | Collision, nearest/first placement, vacated slots, and destination rectangles.                                                                                                                                                                   |
-| `tests/features/alchemy/meta/screens/armory/armory-resolve-equip-swap.test.ts`                                        | `resolveEquipSwap` canSwap / displaced decisions.                                                                                                                                                                                                |
-| `tests/features/alchemy/meta/screens/armory/board-drag-math.test.ts`                                                  | Drag geometry, destination identity, and magnet-hysteresis math helpers.                                                                                                                                                                         |
-| `tests/features/alchemy/shared/ui/portaled-tooltip-placement.test.ts`                                                 | Portaled tooltip placement helpers (shared stage-aware math).                                                                                                                                                                                    |
-| `tests/features/alchemy/shared/storage/gear-save.test.ts`                                                             | Save round-trip and v10 gear normalization.                                                                                                                                                                                                      |
-| `tests/architecture/gear-affix-pool.test.ts`                                                                          | Every gear definition has an eligible affix pool at least as large as its minimum affix count.                                                                                                                                                   |
-| `tests/architecture/gear-affix-effect-keys.test.ts`                                                                   | Every `effectKey` in the catalog is in `GEAR_EFFECT_KEYS` and vice versa.                                                                                                                                                                        |
-| `tests/architecture/save-migration-guard.test.ts`                                                                     | Every fixture is idempotent at the v10 launch baseline.                                                                                                                                                                                          |
-| `tests/architecture/save-migration-contract.test.ts`                                                                  | Launch baseline and migration contract at v10.                                                                                                                                                                                                   |
-| `tests/armory-crafting.spec.ts`, `tests/gear-combat.spec.ts`, `tests/gear-equip.spec.ts`, `tests/gear-layout.spec.ts` | Playwright E2E specs.                                                                                                                                                                                                                            |
-| `tests/e2e/armory.ts`                                                                                                 | Playwright helpers: `openArmory`, `gearItemLocator`, `currencyLocator`, `activateCurrency`, `applyCurrencyToGear`, `enterSalvageMode`, `salvageInventoryItem`, `confirmSalvage`, `expectSalvageDialog`, `pointerDrag`, `pointerDragToInventory`. |
+Use the path-scoped Gear gate in [`CONTRIBUTING.md`](../CONTRIBUTING.md#what-to-run-when-you-change) rather than maintaining a second exhaustive command here. Test ownership is intentionally split:
+
+- `tests/lib/gear/` — pure definitions, operations, generation, crafting, manifests, and board layout.
+- `tests/features/alchemy/shared/stores/gear-*.test.ts` and `shared/storage/gear-save.test.ts` — aggregate mutation and persistence.
+- `tests/features/alchemy/meta/screens/armory*/` — controller, rendering, targeting, and drag interaction.
+- `tests/architecture/gear-*.test.ts` and save-migration guards — registry and persistence contracts.
+- `tests/*gear*.spec.ts`, `tests/armory-*.spec.ts`, and `tests/e2e/armory.ts` — player flows and Playwright helpers.

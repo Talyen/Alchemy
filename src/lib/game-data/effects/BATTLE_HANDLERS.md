@@ -1,6 +1,6 @@
 # Battle handlers for card effects
 
-Effect **schemas** live in [`src/lib/game-data/effects/`](./), grouped by concern into per-concern `<group>-schemas.ts` files plus the recursive `chance/definition.ts`.
+Effect **schemas** live in [`src/lib/game-data/effects/`](./), grouped by concern into per-concern `<group>-schemas.ts` files plus the recursive `chance-definition.ts`.
 Effect **runtime handlers** live in [`src/lib/battle/effect-handlers/`](../../battle/effect-handlers/), grouped by concern into five `<group>-handlers.ts` files plus `dispatch.ts` and `registry.ts`.
 
 ## Schemas (`src/lib/game-data/effects/`)
@@ -12,7 +12,7 @@ Effect **runtime handlers** live in [`src/lib/battle/effect-handlers/`](../../ba
 | `restore-mana`, `lose-mana`, `gain-max-mana`, `lose-max-mana`, `heal`, `lose-health`                                                         | [`mana-health-schemas.ts`](./mana-health-schemas.ts) |
 | `summon-companion`, `buff-companion`                                                                                                         | [`companion-schemas.ts`](./companion-schemas.ts)     |
 | `gain-gold`, `wish`, `draw-cards`                                                                                                            | [`utility-schemas.ts`](./utility-schemas.ts)         |
-| `chance` (recursive)                                                                                                                         | [`chance/definition.ts`](./chance/definition.ts)     |
+| `chance` (recursive)                                                                                                                         | [`chance-definition.ts`](./chance-definition.ts)     |
 
 The canonical kind list is [`BATTLE_CARD_EFFECT_KINDS`](./kinds.ts). All template definitions are aggregated in [`template-definitions.ts`](./template-definitions.ts).
 

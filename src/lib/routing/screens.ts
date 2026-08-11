@@ -1,31 +1,4 @@
 // Canonical screen route identifiers shared by validation, persistence, and UI routing.
-export type Screen =
-  | "menu"
-  | "game-mode-select"
-  | "character-select"
-  | "difficulty-select"
-  | "draft-deck"
-  | "battle"
-  | "rewards"
-  | "destination"
-  | "options"
-  | "collection"
-  | "talents"
-  | "homestead"
-  | "armory"
-  | "game-over"
-  | "campfire"
-  | "shop"
-  | "alchemist"
-  | "trinket-shop"
-  | "equipment-shop"
-  | "mystery"
-  | "corruption"
-  | "run-victory"
-  | "labyrinth-map"
-  | "wildwood-recovery"
-  | "wildwood-removal";
-
 export const ROUTE_SCREENS = {
   MENU: "menu",
   GAME_MODE_SELECT: "game-mode-select",
@@ -52,6 +25,10 @@ export const ROUTE_SCREENS = {
   LABYRINTH_MAP: "labyrinth-map",
   WILDWOOD_RECOVERY: "wildwood-recovery",
   WILDWOOD_REMOVAL: "wildwood-removal",
-} as const satisfies Record<string, Screen>;
+} as const;
 
+export type Screen = (typeof ROUTE_SCREENS)[keyof typeof ROUTE_SCREENS];
+
+// ROUTE_SCREENS is non-empty by construction; deriving this list keeps persisted
+// save validation synchronized with the compile-time Screen union.
 export const ROUTE_SCREEN_VALUES = Object.values(ROUTE_SCREENS) as [Screen, ...Screen[]];

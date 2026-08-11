@@ -4,7 +4,7 @@
 
 ## Intent
 
-Inventory confirmed boundary or transition issues and fix them through the complete invariant: decode/validate → mutate → persist/synchronize → acknowledge → recover. This includes boot/hydration, import/export, backup restore, and cloud merge when applicable. A clean pass is valid; do not add guards, logs, seams, or tests solely to create work. Reuse the existing persistence/transition owner; a new seam requires repeated confirmed violations and the proposal bar in [README.md](README.md). If the scope is large, phase the plan.
+Fix confirmed boundary issues through the complete invariant: decode/validate → mutate → persist/synchronize → acknowledge → recover. Include boot, import/export, backup, and cloud paths when they participate; reuse the existing persistence or transition owner.
 
 ## Hard stops
 

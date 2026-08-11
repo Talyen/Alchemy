@@ -4,7 +4,7 @@
 
 ## Intent
 
-Confirm unexpected effect ownership or a defective allowed seam and fix the complete effect chain using existing owners. Inspect pure rule → controller → store → storage/audio/IPC/browser consumer as applicable. Allowed location alone does not prove good ownership: atomicity, batching, cleanup, retry/error propagation, deduplication, hidden global coupling, and testability remain in scope. A clean pass is valid. A new seam requires repeated confirmed violations, at least three current uses, two demonstrated drifting implementations, or an enforced boundary, and follows the structural-fix policy in [README.md](README.md). If the scope is large, phase the plan.
+Fix confirmed ownership or quality defects across the complete rule → controller → store → storage/audio/IPC/browser chain. An allowed location is not enough: inspect atomicity, batching, cleanup, retry/error propagation, deduplication, hidden global coupling, and testability.
 
 ## Hard stops
 

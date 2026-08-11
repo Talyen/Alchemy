@@ -65,18 +65,34 @@ describe("generate-patch-notes", () => {
     expect(lines).toEqual(["**save:** repair corrupt deck"]);
   });
 
-  it("builds grouped unreleased changelog sections", () => {
+  it("builds grouped unreleased changelog sections and omits non-conventional history noise", () => {
     const markdown = buildChangelogUnreleased([
       { subject: "feat(ui): add armory", body: "Replace placeholder gear with affix rolls." },
       { subject: "fix(ci): repair Electron download", body: "" },
       { subject: "Abstract encounter traits across Labyrinth and Wildwood", body: "" },
+      { subject: "wip: temporary checkpoint", body: "" },
     ]);
     expect(markdown).toContain("## [Unreleased]");
     expect(markdown).toContain("### Features");
     expect(markdown).toContain("- feat(ui): add armory");
     expect(markdown).toContain("Replace placeholder gear with affix rolls.");
     expect(markdown).toContain("### Bug Fixes");
-    expect(markdown).toContain("### Other");
+    expect(markdown).not.toContain("### Other");
+    expect(markdown).not.toContain("Abstract encounter traits");
+    expect(markdown).not.toContain("temporary checkpoint");
+  });
+
+  it("caps verbose changelog bodies while retaining their leading context", () => {
+    const markdown = buildChangelogUnreleased([
+      {
+        subject: "feat(ui): add armory",
+        body: Array.from({ length: 10 }, (_, index) => `Detail line ${index + 1}`).join("\n"),
+      },
+    ]);
+    expect(markdown).toContain("Detail line 1");
+    expect(markdown).toContain("Detail line 6");
+    expect(markdown).not.toContain("Detail line 7");
+    expect(markdown).toContain("\n  …");
   });
 
   it("parses changelog commits with indented bodies", () => {

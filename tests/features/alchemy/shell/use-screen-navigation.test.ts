@@ -20,11 +20,11 @@ describe("useScreenTransitions", () => {
     const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.MENU, setScreen));
 
     act(() => {
-      result.current.navigateTo(ROUTE_SCREENS.SHOP);
+      result.current.navigateTo(ROUTE_SCREENS.GAME_MODE_SELECT);
       vi.advanceTimersByTime(100);
     });
 
-    expect(setScreen).toHaveBeenCalledWith(ROUTE_SCREENS.SHOP);
+    expect(setScreen).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_MODE_SELECT);
   });
 
   it("commitPendingTransition runs deferred screen commit callbacks", () => {
@@ -39,5 +39,15 @@ describe("useScreenTransitions", () => {
 
     expect(setScreen).not.toHaveBeenCalled();
     expect(onCommit).toHaveBeenCalledOnce();
+  });
+
+  it("rejects transitions outside the screen policy", () => {
+    const setScreen = vi.fn();
+    const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.MENU, setScreen));
+
+    expect(() => result.current.navigateTo(ROUTE_SCREENS.BATTLE)).toThrow(
+      "Disallowed screen transition: menu -> battle",
+    );
+    expect(setScreen).not.toHaveBeenCalled();
   });
 });

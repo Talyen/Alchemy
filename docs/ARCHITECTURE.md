@@ -114,7 +114,7 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 
 - **Card play:** UI → `useBattleController.playCard()` → `playBattleCardResolved()` → `applyCardEffects()` → new `BattleState` → store.
 - **Enemy turn:** `endPlayerTurn()` → one committed intermediate state + persisted continuation → presentation delays → one committed result state.
-- **Screen transition:** `navigateTo` → `navigation.screen` → `renderAlchemyScreenRoute()`.
+- **Screen transition:** `navigateTo` → `assertScreenTransitionAllowed()` → `navigation.screen` → `renderAlchemyScreenRoute()`. Interactive transitions are governed by the exhaustive `ALLOWED_SCREEN_TRANSITIONS` table in `src/lib/routing/screen-transition-policy.ts`; boot restore/hydration intentionally bypasses that policy after save validation.
 - **Run-loop screens:** `screen-routes` call their screen-specific read hook for display props; `routeCommands` from the shell controller provide actions — no second data bus through `useAlchemyRunController` for shop/rewards/mystery/labyrinth fields.
 - **Shell preload / autosave:** App warms the centralized `allGameArt` manifest before reveal; autosave and chrome read needed fields through capability modules, not controller state re-exports. Critical UI sounds load eagerly. Battle initialization then prioritizes the visible hand and current enemy sounds; the remaining manifest decodes one item at a time during input-idle work so background audio warming cannot compete with interaction frames.
 
@@ -131,7 +131,7 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 | Battle                  | `shell/use-battle-controller.ts` → `lib/battle/*`                                                                                                    |
 | Shops                   | `shell/use-shop-controller.ts` → `run-loop/shop/create-shop-actions.ts` → domain command modules                                                     |
 | Session reads/writes    | `shared/stores/run-session-read-port.ts`, `run-session-write-port.ts`, `run-session-command.ts`                                                      |
-| Screen routing          | `shell/use-screen-transitions.ts`, `useActiveRunScreen()`                                                                                            |
+| Screen routing          | `lib/routing/screen-transition-policy.ts`, `shell/use-screen-transitions.ts`, `useActiveRunScreen()`                                                 |
 
 ## Shop commands
 
@@ -150,7 +150,7 @@ Each persistence owner exposes a codec beside its aggregate region. The codec ow
 
 ## Permanent Gear (`gear-store`)
 
-Owned Gear instances and per-character loadouts live in `shared/stores/gear-store.ts`. Definitions and pure equip/salvage/effect rules live under `src/lib/gear/`. Gear is permanent meta progression and is not copied into active-run data; battle creation snapshots the selected character's aggregate Gear effects into the immutable battle talent manifest.
+Owned Gear instances and per-character loadouts live in `shared/stores/gear-store.ts`. Definitions and pure equip/salvage/effect rules live under `src/lib/gear/`. Gear is permanent meta progression and is not copied into active-run data; battle creation snapshots the selected character's aggregate Gear effects into immutable `BattleState.gearEffects`.
 
 Run-loop / run-setup / shell read gear through `shared/stores/gear-store.ts` (`readGearManifestForCharacter`, `readHasAnyOwnedGear`, `useGearArmorySlice`, …) instead of reaching into the full store API. Mutations enter through `dispatchGearMutationWithRunHealthSync()` so active-run health is derived from the same before/after Gear snapshot and committed with the Gear mutation. Autosave observes the single aggregate commit signal.
 

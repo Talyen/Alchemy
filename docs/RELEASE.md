@@ -23,7 +23,7 @@ Automation enforces release readiness — agents do not rely on manual checklist
 
 1. Day to day: commit to `main` with [Conventional Commits](https://www.conventionalcommits.org/). **Do not edit `CHANGELOG.md`.**
 2. `npm run release` / `release:hotfix` → `commit-and-tag-version` runs `.versionrc.json` hooks:
-   - **prerelease:** `sync-changelog.mjs` fills ## [Unreleased] from git since the latest `v*` tag
+   - **prerelease:** `sync-changelog.mjs` fills ## [Unreleased] from recognized Conventional Commits since the latest `v*` tag; it omits merge/non-conventional noise and caps verbose bodies
    - **postbump:** `release-changelog.mjs` promotes that section to `## [x.y.z] (date)`
 3. Anytime: `npm run generate:patch-notes` writes player-facing `release-notes/UNRELEASED.md` (uses git via an in-memory sync; no need to commit changelog churn).
 
@@ -103,10 +103,10 @@ Windows release job.
 | Job                                         | Trigger                                                                             |
 | ------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `e2e` (`@critical`)                         | Every push                                                                          |
-| `ship-gate`                                 | Every push (desktop compile after unit tests; uploads `dist-desktop` for electron)  |
+| `ship-gate`                                 | Pushes matching the `desktop_renderer` filter (desktop renderer after unit tests)   |
 | `assets`                                    | Push when Raw Assets / asset scripts change (prep + drift check)                    |
 | `save-gate`                                 | Push when save/migration/active-run paths change                                    |
 | `desktop-build`                             | Push when desktop paths change (`dist:desktop` Windows installer artifact)          |
-| `electron-e2e`                              | Push when desktop/Electron paths change (reuses ship-gate `dist/`)                  |
+| `electron-e2e`                              | Pushes matching `desktop_renderer` (reuses ship-gate `dist/`)                       |
 | `ci-ok`                                     | Aggregate status over all CI jobs (dashboards / optional PRs; not a main push gate) |
 | `release` (incl. `e2e-full` 3-shard matrix) | Tag `v*` push                                                                       |

@@ -4,7 +4,7 @@
 
 ## Intent
 
-Identify high-friction clusters and simplify them through existing sources of truth or owners. A successful fix reduces at least one stable proxy: authored touchpoints, required preread surface, duplicated declarations or policy, routed verification tiers, or routine command output. Do not use tokenizer-specific token counts. A clean pass is valid. Before shipping, confirm recurrence, demonstrated drift, or one consistently expensive workflow; causality beyond co-change alone; excess avoidable surface; an existing home for the remedy; and a measurable before/after proxy with unchanged correctness coverage. Follow the authoring path through source, tests, fixtures, generated inputs, commands, and docs when they participate in the same friction. If the scope is large, phase the plan.
+Simplify confirmed high-friction clusters through existing sources of truth. Require recurrence, demonstrated drift, or one consistently expensive workflow; causality beyond co-change; avoidable surface; an existing remedy owner; and a stable before/after proxy such as authored touchpoints, preread surface, duplicated policy, verification tiers, or routine output.
 
 ## What counts as locality or context friction
 

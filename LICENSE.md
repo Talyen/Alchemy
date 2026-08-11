@@ -1,6 +1,8 @@
-# Creative Commons Attribution-NonCommercial 4.0 International License
+# Alchemy license notice
 
-This repository is authored and owned by Ryan McIntire (talyen42@gmail.com).
+Copyright © Ryan McIntire. SPDX-License-Identifier: CC-BY-NC-4.0.
+
+The original code, documentation, art, audio, and other content in this repository are source-available under the Creative Commons Attribution-NonCommercial 4.0 International license unless a file or bundled dependency states otherwise. This is a noncommercial license, not an OSI-approved open-source software license. Commercial use requires separate permission from the copyright owner.
 
 ## You are free to:
 
@@ -25,4 +27,4 @@ No warranties are given. The license may not give you all of the permissions nec
 
 ---
 
-Full license text: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+The summary above does not replace the license terms. See the [official license deed](https://creativecommons.org/licenses/by-nc/4.0/) and [full legal code](https://creativecommons.org/licenses/by-nc/4.0/legalcode).

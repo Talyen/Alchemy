@@ -1,5 +1,10 @@
 export { type Screen, ROUTE_SCREENS, ROUTE_SCREEN_VALUES } from "./screens";
 export {
+  ALLOWED_SCREEN_TRANSITIONS,
+  assertScreenTransitionAllowed,
+  isScreenTransitionAllowed,
+} from "./screen-transition-policy";
+export {
   DESTINATIONS,
   type Destination,
   COMBAT_DESTINATIONS,
@@ -10,15 +15,11 @@ export {
 export { filterValidDestinations, filterValidDestinationRounds } from "./destination-validation";
 export { getAvailableDestinations } from "./destination-availability";
 export {
-  DOCUMENTED_META_TRANSITIONS,
-  DOCUMENTED_RUN_END_TRANSITIONS,
-  DOCUMENTED_RUN_LOOP_TRANSITIONS,
   getRunPhase,
   isMetaScreen,
   isRunLoopScreen,
   isRunEndScreen,
   requiresActiveRun,
-  isDocumentedTransition,
   type RunPhase,
 } from "./run-screen-router";
 export { getSteamRichPresenceLabel } from "./run-phase-presence";

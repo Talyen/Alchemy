@@ -13,9 +13,8 @@ export type ScreenRoute = (ctx: RenderAlchemyScreenProps) => ReactNode;
 
 /**
  * Compose phase-scoped route tables. Each input covers a disjoint subset of
- * `Screen`; the union must equal `Screen` for `SCREEN_ROUTES` to type as
- * `Record<Screen, ScreenRoute>`. A missing or duplicate key becomes a
- * compile error on `_exhaustive` below.
+ * `Screen`; their union must equal `Screen` and their keys must be pairwise
+ * disjoint. Missing, extra, and duplicate registrations fail compilation.
  */
 type PhaseRouteTables = typeof metaScreenRoutes &
   typeof runSetupScreenRoutes &
@@ -23,10 +22,24 @@ type PhaseRouteTables = typeof metaScreenRoutes &
   typeof runEndScreenRoutes &
   typeof optionsScreenRoutes;
 type PhaseKeys = keyof PhaseRouteTables;
+type SharedPhaseKeys =
+  | (keyof typeof metaScreenRoutes & keyof typeof runSetupScreenRoutes)
+  | (keyof typeof metaScreenRoutes & keyof typeof runLoopScreenRoutes)
+  | (keyof typeof metaScreenRoutes & keyof typeof runEndScreenRoutes)
+  | (keyof typeof metaScreenRoutes & keyof typeof optionsScreenRoutes)
+  | (keyof typeof runSetupScreenRoutes & keyof typeof runLoopScreenRoutes)
+  | (keyof typeof runSetupScreenRoutes & keyof typeof runEndScreenRoutes)
+  | (keyof typeof runSetupScreenRoutes & keyof typeof optionsScreenRoutes)
+  | (keyof typeof runLoopScreenRoutes & keyof typeof runEndScreenRoutes)
+  | (keyof typeof runLoopScreenRoutes & keyof typeof optionsScreenRoutes)
+  | (keyof typeof runEndScreenRoutes & keyof typeof optionsScreenRoutes);
 
 type _Exhaustive = [PhaseKeys] extends [Screen] ? ([Screen] extends [PhaseKeys] ? true : false) : false;
 const _exhaustive: _Exhaustive = true;
 void _exhaustive;
+type _Disjoint = [SharedPhaseKeys] extends [never] ? true : false;
+const _disjoint: _Disjoint = true;
+void _disjoint;
 
 const SCREEN_ROUTES = {
   ...metaScreenRoutes,
@@ -34,7 +47,7 @@ const SCREEN_ROUTES = {
   ...runLoopScreenRoutes,
   ...runEndScreenRoutes,
   ...optionsScreenRoutes,
-};
+} satisfies Record<Screen, ScreenRoute>;
 
 export interface RenderAlchemyScreenProps {
   screen: Screen;

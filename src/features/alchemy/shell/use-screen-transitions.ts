@@ -8,6 +8,7 @@
 import { useCallback, useRef } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
+import { assertScreenTransitionAllowed } from "@/lib/routing";
 import type { Screen } from "@/features/alchemy/shared/types";
 
 export interface ScreenTransitionOptions {
@@ -42,6 +43,7 @@ export function useScreenTransitions(currentScreen: Screen, setScreen: (screen: 
 
   const navigateTo = useCallback(
     (nextScreen: Screen, onRenderedScreenCommit?: () => void) => {
+      assertScreenTransitionAllowed(currentScreen, nextScreen);
       timerRef.current.clearAll();
       pendingTransitionCommitRef.current = onRenderedScreenCommit ?? null;
       timerRef.current.setTimeout(() => {
@@ -58,6 +60,7 @@ export function useScreenTransitions(currentScreen: Screen, setScreen: (screen: 
   const transition = useCallback(
     (nextScreen: Screen, options: ScreenTransitionOptions = {}) => {
       const { delayMs, immediate, onCommit, guard } = options;
+      assertScreenTransitionAllowed(currentScreen, nextScreen);
 
       const applyImmediate = () => {
         if (guard && !guard()) return;
@@ -78,7 +81,7 @@ export function useScreenTransitions(currentScreen: Screen, setScreen: (screen: 
 
       navigateTo(nextScreen, onCommit);
     },
-    [navigateTo, setScreen],
+    [currentScreen, navigateTo, setScreen],
   );
 
   return { navigateTo, transition, commitPendingTransition, cancelPending };

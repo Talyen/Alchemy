@@ -4,7 +4,7 @@
 
 ## Intent
 
-Surface **confirmed** hotspots so authored LOC, declarations, indirection, nesting, mixed responsibilities, or review surface decreases. Moving ceremony among files is not success. Prefer deleting/inlining; bounded structural simplification may ship under [README.md](README.md), while new layers or uncertain ownership remain proposals. A clean pass is valid. Before shipping a fix, confirm real reading/editing cost, no second need for the indirection, and a simpler form that preserves behavior. One severe abstraction or mega-module may qualify without repeated examples. Follow the abstraction through its types, tests, configuration, and call sites when removing only the local wrapper would leave the ceremony intact. If the fix scope is large, phase the plan.
+Confirm real reading/editing cost and a simpler behavior-preserving form, then reduce authored LOC, declarations, indirection, nesting, mixed responsibilities, or review surface. Prefer deletion and inlining; moving ceremony among files is not success. One severe abstraction or mega-module may qualify without repeated examples.
 
 This audit owns two scales: **local ceremony** (functions, wrappers, comments, branches) and **file/folder mass** (large authored surfaces whose size or mixed jobs cost more to read, edit, or verify than the behavior warrants). Wrong Architecture owner — even in a huge file — belongs to `14-StateGravityOwnershipAudit.md`.
 

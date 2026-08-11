@@ -4,7 +4,7 @@
 
 ## Intent
 
-Find unsafe escapes, unsound generics, broad records, non-exhaustive unions, optional-property bags that encode invalid states, and types that disagree with runtime presence. Prefer one validation boundary (Zod) or an impossible-state model over repeated call-site guards and fallbacks. Once an unsafe model is confirmed, follow it through schema, domain type, callers, fixtures, and tests. Production-facing test helpers and fixtures are in scope when their typing masks a state that product code consumes. A clean pass is valid; bounded repairs under existing owners may ship, while persistence-format or new architectural seams remain proposals. If the scope is large, phase the plan.
+Confirm unsafe escapes, unsound generics, broad records, non-exhaustive unions, invalid optional-property bags, or types that disagree with runtime presence. Prefer one validation boundary or an impossible-state model over repeated guards, and follow the model through schemas, callers, fixtures, and tests.
 
 ## Hard stops
 

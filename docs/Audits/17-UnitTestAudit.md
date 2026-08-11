@@ -6,7 +6,7 @@ Conventions: [CONTRIBUTING.md](../../CONTRIBUTING.md). Architecture owners: [ARC
 
 ## Intent
 
-Confirm duplicate, weaker, implementation-detail, slow, over-expanded, nondeterministic, or false-positive cases and fix them. Also confirm meaningful boundary, branch, mutation, or invariant gaps where regression risk lacks a semantic test owner. A clean pass is valid; do not add coverage to manufacture value, but permit net growth when it closes a demonstrated gap under the correct owner. Follow a confirmed ownership problem through its related fixtures, helpers, and sibling cases rather than optimizing one declaration in isolation. If the scope is large, phase the plan.
+Fix confirmed duplicate, weaker, implementation-detail, slow, over-expanded, nondeterministic, or false-positive cases. Add coverage only for a demonstrated boundary, branch, mutation, or invariant gap under the correct semantic owner; follow ownership problems through related fixtures, helpers, and sibling cases.
 
 ## Hard stops
 

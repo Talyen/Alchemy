@@ -47,19 +47,7 @@ Inventory confirmed findings and address them per the right-size policy. For a f
 
 ### Repeat runs
 
-These audits are designed to be re-run every few days. To keep repeat passes cheap and non-repetitive:
-
-- **Check the ledger first.** Skip candidates already dispositioned in [decisions.md](decisions.md) unless evidence changed (new callers, new drift, changed ownership).
-- **Scope discovery incrementally.** On a repeat run, prefer starting with paths touched since the last audit pass (`git diff --name-only <last-audit-ref>...HEAD`, or the last few days of commits), then follow confirmed candidates through their causal neighborhoods. Do a full-repo pass periodically (roughly monthly), when the user explicitly requests a full audit, or when a cheap mechanical probe (`npm run audit:all`) already covers the repo.
-- **Match cadence to yield.** Not every audit earns a run every few days:
-
-| Tier                                          | Audits                                                                                                                                                                                             |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Frequent** (mechanical, greppable, cheap)   | `05-DeadCodeAudit`, `15-TypeSafetyAudit`, `13-SideEffectSurfaceAudit`, `06-DesignSystemConsistencyAudit`, `07-DocumentationStalenessAudit`, `03-BugHuntingAudit` (recent changes + rotating slice) |
-| **Occasional** (judgment or runtime needed)   | `17-UnitTestAudit`, `10-E2ETestQualityAudit`, `02-BehaviorHardeningAudit`, `01-AsyncRaceAudit`, `16-UIInteractionFeedbackAudit`, `11-InelegantSlopAudit`, `12-PerformanceAudit`                    |
-| **Rare** (structural, expensive, slow-moving) | `09-DuplicateFeatureSurfaceAudit`, `14-StateGravityOwnershipAudit`, `08-DualPathRetentionAudit`, `04-ChangeLocalityContextEfficiencyAudit`                                                         |
-
-The tiers are guidance, not gates — a user citing an audit always runs it.
+Run audits only when cited. Check [decisions.md](decisions.md) first, start repeat discovery with paths changed since the prior pass, and follow confirmed candidates through their causal neighborhood. A user-requested full audit still covers the audit's complete ownership area.
 
 ### Promote stable checks to lint gates
 
@@ -67,22 +55,7 @@ When a class of finding is fully mechanical (expressible as an ESLint rule or `n
 
 ### Orchestrated runs
 
-When a user requests multiple audits or subagent implementation, keep one root orchestrator responsible for shared prereads, candidate deduplication, finding confirmation, the implementation plan, edit ownership, final review, and integrated verification.
-
-- Delegate only confirmed, independent implementation slices. Use an Explorer only for a bounded investigation that does not repeat the root inventory.
-- Never give a subagent the full conversation by default. Use no inherited turns or the smallest useful recent-turn slice; rely on a task brief and repository sources for durable context.
-- A task brief must name the owning audit, confirmed evidence, intended remedy, exact files/symbols the agent owns, hard stops, and the cheapest matching verification. Do not ask the agent to rediscover the problem or rerun broad probes.
-- Keep concurrent write ownership disjoint. Prefer one or two implementation agents at a time; additional agents must provide a real independent latency win.
-- Subagents run targeted checks for their own slice and return only changed paths, behavior, verification status, and blockers. Do not return raw diffs, source dumps, or full build/test logs.
-- The root reviews every diff and runs the applicable path-scoped gates from `CONTRIBUTING.md` once across the integrated changed paths. Do not multiply the same full suite across workers and the root.
-- Keep command output bounded: pass explicit paths to searches, prefer quiet or summary modes, and inspect focused diagnostics only after a failure. Save or summarize long logs instead of injecting them into agent context.
-
-### Code and test budgets
-
-- Simplification, duplication, dead-code, and test-reduction fixes should reduce authored LOC, declarations, indirection, duplicated structure, or executed cases. Ownership, correctness, type-model, test-quality, and performance fixes may be LOC-neutral or grow when the causal remedy requires it; report the more relevant before/after proxy. Moving code without removing the old path is not a reduction.
-- Feature/correctness fixes may grow; explain necessity and the simpler rejected alternative when growth is large.
-- Verification alone does not imply new coverage. Add coverage for a confirmed gap under the existing semantic owner first and remove coverage made redundant.
-- Parameterization is not a reduction when it merely hides the same or more expanded cases behind fewer declarations.
+For multiple audits or delegated implementation, one root owns deduplication, the integrated plan, disjoint edit ownership, final review, and the path-scoped gate. Delegate only confirmed independent slices with a brief naming the evidence, remedy, owned files, hard stops, and focused verification. Report the relevant before/after proxy; moving or parameterizing the same surface is not automatically a reduction.
 
 ### Verification
 

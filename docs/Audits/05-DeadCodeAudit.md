@@ -4,7 +4,7 @@
 
 ## Intent
 
-Identify confirmed obsolete authored surface and clean up the complete deletion cascade. A clean pass is valid. Prefer narrowing exports (module-private) when the API remains useful inside its folder. Once an owner is proven dead, follow callers, barrels, routes, styles, tests, docs, configuration, generated inputs, and assets that exist only for it. A successful fix must report authored LOC, declarations, files, branches, registrations, or exported API removed; moving the same surface is not dead-code reduction. Reachable twins / no-op shims with live callers belong to `08-DualPathRetentionAudit.md`. If the scope is large, phase the plan.
+Delete confirmed obsolete surface and its dependent callers, barrels, routes, styles, tests, docs, configuration, generated inputs, and assets. Narrow still-useful exports instead of deleting them. Reachable twins or no-op shims belong to `08-DualPathRetentionAudit.md`.
 
 ## Hard stops
 

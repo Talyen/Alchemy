@@ -2,6 +2,8 @@
 
 const PLAYER_TYPES = new Set(["feat", "fix", "balance", "perf"]);
 const HIDDEN_TYPES = new Set(["chore", "refactor", "test", "ci", "build", "style", "docs"]);
+const CHANGELOG_BODY_MAX_LINES = 6;
+const CHANGELOG_BODY_MAX_CHARS = 800;
 
 export const CHANGELOG_SECTION_ORDER = [
   "Features",
@@ -122,16 +124,31 @@ export function normalizeCommits(commits) {
   );
 }
 
+function compactChangelogBody(body) {
+  const cleaned = cleanCommitBody(body);
+  if (!cleaned) return "";
+
+  const lines = cleaned.split("\n").slice(0, CHANGELOG_BODY_MAX_LINES);
+  let compacted = lines.join("\n").trim();
+  if (compacted.length > CHANGELOG_BODY_MAX_CHARS) {
+    compacted = `${compacted.slice(0, CHANGELOG_BODY_MAX_CHARS).trimEnd()}…`;
+  } else if (cleaned.split("\n").length > CHANGELOG_BODY_MAX_LINES) {
+    compacted = `${compacted}\n…`;
+  }
+  return compacted;
+}
+
 export function buildChangelogUnreleased(commits) {
   const grouped = new Map();
 
   for (const { subject, body } of normalizeCommits(commits)) {
     const parsed = parseConventionalCommit(subject);
-    const section = TYPE_TO_CHANGELOG_SECTION[parsed.type] ?? TYPE_TO_CHANGELOG_SECTION.other;
+    const section = TYPE_TO_CHANGELOG_SECTION[parsed.type];
+    if (!section || section === TYPE_TO_CHANGELOG_SECTION.other) continue;
     if (!grouped.has(section)) grouped.set(section, []);
 
     let entry = `- ${subject}`;
-    const cleaned = cleanCommitBody(body);
+    const cleaned = compactChangelogBody(body);
     if (cleaned) {
       entry += `\n${cleaned
         .split("\n")

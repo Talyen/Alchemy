@@ -21,7 +21,7 @@ jobs:
     outputs:
       save: ${{ steps.filter.outputs.save }}
       desktop: ${{ steps.filter.outputs.desktop }}
-      electron: ${{ steps.filter.outputs.electron }}
+      desktop_renderer: ${{ steps.filter.outputs.desktop_renderer }}
       assets: ${{ steps.filter.outputs.assets }}
     steps:
       - uses: actions/checkout@v5
@@ -62,16 +62,26 @@ jobs:
               - "scripts/dist-desktop*"
               - "scripts/verify-desktop-package*"
               - "scripts/sync-steam-appid*"
-            electron:
+            desktop_renderer:
               - "desktop/**"
               - "index.html"
               - "src/main.tsx"
+              - "src/App.tsx"
+              - "src/app/**"
               - "src/lib/platform.ts"
               - "src/lib/crash-reporting.ts"
+              - "src/lib/routing/**"
+              - "src/features/alchemy/shell/**"
               - "src/features/alchemy/shared/storage/**"
+              - "src/features/alchemy/shared/stores/**"
+              - "src/features/alchemy/meta/screens/**"
+              - "src/features/alchemy/run-setup/screens/**"
+              - "src/features/alchemy/run-loop/screens/**"
               - "tests/electron-*"
               - "playwright.electron*"
+              - "vite.config.ts"
               - "package.json"
+              - "scripts/prepare-assets.mjs"
               - "scripts/electron-path*"
               - "scripts/ensure-electron*"
               - "scripts/electron-download*"
@@ -221,7 +231,7 @@ jobs:
     needs: [changes, test]
     # Only produces the dist-desktop artifact consumed by electron-e2e, so it is
     # path-gated on the same electron filter rather than running on every push.
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.electron == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop_renderer == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -341,7 +351,7 @@ jobs:
 
   electron-e2e:
     needs: [changes, ship-gate]
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.electron == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop_renderer == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

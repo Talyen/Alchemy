@@ -4,7 +4,7 @@
 
 ## Intent
 
-Confirm candidate defects and fix them. A pass with no confirmed defect is successful. Do not re-run sibling audits’ unrelated full suites; defer P4/P5 by default. Bounded structural remedies may ship under [README.md](README.md); new architecture or product decisions remain proposals. If the scope is large, phase the plan.
+Confirm and fix real defects. Do not re-run sibling audits’ unrelated suites; defer P4/P5 by default.
 
 **Default discovery mode:** start with recent changes, then inspect one rotating high-risk subsystem or invariant family. Review commits since the last pass (`git log`/`git diff` on authored paths) for defects introduced or exposed by recent work, follow confirmed candidates through their causal neighborhoods, and perform a deeper slice such as persistence/resume, battle transitions, reward/shop mutation, routing, or desktop lifecycle. Whole-repo signal greps remain a secondary, periodic mode.
 

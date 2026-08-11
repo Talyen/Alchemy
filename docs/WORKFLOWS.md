@@ -210,15 +210,17 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 
 ## Add a new card effect `kind`
 
-| Step                                                                                     | File(s)                                                                                   |
-| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| 1. Add to `BattleCardEffect` union                                                       | `src/lib/game-data/types.ts`                                                              |
-| 2. Create `effects/<kind>/definition.ts` (schema + `dispatchRoute`)                      | `src/lib/game-data/effects/`                                                              |
-| 3. Register in `TEMPLATE_EFFECT_DEFINITIONS` (+ `ALL_EFFECT_REGISTRY_ENTRIES` if needed) | `src/lib/game-data/effects/template-definitions.ts`                                       |
-| 4. Add `kind` to `BATTLE_CARD_EFFECT_KINDS`                                              | `src/lib/game-data/effects/kinds.ts`                                                      |
-| 5. Implement handler (existing route module or new)                                      | `src/lib/battle/effect-handlers/` — see `src/lib/game-data/effects/BATTLE_HANDLERS.md`    |
-| 6. Update `effect-metadata.ts` keywords                                                  | `src/lib/game-data/effect-metadata.ts`                                                    |
-| 7. Tests                                                                                 | `tests/lib/battle/apply-effects*.test.ts`, `tests/lib/game-data/effects-registry.test.ts` |
+| Step                                                                         | File(s)                                                                                   |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| 1. Add to `BattleCardEffect` union                                           | `src/lib/game-data/types.ts`                                                              |
+| 2. Add an `EffectKindDefinition` to the matching grouped `*-schemas.ts` file | `src/lib/game-data/effects/`                                                              |
+| 3. Register non-recursive kinds in `TEMPLATE_EFFECT_DEFINITIONS`             | `src/lib/game-data/effects/template-definitions.ts`                                       |
+| 4. Add `kind` to `BATTLE_CARD_EFFECT_KINDS`                                  | `src/lib/game-data/effects/kinds.ts`                                                      |
+| 5. Register the runtime handler in `EFFECT_APPLY_BY_KIND`                    | `src/lib/battle/effect-handlers/` — see `src/lib/game-data/effects/BATTLE_HANDLERS.md`    |
+| 6. Update effect metadata used for descriptions/keywords                     | `src/lib/game-data/effect-metadata.ts`                                                    |
+| 7. Tests                                                                     | `tests/lib/battle/apply-effects*.test.ts`, `tests/lib/game-data/effects-registry.test.ts` |
+
+`chance` is the recursive exception: its schema factory lives in `chance-definition.ts` and dispatch recurses before the non-chance registry.
 
 ---
 
@@ -257,11 +259,11 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 1. Add base item metadata in `src/lib/gear/base-items.ts` (slots, two-hand rule, affinity keywords, available rarities, salvage).
 2. Register raw art as `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg`; run `npm run assets:optimize` then `npm run sync:gear-art` to emit `gear-{slug}-{rarity}.webp` mappings in `src/lib/game-data/gear-art.ts`.
 3. Variant definitions are built automatically in `src/lib/gear/definitions.ts` as `{baseItemId}-{rarity}`.
-4. Add new affixes in `src/lib/gear/affixes.ts` with stable `affixId` and `keywordId` for affinity weighting.
+4. Add new affix definitions in `src/lib/gear/affix-catalog.ts` with a stable ID, `keywordId`, effect key, value range, and eligible slots. Display/roll helpers live in `affixes.ts`.
 5. Reward generation rolls instances in `src/lib/gear/generation.ts`; rewards screen stores the exact `GearInstance` (never re-roll on accept). Mid-reward campaign/labyrinth progress is persisted in `activeRun.interruptedFlow` (`primary-reward` / `companion-reward` arms; gear stores full instances; cards/trinkets store choice ids).
-6. Keep owned items as unique `GearInstance` records with `affixIds`; never put definition objects or art URLs into save data.
+6. Keep owned items as unique `GearInstance` records with `affixes: GearAffixRoll[]`; never put definition objects or art URLs into save data.
 7. Battle applies aggregated `gearEffects` from `computeGearManifest()` during battle creation.
-8. v1 affixes only cover the eight flat damage keywords; affinity tags like `archery` or `gold` are forward-looking for roll weighting until matching affixes ship.
+8. Keep each affix's `keywordId` aligned with affinity weighting and its `effectKey` aligned with `GEAR_EFFECT_KEYS`; architecture tests enforce registry coverage.
 9. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change. Additive `interruptedFlow` reward fields and `gearBoardPositions` use schema defaults where safe (no bump required for pure additives).
 10. Cover pure operations, generation, persistence, reward selection, Armory interaction, and battle snapshot behavior.
 
@@ -295,13 +297,17 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 
 ## Adding a new screen
 
-| Step                                                                                                        | File(s)                                                                |
-| ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| 1. Add string to `Screen` union and `ROUTE_SCREENS`                                                         | `src/lib/routing/screens.ts`                                           |
-| 2. Create component in `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/` + barrel export        | `index.ts` (local screen index under that subdirectory)                |
-| 3. Wire route handler in the matching phase table (`meta-routes`, `run-setup-routes`, `run-loop-routes`, …) | `src/app/screen-routes/`                                               |
-| 4. Extend phase route ctx / `RenderAlchemyScreenProps` if new props needed                                  | `src/app/screen-routes/route-ctx.ts`, `src/app/render-screen-props.ts` |
-| 5. Wire navigation trigger                                                                                  | caller of `goToScreen("<name>")`                                       |
+| Step                                                                                                        | File(s)                                                                      |
+| ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| 1. Add string to `Screen` union and `ROUTE_SCREENS`                                                         | `src/lib/routing/screens.ts`                                                 |
+| 2. Classify the screen and add every legal interactive edge                                                 | `run-screen-router.ts`, `screen-transition-policy.ts`                        |
+| 3. Create component in `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/` + barrel export        | `index.ts` (local screen index under that subdirectory)                      |
+| 4. Wire route handler in the matching phase table (`meta-routes`, `run-setup-routes`, `run-loop-routes`, …) | `src/app/screen-routes/`                                                     |
+| 5. Extend phase route ctx / `RenderAlchemyScreenProps` if new props are needed                              | `src/app/screen-routes/route-ctx.ts`, `src/app/screen-routes/index.tsx`      |
+| 6. Wire navigation trigger                                                                                  | caller of `goToScreen("<name>")`                                             |
+| 7. Cover taxonomy, allowed/rejected transitions, and route rendering                                        | `tests/lib/routing/`, `tests/features/alchemy/shell/`, route component tests |
+
+Boot restore/hydration sets a validated saved screen directly and intentionally bypasses the interactive transition table.
 
 ---
 

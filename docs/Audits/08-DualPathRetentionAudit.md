@@ -4,7 +4,7 @@
 
 ## Intent
 
-Confirm two reachable paths for one behavior (or a reachable shim that only forwards to the surviving owner) and remove the complete superseded path. Once confirmed, inspect its connected callers, tests, docs, configuration, flags, adapters, selectors, commands, and generated inputs. A successful fix reports authored LOC, declarations, branches, configuration, or exported API removed by deleting the superseded path — not by wrapping it again. A clean pass is valid. Planning and phasing: [README.md](README.md).
+Confirm two reachable paths for one behavior, or a live shim that only forwards, then delete the superseded path and its connected callers, tests, docs, configuration, flags, adapters, selectors, commands, and generated inputs.
 
 ## What counts as dual-path retention
 

@@ -6,7 +6,7 @@ Conventions: [CONTRIBUTING.md](../../CONTRIBUTING.md) (E2E helpers, tags, CI par
 
 ## Intent
 
-Confirm P0–P2 candidates across suites and address them, preferring delete → merge → move to a cheaper tier → shorten when coverage is redundant. Also add or strengthen a journey when a confirmed shipping-critical behavior has no trustworthy E2E owner. Add page-object or harness surface when at least three current uses become shorter, two uses have demonstrated drift/cost, or one enforced reliability boundary requires it. If the scope is large, phase the plan.
+Address confirmed P0–P2 issues, preferring delete → merge → cheaper tier → shorter coverage when redundant. Add or strengthen a journey when shipping-critical behavior lacks a trustworthy E2E owner; add page-object or harness surface only when it meets the shared abstraction bar.
 
 Prefer CI run history and `npm run test:e2e:audit` timing/flake reports as primary discovery inputs, but accept deterministic local reproduction or conclusive structural evidence of false positives, state leakage, or nondeterminism. Do not re-run full suites solely to hunt for flakes. Re-run only the suspect spec cluster when confirming a candidate.
 

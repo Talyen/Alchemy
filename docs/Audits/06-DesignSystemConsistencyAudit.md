@@ -6,7 +6,7 @@ Token / primitive owners: `src/components/ui/README.md`, `src/features/alchemy/s
 
 ## Intent
 
-Inventory custom vs tokenized vs justified-custom across complete UI families, then migrate confirmed drift toward existing shared primitives and CSS variables. Include responsive rules, elevation, density, focus/disabled/error states, motion roles, and icon treatment when they are part of the same visual system. Add a shared token/helper for at least three current uses, two demonstrated drifting implementations, or an enforced design-system boundary, and only when removing call-site surface outweighs the new API; otherwise simplify locally. If the scope is large, phase the plan.
+Compare custom, tokenized, and justified-custom implementations across a complete UI family, then migrate confirmed drift to existing primitives and CSS variables. Add a token/helper only when it meets the shared abstraction bar in [README.md](README.md) and removes more call-site surface than it adds.
 
 **Principles:** one spacing/color scale; delete parallel one-off systems; reuse `src/components/ui` and `shared/ui` before inventing new chrome; don’t invent a second visual language beside the established game UI.
 

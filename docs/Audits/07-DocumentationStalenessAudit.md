@@ -4,7 +4,7 @@
 
 ## Intent
 
-Find contradictions between live docs and sources of truth, harmful omissions in documents that present a workflow or contract as complete, and duplicated policy that has begun to drift. Discover markdown mechanically (do not trust a hardcoded count), but do not load it wholesale — use capped probes and open only candidate files plus nearby source-of-truth lines. Once a concept is confirmed stale, inspect its focused references across docs, scripts, help text, and nearby READMEs. A pass with no material drift is valid. If the Critical/Moderate drift scope is large, phase the plan.
+Find contradictions, harmful omissions in complete-looking workflows, and duplicated policy that has drifted. Discover markdown mechanically, then inspect candidate files and their nearby source of truth; follow confirmed concepts across docs, scripts, help text, and local READMEs.
 
 ## Hard stops
 
@@ -40,7 +40,7 @@ A missing step or invariant is Critical/Moderate only when the document claims t
 Optional discovery aids — choose your own probes.
 
 - **Code snippet drift:** fenced `ts`/`tsx` blocks in `docs/`, `AGENTS.md`, `CONTRIBUTING.md`, READMEs whose type names and APIs no longer exist.
-- **Script flag drift:** documented `npm run …` commands vs actual `package.json` scripts.
+- **Script/link contract:** `tests/scripts/documentation-contract.test.ts` continuously checks local Markdown targets and documented `npm run` names; inspect flags, anchors, and factual meaning manually.
 - **Architecture & directory mismatches:** claims in `ARCHITECTURE.md` vs on-disk `src/lib`, `src/features/alchemy`, `desktop/`, `tests/`.
 - **Broken relative links & anchors:** markdown links and `#heading` anchors whose targets are missing.
 - **Version / engine staleness:** Node engine, Electron, Playwright, Vitest versions claimed in docs vs `package.json`.

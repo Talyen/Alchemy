@@ -29,7 +29,7 @@ npm run build               # vite build (typecheck is a separate gate; Vercel r
 npm run build:desktop       # vite desktop build (runs prebuild:desktop sync)
 npm run package:win         # unpacked Windows app via dist-desktop.mjs (ALCHEMY_PACKAGE_DIR=1)
 npm run dist:desktop        # installers via dist-desktop.mjs (steam/platforms.json targets)
-npm run smoke:preview       # start vite preview and assert HTTP 200 (CI/release)
+npm run smoke:preview       # start vite preview; assert HTML plus emitted JS/CSS resources (CI/release)
 npm run typecheck           # tsc --noEmit (fast; also in lint:ci and pre-commit)
 npm test                    # Vitest
 npm test -- <path>          # Single test file
@@ -71,6 +71,8 @@ npm run clean:all           # clean + dist/release-desktop + stop stale E2E prev
 **Skip flag:** `ALCHEMY_SKIP_ASSETS=1` skips only `prepare-assets.mjs` (sharp/ffmpeg/codegen). Version sync, steam app id sync, and the Vite build still run via `prebuild` / `prebuild:desktop`.
 
 CI, Vercel, and release builds set `ALCHEMY_SKIP_ASSETS=1` because optimized outputs are committed. When you change `Raw Assets/` or asset scripts, commit the regenerated outputs (CI `assets` job fails on drift). All CI jobs except the `assets` drift job sparse-checkout the repo without `Raw Assets/` (the 700 MB raw sources are only needed to regenerate committed outputs). Unit tests that assert against raw sources skip when that directory is absent; run them locally with a full checkout.
+
+CI's `desktop_renderer` path filter covers Electron integration plus app boot, routing, shell/store orchestration, phase screens, Vite configuration, and renderer asset preparation. Matching changes rebuild the desktop-mode renderer and run the Electron smoke suite; installer packaging remains under the narrower `desktop` filter.
 
 `predev:desktop` is an alias of `predev` (same stop-server + asset prep).
 
@@ -160,4 +162,4 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 | Sound ↔ card registry                                                      | `src/lib/sound-registry.ts`                                                                                                                     |
 | Startup validation                                                         | `src/lib/validate-startup.ts`                                                                                                                   |
 | Talent XP math vs talent data                                              | `src/lib/game-data/talents/progression.ts` vs `src/lib/game-data/talents/`                                                                      |
-| Tuning                                                                     | `src/lib/game-constants.ts`                                                                                                                     |
+| Tuning                                                                     | Topical files under `src/lib/game-constants/`, exported through `src/lib/game-constants.ts`                                                     |

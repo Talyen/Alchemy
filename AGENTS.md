@@ -18,6 +18,8 @@ Alchemy is a fantasy roguelite deckbuilder.
 
 For non-trivial work, find and read only the docs that match the task; prefer specific subsystem docs over broad assumptions.
 
+Each document owns the concern named below. When another document needs the same policy, link to the owner instead of restating volatile commands, versions, counts, or file inventories.
+
 | Need                                              | Read                                             |
 | ------------------------------------------------- | ------------------------------------------------ |
 | Run state, controllers, import boundaries, boot   | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)   |

@@ -7,7 +7,7 @@
 - **Turn-based card combat** — spend Mana to play cards that deal damage, gain Block, apply statuses, and summon allies
 - **Roguelite progression** — each Run is unique; Talent XP and Homestead upgrades persist across runs
 - **Rich status system** — Protective (Block, Armor), Empowering (Forge, Haste), Damage-over-Time (Burn, Poison, Bleed), and Crowd Control (Freeze, Stun) effects
-- **9 damage types** — Physical, Stun, Holy, Burn, Poison, Bleed, Freeze, Nature, and Arrow; enemies have unique resistances and vulnerabilities
+- **8 damage types** — Physical, Stun, Holy, Burn, Poison, Bleed, Freeze, and Nature; enemies have unique resistances and vulnerabilities
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@
 ```sh
 git clone <repository-url>
 cd alchemy
-npm install
+npm ci
 npm run dev
 ```
 
@@ -149,8 +149,9 @@ src/
 │   ├── validation/       # Zod schemas and migrations
 │   ├── audio.ts          # Web Audio buffer playback
 │   ├── audio-*.ts        # SFX, music, volume, state, cache
-│   ├── game-constants.ts # All tuning knobs
-│   └── trinkets.ts       # Trinket definitions
+│   ├── game-constants/   # Topical tuning modules
+│   ├── game-constants.ts # Public tuning barrel
+│   └── trinkets.ts       # Trinket effect manifest helpers
 ├── features/alchemy/     # React UI
 │   ├── shared/           # stores, storage, ui, config
 │   ├── meta/             # menu, collection, homestead, talents
@@ -187,3 +188,7 @@ React • TypeScript • Vite • Tailwind CSS • Zustand • Electron • Vite
 ## Development Guide
 
 **Docs:** [`AGENTS.md`](./AGENTS.md) (coding rules) · [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) (run state) · [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md) (how-to checklists) · [`docs/REFERENCE.md`](./docs/REFERENCE.md) (commands, glossary, battle rules) · [`CONTRIBUTING.md`](./CONTRIBUTING.md) (hooks & tests) · [`docs/Audits`](./docs/Audits/README.md) (agent audits)
+
+## License
+
+Alchemy is source-available for noncommercial use under [CC BY-NC 4.0](./LICENSE.md). The license applies to the repository's original code and content unless a file or bundled dependency states otherwise. Commercial use requires separate permission from the copyright owner.

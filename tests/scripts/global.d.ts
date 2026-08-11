@@ -1,3 +1,7 @@
+declare module "*/smoke-preview.mjs" {
+  export function extractBuildResourceUrls(html: string, documentUrl: string): string[];
+}
+
 declare module "*/patch-notes-core.mjs" {
   export function buildChangelogUnreleased(commits: Array<{ subject: string; body: string }>): string;
   export function buildPatchNotesMarkdown(tag: string, commits: Array<{ subject: string; body: string }>): string;

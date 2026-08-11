@@ -32,6 +32,43 @@ async function waitForPreview(port) {
 }
 
 /**
+ * Return the executable resources that prove Vite's generated HTML points at
+ * loadable application code and styles, not merely a successful HTML response.
+ * @param {string} html
+ * @param {string} documentUrl
+ */
+export function extractBuildResourceUrls(html, documentUrl) {
+  const urls = new Set();
+  for (const match of html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/giu)) {
+    urls.add(new URL(match[1], documentUrl).href);
+  }
+  for (const match of html.matchAll(/<link\b[^>]*\brel=["']stylesheet["'][^>]*\bhref=["']([^"']+)["'][^>]*>/giu)) {
+    urls.add(new URL(match[1], documentUrl).href);
+  }
+  return [...urls];
+}
+
+async function verifyBuildResources(html, documentUrl) {
+  const resourceUrls = extractBuildResourceUrls(html, documentUrl);
+  if (resourceUrls.length === 0) {
+    throw new Error("Preview HTML did not reference any executable build resources");
+  }
+
+  await Promise.all(
+    resourceUrls.map(async (resourceUrl) => {
+      const response = await fetch(resourceUrl, { signal: AbortSignal.timeout(5_000) });
+      if (!response.ok) {
+        throw new Error(`Build resource responded with HTTP ${response.status}: ${resourceUrl}`);
+      }
+      const body = await response.arrayBuffer();
+      if (body.byteLength === 0) {
+        throw new Error(`Build resource was empty: ${resourceUrl}`);
+      }
+    }),
+  );
+}
+
+/**
  * @param {{ port?: number }} [options]
  */
 export async function smokePreview(options = {}) {
@@ -59,10 +96,12 @@ export async function smokePreview(options = {}) {
   try {
     await waitForPreview(port);
     if (exitError) throw exitError;
-    const response = await fetch(`http://127.0.0.1:${port}`);
+    const documentUrl = `http://127.0.0.1:${port}`;
+    const response = await fetch(documentUrl);
     if (!response.ok) {
       throw new Error(`Preview responded with HTTP ${response.status}`);
     }
+    await verifyBuildResources(await response.text(), documentUrl);
   } finally {
     if (!child.killed) {
       child.kill("SIGTERM");

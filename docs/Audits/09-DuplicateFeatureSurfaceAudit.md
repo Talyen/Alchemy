@@ -4,7 +4,7 @@
 
 ## Intent
 
-Find cohesive clusters of **confirmed** copy-paste feature surfaces and collapse them under their existing owners. Two substantial structural twins are sufficient when an existing owner can absorb them with clear simplification; otherwise require three twins or two with demonstrated drift/duplicate maintenance. Inspect the surrounding controllers and loading, empty, error, overlay, and responsive states when they form one duplicated surface family. A successful collapse removes the old paths and reduces duplicated structure, declarations, or drift risk; modest LOC growth is acceptable when it establishes one authoritative shell and deletes parallel scaffolding. Do not build a generic configuration renderer merely because two callers exist. Before shipping, confirm structural twinship, maintenance cost across siblings, and a safer shared shape that preserves behavior. If the scope across features is large, phase the plan.
+Collapse confirmed structural twins under an existing owner. Two substantial twins qualify when that owner can absorb them cleanly; otherwise require three, or two with demonstrated drift. Include their loading, empty, error, overlay, and responsive states when those form the same family; do not build a generic renderer merely because two callers exist.
 
 ## What counts as a duplicate surface
 

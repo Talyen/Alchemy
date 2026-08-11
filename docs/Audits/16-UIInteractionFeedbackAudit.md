@@ -4,7 +4,7 @@
 
 ## Intent
 
-Identify navigation, responsive, focus, feedback, and interaction defects and fix them through the shared primitive or flow family that owns them. Reuse existing UI coverage; add or extend a test when a confirmed interaction regression has no trustworthy semantic owner. Bounded shared-pattern fixes may ship under [README.md](README.md); interaction-model or player-facing design decisions remain proposals. If the scope is large, phase the plan.
+Fix confirmed navigation, responsive, focus, feedback, and interaction defects through their owning primitive or flow family. Reuse existing coverage and add a test only when the regression lacks a trustworthy semantic owner.
 
 This audit checks interactive clarity for a desktop web/Electron game, including obvious keyboard, focus, semantic-role, and reduced-motion failures; it is not a comprehensive WCAG certification.
 

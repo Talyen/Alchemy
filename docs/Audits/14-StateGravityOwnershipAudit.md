@@ -4,7 +4,7 @@
 
 ## Intent
 
-Identify ownership-drift clusters and restore them to existing owners. Inspect rules, transforms, derived selectors, route composition, feature adapters, controller glue, test helpers, persistence, and presentation when they participate in the same misplaced responsibility. Move, do not mirror: migrate callers and tests, then delete old forwarding APIs and parallel paths. New managers/stores must express a real lifetime boundary and replace more surface than they add. Bounded moves into an existing documented owner may ship under [README.md](README.md); uncertain ownership or a new lifetime seam remains a proposal. Before shipping, confirm the code’s concern matches a different Architecture owner, real review/test cost from mixed jobs, and an existing home (not a greenfield layer). LOC-neutral moves are acceptable when mixed-lifetime coupling and verification surface materially decrease. If the scope is large, phase the plan.
+Restore confirmed ownership drift to an existing Architecture owner. Move rather than mirror: migrate callers and tests, then delete forwarding APIs and parallel paths. New managers/stores require a real lifetime boundary and must replace more surface than they add.
 
 ## What “state gravity” means here
 

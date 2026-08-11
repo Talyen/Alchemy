@@ -4,7 +4,7 @@
 
 ## Intent
 
-Confirm a performance cost with evidence (profiler trace, React Compiler diagnostics, build output sizes, reproducible latency/jank, allocation/memory evidence, or deterministic workload timing) before changing code. A prior recorded run is useful but not required; establish a reproducible scenario and baseline when none exists. High-confidence static evidence such as repeated synchronous parsing/sorting/storage inside a measured hot loop may confirm the cause, but do not optimize merely suspicious code. A clean pass is valid. Do not invent absolute CI gates; compare the before/after scenario and fix the complete hot path through existing owners. Bounded changes using existing platform capabilities may ship; new Workers, virtualization frameworks, or rendering models remain proposals per [README.md](README.md). If the scope is large, phase the plan.
+Require a profiler trace, compiler diagnostic, build-size result, reproducible latency/jank, allocation evidence, deterministic timing, or high-confidence static evidence inside a measured hot loop. Establish a reproducible baseline, compare the same scenario before/after, and fix the complete hot path through existing owners.
 
 ## Hard stops
 
