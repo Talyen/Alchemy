@@ -66,7 +66,7 @@ const CONFIGS: Record<ParticleVariant, BackgroundParticleConfig> = {
 const MAX_PARTICLE_BACKING_SCALE = 1.5;
 const MAX_PARTICLE_BACKING_PIXELS = 3_000_000;
 
-export function resolveParticleBackingScale(width: number, height: number, requestedScale: number): number {
+function resolveParticleBackingScale(width: number, height: number, requestedScale: number): number {
   const safeWidth = Math.max(1, width);
   const safeHeight = Math.max(1, height);
   const pixelLimitedScale = Math.sqrt(MAX_PARTICLE_BACKING_PIXELS / (safeWidth * safeHeight));
