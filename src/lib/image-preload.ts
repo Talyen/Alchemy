@@ -4,6 +4,7 @@ import { IMAGE_PRELOAD_BATCH_SIZE } from "./game-constants";
 
 // Cache storing in-flight and completed load promises by image source URL.
 const imageLoads = new Map<string, Promise<void>>();
+const MAX_IMAGE_CACHE_SIZE = 500;
 
 // Decodes an image once and caches the promise so repeated route predictions can
 // share work instead of creating competing network requests.
@@ -12,9 +13,16 @@ export function preloadImage(src: string): Promise<void> {
   const existing = imageLoads.get(src);
   if (existing) return existing;
 
+  if (imageLoads.size >= MAX_IMAGE_CACHE_SIZE) {
+    const firstKey = imageLoads.keys().next().value;
+    if (firstKey) imageLoads.delete(firstKey);
+  }
+
   const promise = new Promise<void>((resolve) => {
     const image = new Image();
     image.decoding = "async";
+
+    let handled = false;
 
     function finish() {
       image.onload = null;
@@ -23,6 +31,10 @@ export function preloadImage(src: string): Promise<void> {
     }
 
     function handleLoad() {
+      if (handled) return;
+      handled = true;
+      image.onload = null;
+      image.onerror = null;
       image
         .decode()
         .catch(() => {})

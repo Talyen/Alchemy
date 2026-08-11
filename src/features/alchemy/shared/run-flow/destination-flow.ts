@@ -144,42 +144,16 @@ function pickCombatPity(
   return { picked, remaining: remaining.filter((d) => d !== picked && !isCombatDestination(d)) };
 }
 
-function fillRemainingSlots(
-  remaining: Destination[],
-  weightContext: DestinationWeightContext,
-  rng: () => number,
-  capacity: number = DESTINATION_CHOICES,
-): Destination[] {
-  const choices: Destination[] = [];
-  while (choices.length < capacity && remaining.length > 0) {
-    const hasShop = choices.some(isShopDestination);
-    const pool = hasShop ? remaining.filter((d) => !isShopDestination(d)) : remaining;
-    if (pool.length === 0) break;
-    const picked = weightedPick(pool, weightContext, rng);
-    if (!picked) break;
-    choices.push(picked);
-    remaining = remaining.filter((d) => d !== picked);
-  }
-  return choices;
-}
-
 export function sampleDestinationChoices(
   destinations: Destination[],
   offerState: DestinationOfferState = createEmptyDestinationOfferState(),
   rng: () => number,
 ): SampleDestinationChoicesResult {
-  if (destinations.length === 1 && destinations[0] === DESTINATIONS.BOSS_COMBAT) {
+  const eligibleDestinations = [...new Set(destinations)];
+  if (eligibleDestinations.length === 1 && eligibleDestinations[0] === DESTINATIONS.BOSS_COMBAT) {
     return {
       choices: [DESTINATIONS.BOSS_COMBAT],
-      offerState: advanceDestinationOfferState(offerState, destinations, [DESTINATIONS.BOSS_COMBAT]),
-    };
-  }
-
-  // Not enough unique destinations to fill DESTINATION_CHOICES — return all available.
-  if (destinations.length <= DESTINATION_CHOICES) {
-    return {
-      choices: [...destinations],
-      offerState: advanceDestinationOfferState(offerState, destinations, destinations),
+      offerState: advanceDestinationOfferState(offerState, eligibleDestinations, [DESTINATIONS.BOSS_COMBAT]),
     };
   }
 
@@ -187,7 +161,7 @@ export function sampleDestinationChoices(
     lastOfferedDestinations: offerState.lastOfferedDestinations,
     roundsSinceOffered: offerState.roundsSinceOffered,
   };
-  let remaining = [...destinations];
+  let remaining = [...eligibleDestinations];
   const choices: Destination[] = [];
 
   if (!lastOfferedIncludesCombat(offerState.lastOfferedDestinations)) {
@@ -198,21 +172,15 @@ export function sampleDestinationChoices(
     }
   }
 
-  choices.push(...fillRemainingSlots(remaining, weightContext, rng, DESTINATION_CHOICES - choices.length));
-
-  // Top up to DESTINATION_CHOICES if weighted picking under-filled. Boss-only pools
-  // already short-circuit at the top of this function, so this only runs for normal acts.
-  if (choices.length < DESTINATION_CHOICES) {
-    const used = new Set(choices);
-    const fillers = destinations.filter((d) => !used.has(d));
-    while (choices.length < DESTINATION_CHOICES && fillers.length > 0) {
-      const idx = Math.round(rng() * (fillers.length - 1));
-      const [picked] = fillers.splice(Math.min(idx, fillers.length - 1), 1);
-      if (picked) choices.push(picked);
-    }
+  while (choices.length < DESTINATION_CHOICES && remaining.length > 0) {
+    const pool = choices.some(isShopDestination) ? remaining.filter((d) => !isShopDestination(d)) : remaining;
+    const picked = weightedPick(pool, weightContext, rng);
+    if (!picked) break;
+    choices.push(picked);
+    remaining = remaining.filter((destination) => destination !== picked);
   }
 
-  return { choices, offerState: advanceDestinationOfferState(offerState, destinations, choices) };
+  return { choices, offerState: advanceDestinationOfferState(offerState, eligibleDestinations, choices) };
 }
 
 /** Create the initial destination picker state from explicit, command-owned inputs. */

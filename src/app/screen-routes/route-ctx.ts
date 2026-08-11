@@ -1,6 +1,15 @@
 // Phase-scoped route contexts — keep the composer bag at App, narrow tables by phase.
 import type { AlchemyRouteCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import type { RenderAlchemyScreenProps } from "./index";
+import type { Screen } from "@/lib/routing";
+
+export interface RenderAlchemyScreenProps {
+  screen: Screen;
+  routeCommands: AlchemyRouteCommands;
+  onOpenBattleMenu: (rect?: DOMRect) => void;
+  onClearSaveData: () => void;
+  onUnlockAllDevMode: () => void;
+  onBackFromOptions: () => void;
+}
 
 export type MetaCommands = AlchemyRouteCommands["meta"];
 export type RunSetupCommands = AlchemyRouteCommands["runSetup"];

@@ -129,6 +129,7 @@ export function applyDamageRiders(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   modifiedDamage: number,
   combatTexts: CombatTextEvent[],
+  isExtraHit = false,
 ) {
   const previousHealth = state.enemyHealth;
   let nextState: BattleState = {
@@ -152,10 +153,10 @@ export function applyDamageRiders(
     nextState = applyLifestealAndPlayerHitTriggers(nextState, modifiedDamage, combatTexts);
   }
 
-  if (card.tags?.includes("archery") && modifiedDamage > 0) {
+  if (!isExtraHit && card.tags?.includes("archery") && modifiedDamage > 0) {
     if (rollTalentChance(state.talentEffects.archeryPlayTwiceChance, state)) {
       const secondHit = Math.round(modifiedDamage / HALF_DIVISOR);
-      nextState = applyDamageRiders(nextState, card, effect, secondHit, combatTexts);
+      nextState = applyDamageRiders(nextState, card, effect, secondHit, combatTexts, true);
     }
   }
   if (effect.damageType === "holy") {

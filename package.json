@@ -82,7 +82,7 @@
     "lint:architecture-smoke": "node scripts/lint-architecture-smoke.mjs",
     "typecheck": "tsc --noEmit",
     "typecheck:all": "concurrently \"tsc --noEmit\" \"tsc -p tsconfig.test.json --noEmit\"",
-    "lint:ci": "npm run format:check && npm run typecheck:all && npm run lint && npm run lint:boundaries && npm run deadcode",
+    "lint:ci": "npm run format:check && npm run typecheck:all && npm run lint && npm run lint:boundaries && npm run lint:architecture-smoke && npm run deadcode",
     "lint:fix": "eslint . --fix",
     "format": "node scripts/run-prettier.mjs --write",
     "ensure:electron": "node scripts/ensure-electron.mjs",

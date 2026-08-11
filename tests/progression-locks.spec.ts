@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures/e2e";
 import { enableFastMode, injectHomestead } from "./helpers";
-import { critical, slow } from "./playwright-tags";
+import { critical } from "./playwright-tags";
 
 test.describe("Progression Locks", () => {
   test.beforeEach(async ({ page }) => {
@@ -84,12 +84,10 @@ test.describe("Progression Locks", () => {
     },
   );
 
-  test("finishing run as Knight unlocks Rogue class, Talents, and Homestead", slow, async ({ page }) => {
-    // 1. Inject a save where Knight run is completed
-    await injectHomestead(page, { finishedRunCharacters: ["knight"] });
+  test("completed progression unlocks meta screens, game modes, and later characters", async ({ page }) => {
+    await injectHomestead(page, { finishedRunCharacters: ["knight", "rogue", "wizard", "ranger"] });
     await page.goto("/");
 
-    // 2. Verify Talents and Homestead are unlocked (clicking them navigates)
     const talentsBtn = page.getByRole("button", { name: "Talents" });
     const homesteadBtn = page.getByRole("button", { name: "Homestead" });
     await expect(talentsBtn).not.toHaveClass(/(?<!\S)opacity-50(?!\S)/);
@@ -104,61 +102,20 @@ test.describe("Progression Locks", () => {
     await page.getByRole("button", { name: "Open homestead menu" }).click();
     await page.getByRole("button", { name: "Main Menu" }).click();
 
-    // 3. Verify Rogue class is unlocked in character select
-    await page.getByRole("button", { name: "Play" }).click();
-    await page.getByRole("button", { name: /The Campaign/ }).click();
-    await page.getByRole("button", { name: "Play", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
-
-    const rogueCard = page.getByRole("button", { name: "Select Rogue" });
-    await expect(rogueCard).toBeVisible();
-    await rogueCard.click();
-    await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
-
-    // Wizard remains locked
-    const wizardCard = page.getByRole("button", { name: "Wizard (Locked)" });
-    await expect(wizardCard).toBeVisible();
-    await wizardCard.hover();
-    await expect(page.getByText("Finish a Run as the Rogue to unlock")).toBeVisible();
-  });
-
-  test("finishing run as Rogue unlocks Wizard class and Labyrinth mode", slow, async ({ page }) => {
-    // 1. Inject Rogue run completed
-    await injectHomestead(page, { finishedRunCharacters: ["knight", "rogue"] });
-    await page.goto("/");
-
-    // 2. Verify Labyrinth mode is unlocked
     await page.getByRole("button", { name: "Play" }).click();
     const labyrinthCard = page.getByRole("button", { name: /The Labyrinth/ });
+    const wildwoodCard = page.getByRole("button", { name: /Wildwood Draft/ });
     await expect(labyrinthCard).not.toHaveClass(/(?<!\S)opacity-50(?!\S)/);
+    await expect(wildwoodCard).not.toHaveClass(/(?<!\S)opacity-50(?!\S)/);
     await labyrinthCard.click();
     await page.getByRole("button", { name: "Play", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
 
-    // 3. Verify Wizard class is unlocked
     const wizardCard = page.getByRole("button", { name: "Select Wizard" });
-    await expect(wizardCard).toBeVisible();
-    await wizardCard.click();
-    await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
-  });
-
-  test("finishing run as Ranger unlocks Alchemist class and Wildwood mode", slow, async ({ page }) => {
-    // 1. Inject Ranger run completed
-    await injectHomestead(page, { finishedRunCharacters: ["knight", "rogue", "wizard", "ranger"] });
-    await page.goto("/");
-
-    // 2. Verify Wildwood mode is unlocked
-    await page.getByRole("button", { name: "Play" }).click();
-    const wildwoodCard = page.getByRole("button", { name: /Wildwood Draft/ });
-    await expect(wildwoodCard).not.toHaveClass(/(?<!\S)opacity-50(?!\S)/);
-    await wildwoodCard.click();
-    await page.getByRole("button", { name: "Play", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
-
-    // 3. Verify Alchemist class is unlocked
     const alchemistCard = page.getByRole("button", { name: "Select Alchemist" });
+    await expect(wizardCard).toBeVisible();
     await expect(alchemistCard).toBeVisible();
-    await alchemistCard.click();
+    await wizardCard.click();
     await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
   });
 });

@@ -1,48 +1,22 @@
 // @vitest-environment jsdom
-import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { currentSchemaCampaignSave } from "../../../../fixtures/legacy-saves";
+import { setupMockWindowDesktop } from "../../../../helpers/desktop-save-mock-helper";
+import { loadAlchemySaveState } from "@/features/alchemy/shared/storage/io";
 
 const globalWithWindow = globalThis as unknown as { window?: object };
 
 describe("storage io desktop backup", () => {
-  beforeEach(() => {
-    vi.resetModules();
-  });
-
   afterEach(() => {
     delete globalWithWindow.window;
   });
 
   it("does not request a desktop backup on load (rotation owns backups at write time)", async () => {
     const legacy = JSON.stringify(currentSchemaCampaignSave());
+    const desktop = setupMockWindowDesktop({ saveCandidates: [legacy] });
 
-    globalWithWindow.window = {
-      localStorage: {
-        getItem: () => null,
-        setItem: () => undefined,
-        removeItem: () => undefined,
-      } as unknown as Storage,
-      alchemyDesktop: {
-        isDesktop: true,
-        setDisplayMode: vi.fn(),
-        quit: vi.fn(),
-        listSaveCandidates: vi.fn().mockResolvedValue([legacy]),
-        writeSave: vi.fn(),
-        clearSave: vi.fn(),
-        steamGetName: vi.fn(),
-        steamSetRichPresence: vi.fn(),
-        steamCloudRead: vi.fn().mockResolvedValue(null),
-        steamCloudWrite: vi.fn(),
-        steamCloudDelete: vi.fn(),
-      },
-    } as unknown as Window;
-
-    const desktop = (globalWithWindow.window as unknown as { alchemyDesktop: { writeSave: ReturnType<typeof vi.fn> } })
-      .alchemyDesktop;
-
-    const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
     await loadAlchemySaveState();
 
     expect(desktop.writeSave).not.toHaveBeenCalled();
-  }, 30_000);
+  });
 });

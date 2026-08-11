@@ -7,6 +7,7 @@ import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-scr
 import type { useReturnToRunNavigation } from "@/app/use-app-navigation";
 import { useHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-store";
 import { renderAlchemyScreenRoute, type RenderAlchemyScreenProps } from "@/app/screen-routes";
+import { isProgressionFeatureUnlocked, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 
 export function RenderAlchemyScreen(props: RenderAlchemyScreenProps) {
   return renderAlchemyScreenRoute(props);
@@ -91,7 +92,7 @@ export function GameMenuOverlay({
   currentScreen: Screen;
   onClose: () => void;
   nav: ReturnType<typeof useReturnToRunNavigation>;
-  finishedRunCharacters: string[];
+  finishedRunCharacters: CharacterId[];
   isArmoryLocked: boolean;
   onEndRun: (() => void) | undefined;
 }) {
@@ -107,8 +108,8 @@ export function GameMenuOverlay({
       onHomestead={() => nav.navigateToMeta("homestead")}
       onArmory={() => nav.navigateToMeta("armory")}
       onOptions={() => nav.navigateToMeta("options")}
-      isTalentsLocked={!finishedRunCharacters.includes("knight")}
-      isHomesteadLocked={!finishedRunCharacters.includes("knight")}
+      isTalentsLocked={!isProgressionFeatureUnlocked("talents", finishedRunCharacters)}
+      isHomesteadLocked={!isProgressionFeatureUnlocked("homestead", finishedRunCharacters)}
       isArmoryLocked={isArmoryLocked}
       {...(nav.returnToRunTarget && nav.returnToRunTarget !== currentScreen
         ? {

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Slow ESLint smoke: lint representative screens under stacked boundary rules.
-// Kept out of the default Vitest suite (cold ESLint can exceed unit timeouts in CI).
+// Slow ESLint smoke: lint representative files and verify their effective stacked rules.
+// Kept in the static-analysis tier because cold ESLint startup does not belong in Vitest.
+import assert from "node:assert/strict";
 import { ESLint } from "eslint";
 
 const FILES = [
@@ -11,6 +12,102 @@ const FILES = [
 ];
 
 const eslint = new ESLint();
+
+function restrictedImports(config) {
+  const rule = config.rules?.["no-restricted-imports"];
+  return Array.isArray(rule) && rule[1] && typeof rule[1] === "object" ? rule[1] : null;
+}
+
+function restrictedSyntax(config) {
+  const rule = config.rules?.["no-restricted-syntax"];
+  return Array.isArray(rule) ? rule.slice(1) : [];
+}
+
+function patternGroups(options) {
+  return (options?.patterns ?? []).flatMap((pattern) =>
+    Array.isArray(pattern.group) ? pattern.group : typeof pattern.group === "string" ? [pattern.group] : [],
+  );
+}
+
+function assertImportGroup(options, needle, file) {
+  assert.ok(
+    patternGroups(options).some((group) => group.includes(needle)),
+    `${file} must restrict ${needle}`,
+  );
+}
+
+async function calculateImports(file) {
+  return restrictedImports(await eslint.calculateConfigForFile(file));
+}
+
+const battleConfig = await eslint.calculateConfigForFile("src/lib/battle/card-play.ts");
+const battleImports = restrictedImports(battleConfig);
+const battleSyntax = restrictedSyntax(battleConfig);
+assert.ok(
+  battleImports?.paths?.some((entry) => entry.name === "react"),
+  "battle must restrict React",
+);
+assert.ok(
+  battleImports?.paths?.some((entry) => entry.name === "zustand"),
+  "battle must restrict Zustand",
+);
+assertImportGroup(battleImports, "features", "src/lib/battle/card-play.ts");
+assert.ok(
+  battleSyntax.some((entry) => entry.selector?.includes("random")),
+  "battle must restrict Math.random",
+);
+assert.ok(
+  battleSyntax.some((entry) => entry.selector?.includes("floor")),
+  "battle must restrict Math.floor",
+);
+
+const runLoopBattleImports = await calculateImports(
+  "src/features/alchemy/run-loop/battle/battle-presentation-store.ts",
+);
+for (const restriction of ["run-domain-store", "run-transitions", "run-profile-store", "screens"]) {
+  assertImportGroup(runLoopBattleImports, restriction, "run-loop/battle");
+}
+
+const metaScreenImports = await calculateImports("src/features/alchemy/meta/screens/menu-screen.tsx");
+for (const restriction of ["run-domain-store", "run-loop", "@/lib/battle/*", "run-loop/run"]) {
+  assertImportGroup(metaScreenImports, restriction, "meta screen");
+}
+const metaNonScreenImports = await calculateImports("src/features/alchemy/meta/talents/talent-positions.ts");
+assertImportGroup(metaNonScreenImports, "run-loop", "meta non-screen");
+assert.ok(
+  !patternGroups(metaNonScreenImports).some((group) => group.includes("run-loop/run")),
+  "screen-only run-loop/run restriction must not leak into non-screen meta files",
+);
+
+const sharedUiImports = await calculateImports("src/features/alchemy/shared/ui/game-menu.tsx");
+assertImportGroup(sharedUiImports, "battle-store", "shared UI");
+assertImportGroup(sharedUiImports, "@/lib/battle/*", "shared UI");
+
+const routeImports = await calculateImports("src/app/screen-routes/index.tsx");
+assert.ok(
+  routeImports?.paths?.some((entry) => entry.name === "react" && entry.importNames?.includes("lazy")),
+  "screen routes must restrict React.lazy",
+);
+assertImportGroup(routeImports, "run-domain-store", "screen routes");
+
+const runSetupImports = await calculateImports("src/features/alchemy/run-setup/run/content-system-navigation.ts");
+assertImportGroup(runSetupImports, "run-loop", "run setup");
+assertImportGroup(runSetupImports, "run-domain-store", "run setup");
+
+const runLoopImports = await calculateImports("src/features/alchemy/run-loop/battle/battle-init.ts");
+for (const restriction of ["run-setup", "screens", "run-domain-store"]) {
+  assertImportGroup(runLoopImports, restriction, "run-loop battle");
+}
+
+const runLoopScreenImports = await calculateImports("src/features/alchemy/run-loop/screens/destination-screen.tsx");
+assertImportGroup(runLoopScreenImports, "run-loop/run", "run-loop screen");
+const shopImports = await calculateImports("src/features/alchemy/run-loop/shop/create-shop-actions.ts");
+assertImportGroup(shopImports, "run-setup", "run-loop shop");
+assert.ok(
+  !patternGroups(shopImports).some((group) => group.includes("run-loop/run")),
+  "screen-only run-loop/run restriction must not leak into shops",
+);
+
 const results = await eslint.lintFiles(FILES);
 const errors = results.flatMap((r) =>
   r.messages.filter((m) => m.severity === 2).map((m) => `${r.filePath}:${m.line}:${m.column} ${m.message}`),
@@ -21,4 +118,4 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log(`Architecture ESLint smoke clean (${FILES.length} files).`);
+console.log(`Architecture ESLint smoke clean (${FILES.length} linted files plus effective-config checks).`);

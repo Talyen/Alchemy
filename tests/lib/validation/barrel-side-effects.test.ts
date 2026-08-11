@@ -1,62 +1,62 @@
 import { describe, expect, it } from "vitest";
+import * as gameDataBarrel from "@/lib/game-data";
+import * as battleBarrel from "@/lib/battle";
+import * as validationBarrel from "@/lib/validation";
+import * as metaScreensBarrel from "@/features/alchemy/meta/screens";
+import * as runLoopScreensBarrel from "@/features/alchemy/run-loop/screens";
+import * as sharedUtilsBarrel from "@/features/alchemy/shared/utils";
 
 // Barrel files should re-export symbols without executing module-level side effects.
 // These tests verify that importing each barrel resolves the expected public API.
 
 describe("@/lib/game-data barrel", () => {
-  it("exports known symbols", async () => {
-    const mod = await import("@/lib/game-data");
-    expect(mod.cardLibrary).toBeDefined();
-    expect(mod.enemyBestiary).toBeDefined();
-    expect(mod.characters).toBeDefined();
-    expect(mod.companionLibrary).toBeDefined();
-    expect(mod.keywordDefinitions).toBeDefined();
-    expect(mod.trinketLibrary).toBeDefined();
-    expect(mod.selectRewardCards).toBeTypeOf("function");
-  }, 15_000);
+  it("exports known symbols", () => {
+    expect(gameDataBarrel.cardLibrary).toBeDefined();
+    expect(gameDataBarrel.enemyBestiary).toBeDefined();
+    expect(gameDataBarrel.characters).toBeDefined();
+    expect(gameDataBarrel.companionLibrary).toBeDefined();
+    expect(gameDataBarrel.keywordDefinitions).toBeDefined();
+    expect(gameDataBarrel.trinketLibrary).toBeDefined();
+    expect(gameDataBarrel.selectRewardCards).toBeTypeOf("function");
+  });
 });
 
 describe("@/lib/battle barrel", () => {
-  it("exports known symbols", async () => {
-    const mod = await import("@/lib/battle");
-    expect(mod.createBattleState).toBeTypeOf("function");
-    expect(mod.endPlayerTurn).toBeTypeOf("function");
-    expect(mod.applyCardEffects).toBeTypeOf("function");
-    expect(mod.mergeCombatText).toBeTypeOf("function");
-    expect(mod.tickEnemyStatuses).toBeTypeOf("function");
-    expect(mod.tickPlayerStatuses).toBeTypeOf("function");
-    expect(mod.defaultBattleState).toBeTypeOf("function");
-    expect(mod.playBattleCardResolved).toBeTypeOf("function");
-    expect(mod.chooseWishCard).toBeTypeOf("function");
-  }, 15_000);
+  it("exports known symbols", () => {
+    expect(battleBarrel.createBattleState).toBeTypeOf("function");
+    expect(battleBarrel.endPlayerTurn).toBeTypeOf("function");
+    expect(battleBarrel.applyCardEffects).toBeTypeOf("function");
+    expect(battleBarrel.mergeCombatText).toBeTypeOf("function");
+    expect(battleBarrel.tickEnemyStatuses).toBeTypeOf("function");
+    expect(battleBarrel.tickPlayerStatuses).toBeTypeOf("function");
+    expect(battleBarrel.defaultBattleState).toBeTypeOf("function");
+    expect(battleBarrel.playBattleCardResolved).toBeTypeOf("function");
+    expect(battleBarrel.chooseWishCard).toBeTypeOf("function");
+  });
 });
 
 describe("@/lib/validation barrel", () => {
-  it("exports known symbols", async () => {
-    const mod = await import("@/lib/validation");
-    expect(mod.ActiveRunDataSchema).toBeDefined();
-    expect(mod.SaveDataSchema).toBeDefined();
-    expect(mod.CURRENT_SAVE_SCHEMA_VERSION).toBeTypeOf("number");
-    expect(mod.migrateSaveDataToCurrent).toBeTypeOf("function");
-  }, 15_000);
+  it("exports known symbols", () => {
+    expect(validationBarrel.ActiveRunDataSchema).toBeDefined();
+    expect(validationBarrel.SaveDataSchema).toBeDefined();
+    expect(validationBarrel.CURRENT_SAVE_SCHEMA_VERSION).toBeTypeOf("number");
+    expect(validationBarrel.migrateSaveDataToCurrent).toBeTypeOf("function");
+  });
 });
 
 describe("@/features/alchemy phase screen barrels", () => {
-  it("exports known symbols from meta and run-loop barrels", async () => {
-    const meta = await import("@/features/alchemy/meta/screens");
-    const runLoop = await import("@/features/alchemy/run-loop/screens");
-    expect(meta.MenuScreen).toBeDefined();
-    expect(meta.HomesteadScreen).toBeDefined();
-    expect(runLoop.BattleScreen).toBeDefined();
-    expect(runLoop.RewardsScreen).toBeDefined();
-  }, 30_000);
+  it("exports known symbols from meta and run-loop barrels", () => {
+    expect(metaScreensBarrel.MenuScreen).toBeDefined();
+    expect(metaScreensBarrel.HomesteadScreen).toBeDefined();
+    expect(runLoopScreensBarrel.BattleScreen).toBeDefined();
+    expect(runLoopScreensBarrel.RewardsScreen).toBeDefined();
+  });
 });
 
 describe("@/features/alchemy/shared/utils barrel", () => {
-  it("exports known symbols", async () => {
-    const mod = await import("@/features/alchemy/shared/utils");
-    expect(mod.sampleItems).toBeTypeOf("function");
-    expect(mod.tokenizeDescription).toBeTypeOf("function");
+  it("exports known symbols", () => {
+    expect(sharedUtilsBarrel.sampleItems).toBeTypeOf("function");
+    expect(sharedUtilsBarrel.tokenizeDescription).toBeTypeOf("function");
   });
 });
 

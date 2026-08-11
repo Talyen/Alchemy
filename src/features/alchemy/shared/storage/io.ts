@@ -187,13 +187,17 @@ let clearPending = false;
 
 async function writeSaveSnapshot(data: SaveData): Promise<void> {
   try {
-    const payload: SaveData = { ...data, lastSavedAt: Date.now() };
-    const result = await writeStorageItem(SAVE_KEY, JSON.stringify(payload));
+    const result = await writeStorageItem(SAVE_KEY, serializeSaveSnapshot(data));
     if (result.ok) return;
     logStorageFailure("Save data could not be written", result.error);
   } catch (error) {
     logStorageFailure("Save data could not be serialized", error);
   }
+}
+
+function serializeSaveSnapshot(data: SaveData): string {
+  const payload: SaveData = { ...data, lastSavedAt: Date.now() };
+  return JSON.stringify(payload);
 }
 
 // Writes the current save snapshot exactly as provided by App/controller state.
@@ -215,6 +219,38 @@ export async function saveAlchemySaveData(data: SaveData) {
   // Keep the chain alive even if a write logs-and-continues; never reject the gate.
   saveWriteChain = run.catch(() => {});
   await run;
+}
+
+/**
+ * Flushes the latest browser snapshot synchronously during page lifecycle exit.
+ * Desktop IPC cannot be made synchronous, so it falls back to the normal serialized queue.
+ */
+export function saveAlchemySaveDataForExit(data: SaveData): void {
+  if (typeof window === "undefined" || writesDisabledForSession) return;
+
+  if (!saveBackend.writeSync) {
+    void saveAlchemySaveData(data);
+    return;
+  }
+
+  try {
+    const result = saveBackend.writeSync(SAVE_KEY, serializeSaveSnapshot(data));
+    if (result === null) {
+      void saveAlchemySaveData(data);
+      return;
+    }
+    if (!result.ok) {
+      logStorageFailure("Save data could not be written during page exit", result.error);
+      void saveAlchemySaveData(data);
+      return;
+    }
+
+    // A queued, not-yet-started snapshot must not overwrite the terminal snapshot.
+    coalescedSave = null;
+  } catch (error) {
+    logStorageFailure("Save data could not be serialized during page exit", error);
+    void saveAlchemySaveData(data);
+  }
 }
 
 // Removes the persisted save while leaving in-memory React state reset to callers.

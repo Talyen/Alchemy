@@ -31,7 +31,7 @@ describe("RemoveCardPanel Card Tooltips in Grid", () => {
     cleanup();
   });
 
-  it("renders card tooltips on top row cards when focused or hovered", async () => {
+  it("renders card tooltips on top row cards when focused or hovered", () => {
     const onConfirm = vi.fn();
 
     render(<RemoveCardPanel runDeck={runDeck} intro={<p>Select a card to remove</p>} onConfirm={onConfirm} />);
@@ -41,7 +41,7 @@ describe("RemoveCardPanel Card Tooltips in Grid", () => {
 
     fireEvent.focus(topRowCardButton);
 
-    const descriptionSpan = await screen.findByText(/Deal/);
+    const descriptionSpan = screen.getByText(/Deal/);
     expect(descriptionSpan).toBeTruthy();
 
     const tooltipPanel = descriptionSpan.closest(".hover-popup-panel");

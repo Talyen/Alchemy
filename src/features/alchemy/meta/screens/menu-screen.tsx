@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
 import { StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { LockedMenuItem } from "../../shared/ui/locked-menu-item";
-import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data";
+import { isProgressionFeatureUnlocked, KNIGHT_UNLOCK_MESSAGE } from "../../shared/config/game-data-catalog";
 
 export function MenuScreen({
   onPlay,
@@ -44,7 +44,7 @@ export function MenuScreen({
   const [flipped, setFlipped] = useState(false);
 
   const finishedRunCharacters = useFinishedRunCharacters();
-  const isKnightGatedLocked = !finishedRunCharacters.includes("knight");
+  const isKnightGatedLocked = !isProgressionFeatureUnlocked("talents", finishedRunCharacters);
 
   const handleLogoClick = useCallback(() => {
     if (!flipped && variants.length > 2) {

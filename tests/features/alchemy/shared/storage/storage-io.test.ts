@@ -27,29 +27,11 @@ function teardownWindow() {
   delete globalWithWindow.window;
 }
 
+import { setupMockWindowDesktop } from "../../../../helpers/desktop-save-mock-helper";
+
 function setupDesktopSaveCandidates(candidates: string[]) {
-  const writeSave = vi.fn().mockResolvedValue(true);
-  globalWithWindow.window = {
-    localStorage: {
-      getItem: () => null,
-      setItem: () => undefined,
-      removeItem: () => undefined,
-    } as unknown as Storage,
-    alchemyDesktop: {
-      isDesktop: true,
-      setDisplayMode: vi.fn(),
-      quit: vi.fn(),
-      listSaveCandidates: vi.fn().mockResolvedValue(candidates),
-      writeSave,
-      clearSave: vi.fn(),
-      steamGetName: vi.fn().mockResolvedValue(null),
-      steamSetRichPresence: vi.fn(),
-      steamCloudRead: vi.fn().mockResolvedValue(null),
-      steamCloudWrite: vi.fn().mockResolvedValue(true),
-      steamCloudDelete: vi.fn(),
-    },
-  } as unknown as Window;
-  return { writeSave };
+  const desktop = setupMockWindowDesktop({ saveCandidates: candidates, steamName: null });
+  return { writeSave: desktop.writeSave };
 }
 
 describe("storage io", () => {
@@ -187,6 +169,16 @@ describe("storage io", () => {
     const written = JSON.parse(mockStorage[SAVE_KEY]) as SaveData;
     expect(written.selectedAspectRatio).toBe("16:9");
     expect(written.lastSavedAt).toBeGreaterThan(0);
+  });
+
+  it("terminal browser flush supersedes a queued stale snapshot", async () => {
+    const { saveAlchemySaveData, saveAlchemySaveDataForExit } = await import("@/features/alchemy/shared/storage/io");
+    const pending = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["stale"] });
+
+    saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["latest"] });
+    await pending;
+
+    expect(JSON.parse(mockStorage[SAVE_KEY]).discoveredCardIds).toEqual(["latest"]);
   });
 
   it("clearAlchemySaveData removes key from localStorage", async () => {
@@ -330,26 +322,7 @@ describe("storage io", () => {
     });
     const corruptLocal = "not-valid-json";
 
-    (globalWithWindow as { window?: object }).window = {
-      localStorage: {
-        getItem: () => null,
-        setItem: () => undefined,
-        removeItem: () => undefined,
-      } as unknown as Storage,
-      alchemyDesktop: {
-        isDesktop: true,
-        setDisplayMode: vi.fn(),
-        quit: vi.fn(),
-        listSaveCandidates: vi.fn().mockResolvedValue([corruptLocal, validFromBackup]),
-        writeSave: vi.fn().mockResolvedValue(true),
-        clearSave: vi.fn(),
-        steamGetName: vi.fn().mockResolvedValue(null),
-        steamSetRichPresence: vi.fn(),
-        steamCloudRead: vi.fn().mockResolvedValue(null),
-        steamCloudWrite: vi.fn(),
-        steamCloudDelete: vi.fn(),
-      },
-    } as unknown as Window;
+    setupMockWindowDesktop({ saveCandidates: [corruptLocal, validFromBackup], steamName: null });
 
     const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
     const loaded = await loadAlchemySaveState();
@@ -361,26 +334,7 @@ describe("storage io", () => {
   it("returns corrupt when every candidate fails JSON parsing on desktop", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
 
-    (globalWithWindow as { window?: object }).window = {
-      localStorage: {
-        getItem: () => null,
-        setItem: () => undefined,
-        removeItem: () => undefined,
-      } as unknown as Storage,
-      alchemyDesktop: {
-        isDesktop: true,
-        setDisplayMode: vi.fn(),
-        quit: vi.fn(),
-        listSaveCandidates: vi.fn().mockResolvedValue(["garbage", "also-garbage"]),
-        writeSave: vi.fn().mockResolvedValue(true),
-        clearSave: vi.fn(),
-        steamGetName: vi.fn().mockResolvedValue(null),
-        steamSetRichPresence: vi.fn(),
-        steamCloudRead: vi.fn().mockResolvedValue(null),
-        steamCloudWrite: vi.fn(),
-        steamCloudDelete: vi.fn(),
-      },
-    } as unknown as Window;
+    setupMockWindowDesktop({ saveCandidates: ["garbage", "also-garbage"], steamName: null });
 
     const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
     const loaded = await loadAlchemySaveState();
@@ -403,33 +357,15 @@ describe("storage io", () => {
     let inFlightWrites = 0;
     let maxInFlightWrites = 0;
 
-    (globalWithWindow as { window?: object }).window = {
-      localStorage: {
-        getItem: () => null,
-        setItem: () => undefined,
-        removeItem: () => undefined,
-      } as unknown as Storage,
-      alchemyDesktop: {
-        isDesktop: true,
-        setDisplayMode: vi.fn(),
-        quit: vi.fn(),
-        listSaveCandidates: vi.fn().mockResolvedValue([]),
-        writeSave: vi.fn().mockImplementation(async (payload: string) => {
-          inFlightWrites += 1;
-          maxInFlightWrites = Math.max(maxInFlightWrites, inFlightWrites);
-          writePayloads.push(payload);
-          if (writePayloads.length === 1) await firstWriteGate;
-          inFlightWrites -= 1;
-          return true;
-        }),
-        clearSave: vi.fn(),
-        steamGetName: vi.fn().mockResolvedValue(null),
-        steamSetRichPresence: vi.fn(),
-        steamCloudRead: vi.fn().mockResolvedValue(null),
-        steamCloudWrite: vi.fn().mockResolvedValue(true),
-        steamCloudDelete: vi.fn(),
-      },
-    } as unknown as Window;
+    const desktop = setupMockWindowDesktop({ saveCandidates: [], steamName: null });
+    desktop.writeSave.mockImplementation(async (payload: string) => {
+      inFlightWrites += 1;
+      maxInFlightWrites = Math.max(maxInFlightWrites, inFlightWrites);
+      writePayloads.push(payload);
+      if (writePayloads.length === 1) await firstWriteGate;
+      inFlightWrites -= 1;
+      return true;
+    });
 
     const { saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
     const first = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["first"] });
@@ -458,28 +394,9 @@ describe("storage io", () => {
       await writeGate;
       return true;
     });
-    const clearSave = vi.fn().mockResolvedValue(true);
-
-    (globalWithWindow as { window?: object }).window = {
-      localStorage: {
-        getItem: () => null,
-        setItem: () => undefined,
-        removeItem: () => undefined,
-      } as unknown as Storage,
-      alchemyDesktop: {
-        isDesktop: true,
-        setDisplayMode: vi.fn(),
-        quit: vi.fn(),
-        listSaveCandidates: vi.fn().mockResolvedValue([]),
-        writeSave,
-        clearSave,
-        steamGetName: vi.fn().mockResolvedValue(null),
-        steamSetRichPresence: vi.fn(),
-        steamCloudRead: vi.fn().mockResolvedValue(null),
-        steamCloudWrite: vi.fn().mockResolvedValue(true),
-        steamCloudDelete: vi.fn().mockResolvedValue(true),
-      },
-    } as unknown as Window;
+    const desktop = setupMockWindowDesktop({ saveCandidates: [], steamName: null });
+    desktop.writeSave = writeSave;
+    const clearSave = desktop.clearSave;
 
     const { clearAlchemySaveData, saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
     const pendingSave = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["stale"] });
@@ -497,34 +414,13 @@ describe("storage io", () => {
   });
 
   it("keeps writes disabled when desktop clear fails due to Steam Cloud", async () => {
-    const clearSave = vi.fn().mockResolvedValue(true);
-    const writeSave = vi.fn().mockResolvedValue(true);
-    const steamCloudDelete = vi.fn().mockResolvedValue(false);
     const futurePayload = JSON.stringify({
       ...currentSchemaCampaignSave(),
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
     });
 
-    globalWithWindow.window = {
-      localStorage: {
-        getItem: () => null,
-        setItem: () => undefined,
-        removeItem: () => undefined,
-      } as unknown as Storage,
-      alchemyDesktop: {
-        isDesktop: true,
-        setDisplayMode: vi.fn(),
-        quit: vi.fn(),
-        listSaveCandidates: vi.fn().mockResolvedValue([futurePayload]),
-        writeSave,
-        clearSave,
-        steamGetName: vi.fn().mockResolvedValue("PlayerOne"),
-        steamSetRichPresence: vi.fn(),
-        steamCloudRead: vi.fn().mockResolvedValue(null),
-        steamCloudWrite: vi.fn().mockResolvedValue(true),
-        steamCloudDelete,
-      },
-    } as unknown as Window;
+    const desktop = setupMockWindowDesktop({ saveCandidates: [futurePayload], steamName: "PlayerOne" });
+    desktop.steamCloudDelete.mockResolvedValue(false);
 
     const { bootstrapAlchemySaveState } = await import("@/features/alchemy/shared/storage/bootstrap-save-state");
     const { clearAlchemySaveData, saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
@@ -533,10 +429,10 @@ describe("storage io", () => {
     expect(loaded.status.kind).toBe("unsupported-newer-schema");
 
     await expect(clearAlchemySaveData()).resolves.toBe(false);
-    expect(steamCloudDelete).toHaveBeenCalledOnce();
-    expect(clearSave).not.toHaveBeenCalled();
+    expect(desktop.steamCloudDelete).toHaveBeenCalledOnce();
+    expect(desktop.clearSave).not.toHaveBeenCalled();
 
     await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["should-not-write"] });
-    expect(writeSave).not.toHaveBeenCalled();
+    expect(desktop.writeSave).not.toHaveBeenCalled();
   });
 });

@@ -31,54 +31,34 @@ function applyCrit(damage: number, damageType: DamageType, state: BattleState) {
   return isCrit ? damage * CRIT_MULTIPLIER : damage;
 }
 
-function applyFirstBurnModifiers(state: BattleState, rawDamage: number): { state: BattleState; damage: number } {
-  let nextState: BattleState = state;
-  let nextDamage = rawDamage;
-
-  if (nextState.talentEffects.firstBurnCardDoubled && !nextState.flags.firstBurnCardDoubledUsed) {
-    nextDamage = Math.round(nextDamage * FIRST_BURN_CARD_BONUS_MULTIPLIER);
-    nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
-  }
-  if (nextState.trinketEffects.firstBurnDoubled && !nextState.flags.firstBurnTrinketDoubledUsed) {
-    nextDamage *= FIRST_EFFECT_MULTIPLIER;
-    nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);
-  }
-
-  return { state: nextState, damage: nextDamage };
-}
-
 /**
- * Applies first-time holy modifiers from boons, updating state in place.
- */
-function applyFirstHolyModifiers(state: BattleState, rawDamage: number): { state: BattleState; damage: number } {
-  let nextState: BattleState = state;
-  let nextDamage = rawDamage;
-
-  if (nextState.trinketEffects.firstHolyDamageDoubled && !nextState.flags.firstHolyDamageBonusUsed) {
-    nextDamage *= FIRST_EFFECT_MULTIPLIER;
-    nextState = setFlag(nextState, "firstHolyDamageBonusUsed", true);
-  }
-
-  return { state: nextState, damage: nextDamage };
-}
-
-/**
- * Applies first-card doubling modifiers, updating state with consumed flags.
+ * Applies first-card element doubling modifiers (burn, holy), updating state with consumed flags.
  */
 function applyFirstDamageModifiers(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   rawDamage: number,
 ): { state: BattleState; rawDamage: number } {
+  let nextState: BattleState = state;
+  let nextDamage = rawDamage;
+
   if (effect.damageType === "burn") {
-    const { state: nextState, damage } = applyFirstBurnModifiers(state, rawDamage);
-    return { state: nextState, rawDamage: damage };
+    if (nextState.talentEffects.firstBurnCardDoubled && !nextState.flags.firstBurnCardDoubledUsed) {
+      nextDamage = Math.round(nextDamage * FIRST_BURN_CARD_BONUS_MULTIPLIER);
+      nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
+    }
+    if (nextState.trinketEffects.firstBurnDoubled && !nextState.flags.firstBurnTrinketDoubledUsed) {
+      nextDamage *= FIRST_EFFECT_MULTIPLIER;
+      nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);
+    }
+  } else if (effect.damageType === "holy") {
+    if (nextState.trinketEffects.firstHolyDamageDoubled && !nextState.flags.firstHolyDamageBonusUsed) {
+      nextDamage *= FIRST_EFFECT_MULTIPLIER;
+      nextState = setFlag(nextState, "firstHolyDamageBonusUsed", true);
+    }
   }
-  if (effect.damageType === "holy") {
-    const { state: nextState, damage } = applyFirstHolyModifiers(state, rawDamage);
-    return { state: nextState, rawDamage: damage };
-  }
-  return { state, rawDamage };
+
+  return { state: nextState, rawDamage: nextDamage };
 }
 
 /**
@@ -157,8 +137,8 @@ export function computeCardDamageToEnemy(
   const effectiveArmor = isPhysicalOrStun ? nextState.enemyMitigation.armor : 0;
   const damageAfterArmor = Math.max(0, damageAfterBlock - effectiveArmor);
   const multiplier =
-    getEnemyDamageMultiplier(stateAfterFirstMods, effect.damageType) *
-    gearFrozenDamageMultiplier(stateAfterFirstMods) *
-    computeBurnMultiplier(effect, stateAfterFirstMods);
+    getEnemyDamageMultiplier(nextState, effect.damageType) *
+    gearFrozenDamageMultiplier(nextState) *
+    computeBurnMultiplier(effect, nextState);
   return { nextState, modifiedDamage: Math.round(damageAfterArmor * multiplier) };
 }

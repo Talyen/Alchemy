@@ -27,6 +27,28 @@ describe("computeBaseDamage — archery tag", () => {
     );
     expect(result.enemyHealth).toBeLessThan(25);
   });
+
+  it("triggers extra hit once without infinite recursion when archeryPlayTwiceChance is 100%", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const state = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      talentEffects: { ...defaultTalentEffects, archeryPlayTwiceChance: 100 },
+    });
+    const card = makeCard({
+      tags: ["archery"],
+      effects: [makeEffect("physical", 20)],
+    });
+    const texts = makeTexts();
+    const result = dealDamageToEnemy(
+      state,
+      card,
+      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
+      texts,
+    );
+    // Initial hit = 20 damage, extra hit = Math.round(20 / 2) = 10 damage. Total = 30 damage dealt.
+    expect(result.enemyHealth).toBe(70);
+  });
 });
 
 describe("computeBaseDamage — stun damage", () => {

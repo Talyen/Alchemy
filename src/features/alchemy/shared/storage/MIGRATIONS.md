@@ -73,6 +73,8 @@ Until launch, `LAUNCH_SAVE_SCHEMA_VERSION` may move forward when the team delibe
 
 Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring rotation) and then mirror to Steam Cloud. On load, candidates are walked in preference order (local → bak.1 → bak.2 → bak.3 → cloud) and the first that Zod-validates is used. Future-versioned candidates are silently skipped. Only when every candidate is from a future version does the load fall back to defaults with writes disabled and the Save Protected screen.
 
+Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest dirty snapshot to `localStorage`. Desktop IPC remains on the serialized asynchronous queue, so the earlier visibility/pagehide signals give it time to finish before the window closes. A terminal browser flush supersedes any queued snapshot that has not started writing.
+
 ### Implementation rules
 
 - Schema migration steps cover `LAUNCH_SAVE_SCHEMA_VERSION → CURRENT_SAVE_SCHEMA_VERSION` only. Do not remove a supported step without raising `LAUNCH_SAVE_SCHEMA_VERSION` in the same change.

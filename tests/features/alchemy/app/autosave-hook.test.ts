@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
-import { useRunDomainStore } from "../../../helpers/gameplay-store-test";
+import { useRunDomainStore, useRunTransientStore } from "../../../helpers/gameplay-store-test";
 
 const mockStorage: Record<string, string> = {};
 
@@ -53,5 +53,19 @@ describe("useAlchemyAutosaveFromStores", () => {
     expect(keys.length).toBeGreaterThan(0);
     const written = JSON.parse(mockStorage[keys[0]!]);
     expect(written.lastSavedAt).toBeGreaterThan(0);
+  });
+
+  it("flushes the latest dirty snapshot on pagehide before the debounce expires", () => {
+    renderHook(() => useAlchemyAutosaveFromStores(true));
+
+    act(() => {
+      useRunTransientStore.getState().setHasActiveRun(true);
+      useRunDomainStore.getState().setRunGold(91);
+      window.dispatchEvent(new PageTransitionEvent("pagehide"));
+    });
+
+    const keys = Object.keys(mockStorage);
+    expect(keys).toHaveLength(1);
+    expect(JSON.parse(mockStorage[keys[0]!]!).activeRun?.runGold).toBe(91);
   });
 });

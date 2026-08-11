@@ -9,7 +9,7 @@ import { logError } from "./error-logger";
 const BUFFER_CACHE_CONFIG = {
   SOUNDS_BASE_PATH: "sounds/",
   IDLE_CALLBACK_TIMEOUT_MS: 5000,
-  PRELOAD_BATCH_SIZE: 1,
+  PRELOAD_BATCH_SIZE: 4,
 } as const;
 
 // In-memory cache for fully decoded AudioBuffer objects.
@@ -53,7 +53,9 @@ export function getCachedBuffer(name: string): AudioBuffer | null {
 
 // Builds sound URLs through Vite's base path so GitHub Pages deployments resolve assets correctly.
 function getSoundUrl(name: string): string {
-  return import.meta.env.BASE_URL + BUFFER_CACHE_CONFIG.SOUNDS_BASE_PATH + name;
+  const baseUrl = import.meta.env.BASE_URL ?? "/";
+  const prefix = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  return `${prefix}${BUFFER_CACHE_CONFIG.SOUNDS_BASE_PATH}${name}`;
 }
 
 // Loads a sound once and shares the in-flight decode with concurrent play/preload calls.
@@ -77,7 +79,9 @@ export async function loadSoundBuffer(name: string): Promise<AudioBuffer | null>
       soundCache.set(name, buffer);
       return buffer;
     } catch {
-      logError("Failed to load or decode sound", "audio", { name });
+      if (import.meta.env.MODE !== "test") {
+        logError("Failed to load or decode sound", "audio", { name });
+      }
       return null;
     } finally {
       loadingPromises.delete(name);
@@ -150,13 +154,13 @@ function preloadSoundsWhenIdle(names: string[]) {
 }
 
 // Uses browser idle time when available and falls back for environments without it (e.g. testing context).
-function schedulePreloadBatch(callback: () => void) {
+function schedulePreloadBatch(callback: () => void, retries = 0) {
   if ("requestIdleCallback" in window) {
     window.requestIdleCallback(
       () => {
         const scheduling = navigator as Navigator & { scheduling?: { isInputPending?: () => boolean } };
-        if (scheduling.scheduling?.isInputPending?.()) {
-          schedulePreloadBatch(callback);
+        if (retries < 3 && scheduling.scheduling?.isInputPending?.()) {
+          schedulePreloadBatch(callback, retries + 1);
           return;
         }
         callback();

@@ -7,6 +7,8 @@ type SaveBackendWriteResult = { ok: true } | { ok: false; error: unknown };
 export interface SaveBackend {
   readCandidates(key: string): Promise<SaveBackendReadResult>;
   write(key: string, value: string): Promise<SaveBackendWriteResult>;
+  /** Synchronous best-effort write for terminal browser lifecycle events. */
+  writeSync?(key: string, value: string): SaveBackendWriteResult | null;
   clear(key: string): Promise<SaveBackendWriteResult>;
 }
 
@@ -80,6 +82,18 @@ export function createPlatformSaveBackend({ cloudSyncEnabled = false }: Platform
           return { ok: false, error };
         }
       }
+
+      try {
+        window.localStorage.setItem(key, value);
+        return { ok: true };
+      } catch (error) {
+        return { ok: false, error };
+      }
+    },
+
+    writeSync(key, value) {
+      const desktop = desktopApi();
+      if (desktop?.isDesktop) return null;
 
       try {
         window.localStorage.setItem(key, value);

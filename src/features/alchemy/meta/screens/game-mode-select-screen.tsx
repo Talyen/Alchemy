@@ -7,9 +7,13 @@ import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
 import { playUISound } from "@/lib/audio";
 import { TooltipBody, TooltipHeader, TooltipPanel } from "../../shared/ui/tooltip-panel";
+import {
+  getGameModeUnlockMessage,
+  isGameModeUnlocked,
+  type GameModeId,
+} from "@/features/alchemy/shared/config/game-data-catalog";
 
-const GAME_MODE_IDS = ["campaign", "labyrinth", "wildwood"] as const;
-type GameModeId = (typeof GAME_MODE_IDS)[number];
+const GAME_MODE_IDS: readonly GameModeId[] = ["campaign", "labyrinth", "wildwood"];
 
 function handleModeSelect(modeId: GameModeId, isLocked: boolean, setSelectedModeId: (id: GameModeId) => void) {
   if (isLocked) {
@@ -60,9 +64,7 @@ export function GameModeSelectScreen({
         {GAME_MODE_IDS.map((modeId, index) => {
           const meta = gameModeMeta[modeId];
           if (!meta) return null;
-          const isLocked =
-            (modeId === "labyrinth" && !finishedRunCharacters.includes("rogue")) ||
-            (modeId === "wildwood" && !finishedRunCharacters.includes("ranger"));
+          const isLocked = !isGameModeUnlocked(modeId, finishedRunCharacters);
           const isSelected = selectedModeId === modeId;
           const selectMode = () => handleModeSelect(modeId, isLocked, setSelectedModeId);
 
@@ -97,11 +99,7 @@ export function GameModeSelectScreen({
                 <TooltipPanel width="w-64" visible className="z-50 mb-3 text-center">
                   <TooltipHeader>{meta.title}</TooltipHeader>
                   <TooltipBody>
-                    <p>
-                      {modeId === "labyrinth"
-                        ? "Finish a Run as the Rogue to unlock"
-                        : "Finish a Run as the Ranger to unlock"}
-                    </p>
+                    <p>{getGameModeUnlockMessage(modeId)}</p>
                   </TooltipBody>
                 </TooltipPanel>
               )}

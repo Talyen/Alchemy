@@ -5,7 +5,11 @@ import { useEffect } from "react";
 import { readHasActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { useLatestRef } from "@/features/alchemy/shared/hooks";
-import { saveAlchemySaveData, subscribeAlchemyPersistence } from "@/features/alchemy/shared/storage";
+import {
+  saveAlchemySaveData,
+  saveAlchemySaveDataForExit,
+  subscribeAlchemyPersistence,
+} from "@/features/alchemy/shared/storage";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import type { Screen } from "@/lib/routing";
@@ -19,7 +23,7 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
     let timer: NodeJS.Timeout | null = null;
     let isDirty = false;
 
-    const flush = () => {
+    const flush = (terminal = false) => {
       if (!isDirty || !enabledRef.current) return;
 
       if (timer) {
@@ -31,7 +35,12 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
 
       const activeRun = resolveActiveRunForSave(readHasActiveRun(), runScreenOverrideRef.current ?? undefined);
 
-      void saveAlchemySaveData(buildAlchemySaveDataFromStores(activeRun));
+      const save = buildAlchemySaveDataFromStores(activeRun);
+      if (terminal) {
+        saveAlchemySaveDataForExit(save);
+      } else {
+        void saveAlchemySaveData(save);
+      }
     };
 
     const triggerSave = () => {
@@ -49,15 +58,22 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
 
     const unsubscribePersistence = subscribeAlchemyPersistence(triggerSave);
 
-    const handleBeforeUnload = () => {
-      flush();
+    const handlePageExit = () => {
+      flush(true);
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") flush(true);
     };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("pagehide", handlePageExit);
+    window.addEventListener("beforeunload", handlePageExit);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       unsubscribePersistence();
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("pagehide", handlePageExit);
+      window.removeEventListener("beforeunload", handlePageExit);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       flush();
     };
   }, [enabledRef, runScreenOverrideRef]);

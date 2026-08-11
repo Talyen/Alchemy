@@ -6,13 +6,17 @@ export {
   cardLibrary,
   characterArt,
   characters,
-  characterUnlockRequirements,
   corruptionAltar,
   eliteEnemyBg,
   enemyBestiary,
+  getCharacterUnlockMessage,
+  getGameModeUnlockMessage,
   getRequiredPreviousCharacter,
+  KNIGHT_UNLOCK_MESSAGE,
   getTalentKeywordProgress,
   isCharacterUnlocked,
+  isGameModeUnlocked,
+  isProgressionFeatureUnlocked,
   keywordDefinitions,
   merchantShopBg,
   mysteryBg,
@@ -25,4 +29,12 @@ export {
   trinketLibrary,
 } from "@/lib/game-data";
 
-export type { BestiaryEntry, CharacterId, CompanionId, EnemyType, KeywordId, TrinketEntry } from "@/lib/game-data";
+export type {
+  BestiaryEntry,
+  CharacterId,
+  CompanionId,
+  EnemyType,
+  GameModeId,
+  KeywordId,
+  TrinketEntry,
+} from "@/lib/game-data";

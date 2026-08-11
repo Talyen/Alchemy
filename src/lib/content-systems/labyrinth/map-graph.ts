@@ -100,14 +100,17 @@ function addPath(
 ) {
   for (const point of path) addPoint(points, used, point);
   for (let index = 0; index < path.length - 1; index += 1) {
-    addEdge(edges, degree, path[index]!, path[index + 1]!);
+    const from = path[index];
+    const to = path[index + 1];
+    if (from && to) addEdge(edges, degree, from, to);
   }
 }
 
 function canAddPath(path: readonly Point[], used: Set<string>, degree: Map<string, number>) {
   for (let index = 0; index < path.length - 1; index += 1) {
-    const from = path[index]!;
-    const to = path[index + 1]!;
+    const from = path[index];
+    const to = path[index + 1];
+    if (!from || !to) continue;
     const fromExisting = used.has(keyOf(from));
     const toExisting = used.has(keyOf(to));
     const fromDegree = degree.get(keyOf(from)) ?? 0;
@@ -159,9 +162,10 @@ function shortestPathNodeCount(points: Point[], edges: Array<{ from: Point; to: 
   const bossKey = keyOf(boss);
   const visited = new Set<string>();
   const queue = [{ key: keyOf(start), count: 1 }];
-  while (queue.length > 0) {
-    const current = queue.shift()!;
-    if (visited.has(current.key)) continue;
+  let head = 0;
+  while (head < queue.length) {
+    const current = queue[head++];
+    if (!current || visited.has(current.key)) continue;
     if (current.key === bossKey) return current.count;
     visited.add(current.key);
     for (const next of adjacency.get(current.key) ?? []) {

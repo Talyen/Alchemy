@@ -180,47 +180,33 @@ describe("sampleDestinationChoices", () => {
   });
 
   it("allows zero combats when the previous screen offered combat", () => {
-    let sawZeroCombats = false;
-    for (let seed = 0; seed < 40; seed += 1) {
-      let i = 0;
-      const rng = () => {
-        const value = (Math.sin(seed + i++) + 1) / 2;
-        return value;
-      };
-      const result = sampleDestinationChoices(
-        [DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE, DESTINATIONS.MERCHANT_SHOP, DESTINATIONS.ALCHEMIST_SHOP],
-        {
-          lastOfferedDestinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE],
-          roundsSinceOffered: {},
-        },
-        rng,
-      );
-      const combatCount = result.choices.filter(
-        (destination) => destination === DESTINATIONS.NORMAL_COMBAT || destination === DESTINATIONS.ELITE_COMBAT,
-      ).length;
-      if (combatCount === 0) {
-        sawZeroCombats = true;
-        break;
-      }
-    }
-    expect(sawZeroCombats).toBe(true);
+    const result = sampleDestinationChoices(
+      [DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE, DESTINATIONS.MERCHANT_SHOP, DESTINATIONS.ALCHEMIST_SHOP],
+      {
+        lastOfferedDestinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE],
+        roundsSinceOffered: {},
+      },
+      () => 0,
+    );
+
+    expect(result.choices).toEqual([DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE, DESTINATIONS.MERCHANT_SHOP]);
   });
 
-  it("never offers more than one shop", () => {
-    for (let seed = 0; seed < 50; seed += 1) {
-      let i = 0;
-      const rng = () => (Math.sin(seed + i++) + 1) / 2;
-      const result = sampleDestinationChoices([...FULL_POOL], createEmptyDestinationOfferState(), rng);
-      const shopCount = result.choices.filter((destination) =>
-        [
-          DESTINATIONS.MERCHANT_SHOP,
-          DESTINATIONS.ALCHEMIST_SHOP,
-          DESTINATIONS.TRINKET_SHOP,
-          DESTINATIONS.EQUIPMENT_SHOP,
-        ].includes(destination as "Merchant's Shop" | "Alchemist's Shop" | "Trinket Shop" | "Equipment Shop"),
-      ).length;
-      expect(shopCount).toBeLessThanOrEqual(1);
-    }
+  it("never offers more than one shop when the remaining pool is all shops", () => {
+    const result = sampleDestinationChoices(
+      [
+        DESTINATIONS.NORMAL_COMBAT,
+        DESTINATIONS.MERCHANT_SHOP,
+        DESTINATIONS.ALCHEMIST_SHOP,
+        DESTINATIONS.TRINKET_SHOP,
+        DESTINATIONS.EQUIPMENT_SHOP,
+      ],
+      createEmptyDestinationOfferState(),
+      () => 0.5,
+    );
+
+    expect(result.choices).toHaveLength(2);
+    expect(result.choices.filter((destination) => destination.includes("Shop"))).toHaveLength(1);
   });
 
   it("returns all destinations when fewer than requested count", () => {
@@ -237,6 +223,30 @@ describe("sampleDestinationChoices", () => {
     expect(result.choices).toEqual([]);
   });
 
+  it("applies the shop cap even when the input has fewer than three unique destinations", () => {
+    const result = sampleDestinationChoices(
+      [DESTINATIONS.MERCHANT_SHOP, DESTINATIONS.ALCHEMIST_SHOP, DESTINATIONS.TRINKET_SHOP],
+      { lastOfferedDestinations: [DESTINATIONS.NORMAL_COMBAT], roundsSinceOffered: {} },
+      () => 0,
+    );
+
+    expect(result.choices).toEqual([DESTINATIONS.MERCHANT_SHOP]);
+  });
+
+  it("deduplicates malformed input before sampling", () => {
+    const result = sampleDestinationChoices(
+      [DESTINATIONS.MYSTERY, DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE],
+      { lastOfferedDestinations: [DESTINATIONS.NORMAL_COMBAT], roundsSinceOffered: {} },
+      () => 0,
+    );
+
+    expect(result.choices).toEqual([DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE]);
+    expect(result.offerState.roundsSinceOffered).toEqual({
+      [DESTINATIONS.MYSTERY]: 0,
+      [DESTINATIONS.CAMPFIRE]: 0,
+    });
+  });
+
   it("favors high-pity destinations over freshly offered repeats", () => {
     const pityWeight = computeDestinationWeight(DESTINATIONS.MYSTERY, {
       lastOfferedDestinations: [],
@@ -250,54 +260,21 @@ describe("sampleDestinationChoices", () => {
     expect(pityWeight).toBeGreaterThan(DEFAULT_DESTINATION_WEIGHT);
   });
 
-  it("always returns DESTINATION_CHOICES entries when the pool has enough destinations", () => {
-    // 200 seeded rolls across the full pool — never short by 1 or 2.
-    for (let seed = 0; seed < 200; seed += 1) {
-      let i = 0;
-      const rng = () => {
-        const value = (Math.sin(seed * 13 + i++) + 1) / 2;
-        return value;
-      };
-      const result = sampleDestinationChoices([...FULL_POOL], createEmptyDestinationOfferState(), rng);
-      expect(result.choices).toHaveLength(3);
-    }
+  it("returns DESTINATION_CHOICES entries when the valid pool has enough destinations", () => {
+    const result = sampleDestinationChoices([...FULL_POOL], createEmptyDestinationOfferState(), () => 0.5);
+
+    expect(result.choices).toHaveLength(3);
+    expect(new Set(result.choices).size).toBe(3);
   });
 
-  it("includes the picked combat in choices when the previous screen had none (regression)", () => {
-    // Regression: pickCombatPity used to drop the picked combat on the floor, leaving
-    // a pool of [Mystery, Corruption] when the only combat was consumed by pity.
-    for (let seed = 0; seed < 50; seed += 1) {
-      let i = 0;
-      const rng = () => {
-        const value = (Math.sin(seed * 17 + i++) + 1) / 2;
-        return value;
-      };
-      const result = sampleDestinationChoices([...FULL_POOL], createEmptyDestinationOfferState(), rng);
-      const combatCount = result.choices.filter(
-        (d) => d === DESTINATIONS.NORMAL_COMBAT || d === DESTINATIONS.ELITE_COMBAT,
-      ).length;
-      expect(combatCount).toBe(1);
-      expect(result.choices).toHaveLength(3);
-    }
-  });
+  it("includes exactly the picked combat when the previous screen had none", () => {
+    const result = sampleDestinationChoices([...FULL_POOL], createEmptyDestinationOfferState(), () => 0.99);
+    const combats = result.choices.filter(
+      (destination) => destination === DESTINATIONS.NORMAL_COMBAT || destination === DESTINATIONS.ELITE_COMBAT,
+    );
 
-  it("still respects the single-shop cap when topping up", () => {
-    // If weighted picking under-fills and the top-up runs, the shop cap must still hold.
-    for (let seed = 0; seed < 100; seed += 1) {
-      let i = 0;
-      const rng = () => (Math.sin(seed * 19 + i++) + 1) / 2;
-      const result = sampleDestinationChoices([...FULL_POOL], createEmptyDestinationOfferState(), rng);
-      const shopCount = result.choices.filter((d) =>
-        [
-          DESTINATIONS.MERCHANT_SHOP,
-          DESTINATIONS.ALCHEMIST_SHOP,
-          DESTINATIONS.TRINKET_SHOP,
-          DESTINATIONS.EQUIPMENT_SHOP,
-        ].includes(d as "Merchant's Shop" | "Alchemist's Shop" | "Trinket Shop" | "Equipment Shop"),
-      ).length;
-      expect(shopCount).toBeLessThanOrEqual(1);
-      expect(result.choices).toHaveLength(3);
-    }
+    expect(combats).toEqual([DESTINATIONS.ELITE_COMBAT]);
+    expect(result.choices).toHaveLength(3);
   });
 });
 

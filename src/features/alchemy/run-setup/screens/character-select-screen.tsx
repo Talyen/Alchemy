@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 import {
   characterArt,
   characters,
-  characterUnlockRequirements,
+  getCharacterUnlockMessage,
+  isCharacterUnlocked,
   type CharacterId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
@@ -163,9 +164,8 @@ export function CharacterSelectScreen({
 
       <StaggerGroup className="grid grid-cols-2 justify-items-center gap-x-8 gap-y-6 sm:grid-cols-4">
         {charIds.map((id, index) => {
-          const req = characterUnlockRequirements[id];
-          const isLocked = req.requiredChar !== null && !finishedRunCharacters.includes(req.requiredChar);
-          const unlockRequirementText = isLocked ? `Finish a Run as the ${req.requiredName} to unlock` : "";
+          const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
+          const unlockRequirementText = isLocked ? getCharacterUnlockMessage(id) : "";
 
           return (
             <StaggerItem key={id} index={index}>
