@@ -76,6 +76,17 @@ function resolveSkippedEnemyTurn(state: BattleState, options?: { traitRoll?: num
   nextState = tickEnemyStatuses(nextState, enemyTurnStartCombatTexts);
   const enemyTurnStartState = nextState;
 
+  if (enemyTurnStartState.enemyHealth <= 0) {
+    return {
+      kind: "skipped" as const,
+      ...finalizePlayerTurn(enemyTurnStartState, enemyTurnStartCombatTexts),
+      enemyTurnStartState,
+      enemyTurnStartCombatTexts,
+      enemyResolutionCombatTexts: [],
+      enemyPerformedAttack: false,
+    };
+  }
+
   nextState = processEnemyTraits(nextState, enemyResolutionCombatTexts, options);
   nextState = reduceSkipTurns(nextState);
   nextState = tickPlayerStatuses(nextState, enemyResolutionCombatTexts);

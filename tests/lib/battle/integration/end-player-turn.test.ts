@@ -786,6 +786,23 @@ describe("endPlayerTurn — enemy DoT kill during CC skip", () => {
     expect(result.state.playerHealth).toBe(30);
     expect(result.enemyPerformedAttack).toBe(false);
   });
+
+  it("does not revive a DoT-killed CCd enemy via regeneration", () => {
+    const state = makeState({
+      enemyHealth: 4,
+      enemyMaxHealth: 30,
+      enemyStatuses: defaultEnemyStatusValues({ bleed: 6 }),
+      enemyCC: defaultCcState({ stunSkipTurns: 1 }),
+      enemyRegeneration: 5,
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+    });
+    const result = endPlayerTurn(state);
+    // bleed tick deals 6 → enemy health 0 before the skipped path's regeneration
+    // step runs, so it must stay dead instead of healing back to 5.
+    expect(result.state.enemyHealth).toBe(0);
+    expect(result.state.playerHealth).toBe(30);
+    expect(result.enemyPerformedAttack).toBe(false);
+  });
 });
 
 describe("endPlayerTurn — player killed by DoT after Death's Door consumed", () => {
