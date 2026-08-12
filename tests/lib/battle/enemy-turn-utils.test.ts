@@ -107,6 +107,27 @@ describe("advanceToPlayerTurn", () => {
     expect(result.playerHealth).toBe(14);
     expect(texts.some((t) => t.kind === "heal" && t.amount === 4)).toBe(true);
   });
+
+  it("healthPerTurn combat text uses actual health gained near max HP", () => {
+    const state = makeTestBattleState({
+      turnPhase: "enemy",
+      playerHealth: 29,
+      playerMaxHealth: 30,
+      deck: [makeTestCardWithId("d1"), makeTestCardWithId("d2"), makeTestCardWithId("d3")],
+      hand: [],
+      gearEffects: { ...defaultGearEffects, healthPerTurn: 4 },
+      rng: () => 0,
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = advanceToPlayerTurn(state, texts);
+    expect(result.playerHealth).toBe(30);
+    expect(texts.find((t) => t.kind === "heal")).toEqual({
+      target: "player",
+      kind: "heal",
+      stat: "health",
+      amount: 1,
+    });
+  });
 });
 
 describe("resetEnemyTurnState", () => {

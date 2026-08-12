@@ -61,6 +61,19 @@ describe("applyBoneCharmHeal", () => {
     expect(texts).toEqual([{ target: "player", kind: "heal", stat: "health", amount: 5 }]);
   });
 
+  it("emits only actual health gained when bone charm overheals", () => {
+    const state = patchBattleState({
+      enemyHealth: 0,
+      playerHealth: 29,
+      playerMaxHealth: 30,
+      trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 5 }),
+    });
+    const texts: CombatTextEvent[] = [];
+    const next = applyBoneCharmHeal(state, true, texts);
+    expect(next.playerHealth).toBe(30);
+    expect(texts).toEqual([{ target: "player", kind: "heal", stat: "health", amount: 1 }]);
+  });
+
   it("does nothing when enemy was not alive before this hit", () => {
     const state = patchBattleState({ enemyHealth: 0 });
     const texts: CombatTextEvent[] = [];

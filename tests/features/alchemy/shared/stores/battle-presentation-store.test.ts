@@ -115,4 +115,46 @@ describe("battle-presentation-store", () => {
     expect(useBattlePresentationStore.getState().floatingCombatTexts).toEqual([]);
     vi.useRealTimers();
   });
+
+  it("batches same-lane combat texts into one store write", async () => {
+    vi.useFakeTimers();
+    getBattleStoreView().setHasActiveBattle(true);
+    getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+    const writes: number[] = [];
+    const unsubscribe = useBattlePresentationStore.subscribe((state, prev) => {
+      if (state.floatingCombatTexts !== prev.floatingCombatTexts) {
+        writes.push(state.floatingCombatTexts.length);
+      }
+    });
+
+    useBattlePresentationStore.getState().showCombatTexts([
+      { target: "enemy", kind: "damage", stat: "health", amount: 5 },
+      { target: "player", kind: "heal", stat: "health", amount: 2 },
+    ]);
+    await vi.advanceTimersByTimeAsync(0);
+    unsubscribe();
+    expect(useBattlePresentationStore.getState().floatingCombatTexts).toHaveLength(2);
+    expect(writes.filter((count) => count > 0)).toEqual([2]);
+    vi.useRealTimers();
+  });
+
+  it("caps visible combat texts per rail", async () => {
+    vi.useFakeTimers();
+    getBattleStoreView().setHasActiveBattle(true);
+    getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+
+    useBattlePresentationStore.getState().showCombatTexts([
+      { target: "enemy", kind: "damage", stat: "health", amount: 1 },
+      { target: "enemy", kind: "damage", stat: "health", amount: 2 },
+      { target: "enemy", kind: "damage", stat: "health", amount: 3 },
+      { target: "enemy", kind: "damage", stat: "health", amount: 4 },
+    ]);
+    await vi.advanceTimersByTimeAsync(400);
+    const enemyTexts = useBattlePresentationStore
+      .getState()
+      .floatingCombatTexts.filter((text) => text.target === "enemy");
+    expect(enemyTexts).toHaveLength(3);
+    expect(enemyTexts.map((text) => text.amount)).toEqual([2, 3, 4]);
+    vi.useRealTimers();
+  });
 });

@@ -14,6 +14,19 @@ describe("applyEffectByKind (utility effects)", () => {
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 5 });
   });
 
+  it("scales gain-gold combat text with goldGainPercent", () => {
+    const state = makeTestBattleState({
+      gold: 10,
+      gearEffects: { ...makeTestBattleState().gearEffects, goldGainPercent: 50 },
+    });
+    const card = makeTestCard({ effects: [{ kind: "gain-gold", amount: 5 }] });
+    const texts = makeTexts();
+    const effect = { kind: "gain-gold" as const, amount: 5 };
+    const result = applyEffectByKind(effect.kind, state, card, effect, 1, texts);
+    expect(result.gold).toBe(18);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 8 });
+  });
+
   it("gain-gold applies potion multiplier", () => {
     const state = makeTestBattleState({ gold: 0 });
     const card = makeTestCard({ effects: [{ kind: "gain-gold", amount: 3 }] });

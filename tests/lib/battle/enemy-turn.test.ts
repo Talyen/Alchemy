@@ -6,6 +6,7 @@ import { defaultTalentEffects } from "@/lib/battle";
 import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
 import type { BestiaryEntry } from "@/lib/game-data";
 import { defaultCcState, defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
+import { companionLibrary } from "@/lib/game-data";
 
 function baseEnemy(enemyId: string): BestiaryEntry {
   return {
@@ -396,5 +397,18 @@ describe("endPlayerTurn — Death's Door", () => {
     expect(result.state.playerHealth).toBe(0);
     expect(result.state.deathsDoorActive).toBe(false);
     expect(result.state.deathsDoorUsed).toBe(true);
+  });
+});
+
+describe("endPlayerTurn — companion", () => {
+  it("does not apply companion turn-start effects", () => {
+    const state = battleState({
+      activeCompanion: companionLibrary.wolf,
+      enemyAttackEffects: [],
+      enemyHealth: 30,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyHealth).toBe(30);
+    expect(result.state.enemyStatuses.bleed).toBe(0);
   });
 });

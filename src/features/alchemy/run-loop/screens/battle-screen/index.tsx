@@ -10,12 +10,23 @@ import { BattleBottomBar } from "./controls";
 import { HamburgerTrigger, PageLayout } from "../../../shared/ui/shared-ui";
 import { WishOverlay } from "./wish-overlay";
 import type { BattleActionsProps, BattleFeedbackProps, BattleRefsProps, BattleScreenData } from "./types";
-import { BATTLE_PARTICLE_ALPHA_BOSS, BATTLE_PARTICLE_ALPHA_NORMAL } from "@/lib/game-constants";
 import { getEnemyStatusChips, getPlayerStatusChips } from "../../../shared/utils";
 import { isAlchemyDevBuild } from "../../../shared/utils/dev-mode";
 import { BackgroundParticles } from "../../../shared/ui/background-particles";
+import { getScreenParticleConfig } from "@/app/screen-particle-config";
+import { useBattlePresentationStore } from "../../battle/battle-presentation-store";
 
-const BATTLE_PARTICLE_COLORS = ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"] as const;
+function CardGhostLayer() {
+  const cardGhosts = useBattlePresentationStore((s) => s.cardGhosts);
+  const removeCardGhost = useBattlePresentationStore((s) => s.removeCardGhost);
+  return (
+    <>
+      {cardGhosts.map((ghost) => (
+        <CardGhostOverlay key={ghost.id} ghost={ghost} onDone={() => removeCardGhost(ghost.id)} />
+      ))}
+    </>
+  );
+}
 
 interface BattleScreenProps {
   battleScreenData: BattleScreenData;
@@ -28,7 +39,6 @@ interface BattleScreenProps {
   onOpenMenu: (rect?: DOMRect) => void;
   onWishChoice: (card: BattleCard | null) => void;
   playableHandCardKeys: Set<string>;
-  onRemoveCardGhost: (id: string) => void;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
   cardTransfers: CardTransfer[];
@@ -47,7 +57,6 @@ export function BattleScreen(props: BattleScreenProps) {
     onCardClick,
     onOpenMenu,
     onWishChoice,
-    onRemoveCardGhost,
     onSkipCombatDevMode,
     onEndTurn,
     cardTransfers,
@@ -56,13 +65,13 @@ export function BattleScreen(props: BattleScreenProps) {
     playableHandCardKeys,
   } = props;
 
-  const { battleState, displayOverrides, revealedCardKeys, cardGhosts, activeLabyrinthModifiers } = battleScreenData;
+  const { battleState, displayOverrides, revealedCardKeys, activeLabyrinthModifiers } = battleScreenData;
 
   const displayState = useMemo(() => ({ ...battleState, ...displayOverrides }), [battleState, displayOverrides]);
 
   const isBossBattle = battleState.currentEnemy.enemyType === "boss";
-  const particleAlpha = isBossBattle ? BATTLE_PARTICLE_ALPHA_BOSS : BATTLE_PARTICLE_ALPHA_NORMAL;
-  const particleColors = BATTLE_PARTICLE_COLORS;
+  const { particleColors, particleAlphaMultiplier } = getScreenParticleConfig("battle", isBossBattle);
+  const particleAlpha = particleAlphaMultiplier ?? 1;
 
   const playerStatusChips = useMemo(() => getPlayerStatusChips(displayState), [displayState]);
   const enemyStatusChips = useMemo(() => getEnemyStatusChips(battleState), [battleState]);
@@ -82,10 +91,9 @@ export function BattleScreen(props: BattleScreenProps) {
     () => ({
       playerStatusChips,
       enemyStatusChips,
-      cardGhosts,
       activeLabyrinthModifiers,
     }),
-    [playerStatusChips, enemyStatusChips, cardGhosts, activeLabyrinthModifiers],
+    [playerStatusChips, enemyStatusChips, activeLabyrinthModifiers],
   );
 
   const isDev = isAlchemyDevBuild();
@@ -94,7 +102,6 @@ export function BattleScreen(props: BattleScreenProps) {
       onCardClick,
       onOpenMenu,
       onWishChoice,
-      onRemoveCardGhost,
       onSkipCombatDevMode,
       onEndTurn,
       hiddenHandCardKeys,
@@ -107,7 +114,6 @@ export function BattleScreen(props: BattleScreenProps) {
       onCardClick,
       onOpenMenu,
       onWishChoice,
-      onRemoveCardGhost,
       onSkipCombatDevMode,
       onEndTurn,
       hiddenHandCardKeys,
@@ -119,14 +125,16 @@ export function BattleScreen(props: BattleScreenProps) {
   );
 
   const { battleSceneRef: sceneRef } = refs;
-  const { onRemoveCardGhost: removeGhost } = actions;
-  const requiredView = useMemo(() => ({ ...view, aspectMode }), [view, aspectMode]);
 
   return (
     <PageLayout>
       <div className="alchemy-shell relative flex w-full max-w-[100rem] flex-1 flex-col rounded-shell-screen border border-border/80 p-7 pb-1">
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-shell-screen">
-          <BackgroundParticles variant="embers" colors={particleColors} alphaMultiplier={particleAlpha} />
+          <BackgroundParticles
+            variant="embers"
+            {...(particleColors ? { colors: particleColors } : {})}
+            alphaMultiplier={particleAlpha}
+          />
         </div>
 
         <div className="relative z-10 flex min-h-0 flex-1 flex-col">
@@ -139,9 +147,9 @@ export function BattleScreen(props: BattleScreenProps) {
             data-testid="battle-scene"
             className="[container-type:size] absolute inset-0 overflow-hidden"
           >
-            <BattleActors view={requiredView} feedback={feedback} refs={refs} />
+            <BattleActors view={view} feedback={feedback} refs={refs} />
 
-            <BattleBottomBar view={requiredView} refs={refs} actions={actions} />
+            <BattleBottomBar view={view} refs={refs} actions={actions} />
 
             {battleState.wishOptions ? (
               <WishOverlay
@@ -151,9 +159,7 @@ export function BattleScreen(props: BattleScreenProps) {
               />
             ) : null}
 
-            {cardGhosts.map((ghost) => (
-              <CardGhostOverlay key={ghost.id} ghost={ghost} onDone={() => removeGhost(ghost.id)} />
-            ))}
+            <CardGhostLayer />
 
             {cardTransfers.map((transfer) => (
               <CardTransferOverlay key={transfer.id} transfer={transfer} />

@@ -38,22 +38,14 @@ export default {
     "src/lib/routing/destinations.ts": ["exports"],
     "src/lib/routing/index.ts": ["exports"],
     "src/features/alchemy/meta/screens/armory/parts/grid-styles.ts": ["exports"],
-    "src/lib/gear/grid-packing.ts": ["exports"],
     "src/lib/routing/run-screen-router.ts": ["exports"],
-    "src/lib/utils.ts": ["exports", "types"],
     "src/app/screen-routes/index.tsx": ["types"],
     "src/lib/validation/migration/tombstoned-content-ids.ts": ["exports", "types"],
     // Shared active-run orchestration contract enforced by architecture tests; consumed via Pick aliases.
     "src/features/alchemy/shared/stores/run-port-types.ts": ["types"],
     "src/features/alchemy/shell/shell-types.ts": ["types"],
   },
-  ignore: [
-    "tests/environment.d.ts",
-    "tests/scripts/global.d.ts",
-    "tests/electron-environment.d.ts",
-    // Dev-mode screen retained for error-log routing experiments; not mounted in normal builds.
-    "src/features/alchemy/meta/screens/error-log-viewer.tsx",
-  ],
+  ignore: ["tests/environment.d.ts", "tests/scripts/global.d.ts", "tests/electron-environment.d.ts"],
   ignoreDependencies: [
     "tailwindcss-animate",
     // Loaded via node_modules path string in scripts/dist-desktop.mjs; knip cannot trace it.

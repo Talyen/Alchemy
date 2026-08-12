@@ -5,7 +5,7 @@ import type { BattleState } from "@/lib/battle";
 import type { DisplayOverrides } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
-import type { CardGhost, StatusChip } from "../../../shared/types";
+import type { StatusChip } from "../../../shared/types";
 import type { BattleRefs } from "../../../shared/types";
 
 export type BattleScreenState = Pick<
@@ -43,7 +43,6 @@ interface BattleScreenViewProps {
 export interface BattleFeedbackProps {
   playerStatusChips: StatusChip[];
   enemyStatusChips: StatusChip[];
-  cardGhosts: CardGhost[];
   activeLabyrinthModifiers: EncounterCombatTraitId[];
 }
 
@@ -53,7 +52,6 @@ export interface BattleActionsProps {
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   onOpenMenu: (rect?: DOMRect) => void;
   onWishChoice: (card: BattleCard | null) => void;
-  onRemoveCardGhost: (id: string) => void;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
   hiddenHandCardKeys: Set<string>;
@@ -70,6 +68,5 @@ export interface BattleScreenData {
   battleState: BattleState;
   displayOverrides: DisplayOverrides;
   revealedCardKeys: Set<string>;
-  cardGhosts: CardGhost[];
   activeLabyrinthModifiers: EncounterCombatTraitId[];
 }

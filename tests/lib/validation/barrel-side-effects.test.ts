@@ -55,7 +55,6 @@ describe("@/features/alchemy phase screen barrels", () => {
 
 describe("@/features/alchemy/shared/utils barrel", () => {
   it("exports known symbols", () => {
-    expect(sharedUtilsBarrel.sampleItems).toBeTypeOf("function");
     expect(sharedUtilsBarrel.tokenizeDescription).toBeTypeOf("function");
   });
 });

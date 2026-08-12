@@ -57,7 +57,6 @@ function BattleScreenRoute({
       onCardClick={commands.handleCardClick}
       onOpenMenu={onOpenBattleMenu}
       onWishChoice={commands.handleWishChoice}
-      onRemoveCardGhost={commands.removeCardGhost}
       onSkipCombatDevMode={commands.skipCombatDevMode}
       onEndTurn={commands.handleEndTurn}
       cardTransfers={cardTransfers}

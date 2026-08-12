@@ -1,14 +1,14 @@
 /**
  * Companion turn-start resolution: builds a synthetic 0-cost card from the companion's
  * turnStartEffects and applies it as if played. Depends on: effect-handlers, types, game-data.
- * Depended on by: enemy-turn (endPlayerTurn flow).
+ * Depended on by: battle start and post-draw companion follow-up (player turn start).
  */
 import { applyCardEffects } from "./effect-handlers";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
-import { type BattleState, type CombatTextEvent, applyPlayerHealing, withPreservedFlags } from "./types";
+import { type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
 import { HALF_DIVISOR } from "../game-constants";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
-import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
+import { applyHealingWithCombatText } from "./combat-text";
 import { computeLeechHeal } from "../game-constants";
 import { rollPercent, getBattleRng } from "./status-helpers";
 
@@ -89,16 +89,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     if (state.gearEffects.healOnCompanionAttack > 0) {
       const hasDamageEffect = companionCard.effects.some((e) => e.kind === "damage");
       if (hasDamageEffect) {
-        const prevState = afterEffects;
-        const healedState = applyPlayerHealing(afterEffects, state.gearEffects.healOnCompanionAttack);
-        mergeCombatText(combatTexts, {
-          target: "player",
-          kind: "heal",
-          stat: "health",
-          amount: state.gearEffects.healOnCompanionAttack,
-        });
-        emitOverhealBlockText(prevState, healedState, combatTexts);
-        afterEffects = healedState;
+        afterEffects = applyHealingWithCombatText(afterEffects, state.gearEffects.healOnCompanionAttack, combatTexts);
       }
     }
 
@@ -110,16 +101,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
           .reduce((sum, e) => sum + e.amount, 0);
         const leechHeal = computeLeechHeal(companionDamage);
         if (leechHeal > 0) {
-          const prevState = afterEffects;
-          const healedState = applyPlayerHealing(afterEffects, leechHeal);
-          mergeCombatText(combatTexts, {
-            target: "player",
-            kind: "heal",
-            stat: "health",
-            amount: leechHeal,
-          });
-          emitOverhealBlockText(prevState, healedState, combatTexts);
-          afterEffects = healedState;
+          afterEffects = applyHealingWithCombatText(afterEffects, leechHeal, combatTexts);
         }
       }
     }

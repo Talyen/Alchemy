@@ -298,6 +298,27 @@ describe("processCompanionTurnStart", () => {
     expect(result.playerHealth).toBe(14);
   });
 
+  it("healOnCompanionAttack combat text uses actual health gained near max HP", () => {
+    const texts = makeTexts();
+    const state = makeTestBattleState({
+      activeCompanion: companionLibrary.imp,
+      playerHealth: 29,
+      playerMaxHealth: 30,
+      gearEffects: {
+        ...makeTestBattleState().gearEffects,
+        healOnCompanionAttack: 4,
+      },
+    });
+    const result = processCompanionTurnStart(state, texts);
+    expect(result.playerHealth).toBe(30);
+    expect(texts.find((t) => t.kind === "heal")).toEqual({
+      target: "player",
+      kind: "heal",
+      stat: "health",
+      amount: 1,
+    });
+  });
+
   it("healOnCompanionAttack no-ops when companion has no damage effect", () => {
     const state = makeTestBattleState({
       activeCompanion: companionLibrary["shield-scarab"],

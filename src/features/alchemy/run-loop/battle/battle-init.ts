@@ -1,5 +1,5 @@
 // Battle start helpers: enemy selection, state creation, and encounter tracking.
-import { createBattleState, type CombatTextEvent } from "@/lib/battle";
+import { createBattleState, isPlayerDefeated, processCompanionTurnStart, type CombatTextEvent } from "@/lib/battle";
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";
@@ -18,6 +18,8 @@ import { readProfileStore, setEncounteredEnemyIds } from "../../shared/stores/pr
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
 import { preloadBattleSounds } from "@/lib/audio";
+import { applyCombatTextPortraitFeedback } from "./battle-feedback";
+import { playCompanionSound, playCombatTextSounds } from "./controller-utils";
 import { readGearManifestForCharacter } from "../../shared/stores/gear-store";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
@@ -69,7 +71,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
         setRoomsEncountered(draft, nextRoomsEncountered);
         const encounterTraitIds = run.contentSystemType === "labyrinth" ? draft.session.activeLabyrinthModifiers : [];
         const battleEnemy = encounterTraitIds.length > 0 ? appendEncounterTraits(enemy, encounterTraitIds) : enemy;
-        const nextBattleState = createBattleForEnemy(
+        let nextBattleState = createBattleForEnemy(
           battleEnemy,
           deck ?? run.runDeck,
           gold ?? run.runGold,
@@ -78,11 +80,16 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
           createDraftRunRandomSource(draft, "world"),
           modifiers,
         );
+        const companionTexts: CombatTextEvent[] = [];
+        const companionId = nextBattleState.activeCompanion?.id ?? null;
+        if (companionId) {
+          nextBattleState = processCompanionTurnStart(nextBattleState, companionTexts);
+        }
         initializeActiveBattle(draft, nextBattleState, null);
         setEncounteredRunEnemyIds(draft, (current) => appendUnique(current, enemy.id));
         setEncounteredEnemyIds(draft, (current) => appendUnique(current, enemy.id));
 
-        const startingTexts: CombatTextEvent[] = [];
+        const startingTexts: CombatTextEvent[] = [...companionTexts];
         if (nextBattleState.enemyMitigation.armor > 0) {
           startingTexts.push({
             target: "enemy",
@@ -99,10 +106,15 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
             amount: nextBattleState.enemyMitigation.block,
           });
         }
-        return startingTexts;
+        const outcome: "victory" | "defeat" | null = isPlayerDefeated(nextBattleState)
+          ? "defeat"
+          : nextBattleState.enemyHealth <= 0
+            ? "victory"
+            : null;
+        return { startingTexts, companionId, outcome };
       },
       {
-        afterCommit: (startingTexts) => {
+        afterCommit: ({ startingTexts, companionId, outcome }) => {
           const battleState = readBattle().battleState;
           preloadBattleSounds(
             battleState.hand.map((card) => card.id),
@@ -118,7 +130,16 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
           presentationStore.resetCardTransfers();
           presentationStore.resetHandTransferUi();
           presentationStore.clearCardGhosts();
-          if (startingTexts.length > 0) presentationStore.showCombatTexts(startingTexts);
+          if (companionId) {
+            playCompanionSound(companionId);
+            presentationStore.shakeCompanion();
+          }
+          if (startingTexts.length > 0) {
+            presentationStore.showCombatTexts(startingTexts);
+            applyCombatTextPortraitFeedback(startingTexts, presentationStore);
+            playCombatTextSounds(startingTexts);
+          }
+          if (outcome) session.handleVictoryDefeat?.(outcome);
         },
       },
     );

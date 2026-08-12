@@ -71,13 +71,3 @@ export function createInstanceId(): string {
 export function appendUniqueMany<T>(items: readonly T[], additions: readonly T[]): T[] {
   return Array.from(new Set([...items, ...additions]));
 }
-
-export type Setter<T> = (action: T | ((prev: T) => T)) => void;
-
-// Adapts Zustand setters to React Dispatch<SetStateAction> call sites.
-export function wrapStoreSetter<T>(getCurrent: () => T, setter: (value: T) => void): Setter<T> {
-  return (action) => {
-    const nextVal = typeof action === "function" ? (action as (prev: T) => T)(getCurrent()) : action;
-    setter(nextVal);
-  };
-}

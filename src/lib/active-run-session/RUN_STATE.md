@@ -4,6 +4,7 @@ Moved to **[docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md)** (run state, c
 
 Quick links:
 
-- Authoritative store: `gameplay-state-store.ts` (nested `run`, `session`, `battle`, and `runProfile` regions under `src/features/alchemy/shared/stores/`)
-- Capability ports: `run-session-read-port.ts`, `run-session-react-ports.ts`, and `run-session-lifecycle-port.ts`
-- Transitions: `src/features/alchemy/shared/stores/run-transitions.ts`
+- Authoritative store: `gameplay-state-store.ts` (nested `run`, `session`, `battle`, `runProfile`, `profile`, and `gear` regions under `src/features/alchemy/shared/stores/`)
+- Reads: `run-session-read-port.ts`, `run-session-react-ports.ts`
+- Writes: `run-session-write-port.ts`; commits via `dispatchRunSessionCommand()` in `run-session-command.ts`
+- Lifecycle: `run-session-lifecycle-port.ts` over `run-transitions.ts`

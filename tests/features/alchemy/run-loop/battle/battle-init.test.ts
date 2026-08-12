@@ -1,5 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
+import * as battleFeedback from "@/features/alchemy/run-loop/battle/battle-feedback";
+import * as controllerUtils from "@/features/alchemy/run-loop/battle/controller-utils";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { computeTalentEffects } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
@@ -16,6 +18,7 @@ import {
 beforeEach(() => {
   resetRunBattleSlice();
   resetRunProgressSlice();
+  vi.restoreAllMocks();
 });
 
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
@@ -114,5 +117,26 @@ describe("createBattleInit", () => {
     ]);
     expect(battle.gold).toBe(27);
     expect(getRunProgressStoreView().roomsEncountered).toBe(5);
+  });
+
+  it("applies companion turn-start effects when a battle starts with a companion", () => {
+    setRunProgress({ roomsEncountered: 0, runPlayerHealth: 30, runMaxHealth: 30 });
+    makeInit().startBattle(getRunProgressStoreView().runDeck, 0, "normal", [{ kind: "start-companion" }]);
+
+    const battle = getBattleStoreView().battleState;
+    expect(battle.activeCompanion?.id).toBe("wolf");
+    expect(battle.enemyHealth).toBeLessThan(battle.enemyMaxHealth);
+  });
+
+  it("plays combat-text sounds and portrait feedback for companion damage at battle start", () => {
+    const sounds = vi.spyOn(controllerUtils, "playCombatTextSounds");
+    const feedback = vi.spyOn(battleFeedback, "applyCombatTextPortraitFeedback");
+    setRunProgress({ roomsEncountered: 0, runPlayerHealth: 30, runMaxHealth: 30 });
+    makeInit().startBattle(getRunProgressStoreView().runDeck, 0, "normal", [{ kind: "start-companion" }]);
+
+    expect(sounds).toHaveBeenCalled();
+    expect(feedback).toHaveBeenCalled();
+    const texts = sounds.mock.calls[0]?.[0] ?? [];
+    expect(texts.some((ct) => ct.kind === "damage" && ct.target === "enemy")).toBe(true);
   });
 });

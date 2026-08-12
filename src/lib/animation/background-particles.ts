@@ -149,37 +149,45 @@ export function startBackgroundParticles(
   let particles: BackgroundParticle[] = [];
   let lastTime = performance.now();
   let backingScale = 1;
+  let logicalWidth = 0;
+  let logicalHeight = 0;
+  const config = CONFIGS[variant];
+  const resolvedColors = (colors ?? config.colors).map((c) => c.replace("X", "1"));
+  const mult = alphaMultiplier ?? 1;
+  const patchedConfig = {
+    ...config,
+    colors: resolvedColors,
+    minAlpha: config.minAlpha * mult,
+    maxAlpha: config.maxAlpha * mult,
+  };
 
   function resize() {
     const w = activeParent.clientWidth;
     const h = activeParent.clientHeight;
-    const renderedBounds = activeParent.getBoundingClientRect();
-    const scaleX = w > 0 ? renderedBounds.width / w : 1;
-    const scaleY = h > 0 ? renderedBounds.height / h : 1;
-    const renderedScale = Math.max(scaleX, scaleY);
-    backingScale = resolveParticleBackingScale(w, h, renderedScale * (devicePixelRatio || 1));
+    backingScale = resolveParticleBackingScale(w, h, devicePixelRatio || 1);
     activeCanvas.width = Math.max(1, Math.round(w * backingScale));
     activeCanvas.height = Math.max(1, Math.round(h * backingScale));
     activeCanvas.style.width = `${w}px`;
     activeCanvas.style.height = `${h}px`;
     activeCtx.setTransform(backingScale, 0, 0, backingScale, 0, 0);
-    const config = CONFIGS[variant];
-    const resolvedColors = (colors ?? config.colors).map((c) => c.replace("X", "1"));
-    const mult = alphaMultiplier ?? 1;
-    const patchedConfig = {
-      ...config,
-      colors: resolvedColors,
-      minAlpha: config.minAlpha * mult,
-      maxAlpha: config.maxAlpha * mult,
-    };
-    particles = Array.from({ length: config.particleCount }, () => spawnParticle(w, h, patchedConfig));
+    if (particles.length === 0) {
+      particles = Array.from({ length: config.particleCount }, () => spawnParticle(w, h, patchedConfig));
+    } else if (logicalWidth > 0 && logicalHeight > 0 && (w !== logicalWidth || h !== logicalHeight)) {
+      const scaleX = w / logicalWidth;
+      const scaleY = h / logicalHeight;
+      for (const p of particles) {
+        p.x *= scaleX;
+        p.y *= scaleY;
+      }
+    }
+    logicalWidth = w;
+    logicalHeight = h;
   }
 
   resize();
 
   const ro = new ResizeObserver(resize);
   ro.observe(activeParent);
-  window.addEventListener("resize", resize);
 
   let animFrameId: number | null = null;
 
@@ -244,7 +252,6 @@ export function startBackgroundParticles(
     document.removeEventListener("visibilitychange", handleVisibilityChange);
     window.removeEventListener("blur", handleWindowBlur);
     window.removeEventListener("focus", resume);
-    window.removeEventListener("resize", resize);
     ro.disconnect();
     onStop?.();
   };

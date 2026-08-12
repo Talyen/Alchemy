@@ -17,7 +17,6 @@ export function useBattleScreenRouteData() {
   const battlePresentation = useBattlePresentationStore(
     useShallow((s) => ({
       revealedCardKeys: s.revealedCardKeys,
-      cardGhosts: s.cardGhosts,
       hiddenHandCardKeys: s.hiddenHandCardKeys,
       cardTransfers: s.cardTransfers,
       cardTransferInProgress: s.cardTransferInProgress,
@@ -28,16 +27,9 @@ export function useBattleScreenRouteData() {
       battleState,
       displayOverrides,
       revealedCardKeys: battlePresentation.revealedCardKeys,
-      cardGhosts: battlePresentation.cardGhosts,
       activeLabyrinthModifiers,
     }),
-    [
-      battleState,
-      displayOverrides,
-      battlePresentation.revealedCardKeys,
-      battlePresentation.cardGhosts,
-      activeLabyrinthModifiers,
-    ],
+    [battleState, displayOverrides, battlePresentation.revealedCardKeys, activeLabyrinthModifiers],
   );
 
   const playableHandCardKeys = useMemo(

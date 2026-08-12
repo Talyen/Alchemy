@@ -18,7 +18,7 @@ import {
 } from "@/lib/game-constants";
 import { generateGearRewardChoices, type GearInstance } from "@/lib/gear";
 import { trinketLibrary } from "@/lib/game-data";
-import { sampleItems } from "@/features/alchemy/shared/utils";
+import { sampleItems } from "@/lib/utils";
 
 export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState };
 

@@ -57,6 +57,18 @@ describe("applyDamageStatuses", () => {
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 8 });
   });
 
+  it("scales goldOnFirstPoison combat text with goldGainPercent", () => {
+    const state = makeTestBattleState({
+      talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, goldOnFirstPoison: 8 },
+      gearEffects: { ...makeTestBattleState().gearEffects, goldGainPercent: 50 },
+    });
+    const effect = { kind: "damage" as const, damageType: "poison" as const, amount: 3 };
+    const texts = makeTexts();
+    const result = applyDamageStatuses(state, effect, 3, texts);
+    expect(result.gold).toBe(12);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 12 });
+  });
+
   it("poison grants goldOnFirstPoison only once", () => {
     const state = makeTestBattleState({
       gold: 10,
@@ -91,6 +103,18 @@ describe("applyDamageStatuses", () => {
     const result = applyDamageStatuses(state, effect, 5, texts);
     expect(result.gold).toBe(2);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 2 });
+  });
+
+  it("scales cutpurseGoldOnBleed combat text with goldGainPercent", () => {
+    const state = makeTestBattleState({
+      trinketEffects: defaultTrinketManifest({ ...makeTestBattleState().trinketEffects, cutpurseGoldOnBleed: 2 }),
+      gearEffects: { ...makeTestBattleState().gearEffects, goldGainPercent: 50 },
+    });
+    const effect = { kind: "damage" as const, damageType: "bleed" as const, amount: 5 };
+    const texts = makeTexts();
+    const result = applyDamageStatuses(state, effect, 5, texts);
+    expect(result.gold).toBe(3);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 3 });
   });
 
   it("stun adds to stun stack and triggers resolveStunTrigger", () => {

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makeState } from "./integration/helpers";
-import { makeTestCard } from "../../fixtures/battle";
+import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-turn-attack";
@@ -11,6 +10,10 @@ import { applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { resolvePlayerCrowdControlTrigger } from "@/lib/battle/status-cc";
+
+function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
+  return makeTestBattleState({ rng: () => 0.99, ...overrides });
+}
 
 describe("New Gear Affixes Integration Tests", () => {
   it("burn-on-consume: applies Burn when a card is Consumed", () => {

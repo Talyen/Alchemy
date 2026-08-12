@@ -7,74 +7,10 @@ import {
   shouldShakeEnemyFromCombatTexts,
   shouldShakePlayerFromCombatTexts,
 } from "@/features/alchemy/run-loop/battle/battle-feedback";
-import type { BattleState } from "@/lib/battle";
-import { defaultTalentEffects } from "@/lib/battle";
-import { defaultTrinketEffects } from "@/lib/trinkets";
-import {
-  defaultPlayerStatusValues,
-  defaultEnemyStatusValues,
-  defaultCcState,
-  defaultEnemyMitigation,
-  defaultCombatFlags,
-} from "../../../../fixtures/default-battle-state";
-import { makeTestCard } from "../../../../fixtures/battle";
+import { makeTestCard, patchBattleState } from "../../../../fixtures/battle";
 
-function makeState(): BattleState {
-  return {
-    deck: [],
-    hand: [],
-    discard: [],
-    exhausted: [],
-    mana: 0,
-    maxMana: 0,
-    gold: 0,
-    turn: 1,
-    turnPhase: "player",
-    playerHealth: 30,
-    playerMaxHealth: 30,
-    deathsDoorUsed: false,
-    deathsDoorActive: false,
-    deathsDoorTriggeredTurn: null,
-    enemyHealth: 30,
-    enemyMaxHealth: 30,
-    enemyAttackEffects: [],
-    enemyMitigation: defaultEnemyMitigation(),
-    enemyRegeneration: 0,
-    roomScalingMultiplier: 1,
-    playerStatuses: defaultPlayerStatusValues(),
-    enemyStatuses: defaultEnemyStatusValues(),
-    pendingBleedLeechHealing: 0,
-    playerCC: defaultCcState(),
-    enemyCC: defaultCcState(),
-    wishOptions: null,
-    wishQueue: [],
-    activeCompanion: null,
-    currentEnemy: {
-      id: "skeleton",
-      title: "Skeleton",
-      subtitle: "",
-      descriptionLines: [""],
-      art: "",
-      enemyType: "normal",
-      traits: [],
-      attackEffects: [],
-    },
-    talentEffects: defaultTalentEffects,
-    trinketEffects: defaultTrinketEffects,
-    flags: defaultCombatFlags(),
-    discoveredCardIds: [],
-    cardsPlayedThisTurn: 0,
-    nextCardUid: 0,
-    difficultyModifiers: [],
-    deathsDoorGraceTurnsRemaining: null,
-    pendingEnemyBleedLeechHealing: 0,
-    enemyPhysicalDamageBonus: 0,
-    companionDamageBuff: 0,
-    gearEffects: {} as import("@/lib/gear/gear-effect-manifest").GearEffectManifest,
-    pendingMaterials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
-    contentSystemType: "campaign",
-    rng: Math.random,
-  };
+function makeState() {
+  return patchBattleState();
 }
 
 describe("shouldPlayCardGoldGain", () => {

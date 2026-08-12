@@ -140,6 +140,23 @@ describe("applyPlayerStatusEffect", () => {
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 3 });
   });
 
+  it("includes flatBlockGained on armorBlockThreshold procs", () => {
+    const state = patchBattleState({
+      playerStatuses: defaultPlayerStatusValues({ armor: 3 }),
+      talentEffects: {
+        ...defaultTalentEffects,
+        armorBlockThreshold: 5,
+        armorBlockAmount: 3,
+      },
+      gearEffects: { ...patchBattleState().gearEffects, flatBlockGained: 2 },
+    });
+    const effect = { kind: "player-status" as const, status: "armor" as const, amount: 3 };
+    const texts = makeTexts();
+    const result = applyPlayerStatusEffect(state, effect, texts);
+    expect(result.playerStatuses.block).toBe(5);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 5 });
+  });
+
   it("does not grant block when armor does not cross threshold", () => {
     const state = patchBattleState({
       playerStatuses: defaultPlayerStatusValues({ armor: 1 }),

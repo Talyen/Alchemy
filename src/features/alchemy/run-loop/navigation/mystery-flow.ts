@@ -16,7 +16,7 @@ import { setDiscoveredCardIds, setDiscoveredTrinketIds } from "../../shared/stor
 import type { MaterialId, MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MysteryEffect } from "@/lib/mystery";
-import { sampleItems } from "../../shared/utils";
+import { sampleItems } from "@/lib/utils";
 import { spendRunGold } from "../run-gold";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 

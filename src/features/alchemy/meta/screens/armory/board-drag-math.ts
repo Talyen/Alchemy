@@ -62,6 +62,38 @@ export function readInventoryBoardMetrics(board: HTMLElement): {
   boardRect: DOMRect;
   scrollTop: number;
 } | null {
+  const cached = inventoryMetricsFrameCache?.get(board);
+  if (cached !== undefined) return cached;
+  const metrics = measureInventoryBoardMetrics(board);
+  inventoryMetricsFrameCache?.set(board, metrics);
+  return metrics;
+}
+
+let inventoryMetricsFrameCache: WeakMap<HTMLElement, ReturnType<typeof measureInventoryBoardMetrics>> | null = null;
+
+export function beginInventoryMetricsFrame() {
+  inventoryMetricsFrameCache = new WeakMap();
+}
+
+export function endInventoryMetricsFrame() {
+  inventoryMetricsFrameCache = null;
+}
+
+export function withInventoryMetricsFrame<T>(fn: () => T): T {
+  beginInventoryMetricsFrame();
+  try {
+    return fn();
+  } finally {
+    endInventoryMetricsFrame();
+  }
+}
+
+function measureInventoryBoardMetrics(board: HTMLElement): {
+  cellSize: number;
+  gap: number;
+  boardRect: DOMRect;
+  scrollTop: number;
+} | null {
   const boardRect = board.getBoundingClientRect();
   const cellMetric = board.querySelector<HTMLElement>("[data-armory-grid-metric='cell']")?.getBoundingClientRect();
   const strideMetric = board.querySelector<HTMLElement>("[data-armory-grid-metric='stride']")?.getBoundingClientRect();

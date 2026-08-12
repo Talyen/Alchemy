@@ -1,5 +1,4 @@
 import type { GearFootprint } from "./footprints";
-import type { InventoryPlacement } from "./inventory-placement";
 
 interface GridItemInput {
   id: string;
@@ -29,13 +28,7 @@ function ensureRows(occupancy: boolean[][], rows: number, cols: number): void {
   }
 }
 
-export function canPlace(
-  occupancy: boolean[][],
-  col: number,
-  row: number,
-  footprint: GearFootprint,
-  cols: number,
-): boolean {
+function canPlace(occupancy: boolean[][], col: number, row: number, footprint: GearFootprint, cols: number): boolean {
   if (col < 1 || row < 1 || col + footprint.w - 1 > cols) return false;
   ensureRows(occupancy, row + footprint.h - 1, cols);
   for (let y = row - 1; y < row - 1 + footprint.h; y++) {
@@ -46,13 +39,7 @@ export function canPlace(
   return true;
 }
 
-export function markPlaced(
-  occupancy: boolean[][],
-  col: number,
-  row: number,
-  footprint: GearFootprint,
-  cols: number,
-): void {
+function markPlaced(occupancy: boolean[][], col: number, row: number, footprint: GearFootprint, cols: number): void {
   ensureRows(occupancy, row + footprint.h - 1, cols);
   for (let y = row - 1; y < row - 1 + footprint.h; y++) {
     for (let x = col - 1; x < col - 1 + footprint.w; x++) {
@@ -61,11 +48,7 @@ export function markPlaced(
   }
 }
 
-export function findPlacement(
-  occupancy: boolean[][],
-  footprint: GearFootprint,
-  cols: number,
-): { col: number; row: number } {
+function findPlacement(occupancy: boolean[][], footprint: GearFootprint, cols: number): { col: number; row: number } {
   for (let row = 1; ; row++) {
     for (let col = 1; col <= cols - footprint.w + 1; col++) {
       if (canPlace(occupancy, col, row, footprint, cols)) return { col, row };
@@ -171,65 +154,4 @@ export function packGridItems<T extends GridItemInput>(
   const fillRows = placeRemainingItems(occupancy, remainingItems, cols, packedItems);
 
   return { items: packedItems, occupiedRows: Math.max(blockedRows, reservedRows, savedRows, fillRows) };
-}
-
-export function packInventoryGrid<T>(
-  items: T[],
-  cols: number,
-  getFootprint: (item: T) => GearFootprint,
-): Array<PackedGridItem<T>> {
-  return packGridItems(
-    items.map((item, idx) => {
-      const footprint = getFootprint(item);
-      return { id: String(idx), w: footprint.w, h: footprint.h, originalItem: item };
-    }),
-    cols,
-  ).items.map((packed) => ({
-    item: packed.item.originalItem,
-    col: packed.col,
-    row: packed.row,
-    w: packed.w,
-    h: packed.h,
-  }));
-}
-
-export function packInventoryGridPreserving<T extends { id: string }>(
-  items: T[],
-  cols: number,
-  getFootprint: (item: T) => GearFootprint,
-  getSavedPosition: (item: T) => InventoryPlacement | undefined,
-): Array<PackedGridItem<T>> {
-  return packGridItems(
-    items.map((item) => {
-      const footprint = getFootprint(item);
-      return { id: item.id, w: footprint.w, h: footprint.h, saved: getSavedPosition(item), originalItem: item };
-    }),
-    cols,
-  ).items.map((packed) => ({
-    item: packed.item.originalItem,
-    col: packed.col,
-    row: packed.row,
-    w: packed.w,
-    h: packed.h,
-  }));
-}
-
-export function packCurrencyGridWithGearObstacles(
-  currencyIds: string[],
-  cols: number,
-  savedPositions: Record<string, InventoryPlacement | undefined>,
-  gearObstacles: Array<{ col: number; row: number; w: number; h: number }>,
-): Array<{ id: string; col: number; row: number; w: 1; h: 1 }> {
-  const result = packGridItems(
-    currencyIds.map((id) => ({ id, w: 1, h: 1, saved: savedPositions[id] })),
-    cols,
-    { blockedCells: gearObstacles },
-  );
-  return result.items.map((packed) => ({
-    id: packed.item.id,
-    col: packed.col,
-    row: packed.row,
-    w: 1 as const,
-    h: 1 as const,
-  }));
 }

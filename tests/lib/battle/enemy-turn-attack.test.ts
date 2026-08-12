@@ -285,6 +285,25 @@ describe("processEnemyAttack", () => {
     expect(result.playerHealth).toBe(15);
   });
 
+  it("emits actual health gained when block-depleted heal overheals", () => {
+    const texts = makeTexts();
+    const state = makeTestBattleState({
+      playerHealth: 29,
+      playerMaxHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 5, armor: 0 },
+      talentEffects: { ...makeTestBattleState().talentEffects, blockDepletedHeal: 4 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    const result = processEnemyAttack(state, texts);
+    expect(result.playerHealth).toBe(30);
+    expect(texts.find((t) => t.kind === "heal")).toEqual({
+      target: "player",
+      kind: "heal",
+      stat: "health",
+      amount: 1,
+    });
+  });
+
   it("consumes phoenix feather and resurrects player when attack is lethal", () => {
     const state = makeTestBattleState({
       playerHealth: 5,

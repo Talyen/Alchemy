@@ -1,5 +1,5 @@
 // Enemy attack resolution: damage, block, armor, and attack effect dispatch.
-import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
+import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import {
   applyPlayerStatusFromAttack,
   applyPlayerDamageStatuses,
@@ -11,7 +11,6 @@ import type { EnemyAttackEffect } from "@/lib/game-data";
 import { logError } from "../error-logger";
 import {
   applyPlayerCombatDamage,
-  applyPlayerHealing,
   clampHealth,
   type BattleState,
   type CombatTextEvent,
@@ -176,9 +175,7 @@ function applyBlockDepletedHeal(
   const isBlockDepleted = prevState.playerStatuses.block > 0 && nextState.playerStatuses.block <= 0;
 
   if (isBlockDepleted && healAmount > 0) {
-    const healedState = applyPlayerHealing(finalState, healAmount);
-    emitOverhealBlockText(finalState, healedState, combatTexts);
-    finalState = healedState;
+    finalState = applyHealingWithCombatText(finalState, healAmount, combatTexts);
   }
 
   if (isBlockDepleted && prevState.gearEffects.stunOnBlockDepleted > 0 && finalState.enemyHealth > 0) {

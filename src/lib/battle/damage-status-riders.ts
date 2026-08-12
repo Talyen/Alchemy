@@ -11,6 +11,7 @@ import {
   addGold,
   clampHealth,
   reduceEnemyArmor,
+  scaleGoldReward,
   setEnemyStatus,
   setFlag,
   type BattleState,
@@ -39,16 +40,13 @@ function applyPoisonStatusRider(state: BattleState, actualDamage: number, combat
     nextState.talentEffects.goldOnFirstPoison > 0 &&
     !nextState.flags.goldOnFirstPoisonThisCombat
   ) {
-    nextState = setFlag(
-      addGold(nextState, nextState.talentEffects.goldOnFirstPoison),
-      "goldOnFirstPoisonThisCombat",
-      true,
-    );
+    const poisonGold = nextState.talentEffects.goldOnFirstPoison;
+    nextState = setFlag(addGold(nextState, poisonGold), "goldOnFirstPoisonThisCombat", true);
     mergeCombatText(combatTexts, {
       target: "player",
       kind: "status",
       stat: "gold",
-      amount: nextState.talentEffects.goldOnFirstPoison,
+      amount: scaleGoldReward(poisonGold, nextState.gearEffects),
     });
   }
   nextState = applyPoisonTalentRiders(nextState, actualDamage, combatTexts);
@@ -116,13 +114,14 @@ function procBleedPoison(state: BattleState, actualDamage: number, bleedAmount: 
 
 function awardCutpurseGold(state: BattleState, bleedAmount: number, combatTexts: CombatTextEvent[]): BattleState {
   if (bleedAmount <= 0 || state.trinketEffects.cutpurseGoldOnBleed <= 0) return state;
+  const cutpurseGold = state.trinketEffects.cutpurseGoldOnBleed;
   mergeCombatText(combatTexts, {
     target: "player",
     kind: "status",
     stat: "gold",
-    amount: state.trinketEffects.cutpurseGoldOnBleed,
+    amount: scaleGoldReward(cutpurseGold, state.gearEffects),
   });
-  return addGold(state, state.trinketEffects.cutpurseGoldOnBleed);
+  return addGold(state, cutpurseGold);
 }
 
 function applyBleedStatusRider(

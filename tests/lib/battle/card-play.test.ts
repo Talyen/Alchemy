@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { canPlayCard, cardHasDamageType, playBattleCardResolved } from "@/lib/battle/card-play";
+import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
+import { cardHasDamageType } from "@/lib/battle/card-cost-rules";
 import { defaultBattleState } from "@/lib/battle";
 import { companionLibrary } from "@/lib/game-data";
 import { makeTestBattleState, makeTestCard, slashDeck } from "../../fixtures/battle";
@@ -48,7 +49,7 @@ describe("playBattleCardResolved", () => {
     expect(result.state.enemyHealth).toBe(29);
   });
 
-  it("restore-mana effect is applied before cost deduction so overflow works", () => {
+  it("deducts cost before restore-mana so refunds at maxMana are not capped", () => {
     const card = makeTestCard({ cost: 1, effects: [{ kind: "restore-mana", amount: 2 }] });
     const state = makeState({ mana: 4, maxMana: 4, hand: [card] });
     const result = playBattleCardResolved(state, card.id, 0);
@@ -104,6 +105,27 @@ describe("playBattleCardResolved", () => {
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.activeCompanion).toEqual(companionLibrary.wolf);
   });
+
+  it("grants Resonant Chime mana once per turn after enough cards", () => {
+    const card1 = makeTestCard({ id: "c1", cost: 0, effects: [] });
+    const card2 = makeTestCard({ id: "c2", cost: 0, effects: [] });
+    const state = makeState({
+      mana: 5,
+      maxMana: 5,
+      hand: [card1, card2],
+      cardsPlayedThisTurn: 2,
+      trinketEffects: {
+        ...makeState().trinketEffects,
+        resonantChimeCardsRequired: 3,
+        resonantChimeMana: 1,
+      },
+    });
+    const first = playBattleCardResolved(state, card1.id, 0);
+    expect(first.state.mana).toBe(6);
+    expect(first.state.flags.resonantChimeUsedThisTurn).toBe(true);
+    const second = playBattleCardResolved(first.state, card2.id, 0);
+    expect(second.state.mana).toBe(first.state.mana);
+  });
 });
 
 describe("playBattleCardResolved — edge cases", () => {
@@ -124,6 +146,19 @@ describe("playBattleCardResolved — edge cases", () => {
     const result = playBattleCardResolved(state, "test-card", 0);
     expect(result.state).toBe(state);
     expect(result.combatTexts).toEqual([]);
+  });
+
+  it("allows play after enemy defeat when allowAfterEnemyDefeat is set", () => {
+    const card = makeTestCard({
+      id: "c1",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    const state = makeState({ enemyHealth: 0, hand: [card], mana: 3 });
+    const result = playBattleCardResolved(state, "c1", 0, { allowAfterEnemyDefeat: true });
+    expect(result.state.hand).toHaveLength(0);
+    expect(result.state.discard[0]?.id).toBe("c1");
+    expect(result.state.mana).toBe(2);
   });
 });
 
@@ -165,5 +200,30 @@ describe("canPlayCard", () => {
     const card = makeTestCard({ cost: 1 });
     const state = { ...defaultBattleState(), hand: [card], turnPhase: "player" as const, mana: 0 };
     expect(canPlayCard(state, card, 0)).toBe(false);
+  });
+
+  it("blocks cleanse-only cards when the player has no harmful statuses", () => {
+    const card = makeTestCard({
+      id: "cleanse",
+      cost: 1,
+      effects: [{ kind: "remove-harmful-status", amount: 1 }],
+    });
+    const state = makeState({ mana: 4, hand: [card] });
+    expect(canPlayCard(state, card, 0)).toBe(false);
+    const result = playBattleCardResolved(state, "cleanse", 0);
+    expect(result.state).toBe(state);
+  });
+
+  it("allows mixed-purpose cleanse cards with no harmful statuses", () => {
+    const card = makeTestCard({
+      id: "mixed-panacea-heal",
+      cost: 1,
+      effects: [
+        { kind: "remove-harmful-status", amount: 1 },
+        { kind: "heal", amount: 4 },
+      ],
+    });
+    const state = makeState({ mana: 4, playerHealth: 20, hand: [card] });
+    expect(canPlayCard(state, card, 0)).toBe(true);
   });
 });

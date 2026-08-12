@@ -1,8 +1,8 @@
 // Shared helpers for enemy turn phase transitions, Death's Door, and health thresholds.
 import { drawCards } from "./draw";
-import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
+import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { decayHalvedStatus } from "./status-helpers";
-import { applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
+import { type BattleState, type CombatTextEvent } from "./types";
 import { CARDS_PER_TURN, PERCENT_DENOMINATOR } from "../game-constants";
 
 export const ENEMY_TURN_CONSTANTS = {
@@ -109,12 +109,7 @@ export function advanceToPlayerTurn(state: BattleState, combatTexts: CombatTextE
 
   const drawnState = performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn);
   if (drawnState.gearEffects.healthPerTurn <= 0) return drawnState;
-  const healAmount = drawnState.gearEffects.healthPerTurn;
-  const prevState = drawnState;
-  const healedState = applyPlayerHealing(drawnState, healAmount);
-  mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
-  emitOverhealBlockText(prevState, healedState, combatTexts);
-  return healedState;
+  return applyHealingWithCombatText(drawnState, drawnState.gearEffects.healthPerTurn, combatTexts);
 }
 
 export function checkHealthThresholds(

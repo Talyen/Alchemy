@@ -21,6 +21,7 @@ import {
   resolveInventoryDestination,
   resolvePointerDestination,
   shouldReusePendingDrag,
+  withInventoryMetricsFrame,
 } from "./board-drag-math";
 
 export type { BoardDragVisual, DragOrigin, UseBoardDragOptions } from "./armory-drag-types";
@@ -152,11 +153,26 @@ export function useBoardDrag<TItem, TOrigin extends DragOrigin>({
     const id = heldId;
 
     const handlePointerMove = (event: PointerEvent) => {
+      pendingPointerRef.current = { pointer: { x: event.clientX, y: event.clientY }, pointerId: event.pointerId };
+      pointerFrameRef.current ??= requestAnimationFrame(flushHeldPointerMove);
+    };
+
+    const flushHeldPointerMove = () => {
+      pointerFrameRef.current = null;
+      const pending = pendingPointerRef.current;
+      pendingPointerRef.current = null;
       const current = sessionRef.current;
-      if (current.phase !== "held") return;
-      const pointer = { x: event.clientX, y: event.clientY };
-      const visual = buildHeldDragVisual(id, current.visual.origin, current.visual.source, pointer, getDragDestination);
-      publishSession({ ...current, visual });
+      if (!pending || current.phase !== "held") return;
+      withInventoryMetricsFrame(() => {
+        const visual = buildHeldDragVisual(
+          id,
+          current.visual.origin,
+          current.visual.source,
+          pending.pointer,
+          getDragDestination,
+        );
+        publishSession({ ...current, visual });
+      });
     };
 
     const handlePointerDown = (event: PointerEvent) => {
@@ -164,25 +180,33 @@ export function useBoardDrag<TItem, TOrigin extends DragOrigin>({
       if (current.phase !== "held") return;
       event.stopPropagation();
       event.preventDefault();
-      const pointer = { x: event.clientX, y: event.clientY };
-      const visual = buildHeldDragVisual(id, current.visual.origin, current.visual.source, pointer, getDragDestination);
-      const destination = visual.destination;
-      if (!destination) {
-        onCancelRef.current?.(id);
-        clearDragState();
-        return;
-      }
-      const result = commitDestination(visual, destination);
-      if (result?.heldItem) {
-        beginHeld(result.heldItem.item, result.heldItem.source);
-        return;
-      }
-      publishSession({
-        phase: "animating",
-        item: current.item,
-        visual: { ...visual, rect: destination.rect, settling: true, releaseRect: visual.rect },
-        durationMs: SETTLE_CLEAR_DELAY_MS,
-        commit: null,
+      withInventoryMetricsFrame(() => {
+        const pointer = { x: event.clientX, y: event.clientY };
+        const visual = buildHeldDragVisual(
+          id,
+          current.visual.origin,
+          current.visual.source,
+          pointer,
+          getDragDestination,
+        );
+        const destination = visual.destination;
+        if (!destination) {
+          onCancelRef.current?.(id);
+          clearDragState();
+          return;
+        }
+        const result = commitDestination(visual, destination);
+        if (result?.heldItem) {
+          beginHeld(result.heldItem.item, result.heldItem.source);
+          return;
+        }
+        publishSession({
+          phase: "animating",
+          item: current.item,
+          visual: { ...visual, rect: destination.rect, settling: true, releaseRect: visual.rect },
+          durationMs: SETTLE_CLEAR_DELAY_MS,
+          commit: null,
+        });
       });
     };
 
@@ -264,7 +288,11 @@ export function useBoardDrag<TItem, TOrigin extends DragOrigin>({
     pointerFrameRef.current = null;
     const pending = pendingPointerRef.current;
     pendingPointerRef.current = null;
-    if (pending) updateActiveDrag(pending.pointer, pending.pointerId);
+    if (pending) {
+      withInventoryMetricsFrame(() => {
+        updateActiveDrag(pending.pointer, pending.pointerId);
+      });
+    }
   }, [updateActiveDrag]);
 
   const beginPointer = useCallback(
@@ -293,7 +321,9 @@ export function useBoardDrag<TItem, TOrigin extends DragOrigin>({
       // Activate immediately once the threshold is crossed so the drag never feels
       // one frame late; subsequent raw pointer events are coalesced to one per frame.
       if (sessionRef.current.phase === "armed") {
-        updateActiveDrag(pointer, pointerId);
+        withInventoryMetricsFrame(() => {
+          updateActiveDrag(pointer, pointerId);
+        });
         return;
       }
       pendingPointerRef.current = { pointer, pointerId };

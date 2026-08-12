@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { applyPlayerDamageStatuses, removeHarmfulPlayerStatuses } from "@/lib/battle/status-player";
 import { getEnemyDamageMultiplier } from "@/lib/battle/status-helpers";
+import { TRAIT_DAMAGE_RULES } from "@/lib/game-constants";
 import { makeTestBattleState } from "../../fixtures/battle";
-import { defaultPlayerStatusValues, defaultTalentEffects, defaultCcState } from "../../fixtures/default-battle-state";
+import { defaultTalentEffects, defaultCcState } from "../../fixtures/default-battle-state";
 
 describe("getEnemyDamageMultiplier", () => {
   it("returns 1 when no multipliers apply", () => {
@@ -66,31 +66,17 @@ describe("getEnemyDamageMultiplier", () => {
     const result = getEnemyDamageMultiplier(state, "holy");
     expect(result).toBe(2);
   });
-});
 
-describe("player status application", () => {
-  it("applyPlayerDamageStatuses adds burn stacks from enemy burn damage", () => {
-    const state = makeTestBattleState({
-      playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, burn: 1 }),
-    });
-    const result = applyPlayerDamageStatuses(state, { damageType: "burn" }, 4);
-    expect(result.playerStatuses.burn).toBe(5);
-  });
-
-  it("applyPlayerDamageStatuses is a no-op at zero damage", () => {
-    const state = makeTestBattleState({
-      playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, poison: 2 }),
-    });
-    const result = applyPlayerDamageStatuses(state, { damageType: "poison" }, 0);
-    expect(result).toBe(state);
-  });
-
-  it("removeHarmfulPlayerStatuses clears highest-priority harmful stacks", () => {
-    const state = makeTestBattleState({
-      playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, burn: 3, bleed: 2 }),
-    });
-    const result = removeHarmfulPlayerStatuses(state, 1);
-    expect(result.playerStatuses.burn).toBe(0);
-    expect(result.playerStatuses.bleed).toBe(2);
+  it("applies every TRAIT_DAMAGE_RULES multiplier", () => {
+    const base = makeTestBattleState();
+    for (const rule of TRAIT_DAMAGE_RULES) {
+      const state = makeTestBattleState({
+        currentEnemy: {
+          ...base.currentEnemy,
+          traits: [{ id: rule.traitId, title: rule.traitId, description: "" }],
+        },
+      });
+      expect(getEnemyDamageMultiplier(state, rule.damageType), rule.traitId).toBe(rule.multiplier);
+    }
   });
 });

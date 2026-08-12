@@ -6,7 +6,7 @@ import { makeTestCard } from "./cards";
 import { seededRng } from "./rng";
 
 export { makeTestCard, makeTestCardWithId } from "./cards";
-export { seededRng } from "./rng";
+export { seededRng, rngSequence } from "./rng";
 
 export function makeCombatTexts(): CombatTextEvent[] {
   return [];

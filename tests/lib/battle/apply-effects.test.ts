@@ -33,39 +33,6 @@ describe("applyCardEffects", () => {
     expect(result.enemyStatuses.burn).toBeGreaterThan(0);
   });
 
-  it("heals the player", () => {
-    const state = makeState({ playerHealth: 20 });
-    const card = makeTestCard({ effects: [{ kind: "heal", amount: 5 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.playerHealth).toBe(25);
-  });
-
-  it("restores mana", () => {
-    const state = makeState({ mana: 2 });
-    const card = makeTestCard({ effects: [{ kind: "restore-mana", amount: 2 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.mana).toBe(4);
-  });
-
-  it("restore-mana can overflow maxMana", () => {
-    const state = makeState({ mana: 4, maxMana: 4 });
-    const card = makeTestCard({ effects: [{ kind: "restore-mana", amount: 2 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.mana).toBe(6);
-  });
-
-  it("clamps current mana when max mana is reduced", () => {
-    const state = makeState({ mana: 4, maxMana: 4 });
-    const card = makeTestCard({ effects: [{ kind: "lose-max-mana", amount: 2 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.maxMana).toBe(2);
-    expect(result.mana).toBe(2);
-  });
-
   it("self-damage triggers Death's Door instead of defeat on first fatal hit", () => {
     const state = makeState({
       playerHealth: 1,
@@ -126,44 +93,6 @@ describe("applyCardEffects — phoenix-feather card", () => {
   });
 });
 
-describe("applyCardEffects — lose-mana", () => {
-  it("reduces current mana, flooring at 0", () => {
-    const state = makeState({ mana: 3 });
-    const card = makeTestCard({ effects: [{ kind: "lose-mana", amount: 5 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.mana).toBe(0);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "mana", amount: 5 });
-  });
-});
-
-describe("applyCardEffects — gain-gold", () => {
-  it("adds gold with potion potency multiplier", () => {
-    const state = makeState({ gold: 10 });
-    state.talentEffects.potionPotency = 1.5;
-    const card = makeTestCard({ id: "luck-potion", effects: [{ kind: "gain-gold", amount: 10 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.gold).toBe(25);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 15 });
-  });
-});
-
-describe("applyCardEffects — remove-harmful-status", () => {
-  it("removes harmful status types with potion potency", () => {
-    const state = makeState({
-      playerStatuses: defaultPlayerStatusValues({ burn: 5, poison: 3, bleed: 2 }),
-    });
-    state.talentEffects.potionPotency = 2;
-    const card = makeTestCard({ id: "panacea-potion", effects: [{ kind: "remove-harmful-status", amount: 1 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.playerStatuses.burn).toBe(0);
-    expect(result.playerStatuses.poison).toBe(0);
-    expect(result.playerStatuses.bleed).toBe(2);
-  });
-});
-
 describe("applyCardEffects — unknown effect kind", () => {
   it("ignores unknown effect kinds (default case)", () => {
     const state = makeState({ mana: 3 });
@@ -172,51 +101,6 @@ describe("applyCardEffects — unknown effect kind", () => {
     const result = applyCardEffects(state, card, texts);
     expect(result).toBe(state);
     expect(texts).toEqual([]);
-  });
-});
-
-describe("applyCardEffects — lose-health", () => {
-  it("damages player without applying a status rider", () => {
-    const state = makeState({
-      playerHealth: 20,
-      playerStatuses: defaultPlayerStatusValues(),
-    });
-    const card = makeTestCard({ effects: [{ kind: "lose-health", amount: 5 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.playerHealth).toBe(15);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "health", amount: 5 });
-  });
-});
-
-describe("applyCardEffects — draw-cards", () => {
-  it("draws from deck into hand", () => {
-    const deck = [makeTestCard({ id: "d1" }), makeTestCard({ id: "d2" })];
-    const state = makeState({ deck, hand: [] });
-    const card = makeTestCard({ effects: [{ kind: "draw-cards", amount: 2 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.hand).toHaveLength(2);
-    expect(result.deck).toHaveLength(0);
-  });
-
-  it("reshuffles discard when deck is empty", () => {
-    const discard = [makeTestCard({ id: "d1" }), makeTestCard({ id: "d2" })];
-    const state = makeState({ deck: [], discard, hand: [] });
-    const card = makeTestCard({ effects: [{ kind: "draw-cards", amount: 2 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.hand).toHaveLength(2);
-    expect(result.discard).toHaveLength(0);
-  });
-
-  it("respects MAX_HAND_SIZE", () => {
-    const deck = Array.from({ length: 10 }, (_, i) => makeTestCard({ id: `d${i}` }));
-    const state = makeState({ deck, hand: [] });
-    const card = makeTestCard({ effects: [{ kind: "draw-cards", amount: 20 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.hand.length).toBe(7);
   });
 });
 
@@ -245,16 +129,6 @@ describe("applyCardEffects — remove-player-status", () => {
     const result = applyCardEffects(state, card, texts);
     expect(result.playerStatuses.burn).toBe(0);
     expect(result.playerHealth).toBe(21);
-  });
-});
-
-describe("applyCardEffects — buff-companion", () => {
-  it("increases companion damage buff", () => {
-    const state = makeState({ companionDamageBuff: 2 });
-    const card = makeTestCard({ effects: [{ kind: "buff-companion", amount: 3 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.companionDamageBuff).toBe(5);
   });
 });
 

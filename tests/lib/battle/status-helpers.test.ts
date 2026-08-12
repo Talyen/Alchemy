@@ -185,6 +185,18 @@ describe("decayArmorAfterDamage", () => {
       expect(texts).toEqual([{ target: "player", kind: "status", stat: "block", amount: 4 }]);
     });
 
+    it("includes flatBlockGained when armor breaks", () => {
+      const state = makeTestBattleState({
+        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, armor: 1 }),
+        talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, armorBreakBlock: 4 },
+        gearEffects: { ...makeTestBattleState().gearEffects, flatBlockGained: 2 },
+      });
+      const texts: CombatTextEvent[] = [];
+      const result = decayArmorAfterDamage(state, 3, "player", texts);
+      expect(result.playerStatuses.block).toBe(6);
+      expect(texts).toEqual([{ target: "player", kind: "status", stat: "block", amount: 6 }]);
+    });
+
     it("does not grant block when armor does not break (still positive after decay)", () => {
       const state = makeTestBattleState({
         playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, armor: 5 }),

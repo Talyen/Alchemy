@@ -29,7 +29,7 @@ A missing step or invariant is Critical/Moderate only when the document claims t
 
 **Known drift hotspots** (prune entries from this list once fixed and stable — a resolved hotspot left here is itself stale guidance):
 
-- [CONTRIBUTING.md](../../CONTRIBUTING.md) “What to run when you change…” table — test paths must stay under `tests/features/alchemy/...`
+- [docs/Plans/](../Plans/) is not a source of truth. Keep only still-active work; delete a plan in the same change that finishes it. Do not treat completed plans as backlog or architecture.
 
 **Links:** internal `.md` links resolve **relative to the source file**; heading anchors must still exist. Recheck edited links and factual claims against their listed source of truth. External URLs: check only when changing that source and network is available — do not fail solely on an unavailable endpoint.
 

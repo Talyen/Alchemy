@@ -70,7 +70,7 @@ export function createParticles(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  maxParticles: number = 800,
+  maxParticles: number = 240,
 ): Particle[] {
   // Convert already-rendered canvas pixels into particles so the caller can sample card art
   // once, clear the canvas, and let the burst replace the original image visually.

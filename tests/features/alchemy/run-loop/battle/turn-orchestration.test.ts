@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { resolveEndTurn } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import type { TurnOrchestration } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { defaultBattleState } from "@/lib/battle";
+import { companionLibrary } from "@/lib/game-data";
 
 const commitBattleTransition = vi.fn();
 const setBattleState = vi.fn();
@@ -65,5 +66,17 @@ describe("resolveEndTurn", () => {
     resolveEndTurn(state, 1, orch);
 
     expect(commitBattleTransition).toHaveBeenCalledOnce();
+  });
+
+  it("does not apply companion effects before the enemy turn", () => {
+    const orch = makeOrch();
+    const state = defaultBattleState();
+    state.activeCompanion = companionLibrary.wolf;
+    const enemyHealth = state.enemyHealth;
+
+    resolveEndTurn(state, 1, orch);
+
+    expect(orch.handleVictoryDefeat).not.toHaveBeenCalled();
+    expect(beginBattleTransition.mock.calls[0]?.[1]?.enemyHealth).toBe(enemyHealth);
   });
 });

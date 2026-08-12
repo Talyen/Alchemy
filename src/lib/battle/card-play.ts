@@ -20,8 +20,6 @@ import { processEncounterTraitCardAction } from "./encounter-trait-events";
 
 import { cardHasDamageType, computeEffectiveCost } from "./card-cost-rules";
 
-export { cardHasDamageType, computeEffectiveCost } from "./card-cost-rules";
-
 /**
  * Resolves the final state and cost for a played card, modifying flags if discounts were used.
  */

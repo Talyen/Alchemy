@@ -101,8 +101,7 @@ describe("startBackgroundParticles", () => {
 
   it("caps the rendered-pixel backing store to protect high-DPR frame pacing", () => {
     vi.stubGlobal("devicePixelRatio", 2);
-    const { canvas, parent } = makeMockCanvas();
-    vi.mocked(parent.getBoundingClientRect).mockReturnValue({ width: 1440, height: 810 } as DOMRect);
+    const { canvas } = makeMockCanvas();
     const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(1);
 
     const cleanup = startBackgroundParticles({ current: canvas } as never, "embers");

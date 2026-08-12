@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { getCardKeywords, selectRewardCards } from "@/lib/game-data";
-import { sampleItems } from "@/features/alchemy/shared/utils";
+import { sampleItems } from "@/lib/utils";
 import type { BattleCard } from "@/lib/game-data";
 
 function card(overrides: Partial<BattleCard> = {}): BattleCard {

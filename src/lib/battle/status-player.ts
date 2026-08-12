@@ -69,19 +69,14 @@ function procArmorBlockThreshold(state: BattleState, newArmor: number, combatTex
   ) {
     return state;
   }
+  const nextState = addPlayerStatus(state, "block", state.talentEffects.armorBlockAmount);
   mergeCombatText(combatTexts, {
     target: "player",
     kind: "status",
     stat: "block",
-    amount: state.talentEffects.armorBlockAmount,
+    amount: nextState.playerStatuses.block - state.playerStatuses.block,
   });
-  return {
-    ...state,
-    playerStatuses: {
-      ...state.playerStatuses,
-      block: state.playerStatuses.block + state.talentEffects.armorBlockAmount,
-    },
-  };
+  return nextState;
 }
 
 function procArmorCleanseThreshold(state: BattleState, newArmor: number, combatTexts: CombatTextEvent[]) {

@@ -1,4 +1,5 @@
 // SVG connection lines between labyrinth map nodes.
+import { useMemo } from "react";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
 
@@ -9,7 +10,7 @@ interface Props {
 }
 
 export function LabyrinthConnectionLayer({ labyrinthMap }: Props) {
-  const connections = getUniqueConnections(labyrinthMap);
+  const connections = useMemo(() => getUniqueConnections(labyrinthMap), [labyrinthMap]);
   return (
     <svg
       className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible"

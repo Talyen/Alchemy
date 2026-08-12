@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { makeState } from "./integration/helpers";
-import { makeTestCard } from "../../fixtures/battle";
+import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
+
+function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
+  return makeTestBattleState({ rng: () => 0.99, ...overrides });
+}
 
 describe("Burn Stun Chance / Direct status threshold resolution", () => {
   it("resolves and triggers stun when stun is added from burn damage riders", () => {

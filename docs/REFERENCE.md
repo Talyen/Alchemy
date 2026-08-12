@@ -5,6 +5,7 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 ## Quick Reference
 
 - [Environment & Commands](#environment--commands)
+- [Balance simulation](#balance-simulation)
 - [Battle Implementation Rules](#battle-implementation-rules)
 - [Domain Glossary](#domain-glossary)
 - [Navigation Hints](#navigation-hints)
@@ -16,9 +17,9 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 - **Node.js `>=24`** — authoritative in `package.json` `engines`.
 - **npm `>=11`** — authoritative in `package.json` `engines` (Node 24 bundles npm 11).
 - **Playwright:** `npx playwright install chromium` once before first `npm run test:e2e`.
-- **GitHub CLI (`gh`):** optional; PR/CI only when the user asks — do not run `gh auth login`. CI failures are easiest to read from check annotations and the job Step Summary (not the raw Vitest pass list).
-- **Git hooks:** lefthook `pre-commit` / `commit-msg` / fast `pre-push` — see [CONTRIBUTING.md](../CONTRIBUTING.md). Changelog updates happen at release only ([RELEASE.md](./RELEASE.md)). Fuller local static+unit is `npm run check:push:full` (still `@prepush` E2E); CI owns critical E2E (`test:e2e:prepush:full`).
-- **Steam / ship gates:** [RELEASE.md](./RELEASE.md) — `check:ship`, `check:ship:full`, tag-triggered `release.yml`.
+- **GitHub CLI (`gh`):** optional; PR/CI only when the user asks — do not run `gh auth login`.
+- **Git hooks / local gates:** [CONTRIBUTING.md](../CONTRIBUTING.md). Changelog updates happen at release only ([RELEASE.md](./RELEASE.md)).
+- **Steam / ship gates:** [RELEASE.md](./RELEASE.md).
 - **Balance sim env vars:** `ALCHEMY_BALANCE_ITERATIONS`, `ALCHEMY_BALANCE_POLICY` (`random-playable`, `greedy-damage`, `defensive-random`).
 
 ### Script Command Reference
@@ -35,7 +36,7 @@ npm test                    # Vitest
 npm test -- <path>          # Single test file
 npm run lint:ci             # format:check + typecheck:all + lint + boundaries + deadcode (full local/CI static gate)
 npm run lint:boundaries     # dependency-cruiser phase / lib edges
-npm run lint:architecture-smoke  # optional debugging smoke over representative screens (subsumed by npm run lint; not in lint:ci)
+npm run lint:architecture-smoke  # Cold ESLint smoke over representative screens; included in lint:ci
 npm run deadcode            # knip (lint:ci / CI; not default pre-push; in check:push:full via check)
 npm run deadcode:strict     # knip --strict, entry exports, deps excluded (nightly)
 npm run format / format:check  # Prettier via scripts/run-prettier.mjs (shared globs)
@@ -79,6 +80,39 @@ CI's `desktop_renderer` path filter covers Electron integration plus app boot, r
 `npm run clean` never stops the main Vite dev server (`5173` / `ALCHEMY_DEV_PORT`). Use `npm run clean -- --processes --include-dev-port` for that, or rely on `predev` which already calls `scripts/stop-dev-server.mjs`. Playwright keeps only failed-run output under `test-results/` (`preserveOutput: "failures-only"`). Shared `~/Library/Caches/ms-playwright` may be used by other projects — do not prune it from Alchemy alone.
 
 Full script list: `package.json` / [README.md](../README.md).
+
+## Balance simulation
+
+Headless battle simulator for overpowered or underpowered cards, classes, enemies, and trinkets. It runs thousands of battles through the real battle engine (no browser, no React) using simple play policies. Skipped during normal `npm test` runs.
+
+```sh
+npm run balance:sim
+
+# Increase iterations per scenario (default: 100)
+ALCHEMY_BALANCE_ITERATIONS=500 npm run balance:sim
+
+# Change the play policy (random-playable, greedy-damage, defensive-random)
+ALCHEMY_BALANCE_POLICY=greedy-damage npm run balance:sim
+```
+
+Windows PowerShell:
+
+```powershell
+$env:ALCHEMY_BALANCE_ITERATIONS="500"; npm run balance:sim
+$env:ALCHEMY_BALANCE_POLICY="greedy-damage"; npm run balance:sim
+```
+
+Scenarios run at three talent-progression tiers:
+
+| Tier      | Act | Talents                     |
+| --------- | --- | --------------------------- |
+| **Early** | 1   | None                        |
+| **Mid**   | 2   | First 3 talents per keyword |
+| **Late**  | 3   | All talents per keyword     |
+
+Console tables show the top/bottom 3 entries per tier. An HTML report is written to `reports/balance-report.html`. On Windows, the report opens automatically after the simulation finishes.
+
+Categories: weakest/strongest enemies, class rankings, weakest/strongest cards (random 10-card decks vs baseline), trinket win-rate deltas vs a no-trinket baseline. All simulations use deterministic seeding.
 
 ---
 

@@ -66,6 +66,17 @@ describe("applyStunBlockTalent", () => {
     expect(texts).toEqual([{ target: "player", kind: "status", stat: "block", amount: 4 }]);
   });
 
+  it("includes flatBlockGained in stun-block combat text", () => {
+    const state = makeTestBattleState({
+      talentEffects: { ...defaultTalentEffects, blockOnStun: 4 },
+      gearEffects: { ...makeTestBattleState().gearEffects, flatBlockGained: 2 },
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applyStunBlockTalent(state, texts);
+    expect(result.playerStatuses.block).toBe(6);
+    expect(texts).toEqual([{ target: "player", kind: "status", stat: "block", amount: 6 }]);
+  });
+
   it("no-ops when amount is 0", () => {
     const state = makeTestBattleState({ playerStatuses: { ...makeTestBattleState().playerStatuses, block: 2 } });
     const result = applyStunBlockTalent(state);

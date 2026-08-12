@@ -102,11 +102,10 @@ export function animateHurtSparks(
     draw: (c, p, progress) => {
       if (p.alpha <= 0.01) return;
       p.alpha = Math.max(0, 1 - progress * progress);
-      c.save();
       c.globalAlpha = p.alpha;
       c.fillStyle = p.color;
       c.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
-      c.restore();
+      c.globalAlpha = 1;
     },
     onComplete,
   });

@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   applyMagnetHysteresis,
+  beginInventoryMetricsFrame,
+  endInventoryMetricsFrame,
+  readInventoryBoardMetrics,
+  withInventoryMetricsFrame,
   distanceBetweenRects,
   rectCenter,
   sameDestinationIdentity,
@@ -149,5 +154,112 @@ describe("applyMagnetHysteresis", () => {
     const result = applyMagnetHysteresis(input(cand, prev, freeRect));
     expect(result.destination).toEqual(cand);
     expect(result.switched).toBe(false);
+  });
+});
+
+function mockInventoryBoard(left: number) {
+  const board = document.createElement("div");
+  const cell = document.createElement("div");
+  cell.setAttribute("data-armory-grid-metric", "cell");
+  const stride = document.createElement("div");
+  stride.setAttribute("data-armory-grid-metric", "stride");
+  board.appendChild(cell);
+  board.appendChild(stride);
+
+  vi.spyOn(board, "getBoundingClientRect").mockImplementation(
+    () =>
+      ({
+        left,
+        top: 100,
+        width: 200,
+        height: 200,
+        right: left + 200,
+        bottom: 300,
+        x: left,
+        y: 100,
+        toJSON: () => ({}),
+      }) as DOMRect,
+  );
+  vi.spyOn(cell, "getBoundingClientRect").mockReturnValue({
+    left,
+    top: 100,
+    width: 40,
+    height: 40,
+    right: left + 40,
+    bottom: 140,
+    x: left,
+    y: 100,
+    toJSON: () => ({}),
+  } as DOMRect);
+  vi.spyOn(stride, "getBoundingClientRect").mockReturnValue({
+    left: left + 50,
+    top: 100,
+    width: 40,
+    height: 40,
+    right: left + 90,
+    bottom: 140,
+    x: left + 50,
+    y: 100,
+    toJSON: () => ({}),
+  } as DOMRect);
+  vi.spyOn(window, "getComputedStyle").mockReturnValue({
+    paddingLeft: "0px",
+    paddingTop: "0px",
+    paddingRight: "0px",
+    paddingBottom: "0px",
+    borderLeftWidth: "0px",
+    borderTopWidth: "0px",
+    borderRightWidth: "0px",
+    borderBottomWidth: "0px",
+  } as CSSStyleDeclaration);
+
+  return board;
+}
+
+describe("inventory metrics frame cache", () => {
+  afterEach(() => {
+    endInventoryMetricsFrame();
+    vi.restoreAllMocks();
+  });
+
+  it("reuses measurements until the frame ends", () => {
+    const board = mockInventoryBoard(100);
+    beginInventoryMetricsFrame();
+    const first = readInventoryBoardMetrics(board);
+    vi.spyOn(board, "getBoundingClientRect").mockReturnValue({
+      left: 400,
+      top: 100,
+      width: 200,
+      height: 200,
+      right: 600,
+      bottom: 300,
+      x: 400,
+      y: 100,
+      toJSON: () => ({}),
+    } as DOMRect);
+    const cached = readInventoryBoardMetrics(board);
+    expect(cached?.boardRect.left).toBe(first?.boardRect.left);
+    endInventoryMetricsFrame();
+    const fresh = readInventoryBoardMetrics(board);
+    expect(fresh?.boardRect.left).toBe(400);
+  });
+
+  it("does not leave a cache after withInventoryMetricsFrame", () => {
+    const board = mockInventoryBoard(100);
+    withInventoryMetricsFrame(() => {
+      expect(readInventoryBoardMetrics(board)?.boardRect.left).toBe(100);
+    });
+    vi.spyOn(board, "getBoundingClientRect").mockReturnValue({
+      left: 250,
+      top: 100,
+      width: 200,
+      height: 200,
+      right: 450,
+      bottom: 300,
+      x: 250,
+      y: 100,
+      toJSON: () => ({}),
+    } as DOMRect);
+    expect(readInventoryBoardMetrics(board)?.boardRect.left).toBe(250);
   });
 });

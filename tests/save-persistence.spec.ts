@@ -1,7 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
 import {
-  enableFastMode,
   injectSaveState,
   destinationInterruptedFlow,
   openGameModeSelect,
@@ -20,10 +19,17 @@ import { RewardPage } from "./pages/reward-page";
 import { critical } from "./playwright-tags";
 import { currentSchemaCampaignSave } from "./fixtures/legacy-saves";
 
-function getSavedRoomCount(page: import("@playwright/test").Page): Promise<number> {
+function getSavedLastSavedAt(page: import("@playwright/test").Page): Promise<number> {
   return page.evaluate((saveKey) => {
     const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-    return save.activeRun?.roomsEncountered ?? 0;
+    return typeof save.lastSavedAt === "number" ? save.lastSavedAt : 0;
+  }, SAVE_KEY);
+}
+
+function getSavedBattleTurn(page: import("@playwright/test").Page): Promise<number> {
+  return page.evaluate((saveKey) => {
+    const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+    return save.activeRun?.activeCombat?.battleState?.turn ?? 0;
   }, SAVE_KEY);
 }
 
@@ -228,18 +234,18 @@ test.describe("Autosave Cadence", () => {
       Array.from({ length: 6 }, () => makeHighDamageCard()),
     );
 
-    const before = await getSavedRoomCount(page);
+    const savedAtBefore = await getSavedLastSavedAt(page);
+    const turnBefore = await getSavedBattleTurn(page);
     const battle = new BattlePage(page);
     await battle.endTurn();
 
-    const after = await getSavedRoomCount(page);
-    expect(after).toBeGreaterThanOrEqual(before);
+    await expect.poll(() => getSavedBattleTurn(page)).toBeGreaterThan(turnBefore);
+    await expect.poll(() => getSavedLastSavedAt(page)).toBeGreaterThan(savedAtBefore);
   });
 
   test("save is written after claiming a reward", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
-    await enableFastMode(page);
     await startBattleWithDeck(
       page,
       Array.from({ length: 6 }, () => makeHighDamageCard()),
@@ -248,13 +254,13 @@ test.describe("Autosave Cadence", () => {
     const battle = new BattlePage(page);
     await battle.winViaCombat(3);
 
+    const savedAtBeforeReward = await getSavedLastSavedAt(page);
     const reward = new RewardPage(page);
     await reward.selectFirstReward();
     await reward.addRewardBtn.click();
     await new DestinationPage(page).expectVisible();
 
-    const roomsAfter = await getSavedRoomCount(page);
-    expect(roomsAfter).toBeGreaterThanOrEqual(1);
+    await expect.poll(() => getSavedLastSavedAt(page)).toBeGreaterThan(savedAtBeforeReward);
   });
 
   test("save persists across page navigation", async ({ page }) => {

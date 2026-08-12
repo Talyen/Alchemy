@@ -40,13 +40,13 @@ Agentic coding often drops the next method on the nearest large module. Gravity 
 
 ## Remedy preference
 
-Prefer moving pure rules into the matching `src/lib/*` owner and persistence policy into `shared/storage` / save-schemas / migrations, keeping stores thin. Keep run orchestration on shell controllers plus capability-specific run-session ports (lifecycle implemented in `run-transitions.ts`). Keep battle VFX in `battle-presentation-store`, global UI chrome in `ui-store`, meta discovery in `app-store`, permanent gear in `gear-store`, homestead/talents in `gameplay-state-store.runProfile` ([ARCHITECTURE.md](../ARCHITECTURE.md)). Extract presentation-only helpers into `shared/ui` or the feature folder; collapse duplicate shells via `09-DuplicateFeatureSurfaceAudit.md` when that is the bulk of the win. A pass may move several connected responsibilities out of one gravity well in phases when each destination is already documented and the old APIs disappear; propose only when the split requires a new owner.
+Prefer moving pure rules into the matching `src/lib/*` owner and persistence policy into `shared/storage` / save-schemas / migrations, keeping stores thin. Keep run orchestration on shell controllers plus capability-specific run-session ports (lifecycle implemented in `run-transitions.ts`). Keep battle VFX in `battle-presentation-store`, global UI chrome in `ui-store`, meta discovery in `profile-store`, permanent gear in `gear-store`, homestead/talents in `gameplay-state-store.runProfile` ([ARCHITECTURE.md](../ARCHITECTURE.md)). Extract presentation-only helpers into `shared/ui` or the feature folder; collapse duplicate shells via `09-DuplicateFeatureSurfaceAudit.md` when that is the bulk of the win. A pass may move several connected responsibilities out of one gravity well in phases when each destination is already documented and the old APIs disappear; propose only when the split requires a new owner.
 
 ## Domain rules
 
-Ownership is defined by [ARCHITECTURE.md](../ARCHITECTURE.md) (store layout, controllers, session facade, `src/lib` owners) — read the relevant sections there rather than relying on a copied table here. Deltas this audit adds on top:
+Ownership is defined by [ARCHITECTURE.md](../ARCHITECTURE.md) (aggregate layout, controllers, capability ports, `src/lib` owners) — read the relevant sections there rather than relying on a copied table here. Deltas this audit adds on top:
 
-- **Hub containment:** keep run-lifetime stores and persistence modules thin — new work goes to handlers, ports, facade methods, or controllers, not feature-specific methods on a mixed-lifetime hub.
+- **Hub containment:** keep `gameplay-state-store` and persistence modules thin — new work goes to handlers, ports, or controllers, not feature-specific methods on a mixed-lifetime hub.
 - **Presentation split:** product screens stay in `meta/` / `run-setup/` / `run-loop/`; shared chrome belongs in `shared/ui` / `src/components/ui`; nothing React lands in `src/lib`.
 
 ## Known signals
@@ -55,7 +55,7 @@ Optional discovery aids — choose your own probes.
 
 - **Deep prop drilling:** battle/run props passed through ≥3 levels because controller props or view composition are shaped too broadly; preserve the documented shell-controller binding rather than bypassing it with direct store/facade access.
 - **Direct aggregate or port bypasses from screens:** `gameplay-state-store` or low-level port imports under `src/features/alchemy` outside `**/stores/**` instead of capability ports.
-- **Other store bypasses:** screens importing `gear-store` / `app-store` mutation APIs where a facade/controller already owns the write path.
+- **Other store bypasses:** screens importing `gear-store` / `profile-store` mutation APIs where a facade/controller already owns the write path.
 - **Transient UI in persistence types:** hover/selection/scroll fields on save shapes.
 - **Misplaced battle math in React:** damage/deck calculations inside `*.tsx` screens.
 - **Controller / store bloat:** mega-files mixing navigation, rewards, battle sync, and persistence.

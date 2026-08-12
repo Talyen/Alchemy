@@ -100,34 +100,24 @@ export function resolveEndTurn(currentState: BattleState, session: number, orch:
   if (!orch.isCurrentBattleSession(session)) return false;
   markBattleStage("resolve-start");
   try {
-    const companionTexts: CombatTextEvent[] = [];
-    const companionState = triggerCompanionEffects(currentState, companionTexts);
-
-    if (companionState.enemyHealth <= 0) {
-      commandSetBattleState(companionState);
-      if (companionTexts.length > 0) {
-        const store = getBattleSessionStore();
-        store.showCombatTexts(companionTexts);
-        applyCombatTextPortraitFeedback(companionTexts, store);
-        playCombatTextSounds(companionTexts);
-      }
+    if (currentState.enemyHealth <= 0) {
       orch.handleVictoryDefeat("victory");
       return false;
     }
-    if (isPlayerDefeated(companionState)) {
+    if (isPlayerDefeated(currentState)) {
       orch.handleVictoryDefeat("defeat");
       return false;
     }
 
-    const result = endPlayerTurn(companionState);
+    const result = endPlayerTurn(currentState);
 
     switch (result.kind) {
       case "haste":
-        resolveHasteSkipTurn(result, companionState, session, orch);
+        resolveHasteSkipTurn(result, currentState, session, orch);
         return true;
       case "skipped":
       case "standard":
-        resolveNormalEnemyTurn(result, companionState, companionTexts, session, orch);
+        resolveNormalEnemyTurn(result, currentState, session, orch);
         return false;
     }
   } finally {
@@ -167,13 +157,12 @@ function continueAfterHasteDraw(result: EndPlayerTurnResolution, session: number
 
 export function resolveNormalEnemyTurn(
   result: Extract<EndPlayerTurnResolution, { kind: "skipped" | "standard" }>,
-  companionState: BattleState,
-  companionTexts: CombatTextEvent[],
+  currentState: BattleState,
   session: number,
   orch: TurnOrchestration,
 ) {
   if (!orch.isCurrentBattleSession(session)) return;
-  const enemyTurnStartTexts = [...companionTexts, ...result.enemyTurnStartCombatTexts];
+  const enemyTurnStartTexts = result.enemyTurnStartCombatTexts;
   const enemyResolutionTexts = result.enemyResolutionCombatTexts;
   const store = getBattleSessionStore();
   const dotTexts = enemyTurnStartTexts.filter((ct) => ct.target === "enemy" || ct.kind === "heal");
@@ -195,8 +184,8 @@ export function resolveNormalEnemyTurn(
     },
     {
       hand: [],
-      playerHealth: companionState.playerHealth,
-      playerStatuses: companionState.playerStatuses,
+      playerHealth: currentState.playerHealth,
+      playerStatuses: currentState.playerStatuses,
       turnPhase: "enemy",
     },
   );
@@ -208,7 +197,7 @@ export function resolveNormalEnemyTurn(
 
   void executeEnemyPhase(
     result.state,
-    companionState,
+    currentState,
     enemyResolutionTexts,
     session,
     result.playerTurnSkipped,

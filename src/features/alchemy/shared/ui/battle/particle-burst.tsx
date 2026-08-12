@@ -6,7 +6,8 @@ import { useLayoutEffect, useRef } from "react";
 import { animateParticles, createParticles } from "@/lib/animation/particle-burst";
 
 const PARTICLE_BURST_CONFIG = {
-  canvasScale: 2,
+  canvasScale: 1,
+  maxParticles: 240,
   durationMs: 2400,
 } as const;
 
@@ -44,9 +45,12 @@ export function ParticleBurst({ imageUrl }: { imageUrl: string }) {
     img.onload = () => {
       if (cancelled) return;
       ctx.drawImage(img, (cw - w) / 2, (ch - h) / 2, w, h);
-      const particles = createParticles(ctx, cw, ch);
-      ctx.clearRect(0, 0, cw, ch);
-      stop = animateParticles(ctx, particles, cw, ch, PARTICLE_BURST_CONFIG.durationMs, () => {});
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        const particles = createParticles(ctx, cw, ch, PARTICLE_BURST_CONFIG.maxParticles);
+        ctx.clearRect(0, 0, cw, ch);
+        stop = animateParticles(ctx, particles, cw, ch, PARTICLE_BURST_CONFIG.durationMs, () => {});
+      });
     };
 
     img.onerror = () => {

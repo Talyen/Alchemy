@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { sampleItems } from "@/features/alchemy/shared/utils/random";
+import { sampleItems } from "@/lib/utils";
 
 const testRng = () => 0.5;
 

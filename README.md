@@ -77,91 +77,22 @@ npm run test:e2e
 | E2E critical    | `npm run test:e2e:prepush:full` | CI critical Playwright suite                                           |
 | E2E full        | `npm run test:e2e:full`         | Broader Playwright suite in CI/nightly/release                         |
 
-For fuller local static+unit (`lint:ci` + Vitest + build) with the same `@prepush` E2E canary, use `npm run check:push:full`. It is not CI E2E parity — use `npm run test:e2e:prepush:full` for that. The default hook stays lean; CI is the authoritative full gate.
-
 CI runs formatting, linting, unit tests, production build, and the critical Playwright suite. Path-specific tests and CI parity: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
-## Balance Simulation
-
-The project includes a headless battle simulator for detecting overpowered or underpowered cards, classes, enemies, and trinkets. It runs thousands of battles through the real battle engine (no browser, no React) using simple play policies.
-
-### Usage
-
-```sh
-npm run balance:sim
-```
-
-The report is skipped during normal `npm test` runs. Set environment variables to configure the sweep:
-
-```sh
-# Increase iterations per scenario (default: 100)
-ALCHEMY_BALANCE_ITERATIONS=500 npm run balance:sim
-
-# Change the play policy (random-playable, greedy-damage, defensive-random)
-ALCHEMY_BALANCE_POLICY=greedy-damage npm run balance:sim
-```
-
-In Windows PowerShell, set environment variables before the command:
-
-```powershell
-$env:ALCHEMY_BALANCE_ITERATIONS="500"; npm run balance:sim
-$env:ALCHEMY_BALANCE_POLICY="greedy-damage"; npm run balance:sim
-```
-
-### Output
-
-The report runs all scenarios at three difficulty tiers to capture talent progression:
-
-| Tier      | Act | Talents                     |
-| --------- | --- | --------------------------- |
-| **Early** | 1   | None                        |
-| **Mid**   | 2   | First 3 talents per keyword |
-| **Late**  | 3   | All talents per keyword     |
-
-Console tables show the top/bottom 3 entries per tier. An HTML report is written to `reports/balance-report.html` and contains full expanded tables for all entries. On Windows, the report opens automatically after the simulation finishes.
-
-**Categories measured:**
-
-- **Weakest / Strongest Enemies** — per tier, averaged across all classes and depths
-- **Class Rankings** — per tier, averaged across all enemies to show which classes over- and under-perform with current talent levels
-- **Weakest / Strongest Cards** — each card evaluated in random 10-card decks vs baseline, per tier
-- **Trinket Deltas** — win-rate change vs a no-trinket baseline, per tier
-
-All simulations use deterministic seeding for reproducible results.
+Headless balance simulation (`npm run balance:sim`) runs the real battle engine without a browser. Usage, env vars, and report categories: [`docs/REFERENCE.md` § Balance simulation](./docs/REFERENCE.md#balance-simulation).
 
 ## Project Structure
 
-```
-desktop/               # Electron main/preload entry points
-scripts/               # Build/optimization scripts
-public/                # Static assets (sounds, music, card art)
-src/
-├── app/                  # App bootstrapping, startup screen, save-state, preload
-├── lib/                  # Pure game logic (no React)
-│   ├── animation/        # Particle systems
-│   ├── balance/          # Balance simulation engine
-│   ├── battle/           # State machine, effects, draw
-│   ├── content-systems/  # Map and encounter generation
-│   ├── game-data/        # Cards, keywords, talents, compendium (barrel: @/lib/game-data)
-│   │   └── talents/      # Talent XP math and talent data
-│   ├── homestead/        # Between-run hub logic
-│   ├── ui/               # Utility UI logic
-│   ├── validation/       # Zod schemas and migrations
-│   ├── audio.ts          # Web Audio buffer playback
-│   ├── audio-*.ts        # SFX, music, volume, state, cache
-│   ├── game-constants/   # Topical tuning modules
-│   ├── game-constants.ts # Public tuning barrel
-│   └── trinkets.ts       # Trinket effect manifest helpers
-├── features/alchemy/     # React UI
-│   ├── shared/           # stores, storage, ui, config
-│   ├── meta/             # menu, collection, homestead, talents
-│   ├── run-setup/        # character, difficulty, draft screens
-│   ├── run-loop/         # battle glue, navigation, shop, in-run screens
-│   └── shell/            # controller hooks
-├── components/           # Shared UI primitives
-└── assets/optimized/     # Pre-optimized images
-tests/                   # Vitest unit tests and Playwright e2e specs
-```
+- `desktop/` — Electron main/preload
+- `scripts/` — build, assets, release
+- `public/` — static sounds, music, card art
+- `src/app/` — boot, screen routes, save-state
+- `src/lib/` — React-free game logic (battle, game-data, homestead, validation)
+- `src/features/alchemy/` — React UI (`meta`, `run-setup`, `run-loop`, `shell`, `shared`)
+- `src/components/ui/` — design-system primitives
+- `tests/` — Vitest unit tests and Playwright specs
+
+Feature layout and run-state ownership: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
 ## Assets
 

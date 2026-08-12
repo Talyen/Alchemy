@@ -25,10 +25,12 @@ export function animateParticleLoop<T>({
   duration: number;
 } & ParticleLoopCallbacks<T> & { onComplete: () => void }): () => void {
   let running = true;
+  let rafId: number | null = null;
   const startTime = performance.now();
   let lastTime = startTime;
 
   function frame(now: number): void {
+    rafId = null;
     if (!running) return;
 
     const elapsed = now - startTime;
@@ -44,15 +46,19 @@ export function animateParticleLoop<T>({
     }
 
     if (progress < 1) {
-      requestAnimationFrame(frame);
+      rafId = requestAnimationFrame(frame);
     } else {
       onComplete();
     }
   }
 
-  requestAnimationFrame(frame);
+  rafId = requestAnimationFrame(frame);
 
   return () => {
     running = false;
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
   };
 }

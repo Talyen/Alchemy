@@ -1,23 +1,19 @@
 import { describe, expect, it } from "vitest";
-import {
-  packInventoryGrid,
-  packInventoryGridPreserving,
-  packCurrencyGridWithGearObstacles,
-} from "@/lib/gear/grid-packing";
+import { packGridItems } from "@/lib/gear/grid-packing";
 import { boardItemKey, resolveMoveWithSwap, type BoardItem } from "@/lib/gear/board-moves";
 
 const COLS = 8;
 const pos = (positions: Map<string, { col: number; row: number }>, item: Pick<BoardItem, "id" | "kind">) =>
   positions.get(boardItemKey(item));
 
-describe("packInventoryGrid", () => {
+describe("packGridItems", () => {
   it("packs items in row-major order using each item's footprint", () => {
     const items = [
       { id: "a", w: 2, h: 2 },
       { id: "b", w: 1, h: 1 },
       { id: "c", w: 2, h: 1 },
     ];
-    const packed = packInventoryGrid(items, COLS, (item) => ({ w: item.w, h: item.h }));
+    const packed = packGridItems(items, COLS).items;
     expect(packed).toEqual([
       { item: items[0], col: 1, row: 1, w: 2, h: 2 },
       { item: items[1], col: 3, row: 1, w: 1, h: 1 },
@@ -26,48 +22,37 @@ describe("packInventoryGrid", () => {
   });
 
   it("packs 56 single-cell items into exactly 7 rows on an 8-column board", () => {
-    const items = Array.from({ length: 56 }, (_, index) => ({ id: String(index) }));
-    const packed = packInventoryGrid(items, COLS, () => ({ w: 1, h: 1 }));
+    const items = Array.from({ length: 56 }, (_, index) => ({ id: String(index), w: 1, h: 1 }));
+    const packed = packGridItems(items, COLS).items;
     expect(packed).toHaveLength(56);
     expect(packed[55]).toEqual({ item: items[55], col: 8, row: 7, w: 1, h: 1 });
   });
 
   it("rolls into an eighth row when there are 57 items", () => {
-    const items = Array.from({ length: 57 }, (_, index) => ({ id: String(index) }));
-    const packed = packInventoryGrid(items, COLS, () => ({ w: 1, h: 1 }));
+    const items = Array.from({ length: 57 }, (_, index) => ({ id: String(index), w: 1, h: 1 }));
+    const packed = packGridItems(items, COLS).items;
     expect(packed[56]).toEqual({ item: items[56], col: 1, row: 8, w: 1, h: 1 });
   });
 
   it("returns an empty array for an empty input", () => {
-    expect(packInventoryGrid([], COLS, () => ({ w: 1, h: 1 }))).toEqual([]);
+    expect(packGridItems([], COLS).items).toEqual([]);
   });
 
   it("throws when an item's footprint is wider than the board", () => {
-    expect(() => packInventoryGrid([{ id: "wide" }], 2, () => ({ w: 3, h: 1 }))).toThrow(RangeError);
+    expect(() => packGridItems([{ id: "wide", w: 3, h: 1 }], 2)).toThrow(RangeError);
   });
 
   it("throws on zero-area footprints", () => {
-    expect(() => packInventoryGrid([{ id: "x" }], COLS, () => ({ w: 0, h: 1 }))).toThrow(RangeError);
+    expect(() => packGridItems([{ id: "x", w: 0, h: 1 }], COLS)).toThrow(RangeError);
   });
-});
 
-describe("packInventoryGridPreserving", () => {
   it("keeps saved positions when they fit and pack the rest sequentially", () => {
     const items = [
-      { id: "item1", footprint: { w: 2, h: 2 } },
-      { id: "item2", footprint: { w: 2, h: 3 } },
-      { id: "item3", footprint: { w: 2, h: 1 } },
+      { id: "item1", w: 2, h: 2, saved: { col: 3, row: 1 } },
+      { id: "item2", w: 2, h: 3, saved: { col: 1, row: 3 } },
+      { id: "item3", w: 2, h: 1 },
     ];
-    const saved = {
-      item1: { col: 3, row: 1 },
-      item2: { col: 1, row: 3 },
-    };
-    const packed = packInventoryGridPreserving(
-      items,
-      COLS,
-      (item) => item.footprint,
-      (item) => saved[item.id as keyof typeof saved],
-    );
+    const packed = packGridItems(items, COLS).items;
     expect(packed).toEqual([
       { item: items[0], col: 3, row: 1, w: 2, h: 2 },
       { item: items[1], col: 1, row: 3, w: 2, h: 3 },
@@ -77,56 +62,47 @@ describe("packInventoryGridPreserving", () => {
 
   it("falls back to first-available when saved positions collide", () => {
     const items = [
-      { id: "item1", footprint: { w: 2, h: 2 } },
-      { id: "item2", footprint: { w: 2, h: 1 } },
+      { id: "item1", w: 2, h: 2, saved: { col: 1, row: 1 } },
+      { id: "item2", w: 2, h: 1, saved: { col: 1, row: 1 } },
     ];
-    const saved = {
-      item1: { col: 1, row: 1 },
-      item2: { col: 1, row: 1 },
-    };
-    const packed = packInventoryGridPreserving(
-      items,
-      COLS,
-      (item) => item.footprint,
-      (item) => saved[item.id as keyof typeof saved],
-    );
+    const packed = packGridItems(items, COLS).items;
     expect(packed[0]).toMatchObject({ item: items[0], col: 1, row: 1 });
     expect(packed[1]?.item).toBe(items[1]);
     expect(packed[1]?.col).toBe(3);
   });
 
   it("ignores saved positions that are out of bounds", () => {
-    const items = [{ id: "a", footprint: { w: 2, h: 2 } }];
-    const saved = { a: { col: 0, row: 1 } };
-    const packed = packInventoryGridPreserving(
-      items,
-      COLS,
-      (item) => item.footprint,
-      (item) => saved[item.id as keyof typeof saved],
-    );
+    const items = [{ id: "a", w: 2, h: 2, saved: { col: 0, row: 1 } }];
+    const packed = packGridItems(items, COLS).items;
     expect(packed[0]).toMatchObject({ item: items[0], col: 1, row: 1 });
   });
-});
 
-describe("packCurrencyGridWithGearObstacles", () => {
   it("keeps saved currency positions and packs the rest around gear obstacles", () => {
-    const gearObstacles = [{ col: 1, row: 1, w: 2, h: 2 }];
-    const saved = {
-      voidstone: { col: 4, row: 1 },
-      "discordant-dice": { col: 1, row: 1 },
-    };
-    const packed = packCurrencyGridWithGearObstacles(["voidstone", "discordant-dice"], COLS, saved, gearObstacles);
+    const packed = packGridItems(
+      [
+        { id: "voidstone", w: 1, h: 1, saved: { col: 4, row: 1 } },
+        { id: "discordant-dice", w: 1, h: 1, saved: { col: 1, row: 1 } },
+      ],
+      COLS,
+      { blockedCells: [{ col: 1, row: 1, w: 2, h: 2 }] },
+    ).items;
     expect(packed).toEqual([
-      { id: "voidstone", col: 4, row: 1, w: 1, h: 1 },
-      { id: "discordant-dice", col: 3, row: 1, w: 1, h: 1 },
+      { item: { id: "voidstone", w: 1, h: 1, saved: { col: 4, row: 1 } }, col: 4, row: 1, w: 1, h: 1 },
+      { item: { id: "discordant-dice", w: 1, h: 1, saved: { col: 1, row: 1 } }, col: 3, row: 1, w: 1, h: 1 },
     ]);
   });
 
   it("packs currencies sequentially when no saved positions are valid", () => {
-    const packed = packCurrencyGridWithGearObstacles(["a", "b"], COLS, {}, []);
+    const packed = packGridItems(
+      [
+        { id: "a", w: 1, h: 1 },
+        { id: "b", w: 1, h: 1 },
+      ],
+      COLS,
+    ).items;
     expect(packed).toEqual([
-      { id: "a", col: 1, row: 1, w: 1, h: 1 },
-      { id: "b", col: 2, row: 1, w: 1, h: 1 },
+      { item: { id: "a", w: 1, h: 1 }, col: 1, row: 1, w: 1, h: 1 },
+      { item: { id: "b", w: 1, h: 1 }, col: 2, row: 1, w: 1, h: 1 },
     ]);
   });
 });

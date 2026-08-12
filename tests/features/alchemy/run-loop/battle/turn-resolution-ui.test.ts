@@ -163,7 +163,7 @@ describe("resolveNormalEnemyTurn", () => {
     if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
     const orch = makeOrch();
 
-    resolveNormalEnemyTurn(result, state, [], 1, orch);
+    resolveNormalEnemyTurn(result, state, 1, orch);
 
     expect(beginBattleTransition).toHaveBeenCalledWith(
       expect.objectContaining({ turnPhase: "enemy" }),
@@ -188,7 +188,7 @@ describe("resolveNormalEnemyTurn", () => {
     };
     const orch = makeOrch();
 
-    resolveNormalEnemyTurn(deadResult, state, [], 1, orch);
+    resolveNormalEnemyTurn(deadResult, state, 1, orch);
 
     expect(orch.handleVictoryDefeat).toHaveBeenCalledWith("victory");
     expect(commitBattleTransition).toHaveBeenCalled();

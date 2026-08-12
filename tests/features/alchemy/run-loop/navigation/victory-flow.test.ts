@@ -1,12 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   computeVictoryRewardState,
-  withSelectedBossForDestinations,
-  createDestinationRewardState,
   computeVictoryRewards,
   commitVictoryRewards,
   type VictoryRewardsInput,
 } from "@/features/alchemy/run-loop/navigation/victory-flow";
+import {
+  withSelectedBossForDestinations,
+  createDestinationRewardState,
+} from "@/features/alchemy/shared/run-flow/destination-flow";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
@@ -14,6 +16,7 @@ import type { Destination } from "@/features/alchemy/shared/types";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { resetRunDomainStore } from "../../../../helpers/gameplay-store-test";
+import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 
 beforeEach(() => resetRunDomainStore());
 
@@ -240,6 +243,22 @@ describe("computeVictoryRewards", () => {
     expect(result.rewardState.choices).toHaveLength(3);
   });
 
+  it("persists in-combat gold for Wildwood victories without a victory gold roll", () => {
+    const result = computeVictoryRewards(
+      baseInput({
+        contentSystemType: "wildwood",
+        runGold: 10,
+        battleState: baseBattleState({ gold: 15 }),
+      }),
+      () => 0.25,
+    );
+
+    expect(result.goldEarned).toBe(5);
+    expect(result.newGold).toBe(15);
+    expect(result.baseGold).toBe(0);
+    expect(result.materials).toEqual(emptyInventory());
+  });
+
   it("computes combat victory rewards for normal enemy", () => {
     const result = computeVictoryRewards(baseInput(), testRng);
     expect(result.goldEarned).toBe(15);
@@ -464,6 +483,17 @@ describe("commitVictoryRewards", () => {
     // The wish engine never generates crystal in wildwood (it grants gold
     // instead); the commit guard also refuses to award materials.
     expect(readGameplayState().runProfile.materialInventory.crystal).toBe(0);
+  });
+
+  it("persists in-combat gold into runGold for wildwood victories", () => {
+    setRunProgress({ runGold: 10 });
+    const battleState = baseBattleState({ gold: 15, pendingMaterials: emptyInventory() });
+    const result = computeVictoryRewards(
+      baseInput({ contentSystemType: "wildwood", runGold: 10, battleState }),
+      testRng,
+    );
+    commit(result, commitDeps({ battleState, contentSystemType: "wildwood" }));
+    expect(readGameplayState().run.activeRun.runGold).toBe(15);
   });
 
   it("stamps victory routing context onto reward state", () => {

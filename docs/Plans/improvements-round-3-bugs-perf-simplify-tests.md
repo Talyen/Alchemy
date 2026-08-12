@@ -1,5 +1,7 @@
 # Plan: Round 3 — Bug, Performance, Complexity, and Test Improvements
 
+In-flight only. Delete this file in the same change that finishes the work. Do not add new plans under `docs/Plans/` — use the session plan file or git.
+
 ## Overview
 
 A comprehensive pass over the codebase identified a third batch of verified improvements across four key areas: **Bugs**, **Performance**, **Complexity & Code Simplification**, and **Test Optimizations**.

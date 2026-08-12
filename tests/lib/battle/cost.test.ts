@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeEffectiveCost } from "@/lib/battle/card-play";
+import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
 import { FREE_CARD_SENTINEL } from "@/lib/game-constants";
 import { defaultBattleState, defaultTalentEffects } from "@/lib/battle";
 import type { BattleState, CombatFlags } from "@/lib/battle/types";

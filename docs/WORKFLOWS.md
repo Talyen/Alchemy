@@ -20,6 +20,7 @@ For refactors and simplification passes on attached paths, use [docs/Audits](./A
 | Status effect                                 | [New status](#add-a-new-status-effect)                                                                                                                                            |
 | Card / card effect kind                       | [New card](#add-a-new-card) · [New effect kind](#add-a-new-card-effect-kind)                                                                                                      |
 | Character, enemy, trinket, companion, keyword | [Character](#add-a-new-character) · [Enemy](#add-a-new-enemy) · [Trinket](#add-a-new-trinket) · [Companion](#add-a-new-companion) · [Keyword](#add-a-new-keyword)                 |
+| Talent / homestead upgrade                    | [Talent](#add-a-new-talent) · [Homestead upgrade](#add-a-homestead-upgrade)                                                                                                       |
 | Permanent gear                                | [Gear](#add-permanent-gear)                                                                                                                                                       |
 | Screen, destination, mystery                  | [New screen](#adding-a-new-screen) · [Destination](#adding-a-new-destination-map-node) · [Mystery effect](#adding-a-new-mystery-effect-kind)                                      |
 | In-run materials, staggered enter             | [Grant materials during a run](#grant-materials-during-a-run) · [Staggered screen enter](#staggered-screen-enter-motion) · [Interactive buttons](#interactive-button-conventions) |
@@ -38,11 +39,11 @@ For refactors and simplification passes on attached paths, use [docs/Audits](./A
 
 ## Change persisted save data
 
-See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md).
+Policy (when to bump, stamp-only floor, public save contract): [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
 1. Decide if a schema bump is needed (transform required vs safe additive default).
 2. Increment `CURRENT_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts`.
-3. Add `migrateVNToVNPlus1` in a new `src/lib/validation/migration/steps.ts` or topical `steps-*.ts` file when the first real post-floor bump lands (today is stamp-only); chain it from `migrateSaveDataToCurrent`.
+3. Add `migrateVNToVNPlus1` in a new `src/lib/validation/migration/steps.ts` or topical `steps-*.ts` file; chain it from `migrateSaveDataToCurrent`.
 4. Update Zod schemas in `src/lib/validation/save-schemas/`, storage defaults, and fixtures in `tests/fixtures/legacy-saves.ts`.
 5. CI enforces via `tests/architecture/save-migration-guard.test.ts`, `tests/architecture/save-migration-contract.test.ts`, and `npm run check:ship` — no manual release checklist.
 
@@ -173,7 +174,7 @@ popups stay open while the pointer is over the trigger OR the panel (hover hando
 
 ## Gameplay command boundary
 
-Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-session-command.ts`.
+Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-session-command.ts`. Ownership and anti-patterns: [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 1. Keep the command synchronous; do not cross an `await` while mutating run state.
 2. Put audio, navigation, timers, and presentation cleanup in `afterCommit` so failed commands cannot leak non-rollbackable effects.
@@ -189,12 +190,7 @@ Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-
    });
    ```
 
-4. Run-flow concern factories receive only the explicit callbacks they need from already-created concerns (for example, destination handlers receive `advanceToNextDestination`). Keep this wiring at `createRunFlowHandlers`; do not introduce a mutable sibling-handler bag or a second dispatch/continuation layer.
-5. Gameplay mutations enter through `dispatchRunSessionCommand()` and focused draft mutators. Do not call a command from inside another command or reach past that boundary into aggregate transaction internals.
-6. `readBattle()` is data-only. Battle mutations use the focused commands exported from `run-session-write-port.ts`; do not spread aggregate battle actions into event-time stores.
-7. If an async battle flow persists an intermediate state, commit `activeCombat.pendingBattleTransition` with it and add a boot resume path. Presentation timers alone are not a gameplay continuation.
-8. `readActiveRun()`, `readRunProfile()`, and `readRunSession()` are data-only. Active-run and profile mutations use focused command-backed write ports; do not pass aggregate actions through React or imperative read ports.
-9. Run RNG sources are command-backed and must be consumed inside the command that commits their resulting state. Gameplay code must not use `Math.random()` for run outcomes.
+4. If an async battle flow persists an intermediate state, commit `activeCombat.pendingBattleTransition` with it and add a boot resume path. Presentation timers alone are not a gameplay continuation.
 
 ---
 
@@ -301,6 +297,26 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 
 ---
 
+## Add a new talent
+
+| Step                                                                 | File(s)                                                                                        |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 1. Add effect field if the talent needs a new battle bonus           | `src/lib/game-data/talent-effect-manifest.ts` + default in `talents/manifest-defaults.ts`      |
+| 2. Define the talent (`id`, `keywordId`, name, description, effects) | matching `src/lib/game-data/talents/pool/{keyword}.ts` — already spread into `talentPool`      |
+| 3. XP is keyword-based                                               | `src/lib/game-data/talents/progression.ts` — no per-talent XP hook unless the keyword is new   |
+| 4. Tests                                                             | `tests/lib/game-data/talent-pool.test.ts`, `tests/lib/game-data/talents-match-effects.test.ts` |
+
+New keywords still follow [Add a new keyword](#add-a-new-keyword) first.
+
+## Add a homestead upgrade
+
+| Step                                                                       | File(s)                                                                                        |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 1. Add `BuildingId` / `FarmId` / `ResearchId`                              | `src/lib/homestead/types.ts`                                                                   |
+| 2. Define the item with `defineBuilding` / `defineFarm` / `defineResearch` | `src/lib/homestead/data.ts` (costs via `data-builders.ts` / `costs.ts`)                        |
+| 3. New battle or meta effect keys                                          | `HomesteadEffectManifest` + `HOMESTEAD_BATTLE_*_KEYS` in `types.ts`; defaults in `defaults.ts` |
+| 4. Tests                                                                   | `tests/lib/homestead.test.ts`, `tests/lib/homestead/tiers.test.ts`                             |
+
 ## Add a new keyword
 
 | Step                                                  | File(s)                                                             |
@@ -329,10 +345,11 @@ Boot restore/hydration sets a validated saved screen directly and intentionally 
 
 ## Adding a new destination (map node)
 
-| Step                                      | File(s)                                       |
-| ----------------------------------------- | --------------------------------------------- |
-| 1. Add to `DESTINATIONS` const            | `src/lib/routing/destinations.ts`             |
-| 2. Add to destination pool / availability | `src/lib/routing/destination-availability.ts` |
+| Step                                      | File(s)                                                                                                                            |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Add to `DESTINATIONS` const            | `src/lib/routing/destinations.ts`                                                                                                  |
+| 2. Add to destination pool / availability | `src/lib/routing/destination-availability.ts`                                                                                      |
+| 3. Offer construction (pure)              | `shared/run-flow/destination-flow.ts` — campaign start and run-loop progression pass offer history, boss ID, and command-bound RNG |
 
 ---
 

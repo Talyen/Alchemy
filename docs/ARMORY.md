@@ -25,42 +25,13 @@ The screen implementation lives under `src/features/alchemy/meta/screens/armory/
 
 ## State flow
 
-```
-                  ┌─────────────────────────────────────┐
-                  │  src/lib/gear/  (pure, immutable)   │
-                  │  types / definitions / base-items   │
-                  │  affix-catalog / crafting / ops     │
-                  │  inventory-layout / grid-packing    │
-                  │  generation                         │
-                  └──────────────┬──────────────────────┘
-                                 │ types + functions
-                                 ▼
-┌───────────────────────────────────────────────────────────┐
-│  src/features/alchemy/shared/stores/gear-store.ts         │
-│  Gear aggregate adapter: selector (`useGearArmorySlice`) +│
-│  persistence codec; state + actions live in the           │
-│  gameplay-state-store aggregate (gear-actions.ts).        │
-│  Adjacent: gear-session-command.ts (HP-sync wrapper).     │
-│  GearStore mutation surface:                              │
-│  equip / unequip / salvage / applyCurrency /              │
-│  transferToInventory / addInstance / moveBoardItem /      │
-│  syncBoardPositions / sortBoard / addCurrencies / reset   │
-└──────────────┬────────────────────────────────────────────┘
-               │ subscriptions / selectors
-   ┌───────────┼─────────────┬──────────────────────────────┐
-   ▼           ▼             ▼                              ▼
- Armory    Meta-routes   App.tsx (isArmoryLocked)   subscribeAlchemyPersistence
- screen    (controller)  useAlchemyAutosaveFromStores  (store-owned codecs)
-   │
-   ▼
- armory-screen.tsx + armory/* (panels, drag hooks, tooltips)
-                                 │
-                                 ▼
-              Battle snapshots: computeGearManifest → BattleState.gearEffects
-                                 │
-                                 ▼
-                  All src/lib/battle/*.ts read state.gearEffects.X
-```
+| Layer       | Owner                                                                                                                                  |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Pure rules  | `src/lib/gear/` — types, definitions, affixes, crafting, packing, generation                                                           |
+| Aggregate   | `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec) and `gear-session-command.ts` (HP-sync wrapper) |
+| Screen      | Armory route → `use-armory-controller.ts` → `armory-screen.tsx` + panels/drag                                                          |
+| Battle      | `computeGearManifest` → immutable `BattleState.gearEffects`; battle code never reads the Gear aggregate mid-fight                      |
+| Persistence | `subscribeAlchemyPersistence` / `encodeAlchemyPersistenceFields`                                                                       |
 
 ### Read paths
 
@@ -102,9 +73,7 @@ Board dimensions come from `INVENTORY_COLS` / `INVENTORY_VISIBLE_ROWS`; per-slot
 
 All grid layout logic lives in **`src/lib/gear/grid-packing.ts`** (pure, framework-agnostic). The store, the screen, and the drag hooks all delegate to it:
 
-- `packInventoryGrid(items, cols, getFootprint)` — pack items in row-major order.
-- `packInventoryGridPreserving(items, cols, getFootprint, getSavedPosition)` — keep saved positions when valid, pack the rest sequentially.
-- `packCurrencyGridWithGearObstacles(...)` — same for crafting currencies, treating gear as obstacles.
+- `packGridItems(items, cols, options?)` — pack items in row-major order, optionally keeping `saved` positions and treating `blockedCells` / `reservedItems` as obstacles.
 - `resolveMoveWithSwap(items, movingId, target, cols, options?)` — `moveBoardItemForState`/`sortBoardForCharacter` use this to push displaced items to the closest open cell.
 
 ## Battle integration

@@ -33,7 +33,7 @@ function applyBlockOnCCTalent(state: BattleState, amount: number, combatTexts?: 
       target: "player",
       kind: "status",
       stat: "block",
-      amount,
+      amount: nextState.playerStatuses.block - state.playerStatuses.block,
     });
   }
   return nextState;

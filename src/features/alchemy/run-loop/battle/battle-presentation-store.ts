@@ -3,7 +3,12 @@ import { getRunSession } from "@/features/alchemy/shared/stores/run-session-mode
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import type { CombatTextEvent } from "@/lib/battle";
-import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
+import {
+  COMBAT_TEXT_LANE_DELAY_MS,
+  COMBAT_TEXT_LIFETIME_MS,
+  COMBAT_TEXT_MAX_VISIBLE_PER_RAIL,
+  SHAKE_DURATION,
+} from "@/lib/game-constants";
 import { resolveGameDelay, TimerGroup } from "@/lib/animation/game-timer";
 import type { CardGhost, CardTransfer, FloatingCombatText } from "../../shared/types";
 
@@ -143,16 +148,34 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
       } satisfies FloatingCombatText;
     });
 
+    const entriesByDelay = new Map<number, FloatingCombatText[]>();
     for (const entry of nextEntries) {
-      const entryDelay = entry.lane * combatTextLaneDelayMs;
+      const entryDelay = resolveGameDelay(entry.lane * combatTextLaneDelayMs);
+      const bucket = entriesByDelay.get(entryDelay);
+      if (bucket) bucket.push(entry);
+      else entriesByDelay.set(entryDelay, [entry]);
+    }
+
+    for (const [entryDelay, entries] of entriesByDelay) {
       combatTextTimers.setTimeout(() => {
         if (!shouldShowFloatingCombatText(sequence)) return;
-        set((s) => ({ floatingCombatTexts: [...s.floatingCombatTexts, entry] }));
+        set((s) => {
+          let next = [...s.floatingCombatTexts, ...entries];
+          for (const side of ["player", "enemy"] as const) {
+            const sideEntries = next.filter((entry) => entry.target === side);
+            const overflow = sideEntries.length - COMBAT_TEXT_MAX_VISIBLE_PER_RAIL;
+            if (overflow <= 0) continue;
+            const drop = new Set(sideEntries.slice(0, overflow).map((entry) => entry.id));
+            next = next.filter((entry) => !drop.has(entry.id));
+          }
+          return { floatingCombatTexts: next };
+        });
+        const ids = new Set(entries.map((entry) => entry.id));
         combatTextTimers.setTimeout(() => {
           if (sequence !== combatTextSequence) return;
-          set((s) => ({ floatingCombatTexts: s.floatingCombatTexts.filter((c) => c.id !== entry.id) }));
+          set((s) => ({ floatingCombatTexts: s.floatingCombatTexts.filter((c) => !ids.has(c.id)) }));
         }, resolveGameDelay(combatTextLifetimeMs));
-      }, resolveGameDelay(entryDelay));
+      }, entryDelay);
     }
   },
 

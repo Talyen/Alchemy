@@ -50,10 +50,6 @@ import {
 // Pure victory reward computation for run-flow victory handlers.
 // Depends on: reward-flow, destination-flow, game data, game constants, homestead loot.
 // Depended on by: useRunFlowEngine for computing battle victory outcomes.
-export {
-  withSelectedBossForDestinations,
-  createDestinationRewardState,
-} from "@/features/alchemy/shared/run-flow/destination-flow";
 
 interface VictoryGoldRoll {
   gold: number;
@@ -163,13 +159,14 @@ export function computeVictoryRewards(
 
   const talentEffects = computeTalentEffects(input.unlockedTalents);
   if (input.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+    const goldEarned = Math.max(0, input.battleState.gold - input.runGold);
     return {
-      newGold: input.runGold,
+      newGold: input.runGold + goldEarned,
       rewardState: createWildwoodRewardState(input.runDeck, rng, input.homesteadEffects.gearAstralChanceBonus),
       labyrinthRewardModifiers,
       destinations: [],
       materials: emptyInventory(),
-      goldEarned: 0,
+      goldEarned,
       playerHealth: input.battleState.playerHealth,
       maxHealthDelta: talentEffects.maxHealthPerCombat > 0 ? talentEffects.maxHealthPerCombat : 0,
       baseGold: 0,
