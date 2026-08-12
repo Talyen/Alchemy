@@ -4,7 +4,6 @@ import { playUISound } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 import { PortaledTooltip } from "../../../../shared/ui/portaled-tooltip";
 import { TooltipBody, TooltipHeader } from "../../../../shared/ui/tooltip-panel";
-import { ARMORY_TOOLTIP_WIDTH } from "../gear-tooltip-content";
 import { packedItemStyle } from "./grid-styles";
 import { CURRENCY_COUNT_LABEL_CLASS } from "./currency-styles";
 import type { CurrencyPointerEnd, CurrencyPointerMove, CurrencyPointerStart } from "../armory-drag-types";
@@ -117,18 +116,13 @@ export const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
         <img src={definition.art} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <span className={CURRENCY_COUNT_LABEL_CLASS}>{count}</span>
       </div>
-      <PortaledTooltip
-        triggerRef={tileRef}
-        visible={showTooltip}
-        width={ARMORY_TOOLTIP_WIDTH}
-        className="armory-inventory-tooltip !shadow-none"
-      >
-        <div className="w-max">
+      <PortaledTooltip triggerRef={tileRef} visible={showTooltip} className="armory-inventory-tooltip !shadow-none">
+        <div>
           <TooltipHeader>
-            <span className="whitespace-nowrap">{definition.displayName}</span>
+            <span>{definition.displayName}</span>
           </TooltipHeader>
           <TooltipBody>
-            <p className="whitespace-nowrap">{definition.tooltipEffect}</p>
+            <p>{definition.tooltipEffect}</p>
           </TooltipBody>
         </div>
       </PortaledTooltip>

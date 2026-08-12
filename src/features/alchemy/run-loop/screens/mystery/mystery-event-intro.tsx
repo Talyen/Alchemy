@@ -54,7 +54,7 @@ function MysteryEventChoiceButton({
       >
         {choice.label}
       </Button>
-      <PortaledTooltip triggerRef={triggerRef} visible={visible} width="w-[19.2rem]" maxWidthFraction={0.4}>
+      <PortaledTooltip triggerRef={triggerRef} visible={visible} maxWidthFraction={0.4}>
         <MysteryEffectList
           effects={choice.effects}
           findCard={findCard}

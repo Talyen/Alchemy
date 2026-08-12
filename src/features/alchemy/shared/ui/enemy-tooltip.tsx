@@ -57,7 +57,7 @@ export function EnemyTooltip({
       : [];
 
   return (
-    <PortaledTooltip triggerRef={triggerRef} visible={visible} width="w-72" className="rounded-shell-tooltip">
+    <PortaledTooltip triggerRef={triggerRef} visible={visible} className="rounded-shell-tooltip">
       <TooltipHeader>{discovered ? entry.title : "Undiscovered"}</TooltipHeader>
       {discovered ? (
         <DescriptionLines lines={[...attackLines, ...traitLines]} idPrefix={`enemy-${entry.id}`} />

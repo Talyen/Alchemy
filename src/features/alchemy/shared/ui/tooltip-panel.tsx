@@ -1,6 +1,6 @@
 // Shared hover tooltip container with standard header/subheader/body/section slots.
 // Provides consistent styling across all tooltips — enemy, card, keyword, status, map, etc.
-// Width is configurable via the `width` prop (defaults to w-72).
+// Width is configurable via the `width` prop (defaults to tooltipWidthClass).
 import { type CSSProperties, type MouseEventHandler, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ import {
   tooltipBodyClass,
   tooltipHeaderClass,
   tooltipSubheaderClass,
+  tooltipWidthClass,
 } from "../config";
 
 export type TooltipPlacement = "above" | "below" | "side-start" | "side-end";
@@ -38,7 +39,7 @@ function tooltipAnchorClass(placement: TooltipPlacement): string {
 
 export function TooltipPanel({
   children,
-  width = "w-72",
+  width = tooltipWidthClass,
   className,
   flip,
   placement = "above",

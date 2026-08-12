@@ -44,13 +44,7 @@ export function LabyrinthNodeTooltip({ type, modifiers, rewardModifiers, trigger
   const hasModifiers = enemyModifiers.length > 0 || rewardModifiers.length > 0;
 
   return (
-    <PortaledTooltip
-      triggerRef={triggerRef}
-      visible={visible}
-      width="w-[19.2rem]"
-      maxWidthFraction={0.4}
-      className="rounded-shell-tooltip"
-    >
+    <PortaledTooltip triggerRef={triggerRef} visible={visible} maxWidthFraction={0.4} className="rounded-shell-tooltip">
       <TooltipHeader>{NODE_TYPE_LABELS[type]}</TooltipHeader>
       <TooltipBody>
         <p>{renderColoredKeywords(NODE_TYPE_TOOLTIPS[type])}</p>

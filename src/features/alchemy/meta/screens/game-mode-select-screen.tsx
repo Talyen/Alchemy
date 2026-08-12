@@ -80,7 +80,7 @@ function GameModeTile({
           </TiltSurface>
         </PressableSound>
         {isHovered && isLocked && (
-          <PortaledTooltip triggerRef={tileRef} visible width="w-64" className="text-center">
+          <PortaledTooltip triggerRef={tileRef} visible className="text-center">
             <TooltipHeader>{meta.title}</TooltipHeader>
             <TooltipBody>
               <p>{getGameModeUnlockMessage(modeId)}</p>

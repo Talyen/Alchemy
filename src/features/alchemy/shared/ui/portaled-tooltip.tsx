@@ -8,6 +8,8 @@ import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";
 
+import { tooltipWidthClass } from "../config";
+
 import { getVrStageBounds, usePortaledTooltipPlacement, type PortaledTooltipSide } from "./portaled-tooltip-placement";
 import { getTooltipRoot } from "./tooltip-root";
 import { TooltipPanel } from "./tooltip-panel";
@@ -25,7 +27,7 @@ export interface PortaledTooltipProps {
   placement?: "above" | PortaledTooltipSide;
   /** Interactive popups capture pointer events (card popups). */
   pointerEventsAuto?: boolean;
-  /** Size the panel to the trigger's rendered width (card popups). */
+  /** Size the panel to the trigger's rendered width (card popups); still capped by the width class (tooltipWidthClass). */
   matchTriggerWidth?: boolean;
   /** Fraction of the vr-stage width used as a max-width safety cap on small windows. */
   maxWidthFraction?: number;
@@ -37,7 +39,7 @@ export function PortaledTooltip({
   triggerRef,
   visible,
   children,
-  width = "w-72",
+  width = tooltipWidthClass,
   className,
   padding = 8,
   placement = "above",

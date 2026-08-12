@@ -27,12 +27,12 @@ export function GearTooltipContent({
     : definition.descriptionLines.map((text, index) => ({ key: `definition-${index}`, text }));
 
   return (
-    <div className="w-max">
+    <div>
       <TooltipHeader>
         {instance ? (
-          <GearItemTitle instance={instance} />
+          <GearItemTitle instance={instance} className="whitespace-normal" />
         ) : (
-          <span className="whitespace-nowrap">{definition.title}</span>
+          <span>{definition.title}</span>
         )}
       </TooltipHeader>
       {affixEntries.length > 0 ? (
@@ -55,9 +55,7 @@ export function GearTooltipContent({
                 ) : (
                   <TooltipSubheader>{entry.name}</TooltipSubheader>
                 )}
-                <p className={cn(tooltipBodyClass, "mt-0 pl-3 whitespace-nowrap")}>
-                  {renderColoredKeywords(entry.text)}
-                </p>
+                <p className={cn(tooltipBodyClass, "mt-0 pl-3")}>{renderColoredKeywords(entry.text)}</p>
               </div>
             );
           })}
@@ -65,9 +63,7 @@ export function GearTooltipContent({
       ) : (
         <TooltipBody>
           {bodyLines.map((entry) => (
-            <p key={entry.key} className="whitespace-nowrap">
-              {renderColoredKeywords(entry.text)}
-            </p>
+            <p key={entry.key}>{renderColoredKeywords(entry.text)}</p>
           ))}
         </TooltipBody>
       )}

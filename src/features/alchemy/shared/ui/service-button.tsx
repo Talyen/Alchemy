@@ -13,7 +13,7 @@ export function DisabledTooltip({ show, message, children }: { show: boolean; me
   return (
     <div ref={triggerRef} className="relative" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       {children}
-      <PortaledTooltip triggerRef={triggerRef} visible={visible} width="w-auto" className="whitespace-nowrap">
+      <PortaledTooltip triggerRef={triggerRef} visible={visible} className="whitespace-nowrap">
         <p className="text-base leading-none text-foreground">{message}</p>
       </PortaledTooltip>
     </div>

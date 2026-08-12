@@ -84,7 +84,7 @@ function CharacterCard({
           />
         </TiltSurface>
         {showTooltip ? (
-          <PortaledTooltip triggerRef={cardWrapperRef} visible width="w-80">
+          <PortaledTooltip triggerRef={cardWrapperRef} visible>
             <TooltipHeader>{char.name}</TooltipHeader>
 
             {isLocked ? (

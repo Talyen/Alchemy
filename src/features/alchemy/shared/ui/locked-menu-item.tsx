@@ -58,13 +58,7 @@ export function LockedMenuItem({
         {children}
       </Button>
       {showTooltip && locked && (
-        <PortaledTooltip
-          triggerRef={triggerRef}
-          visible
-          placement={tooltipPlacement}
-          width="w-64"
-          className="text-left"
-        >
+        <PortaledTooltip triggerRef={triggerRef} visible placement={tooltipPlacement} className="text-left">
           <LockedFeatureTooltip title={title} message={message} />
         </PortaledTooltip>
       )}

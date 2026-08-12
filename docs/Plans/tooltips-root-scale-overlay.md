@@ -186,6 +186,8 @@ root-scale size cannot dominate a small stage.
 - **Nested keyword tooltips:** `pointer-events-none` parent tooltips (enemy
   tooltip) cannot trigger nested keyword tooltips today anyway; only interactive
   popups can. Preserve that behavior.
-- **Width parity:** card/gear popups match the trigger's rendered width; other
-  tooltips keep authored root-scale widths, with an optional stage-relative
-  max-width cap so they cannot dominate small windows.
+- **Width parity:** all hover tooltips use `tooltipWidthClass` (`w-max max-w-72`) —
+  content-sized up to a 288px cap, so tiny tooltips shrink and none exceed the
+  cap. `matchTriggerWidth` popups (card/gear detail) still match the trigger's
+  rendered width but are capped by the same 288px max. Armory gear/currency
+  tooltips conform to the standard (no `whitespace-nowrap`; text wraps at the cap).

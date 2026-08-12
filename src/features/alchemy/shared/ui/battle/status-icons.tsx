@@ -21,13 +21,11 @@ function StatusChipShell({
   buttonClassName,
   icon,
   tooltip,
-  width = "w-72",
 }: {
   ariaLabel: string;
   buttonClassName?: string;
   icon: ReactNode;
   tooltip: ReactNode;
-  width?: string;
 }) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [visible, setVisible] = useState(false);
@@ -46,7 +44,7 @@ function StatusChipShell({
       >
         {icon}
       </button>
-      <PortaledTooltip triggerRef={triggerRef} visible={visible} width={width}>
+      <PortaledTooltip triggerRef={triggerRef} visible={visible}>
         {tooltip}
       </PortaledTooltip>
     </div>

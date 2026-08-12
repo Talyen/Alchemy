@@ -36,6 +36,10 @@ export const staticCardTransform = "translate3d(0px, 0px, 0px)";
 export const popupBaseClassName =
   "absolute left-1/2 z-50 rounded-shell-tooltip border border-border bg-card px-3 py-3 text-left";
 
+// Standard hover tooltip width: content-sized up to a 288px cap. Tiny tooltips
+// shrink to their content; none exceed the cap.
+export const tooltipWidthClass = "w-max max-w-72";
+
 // Selection ring for TiltSurface and outer panels that wrap art + labels (setup/run tiles).
 export const tiltSurfaceSelectedRingClass = "ring-2 ring-primary ring-offset-4 ring-offset-background";
 
