@@ -8,7 +8,6 @@ const publicSoundsDir = path.resolve(process.cwd(), "public", "sounds");
 const optimizeSoundsScript = path.resolve(process.cwd(), "scripts", "optimize-sounds.mjs");
 
 const preservedPublicSounds = new Set([
-  "8bit-chime-quick.ogg",
   "click-double-off.ogg",
   "click-double-on.ogg",
   "coin-collect.ogg",

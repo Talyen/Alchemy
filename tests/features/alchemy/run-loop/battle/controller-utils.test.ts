@@ -58,9 +58,9 @@ describe("playCombatTextSounds", () => {
     expect(audioBufferCache.getCachedBuffer).toHaveBeenCalledWith("vibraphone-chime-quick.ogg");
   });
 
-  it("plays playerBuff for player status", () => {
+  it("plays nothing for player status", () => {
     playCombatTextSounds([{ target: "player", kind: "status", stat: "block", amount: 5 }]);
-    expect(audioBufferCache.getCachedBuffer).toHaveBeenCalledWith("8bit-chime-quick.ogg");
+    expect(audioBufferCache.getCachedBuffer).not.toHaveBeenCalled();
   });
 
   it("plays nothing for notice events", () => {

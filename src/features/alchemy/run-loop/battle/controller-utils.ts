@@ -35,7 +35,7 @@ export function playCompanionSound(companionId: string) {
   if (soundCardId) playCardSound(soundCardId);
 }
 
-// Plays battle-event impact sounds (hit, block absorb, heal, buff) based on
+// Plays battle-event impact sounds (hit, block absorb, heal) based on
 // resolved combat text. The per-sound cooldown in the audio engine prevents
 // multi-hit cards from stacking identical impact sounds too rapidly.
 export function playCombatTextSounds(combatTexts: CombatTextEvent[]) {
@@ -49,8 +49,6 @@ export function playCombatTextSounds(combatTexts: CombatTextEvent[]) {
       playBattleEvent("playerHit");
     } else if (ct.kind === "heal" && ct.target === "player") {
       playBattleEvent("playerHeal");
-    } else if (ct.kind === "status" && ct.target === "player") {
-      playBattleEvent("playerBuff");
     }
   }
 }
