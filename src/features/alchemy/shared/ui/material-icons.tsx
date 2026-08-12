@@ -8,7 +8,7 @@ import { materialLabels, type MaterialId } from "@/lib/homestead/types";
 
 const MAT_ICON_CLASS = "block h-6 w-6 shrink-0";
 
-export const matIconMap: Record<MaterialId, ReactNode> = {
+const matIconMap: Record<MaterialId, ReactNode> = {
   wood: <TreePine absoluteStrokeWidth aria-hidden="true" className={MAT_ICON_CLASS} />,
   iron: <Pickaxe absoluteStrokeWidth aria-hidden="true" className={MAT_ICON_CLASS} />,
   herbs: <Leaf absoluteStrokeWidth aria-hidden="true" className={MAT_ICON_CLASS} />,
