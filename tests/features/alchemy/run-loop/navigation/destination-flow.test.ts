@@ -2,11 +2,13 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import {
   advanceDestinationOfferState,
   computeDestinationWeight,
+  createDestinationRewardState,
   createEmptyDestinationOfferState,
   getRunAvailableDestinations,
   lastOfferedIncludesCombat,
   restoreOrCreateDestinationRewardState,
   sampleDestinationChoices,
+  withSelectedBossForDestinations,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import {
@@ -283,5 +285,40 @@ describe("lastOfferedIncludesCombat", () => {
     expect(lastOfferedIncludesCombat([DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.MYSTERY])).toBe(true);
     expect(lastOfferedIncludesCombat([DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY])).toBe(false);
     expect(lastOfferedIncludesCombat([])).toBe(false);
+  });
+});
+
+describe("withSelectedBossForDestinations", () => {
+  it("sets selectedBossId when only Boss Combat is available", () => {
+    const reward = createEmptyRewardState(["Boss Combat"]);
+    const result = withSelectedBossForDestinations(["Boss Combat"], reward, "mimic");
+    expect(result.selectedBossId).toBe("mimic");
+  });
+
+  it("clears selectedBossId when multiple destinations are available", () => {
+    const reward = { ...createEmptyRewardState(["Normal Combat", "Campfire"]), selectedBossId: "dragon" };
+    const result = withSelectedBossForDestinations(["Normal Combat", "Campfire"], reward);
+    expect(result.selectedBossId).toBeNull();
+  });
+
+  it("preserves existing selectedBossId for single boss destination", () => {
+    const reward = { ...createEmptyRewardState(["Boss Combat"]), selectedBossId: "dragon" };
+    const result = withSelectedBossForDestinations(["Boss Combat"], reward, "mimic");
+    expect(result.selectedBossId).toBe("dragon");
+  });
+});
+
+describe("createDestinationRewardState", () => {
+  it("returns empty reward state with destinations", () => {
+    const result = createDestinationRewardState(["Normal Combat", "Campfire"]);
+    expect(result.destinations).toEqual(["Normal Combat", "Campfire"]);
+    expect(result.gold).toBe(0);
+    expect(result.choices).toEqual([]);
+  });
+
+  it("sets selectedBossId for single boss destination", () => {
+    const result = createDestinationRewardState(["Boss Combat"], "mimic");
+    expect(result.selectedBossId).toBe("mimic");
+    expect(result.destinations).toEqual(["Boss Combat"]);
   });
 });

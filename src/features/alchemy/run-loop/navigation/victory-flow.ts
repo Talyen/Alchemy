@@ -287,5 +287,5 @@ export function commitVictoryRewards(
     setCompanionRewardCards(draft, null);
   }
   setHasActiveBattle(draft, false);
-  return result.newGold > deps.battleState.gold;
+  return result.goldEarned > 0;
 }

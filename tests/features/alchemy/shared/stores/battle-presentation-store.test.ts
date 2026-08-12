@@ -1,8 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { SHAKE_DURATION } from "@/lib/game-constants";
+import { COMBAT_TEXT_LANE_DELAY_MS, SHAKE_DURATION } from "@/lib/game-constants";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import { teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
+import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
+import { clearCombatPresentation } from "@/features/alchemy/run-loop/run/run-flow-session-helpers";
 import {
   getBattleStoreView,
   getNavigationStoreView,
@@ -16,6 +17,10 @@ function freshStore() {
 
 describe("battle-presentation-store", () => {
   beforeEach(freshStore);
+  afterEach(() => {
+    useBattlePresentationStore.getState().resetPresentation();
+    vi.useRealTimers();
+  });
 
   it("initializes with empty presentation state", () => {
     const s = useBattlePresentationStore.getState();
@@ -89,6 +94,38 @@ describe("battle-presentation-store", () => {
     expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
   });
 
+  it("clearBattlePresentationUi resets full presentation VFX", () => {
+    useBattlePresentationStore.getState().hurtPlayer();
+    useBattlePresentationStore.getState().shakeEnemy();
+    useBattlePresentationStore.getState().spawnCardGhost({
+      art: "test.webp",
+      rect: { x: 0, y: 0, width: 10, height: 10 },
+      rotation: 0,
+      delay: 0,
+      variant: "activate",
+    });
+    useBattlePresentationStore.getState().addRevealedCardKey("strike-1");
+    clearBattlePresentationUi();
+    const s = useBattlePresentationStore.getState();
+    expect(s.cardGhosts).toEqual([]);
+    expect(s.playerHurtFlashToken).toBe(0);
+    expect(s.enemyShaking).toBe(false);
+    expect(s.floatingCombatTexts).toEqual([]);
+    expect(s.revealedCardKeys.size).toBe(0);
+  });
+
+  it("clearCombatPresentation uses the same full VFX reset", () => {
+    useBattlePresentationStore.getState().spawnCardGhost({
+      art: "test.webp",
+      rect: { x: 0, y: 0, width: 10, height: 10 },
+      rotation: 0,
+      delay: 0,
+      variant: "activate",
+    });
+    clearCombatPresentation();
+    expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
+  });
+
   it("clearFloatingCombatTexts invalidates pending showCombatTexts timers", async () => {
     vi.useFakeTimers();
     getBattleStoreView().setHasActiveBattle(true);
@@ -149,7 +186,7 @@ describe("battle-presentation-store", () => {
       { target: "enemy", kind: "damage", stat: "health", amount: 3 },
       { target: "enemy", kind: "damage", stat: "health", amount: 4 },
     ]);
-    await vi.advanceTimersByTimeAsync(400);
+    await vi.advanceTimersByTimeAsync(3 * COMBAT_TEXT_LANE_DELAY_MS + 1);
     const enemyTexts = useBattlePresentationStore
       .getState()
       .floatingCombatTexts.filter((text) => text.target === "enemy");

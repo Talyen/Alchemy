@@ -7,7 +7,7 @@ import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { computeVictoryRewards, commitVictoryRewards } from "../navigation/victory-flow";
 import { CONSTANTS } from "../../shared/types";
 import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
-import { clearCombatPresentation } from "./run-flow-session-helpers";
+import { useUiStore } from "../../shared/stores/ui-store";
 
 export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
   function computeVictoryResult(draft: GameplayDraft) {
@@ -69,7 +69,9 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
       {
         afterCommit: () => {
           if (goldGained) playGoldGain();
-          clearCombatPresentation();
+          // Hover only — full VFX reset waits until the battle screen unmounts so
+          // kill animations can play through victory grace.
+          useUiStore.getState().clearCardHover();
         },
       },
     );

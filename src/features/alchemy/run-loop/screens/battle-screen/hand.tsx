@@ -29,9 +29,9 @@ const HandCardItem = memo(function HandCardItem({
   handWidthClass,
   stagePixelRatio,
   handCardRefs,
-  hiddenHandCardKeys,
-  revealedCardKeys,
-  playableHandCardKeys,
+  canPlay,
+  isHidden,
+  isRevealed,
   onCardClick,
   descriptionContext,
 }: {
@@ -41,9 +41,9 @@ const HandCardItem = memo(function HandCardItem({
   handWidthClass: string;
   stagePixelRatio: number;
   handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
-  hiddenHandCardKeys: Set<string>;
-  revealedCardKeys: Set<string>;
-  playableHandCardKeys: Set<string>;
+  canPlay: boolean;
+  isHidden: boolean;
+  isRevealed: boolean;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   descriptionContext: CardDescriptionContext;
 }) {
@@ -53,9 +53,7 @@ const HandCardItem = memo(function HandCardItem({
     `${card.id}-${card.uid}`,
   );
   const offset = index - (handLength - 1) / 2;
-  const isRevealedFromTransfer = revealedCardKeys.has(cardKey);
-  const shouldStagger = !hiddenHandCardKeys.has(cardKey) && !isRevealedFromTransfer;
-  const canPlay = playableHandCardKeys.has(cardKey);
+  const shouldStagger = !isHidden && !isRevealed;
 
   const elementRef = useRef<HTMLButtonElement | null>(null);
 
@@ -91,7 +89,7 @@ const HandCardItem = memo(function HandCardItem({
       }
       className={cn(handWidthClass, !canPlay && "cursor-default grayscale")}
       tiltEnabled={canPlay}
-      dragging={hiddenHandCardKeys.has(cardKey)}
+      dragging={isHidden}
       wrapperClassName={cn(shouldStagger && "stagger-item", "relative -mx-5 flex justify-center sm:-mx-6")}
       wrapperDataCardKey={cardKey}
       wrapperStyle={
@@ -129,22 +127,25 @@ export function BattleHand({
 
   return (
     <div className={battleHandContainerClass} aria-label="Player hand">
-      {battleState.hand.map((card, index) => (
-        <HandCardItem
-          key={`${card.id}-${card.uid}`}
-          card={card}
-          index={index}
-          handLength={battleState.hand.length}
-          handWidthClass={handWidthClass}
-          stagePixelRatio={stagePixelRatio}
-          handCardRefs={handCardRefs}
-          hiddenHandCardKeys={hiddenHandCardKeys}
-          revealedCardKeys={revealedCardKeys}
-          playableHandCardKeys={playableHandCardKeys}
-          onCardClick={onCardClick}
-          descriptionContext={descriptionContext}
-        />
-      ))}
+      {battleState.hand.map((card, index) => {
+        const cardKey = `${card.id}-${card.uid}`;
+        return (
+          <HandCardItem
+            key={cardKey}
+            card={card}
+            index={index}
+            handLength={battleState.hand.length}
+            handWidthClass={handWidthClass}
+            stagePixelRatio={stagePixelRatio}
+            handCardRefs={handCardRefs}
+            canPlay={playableHandCardKeys.has(cardKey)}
+            isHidden={hiddenHandCardKeys.has(cardKey)}
+            isRevealed={revealedCardKeys.has(cardKey)}
+            onCardClick={onCardClick}
+            descriptionContext={descriptionContext}
+          />
+        );
+      })}
     </div>
   );
 }

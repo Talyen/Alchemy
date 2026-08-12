@@ -2,7 +2,6 @@
 // Driven by useBattleController; focused child modules own the layout slices.
 import { useMemo, type MouseEvent } from "react";
 import type { BattleCard } from "@/lib/game-data";
-import type { CardTransfer } from "../../../shared/types";
 import { CardGhostOverlay } from "../../../shared/ui/card-ghost-overlay";
 import { CardTransferOverlay } from "./card-transfer-overlay";
 import { BattleActors } from "./actors";
@@ -28,6 +27,17 @@ function CardGhostLayer() {
   );
 }
 
+function CardTransferLayer() {
+  const cardTransfers = useBattlePresentationStore((s) => s.cardTransfers);
+  return (
+    <>
+      {cardTransfers.map((transfer) => (
+        <CardTransferOverlay key={transfer.id} transfer={transfer} />
+      ))}
+    </>
+  );
+}
+
 interface BattleScreenProps {
   battleScreenData: BattleScreenData;
   heroArt: string;
@@ -41,7 +51,6 @@ interface BattleScreenProps {
   playableHandCardKeys: Set<string>;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
-  cardTransfers: CardTransfer[];
   hiddenHandCardKeys: Set<string>;
   cardTransferInProgress: boolean;
 }
@@ -59,7 +68,6 @@ export function BattleScreen(props: BattleScreenProps) {
     onWishChoice,
     onSkipCombatDevMode,
     onEndTurn,
-    cardTransfers,
     hiddenHandCardKeys,
     cardTransferInProgress,
     playableHandCardKeys,
@@ -160,10 +168,7 @@ export function BattleScreen(props: BattleScreenProps) {
             ) : null}
 
             <CardGhostLayer />
-
-            {cardTransfers.map((transfer) => (
-              <CardTransferOverlay key={transfer.id} transfer={transfer} />
-            ))}
+            <CardTransferLayer />
           </div>
         </div>
       </div>

@@ -3,13 +3,10 @@ import {
   computeVictoryRewardState,
   computeVictoryRewards,
   commitVictoryRewards,
+  type CommitVictoryRewardsDeps,
   type VictoryRewardsInput,
   type VictoryRewardsResult,
 } from "@/features/alchemy/run-loop/navigation/victory-flow";
-import {
-  withSelectedBossForDestinations,
-  createDestinationRewardState,
-} from "@/features/alchemy/shared/run-flow/destination-flow";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
@@ -76,41 +73,6 @@ const testRng = () => 0.25;
 
 afterEach(() => {
   vi.restoreAllMocks();
-});
-
-describe("withSelectedBossForDestinations", () => {
-  it("sets selectedBossId when only Boss Combat is available", () => {
-    const reward = createEmptyRewardState(["Boss Combat"]);
-    const result = withSelectedBossForDestinations(["Boss Combat"], reward, "mimic");
-    expect(result.selectedBossId).toBe("mimic");
-  });
-
-  it("clears selectedBossId when multiple destinations are available", () => {
-    const reward = { ...createEmptyRewardState(["Normal Combat", "Campfire"]), selectedBossId: "dragon" };
-    const result = withSelectedBossForDestinations(["Normal Combat", "Campfire"], reward);
-    expect(result.selectedBossId).toBeNull();
-  });
-
-  it("preserves existing selectedBossId for single boss destination", () => {
-    const reward = { ...createEmptyRewardState(["Boss Combat"]), selectedBossId: "dragon" };
-    const result = withSelectedBossForDestinations(["Boss Combat"], reward, "mimic");
-    expect(result.selectedBossId).toBe("dragon");
-  });
-});
-
-describe("createDestinationRewardState", () => {
-  it("returns empty reward state with destinations", () => {
-    const result = createDestinationRewardState(["Normal Combat", "Campfire"]);
-    expect(result.destinations).toEqual(["Normal Combat", "Campfire"]);
-    expect(result.gold).toBe(0);
-    expect(result.choices).toEqual([]);
-  });
-
-  it("sets selectedBossId for single boss destination", () => {
-    const result = createDestinationRewardState(["Boss Combat"], "mimic");
-    expect(result.selectedBossId).toBe("mimic");
-    expect(result.destinations).toEqual(["Boss Combat"]);
-  });
 });
 
 describe("computeVictoryRewardState", () => {
@@ -422,13 +384,13 @@ describe("computeVictoryRewards", () => {
 });
 
 describe("commitVictoryRewards", () => {
-  function victoryResult(overrides: Record<string, unknown> = {}) {
+  function victoryResult(overrides: Partial<VictoryRewardsResult> = {}): VictoryRewardsResult {
     return {
       newGold: 25,
       goldEarned: 20,
       rewardState: createEmptyRewardState(),
       labyrinthRewardModifiers: [],
-      destinations: ["Normal Combat"] as Destination[],
+      destinations: ["Normal Combat"],
       materials: emptyInventory(),
       playerHealth: 30,
       maxHealthDelta: 0,
@@ -441,24 +403,33 @@ describe("commitVictoryRewards", () => {
     };
   }
 
-  function commitDeps(overrides: Record<string, unknown> = {}) {
+  function commitDeps(overrides: Partial<CommitVictoryRewardsDeps> = {}): CommitVictoryRewardsDeps {
     return {
       battleState: baseBattleState({ gold: 5, pendingMaterials: emptyInventory() }),
-      contentSystemType: "campaign" as const,
+      contentSystemType: "campaign",
       ...overrides,
     };
   }
 
-  function commit(result: VictoryRewardsResult = victoryResult() as VictoryRewardsResult, deps = commitDeps()) {
+  function commit(result: VictoryRewardsResult = victoryResult(), deps = commitDeps()) {
     return dispatchRunSessionCommand((draft) => commitVictoryRewards(draft, result, deps, testRng));
   }
 
-  it("reports gold gain when post-reward gold exceeds battle gold", () => {
+  it("reports gold gain when gold was earned", () => {
     expect(commit()).toBe(true);
   });
 
   it("reports no gold gain when gold did not increase", () => {
     expect(commit(victoryResult({ newGold: 5, goldEarned: 0 }))).toBe(false);
+  });
+
+  it("reports gold gain when earned gold matches battle gold", () => {
+    expect(
+      commit(
+        victoryResult({ newGold: 15, goldEarned: 5 }),
+        commitDeps({ battleState: baseBattleState({ gold: 15, pendingMaterials: emptyInventory() }) }),
+      ),
+    ).toBe(true);
   });
 
   it("adds pending crystal materials to homestead", () => {
@@ -493,8 +464,9 @@ describe("commitVictoryRewards", () => {
       baseInput({ contentSystemType: "wildwood", runGold: 10, battleState }),
       testRng,
     );
-    commit(result, commitDeps({ battleState, contentSystemType: "wildwood" }));
+    const goldGained = commit(result, commitDeps({ battleState, contentSystemType: "wildwood" }));
     expect(readGameplayState().run.activeRun.runGold).toBe(15);
+    expect(goldGained).toBe(true);
   });
 
   it("stamps victory routing context onto reward state", () => {

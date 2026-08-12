@@ -7,7 +7,7 @@ import {
   setHasActiveBattle,
   setRunEndMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { useUiStore } from "../../shared/stores/ui-store";
+import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { CONSTANTS } from "../../shared/types";
 
 /** Clear the persisted battle-active state; presentation cleanup is a post-commit concern. */
@@ -17,7 +17,7 @@ export function clearCombatState(draft: GameplayDraft) {
 
 /** Clear transient combat presentation after the gameplay state has committed. */
 export function clearCombatPresentation() {
-  useUiStore.getState().clearCardHover();
+  clearBattlePresentationUi();
 }
 
 export function awardRunEndMaterials(draft: GameplayDraft): ReturnType<typeof emptyInventory> {

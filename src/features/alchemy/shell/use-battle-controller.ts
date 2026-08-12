@@ -48,7 +48,7 @@ export function useBattleController({
     battle: { battleState, hasActiveBattle, pendingBattleTransition, pendingTransitionResumeRequired },
   } = useRunSessionBattleContext(screen);
   const removeCardGhost = useBattlePresentationStore((s) => s.removeCardGhost);
-  const clearFloatingCombatTexts = useBattlePresentationStore((s) => s.clearFloatingCombatTexts);
+  const resetPresentation = useBattlePresentationStore((s) => s.resetPresentation);
 
   const scheduleAutoEndTurnRef = useRef<((state: BattleState) => void) | null>(null);
   const clearAutoEndTurnRef = useRef<(() => void) | null>(null);
@@ -139,9 +139,9 @@ export function useBattleController({
 
   useEffect(() => {
     if (screen !== "battle") {
-      clearFloatingCombatTexts();
+      resetPresentation();
     }
-  }, [screen, clearFloatingCombatTexts]);
+  }, [screen, resetPresentation]);
 
   return {
     battleState,

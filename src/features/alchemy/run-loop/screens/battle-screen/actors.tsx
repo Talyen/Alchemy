@@ -21,15 +21,34 @@ function CombatTextRailSide({ side }: { side: "player" | "enemy" }) {
   return <CombatTextRail entries={entries} side={side} />;
 }
 
-function ShakingArtPanel({
-  side,
-  ...props
-}: Omit<ComponentProps<typeof ArtPanel>, "shaking" | "hurtFlashToken"> & { side: "player" | "enemy" }) {
+type ShakingArtPanelProps = Omit<
+  ComponentProps<typeof ArtPanel>,
+  "shaking" | "hurtFlashToken" | "shimmerActive" | "shimmerToken" | "onHoverShimmer"
+> & {
+  side: "player" | "enemy";
+  shimmerId: string;
+};
+
+function ShakingArtPanel({ side, shimmerId, ...props }: ShakingArtPanelProps) {
   const shaking = useBattlePresentationStore((s) => (side === "player" ? s.playerShaking : s.enemyShaking));
   const hurtFlashToken = useBattlePresentationStore((s) =>
     side === "player" ? s.playerHurtFlashToken : s.enemyHurtFlashToken,
   );
-  return <ArtPanel {...props} side={side} shaking={shaking} hurtFlashToken={hurtFlashToken} />;
+  const shimmerActive = useUiStore((s) => s.shimmerState?.cardId === shimmerId);
+  const shimmerToken = useUiStore((s) => (s.shimmerState?.cardId === shimmerId ? s.shimmerState.token : undefined));
+  const onHoverShimmer = useUiStore((s) => s.maybeTriggerShimmer);
+  return (
+    <ArtPanel
+      {...props}
+      side={side}
+      shimmerId={shimmerId}
+      shaking={shaking}
+      hurtFlashToken={hurtFlashToken}
+      shimmerActive={shimmerActive}
+      shimmerToken={shimmerToken}
+      onHoverShimmer={onHoverShimmer}
+    />
+  );
 }
 
 function ShakingCompanionPanel(props: ComponentProps<typeof CompanionPanel>) {
@@ -47,8 +66,6 @@ export function BattleActors({
   refs: BattleRefsProps;
 }) {
   const { battleState, heroArt, playerName, aspectMode } = view;
-  const shimmerState = useUiStore((state) => state.shimmerState);
-  const onHoverShimmer = useUiStore((state) => state.maybeTriggerShimmer);
   const { playerStatusChips, enemyStatusChips, activeLabyrinthModifiers } = feedback;
   const { playerPanelRef, enemyPanelRef } = refs;
   const isPlayerTurn = battleState.turnPhase === "player";
@@ -80,9 +97,6 @@ export function BattleActors({
             maxHealth={battleState.playerMaxHealth}
             statuses={playerStatusChips}
             shimmerId="player-card"
-            shimmerActive={shimmerState?.cardId === "player-card"}
-            shimmerToken={shimmerState?.token}
-            onHoverShimmer={onHoverShimmer}
             deathsDoorActive={battleState.deathsDoorActive}
             surfaceRef={playerPanelRef}
             turnActive={isPlayerTurn}
@@ -115,9 +129,6 @@ export function BattleActors({
           maxHealth={battleState.enemyMaxHealth}
           statuses={enemyStatusChips}
           shimmerId="enemy-card"
-          shimmerActive={shimmerState?.cardId === "enemy-card"}
-          shimmerToken={shimmerState?.token}
-          onHoverShimmer={onHoverShimmer}
           surfaceRef={enemyPanelRef}
           isDead={battleState.enemyHealth <= 0}
           currentEnemy={battleState.currentEnemy}

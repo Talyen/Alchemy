@@ -18,7 +18,6 @@ export function useBattleScreenRouteData() {
     useShallow((s) => ({
       revealedCardKeys: s.revealedCardKeys,
       hiddenHandCardKeys: s.hiddenHandCardKeys,
-      cardTransfers: s.cardTransfers,
       cardTransferInProgress: s.cardTransferInProgress,
     })),
   );
@@ -60,7 +59,6 @@ export function useBattleScreenRouteData() {
 
   return {
     battleScreenData,
-    cardTransfers: battlePresentation.cardTransfers,
     hiddenHandCardKeys: battlePresentation.hiddenHandCardKeys,
     cardTransferInProgress: battlePresentation.cardTransferInProgress,
     playableHandCardKeys,

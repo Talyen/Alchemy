@@ -23,6 +23,7 @@ vi.mock("@/lib/audio", () => ({
   playVictory: vi.fn(),
   stopAllSfx: vi.fn(),
   playUISound: vi.fn(),
+  playGoldGain: vi.fn(),
 }));
 
 vi.mock("@/features/alchemy/shared/stores/run-transitions", async (importOriginal) => {
@@ -34,6 +35,8 @@ vi.mock("@/features/alchemy/shared/stores/run-transitions", async (importOrigina
 });
 
 import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-transitions";
+import { playGoldGain } from "@/lib/audio";
+import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -120,6 +123,19 @@ describe("createRunFlowHandlers victory paths", () => {
     handlers.handleBattleDefeat();
     expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
     expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.LABYRINTH_MAP);
+  });
+
+  it("handleBattleDefeat clears battle presentation for labyrinth", () => {
+    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });
+    useBattlePresentationStore.getState().spawnCardGhost({
+      art: "test.webp",
+      rect: { x: 0, y: 0, width: 10, height: 10 },
+      rotation: 0,
+      delay: 0,
+      variant: "activate",
+    });
+    createRunFlowHandlers(makeFlowHandlerDeps()).handleBattleDefeat();
+    expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
   });
 
   it("handleAbandonRun invokes applyRunDefeatTeardown for campaign", () => {
@@ -231,6 +247,40 @@ describe("createRunFlowHandlers victory paths", () => {
 
     expect(commitWildwoodVictory).toHaveBeenCalledTimes(1);
     expect(receivedDraft).toBe(true);
+  });
+
+  it("plays gold gain SFX when Wildwood victory persists in-combat gold", () => {
+    setRunProgress({
+      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD,
+      runGold: 10,
+      runDeck: [],
+      runPlayerHealth: 20,
+      runMaxHealth: 20,
+    });
+    getBattleStoreView().setSyncedBattleState({
+      ...getBattleStoreView().battleState,
+      gold: 15,
+    });
+    setRunSession({
+      wildwoodDraft: {
+        version: 3 as const,
+        phase: "battle",
+        draftChoices: [],
+        remainingBossIds: [],
+        previousBossId: null,
+        currentBossId: "forge-golem",
+        currentCombatTraitIds: [],
+        currentRewardTraitIds: [],
+        rewardType: null,
+        rewardChoiceIds: [],
+        rewardGearChoices: [],
+        selectedRewardId: null,
+      },
+    });
+
+    createRunFlowHandlers(makeFlowHandlerDeps()).commitVictoryResult();
+
+    expect(playGoldGain).toHaveBeenCalledOnce();
   });
 
   it("finishRewards ignores a second call while claim is in flight", () => {

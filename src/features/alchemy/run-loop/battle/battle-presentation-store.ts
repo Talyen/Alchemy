@@ -228,7 +228,7 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
 }));
 
 onClearBattlePresentation(() => {
-  useBattlePresentationStore.getState().clearCardGhosts();
+  useBattlePresentationStore.getState().resetPresentation();
 });
 
 onRunTeardown(() => {

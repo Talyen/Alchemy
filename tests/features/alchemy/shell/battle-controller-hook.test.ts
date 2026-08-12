@@ -60,7 +60,7 @@ describe("useBattleController", () => {
     expect(result.current.battleState).not.toEqual(defaultBattleState());
   });
 
-  it("clears floating combat text when leaving battle screen with active combat", async () => {
+  it("clears floating combat text and other VFX when leaving battle screen with active combat", async () => {
     vi.useFakeTimers();
     getBattleStoreView().setHasActiveBattle(true);
     getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
@@ -70,14 +70,23 @@ describe("useBattleController", () => {
     useBattlePresentationStore
       .getState()
       .showCombatTexts([{ target: "enemy", kind: "damage", stat: "health", amount: 5 }]);
+    useBattlePresentationStore.getState().spawnCardGhost({
+      art: "test.webp",
+      rect: { x: 0, y: 0, width: 10, height: 10 },
+      rotation: 0,
+      delay: 0,
+      variant: "activate",
+    });
     await vi.advanceTimersByTimeAsync(0);
     expect(useBattlePresentationStore.getState().floatingCombatTexts).toHaveLength(1);
+    expect(useBattlePresentationStore.getState().cardGhosts).toHaveLength(1);
 
     act(() => {
       rerender({ screen: ROUTE_SCREENS.COLLECTION });
     });
 
     expect(useBattlePresentationStore.getState().floatingCombatTexts).toEqual([]);
+    expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
     vi.useRealTimers();
   });
 });

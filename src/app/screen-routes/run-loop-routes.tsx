@@ -43,7 +43,7 @@ function BattleScreenRoute({
   onOpenBattleMenu: BattleRouteCtx["onOpenBattleMenu"];
 }) {
   const { heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
-  const { battleScreenData, cardTransfers, hiddenHandCardKeys, cardTransferInProgress, playableHandCardKeys } =
+  const { battleScreenData, hiddenHandCardKeys, cardTransferInProgress, playableHandCardKeys } =
     useBattleScreenRouteData();
 
   return (
@@ -59,7 +59,6 @@ function BattleScreenRoute({
       onWishChoice={commands.handleWishChoice}
       onSkipCombatDevMode={commands.skipCombatDevMode}
       onEndTurn={commands.handleEndTurn}
-      cardTransfers={cardTransfers}
       hiddenHandCardKeys={hiddenHandCardKeys}
       cardTransferInProgress={cardTransferInProgress}
       playableHandCardKeys={playableHandCardKeys}
