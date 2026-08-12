@@ -14,9 +14,3 @@ function createLcgRng(seed: number): () => number {
 export function seededRng(seed = 42): () => number {
   return createLcgRng(seed);
 }
-
-/** Sequential rolls, then 0.99 (no-proc) for talent/trinket chance tests. */
-export function rngSequence(...values: number[]): () => number {
-  let index = 0;
-  return () => (index < values.length ? values[index++]! : 0.99);
-}
