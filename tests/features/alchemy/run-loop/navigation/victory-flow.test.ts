@@ -4,6 +4,7 @@ import {
   computeVictoryRewards,
   commitVictoryRewards,
   type VictoryRewardsInput,
+  type VictoryRewardsResult,
 } from "@/features/alchemy/run-loop/navigation/victory-flow";
 import {
   withSelectedBossForDestinations,
@@ -448,7 +449,7 @@ describe("commitVictoryRewards", () => {
     };
   }
 
-  function commit(result = victoryResult(), deps = commitDeps()) {
+  function commit(result: VictoryRewardsResult = victoryResult() as VictoryRewardsResult, deps = commitDeps()) {
     return dispatchRunSessionCommand((draft) => commitVictoryRewards(draft, result, deps, testRng));
   }
 

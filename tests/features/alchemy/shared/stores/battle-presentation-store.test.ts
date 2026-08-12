@@ -154,7 +154,7 @@ describe("battle-presentation-store", () => {
       .getState()
       .floatingCombatTexts.filter((text) => text.target === "enemy");
     expect(enemyTexts).toHaveLength(3);
-    expect(enemyTexts.map((text) => text.amount)).toEqual([2, 3, 4]);
+    expect(enemyTexts.map((text) => ("amount" in text ? text.amount : undefined))).toEqual([2, 3, 4]);
     vi.useRealTimers();
   });
 });
