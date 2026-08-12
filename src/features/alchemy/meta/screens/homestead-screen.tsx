@@ -78,7 +78,7 @@ export function HomesteadScreen({
 
   return (
     <PageLayout>
-      <ScreenShell maxWidthClass="max-w-6xl" minHeightClass={HOMESTEAD_CONFIG.shellMinHeightClass} className="relative">
+      <ScreenShell maxWidthClass="max-w-7xl" minHeightClass={HOMESTEAD_CONFIG.shellMinHeightClass} className="relative">
         <ScreenHeaderRow
           title="Homestead"
           trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open homestead menu" />}

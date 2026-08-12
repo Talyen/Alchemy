@@ -6,7 +6,7 @@ import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-c
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 import { materialLabels } from "@/lib/homestead/types";
-import { matIconMap, matPillStyle, matTextColor } from "./material-icons";
+import { MaterialIcon, matPillStyle, matTextColor } from "./material-icons";
 import { TooltipHeader } from "./tooltip-panel";
 import type { MysteryEffect } from "@/lib/mystery";
 
@@ -47,7 +47,7 @@ function renderMaterialBadge(effect: MysteryEffect): React.ReactNode {
         matTextColor[mat],
       )}
     >
-      <span>{matIconMap[mat]}</span>
+      <MaterialIcon material={mat} className="h-4 w-4" />
       {`${e.amount} ${materialLabels[mat]}`}
     </span>
   );

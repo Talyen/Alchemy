@@ -7,7 +7,7 @@ import { DetailPopup } from "../../../shared/ui/card-popup";
 import { DisabledTooltip } from "../../../shared/ui/shared-ui";
 import { type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
-import { matIconMap, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
+import { MaterialIcon, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
 import { HOMESTEAD_CONFIG, type GoalItem, MaterialCost, getArt, renderTextWithMaterials } from "./helpers";
 import { HomesteadTileCompletedFooter, HomesteadTileFrame } from "./homestead-tile-node";
 
@@ -47,7 +47,7 @@ export function HomesteadUpgradeNode({
   ) : hasCost ? (
     <div className="mt-1.5 flex items-center gap-2">
       <DisabledTooltip show={!itemAffordable} message="Not Enough Resources">
-        <Button size="lg" variant="outline" disabled={!itemAffordable} onClick={() => onAction(item)}>
+        <Button variant="outline" disabled={!itemAffordable} onClick={() => onAction(item)}>
           {item.data.title}
           {costItems.map((m) => (
             <MaterialCost key={m} material={m} amount={itemCost[m]} />
@@ -87,7 +87,7 @@ function buildFarmYieldNodes(farm: { yield: Record<string, number> }): ReactNode
             matTextColor[m],
           )}
         >
-          {matIconMap[m]} +{farm.yield[m]} {materialLabels[m]}
+          <MaterialIcon material={m} className="h-4 w-4" /> +{farm.yield[m]} {materialLabels[m]}
         </span>,
       );
     }

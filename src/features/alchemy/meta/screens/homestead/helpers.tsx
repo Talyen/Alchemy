@@ -32,7 +32,7 @@ import {
   type MaterialInventory,
   materialLabels,
 } from "@/lib/homestead/types";
-import { MaterialIcon, MaterialPill, matIconMap, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
+import { MaterialIcon, MaterialPill, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
 import { TabBar } from "../../../shared/ui/tab-bar";
 import { Hammer, Wheat, FlaskConical, PawPrint } from "lucide-react";
 import { tokenizeDescription } from "../../../shared/utils";
@@ -53,7 +53,7 @@ export const HOMESTEAD_CONFIG = {
   // Pinned to the Companions tab's rendered shell height (Playwright-measured
   // at 1920x1080). Keeps the outer shell the same height on every tab so the
   // page doesn't visibly resize on tab switch.
-  shellMinHeightClass: "min-h-[104.3cqh]",
+  shellMinHeightClass: "min-h-[111.3cqh]",
 } as const;
 
 const itemArt: Record<string, string> = {
@@ -84,9 +84,7 @@ export function getArt(id: string): string {
 export function MaterialCost({ material, amount }: { material: MaterialId; amount: number }) {
   return (
     <span className="ml-1.5 inline-flex h-5 shrink-0 items-center gap-1 leading-none">
-      <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden">
-        <MaterialIcon material={material} />
-      </span>
+      <MaterialIcon material={material} className="h-4 w-4" />
       <span className={cn("leading-none tabular-nums", matTextColor[material])}>{amount}</span>
     </span>
   );
@@ -119,7 +117,7 @@ export function renderTextWithMaterials(text: string): ReactNode {
                 matTextColor[mat],
               )}
             >
-              {matIconMap[mat]}
+              <MaterialIcon material={mat} className="h-4 w-4" />
               {sub}
             </span>,
           );
