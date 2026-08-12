@@ -2,9 +2,14 @@
 // Depends on the battle combat-text helper and type contracts.
 import { describe, expect, it } from "vitest";
 
-import { emitOverhealBlockText, mergeCombatText, shouldShowCombatText } from "@/lib/battle/combat-text";
+import {
+  applyHealingWithCombatText,
+  emitOverhealBlockText,
+  mergeCombatText,
+  shouldShowCombatText,
+} from "@/lib/battle/combat-text";
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
-import { makeCombatTexts as makeTexts } from "../../fixtures/battle";
+import { makeCombatTexts as makeTexts, makeTestBattleState } from "../../fixtures/battle";
 
 describe("shouldShowCombatText", () => {
   it("hides harmful status application text", () => {
@@ -67,5 +72,15 @@ describe("emitOverhealBlockText", () => {
     const texts = makeTexts();
     emitOverhealBlockText({ playerStatuses: statuses }, { playerStatuses: statuses }, texts);
     expect(texts).toEqual([]);
+  });
+});
+
+describe("applyHealingWithCombatText", () => {
+  it("emits only actual health gained on overheal", () => {
+    const state = makeTestBattleState({ playerHealth: 29, playerMaxHealth: 30 });
+    const texts = makeTexts();
+    applyHealingWithCombatText(state, 10, texts);
+    const healText = texts.find((t) => t.kind === "heal");
+    expect(healText).toEqual({ target: "player", kind: "heal", stat: "health", amount: 1 });
   });
 });

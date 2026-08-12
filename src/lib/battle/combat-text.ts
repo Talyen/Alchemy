@@ -79,7 +79,10 @@ export function applyHealingWithCombatText(
   const prevState = state;
   const nextState = applyPlayerHealing(state, amount);
   if (combatTexts) {
-    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount });
+    const actualHeal = nextState.playerHealth - prevState.playerHealth;
+    if (actualHeal > 0) {
+      mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: actualHeal });
+    }
     emitOverhealBlockText(prevState, nextState, combatTexts);
   }
   return nextState;

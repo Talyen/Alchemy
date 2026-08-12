@@ -80,7 +80,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
   // first-time-per-combat flags, sets them to "used" values, runs the effects,
   // then restores the originals — without the manual scope-guard boilerplate.
   return withPreservedFlags(state, (s) => {
-    const afterEffects = processEncounterTraitCardAction(
+    let afterEffects = processEncounterTraitCardAction(
       applyCardEffects(s, companionCard, combatTexts),
       companionCard,
       combatTexts,
@@ -98,7 +98,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
           amount: state.gearEffects.healOnCompanionAttack,
         });
         emitOverhealBlockText(prevState, healedState, combatTexts);
-        return healedState;
+        afterEffects = healedState;
       }
     }
 
@@ -119,7 +119,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
             amount: leechHeal,
           });
           emitOverhealBlockText(prevState, healedState, combatTexts);
-          return healedState;
+          afterEffects = healedState;
         }
       }
     }

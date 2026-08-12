@@ -97,12 +97,11 @@ function executeCardPlayState(
     // Reset the temporary single-use card cost reduction after playing the card
     flags: { ...state.flags, nextCardCostReduction: 0 },
     cardsPlayedThisTurn: state.cardsPlayedThisTurn + 1,
+    // Deduct mana cost first so that refunds aren't capped by maxMana prematurely.
+    mana: Math.max(0, state.mana - effectiveCost),
   };
 
   nextState = applyCardEffects(nextState, card, combatTexts);
-
-  // Deduct mana cost first so that refunds aren't capped by maxMana prematurely.
-  nextState = { ...nextState, mana: Math.max(0, nextState.mana - effectiveCost) };
 
   if (cardHasDamageType(card, "nature") && state.gearEffects.manaOnNatureDamageChance > 0) {
     if (state.rng() * 100 < state.gearEffects.manaOnNatureDamageChance) {

@@ -344,4 +344,27 @@ describe("processCompanionTurnStart", () => {
     // Roll fails, no leech.
     expect(result.playerHealth).toBe(10);
   });
+
+  it("applies both healOnCompanionAttack gear and companionLeechChance talent when both are active", () => {
+    const state = makeTestBattleState({
+      activeCompanion: companionLibrary.imp,
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      gearEffects: {
+        ...makeTestBattleState().gearEffects,
+        healOnCompanionAttack: 4,
+      },
+      talentEffects: {
+        ...makeTestBattleState().talentEffects,
+        companionLeechChance: 100,
+      },
+    });
+    const texts = makeTexts();
+    const result = processCompanionTurnStart(state, texts);
+    // Gear heal (4) and leech heal (1) both apply -> health is 15. Combat text merges to amount: 5.
+    expect(result.playerHealth).toBe(15);
+    const healText = texts.find((t) => t.kind === "heal") as { amount?: number } | undefined;
+    expect(healText).toBeDefined();
+    expect(healText?.amount).toBe(5);
+  });
 });

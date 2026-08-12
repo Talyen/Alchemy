@@ -355,3 +355,21 @@ describe("canPlayCard — remove-harmful-status", () => {
     expect(result.state.hand).toHaveLength(1);
   });
 });
+
+describe("playBattleCardResolved — mana refund ordering", () => {
+  it("deducts cost before restore-mana effect so refunds at maxMana are not capped prematurely", () => {
+    const card = makeTestCard({
+      id: "mana-card",
+      cost: 2,
+      effects: [{ kind: "restore-mana", amount: 2 }],
+    });
+    const state = makeState({
+      mana: 3,
+      maxMana: 3,
+      hand: [card],
+    });
+    const result = playBattleCardResolved(state, "mana-card", 0);
+    // Cost (2) is deducted first (3 -> 1), then restore-mana (2) brings mana back to 3/3.
+    expect(result.state.mana).toBe(3);
+  });
+});

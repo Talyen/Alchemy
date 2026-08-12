@@ -266,6 +266,7 @@ export async function clearAlchemySaveData(): Promise<boolean> {
   let cleared = false;
   const run = saveWriteChain.then(async () => {
     try {
+      coalescedSave = null;
       const result = await removeStorageItem(SAVE_KEY);
       if (result.ok) {
         writesDisabledForSession = false;
@@ -274,11 +275,13 @@ export async function clearAlchemySaveData(): Promise<boolean> {
       }
       logStorageFailure("Save data could not be cleared", result.error);
     } finally {
+      coalescedSave = null;
       clearPending = false;
     }
   });
   // Keep the chain alive even if clear logs-and-continues; never reject the gate.
   saveWriteChain = run.catch(() => {
+    coalescedSave = null;
     clearPending = false;
   });
   try {
