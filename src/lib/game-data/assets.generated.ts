@@ -264,17 +264,6 @@ export { default as stoneskinPotion } from "@/assets/optimized/stoneskin-potion.
 export { default as sunburst } from "@/assets/optimized/sunburst.webp";
 export { default as sunderArmor } from "@/assets/optimized/sunder-armor.webp";
 export { default as sunderingCharm } from "@/assets/optimized/sundering-charm.webp";
-export { default as talentBgArmor } from "@/assets/optimized/talent-bg-armor.webp";
-export { default as talentBgBleed } from "@/assets/optimized/talent-bg-bleed.webp";
-export { default as talentBgBurn } from "@/assets/optimized/talent-bg-burn.webp";
-export { default as talentBgCompanion } from "@/assets/optimized/talent-bg-companion.webp";
-export { default as talentBgForge } from "@/assets/optimized/talent-bg-forge.webp";
-export { default as talentBgFreeze } from "@/assets/optimized/talent-bg-freeze.webp";
-export { default as talentBgLeech } from "@/assets/optimized/talent-bg-leech.webp";
-export { default as talentBgMana } from "@/assets/optimized/talent-bg-mana.webp";
-export { default as talentBgNature } from "@/assets/optimized/talent-bg-nature.webp";
-export { default as talentBgPhysical } from "@/assets/optimized/talent-bg-physical.webp";
-export { default as talentBgStun } from "@/assets/optimized/talent-bg-stun.webp";
 export { default as tatteredPages } from "@/assets/optimized/tattered-pages.webp";
 export { default as theBlightTreant } from "@/assets/optimized/the-blight-treant.webp";
 export { default as theCampaign } from "@/assets/optimized/the-campaign.webp";

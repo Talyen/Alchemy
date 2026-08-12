@@ -24,7 +24,6 @@ import {
   XP_TRIANGULAR_MULTIPLIER,
   XP_MIN_THRESHOLD,
   XP_ROOT_DIVISOR,
-  TALENT_CHOICES_OFFERED,
   SHOP_CARD_PRICE,
   SHOP_REMOVE_PRICE,
   SHOP_REFRESH_PRICE,
@@ -145,10 +144,6 @@ describe("Talent / XP constants", () => {
   it("XP_ROOT_DIVISOR is between 0 and 1", () => {
     expect(XP_ROOT_DIVISOR).toBeGreaterThan(0);
     expect(XP_ROOT_DIVISOR).toBeLessThanOrEqual(1);
-  });
-
-  it("TALENT_CHOICES_OFFERED is positive", () => {
-    expect(TALENT_CHOICES_OFFERED).toBeGreaterThanOrEqual(1);
   });
 });
 

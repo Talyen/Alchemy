@@ -1,18 +1,18 @@
-// Talent tree screen — spend XP to unlock keyword-specific talents.
-import { useState, useMemo } from "react";
+// Talent screen — spend XP to unlock keyword-specific talents.
+import { useMemo, useState } from "react";
 import { RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
-  talentBackgroundArt,
   type KeywordId,
   getTalentsForKeyword,
   countImplementedTalents,
   getTalentKeywordProgress,
+  getAllocatableTalentChoices,
+  getTalentTreeKeywordIds,
   type UnlockedTalents,
   type TalentXP,
 } from "@/lib/game-data";
-import { getTalentTreeKeywordIds } from "@/lib/game-data";
 
 import { TalentKeywordButton } from "../talents/talents-ui";
 import {
@@ -22,9 +22,24 @@ import {
   ScreenHeaderRow,
   ScreenShell,
 } from "../../shared/ui/shared-ui";
-import { useTalentChoices } from "../talents/use-talent-choices";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
+
+const CHIP_ROW_COUNT = 3;
+
+function chunkIntoRows<T>(items: T[], rowCount: number): T[][] {
+  const rows: T[][] = [];
+  let index = 0;
+  let remaining = items.length;
+  for (let i = 0; i < rowCount; i++) {
+    const groupsLeft = rowCount - i;
+    const size = Math.ceil(remaining / groupsLeft);
+    rows.push(items.slice(index, index + size));
+    index += size;
+    remaining -= size;
+  }
+  return rows;
+}
 
 export function TalentsScreen({
   talentXP,
@@ -42,17 +57,19 @@ export function TalentsScreen({
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordId>("physical");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const keywordIds = useMemo(() => getTalentTreeKeywordIds(), []);
+  const chipRows = useMemo(() => chunkIntoRows(keywordIds, CHIP_ROW_COUNT), [keywordIds]);
 
   const unlockedIds = useMemo(() => unlockedTalents[selectedKeyword] ?? [], [selectedKeyword, unlockedTalents]);
-  const allTalentsForKeyword = getTalentsForKeyword(selectedKeyword);
-  const unlockedTalentsForKeyword = useMemo(
-    () => allTalentsForKeyword.filter((t) => unlockedIds.includes(t.id)),
-    [allTalentsForKeyword, unlockedIds],
+  const allTalentsForKeyword = useMemo(() => getTalentsForKeyword(selectedKeyword), [selectedKeyword]);
+  const allocatableIds = useMemo(
+    () => new Set(getAllocatableTalentChoices(selectedKeyword, unlockedIds).map((t) => t.id)),
+    [selectedKeyword, unlockedIds],
   );
-
-  const { currentChoices } = useTalentChoices(selectedKeyword, talentXP, unlockedIds);
-  const MASK_ID = "talent-bg-mask";
-  const BLUR_ID = "talent-bg-blur";
+  const progress = getTalentKeywordProgress(
+    talentXP[selectedKeyword] ?? 0,
+    unlockedIds.length,
+    countImplementedTalents(selectedKeyword),
+  );
 
   function handleUnlockTalent(talentId: string) {
     onUnlockTalent(selectedKeyword, talentId);
@@ -71,69 +88,52 @@ export function TalentsScreen({
       <ScreenShell>
         <ScreenHeaderRow
           title="Talents"
-          trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open talents menu" />}
+          trailing={
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 text-muted-foreground"
+                onClick={() => setShowResetConfirm(true)}
+                aria-label="Reset talents"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+              <HamburgerTrigger onClick={onOpenMenu} label="Open talents menu" />
+            </div>
+          }
         />
 
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          {keywordIds.map((kw) => {
-            const kwProgress = getTalentKeywordProgress(
-              talentXP[kw] ?? 0,
-              (unlockedTalents[kw] ?? []).length,
-              countImplementedTalents(kw),
-            );
-            return (
-              <TalentKeywordButton
-                key={kw}
-                keywordId={kw}
-                hasUnspent={kwProgress.hasUnspent}
-                isSelected={selectedKeyword === kw}
-                onClick={() => setSelectedKeyword(kw)}
-              />
-            );
-          })}
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground"
-            onClick={() => setShowResetConfirm(true)}
-            aria-label="Reset talents"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-          </Button>
+        <div className="mt-6 flex flex-col items-center gap-2">
+          {chipRows.map((row, rowIndex) => (
+            <div key={rowIndex} className="flex flex-wrap justify-center gap-2">
+              {row.map((kw) => {
+                const kwProgress = getTalentKeywordProgress(
+                  talentXP[kw] ?? 0,
+                  (unlockedTalents[kw] ?? []).length,
+                  countImplementedTalents(kw),
+                );
+                return (
+                  <TalentKeywordButton
+                    key={kw}
+                    keywordId={kw}
+                    hasUnspent={kwProgress.hasUnspent}
+                    isSelected={selectedKeyword === kw}
+                    onClick={() => setSelectedKeyword(kw)}
+                  />
+                );
+              })}
+            </div>
+          ))}
         </div>
 
-        <div className="relative mt-6 aspect-[4/3]">
-          <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-0">
-            <defs>
-              <filter id={BLUR_ID}>
-                <feGaussianBlur stdDeviation="24" />
-              </filter>
-              <mask id={MASK_ID} maskUnits="userSpaceOnUse">
-                <rect x="7%" y="7%" width="86%" height="86%" rx="24" fill="white" filter={`url(#${BLUR_ID})`} />
-              </mask>
-            </defs>
-          </svg>
-          {talentBackgroundArt[selectedKeyword] ? (
-            <div
-              key={selectedKeyword}
-              className="state-fade absolute inset-0 overflow-hidden"
-              style={{
-                backgroundImage: `url(${talentBackgroundArt[selectedKeyword]})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                filter: "brightness(0.9)",
-                maskImage: `url(#${MASK_ID})`,
-                WebkitMaskImage: `url(#${MASK_ID})`,
-              }}
-            />
-          ) : null}
-
+        <div className="mt-6">
           <TalentTree
             key={selectedKeyword}
-            keywordId={selectedKeyword}
-            unlockedTalents={unlockedTalentsForKeyword}
             allTalents={allTalentsForKeyword}
-            choices={currentChoices}
+            unlockedIds={unlockedIds}
+            allocatableIds={allocatableIds}
+            hasUnspentPoints={progress.unspentPoints > 0}
             onUnlock={handleUnlockTalent}
             onUnlockBegin={handleUnlockTalentBegin}
           />

@@ -198,31 +198,6 @@
   }
 }
 
-@keyframes talentUnlockRing {
-  0% {
-    opacity: 0.95;
-    transform: scale(0.8);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(2.6);
-  }
-}
-
-@keyframes talentUnlockSpark {
-  0% {
-    opacity: 1;
-    transform: rotate(var(--spark-angle)) translateY(calc(-50cqmin)) scale(1);
-  }
-  70% {
-    opacity: 0.85;
-  }
-  100% {
-    opacity: 0;
-    transform: rotate(var(--spark-angle)) translateY(calc(-180cqmin)) scale(0.15);
-  }
-}
-
 @keyframes talentUnlockPop {
   0% {
     filter: brightness(1);

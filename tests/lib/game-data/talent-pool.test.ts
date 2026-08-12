@@ -3,12 +3,14 @@ import type { KeywordId } from "@/lib/game-data";
 import {
   talentPool,
   getTalentsForKeyword,
-  getNextTalentChoices,
+  getAllocatableTalentChoices,
+  getTalentRows,
+  getTalentRowIndex,
+  isTalentRowUnlocked,
   computeTalentEffects,
   canUnlockTalent,
   tryUnlockTalent,
   isTalentPlaceholder,
-  countImplementedTalents,
 } from "@/lib/game-data";
 import { getTalentTreeKeywordIds } from "@/lib/game-data";
 
@@ -88,38 +90,64 @@ describe("getTalentsForKeyword", () => {
   });
 });
 
-describe("getNextTalentChoices", () => {
-  it("excludes already unlocked talents", () => {
-    const allPhys = getTalentsForKeyword("physical");
-    const unlocked = allPhys.slice(0, 2).map((t) => t.id);
-    const available = getNextTalentChoices("physical", unlocked, 10);
-    expect(available.every((t) => !unlocked.includes(t.id))).toBe(true);
+describe("talent row layout", () => {
+  it("splits a full keyword into rows of 1, 2, 3, 4 in pool order", () => {
+    const rows = getTalentRows("physical");
+    expect(rows.map((row) => row.length)).toEqual([1, 2, 3, 4]);
+    expect(rows.flat().map((t) => t.id)).toEqual(getTalentsForKeyword("physical").map((t) => t.id));
   });
 
-  it("excludes placeholder talents", () => {
-    const choices = getNextTalentChoices("consume", [], 10);
-    expect(choices).toHaveLength(5);
-    expect(getTalentsForKeyword("consume").every(isTalentPlaceholder)).toBe(false);
+  it("pads partial keywords to the full grid with placeholders", () => {
+    const rows = getTalentRows("archery");
+    expect(rows.map((row) => row.length)).toEqual([1, 2, 3, 4]);
+    expect(rows[3]).toHaveLength(4);
+    expect(rows.flat().filter((t) => isTalentPlaceholder(t))).toHaveLength(5);
   });
 
-  it("excludes placeholder-only keywords from the talent tree", () => {
+  it("reports the row for a grid position", () => {
+    expect(getTalentRowIndex(0)).toBe(0);
+    expect(getTalentRowIndex(1)).toBe(1);
+    expect(getTalentRowIndex(2)).toBe(1);
+    expect(getTalentRowIndex(3)).toBe(2);
+    expect(getTalentRowIndex(6)).toBe(3);
+    expect(getTalentRowIndex(9)).toBe(3);
+  });
+
+  it("row 0 is always unlocked", () => {
+    expect(isTalentRowUnlocked("physical", [], 0)).toBe(true);
+  });
+
+  it("a row is unlocked only when every real talent above it is unlocked", () => {
+    const phys = getTalentsForKeyword("physical");
+    expect(isTalentRowUnlocked("physical", [], 1)).toBe(false);
+    expect(isTalentRowUnlocked("physical", [phys[0]!.id], 1)).toBe(true);
+    expect(isTalentRowUnlocked("physical", [phys[0]!.id], 2)).toBe(false);
+    expect(isTalentRowUnlocked("physical", [phys[0]!.id, phys[1]!.id, phys[2]!.id], 2)).toBe(true);
+  });
+
+  it("placeholder nodes never gate later rows", () => {
+    const archery = getTalentsForKeyword("archery");
+    const realIds = archery.filter((t) => !isTalentPlaceholder(t)).map((t) => t.id);
+    expect(isTalentRowUnlocked("archery", realIds, 3)).toBe(true);
+  });
+
+  it("getAllocatableTalentChoices returns only real talents on unlocked rows", () => {
+    const phys = getTalentsForKeyword("physical");
+    expect(getAllocatableTalentChoices("physical", []).map((t) => t.id)).toEqual([phys[0]!.id]);
+    const ids = [0, 1, 2].map((i) => phys[i]!.id);
+    expect(getAllocatableTalentChoices("physical", ids).map((t) => t.id)).toEqual([3, 4, 5].map((i) => phys[i]!.id));
+  });
+
+  it("getAllocatableTalentChoices never returns placeholders", () => {
+    expect(getAllocatableTalentChoices("consume", [])).toHaveLength(1);
+    expect(getAllocatableTalentChoices("consume", []).every((t) => !isTalentPlaceholder(t))).toBe(true);
+  });
+
+  it("includes partial keywords in the talent tree", () => {
     expect(getTalentTreeKeywordIds()).toContain("nature");
     expect(getTalentTreeKeywordIds()).toContain("archery");
     expect(getTalentTreeKeywordIds()).toContain("companion");
     expect(getTalentTreeKeywordIds()).toContain("consume");
-  });
-
-  it("returns the requested number of choices", () => {
-    const choices = getNextTalentChoices("physical", [], 3);
-    expect(choices).toHaveLength(3);
-  });
-
-  it("returns fewer choices if not enough available", () => {
-    const implemented = getTalentsForKeyword("archery").filter((t) => !isTalentPlaceholder(t));
-    const unlocked = implemented.slice(0, -1).map((t) => t.id);
-    const choices = getNextTalentChoices("archery", unlocked, 10);
-    expect(choices).toHaveLength(1);
-    expect(countImplementedTalents("archery")).toBe(5);
   });
 });
 
@@ -140,18 +168,31 @@ describe("canUnlockTalent", () => {
     expect(canUnlockTalent("physical", "physical-brute-force", {}, {}).ok).toBe(false);
   });
 
-  it("allows the next implemented choice when points are available", () => {
-    const next = getNextTalentChoices("physical", [], 1)[0]!;
-    const result = canUnlockTalent("physical", next.id, { physical: 10 }, {});
+  it("allows a real talent on an unlocked row when points are available", () => {
+    const phys = getTalentsForKeyword("physical");
+    const result = canUnlockTalent("physical", phys[0]!.id, { physical: 10 }, {});
     expect(result.ok).toBe(true);
+  });
+
+  it("allows any real talent on an unlocked row, not just the next in order", () => {
+    const phys = getTalentsForKeyword("physical");
+    const unlocked = { physical: [phys[0]!.id, phys[1]!.id] };
+    const result = canUnlockTalent("physical", phys[2]!.id, { physical: 100 }, unlocked);
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects talents on rows that are not unlocked yet", () => {
+    const phys = getTalentsForKeyword("physical");
+    const result = canUnlockTalent("physical", phys[3]!.id, { physical: 100 }, {});
+    expect(result).toEqual({ ok: false, reason: "not-eligible-choice" });
   });
 });
 
 describe("tryUnlockTalent", () => {
   it("appends only when validation passes", () => {
-    const next = getNextTalentChoices("physical", [], 1)[0]!;
-    const applied = tryUnlockTalent("physical", next.id, { physical: 10 }, {});
-    expect(applied.unlockedTalents?.physical).toEqual([next.id]);
+    const phys = getTalentsForKeyword("physical");
+    const applied = tryUnlockTalent("physical", phys[0]!.id, { physical: 10 }, {});
+    expect(applied.unlockedTalents?.physical).toEqual([phys[0]!.id]);
   });
 });
 

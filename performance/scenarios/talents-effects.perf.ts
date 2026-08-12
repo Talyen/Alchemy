@@ -5,7 +5,7 @@ import { expect, test } from "../fixtures";
 const MEASURE_MS = Number.parseInt(process.env.PERF_MEASURE_MS ?? "15000", 10);
 
 test.describe("talents-effects", () => {
-  test("talent background, hover, and keyword transitions", async ({ measureScenario }) => {
+  test("talent tree hover, node states, and keyword transitions", async ({ measureScenario }) => {
     await measureScenario({
       scenario: "talents-effects",
       profile: "continuous",

@@ -72,7 +72,7 @@ const metaScreenImports = await calculateImports("src/features/alchemy/meta/scre
 for (const restriction of ["run-domain-store", "run-loop", "@/lib/battle/*", "run-loop/run"]) {
   assertImportGroup(metaScreenImports, restriction, "meta screen");
 }
-const metaNonScreenImports = await calculateImports("src/features/alchemy/meta/talents/talent-positions.ts");
+const metaNonScreenImports = await calculateImports("src/features/alchemy/meta/talents/talent-tree.tsx");
 assertImportGroup(metaNonScreenImports, "run-loop", "meta non-screen");
 assert.ok(
   !patternGroups(metaNonScreenImports).some((group) => group.includes("run-loop/run")),

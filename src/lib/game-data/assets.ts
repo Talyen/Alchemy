@@ -1,6 +1,5 @@
 // Imported asset references (all .webp) consumed by game-data barrel readers and UI.
 // The prebuild step optimizes PNG source files into webp; this file only sees the output.
-import type { KeywordId } from "./types";
 import * as assetRefs from "./assets.generated";
 
 export * from "./assets.generated";
@@ -70,20 +69,6 @@ const assetModules = import.meta.glob("@/assets/optimized/*.webp", {
   import: "default",
 });
 export const allGameArt = Object.values(assetModules) as string[];
-
-export const talentBackgroundArt: Partial<Record<KeywordId, string>> = {
-  physical: assetRefs.talentBgPhysical,
-  stun: assetRefs.talentBgStun,
-  forge: assetRefs.talentBgForge,
-  armor: assetRefs.talentBgArmor,
-  burn: assetRefs.talentBgBurn,
-  bleed: assetRefs.talentBgBleed,
-  freeze: assetRefs.talentBgFreeze,
-  mana: assetRefs.talentBgMana,
-  leech: assetRefs.talentBgLeech,
-  nature: assetRefs.talentBgNature,
-  companion: assetRefs.talentBgCompanion,
-};
 
 export const gearSlotBackgroundArt = {
   body: assetRefs.gearSlotBody,

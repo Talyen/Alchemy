@@ -1,14 +1,12 @@
 /**
  * Talent unlock validation — authoritative rules for spending keyword points.
- * Depends on: talent pool, progression math, and choice ordering helpers.
+ * Depends on: talent pool, progression math, and row unlock eligibility.
  */
-import { TALENT_CHOICES_OFFERED } from "@/lib/game-constants";
 import type { KeywordId } from "../types";
-import { getNextTalentChoices } from "./choices";
+import { countImplementedTalents, getTalentRowIndex, getTalentsForKeyword, isTalentRowUnlocked } from "./choices";
 import { talentPool } from "./pool";
 import { getTalentKeywordProgress, type TalentXP } from "./progression";
 import type { UnlockedTalents } from "./types";
-import { countImplementedTalents } from "./choices";
 
 export type UnlockTalentFailureReason =
   | "unknown-talent"
@@ -41,8 +39,8 @@ export function canUnlockTalent(
   );
   if (!progress.hasUnspent) return { ok: false, reason: "no-unspent-points" };
 
-  const choices = getNextTalentChoices(keywordId, unlockedIds, TALENT_CHOICES_OFFERED);
-  if (!choices.some((choice) => choice.id === talentId)) {
+  const index = getTalentsForKeyword(keywordId).findIndex((entry) => entry.id === talentId);
+  if (index < 0 || !isTalentRowUnlocked(keywordId, unlockedIds, getTalentRowIndex(index))) {
     return { ok: false, reason: "not-eligible-choice" };
   }
 
