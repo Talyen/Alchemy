@@ -52,6 +52,24 @@ export function formatCompanionTurnLineBase(effect: BattleCardEffect, amountOver
   return companionTurnLine(effect, amountOverride);
 }
 
+export interface CompanionTurnLineContext {
+  bondLevel?: number;
+  damageBonus?: number;
+}
+
+/** Companion turn-start line including bond-level and global damage bonus context. */
+export function formatCompanionTurnStartLine(
+  turnEffect: BattleCardEffect,
+  context: CompanionTurnLineContext = {},
+): string | null {
+  if (turnEffect.kind === "damage") {
+    const bondLevel = context.bondLevel ?? 0;
+    const globalBonus = context.damageBonus ?? 0;
+    return formatCompanionTurnLineBase(turnEffect, turnEffect.amount + bondLevel + globalBonus);
+  }
+  return formatCompanionTurnLineBase(turnEffect);
+}
+
 export function expectedCompanionTurnLine(effect: BattleCardEffect): string {
   const line = companionTurnLine(effect);
   if (!line) {

@@ -18,12 +18,6 @@ export function useBattleScreenRouteData() {
     useShallow((s) => ({
       revealedCardKeys: s.revealedCardKeys,
       cardGhosts: s.cardGhosts,
-      floatingCombatTexts: s.floatingCombatTexts,
-      enemyShaking: s.enemyShaking,
-      playerShaking: s.playerShaking,
-      companionShaking: s.companionShaking,
-      playerHurtFlashToken: s.playerHurtFlashToken,
-      enemyHurtFlashToken: s.enemyHurtFlashToken,
       hiddenHandCardKeys: s.hiddenHandCardKeys,
       cardTransfers: s.cardTransfers,
       cardTransferInProgress: s.cardTransferInProgress,
@@ -35,12 +29,6 @@ export function useBattleScreenRouteData() {
       displayOverrides,
       revealedCardKeys: battlePresentation.revealedCardKeys,
       cardGhosts: battlePresentation.cardGhosts,
-      floatingCombatTexts: battlePresentation.floatingCombatTexts,
-      enemyShaking: battlePresentation.enemyShaking,
-      playerShaking: battlePresentation.playerShaking,
-      companionShaking: battlePresentation.companionShaking,
-      playerHurtFlashToken: battlePresentation.playerHurtFlashToken,
-      enemyHurtFlashToken: battlePresentation.enemyHurtFlashToken,
       activeLabyrinthModifiers,
     }),
     [
@@ -48,19 +36,34 @@ export function useBattleScreenRouteData() {
       displayOverrides,
       battlePresentation.revealedCardKeys,
       battlePresentation.cardGhosts,
-      battlePresentation.floatingCombatTexts,
-      battlePresentation.enemyShaking,
-      battlePresentation.playerShaking,
-      battlePresentation.companionShaking,
-      battlePresentation.playerHurtFlashToken,
-      battlePresentation.enemyHurtFlashToken,
       activeLabyrinthModifiers,
     ],
   );
 
   const playableHandCardKeys = useMemo(
-    () => getPlayableHandCardKeysExcludingHidden(battleState, battlePresentation.hiddenHandCardKeys),
-    [battleState, battlePresentation.hiddenHandCardKeys],
+    () =>
+      getPlayableHandCardKeysExcludingHidden(
+        {
+          hand: battleState.hand,
+          turnPhase: battleState.turnPhase,
+          mana: battleState.mana,
+          wishOptions: battleState.wishOptions,
+          flags: battleState.flags,
+          talentEffects: battleState.talentEffects,
+          trinketEffects: battleState.trinketEffects,
+        },
+        battlePresentation.hiddenHandCardKeys,
+      ),
+    [
+      battleState.hand,
+      battleState.turnPhase,
+      battleState.mana,
+      battleState.wishOptions,
+      battleState.flags,
+      battleState.talentEffects,
+      battleState.trinketEffects,
+      battlePresentation.hiddenHandCardKeys,
+    ],
   );
 
   return {

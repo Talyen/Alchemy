@@ -9,7 +9,7 @@ import {
   type CharacterId,
   type KeywordId,
 } from "@/lib/game-data";
-import { createSeededRng, shuffle } from "@/lib/utils";
+import { createSeededRng, sampleItems, shuffle } from "@/lib/utils";
 import type { TalentPreset } from "./types";
 
 const ALCHEMIST_MIXED_POTION_COUNT = 2;
@@ -58,7 +58,7 @@ export function buildClassSimDeck(characterId: CharacterId, preset: TalentPreset
   const candidates = getOfferableCardPool().filter(
     (card) => !startingIds.has(card.id) && cardMatchesAffinity(card, affinityKeywords),
   );
-  const picked = shuffle(candidates, rng).slice(0, CLASS_SIM_AFFINITY_EXTRAS[preset]);
+  const picked = sampleItems(candidates, CLASS_SIM_AFFINITY_EXTRAS[preset], rng);
   const deck = [...startingDeck, ...picked];
 
   if (characterId === "alchemist") {

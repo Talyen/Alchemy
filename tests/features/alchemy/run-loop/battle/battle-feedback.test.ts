@@ -72,6 +72,7 @@ function makeState(): BattleState {
     companionDamageBuff: 0,
     gearEffects: {} as import("@/lib/gear/gear-effect-manifest").GearEffectManifest,
     pendingMaterials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+    contentSystemType: "campaign",
     rng: Math.random,
   };
 }

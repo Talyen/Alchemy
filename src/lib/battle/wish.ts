@@ -7,13 +7,13 @@ import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
 import { drawFromState } from "./draw";
-import { addGold, clampHealth, type BattleState, type CombatTextEvent } from "./types";
+import { addGold, type BattleState, type CombatTextEvent } from "./types";
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-player";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
 import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, WISH_CRYSTAL_GOLD_CHANCE, MAX_HAND_SIZE } from "../game-constants";
-import { applyGearKillRewards, gearFrozenDamageMultiplier } from "./gear-effects";
+import { applyGearKillRewards, dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./gear-effects";
 import { scaleGoldReward } from "./types";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 
@@ -103,7 +103,23 @@ function applyWishCrystalGoldTrigger(state: BattleState, combatTexts: CombatText
   const amount = state.talentEffects.wishCrystalGold;
   if (amount <= 0) return state;
   if (state.rng() < WISH_CRYSTAL_GOLD_CHANCE) {
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount });
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "gold",
+      amount: scaleGoldReward(amount, state.gearEffects),
+    });
+    return addGold(state, amount);
+  }
+  if (state.contentSystemType === "wildwood") {
+    // Wildwood does not pay run materials (see commitVictoryRewards guard); the
+    // crystal wish outcome is granted as gold instead of being silently dropped.
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "gold",
+      amount: scaleGoldReward(amount, state.gearEffects),
+    });
     return addGold(state, amount);
   }
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "crystal", amount });
@@ -167,20 +183,10 @@ function applyWishBurnTrigger(state: BattleState, combatTexts: CombatTextEvent[]
   if (burnAmount <= 0 || state.enemyHealth <= 0) return state;
   const enemyWasAlive = state.enemyHealth > 0;
   const multiplier = getEnemyDamageMultiplier(state, "burn") * gearFrozenDamageMultiplier(state);
-  const finalDamage = Math.round(burnAmount * multiplier);
-  if (finalDamage > 0) {
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "damage",
-      stat: "burn",
-      amount: finalDamage,
-    });
-  }
-  const nextState = {
-    ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
-  };
-  const afterThreshold = processEncounterTraitHealthThreshold(state.enemyHealth, nextState, combatTexts);
+  const afterThreshold = dealEnemyScaledDamage(state, burnAmount, "burn", combatTexts, {
+    multiplier,
+    riders: (damagedState) => processEncounterTraitHealthThreshold(state.enemyHealth, damagedState, combatTexts),
+  });
   return applyGearKillRewards(afterThreshold, enemyWasAlive, combatTexts);
 }
 

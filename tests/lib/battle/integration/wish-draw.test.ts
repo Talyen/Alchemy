@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { makeState, makeCard } from "./helpers";
+import { makeState } from "./helpers";
+import { makeTestCard } from "../../../fixtures/battle";
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
 import { applyCardEffects, chooseWishCard, defaultTalentEffects, processCompanionTurnStart } from "@/lib/battle";
-import { drawCards, shuffleCards } from "@/lib/battle/draw";
+import { drawCards } from "@/lib/battle/draw";
+import { shuffle } from "@/lib/utils";
 import { type CombatTextEvent } from "@/lib/battle/types";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import { companionLibrary } from "@/lib/game-data";
@@ -104,7 +106,7 @@ describe("processCompanionTurnStart", () => {
 
 describe("chooseWishCard", () => {
   it("adds chosen card to hand if there's room", () => {
-    const card = makeCard({ id: "wish-card" });
+    const card = makeTestCard({ id: "wish-card" });
     const state = makeState({ hand: [], wishOptions: [card] });
     const result = chooseWishCard(state, "wish-card");
     expect(result.hand).toHaveLength(1);
@@ -114,10 +116,10 @@ describe("chooseWishCard", () => {
   });
 
   it("puts card in discard if hand is full", () => {
-    const card = makeCard({ id: "wish-card" });
+    const card = makeTestCard({ id: "wish-card" });
     const fullHand = Array(7)
       .fill(null)
-      .map((_, i) => makeCard({ id: `h${i}` }));
+      .map((_, i) => makeTestCard({ id: `h${i}` }));
     const state = makeState({ hand: fullHand, wishOptions: [card] });
     const result = chooseWishCard(state, "wish-card");
     expect(result.discard).toHaveLength(1);
@@ -127,8 +129,8 @@ describe("chooseWishCard", () => {
   });
 
   it("opens the next queued Wish after choosing a card", () => {
-    const firstCard = makeCard({ id: "first-wish-card" });
-    const secondCard = makeCard({ id: "second-wish-card" });
+    const firstCard = makeTestCard({ id: "first-wish-card" });
+    const secondCard = makeTestCard({ id: "second-wish-card" });
     const state = makeState({ hand: [], wishOptions: [firstCard], wishQueue: [[secondCard]] });
 
     const firstChoice = chooseWishCard(state, "first-wish-card");
@@ -145,7 +147,7 @@ describe("chooseWishCard", () => {
 
 describe("wish combat effects", () => {
   it("applies the Gold-tree gold on Wish talent", () => {
-    const card = makeCard({ effects: [{ kind: "wish", amount: 1 }] });
+    const card = makeTestCard({ effects: [{ kind: "wish", amount: 1 }] });
     const state = makeState({
       gold: 2,
       talentEffects: { ...defaultTalentEffects, goldOnWish: 3 },
@@ -159,7 +161,7 @@ describe("wish combat effects", () => {
   });
 
   it("queues one choice per Wish amount", () => {
-    const card = makeCard({ effects: [{ kind: "wish", amount: 2 }] });
+    const card = makeTestCard({ effects: [{ kind: "wish", amount: 2 }] });
     const state = makeState();
     const texts: CombatTextEvent[] = [];
 
@@ -171,7 +173,7 @@ describe("wish combat effects", () => {
   });
 
   it("applies on-Wish rewards once per Wish amount", () => {
-    const card = makeCard({ effects: [{ kind: "wish", amount: 2 }] });
+    const card = makeTestCard({ effects: [{ kind: "wish", amount: 2 }] });
     const state = makeState({
       gold: 2,
       talentEffects: { ...defaultTalentEffects, goldOnWish: 3, healthOnWish: 2 },
@@ -190,7 +192,7 @@ describe("wish combat effects", () => {
 
 describe("drawCards", () => {
   it("draws the requested number of cards", () => {
-    const deck = [makeCard({ id: "a" }), makeCard({ id: "b" }), makeCard({ id: "c" })];
+    const deck = [makeTestCard({ id: "a" }), makeTestCard({ id: "b" }), makeTestCard({ id: "c" })];
     const result = drawCards(deck, [], [], 2, 0, Math.random);
     expect(result.hand).toHaveLength(2);
     expect(result.deck).toHaveLength(1);
@@ -199,13 +201,13 @@ describe("drawCards", () => {
   it("respects MAX_HAND_SIZE", () => {
     const deck = Array(10)
       .fill(null)
-      .map((_, i) => makeCard({ id: `c${i}` }));
+      .map((_, i) => makeTestCard({ id: `c${i}` }));
     const result = drawCards(
       deck,
       [],
       Array(6)
         .fill(null)
-        .map((_, i) => makeCard({ id: `h${i}` })),
+        .map((_, i) => makeTestCard({ id: `h${i}` })),
       10,
       0,
       Math.random,
@@ -214,24 +216,24 @@ describe("drawCards", () => {
   });
 
   it("reshuffles discard into deck when deck is empty", () => {
-    const discard = [makeCard({ id: "a" }), makeCard({ id: "b" })];
+    const discard = [makeTestCard({ id: "a" }), makeTestCard({ id: "b" })];
     const result = drawCards([], discard, [], 2, 0, Math.random);
     expect(result.hand).toHaveLength(2);
     expect(result.discard).toHaveLength(0);
   });
 });
 
-describe("shuffleCards", () => {
+describe("shuffle", () => {
   it("returns all cards in a shuffled order", () => {
-    const cards = [makeCard({ id: "a" }), makeCard({ id: "b" }), makeCard({ id: "c" })];
-    const result = shuffleCards(cards, Math.random);
+    const cards = [makeTestCard({ id: "a" }), makeTestCard({ id: "b" }), makeTestCard({ id: "c" })];
+    const result = shuffle(cards, Math.random);
     expect(result).toHaveLength(3);
     expect(result).toEqual(expect.arrayContaining(cards));
   });
 
   it("does not mutate the original array", () => {
-    const cards = [makeCard({ id: "a" }), makeCard({ id: "b" })];
-    const result = shuffleCards(cards, Math.random);
+    const cards = [makeTestCard({ id: "a" }), makeTestCard({ id: "b" })];
+    const result = shuffle(cards, Math.random);
     expect(cards).toHaveLength(2);
     expect(result).not.toBe(cards);
   });
@@ -239,13 +241,13 @@ describe("shuffleCards", () => {
 
 describe("chooseWishCard — edge cases", () => {
   it("returns state unchanged when card id is not in wishOptions", () => {
-    const state = makeState({ wishOptions: [makeCard({ id: "real-card" })] });
+    const state = makeState({ wishOptions: [makeTestCard({ id: "real-card" })] });
     const result = chooseWishCard(state, "nonexistent-card");
     expect(result).toBe(state);
   });
 
   it("skips wish and clears wishOptions when called with null and no queue", () => {
-    const state = makeState({ wishOptions: [makeCard({ id: "card" })], wishQueue: [] });
+    const state = makeState({ wishOptions: [makeTestCard({ id: "card" })], wishQueue: [] });
     const result = chooseWishCard(state, null);
     expect(result.wishOptions).toBeNull();
     expect(result.wishQueue).toEqual([]);
@@ -254,8 +256,8 @@ describe("chooseWishCard — edge cases", () => {
   });
 
   it("skips wish and opens next queued wish when called with null", () => {
-    const nextCard = makeCard({ id: "next-card" });
-    const state = makeState({ wishOptions: [makeCard({ id: "current" })], wishQueue: [[nextCard]] });
+    const nextCard = makeTestCard({ id: "next-card" });
+    const state = makeState({ wishOptions: [makeTestCard({ id: "current" })], wishQueue: [[nextCard]] });
     const result = chooseWishCard(state, null);
     expect(result.wishOptions).toEqual([nextCard]);
     expect(result.wishQueue).toEqual([]);
@@ -264,9 +266,9 @@ describe("chooseWishCard — edge cases", () => {
   });
 
   it("skips through multiple wishes in queue sequentially with null", () => {
-    const firstCard = makeCard({ id: "first" });
-    const secondCard = makeCard({ id: "second" });
-    const state = makeState({ wishOptions: [makeCard({ id: "current" })], wishQueue: [[firstCard], [secondCard]] });
+    const firstCard = makeTestCard({ id: "first" });
+    const secondCard = makeTestCard({ id: "second" });
+    const state = makeState({ wishOptions: [makeTestCard({ id: "current" })], wishQueue: [[firstCard], [secondCard]] });
     const firstSkip = chooseWishCard(state, null);
     expect(firstSkip.wishOptions).toEqual([firstCard]);
     expect(firstSkip.wishQueue).toHaveLength(1);

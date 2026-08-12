@@ -87,13 +87,17 @@ export function createAlchemistShopCommands({
 
       const cardA = run.runDeck[indexA];
       const cardB = run.runDeck[indexB];
+      if (!cardA || !cardB || cardA.id === MIXED_POTION_CARD_ID || cardB.id === MIXED_POTION_CARD_ID) {
+        return { committed: false, price, value: null };
+      }
+      const mixed = tryCreateMixedPotion(cardA, cardB, talentEffects.potionMixPotency);
+      if (!mixed) {
+        return { committed: false, price, value: null };
+      }
       spendRunGold(price, (update) => setRunGold(draft, update));
       setAlchemistState(draft, (previous) => ({ ...previous, mixUsed: true }));
-      const mixed = tryCreateMixedPotion(cardA, cardB, talentEffects.potionMixPotency);
-      if (mixed) {
-        setRunDeck(draft, (previous) => applyMixToDeck(previous, indexA, indexB, mixed));
-        setDiscoveredCardIds(draft, (previous) => appendUnique(previous, MIXED_POTION_CARD_ID));
-      }
+      setRunDeck(draft, (previous) => applyMixToDeck(previous, indexA, indexB, mixed));
+      setDiscoveredCardIds(draft, (previous) => appendUnique(previous, MIXED_POTION_CARD_ID));
       return { committed: true, price, value: mixed };
     });
     playShopSpendFeedback(result);

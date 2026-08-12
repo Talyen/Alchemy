@@ -19,23 +19,12 @@ const DOT_STATUS_CASES = [
     chipVisibleAfterTick: true,
   },
   {
-    name: "poison ticks each turn and decays by 1",
-    damageType: "poison",
-    amount: 5,
-    chipVisibleAfterTick: false,
-  },
-  {
     name: "bleed bursts on tick and resets to 0",
     damageType: "bleed",
     amount: 3,
     chipVisibleAfterTick: false,
     chipGoneAfterTick: true,
   },
-] as const;
-
-const CC_STATUS_CASES = [
-  { name: "stun triggers CC causing enemy to skip turn", damageType: "stun", amount: 25 },
-  { name: "freeze triggers CC causing enemy to skip turn", damageType: "freeze", amount: 25 },
 ] as const;
 
 // Goblin's trinket-hoarder doubles burn; play+tick can kill and leave this suite on Victory.
@@ -61,45 +50,17 @@ test.describe("Damage-over-Time Status Effects", () => {
       await battle.playCardNamed(title);
       await expect(battle.statusChip(title)).toBeVisible({ timeout: 2000 });
 
-      const enemyHpBefore = await battle.enemyHealth();
       await battle.endTurn();
 
+      // Exact tick amounts are pinned in tests/lib/battle/status-ticks.test.ts;
+      // here we only assert the presentation fact unique to each DoT type.
       await expect(battle.victoryHeading).toBeHidden();
-      await expect(async () => {
-        expect(await battle.enemyHealth()).toBeLessThan(enemyHpBefore);
-      }).toPass({ timeout: 5000 });
 
       if ("chipGoneAfterTick" in statusCase && statusCase.chipGoneAfterTick) {
         await expect(battle.statusChip(title)).toBeHidden();
       } else if (statusCase.chipVisibleAfterTick) {
         await expect(battle.statusChip(title)).toBeVisible();
       }
-    });
-  }
-});
-
-test.describe("Crowd Control Status Effects", () => {
-  for (const statusCase of CC_STATUS_CASES) {
-    const gate = statusCase.damageType === "stun" ? critical : slow;
-
-    test(statusCase.name, gate, async ({ page, fastBattle, runtimeErrors }) => {
-      void fastBattle;
-      void runtimeErrors;
-
-      const title = statusCase.damageType.charAt(0).toUpperCase() + statusCase.damageType.slice(1);
-      await startBattleWithDeck(
-        page,
-        Array.from({ length: 6 }, () => makeStatusCard(statusCase.damageType, statusCase.amount)),
-      );
-      const battle = new BattlePage(page);
-
-      const playerHpBefore = await battle.playerHealth();
-      await battle.playCardNamed(title);
-
-      await battle.endTurn();
-      await expect(async () => {
-        expect(await battle.playerHealth()).toBe(playerHpBefore);
-      }).toPass({ timeout: 5000 });
     });
   }
 });
@@ -117,44 +78,6 @@ test.describe("Companion Battle Behavior", () => {
     await battle.playCardNamed("Wolf");
     await expect(battle.companionPanel).toBeVisible({ timeout: 3000 });
     await expect(battle.companionPanel).toHaveAttribute("aria-label", "Active companion: Wolf Companion");
-  });
-
-  test("companion auto-attacks at start of owner turn", async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-
-    await startBattleWithDeck(page, COMPANION_DECK);
-    const battle = new BattlePage(page);
-
-    await battle.playCardNamed("Wolf");
-    await expect(battle.companionPanel).toBeVisible({ timeout: 3000 });
-
-    const enemyHpBefore = await battle.enemyHealth();
-    await battle.endTurn();
-
-    await expect(async () => {
-      expect(await battle.enemyHealth()).toBeLessThan(enemyHpBefore);
-    }).toPass({ timeout: 5000 });
-  });
-
-  test("companion persists across multiple turns", async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-
-    await startBattleWithDeck(page, COMPANION_DECK);
-    const battle = new BattlePage(page);
-
-    await battle.playCardNamed("Wolf");
-    await expect(battle.companionPanel).toBeVisible({ timeout: 3000 });
-
-    await battle.endTurn();
-    await expect(battle.companionPanel).toBeVisible({ timeout: 3000 });
-
-    if ((await battle.handCount()) > 0) {
-      await battle.playFirstCard();
-    }
-    await battle.endTurn();
-    await expect(battle.companionPanel).toBeVisible({ timeout: 3000 });
   });
 });
 

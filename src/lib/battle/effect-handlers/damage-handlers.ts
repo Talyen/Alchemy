@@ -24,7 +24,7 @@ export const applySelfDamageEffect: EffectHandler = (state, _card, effect, _poti
       amount: healthLost,
     });
   }
-  return addPlayerStatus(postDamage, effect.damageType, effect.amount);
+  return addPlayerStatus(postDamage, effect.damageType, Math.max(0, healthLost));
 };
 
 export const applyRandomDamageEffect: EffectHandler = (state, card, effect, _potionMult, combatTexts) => {

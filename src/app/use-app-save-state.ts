@@ -2,7 +2,7 @@
 // Depends on: saveAlchemySaveData (storage), isAnimationDisabled (game-constants).
 // Used by: App.tsx.
 import { useEffect } from "react";
-import { readHasActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readHasActiveRun, readRunPhase } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { useLatestRef } from "@/features/alchemy/shared/hooks";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/features/alchemy/shared/storage";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
+import { AUTOSAVE_DEBOUNCE_MS, BATTLE_AUTOSAVE_DEBOUNCE_MS } from "@/lib/game-constants";
 import type { Screen } from "@/lib/routing";
 
 // Persists the normalized App/controller snapshot whenever a saved field changes.
@@ -48,12 +49,18 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
       if (timer) {
         clearTimeout(timer);
       }
-      timer = setTimeout(
-        () => {
-          flush();
-        },
-        isAnimationDisabled() ? 0 : 500,
-      );
+      // Battle-screen commits are the highest-frequency writes; debounce them
+      // longer so the full-save serialization doesn't hitch every quiet gap.
+      // Terminal pagehide/visibilitychange flushes are unaffected and still
+      // persist the freshest battle state for crash-resume.
+      const debounceMs = isAnimationDisabled()
+        ? 0
+        : readRunPhase() === "battle"
+          ? BATTLE_AUTOSAVE_DEBOUNCE_MS
+          : AUTOSAVE_DEBOUNCE_MS;
+      timer = setTimeout(() => {
+        flush();
+      }, debounceMs);
     };
 
     const unsubscribePersistence = subscribeAlchemyPersistence(triggerSave);

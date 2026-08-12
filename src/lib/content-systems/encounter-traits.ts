@@ -1,6 +1,6 @@
 // Shared encounter trait catalog and mode-aware deterministic selection helpers.
 import type { EnemyTrait } from "@/lib/game-data";
-import { shuffle } from "@/lib/utils";
+import { sampleItems } from "@/lib/utils";
 import type { ContentSystemId } from "./types";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId } from "./encounter-trait-ids";
 
@@ -108,7 +108,7 @@ export function pickEncounterTraits(
   const pool = Object.values(ENCOUNTER_TRAITS)
     .filter((trait) => trait.category === category && trait.modes.includes(mode))
     .map((trait) => trait.id);
-  return shuffle(pool, rng).slice(0, Math.min(count, pool.length));
+  return sampleItems(pool, count, rng);
 }
 
 export function appendEncounterTraits<T extends { traits: EnemyTrait[] }>(

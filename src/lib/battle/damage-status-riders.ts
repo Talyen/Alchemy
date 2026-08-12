@@ -22,7 +22,7 @@ import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
 import { BLEED_STATUS_MULTIPLIER, BATTLE_CONFIG, computeLeechHeal, FREEZE_THRESHOLD_FRACTION } from "../game-constants";
-import { applyGearCcPhysicalDamage, scaledGearLeechHeal } from "./gear-effects";
+import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal } from "./gear-effects";
 
 function applyBurnStatusRider(state: BattleState, actualDamage: number): BattleState {
   let nextState = addEnemyStatus(state, "burn", actualDamage);
@@ -145,19 +145,9 @@ function applyStunStatusRider(state: BattleState, actualDamage: number, combatTe
 
 function applyFrozenHeartDamage(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.trinketEffects.frozenHeartDamage <= 0) return state;
-  const dmg = state.trinketEffects.frozenHeartDamage;
-  const multiplier = getEnemyDamageMultiplier(state, "physical");
-  const finalDamage = Math.round(dmg * multiplier);
-  mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: "damage",
-    stat: "physical",
-    amount: finalDamage,
+  return dealEnemyScaledDamage(state, state.trinketEffects.frozenHeartDamage, "physical", combatTexts, {
+    multiplier: getEnemyDamageMultiplier(state, "physical"),
   });
-  return {
-    ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
-  };
 }
 
 function applyGearFreezeDamage(

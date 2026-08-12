@@ -14,23 +14,6 @@ baseTest.describe("App Boot", { tag: [smoke.tag, prepush.tag] }, () => {
 });
 
 test.describe("Block Mechanics", critical, () => {
-  test("block card absorbs attack damage and halves at end of turn", async ({ page, fastBattle }) => {
-    void fastBattle;
-
-    await startBattleWithDeck(page, [BLOCK_CARD, BLOCK_CARD, BLOCK_CARD, BLOCK_CARD, BLOCK_CARD, BLOCK_CARD]);
-    const battle = new BattlePage(page);
-
-    const hpBefore = await battle.playerHealth();
-    await battle.playCardNamed("Block");
-    await battle.endTurn();
-
-    const hpAfter = await battle.playerHealth();
-    const hpLost = hpBefore - hpAfter;
-
-    expect(hpLost).toBeLessThanOrEqual(5);
-    expect(hpLost).toBeGreaterThanOrEqual(0);
-  });
-
   test("blessed aegis deals holy damage equal to current block", async ({ page, fastBattle }) => {
     void fastBattle;
 

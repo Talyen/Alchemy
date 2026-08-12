@@ -5,8 +5,8 @@
 export const GLOBAL_CRIT_CHANCE = 5;
 export const CRIT_MULTIPLIER = 2;
 export const BLEED_STATUS_MULTIPLIER = 2; // Bleed stacks gain 2× damage dealt (burst DoT vs burn/poison sustain).
-export const STUN_THRESHOLD_FRACTION = 0.5; // Stun when stacks exceed this fraction of current enemy Health.
-export const FREEZE_THRESHOLD_FRACTION = 0.5; // Freeze uses >= vs stun's > (equivalent at integer Health).
+export const STUN_THRESHOLD_FRACTION = 0.5; // Stun when stacks reach this fraction of current enemy Health (uses >=, like freeze).
+export const FREEZE_THRESHOLD_FRACTION = 0.5; // Freeze when stacks reach this fraction of current enemy Health.
 export const WISH_CHOICE_COUNT = 3;
 export const MIN_MAX_MANA_FLOOR = 1; // Prevents 0 maxMana softlock.
 

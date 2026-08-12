@@ -185,4 +185,33 @@ describe("useBattleAutoEndTurn", () => {
 
     expect(onEndTurn).not.toHaveBeenCalled();
   });
+
+  it("schedules end turn when the hand only has cleanse cards with nothing to cleanse", () => {
+    const onEndTurn = vi.fn();
+    const cleanse = makeTestCard({
+      id: "cleanse",
+      cost: 1,
+      effects: [{ kind: "remove-harmful-status", amount: 1 }],
+    });
+    const battleState = makeTestBattleState({
+      hand: [{ ...cleanse, uid: 3 }],
+      mana: 5,
+      turnPhase: "player",
+      enemyHealth: 20,
+    });
+
+    renderHook(() =>
+      useBattleAutoEndTurn({
+        ...baseOptions,
+        battleState,
+        onEndTurn,
+      }),
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+    });
+
+    expect(onEndTurn).toHaveBeenCalledOnce();
+  });
 });

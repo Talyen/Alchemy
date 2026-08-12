@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { makeState, makeCard } from "./helpers";
+import { makeState } from "./helpers";
+import { makeTestCard } from "../../../fixtures/battle";
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
@@ -9,7 +10,7 @@ import { defaultPlayerStatusValues } from "../../../fixtures/default-battle-stat
 describe("applyCardEffects — perManaCrystal scaling", () => {
   it("perManaCrystal with 0 amount yields 0 block", () => {
     const state = makeState({ mana: 10, maxMana: 4 });
-    const card = makeCard({ effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 0 }] });
+    const card = makeTestCard({ effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 0 }] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.playerStatuses.block).toBe(0);
@@ -17,7 +18,7 @@ describe("applyCardEffects — perManaCrystal scaling", () => {
 
   it("perManaCrystal scales with maxMana", () => {
     const state = makeState({ mana: 10, maxMana: 5 });
-    const card = makeCard({ effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 3 }] });
+    const card = makeTestCard({ effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 3 }] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     // perManaCrystal: 3 * maxMana(5) = 15 block
@@ -26,7 +27,7 @@ describe("applyCardEffects — perManaCrystal scaling", () => {
 
   it("perManaCrystal with minimal maxMana (floor=1)", () => {
     const state = makeState({ mana: 10, maxMana: 1 });
-    const card = makeCard({ effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 4 }] });
+    const card = makeTestCard({ effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 4 }] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     // perManaCrystal: 4 * 1 = 4 block
@@ -37,7 +38,7 @@ describe("applyCardEffects — perManaCrystal scaling", () => {
 describe("applyCardEffects — empty and zero-edge effects", () => {
   it("card with no effects does nothing", () => {
     const state = makeState({ mana: 10, enemyHealth: 30 });
-    const card = makeCard({ effects: [] });
+    const card = makeTestCard({ effects: [] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result).toBe(state);
@@ -46,7 +47,7 @@ describe("applyCardEffects — empty and zero-edge effects", () => {
 
   it("heal with 0 amount does not change health", () => {
     const state = makeState({ playerHealth: 20 });
-    const card = makeCard({ effects: [{ kind: "heal", amount: 0 }] });
+    const card = makeTestCard({ effects: [{ kind: "heal", amount: 0 }] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.playerHealth).toBe(20);
@@ -54,15 +55,15 @@ describe("applyCardEffects — empty and zero-edge effects", () => {
 
   it("gain-gold with 0 amount does not change gold", () => {
     const state = makeState({ gold: 5 });
-    const card = makeCard({ effects: [{ kind: "gain-gold", amount: 0 }] });
+    const card = makeTestCard({ effects: [{ kind: "gain-gold", amount: 0 }] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.gold).toBe(5);
   });
 
   it("draw-cards with 0 amount does nothing", () => {
-    const state = makeState({ deck: [makeCard({ id: "d1" })], hand: [] });
-    const card = makeCard({ effects: [{ kind: "draw-cards", amount: 0 }] });
+    const state = makeState({ deck: [makeTestCard({ id: "d1" })], hand: [] });
+    const card = makeTestCard({ effects: [{ kind: "draw-cards", amount: 0 }] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.hand).toHaveLength(0);
@@ -73,7 +74,7 @@ describe("applyCardEffects — empty and zero-edge effects", () => {
 describe("applyCardEffects — effect ordering", () => {
   it("heal then damage: both applied in order", () => {
     const state = makeState({ mana: 10, playerHealth: 15, enemyHealth: 30 });
-    const card = makeCard({
+    const card = makeTestCard({
       effects: [
         { kind: "heal", amount: 5 },
         { kind: "damage", damageType: "physical", amount: 10 },
@@ -88,7 +89,7 @@ describe("applyCardEffects — effect ordering", () => {
 
   it("restore mana then lose mana produces correct net", () => {
     const state = makeState({ mana: 3, maxMana: 4 });
-    const card = makeCard({
+    const card = makeTestCard({
       effects: [
         { kind: "restore-mana", amount: 3 },
         { kind: "lose-mana", amount: 2 },
@@ -104,7 +105,7 @@ describe("applyCardEffects — effect ordering", () => {
 describe("applyCardEffects — potion potency", () => {
   it("potion potency multiplier of 0 makes heal do nothing", () => {
     const state = makeState({ playerHealth: 15, talentEffects: { ...defaultTalentEffects, potionPotency: 0 } });
-    const card = makeCard({ id: "heal-potion", effects: [{ kind: "heal", amount: 10 }] });
+    const card = makeTestCard({ id: "heal-potion", effects: [{ kind: "heal", amount: 10 }] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     // potionPotency=0 → 10*0 = 0 heal → no change
@@ -119,7 +120,7 @@ describe("applyCardEffects — overheal conversion to block", () => {
       playerMaxHealth: 30,
       talentEffects: { ...defaultTalentEffects, overhealToBlockRatio: 0.5 },
     });
-    const card = makeCard({ effects: [{ kind: "heal", amount: 5 }] });
+    const card = makeTestCard({ effects: [{ kind: "heal", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     // heal 5: 28→30 (capped at max), 3 overheal * 0.5 = 1.5 → round(1.5) = 2 block
@@ -134,7 +135,7 @@ describe("applyCardEffects — self-damage with zero amount", () => {
       playerHealth: 20,
       playerStatuses: defaultPlayerStatusValues(),
     });
-    const card = makeCard({ effects: [{ kind: "self-damage", damageType: "burn", amount: 0 }] });
+    const card = makeTestCard({ effects: [{ kind: "self-damage", damageType: "burn", amount: 0 }] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.playerHealth).toBe(20);
@@ -145,7 +146,7 @@ describe("applyCardEffects — self-damage with zero amount", () => {
 describe("applyCardEffects — all mana effects in one card", () => {
   it("gain-max-mana, restore-mana, lose-max-mana, lose-mana in sequence", () => {
     const state = makeState({ mana: 4, maxMana: 4 });
-    const card = makeCard({
+    const card = makeTestCard({
       effects: [
         { kind: "gain-max-mana", amount: 2 },
         { kind: "restore-mana", amount: 3 },

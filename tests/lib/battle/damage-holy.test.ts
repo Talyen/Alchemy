@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
+import { applyDamageBlock } from "@/lib/battle/damage-rider-leech";
 import type { BattleCardEffect } from "@/lib/game-data";
 import { patchBattleState } from "../../fixtures/battle";
 import {
@@ -7,7 +8,7 @@ import {
   defaultEnemyStatusValues,
   defaultTalentEffects,
 } from "../../fixtures/default-battle-state";
-import { makeCard, makeEffect, makeTexts } from "./damage-test-helpers";
+import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -19,8 +20,8 @@ describe("computeBaseDamage — holy damage", () => {
       gold: 50,
       talentEffects: { ...defaultTalentEffects, holyGoldPercent: 10 },
     });
-    const card = makeCard({ effects: [makeEffect("holy", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -35,8 +36,8 @@ describe("computeBaseDamage — holy damage", () => {
       playerStatuses: defaultPlayerStatusValues({ block: 10 }),
       talentEffects: { ...defaultTalentEffects, holyBlockPercent: 20 },
     });
-    const card = makeCard({ effects: [makeEffect("holy", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -51,8 +52,8 @@ describe("computeBaseDamage — holy damage", () => {
       enemyStatuses: defaultEnemyStatusValues({ burn: 5 }),
       talentEffects: { ...defaultTalentEffects, holyVsBurnMultiplier: 0.5 },
     });
-    const card = makeCard({ effects: [makeEffect("holy", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -69,8 +70,8 @@ describe("applyHolyDamageRiders", () => {
       playerHealth: 20,
       talentEffects: { ...defaultTalentEffects, holyLifestealPercent: 50 },
     });
-    const card = makeCard({ effects: [makeEffect("holy", 10)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -90,8 +91,8 @@ describe("applyHolyDamageRiders", () => {
         holyLifestealPercent: 0,
       },
     });
-    const card = makeCard({ effects: [makeEffect("holy", 10)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -101,13 +102,27 @@ describe("applyHolyDamageRiders", () => {
     expect(result.playerStatuses.block).toBeGreaterThan(0);
   });
 
+  it("reports the full block gained in combat text when flatBlockGained is active", () => {
+    const state = patchBattleState({
+      playerStatuses: defaultPlayerStatusValues({ block: 0 }),
+      talentEffects: { ...defaultTalentEffects, holyBlockPercentFromDamage: 50 },
+      gearEffects: { ...patchBattleState().gearEffects, flatBlockGained: 2 },
+    });
+    const texts = makeCombatTexts();
+    const result = applyDamageBlock(state, 10, texts);
+    // 50% of 10 = 5 block, plus flatBlockGained 2 in the text (matches the
+    // run-state delta from addPlayerStatus).
+    expect(result.playerStatuses.block).toBe(7);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 7 });
+  });
+
   it("applies burn on holy damage with holyBurnChance", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.01);
     const state = patchBattleState({
       talentEffects: { ...defaultTalentEffects, holyBurnChance: 50, holyLifestealPercent: 0, holyGoldPercent: 0 },
     });
-    const card = makeCard({ effects: [makeEffect("holy", 10)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,

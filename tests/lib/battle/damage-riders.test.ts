@@ -257,6 +257,25 @@ describe("damage riders via applyCardEffects", () => {
     expect(result.playerStatuses.block).toBe(5);
   });
 
+  it("holy tithe combat text shows scaled gold when goldGainPercent gear is active", () => {
+    const state = makeState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      talentEffects: { ...defaultTalentEffects, holyGoldChance: 100 },
+      gearEffects: { ...makeState().gearEffects, goldGainPercent: 50 },
+      rng: () => 0.5,
+      deck: [],
+      hand: [],
+      discard: [],
+      exhausted: [],
+    });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 10 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.gold).toBe(15);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 15 });
+  });
+
   it("burn stun rider applies stun when talent procs on burn damage", () => {
     const state = makeState({
       enemyHealth: 50,

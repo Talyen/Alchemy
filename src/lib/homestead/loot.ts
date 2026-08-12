@@ -25,7 +25,7 @@ function lootEntry(material: MaterialId, min: number, max: number, weight = 1): 
 
 const enemyLootTables: Record<string, EnemyLootTable> = {
   skeleton: {
-    guaranteed: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+    guaranteed: emptyInventory(),
     bonuses: [lootEntry("herbs", 0, 1, 0.3)],
   },
   goblin: {

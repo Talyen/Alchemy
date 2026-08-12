@@ -4,10 +4,9 @@ import { cardLibrary, selectRewardCards, trinketLibrary, type BattleCard, type T
 import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { shuffle } from "@/lib/utils";
+import { sampleItems } from "@/lib/utils";
 import { CONSTANTS } from "../../shared/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import { sampleItems } from "../../shared/utils/random";
 import { generateGearRewardChoices, type GearInstance } from "@/lib/gear";
 import {
   createEmptyRewardState,
@@ -76,7 +75,7 @@ export function getRandomPotionCard(rng: () => number): BattleCard {
 
 export function getCompanionCardChoices(rng: () => number): BattleCard[] {
   const companions = cardLibrary.filter((c) => c.effects?.some((e) => e.kind === "summon-companion"));
-  return shuffle(companions, rng).slice(0, LABYRINTH_REWARD_CONFIG.companionCardChoices);
+  return sampleItems(companions, LABYRINTH_REWARD_CONFIG.companionCardChoices, rng);
 }
 
 function resolveRewardRoute(contentSystemType: ContentSystemId, currentEnemyType: string): FinalizeRewardRoute {

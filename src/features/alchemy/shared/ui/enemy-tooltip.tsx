@@ -47,11 +47,14 @@ export function EnemyTooltip({
   triggerRef: RefObject<HTMLElement | null>;
   visible: boolean;
 }) {
-  const attackLines = formatEnemyAttackLines(attackEffects ?? entry.attackEffects);
-  const separatelyDisplayedTraitIds = new Set<string>(labyrinthModifiers);
-  const traitLines = entry.traits
-    .filter((trait) => !separatelyDisplayedTraitIds.has(trait.id))
-    .flatMap((trait) => trait.description.split("\n"));
+  const attackLines = visible ? formatEnemyAttackLines(attackEffects ?? entry.attackEffects) : [];
+  const separatelyDisplayedTraitIds = visible ? new Set<string>(labyrinthModifiers) : null;
+  const traitLines =
+    visible && separatelyDisplayedTraitIds
+      ? entry.traits
+          .filter((trait) => !separatelyDisplayedTraitIds.has(trait.id))
+          .flatMap((trait) => trait.description.split("\n"))
+      : [];
 
   return (
     <PortaledTooltip triggerRef={triggerRef} visible={visible} width="w-72" className="rounded-shell-tooltip">

@@ -12,7 +12,7 @@ export function getGearInstanceTooltipEntries(
 ): Array<{ key: string; name?: string; text: string }> {
   const definition = gearDefinitions[instance.definitionId];
   const rarity = gearInstanceRarity(instance);
-  const affixEntries = getGearAffixTooltipEntries(instance.affixes, rarity);
+  const affixEntries = getGearAffixTooltipEntries(instance.affixes);
 
   if (affixEntries.length > 0) {
     return affixEntries;

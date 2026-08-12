@@ -36,6 +36,16 @@ describe("Progress", () => {
     expect(getFill(container).style.width).toBe("0%");
   });
 
+  it("treats undefined value as 0", () => {
+    const { container } = render(<Progress value={undefined} />);
+    expect(getFill(container).style.width).toBe("0%");
+  });
+
+  it("treats NaN value as 0", () => {
+    const { container } = render(<Progress value={Number.NaN} />);
+    expect(getFill(container).style.width).toBe("0%");
+  });
+
   it("applies custom color class", () => {
     const { container } = render(<Progress value={50} color="bg-blue-500" />);
     expect(getFill(container).className).toContain("bg-blue-500");

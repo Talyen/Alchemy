@@ -1,6 +1,6 @@
 import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
 import { computeTrinketManifest } from "@/lib/trinkets";
-import type { MaterialInventory } from "@/lib/homestead/types";
+import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
 import type { BattleState } from "@/lib/battle";
 import { CONSTANTS } from "../../shared/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
@@ -61,13 +61,10 @@ export function applyLabyrinthRewardMaterialModifiers(
   modifiers: EncounterRewardTraitId[],
 ): MaterialInventory {
   if (!hasRewardModifier(modifiers, "scavenger")) return materials;
-  return {
-    wood: Math.floor(materials.wood * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier),
-    iron: Math.floor(materials.iron * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier),
-    herbs: Math.floor(materials.herbs * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier),
-    food: Math.floor(materials.food * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier),
-    crystal: Math.floor(materials.crystal * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier),
-  };
+  return MATERIAL_IDS.reduce<MaterialInventory>((result, material) => {
+    result[material] = Math.floor(materials[material] * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier);
+    return result;
+  }, {} as MaterialInventory);
 }
 
 function getSmugglersMapGoldBonus(trinketIds: string[]): number {

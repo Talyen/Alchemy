@@ -1,0 +1,58 @@
+// Shared RAF particle animation core. Owns the running flag, dt clamp, progress
+// easing, clearRect, and completion; engines supply step/draw callbacks so
+// one-shot burst effects share identical loop scaffolding.
+export interface ParticleLoopCallbacks<T> {
+  /** Advance one particle by dt (frame-normalized to ~60fps). */
+  step: (particle: T, dt: number) => void;
+  /** Draw one particle at the current loop progress in [0, 1]. */
+  draw: (ctx: CanvasRenderingContext2D, particle: T, progress: number) => void;
+}
+
+export function animateParticleLoop<T>({
+  ctx,
+  particles,
+  width,
+  height,
+  duration,
+  step,
+  draw,
+  onComplete,
+}: {
+  ctx: CanvasRenderingContext2D;
+  particles: T[];
+  width: number;
+  height: number;
+  duration: number;
+} & ParticleLoopCallbacks<T> & { onComplete: () => void }): () => void {
+  let running = true;
+  const startTime = performance.now();
+  let lastTime = startTime;
+
+  function frame(now: number): void {
+    if (!running) return;
+
+    const elapsed = now - startTime;
+    const dt = Math.min((now - lastTime) / 16.67, 3);
+    lastTime = now;
+    const progress = Math.min(elapsed / duration, 1);
+
+    ctx.clearRect(0, 0, width, height);
+
+    for (const p of particles) {
+      step(p, dt);
+      draw(ctx, p, progress);
+    }
+
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      onComplete();
+    }
+  }
+
+  requestAnimationFrame(frame);
+
+  return () => {
+    running = false;
+  };
+}

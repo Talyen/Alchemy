@@ -1,7 +1,7 @@
 import { useMemo, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
-import { canAfford } from "@/lib/homestead/inventory";
+import { canAfford, emptyInventory } from "@/lib/homestead/inventory";
 import { Button } from "@/components/ui/button";
 import { DetailPopup } from "../../../shared/ui/card-popup";
 import { DisabledTooltip } from "../../../shared/ui/shared-ui";
@@ -11,7 +11,7 @@ import { matIconMap, matPillStyle, matTextColor } from "../../../shared/ui/mater
 import { HOMESTEAD_CONFIG, type GoalItem, MaterialCost, getArt, renderTextWithMaterials } from "./helpers";
 import { HomesteadTileCompletedFooter, HomesteadTileFrame } from "./homestead-tile-node";
 
-const ZERO_COST: MaterialInventory = { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 };
+const ZERO_COST: MaterialInventory = emptyInventory();
 
 export function HomesteadUpgradeNode({
   item,

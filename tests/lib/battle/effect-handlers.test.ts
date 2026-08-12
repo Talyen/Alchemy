@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { CombatTextEvent } from "@/lib/battle/types";
 import { applySummonCompanionEffect, applyBuffCompanionEffect } from "@/lib/battle/effect-handlers/companion-handlers";
 import {
   applyDamageEffect,
@@ -105,6 +106,44 @@ describe("applySelfDamageEffect", () => {
     const state = makeTestBattleState();
     const result = applySelfDamageEffect(state, {} as never, { kind: "heal" } as never, 1, []);
     expect(result).toBe(state);
+  });
+
+  it("applies rider status from actual health lost, not the raw amount", () => {
+    const state = makeTestBattleState({
+      playerHealth: 20,
+      playerMaxHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, burn: 0 },
+      talentEffects: { ...makeTestBattleState().talentEffects, damageReduction: 3 },
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applySelfDamageEffect(
+      state,
+      {} as never,
+      { kind: "self-damage", damageType: "burn", amount: 5 } as never,
+      1,
+      texts,
+    );
+    expect(result.playerHealth).toBe(18);
+    expect(result.playerStatuses.burn).toBe(2);
+  });
+
+  it("does not grant rider status when Death's Door absorbs the full hit", () => {
+    const state = makeTestBattleState({
+      playerHealth: 1,
+      playerMaxHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, burn: 0 },
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applySelfDamageEffect(
+      state,
+      {} as never,
+      { kind: "self-damage", damageType: "burn", amount: 5 } as never,
+      1,
+      texts,
+    );
+    expect(result.playerHealth).toBe(1);
+    expect(result.playerStatuses.burn).toBe(0);
+    expect(result.deathsDoorActive).toBe(true);
   });
 });
 

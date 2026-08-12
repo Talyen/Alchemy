@@ -56,19 +56,7 @@ export function BattleScreen(props: BattleScreenProps) {
     playableHandCardKeys,
   } = props;
 
-  const {
-    battleState,
-    displayOverrides,
-    revealedCardKeys,
-    cardGhosts,
-    floatingCombatTexts,
-    enemyShaking,
-    playerShaking,
-    companionShaking,
-    playerHurtFlashToken,
-    enemyHurtFlashToken,
-    activeLabyrinthModifiers,
-  } = battleScreenData;
+  const { battleState, displayOverrides, revealedCardKeys, cardGhosts, activeLabyrinthModifiers } = battleScreenData;
 
   const displayState = useMemo(() => ({ ...battleState, ...displayOverrides }), [battleState, displayOverrides]);
 
@@ -78,15 +66,6 @@ export function BattleScreen(props: BattleScreenProps) {
 
   const playerStatusChips = useMemo(() => getPlayerStatusChips(displayState), [displayState]);
   const enemyStatusChips = useMemo(() => getEnemyStatusChips(battleState), [battleState]);
-
-  const playerCombatTexts = useMemo(
-    () => floatingCombatTexts.filter((t) => t.target === "player"),
-    [floatingCombatTexts],
-  );
-  const enemyCombatTexts = useMemo(
-    () => floatingCombatTexts.filter((t) => t.target === "enemy"),
-    [floatingCombatTexts],
-  );
 
   const view = useMemo(
     () => ({
@@ -103,29 +82,10 @@ export function BattleScreen(props: BattleScreenProps) {
     () => ({
       playerStatusChips,
       enemyStatusChips,
-      playerCombatTexts,
-      enemyCombatTexts,
       cardGhosts,
-      playerShaking,
-      enemyShaking,
-      companionShaking,
-      playerHurtFlashToken,
-      enemyHurtFlashToken,
       activeLabyrinthModifiers,
     }),
-    [
-      playerStatusChips,
-      enemyStatusChips,
-      playerCombatTexts,
-      enemyCombatTexts,
-      cardGhosts,
-      playerShaking,
-      enemyShaking,
-      companionShaking,
-      playerHurtFlashToken,
-      enemyHurtFlashToken,
-      activeLabyrinthModifiers,
-    ],
+    [playerStatusChips, enemyStatusChips, cardGhosts, activeLabyrinthModifiers],
   );
 
   const isDev = isAlchemyDevBuild();

@@ -115,5 +115,6 @@ export function defaultBattleState(): BattleState {
     difficultyModifiers: [],
     rng: placeholderRng,
     pendingMaterials: emptyInventory(),
+    contentSystemType: "campaign",
   };
 }

@@ -55,9 +55,11 @@ function getCompanionTooltip(
       title={discovered ? card.title : "Undiscovered"}
       subtitle={undefined}
       descriptionLines={
-        discovered
-          ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions })
-          : ["Discover this card during a run to reveal it here."]
+        visible
+          ? discovered
+            ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions })
+            : ["Discover this card during a run to reveal it here."]
+          : []
       }
       visible={visible}
       triggerRef={triggerRef}

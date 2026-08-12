@@ -3,14 +3,7 @@ import { test } from "./fixtures/e2e";
 import { ShopPage } from "./pages/shop-page";
 import { RewardPage } from "./pages/reward-page";
 import { DestinationPage } from "./pages/destination-page";
-import {
-  injectSaveState,
-  primaryRewardInterruptedFlow,
-  makeHighDamageCard,
-  SAVE_KEY,
-  startBattleWithDeck,
-} from "./helpers";
-import { BattlePage } from "./pages/battle-page";
+import { injectSaveState, primaryRewardInterruptedFlow, makeHighDamageCard, SAVE_KEY } from "./helpers";
 import { critical } from "./playwright-tags";
 
 test.describe("Merchant Shop", () => {
@@ -129,13 +122,22 @@ test.describe("Reward Flow", () => {
     async ({ page, fastBattle, runtimeErrors }) => {
       void fastBattle;
       void runtimeErrors;
-      await startBattleWithDeck(
-        page,
-        Array.from({ length: 6 }, () => makeHighDamageCard()),
-      );
-
-      const battle = new BattlePage(page);
-      await battle.winViaCombat(3);
+      await injectSaveState(page, {
+        runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
+        currentScreen: "rewards",
+        interruptedFlow: primaryRewardInterruptedFlow({
+          rewardType: "card",
+          choiceIds: ["slash", "bash"],
+          selectedId: null,
+          gold: 0,
+          materials: {},
+          destinations: [],
+          selectedBossId: null,
+          lastVictoryEnemyType: "normal",
+          lastVictoryContentSystem: "campaign",
+        }),
+      });
+      await page.goto("/");
 
       const reward = new RewardPage(page);
       await expect(reward.addRewardBtn).toBeDisabled();

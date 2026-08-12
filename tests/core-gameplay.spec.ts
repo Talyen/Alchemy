@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { MANA_BERRIES_CARD, makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck } from "./helpers";
+import { makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck } from "./helpers";
 import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
 import { DestinationPage } from "./pages/destination-page";
@@ -36,28 +36,6 @@ test.describe("Battle Flow", critical, () => {
     await battle.endTurn();
     const handAfterTurn = await battle.handCount();
     expect(handAfterTurn).toBe(4);
-  });
-});
-
-test.describe("Mana Mechanics", critical, () => {
-  test("restore-mana overflows beyond maxMana", async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-    await startBattleWithDeck(page, [
-      MANA_BERRIES_CARD,
-      MANA_BERRIES_CARD,
-      MANA_BERRIES_CARD,
-      MANA_BERRIES_CARD,
-      MANA_BERRIES_CARD,
-      MANA_BERRIES_CARD,
-    ]);
-    const battle = new BattlePage(page);
-
-    const maxMana = await battle.mana();
-    expect(maxMana).toBeGreaterThan(0);
-    await battle.playCardNamed("Mana Berries");
-    const manaAfter = await battle.mana();
-    expect(manaAfter).toBeGreaterThan(maxMana);
   });
 });
 

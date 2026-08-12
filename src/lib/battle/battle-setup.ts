@@ -16,15 +16,17 @@ import type { GearEffectManifest } from "@/lib/gear";
 import { defaultGearEffects } from "@/lib/gear";
 import { EMPTY_ENEMY_MITIGATION, type BattleState } from "./types";
 import { computeTrinketManifest } from "../trinkets";
-import { drawCards, shuffleCards } from "./draw";
+import { drawCards } from "./draw";
+import { shuffle } from "../utils";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
 import { initializeEnemyState } from "./battle-enemy-setup";
 import { placeholderRng } from "./rng";
+import type { ContentSystemId } from "@/lib/content-systems/types";
 
 export { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
 
 function setupOpeningHand(deck: BattleCard[], extraDrawPerBattle: number, rng: () => number = placeholderRng) {
-  const openingHand = drawCards(shuffleCards(deck, rng), [], [], CARDS_PER_TURN, 0, rng);
+  const openingHand = drawCards(shuffle(deck, rng), [], [], CARDS_PER_TURN, 0, rng);
   if (extraDrawPerBattle <= 0) return openingHand;
   return drawCards(
     openingHand.deck,
@@ -49,6 +51,7 @@ export interface CreateBattleStateOptions {
   gearEffects?: GearEffectManifest;
   difficultyModifiers?: DifficultyModifier[];
   rng?: () => number;
+  contentSystemType?: ContentSystemId;
 }
 
 function initializePlayerHealthAndBlock(
@@ -93,6 +96,7 @@ function buildInitialBattleState(
     nextCardUid: number;
     difficultyModifiers: DifficultyModifier[];
     rng: () => number;
+    contentSystemType: ContentSystemId;
   },
 ): BattleState {
   return {
@@ -136,6 +140,7 @@ function buildInitialBattleState(
     nextCardUid: setup.nextCardUid,
     difficultyModifiers: setup.difficultyModifiers,
     rng: setup.rng,
+    contentSystemType: setup.contentSystemType,
   };
 }
 
@@ -151,6 +156,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     gearEffects: battleGearEffects = defaultGearEffects,
     difficultyModifiers: battleDiffs = [],
     rng: optionsRng,
+    contentSystemType: battleContentSystem = "campaign",
   } = options;
 
   if (!battleEnemy) {
@@ -205,5 +211,6 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     nextCardUid,
     difficultyModifiers: battleDiffs,
     rng: activeRng,
+    contentSystemType: battleContentSystem,
   });
 }

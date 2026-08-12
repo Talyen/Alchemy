@@ -1,11 +1,12 @@
 // Mana and health-related card effect apply handlers.
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../../game-constants";
 import { applyHealOnManaGain, mergeCombatText, applyHealingWithCombatText } from "../combat-text";
-import { clampHealth, applyPlayerCombatDamage } from "../types";
+import { applyPlayerCombatDamage } from "../types";
 import { getEnemyDamageMultiplier } from "../status-helpers";
 import type { BattleState, CombatTextEvent } from "../types";
 import type { EffectHandler } from "./handler-types";
 import { processEncounterTraitHealthThreshold } from "../encounter-trait-events";
+import { dealEnemyScaledDamage } from "../gear-effects";
 
 function restoreMana(
   state: BattleState,
@@ -41,15 +42,16 @@ function loseMaxMana(state: BattleState, amount: number, combatTexts: CombatText
   const newMaxMana = Math.max(MIN_MAX_MANA_FLOOR, state.maxMana - amount);
   let nextState: BattleState = { ...state, maxMana: newMaxMana, mana: Math.min(newMaxMana, state.mana) };
   if (nextState.talentEffects.burnDamageOnManaCrystalLoss > 0 && nextState.enemyHealth > 0) {
-    const burnDmg = nextState.talentEffects.burnDamageOnManaCrystalLoss;
-    const multiplier = getEnemyDamageMultiplier(nextState, "burn");
-    const finalDamage = Math.round(burnDmg * multiplier);
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "burn", amount: finalDamage });
-    nextState = {
-      ...nextState,
-      enemyHealth: clampHealth(nextState.enemyHealth, -finalDamage, nextState.enemyMaxHealth),
-    };
-    nextState = processEncounterTraitHealthThreshold(state.enemyHealth, nextState, combatTexts);
+    nextState = dealEnemyScaledDamage(
+      nextState,
+      nextState.talentEffects.burnDamageOnManaCrystalLoss,
+      "burn",
+      combatTexts,
+      {
+        multiplier: getEnemyDamageMultiplier(nextState, "burn"),
+        riders: (damagedState) => processEncounterTraitHealthThreshold(state.enemyHealth, damagedState, combatTexts),
+      },
+    );
   }
   return nextState;
 }

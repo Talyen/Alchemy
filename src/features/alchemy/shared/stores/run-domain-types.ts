@@ -28,6 +28,7 @@ import type {
 } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { CorruptionResult } from "@/lib/corruption";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MysteryEvent } from "@/lib/mystery";
 import type { MaterialInventory } from "@/lib/homestead/types";
 
@@ -74,7 +75,7 @@ export function createInitialSessionFields(): RunSessionFields {
     activeLabyrinthPendingNode: null,
     rewardState: createEmptyRewardState(),
     companionRewardCards: null,
-    runEndMaterials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+    runEndMaterials: emptyInventory(),
     runEndTalentXP: {},
     corruptionResult: null,
     pendingCharacterId: null,

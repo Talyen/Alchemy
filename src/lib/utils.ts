@@ -14,11 +14,6 @@ export function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-// Inclusive integer in [min, max].
-export function randomInt(min: number, max: number, rng: () => number = Math.random) {
-  return Math.floor(rng() * (max - min + 1) + min);
-}
-
 export function capitalizeWord(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
@@ -32,6 +27,11 @@ export function shuffle<T>(items: readonly T[], rng: () => number = Math.random)
     [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex]!, shuffled[index]!];
   }
   return shuffled;
+}
+
+// Shuffle then take up to `count` items — the common sample-without-replacement pattern.
+export function sampleItems<T>(items: T[], count: number, rng: () => number): T[] {
+  return shuffle(items, rng).slice(0, Math.min(count, items.length));
 }
 
 // Picks one item from a non-empty collection without each caller repeating random index math.

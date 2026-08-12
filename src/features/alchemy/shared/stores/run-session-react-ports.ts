@@ -124,6 +124,14 @@ export function useActiveRunScreenValue(): Screen {
   return useGameplayStateStore((state) => state.run.navigation.screen);
 }
 
+export function useBattleEnemyHealth(): number {
+  return useGameplayStateStore((state) => state.battle.battleState.enemyHealth);
+}
+
+export function useBattleEnemyType(): string {
+  return useGameplayStateStore((state) => state.battle.battleState.currentEnemy.enemyType);
+}
+
 export function useHasActiveBattle(): boolean {
   return useGameplayStateStore((state) => state.battle.hasActiveBattle);
 }

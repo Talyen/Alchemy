@@ -10,10 +10,11 @@ import type {
   ResearchId,
 } from "./types";
 import { dualMaterialCosts, materialCost, singleMaterialCosts } from "./costs";
+import { emptyInventory } from "./inventory";
 
 type HomesteadUpgradeTier = HomesteadBuilding["tiers"][number];
 
-const ZERO_YIELD: MaterialInventory = { herbs: 0, wood: 0, iron: 0, food: 0, crystal: 0 };
+const ZERO_YIELD: MaterialInventory = emptyInventory();
 
 export function stackingTiers(
   costs: readonly MaterialInventory[],

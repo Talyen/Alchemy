@@ -5,7 +5,7 @@ import type { BattleState } from "@/lib/battle";
 import type { DisplayOverrides } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
-import type { CardGhost, FloatingCombatText, StatusChip } from "../../../shared/types";
+import type { CardGhost, StatusChip } from "../../../shared/types";
 import type { BattleRefs } from "../../../shared/types";
 
 export type BattleScreenState = Pick<
@@ -43,14 +43,7 @@ interface BattleScreenViewProps {
 export interface BattleFeedbackProps {
   playerStatusChips: StatusChip[];
   enemyStatusChips: StatusChip[];
-  playerCombatTexts: FloatingCombatText[];
-  enemyCombatTexts: FloatingCombatText[];
   cardGhosts: CardGhost[];
-  playerShaking: boolean;
-  enemyShaking: boolean;
-  companionShaking: boolean;
-  playerHurtFlashToken: number;
-  enemyHurtFlashToken: number;
   activeLabyrinthModifiers: EncounterCombatTraitId[];
 }
 
@@ -78,11 +71,5 @@ export interface BattleScreenData {
   displayOverrides: DisplayOverrides;
   revealedCardKeys: Set<string>;
   cardGhosts: CardGhost[];
-  floatingCombatTexts: FloatingCombatText[];
-  enemyShaking: boolean;
-  playerShaking: boolean;
-  companionShaking: boolean;
-  playerHurtFlashToken: number;
-  enemyHurtFlashToken: number;
   activeLabyrinthModifiers: EncounterCombatTraitId[];
 }

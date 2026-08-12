@@ -68,6 +68,12 @@ export function DescriptionLines({
       {lines.map((line, lineIndex) => {
         const parts = tokenizeDescription(line);
         const corruptedOffsets = getCorruptedValueOffsets(card, lineIndex);
+        let runningLength = 0;
+        const partOffsets = parts.map((part) => {
+          const offset = runningLength;
+          runningLength += part.text.length;
+          return offset;
+        });
 
         return (
           <div key={`${idPrefix}-${lineIndex}-${line}`}>
@@ -81,7 +87,7 @@ export function DescriptionLines({
                   />
                 );
               }
-              const offset = parts.slice(0, index).reduce((acc, p) => acc + p.text.length, 0);
+              const offset = partOffsets[index] ?? 0;
               return splitCorruptedNumericParts(part.text, offset, corruptedOffsets).map((frag, fi) =>
                 frag.corrupted ? (
                   <span key={`${idPrefix}-${lineIndex}-${index}-${fi}`} className="text-red-400">

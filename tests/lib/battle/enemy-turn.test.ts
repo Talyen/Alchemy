@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { endPlayerTurn, recoverLegacyEnemyPhase } from "@/lib/battle/enemy-turn";
 import type { BattleState, EnemyStatusValues } from "@/lib/battle/types";
+import { isPlayerDefeated } from "@/lib/battle/types";
 import { defaultTalentEffects } from "@/lib/battle";
 import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
 import type { BestiaryEntry } from "@/lib/game-data";
@@ -335,6 +336,7 @@ describe("endPlayerTurn — Death's Door", () => {
     expect(result.state.playerHealth).toBe(0);
     expect(result.state.deathsDoorActive).toBe(false);
     expect(result.state.deathsDoorUsed).toBe(true);
+    expect(isPlayerDefeated(result.state)).toBe(true);
   });
 
   it("CC immunity cooldown does not prevent Death's Door grace recovery turn", () => {

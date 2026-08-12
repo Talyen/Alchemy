@@ -12,5 +12,5 @@ export {
   getBattleCardPlayTarget,
 } from "./dom";
 export { formatEnemyAttackLines } from "./enemy";
-export { formatCompanionTurnStartLine } from "./companion-turn-line";
+export { formatCompanionTurnStartLine } from "@/lib/game-data";
 export { isAlchemyDevBuild, shouldSkipStartupLoadingGate } from "./dev-mode";

@@ -344,6 +344,32 @@ describe("new wish talents", () => {
     expect(result.pendingMaterials.crystal).toBe(5);
   });
 
+  it("wishCrystalGold grants gold instead of crystal in wildwood (no silent drop)", () => {
+    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const state = makeTestBattleState({
+      talentEffects: { ...makeTestBattleState().talentEffects, wishCrystalGold: 5 },
+      rng: () => 0.99,
+      contentSystemType: "wildwood",
+    });
+    const result = applyWishEffect(state, card, 1, []);
+    expect(result.pendingMaterials.crystal).toBe(0);
+    expect(result.gold).toBe(5);
+  });
+
+  it("wishCrystalGold gold text matches the scaled run-gold delta in wildwood", () => {
+    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const state = makeTestBattleState({
+      talentEffects: { ...makeTestBattleState().talentEffects, wishCrystalGold: 5 },
+      gearEffects: { ...makeTestBattleState().gearEffects, goldGainPercent: 50 },
+      rng: () => 0.99,
+      contentSystemType: "wildwood",
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applyWishEffect(state, card, 1, texts);
+    expect(result.gold).toBe(8);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 8 });
+  });
+
   it("wishManaTrigger adds mana per wish", () => {
     const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
     const state = makeTestBattleState({

@@ -4,7 +4,7 @@ import type { BattleCardEffect } from "@/lib/game-data";
 import { CRIT_MULTIPLIER } from "@/lib/game-constants";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultTalentEffects } from "../../fixtures/default-battle-state";
-import { makeCard, makeEffect, makeTexts } from "./damage-test-helpers";
+import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -16,8 +16,8 @@ describe("applyCrit", () => {
       talentEffects: { ...defaultTalentEffects, physicalCritChance: 0 },
       rng: () => 0.01,
     });
-    const card = makeCard({ effects: [makeEffect("physical", 10)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 10)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -32,8 +32,8 @@ describe("applyCrit", () => {
       talentEffects: { ...defaultTalentEffects, physicalCritChance: 10 },
       rng: () => 0.1,
     });
-    const card = makeCard({ effects: [makeEffect("physical", 10)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 10)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -46,8 +46,8 @@ describe("applyCrit", () => {
   it("does not crit when random is above threshold", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState();
-    const card = makeCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,

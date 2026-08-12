@@ -1,6 +1,7 @@
 ﻿import { describe, expect, it } from "vitest";
 import { applyIronwoodBuckler, applyBoneCharmHeal, applyLuckyCloverGold } from "@/lib/battle/trinket-effects";
 import type { CombatTextEvent } from "@/lib/battle/types";
+import { defaultGearEffects } from "@/lib/gear";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultPlayerStatusValues, defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
@@ -95,6 +96,18 @@ describe("applyLuckyCloverGold", () => {
     const next = applyLuckyCloverGold(state, 7, texts);
     expect(next.gold).toBe(7);
     expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 7 }]);
+  });
+
+  it("combat text shows scaled gold when goldGainPercent gear is active", () => {
+    const state = patchBattleState({
+      trinketEffects: defaultTrinketManifest({ luckyCloverGoldChance: 50 }),
+      gearEffects: { ...defaultGearEffects, goldGainPercent: 50 },
+      rng: () => 0.01,
+    });
+    const texts: CombatTextEvent[] = [];
+    const next = applyLuckyCloverGold(state, 10, texts);
+    expect(next.gold).toBe(15);
+    expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 15 }]);
   });
 
   it("does nothing when random does not trigger", () => {

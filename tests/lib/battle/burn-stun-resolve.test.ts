@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { makeState, makeCard } from "./integration/helpers";
+import { makeState } from "./integration/helpers";
+import { makeTestCard } from "../../fixtures/battle";
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
 
@@ -13,7 +14,7 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
 
     // Enemy health: 20. Stun threshold: 20 * 0.5 = 10.
     // Burn card dealing 12 damage.
-    const card = makeCard({
+    const card = makeTestCard({
       id: "fireball",
       effects: [{ kind: "damage", damageType: "burn", amount: 12 }],
     });
@@ -47,7 +48,7 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
   it("resolves and triggers stun when stun status is applied directly via enemy-status effect", () => {
     // Enemy health: 20. Stun threshold: 10.
     // Direct status card applying 11 stun.
-    const card = makeCard({
+    const card = makeTestCard({
       id: "apply-stun",
       effects: [{ kind: "enemy-status", status: "stun", amount: 11 }],
     });
@@ -76,7 +77,7 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
   it("resolves and triggers freeze when freeze status is doubled via multiply-enemy-status effect", () => {
     // Enemy health: 20. Freeze threshold: 10.
     // Start with 6 freeze. Double it to 12.
-    const card = makeCard({
+    const card = makeTestCard({
       id: "double-freeze",
       effects: [{ kind: "multiply-enemy-status", status: "freeze", factor: 2 }],
     });

@@ -49,6 +49,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
       trinketIds: run.runTrinkets,
       gearEffects,
       difficultyModifiers: activeModifiers,
+      contentSystemType: run.contentSystemType,
       rng: battleRng,
     });
   }

@@ -3,6 +3,7 @@ import {
   addEnemyStatus,
   addGold,
   addPlayerStatus,
+  scaleGoldReward,
   setFlag,
   type BattleState,
   type CombatTextEvent,
@@ -31,13 +32,11 @@ function applyLeechBleedRider(state: BattleState, damage: number): BattleState {
 
 function applyLeechManaRider(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
-  if (rollTalentChance(state.talentEffects.manaOnLeechChance, state)) {
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: 1 });
-    nextState = { ...nextState, mana: nextState.mana + 1 };
-  }
-  if (rollTalentChance(state.gearEffects.manaOnLeechChance, state)) {
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: 1 });
-    nextState = { ...nextState, mana: nextState.mana + 1 };
+  for (const chance of [state.talentEffects.manaOnLeechChance, state.gearEffects.manaOnLeechChance]) {
+    if (rollTalentChance(chance, state)) {
+      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: 1 });
+      nextState = { ...nextState, mana: nextState.mana + 1 };
+    }
   }
   return nextState;
 }
@@ -134,7 +133,8 @@ export function applyDamageBlock(state: BattleState, damage: number, combatTexts
   if (damage <= 0 || state.talentEffects.holyBlockPercentFromDamage <= 0) return state;
   const blockAmount = Math.round((damage * state.talentEffects.holyBlockPercentFromDamage) / PERCENT_DENOMINATOR);
   if (blockAmount <= 0) return state;
-  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "block", amount: blockAmount });
+  const blockGain = blockAmount + (state.gearEffects.flatBlockGained > 0 ? state.gearEffects.flatBlockGained : 0);
+  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "block", amount: blockGain });
   return addPlayerStatus(state, "block", blockAmount);
 }
 
@@ -144,7 +144,12 @@ export function applyDamageBlock(state: BattleState, damage: number, combatTexts
 export function applyHolyTithe(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyGoldChance <= 0) return state;
   if (rollPercent(state.talentEffects.holyGoldChance, getBattleRng(state))) {
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: damage });
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "gold",
+      amount: scaleGoldReward(damage, state.gearEffects),
+    });
     return addGold(state, damage);
   }
   return state;

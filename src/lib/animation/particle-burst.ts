@@ -1,6 +1,8 @@
 // Canvas particle burst helpers for card/status destruction effects.
 // Depends only on Canvas APIs, random motion, performance.now, and requestAnimationFrame.
 // Used by battle UI death animations; it never reads or mutates battle state.
+import { animateParticleLoop } from "./particle-loop";
+
 interface Particle {
   x: number;
   y: number;
@@ -48,7 +50,9 @@ function sampleParticles(
   return particles;
 }
 
-function drawParticle(ctx: CanvasRenderingContext2D, p: Particle): void {
+function drawParticle(ctx: CanvasRenderingContext2D, p: Particle, progress: number): void {
+  if (p.alpha <= 0.01) return;
+  p.alpha = Math.max(0, 1 - progress * progress * progress);
   ctx.globalAlpha = p.alpha;
   ctx.fillStyle = p.color;
   ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
@@ -84,37 +88,14 @@ export function animateParticles(
 ): () => void {
   // The animation owns its RAF lifecycle and returns cancellation for React unmounts;
   // otherwise delayed death effects could keep drawing into detached canvases.
-  let running = true;
-  const startTime = performance.now();
-  let lastTime = startTime;
-
-  function frame(now: number): void {
-    if (!running) return;
-
-    const elapsed = now - startTime;
-    const dt = Math.min((now - lastTime) / 16.67, 3);
-    lastTime = now;
-    const progress = Math.min(elapsed / duration, 1);
-
-    ctx.clearRect(0, 0, width, height);
-
-    for (const p of particles) {
-      if (p.alpha <= 0.01) continue;
-      stepParticle(p, dt);
-      p.alpha = Math.max(0, 1 - progress * progress * progress);
-      drawParticle(ctx, p);
-    }
-
-    if (progress < 1) {
-      requestAnimationFrame(frame);
-    } else {
-      onComplete();
-    }
-  }
-
-  requestAnimationFrame(frame);
-
-  return () => {
-    running = false;
-  };
+  return animateParticleLoop({
+    ctx,
+    particles,
+    width,
+    height,
+    duration,
+    step: stepParticle,
+    draw: drawParticle,
+    onComplete,
+  });
 }

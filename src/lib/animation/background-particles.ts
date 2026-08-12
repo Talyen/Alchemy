@@ -183,8 +183,24 @@ export function startBackgroundParticles(
 
   let animFrameId: number | null = null;
 
+  // Pause when the document is hidden, the window is unfocused, or the canvas has no
+  // rendered size — the rAF loop is parked (not merely skipping draws) and resumed on
+  // the matching events, mirroring the audio mute logic.
+  function isPaused() {
+    return document.hidden || !document.hasFocus() || activeCanvas.width < 2 || activeCanvas.height < 2;
+  }
+
+  function scheduleFrame() {
+    if (!running || isPaused() || animFrameId !== null) return;
+    animFrameId = requestAnimationFrame(frame);
+  }
+
   function frame(now: number) {
-    if (!running || document.hidden) return;
+    animFrameId = null;
+    if (!running || isPaused()) {
+      lastTime = now;
+      return;
+    }
     const dt = Math.min((now - lastTime) / 16.67, 3);
     lastTime = now;
     const w = activeCanvas.width / backingScale;
@@ -197,24 +213,37 @@ export function startBackgroundParticles(
       renderParticle(activeCtx, p);
     }
 
-    animFrameId = requestAnimationFrame(frame);
+    scheduleFrame();
+  }
+
+  function resume() {
+    if (!running || animFrameId !== null) return;
+    lastTime = performance.now();
+    scheduleFrame();
   }
 
   function handleVisibilityChange() {
-    if (!document.hidden && running) {
-      lastTime = performance.now();
-      if (animFrameId !== null) cancelAnimationFrame(animFrameId);
-      animFrameId = requestAnimationFrame(frame);
+    if (!document.hidden && running) resume();
+  }
+
+  function handleWindowBlur() {
+    if (animFrameId !== null) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
     }
   }
 
   document.addEventListener("visibilitychange", handleVisibilityChange);
-  animFrameId = requestAnimationFrame(frame);
+  window.addEventListener("blur", handleWindowBlur);
+  window.addEventListener("focus", resume);
+  scheduleFrame();
 
   return () => {
     running = false;
     if (animFrameId !== null) cancelAnimationFrame(animFrameId);
     document.removeEventListener("visibilitychange", handleVisibilityChange);
+    window.removeEventListener("blur", handleWindowBlur);
+    window.removeEventListener("focus", resume);
     window.removeEventListener("resize", resize);
     ro.disconnect();
     onStop?.();

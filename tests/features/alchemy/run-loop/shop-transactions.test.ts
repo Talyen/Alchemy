@@ -11,7 +11,7 @@ const setShopState = createRunSessionCommand(mutateShopState);
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { selectRewardCards, type BattleCard } from "@/lib/game-data";
 import type { ShopState } from "@/lib/active-run-session";
-import { makeTestCardWithId } from "../../../fixtures/battle";
+import { makeEffect, makeTestCardWithId } from "../../../fixtures/battle";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
@@ -24,8 +24,7 @@ vi.mock("@/lib/game-data", async (importOriginal) => {
   return { ...actual, selectRewardCards: vi.fn() };
 });
 
-const makeCard = (id: string): BattleCard =>
-  makeTestCardWithId(id, { effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
+const makeCard = (id: string): BattleCard => makeTestCardWithId(id, { effects: [makeEffect("physical", 1)] });
 
 beforeEach(() => {
   vi.clearAllMocks();

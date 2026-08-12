@@ -4,7 +4,6 @@ import type { BattleCard, CharacterId, DifficultyId, UnlockedTalents, TalentEffe
 import type { CommitVictoryRewardsDeps, VictoryRewardsInput, VictoryRewardsResult } from "./victory-flow-types";
 export type { CommitVictoryRewardsDeps, VictoryRewardsInput, VictoryRewardsResult } from "./victory-flow-types";
 import { getEnemyMaterialLoot, applyMaterialFindBonus } from "@/lib/homestead/loot";
-import { randomInt } from "@/lib/utils";
 import {
   COMPANION_GOLD_FIND_CHANCE,
   COMPANION_GOLD_MULTIPLIER,
@@ -70,7 +69,7 @@ function rollVictoryGold(
   labyrinthRewardModifiers: EncounterRewardTraitId[],
   rng: () => number,
 ): VictoryGoldRoll {
-  const baseGold = randomInt(GOLD_REWARD_MIN, GOLD_REWARD_MAX, rng);
+  const baseGold = Math.floor(rng() * (GOLD_REWARD_MAX - GOLD_REWARD_MIN + 1) + GOLD_REWARD_MIN);
   let gold = Math.floor(baseGold * (1 + talentEffects.enemyGoldDropBonus));
 
   if (talentEffects.companionGoldFindActive && battleState.activeCompanion && rng() < COMPANION_GOLD_FIND_CHANCE) {

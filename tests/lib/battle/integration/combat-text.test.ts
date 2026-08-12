@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { makeState, makeCard } from "./helpers";
+import { makeState } from "./helpers";
+import { makeTestCard } from "../../../fixtures/battle";
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
 import { applyCardEffects, defaultTalentEffects, getEnemyDamageMultiplier, mergeCombatText } from "@/lib/battle";
@@ -162,7 +163,7 @@ describe("getEnemyDamageMultiplier", () => {
 
 describe("combat number accuracy", () => {
   it("does not double the first Burn card unless the talent is active", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
     const state = makeState({ enemyHealth: 30 });
     const texts: CombatTextEvent[] = [];
 
@@ -175,8 +176,11 @@ describe("combat number accuracy", () => {
   });
 
   it("doubles the first Burn card exactly once when the talent is active", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
-    const secondCard = makeCard({ id: "second-burn", effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
+    const secondCard = makeTestCard({
+      id: "second-burn",
+      effects: [{ kind: "damage", damageType: "burn", amount: 10 }],
+    });
     const state = makeState({
       enemyHealth: 50,
       talentEffects: { ...defaultTalentEffects, firstBurnCardDoubled: true },
@@ -198,7 +202,7 @@ describe("combat number accuracy", () => {
   });
 
   it("uses post-weakness damage for health, status stacks, and combat text", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
     const state = makeState({
       enemyHealth: 30,
       currentEnemy: {
@@ -222,7 +226,7 @@ describe("combat number accuracy", () => {
   });
 
   it("uses post-resistance damage for health, status stacks, and combat text", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
     const state = makeState({
       enemyHealth: 30,
       currentEnemy: {

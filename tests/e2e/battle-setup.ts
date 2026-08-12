@@ -2,10 +2,8 @@
 import { expect, type Page } from "@playwright/test";
 import { BattlePage } from "../pages/battle-page";
 import { DestinationPage } from "../pages/destination-page";
-import { MenuPage } from "../pages/menu-page";
 import { STARTING_DECK } from "./cards";
 import { resumeCampaignRun } from "./navigation";
-import { seedRandom } from "./rng";
 import { injectSaveState, destinationInterruptedFlow } from "./save-injection";
 import type { DestinationName } from "./types";
 import { completeRunEndToMenu } from "./run-end";
@@ -60,13 +58,6 @@ export async function startBattleWithDeck(
   const destination = new DestinationPage(page);
   await destination.expectVisible();
   await destination.enterCombat("Normal Combat");
-}
-
-export async function startCampaignBattle(page: Page, character: "Knight" | "Ranger" | "Rogue" | "Wizard" = "Knight") {
-  await seedRandom(page, 42);
-  const menu = new MenuPage(page);
-  await menu.goto();
-  await menu.startCampaign(character);
 }
 
 export async function assertDefeatFromEndRun(page: Page, options: { returnToMenu?: boolean } = {}) {

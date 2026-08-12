@@ -8,7 +8,7 @@ import {
   defaultTalentEffects,
   defaultTrinketManifest,
 } from "../../fixtures/default-battle-state";
-import { makeCard, makeEffect, makeTexts } from "./damage-test-helpers";
+import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -17,8 +17,8 @@ afterEach(() => {
 describe("computeBaseDamage — forge bonus", () => {
   it("adds forge bonus to physical damage", () => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ forge: 3 }) });
-    const card = makeCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -33,8 +33,8 @@ describe("computeBaseDamage — forge bonus", () => {
       playerStatuses: defaultPlayerStatusValues({ forge: 2 }),
       talentEffects: { ...defaultTalentEffects, forgeToBurn: true },
     });
-    const card = makeCard({ effects: [makeEffect("burn", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("burn", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -50,8 +50,8 @@ describe("computeBaseDamage — forge bonus", () => {
       playerStatuses: defaultPlayerStatusValues({ forge: 2 }),
       talentEffects: { ...defaultTalentEffects, forgeToHoly: true },
     });
-    const card = makeCard({ effects: [makeEffect("holy", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -67,8 +67,8 @@ describe("computeBaseDamage — forge bonus", () => {
       playerStatuses: defaultPlayerStatusValues({ forge: 2 }),
       talentEffects: { ...defaultTalentEffects, forgeToBleed: true },
     });
-    const card = makeCard({ effects: [makeEffect("bleed", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("bleed", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -86,8 +86,8 @@ describe("applyForgeStunRider", () => {
       trinketEffects: defaultTrinketManifest({ forgeStunThreshold: 4, forgeStunAmount: 2 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 15 }),
     });
-    const card = makeCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -102,8 +102,8 @@ describe("applyForgeStunRider", () => {
       playerStatuses: defaultPlayerStatusValues({ forge: 2 }),
       trinketEffects: defaultTrinketManifest({ forgeStunThreshold: 4, forgeStunAmount: 2 }),
     });
-    const card = makeCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -117,8 +117,8 @@ describe("applyForgeStunRider", () => {
 describe("consumeForgeAfterDamage", () => {
   it("consumes 1 forge after physical damage", () => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ forge: 3 }) });
-    const card = makeCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -130,8 +130,8 @@ describe("consumeForgeAfterDamage", () => {
 
   it("consumes 1 forge after stun damage", () => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ forge: 3 }) });
-    const card = makeCard({ effects: [makeEffect("stun", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("stun", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -146,8 +146,8 @@ describe("consumeForgeAfterDamage", () => {
       playerStatuses: defaultPlayerStatusValues({ forge: 3 }),
       talentEffects: { ...defaultTalentEffects, forgeToBurn: true },
     });
-    const card = makeCard({ effects: [makeEffect("burn", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("burn", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -162,8 +162,8 @@ describe("consumeForgeAfterDamage", () => {
       playerStatuses: defaultPlayerStatusValues({ forge: 3 }),
       talentEffects: { ...defaultTalentEffects, forgeToHoly: true },
     });
-    const card = makeCard({ effects: [makeEffect("holy", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -175,8 +175,8 @@ describe("consumeForgeAfterDamage", () => {
 
   it("does not consume forge for burn damage without talent", () => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ forge: 3 }) });
-    const card = makeCard({ effects: [makeEffect("burn", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("burn", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -188,8 +188,8 @@ describe("consumeForgeAfterDamage", () => {
 
   it("does not consume forge for holy damage without talent", () => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ forge: 3 }) });
-    const card = makeCard({ effects: [makeEffect("holy", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,

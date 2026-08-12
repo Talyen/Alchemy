@@ -2,10 +2,10 @@
  * Enemy stun threshold resolution and stun-triggered talent/boon effects.
  * Depends on: ./status-forge, ./status-cc, ./talent-effects, ./trinket-effects, ./types, ./combat-text.
  */
-import { clampHealth, addPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
+import { addPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 import { mergeCombatText } from "./combat-text";
 import { applyLuckyCloverGold } from "./trinket-effects";
-import { applyGearCcPhysicalDamage } from "./gear-effects";
+import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./gear-effects";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import {
   applyStunBlockTalent,
@@ -61,22 +61,16 @@ function applyStunGearEffects(state: BattleState, combatTexts?: CombatTextEvent[
 function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
   let nextState = state;
   if (nextState.trinketEffects.thunderstoneDamageOnStun > 0) {
-    const dmg = nextState.trinketEffects.thunderstoneDamageOnStun;
-    const multiplier = getEnemyDamageMultiplier(nextState, "nature");
-    const finalDamage = Math.round(dmg * multiplier);
-    nextState = {
-      ...nextState,
-      enemyHealth: clampHealth(nextState.enemyHealth, -finalDamage, nextState.enemyMaxHealth),
-    };
-    if (combatTexts) {
-      mergeCombatText(combatTexts, {
-        target: "enemy",
-        kind: "damage",
-        stat: "nature",
-        amount: finalDamage,
-      });
-    }
-    nextState = applyLuckyCloverGold(nextState, finalDamage, combatTexts ?? []);
+    nextState = dealEnemyScaledDamage(
+      nextState,
+      nextState.trinketEffects.thunderstoneDamageOnStun,
+      "nature",
+      combatTexts ?? [],
+      {
+        multiplier: getEnemyDamageMultiplier(nextState, "nature"),
+        riders: (damagedState, finalDamage) => applyLuckyCloverGold(damagedState, finalDamage, combatTexts ?? []),
+      },
+    );
   }
   return nextState;
 }

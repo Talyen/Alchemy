@@ -13,5 +13,3 @@ export const makeState = (overrides: Parameters<typeof makeTestBattleState>[0] =
     ],
     ...overrides,
   });
-
-export const makeCard = makeTestCard;

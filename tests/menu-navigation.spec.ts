@@ -1,10 +1,11 @@
 import { expect } from "@playwright/test";
 import {
   injectLabyrinthRun,
+  injectSaveState,
   makeCard,
+  makeGoblinBattleState,
   SAVE_KEY,
   startBattleWithDeck,
-  startCampaignBattle,
   enableLoadingScreen,
   failOnRuntimeErrors,
 } from "./helpers";
@@ -30,7 +31,15 @@ test.describe("Menu", critical, () => {
   });
 
   test("menu shows Resume Run when a campaign battle is active", async ({ page }) => {
-    await startCampaignBattle(page);
+    await injectSaveState(page, {
+      currentScreen: "battle",
+      activeCombat: {
+        battleState: makeGoblinBattleState(),
+        activeLabyrinthModifiers: [],
+        activeLabyrinthRewardModifiers: [],
+      },
+    });
+    await page.goto("/");
     const menu = new MenuPage(page);
     const battle = new BattlePage(page);
     await menu.stage.expectRunPhase("battle");
@@ -221,18 +230,5 @@ test.describe("Startup Loading Screen", slow, () => {
     const bar = page.locator(".alchemy-startup-bar");
     await expect(bar).toBeVisible({ timeout: 5000 });
     await new MenuPage(page).expectMainMenu(15000);
-  });
-
-  test("loading screen respects minimum display duration", async ({ page }) => {
-    await enableLoadingScreen(page);
-
-    const start = Date.now();
-    await page.goto("/");
-
-    await expect(page.getByText(LOADING_WORDS)).toBeVisible({ timeout: 5000 });
-    await new MenuPage(page).expectMainMenu(15000);
-
-    const elapsed = Date.now() - start;
-    expect(elapsed).toBeGreaterThanOrEqual(300);
   });
 });

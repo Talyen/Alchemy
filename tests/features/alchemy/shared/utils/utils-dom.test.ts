@@ -6,53 +6,46 @@ import {
   getCardRect,
   setTiltFromEvent,
 } from "@/features/alchemy/shared/utils/dom";
-import type { BattleCard } from "@/lib/game-data";
-
-function makeCard(effects: BattleCard["effects"]): BattleCard {
-  return {
-    id: "test",
-    title: "Test",
-    descriptionLines: [""],
-    art: "",
-    cost: 1,
-    effects,
-  };
-}
+import { makeTestCard } from "../../../../fixtures/cards";
 
 describe("getBattleCardPlayTarget", () => {
   it('returns "enemy" for damage cards', () => {
-    const card = makeCard([{ kind: "damage", damageType: "physical", amount: 5 }]);
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
     expect(getBattleCardPlayTarget(card)).toBe("enemy");
   });
 
   it('returns "player" for player-status cards', () => {
-    const card = makeCard([{ kind: "player-status", status: "block", amount: 5 }]);
+    const card = makeTestCard({ effects: [{ kind: "player-status", status: "block", amount: 5 }] });
     expect(getBattleCardPlayTarget(card)).toBe("player");
   });
 
   it('returns "player" for heal cards', () => {
-    const card = makeCard([{ kind: "heal", amount: 5 }]);
+    const card = makeTestCard({ effects: [{ kind: "heal", amount: 5 }] });
     expect(getBattleCardPlayTarget(card)).toBe("player");
   });
 
   it('returns "enemy" as default when no matching effect kind is found', () => {
-    const card = makeCard([{ kind: "draw-cards", amount: 1 }]);
+    const card = makeTestCard({ effects: [{ kind: "draw-cards", amount: 1 }] });
     expect(getBattleCardPlayTarget(card)).toBe("enemy");
   });
 
   it('returns "enemy" for damage even when preceded by other effects', () => {
-    const card = makeCard([
-      { kind: "gain-gold", amount: 5 },
-      { kind: "damage", damageType: "physical", amount: 5 },
-    ]);
+    const card = makeTestCard({
+      effects: [
+        { kind: "gain-gold", amount: 5 },
+        { kind: "damage", damageType: "physical", amount: 5 },
+      ],
+    });
     expect(getBattleCardPlayTarget(card)).toBe("enemy");
   });
 
   it('returns "player" for player-status even when preceded by draw-cards', () => {
-    const card = makeCard([
-      { kind: "draw-cards", amount: 1 },
-      { kind: "player-status", status: "block", amount: 5 },
-    ]);
+    const card = makeTestCard({
+      effects: [
+        { kind: "draw-cards", amount: 1 },
+        { kind: "player-status", status: "block", amount: 5 },
+      ],
+    });
     expect(getBattleCardPlayTarget(card)).toBe("player");
   });
 });

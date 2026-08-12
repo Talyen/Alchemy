@@ -36,12 +36,13 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
     });
   }
 
-  function prepareNextDestination(destinationIndexInAct: number = 0, onCommitted?: () => void) {
+  function prepareNextDestination(destinationIndexInAct?: number, onCommitted?: () => void) {
     deps.actions.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
       dispatchRunSessionCommand((draft) => {
         const run = draft.run.activeRun;
+        const indexInAct = destinationIndexInAct ?? run.destinationIndexInAct;
         const initialDestinations = createInitialDestinationResult({
-          availableDestinations: deps.getAvailableDestinations({ destinationIndexInAct }),
+          availableDestinations: deps.getAvailableDestinations({ destinationIndexInAct: indexInAct }),
           offerState: {
             lastOfferedDestinations: run.lastOfferedDestinations,
             roundsSinceOffered: run.destinationRoundsSinceOffered,

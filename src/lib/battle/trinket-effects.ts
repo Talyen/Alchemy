@@ -4,7 +4,7 @@
  * Depended on by: damage.ts, enemy-turn.ts, status-stun-resolve.
  */
 import { PERCENT_DENOMINATOR } from "../game-constants";
-import { addGold, applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
+import { addGold, applyPlayerHealing, scaleGoldReward, type BattleState, type CombatTextEvent } from "./types";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 
 export function applyIronwoodBuckler(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -43,8 +43,9 @@ export function applyBoneCharmHeal(state: BattleState, enemyWasAlive: boolean, c
 export function applyLuckyCloverGold(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (state.trinketEffects.luckyCloverGoldChance <= 0 || damage <= 0) return state;
   if (state.rng() * PERCENT_DENOMINATOR < state.trinketEffects.luckyCloverGoldChance) {
+    const scaled = scaleGoldReward(damage, state.gearEffects);
     const nextState = addGold(state, damage);
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: damage });
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: scaled });
     return nextState;
   }
   return state;

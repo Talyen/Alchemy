@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { defaultBattleState, defaultTalentEffects } from "@/lib/battle";
-import { drawCards, shuffleCards } from "@/lib/battle/draw";
+import { drawCards } from "@/lib/battle/draw";
+import { shuffle } from "@/lib/utils";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import { makeTestCardWithId } from "../../fixtures/battle";
 
@@ -73,10 +74,10 @@ describe("defaultBattleState", () => {
   });
 });
 
-describe("shuffleCards", () => {
+describe("shuffle", () => {
   it("returns a new array (not the same reference)", () => {
     const cards = [{ id: "a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [] }];
-    const shuffled = shuffleCards(cards, Math.random);
+    const shuffled = shuffle(cards, Math.random);
     expect(shuffled).not.toBe(cards);
   });
 
@@ -92,7 +93,7 @@ describe("shuffleCards", () => {
       },
     ];
     const original = [...cards];
-    shuffleCards(cards, Math.random);
+    shuffle(cards, Math.random);
     expect(cards).toEqual(original);
   });
 
@@ -102,18 +103,18 @@ describe("shuffleCards", () => {
       { id: "b", title: "B", descriptionLines: [""], art: "", cost: 1, effects: [], uid: 2 },
       { id: "c", title: "C", descriptionLines: [""], art: "", cost: 1, effects: [], uid: 3 },
     ];
-    const shuffled = shuffleCards(cards, Math.random);
+    const shuffled = shuffle(cards, Math.random);
     expect(shuffled).toHaveLength(3);
     expect(shuffled.map((c) => c.id).sort()).toEqual(["a", "b", "c"]);
   });
 
   it("handles empty array", () => {
-    expect(shuffleCards([], Math.random)).toEqual([]);
+    expect(shuffle([], Math.random)).toEqual([]);
   });
 
   it("handles single-card array", () => {
     const card = { id: "a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [] };
-    expect(shuffleCards([card], Math.random)).toEqual([card]);
+    expect(shuffle([card], Math.random)).toEqual([card]);
   });
 });
 

@@ -82,6 +82,11 @@ function sortByTitle<T extends { title: string }>(entries: T[]): T[] {
   return [...entries].sort((a, b) => a.title.localeCompare(b.title));
 }
 
+// Catalogs are static at module load; pre-sort once so paging never re-sorts the full library.
+const sortedCardLibrary = sortByTitle(cardLibrary);
+const sortedEnemyBestiary = sortByTitle(enemyBestiary);
+const sortedTrinketLibrary = sortByTitle(trinketLibrary);
+
 function shapeCardItem(
   card: (typeof cardLibrary)[number],
   discovered: boolean,
@@ -109,46 +114,42 @@ function getCardItems(
   pageSize: number,
 ): CollectionTileItem[] {
   const discoveredSet = new Set(discoveredCardIds);
-  return sortByTitle(cardLibrary)
+  return sortedCardLibrary
     .slice(start, start + pageSize)
     .map((card) => shapeCardItem(card, discoveredSet.has(card.id), bondedCompanions));
 }
 
 function getBestiaryItems(encounteredEnemyIds: string[], start: number, pageSize: number): CollectionTileItem[] {
   const encounteredSet = new Set(encounteredEnemyIds);
-  return sortByTitle(enemyBestiary)
-    .slice(start, start + pageSize)
-    .map((entry: BestiaryEntry) => {
-      const discovered = encounteredSet.has(entry.id);
-      return {
-        id: entry.id,
-        title: discovered ? entry.title : COLLECTION_ITEMS_CONFIG.hiddenTitle,
-        subtitle: discovered ? entry.subtitle : undefined,
-        descriptionLines: discovered ? entry.descriptionLines : [COLLECTION_ITEMS_CONFIG.hiddenEnemyDescription],
-        art: entry.art,
-        discovered,
-        hoverScope: "collection-bestiary",
-        frameType: "bestiary",
-        enemyEntry: entry,
-      };
-    });
+  return sortedEnemyBestiary.slice(start, start + pageSize).map((entry: BestiaryEntry) => {
+    const discovered = encounteredSet.has(entry.id);
+    return {
+      id: entry.id,
+      title: discovered ? entry.title : COLLECTION_ITEMS_CONFIG.hiddenTitle,
+      subtitle: discovered ? entry.subtitle : undefined,
+      descriptionLines: discovered ? entry.descriptionLines : [COLLECTION_ITEMS_CONFIG.hiddenEnemyDescription],
+      art: entry.art,
+      discovered,
+      hoverScope: "collection-bestiary",
+      frameType: "bestiary",
+      enemyEntry: entry,
+    };
+  });
 }
 
 function getTrinketItems(discoveredTrinketIds: string[], start: number, pageSize: number): CollectionTileItem[] {
   const discoveredSet = new Set(discoveredTrinketIds);
-  return sortByTitle(trinketLibrary)
-    .slice(start, start + pageSize)
-    .map((entry: TrinketEntry) => {
-      const discovered = discoveredSet.has(entry.id);
-      return {
-        id: entry.id,
-        title: discovered ? entry.title : COLLECTION_ITEMS_CONFIG.hiddenTitle,
-        subtitle: undefined,
-        descriptionLines: discovered ? entry.descriptionLines : [COLLECTION_ITEMS_CONFIG.hiddenTrinketDescription],
-        art: entry.art,
-        discovered,
-        hoverScope: "collection-trinket" as const,
-        frameType: "trinket" as const,
-      };
-    });
+  return sortedTrinketLibrary.slice(start, start + pageSize).map((entry: TrinketEntry) => {
+    const discovered = discoveredSet.has(entry.id);
+    return {
+      id: entry.id,
+      title: discovered ? entry.title : COLLECTION_ITEMS_CONFIG.hiddenTitle,
+      subtitle: undefined,
+      descriptionLines: discovered ? entry.descriptionLines : [COLLECTION_ITEMS_CONFIG.hiddenTrinketDescription],
+      art: entry.art,
+      discovered,
+      hoverScope: "collection-trinket" as const,
+      frameType: "trinket" as const,
+    };
+  });
 }

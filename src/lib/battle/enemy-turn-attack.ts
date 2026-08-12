@@ -1,9 +1,13 @@
 // Enemy attack resolution: damage, block, armor, and attack effect dispatch.
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
-import { applyPlayerStatusFromAttack, applyPlayerDamageStatuses } from "./status-player";
+import {
+  applyPlayerStatusFromAttack,
+  applyPlayerDamageStatuses,
+  type DirectPlayerStatusAttackEffect,
+} from "./status-player";
 import { resolveStunTrigger } from "./status-stun-resolve";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
-import type { EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
+import type { EnemyAttackEffect } from "@/lib/game-data";
 import { logError } from "../error-logger";
 import {
   applyPlayerCombatDamage,
@@ -17,10 +21,6 @@ import {
 import { BATTLE_CONFIG, computeLeechHeal, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { checkHealthThresholds, isFreezeActiveForAspect } from "./enemy-turn-utils";
 import { decayArmorAfterDamage } from "./status-helpers";
-
-type DirectPlayerStatusAttackEffect = Extract<EnemyAttackEffect, { kind: "player-status" }> & {
-  status: Exclude<PlayerStatusId, "stun" | "freeze">;
-};
 
 function isDirectPlayerStatusAttack(
   effect: Extract<EnemyAttackEffect, { kind: "player-status" }>,

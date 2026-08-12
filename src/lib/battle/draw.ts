@@ -19,7 +19,7 @@ function refillDeck(
 ): { deck: BattleCard[]; discard: BattleCard[] } | null {
   if (deck.length > 0) return { deck, discard };
   if (discard.length === 0) return null;
-  return { deck: shuffleCards(discard, rng), discard: [] };
+  return { deck: shuffle(discard, rng), discard: [] };
 }
 
 /** Draws cards from the deck into the hand, reshuffling discard when the deck empties. */
@@ -54,8 +54,4 @@ export function drawCards(
 /** Convenience wrapper that pulls state.deck/discard/hand/rng from BattleState. */
 export function drawFromState(state: BattleState, amount: number) {
   return drawCards(state.deck, state.discard, state.hand, amount, state.nextCardUid, state.rng);
-}
-
-export function shuffleCards(cards: BattleCard[], rng: () => number) {
-  return shuffle(cards, rng);
 }

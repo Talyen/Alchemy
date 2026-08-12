@@ -3,7 +3,7 @@ import { dealDamageToEnemy } from "@/lib/battle/damage";
 import type { BattleCardEffect } from "@/lib/game-data";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultTalentEffects } from "../../fixtures/default-battle-state";
-import { makeCard, makeEffect, makeTexts } from "./damage-test-helpers";
+import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -17,8 +17,8 @@ describe("dealDamageToEnemy — lifesteal", () => {
       gold: 50,
       talentEffects: { ...defaultTalentEffects, healMultiplier: 0.5 },
     });
-    const card = makeCard({ effects: [makeEffect("physical", 10, { lifesteal: true })] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 10, { lifesteal: true })] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,

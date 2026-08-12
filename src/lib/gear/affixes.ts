@@ -13,7 +13,7 @@ function formatAffixDescription(def: GearAffixDefinition, roll: GearAffixRoll): 
   return def.descriptionTemplate.replace("{value}", String(roll.value));
 }
 
-export function resolveAffixEffects(affixes: readonly GearAffixRoll[], _rarity?: GearRarity): GearEffectManifest {
+export function resolveAffixEffects(affixes: readonly GearAffixRoll[]): GearEffectManifest {
   const effects = { ...defaultGearEffects };
   for (const roll of affixes) {
     const def = gearAffixCatalog[roll.id];
@@ -45,7 +45,6 @@ export function getGearAffixDisplayName(affixId: GearAffixId): string {
 
 export function getGearAffixTooltipEntries(
   affixes: readonly GearAffixRoll[],
-  _rarity?: GearRarity,
 ): Array<{ key: string; name: string; text: string }> {
   return affixes.flatMap((roll, index) => {
     const def = gearAffixCatalog[roll.id];

@@ -35,15 +35,14 @@ import { readProfileStore, setCompletedDifficulties } from "@/features/alchemy/s
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
 import {
   useActiveRunScreenValue,
+  useBattleEnemyHealth,
+  useBattleEnemyType,
   useBondedCompanions,
   useHomesteadEffects,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import { useRewardsScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
-import {
-  useRunSessionBattleContext,
-  useRunSessionNavigationSlice,
-} from "@/features/alchemy/shared/stores/run-session-model";
+import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-session-model";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
@@ -83,7 +82,8 @@ function AppMainContent({
   const isArmoryLocked = useIsArmoryLocked();
   const { screen: controllerScreen } = run;
   const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
-  const { battle } = useRunSessionBattleContext(controllerScreen);
+  const battleEnemyHealth = useBattleEnemyHealth();
+  const battleEnemyType = useBattleEnemyType();
   const gameMenu = useGameMenuState();
   useAppKeyboardShortcuts({
     renderedScreen,
@@ -97,7 +97,7 @@ function AppMainContent({
 
   const isAutosaveAllowed = (): boolean => {
     if (runPhase === "runEnd") return false;
-    if (runPhase === "battle" && battle.battleState.enemyHealth <= 0) return false;
+    if (runPhase === "battle" && battleEnemyHealth <= 0) return false;
     // Mid-claim keeps choices populated; encodeRunResumeSnapshot handles that surface.
     // Block only a true hollow Victory (no claim lock, nothing to pick).
     if (run.screen === "rewards" && !rewardsData.rewardClaimInFlight && rewardsData.rewardState.choices.length === 0) {
@@ -123,7 +123,7 @@ function AppMainContent({
     [homesteadBondedCompanions, homesteadEffects],
   );
 
-  const isBossBattle = renderedScreen === "battle" && battle.battleState.currentEnemy.enemyType === "boss";
+  const isBossBattle = renderedScreen === "battle" && battleEnemyType === "boss";
   const { particleColors, particleAlphaMultiplier } = getScreenParticleConfig(renderedScreen, isBossBattle);
 
   const [deletingUnsupportedSave, setDeletingUnsupportedSave] = useState(false);

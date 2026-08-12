@@ -48,6 +48,53 @@ describe("resolvePlayerCrowdControlTrigger", () => {
     expect(result.playerCC.cooldown).toBe(BATTLE_CONFIG.CC_IMMUNITY_DURATION);
   });
 
+  it("stun triggers at exactly half max health (>= boundary, even health)", () => {
+    const state = makeTestBattleState({
+      playerStatuses: defaultPlayerStatusValues({ stun: 15 }),
+      playerMaxHealth: 30,
+    });
+    const result = resolvePlayerCrowdControlTrigger({
+      state,
+      stat: "stun",
+      stackValue: 15,
+      thresholdFraction: STUN_THRESHOLD_FRACTION,
+      combatTexts: [],
+    });
+    expect(result.playerCC.stunSkipTurns).toBe(BATTLE_CONFIG.BASE_CC_DURATION);
+  });
+
+  it("stun does not trigger one stack below half max health", () => {
+    const state = makeTestBattleState({
+      playerStatuses: defaultPlayerStatusValues({ stun: 14 }),
+      playerMaxHealth: 30,
+    });
+    const texts: never[] = [];
+    const result = resolvePlayerCrowdControlTrigger({
+      state,
+      stat: "stun",
+      stackValue: 14,
+      thresholdFraction: STUN_THRESHOLD_FRACTION,
+      combatTexts: texts,
+    });
+    expect(result.playerCC.stunSkipTurns).toBe(0);
+    expect(result.playerStatuses.stun).toBe(14);
+  });
+
+  it("freeze triggers at exactly half max health (>= boundary, even health)", () => {
+    const state = makeTestBattleState({
+      playerStatuses: defaultPlayerStatusValues({ freeze: 15 }),
+      playerMaxHealth: 30,
+    });
+    const result = resolvePlayerCrowdControlTrigger({
+      state,
+      stat: "freeze",
+      stackValue: 15,
+      thresholdFraction: FREEZE_THRESHOLD_FRACTION,
+      combatTexts: [],
+    });
+    expect(result.playerCC.freezeSkipTurns).toBe(BATTLE_CONFIG.BASE_CC_DURATION);
+  });
+
   it("clears freeze silently during player CC immunity", () => {
     const state = makeTestBattleState({
       playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, freeze: 20 }),

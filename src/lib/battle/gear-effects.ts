@@ -43,6 +43,36 @@ export function scaledGearLeechHeal(baseHeal: number, gear: GearEffectManifest):
 }
 
 /**
+ * Shared "deal scaled enemy damage" helper: applies an optional per-hit
+ * multiplier, emits enemy damage combat text, and clamps enemy health to 0.
+ * Callers pass their bespoke post-clamp riders (lucky-clover gold, kill
+ * rewards, encounter-trait thresholds) via `riders`.
+ */
+export interface DealEnemyScaledDamageOptions {
+  multiplier?: number;
+  riders?: (state: BattleState, finalDamage: number, combatTexts: CombatTextEvent[]) => BattleState;
+}
+
+export function dealEnemyScaledDamage(
+  state: BattleState,
+  baseDamage: number,
+  stat: "physical" | "burn" | "nature",
+  combatTexts: CombatTextEvent[],
+  options: DealEnemyScaledDamageOptions = {},
+): BattleState {
+  if (baseDamage <= 0) return state;
+  const finalDamage = Math.round(baseDamage * (options.multiplier ?? 1));
+  if (finalDamage > 0) {
+    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat, amount: finalDamage });
+  }
+  const nextState = {
+    ...state,
+    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
+  };
+  return options.riders ? options.riders(nextState, finalDamage, combatTexts) : nextState;
+}
+
+/**
  * Deals gear-on-Crowd-Control physical damage (freeze / stun procs), clamping
  * enemy health and paying kill rewards when the hit is lethal. Freeze keeps
  * lucky-clover gold off by default; stun opts in via `grantLuckyClover`.
@@ -55,22 +85,14 @@ export function applyGearCcPhysicalDamage(
 ): BattleState {
   if (gearDamage <= 0) return state;
   const enemyWasAlive = state.enemyHealth > 0;
-  const finalDamage = applyGearProcPhysicalDamage(state, gearDamage);
-  mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: "damage",
-    stat: "physical",
-    amount: finalDamage,
+  return dealEnemyScaledDamage(state, gearDamage, "physical", combatTexts, {
+    multiplier: getEnemyDamageMultiplier(state, "physical") * gearFrozenDamageMultiplier(state),
+    riders: (nextState, finalDamage, texts) => {
+      let result = options.grantLuckyClover ? applyLuckyCloverGold(nextState, finalDamage, texts) : nextState;
+      if (enemyWasAlive && result.enemyHealth <= 0) {
+        result = applyGearKillRewards(result, true, texts);
+      }
+      return result;
+    },
   });
-  let nextState = {
-    ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
-  };
-  if (options.grantLuckyClover) {
-    nextState = applyLuckyCloverGold(nextState, finalDamage, combatTexts);
-  }
-  if (enemyWasAlive && nextState.enemyHealth <= 0) {
-    nextState = applyGearKillRewards(nextState, true, combatTexts);
-  }
-  return nextState;
 }

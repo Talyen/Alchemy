@@ -157,7 +157,7 @@ export function applyPlayerDamageStatuses(
 }
 
 type DirectPlayerStatusId = Exclude<PlayerStatusId, "stun" | "freeze">;
-type DirectPlayerStatusAttackEffect = Extract<EnemyAttackEffect, { kind: "player-status" }> & {
+export type DirectPlayerStatusAttackEffect = Extract<EnemyAttackEffect, { kind: "player-status" }> & {
   status: DirectPlayerStatusId;
 };
 

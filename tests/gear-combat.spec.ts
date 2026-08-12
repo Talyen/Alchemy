@@ -1,8 +1,7 @@
 import { expect } from "@playwright/test";
 import { bodyGear, createEmptyGearInventories, createEmptyGearLoadouts, gearItemLocator } from "./e2e/armory";
 import { assertGearFlatDamageBoostsPhysicalDamage } from "./e2e/gear-combat";
-import { startBattleWithDeck } from "./e2e/battle-setup";
-import { makeCard } from "./e2e/cards";
+import { makeGoblinBattleState, injectSaveState } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 import { test } from "./fixtures/e2e";
 import { armory, critical } from "./playwright-tags";
@@ -25,14 +24,24 @@ test.describe("Gear combat", { ...armory, ...critical }, () => {
     const gearInventories = createEmptyGearInventories();
     gearInventories.knight = [bodyGear];
     const menu = new MenuPage(page);
+
+    // Inject the meta gear first (its init script must run before the battle
+    // save's), then an in-battle screen so the Armory-lock gate is reachable
+    // without booting a full battle. injectSaveState preserves existing
+    // localStorage (gear) and adds the active run + combat snapshot.
     await menu.gotoWithUnlockedMeta({
       gearInventories,
       gearLoadouts: createEmptyGearLoadouts(),
     });
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeCard()),
-    );
+    await injectSaveState(page, {
+      currentScreen: "battle",
+      activeCombat: {
+        battleState: makeGoblinBattleState(),
+        activeLabyrinthModifiers: [],
+        activeLabyrinthRewardModifiers: [],
+      },
+    });
+    await page.goto("/");
 
     await page.getByRole("button", { name: "Open battle menu" }).click();
     await page.getByRole("button", { name: "Armory" }).click();

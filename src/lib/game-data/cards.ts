@@ -6,4 +6,9 @@ import { specialtyCards } from "./cards/library/specialty-cards";
 
 export const cardLibrary: BattleCard[] = [...coreCards, ...specialtyCards, ...advancedCards];
 
-export { expectedCompanionTurnLine, formatCompanionTurnLineBase } from "./cards/companion-turn-description";
+export {
+  expectedCompanionTurnLine,
+  formatCompanionTurnLineBase,
+  formatCompanionTurnStartLine,
+  type CompanionTurnLineContext,
+} from "./cards/companion-turn-description";

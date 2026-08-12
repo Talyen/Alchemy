@@ -1,5 +1,5 @@
 // Deterministic battle setup helpers for Vitest (mirrors tests/helpers.ts card shapes).
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
 import { defaultBattleState } from "@/lib/battle";
 import { makeTestCard } from "./cards";
@@ -10,6 +10,25 @@ export { seededRng } from "./rng";
 
 export function makeCombatTexts(): CombatTextEvent[] {
   return [];
+}
+
+/** Build a damage-effect card effect (canonical home for the shared helper). */
+export function makeEffect(
+  damageType: string,
+  amount: number,
+  extras: Partial<BattleCardEffect> = {},
+): BattleCardEffect {
+  return {
+    kind: "damage",
+    damageType: damageType as import("@/lib/game-data/types").DamageType,
+    amount,
+    ...extras,
+  } as BattleCardEffect;
+}
+
+/** Shared battle state with a 10-mana default (matches the run-loop effect suites). */
+export function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
+  return makeTestBattleState({ mana: 10, ...overrides });
 }
 
 export function makeTestBattleState(overrides: Partial<BattleState> = {}): BattleState {

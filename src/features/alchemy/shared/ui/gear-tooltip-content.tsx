@@ -21,8 +21,7 @@ export function GearTooltipContent({
   instance?: GearInstance | undefined;
 }) {
   const rarity = instance ? gearInstanceRarity(instance) : (definition.rarity ?? "basic");
-  const affixEntries =
-    instance && instance.affixes.length > 0 ? getGearAffixTooltipEntries(instance.affixes, rarity) : [];
+  const affixEntries = instance && instance.affixes.length > 0 ? getGearAffixTooltipEntries(instance.affixes) : [];
   const bodyLines = instance
     ? getGearInstanceTooltipLines(instance)
     : definition.descriptionLines.map((text, index) => ({ key: `definition-${index}`, text }));

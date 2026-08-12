@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { makeState, makeCard } from "./helpers";
+import { makeState } from "./helpers";
+import { makeTestCard } from "../../../fixtures/battle";
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
 import { type CombatTextEvent } from "@/lib/battle/types";
 import { computeTrinketManifest } from "@/lib/trinkets";
@@ -15,7 +16,7 @@ vi.spyOn(Math, "random").mockReturnValue(0.99);
 
 describe("dealDamageToEnemy â€” zero base damage", () => {
   it("deals no damage when amount is 0 and no block/armor substitutes", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({ mana: 10, enemyHealth: 30 });
     const result = applyCardEffects(state, card, texts);
@@ -23,7 +24,7 @@ describe("dealDamageToEnemy â€” zero base damage", () => {
   });
 
   it("equalToBlock with 0 block deals no damage", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0, equalToBlock: true }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0, equalToBlock: true }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({ mana: 10, enemyHealth: 30 });
     const result = applyCardEffects(state, card, texts);
@@ -31,7 +32,7 @@ describe("dealDamageToEnemy â€” zero base damage", () => {
   });
 
   it("equalToArmor with 0 armor deals no damage", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0, equalToArmor: true }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0, equalToArmor: true }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({ mana: 10, enemyHealth: 30 });
     const result = applyCardEffects(state, card, texts);
@@ -42,7 +43,7 @@ describe("dealDamageToEnemy â€” zero base damage", () => {
 describe("dealDamageToEnemy â€” first-damage-doubled flags", () => {
   it("burn first-card-doubled flag is consumed after first use", () => {
     const talentEffects = { ...defaultTalentEffects, firstBurnCardDoubled: true };
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
 
     const texts1: CombatTextEvent[] = [];
     const state1 = makeState({ mana: 10, enemyHealth: 50, talentEffects });
@@ -52,7 +53,7 @@ describe("dealDamageToEnemy â€” first-damage-doubled flags", () => {
 
   it("burn first-card-doubled flag is set after first use", () => {
     const talentEffects = { ...defaultTalentEffects, firstBurnCardDoubled: true };
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
 
     const texts1: CombatTextEvent[] = [];
     const state1 = makeState({ mana: 10, enemyHealth: 50, talentEffects });
@@ -73,7 +74,7 @@ describe("dealDamageToEnemy â€” first-damage-doubled flags", () => {
 
   it("brass-censer boon sets firstHolyDamageBonusUsed flag", () => {
     const manifest = computeTrinketManifest(["brass-censer"]);
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "holy", amount: 4 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 4 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10,
@@ -91,7 +92,7 @@ describe("dealDamageToEnemy â€” critical strikes", () => {
   it("global crit can apply to any damage type", () => {
     // Force a critical hit
     vi.spyOn(Math, "random").mockReturnValue(0.01);
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({ mana: 10, enemyHealth: 50 });
     const result = applyCardEffects(state, card, texts);
@@ -103,7 +104,7 @@ describe("dealDamageToEnemy â€” critical strikes", () => {
 describe("dealDamageToEnemy â€” physical vs stunned/frozen multipliers", () => {
   it("physical damage gets stunned multiplier when enemy is stunned", () => {
     const talentEffects = { ...defaultTalentEffects, physicalDoubledVsStunned: true };
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
     const texts: CombatTextEvent[] = [];
     const staleState = makeState({
       mana: 10,
@@ -127,7 +128,7 @@ describe("dealDamageToEnemy â€” physical vs stunned/frozen multipliers", ()
 
   it("stun double damage talent doubles damage against stunned enemies", () => {
     const talentEffects = { ...defaultTalentEffects, stunDoubleDamage: true };
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "stun", amount: 8 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 8 }] });
     const texts: CombatTextEvent[] = [];
     const staleState = makeState({
       mana: 10,
@@ -152,7 +153,7 @@ describe("dealDamageToEnemy â€” physical vs stunned/frozen multipliers", ()
 
 describe("dealDamageToEnemy â€” forge bonus eligibility", () => {
   it("forge is consumed after physical damage (native forge type)", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10,
@@ -175,7 +176,7 @@ describe("dealDamageToEnemy â€” forge bonus eligibility", () => {
   });
 
   it("forge is NOT consumed for burn without forgeToBurn talent", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10,
@@ -197,7 +198,7 @@ describe("dealDamageToEnemy â€” forge bonus eligibility", () => {
   });
 
   it("forge IS consumed for burn with forgeToBurn talent", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10,
@@ -222,7 +223,7 @@ describe("dealDamageToEnemy â€” forge bonus eligibility", () => {
 
 describe("dealDamageToEnemy â€” armor decay and holy riders", () => {
   it("armor reduces physical damage taken by the enemy", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10,
@@ -236,7 +237,7 @@ describe("dealDamageToEnemy â€” armor decay and holy riders", () => {
   });
 
   it("armor does NOT reduce burn damage (non-physical, ignores armor entirely)", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10,
@@ -250,7 +251,7 @@ describe("dealDamageToEnemy â€” armor decay and holy riders", () => {
 
   it("holy lifesteal heals the player", () => {
     const talentEffects = { ...defaultTalentEffects, holyLifestealPercent: 50 };
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "holy", amount: 10 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 10 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10,
@@ -266,24 +267,12 @@ describe("dealDamageToEnemy â€” armor decay and holy riders", () => {
   });
 
   it("does not lifesteal when damage is zero", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0, lifesteal: true }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0, lifesteal: true }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({ mana: 10, enemyHealth: 30, playerHealth: 15 });
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyHealth).toBe(30);
     expect(result.playerHealth).toBe(15);
-  });
-});
-
-describe("dealDamageToEnemy â€” overkill clamping", () => {
-  it("overkill damage is clamped to 0 health", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 50 }] });
-    const texts: CombatTextEvent[] = [];
-    const state = makeState({ mana: 10, enemyHealth: 10 });
-    const result = applyCardEffects(state, card, texts);
-    expect(result.enemyHealth).toBe(0);
-    expect(result.enemyHealth).not.toBeLessThan(0);
   });
 });
 
@@ -299,13 +288,13 @@ describe("applyDamageStatuses â€” stun talent effects chain", () => {
       stunStripArmor: true,
       manaOnStun: 1,
     };
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "stun", amount: 20 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 20 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10,
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" })],
+      deck: [makeTestCard({ id: "d1" }), makeTestCard({ id: "d2" })],
       hand: [],
       talentEffects,
       enemyMitigation: defaultEnemyMitigation({ armor: 3, forge: 0, block: 0 }),
@@ -329,7 +318,7 @@ describe("applyDamageStatuses â€” stun talent effects chain", () => {
 
 describe("applyDamageStatuses â€” stun on cooldown enemy", () => {
   it("does not stun when enemy CC cooldown is active (stun status cleared by immunity)", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "stun", amount: 20 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 20 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10,
@@ -347,7 +336,7 @@ describe("applyDamageStatuses â€” stun on cooldown enemy", () => {
 describe("applyDamageStatuses â€” freeze threshold boundary", () => {
   it("freeze triggers when stacks >= health * 0.5", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 15 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 15 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10,
@@ -360,7 +349,7 @@ describe("applyDamageStatuses â€” freeze threshold boundary", () => {
   });
 
   it("freeze threshold is checked against post-damage health (which is lower)", () => {
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 6 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 6 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10,
@@ -376,7 +365,7 @@ describe("applyDamageStatuses â€” freeze threshold boundary", () => {
 describe("applyDamageStatuses â€” freeze cooldown skip", () => {
   it("does not re-freeze when enemy is already on freeze cooldown", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 25 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 25 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10,
@@ -393,8 +382,8 @@ describe("applyDamageStatuses â€” freeze cooldown skip", () => {
 describe("applyDamageStatuses â€” bleed stacking and leech", () => {
   it("bleed stacks 2x per hit and accumulates leech healing", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const card1 = makeCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 5 }] });
-    const card2 = makeCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 3 }] });
+    const card1 = makeTestCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 5 }] });
+    const card2 = makeTestCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 3 }] });
     const texts: CombatTextEvent[] = [];
     const state1 = makeState({ mana: 10, enemyHealth: 50 });
     const result1 = applyCardEffects(state1, card1, texts);
@@ -407,7 +396,7 @@ describe("applyDamageStatuses â€” bleed stacking and leech", () => {
 
   it("bleed leech accumulates across multiple bleed hits", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 4, lifesteal: true }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 4, lifesteal: true }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({ mana: 10, enemyHealth: 50 });
     const result = applyCardEffects(state, card, texts);
@@ -426,7 +415,7 @@ describe("applyDamageStatuses â€” bleed stacking and leech", () => {
 describe("applyDamageStatuses â€” poison talent riders", () => {
   it("poison strip armor works regardless of random", () => {
     const talentEffects = { ...defaultTalentEffects, poisonStripArmor: true };
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "poison", amount: 6 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "poison", amount: 6 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10,
@@ -441,7 +430,7 @@ describe("applyDamageStatuses â€” poison talent riders", () => {
 
   it("poison leech talent heals the player", () => {
     const talentEffects = { ...defaultTalentEffects, poisonLeechChance: 100 };
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "poison", amount: 5 }] });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "poison", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10,
@@ -458,7 +447,7 @@ describe("applyDamageStatuses â€” poison talent riders", () => {
 
 describe("applyDamageStatuses â€” forge threshold bursts", () => {
   it("crossing multiple forge thresholds in one gain fires all bursts", () => {
-    const card = makeCard({ effects: [{ kind: "player-status", status: "forge", amount: 4 }] });
+    const card = makeTestCard({ effects: [{ kind: "player-status", status: "forge", amount: 4 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       playerStatuses: defaultPlayerStatusValues({

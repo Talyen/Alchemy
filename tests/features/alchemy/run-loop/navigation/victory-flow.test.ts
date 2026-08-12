@@ -17,11 +17,6 @@ import { resetRunDomainStore } from "../../../../helpers/gameplay-store-test";
 
 beforeEach(() => resetRunDomainStore());
 
-vi.mock("@/lib/utils", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/utils")>("@/lib/utils");
-  return { ...actual, randomInt: vi.fn(() => 15) };
-});
-
 vi.mock("@/features/alchemy/shared/run-flow/destination-flow", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/run-flow/destination-flow")>();
   return {
@@ -71,7 +66,9 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
   };
 }
 
-const testRng = () => 0.5;
+// Base gold roll is inline in rollVictoryGold: floor(rng() * 21 + 10) over [10, 30].
+// 0.25 yields the deterministic 15 base gold the gold assertions below rely on.
+const testRng = () => 0.25;
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -131,7 +128,7 @@ describe("computeVictoryRewardState", () => {
         materials: emptyInventory(),
         destinations: [],
       },
-      () => 0.99,
+      () => 0.25,
     );
     expect(result.rewardType).toBe("gear");
     expect(result.gold).toBe(25);
@@ -155,7 +152,7 @@ describe("computeVictoryRewardState", () => {
         materials: emptyInventory(),
         destinations: ["Normal Combat", "Campfire"],
       },
-      () => 0.99,
+      () => 0.25,
     );
     expect(result.rewardType).toBe("card");
     expect(result.destinations).toEqual(["Normal Combat", "Campfire"]);
@@ -180,7 +177,7 @@ describe("computeVictoryRewardState", () => {
         materials: emptyInventory(),
         destinations: ["Normal Combat"],
       },
-      () => 0.99,
+      () => 0.25,
     );
     expect(result.rewardType).toBe("card");
   });
@@ -225,7 +222,7 @@ describe("computeVictoryRewardState", () => {
       materials: emptyInventory(),
       destinations: [],
     };
-    const gearReward = computeVictoryRewardState(input, () => 0.99);
+    const gearReward = computeVictoryRewardState(input, () => 0.25);
     expect(gearReward.rewardType).toBe("gear");
     expect(gearReward.choices.every((choice) => "instanceId" in choice)).toBe(true);
     expect(gearReward.choices.every((choice) => "affixes" in choice)).toBe(true);
@@ -258,7 +255,7 @@ describe("computeVictoryRewards", () => {
       baseInput({
         battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
       }),
-      () => 0.99,
+      () => 0.25,
     );
     expect(result.eliteBonus).toBe(4);
     expect(result.goldEarned).toBe(19);
@@ -334,7 +331,7 @@ describe("computeVictoryRewards", () => {
         contentSystemType: "labyrinth",
         battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
       }),
-      () => 0.99,
+      () => 0.25,
     );
     expect(result.rewardState.rewardType).toBe("trinket");
   });
@@ -453,6 +450,20 @@ describe("commitVictoryRewards", () => {
       }),
     );
     expect(readGameplayState().runProfile.materialInventory.crystal).toBe(2);
+  });
+
+  it("does not award pending crystal materials for wildwood victories", () => {
+    const materials = { ...emptyInventory(), crystal: 2 };
+    commit(
+      victoryResult(),
+      commitDeps({
+        battleState: baseBattleState({ pendingMaterials: materials }),
+        contentSystemType: "wildwood",
+      }),
+    );
+    // The wish engine never generates crystal in wildwood (it grants gold
+    // instead); the commit guard also refuses to award materials.
+    expect(readGameplayState().runProfile.materialInventory.crystal).toBe(0);
   });
 
   it("stamps victory routing context onto reward state", () => {

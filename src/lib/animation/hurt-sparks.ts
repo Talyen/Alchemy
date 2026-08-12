@@ -1,5 +1,7 @@
 // Short radial red spark burst for player hurt feedback on battle portraits.
 // Depends only on Canvas APIs and requestAnimationFrame; no battle state.
+import { animateParticleLoop } from "./particle-loop";
+
 interface HurtSpark {
   x: number;
   y: number;
@@ -90,42 +92,22 @@ export function animateHurtSparks(
   duration: number,
   onComplete: () => void,
 ): () => void {
-  let running = true;
-  const startTime = performance.now();
-  let lastTime = startTime;
-
-  function frame(now: number): void {
-    if (!running) return;
-
-    const elapsed = now - startTime;
-    const dt = Math.min((now - lastTime) / 16.67, 3);
-    lastTime = now;
-    const progress = Math.min(elapsed / duration, 1);
-
-    ctx.clearRect(0, 0, width, height);
-
-    for (const p of particles) {
-      if (p.alpha <= 0.01) continue;
-      stepHurtSpark(p, dt);
+  return animateParticleLoop({
+    ctx,
+    particles,
+    width,
+    height,
+    duration,
+    step: stepHurtSpark,
+    draw: (c, p, progress) => {
+      if (p.alpha <= 0.01) return;
       p.alpha = Math.max(0, 1 - progress * progress);
-
-      ctx.save();
-      ctx.globalAlpha = p.alpha;
-      ctx.fillStyle = p.color;
-      ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
-      ctx.restore();
-    }
-
-    if (progress < 1) {
-      requestAnimationFrame(frame);
-    } else {
-      onComplete();
-    }
-  }
-
-  requestAnimationFrame(frame);
-
-  return () => {
-    running = false;
-  };
+      c.save();
+      c.globalAlpha = p.alpha;
+      c.fillStyle = p.color;
+      c.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+      c.restore();
+    },
+    onComplete,
+  });
 }

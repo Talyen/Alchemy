@@ -4,10 +4,8 @@ import {
   enableFastMode,
   injectBossState,
   assertDefeatFromEndRun,
-  makeCard,
   makeGoblinBattleState,
   startAtDestination,
-  startBattleWithDeck,
   SAVE_KEY,
   injectSaveState,
 } from "./helpers";
@@ -82,10 +80,16 @@ test.describe("Run Outcomes", () => {
       test.setTimeout(60_000);
       void fastBattle;
 
-      await startBattleWithDeck(
-        page,
-        Array.from({ length: 6 }, () => makeCard()),
-      );
+      // End Run is reachable from an injected battle screen — no full boot needed.
+      await injectSaveState(page, {
+        currentScreen: "battle",
+        activeCombat: {
+          battleState: makeGoblinBattleState(),
+          activeLabyrinthModifiers: [],
+          activeLabyrinthRewardModifiers: [],
+        },
+      });
+      await page.goto("/");
       await assertDefeatFromEndRun(page, { returnToMenu: true });
 
       const activeRun = await page.evaluate((saveKey) => {

@@ -6,6 +6,7 @@ import type { PermanentProgressFields } from "./run-state-init";
 import { pickActiveRunView, type ActiveRunReadView } from "./run-state-init";
 import { readGameplayState } from "./gameplay-state-store";
 import type { RunDomainBattleState, RunSessionFields } from "./run-domain-types";
+import { getRunPhase, type RunPhase } from "@/lib/routing";
 
 export type { ActiveRunReadView } from "./run-state-init";
 export type RunProfileReadView = PermanentProgressFields;
@@ -36,4 +37,9 @@ export function readRunInitialized(): boolean {
 
 export function readHasActiveRun(): boolean {
   return readGameplayState().session.hasActiveRun;
+}
+
+export function readRunPhase(): RunPhase {
+  const state = readGameplayState();
+  return getRunPhase(state.run.navigation.screen, state.battle.hasActiveBattle);
 }

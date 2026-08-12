@@ -3,7 +3,7 @@ import { dealDamageToEnemy } from "@/lib/battle/damage";
 import type { BattleCardEffect } from "@/lib/game-data";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultEnemyStatusValues, defaultTalentEffects, defaultCcState } from "../../fixtures/default-battle-state";
-import { makeCard, makeEffect, makeTexts } from "./damage-test-helpers";
+import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -14,11 +14,11 @@ describe("computeBaseDamage — archery tag", () => {
     const state = patchBattleState({
       talentEffects: { ...defaultTalentEffects, flatArrowDamage: 3 },
     });
-    const card = makeCard({
+    const card = makeTestCard({
       tags: ["archery"],
       effects: [makeEffect("physical", 5)],
     });
-    const texts = makeTexts();
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -35,11 +35,11 @@ describe("computeBaseDamage — archery tag", () => {
       enemyMaxHealth: 100,
       talentEffects: { ...defaultTalentEffects, archeryPlayTwiceChance: 100 },
     });
-    const card = makeCard({
+    const card = makeTestCard({
       tags: ["archery"],
       effects: [makeEffect("physical", 20)],
     });
-    const texts = makeTexts();
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -57,8 +57,8 @@ describe("computeBaseDamage — stun damage", () => {
     const state = patchBattleState({
       talentEffects: { ...defaultTalentEffects, flatStunDamage: 2 },
     });
-    const card = makeCard({ effects: [makeEffect("stun", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("stun", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -76,8 +76,8 @@ describe("computeBaseDamage — physical vs statuses", () => {
       enemyStatuses: defaultEnemyStatusValues({ poison: 5 }),
       talentEffects: { ...defaultTalentEffects, poisonPhysicalBonus: 3 },
     });
-    const card = makeCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -93,8 +93,8 @@ describe("computeBaseDamage — physical vs statuses", () => {
       enemyStatuses: defaultEnemyStatusValues({ bleed: 5 }),
       talentEffects: { ...defaultTalentEffects, bleedPhysicalBonus: 2 },
     });
-    const card = makeCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -110,8 +110,8 @@ describe("computeBaseDamage — physical vs statuses", () => {
       enemyCC: defaultCcState({ stunSkipTurns: 1 }),
       talentEffects: { ...defaultTalentEffects, physicalDoubledVsStunned: true },
     });
-    const card = makeCard({ effects: [makeEffect("physical", 10)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 10)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -127,8 +127,8 @@ describe("computeBaseDamage — physical vs statuses", () => {
       enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       talentEffects: { ...defaultTalentEffects, physicalDoubledVsFrozen: true },
     });
-    const card = makeCard({ effects: [makeEffect("physical", 10)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 10)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,

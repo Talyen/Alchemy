@@ -58,6 +58,28 @@ async function isDesktopPage(page: Page): Promise<boolean> {
   return page.evaluate(() => Boolean(window.alchemyDesktop?.isDesktop)).catch(() => false);
 }
 
+/**
+ * Waits until the desktop save file is observably written (a save candidate
+ * exists) instead of sleeping a fixed 50ms. The desktop bridge exposes no save
+ * content read, so this polls `listSaveCandidates` rather than verifying the
+ * payload — a content-verified poll would need a new IPC seam.
+ */
+async function waitForDesktopSaveCandidate(page: Page): Promise<void> {
+  const deadline = Date.now() + 2000;
+  while (Date.now() < deadline) {
+    const hasCandidate = await page
+      .evaluate(async () => {
+        const desktop = window.alchemyDesktop;
+        if (!desktop) return false;
+        const candidates = (await desktop.listSaveCandidates()) ?? [];
+        return candidates.length > 0;
+      })
+      .catch(() => false);
+    if (hasCandidate) return;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+}
+
 async function writeDesktopSaveAndReload(page: Page, save: unknown): Promise<void> {
   const write = async () => {
     const ok = await page.evaluate(async (payload) => {
@@ -73,7 +95,7 @@ async function writeDesktopSaveAndReload(page: Page, save: unknown): Promise<voi
 
   // Double-write: a Victory/rewards autosave can overwrite the first inject before reload.
   await write();
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  await waitForDesktopSaveCandidate(page);
   await write();
   await page.reload({ waitUntil: "domcontentloaded" });
 }

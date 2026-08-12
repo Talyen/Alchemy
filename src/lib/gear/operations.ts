@@ -209,7 +209,7 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
 
 export function effectsForInstance(instance: GearInstance): GearEffectManifest {
   if (!gearDefinitions[instance.definitionId]) return { ...defaultGearEffects };
-  return resolveAffixEffects(instance.affixes, gearInstanceRarity(instance));
+  return resolveAffixEffects(instance.affixes);
 }
 
 export function computeGearManifest(

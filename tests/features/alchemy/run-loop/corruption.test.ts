@@ -7,6 +7,8 @@ import {
 } from "@/features/alchemy/run-loop/corruption";
 import { getCardDisplayTitle } from "@/features/alchemy/shared/ui/card-description-ui";
 import type { BattleCard } from "@/lib/game-data";
+import { makeTestCard } from "../../../fixtures/cards";
+import { makeEffect } from "../../../fixtures/battle";
 
 function makeRng(values: number[]): () => number {
   let index = 0;
@@ -14,16 +16,14 @@ function makeRng(values: number[]): () => number {
 }
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return {
+  return makeTestCard({
     id: "slash",
     title: "Slash",
     descriptionLines: ["Deal 5 Physical damage"],
     art: "slash-art",
-    cost: 1,
-
-    effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    effects: [makeEffect("physical", 5)],
     ...overrides,
-  };
+  });
 }
 
 describe("card corruption", () => {

@@ -11,6 +11,7 @@ class MockResizeObserver {
 beforeEach(() => {
   vi.stubGlobal("ResizeObserver", MockResizeObserver);
   vi.stubGlobal("devicePixelRatio", 1);
+  vi.spyOn(document, "hasFocus").mockReturnValue(true);
 });
 
 afterEach(() => {
@@ -120,6 +121,38 @@ describe("startBackgroundParticles", () => {
 
     const cleanup = startBackgroundParticles(ref as never, "embers");
     expect(() => cleanup()).not.toThrow();
+
+    rafSpy.mockRestore();
+  });
+
+  it("parks the loop while unfocused and resumes on focus", () => {
+    const { canvas, ctx } = makeMockCanvas();
+    const ref = { current: canvas };
+    const rafCbs: Array<(now: number) => void> = [];
+    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
+      rafCbs.push(cb);
+      return rafCbs.length;
+    });
+
+    startBackgroundParticles(ref as never, "embers");
+
+    // Focused: the first frame draws and schedules the next.
+    rafCbs[rafCbs.length - 1]?.(performance.now());
+    expect(ctx.clearRect).toHaveBeenCalledTimes(1);
+
+    // Blur parks the loop: the pending frame does not draw and nothing new is scheduled.
+    vi.mocked(document.hasFocus).mockReturnValue(false);
+    window.dispatchEvent(new Event("blur"));
+    const parkedCount = rafCbs.length;
+    rafCbs[parkedCount - 1]?.(performance.now());
+    expect(rafCbs.length).toBe(parkedCount);
+    expect(ctx.clearRect).toHaveBeenCalledTimes(1);
+
+    // Focus resumes: the next scheduled frame draws again.
+    vi.mocked(document.hasFocus).mockReturnValue(true);
+    window.dispatchEvent(new Event("focus"));
+    rafCbs[rafCbs.length - 1]?.(performance.now());
+    expect(ctx.clearRect).toHaveBeenCalledTimes(2);
 
     rafSpy.mockRestore();
   });

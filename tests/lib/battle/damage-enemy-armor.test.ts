@@ -3,7 +3,7 @@ import { dealDamageToEnemy } from "@/lib/battle/damage";
 import type { BattleCardEffect } from "@/lib/game-data";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultTalentEffects, defaultTrinketManifest } from "../../fixtures/default-battle-state";
-import { makeCard, makeEffect, makeTexts } from "./damage-test-helpers";
+import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -13,8 +13,8 @@ describe("dealDamageToEnemy — enemy armor", () => {
   it("physical damage is reduced by enemy armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({ enemyMitigation: { armor: 3, forge: 0, block: 0 } });
-    const card = makeCard({ effects: [makeEffect("physical", 10)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 10)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -30,8 +30,8 @@ describe("dealDamageToEnemy — enemy armor", () => {
       enemyMitigation: { armor: 5, forge: 0, block: 0 },
       trinketEffects: defaultTrinketManifest({ sunderingArmorPiercing: 2 }),
     });
-    const card = makeCard({ effects: [makeEffect("physical", 10)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 10)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -45,8 +45,8 @@ describe("dealDamageToEnemy — enemy armor", () => {
   it("non-physical damage ignores enemy armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({ enemyMitigation: { armor: 5, forge: 0, block: 0 } });
-    const card = makeCard({ effects: [makeEffect("burn", 10)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("burn", 10)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -65,8 +65,8 @@ describe("dealDamageToEnemy — boonSiphon siphoning", () => {
       talentEffects: { ...defaultTalentEffects, trinketSiphonChance: 100 },
       rng: () => 0.1,
     });
-    const card = makeCard({ effects: [makeEffect("physical", 10, { lifesteal: true })] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("physical", 10, { lifesteal: true })] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -84,12 +84,12 @@ describe("dealDamageToEnemy — boonSiphon siphoning", () => {
       talentEffects: { ...defaultTalentEffects, trinketSiphonChance: 100 },
       rng: () => 0.0,
     });
-    const card = makeCard({ effects: [makeEffect("nature", 10, { lifesteal: true })] });
+    const card = makeTestCard({ effects: [makeEffect("nature", 10, { lifesteal: true })] });
     const result = dealDamageToEnemy(
       state,
       card,
       card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      makeTexts(),
+      makeCombatTexts(),
     );
     expect(result.enemyMitigation.forge).toBe(2);
     expect(result.playerStatuses.forge).toBe(1);

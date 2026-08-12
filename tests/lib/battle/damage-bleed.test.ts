@@ -3,7 +3,7 @@ import { dealDamageToEnemy } from "@/lib/battle/damage";
 import type { BattleCardEffect } from "@/lib/game-data";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultTalentEffects } from "../../fixtures/default-battle-state";
-import { makeCard, makeEffect, makeTexts } from "./damage-test-helpers";
+import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -16,8 +16,8 @@ describe("computeBaseDamage — bleed damage", () => {
       playerMaxHealth: 30,
       talentEffects: { ...defaultTalentEffects, bleedDesperateMultiplier: 1.5 },
     });
-    const card = makeCard({ effects: [makeEffect("bleed", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("bleed", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,
@@ -33,8 +33,8 @@ describe("computeBaseDamage — bleed damage", () => {
       enemyMaxHealth: 30,
       talentEffects: { ...defaultTalentEffects, bleedExecuteThreshold: 25 },
     });
-    const card = makeCard({ effects: [makeEffect("bleed", 5)] });
-    const texts = makeTexts();
+    const card = makeTestCard({ effects: [makeEffect("bleed", 5)] });
+    const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
       state,
       card,

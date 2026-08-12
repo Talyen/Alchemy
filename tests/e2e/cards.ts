@@ -40,16 +40,6 @@ export const ANVIL_CARD = {
   effects: [{ kind: "player-status", status: "forge", amount: 1 }],
 };
 
-export const MANA_BERRIES_CARD = {
-  id: "mana-berries",
-  title: "Mana Berries",
-  descriptionLines: ["Restore 2 Mana", "Consume"],
-  art: "placeholder",
-  cost: 1,
-  consume: true,
-  effects: [{ kind: "restore-mana", amount: 2 }],
-};
-
 export function makeStatusCard(damageType: string, amount: number, overrides: Record<string, unknown> = {}) {
   return {
     id: `test-${damageType}`,

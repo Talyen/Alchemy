@@ -25,22 +25,9 @@ const FIRST_TIME_FLAG_USED_VALUES: { [K in FirstTimeFlagKey]: CombatFlags[K] } =
  * set them to their "used" sentinel values, run the mutate callback, then restore.
  */
 export function withPreservedFlags(state: BattleState, mutate: (s: BattleState) => BattleState): BattleState {
-  const saved: Partial<Pick<CombatFlags, FirstTimeFlagKey>> = {
-    firstPhysicalCardFreeUsed: state.flags.firstPhysicalCardFreeUsed,
-    firstHolyCardFreeUsed: state.flags.firstHolyCardFreeUsed,
-    firstBurnCardDoubledUsed: state.flags.firstBurnCardDoubledUsed,
-    firstArmorCardDoubledUsed: state.flags.firstArmorCardDoubledUsed,
-    firstPoisonCardFreeUsed: state.flags.firstPoisonCardFreeUsed,
-    firstBleedCardFreeUsed: state.flags.firstBleedCardFreeUsed,
-    firstHolyDamageBonusUsed: state.flags.firstHolyDamageBonusUsed,
-    firstBurnTrinketDoubledUsed: state.flags.firstBurnTrinketDoubledUsed,
-    firstLeechCardDoubledUsed: state.flags.firstLeechCardDoubledUsed,
-    firstConsumeCardFreeUsed: state.flags.firstConsumeCardFreeUsed,
-    firstPotionFreeUsed: state.flags.firstPotionFreeUsed,
-    nextCardCostReduction: state.flags.nextCardCostReduction,
-    resonantChimeUsedThisTurn: state.flags.resonantChimeUsedThisTurn,
-    runicQuillUsedThisTurn: state.flags.runicQuillUsedThisTurn,
-  };
+  const saved = Object.fromEntries(
+    (Object.keys(FIRST_TIME_FLAG_USED_VALUES) as FirstTimeFlagKey[]).map((key) => [key, state.flags[key]]),
+  ) as Partial<Pick<CombatFlags, FirstTimeFlagKey>>;
   const blockedState: BattleState = {
     ...state,
     flags: { ...state.flags, ...FIRST_TIME_FLAG_USED_VALUES },

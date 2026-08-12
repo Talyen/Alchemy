@@ -13,6 +13,7 @@ import type {
 } from "@/lib/game-data";
 import type { GearEffectManifest } from "@/lib/gear";
 import type { MaterialInventory } from "@/lib/homestead/types";
+import type { ContentSystemId } from "@/lib/content-systems/types";
 
 // Both player and enemy use status ID unions. Enemies can gain burnBonus and freezeBonus
 // from boss traits (e.g., Iron Bear, Frostwarden). block/armor/forge live in enemyMitigation.
@@ -156,6 +157,7 @@ export interface BattleState {
   difficultyModifiers: DifficultyModifier[];
   rng: () => number;
   pendingMaterials: MaterialInventory;
+  contentSystemType: ContentSystemId;
 }
 
 // Combat texts are emitted by battle functions and consumed by the floating-text

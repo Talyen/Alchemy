@@ -43,6 +43,8 @@ import {
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import type { GearInstance } from "@/lib/gear";
 import { createRunRngState } from "@/lib/run-rng";
+import { makeTestCard } from "../../../../fixtures/cards";
+import { makeEffect } from "../../../../fixtures/battle";
 
 vi.mock("@/lib/audio", () => ({
   playGoldSpend: vi.fn(),
@@ -58,15 +60,7 @@ beforeEach(() => {
 });
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return {
-    id: "test",
-    title: "Test",
-    descriptionLines: [""],
-    art: "",
-    cost: 2,
-    effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-    ...overrides,
-  };
+  return makeTestCard({ cost: 2, effects: [makeEffect("physical", 5)], ...overrides });
 }
 
 function requiredItem<T>(value: T | undefined, label: string): T {
@@ -323,7 +317,7 @@ describe("createShopActions", () => {
       expect(actions.alchemist.mixPotions(0, 0)).toBeNull();
     });
 
-    it("consumes mix slot on every attempt — even if mixing fails", () => {
+    it("does not charge gold or consume the mix slot when the mix fails", () => {
       setRunProgress({
         runGold: 999,
         runDeck: [makeCard({ id: MIXED_POTION_CARD_ID, title: "Mixed" }), makeCard({ id: "b", title: "Potion" })],
@@ -331,12 +325,12 @@ describe("createShopActions", () => {
       setAlchemistState(createInitialAlchemistState());
       const actions = buildActions({ talentEffects: { potionMixPotency: 0 } });
 
-      // Mixing a Mixed Potion with another potion fails, but gold is deducted
-      // and mixUsed is set so the player can't retry.
+      // Mixing a Mixed Potion with another potion fails without charging the
+      // player or disabling the Mix service.
       const result = actions.alchemist.mixPotions(0, 1);
       expect(result).toBeNull();
-      expect(getRunProgressStoreView().runGold).toBeLessThan(999);
-      expect(getRunSessionStoreView().alchemistState.mixUsed).toBe(true);
+      expect(getRunProgressStoreView().runGold).toBe(999);
+      expect(getRunSessionStoreView().alchemistState.mixUsed).toBe(false);
     });
 
     it("prevents a second mix attempt after first succeeds", () => {

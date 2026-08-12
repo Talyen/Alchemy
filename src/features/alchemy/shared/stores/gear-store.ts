@@ -1,4 +1,5 @@
 import type { CharacterId } from "@/lib/game-data";
+import { useMemo } from "react";
 import {
   computeGearManifest,
   createEmptyCurrencyBoardPositionsByCharacter,
@@ -84,7 +85,8 @@ export function readHasAnyOwnedGear(): boolean {
 }
 
 export function useHasAnyOwnedGear(): boolean {
-  return useGameplayStateStore((state) => flattenGearInventories(state.gear.inventories).length > 0);
+  const inventories = useGameplayStateStore((state) => state.gear.inventories);
+  return useMemo(() => flattenGearInventories(inventories).length > 0, [inventories]);
 }
 
 /** Aggregate gear effects for a character at battle/run-start entry. */

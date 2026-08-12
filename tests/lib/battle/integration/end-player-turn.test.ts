@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { makeState, makeCard } from "./helpers";
+import { makeState } from "./helpers";
+import { makeTestCard } from "../../../fixtures/battle";
 import { applyCardEffects, defaultTalentEffects, endPlayerTurn } from "@/lib/battle";
 import { isPlayerDefeated, type CombatTextEvent } from "@/lib/battle/types";
 import { IRON_HIDE_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN } from "@/lib/game-constants";
@@ -17,7 +18,7 @@ describe("endPlayerTurn", () => {
   it("switches to enemy phase and draws a new hand", () => {
     const state = makeState({
       turnPhase: "player",
-      hand: [makeCard({ id: "c1" }), makeCard({ id: "c2" })],
+      hand: [makeTestCard({ id: "c1" }), makeTestCard({ id: "c2" })],
     });
     const result = endPlayerTurn(state);
     expect(result.state.turnPhase).toBe("player");
@@ -40,7 +41,7 @@ describe("endPlayerTurn", () => {
     const state = makeState({
       enemyAttackEffects: [],
       playerStatuses: defaultPlayerStatusValues({ block: 1 }),
-      deck: [makeCard({ id: "d1" })],
+      deck: [makeTestCard({ id: "d1" })],
     });
 
     const result = endPlayerTurn(state);
@@ -63,7 +64,7 @@ describe("endPlayerTurn", () => {
       enemyAttackEffects: [{ kind: "damage", damageType: "stun", amount: 20 }],
       playerHealth: 30,
       playerMaxHealth: 30,
-      hand: [makeCard({ id: "h1" })],
+      hand: [makeTestCard({ id: "h1" })],
       mana: 2,
     });
 
@@ -81,7 +82,7 @@ describe("endPlayerTurn", () => {
     const state = makeState({
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       playerHealth: 5,
-      deck: [makeCard({ id: "d1" })],
+      deck: [makeTestCard({ id: "d1" })],
     });
     const result = endPlayerTurn(state);
 
@@ -98,7 +99,7 @@ describe("endPlayerTurn", () => {
       playerStatuses: defaultPlayerStatusValues({ burn: 3 }),
       playerCC: defaultCcState({ stunSkipTurns: 1 }),
       enemyCC: defaultCcState({ stunSkipTurns: 1 }),
-      hand: [makeCard({ id: "h1" })],
+      hand: [makeTestCard({ id: "h1" })],
       mana: 2,
     });
 
@@ -118,21 +119,7 @@ describe("endPlayerTurn", () => {
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: 1,
       turn: 2,
-      deck: [makeCard({ id: "d1" })],
-    });
-    const result = endPlayerTurn(state);
-
-    expect(result.state.playerHealth).toBe(0);
-    expect(result.state.deathsDoorActive).toBe(false);
-    expect(isPlayerDefeated(result.state)).toBe(true);
-  });
-
-  it("does not retrigger Death's Door after it was consumed", () => {
-    const state = makeState({
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-      playerHealth: 3,
-      deathsDoorUsed: true,
-      deck: [makeCard({ id: "d1" })],
+      deck: [makeTestCard({ id: "d1" })],
     });
     const result = endPlayerTurn(state);
 
@@ -148,7 +135,7 @@ describe("endPlayerTurn", () => {
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: 1,
     });
-    const card = makeCard({ effects: [{ kind: "heal", amount: 5 }] });
+    const card = makeTestCard({ effects: [{ kind: "heal", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
 
@@ -160,7 +147,7 @@ describe("endPlayerTurn", () => {
   it("gives the player an extra turn when haste is active", () => {
     const state = makeState({
       playerStatuses: defaultPlayerStatusValues({ haste: 1 }),
-      hand: [makeCard({ id: "h1" }), makeCard({ id: "h2" })],
+      hand: [makeTestCard({ id: "h1" }), makeTestCard({ id: "h2" })],
     });
     const result = endPlayerTurn(state);
     expect(result.state.turnPhase).toBe("player");

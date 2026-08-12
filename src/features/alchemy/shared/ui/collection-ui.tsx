@@ -2,6 +2,7 @@
 // Depends on shaped collection items, tile rendering, collection metadata, and pagination UI.
 // Used by CollectionScreen to render encyclopedia-style grids without owning screen routing.
 /* eslint-disable react-refresh/only-export-components -- co-located collection subcomponents and search/zoom utilities */
+import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { PaginationControls, StaggerGroup, StaggerItem } from "./shared-ui";
 import {
@@ -33,14 +34,18 @@ export function CollectionGrid({
   page: number;
   bondedCompanions: Record<string, number>;
 }) {
-  const pageItems = getCollectionPageItems({
-    collectionTab,
-    discoveredCardIds,
-    encounteredEnemyIds,
-    discoveredTrinketIds,
-    bondedCompanions,
-    page,
-  });
+  const pageItems = useMemo(
+    () =>
+      getCollectionPageItems({
+        collectionTab,
+        discoveredCardIds,
+        encounteredEnemyIds,
+        discoveredTrinketIds,
+        bondedCompanions,
+        page,
+      }),
+    [collectionTab, discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, bondedCompanions, page],
+  );
 
   return (
     <StaggerGroup

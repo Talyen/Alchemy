@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { makeState, makeCard } from "./integration/helpers";
+import { makeState } from "./integration/helpers";
+import { makeTestCard } from "../../fixtures/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-turn-attack";
@@ -13,7 +14,7 @@ import { resolvePlayerCrowdControlTrigger } from "@/lib/battle/status-cc";
 
 describe("New Gear Affixes Integration Tests", () => {
   it("burn-on-consume: applies Burn when a card is Consumed", () => {
-    const card = makeCard({ id: "card-consume", consume: true });
+    const card = makeTestCard({ id: "card-consume", consume: true });
     const state = makeState({
       hand: [card],
       gearEffects: { ...makeState().gearEffects, burnOnConsume: 5 },
@@ -23,7 +24,7 @@ describe("New Gear Affixes Integration Tests", () => {
   });
 
   it("archery-ignore-armor: ignores enemy Armor on archery attacks", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       id: "card-archery",
       tags: ["archery"],
       effects: [{ kind: "damage", damageType: "physical", amount: 10 }],
@@ -68,7 +69,7 @@ describe("New Gear Affixes Integration Tests", () => {
   });
 
   it("mana-on-leech-chance: chance to restore 1 mana on Leech", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       id: "card-lifesteal",
       effects: [{ kind: "damage", damageType: "physical", amount: 10, lifesteal: true }],
     });
@@ -105,7 +106,7 @@ describe("New Gear Affixes Integration Tests", () => {
   });
 
   it("nature-mana-refund-chance: refunds 1 mana on Nature damage card play", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       id: "card-nature",
       cost: 1,
       effects: [{ kind: "damage", damageType: "nature", amount: 10 }],
@@ -123,7 +124,7 @@ describe("New Gear Affixes Integration Tests", () => {
 
   it("burn-on-bleed: burn deals more damage to bleeding enemies on play and tick", () => {
     // 1. Play
-    const card = makeCard({
+    const card = makeTestCard({
       id: "card-burn",
       effects: [{ kind: "damage", damageType: "burn", amount: 10 }],
     });

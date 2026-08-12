@@ -1,7 +1,7 @@
 // Player-facing card text after talents, homestead, and battle bonuses — shared by UI and tests.
 import { capitalizeWord } from "@/lib/utils";
 import { POTION_CARD_ID_SUFFIX } from "@/lib/game-constants";
-import { formatCompanionTurnLineBase } from "./cards/companion-turn-description";
+import { formatCompanionTurnStartLine } from "./cards/companion-turn-description";
 import { companionLibrary } from "./companions";
 import type { BattleCard, BattleCardEffect, CompanionId } from "./types";
 
@@ -51,18 +51,6 @@ function isCompanionTurnLine(line: string): boolean {
     /^Gains? \d+ Block each turn/.test(line) ||
     /^Draws \d+/.test(line)
   );
-}
-
-function formatCompanionTurnStartLine(
-  turnEffect: BattleCardEffect,
-  context: { bondLevel?: number; damageBonus?: number } = {},
-): string | null {
-  if (turnEffect.kind === "damage") {
-    const bondLevel = context.bondLevel ?? 0;
-    const globalBonus = context.damageBonus ?? 0;
-    return formatCompanionTurnLineBase(turnEffect, turnEffect.amount + bondLevel + globalBonus);
-  }
-  return formatCompanionTurnLineBase(turnEffect);
 }
 
 function getCompanionLine(card: Pick<BattleCard, "effects">, context: CardDescriptionContext): string | null {

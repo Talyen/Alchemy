@@ -1,12 +1,23 @@
 // Status-related card effect apply handlers.
-import { addEnemyStatus, setEnemyStatus } from "../types";
+import { addEnemyStatus, setEnemyStatus, type BattleState, type CombatTextEvent } from "../types";
 import { mergeCombatText } from "../combat-text";
-import type { BattleState } from "../types";
 import type { EffectHandler } from "./handler-types";
 import { applyPlayerStatusEffect, applyCleanseHeals, removeHarmfulPlayerStatuses } from "../status-player";
 import { tryTriggerEnemyFreeze } from "../damage-status-riders";
 import { resolveStunTrigger } from "../status-stun-resolve";
 import { dealDamageToEnemy } from "../damage";
+import type { EnemyStatusId } from "@/lib/game-data";
+
+function resolveEnemyStatusCcTrigger(
+  preHitState: BattleState,
+  nextState: BattleState,
+  status: EnemyStatusId,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (status === "freeze") return tryTriggerEnemyFreeze(preHitState, nextState, combatTexts);
+  if (status === "stun") return resolveStunTrigger(nextState, combatTexts);
+  return nextState;
+}
 
 export const applyPlayerStatusEffectHandler: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {
   if (effect.kind !== "player-status") return state;
@@ -22,16 +33,11 @@ export const applyPlayerStatusEffectHandler: EffectHandler = (state, _card, effe
 
 export const applyEnemyStatusEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
   if (effect.kind !== "enemy-status") return state;
-  let nextState = addEnemyStatus(state, effect.status, effect.amount);
+  const nextState = addEnemyStatus(state, effect.status, effect.amount);
   const appliedAmount = nextState.enemyStatuses[effect.status] - state.enemyStatuses[effect.status];
   mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: effect.status, amount: appliedAmount });
 
-  if (effect.status === "freeze") {
-    nextState = tryTriggerEnemyFreeze(state, nextState, combatTexts);
-  } else if (effect.status === "stun") {
-    nextState = resolveStunTrigger(nextState, combatTexts);
-  }
-  return nextState;
+  return resolveEnemyStatusCcTrigger(state, nextState, effect.status, combatTexts);
 };
 
 export const applyRemoveHarmfulStatusEffect: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {
@@ -62,15 +68,9 @@ export const applyMultiplyEnemyStatusEffect: EffectHandler = (state, _card, effe
     amount: added,
   });
 
-  let nextState = setEnemyStatus(state, effect.status, current + added);
+  const nextState = setEnemyStatus(state, effect.status, current + added);
 
-  if (effect.status === "freeze") {
-    nextState = tryTriggerEnemyFreeze(state, nextState, combatTexts);
-  } else if (effect.status === "stun") {
-    nextState = resolveStunTrigger(nextState, combatTexts);
-  }
-
-  return nextState;
+  return resolveEnemyStatusCcTrigger(state, nextState, effect.status, combatTexts);
 };
 
 export const applyCleansePlayerStatusToDamageEffect: EffectHandler = (

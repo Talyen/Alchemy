@@ -1,28 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { getEffectiveCardDescriptionLines } from "@/lib/game-data";
-import { cardLibrary, type BattleCard } from "@/lib/game-data";
-
-function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return {
-    id: "test-card",
-    title: "Test Card",
-    descriptionLines: [],
-    art: "",
-    cost: 1,
-    effects: [],
-    ...overrides,
-  };
-}
+import { cardLibrary } from "@/lib/game-data";
+import { makeTestCard } from "../../../../fixtures/cards";
 
 describe("getEffectiveCardDescriptionLines", () => {
   it("returns description lines unchanged when no context is given", () => {
-    const card = makeCard({ descriptionLines: ["Deal 5 Physical damage", "Gain 3 Block"] });
+    const card = makeTestCard({ descriptionLines: ["Deal 5 Physical damage", "Gain 3 Block"] });
     const lines = getEffectiveCardDescriptionLines(card);
     expect(lines).toEqual(["Deal 5 Physical damage", "Gain 3 Block"]);
   });
 
   it("adjusts damage amount with flatPhysicalDamage", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       descriptionLines: ["Deal 5 Physical damage"],
       effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
@@ -31,7 +20,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("does not add flatPhysicalDamage to non-physical damage types", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       descriptionLines: ["Deal 5 Holy damage"],
       effects: [{ kind: "damage", damageType: "holy", amount: 5 }],
     });
@@ -40,7 +29,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("adjusts potion damage with potionPotency", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       id: "health-potion",
       descriptionLines: ["Heal 10", "Gain 5 Block"],
       effects: [
@@ -53,7 +42,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("does not adjust non-potion amounts with potionPotency", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       id: "normal-card",
       descriptionLines: ["Heal 10"],
       effects: [{ kind: "heal", amount: 10 }],
@@ -63,7 +52,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("adjusts damage amount with both flatPhysicalDamage and potionPotency", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       id: "strength-potion",
       descriptionLines: ["Deal 5 Physical damage"],
       effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
@@ -73,7 +62,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("replaces companion damage line with dynamic companion damage", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       descriptionLines: ["Deals 1 Bleed damage each turn", "Gain 3 Block"],
       effects: [
         { kind: "player-status", status: "block", amount: 3 },
@@ -86,7 +75,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("companion damage includes bond level and context bonuses", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       descriptionLines: ["Deals 1 Bleed damage each turn"],
       effects: [{ kind: "summon-companion", companionId: "wolf" }],
     });
@@ -100,7 +89,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("adjusts gold gain amount", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       id: "luck-potion",
       descriptionLines: ["Gain 10 Gold"],
       effects: [{ kind: "gain-gold", amount: 10 }],
@@ -110,7 +99,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("adjusts heal amount", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       id: "health-potion",
       descriptionLines: ["Heal 8"],
       effects: [{ kind: "heal", amount: 8 }],
@@ -120,7 +109,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("adjusts mana restore amount", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       id: "mana-potion",
       descriptionLines: ["Restore 4 Mana"],
       effects: [{ kind: "restore-mana", amount: 4 }],
@@ -130,7 +119,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("adjusts wish amount", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       id: "wish-potion",
       descriptionLines: ["Wish 1"],
       effects: [{ kind: "wish", amount: 1 }],
@@ -140,7 +129,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("adjusts harmful status removal amount with pluralization", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       id: "panacea-potion",
       descriptionLines: ["Remove 2 harmful Statuses"],
       effects: [{ kind: "remove-harmful-status", amount: 2 }],
@@ -150,7 +139,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("harmful status removal uses singular when amount is 1", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       descriptionLines: ["Remove 1 harmful Status"],
       effects: [{ kind: "remove-harmful-status", amount: 1 }],
     });
@@ -159,7 +148,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("leaves non-matching lines unchanged", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       descriptionLines: ["Consume", "A mysterious card"],
       effects: [],
     });
@@ -168,7 +157,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("handles multiple damage effects in sequence", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       descriptionLines: ["Deal 3 Physical damage", "Deal 5 Holy damage"],
       effects: [
         { kind: "damage", damageType: "physical", amount: 3 },
@@ -180,7 +169,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("rounds potion-adjusted amounts", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       id: "odd-potion",
       descriptionLines: ["Heal 5"],
       effects: [{ kind: "heal", amount: 5 }],
@@ -190,13 +179,13 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("returns empty array for empty description lines", () => {
-    const card = makeCard();
+    const card = makeTestCard({ descriptionLines: [] });
     const lines = getEffectiveCardDescriptionLines(card);
     expect(lines).toEqual([]);
   });
 
   it("preserves original description for equalToArmor damage", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       descriptionLines: ["Deal Nature damage equal to your Armor"],
       effects: [{ kind: "damage", damageType: "nature", amount: 0, equalToArmor: true }],
     });
@@ -205,7 +194,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("preserves original description for equalToBlock damage", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       descriptionLines: ["Deal Holy damage equal to your Block"],
       effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToBlock: true }],
     });
@@ -214,7 +203,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("preserves equalToArmor description even with potion context", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       id: "thorn-mail",
       descriptionLines: ["Deal Nature damage equal to your Armor"],
       effects: [{ kind: "damage", damageType: "nature", amount: 0, equalToArmor: true }],
@@ -224,7 +213,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("preserves equalToBlock description even with flatPhysicalDamage context", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       descriptionLines: ["Deal Holy damage equal to your Block"],
       effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToBlock: true }],
     });
@@ -233,7 +222,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("preserves original description for equalToGoldPercent damage (Tithe)", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       descriptionLines: ["Deal Holy damage equal to 10% of your Gold"],
       effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToGoldPercent: 10 }],
     });
@@ -242,7 +231,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("preserves equalToGoldPercent description even with flatPhysicalDamage context", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       descriptionLines: ["Deal Holy damage equal to 10% of your Gold"],
       effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToGoldPercent: 10 }],
     });
@@ -251,7 +240,7 @@ describe("getEffectiveCardDescriptionLines", () => {
   });
 
   it("preserves perManaCrystal description (Mana Shield)", () => {
-    const card = makeCard({
+    const card = makeTestCard({
       descriptionLines: ["Gain 2 Block per Mana Crystal"],
       effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 2 }],
     });

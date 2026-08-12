@@ -156,39 +156,42 @@ test.describe("Wildwood Draft", () => {
     "skips reward after wildwood victory and starts next boss",
     slow,
     async ({ page, fastBattle, runtimeErrors }) => {
-      test.setTimeout(45000);
+      test.setTimeout(30000);
       void fastBattle;
       void runtimeErrors;
       const bossKiller = {
         ...makeHighDamageCard(),
         effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
       };
+      // Inject directly into the reward phase — the reward screen hydrates from
+      // wildwoodDraft (phase "reward" + rewardType/rewardChoiceIds) so no boss
+      // gauntlet boot is needed to reach the Skip gate.
       await injectSaveState(
         page,
         wildwoodBossState({
+          currentScreen: "rewards",
           runPlayerHealth: 10,
           runMaxHealth: 30,
           runDeck: Array.from({ length: 5 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
-          wildwoodDraft: wildwoodDraftDefaults({ draftChoices: [{ ...bossKiller, id: "boss-killer-final" }] }),
+          wildwoodDraft: wildwoodDraftDefaults({
+            phase: "reward",
+            rewardType: "card",
+            rewardChoiceIds: ["slash", "bash", "block"],
+            selectedRewardId: null,
+          }),
         }),
       );
       await page.goto("/");
 
-      await pickDraftCard(page);
-      await expect(page.getByRole("heading", { name: "Draft Complete" })).toBeVisible();
-      await page.getByRole("button", { name: "Continue" }).click();
-
-      const battle = new BattlePage(page);
-      await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
-      await wildwoodWinCombat(page, battle);
-      await expect(battle.victoryHeading).toBeVisible({ timeout: 15000 });
+      await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
 
       // Skip Rewards and start the next battle
       const skipBtn = page.getByRole("button", { name: "Skip" });
-      await expect(async () => {
-        await skipBtn.click();
-        await expect(battle.hand.first()).toBeVisible({ timeout: 2000 });
-      }).toPass({ timeout: 10000 });
+      await expect(skipBtn).toBeEnabled({ timeout: 5000 });
+      await skipBtn.click();
+
+      const battle = new BattlePage(page);
+      await expect(battle.hand.first()).toBeVisible({ timeout: 10000 });
     },
   );
 });

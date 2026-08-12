@@ -4,12 +4,8 @@ import { playBattleCardResolved } from "@/lib/battle/card-play";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { applyPlayerCombatDamage, isPlayerDefeated } from "@/lib/battle/types";
 import { computeTrinketManifest } from "@/lib/trinkets";
-import { blockDeck, makeTestBattleState, makeTestCard, statusDeck } from "../../fixtures/battle";
+import { blockDeck, makeState, makeTestCard, statusDeck } from "../../fixtures/battle";
 import { defaultPlayerStatusValues, defaultEnemyStatusValues } from "../../fixtures/default-battle-state";
-
-function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
-  return makeTestBattleState({ mana: 10, ...overrides });
-}
 
 describe("applyCardEffects", () => {
   it("applies damage to enemy health", () => {

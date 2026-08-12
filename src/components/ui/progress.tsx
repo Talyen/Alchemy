@@ -3,8 +3,7 @@
 // Used by health, XP, and other meter displays.
 import { type CSSProperties, type HTMLAttributes, type Ref } from "react";
 
-import { clampProgressPercent } from "@/lib/ui/progress";
-import { cn } from "@/lib/utils";
+import { clamp, cn } from "@/lib/utils";
 
 interface ProgressProps extends HTMLAttributes<HTMLDivElement> {
   value?: number;
@@ -27,7 +26,7 @@ const Progress = ({ className, value, size = "md", color, fillStyle, ref, ...pro
     >
       <div
         className={cn("h-full w-full flex-1 rounded-full transition-all duration-300 ease-out", fillColor)}
-        style={{ width: `${clampProgressPercent(value)}%`, ...fillStyle }}
+        style={{ width: `${clamp(Number.isNaN(value) ? 0 : (value ?? 0), 0, 100)}%`, ...fillStyle }}
       />
     </div>
   );
