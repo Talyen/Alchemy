@@ -27,8 +27,6 @@ A missing step or invariant is Critical/Moderate only when the document claims t
 
 **Sources of truth:** `package.json` (scripts, engines, deps); [ARCHITECTURE.md](../ARCHITECTURE.md) (run state, ownership); [CONTRIBUTING.md](../../CONTRIBUTING.md) (hooks, test matrix); [AGENTS.md](../../AGENTS.md) (agent guardrails); `eslint.config.js` (import boundaries); `knip.config.js` (deadcode allowlists); `playwright.config.ts` / `playwright.electron.config.ts`; Vite/Electron configs and `desktop/` for build entrypoints.
 
-**Known drift hotspots** (prune entries from this list once fixed and stable — a resolved hotspot left here is itself stale guidance):
-
 **Links:** internal `.md` links resolve **relative to the source file**; heading anchors must still exist. Recheck edited links and factual claims against their listed source of truth. External URLs: check only when changing that source and network is available — do not fail solely on an unavailable endpoint.
 
 **Audit hygiene:** if an audit contains embedded run logs, Done tables, or “Last execution” trackers, remove them and restore guide shape per [README.md](README.md).
@@ -38,7 +36,7 @@ A missing step or invariant is Critical/Moderate only when the document claims t
 Optional discovery aids — choose your own probes.
 
 - **Code snippet drift:** fenced `ts`/`tsx` blocks in `docs/`, `AGENTS.md`, `CONTRIBUTING.md`, READMEs whose type names and APIs no longer exist.
-- **Script/link contract:** `tests/scripts/documentation-contract.test.ts` continuously checks local Markdown targets and documented `npm run` names; inspect flags, anchors, and factual meaning manually.
+- **Script/link contract:** `tests/scripts/documentation-contract.test.ts` continuously checks local Markdown targets, heading anchors, and documented `npm run` names; inspect flags and factual meaning manually.
 - **Architecture & directory mismatches:** claims in `ARCHITECTURE.md` vs on-disk `src/lib`, `src/features/alchemy`, `desktop/`, `tests/`.
 - **Broken relative links & anchors:** markdown links and `#heading` anchors whose targets are missing.
 - **Version / engine staleness:** Node engine, Electron, Playwright, Vitest versions claimed in docs vs `package.json`.

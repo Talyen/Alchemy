@@ -3,7 +3,11 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { createEmptyGearLoadouts } from "@/lib/gear";
-import { installArmoryScreenTestHooks, renderArmoryScreen } from "./armory/armory-screen-test-helpers";
+import {
+  createArmoryInventories,
+  installArmoryScreenTestHooks,
+  renderArmoryScreen,
+} from "./armory/armory-screen-test-helpers";
 
 describe("ArmoryScreen core", () => {
   installArmoryScreenTestHooks();
@@ -13,6 +17,8 @@ describe("ArmoryScreen core", () => {
 
     expect(screen.getByRole("heading", { name: "Armory" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Equipment" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Weapon" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Weapon 1" })).toBeNull();
     expect(screen.getByRole("heading", { name: "Crafting" })).toBeTruthy();
     expect(document.querySelector('[data-gear-title="Longsword"]')).not.toBeNull();
     expect(document.querySelector('[data-gear-title="Leather Armor"]')).toBeNull();
@@ -75,5 +81,36 @@ describe("ArmoryScreen core", () => {
 
     await userEvent.setup().click(screen.getByLabelText("Spawn random gear"));
     expect(onSpawnDevGear).toHaveBeenCalledWith("knight");
+  });
+
+  it("paginates matching inventory to six items per page", async () => {
+    const user = userEvent.setup();
+    const items = Array.from({ length: 7 }, (_, index) => ({
+      instanceId: `gear-sword-${index}`,
+      definitionId: "longsword-basic" as const,
+      affixes: [],
+    }));
+    renderArmoryScreen({ inventories: createArmoryInventories(items) });
+
+    expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(6);
+    expect(document.querySelectorAll('[data-testid="armory-inventory-filler"]')).toHaveLength(0);
+
+    await user.click(screen.getByLabelText("Next page"));
+    await waitFor(() => {
+      expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(1);
+      expect(document.querySelectorAll('[data-testid="armory-inventory-filler"]')).toHaveLength(5);
+    });
+  });
+
+  it("keeps a 2×3 inventory footprint when the selected slot has no items", async () => {
+    const user = userEvent.setup();
+    renderArmoryScreen();
+
+    await user.click(screen.getByLabelText("Amulet equipment slot"));
+    await waitFor(() => {
+      expect(screen.getByText("No items for this slot")).toBeTruthy();
+      expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(0);
+      expect(document.querySelectorAll('[data-testid="armory-inventory-filler"]')).toHaveLength(6);
+    });
   });
 });

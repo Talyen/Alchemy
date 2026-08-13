@@ -24,10 +24,6 @@ export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Pr
   const tooltipAnchorRef = useRef<HTMLDivElement>(null);
   const handleNodeLeave = useCallback(() => setHoveredNode(null), []);
 
-  if (!labyrinthMap) {
-    return null;
-  }
-
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden px-3 py-4 text-center sm:gap-5 sm:px-5 sm:py-6">
       <ScreenHeader title="Labyrinth" className="shrink-0" />
@@ -46,43 +42,45 @@ export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Pr
 
         {/* 90cqh (not 100): header/subtitle + denser padding leave ~887px; 100cqh board is ~939px and clips. */}
         <div className="relative mx-auto aspect-[9/8] w-full max-w-[min(100%,90cqh)] p-[clamp(0.72rem,1.68vw,1.2rem)]">
-          <div className="relative h-full w-full">
-            <LabyrinthConnectionLayer labyrinthMap={labyrinthMap} />
+          {labyrinthMap ? (
+            <div className="relative h-full w-full">
+              <LabyrinthConnectionLayer labyrinthMap={labyrinthMap} />
 
-            {labyrinthMap.grid.map((row, r) =>
-              row.map((node, c) =>
-                node ? (
-                  <LabyrinthNodeButton
-                    key={`${r}-${c}`}
-                    row={r}
-                    col={c}
-                    node={node}
-                    labyrinthMap={labyrinthMap}
-                    onNodeClick={onNodeClick}
-                    onHover={setHoveredNode}
-                    onLeave={handleNodeLeave}
+              {labyrinthMap.grid.map((row, r) =>
+                row.map((node, c) =>
+                  node ? (
+                    <LabyrinthNodeButton
+                      key={`${r}-${c}`}
+                      row={r}
+                      col={c}
+                      node={node}
+                      labyrinthMap={labyrinthMap}
+                      onNodeClick={onNodeClick}
+                      onHover={setHoveredNode}
+                      onLeave={handleNodeLeave}
+                    />
+                  ) : null,
+                ),
+              )}
+
+              {hoveredNode ? (
+                <div
+                  key={`${hoveredNode.row}-${hoveredNode.col}`}
+                  ref={tooltipAnchorRef}
+                  className="pointer-events-none absolute z-[60] flex h-[var(--labyrinth-node-size)] w-[var(--labyrinth-node-size)] -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+                  style={positionStyle(hoveredNode.row, hoveredNode.col, labyrinthMap.rows, labyrinthMap.cols)}
+                >
+                  <LabyrinthNodeTooltip
+                    type={hoveredNode.type}
+                    modifiers={hoveredNode.modifiers}
+                    rewardModifiers={hoveredNode.rewardModifiers}
+                    triggerRef={tooltipAnchorRef}
+                    visible
                   />
-                ) : null,
-              ),
-            )}
-
-            {hoveredNode ? (
-              <div
-                key={`${hoveredNode.row}-${hoveredNode.col}`}
-                ref={tooltipAnchorRef}
-                className="pointer-events-none absolute z-[60] flex h-[var(--labyrinth-node-size)] w-[var(--labyrinth-node-size)] -translate-x-1/2 -translate-y-1/2 items-center justify-center"
-                style={positionStyle(hoveredNode.row, hoveredNode.col, labyrinthMap.rows, labyrinthMap.cols)}
-              >
-                <LabyrinthNodeTooltip
-                  type={hoveredNode.type}
-                  modifiers={hoveredNode.modifiers}
-                  rewardModifiers={hoveredNode.rewardModifiers}
-                  triggerRef={tooltipAnchorRef}
-                  visible
-                />
-              </div>
-            ) : null}
-          </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </section>
     </div>

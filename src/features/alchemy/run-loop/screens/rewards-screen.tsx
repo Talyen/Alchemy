@@ -69,7 +69,9 @@ function RewardsFound({
   rewardMaterials: Partial<Record<MaterialId, number>>;
 }) {
   const hasRewards = rewardGold > 0 || MATERIAL_IDS.some((mat) => (rewardMaterials[mat] ?? 0) > 0);
-  if (!hasRewards) return null;
+  if (!hasRewards) {
+    return <div className="min-h-[2.5rem]" aria-hidden="true" />;
+  }
   return <FoundResourcesRow gold={rewardGold} materials={rewardMaterials} />;
 }
 

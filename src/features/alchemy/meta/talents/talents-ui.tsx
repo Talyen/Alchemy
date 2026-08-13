@@ -47,7 +47,7 @@ export function TalentKeywordButton({
       <button
         type="button"
         className={cn(
-          "relative inline-flex items-center gap-2 px-4 py-2.5 text-base font-semibold text-foreground transition-all duration-200",
+          "relative inline-flex items-center gap-2 px-3 py-2.5 text-base font-semibold text-foreground transition-all duration-200",
           BUTTON_SHAPE,
           BUTTON_SURFACE_NEUTRAL,
           BUTTON_HOVER_TRANSITION,

@@ -118,7 +118,7 @@ React • TypeScript • Vite • Tailwind CSS • Zustand • Electron • Vite
 
 ## Development Guide
 
-**Docs:** [`AGENTS.md`](./AGENTS.md) (coding rules) · [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) (run state) · [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md) (how-to checklists) · [`docs/REFERENCE.md`](./docs/REFERENCE.md) (commands, glossary, battle rules) · [`CONTRIBUTING.md`](./CONTRIBUTING.md) (hooks & tests) · [`docs/Audits`](./docs/Audits/README.md) (agent audits)
+**Docs:** the table in [`AGENTS.md`](./AGENTS.md#docs) is the map for which document to read.
 
 ## License
 

@@ -1,4 +1,5 @@
 // Headless autoplay loop: play the first playable hand card, wait, retry on reject.
+import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { canPlayCard, isPlayerDefeated, type BattleState, type CardPlayOptions } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 
@@ -26,6 +27,7 @@ export interface DriveAutoplayDeps {
   findPlayableCard: () => { card: BattleCard; index: number } | null;
   playCard: (card: BattleCard, index: number) => boolean;
   delayMs: number;
+  postPlayDelayMs: number;
 }
 
 async function waitForAutoplayRetry(delayMs: number, signal: AbortSignal): Promise<void> {
@@ -61,6 +63,7 @@ export async function driveAutoplay(deps: DriveAutoplayDeps): Promise<void> {
       continue;
     }
 
+    const playStartedAt = performance.now();
     if (!deps.playCard(playable.card, playable.index)) {
       await waitForAutoplayRetry(deps.delayMs, deps.signal);
       continue;
@@ -69,5 +72,8 @@ export async function driveAutoplay(deps: DriveAutoplayDeps): Promise<void> {
     while (!deps.signal.aborted && deps.isEnabled() && deps.isBlocked()) {
       await waitForAutoplayRetry(deps.delayMs, deps.signal);
     }
+
+    const remainingMs = resolveGameDelay(deps.postPlayDelayMs) - (performance.now() - playStartedAt);
+    await waitForAutoplayRetry(remainingMs, deps.signal);
   }
 }

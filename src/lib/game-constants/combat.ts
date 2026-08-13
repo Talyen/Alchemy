@@ -48,6 +48,7 @@ export const DEFAULT_BATTLE_ENEMY_TYPE = "normal";
 // ============ Timing (ms) ============
 export const AUTO_END_TURN_DELAY = 1220;
 export const AUTOPLAY_RETRY_DELAY_MS = 50;
+export const AUTOPLAY_POST_PLAY_DELAY_MS = 1000;
 export const SLICE_DEATH_DURATION_MS = 1250;
 export const VICTORY_TRANSITION_DELAY = 1300;
 export const ENEMY_PHASE_DELAY = 900;
@@ -83,5 +84,5 @@ export const XP_BASE_PER_POINT = 10; // Point n costs n×10 XP (triangular total
 export const XP_TRIANGULAR_MULTIPLIER = 5; // Total XP for n points: n(n+1)/2 × 5.
 export const XP_MIN_THRESHOLD = 10;
 export const XP_ROOT_DIVISOR = 0.8; // Inverse formula: sqrt(1 + 0.8×XP).
-export const TALENT_UNLOCK_ANIMATION_MS = 620;
-export const TALENT_UNLOCK_SETTLE_MS = 400;
+export const TALENT_UNLOCK_ANIMATION_MS = 480;
+export const TALENT_UNLOCK_SETTLE_MS = 280;

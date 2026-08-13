@@ -74,28 +74,27 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
             : "Pick 1 of 3 cards \u2014 " + String(round + 1) + "/" + String(DRAFT_ROUNDS) + " selected"}
         </p>
 
-        {isComplete ? (
-          <FadeSlot
-            swapKey="draft-complete"
-            className="mx-auto mt-8 grid max-w-fit grid-cols-3 justify-items-center gap-6"
-          >
-            {drafted.map((card, index) => (
-              <DraftedCardItem key={"drafted-" + String(index) + "-" + card.id} card={card} index={index} />
-            ))}
-          </FadeSlot>
-        ) : (
-          <FadeSlot swapKey={round} className="mt-8 flex flex-wrap items-start justify-center gap-6">
-            {choices.map((card, index) => (
-              <SelectableChoiceCard
-                key={"draft-choice-" + String(index) + "-" + card.id}
-                card={card}
-                selected={selectedIndex === index}
-                onSelect={() => setSelectedIndex(index)}
-                interactionKey={"draft-choice-" + String(index)}
-              />
-            ))}
-          </FadeSlot>
-        )}
+        <FadeSlot swapKey={isComplete ? "complete" : round} className="mx-auto mt-8 min-h-[36cqh] w-full">
+          {isComplete ? (
+            <div className="mx-auto grid max-w-fit grid-cols-3 justify-items-center gap-6">
+              {drafted.map((card, index) => (
+                <DraftedCardItem key={"drafted-" + String(index) + "-" + card.id} card={card} index={index} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-start justify-center gap-6">
+              {choices.map((card, index) => (
+                <SelectableChoiceCard
+                  key={"draft-choice-" + String(index) + "-" + card.id}
+                  card={card}
+                  selected={selectedIndex === index}
+                  onSelect={() => setSelectedIndex(index)}
+                  interactionKey={"draft-choice-" + String(index)}
+                />
+              ))}
+            </div>
+          )}
+        </FadeSlot>
 
         {isComplete ? (
           <div className="mt-8">

@@ -95,12 +95,12 @@ describe("AlchemistShopScreen mix Escape", () => {
     );
 
     await user.click(screen.getByRole("button", { name: /Mix Potions/i }));
-    expect(screen.getByText("Select two Potions to Combine")).toBeTruthy();
+    expect(await screen.findByText("Select two Potions to Combine")).toBeTruthy();
 
     await user.keyboard("{Escape}");
 
+    expect(await screen.findByRole("button", { name: /Mix Potions/i })).toBeTruthy();
     expect(screen.queryByText("Select two Potions to Combine")).toBeNull();
-    expect(screen.getByRole("button", { name: /Mix Potions/i })).toBeTruthy();
     expect(gameMenuHandler).not.toHaveBeenCalled();
 
     window.removeEventListener("keydown", gameMenuHandler);

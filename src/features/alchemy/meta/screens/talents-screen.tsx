@@ -22,10 +22,11 @@ import {
   ScreenHeaderRow,
   ScreenShell,
 } from "../../shared/ui/shared-ui";
+import { FadeSlot } from "../../shared/ui/fade-slot";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
 
-const CHIP_ROW_COUNT = 3;
+const CHIP_ROW_COUNT = 2;
 
 function chunkIntoRows<T>(items: T[], rowCount: number): T[][] {
   const rows: T[][] = [];
@@ -127,7 +128,7 @@ export function TalentsScreen({
           ))}
         </div>
 
-        <div className="mt-6">
+        <FadeSlot swapKey={selectedKeyword} className="mt-6 min-h-[48cqh] w-full">
           <TalentTree
             key={selectedKeyword}
             allTalents={allTalentsForKeyword}
@@ -137,7 +138,7 @@ export function TalentsScreen({
             onUnlock={handleUnlockTalent}
             onUnlockBegin={handleUnlockTalentBegin}
           />
-        </div>
+        </FadeSlot>
       </ScreenShell>
 
       <ConfirmationDialog

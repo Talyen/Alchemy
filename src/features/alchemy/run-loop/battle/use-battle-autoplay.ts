@@ -1,7 +1,7 @@
 // Presentation-boundary autoplay: plays hand cards through the same path as a click.
 import { useEffect } from "react";
 
-import { AUTOPLAY_RETRY_DELAY_MS } from "@/lib/game-constants";
+import { AUTOPLAY_POST_PLAY_DELAY_MS, AUTOPLAY_RETRY_DELAY_MS } from "@/lib/game-constants";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/features/alchemy/shared/types";
@@ -73,6 +73,7 @@ export function useBattleAutoplay({
     void driveAutoplay({
       signal: controller.signal,
       delayMs: AUTOPLAY_RETRY_DELAY_MS,
+      postPlayDelayMs: AUTOPLAY_POST_PLAY_DELAY_MS,
       isEnabled: () => enabledRef.current && !controller.signal.aborted,
       isBlocked: () => blockedRef.current || isCardPlayInProgressRef.current(),
       findPlayableCard: () => findFirstPlayableHandCard(battleStateRef.current),

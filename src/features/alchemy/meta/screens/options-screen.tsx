@@ -57,37 +57,39 @@ export function OptionsScreen({
   const [tab, setTab] = useState<OptionsTab>("display");
   const [showErrorLog, setShowErrorLog] = useState(false);
 
-  if (showErrorLog) {
-    return <ErrorLogViewer onClose={() => setShowErrorLog(false)} />;
-  }
-
   return (
     <PageLayout>
-      <ScreenShell maxWidthClass="max-w-3xl">
-        <ScreenHeaderRow
-          title="Options"
-          trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open options menu" />}
-        />
+      <FadeSlot swapKey={showErrorLog ? "error-log" : "options"} className="min-h-[57.78cqh] w-full">
+        {showErrorLog ? (
+          <ErrorLogViewer onClose={() => setShowErrorLog(false)} />
+        ) : (
+          <ScreenShell maxWidthClass="max-w-3xl">
+            <ScreenHeaderRow
+              title="Options"
+              trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open options menu" />}
+            />
 
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <TabBar tabs={optionsTabs} activeTab={tab} onSelectTab={setTab} />
-        </div>
+            <div className="mt-6 flex flex-wrap justify-center gap-2">
+              <TabBar tabs={optionsTabs} activeTab={tab} onSelectTab={setTab} />
+            </div>
 
-        <FadeSlot swapKey={tab} className="min-h-[42cqh] pt-6 text-left">
-          {tab === "display" ? <DisplayOptionsPanel display={display} /> : null}
-          {tab === "sound" ? <AudioOptionsPanel audio={audio} /> : null}
-          {tab === "gameplay" ? <GameplayOptionsPanel gameplay={gameplay} /> : null}
-          {tab === "other" ? (
-            <OtherOptionsPanel saveData={saveData} dev={{ ...dev, onOpenErrorLog: () => setShowErrorLog(true) }} />
-          ) : null}
-        </FadeSlot>
+            <FadeSlot swapKey={tab} className="min-h-[42cqh] pt-6 text-left">
+              {tab === "display" ? <DisplayOptionsPanel display={display} /> : null}
+              {tab === "sound" ? <AudioOptionsPanel audio={audio} /> : null}
+              {tab === "gameplay" ? <GameplayOptionsPanel gameplay={gameplay} /> : null}
+              {tab === "other" ? (
+                <OtherOptionsPanel saveData={saveData} dev={{ ...dev, onOpenErrorLog: () => setShowErrorLog(true) }} />
+              ) : null}
+            </FadeSlot>
 
-        <div className="mt-6 flex justify-center">
-          <Button size="lg" variant="outline" className={BUTTON_WIDTH_DIALOG} onClick={onBack}>
-            Back
-          </Button>
-        </div>
-      </ScreenShell>
+            <div className="mt-6 flex justify-center">
+              <Button size="lg" variant="outline" className={BUTTON_WIDTH_DIALOG} onClick={onBack}>
+                Back
+              </Button>
+            </div>
+          </ScreenShell>
+        )}
+      </FadeSlot>
 
       <ConfirmationDialog
         open={saveData.showClearSaveConfirm}

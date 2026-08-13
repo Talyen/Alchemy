@@ -9,6 +9,7 @@ import {
   type GearSlot,
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
+import { collectionGridGapXClass, sectionTitleClass } from "@/features/alchemy/shared/config";
 import {
   characters,
   getRequiredPreviousCharacter,
@@ -16,6 +17,7 @@ import {
   type CharacterId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { Button } from "@/components/ui/button";
+import { FadeSlot } from "../../shared/ui/fade-slot";
 import { PageLayout } from "../../shared/ui/shared-ui";
 import {
   ArmoryCharacterTabs,
@@ -29,7 +31,7 @@ import {
 import { applyCurrencyToGear, resetArmoryTargeting } from "./armory/armory-screen-actions";
 import { EquipmentSlotButton } from "./armory/parts/equipment-slot-button";
 import { CraftingStrip } from "./armory/parts/crafting-strip";
-import { EQUIP_SLOTS } from "./armory/parts/slot-labels";
+import { EQUIP_SLOTS, SLOT_LABELS } from "./armory/parts/slot-labels";
 import { ItemPickerGrid } from "./armory/item-picker-grid";
 import "./armory/armory-screen.css";
 
@@ -159,97 +161,105 @@ export function ArmoryScreen({
           }}
           onPointerLeave={() => setCursorPoint(null)}
         >
-          <div className="armory-workspace-grid">
-            <section
-              data-testid="armory-left-panel"
-              className="alchemy-shell relative flex min-w-0 flex-col items-center rounded-shell-dialog border border-border/80 p-4"
-            >
-              <h2 className="text-center font-sans text-lg text-amber-100">Equipment</h2>
-              <div
-                data-testid="armory-equipment-board"
-                className="mt-4 grid w-full max-w-[min(100%,28rem)] grid-cols-3 gap-3"
+          <FadeSlot swapKey={characterId} className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <div className="armory-workspace-grid">
+              <section
+                data-testid="armory-left-panel"
+                className="alchemy-shell relative flex min-w-0 flex-col items-center rounded-shell-dialog border border-border/80 p-4"
               >
-                {EQUIP_SLOTS.map((slot) => {
-                  const instanceId = loadout[slot];
-                  return (
-                    <EquipmentSlotButton
-                      key={slot}
-                      slot={slot}
-                      instance={instanceId ? inventoryById.get(instanceId) : undefined}
-                      selected={selectedSlot === slot}
-                      editable={editable}
-                      salvageMode={salvageMode}
-                      activeCurrencyId={activeCurrencyId}
-                      onSelect={() => setSelectedSlot(slot)}
-                      onSalvage={() => {
-                        const instance = instanceId ? inventoryById.get(instanceId) : undefined;
-                        if (instance) setSalvageTarget(instance);
-                      }}
-                      onApplyCurrency={() => {
-                        const instance = instanceId ? inventoryById.get(instanceId) : undefined;
-                        if (instance) handleApplyCurrency(instance);
-                      }}
-                    />
-                  );
-                })}
-              </div>
-              <CraftingStrip
-                craftingCurrencies={craftingCurrencies}
-                activeCurrencyId={activeCurrencyId}
-                salvageMode={salvageMode}
-                editable={editable}
-                hasSalvageableGear={characterInventory.length > 0}
-                onSelectCurrency={handleSelectCurrency}
-                onToggleSalvageMode={() => {
-                  setSalvageMode((current) => !current);
-                  setActiveCurrencyId(null);
-                }}
-              />
-              {locked && requiredCharacterId ? (
-                <div className="absolute inset-0 z-40 flex items-center justify-center rounded-shell-dialog bg-black/70 p-5">
-                  <div className="max-w-xs text-center">
-                    <Lock className="mx-auto h-8 w-8" />
-                    <p className="mt-2 font-semibold">
-                      Finish a Run as the {characters[requiredCharacterId].name} to unlock
-                    </p>
+                <div className="relative flex min-h-10 w-full items-center justify-center">
+                  <h2 className={cn("text-center font-sans", sectionTitleClass)}>Equipment</h2>
+                </div>
+                <div
+                  data-testid="armory-equipment-board"
+                  className={cn("mt-2 grid w-full grid-cols-3", collectionGridGapXClass, "gap-y-6")}
+                >
+                  {EQUIP_SLOTS.map((slot) => {
+                    const instanceId = loadout[slot];
+                    return (
+                      <EquipmentSlotButton
+                        key={slot}
+                        slot={slot}
+                        instance={instanceId ? inventoryById.get(instanceId) : undefined}
+                        selected={selectedSlot === slot}
+                        editable={editable}
+                        salvageMode={salvageMode}
+                        activeCurrencyId={activeCurrencyId}
+                        onSelect={() => setSelectedSlot(slot)}
+                        onSalvage={() => {
+                          const instance = instanceId ? inventoryById.get(instanceId) : undefined;
+                          if (instance) setSalvageTarget(instance);
+                        }}
+                        onApplyCurrency={() => {
+                          const instance = instanceId ? inventoryById.get(instanceId) : undefined;
+                          if (instance) handleApplyCurrency(instance);
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+                <CraftingStrip
+                  craftingCurrencies={craftingCurrencies}
+                  activeCurrencyId={activeCurrencyId}
+                  salvageMode={salvageMode}
+                  editable={editable}
+                  hasSalvageableGear={characterInventory.length > 0}
+                  onSelectCurrency={handleSelectCurrency}
+                  onToggleSalvageMode={() => {
+                    setSalvageMode((current) => !current);
+                    setActiveCurrencyId(null);
+                  }}
+                />
+                {locked && requiredCharacterId ? (
+                  <div className="absolute inset-0 z-40 flex items-center justify-center rounded-shell-dialog bg-black/70 p-5">
+                    <div className="max-w-xs text-center">
+                      <Lock className="mx-auto h-8 w-8" />
+                      <p className="mt-2 font-semibold">
+                        Finish a Run as the {characters[requiredCharacterId].name} to unlock
+                      </p>
+                    </div>
                   </div>
+                ) : null}
+              </section>
+              <section
+                data-testid="armory-right-panel"
+                className="alchemy-shell relative flex min-h-0 min-w-0 flex-col rounded-shell-dialog border border-border/80 p-4"
+              >
+                <div className="relative flex min-h-10 w-full items-center justify-center">
+                  <h2 className={cn("text-center font-sans", sectionTitleClass)}>{SLOT_LABELS[selectedSlot]}</h2>
+                  {onSpawnDevGear && editable ? (
+                    <div className="absolute right-0">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Spawn random gear"
+                        onClick={() => onSpawnDevGear(characterId)}
+                      >
+                        <Dices className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </section>
-            <section
-              data-testid="armory-right-panel"
-              className="alchemy-shell relative flex min-h-0 min-w-0 flex-col rounded-shell-dialog border border-border/80 p-4"
-            >
-              {onSpawnDevGear && editable ? (
-                <div className="mb-2 flex justify-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    aria-label="Spawn random gear"
-                    onClick={() => onSpawnDevGear(characterId)}
-                  >
-                    <Dices className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : null}
-              <ItemPickerGrid
-                slot={selectedSlot}
-                items={pickerItems}
-                loadout={loadout}
-                inventory={characterInventory}
-                equippedInstanceId={loadout[selectedSlot]}
-                siblingEquippedIds={siblingEquippedIds}
-                editable={editable}
-                salvageMode={salvageMode}
-                activeCurrencyId={activeCurrencyId}
-                onEquip={(instance) => onEquip(characterId, selectedSlot, instance)}
-                onUnequip={() => onUnequip(characterId, selectedSlot)}
-                onSalvage={(instance) => setSalvageTarget(instance)}
-                onApplyCurrency={handleApplyCurrency}
-              />
-            </section>
-          </div>
+                <ItemPickerGrid
+                  slot={selectedSlot}
+                  characterId={characterId}
+                  items={pickerItems}
+                  loadout={loadout}
+                  inventory={characterInventory}
+                  equippedInstanceId={loadout[selectedSlot]}
+                  siblingEquippedIds={siblingEquippedIds}
+                  editable={editable}
+                  salvageMode={salvageMode}
+                  activeCurrencyId={activeCurrencyId}
+                  onEquip={(instance) => onEquip(characterId, selectedSlot, instance)}
+                  onUnequip={() => onUnequip(characterId, selectedSlot)}
+                  onSalvage={(instance) => setSalvageTarget(instance)}
+                  onApplyCurrency={handleApplyCurrency}
+                />
+              </section>
+            </div>
+          </FadeSlot>
         </div>
         <ArmoryOverlays
           salvageTarget={salvageTarget}

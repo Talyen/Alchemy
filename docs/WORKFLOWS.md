@@ -39,13 +39,11 @@ For refactors and simplification passes on attached paths, use [docs/Audits](./A
 
 ## Change persisted save data
 
-Policy (when to bump, stamp-only floor, public save contract): [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md).
+Policy (when to bump, stamp-only floor, migrate steps, public save contract): [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
-1. Decide if a schema bump is needed (transform required vs safe additive default).
-2. Increment `CURRENT_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts`.
-3. Add `migrateVNToVNPlus1` in a new `src/lib/validation/migration/steps.ts` or topical `steps-*.ts` file; chain it from `migrateSaveDataToCurrent`.
-4. Update Zod schemas in `src/lib/validation/save-schemas/`, storage defaults, and fixtures in `tests/fixtures/legacy-saves.ts`.
-5. CI enforces via `tests/architecture/save-migration-guard.test.ts`, `tests/architecture/save-migration-contract.test.ts`, and `npm run check:ship` — no manual release checklist.
+1. Decide bump vs safe additive default using that contract — do not add a `migrateVNToVNPlus1` step for stamp-only or defaulted additive fields.
+2. Follow the Required pattern in `MIGRATIONS.md` (version stamp, transform step only when needed, Zod/defaults/fixtures, CI guards).
+3. Verify with the save-migration tests named there (`npm run check:ship` covers the production parse path).
 
 ---
 
@@ -84,13 +82,13 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 
 ## Screen fade motion
 
-| Step                  | Guidance                                                                                                                                                                                                   |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Route change       | `useRenderedScreenTransition` fades the page wrapper out, swaps the screen at opacity 0, then fades in. Opacity only — no translate. Tokens: `--motion-fade-duration` / `MOTION_FADE_MS` / `PAGE_EXIT_MS`. |
-| 2. In-screen identity | `<FadeSlot swapKey={...}>` for tab/page/offering swaps (collection grid, homestead, options, shops). First mount is idle so it does not stack on the route fade.                                           |
-| 3. Overlays           | Dialogs, wish, and game menu use `useFadePresence` so they fade out before unmount.                                                                                                                        |
-| 4. Copy               | `ScreenDescription` is static. Word-by-word `TextAnimate` is mystery narrative only.                                                                                                                       |
-| 5. Anti-flash         | Swap layout only while opacity is 0. Reserve slot min-height (collection `grid-rows-2` + fillers). Do not stagger items.                                                                                   |
+| Step                  | Guidance                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Route change       | `useRenderedScreenTransition` fades the page wrapper out, swaps the screen at opacity 0, then fades in. Opacity only — no translate. Tokens: `--motion-fade-duration` / `MOTION_FADE_MS` / `PAGE_EXIT_MS`.                                                                                                                                                                                                             |
+| 2. In-screen identity | `<FadeSlot swapKey={...}>` for any in-screen identity swap (tabs, shop modes, offerings, keyword trees). First mount is idle so it does not stack on the route fade.                                                                                                                                                                                                                                                   |
+| 3. Overlays           | Dialogs, wish, and game menu use `useFadePresence` so they fade out before unmount.                                                                                                                                                                                                                                                                                                                                    |
+| 4. Copy               | `ScreenDescription` is static. Word-by-word `TextAnimate` is mystery narrative only.                                                                                                                                                                                                                                                                                                                                   |
+| 5. Anti-flash         | Swap layout only while opacity is 0. `FadeSlot` holds wrapper `className` until then. Identity swaps that change subtree shape (tabs, shop modes, mystery phases, talent keywords) use `FadeSlot` plus reserved min-height. Collection uses inner `grid-rows-2` + aspect fillers + slot `min-h`. Routes must not `return null` for a missing payload — hold the last view or keep screen chrome. Do not stagger items. |
 
 Motion tokens live in `src/styles/theme.css` and `src/styles/components.css`. Hover/tap rules: [Interactive button conventions](#interactive-button-conventions).
 
@@ -216,7 +214,7 @@ Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-
 | 5. Update `descriptionLines` to match effects                             | same card entry                                                                  |
 | 6. Cover through `tests/lib/game-data/descriptions-match-effects.test.ts` |                                                                                  |
 
-Cards in `cardLibrary` are automatically included in merchant shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration (only `mixed-potion` is excluded).
+Cards in `cardLibrary` are automatically included in merchant shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example).
 
 ---
 

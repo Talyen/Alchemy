@@ -1,6 +1,6 @@
 # Armory
 
-The Armory is the permanent meta-progression screen for managing **Gear** (per-character equipment with affix rolls) and **Crafting Currencies** (six material types used to upgrade gear). It is the primary surface for `useGearArmorySlice` and the gateway to in-battle gear effects.
+The Armory is the permanent meta-progression screen for managing **Gear** (per-character equipment with affix rolls) and **Crafting Currencies** (six crafting currencies used to upgrade gear). It is the primary surface for `useGearArmorySlice` and the gateway to in-battle gear effects.
 
 > **Related:** [ARCHITECTURE.md § Permanent Gear](./ARCHITECTURE.md#permanent-gear-gear-store), [REFERENCE.md § Domain Glossary](./REFERENCE.md#domain-glossary), [WORKFLOWS.md § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
 
@@ -9,20 +9,20 @@ The Armory is the permanent meta-progression screen for managing **Gear** (per-c
 The screen implementation lives under `src/features/alchemy/meta/screens/armory/`. Start from these owners:
 
 - `use-armory-controller.ts` — read facade and mutation/HP-sync/save-flush boundary consumed by the route.
-- `armory-screen.tsx` — hero tabs, 3×2 equipment slots, Crafting strip, and slot-filtered item picker.
-- `item-picker-grid.tsx` — Collection-style click-to-equip grid for the selected slot.
+- `armory-screen.tsx` — hero tabs, equal Equipment / Inventory columns, 3×2 equipment slots, Crafting strip, and slot-filtered item picker.
+- `item-picker-grid.tsx` — Collection-style click-to-equip grid for the selected slot, paginated 2×3 (6 items per page) with aspect fillers so short or empty pages keep the same footprint.
 - Panels, parts, and overlays — presentation only; they receive domain state and commands through props.
 
-Hero identity is the Collection-style tab ring. There is no hero portrait and no packed inventory board. Selecting an equipment slot shows matching items on the right; clicking an item equips it into that slot (or unequips if it is already in that slot). Salvage and currency apply are mutually exclusive targeting modes from the Crafting strip.
+Hero identity is the Collection-style tab ring. There is no hero portrait and no packed inventory board. Equipment and Inventory panels share equal column width. Selecting an equipment slot shows matching items on the right (2 rows × 3 items per page); clicking an item equips it into that slot (or unequips if it is already in that slot). Salvage and currency apply are mutually exclusive targeting modes from the Crafting strip.
 
 ## Data model
 
-`src/lib/gear/types.ts`, `types-core.ts`, and `crafting-types.ts` are authoritative. Durable invariants:
+`src/lib/gear/types.ts`, `types-core.ts`, and `crafting.ts` are authoritative. Durable invariants:
 
 - A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and rolled `affixes`; it never embeds definition objects or art URLs.
 - Inventories and loadouts are keyed by character. A loadout maps each slot to at most one instance ID.
 - Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata.
-- Equipment slots are `main-hand`, `off-hand`, `body`, `left-ring`, `right-ring`, and `amulet` (UI labels: Weapon 1, Weapon 2, Armor, Ring 1, Ring 2, Amulet).
+- Equipment slots are `main-hand`, `off-hand`, `body`, `left-ring`, `right-ring`, and `amulet` (UI labels: Weapon, Weapon, Armor, Ring, Ring, Amulet).
 
 ## State flow
 
@@ -68,7 +68,7 @@ The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not mutate gear
 
 Gear effects are **snapshotted** at battle start. `computeGearManifest(characterId, inventory, loadouts)` flattens equipped Gear into `BattleState.gearEffects`. Battle code never reads the Gear aggregate during a fight.
 
-Effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest.ts`). Each entry in `gearAffixCatalog` declares its `effectKey: keyof GearEffectManifest`. The architecture guard `tests/architecture/gear-affix-effect-keys.test.ts` asserts:
+Effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest.ts`). Each entry in `gearAffixCatalog` declares its `effectKey: keyof GearEffectManifest`. The architecture guard `tests/architecture/affix-catalog-guard.test.ts` asserts:
 
 - Every `effectKey` in the catalog is a member of `GEAR_EFFECT_KEYS` (catches silent zero-roll typos).
 - Every key in `GEAR_EFFECT_KEYS` is referenced by at least one affix.
@@ -95,5 +95,5 @@ Use the path-scoped Gear gate in [`CONTRIBUTING.md`](../CONTRIBUTING.md#what-to-
 - `tests/lib/gear/` — pure definitions, operations, generation, crafting, and manifests.
 - `tests/features/alchemy/shared/stores/gear-*.test.ts` and `shared/storage/gear-save.test.ts` — aggregate mutation and persistence.
 - `tests/features/alchemy/meta/screens/armory*/` — controller, rendering, targeting, and click-to-equip.
-- `tests/architecture/gear-*.test.ts` and save-migration guards — registry and persistence contracts.
+- `tests/architecture/affix-catalog-guard.test.ts`, `tests/architecture/gear-*.test.ts`, and save-migration guards — registry and persistence contracts.
 - `tests/*gear*.spec.ts`, `tests/armory-*.spec.ts`, and `tests/e2e/armory.ts` — player flows and Playwright helpers.

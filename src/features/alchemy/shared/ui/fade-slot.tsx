@@ -18,9 +18,12 @@ export function FadeSlot({
   const [phase, setPhase] = useState<FadePhase>("idle");
   const [shownKey, setShownKey] = useState(swapKey);
   const heldRef = useRef(children);
+  const heldClassNameRef = useRef(className);
   if (shownKey === swapKey) {
     // eslint-disable-next-line react-hooks/refs -- snapshot the outgoing view before swapKey changes
     heldRef.current = children;
+    // eslint-disable-next-line react-hooks/refs -- snapshot wrapper layout with the outgoing view
+    heldClassNameRef.current = className;
   }
 
   useEffect(() => {
@@ -35,7 +38,14 @@ export function FadeSlot({
   }, [swapKey, shownKey]);
 
   return (
-    <div className={cn(fadePhaseClass(phase), className)} {...props}>
+    <div
+      className={cn(
+        fadePhaseClass(phase),
+        // eslint-disable-next-line react-hooks/refs -- hold outgoing layout while opacity is 0
+        shownKey === swapKey ? className : heldClassNameRef.current,
+      )}
+      {...props}
+    >
       {/* eslint-disable-next-line react-hooks/refs -- hold the outgoing child while opacity is 0 */}
       {shownKey === swapKey ? children : heldRef.current}
     </div>

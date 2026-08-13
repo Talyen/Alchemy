@@ -54,7 +54,7 @@ describe("MysteryScreen Card Removal Flow", () => {
     vi.unstubAllGlobals();
   });
 
-  it("bypasses reward summary and calls onContinue directly when choice only removes a card", () => {
+  it("bypasses reward summary and calls onContinue directly when choice only removes a card", async () => {
     const onChoose = vi.fn();
     const onRemoveCard = vi.fn();
     const onContinue = vi.fn();
@@ -78,8 +78,7 @@ describe("MysteryScreen Card Removal Flow", () => {
     fireEvent.click(screen.getByRole("button", { name: "Make an Offering" }));
     expect(onChoose).toHaveBeenCalledWith(sampleEvent.choices[0]);
 
-    // Removal grid is displayed
-    const selectCardBtn = screen.getByRole("button", { name: "Select Strike" });
+    const selectCardBtn = await screen.findByRole("button", { name: "Select Strike" });
     expect(selectCardBtn).toBeTruthy();
     fireEvent.click(selectCardBtn);
 
@@ -91,7 +90,7 @@ describe("MysteryScreen Card Removal Flow", () => {
     expect(onContinue).toHaveBeenCalledTimes(1);
   });
 
-  it("shows reward summary when choice has additional displayable rewards besides card removal", () => {
+  it("shows reward summary when choice has additional displayable rewards besides card removal", async () => {
     const onChoose = vi.fn();
     const onRemoveCard = vi.fn();
     const onContinue = vi.fn();
@@ -114,8 +113,7 @@ describe("MysteryScreen Card Removal Flow", () => {
     // Pick "Sacrifice Gold and Offering"
     fireEvent.click(screen.getByRole("button", { name: "Sacrifice Gold and Offering" }));
 
-    // Removal grid is displayed
-    const selectCardBtn = screen.getByRole("button", { name: "Select Strike" });
+    const selectCardBtn = await screen.findByRole("button", { name: "Select Strike" });
     fireEvent.click(selectCardBtn);
 
     // Click "Remove Card" button
@@ -123,7 +121,7 @@ describe("MysteryScreen Card Removal Flow", () => {
 
     expect(onRemoveCard).toHaveBeenCalledWith(0);
     expect(onContinue).not.toHaveBeenCalled();
-    expect(screen.getByRole("heading", { name: "Ancient Altar" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Ancient Altar" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Continue" })).toBeTruthy();
   });
 });

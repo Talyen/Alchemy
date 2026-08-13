@@ -2,11 +2,12 @@
 // card choice/removal overlays, and the final reward summary.
 // Depends on global run and screen Zustand stores, audio jingles, and sub-views in parts.tsx.
 // Consumed by the screen routing system to display the Mystery event node.
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { playUISound } from "@/lib/audio";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 
 import { ScreenDescription } from "../../../shared/ui/shared-ui";
+import { FadeSlot } from "../../../shared/ui/fade-slot";
 import { RemoveCardPanel } from "../../../shared/ui/remove-card-panel";
 
 import {
@@ -90,29 +91,41 @@ export function MysteryScreen({
     playUISound("talentUnlock");
   }
 
+  const phase = mysteryCardChoices ? "cards" : pendingRemoval ? "remove" : chosen ? "summary" : "intro";
+
+  return (
+    <MysteryScreenShell>
+      <FadeSlot swapKey={phase} className="min-h-[56cqh] w-full">
+        {mysteryCardChoices ? (
+          <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
+        ) : pendingRemoval ? (
+          <RemoveCardPanel
+            runDeck={runDeck}
+            intro={<ScreenDescription>Select a card to remove from your deck</ScreenDescription>}
+            onConfirm={handleRemoveConfirm}
+          />
+        ) : chosen ? (
+          <MysteryRewardSummary
+            choice={chosen}
+            runDeck={runDeck}
+            findCard={findCard}
+            findTrinket={findTrinket}
+            grantedTrinketIds={mysteryGrantedTrinketIds}
+            onContinue={onContinue}
+            eventTitle={event.title}
+          />
+        ) : (
+          <MysteryEventIntro event={event} findCard={findCard} findTrinket={findTrinket} onPick={handlePick} />
+        )}
+      </FadeSlot>
+    </MysteryScreenShell>
+  );
+}
+
+export function MysteryScreenShell({ children }: { children?: ReactNode }) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
-      {mysteryCardChoices ? (
-        <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
-      ) : pendingRemoval ? (
-        <RemoveCardPanel
-          runDeck={runDeck}
-          intro={<ScreenDescription>Select a card to remove from your deck</ScreenDescription>}
-          onConfirm={handleRemoveConfirm}
-        />
-      ) : chosen ? (
-        <MysteryRewardSummary
-          choice={chosen}
-          runDeck={runDeck}
-          findCard={findCard}
-          findTrinket={findTrinket}
-          grantedTrinketIds={mysteryGrantedTrinketIds}
-          onContinue={onContinue}
-          eventTitle={event.title}
-        />
-      ) : (
-        <MysteryEventIntro event={event} findCard={findCard} findTrinket={findTrinket} onPick={handlePick} />
-      )}
+      {children}
     </div>
   );
 }

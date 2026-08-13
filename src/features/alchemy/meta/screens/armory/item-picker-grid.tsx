@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   canApplyCraftingCurrency,
   gearDefinitions,
@@ -11,11 +12,16 @@ import {
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
-import { cardSurfaceClass, collectionGridGapXClass, gearArtAspectClass } from "../../../shared/config";
+import {
+  cardSurfaceClass,
+  collectionGridGapXClass,
+  collectionGridTileWidthClass,
+  gearArtAspectClass,
+} from "../../../shared/config";
 import { GearDetailPopup } from "../../../shared/ui/gear-detail-popup";
 import { InteractiveArtTile } from "../../../shared/ui/interactive-art-tile";
 import { FadeSlot } from "../../../shared/ui/fade-slot";
-import { SLOT_LABELS } from "./parts/slot-labels";
+import { PaginationControls } from "../../../shared/ui/shared-ui";
 import {
   SALVAGE_TARGET_RING,
   SALVAGE_TARGET_SHADOW,
@@ -23,8 +29,11 @@ import {
   VALID_TARGET_SHADOW,
 } from "./targeting-highlight";
 
+const INVENTORY_PAGE_SIZE = 6;
+
 export function ItemPickerGrid({
   slot,
+  characterId,
   items,
   loadout,
   inventory,
@@ -39,6 +48,7 @@ export function ItemPickerGrid({
   onApplyCurrency,
 }: {
   slot: GearSlot;
+  characterId: string;
   items: GearInstance[];
   loadout: GearLoadout;
   inventory: GearInstance[];
@@ -52,19 +62,24 @@ export function ItemPickerGrid({
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
 }) {
-  const slotLabel = SLOT_LABELS[slot];
+  const pageContext = `${characterId}:${slot}`;
+  const [paging, setPaging] = useState({ context: pageContext, page: 0 });
+  const page = paging.context === pageContext ? paging.page : 0;
+  const totalPages = Math.max(1, Math.ceil(items.length / INVENTORY_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageItems = items.slice(safePage * INVENTORY_PAGE_SIZE, (safePage + 1) * INVENTORY_PAGE_SIZE);
+  const fillerCount = INVENTORY_PAGE_SIZE - pageItems.length;
 
   return (
     <section data-testid="armory-item-picker" className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <h2 className="text-center font-sans text-lg text-amber-100">{slotLabel}</h2>
-      {items.length === 0 ? (
-        <p className="mt-8 text-center text-sm text-muted-foreground">No items for this slot</p>
-      ) : (
-        <FadeSlot
-          swapKey={slot}
-          className={cn("mt-4 grid w-full grid-cols-3 overflow-visible", collectionGridGapXClass, "gap-y-6")}
-        >
-          {items.map((item) => {
+      <FadeSlot swapKey={`${characterId}-${slot}-${safePage}`} className="relative mt-2 w-full overflow-visible">
+        {items.length === 0 ? (
+          <p className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-center text-sm text-muted-foreground">
+            No items for this slot
+          </p>
+        ) : null}
+        <div className={cn("grid w-full grid-cols-3 grid-rows-2", collectionGridGapXClass, "gap-y-6")}>
+          {pageItems.map((item) => {
             const definition = gearDefinitions[item.definitionId];
             const title = getGearInstanceTitle(item);
             const equippedHere = item.instanceId === equippedInstanceId;
@@ -105,7 +120,7 @@ export function ItemPickerGrid({
                     selected={equippedHere}
                     interactive
                     ariaLabel={ariaLabel}
-                    className={cn(cardSurfaceClass, gearArtAspectClass, "w-full")}
+                    className={cn(cardSurfaceClass, collectionGridTileWidthClass, gearArtAspectClass)}
                     imageClassName="absolute inset-0 h-full w-full rounded-shell-hero object-cover"
                     onClick={() => {
                       if (!editable) return;
@@ -145,8 +160,26 @@ export function ItemPickerGrid({
               </div>
             );
           })}
-        </FadeSlot>
-      )}
+          {Array.from({ length: fillerCount }).map((_, index) => (
+            <div
+              key={`armory-inventory-filler-${index}`}
+              data-testid="armory-inventory-filler"
+              className={cn(collectionGridTileWidthClass, gearArtAspectClass)}
+              aria-hidden="true"
+            />
+          ))}
+        </div>
+      </FadeSlot>
+      <div className="mt-auto flex justify-center">
+        <PaginationControls
+          page={safePage}
+          totalPages={totalPages}
+          onPageChange={(nextPage) => setPaging({ context: pageContext, page: nextPage })}
+          size="default"
+          reserveSpace
+          className="mt-0"
+        />
+      </div>
     </section>
   );
 }

@@ -132,7 +132,7 @@ export function renderTextWithMaterials(text: string): ReactNode {
 
 export function MaterialsBar({ materialInventory }: { materialInventory: MaterialInventory }) {
   return (
-    <div className="mx-auto mt-5 mb-4 flex w-full max-w-2xl flex-wrap items-center justify-center gap-x-3 gap-y-2">
+    <div className="mx-auto mt-5 mb-4 flex w-full items-center justify-center gap-3">
       {MATERIAL_IDS.map((mat) => (
         <MaterialPill key={mat} material={mat} amount={materialInventory[mat] ?? 0} />
       ))}

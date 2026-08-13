@@ -197,11 +197,15 @@
   }
 
   .talent-node-unlocking {
-    animation: talentUnlockPop 620ms var(--ease-out-expo) forwards;
+    animation: talentUnlockBloom 480ms var(--ease-out-expo) forwards;
+  }
+
+  .talent-node-unlocking .card-shimmer-sweep {
+    animation: cardShimmer 480ms var(--ease-out-expo);
   }
 
   .talent-node-unlocked-settle {
-    animation: talentUnlockedSettle 400ms var(--ease-out-expo) both;
+    animation: talentUnlockedSettle 280ms var(--ease-out-expo) both;
   }
 
   .alchemy-startup-bar {

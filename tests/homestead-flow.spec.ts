@@ -12,8 +12,22 @@ test.describe("Homestead Flow", () => {
 
     test("homestead screen shows injected materials count", async ({ page }) => {
       const homestead = new HomesteadPage(page);
-      await expect(homestead.materialPill("Wood", 100)).toBeVisible({ timeout: 3000 });
-      await expect(homestead.materialPill("Iron", 50)).toBeVisible({ timeout: 3000 });
+      const pills = [
+        homestead.materialPill("Wood", 100),
+        homestead.materialPill("Iron", 50),
+        homestead.materialPill("Herbs", 25),
+        homestead.materialPill("Food", 10),
+        homestead.materialPill("Crystal", 5),
+      ];
+      for (const pill of pills) {
+        await expect(pill).toBeVisible({ timeout: 3000 });
+      }
+      const boxes = await Promise.all(pills.map((pill) => pill.boundingBox()));
+      const ys = boxes.map((box) => {
+        expect(box).not.toBeNull();
+        return box!.y;
+      });
+      expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(8);
     });
   });
 
@@ -40,8 +54,9 @@ test.describe("Homestead Flow", () => {
       const homestead = new HomesteadPage(page);
       await homestead.switchTab("Companions");
       await expect(page.getByText("Wolf").first()).toBeVisible({ timeout: 3000 });
-      await expect(page.getByText("Phoenix").first()).toBeVisible();
       await expect(page.getByText("Bear").first()).toBeVisible();
+      await page.getByRole("button", { name: "Next page" }).click();
+      await expect(page.getByText("Phoenix").first()).toBeVisible({ timeout: 3000 });
     });
   });
 

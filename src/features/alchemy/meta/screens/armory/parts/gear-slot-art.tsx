@@ -12,7 +12,7 @@ export function GearSlotArt({
   isHidden?: boolean;
 }) {
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-xl">
+    <div className="relative h-full w-full overflow-hidden rounded-shell-hero">
       <img
         src={gearSlotBackgroundArt[slot]}
         alt=""

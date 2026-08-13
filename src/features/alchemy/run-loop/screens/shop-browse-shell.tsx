@@ -25,7 +25,13 @@ export function ShopBrowseShell({
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
       <ScreenHeader title={title} />
-      {showGold ? <GoldDisplay gold={gold} /> : null}
+      {showGold ? (
+        <GoldDisplay gold={gold} />
+      ) : (
+        <div className="invisible" aria-hidden="true">
+          <GoldDisplay gold={gold} />
+        </div>
+      )}
       {children}
     </div>
   );

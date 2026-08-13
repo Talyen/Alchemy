@@ -10,6 +10,7 @@ import {
   collectionBestiaryGridClass,
   collectionCardGridClass,
   collectionGridBestiaryWidthClass,
+  collectionGridMinHeightClass,
   collectionGridTileWidthClass,
   collectionGridTrinketWidthClass,
   collectionTabMeta,
@@ -50,37 +51,31 @@ export function CollectionGrid({
     [collectionTab, discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, bondedCompanions, page],
   );
 
+  const gridClass =
+    collectionTab === "trinkets"
+      ? collectionTrinketGridClass
+      : collectionTab === "bestiary"
+        ? collectionBestiaryGridClass
+        : collectionCardGridClass;
+  const fillerClass =
+    collectionTab === "trinkets"
+      ? cn(collectionGridTrinketWidthClass, "aspect-square")
+      : collectionTab === "bestiary"
+        ? cn(collectionGridBestiaryWidthClass, "aspect-[4/3]")
+        : cn(collectionGridTileWidthClass, "aspect-[3/4]");
+
   return (
-    <FadeSlot
-      swapKey={`${collectionTab}-${page}`}
-      className={cn(
-        "gap-y-8 overflow-visible",
-        collectionTab === "trinkets"
-          ? collectionTrinketGridClass
-          : collectionTab === "bestiary"
-            ? collectionBestiaryGridClass
-            : collectionCardGridClass,
-        "grid-rows-2",
-      )}
-    >
-      {pageItems.map((item) => (
-        <div key={`${item.hoverScope}-${item.id}`} className="relative">
-          <CompendiumTile item={item} />
-        </div>
-      ))}
-      {Array.from({ length: getCollectionFillerCount(pageItems.length, collectionTab) }).map((_, index) => (
-        <div
-          key={`collection-filler-${index}`}
-          className={cn(
-            collectionTab === "trinkets"
-              ? collectionGridTrinketWidthClass
-              : collectionTab === "bestiary"
-                ? collectionGridBestiaryWidthClass
-                : collectionGridTileWidthClass,
-          )}
-          aria-hidden="true"
-        />
-      ))}
+    <FadeSlot swapKey={`${collectionTab}-${page}`} className={cn("overflow-visible", collectionGridMinHeightClass)}>
+      <div className={cn(gridClass, "grid-rows-2 gap-y-8")}>
+        {pageItems.map((item) => (
+          <div key={`${item.hoverScope}-${item.id}`} className="relative">
+            <CompendiumTile item={item} />
+          </div>
+        ))}
+        {Array.from({ length: getCollectionFillerCount(pageItems.length, collectionTab) }).map((_, index) => (
+          <div key={`collection-filler-${index}`} className={fillerClass} aria-hidden="true" />
+        ))}
+      </div>
     </FadeSlot>
   );
 }

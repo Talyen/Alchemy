@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import { useHeldWhile } from "@/features/alchemy/shared/ui/fade-presence";
 import { cardLibrary, trinketLibrary } from "@/features/alchemy/shared/config/game-data-catalog";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import {
@@ -11,6 +12,7 @@ import {
   LabyrinthMapScreen,
   MerchantShopScreen,
   MysteryScreen,
+  MysteryScreenShell,
   RewardsScreen,
   TrinketShopScreen,
   WildwoodRecoveryScreen,
@@ -215,6 +217,7 @@ function MysteryScreenRoute({ commands }: { commands: RunLoopCommands["mystery"]
   const r = useMysteryScreenData();
   const { handleContinue } = commands;
   const autoContinueAttemptedRef = useRef(false);
+  const heldEvent = useHeldWhile(Boolean(r.mysteryEvent), r.mysteryEvent);
 
   useEffect(() => {
     if (r.mysteryEvent) {
@@ -226,13 +229,13 @@ function MysteryScreenRoute({ commands }: { commands: RunLoopCommands["mystery"]
     handleContinue();
   }, [r.mysteryEvent, handleContinue]);
 
-  if (!r.mysteryEvent) {
-    return null;
+  if (!heldEvent) {
+    return <MysteryScreenShell />;
   }
 
   return (
     <MysteryScreen
-      event={r.mysteryEvent}
+      event={heldEvent}
       runDeck={r.runDeck}
       mysteryCardChoices={r.mysteryCardChoices}
       mysteryGrantedTrinketIds={r.mysteryGrantedTrinketIds}

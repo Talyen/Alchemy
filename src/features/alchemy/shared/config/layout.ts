@@ -24,6 +24,8 @@ export const collectionBestiaryGridClass = `grid w-full ${collectionGridGapXClas
 export const collectionGridTrinketWidthClass = "mx-auto w-full max-w-[clamp(29.4cqh,29.87cqh,44.48cqh)]";
 /** Landscape 4:3 tiles stretch the 3-col row so two rows fill the collection well. */
 export const collectionGridBestiaryWidthClass = "mx-auto w-full";
+/** Floor for Collection FadeSlot so pagination does not jump across tab aspect ratios. */
+export const collectionGridMinHeightClass = "min-h-[70cqh]";
 export const pileCardWidthClass = "w-[clamp(13.8cqh,14.9cqh,21cqh)]";
 
 // Non-battle portrait/card panels (e.g. difficulty select) — 1.2× battleCardWidthClass, battle token untouched.

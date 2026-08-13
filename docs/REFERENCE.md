@@ -34,7 +34,7 @@ npm run smoke:preview       # start vite preview; assert HTML plus emitted JS/CS
 npm run typecheck           # tsc --noEmit (fast; also in lint:ci and pre-commit)
 npm test                    # Vitest
 npm test -- <path>          # Single test file
-npm run lint:ci             # format:check + typecheck:all + lint + boundaries + deadcode (full local/CI static gate)
+npm run lint:ci             # format:check + typecheck:all + lint + boundaries + architecture-smoke + deadcode
 npm run lint:boundaries     # dependency-cruiser phase / lib edges
 npm run lint:architecture-smoke  # Cold ESLint smoke over representative screens; included in lint:ci
 npm run deadcode            # knip (lint:ci / CI; not default pre-push; in check:push:full via check)
@@ -171,29 +171,29 @@ Definitions of common terms used in the Alchemy codebase.
 
 Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths are on-disk unless noted.
 
-| Need                                                    | Look in                                                                                                                                         |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| App boot / screen registry                              | `src/app/screen-routes/`                                                                                                                        |
-| Audio (cache / music / SFX / volume)                    | `src/lib/audio-*.ts`, `src/lib/audio.ts`                                                                                                        |
-| Cold-start loading gate                                 | `use-app-effects.ts`, `allGameArt` in `assets.ts` — see [ARCHITECTURE § Boot](./ARCHITECTURE.md#boot-and-loading)                               |
-| Balance simulation                                      | `src/lib/balance/`                                                                                                                              |
-| Card corruption                                         | `src/features/alchemy/run-loop/corruption.ts`                                                                                                   |
-| Card library barrel                                     | `src/lib/game-data/cards.ts` → `cards/library/{core-cards,specialty-cards,advanced-cards}.ts`                                                   |
-| Content systems (labyrinth / wildwood)                  | `src/lib/content-systems/`                                                                                                                      |
-| Effect handler registry doc                             | `src/lib/game-data/effects/BATTLE_HANDLERS.md`                                                                                                  |
-| Feature config barrel                                   | `src/features/alchemy/shared/config/`                                                                                                           |
-| Game-data types                                         | `src/lib/game-data/types.ts`                                                                                                                    |
-| Homestead data                                          | `src/lib/homestead/` — **Detect Magic** (`masonry` research) shifts gear reward/shop Basic↔Astral rolls (+3% / +6% / +10% Astral at tiers 1–3). |
-| In-run material grants                                  | `awardMaterialsDuringRun()` in `shared/stores/run-session-write-port.ts`                                                                        |
-| Motion UI (`FadeSlot`, `TiltSurface`, `PressableSound`) | `src/features/alchemy/shared/ui/` — fade tokens in `src/styles/theme.css` / `src/styles/components.css`                                         |
-| Image preload helper                                    | `src/lib/image-preload.ts`                                                                                                                      |
-| Potion mixing                                           | `src/lib/alchemist/potion-mixer.ts`                                                                                                             |
-| Platform / Steam                                        | `src/lib/platform.ts`, `src/lib/platform-save-backend.ts`, `desktop/`                                                                           |
-| Reward card sampling                                    | `run-loop/navigation/reward-flow.ts`                                                                                                            |
-| Run lifecycle / capability ports                        | `shared/stores/run-session-lifecycle-port.ts`, `run-session-read-port.ts`, `run-session-write-port.ts`                                          |
-| Run screen taxonomy                                     | `src/lib/routing/run-screen-router.ts`                                                                                                          |
-| Save migrations doc                                     | `shared/storage/MIGRATIONS.md`                                                                                                                  |
-| Sound ↔ card registry                                   | `src/lib/sound-registry.ts`                                                                                                                     |
-| Startup validation                                      | `src/lib/validate-startup.ts`                                                                                                                   |
-| Talent XP math vs talent data                           | `src/lib/game-data/talents/progression.ts` vs `src/lib/game-data/talents/`                                                                      |
-| Tuning                                                  | Topical files under `src/lib/game-constants/`, exported through `src/lib/game-constants.ts`                                                     |
+| Need                                                    | Look in                                                                                                                                              |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App boot / screen registry                              | `src/app/screen-routes/`                                                                                                                             |
+| Audio (cache / music / SFX / volume)                    | `src/lib/audio-*.ts`, `src/lib/audio.ts`                                                                                                             |
+| Cold-start loading gate                                 | `use-app-effects.ts`, `allGameArt` in `assets.ts` — see [ARCHITECTURE § Boot](./ARCHITECTURE.md#boot-and-loading)                                    |
+| Balance simulation                                      | `src/lib/balance/`                                                                                                                                   |
+| Card corruption                                         | `src/lib/corruption/` (`run-loop/corruption.ts` re-exports)                                                                                          |
+| Card library barrel                                     | `src/lib/game-data/cards.ts` → `cards/library/{core-cards,specialty-cards,advanced-cards}.ts`                                                        |
+| Content systems (labyrinth / wildwood)                  | `src/lib/content-systems/`                                                                                                                           |
+| Effect handler registry doc                             | `src/lib/game-data/effects/BATTLE_HANDLERS.md`                                                                                                       |
+| Feature config barrel                                   | `src/features/alchemy/shared/config/`                                                                                                                |
+| Game-data types                                         | `src/lib/game-data/types.ts`                                                                                                                         |
+| Homestead data                                          | `src/lib/homestead/` — **Detect Magic** (`detect-magic` research) shifts gear reward/shop Basic↔Astral rolls (+3% / +6% / +10% Astral at tiers 1–3). |
+| In-run material grants                                  | `awardMaterialsDuringRun()` in `shared/stores/run-session-write-port.ts`                                                                             |
+| Motion UI (`FadeSlot`, `TiltSurface`, `PressableSound`) | `src/features/alchemy/shared/ui/` — fade tokens in `src/styles/theme.css` / `src/styles/components.css`                                              |
+| Image preload helper                                    | `src/lib/image-preload.ts`                                                                                                                           |
+| Potion mixing                                           | `src/lib/alchemist/potion-mixer.ts`                                                                                                                  |
+| Platform / Steam                                        | `src/lib/platform.ts`, `src/lib/platform-save-backend.ts`, `desktop/`                                                                                |
+| Reward card sampling                                    | `run-loop/navigation/reward-flow.ts`                                                                                                                 |
+| Run lifecycle / capability ports                        | `shared/stores/run-session-lifecycle-port.ts`, `run-session-read-port.ts`, `run-session-write-port.ts`                                               |
+| Run screen taxonomy                                     | `src/lib/routing/run-screen-router.ts`                                                                                                               |
+| Save migrations doc                                     | `shared/storage/MIGRATIONS.md`                                                                                                                       |
+| Sound ↔ card registry                                   | `src/lib/sound-registry.ts`                                                                                                                          |
+| Startup validation                                      | `src/lib/validate-startup.ts`                                                                                                                        |
+| Talent XP math vs talent data                           | `src/lib/game-data/talents/progression.ts` vs `src/lib/game-data/talents/`                                                                           |
+| Tuning                                                  | Topical files under `src/lib/game-constants/`, exported through `src/lib/game-constants.ts`                                                          |

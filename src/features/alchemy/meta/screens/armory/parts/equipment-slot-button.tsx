@@ -11,8 +11,14 @@ import {
 import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
+import {
+  cardSurfaceClass,
+  collectionGridTileWidthClass,
+  gearArtAspectClass,
+  tiltSurfaceSelectedRingClass,
+} from "../../../../shared/config";
 import { GearSlotArt } from "./gear-slot-art";
-import { SLOT_LABELS } from "./slot-labels";
+import { SLOT_ARIA_LABELS } from "./slot-labels";
 import { GearTooltipPortal } from "../gear-tooltip-portal";
 import {
   SALVAGE_TARGET_RING,
@@ -20,7 +26,6 @@ import {
   VALID_TARGET_RING,
   VALID_TARGET_SHADOW,
 } from "../targeting-highlight";
-import { tiltSurfaceSelectedRingClass } from "../../../../shared/config/layout";
 
 export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   slot,
@@ -51,10 +56,10 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   const canCraft = Boolean(activeCurrencyId && instance && canApplyCraftingCurrency(activeCurrencyId, instance));
   const salvageable = salvageMode && Boolean(instance);
   const currencyTarget = Boolean(activeCurrencyId) && canCraft;
-  const label = SLOT_LABELS[slot];
+  const ariaLabel = SLOT_ARIA_LABELS[slot];
 
   return (
-    <div className="flex min-w-0 flex-col items-center gap-1">
+    <>
       {instance && definition ? (
         <GearTooltipPortal triggerRef={triggerRef} visible={showTooltip} definition={definition} instance={instance} />
       ) : null}
@@ -64,10 +69,13 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         data-testid="armory-equipment-slot"
         data-slot={slot}
         data-salvageable={salvageable ? "true" : undefined}
-        aria-label={`${label} equipment slot`}
+        aria-label={ariaLabel}
         aria-pressed={selected}
         className={cn(
-          "relative aspect-[3/4] w-full overflow-hidden rounded-xl border border-border/80 bg-black",
+          cardSurfaceClass,
+          collectionGridTileWidthClass,
+          gearArtAspectClass,
+          "border border-border/80",
           selected && tiltSurfaceSelectedRingClass,
           salvageable && [SALVAGE_TARGET_RING, SALVAGE_TARGET_SHADOW],
           currencyTarget && [VALID_TARGET_RING, VALID_TARGET_SHADOW],
@@ -97,7 +105,6 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         <GearSlotArt definition={definition} slot={slot} />
         {isAstral && shineColors.length > 0 ? <ShineBorder shineColor={shineColors} borderWidth={1} /> : null}
       </button>
-      <p className="text-center font-sans text-sm text-amber-100">{label}</p>
-    </div>
+    </>
   );
 });

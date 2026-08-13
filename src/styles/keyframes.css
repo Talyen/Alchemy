@@ -185,24 +185,30 @@
   }
 }
 
-@keyframes talentUnlockPop {
+@keyframes talentUnlockBloom {
   0% {
-    filter: brightness(1);
+    border-color: color-mix(in srgb, var(--talent-accent) 85%, transparent);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--talent-accent) 35%, transparent);
+    background-color: transparent;
   }
-  35% {
-    filter: brightness(1.4);
+  45% {
+    border-color: var(--talent-accent);
+    box-shadow: 0 0 28px color-mix(in srgb, var(--talent-accent) 70%, transparent);
+    background-color: color-mix(in srgb, var(--talent-accent) 8%, transparent);
   }
   100% {
-    filter: brightness(1.05);
+    border-color: var(--talent-accent);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--talent-accent) 50%, transparent);
+    background-color: color-mix(in srgb, var(--talent-accent) 14%, transparent);
   }
 }
 
 @keyframes talentUnlockedSettle {
   from {
-    filter: brightness(1.15);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--talent-accent) 50%, transparent);
   }
   to {
-    filter: brightness(1);
+    box-shadow: 0 0 0 transparent;
   }
 }
 

@@ -14,6 +14,7 @@ import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { ScreenDescription, ServiceButton } from "../../shared/ui/shared-ui";
 import { useCaptureEscapeCancel } from "../../shared/ui/use-capture-escape-cancel";
 import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
+import { FadeSlot } from "../../shared/ui/fade-slot";
 
 export function AlchemistShopScreen({
   gold,
@@ -105,110 +106,113 @@ export function AlchemistShopScreen({
   const hasEnoughPotionsToMix = mixableCards.length >= 2;
   const mixDisabled = gold < mixPrice || !hasEnoughPotionsToMix;
   const mixDisabledMessage = hasEnoughPotionsToMix ? "Not Enough Gold" : "Not Enough Potions to Mix";
+  const modeKey = mixedCard ? "result" : mixMode ? "mix" : "browse";
 
   return (
     <ShopBrowseShell title="Alchemist's Shop" gold={gold} showGold={!mixedCard}>
-      {mixedCard ? (
-        <div className="flex flex-col items-center gap-6">
-          <div>
-            <p className="text-lg font-semibold text-emerald-400">Added to Deck: {MIXED_POTION_TITLE}</p>
-          </div>
-          <div className="flex flex-col items-center gap-3">
-            <div onMouseEnter={() => setMixedCardHovered(true)} onMouseLeave={() => setMixedCardHovered(false)}>
-              <BattleCardButton
-                card={mixedCard}
-                hovered={mixedCardHovered}
-                onHoverStart={() => setMixedCardHovered(true)}
-                onHoverEnd={() => setMixedCardHovered(false)}
-                ariaLabel={MIXED_POTION_TITLE}
-                shimmerActive={false}
-                shimmerToken={undefined}
-                className={collectionTileWidthClass}
-              />
+      <FadeSlot swapKey={modeKey} className="min-h-[56cqh] w-full">
+        {mixedCard ? (
+          <div className="flex flex-col items-center gap-6">
+            <div>
+              <p className="text-lg font-semibold text-emerald-400">Added to Deck: {MIXED_POTION_TITLE}</p>
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <div onMouseEnter={() => setMixedCardHovered(true)} onMouseLeave={() => setMixedCardHovered(false)}>
+                <BattleCardButton
+                  card={mixedCard}
+                  hovered={mixedCardHovered}
+                  onHoverStart={() => setMixedCardHovered(true)}
+                  onHoverEnd={() => setMixedCardHovered(false)}
+                  ariaLabel={MIXED_POTION_TITLE}
+                  shimmerActive={false}
+                  shimmerToken={undefined}
+                  className={collectionTileWidthClass}
+                />
+              </div>
+            </div>
+            <div>
+              <Button
+                size="lg"
+                className={BUTTON_WIDTH_ACTION}
+                onClick={() => {
+                  setMixedCard(null);
+                  cancelMix();
+                }}
+              >
+                Continue
+              </Button>
             </div>
           </div>
+        ) : !mixMode ? (
+          <ShopBrowseOfferings
+            swapKey={potionCards.map((card) => card.id).join("-")}
+            onLeave={onContinue}
+            serviceClassName="gap-4"
+            services={
+              <>
+                <ServiceButton
+                  icon={FlaskConical}
+                  label="Mix Potions"
+                  cost={mixPrice}
+                  disabled={mixDisabled}
+                  disabledMessage={mixDisabledMessage}
+                  used={mixUsed}
+                  soldOutText="Mix Potions — Sold Out"
+                  onClick={startMix}
+                />
+                <RefreshShopServiceButton
+                  gold={gold}
+                  refreshesLeft={refreshesLeft}
+                  refreshPrice={refreshPrice}
+                  onRefresh={onRefresh}
+                  label="Refresh Shop"
+                />
+              </>
+            }
+          >
+            {potionCards.map((card, i) => {
+              const slotKey = `${card.id}-${i}`;
+              return (
+                <PurchasableCardItem
+                  key={slotKey}
+                  card={card}
+                  price={getPotionPrice(card)}
+                  gold={gold}
+                  purchased={purchasedSlotKeys.includes(slotKey)}
+                  onBuy={() => onBuyCard(card, slotKey)}
+                />
+              );
+            })}
+          </ShopBrowseOfferings>
+        ) : (
           <div>
-            <Button
-              size="lg"
-              className={BUTTON_WIDTH_ACTION}
-              onClick={() => {
-                setMixedCard(null);
-                cancelMix();
-              }}
-            >
-              Continue
-            </Button>
+            <ScreenDescription className="mb-3">Select two Potions to Combine</ScreenDescription>
+            <CardSelectionGrid
+              items={mixableCards}
+              page={mixPage}
+              onPageChange={setMixPage}
+              pageSize={SELECTION_GRID_PAGE_SIZE}
+              paginationSize="default"
+              paginationReserveSpace
+              renderItem={({ card, index }) => (
+                <SelectableShopCard
+                  card={card}
+                  isSelected={selectedA === index || selectedB === index}
+                  onSelect={() => selectMixCard(index)}
+                />
+              )}
+            />
+            <div className="mt-5 flex justify-center gap-3">
+              <Button size="lg" variant="outline" onClick={cancelMix}>
+                Cancel
+              </Button>
+              <Button size="lg" disabled={selectedA === null || selectedB === null} onClick={handleMixConfirm}>
+                Combine
+              </Button>
+            </div>
           </div>
-        </div>
-      ) : !mixMode ? (
-        <ShopBrowseOfferings
-          swapKey={potionCards.map((card) => card.id).join("-")}
-          onLeave={onContinue}
-          serviceClassName="gap-4"
-          services={
-            <>
-              <ServiceButton
-                icon={FlaskConical}
-                label="Mix Potions"
-                cost={mixPrice}
-                disabled={mixDisabled}
-                disabledMessage={mixDisabledMessage}
-                used={mixUsed}
-                soldOutText="Mix Potions — Sold Out"
-                onClick={startMix}
-              />
-              <RefreshShopServiceButton
-                gold={gold}
-                refreshesLeft={refreshesLeft}
-                refreshPrice={refreshPrice}
-                onRefresh={onRefresh}
-                label="Refresh Shop"
-              />
-            </>
-          }
-        >
-          {potionCards.map((card, i) => {
-            const slotKey = `${card.id}-${i}`;
-            return (
-              <PurchasableCardItem
-                key={slotKey}
-                card={card}
-                price={getPotionPrice(card)}
-                gold={gold}
-                purchased={purchasedSlotKeys.includes(slotKey)}
-                onBuy={() => onBuyCard(card, slotKey)}
-              />
-            );
-          })}
-        </ShopBrowseOfferings>
-      ) : (
-        <div>
-          <ScreenDescription className="mb-3">Select two Potions to Combine</ScreenDescription>
-          <CardSelectionGrid
-            items={mixableCards}
-            page={mixPage}
-            onPageChange={setMixPage}
-            pageSize={SELECTION_GRID_PAGE_SIZE}
-            paginationSize="default"
-            paginationReserveSpace
-            renderItem={({ card, index }) => (
-              <SelectableShopCard
-                card={card}
-                isSelected={selectedA === index || selectedB === index}
-                onSelect={() => selectMixCard(index)}
-              />
-            )}
-          />
-          <div className="mt-5 flex justify-center gap-3">
-            <Button size="lg" variant="outline" onClick={cancelMix}>
-              Cancel
-            </Button>
-            <Button size="lg" disabled={selectedA === null || selectedB === null} onClick={handleMixConfirm}>
-              Combine
-            </Button>
-          </div>
-        </div>
-      )}
+        )}
+      </FadeSlot>
     </ShopBrowseShell>
   );
 }

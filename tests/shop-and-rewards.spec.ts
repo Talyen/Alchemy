@@ -47,11 +47,13 @@ test.describe("Merchant Shop", () => {
         expect(await shop.gold()).toBeLessThan(goldBefore);
       }).toPass({ timeout: 3000 });
 
-      const cardNamesAfter = await shop.getInspectLabels();
-      const sameCards =
-        cardNamesBefore.length === cardNamesAfter.length &&
-        cardNamesBefore.every((name, i) => name === cardNamesAfter[i]);
-      expect(sameCards).toBe(false);
+      await expect(async () => {
+        const cardNamesAfter = await shop.getInspectLabels();
+        const sameCards =
+          cardNamesBefore.length === cardNamesAfter.length &&
+          cardNamesBefore.every((name, i) => name === cardNamesAfter[i]);
+        expect(sameCards).toBe(false);
+      }).toPass({ timeout: 3000 });
     });
 
     test("remove card button is visible with sufficient gold", async ({ page }) => {

@@ -140,14 +140,13 @@ export function HomesteadScreen({
         </FadeSlot>
 
         <div className="mx-auto mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
-          {tab === "companions" && (
-            <PaginationControls
-              page={companionPage}
-              totalPages={companionPages}
-              onPageChange={setCompanionPage}
-              size="sm"
-            />
-          )}
+          <PaginationControls
+            page={companionPage}
+            totalPages={tab === "companions" ? companionPages : 1}
+            onPageChange={setCompanionPage}
+            size="sm"
+            reserveSpace
+          />
         </div>
       </ScreenShell>
     </PageLayout>

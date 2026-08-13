@@ -2,7 +2,7 @@
 // A row unlocks once every real talent in the rows above it is unlocked; any real
 // talent on an unlocked row can be allocated with an unspent point. Placeholder
 // nodes render as inert "Coming Soon" cards and never participate in progression.
-import { Fragment, useCallback, useMemo, useState, type CSSProperties } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { Lock } from "lucide-react";
 import { keywordDefinitions, isTalentPlaceholder } from "@/lib/game-data";
@@ -11,6 +11,7 @@ import type { TalentDefinition } from "@/lib/game-data";
 import { getKeywordShineColors, keywordIcons } from "@/features/alchemy/shared/config";
 import { tokenizeDescription } from "../../shared/utils";
 import { PressableSound } from "../../shared/ui/pressable-sound";
+import { ShimmerOverlay } from "../../shared/ui/shimmer";
 import { TALENT_UNLOCK_ANIMATION_MS, TALENT_UNLOCK_SETTLE_MS } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
 
@@ -90,7 +91,7 @@ function TalentCard({
     : undefined;
 
   const className = cn(
-    "relative flex w-full flex-col gap-1 rounded-lg border-2 px-3 py-2.5 text-left transition-[box-shadow,border-color] duration-200 outline-none select-none",
+    "relative flex min-h-28 w-full min-w-64 flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border-2 px-3 py-2.5 text-center transition-[box-shadow,border-color] duration-200 outline-none select-none",
     interactive && "talent-card-available cursor-pointer",
     isUnlocking && "talent-node-unlocking",
     isSettling && "talent-node-unlocked-settle",
@@ -113,7 +114,8 @@ function TalentCard({
       style={style}
       aria-label={ariaLabel}
     >
-      <div className="flex items-center gap-2">
+      {isUnlocking ? <ShimmerOverlay active token={1} rounded="rounded-lg" /> : null}
+      <div className="flex items-center justify-center gap-2">
         <span className={cn(isPlaceholder ? "text-muted-foreground" : def?.colorClass)}>
           {isPlaceholder ? <Lock className="h-5 w-5" /> : <Icon className="h-6 w-6" />}
         </span>
@@ -142,7 +144,14 @@ export function TalentTree({
 }: TalentLayoutProps) {
   const [unlockingTalentId, setUnlockingTalentId] = useState<string | null>(null);
   const [settlingTalentId, setSettlingTalentId] = useState<string | null>(null);
+  const mountedRef = useRef(true);
   const rows = useMemo(() => chunkRows(allTalents), [allTalents]);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const handleUnlock = useCallback(
     async (talentId: string) => {
@@ -153,10 +162,12 @@ export function TalentTree({
 
       await delay(TALENT_UNLOCK_ANIMATION_MS);
       onUnlock(talentId);
+      if (!mountedRef.current) return;
       setUnlockingTalentId(null);
       setSettlingTalentId(talentId);
 
       await delay(TALENT_UNLOCK_SETTLE_MS);
+      if (!mountedRef.current) return;
       setSettlingTalentId((current) => (current === talentId ? null : current));
     },
     [onUnlock, onUnlockBegin, unlockingTalentId],

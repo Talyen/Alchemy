@@ -46,6 +46,7 @@ function CorruptionDeckPicker({
       onPageChange={onPageChange}
       pageSize={SELECTION_GRID_PAGE_SIZE}
       emptyMessage="No uncorrupted cards remain."
+      paginationReserveSpace
       renderItem={({ card, index }) => (
         <SelectableShopCard
           card={card}
