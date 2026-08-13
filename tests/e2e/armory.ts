@@ -11,7 +11,7 @@ export const bodyGear = {
   affixes: [],
 };
 
-export const swordGear = {
+const swordGear = {
   instanceId: "gear-sword",
   definitionId: "longsword-basic" as const,
   affixes: [],

@@ -30,11 +30,6 @@ export function isQuiver(definition: GearDefinition): boolean {
   return definition.quiver === true;
 }
 
-export function canEquipInOffHand(definition: GearDefinition): boolean {
-  if (definition.requiresTwoHands) return false;
-  return definition.compatibleSlots.includes("off-hand") || definition.compatibleSlots.includes("main-hand");
-}
-
 function resolveEquippedDefinitionAt(
   inventory: GearInstance[],
   loadout: GearLoadouts[GearCharacterId],

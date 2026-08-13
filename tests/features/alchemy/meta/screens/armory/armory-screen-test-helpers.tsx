@@ -6,7 +6,7 @@ import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance 
 import type { CharacterId } from "@/lib/game-data";
 import { useGearStore } from "../../../../../helpers/gameplay-store-test";
 
-export const DEFAULT_ARMORY_INVENTORY: GearInstance[] = [
+const DEFAULT_ARMORY_INVENTORY: GearInstance[] = [
   { instanceId: "gear-sword", definitionId: "longsword-basic", affixes: [] },
   { instanceId: "gear-body", definitionId: "leather-armor-basic", affixes: [] },
 ];

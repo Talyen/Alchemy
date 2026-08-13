@@ -13,8 +13,8 @@ test.describe("Gear combat", { ...armory, ...critical }, () => {
 
     await assertGearFlatDamageBoostsPhysicalDamage(page, {
       instanceId: "gear-1",
-      definitionId: "leather-armor-basic",
-      slot: "body",
+      definitionId: "longsword-basic",
+      slot: "main-hand",
       affixes: [{ id: "flat-physical", value: 1 }],
     });
   });
@@ -46,7 +46,9 @@ test.describe("Gear combat", { ...armory, ...critical }, () => {
     await page.getByRole("button", { name: "Open battle menu" }).click();
     await page.getByRole("button", { name: "Armory" }).click();
     await expect(page.getByText("Equipment can be changed after combat.")).toBeVisible();
+    await page.getByLabel("Armor equipment slot").click();
     const bodyItem = gearItemLocator(page, "Leather Armor");
+    await expect(bodyItem).toBeVisible();
     await bodyItem.dblclick();
     await expect(page.locator('[data-testid="armory-equipment-slot"][data-slot="body"] img')).toHaveCount(1);
   });

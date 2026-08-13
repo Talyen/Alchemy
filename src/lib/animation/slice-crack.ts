@@ -14,10 +14,10 @@ export interface SliceVec {
   dy: number;
 }
 
-export const SLICE_ANGLE_DEGREES = -30;
+const SLICE_ANGLE_DEGREES = -30;
 export const SLICE_ANGLE_RADIANS = (SLICE_ANGLE_DEGREES * Math.PI) / 180;
 
-export const SLICE_ALONG: SliceVec = {
+const SLICE_ALONG: SliceVec = {
   dx: Math.sin(SLICE_ANGLE_RADIANS),
   dy: Math.cos(SLICE_ANGLE_RADIANS),
 };
@@ -30,8 +30,8 @@ export const SLICE_NORMAL: SliceVec = {
 /** 4:3 landscape enemy art (Trinket used 192×256 portrait). */
 export const SLICE_ASPECT_WIDTH = 256;
 export const SLICE_ASPECT_HEIGHT = 192;
-export const SLICE_SEGMENT_COUNT = 5;
-export const SLICE_WOBBLE = 16;
+const SLICE_SEGMENT_COUNT = 5;
+const SLICE_WOBBLE = 16;
 const END_PADDING = 24;
 
 function cardSpanOffsets(): { min: number; max: number } {
@@ -96,7 +96,7 @@ const CUMULATIVE_ASPECT_LENGTHS: number[] = (() => {
   return lengths;
 })();
 
-export const SLICE_CRACK_TOTAL_ASPECT_LENGTH = CUMULATIVE_ASPECT_LENGTHS[CUMULATIVE_ASPECT_LENGTHS.length - 1]!;
+const SLICE_CRACK_TOTAL_ASPECT_LENGTH = CUMULATIVE_ASPECT_LENGTHS[CUMULATIVE_ASPECT_LENGTHS.length - 1]!;
 
 export const SLICE_CARD_FRACTION_RANGE = {
   start: END_PADDING / SLICE_CRACK_TOTAL_ASPECT_LENGTH,
@@ -208,7 +208,7 @@ function formatPct(value: number): string {
 }
 
 /** CSS clip-path polygon for one half-plane of the jagged crack. */
-export function sliceCrackHalfClipPath(isPrimary: boolean): string {
+function sliceCrackHalfClipPath(isPrimary: boolean): string {
   const sign = isPrimary ? -1 : 1;
   const maxDim = Math.max(SLICE_ASPECT_WIDTH, SLICE_ASPECT_HEIGHT);
   const farX = (SLICE_NORMAL.dx * maxDim * 2.2 * sign) / SLICE_ASPECT_WIDTH;

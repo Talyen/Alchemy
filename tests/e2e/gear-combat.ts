@@ -42,6 +42,8 @@ export async function assertGearFlatDamageBoostsPhysicalDamage(page: Page, gear:
     {
       // Fixed seed keeps opening-hand shuffle + crit rolls stable across CI.
       rng: { seed: 42, counters: { rewards: 0, destinations: 0, events: 0, shops: 0, world: 0 } },
+      // Slime halves physical damage; keep Goblin so the flat bonus is observable.
+      encounteredRunEnemyIds: ["slime", "skeleton"],
     },
   );
 

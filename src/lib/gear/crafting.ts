@@ -73,7 +73,7 @@ export const CRAFTING_CURRENCY_LIST: CraftingCurrencyDefinition[] = [
   },
 ];
 
-export const CRAFTING_CURRENCY_IDS = CRAFTING_CURRENCY_LIST.map(({ id }) => id) as [
+const CRAFTING_CURRENCY_IDS = CRAFTING_CURRENCY_LIST.map(({ id }) => id) as [
   CraftingCurrencyId,
   ...CraftingCurrencyId[],
 ];

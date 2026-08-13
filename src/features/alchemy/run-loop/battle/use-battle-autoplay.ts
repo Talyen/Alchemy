@@ -21,7 +21,7 @@ interface UseBattleAutoplayOptions {
   playCard: (card: BattleCard, index: number) => boolean;
 }
 
-export function isAutoplayBlocked(options: {
+function isAutoplayBlocked(options: {
   screen: Screen;
   battleState: BattleState;
   hasActiveBattle: boolean;

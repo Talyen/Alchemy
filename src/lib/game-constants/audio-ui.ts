@@ -24,7 +24,7 @@ export const IMAGE_PRELOAD_BATCH_SIZE = 4;
 
 // ============ Screen Transitions ============
 export const MOTION_FADE_MS = 180;
-export const PAGE_EXIT_MS = MOTION_FADE_MS;
+export const PAGE_EXIT_MS = 180;
 
 // ============ Startup Loading ============
 export const INITIAL_LOAD_MIN_DURATION_MS = 650;

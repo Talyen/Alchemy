@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OptionsScreen } from "@/features/alchemy/meta/screens/options-screen";
@@ -71,6 +71,8 @@ describe("OptionsScreen", () => {
     render(<OptionsScreen {...defaultProps} />);
 
     await user.click(screen.getByRole("button", { name: "Gameplay" }));
-    expect(screen.getByText("Remember Auto-Battle Preference")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText("Remember Auto-Battle Preference")).toBeTruthy();
+    });
   });
 });

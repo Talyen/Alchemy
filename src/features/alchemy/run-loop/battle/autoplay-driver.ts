@@ -2,7 +2,7 @@
 import { canPlayCard, isPlayerDefeated, type BattleState, type CardPlayOptions } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 
-export const AUTOPLAY_CARD_PLAY_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
+const AUTOPLAY_CARD_PLAY_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
 
 export function findFirstPlayableHandCard(state: BattleState): { card: BattleCard; index: number } | null {
   for (let index = 0; index < state.hand.length; index++) {
@@ -28,7 +28,7 @@ export interface DriveAutoplayDeps {
   delayMs: number;
 }
 
-export async function waitForAutoplayRetry(delayMs: number, signal: AbortSignal): Promise<void> {
+async function waitForAutoplayRetry(delayMs: number, signal: AbortSignal): Promise<void> {
   if (signal.aborted) return;
   if (delayMs <= 0) {
     await Promise.resolve();

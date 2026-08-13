@@ -37,7 +37,6 @@ export default {
     "scripts/lib/patch-notes-core.mjs": ["exports"],
     "src/lib/routing/destinations.ts": ["exports"],
     "src/lib/routing/index.ts": ["exports"],
-    "src/features/alchemy/meta/screens/armory/parts/grid-styles.ts": ["exports"],
     "src/lib/routing/run-screen-router.ts": ["exports"],
     "src/app/screen-routes/index.tsx": ["types"],
     "src/lib/validation/migration/tombstoned-content-ids.ts": ["exports", "types"],

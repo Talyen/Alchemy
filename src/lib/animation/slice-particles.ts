@@ -111,7 +111,7 @@ function makeBorderParticle(index: number, salt: number, origin: SlicePoint, out
   };
 }
 
-export function makeSliceBorderParticles(count: number, isPrimary: boolean, salt = 0): SliceBorderParticle[] {
+function makeSliceBorderParticles(count: number, isPrimary: boolean, salt = 0): SliceBorderParticle[] {
   const halfSign = isPrimary ? -1 : 1;
   const particles: SliceBorderParticle[] = [];
   let index = 0;
@@ -127,7 +127,7 @@ export function makeSliceBorderParticles(count: number, isPrimary: boolean, salt
   return particles;
 }
 
-export function makeSliceCutParticles(count: number): SliceCutParticle[] {
+function makeSliceCutParticles(count: number): SliceCutParticle[] {
   const particles: SliceCutParticle[] = [];
   for (let index = 0; index < count; index++) {
     particles.push({

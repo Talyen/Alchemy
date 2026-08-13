@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { createEmptyGearLoadouts } from "@/lib/gear";
@@ -23,7 +23,9 @@ describe("ArmoryScreen core", () => {
     renderArmoryScreen();
 
     await user.click(screen.getByLabelText("Armor equipment slot"));
-    expect(document.querySelector('[data-gear-title="Leather Armor"]')).not.toBeNull();
+    await waitFor(() => {
+      expect(document.querySelector('[data-gear-title="Leather Armor"]')).not.toBeNull();
+    });
     expect(document.querySelector('[data-gear-title="Longsword"]')).toBeNull();
   });
 

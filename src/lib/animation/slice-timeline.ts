@@ -2,12 +2,12 @@
 
 import { SLICE_NORMAL } from "./slice-crack";
 
-export const SLICE_INTENSITY = 0.5;
+const SLICE_INTENSITY = 0.5;
 export const SLICE_PARTICLE_COUNT = 48;
-export const SLICE_TINT_STRENGTH = 0.85;
-export const SLICE_SPLIT_GAP = 0.22;
-export const SLICE_CRACK_GAP = 0.035;
-export const SLICE_CRACK_DRAW_DURATION = 0.08;
+const SLICE_TINT_STRENGTH = 0.85;
+const SLICE_SPLIT_GAP = 0.22;
+const SLICE_CRACK_GAP = 0.035;
+const SLICE_CRACK_DRAW_DURATION = 0.08;
 export const SLICE_CRACK_OPEN_START = 0.08;
 export const SLICE_SPLIT_DELAY = 0.3;
 

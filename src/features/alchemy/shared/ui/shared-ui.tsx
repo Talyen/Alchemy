@@ -9,4 +9,3 @@ export { GameMenu } from "./game-menu";
 export { HamburgerTrigger, PaginationControls } from "./navigation";
 export { DisabledTooltip, ServiceButton } from "./service-button";
 export { TabBar } from "./tab-bar";
-export { FadeSlot } from "./fade-slot";
