@@ -221,7 +221,5 @@ export const useProfileStore = createFacade<TestProfileStore>(profileStoreView, 
 export const useGearStore = createFacade<TestGearStore>(gearStoreView, (state, next) => {
   state.gear.inventories = next.inventories;
   state.gear.loadouts = next.loadouts;
-  state.gear.boardPositionsByCharacter = next.boardPositionsByCharacter;
-  state.gear.currencyBoardPositionsByCharacter = next.currencyBoardPositionsByCharacter;
   state.gear.craftingCurrencies = next.craftingCurrencies;
 });

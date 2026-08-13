@@ -14,7 +14,7 @@ describe("ArmoryScreen salvage flow", () => {
 
     await user.click(screen.getByLabelText("Salvage"));
     await user.click(screen.getByRole("button", { name: "Salvage Longsword" }));
-    await user.click(screen.getByRole("button", { name: "Salvage", exact: true }));
+    await user.click(screen.getByRole("button", { name: /^Salvage$/ }));
 
     expect(onSalvage).toHaveBeenCalledWith("gear-sword");
     expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();

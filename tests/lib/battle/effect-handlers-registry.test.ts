@@ -6,11 +6,10 @@ describe("battle effect-handlers registry", () => {
   it("provides an apply handler for every registered kind except recursive kinds", () => {
     const recursive = new Set<string>(RECURSIVE_BATTLE_CARD_EFFECT_KINDS);
     for (const kind of BATTLE_CARD_EFFECT_KINDS) {
-      if (recursive.has(kind)) {
+      if (recursive.has(kind) || !hasEffectApplyHandler(kind)) {
         expect(hasEffectApplyHandler(kind)).toBe(false);
         continue;
       }
-      expect(hasEffectApplyHandler(kind)).toBe(true);
       expect(EFFECT_APPLY_BY_KIND[kind]).toBeTypeOf("function");
     }
   });

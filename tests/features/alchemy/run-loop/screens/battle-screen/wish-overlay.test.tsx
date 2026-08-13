@@ -42,7 +42,7 @@ function renderWish(onWishChoice = vi.fn()) {
     companionDamageBuff: 0,
   } as unknown as BattleScreenState;
   const actions = { onWishChoice } as unknown as BattleActionsProps;
-  return render(<WishOverlay battleState={battleState} actions={actions} />);
+  return render(<WishOverlay open battleState={battleState} actions={actions} />);
 }
 
 describe("WishOverlay", () => {
