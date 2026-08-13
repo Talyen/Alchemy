@@ -39,9 +39,11 @@ const commandUnlockAllTalents = createRunSessionCommand(unlockAllTalents);
 
 export function useAlchemyRunController({
   autoEndTurn,
+  gameMenuOpen,
   onMarkDifficultyCompleted,
 }: {
   autoEndTurn: boolean;
+  gameMenuOpen: boolean;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
 }) {
   // The app bootstrap gate restores the aggregate before this controller mounts.
@@ -83,6 +85,7 @@ export function useAlchemyRunController({
     autoEndTurn,
     homesteadEffects,
     screen,
+    gameMenuOpen,
     setHoveredCardId,
     onBattleVictory: battleCompletionOps.onBattleVictory,
     onBattleDefeat: battleCompletionOps.onBattleDefeat,
@@ -242,6 +245,8 @@ export function useAlchemyRunController({
       handleEndTurn: battle.handleEndTurn,
       skipCombatDevMode: battle.skipCombatDevMode,
       removeCardGhost: battle.removeCardGhost,
+      isAutoplayEnabled: battle.isAutoplayEnabled,
+      toggleAutoplay: battle.toggleAutoplay,
       refs: battle.refs,
     },
     runEnd: {

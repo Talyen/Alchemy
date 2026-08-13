@@ -193,12 +193,8 @@ function gearStoreActions(state: GameplayState) {
   return {
     initialize: state.gearActions.gearInitialize,
     addInstance: state.gearActions.gearAddInstance,
-    transferToInventory: state.gearActions.gearTransferToInventory,
     equip: state.gearActions.gearEquip,
     unequip: state.gearActions.gearUnequip,
-    moveBoardItem: state.gearActions.gearMoveBoardItem,
-    syncBoardPositions: state.gearActions.gearSyncBoardPositions,
-    sortBoard: state.gearActions.gearSortBoard,
     salvage: state.gearActions.gearSalvage,
     applyCurrency: state.gearActions.gearApplyCurrency,
     addCurrencies: state.gearActions.gearAddCurrencies,

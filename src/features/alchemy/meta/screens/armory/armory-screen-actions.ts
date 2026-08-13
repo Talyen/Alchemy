@@ -1,22 +1,14 @@
-import {
-  canApplyCraftingCurrency,
-  type CraftingCurrencyId,
-  type GearInstance,
-  type GearLoadouts,
-  type GearSlot,
-  type InventoryPlacement,
-  type PackedInventoryItem,
-} from "@/lib/gear";
-import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
+import { canApplyCraftingCurrency, type CraftingCurrencyId, type GearInstance } from "@/lib/gear";
 import { playUISound } from "@/lib/audio";
-import { resolveEquipSwap } from "./resolve-equip-swap";
 import type { ArmoryCursorPoint } from "./armory-screen-types";
+
 interface TargetingSetters {
   setSalvageMode: (value: boolean) => void;
   setActiveCurrencyId: (value: CraftingCurrencyId | null) => void;
   setCursorPoint: (value: ArmoryCursorPoint | null) => void;
   setSalvageTarget?: (value: GearInstance | null) => void;
 }
+
 export function resetArmoryTargeting({
   setSalvageMode,
   setActiveCurrencyId,
@@ -58,46 +50,4 @@ export function applyCurrencyToGear({
   if (craftingCurrencies[activeCurrencyId] <= 1) {
     clearCurrency();
   }
-}
-
-export function equipWithArmorySwap({
-  targetCharacterId,
-  slot,
-  instance,
-  options,
-  loadouts,
-  inventoryById,
-  packedItems,
-  onEquip,
-}: {
-  targetCharacterId: CharacterId;
-  slot: GearSlot;
-  instance: GearInstance;
-  options: { vacatedPlacement?: InventoryPlacement } | undefined;
-  loadouts: GearLoadouts;
-  inventoryById: Map<string, GearInstance>;
-  packedItems: PackedInventoryItem[];
-  onEquip: (
-    characterId: CharacterId,
-    slot: GearSlot,
-    instance: GearInstance,
-    options?: { vacatedPlacement?: InventoryPlacement; swapDisplaced?: boolean },
-  ) => void;
-}) {
-  const vacatedPlacement = options?.vacatedPlacement;
-  if (!vacatedPlacement) {
-    onEquip(targetCharacterId, slot, instance);
-    return;
-  }
-
-  const { canSwap } = resolveEquipSwap({
-    loadout: loadouts[targetCharacterId],
-    slot,
-    instance,
-    vacatedPlacement,
-    inventoryById,
-    packedItems,
-  });
-
-  onEquip(targetCharacterId, slot, instance, { vacatedPlacement, swapDisplaced: canSwap });
 }

@@ -48,19 +48,8 @@ export type GearInventories = Record<GearCharacterId, GearInventory>;
 export type GearLoadout = Record<GearSlot, string | null>;
 export type GearLoadouts = Record<GearCharacterId, GearLoadout>;
 
-export interface GearBoardPosition {
-  col: number;
-  row: number;
-}
-export type GearBoardPositions = Record<string, GearBoardPosition>;
-export type GearBoardPositionsByCharacter = Record<GearCharacterId, GearBoardPositions>;
-
 export function createEmptyGearInventories(): GearInventories {
   return Object.fromEntries(GEAR_CHARACTER_IDS.map((id) => [id, [] as GearInventory])) as GearInventories;
-}
-
-export function createEmptyGearBoardPositionsByCharacter(): GearBoardPositionsByCharacter {
-  return Object.fromEntries(GEAR_CHARACTER_IDS.map((id) => [id, {}])) as GearBoardPositionsByCharacter;
 }
 
 export function flattenGearInventories(inventories: GearInventories): GearInventory {

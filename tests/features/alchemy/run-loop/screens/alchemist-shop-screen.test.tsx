@@ -52,17 +52,6 @@ vi.mock("@/features/alchemy/run-loop/screens/shop-browse-shell", () => ({
   ),
 }));
 
-vi.mock("@/features/alchemy/shared/ui/shared-ui", async () => {
-  const actual = await vi.importActual<typeof import("@/features/alchemy/shared/ui/shared-ui")>(
-    "@/features/alchemy/shared/ui/shared-ui",
-  );
-  return {
-    ...actual,
-    StaggerGroup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-    StaggerItem: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  };
-});
-
 vi.mock("@/lib/game-data/cards/card-pools", () => ({
   isStandardPotionCard: () => true,
 }));

@@ -11,7 +11,7 @@ import { collectionTileWidthClass, BUTTON_WIDTH_ACTION } from "@/features/alchem
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { PurchasableCardItem, SelectableShopCard } from "../../shared/ui/shop-card-item";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
-import { ScreenDescription, ServiceButton, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
+import { ScreenDescription, ServiceButton } from "../../shared/ui/shared-ui";
 import { useCaptureEscapeCancel } from "../../shared/ui/use-capture-escape-cancel";
 import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
 
@@ -109,11 +109,11 @@ export function AlchemistShopScreen({
   return (
     <ShopBrowseShell title="Alchemist's Shop" gold={gold} showGold={!mixedCard}>
       {mixedCard ? (
-        <StaggerGroup className="flex flex-col items-center gap-6">
-          <StaggerItem index={0}>
+        <div className="flex flex-col items-center gap-6">
+          <div>
             <p className="text-lg font-semibold text-emerald-400">Added to Deck: {MIXED_POTION_TITLE}</p>
-          </StaggerItem>
-          <StaggerItem index={1} className="flex flex-col items-center gap-3">
+          </div>
+          <div className="flex flex-col items-center gap-3">
             <div onMouseEnter={() => setMixedCardHovered(true)} onMouseLeave={() => setMixedCardHovered(false)}>
               <BattleCardButton
                 card={mixedCard}
@@ -126,8 +126,8 @@ export function AlchemistShopScreen({
                 className={collectionTileWidthClass}
               />
             </div>
-          </StaggerItem>
-          <StaggerItem index={2}>
+          </div>
+          <div>
             <Button
               size="lg"
               className={BUTTON_WIDTH_ACTION}
@@ -138,8 +138,8 @@ export function AlchemistShopScreen({
             >
               Continue
             </Button>
-          </StaggerItem>
-        </StaggerGroup>
+          </div>
+        </div>
       ) : !mixMode ? (
         <ShopBrowseOfferings
           swapKey={potionCards.map((card) => card.id).join("-")}
@@ -177,13 +177,12 @@ export function AlchemistShopScreen({
                 gold={gold}
                 purchased={purchasedSlotKeys.includes(slotKey)}
                 onBuy={() => onBuyCard(card, slotKey)}
-                staggerIndex={i}
               />
             );
           })}
         </ShopBrowseOfferings>
       ) : (
-        <StaggerGroup>
+        <div>
           <ScreenDescription className="mb-3">Select two Potions to Combine</ScreenDescription>
           <CardSelectionGrid
             items={mixableCards}
@@ -208,7 +207,7 @@ export function AlchemistShopScreen({
               Combine
             </Button>
           </div>
-        </StaggerGroup>
+        </div>
       )}
     </ShopBrowseShell>
   );

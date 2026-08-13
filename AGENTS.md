@@ -63,7 +63,7 @@ Each document owns the concern named below. When another document needs the same
 - Be exacting about UI/UX polish: native feel, smooth motion, visual balance, spacing, alignment, and responsive behavior. If something looks off, fix it before calling the work done.
 - Use plain function components with explicit `Props` types, not `React.FC`. Build conditional Tailwind classes with `cn()` from `@/lib/utils`; no template literals in `className`.
 - Use CSS `active:` for press feedback on buttons; no Framer hover scale. Hover uses background lift from `src/lib/ui/button-hover.ts` plus sound via `Button` or `PressableSound`.
-- Use `StaggerGroup` / `StaggerItem` per [the motion workflow](./docs/WORKFLOWS.md#staggered-screen-enter-motion). Do not wrap translate-centered absolute map nodes with `StaggerItem`.
+- Use `FadeSlot` for in-screen identity swaps per [the motion workflow](./docs/WORKFLOWS.md#screen-fade-motion). Do not stagger items or slide page chrome.
 - Initialize cosmetic randomness lazily with `useState(() => ...)`, not `useMemo` plus `Math.random()` during render.
 
 ## Environment

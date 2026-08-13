@@ -14,7 +14,7 @@ npm run perf
 
 # Other scenarios (each defaults to 1 warm-up + 1 measured run)
 npm run perf -- --scenario battle-end-turn
-npm run perf -- --scenario armory-drag
+npm run perf -- --scenario collection-tabs
 npm run perf -- --all
 
 # Opt-in art diagnostics (no metrics aggregate)
@@ -69,14 +69,13 @@ PERF_MEASURE_MS=8000 PERF_MIN_FRAMES=50 npm run perf -- --scenario battle-end-tu
 | -------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `battle-effects`     | continuous | Dense multi-type hand (dual-hit / heal+damage / statuses), play several cards per turn so combat texts overlap, then end turn (**default** for bare `npm run perf`) |
 | `battle-end-turn`    | transition | One play → wait for play FX to finish → end turn → draw (isolates discard / enemy / redraw)                                                                         |
-| `armory-drag`        | continuous | Large inventory scroll + multi-step pointer drags                                                                                                                   |
 | `talents-effects`    | continuous | Switch talent trees and hover unlockable nodes while particles and animated effects remain active                                                                   |
 | `collection-tabs`    | transition | Switch among populated bestiary, trinket, and card grids and exercise hover rendering                                                                               |
 | `options-brightness` | continuous | Alternate dim and bright display settings while ambient animation remains active                                                                                    |
 | `memory-soak`        | (diag)     | Repeated collection/talent navigation for runtime and DOM growth diagnosis; excluded from `--all`                                                                   |
 | `battle-art-diag`    | (diag)     | Art readiness diagnostics only; excluded from `--all`                                                                                                               |
 
-`--all` runs the six metric scenarios above. All scenarios keep **real animations** (no `enableFastMode` / `fastBattle`). Setup and navigation are excluded from the measured window. Every ordinary loop includes one warm-up iteration before measured runs (including `--trace`); `--cold` skips it. Battle decks use real `cardLibrary` ids so `hydrateCard` attaches production art — do not use E2E `placeholder` stubs here. `battle-effects` uses cost-0 multi-effect cards so a full hand can fire in one turn without mana gating; damage stays low so the fight lasts.
+`--all` runs the five metric scenarios above. All scenarios keep **real animations** (no `enableFastMode` / `fastBattle`). Setup and navigation are excluded from the measured window. Every ordinary loop includes one warm-up iteration before measured runs (including `--trace`); `--cold` skips it. Battle decks use real `cardLibrary` ids so `hydrateCard` attaches production art — do not use E2E `placeholder` stubs here. `battle-effects` uses cost-0 multi-effect cards so a full hand can fire in one turn without mana gating; damage stays low so the fight lasts.
 
 ## Metrics
 
@@ -95,7 +94,7 @@ Collected via `requestAnimationFrame` timestamps and `PerformanceObserver` long 
 | Event duration / input delay       | Browser Event Timing for sampled user interactions |
 | Before/after runtime snapshot      | Heap, DOM/media nodes, and Electron working set    |
 
-Phases (`play-card`, `damage-feedback`, `enemy-turn`, `draw-hand`, `armory-scroll`, `armory-drag`) label long tasks in the report.
+Phases (`play-card`, `damage-feedback`, `enemy-turn`, `draw-hand`) label long tasks in the report.
 
 Invalid runs (too few frames, empty samples) **fail the harness**. Missing an advisory target does **not**.
 

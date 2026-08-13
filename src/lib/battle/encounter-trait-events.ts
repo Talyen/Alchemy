@@ -119,6 +119,7 @@ export function processEncounterTraitCardAction(
   if (card.effects.some((effect) => effect.kind === "damage")) {
     if (hasTrait(nextState, "thorns")) nextState = dealTraitDamage(nextState, "physical", 1, combatTexts);
     if (hasTrait(nextState, "holy-retribution")) nextState = dealTraitDamage(nextState, "holy", 1, combatTexts);
+    if (hasTrait(nextState, "cinder-skin")) nextState = dealTraitDamage(nextState, "burn", 1, combatTexts);
   }
   return nextState;
 }

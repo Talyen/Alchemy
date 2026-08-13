@@ -2,11 +2,15 @@ import type { BattleCardEffect } from "@/lib/game-data";
 import type { ContentValidationIssue } from "../types";
 
 export function flattenEffects(effects: BattleCardEffect[]): BattleCardEffect[] {
-  return effects.flatMap((effect) =>
-    effect.kind === "chance"
-      ? [...flattenEffects(effect.successEffects), ...flattenEffects(effect.failureEffects)]
-      : [effect],
-  );
+  return effects.flatMap((effect) => {
+    if (effect.kind === "chance") {
+      return [...flattenEffects(effect.successEffects), ...flattenEffects(effect.failureEffects)];
+    }
+    if (effect.kind === "repeat-over-turns") {
+      return flattenEffects(effect.effects);
+    }
+    return [effect];
+  });
 }
 
 export function countByKind(effects: BattleCardEffect[], kind: string): number {
@@ -34,7 +38,7 @@ export function hasNonStandardDamageEffects(effects: BattleCardEffect[]): boolea
   return (
     hasEqualToBlockOrArmor(flat) ||
     flat.some((effect) => effect.kind === "cleanse-player-status-to-damage" || effect.kind === "random-damage") ||
-    effects.some((effect) => effect.kind === "chance")
+    effects.some((effect) => effect.kind === "chance" || effect.kind === "repeat-over-turns")
   );
 }
 

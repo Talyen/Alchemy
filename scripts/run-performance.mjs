@@ -3,11 +3,11 @@
  * On-demand FPS / hitch profiling runner.
  * Usage:
  *   node scripts/run-performance.mjs
- *   node scripts/run-performance.mjs --scenario armory-drag
+ *   node scripts/run-performance.mjs --scenario collection-tabs
  *   node scripts/run-performance.mjs --all
  *   node scripts/run-performance.mjs --trace --scenario battle-effects
  *   node scripts/run-performance.mjs --compare reports/performance/a reports/performance/b
- *   node scripts/run-performance.mjs --electron --scenario armory-drag
+ *   node scripts/run-performance.mjs --electron --scenario collection-tabs
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -18,7 +18,6 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const METRIC_SCENARIOS = [
   "battle-effects",
   "battle-end-turn",
-  "armory-drag",
   "talents-effects",
   "collection-tabs",
   "options-brightness",
@@ -62,7 +61,7 @@ function printHelp() {
 
 Usage:
   npm run perf
-  npm run perf -- --scenario armory-drag
+  npm run perf -- --scenario collection-tabs
   npm run perf -- --all
   npm run perf:trace -- --scenario battle-effects
   npm run perf:compare -- <beforeDir> <afterDir>

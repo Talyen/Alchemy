@@ -90,8 +90,8 @@ function TalentCard({
     : undefined;
 
   const className = cn(
-    "relative flex w-full flex-col gap-1 rounded-lg border-2 px-3 py-2.5 text-left transition-[filter,box-shadow,border-color] duration-200 outline-none select-none",
-    interactive && "talent-card-available cursor-pointer hover:brightness-110 active:brightness-95",
+    "relative flex w-full flex-col gap-1 rounded-lg border-2 px-3 py-2.5 text-left transition-[box-shadow,border-color] duration-200 outline-none select-none",
+    interactive && "talent-card-available cursor-pointer",
     isUnlocking && "talent-node-unlocking",
     isSettling && "talent-node-unlocked-settle",
     isUnlocked && "talent-card-unlocked",
@@ -115,14 +115,14 @@ function TalentCard({
     >
       <div className="flex items-center gap-2">
         <span className={cn(isPlaceholder ? "text-muted-foreground" : def?.colorClass)}>
-          {isPlaceholder ? <Lock className="h-4 w-4" /> : <Icon className="h-5 w-5" />}
+          {isPlaceholder ? <Lock className="h-5 w-5" /> : <Icon className="h-6 w-6" />}
         </span>
-        <span className={cn("text-base font-bold", isUnlocked && def?.colorClass)}>
+        <span className={cn("text-lg font-bold", isUnlocked && def?.colorClass)}>
           {isPlaceholder ? "Coming Soon" : (talent.name ?? "Talent")}
         </span>
       </div>
       {isPlaceholder ? null : (
-        <p className="text-sm leading-snug text-foreground/90">
+        <p className="text-base leading-snug text-foreground/90">
           <TalentDescription description={talent.description} />
         </p>
       )}
@@ -167,13 +167,13 @@ export function TalentTree({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-1">
+    <div className="mx-auto flex w-full flex-col gap-3 px-1">
       {rows.map((row, rowIndex) => (
         <div key={rowIndex} className="flex w-full items-stretch justify-center gap-3">
           {row.map((talent) => {
             if (!talent) return null;
             return (
-              <div key={talent.id} className={cn("flex flex-1", row.length === 1 && "max-w-md")}>
+              <div key={talent.id} className={cn("flex flex-1", row.length === 1 && "max-w-2xl")}>
                 <TalentCard
                   talent={talent}
                   isUnlocked={unlockedIds.includes(talent.id)}

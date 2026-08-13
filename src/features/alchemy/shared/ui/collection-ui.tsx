@@ -4,9 +4,12 @@
 /* eslint-disable react-refresh/only-export-components -- co-located collection subcomponents and search/zoom utilities */
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { PaginationControls, StaggerGroup, StaggerItem } from "./shared-ui";
+import { PaginationControls } from "./shared-ui";
+import { FadeSlot } from "./fade-slot";
 import {
+  collectionBestiaryGridClass,
   collectionCardGridClass,
+  collectionGridBestiaryWidthClass,
   collectionGridTileWidthClass,
   collectionGridTrinketWidthClass,
   collectionTabMeta,
@@ -48,27 +51,37 @@ export function CollectionGrid({
   );
 
   return (
-    <StaggerGroup
+    <FadeSlot
       swapKey={`${collectionTab}-${page}`}
       className={cn(
-        "min-h-[60cqh] gap-y-8 overflow-visible",
-        collectionTab === "trinkets" ? collectionTrinketGridClass : collectionCardGridClass,
+        "gap-y-8 overflow-visible",
+        collectionTab === "trinkets"
+          ? collectionTrinketGridClass
+          : collectionTab === "bestiary"
+            ? collectionBestiaryGridClass
+            : collectionCardGridClass,
         "grid-rows-2",
       )}
     >
-      {pageItems.map((item, index) => (
-        <StaggerItem key={`${item.hoverScope}-${item.id}`} index={index} className="relative">
+      {pageItems.map((item) => (
+        <div key={`${item.hoverScope}-${item.id}`} className="relative">
           <CompendiumTile item={item} />
-        </StaggerItem>
+        </div>
       ))}
       {Array.from({ length: getCollectionFillerCount(pageItems.length, collectionTab) }).map((_, index) => (
         <div
           key={`collection-filler-${index}`}
-          className={cn(collectionTab === "trinkets" ? collectionGridTrinketWidthClass : collectionGridTileWidthClass)}
+          className={cn(
+            collectionTab === "trinkets"
+              ? collectionGridTrinketWidthClass
+              : collectionTab === "bestiary"
+                ? collectionGridBestiaryWidthClass
+                : collectionGridTileWidthClass,
+          )}
           aria-hidden="true"
         />
       ))}
-    </StaggerGroup>
+    </FadeSlot>
   );
 }
 
@@ -96,6 +109,13 @@ export function CollectionPagination({
   onPageChange: (page: number) => void;
 }) {
   return (
-    <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} size="default" reserveSpace />
+    <PaginationControls
+      page={page}
+      totalPages={totalPages}
+      onPageChange={onPageChange}
+      size="default"
+      reserveSpace
+      className="mt-0"
+    />
   );
 }

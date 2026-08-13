@@ -1,7 +1,7 @@
 // Pure collection item shaping for cards, enemies, and trinkets.
 // Depends on game-data libraries, card description formatting, and collection page size tuning.
 // Used by collection UI layout and tests without owning rendering concerns.
-import { COLLECTION_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
+import { COLLECTION_PAGE_SIZE, BESTIARY_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import {
   cardLibrary,
   enemyBestiary,
@@ -34,7 +34,9 @@ export interface CollectionTileItem {
 }
 
 function getCollectionPageSize(tab: CollectionTab): number {
-  return tab === "trinkets" ? TRINKET_PAGE_SIZE : COLLECTION_PAGE_SIZE;
+  if (tab === "trinkets") return TRINKET_PAGE_SIZE;
+  if (tab === "bestiary") return BESTIARY_PAGE_SIZE;
+  return COLLECTION_PAGE_SIZE;
 }
 
 export function getCollectionTotalPages(collectionTab: CollectionTab) {

@@ -118,10 +118,10 @@ test.describe("Card Interactions", slow, () => {
     await battle.hand.nth(0).hover();
     // Card popups portal into the root tooltip overlay; fade-out keeps the
     // previously hovered panel mounted briefly, so target the visible one.
-    await expect(page.locator(".hover-popup-panel.pointer-events-auto:visible")).toBeVisible();
+    await expect(page.locator(".hover-popup-panel[data-visible]")).toBeVisible();
 
     await battle.hand.nth(1).hover();
-    await expect(page.locator(".hover-popup-panel.pointer-events-auto:visible")).toBeVisible();
+    await expect(page.locator(".hover-popup-panel[data-visible]")).toBeVisible();
 
     await battle.hand.nth(0).click();
     await expect(async () => expect(await battle.handCount()).toBe(handBefore - 1)).toPass({ timeout: 3000 });

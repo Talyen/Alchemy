@@ -9,13 +9,7 @@ import { buildEligibleAffixPool } from "./generation";
 import { rollAffixValue } from "./affixes";
 import { gearAffixCatalog } from "./affix-catalog";
 import { gearDefinitions, gearInstanceRarity } from "./definitions";
-import {
-  GEAR_CHARACTER_IDS,
-  type GearCharacterId,
-  type GearInstance,
-  type GearAffixRoll,
-  type GearRarity,
-} from "./types";
+import { type GearInstance, type GearAffixRoll, type GearRarity } from "./types";
 import { pickRandom } from "@/lib/utils";
 
 export type CraftingCurrencyId =
@@ -25,17 +19,6 @@ export type CraftingCurrencyId =
   | "ascension-seal"
   | "severance-maw"
   | "smiths-whetstone";
-
-interface CraftingCurrencyBoardPosition {
-  col: number;
-  row: number;
-}
-export type CraftingCurrencyBoardPositions = Partial<Record<CraftingCurrencyId, CraftingCurrencyBoardPosition>>;
-export type CraftingCurrencyBoardPositionsByCharacter = Record<GearCharacterId, CraftingCurrencyBoardPositions>;
-
-export function createEmptyCurrencyBoardPositionsByCharacter(): CraftingCurrencyBoardPositionsByCharacter {
-  return Object.fromEntries(GEAR_CHARACTER_IDS.map((id) => [id, {}])) as CraftingCurrencyBoardPositionsByCharacter;
-}
 
 export interface CraftingCurrencyDefinition {
   id: CraftingCurrencyId;

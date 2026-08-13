@@ -1,7 +1,5 @@
 // Hover detail popup for cards and collection tiles.
-// Rendered root-scale via PortaledTooltip, sized to the trigger's rendered
-// width, and interactive (pointer-events-auto) so nested keyword tooltips
-// stay reachable.
+// Rendered root-scale via PortaledTooltip (content-sized, capped at tooltipWidthClass).
 // Used by battle cards, shop cards, and collection previews.
 import { type ReactNode, type RefObject } from "react";
 
@@ -31,13 +29,7 @@ export function DetailPopup({
   visible: boolean;
 }) {
   return (
-    <PortaledTooltip
-      triggerRef={triggerRef}
-      visible={visible}
-      matchTriggerWidth
-      pointerEventsAuto
-      className="rounded-shell-tooltip"
-    >
+    <PortaledTooltip triggerRef={triggerRef} visible={visible} className="rounded-shell-tooltip">
       <TooltipHeader>{title}</TooltipHeader>
       {subtitle ? <p className="mt-1 text-xs tracking-widest text-amber-100/80 uppercase">{subtitle}</p> : null}
       <DescriptionLines lines={descriptionLines} idPrefix={idPrefix} {...(card ? { card } : {})} />

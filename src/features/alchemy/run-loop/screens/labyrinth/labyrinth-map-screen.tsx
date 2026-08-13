@@ -5,7 +5,7 @@
  */
 import { type CSSProperties, useCallback, useRef, useState } from "react";
 
-import { HamburgerTrigger, ScreenDescription, ScreenHeader, StaggerGroup } from "../../../shared/ui/shared-ui";
+import { HamburgerTrigger, ScreenDescription, ScreenHeader } from "../../../shared/ui/shared-ui";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 
 import { LabyrinthConnectionLayer } from "./labyrinth-connection-layer";
@@ -35,8 +35,7 @@ export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Pr
         Choose your path through the depths
       </ScreenDescription>
 
-      <StaggerGroup
-        as="section"
+      <section
         aria-label="Labyrinth map"
         className="relative flex min-h-0 w-full max-w-[1104px] shrink items-center justify-center rounded-shell-panel border border-border bg-card p-5 sm:p-6"
         style={{ "--labyrinth-node-size": "clamp(2.7rem, 5.5vw, 4rem)" } as CSSProperties}
@@ -85,7 +84,7 @@ export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Pr
             ) : null}
           </div>
         </div>
-      </StaggerGroup>
+      </section>
     </div>
   );
 }

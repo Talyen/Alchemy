@@ -20,17 +20,30 @@ const FIRST_TIME_FLAG_USED_VALUES: { [K in FirstTimeFlagKey]: CombatFlags[K] } =
   runicQuillUsedThisTurn: true,
 };
 
+/** Armed player-card flags: force inactive so companions/pulses neither benefit nor consume. */
+const NON_CARD_INACTIVE_FLAGS = {
+  nextHitCrit: false,
+  playNextCardTwice: false,
+} as const satisfies Partial<CombatFlags>;
+
+const PRESERVED_NON_CARD_FLAG_VALUES = {
+  ...FIRST_TIME_FLAG_USED_VALUES,
+  ...NON_CARD_INACTIVE_FLAGS,
+};
+
+type PreservedNonCardFlagKey = keyof typeof PRESERVED_NON_CARD_FLAG_VALUES;
+
 /**
  * Snapshot first-time-per-combat flags before a non-card action (e.g., companion attack),
  * set them to their "used" sentinel values, run the mutate callback, then restore.
  */
 export function withPreservedFlags(state: BattleState, mutate: (s: BattleState) => BattleState): BattleState {
   const saved = Object.fromEntries(
-    (Object.keys(FIRST_TIME_FLAG_USED_VALUES) as FirstTimeFlagKey[]).map((key) => [key, state.flags[key]]),
-  ) as Partial<Pick<CombatFlags, FirstTimeFlagKey>>;
+    (Object.keys(PRESERVED_NON_CARD_FLAG_VALUES) as PreservedNonCardFlagKey[]).map((key) => [key, state.flags[key]]),
+  ) as Partial<Pick<CombatFlags, PreservedNonCardFlagKey>>;
   const blockedState: BattleState = {
     ...state,
-    flags: { ...state.flags, ...FIRST_TIME_FLAG_USED_VALUES },
+    flags: { ...state.flags, ...PRESERVED_NON_CARD_FLAG_VALUES },
   };
   const result = mutate(blockedState);
   return { ...result, flags: { ...result.flags, ...saved } };

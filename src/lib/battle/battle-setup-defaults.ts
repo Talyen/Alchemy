@@ -67,6 +67,8 @@ function createInitialFlags(): CombatFlags {
     resonantChimeUsedThisTurn: false,
     runicQuillUsedThisTurn: false,
     divineAegisTriggered: false,
+    nextHitCrit: false,
+    playNextCardTwice: false,
   };
 }
 
@@ -109,6 +111,7 @@ export function defaultBattleState(): BattleState {
     trinketEffects: { ...defaultTrinketEffects },
     gearEffects: { ...defaultGearEffects },
     flags: createInitialFlags(),
+    pendingTurnStartEffects: [],
     discoveredCardIds: [],
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,

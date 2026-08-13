@@ -97,14 +97,6 @@ describe("enemyBestiary attack lines integration", () => {
     expect(getAttackLines("goblin")).toEqual(["Deals 7 Physical damage"]);
   });
 
-  it("Imp — pure Burn", () => {
-    expect(getAttackLines("imp")).toEqual(["Deals 3 Burn damage"]);
-  });
-
-  it("Lizard Scout — Physical + Poison", () => {
-    expect(getAttackLines("lizard-scout")).toEqual(["Deals 2 Physical and 1 Poison"]);
-  });
-
   it("Mimic — Physical + Bleed", () => {
     expect(getAttackLines("mimic")).toEqual(["Deals 7 Physical and 1 Bleed"]);
   });

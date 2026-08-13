@@ -48,6 +48,6 @@ describe("RemoveCardPanel Card Tooltips in Grid", () => {
     // the overlay root is not mounted), not inside the grid item.
     const tooltipPanel = descriptionSpan.closest(".hover-popup-panel");
     expect(tooltipPanel).toBeTruthy();
-    expect(document.querySelector(".hover-popup-panel.pointer-events-auto")).toBeTruthy();
+    expect(tooltipPanel?.classList.contains("pointer-events-none")).toBe(true);
   });
 });

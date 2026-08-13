@@ -17,6 +17,8 @@ export interface HomesteadSaveFixture {
   masterVolume: number;
   muteInBackground: boolean;
   autoEndTurn: boolean;
+  rememberAutoplayPreference: boolean;
+  autoplayEnabled: boolean;
   completedDifficulties: Record<string, string[]>;
   activeRun: null;
   materialInventory: Record<string, number>;
@@ -45,6 +47,8 @@ export const baseHomesteadSave: HomesteadSaveFixture = {
   masterVolume: 50,
   muteInBackground: true,
   autoEndTurn: true,
+  rememberAutoplayPreference: false,
+  autoplayEnabled: false,
   completedDifficulties: {
     knight: [],
     rogue: [],

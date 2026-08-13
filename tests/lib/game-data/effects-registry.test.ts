@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { BATTLE_CARD_EFFECT_KINDS, BattleCardEffectSchema, TEMPLATE_EFFECT_DEFINITIONS } from "@/lib/game-data";
+import {
+  BATTLE_CARD_EFFECT_KINDS,
+  BattleCardEffectSchema,
+  RECURSIVE_BATTLE_CARD_EFFECT_KINDS,
+  TEMPLATE_EFFECT_DEFINITIONS,
+} from "@/lib/game-data";
 
 describe("effect dispatch registry", () => {
-  it("template definitions cover all non-chance kinds", () => {
-    expect(TEMPLATE_EFFECT_DEFINITIONS).toHaveLength(21);
+  it("template definitions cover all non-recursive kinds", () => {
+    const recursive = new Set<string>(RECURSIVE_BATTLE_CARD_EFFECT_KINDS);
+    expect(TEMPLATE_EFFECT_DEFINITIONS).toHaveLength(BATTLE_CARD_EFFECT_KINDS.length - recursive.size);
     const templateKinds = new Set<string>(TEMPLATE_EFFECT_DEFINITIONS.map((def) => def.kind));
     for (const kind of BATTLE_CARD_EFFECT_KINDS) {
-      if (kind === "chance") {
+      if (recursive.has(kind)) {
         expect(templateKinds.has(kind)).toBe(false);
       } else {
         expect(templateKinds.has(kind)).toBe(true);

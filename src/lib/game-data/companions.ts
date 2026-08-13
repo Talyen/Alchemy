@@ -9,11 +9,12 @@ import {
   pantherCompanion,
   phoenixCompanion,
   pixieCompanion,
-  raiseSkeletonCompanion,
+  risenSkeletonCompanion,
   shieldScarabCompanion,
   willOWispCompanion,
   wolfCompanion,
   frostWhelpCompanion,
+  foxCompanion,
 } from "./assets";
 import type { CompanionDefinition, CompanionId } from "./types";
 
@@ -64,8 +65,8 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
   },
   skeleton: {
     id: "skeleton",
-    title: "Skeleton Companion",
-    art: raiseSkeletonCompanion,
+    title: "Risen Skeleton Companion",
+    art: risenSkeletonCompanion,
     turnStartEffects: [{ kind: "damage", damageType: "physical", amount: 1 }],
   },
   pixie: {
@@ -104,6 +105,19 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
     art: libraryOwlCompanion,
     turnStartEffects: [{ kind: "draw-cards", amount: 1 }],
   },
+  fox: {
+    id: "fox",
+    title: "Fox Companion",
+    art: foxCompanion,
+    turnStartEffects: [
+      {
+        kind: "chance",
+        probability: 0.5,
+        successEffects: [{ kind: "damage", damageType: "bleed", amount: 1 }],
+        failureEffects: [{ kind: "gain-gold", amount: 1 }],
+      },
+    ],
+  },
 };
 
 export const defaultCompanionBondLevels: Record<CompanionId, number> = {
@@ -121,4 +135,5 @@ export const defaultCompanionBondLevels: Record<CompanionId, number> = {
   "golden-retriever": 0,
   "shield-scarab": 0,
   "library-owl": 0,
+  fox: 0,
 };

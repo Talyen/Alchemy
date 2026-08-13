@@ -50,8 +50,6 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattl
     <ArmoryScreen
       inventories={controller.inventories}
       loadouts={controller.loadouts}
-      gearBoardPositionsByCharacter={controller.gearBoardPositionsByCharacter}
-      currencyBoardPositionsByCharacter={controller.currencyBoardPositionsByCharacter}
       craftingCurrencies={controller.craftingCurrencies}
       onApplyCurrency={controller.onApplyCurrency}
       finishedRunCharacters={controller.finishedRunCharacters}
@@ -60,9 +58,6 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattl
       onEquip={controller.onEquip}
       onUnequip={controller.onUnequip}
       onSalvage={controller.onSalvage}
-      onTransferGear={controller.onTransferGear}
-      onMoveBoardItem={controller.onMoveBoardItem}
-      onSortBoard={controller.onSortBoard}
       {...(controller.onSpawnDevGear ? { onSpawnDevGear: controller.onSpawnDevGear } : {})}
     />
   );

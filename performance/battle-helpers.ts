@@ -13,7 +13,7 @@ export async function playHandCard(page: Page, index = 0): Promise<void> {
   });
 }
 
-/** Hand cards finish stagger enter (opacity 0) before Playwright considers them visible. */
+/** Hand cards can start at opacity 0 during the screen fade-in. */
 export async function waitForHandPlayable(page: Page, timeoutMs = 15_000): Promise<void> {
   const hand = page.locator('[aria-label^="Play "]');
   await expect(hand.first()).toBeAttached({ timeout: timeoutMs });

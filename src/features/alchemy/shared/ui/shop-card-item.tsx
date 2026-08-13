@@ -18,11 +18,10 @@ interface PurchasableCardItemProps {
   purchased: boolean;
   onBuy: () => void;
   widthClass?: string;
-  staggerIndex?: number;
 }
 
 export function PurchasableCardItem(props: PurchasableCardItemProps) {
-  const { card, price, gold, purchased, onBuy, widthClass = collectionTileWidthClass, staggerIndex } = props;
+  const { card, price, gold, purchased, onBuy, widthClass = collectionTileWidthClass } = props;
   const [hovered, setHovered] = useState(false);
 
   const media = purchased ? (
@@ -52,16 +51,7 @@ export function PurchasableCardItem(props: PurchasableCardItemProps) {
     </div>
   );
 
-  return (
-    <PurchasableShopTile
-      media={media}
-      price={price}
-      gold={gold}
-      purchased={purchased}
-      onBuy={onBuy}
-      {...(staggerIndex !== undefined ? { staggerIndex } : {})}
-    />
-  );
+  return <PurchasableShopTile media={media} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />;
 }
 
 export type SelectableCardChrome = "shop" | "deck" | "corruption";

@@ -5,7 +5,8 @@ import type { ReactNode } from "react";
 
 import type { BattleCard } from "@/lib/game-data";
 
-import { PaginationControls, StaggerGroup, StaggerItem } from "./shared-ui";
+import { FadeSlot } from "./fade-slot";
+import { PaginationControls } from "./shared-ui";
 
 const CARD_SELECTION_GRID_CONFIG = {
   cardsPerRow: 4,
@@ -25,7 +26,6 @@ export function CardSelectionGrid({
   emptyMessage,
   paginationSize = "sm",
   paginationReserveSpace = false,
-  stagger = true,
 }: {
   items: CardSelectionGridItem[];
   page: number;
@@ -35,7 +35,6 @@ export function CardSelectionGrid({
   emptyMessage?: string;
   paginationSize?: "sm" | "default";
   paginationReserveSpace?: boolean;
-  stagger?: boolean;
 }) {
   // The original deck index travels with each item so paginated/filtered pickers still mutate the correct slot.
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
@@ -52,9 +51,8 @@ export function CardSelectionGrid({
 
   return (
     <div>
-      <StaggerGroup
+      <FadeSlot
         swapKey={safePage}
-        animate={false}
         className="mx-auto flex max-w-[calc(4*31.78cqh+3*1.2rem)] flex-col gap-y-6"
         data-testid="card-selection-grid"
       >
@@ -62,18 +60,15 @@ export function CardSelectionGrid({
           <div key={`row-${rowIndex}`} className="flex justify-center gap-x-4">
             {rowItems.map((item, columnIndex) => {
               const visualIndex = rowIndex * CARD_SELECTION_GRID_CONFIG.cardsPerRow + columnIndex;
-              const cell = <div className="flex justify-center">{renderItem(item, visualIndex)}</div>;
-              return stagger ? (
-                <StaggerItem key={`${item.card.id}-${item.index}`} index={visualIndex}>
-                  {cell}
-                </StaggerItem>
-              ) : (
-                <div key={`${item.card.id}-${item.index}`}>{cell}</div>
+              return (
+                <div key={`${item.card.id}-${item.index}`} className="flex justify-center">
+                  {renderItem(item, visualIndex)}
+                </div>
               );
             })}
           </div>
         ))}
-      </StaggerGroup>
+      </FadeSlot>
       {pageItems.length === 0 && emptyMessage ? (
         <p className="mt-4 text-sm text-muted-foreground">{emptyMessage}</p>
       ) : null}

@@ -62,6 +62,24 @@ function isCardInHand(state: BattleState, card: BattleCard, index: number): bool
   return !!currentCard && currentCard.id === card.id && currentCard.uid === card.uid;
 }
 
+function effectDealsDamageToEnemy(effect: BattleCard["effects"][number]): boolean {
+  if (
+    effect.kind === "damage" ||
+    effect.kind === "random-damage" ||
+    effect.kind === "cleanse-player-status-to-damage"
+  ) {
+    return true;
+  }
+  if (effect.kind === "chance") {
+    return [...effect.successEffects, ...effect.failureEffects].some(effectDealsDamageToEnemy);
+  }
+  return false;
+}
+
+function cardDealsDamage(card: BattleCard): boolean {
+  return card.effects.some(effectDealsDamageToEnemy);
+}
+
 function canAffordCard(state: BattleState, index: number): boolean {
   const currentCard = state.hand[index];
   return !!currentCard && state.mana >= computeEffectiveCost(state, currentCard).effectiveCost;
@@ -89,17 +107,19 @@ function executeCardPlayState(
   effectiveCost: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
+  const playTwice = state.flags.playNextCardTwice;
+  const consumeCrit = state.flags.nextHitCrit && cardDealsDamage(card);
   let nextState: BattleState = {
     ...state,
     hand: state.hand.filter((_, i) => i !== index),
-    // Reset the temporary single-use card cost reduction after playing the card
-    flags: { ...state.flags, nextCardCostReduction: 0 },
+    flags: { ...state.flags, nextCardCostReduction: 0, playNextCardTwice: false },
     cardsPlayedThisTurn: state.cardsPlayedThisTurn + 1,
-    // Deduct mana cost first so that refunds aren't capped by maxMana prematurely.
     mana: Math.max(0, state.mana - effectiveCost),
   };
 
   nextState = applyCardEffects(nextState, card, combatTexts);
+  if (playTwice) nextState = applyCardEffects(nextState, card, combatTexts);
+  if (consumeCrit) nextState = { ...nextState, flags: { ...nextState.flags, nextHitCrit: false } };
 
   if (cardHasDamageType(card, "nature") && state.gearEffects.manaOnNatureDamageChance > 0) {
     if (state.rng() * 100 < state.gearEffects.manaOnNatureDamageChance) {
@@ -214,8 +234,10 @@ export function playBattleCardResolved(
     return { state, combatTexts };
   }
 
+  const playTwice = costState.flags.playNextCardTwice;
   let nextState = executeCardPlayState(costState, card, index, effectiveCost, combatTexts);
   nextState = processEncounterTraitCardAction(nextState, card, combatTexts);
+  if (playTwice) nextState = processEncounterTraitCardAction(nextState, card, combatTexts);
   if (!isPlayerDefeated(nextState)) {
     if (enemyWasAlive) {
       nextState = applyResonantChimeTrinket(nextState, combatTexts);

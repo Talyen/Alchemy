@@ -49,7 +49,6 @@ export function TrinketShopScreen({
               gold={gold}
               purchased={purchasedSlotKeys.includes(slotKey)}
               onBuy={() => onBuyTrinket(trinket, slotKey)}
-              staggerIndex={i}
             />
           );
         })}

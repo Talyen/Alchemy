@@ -7,6 +7,7 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { makeRunController, makeTalentController } from "../../../helpers/run-controller";
 import {
   getBattleStoreView,
@@ -29,6 +30,7 @@ beforeEach(() => {
   resetRunProgressSlice();
   resetRunBattleSlice();
   resetTransientRunUi();
+  useSettingsStore.setState(useSettingsStore.getInitialState(), true);
 });
 
 function renderBattleController(screen: Screen = ROUTE_SCREENS.BATTLE) {
@@ -38,6 +40,7 @@ function renderBattleController(screen: Screen = ROUTE_SCREENS.BATTLE) {
         run: makeRunController(),
         talents: makeTalentController(),
         autoEndTurn: false,
+        gameMenuOpen: false,
         homesteadEffects: defaultHomesteadEffects,
         screen: currentScreen,
         setHoveredCardId: vi.fn(),
@@ -88,5 +91,48 @@ describe("useBattleController", () => {
     expect(useBattlePresentationStore.getState().floatingCombatTexts).toEqual([]);
     expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
     vi.useRealTimers();
+  });
+
+  it("resets autoplay off on a new battle when remember is off", () => {
+    const { result, rerender } = renderBattleController();
+
+    act(() => {
+      result.current.startBattle();
+      rerender({ screen: ROUTE_SCREENS.BATTLE });
+    });
+    act(() => {
+      result.current.toggleAutoplay();
+    });
+    expect(result.current.isAutoplayEnabled).toBe(true);
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(false);
+
+    act(() => {
+      result.current.startBattle();
+      rerender({ screen: ROUTE_SCREENS.BATTLE });
+    });
+    expect(result.current.isAutoplayEnabled).toBe(false);
+  });
+
+  it("restores and persists autoplay when remember is on", () => {
+    useSettingsStore.getState().setRememberAutoplayPreference(true);
+    useSettingsStore.getState().setAutoplayEnabled(true);
+    const { result, rerender } = renderBattleController();
+
+    act(() => {
+      result.current.startBattle();
+      rerender({ screen: ROUTE_SCREENS.BATTLE });
+    });
+    expect(result.current.isAutoplayEnabled).toBe(true);
+
+    act(() => {
+      result.current.toggleAutoplay();
+    });
+    expect(result.current.isAutoplayEnabled).toBe(false);
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(false);
+
+    act(() => {
+      result.current.toggleAutoplay();
+    });
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(true);
   });
 });

@@ -27,7 +27,7 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
     name: "Knight",
     role: "Vanguard",
     description: "A durable frontliner who relies on Armor, Forge, and Block synergies to outlast opponents.",
-    startingDeck: resolveDeck(["anvil", "bash", "slash", "block", "plate-mail", "shield-bash", "sunder-armor"]),
+    startingDeck: resolveDeck(["anvil", "bash", "slash", "block", "plate-mail", "shield-bash", "sunder"]),
     keywords: ["block", "armor", "stun"],
   },
   rogue: {

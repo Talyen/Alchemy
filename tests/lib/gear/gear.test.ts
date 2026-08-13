@@ -79,7 +79,7 @@ describe("gear domain", () => {
       equipGear(
         loadouts,
         "knight",
-        "helm",
+        "amulet",
         {
           instanceId: "body-1",
           definitionId: "leather-armor-basic",
@@ -164,7 +164,7 @@ describe("gear domain", () => {
   it("skips orphan loadout references and missing definitions in manifest", () => {
     const body: GearInstance = { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] };
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "body", body, [body]);
-    loadouts.knight.helm = "missing-instance";
+    loadouts.knight.amulet = "missing-instance";
     expect(computeGearManifest("knight", [body], loadouts)).toEqual(manifestWithPhysical(0));
   });
 
@@ -269,8 +269,8 @@ describe("gear domain", () => {
 
   it("includes affix names in gear instance tooltip entries", () => {
     const entries = getGearInstanceTooltipEntries({
-      instanceId: "helm-1",
-      definitionId: "leather-helm-basic",
+      instanceId: "armor-1",
+      definitionId: "leather-armor-basic",
       affixes: [{ id: "flat-physical", value: 1 }],
     });
     expect(entries[0]?.name).toBe("Ironbound");

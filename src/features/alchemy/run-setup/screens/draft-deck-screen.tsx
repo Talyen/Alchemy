@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
 import { SelectableChoiceCard } from "../../shared/ui/selectable-choice-card";
-import { ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
+import { FadeSlot } from "../../shared/ui/fade-slot";
+import { ScreenHeader } from "../../shared/ui/shared-ui";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
 function DraftedCardItem({ card, index }: { card: BattleCard; index: number }) {
@@ -74,29 +75,26 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
         </p>
 
         {isComplete ? (
-          <StaggerGroup
+          <FadeSlot
             swapKey="draft-complete"
             className="mx-auto mt-8 grid max-w-fit grid-cols-3 justify-items-center gap-6"
           >
             {drafted.map((card, index) => (
-              <StaggerItem key={"drafted-" + String(index) + "-" + card.id} index={index}>
-                <DraftedCardItem card={card} index={index} />
-              </StaggerItem>
+              <DraftedCardItem key={"drafted-" + String(index) + "-" + card.id} card={card} index={index} />
             ))}
-          </StaggerGroup>
+          </FadeSlot>
         ) : (
-          <StaggerGroup swapKey={round} className="mt-8 flex flex-wrap items-start justify-center gap-6">
+          <FadeSlot swapKey={round} className="mt-8 flex flex-wrap items-start justify-center gap-6">
             {choices.map((card, index) => (
-              <StaggerItem key={"draft-choice-" + String(index) + "-" + card.id} index={index}>
-                <SelectableChoiceCard
-                  card={card}
-                  selected={selectedIndex === index}
-                  onSelect={() => setSelectedIndex(index)}
-                  interactionKey={"draft-choice-" + String(index)}
-                />
-              </StaggerItem>
+              <SelectableChoiceCard
+                key={"draft-choice-" + String(index) + "-" + card.id}
+                card={card}
+                selected={selectedIndex === index}
+                onSelect={() => setSelectedIndex(index)}
+                interactionKey={"draft-choice-" + String(index)}
+              />
             ))}
-          </StaggerGroup>
+          </FadeSlot>
         )}
 
         {isComplete ? (

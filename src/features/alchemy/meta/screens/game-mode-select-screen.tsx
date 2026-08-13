@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { gameModeMeta, bodyTextClass, sectionTitleClass } from "@/features/alchemy/shared/config";
 import { PressableSound } from "../../shared/ui/pressable-sound";
-import { ActionButtonRow, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
+import { ActionButtonRow, ScreenHeader } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
 import { playUISound } from "@/lib/audio";
@@ -28,7 +28,6 @@ function handleModeSelect(modeId: GameModeId, isLocked: boolean, setSelectedMode
 
 function GameModeTile({
   modeId,
-  index,
   meta,
   isLocked,
   isSelected,
@@ -38,7 +37,6 @@ function GameModeTile({
   onSelect,
 }: {
   modeId: GameModeId;
-  index: number;
   meta: GameModeMeta;
   isLocked: boolean;
   isSelected: boolean;
@@ -52,7 +50,7 @@ function GameModeTile({
   const tileRef = useRef<HTMLDivElement>(null);
 
   return (
-    <StaggerItem index={index} className="relative">
+    <div className="relative">
       <div ref={tileRef} className="relative">
         <PressableSound>
           <TiltSurface
@@ -88,7 +86,7 @@ function GameModeTile({
           </PortaledTooltip>
         )}
       </div>
-    </StaggerItem>
+    </div>
   );
 }
 
@@ -129,8 +127,8 @@ export function GameModeSelectScreen({
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
       <ScreenHeader title="Choose Your Adventure" />
 
-      <StaggerGroup className="flex flex-wrap items-start justify-center gap-8">
-        {GAME_MODE_IDS.map((modeId, index) => {
+      <div className="flex flex-wrap items-start justify-center gap-8">
+        {GAME_MODE_IDS.map((modeId) => {
           const meta = gameModeMeta[modeId];
           if (!meta) return null;
           const isLocked = !isGameModeUnlocked(modeId, finishedRunCharacters);
@@ -140,7 +138,6 @@ export function GameModeSelectScreen({
             <GameModeTile
               key={modeId}
               modeId={modeId}
-              index={index}
               meta={meta}
               isLocked={isLocked}
               isSelected={isSelected}
@@ -151,7 +148,7 @@ export function GameModeSelectScreen({
             />
           );
         })}
-      </StaggerGroup>
+      </div>
 
       <ActionButtonRow
         width="dialog"

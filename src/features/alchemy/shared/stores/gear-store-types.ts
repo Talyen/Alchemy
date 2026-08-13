@@ -1,48 +1,24 @@
 import type { CharacterId } from "@/lib/game-data";
-import type {
-  BoardItemRef,
-  CraftingCurrencyBoardPositionsByCharacter,
-  CraftingCurrencyId,
-  GearBoardPositionsByCharacter,
-  GearInstance,
-  GearInventories,
-  GearLoadouts,
-  GearSlot,
-} from "@/lib/gear";
+import type { CraftingCurrencyId, GearInstance, GearInventories, GearLoadouts, GearSlot } from "@/lib/gear";
 
 export interface GearSaveFields {
   gearInventories: GearInventories;
   gearLoadouts: GearLoadouts;
-  gearBoardPositionsByCharacter: GearBoardPositionsByCharacter;
-  craftingCurrencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
 }
 
 export interface GearStore {
   inventories: GearInventories;
   loadouts: GearLoadouts;
-  boardPositionsByCharacter: GearBoardPositionsByCharacter;
-  currencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   initialize: (
     inventories: GearInventories,
     loadouts: GearLoadouts,
-    boardPositionsByCharacter?: GearBoardPositionsByCharacter,
     craftingCurrencies?: Partial<Record<CraftingCurrencyId, number>>,
-    currencyBoardPositionsByCharacter?: CraftingCurrencyBoardPositionsByCharacter,
   ) => void;
   addInstance: (instance: GearInstance, characterId: CharacterId) => void;
-  transferToInventory: (instanceId: string, targetCharacterId: CharacterId) => boolean;
-  equip: (
-    characterId: CharacterId,
-    slot: GearSlot,
-    instance: GearInstance,
-    options?: { vacatedPlacement?: { col: number; row: number }; swapDisplaced?: boolean },
-  ) => void;
+  equip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
   unequip: (characterId: CharacterId, slot: GearSlot) => void;
-  moveBoardItem: (characterId: CharacterId, item: BoardItemRef, col: number, row: number) => boolean;
-  syncBoardPositions: () => void;
-  sortBoard: (characterId: CharacterId) => void;
   salvage: (
     instanceId: string,
     options?: { rng?: () => number },

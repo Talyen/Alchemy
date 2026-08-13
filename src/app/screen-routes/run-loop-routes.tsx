@@ -62,6 +62,8 @@ function BattleScreenRoute({
       hiddenHandCardKeys={hiddenHandCardKeys}
       cardTransferInProgress={cardTransferInProgress}
       playableHandCardKeys={playableHandCardKeys}
+      isAutoplayEnabled={commands.isAutoplayEnabled}
+      onToggleAutoplay={commands.toggleAutoplay}
     />
   );
 }

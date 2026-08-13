@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { getGearInstanceTooltipEntries, getGearInstanceDescriptionLines } from "@/lib/gear/display";
-import { footprintForInstance, getInventoryFootprint } from "@/lib/gear/footprints";
 import type { GearInstance } from "@/lib/gear/types";
 import { gearDefinitionList } from "@/lib/gear/definitions";
 
@@ -43,33 +42,5 @@ describe("getGearInstanceDescriptionLines", () => {
     const instance = makeInstance();
     const lines = getGearInstanceDescriptionLines(instance);
     expect(Array.isArray(lines)).toBe(true);
-  });
-});
-
-describe("footprintForInstance", () => {
-  it("returns footprint for a known definition", () => {
-    const fp = footprintForInstance({ definitionId: gearDefinitionList[0]?.id ?? "wooden-sword-basic" });
-    expect(fp).not.toBeNull();
-    expect(fp!.w).toBeGreaterThan(0);
-    expect(fp!.h).toBeGreaterThan(0);
-  });
-
-  it("returns null for unknown definition", () => {
-    const fp = footprintForInstance({ definitionId: "nonexistent" });
-    expect(fp).toBeNull();
-  });
-});
-
-describe("getInventoryFootprint", () => {
-  it("uses selected slot when provided", () => {
-    const def = gearDefinitionList[0]!;
-    const fp = getInventoryFootprint(def, "helm");
-    expect(fp).toEqual({ w: 2, h: 2 });
-  });
-
-  it("falls back to first compatible slot when none selected", () => {
-    const def = gearDefinitionList[0]!;
-    const fp = getInventoryFootprint(def, null);
-    expect(fp.w).toBeGreaterThan(0);
   });
 });

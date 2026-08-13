@@ -48,6 +48,6 @@ test.describe("Accessibility", critical, () => {
     await cards.first().hover();
     // Card popups portal into the root tooltip overlay; fade-out keeps the
     // previously hovered panel mounted briefly, so target the visible one.
-    await expect(page.locator(".hover-popup-panel.pointer-events-auto:visible")).toBeVisible({ timeout: 3000 });
+    await expect(page.locator(".hover-popup-panel[data-visible]")).toBeVisible({ timeout: 3000 });
   });
 });

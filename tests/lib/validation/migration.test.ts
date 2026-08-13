@@ -89,6 +89,19 @@ describe("migrateSaveDataToCurrent", () => {
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(result.gearInventories).toEqual(inventories);
   });
+
+  it("remaps sunder-armor card ids when content version is below 2", () => {
+    const result = migrateSaveDataToCurrent({
+      contentVersion: 1,
+      discoveredCardIds: ["sunder-armor", "slash"],
+      activeRun: {
+        deck: [{ id: "sunder-armor", title: "Sunder Armor" }],
+      },
+    });
+    expect(result.contentVersion).toBe(CURRENT_CONTENT_VERSION);
+    expect(result.discoveredCardIds).toEqual(["sunder", "slash"]);
+    expect(result.activeRun).toEqual({ deck: [{ id: "sunder", title: "Sunder Armor" }] });
+  });
 });
 
 describe("isUnsupportedFutureSaveData", () => {

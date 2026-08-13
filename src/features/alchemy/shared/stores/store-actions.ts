@@ -19,6 +19,8 @@ const settingsActionKeys = [
   "setSfxVol",
   "setMuteInBackground",
   "setAutoEndTurn",
+  "setRememberAutoplayPreference",
+  "setAutoplayEnabled",
   "setShowClearSaveConfirm",
   "resetToDefaults",
 ] as const;
@@ -70,6 +72,8 @@ export interface AppSettings {
   masterVol: SettingsStore["masterVol"];
   muteInBackground: SettingsStore["muteInBackground"];
   autoEndTurn: SettingsStore["autoEndTurn"];
+  rememberAutoplayPreference: SettingsStore["rememberAutoplayPreference"];
+  autoplayEnabled: SettingsStore["autoplayEnabled"];
 }
 
 function selectAppSettings(state: SettingsStore): AppSettings {
@@ -82,6 +86,8 @@ function selectAppSettings(state: SettingsStore): AppSettings {
     masterVol: state.masterVol,
     muteInBackground: state.muteInBackground,
     autoEndTurn: state.autoEndTurn,
+    rememberAutoplayPreference: state.rememberAutoplayPreference,
+    autoplayEnabled: state.autoplayEnabled,
   };
 }
 

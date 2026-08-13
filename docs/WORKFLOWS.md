@@ -10,22 +10,22 @@ For refactors and simplification passes on attached paths, use [docs/Audits](./A
 
 ## Task index
 
-| Task                                          | Section                                                                                                                                                                           |
-| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Raw asset / art                               | [Assets](#assets)                                                                                                                                                                 |
-| Save schema / migration                       | [Persisted save data](#change-persisted-save-data)                                                                                                                                |
-| Mid-run resume                                | [Active run data](#change-mid-run-resume-activerundata)                                                                                                                           |
-| Post-victory routing                          | [REWARD_ROUTES](#add-or-change-post-victory-routing-reward_routes)                                                                                                                |
-| Run teardown / clear save                     | [Run teardown](#run-teardown)                                                                                                                                                     |
-| Status effect                                 | [New status](#add-a-new-status-effect)                                                                                                                                            |
-| Card / card effect kind                       | [New card](#add-a-new-card) · [New effect kind](#add-a-new-card-effect-kind)                                                                                                      |
-| Character, enemy, trinket, companion, keyword | [Character](#add-a-new-character) · [Enemy](#add-a-new-enemy) · [Trinket](#add-a-new-trinket) · [Companion](#add-a-new-companion) · [Keyword](#add-a-new-keyword)                 |
-| Talent / homestead upgrade                    | [Talent](#add-a-new-talent) · [Homestead upgrade](#add-a-homestead-upgrade)                                                                                                       |
-| Permanent gear                                | [Gear](#add-permanent-gear)                                                                                                                                                       |
-| Screen, destination, mystery                  | [New screen](#adding-a-new-screen) · [Destination](#adding-a-new-destination-map-node) · [Mystery effect](#adding-a-new-mystery-effect-kind)                                      |
-| In-run materials, staggered enter             | [Grant materials during a run](#grant-materials-during-a-run) · [Staggered screen enter](#staggered-screen-enter-motion) · [Interactive buttons](#interactive-button-conventions) |
-| Tooltips                                      | [Hover tooltips](#hover-tooltips)                                                                                                                                                 |
-| Gameplay session mutation                     | [Gameplay command boundary](#gameplay-command-boundary)                                                                                                                           |
+| Task                                          | Section                                                                                                                                                            |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Raw asset / art                               | [Assets](#assets)                                                                                                                                                  |
+| Save schema / migration                       | [Persisted save data](#change-persisted-save-data)                                                                                                                 |
+| Mid-run resume                                | [Active run data](#change-mid-run-resume-activerundata)                                                                                                            |
+| Post-victory routing                          | [REWARD_ROUTES](#add-or-change-post-victory-routing-reward_routes)                                                                                                 |
+| Run teardown / clear save                     | [Run teardown](#run-teardown)                                                                                                                                      |
+| Status effect                                 | [New status](#add-a-new-status-effect)                                                                                                                             |
+| Card / card effect kind                       | [New card](#add-a-new-card) · [New effect kind](#add-a-new-card-effect-kind)                                                                                       |
+| Character, enemy, trinket, companion, keyword | [Character](#add-a-new-character) · [Enemy](#add-a-new-enemy) · [Trinket](#add-a-new-trinket) · [Companion](#add-a-new-companion) · [Keyword](#add-a-new-keyword)  |
+| Talent / homestead upgrade                    | [Talent](#add-a-new-talent) · [Homestead upgrade](#add-a-homestead-upgrade)                                                                                        |
+| Permanent gear                                | [Gear](#add-permanent-gear)                                                                                                                                        |
+| Screen, destination, mystery                  | [New screen](#adding-a-new-screen) · [Destination](#adding-a-new-destination-map-node) · [Mystery effect](#adding-a-new-mystery-effect-kind)                       |
+| In-run materials, screen fade                 | [Grant materials during a run](#grant-materials-during-a-run) · [Screen fade motion](#screen-fade-motion) · [Interactive buttons](#interactive-button-conventions) |
+| Tooltips                                      | [Hover tooltips](#hover-tooltips)                                                                                                                                  |
+| Gameplay session mutation                     | [Gameplay command boundary](#gameplay-command-boundary)                                                                                                            |
 
 ---
 
@@ -82,17 +82,17 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 
 ---
 
-## Staggered screen enter (motion)
+## Screen fade motion
 
-| Step                    | Guidance                                                                                                                 |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| 1. Panel wrapper        | `<StaggerGroup>` on the main content container; optional `swapKey` when content identity changes and enter should replay |
-| 2. Child items          | `<StaggerItem index={n}>` wrapping each row/card — not on `Button` / `PressableSound` directly                           |
-| 3. Nested grid          | Inner `<StaggerGroup animate={false}>` to avoid double panel enter (shops, pickers inside an already-entering panel)     |
-| 4. Tab switch fade only | `state-fade` class instead of `state-swap` when restagger on tab change is undesirable (options tabs)                    |
-| 5. Absolute / map nodes | Skip `StaggerItem` when the node uses `-translate-x/y` for centering; use panel-level enter only                         |
+| Step                  | Guidance                                                                                                                                                                                                   |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Route change       | `useRenderedScreenTransition` fades the page wrapper out, swaps the screen at opacity 0, then fades in. Opacity only — no translate. Tokens: `--motion-fade-duration` / `MOTION_FADE_MS` / `PAGE_EXIT_MS`. |
+| 2. In-screen identity | `<FadeSlot swapKey={...}>` for tab/page/offering swaps (collection grid, homestead, options, shops). First mount is idle so it does not stack on the route fade.                                           |
+| 3. Overlays           | Dialogs, wish, and game menu use `useFadePresence` so they fade out before unmount.                                                                                                                        |
+| 4. Copy               | `ScreenDescription` is static. Word-by-word `TextAnimate` is mystery narrative only.                                                                                                                       |
+| 5. Anti-flash         | Swap layout only while opacity is 0. Reserve slot min-height (collection `grid-rows-2` + fillers). Do not stagger items.                                                                                   |
 
-Motion tokens and keyframes live in `src/index.css`. Hover/tap rules: [Interactive button conventions](#interactive-button-conventions).
+Motion tokens live in `src/styles/theme.css` and `src/styles/components.css`. Hover/tap rules: [Interactive button conventions](#interactive-button-conventions).
 
 ---
 
@@ -135,17 +135,17 @@ browser window. Prefer above; flip below when the tooltip would clip the stage t
 
 Build tooltips with `PortaledTooltip` (`src/features/alchemy/shared/ui/portaled-tooltip.tsx`):
 
-| Need                                                                           | Prop / helper                                                                           |
-| ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| Basic hover tooltip (pointer-events-none, no handoff)                          | `triggerRef` + `visible`; drive hover with `useHoverVisible()` (`use-hover-visible.ts`) |
-| Card/gear popups sized to their trigger and interactive (nested keyword hover) | `matchTriggerWidth` + `pointerEventsAuto` (see `DetailPopup` / `GearDetailPopup`)       |
-| Placement beside the trigger                                                   | `placement="side-start"` / `"side-end"` (flips to the other side when clipped)          |
-| Small-window guard                                                             | `maxWidthFraction` — cap against a fraction of the vr-stage width                       |
+| Need                         | Prop / helper                                                                           |
+| ---------------------------- | --------------------------------------------------------------------------------------- |
+| Basic hover tooltip          | `triggerRef` + `visible`; drive hover with `useHoverVisible()` (`use-hover-visible.ts`) |
+| Placement beside the trigger | `placement="side-start"` / `"side-end"` (flips to the other side when clipped)          |
+| Small-window guard           | `maxWidthFraction` — cap against a fraction of the vr-stage width                       |
 
-State-driven triggers (mount on hover) render `PortaledTooltip` only while hovered;
-CSS-hover converts use `useHoverVisible()` and always mount, letting
-`PortaledTooltip` keep the panel mounted through a short fade-out. Interactive
-popups stay open while the pointer is over the trigger OR the panel (hover handoff).
+Panels are `pointer-events-none`; visibility follows the trigger only. Nested
+keyword tooltips inside a panel are not supported. State-driven triggers (mount
+on hover) render `PortaledTooltip` only while hovered; CSS-hover converts use
+`useHoverVisible()` and always mount, letting `PortaledTooltip` keep the panel
+mounted through a short fade-out.
 
 `EnemyTooltip`, `GearTooltipPortal`, `DetailPopup`, and `GearDetailPopup` wrap
 `PortaledTooltip` with their own content. Placement helpers live in
@@ -232,7 +232,7 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 | 6. Update effect metadata used for descriptions/keywords                     | `src/lib/game-data/effect-metadata.ts`                                                    |
 | 7. Tests                                                                     | `tests/lib/battle/apply-effects*.test.ts`, `tests/lib/game-data/effects-registry.test.ts` |
 
-`chance` is the recursive exception: its schema factory lives in `chance-definition.ts` and dispatch recurses before the non-chance registry.
+`chance` and `repeat-over-turns` are the recursive exceptions: their schema factories live in `recursive-definition.ts` and dispatch handles them before the non-recursive registry.
 
 ---
 
@@ -276,7 +276,7 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 6. Keep owned items as unique `GearInstance` records with `affixes: GearAffixRoll[]`; never put definition objects or art URLs into save data.
 7. Battle applies aggregated `gearEffects` from `computeGearManifest()` during battle creation.
 8. Keep each affix's `keywordId` aligned with affinity weighting and its `effectKey` aligned with `GEAR_EFFECT_KEYS`; architecture tests enforce registry coverage.
-9. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change. Additive `interruptedFlow` reward fields and `gearBoardPositions` use schema defaults where safe (no bump required for pure additives).
+9. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change.
 10. Cover pure operations, generation, persistence, reward selection, Armory interaction, and battle snapshot behavior.
 
 ---

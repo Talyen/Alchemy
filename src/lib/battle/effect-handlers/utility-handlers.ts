@@ -34,3 +34,13 @@ export const applyDrawCardsEffect: EffectHandler = (state, _card, effect) => {
     nextCardUid: draw.nextCardUid,
   };
 };
+
+export const applyNextHitCritEffect: EffectHandler = (state, _card, effect) => {
+  if (effect.kind !== "next-hit-crit") return state;
+  return { ...state, flags: { ...state.flags, nextHitCrit: true } };
+};
+
+export const applyPlayNextCardTwiceEffect: EffectHandler = (state, _card, effect) => {
+  if (effect.kind !== "play-next-card-twice") return state;
+  return { ...state, flags: { ...state.flags, playNextCardTwice: true } };
+};

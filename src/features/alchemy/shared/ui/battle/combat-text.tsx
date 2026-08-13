@@ -91,29 +91,24 @@ const FCT_ANIMATION_PROPS = (() => {
   };
 })();
 
-// Renders a side-specific rail of active combat text bubbles.
-export function CombatTextRail({ entries, side }: { entries: FloatingCombatText[]; side: "player" | "enemy" }) {
+// Renders a rail of active combat text bubbles, centered on actor art.
+export function CombatTextRail({ entries }: { entries: FloatingCombatText[] }) {
   if (entries.length === 0) {
     return null;
   }
 
   return (
-    <div
-      className={cn(
-        "pointer-events-none relative z-30 h-24 w-full",
-        side === "player" ? "flex justify-end" : "flex justify-start",
-      )}
-    >
+    <div className="pointer-events-none relative z-30 h-24 w-full">
       <AnimatePresence>
         {entries.map((entry) => (
-          <CombatTextBubble key={entry.id} entry={entry} side={side} />
+          <CombatTextBubble key={entry.id} entry={entry} />
         ))}
       </AnimatePresence>
     </div>
   );
 }
 
-function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "player" | "enemy" }) {
+function CombatTextBubble({ entry }: { entry: FloatingCombatText }) {
   const icon = getCombatTextIcon(entry);
   const colorClass = getCombatTextColorClass(entry);
 
@@ -121,22 +116,21 @@ function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "p
   const iconSize = `${FCT_BASE_SIZE_CQH * 0.94}cqh`;
 
   return (
-    <motion.div
-      className={cn(
-        "absolute inline-flex items-center gap-2 font-semibold whitespace-nowrap",
-        colorClass,
-        side === "player" ? "left-0" : "right-0",
-      )}
+    <div
+      className="absolute left-1/2"
       // Lane offset is per floating entry — static utilities can't encode the runtime stack index.
-      style={{
-        top: `${entry.lane * 56}px`,
-        fontSize,
-      }}
-      {...FCT_ANIMATION_PROPS}
-      exit={{ opacity: 0, transition: { duration: 0.1 } }}
+      // Horizontal center lives on this wrapper so Framer y/scale on the bubble do not fight CSS transform.
+      style={{ top: `${entry.lane * 56}px`, transform: "translateX(-50%)" }}
     >
-      {createElement(icon!, { style: { width: iconSize, height: iconSize } })}
-      <span>{entry.displayText}</span>
-    </motion.div>
+      <motion.div
+        className={cn("inline-flex items-center gap-2 font-semibold whitespace-nowrap", colorClass)}
+        style={{ fontSize }}
+        {...FCT_ANIMATION_PROPS}
+        exit={{ opacity: 0, transition: { duration: 0.1 } }}
+      >
+        {createElement(icon!, { style: { width: iconSize, height: iconSize } })}
+        <span>{entry.displayText}</span>
+      </motion.div>
+    </div>
   );
 }

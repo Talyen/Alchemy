@@ -18,7 +18,7 @@ function isTargetingElement(target: EventTarget | null): boolean {
     !!target.closest('[data-testid="armory-inventory-item"]') ||
     !!target.closest('[data-testid="armory-equipment-slot"]') ||
     !!target.closest('[data-testid="armory-crafting-currency"]') ||
-    !!target.closest(".armory-salvage-tile") ||
+    !!target.closest('[data-testid="armory-crafting-strip"]') ||
     !!target.closest('[data-testid="armory-salvage-toggle"]')
   );
 }
@@ -29,7 +29,8 @@ function setupTargetingEventListeners(salvageMode: boolean, clearTargeting: () =
       if (
         event.target instanceof HTMLElement &&
         (event.target.closest('[data-salvageable="true"]') ||
-          event.target.closest('[data-testid="armory-salvage-toggle"]'))
+          event.target.closest('[data-testid="armory-salvage-toggle"]') ||
+          event.target.closest('[data-testid="armory-crafting-strip"]'))
       ) {
         return;
       }
@@ -66,11 +67,14 @@ function setupTargetingEventListeners(salvageMode: boolean, clearTargeting: () =
     priority: ESCAPE_PRIORITY.ARMORY_TRANSIENT,
     onEscape: () => clearTargeting(),
   });
-  document.addEventListener("click", handleClick);
-  document.addEventListener("contextmenu", handleContextMenu);
+  const clickTimer = window.setTimeout(() => {
+    document.addEventListener("click", handleClick);
+    document.addEventListener("contextmenu", handleContextMenu);
+  }, 0);
   window.addEventListener("blur", handleBlur);
   document.addEventListener("visibilitychange", handleVisibilityChange);
   return () => {
+    window.clearTimeout(clickTimer);
     unsubscribeEscape();
     document.removeEventListener("click", handleClick);
     document.removeEventListener("contextmenu", handleContextMenu);

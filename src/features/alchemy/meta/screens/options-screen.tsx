@@ -3,9 +3,9 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_DIALOG } from "@/features/alchemy/shared/config";
-import { cn } from "@/lib/utils";
 import { ErrorLogViewer } from "./error-log-viewer";
 
+import { FadeSlot } from "../../shared/ui/fade-slot";
 import {
   ConfirmationDialog,
   HamburgerTrigger,
@@ -56,7 +56,6 @@ export function OptionsScreen({
 }) {
   const [tab, setTab] = useState<OptionsTab>("display");
   const [showErrorLog, setShowErrorLog] = useState(false);
-  const tabPanelClass = "col-start-1 row-start-1 pt-6 text-left";
 
   if (showErrorLog) {
     return <ErrorLogViewer onClose={() => setShowErrorLog(false)} />;
@@ -74,35 +73,14 @@ export function OptionsScreen({
           <TabBar tabs={optionsTabs} activeTab={tab} onSelectTab={setTab} />
         </div>
 
-        <div className="grid">
-          <div
-            className={cn(tabPanelClass, tab === "display" ? "state-fade" : "pointer-events-none invisible")}
-            aria-hidden={tab !== "display"}
-          >
-            <DisplayOptionsPanel display={display} />
-          </div>
-
-          <div
-            className={cn(tabPanelClass, tab === "sound" ? "state-fade" : "pointer-events-none invisible")}
-            aria-hidden={tab !== "sound"}
-          >
-            <AudioOptionsPanel audio={audio} />
-          </div>
-
-          <div
-            className={cn(tabPanelClass, tab === "gameplay" ? "state-fade" : "pointer-events-none invisible")}
-            aria-hidden={tab !== "gameplay"}
-          >
-            <GameplayOptionsPanel gameplay={gameplay} />
-          </div>
-
-          <div
-            className={cn(tabPanelClass, tab === "other" ? "state-fade" : "pointer-events-none invisible")}
-            aria-hidden={tab !== "other"}
-          >
+        <FadeSlot swapKey={tab} className="min-h-[42cqh] pt-6 text-left">
+          {tab === "display" ? <DisplayOptionsPanel display={display} /> : null}
+          {tab === "sound" ? <AudioOptionsPanel audio={audio} /> : null}
+          {tab === "gameplay" ? <GameplayOptionsPanel gameplay={gameplay} /> : null}
+          {tab === "other" ? (
             <OtherOptionsPanel saveData={saveData} dev={{ ...dev, onOpenErrorLog: () => setShowErrorLog(true) }} />
-          </div>
-        </div>
+          ) : null}
+        </FadeSlot>
 
         <div className="mt-6 flex justify-center">
           <Button size="lg" variant="outline" className={BUTTON_WIDTH_DIALOG} onClick={onBack}>
@@ -111,22 +89,21 @@ export function OptionsScreen({
         </div>
       </ScreenShell>
 
-      {saveData.showClearSaveConfirm ? (
-        <ConfirmationDialog
-          title="Clear Save Data"
-          description={
-            <>
-              Are you sure you wish to clear all Save Data?
-              <br />
-              This cannot be undone.
-            </>
-          }
-          confirmLabel="Clear Save Data"
-          dimBackground={false}
-          onConfirm={saveData.onConfirmClearSave}
-          onCancel={saveData.onCloseClearSaveConfirm}
-        />
-      ) : null}
+      <ConfirmationDialog
+        open={saveData.showClearSaveConfirm}
+        title="Clear Save Data"
+        description={
+          <>
+            Are you sure you wish to clear all Save Data?
+            <br />
+            This cannot be undone.
+          </>
+        }
+        confirmLabel="Clear Save Data"
+        dimBackground={false}
+        onConfirm={saveData.onConfirmClearSave}
+        onCancel={saveData.onCloseClearSaveConfirm}
+      />
     </PageLayout>
   );
 }

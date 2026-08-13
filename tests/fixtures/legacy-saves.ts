@@ -19,18 +19,7 @@ const FIXTURE_CHARACTER_IDS = [
   "druid",
   "wildcard",
 ] as const;
-const FIXTURE_GEAR_SLOTS = [
-  "body",
-  "helm",
-  "boots",
-  "gloves",
-  "belt",
-  "main-hand",
-  "off-hand",
-  "left-ring",
-  "right-ring",
-  "amulet",
-] as const;
+const FIXTURE_GEAR_SLOTS = ["main-hand", "off-hand", "body", "left-ring", "right-ring", "amulet"] as const;
 
 function emptyGearInventories() {
   return Object.fromEntries(FIXTURE_CHARACTER_IDS.map((id) => [id, [] as unknown[]])) as Record<string, unknown[]>;
@@ -40,10 +29,6 @@ function emptyGearLoadouts() {
   return Object.fromEntries(
     FIXTURE_CHARACTER_IDS.map((id) => [id, Object.fromEntries(FIXTURE_GEAR_SLOTS.map((slot) => [slot, null]))]),
   ) as Record<string, Record<string, string | null>>;
-}
-
-function emptyBoardPositionsByCharacter() {
-  return Object.fromEntries(FIXTURE_CHARACTER_IDS.map((id) => [id, {}])) as Record<string, object>;
 }
 
 function emptyCraftingCurrencies() {
@@ -70,9 +55,7 @@ function currentSaveEnvelope(overrides: Record<string, unknown> = {}) {
     discoveredTrinketIds: [] as string[],
     gearInventories: emptyGearInventories(),
     gearLoadouts: emptyGearLoadouts(),
-    gearBoardPositionsByCharacter: emptyBoardPositionsByCharacter(),
     craftingCurrencies: emptyCraftingCurrencies(),
-    craftingCurrencyBoardPositionsByCharacter: emptyBoardPositionsByCharacter(),
     talentXP: {} as Record<string, number>,
     unlockedTalents: {} as Record<string, string[]>,
     musicVolume: 50,

@@ -47,7 +47,9 @@ export const DEFAULT_BATTLE_ENEMY_TYPE = "normal";
 
 // ============ Timing (ms) ============
 export const AUTO_END_TURN_DELAY = 1220;
-export const VICTORY_TRANSITION_DELAY = 1200;
+export const AUTOPLAY_RETRY_DELAY_MS = 50;
+export const SLICE_DEATH_DURATION_MS = 1250;
+export const VICTORY_TRANSITION_DELAY = 1300;
 export const ENEMY_PHASE_DELAY = 900;
 export const ENEMY_ATTACK_RECOVERY_DELAY = 500;
 export const SHAKE_DURATION = 420;

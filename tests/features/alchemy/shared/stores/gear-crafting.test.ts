@@ -17,9 +17,7 @@ describe("gear-store crafting integration", () => {
 
   it("initializes crafting currencies, merging defaults", () => {
     useGearStore.getState().reset();
-    useGearStore
-      .getState()
-      .initialize(knightInventories(item), createEmptyGearLoadouts(), undefined, { "discordant-dice": 3 });
+    useGearStore.getState().initialize(knightInventories(item), createEmptyGearLoadouts(), { "discordant-dice": 3 });
 
     expect(useGearStore.getState().craftingCurrencies["discordant-dice"]).toBe(3);
     expect(useGearStore.getState().craftingCurrencies["sprig-of-growth"]).toBe(0);
@@ -51,7 +49,7 @@ describe("gear-store crafting integration", () => {
   it("applies currency to equipped gear without clearing loadout references", () => {
     useGearStore.getState().reset();
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", item, [item]);
-    useGearStore.getState().initialize(knightInventories(item), loadouts, undefined, { voidstone: 1 });
+    useGearStore.getState().initialize(knightInventories(item), loadouts, { voidstone: 1 });
 
     const successApply = useGearStore.getState().applyCurrency("voidstone", item.instanceId, { rng: () => 0 });
     expect(successApply).toBe(true);
@@ -79,9 +77,7 @@ describe("gear-store crafting integration", () => {
 
     function initStore(inventory: GearInstance[], currencies: Partial<Record<string, number>>) {
       useGearStore.getState().reset();
-      useGearStore
-        .getState()
-        .initialize(knightInventories(...inventory), createEmptyGearLoadouts(), undefined, currencies);
+      useGearStore.getState().initialize(knightInventories(...inventory), createEmptyGearLoadouts(), currencies);
     }
 
     it.each([
@@ -108,7 +104,7 @@ describe("gear-store crafting integration", () => {
         currencyId: "ascension-seal" as const,
         item: {
           instanceId: "seal-item",
-          definitionId: "leather-helm-basic" as const,
+          definitionId: "leather-armor-basic" as const,
           affixes: [{ id: "max-health" as const, value: 7 }],
         },
       },
@@ -152,7 +148,7 @@ describe("gear-store crafting integration", () => {
     it("returns false and does not spend currency on ineligible targets", () => {
       const bareItem: GearInstance = {
         instanceId: "bare-item",
-        definitionId: "leather-helm-basic",
+        definitionId: "leather-armor-basic",
         affixes: [],
       };
       initStore([bareItem], { voidstone: 1 });

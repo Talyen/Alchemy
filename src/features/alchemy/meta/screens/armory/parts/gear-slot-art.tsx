@@ -24,7 +24,7 @@ export function GearSlotArt({
           src={definition.art}
           alt=""
           className={cn(
-            "absolute -inset-px z-10 h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover image-rendering-pixelated",
+            "absolute inset-0 z-10 h-full w-full object-contain image-rendering-pixelated",
             isHidden && "opacity-0",
           )}
         />

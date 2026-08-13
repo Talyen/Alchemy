@@ -1,4 +1,5 @@
 export { useBattleAutoEndTurn } from "./use-battle-auto-end-turn";
+export { useBattleAutoplay } from "./use-battle-autoplay";
 export { createBattleSession } from "./battle-session";
 export { defaultMeasureElementRect, defaultMeasureVisualCardRect } from "./controller-utils";
 export { createBattleEndTurnUi } from "./end-turn-ui";

@@ -12,6 +12,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleState>): Batt
     trinketEffects: { ...defaults.trinketEffects, ...saved.trinketEffects },
     gearEffects: { ...defaults.gearEffects, ...saved.gearEffects },
     flags: { ...defaults.flags, ...saved.flags },
+    pendingTurnStartEffects: saved.pendingTurnStartEffects ?? defaults.pendingTurnStartEffects,
     currentEnemy: {
       ...defaults.currentEnemy,
       ...saved.currentEnemy,

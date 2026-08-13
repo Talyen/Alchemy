@@ -110,11 +110,12 @@ export function createBattleCardPlay(
     card: BattleCard,
     index: number,
     sourceRect: { x: number; y: number; width: number; height: number },
-  ) {
+    options?: { silentReject?: boolean },
+  ): boolean {
     const currentState = getStore().battleState;
     if (!canPlayCard(card, index, currentState)) {
-      playUISound("error");
-      return;
+      if (!options?.silentReject) playUISound("error");
+      return false;
     }
     const sessionNum = ctx.battleSessionRef.current;
     ctx.cardPlayInProgressRef.current = true;
@@ -146,10 +147,17 @@ export function createBattleCardPlay(
     session.runIfSessionActive(sessionNum, () => {
       ctx.scheduleAutoEndTurnRef.current?.(resolution.state);
     });
+    return true;
   }
 
   function handleCardClick(card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) {
     handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()));
+  }
+
+  function handleAutoplayCard(card: BattleCard, index: number): boolean {
+    const element = ctx.handCardRefs.current[getCardKey(card)];
+    if (!element) return false;
+    return handlePlayCard(card, index, getCardRect(element.getBoundingClientRect()), { silentReject: true });
   }
 
   function handleWishChoice(cardOrNull: BattleCard | null) {
@@ -173,5 +181,5 @@ export function createBattleCardPlay(
     );
   }
 
-  return { handleCardClick, handleWishChoice };
+  return { handleCardClick, handleWishChoice, handleAutoplayCard };
 }

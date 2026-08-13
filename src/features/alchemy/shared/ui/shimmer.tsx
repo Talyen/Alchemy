@@ -1,10 +1,4 @@
-/* eslint-disable react-refresh/only-export-components -- co-located Shimmer component and staggerDelay utility */
 import { cn } from "@/lib/utils";
-import { ANIMATION_STAGGER_UNIT } from "@/lib/game-constants";
-
-export function staggerDelay(position: number): number {
-  return ANIMATION_STAGGER_UNIT * position;
-}
 
 export function ShimmerOverlay({
   active,

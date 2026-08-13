@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { Screen } from "../types";
+import { fadePhaseClass, useFadePresence } from "./fade-presence";
 import { LockedMenuItem } from "./locked-menu-item";
 
 const GAME_MENU_CONFIG = {
@@ -201,7 +202,10 @@ export function GameMenu({
   isHomesteadLocked = false,
   isArmoryLocked = false,
 }: GameMenuProps) {
-  if (!isOpen) return null;
+  const { mounted, phase } = useFadePresence(isOpen);
+  if (!mounted) return null;
+
+  const overlayFadeClass = fadePhaseClass(phase);
 
   const panel = (
     <GameMenuPanel
@@ -229,7 +233,7 @@ export function GameMenu({
 
   if (anchorRect) {
     return (
-      <div className="absolute inset-0 z-[120]" onClick={onClose}>
+      <div className={cn("absolute inset-0 z-[120]", overlayFadeClass)} onClick={onClose}>
         <div className="fixed z-[121]" style={anchoredMenuStyle(anchorRect)}>
           {panel}
         </div>
@@ -238,7 +242,10 @@ export function GameMenu({
   }
 
   return (
-    <div className="absolute inset-0 z-[120] flex items-center justify-center px-6" onClick={onClose}>
+    <div
+      className={cn("absolute inset-0 z-[120] flex items-center justify-center px-6", overlayFadeClass)}
+      onClick={onClose}
+    >
       {panel}
     </div>
   );

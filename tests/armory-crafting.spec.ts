@@ -10,15 +10,16 @@ import {
   gearItemLocator,
   openArmory,
   salvageInventoryItem,
+  selectArmorySlot,
 } from "./e2e/armory";
 import { test } from "./fixtures/e2e";
 import { seedRandom } from "./e2e/rng";
 import { armory, critical, slow } from "./playwright-tags";
 
-const affixedHelm = {
-  instanceId: "gear-helm",
-  definitionId: "leather-helm-basic" as const,
-  affixes: [{ id: "max-health" as const, value: 7 }],
+const affixedSword = {
+  instanceId: "gear-sword",
+  definitionId: "longsword-basic" as const,
+  affixes: [{ id: "flat-physical" as const, value: 1 }],
 };
 
 const emptyCraftingCurrencies = {
@@ -68,6 +69,7 @@ test.describe("Armory crafting", { ...armory }, () => {
       craftingCurrencies: { ...emptyCraftingCurrencies },
     });
 
+    await selectArmorySlot(page, "left-ring");
     await enterSalvageMode(page);
     await page.getByLabel("Salvage Ruby Ring", { exact: true }).first().click();
     await expectSalvageDialog(page);
@@ -79,43 +81,42 @@ test.describe("Armory crafting", { ...armory }, () => {
 
   test("applies voidstone and removes affixes", critical, async ({ page }) => {
     await openArmory(page, {
-      inventory: [affixedHelm],
+      inventory: [affixedSword],
       craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
     });
 
     await activateCurrency(page, "voidstone");
-    await applyCurrencyToGear(page, "Leather Helm", "Voidstone");
+    await applyCurrencyToGear(page, "Longsword", "Voidstone");
 
     await expect(page.getByTestId("armory-crafting-cursor")).toHaveCount(0);
-    await expect(currencyLocator(page, "voidstone")).toHaveCount(0);
+    await expect(currencyLocator(page, "voidstone")).toContainText("0");
 
-    const helm = gearItemLocator(page, "Leather Helm");
-    await helm.hover();
-    await expect(page.getByText("Enduring")).toHaveCount(0);
-    await expect(page.getByText("Salvage for Basic crafting currency")).toBeHidden();
+    const sword = gearItemLocator(page, "Longsword");
+    await sword.hover();
+    await expect(page.getByText("Ironbound")).toHaveCount(0);
   });
 
   test("upgrades basic gear to astral with ascension seal", slow, async ({ page }) => {
     await openArmory(page, {
-      inventory: [affixedHelm],
+      inventory: [affixedSword],
       craftingCurrencies: { ...emptyCraftingCurrencies, "ascension-seal": 1 },
     });
 
     await activateCurrency(page, "ascension-seal");
-    await applyCurrencyToGear(page, "Leather Helm", "Ascension Seal");
+    await applyCurrencyToGear(page, "Longsword", "Ascension Seal");
 
-    await expect(gearItemLocator(page, "Astral Leather Helm")).toBeVisible();
-    await expect(gearItemLocator(page, "Leather Helm")).toHaveCount(0);
+    await expect(gearItemLocator(page, "Astral Longsword")).toBeVisible();
+    await expect(gearItemLocator(page, "Longsword")).toHaveCount(0);
   });
 
   test("cancels currency targeting with Escape", async ({ page }) => {
     await openArmory(page, {
-      inventory: [affixedHelm],
+      inventory: [affixedSword],
       craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
     });
 
     await activateCurrency(page, "voidstone");
-    await expect(page.getByRole("button", { name: /Apply Voidstone to Leather Helm/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Apply Voidstone to Longsword/ })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("button", { name: /Apply Voidstone/ })).toHaveCount(0);
   });
@@ -126,17 +127,18 @@ test.describe("Armory crafting", { ...armory }, () => {
       craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
     });
 
+    await selectArmorySlot(page, "body");
     await activateCurrency(page, "voidstone");
     await gearItemLocator(page, "Leather Armor").click();
     await expect(currencyLocator(page, "voidstone")).toContainText("1");
-    await expect(page.getByRole("button", { name: /Apply Voidstone/ })).toBeVisible();
+    await expect(currencyLocator(page, "voidstone")).toHaveAttribute("aria-pressed", "true");
   });
 
   test("shows affix epithets in gear tooltips", async ({ page }) => {
-    await openArmory(page, { inventory: [affixedHelm] });
+    await openArmory(page, { inventory: [affixedSword] });
 
-    await gearItemLocator(page, "Leather Helm").hover();
-    await expect(page.getByText("Enduring")).toBeVisible();
-    await expect(page.getByText("Increases Health by 7")).toBeVisible();
+    await gearItemLocator(page, "Longsword").hover();
+    await expect(page.getByText("Ironbound")).toBeVisible();
+    await expect(page.getByText("Increases Physical damage by 1")).toBeVisible();
   });
 });

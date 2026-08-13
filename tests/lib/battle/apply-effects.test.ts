@@ -59,6 +59,53 @@ describe("applyCardEffects", () => {
     expect(result.state.exhausted).toHaveLength(1);
     expect(result.state.exhausted[0].id).toBe("consumable");
   });
+
+  it("plays the next card's effects twice when playNextCardTwice is armed", () => {
+    const card = makeTestCard({
+      id: "slash",
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    const state = makeState({
+      enemyHealth: 30,
+      hand: [card],
+      flags: { ...makeState().flags, playNextCardTwice: true },
+    });
+    const result = playBattleCardResolved(state, "slash", 0);
+    expect(result.state.enemyHealth).toBe(20);
+    expect(result.state.flags.playNextCardTwice).toBe(false);
+  });
+
+  it("guarantees a crit on the next damaging card", () => {
+    const card = makeTestCard({
+      id: "slash",
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    const state = makeState({
+      enemyHealth: 30,
+      hand: [card],
+      flags: { ...makeState().flags, nextHitCrit: true },
+    });
+    const result = playBattleCardResolved(state, "slash", 0);
+    expect(result.state.enemyHealth).toBe(20);
+    expect(result.state.flags.nextHitCrit).toBe(false);
+  });
+
+  it("guarantees a crit on cleanse-player-status-to-damage and consumes the flag", () => {
+    const card = makeTestCard({
+      id: "exorcism",
+      effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy", removeAll: true }],
+    });
+    const state = makeState({
+      enemyHealth: 30,
+      hand: [card],
+      playerStatuses: defaultPlayerStatusValues({ burn: 4 }),
+      flags: { ...makeState().flags, nextHitCrit: true },
+    });
+    const result = playBattleCardResolved(state, "exorcism", 0);
+    expect(result.state.enemyHealth).toBe(22);
+    expect(result.state.flags.nextHitCrit).toBe(false);
+    expect(result.state.playerStatuses.burn).toBe(0);
+  });
 });
 
 describe("applyPlayerCombatDamage — phoenixFeather", () => {

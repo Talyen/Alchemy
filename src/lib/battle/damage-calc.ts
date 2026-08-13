@@ -24,6 +24,7 @@ const DAMAGE_CONSTANTS = {
  * Evaluates whether damage turns into a critical strike and returns modified damage.
  */
 function applyCrit(damage: number, damageType: DamageType, state: BattleState) {
+  if (state.flags.nextHitCrit) return damage * CRIT_MULTIPLIER;
   const physCritChance = damageType === "physical" ? state.talentEffects.physicalCritChance : 0;
   const totalChance = GLOBAL_CRIT_CHANCE + physCritChance;
   const rng = getBattleRng(state);

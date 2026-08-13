@@ -12,6 +12,81 @@ import { applyHealingWithCombatText } from "./combat-text";
 import { computeLeechHeal } from "../game-constants";
 import { rollPercent, getBattleRng } from "./status-helpers";
 
+function companionDamageBonusForEffect(
+  effect: Extract<BattleCard["effects"][number], { kind: "damage" }>,
+  talentEffects: TalentEffectManifest,
+  trinketEffects: BattleState["trinketEffects"],
+  gearEffects: BattleState["gearEffects"],
+  companionDamageBuff: number,
+  companionBondLevel: number,
+  enemyFreezeSkipTurns: number,
+  maxMana: number,
+  playerForge: number,
+): number {
+  return (
+    companionBondLevel +
+    talentEffects.companionDamage +
+    gearEffects.companionDamageBonus +
+    (effect.damageType === "bleed" ? talentEffects.companionBleedDamageBonus : 0) +
+    trinketEffects.companionDamageBonus +
+    companionDamageBuff +
+    (enemyFreezeSkipTurns > 0 ? talentEffects.companionVsFrozenBonus : 0) +
+    Math.round((maxMana * talentEffects.companionDamagePerManaCrystal) / HALF_DIVISOR) +
+    (gearEffects.companionBenefitsFromForge > 0 && (effect.damageType === "physical" || effect.damageType === "stun")
+      ? playerForge
+      : 0)
+  );
+}
+
+function scaleCompanionTurnEffect(
+  effect: BattleCard["effects"][number],
+  talentEffects: TalentEffectManifest,
+  trinketEffects: BattleState["trinketEffects"],
+  gearEffects: BattleState["gearEffects"],
+  companionDamageBuff: number,
+  companionBondLevel: number,
+  enemyFreezeSkipTurns: number,
+  maxMana: number,
+  playerForge: number,
+  lowHealthMultiplier: number,
+): BattleCard["effects"][number] {
+  if (effect.kind === "damage") {
+    const amountBonus = companionDamageBonusForEffect(
+      effect,
+      talentEffects,
+      trinketEffects,
+      gearEffects,
+      companionDamageBuff,
+      companionBondLevel,
+      enemyFreezeSkipTurns,
+      maxMana,
+      playerForge,
+    );
+    return { ...effect, amount: Math.round((effect.amount + amountBonus) * lowHealthMultiplier) };
+  }
+  if (effect.kind === "chance") {
+    const scaleNested = (nested: BattleCard["effects"][number]) =>
+      scaleCompanionTurnEffect(
+        nested,
+        talentEffects,
+        trinketEffects,
+        gearEffects,
+        companionDamageBuff,
+        companionBondLevel,
+        enemyFreezeSkipTurns,
+        maxMana,
+        playerForge,
+        lowHealthMultiplier,
+      );
+    return {
+      ...effect,
+      successEffects: effect.successEffects.map(scaleNested),
+      failureEffects: effect.failureEffects.map(scaleNested),
+    };
+  }
+  return effect;
+}
+
 function buildCompanionCard(
   activeCompanion: NonNullable<BattleState["activeCompanion"]>,
   talentEffects: TalentEffectManifest,
@@ -30,27 +105,19 @@ function buildCompanionCard(
     descriptionLines: [],
     art: activeCompanion.art,
     cost: 0,
-    effects: activeCompanion.turnStartEffects.map((e) =>
-      e.kind === "damage"
-        ? {
-            ...e,
-            amount: Math.round(
-              (e.amount +
-                companionBondLevel +
-                talentEffects.companionDamage +
-                gearEffects.companionDamageBonus +
-                (e.damageType === "bleed" ? talentEffects.companionBleedDamageBonus : 0) +
-                trinketEffects.companionDamageBonus +
-                companionDamageBuff +
-                (enemyFreezeSkipTurns > 0 ? talentEffects.companionVsFrozenBonus : 0) +
-                Math.round((maxMana * talentEffects.companionDamagePerManaCrystal) / HALF_DIVISOR) +
-                (gearEffects.companionBenefitsFromForge > 0 && (e.damageType === "physical" || e.damageType === "stun")
-                  ? playerForge
-                  : 0)) *
-                lowHealthMultiplier,
-            ),
-          }
-        : e,
+    effects: activeCompanion.turnStartEffects.map((effect) =>
+      scaleCompanionTurnEffect(
+        effect,
+        talentEffects,
+        trinketEffects,
+        gearEffects,
+        companionDamageBuff,
+        companionBondLevel,
+        enemyFreezeSkipTurns,
+        maxMana,
+        playerForge,
+        lowHealthMultiplier,
+      ),
     ),
   };
 }
@@ -86,20 +153,14 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
       combatTexts,
     );
 
-    if (state.gearEffects.healOnCompanionAttack > 0) {
-      const hasDamageEffect = companionCard.effects.some((e) => e.kind === "damage");
-      if (hasDamageEffect) {
-        afterEffects = applyHealingWithCombatText(afterEffects, state.gearEffects.healOnCompanionAttack, combatTexts);
-      }
+    const damageDealt = Math.max(0, s.enemyHealth - afterEffects.enemyHealth);
+    if (damageDealt > 0 && state.gearEffects.healOnCompanionAttack > 0) {
+      afterEffects = applyHealingWithCombatText(afterEffects, state.gearEffects.healOnCompanionAttack, combatTexts);
     }
 
-    if (state.talentEffects.companionLeechChance > 0) {
-      const hasDamageEffect = companionCard.effects.some((e) => e.kind === "damage");
-      if (hasDamageEffect && rollPercent(state.talentEffects.companionLeechChance, getBattleRng(state))) {
-        const companionDamage = companionCard.effects
-          .filter((e) => e.kind === "damage")
-          .reduce((sum, e) => sum + e.amount, 0);
-        const leechHeal = computeLeechHeal(companionDamage);
+    if (damageDealt > 0 && state.talentEffects.companionLeechChance > 0) {
+      if (rollPercent(state.talentEffects.companionLeechChance, getBattleRng(state))) {
+        const leechHeal = computeLeechHeal(damageDealt);
         if (leechHeal > 0) {
           afterEffects = applyHealingWithCombatText(afterEffects, leechHeal, combatTexts);
         }

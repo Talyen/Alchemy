@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- overlay components and tiny route helpers are colocated here. */
 import { GameMenu, HamburgerTrigger } from "@/features/alchemy/shared/ui/shared-ui";
 import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-particles";
+import { cn } from "@/lib/utils";
 import { isDesktop, quitDesktopApp } from "@/lib/platform";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
@@ -37,14 +38,21 @@ const APP_FLOATING_HAMBURGER_SCREENS = new Set<Screen>(["rewards"]);
 
 export function AppHamburgerTrigger({
   renderedScreen,
+  pagePhase,
   onOpenMenu,
 }: {
   renderedScreen: Screen;
+  pagePhase: "enter" | "exit";
   onOpenMenu: () => void;
 }) {
   if (!APP_FLOATING_HAMBURGER_SCREENS.has(renderedScreen)) return null;
   return (
-    <div className="pointer-events-none absolute inset-0 z-50 flex justify-center">
+    <div
+      className={cn(
+        "pointer-events-none absolute inset-0 z-50 flex justify-center",
+        pagePhase === "exit" ? "page-exit" : "page-enter",
+      )}
+    >
       <div className="pointer-events-none relative w-full max-w-6xl">
         <div className="pointer-events-auto absolute top-4 right-4">
           <HamburgerTrigger onClick={onOpenMenu} label={`Open ${renderedScreen} menu`} />

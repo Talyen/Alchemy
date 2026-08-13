@@ -126,4 +126,39 @@ describe("settings store", () => {
     expect(useSettingsStore.getState().showClearSaveConfirm).toBe(false);
     expect(useProfileStore.getState().discoveredCardIds).toEqual(["card-a"]);
   });
+
+  it("clears stored autoplay when remember is turned off", () => {
+    const settings = useSettingsStore.getState();
+    settings.setRememberAutoplayPreference(true);
+    settings.setAutoplayEnabled(true);
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(true);
+
+    settings.setRememberAutoplayPreference(false);
+    expect(useSettingsStore.getState().rememberAutoplayPreference).toBe(false);
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(false);
+  });
+
+  it("hydrates autoplay off when remember is off even if the save stored it on", () => {
+    settingsPersistenceCodec.hydrate(
+      makeSave({
+        rememberAutoplayPreference: false,
+        autoplayEnabled: true,
+      }),
+    );
+
+    expect(useSettingsStore.getState().rememberAutoplayPreference).toBe(false);
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(false);
+  });
+
+  it("hydrates autoplay on only when remember is on", () => {
+    settingsPersistenceCodec.hydrate(
+      makeSave({
+        rememberAutoplayPreference: true,
+        autoplayEnabled: true,
+      }),
+    );
+
+    expect(useSettingsStore.getState().rememberAutoplayPreference).toBe(true);
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(true);
+  });
 });

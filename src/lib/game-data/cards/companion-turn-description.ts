@@ -40,7 +40,15 @@ const COMPANION_TURN_LINE_FORMATTERS: {
   "cleanse-player-status-to-damage": () => null,
   "random-damage": () => null,
   wish: () => null,
-  chance: () => null,
+  chance: (effect) => {
+    const success = effect.successEffects[0] ? companionTurnLine(effect.successEffects[0]) : null;
+    const failure = effect.failureEffects[0] ? companionTurnLine(effect.failureEffects[0]) : null;
+    if (!success || !failure) return null;
+    return `${success.replace(/ each turn$/, "")} or ${failure.replace(/ each turn$/, "")} each turn`;
+  },
+  "repeat-over-turns": () => null,
+  "next-hit-crit": () => null,
+  "play-next-card-twice": () => null,
 };
 
 function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): string | null {
@@ -66,6 +74,16 @@ export function formatCompanionTurnStartLine(
     const bondLevel = context.bondLevel ?? 0;
     const globalBonus = context.damageBonus ?? 0;
     return formatCompanionTurnLineBase(turnEffect, turnEffect.amount + bondLevel + globalBonus);
+  }
+  if (turnEffect.kind === "chance") {
+    const success = turnEffect.successEffects[0]
+      ? formatCompanionTurnStartLine(turnEffect.successEffects[0], context)
+      : null;
+    const failure = turnEffect.failureEffects[0]
+      ? formatCompanionTurnStartLine(turnEffect.failureEffects[0], context)
+      : null;
+    if (!success || !failure) return null;
+    return `${success.replace(/ each turn$/, "")} or ${failure.replace(/ each turn$/, "")} each turn`;
   }
   return formatCompanionTurnLineBase(turnEffect);
 }

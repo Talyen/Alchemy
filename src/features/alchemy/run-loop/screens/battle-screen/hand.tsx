@@ -1,7 +1,7 @@
 // Player hand fan for battle cards.
 // Depends on battle controller playability props and hand layout constants.
 // Used by BattleBottomBar to render playable cards and animation refs.
-import { type CSSProperties, type MouseEvent, type RefObject, memo, useLayoutEffect, useMemo, useRef } from "react";
+import { type MouseEvent, type RefObject, memo, useLayoutEffect, useMemo, useRef } from "react";
 
 import {
   HAND_CARD_BASE_Z_INDEX,
@@ -31,7 +31,6 @@ const HandCardItem = memo(function HandCardItem({
   handCardRefs,
   canPlay,
   isHidden,
-  isRevealed,
   onCardClick,
   descriptionContext,
 }: {
@@ -43,7 +42,6 @@ const HandCardItem = memo(function HandCardItem({
   handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
   canPlay: boolean;
   isHidden: boolean;
-  isRevealed: boolean;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   descriptionContext: CardDescriptionContext;
 }) {
@@ -53,7 +51,6 @@ const HandCardItem = memo(function HandCardItem({
     `${card.id}-${card.uid}`,
   );
   const offset = index - (handLength - 1) / 2;
-  const shouldStagger = !isHidden && !isRevealed;
 
   const elementRef = useRef<HTMLButtonElement | null>(null);
 
@@ -90,14 +87,11 @@ const HandCardItem = memo(function HandCardItem({
       className={cn(handWidthClass, !canPlay && "cursor-default grayscale")}
       tiltEnabled={canPlay}
       dragging={isHidden}
-      wrapperClassName={cn(shouldStagger && "stagger-item", "relative -mx-5 flex justify-center sm:-mx-6")}
+      wrapperClassName="relative -mx-5 flex justify-center sm:-mx-6"
       wrapperDataCardKey={cardKey}
-      wrapperStyle={
-        {
-          zIndex: isHovered ? HAND_CARD_HOVER_Z_INDEX : HAND_CARD_BASE_Z_INDEX + index,
-          "--stagger-index": index,
-        } as CSSProperties
-      }
+      wrapperStyle={{
+        zIndex: isHovered ? HAND_CARD_HOVER_Z_INDEX : HAND_CARD_BASE_Z_INDEX + index,
+      }}
     />
   );
 });
@@ -113,7 +107,7 @@ export function BattleHand({
 }) {
   const { battleState, stagePixelRatio } = view;
   const { handCardRefs } = refs;
-  const { hiddenHandCardKeys, playableHandCardKeys, revealedCardKeys, onCardClick } = actions;
+  const { hiddenHandCardKeys, playableHandCardKeys, onCardClick } = actions;
   const handWidthClass = handCardWidthClass;
 
   const descriptionContext = useMemo(
@@ -140,7 +134,6 @@ export function BattleHand({
             handCardRefs={handCardRefs}
             canPlay={playableHandCardKeys.has(cardKey)}
             isHidden={hiddenHandCardKeys.has(cardKey)}
-            isRevealed={revealedCardKeys.has(cardKey)}
             onCardClick={onCardClick}
             descriptionContext={descriptionContext}
           />

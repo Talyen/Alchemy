@@ -6,8 +6,8 @@ import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance 
 import type { CharacterId } from "@/lib/game-data";
 import { useGearStore } from "../../../../../helpers/gameplay-store-test";
 
-const DEFAULT_ARMORY_INVENTORY: GearInstance[] = [
-  { instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [] },
+export const DEFAULT_ARMORY_INVENTORY: GearInstance[] = [
+  { instanceId: "gear-sword", definitionId: "longsword-basic", affixes: [] },
   { instanceId: "gear-body", definitionId: "leather-armor-basic", affixes: [] },
 ];
 
@@ -44,9 +44,6 @@ export function installArmoryScreenTestHooks() {
     useGearStore.getState().reset();
     localStorage.clear();
     vi.clearAllMocks();
-    HTMLDivElement.prototype.setPointerCapture = vi.fn();
-    HTMLDivElement.prototype.releasePointerCapture = vi.fn();
-    HTMLDivElement.prototype.hasPointerCapture = vi.fn(() => false);
   });
 
   afterEach(() => {

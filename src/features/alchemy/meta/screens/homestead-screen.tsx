@@ -3,7 +3,6 @@
 // materials are sufficient. Completed nodes are dimmed with a checkmark.
 
 import { useState, useMemo } from "react";
-import { cn } from "@/lib/utils";
 import { type BuildingId, type FarmId, type MaterialInventory, type ResearchId } from "@/lib/homestead/types";
 import { buildings, visibleFarmPlots, researchUpgrades } from "@/lib/homestead/data";
 import {
@@ -12,8 +11,8 @@ import {
   PaginationControls,
   ScreenHeaderRow,
   ScreenShell,
-  StaggerGroup,
 } from "../../shared/ui/shared-ui";
+import { FadeSlot } from "../../shared/ui/fade-slot";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type CompanionId } from "@/lib/game-data";
 import { HOMESTEAD_CONFIG, type GoalItem, type Tab, MaterialsBar, HomesteadTabs, getItems } from "./homestead/helpers";
@@ -87,88 +86,58 @@ export function HomesteadScreen({
         <MaterialsBar materialInventory={materialInventory} />
         <HomesteadTabs activeTab={tab} onSelectTab={setTab} />
 
-        <div className="mx-auto mt-6 grid w-full">
-          {(["buildings", "farm", "research", "companions"] as const).map((t) => {
-            const isActive = tab === t;
-            if (t === "companions") {
-              return (
-                <div
-                  key={t}
-                  className={cn(
-                    "motion-crossfade col-start-1 row-start-1",
-                    isActive ? "opacity-100" : "motion-crossfade-hidden pointer-events-none opacity-0",
-                  )}
-                >
-                  <div className="grid">
-                    {Array.from({ length: companionPages }, (_, pageIndex) => {
-                      const pageItems = companionCards.slice(
-                        pageIndex * HOMESTEAD_CONFIG.companionPageSize,
-                        (pageIndex + 1) * HOMESTEAD_CONFIG.companionPageSize,
-                      );
-                      const isPageActive = companionPage === pageIndex;
-
-                      return (
-                        <StaggerGroup
-                          key={pageIndex}
-                          swapKey={isPageActive ? `companions-${companionPage}` : `companions-page-${pageIndex}`}
-                          animate={isPageActive}
-                          className={cn(
-                            "motion-crossfade col-start-1 row-start-1 grid grid-cols-3 gap-x-1 gap-y-4",
-                            isPageActive ? "opacity-100" : "motion-crossfade-hidden pointer-events-none opacity-0",
-                          )}
-                        >
-                          {pageItems.map((card, index) => (
-                            <CompanionCardNode
-                              key={card.id}
-                              card={card}
-                              index={index}
-                              discovered={discoveredCardIds.includes(card.id)}
-                              bondedCompanions={bondedCompanions}
-                              materialInventory={materialInventory}
-                              hoveredItemId={hoveredItemId}
-                              setHoveredItemId={setHoveredItemId}
-                              onBond={handleBondCompanion}
-                            />
-                          ))}
-                        </StaggerGroup>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            }
-
-            const items = t === "buildings" ? buildingsItems : t === "farm" ? farmItems : researchItems;
-            const completedRecord =
-              t === "buildings" ? constructedBuildings : t === "farm" ? plantedFarms : completedResearch;
-
-            return (
-              <StaggerGroup
-                key={t}
-                swapKey={`${t}-${isActive ? "active" : "idle"}`}
-                animate={isActive}
-                className={cn(
-                  "motion-crossfade col-start-1 row-start-1",
-                  isActive ? "opacity-100" : "motion-crossfade-hidden pointer-events-none opacity-0",
-                  "grid grid-cols-3 gap-x-2 gap-y-6",
-                )}
-              >
-                {items.map((item, index) => (
+        <FadeSlot
+          swapKey={tab === "companions" ? `companions-${companionPage}` : tab}
+          className="mx-auto mt-6 min-h-[70cqh] w-full"
+        >
+          {tab === "companions" ? (
+            <div className="grid grid-cols-3 gap-x-1 gap-y-4">
+              {companionCards
+                .slice(
+                  companionPage * HOMESTEAD_CONFIG.companionPageSize,
+                  (companionPage + 1) * HOMESTEAD_CONFIG.companionPageSize,
+                )
+                .map((card, index) => (
+                  <CompanionCardNode
+                    key={card.id}
+                    card={card}
+                    index={index}
+                    discovered={discoveredCardIds.includes(card.id)}
+                    bondedCompanions={bondedCompanions}
+                    materialInventory={materialInventory}
+                    hoveredItemId={hoveredItemId}
+                    setHoveredItemId={setHoveredItemId}
+                    onBond={handleBondCompanion}
+                  />
+                ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-x-2 gap-y-6">
+              {(tab === "buildings" ? buildingsItems : tab === "farm" ? farmItems : researchItems).map(
+                (item, index) => (
                   <HomesteadUpgradeNode
                     key={item.data.id}
                     item={item}
                     index={index}
-                    currentLevel={(completedRecord as Record<string, number>)[item.data.id] ?? 0}
+                    currentLevel={
+                      (
+                        (tab === "buildings"
+                          ? constructedBuildings
+                          : tab === "farm"
+                            ? plantedFarms
+                            : completedResearch) as Record<string, number>
+                      )[item.data.id] ?? 0
+                    }
                     materialInventory={materialInventory}
                     hoveredItemId={hoveredItemId}
                     setHoveredItemId={setHoveredItemId}
                     onAction={handleAction}
                   />
-                ))}
-              </StaggerGroup>
-            );
-          })}
-        </div>
+                ),
+              )}
+            </div>
+          )}
+        </FadeSlot>
 
         <div className="mx-auto mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
           {tab === "companions" && (

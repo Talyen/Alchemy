@@ -25,6 +25,7 @@ function OptionsScreenRoute({
       sfxVol: s.sfxVol,
       muteInBackground: s.muteInBackground,
       autoEndTurn: s.autoEndTurn,
+      rememberAutoplayPreference: s.rememberAutoplayPreference,
       showClearSaveConfirm: s.showClearSaveConfirm,
     })),
   );
@@ -53,7 +54,12 @@ function OptionsScreenRoute({
         muteInBackground: settings.muteInBackground,
         onMuteInBackgroundChange: actions.setMuteInBackground,
       }}
-      gameplay={{ autoEndTurn: settings.autoEndTurn, onAutoEndTurnChange: actions.setAutoEndTurn }}
+      gameplay={{
+        autoEndTurn: settings.autoEndTurn,
+        onAutoEndTurnChange: actions.setAutoEndTurn,
+        rememberAutoplayPreference: settings.rememberAutoplayPreference,
+        onRememberAutoplayPreferenceChange: actions.setRememberAutoplayPreference,
+      }}
       saveData={{
         showClearSaveConfirm: settings.showClearSaveConfirm,
         onOpenClearSaveConfirm: () => actions.setShowClearSaveConfirm(true),

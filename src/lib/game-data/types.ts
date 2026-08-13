@@ -58,7 +58,8 @@ export type CompanionId =
   | "will-o-wisp"
   | "golden-retriever"
   | "shield-scarab"
-  | "library-owl";
+  | "library-owl"
+  | "fox";
 
 export type EnemyAttackEffect =
   | { kind: "damage"; damageType: DamageType; amount: number; lifesteal?: boolean }
@@ -115,7 +116,14 @@ export type BattleCardEffect =
       probability: number;
       successEffects: BattleCardEffect[];
       failureEffects: BattleCardEffect[];
-    };
+    }
+  | {
+      kind: "repeat-over-turns";
+      remainingTurns: number;
+      effects: BattleCardEffect[];
+    }
+  | { kind: "next-hit-crit" }
+  | { kind: "play-next-card-twice" };
 
 export interface CompanionDefinition {
   id: CompanionId;

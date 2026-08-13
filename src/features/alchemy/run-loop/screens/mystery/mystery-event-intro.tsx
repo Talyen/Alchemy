@@ -10,7 +10,8 @@ import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { MysteryEffectList } from "../../../shared/ui/mystery-effect-badge";
-import { ScreenHeader, StaggerGroup, StaggerItem } from "../../../shared/ui/shared-ui";
+import { ScreenHeader } from "../../../shared/ui/shared-ui";
+import { FadeSlot } from "../../../shared/ui/fade-slot";
 import { PortaledTooltip } from "../../../shared/ui/portaled-tooltip";
 import { useHoverVisible } from "../../../shared/ui/use-hover-visible";
 
@@ -82,12 +83,12 @@ export function MysteryEventIntro({
   const isHovered = hoveredCardId === event.id;
 
   return (
-    <StaggerGroup className="flex flex-col items-center gap-6">
-      <StaggerItem index={0}>
+    <div className="flex flex-col items-center gap-6">
+      <div>
         <ScreenHeader title={event.title} />
-      </StaggerItem>
+      </div>
       {event.art ? (
-        <StaggerItem index={1}>
+        <div>
           <TiltSurface className="aspect-[4/3] w-full max-w-[39.11cqh] overflow-hidden rounded-shell-card">
             <img
               src={event.art}
@@ -98,9 +99,9 @@ export function MysteryEventIntro({
               loading="eager"
             />
           </TiltSurface>
-        </StaggerItem>
+        </div>
       ) : featuredCard ? (
-        <StaggerItem index={1}>
+        <div>
           <BattleCardButton
             card={featuredCard}
             hovered={isHovered}
@@ -111,21 +112,21 @@ export function MysteryEventIntro({
             shimmerToken={undefined}
             className={viewCardWidthClass}
           />
-        </StaggerItem>
+        </div>
       ) : null}
-      <StaggerItem index={event.art || featuredCard ? 2 : 1}>
+      <div>
         <TextAnimate once className={cn("max-w-lg", bodyTextClass)}>
           {event.narrative}
         </TextAnimate>
-      </StaggerItem>
+      </div>
 
-      <StaggerGroup swapKey={event.id} animate={false} className="flex flex-wrap justify-center gap-4">
+      <FadeSlot swapKey={event.id} className="flex flex-wrap justify-center gap-4">
         {event.choices.map((choice, i) => (
-          <StaggerItem key={i} index={(event.art || featuredCard ? 3 : 2) + i}>
+          <div key={i}>
             <MysteryEventChoiceButton choice={choice} findCard={findCard} findTrinket={findTrinket} onPick={onPick} />
-          </StaggerItem>
+          </div>
         ))}
-      </StaggerGroup>
-    </StaggerGroup>
+      </FadeSlot>
+    </div>
   );
 }

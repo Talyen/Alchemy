@@ -7,7 +7,7 @@ import { BATTLE_ACTOR_TOP } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
 import { ArtPanel, CompanionPanel, CombatTextRail } from "../../../shared/ui/battle-ui";
-import { battleActorSectionClass, bossCardWidthClass } from "@/features/alchemy/shared/config";
+import { battleActorSectionClass } from "@/features/alchemy/shared/config";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useBattlePresentationStore } from "../../battle/battle-presentation-store";
 import type { BattleFeedbackProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
@@ -18,7 +18,7 @@ function CombatTextRailSide({ side }: { side: "player" | "enemy" }) {
   const entries = useBattlePresentationStore(
     useShallow((s) => s.floatingCombatTexts.filter((text) => text.target === side)),
   );
-  return <CombatTextRail entries={entries} side={side} />;
+  return <CombatTextRail entries={entries} />;
 }
 
 type ShakingArtPanelProps = Omit<
@@ -72,7 +72,6 @@ export function BattleActors({
   const enemyDead = battleState.enemyHealth <= 0;
   const hasCompanion = Boolean(battleState.activeCompanion);
   const isBoss = battleState.currentEnemy.enemyType === "boss";
-  const bossStatsCardWidthClass = isBoss ? bossCardWidthClass : undefined;
 
   return (
     <section
@@ -80,9 +79,6 @@ export function BattleActors({
       style={{ top: BATTLE_ACTOR_TOP }}
     >
       <div className="relative flex items-start justify-center transition-transform duration-500 ease-out">
-        <div className="absolute top-[30%] left-[calc(100%+clamp(3cqw,5cqw,6.5cqw))] z-30 w-40">
-          <CombatTextRailSide side="player" />
-        </div>
         <div
           className={cn(
             "relative transition-transform duration-500 ease-out",
@@ -100,7 +96,9 @@ export function BattleActors({
             deathsDoorActive={battleState.deathsDoorActive}
             surfaceRef={playerPanelRef}
             turnActive={isPlayerTurn}
-          />
+          >
+            <CombatTextRailSide side="player" />
+          </ShakingArtPanel>
           {battleState.activeCompanion ? (
             <div className="absolute bottom-[clamp(8.56cqh,8.93cqh,11.48cqh)] left-[calc(100%-clamp(4.71cqh,5.58cqh,7.65cqh))] z-20">
               <ShakingCompanionPanel
@@ -118,9 +116,6 @@ export function BattleActors({
       </div>
 
       <div className="relative flex flex-col items-center">
-        <div className="absolute top-[30%] right-[calc(100%+clamp(3cqw,5cqw,6.5cqw))] z-30 w-40">
-          <CombatTextRailSide side="enemy" />
-        </div>
         <ShakingArtPanel
           side="enemy"
           title={battleState.currentEnemy.title}
@@ -135,10 +130,11 @@ export function BattleActors({
           currentEnemyAttackEffects={battleState.enemyAttackEffects}
           activeLabyrinthModifiers={activeLabyrinthModifiers}
           isBoss={isBoss}
-          statsCardWidthClass={bossStatsCardWidthClass}
           turnActive={!isPlayerTurn && !enemyDead}
           turnUrgentHide={enemyDead}
-        />
+        >
+          <CombatTextRailSide side="enemy" />
+        </ShakingArtPanel>
       </div>
     </section>
   );

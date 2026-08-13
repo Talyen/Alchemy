@@ -28,6 +28,9 @@ const FORMATTERS: { [K in BattleCardEffect["kind"]]: KeywordFormatter<K> } = {
   "multiply-enemy-status": (effect) => [effect.status],
   "remove-player-status": (effect) => [effect.status],
   "self-damage": (effect) => [effect.damageType],
+  "repeat-over-turns": (effect) => effect.effects.flatMap(collectKeywordsFromBattleEffect),
+  "next-hit-crit": () => [],
+  "play-next-card-twice": () => [],
 };
 
 function dedupeKeywords(...iterables: readonly KeywordId[][]): KeywordId[] {

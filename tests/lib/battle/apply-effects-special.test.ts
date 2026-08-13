@@ -149,3 +149,37 @@ describe("forge burn", () => {
     expect(result.playerStatuses.forge).toBe(3);
   });
 });
+
+describe("applyCardEffects — next-hit-crit and play-next-card-twice", () => {
+  it("arms nextHitCrit", () => {
+    const state = makeState();
+    const card = makeTestCard({ effects: [{ kind: "next-hit-crit" }] });
+    const result = applyCardEffects(state, card, []);
+    expect(result.flags.nextHitCrit).toBe(true);
+  });
+
+  it("arms playNextCardTwice", () => {
+    const state = makeState();
+    const card = makeTestCard({ effects: [{ kind: "play-next-card-twice" }] });
+    const result = applyCardEffects(state, card, []);
+    expect(result.flags.playNextCardTwice).toBe(true);
+  });
+
+  it("queues repeat-over-turns pulses", () => {
+    const state = makeState();
+    const card = makeTestCard({
+      effects: [
+        {
+          kind: "repeat-over-turns",
+          remainingTurns: 1,
+          effects: [{ kind: "damage", damageType: "freeze", amount: 2 }],
+        },
+      ],
+    });
+    const result = applyCardEffects(state, card, []);
+    expect(result.pendingTurnStartEffects).toEqual([
+      { remainingTurns: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 2 }] },
+    ]);
+    expect(result.enemyHealth).toBe(30);
+  });
+});

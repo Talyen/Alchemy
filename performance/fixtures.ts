@@ -28,7 +28,6 @@ import { PERF_VIEWPORT } from "./viewport";
 export const SCENARIO_IDS = [
   "battle-effects",
   "battle-end-turn",
-  "armory-drag",
   "talents-effects",
   "collection-tabs",
   "options-brightness",

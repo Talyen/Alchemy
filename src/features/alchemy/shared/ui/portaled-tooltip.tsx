@@ -1,8 +1,8 @@
 // Root-space tooltip rendered via portal into the #tooltip-root overlay so it
 // renders at constant CSS-pixel scale regardless of the vr-stage transform and
 // cannot be clipped by overflow-hidden ancestors. Handles above/below flip,
-// side placement, trigger-width matching, interactive (pointer-events-auto)
-// popups with hover handoff, and fade-out on hide.
+// side placement, and fade-out on hide. Panels are
+// pointer-events-none; visibility follows the trigger only.
 import { useEffect, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
@@ -25,10 +25,6 @@ export interface PortaledTooltipProps {
   padding?: number;
   /** "above" (default) flips above/below; side-start / side-end anchor beside the trigger. */
   placement?: "above" | PortaledTooltipSide;
-  /** Interactive popups capture pointer events (card popups). */
-  pointerEventsAuto?: boolean;
-  /** Size the panel to the trigger's rendered width (card popups); still capped by the width class (tooltipWidthClass). */
-  matchTriggerWidth?: boolean;
   /** Fraction of the vr-stage width used as a max-width safety cap on small windows. */
   maxWidthFraction?: number;
   /** Keep the panel mounted for a fade-out after hide. */
@@ -43,32 +39,23 @@ export function PortaledTooltip({
   className,
   padding = 8,
   placement = "above",
-  pointerEventsAuto = false,
-  matchTriggerWidth = false,
   maxWidthFraction,
   fadeOutMs = DEFAULT_FADE_OUT_MS,
 }: PortaledTooltipProps) {
-  // Interactive popups stay open while the pointer is over the panel so the
-  // cursor can move from the trigger onto it (hover handoff). The panel
-  // remains pointer-events-auto during the fade-out window to catch that move.
-  const [sticky, setSticky] = useState(false);
-  const effectiveVisible = visible || sticky;
-
   const { tooltipRef, placeBelow, tooltipSide, tooltipStyle } = usePortaledTooltipPlacement(
     triggerRef,
-    effectiveVisible,
+    visible,
     padding,
     placement,
-    matchTriggerWidth,
   );
 
   // The panel renders synchronously whenever visible (so placement measures on
   // the same commit) and stays mounted for the fade-out window after hide.
   const [mounted, setMounted] = useState(false);
-  const renderPanel = effectiveVisible || mounted;
+  const renderPanel = visible || mounted;
 
   useEffect(() => {
-    if (effectiveVisible) {
+    if (visible) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- stays mounted while visible; clears any pending unmount timer
       setMounted(true);
       return;
@@ -80,7 +67,7 @@ export function PortaledTooltip({
     }
     const timer = window.setTimeout(() => setMounted(false), fadeOutMs);
     return () => window.clearTimeout(timer);
-  }, [effectiveVisible, mounted, fadeOutMs]);
+  }, [visible, mounted, fadeOutMs]);
 
   if (!renderPanel) return null;
 
@@ -94,11 +81,9 @@ export function PortaledTooltip({
       width={width}
       {...(tooltipSide ? { placement: tooltipSide } : {})}
       flip={placeBelow}
-      visible={placed && effectiveVisible}
-      {...(pointerEventsAuto ? { onMouseEnter: () => setSticky(true), onMouseLeave: () => setSticky(false) } : {})}
+      visible={placed && visible}
       className={cn(
-        "fixed top-auto bottom-auto z-[100] mt-0 mb-0",
-        pointerEventsAuto ? "pointer-events-auto" : "pointer-events-none",
+        "pointer-events-none fixed top-auto bottom-auto z-[100] mt-0 mb-0",
         !placed && "invisible opacity-0",
         className,
       )}

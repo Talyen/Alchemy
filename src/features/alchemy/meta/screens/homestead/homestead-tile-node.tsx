@@ -1,7 +1,6 @@
 // Shared homestead tile layout: hover shell, tilt surface, and footer slot.
 import { useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { StaggerItem } from "../../../shared/ui/shared-ui";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { HOMESTEAD_CONFIG } from "./helpers";
@@ -34,18 +33,17 @@ export function HomesteadTileFrame({
   const frameRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div
-      ref={frameRef}
-      className="relative"
-      onMouseEnter={() => setHoveredItemId(id)}
-      onMouseLeave={() => setHoveredItemId(null)}
-    >
-      <StaggerItem
-        index={index}
+    <div>
+      <div
         className={cn("relative flex flex-col items-center", index < HOMESTEAD_CONFIG.compilationFillerCount && "mb-2")}
       >
         {detailTooltip({ visible: hoveredItemId === id, triggerRef: frameRef })}
-        <div className={cn("group w-full overflow-hidden rounded-shell-card p-3", wrapperClassName)}>
+        <div
+          ref={frameRef}
+          className={cn("group relative w-full overflow-hidden rounded-shell-card p-3", wrapperClassName)}
+          onMouseEnter={() => setHoveredItemId(id)}
+          onMouseLeave={() => setHoveredItemId(null)}
+        >
           <TiltSurface
             className={cn(
               "relative mx-auto flex items-center justify-center overflow-hidden rounded-shell-card bg-stone-900",
@@ -56,7 +54,7 @@ export function HomesteadTileFrame({
           </TiltSurface>
         </div>
         {footer}
-      </StaggerItem>
+      </div>
     </div>
   );
 }

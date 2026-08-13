@@ -48,7 +48,8 @@ describe("card descriptions vs effects", () => {
           /^Cleanses \d+/.test(l) ||
           /^Steals \d+/.test(l) ||
           /^Gains? \d+ Block/.test(l) ||
-          /^Draws \d+/.test(l),
+          /^Draws \d+/.test(l) ||
+          / or /.test(l),
       );
       expect(companionLine, `${card.id} missing companion turn line`).toBeDefined();
       expect(companionLine).toBe(expectedCompanionTurnLine(turnEffect));

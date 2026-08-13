@@ -20,6 +20,16 @@ function applySingleEffect(
     return branch.reduce((s, nested) => applyCardEffects(s, { ...card, effects: [nested] }, combatTexts), state);
   }
 
+  if (effect.kind === "repeat-over-turns") {
+    return {
+      ...state,
+      pendingTurnStartEffects: [
+        ...state.pendingTurnStartEffects,
+        { remainingTurns: effect.remainingTurns, effects: effect.effects },
+      ],
+    };
+  }
+
   return applyEffectByKind(effect.kind, state, card, effect, potionMult, combatTexts);
 }
 

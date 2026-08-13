@@ -14,22 +14,22 @@ describe("getGearInstanceTitle", () => {
     expect(
       getGearInstanceTitle(
         instance({
-          instanceId: "helm-1",
-          definitionId: "leather-helm-basic",
+          instanceId: "armor-1",
+          definitionId: "leather-armor-basic",
         }),
       ),
-    ).toBe("Leather Helm");
+    ).toBe("Leather Armor");
   });
 
   it("prefixes astral items with Astral", () => {
     expect(
       getGearInstanceTitle(
         instance({
-          instanceId: "helm-astral",
-          definitionId: "leather-helm-astral",
+          instanceId: "armor-astral",
+          definitionId: "leather-armor-astral",
         }),
       ),
-    ).toBe("Astral Leather Helm");
+    ).toBe("Astral Leather Armor");
   });
 
   it("ignores affix rolls when naming items", () => {

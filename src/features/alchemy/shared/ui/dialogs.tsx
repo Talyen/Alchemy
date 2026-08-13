@@ -7,12 +7,14 @@ import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { Button } from "@/components/ui/button";
 import { bodyTextClass, sectionTitleClass } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
+import { fadePhaseClass, useFadePresence } from "./fade-presence";
 
 const DIALOG_CONFIG = {
   dangerTone: "danger",
 } as const;
 
 export function ConfirmationDialog({
+  open = true,
   title,
   description,
   confirmLabel,
@@ -26,6 +28,7 @@ export function ConfirmationDialog({
   onConfirm,
   onCancel,
 }: {
+  open?: boolean;
   title: React.ReactNode;
   description?: ReactNode;
   confirmLabel: string;
@@ -39,20 +42,24 @@ export function ConfirmationDialog({
   onCancel: () => void;
 }) {
   const escapeId = useId();
+  const { mounted, phase } = useFadePresence(open);
 
   useEffect(() => {
-    if (!dismissOnEscape) return;
+    if (!dismissOnEscape || !mounted || phase === "exit") return;
     return pushEscapeHandler({
       id: `confirmation-dialog:${escapeId}`,
       priority: ESCAPE_PRIORITY.DIALOG,
       onEscape: () => onCancel(),
     });
-  }, [dismissOnEscape, escapeId, onCancel]);
+  }, [dismissOnEscape, escapeId, onCancel, mounted, phase]);
+
+  if (!mounted) return null;
 
   return (
     <div
       className={cn(
         "motion-overlay fixed inset-0 z-[120] flex items-center justify-center px-6",
+        fadePhaseClass(phase),
         dimBackground ? "bg-black/70" : "bg-transparent",
       )}
       onClick={dismissOnBackdrop ? onCancel : undefined}

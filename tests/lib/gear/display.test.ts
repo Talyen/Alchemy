@@ -2,26 +2,26 @@ import { describe, expect, it } from "vitest";
 import { getGearInstanceDescriptionLines, getGearInstanceTooltipEntries, type GearInstance } from "@/lib/gear";
 
 describe("gear display", () => {
-  const affixedHelm: GearInstance = {
-    instanceId: "helm-1",
-    definitionId: "leather-helm-basic",
+  const affixedArmor: GearInstance = {
+    instanceId: "armor-1",
+    definitionId: "leather-armor-basic",
     affixes: [{ id: "max-health", value: 7 }],
   };
 
-  const bareHelm: GearInstance = {
-    instanceId: "helm-2",
-    definitionId: "leather-helm-basic",
+  const bareArmor: GearInstance = {
+    instanceId: "armor-2",
+    definitionId: "leather-armor-basic",
     affixes: [],
   };
 
-  const astralHelm: GearInstance = {
-    instanceId: "helm-3",
-    definitionId: "leather-helm-astral",
+  const astralArmor: GearInstance = {
+    instanceId: "armor-3",
+    definitionId: "leather-armor-astral",
     affixes: [],
   };
 
   it("returns affix tooltip entries with names and formatted text", () => {
-    const entries = getGearInstanceTooltipEntries(affixedHelm);
+    const entries = getGearInstanceTooltipEntries(affixedArmor);
     expect(entries).toEqual([
       {
         key: "max-health-0",
@@ -32,14 +32,14 @@ describe("gear display", () => {
   });
 
   it("returns empty tooltip entries for items with no affixes and no description lines", () => {
-    expect(getGearInstanceTooltipEntries(bareHelm)).toEqual([]);
+    expect(getGearInstanceTooltipEntries(bareArmor)).toEqual([]);
   });
 
   it("returns empty tooltip entries for astral items with no affixes and no description lines", () => {
-    expect(getGearInstanceTooltipEntries(astralHelm)).toEqual([]);
+    expect(getGearInstanceTooltipEntries(astralArmor)).toEqual([]);
   });
 
   it("strips affix names from description lines", () => {
-    expect(getGearInstanceDescriptionLines(affixedHelm)).toEqual(["Increases Health by 7"]);
+    expect(getGearInstanceDescriptionLines(affixedArmor)).toEqual(["Increases Health by 7"]);
   });
 });

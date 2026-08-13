@@ -2,6 +2,7 @@
 
 import type {
   BattleCard,
+  BattleCardEffect,
   BestiaryEntry,
   CompanionDefinition,
   DamageType,
@@ -14,6 +15,11 @@ import type {
 import type { GearEffectManifest } from "@/lib/gear";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
+
+export interface PendingTurnStartPulse {
+  remainingTurns: number;
+  effects: BattleCardEffect[];
+}
 
 // Both player and enemy use status ID unions. Enemies can gain burnBonus and freezeBonus
 // from boss traits (e.g., Iron Bear, Frostwarden). block/armor/forge live in enemyMitigation.
@@ -92,6 +98,8 @@ export interface CombatFlags {
   resonantChimeUsedThisTurn: boolean;
   runicQuillUsedThisTurn: boolean;
   divineAegisTriggered: boolean;
+  nextHitCrit: boolean;
+  playNextCardTwice: boolean;
 }
 
 // Subset of CombatFlags consumed by card play — companion actions must not consume these.
@@ -151,6 +159,7 @@ export interface BattleState {
   trinketEffects: TrinketManifest;
   gearEffects: GearEffectManifest;
   flags: CombatFlags;
+  pendingTurnStartEffects: PendingTurnStartPulse[];
   discoveredCardIds: string[]; // used by wish undiscovered talent
   cardsPlayedThisTurn: number;
   nextCardUid: number; // battle-owned source for unique rendered card keys

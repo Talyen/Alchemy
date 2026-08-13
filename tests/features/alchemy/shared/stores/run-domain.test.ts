@@ -280,22 +280,22 @@ describe("initialize", () => {
 });
 
 describe("gear max health sync", () => {
-  const maxHealthHelm: GearInstance = {
-    instanceId: "max-health-helm",
-    definitionId: "leather-helm-basic",
+  const maxHealthArmor: GearInstance = {
+    instanceId: "max-health-armor",
+    definitionId: "leather-armor-basic",
     affixes: [{ id: "max-health", value: 7 }],
   };
 
   it("applies max-health deltas when equipped gear inventory mutates", () => {
     const loadouts = createEmptyGearLoadouts();
-    loadouts.knight.helm = maxHealthHelm.instanceId;
+    loadouts.knight.body = maxHealthArmor.instanceId;
     setRunProgress({ characterId: "knight", runMaxHealth: 37, runPlayerHealth: 37, initialized: true });
 
     syncRunMaxHealthFromGearMutation(
       "knight",
-      [maxHealthHelm],
+      [maxHealthArmor],
       loadouts,
-      [{ ...maxHealthHelm, affixes: [] }],
+      [{ ...maxHealthArmor, affixes: [] }],
       loadouts,
     );
 
@@ -305,11 +305,11 @@ describe("gear max health sync", () => {
 
   it("applies max-health deltas when equipped gear is removed", () => {
     const loadoutsBefore = createEmptyGearLoadouts();
-    loadoutsBefore.knight.helm = maxHealthHelm.instanceId;
+    loadoutsBefore.knight.body = maxHealthArmor.instanceId;
     const loadoutsAfter = createEmptyGearLoadouts();
     setRunProgress({ characterId: "knight", runMaxHealth: 37, runPlayerHealth: 35, initialized: true });
 
-    syncRunMaxHealthFromGearMutation("knight", [maxHealthHelm], loadoutsBefore, [], loadoutsAfter);
+    syncRunMaxHealthFromGearMutation("knight", [maxHealthArmor], loadoutsBefore, [], loadoutsAfter);
 
     expect(getRunProgressStoreView().runMaxHealth).toBe(30);
     expect(getRunProgressStoreView().runPlayerHealth).toBe(30);

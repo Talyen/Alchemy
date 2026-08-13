@@ -183,6 +183,34 @@ describe("encounter trait card events", () => {
     expect(result.state.playerHealth).toBe(8);
   });
 
+  it("burns the attacker when the enemy has cinder-skin", () => {
+    const currentEnemy: BestiaryEntry = {
+      id: "fire-elemental",
+      title: "Fire Elemental",
+      subtitle: "Elite",
+      descriptionLines: [],
+      art: "",
+      enemyType: "elite",
+      traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "Deals 1 Burn damage when attacked" }],
+      attackEffects: [{ kind: "damage", damageType: "burn", amount: 3 }],
+    };
+    const played = card({
+      effects: [{ kind: "damage", damageType: "physical", amount: 2 }],
+    });
+    const result = playBattleCardResolved(
+      makeTestBattleState({
+        currentEnemy,
+        hand: [played],
+        mana: 1,
+        playerHealth: 10,
+        turnPhase: "player",
+      }),
+      played.id,
+      0,
+    );
+    expect(result.state.playerStatuses.burn).toBeGreaterThan(0);
+  });
+
   it("moves a played card to its destination when retaliation defeats the player", () => {
     const currentEnemy = enemyWith("thorns");
     const played = card({ consume: true });

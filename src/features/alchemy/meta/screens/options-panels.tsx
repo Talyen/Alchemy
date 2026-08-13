@@ -34,6 +34,8 @@ export interface AudioOptionsProps {
 export interface GameplayOptionsProps {
   autoEndTurn: boolean;
   onAutoEndTurnChange: (checked: boolean) => void;
+  rememberAutoplayPreference: boolean;
+  onRememberAutoplayPreferenceChange: (checked: boolean) => void;
 }
 
 export interface SaveDataOptionsProps {
@@ -160,6 +162,12 @@ export function GameplayOptionsPanel({ gameplay }: { gameplay: GameplayOptionsPr
         description="Automatically end your turn when no cards in hand can be played."
         checked={gameplay.autoEndTurn}
         onChange={gameplay.onAutoEndTurnChange}
+      />
+      <ToggleOption
+        label="Remember Auto-Battle Preference"
+        description="Restore the in-battle Autoplay toggle across battles."
+        checked={gameplay.rememberAutoplayPreference}
+        onChange={gameplay.onRememberAutoplayPreferenceChange}
       />
     </div>
   );

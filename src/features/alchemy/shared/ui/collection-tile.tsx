@@ -10,8 +10,10 @@ import { cn } from "@/lib/utils";
 import {
   cardArtImageClass,
   cardSurfaceClass,
+  collectionGridBestiaryWidthClass,
   collectionGridTileWidthClass,
   collectionGridTrinketWidthClass,
+  landscapeArtImageClass,
   squareArtImageClass,
 } from "../config";
 import { CardFlip } from "./card-flip";
@@ -46,7 +48,11 @@ export function CompendiumTile({ item }: CompendiumTileProps) {
         className={cn(
           "group",
           cardSurfaceClass,
-          item.frameType === "trinket" ? collectionGridTrinketWidthClass : collectionGridTileWidthClass,
+          item.frameType === "trinket"
+            ? collectionGridTrinketWidthClass
+            : item.frameType === "bestiary"
+              ? collectionGridBestiaryWidthClass
+              : collectionGridTileWidthClass,
           item.frameType === "card" && "bg-transparent",
         )}
         onClick={() => {
@@ -103,7 +109,16 @@ function CollectionTileMedia({ item, flipped }: { item: CollectionTileItem; flip
   }
 
   return (
-    <TileImage item={item} className={cn(item.frameType === "trinket" ? squareArtImageClass : cardArtImageClass)} />
+    <TileImage
+      item={item}
+      className={cn(
+        item.frameType === "trinket"
+          ? squareArtImageClass
+          : item.frameType === "bestiary"
+            ? landscapeArtImageClass
+            : cardArtImageClass,
+      )}
+    />
   );
 }
 

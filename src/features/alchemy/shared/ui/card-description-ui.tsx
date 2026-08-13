@@ -80,11 +80,12 @@ export function DescriptionLines({
             {parts.map((part, index) => {
               if (part.keywordId) {
                 return (
-                  <KeywordToken
+                  <span
                     key={`${idPrefix}-${lineIndex}-${index}`}
-                    keywordId={part.keywordId}
-                    matchedText={part.text}
-                  />
+                    className={cn(keywordDefinitions[part.keywordId]?.colorClass, "font-semibold")}
+                  >
+                    {part.text}
+                  </span>
                 );
               }
               const offset = partOffsets[index] ?? 0;

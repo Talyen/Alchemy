@@ -388,4 +388,48 @@ describe("processCompanionTurnStart", () => {
     expect(healText).toBeDefined();
     expect(healText?.amount).toBe(5);
   });
+
+  it("does not crit or consume nextHitCrit on companion damage", () => {
+    const state = makeTestBattleState({
+      activeCompanion: companionLibrary.wolf,
+      flags: { ...makeTestBattleState().flags, nextHitCrit: true },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    expect(result.enemyHealth).toBe(29);
+    expect(result.flags.nextHitCrit).toBe(true);
+  });
+
+  it("healOnCompanionAttack heals Fox when the damage branch resolves", () => {
+    const state = makeTestBattleState({
+      activeCompanion: companionLibrary.fox,
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      rng: () => 0.1,
+      gearEffects: {
+        ...makeTestBattleState().gearEffects,
+        healOnCompanionAttack: 4,
+      },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    expect(result.enemyHealth).toBe(29);
+    expect(result.playerHealth).toBe(14);
+  });
+
+  it("healOnCompanionAttack no-ops when Fox takes the gold branch", () => {
+    const state = makeTestBattleState({
+      activeCompanion: companionLibrary.fox,
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      gold: 0,
+      rng: () => 0.9,
+      gearEffects: {
+        ...makeTestBattleState().gearEffects,
+        healOnCompanionAttack: 4,
+      },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    expect(result.enemyHealth).toBe(30);
+    expect(result.gold).toBe(1);
+    expect(result.playerHealth).toBe(10);
+  });
 });

@@ -19,7 +19,7 @@ import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 import { KeywordToken } from "../../shared/ui/card-description-ui";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { PressableSound } from "../../shared/ui/pressable-sound";
-import { ScreenHeader, ActionButtonRow, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
+import { ScreenHeader, ActionButtonRow } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { tokenizeDescription } from "../../shared/utils";
 import {
@@ -190,11 +190,8 @@ export function DifficultySelectScreen({
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
       <ScreenHeader title={config.headerTitle} />
 
-      <StaggerGroup className="flex flex-wrap items-start justify-center gap-6">
-        <StaggerItem
-          index={0}
-          className="flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6"
-        >
+      <div className="flex flex-wrap items-start justify-center gap-6">
+        <div className="flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6">
           <TiltSurface
             className={cn("relative aspect-[3/4] overflow-hidden rounded-shell-panel", nonBattleCardWidthClass)}
             shimmerActive={shimmerState?.cardId === "character"}
@@ -214,33 +211,32 @@ export function DifficultySelectScreen({
               <KeywordTag key={kw} keywordId={kw} pill showTooltip />
             ))}
           </div>
-        </StaggerItem>
+        </div>
 
-        <StaggerItem index={1} className="hidden shrink-0 flex-col items-center self-stretch lg:flex">
+        <div className="hidden shrink-0 flex-col items-center self-stretch lg:flex">
           <div className="w-px flex-1 bg-gradient-to-b from-transparent via-amber-100/75 to-transparent" />
           <Swords className="my-1 h-4 w-4 text-amber-100/75" aria-hidden="true" />
           <div className="w-px flex-1 bg-gradient-to-b from-transparent via-amber-100/75 to-transparent" />
-        </StaggerItem>
+        </div>
 
         <div className="flex flex-wrap items-start justify-center gap-6">
-          {config.difficulties.map((d, index) => (
-            <StaggerItem key={d.id} index={index + 2}>
-              <DifficultyCard
-                difficultyId={d.id}
-                name={d.name}
-                description={d.description}
-                completed={completedDifficulties.includes(d.id)}
-                locked={!isDifficultyUnlocked(d.id, completedDifficulties)}
-                isSelected={selectedDifficultyId === d.id}
-                isShimmer={shimmerState?.cardId === d.id}
-                shimmerToken={shimmerState?.token}
-                onHoverShimmer={maybeTriggerShimmer}
-                onSelect={handleSelectDifficulty}
-              />
-            </StaggerItem>
+          {config.difficulties.map((d) => (
+            <DifficultyCard
+              key={d.id}
+              difficultyId={d.id}
+              name={d.name}
+              description={d.description}
+              completed={completedDifficulties.includes(d.id)}
+              locked={!isDifficultyUnlocked(d.id, completedDifficulties)}
+              isSelected={selectedDifficultyId === d.id}
+              isShimmer={shimmerState?.cardId === d.id}
+              shimmerToken={shimmerState?.token}
+              onHoverShimmer={maybeTriggerShimmer}
+              onSelect={handleSelectDifficulty}
+            />
           ))}
         </div>
-      </StaggerGroup>
+      </div>
 
       <ActionButtonRow
         className="mt-6"

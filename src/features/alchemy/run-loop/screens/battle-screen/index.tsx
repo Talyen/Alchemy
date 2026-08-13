@@ -7,6 +7,7 @@ import { CardTransferOverlay } from "./card-transfer-overlay";
 import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
 import { HamburgerTrigger, PageLayout } from "../../../shared/ui/shared-ui";
+import { BattleAutoplayToggle } from "./autoplay-toggle";
 import { WishOverlay } from "./wish-overlay";
 import type { BattleActionsProps, BattleFeedbackProps, BattleRefsProps, BattleScreenData } from "./types";
 import { getEnemyStatusChips, getPlayerStatusChips } from "../../../shared/utils";
@@ -53,6 +54,8 @@ interface BattleScreenProps {
   onEndTurn: () => void;
   hiddenHandCardKeys: Set<string>;
   cardTransferInProgress: boolean;
+  isAutoplayEnabled: boolean;
+  onToggleAutoplay: () => void;
 }
 
 export function BattleScreen(props: BattleScreenProps) {
@@ -71,6 +74,8 @@ export function BattleScreen(props: BattleScreenProps) {
     hiddenHandCardKeys,
     cardTransferInProgress,
     playableHandCardKeys,
+    isAutoplayEnabled,
+    onToggleAutoplay,
   } = props;
 
   const { battleState, displayOverrides, revealedCardKeys, activeLabyrinthModifiers } = battleScreenData;
@@ -117,6 +122,8 @@ export function BattleScreen(props: BattleScreenProps) {
       playableHandCardKeys,
       revealedCardKeys,
       isDevMode: isDev,
+      isAutoplayEnabled,
+      onToggleAutoplay,
     }),
     [
       onCardClick,
@@ -129,6 +136,8 @@ export function BattleScreen(props: BattleScreenProps) {
       playableHandCardKeys,
       revealedCardKeys,
       isDev,
+      isAutoplayEnabled,
+      onToggleAutoplay,
     ],
   );
 
@@ -146,7 +155,8 @@ export function BattleScreen(props: BattleScreenProps) {
         </div>
 
         <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-          <div className="absolute top-0 right-0 z-30">
+          <div className="absolute top-0 right-0 z-30 flex items-center gap-2">
+            <BattleAutoplayToggle enabled={actions.isAutoplayEnabled} onToggle={actions.onToggleAutoplay} />
             <HamburgerTrigger onClick={actions.onOpenMenu} label="Open battle menu" />
           </div>
 
@@ -159,13 +169,7 @@ export function BattleScreen(props: BattleScreenProps) {
 
             <BattleBottomBar view={view} refs={refs} actions={actions} />
 
-            {battleState.wishOptions ? (
-              <WishOverlay
-                key={battleState.wishOptions.map((card) => card.id).join("-")}
-                battleState={displayState}
-                actions={actions}
-              />
-            ) : null}
+            <WishOverlay open={Boolean(battleState.wishOptions)} battleState={displayState} actions={actions} />
 
             <CardGhostLayer />
             <CardTransferLayer />

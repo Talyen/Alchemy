@@ -3,7 +3,6 @@
 // Used by screens that need consistent header, description, and scroll layout.
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { TextAnimate } from "@/components/ui/text-animate";
 import { screenDescriptionClass, screenTitleClass } from "../config";
 
 export function ScreenHeader({ title, className }: { title: ReactNode; className?: string }) {
@@ -36,12 +35,19 @@ export function ScreenHeaderRow({
   );
 }
 
-export function PageLayout({ children }: { children: ReactNode }) {
+export function PageLayout({ children, align = "center" }: { children: ReactNode; align?: "center" | "start" }) {
   // Outer scroller + inner min-h-full center: keeps justify-center from jumping when
   // abspos feedback (combat text, ghosts, hurt sparks) changes scrollHeight.
   return (
     <div className="game-page-scroll h-full w-full overflow-x-hidden overflow-y-auto px-5 py-7">
-      <div className="flex min-h-full w-full flex-col items-center justify-center">{children}</div>
+      <div
+        className={cn(
+          "flex min-h-full w-full flex-col items-center",
+          align === "start" ? "justify-start" : "justify-center",
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }
@@ -75,17 +81,13 @@ export function ScreenDescription({
   children,
   className,
   tone,
-  startOnView = true,
 }: {
   children: string;
   className?: string;
   tone?: "default" | "danger";
-  startOnView?: boolean;
 }) {
   return (
-    <TextAnimate
-      once
-      startOnView={startOnView}
+    <p
       className={cn(
         "mx-auto max-w-lg text-center",
         screenDescriptionClass,
@@ -94,6 +96,6 @@ export function ScreenDescription({
       )}
     >
       {children}
-    </TextAnimate>
+    </p>
   );
 }

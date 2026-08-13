@@ -58,6 +58,9 @@ const EFFECT_DESCRIPTION_FORMATTERS: {
   "cleanse-player-status-to-damage": () => unsupportedEffectKind("cleanse-player-status-to-damage"),
   "random-damage": () => unsupportedEffectKind("random-damage"),
   chance: () => unsupportedEffectKind("chance"),
+  "repeat-over-turns": () => unsupportedEffectKind("repeat-over-turns"),
+  "next-hit-crit": () => "Your next damaging card is a critical strike",
+  "play-next-card-twice": () => "Your next card is played twice",
 };
 
 function unsupportedEffectKind(kind: string): never {

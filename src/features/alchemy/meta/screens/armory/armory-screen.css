@@ -1,35 +1,5 @@
-/* Inventory grid: INVENTORY_COLS=8, INVENTORY_VISIBLE_ROWS=8 (inventory-layout.ts) */
 .armory-workspace {
-  /*
-    Inline-size only. Height queries (cqh) must pass through to the vr-stage:
-    a full size container here makes the character art's cqh query cycle with
-    this container's own content-driven height and collapse to 0. The width
-    query below still works on an inline-size container.
-  */
   container-type: inline-size;
-  --armory-board-gap: 0.375rem;
-  --armory-inventory-cols: 8;
-  /*
-    Fixed rem cell size. cq-based sizing on this size-container re-resolves on
-    board descendants, cycles with content-sized flex ancestors (PageLayout),
-    collapses to 0, and hides 1×1 currency tiles (multi-cell gear still shows
-    via board-gap). Rem keeps inventory/equipment boards readable at stage scale.
-  */
-  --armory-cell-size: 4.5rem;
-}
-
-.armory-character-art-container {
-  /*
-    Battle player art = clamp(28.5,28.9,43.1)cqh of the battle scene, which is
-    the shell content box = 990px of the 1080px stage. Armory art renders 1.1×
-    that. cqh anchors to the vr-stage (definite-height size container) because
-    .armory-workspace only establishes inline-size containment (see above).
-  */
-  --battle-scene-to-stage-height: 0.91667; /* 990px shell content ÷ 1080px stage */
-  --armory-to-battle-art-scale: 1.1;
-  width: calc(
-    clamp(28.5cqh, 28.9cqh, 43.1cqh) * var(--battle-scene-to-stage-height) * var(--armory-to-battle-art-scale)
-  );
 }
 
 .armory-workspace-grid {
@@ -39,54 +9,12 @@
   align-items: stretch;
 }
 
-.armory-equipment-board {
-  width: calc(6 * var(--armory-cell-size) + 5 * var(--armory-board-gap));
-  height: calc(7 * var(--armory-cell-size) + 6 * var(--armory-board-gap));
-  max-width: 100%;
-}
-
-.armory-inventory-board {
-  width: calc(
-    var(--armory-inventory-cols) * var(--armory-cell-size) + (var(--armory-inventory-cols) - 1) *
-      var(--armory-board-gap) + 22px
-  );
-  height: calc(8 * var(--armory-cell-size) + 7 * var(--armory-board-gap) + 14px);
-  padding: 6px 12px 6px 6px;
-  max-width: 100%;
-  scrollbar-width: none;
-}
-
-.armory-inventory-board::-webkit-scrollbar {
-  display: none;
-}
-
-@container (min-width: 76rem) {
+@container (min-width: 64rem) {
   .armory-workspace-grid {
-    /* Cell size stays the inherited absolute length from .armory-workspace. */
-    grid-template-columns: 2.4fr 2fr;
+    grid-template-columns: minmax(18rem, 0.9fr) minmax(0, 1.4fr);
   }
 }
 
-@keyframes craft-flash {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 20px 4px rgba(245, 158, 11, 0.8);
-    background-color: rgba(255, 253, 245, 0.75);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.08);
-    box-shadow: 0 0 0px 0px rgba(245, 158, 11, 0);
-    background-color: rgba(255, 253, 245, 0);
-  }
-}
-
-.craft-flash-overlay {
-  animation: craft-flash 0.55s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-}
-
-/* Red trash can — hotspot centered for salvage targeting */
 .armory-salvage-cursor,
 .armory-salvage-cursor * {
   cursor:

@@ -1,7 +1,12 @@
 // Composes BattleCardEffectSchema from per-kind definition modules.
 import { z } from "zod";
 import type { BattleCardEffect } from "../types";
-import { chanceEffectDefinition, createChanceEffectSchema } from "./chance-definition";
+import {
+  chanceEffectDefinition,
+  createChanceEffectSchema,
+  createRepeatOverTurnsEffectSchema,
+  repeatOverTurnsEffectDefinition,
+} from "./recursive-definition";
 import { TEMPLATE_EFFECT_DEFINITIONS } from "./template-definitions";
 
 type DiscriminableKindSchema = z.core.$ZodTypeDiscriminable<"kind">;
@@ -17,6 +22,8 @@ const BattleCardEffectSchemaBase = z.discriminatedUnion("kind", templateEffectSc
 
 export const BattleCardEffectSchema: z.ZodType<BattleCardEffect> = z.lazy(() => {
   const ChanceEffectSchema = createChanceEffectSchema(() => BattleCardEffectSchema);
+  const RepeatOverTurnsEffectSchema = createRepeatOverTurnsEffectSchema(() => BattleCardEffectSchema);
   void chanceEffectDefinition;
-  return z.union([BattleCardEffectSchemaBase, ChanceEffectSchema]);
+  void repeatOverTurnsEffectDefinition;
+  return z.union([BattleCardEffectSchemaBase, ChanceEffectSchema, RepeatOverTurnsEffectSchema]);
 }) as z.ZodType<BattleCardEffect>;

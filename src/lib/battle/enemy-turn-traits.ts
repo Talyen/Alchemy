@@ -100,6 +100,9 @@ const PASSIVE_ONLY_TRAITS = new Set([
   "gold-trove",
   "starting-block",
   "regeneration",
+  "freeze-vulnerability",
+  "amorphous",
+  "cinder-skin",
   ...COMBAT_ENCOUNTER_TRAIT_IDS,
 ]);
 

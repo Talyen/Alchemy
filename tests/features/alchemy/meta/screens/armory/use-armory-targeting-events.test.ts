@@ -8,6 +8,12 @@ describe("useArmoryTargetingEvents", () => {
   afterEach(() => {
     resetEscapeStackForTests();
   });
+
+  async function flushTargetingListeners() {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+  }
   it("calls clearTargeting on Escape when salvageMode is active", async () => {
     const clearTargeting = vi.fn();
 
@@ -19,6 +25,8 @@ describe("useArmoryTargetingEvents", () => {
         clearTargeting,
       }),
     );
+
+    await flushTargetingListeners();
 
     act(() => {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
@@ -38,6 +46,8 @@ describe("useArmoryTargetingEvents", () => {
         clearTargeting,
       }),
     );
+
+    await flushTargetingListeners();
 
     act(() => {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
@@ -77,6 +87,8 @@ describe("useArmoryTargetingEvents", () => {
       }),
     );
 
+    await flushTargetingListeners();
+
     act(() => {
       document.body.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
@@ -103,7 +115,7 @@ describe("useArmoryTargetingEvents", () => {
     expect(clearTargeting).not.toHaveBeenCalled();
   });
 
-  it("removes listeners on unmount", () => {
+  it("removes listeners on unmount", async () => {
     const clearTargeting = vi.fn();
 
     const { unmount } = renderHook(() =>
@@ -115,6 +127,7 @@ describe("useArmoryTargetingEvents", () => {
       }),
     );
 
+    await flushTargetingListeners();
     unmount();
 
     act(() => {
@@ -124,7 +137,7 @@ describe("useArmoryTargetingEvents", () => {
     expect(clearTargeting).not.toHaveBeenCalled();
   });
 
-  it("calls clearTargeting on window blur when targeting is armed", () => {
+  it("calls clearTargeting on window blur when targeting is armed", async () => {
     const clearTargeting = vi.fn();
 
     renderHook(() =>
@@ -136,6 +149,8 @@ describe("useArmoryTargetingEvents", () => {
       }),
     );
 
+    await flushTargetingListeners();
+
     act(() => {
       window.dispatchEvent(new Event("blur"));
     });
@@ -143,7 +158,7 @@ describe("useArmoryTargetingEvents", () => {
     expect(clearTargeting).toHaveBeenCalledTimes(1);
   });
 
-  it("calls clearTargeting on visibilitychange to hidden when targeting is armed", () => {
+  it("calls clearTargeting on visibilitychange to hidden when targeting is armed", async () => {
     const clearTargeting = vi.fn();
 
     renderHook(() =>
@@ -154,6 +169,8 @@ describe("useArmoryTargetingEvents", () => {
         clearTargeting,
       }),
     );
+
+    await flushTargetingListeners();
 
     act(() => {
       Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });

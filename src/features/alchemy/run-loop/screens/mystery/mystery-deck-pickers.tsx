@@ -5,7 +5,7 @@ import { type BattleCard } from "@/lib/game-data";
 
 import { CardSelectionGrid, type CardSelectionGridItem } from "../../../shared/ui/card-selection-grid";
 import { SelectableShopCard } from "../../../shared/ui/shop-card-item";
-import { ScreenHeader, StaggerGroup, StaggerItem } from "../../../shared/ui/shared-ui";
+import { ScreenHeader } from "../../../shared/ui/shared-ui";
 import { bodyTextClass } from "@/features/alchemy/shared/config";
 
 function DeckCardSelectionFlow({
@@ -29,11 +29,9 @@ function DeckCardSelectionFlow({
   confirmDisabled: boolean;
   onConfirm: () => void;
 }) {
-  const confirmStaggerIndex = Math.min(items.length, pageSize) + 1;
-
   return (
-    <StaggerGroup className="space-y-6 text-center">
-      <StaggerItem index={0}>{intro}</StaggerItem>
+    <div className="space-y-6 text-center">
+      {intro}
       <CardSelectionGrid
         items={items}
         page={page}
@@ -41,12 +39,12 @@ function DeckCardSelectionFlow({
         pageSize={pageSize}
         renderItem={renderItem}
       />
-      <StaggerItem index={confirmStaggerIndex} className="flex justify-center gap-4">
+      <div className="flex justify-center gap-4">
         <Button size="lg" disabled={confirmDisabled} onClick={onConfirm}>
           {confirmLabel}
         </Button>
-      </StaggerItem>
-    </StaggerGroup>
+      </div>
+    </div>
   );
 }
 

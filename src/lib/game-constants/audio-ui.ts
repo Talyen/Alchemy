@@ -23,7 +23,8 @@ export const SFX_COOLDOWN_MS = 80;
 export const IMAGE_PRELOAD_BATCH_SIZE = 4;
 
 // ============ Screen Transitions ============
-export const PAGE_EXIT_MS = 130;
+export const MOTION_FADE_MS = 180;
+export const PAGE_EXIT_MS = MOTION_FADE_MS;
 
 // ============ Startup Loading ============
 export const INITIAL_LOAD_MIN_DURATION_MS = 650;
@@ -33,7 +34,6 @@ export const SHIMMER_COOLDOWN_MS = 350;
 export const COMBAT_TEXT_LIFETIME_MS = 3300;
 export const COMBAT_TEXT_LANE_DELAY_MS = 80;
 export const COMBAT_TEXT_MAX_VISIBLE_PER_RAIL = 3;
-export const ANIMATION_STAGGER_UNIT = 0.08;
 export const CARD_ACTIVATION_ROTATION_DEGREES = 4.2;
 
 export const CARD_TRANSFER_CONFIG = {
@@ -70,6 +70,7 @@ export const MAX_STAGE_SCALE = 2.0;
 
 // ============ Collection ============
 export const COLLECTION_PAGE_SIZE = 8;
+export const BESTIARY_PAGE_SIZE = 6;
 export const TRINKET_PAGE_SIZE = 6;
 export const SELECTION_GRID_PAGE_SIZE = 8;
 export const BATTLE_ACTOR_TOP = "34%";

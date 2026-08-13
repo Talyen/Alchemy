@@ -29,7 +29,7 @@ Gameplay state has one authoritative nested Zustand aggregate in `shared/stores/
 | `battle`         | Combat snapshot, battle-start state, and display overrides                   | Transient per battle  |
 | `runProfile`     | Homestead, talent XP / unlocks, and derived effects                          | Meta lifetime         |
 | `profile`        | Compendium discoveries and collection browsing state                         | Profile lifetime      |
-| `gear`           | Permanent inventories, loadouts, board positions, and crafting currencies    | Profile lifetime      |
+| `gear`           | Permanent inventories, loadouts, and crafting currencies                     | Profile lifetime      |
 
 Cross-concern writes go through `run-session-write-port.ts`. Multi-concern lifecycle orchestration is exposed through `run-session-lifecycle-port.ts`. Feature-facing reads (`run-session-read-port`, `profile-store` / `gear-store` slices, and the React ports) are data-only; command-backed write ports own every gameplay mutation. React orchestration uses narrow ports from `run-session-react-ports.ts`; screens use exact screen-data hooks (battle display via `useBattleScreenRouteData`).
 
@@ -159,7 +159,7 @@ Each persistence owner exposes a codec beside its aggregate region. The codec ow
 
 Owned Gear instances and per-character loadouts live in `shared/stores/gear-store.ts`. Definitions and pure equip/salvage/effect rules live under `src/lib/gear/`. Gear is permanent meta progression and is not copied into active-run data; battle creation snapshots the selected character's aggregate Gear effects into immutable `BattleState.gearEffects`.
 
-Run-loop / run-setup / shell read gear through `gear-store.ts` (`readGearManifestForCharacter`, `readHasAnyOwnedGear`, `useGearArmorySlice`, …). Mutations that affect HP enter through `dispatchGearMutationWithRunHealthSync()`. Each Gear instance may be equipped on at most one character at a time. Armory editing is disabled while a battle is active. See [ARMORY.md](./ARMORY.md) for the data model, board packing, drag FSM, and tests.
+Run-loop / run-setup / shell read gear through `gear-store.ts` (`readGearManifestForCharacter`, `readHasAnyOwnedGear`, `useGearArmorySlice`, …). Mutations that affect HP enter through `dispatchGearMutationWithRunHealthSync()`. Each Gear instance may be equipped on at most one character at a time. Armory editing is disabled while a battle is active. See [ARMORY.md](./ARMORY.md) for the data model, click-to-equip screen, and tests.
 
 ## Types
 

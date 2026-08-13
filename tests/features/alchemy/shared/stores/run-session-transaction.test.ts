@@ -335,13 +335,13 @@ describe("run-session transaction coordinator", () => {
   });
 
   it("publishes Gear and active-run health changes as one aggregate commit", () => {
-    const helm: GearInstance = {
-      instanceId: "aggregate-health-helm",
-      definitionId: "leather-helm-basic",
+    const armor: GearInstance = {
+      instanceId: "aggregate-health-armor",
+      definitionId: "leather-armor-basic",
       affixes: [{ id: "max-health", value: 7 }],
     };
     const inventories = createEmptyGearInventories();
-    inventories.knight = [helm];
+    inventories.knight = [armor];
     useGearStore.getState().initialize(inventories, createEmptyGearLoadouts());
     getRunDomainStore().setRunMaxHealth(30);
     getRunDomainStore().setRunPlayerHealth(30);
@@ -352,7 +352,7 @@ describe("run-session transaction coordinator", () => {
 
     dispatchGearMutationWithRunHealthSync({
       characterId: "knight",
-      mutate: (gear) => gear.equip("knight", "helm", helm),
+      mutate: (gear) => gear.equip("knight", "body", armor),
     });
 
     unsubscribe();
@@ -360,7 +360,7 @@ describe("run-session transaction coordinator", () => {
     expect(commits).toHaveLength(1);
     expect(getRunDomainStore().activeRun.runMaxHealth).toBe(37);
     expect(getRunDomainStore().activeRun.runPlayerHealth).toBe(30);
-    expect(useGearStore.getState().loadouts.knight.helm).toBe(helm.instanceId);
+    expect(useGearStore.getState().loadouts.knight.body).toBe(armor.instanceId);
   });
 
   it("restores every gameplay store and publishes no commit when work throws", () => {

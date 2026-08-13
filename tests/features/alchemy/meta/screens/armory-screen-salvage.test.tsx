@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { installArmoryScreenTestHooks, renderArmoryScreen } from "./armory/armory-screen-test-helpers";
@@ -12,11 +12,11 @@ describe("ArmoryScreen salvage flow", () => {
     const onSalvage = vi.fn(() => true);
     renderArmoryScreen({ onSalvage });
 
-    await user.click(screen.getByLabelText("Salvage Gear"));
-    await user.click(screen.getByRole("button", { name: "Salvage Leather Helm" }));
-    await user.click(screen.getByRole("button", { name: "Salvage" }));
+    await user.click(screen.getByLabelText("Salvage"));
+    await user.click(screen.getByRole("button", { name: "Salvage Longsword" }));
+    await user.click(screen.getByRole("button", { name: "Salvage", exact: true }));
 
-    expect(onSalvage).toHaveBeenCalledWith("gear-helm");
+    expect(onSalvage).toHaveBeenCalledWith("gear-sword");
     expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();
   });
 
@@ -24,18 +24,18 @@ describe("ArmoryScreen salvage flow", () => {
     const user = userEvent.setup();
     renderArmoryScreen();
 
-    await user.click(screen.getByLabelText("Salvage Gear"));
+    await user.click(screen.getByLabelText("Salvage"));
     await user.keyboard("{Escape}");
 
-    expect(screen.getByLabelText("Salvage Gear")).toBeTruthy();
+    expect(screen.getByLabelText("Salvage")).toBeTruthy();
   });
 
   it("keeps an open confirmation when its backdrop is clicked", async () => {
     const user = userEvent.setup();
     renderArmoryScreen();
 
-    await user.click(screen.getByLabelText("Salvage Gear"));
-    await user.click(screen.getByRole("button", { name: "Salvage Leather Helm" }));
+    await user.click(screen.getByLabelText("Salvage"));
+    await user.click(screen.getByRole("button", { name: "Salvage Longsword" }));
     await user.click(document.querySelector(".motion-overlay")!);
 
     expect(screen.getByText("Salvaging items yields crafting materials")).toBeTruthy();
@@ -45,11 +45,13 @@ describe("ArmoryScreen salvage flow", () => {
     const user = userEvent.setup();
     renderArmoryScreen();
 
-    await user.click(screen.getByLabelText("Salvage Gear"));
-    await user.click(screen.getByRole("button", { name: "Salvage Leather Helm" }));
+    await user.click(screen.getByLabelText("Salvage"));
+    await user.click(screen.getByRole("button", { name: "Salvage Longsword" }));
     await user.keyboard("{Escape}");
 
-    expect(screen.queryByText("Salvaging items yields crafting materials")).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByText("Salvaging items yields crafting materials")).toBeNull();
+    });
     expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();
   });
 });

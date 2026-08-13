@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useLayoutEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useLayoutEffect, useRef, useState } from "react";
 import {
   useBattleAutoEndTurn,
+  useBattleAutoplay,
   createBattleSession,
   defaultMeasureElementRect,
   defaultMeasureVisualCardRect,
@@ -15,6 +16,7 @@ import {
 import type { CardRect, Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { BattleRunPort, BattleTalentPort } from "@/features/alchemy/shared/stores/run-port-types";
+import { preferredAutoplayEnabled, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-model";
 import type { BattleState } from "@/lib/battle";
@@ -25,6 +27,7 @@ interface UseBattleControllerProps {
   autoEndTurn: boolean;
   homesteadEffects: HomesteadEffectManifest;
   screen: Screen;
+  gameMenuOpen: boolean;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   onBattleVictory?: () => void;
   onBattleDefeat?: () => void;
@@ -38,6 +41,7 @@ export function useBattleController({
   autoEndTurn,
   homesteadEffects,
   screen,
+  gameMenuOpen,
   setHoveredCardId,
   onBattleVictory,
   onBattleDefeat,
@@ -52,9 +56,32 @@ export function useBattleController({
 
   const scheduleAutoEndTurnRef = useRef<((state: BattleState) => void) | null>(null);
   const clearAutoEndTurnRef = useRef<(() => void) | null>(null);
+  const onBattleSessionPreparedRef = useRef<(() => void) | null>(null);
   const pendingTransitionResumeAttemptedRef = useRef(false);
+  const [isAutoplayEnabled, setIsAutoplayEnabled] = useState(() =>
+    preferredAutoplayEnabled(useSettingsStore.getState()),
+  );
 
-  // Initialize/Update the unified context
+  const applyPreferredAutoplay = useCallback(() => {
+    setIsAutoplayEnabled(preferredAutoplayEnabled(useSettingsStore.getState()));
+  }, []);
+
+  useLayoutEffect(() => {
+    onBattleSessionPreparedRef.current = applyPreferredAutoplay;
+  }, [applyPreferredAutoplay]);
+
+  const setAutoplayEnabled = useCallback((enabled: boolean) => {
+    setIsAutoplayEnabled(enabled);
+    const settings = useSettingsStore.getState();
+    if (settings.rememberAutoplayPreference) {
+      settings.setAutoplayEnabled(enabled);
+    }
+  }, []);
+
+  const toggleAutoplay = useCallback(() => {
+    setAutoplayEnabled(!isAutoplayEnabled);
+  }, [isAutoplayEnabled, setAutoplayEnabled]);
+
   const ctx = useBattleControllerContext({
     run,
     talents,
@@ -68,9 +95,9 @@ export function useBattleController({
     measureVisualCardRect,
     scheduleAutoEndTurnRef,
     clearAutoEndTurnRef,
+    onBattleSessionPreparedRef,
   });
 
-  // Instantiate action handlers exactly once on mount
   const actions = useMemo(() => {
     const session = createBattleSession(ctx);
     const transferDeps = createBattleTransferDeps(ctx, session.isCurrentBattleSession);
@@ -91,9 +118,8 @@ export function useBattleController({
   const hiddenHandCardKeys = useBattlePresentationStore((s) => s.hiddenHandCardKeys);
   const cardTransferInProgress = useBattlePresentationStore((s) => s.cardTransferInProgress);
 
-  // Auto end turn hook
   const { scheduleAutoEndTurn, clearAutoEndTurn } = useBattleAutoEndTurn({
-    autoEndTurn,
+    autoEndTurn: autoEndTurn || isAutoplayEnabled,
     screen,
     battleState,
     hasActiveBattle,
@@ -102,7 +128,18 @@ export function useBattleController({
     onEndTurn: actions.endTurnUi.handleEndTurn,
   });
 
-  // Wire schedule/clear auto-end back into context for card play and end-turn
+  useBattleAutoplay({
+    enabled: isAutoplayEnabled,
+    screen,
+    battleState,
+    hasActiveBattle,
+    cardTransferInProgress,
+    hiddenHandCardKeys,
+    isCardPlayInProgress: () => ctx.cardPlayInProgressRef.current,
+    gameMenuOpen,
+    playCard: actions.cardPlay.handleAutoplayCard,
+  });
+
   useLayoutEffect(() => {
     scheduleAutoEndTurnRef.current = scheduleAutoEndTurn;
     clearAutoEndTurnRef.current = clearAutoEndTurn;
@@ -146,6 +183,8 @@ export function useBattleController({
   return {
     battleState,
     hasActiveBattle,
+    isAutoplayEnabled,
+    toggleAutoplay,
     refs: {
       handCardRefs: ctx.handCardRefs,
       drawPileRef: ctx.drawPileRef,

@@ -13,6 +13,9 @@ const TRAIT_REQUIRED_PATTERNS: Record<string, { pattern: RegExp; term: string }>
   "holy-vulnerability": { pattern: /holy/, term: "holy" },
   "living-armor": { pattern: /bleed|armor/, term: "bleed or armor" },
   "gold-trove": { pattern: /gold/, term: "gold" },
+  "freeze-vulnerability": { pattern: /freeze/, term: "freeze" },
+  amorphous: { pattern: /physical|poison/, term: "physical or poison" },
+  "cinder-skin": { pattern: /burn/, term: "burn" },
 };
 
 export function validateEnemyTraitDescriptionParity(enemy: BestiaryEntry): ContentValidationIssue[] {

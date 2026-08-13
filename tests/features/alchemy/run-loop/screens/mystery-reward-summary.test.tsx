@@ -35,8 +35,8 @@ describe("MysteryRewardSummary", () => {
 
     expect(screen.getByRole("img", { name: "Bone Charm" })).toBeTruthy();
     expect(screen.getByText("Bone Charm")).toBeTruthy();
-    expect(screen.getByText("Added Bone Charm to your Inventory")).toBeTruthy();
-    expect(screen.queryByText("Gained a random trinket")).toBeNull();
+    expect(screen.getByText("Added Bone Charm for this run")).toBeTruthy();
+    expect(screen.queryByText("Gained a random trinket for this run")).toBeNull();
   });
 
   it("shows the trinket hover tooltip for gainRandomTrinket", () => {
@@ -56,7 +56,7 @@ describe("MysteryRewardSummary", () => {
   it("falls back to random trinket text when the granted id is unavailable", () => {
     renderSummary([{ kind: "gainRandomTrinket" }], []);
 
-    expect(screen.getByText("Gained a random trinket")).toBeTruthy();
+    expect(screen.getByText("Gained a random trinket for this run")).toBeTruthy();
     expect(screen.queryByText("Bone Charm")).toBeNull();
   });
 });

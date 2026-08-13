@@ -106,7 +106,6 @@ export function usePortaledTooltipPlacement(
   active: boolean,
   padding = 8,
   placement: PortaledTooltipPlacement = "above",
-  matchTriggerWidth = false,
 ) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [placeBelow, setPlaceBelow] = useState(false);
@@ -138,12 +137,12 @@ export function usePortaledTooltipPlacement(
         const measured = measurePortaledTooltipPlacement(anchor, tooltipRect, stage, padding);
         setTooltipSide(null);
         setPlaceBelow(measured.placeBelow);
-        setTooltipStyle(matchTriggerWidth ? { ...measured.style, width: `${triggerRect.width}px` } : measured.style);
+        setTooltipStyle(measured.style);
       } else {
         const { side, style } = buildSideTooltipStyle(anchor, triggerRect, tooltipRect, placement, stage, padding);
         setTooltipSide(side);
         setPlaceBelow(false);
-        setTooltipStyle(matchTriggerWidth ? { ...style, width: `${triggerRect.width}px` } : style);
+        setTooltipStyle(style);
       }
     };
 
@@ -163,7 +162,7 @@ export function usePortaledTooltipPlacement(
       document.removeEventListener("scroll", onScrollOrResize, true);
       resizeObserver?.disconnect();
     };
-  }, [active, triggerRef, padding, placement, matchTriggerWidth]);
+  }, [active, triggerRef, padding, placement]);
 
   return { tooltipRef, placeBelow, tooltipSide, tooltipStyle };
 }

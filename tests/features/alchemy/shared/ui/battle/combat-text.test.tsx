@@ -25,12 +25,12 @@ describe("CombatTextRail", () => {
   };
 
   it("renders null when entries array is empty", () => {
-    const { container } = render(<CombatTextRail entries={[]} side="enemy" />);
+    const { container } = render(<CombatTextRail entries={[]} />);
     expect(container.firstChild).toBeNull();
   });
 
   it("renders combat text bubble with display text", () => {
-    render(<CombatTextRail entries={[sampleEntry]} side="enemy" />);
+    render(<CombatTextRail entries={[sampleEntry]} />);
     expect(screen.getByText("-15")).toBeDefined();
   });
 });

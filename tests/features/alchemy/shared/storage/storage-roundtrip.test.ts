@@ -44,7 +44,7 @@ describe("save JSON round trips", () => {
         destinationIndexInAct: 1,
         completedDestinations: ["Normal Combat", "Alchemist", "Campfire"],
         runTrinkets: ["bone-charm", "brass-censer"],
-        encounteredRunEnemyIds: ["skeleton", "goblin", "imp"],
+        encounteredRunEnemyIds: ["skeleton", "goblin", "slime"],
         selectedDifficulty: null,
         contentSystemType: "campaign",
         labyrinthMap: null,

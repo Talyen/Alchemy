@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 
-import { GoldDisplay, ScreenHeader, ServiceButton, StaggerGroup } from "../../shared/ui/shared-ui";
+import { GoldDisplay, ScreenHeader, ServiceButton } from "../../shared/ui/shared-ui";
+import { FadeSlot } from "../../shared/ui/fade-slot";
 
 export function ShopBrowseShell({
   title,
@@ -44,15 +45,15 @@ export function ShopBrowseOfferings({
   serviceClassName?: string;
 }) {
   return (
-    <StaggerGroup className="flex flex-col items-center gap-6">
-      <StaggerGroup swapKey={swapKey} animate={false} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="flex flex-col items-center gap-6">
+      <FadeSlot swapKey={swapKey} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {children}
-      </StaggerGroup>
+      </FadeSlot>
       {services ? <div className={cn("flex flex-wrap justify-center gap-3", serviceClassName)}>{services}</div> : null}
       <Button size="lg" variant="primary" className={cn("mt-2", BUTTON_WIDTH_ACTION)} onClick={onLeave}>
         Leave
       </Button>
-    </StaggerGroup>
+    </div>
   );
 }
 

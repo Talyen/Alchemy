@@ -58,6 +58,8 @@ export const ENEMY_TRAIT_IDS = {
   GLACIAL_SHELL: "glacial-shell",
   GOLD_TROVE: "gold-trove",
   STARTING_BLOCK: "starting-block",
+  FREEZE_VULNERABILITY: "freeze-vulnerability",
+  AMORPHOUS: "amorphous",
 } as const;
 
 // Trait damage rules: first matching (traitId, damageType) wins.
@@ -73,6 +75,9 @@ export const TRAIT_DAMAGE_RULES: Array<{ traitId: string; damageType: string; mu
   { traitId: ENEMY_TRAIT_IDS.POISON_RESISTANCE, damageType: "poison", multiplier: TRAIT_DAMAGE_RESISTANCE },
   { traitId: ENEMY_TRAIT_IDS.GLACIAL_SHELL, damageType: "freeze", multiplier: TRAIT_DAMAGE_RESISTANCE },
   { traitId: ENEMY_TRAIT_IDS.GLACIAL_SHELL, damageType: "burn", multiplier: TRAIT_DAMAGE_WEAKNESS },
+  { traitId: ENEMY_TRAIT_IDS.FREEZE_VULNERABILITY, damageType: "freeze", multiplier: TRAIT_DAMAGE_WEAKNESS },
+  { traitId: ENEMY_TRAIT_IDS.AMORPHOUS, damageType: "physical", multiplier: TRAIT_DAMAGE_RESISTANCE },
+  { traitId: ENEMY_TRAIT_IDS.AMORPHOUS, damageType: "poison", multiplier: TRAIT_DAMAGE_RESISTANCE },
 ];
 
 // ============ Companion ============

@@ -12,7 +12,7 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { renderColoredKeywords } from "../../shared/ui/card-description-ui";
-import { ScreenHeader, ActionButtonRow, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
+import { ScreenHeader, ActionButtonRow } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { TooltipBody, TooltipHeader, TooltipSubheader } from "../../shared/ui/tooltip-panel";
 import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
@@ -157,27 +157,26 @@ export function CharacterSelectScreen({
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-4 text-center">
       <ScreenHeader title="Choose Your Hero" />
 
-      <StaggerGroup className="grid grid-cols-2 justify-items-center gap-x-8 gap-y-6 sm:grid-cols-4">
-        {charIds.map((id, index) => {
+      <div className="grid grid-cols-2 justify-items-center gap-x-8 gap-y-6 sm:grid-cols-4">
+        {charIds.map((id) => {
           const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
           const unlockRequirementText = isLocked ? getCharacterUnlockMessage(id) : "";
 
           return (
-            <StaggerItem key={id} index={index}>
-              <CharacterCard
-                id={id}
-                isSelected={selectedId === id}
-                isShimmer={shimmerState?.cardId === id}
-                shimmerToken={shimmerState?.token}
-                onSelect={setSelectedId}
-                onHoverShimmer={maybeTriggerShimmer}
-                isLocked={isLocked}
-                unlockRequirementText={unlockRequirementText}
-              />
-            </StaggerItem>
+            <CharacterCard
+              key={id}
+              id={id}
+              isSelected={selectedId === id}
+              isShimmer={shimmerState?.cardId === id}
+              shimmerToken={shimmerState?.token}
+              onSelect={setSelectedId}
+              onHoverShimmer={maybeTriggerShimmer}
+              isLocked={isLocked}
+              unlockRequirementText={unlockRequirementText}
+            />
           );
         })}
-      </StaggerGroup>
+      </div>
 
       <ActionButtonRow
         width="dialog"

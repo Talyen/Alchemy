@@ -146,21 +146,18 @@ export function weakEndTurnDeck(): PerfCard[] {
 
 const INVENTORY_DEFS = [
   "leather-armor-basic",
-  "leather-helm-basic",
-  "leather-boots-basic",
-  "leather-gloves-basic",
-  "leather-belt-basic",
   "ruby-ring-basic",
   "leather-buckler-basic",
   "shortsword-basic",
   "longbow-basic",
   "leather-armor-astral",
-  "leather-helm-astral",
-  "leather-boots-astral",
   "plate-armor-basic",
   "dagger-basic",
   "mace-basic",
   "sapphire-ring-basic",
+  "longsword-basic",
+  "staff-basic",
+  "emerald-amulet-basic",
 ] as const;
 
 /** Large but realistic Armory inventory for scroll/drag measurement. */

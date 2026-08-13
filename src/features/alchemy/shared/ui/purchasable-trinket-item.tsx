@@ -12,17 +12,9 @@ interface PurchasableTrinketItemProps {
   gold: number;
   purchased: boolean;
   onBuy: () => void;
-  staggerIndex?: number;
 }
 
-export function PurchasableTrinketItem({
-  trinket,
-  price,
-  gold,
-  purchased,
-  onBuy,
-  staggerIndex,
-}: PurchasableTrinketItemProps) {
+export function PurchasableTrinketItem({ trinket, price, gold, purchased, onBuy }: PurchasableTrinketItemProps) {
   const media = (
     <InteractiveArtTile
       id={trinket.id}
@@ -36,7 +28,7 @@ export function PurchasableTrinketItem({
         <DetailPopup
           idPrefix={trinket.id}
           title={trinket.title}
-          subtitle={undefined}
+          subtitle="This Run"
           descriptionLines={trinket.descriptionLines}
           visible={visible}
           triggerRef={triggerRef}
@@ -45,14 +37,5 @@ export function PurchasableTrinketItem({
     />
   );
 
-  return (
-    <PurchasableShopTile
-      media={media}
-      price={price}
-      gold={gold}
-      purchased={purchased}
-      onBuy={onBuy}
-      {...(staggerIndex !== undefined ? { staggerIndex } : {})}
-    />
-  );
+  return <PurchasableShopTile media={media} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />;
 }

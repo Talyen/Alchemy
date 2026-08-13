@@ -47,6 +47,8 @@ import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-ru
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
+type GameMenuState = ReturnType<typeof useGameMenuState>;
+
 async function wipeUnsupportedSaveAndReload() {
   const cleared = await clearAlchemySaveData();
   if (!cleared) {
@@ -66,6 +68,7 @@ function AppMainContent({
   renderedScreen,
   pagePhase,
   tooltipBlocked,
+  gameMenu,
 }: {
   saveBlockedByNewerVersion: boolean;
   vrStageRef: React.RefObject<HTMLDivElement | null>;
@@ -77,6 +80,7 @@ function AppMainContent({
   renderedScreen: Screen;
   pagePhase: "enter" | "exit";
   tooltipBlocked: boolean;
+  gameMenu: GameMenuState;
 }) {
   const finishedRunCharacters = useFinishedRunCharacters();
   const isArmoryLocked = useIsArmoryLocked();
@@ -84,7 +88,6 @@ function AppMainContent({
   const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
   const battleEnemyHealth = useBattleEnemyHealth();
   const battleEnemyType = useBattleEnemyType();
-  const gameMenu = useGameMenuState();
   useAppKeyboardShortcuts({
     renderedScreen,
     gameMenuOpen: gameMenu.gameMenuOpen,
@@ -178,7 +181,11 @@ function AppMainContent({
           particleAlphaMultiplier={particleAlphaMultiplier}
         />
         {content}
-        <AppHamburgerTrigger renderedScreen={renderedScreen} onOpenMenu={gameMenu.openBattleMenu} />
+        <AppHamburgerTrigger
+          renderedScreen={renderedScreen}
+          pagePhase={pagePhase}
+          onOpenMenu={gameMenu.openBattleMenu}
+        />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 z-[90] bg-black"
@@ -234,8 +241,10 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
     screen,
   });
 
+  const gameMenu = useGameMenuState();
   const run = useAlchemyRunController({
     autoEndTurn: settings.autoEndTurn,
+    gameMenuOpen: gameMenu.gameMenuOpen,
     onMarkDifficultyCompleted: handleMarkDifficultyCompleted,
   });
 
@@ -262,6 +271,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
             renderedScreen={renderedScreen}
             pagePhase={pagePhase}
             tooltipBlocked={tooltipBlocked}
+            gameMenu={gameMenu}
           />
           <div
             ref={(el) => setTooltipRoot(el)}

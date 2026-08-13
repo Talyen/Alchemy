@@ -11,6 +11,7 @@ export class BattlePage {
   readonly defeatHeading: Locator;
   readonly blockChip: Locator;
   readonly menuBtn: Locator;
+  readonly autoplayToggle: Locator;
   readonly companionPanel: Locator;
   readonly deathsDoorIcon: Locator;
   readonly statusChip: (name: string) => Locator;
@@ -26,6 +27,7 @@ export class BattlePage {
     this.defeatHeading = this.page.getByRole("heading", { name: "Defeat" });
     this.blockChip = this.page.getByRole("button", { name: /^Block \d+$/ }).first();
     this.menuBtn = this.page.getByRole("button", { name: "Menu" });
+    this.autoplayToggle = this.page.getByTestId("autoplay-toggle");
     this.companionPanel = this.page.getByTestId("active-companion");
     this.deathsDoorIcon = this.page.getByLabel("Death's Door");
     this.statusChip = (name: string) =>

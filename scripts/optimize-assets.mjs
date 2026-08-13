@@ -27,26 +27,11 @@ const TRANSFORM_CONCURRENCY = 6;
 const gearAssetWidth = 420;
 const gearAssetQuality = 82;
 
-const GEAR_SLOT_IDS = [
-  "body",
-  "helm",
-  "boots",
-  "gloves",
-  "belt",
-  "main-hand",
-  "off-hand",
-  "amulet",
-  "left-ring",
-  "right-ring",
-];
+const GEAR_SLOT_IDS = ["body", "main-hand", "off-hand", "amulet", "left-ring", "right-ring"];
 
 const GEAR_SLOT_BACKGROUND_NAME_TO_ID = {
   amulet: "amulet",
-  belt: "belt",
   body: "body",
-  boots: "boots",
-  gloves: "gloves",
-  helm: "helm",
   "left ring": "left-ring",
   "main hand": "main-hand",
   "off-hand": "off-hand",

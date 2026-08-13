@@ -50,7 +50,7 @@ export const cardSounds: Record<string, string[]> = {
   bloodthorn: ["sword-impact-hit-2.ogg"],
   cinderbloom: ["fireball-1.ogg"],
   "serrated-edge": ["sword-impact-hit-2.ogg"],
-  "sunder-armor": ["strong-punch.ogg"],
+  sunder: ["strong-punch.ogg"],
   "briar-shield": ["sword-blocked-1.ogg"],
   "thorn-mail": ["sword-blocked-1.ogg"],
   "mana-shield": ["energy-noise.ogg"],
@@ -74,8 +74,6 @@ export const cardSounds: Record<string, string[]> = {
 export const enemyAttackSounds: Record<string, string[]> = {
   skeleton: ["swish-hit.ogg"],
   goblin: ["swish-hit.ogg"],
-  imp: ["torch-attack-strike-1.ogg"],
-  "lizard-scout": ["swipe.ogg"],
   mimic: ["kick.ogg"],
   "mud-elemental": ["strong-punch.ogg"],
   necromancer: ["energy-noise.ogg"],
@@ -85,6 +83,9 @@ export const enemyAttackSounds: Record<string, string[]> = {
   "blight-treant": ["strong-punch.ogg"],
   "iron-bear": ["strong-punch.ogg"],
   "living-armor": ["strong-punch.ogg"],
+  "fire-elemental": ["torch-attack-strike-1.ogg"],
+  "frost-elemental": ["ice-throw-1.ogg"],
+  slime: ["squelching-4.ogg"],
 };
 
 // ── Battle events ──

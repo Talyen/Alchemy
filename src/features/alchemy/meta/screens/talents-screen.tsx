@@ -84,8 +84,8 @@ export function TalentsScreen({
   }
 
   return (
-    <PageLayout>
-      <ScreenShell>
+    <PageLayout align="start">
+      <ScreenShell maxWidthClass="max-w-7xl">
         <ScreenHeaderRow
           title="Talents"
           trailing={
@@ -106,7 +106,7 @@ export function TalentsScreen({
 
         <div className="mt-6 flex flex-col items-center gap-2">
           {chipRows.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex flex-wrap justify-center gap-2">
+            <div key={rowIndex} className="flex flex-nowrap justify-center gap-2">
               {row.map((kw) => {
                 const kwProgress = getTalentKeywordProgress(
                   talentXP[kw] ?? 0,
@@ -140,17 +140,16 @@ export function TalentsScreen({
         </div>
       </ScreenShell>
 
-      {showResetConfirm ? (
-        <ConfirmationDialog
-          title="Reset Talents?"
-          description="This will refund all your talent points so you can choose again. Any unspent talent points will also be available."
-          confirmLabel="Reset Talents"
-          tone="default"
-          dimBackground={false}
-          onConfirm={handleReset}
-          onCancel={() => setShowResetConfirm(false)}
-        />
-      ) : null}
+      <ConfirmationDialog
+        open={showResetConfirm}
+        title="Reset Talents?"
+        description="This will refund all your talent points so you can choose again. Any unspent talent points will also be available."
+        confirmLabel="Reset Talents"
+        tone="default"
+        dimBackground={false}
+        onConfirm={handleReset}
+        onCancel={() => setShowResetConfirm(false)}
+      />
     </PageLayout>
   );
 }

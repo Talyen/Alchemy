@@ -20,7 +20,7 @@ import { BattleCardButton } from "../../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
 import { DetailPopup } from "../../../shared/ui/card-popup";
 import { MysteryEffectBadge } from "../../../shared/ui/mystery-effect-badge";
-import { ScreenHeader, StaggerGroup, StaggerItem } from "../../../shared/ui/shared-ui";
+import { ScreenHeader } from "../../../shared/ui/shared-ui";
 
 interface LookupProps {
   findCard: (id: string) => BattleCard | undefined;
@@ -85,7 +85,7 @@ function MysteryRewardEffectItem({
           <DetailPopup
             idPrefix={boon.id}
             title={boon.title}
-            subtitle={undefined}
+            subtitle="This Run"
             descriptionLines={boon.descriptionLines}
             visible={isHovered}
             triggerRef={trinketRef}
@@ -100,7 +100,7 @@ function MysteryRewardEffectItem({
           </TiltSurface>
         </div>
         <p className={controlLabelClass}>{boon.title}</p>
-        <p className={bodyTextClass}>Added {boon.title} to your Inventory</p>
+        <p className={bodyTextClass}>Added {boon.title} for this run</p>
       </div>
     );
   }
@@ -120,7 +120,7 @@ function MysteryRewardEffectItem({
     },
     gainRandomTrinket: () => {
       const boon = grantedTrinketId ? findTrinket(grantedTrinketId) : undefined;
-      if (!boon) return <p className={controlLabelClass}>Gained a random trinket</p>;
+      if (!boon) return <p className={controlLabelClass}>Gained a random trinket for this run</p>;
       return renderTrinketReward(boon);
     },
     gainGold: () => renderFoundOrLost(effect, "Found"),
@@ -172,16 +172,16 @@ export function MysteryRewardSummary({
   let randomTrinketCursor = 0;
 
   return (
-    <StaggerGroup className="space-y-6 text-center">
-      <StaggerItem index={0}>
+    <div className="space-y-6 text-center">
+      <div>
         <ScreenHeader title={eventTitle} />
-      </StaggerItem>
+      </div>
 
       {otherEffects.map((effect, i) => {
         const grantedTrinketId =
           effect.kind === "gainRandomTrinket" ? grantedTrinketIds[randomTrinketCursor++] : undefined;
         return (
-          <StaggerItem key={i} index={i + 1}>
+          <div key={i}>
             <MysteryRewardEffectItem
               effect={effect}
               runDeck={runDeck}
@@ -189,21 +189,21 @@ export function MysteryRewardSummary({
               findTrinket={findTrinket}
               grantedTrinketId={grantedTrinketId}
             />
-          </StaggerItem>
+          </div>
         );
       })}
 
       {resourceEffects.length > 0 ? (
-        <StaggerItem index={otherEffects.length + 1}>
+        <div>
           <FoundResourcesRow gold={totalGold} materials={mats} />
-        </StaggerItem>
+        </div>
       ) : null}
 
-      <StaggerItem index={otherEffects.length + (resourceEffects.length > 0 ? 2 : 1)}>
+      <div>
         <Button size="lg" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
           Continue
         </Button>
-      </StaggerItem>
-    </StaggerGroup>
+      </div>
+    </div>
   );
 }

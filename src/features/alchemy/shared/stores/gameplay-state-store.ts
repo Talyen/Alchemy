@@ -53,12 +53,8 @@ type ProfileStoreSet<T> = (value: T | ((previous: T) => T)) => void;
 interface GearAggregateActions {
   gearInitialize: GearStore["initialize"];
   gearAddInstance: GearStore["addInstance"];
-  gearTransferToInventory: GearStore["transferToInventory"];
   gearEquip: GearStore["equip"];
   gearUnequip: GearStore["unequip"];
-  gearMoveBoardItem: GearStore["moveBoardItem"];
-  gearSyncBoardPositions: GearStore["syncBoardPositions"];
-  gearSortBoard: GearStore["sortBoard"];
   gearSalvage: GearStore["salvage"];
   gearApplyCurrency: GearStore["applyCurrency"];
   gearAddCurrencies: GearStore["addCurrencies"];
@@ -155,12 +151,8 @@ function createGearActionGroup(rootSet: RootSet, rootGet: () => GameplayState): 
   return {
     gearInitialize: gearActions.initialize,
     gearAddInstance: gearActions.addInstance,
-    gearTransferToInventory: gearActions.transferToInventory,
     gearEquip: gearActions.equip,
     gearUnequip: gearActions.unequip,
-    gearMoveBoardItem: gearActions.moveBoardItem,
-    gearSyncBoardPositions: gearActions.syncBoardPositions,
-    gearSortBoard: gearActions.sortBoard,
     gearSalvage: gearActions.salvage,
     gearApplyCurrency: gearActions.applyCurrency,
     gearAddCurrencies: gearActions.addCurrencies,

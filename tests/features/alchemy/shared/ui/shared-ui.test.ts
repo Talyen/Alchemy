@@ -1,15 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { staggerDelay } from "@/features/alchemy/shared/ui/shared-ui";
-import { ANIMATION_STAGGER_UNIT } from "@/lib/game-constants";
+import { fadePhaseClass } from "@/features/alchemy/shared/ui/fade-presence";
 
-describe("staggerDelay", () => {
-  it("returns 0 for position 0", () => {
-    expect(staggerDelay(0)).toBe(0);
-  });
-
-  it("multiplies position by ANIMATION_STAGGER_UNIT", () => {
-    expect(staggerDelay(1)).toBe(ANIMATION_STAGGER_UNIT);
-    expect(staggerDelay(3)).toBe(ANIMATION_STAGGER_UNIT * 3);
-    expect(staggerDelay(10)).toBe(ANIMATION_STAGGER_UNIT * 10);
+describe("fadePhaseClass", () => {
+  it("maps enter and exit to screen fade classes", () => {
+    expect(fadePhaseClass("enter")).toBe("screen-fade-in");
+    expect(fadePhaseClass("exit")).toBe("screen-fade-out");
+    expect(fadePhaseClass("idle")).toBeUndefined();
   });
 });

@@ -59,6 +59,8 @@ export interface BattleActionsProps {
   playableHandCardKeys: Set<string>;
   revealedCardKeys: Set<string>;
   isDevMode: boolean;
+  isAutoplayEnabled: boolean;
+  onToggleAutoplay: () => void;
 }
 
 export type RequiredBattleViewProps = Required<BattleScreenViewProps>;

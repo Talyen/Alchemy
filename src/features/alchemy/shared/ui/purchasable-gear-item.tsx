@@ -13,17 +13,9 @@ interface PurchasableGearItemProps {
   gold: number;
   purchased: boolean;
   onBuy: () => void;
-  staggerIndex?: number;
 }
 
-export function PurchasableGearItem({
-  instance,
-  price,
-  gold,
-  purchased,
-  onBuy,
-  staggerIndex,
-}: PurchasableGearItemProps) {
+export function PurchasableGearItem({ instance, price, gold, purchased, onBuy }: PurchasableGearItemProps) {
   const definition = gearDefinitions[instance.definitionId];
   const title = getGearInstanceTitle(instance);
   const art = definition?.art ?? "";
@@ -42,14 +34,5 @@ export function PurchasableGearItem({
     />
   );
 
-  return (
-    <PurchasableShopTile
-      media={media}
-      price={price}
-      gold={gold}
-      purchased={purchased}
-      onBuy={onBuy}
-      {...(staggerIndex !== undefined ? { staggerIndex } : {})}
-    />
-  );
+  return <PurchasableShopTile media={media} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />;
 }

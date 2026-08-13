@@ -4,13 +4,12 @@ import { affixMatchesAffinity, rollAffixValue } from "./affixes";
 import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
 import { gearBaseItemList } from "./base-items";
 import { gearDefinitions, getGearDefinitionsByRarity } from "./definitions";
-import { definitionOfferFootprintKey, eligibleOfferFootprintKeys, type GearOfferFootprintKey } from "./footprints";
 import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity, GearSlot } from "./types";
 
 const SHIELD_BASE_ITEM_IDS = new Set(["leather-buckler", "kite-shield"]);
 const OFF_HAND_OFFENSIVE_BASE_ITEMS = new Set(["quiver", "spellbook"]);
 const JEWELRY_SLOTS = new Set<GearSlot>(["left-ring", "right-ring", "amulet"]);
-const ARMOR_SLOTS = new Set<GearSlot>(["body", "helm", "boots", "gloves", "belt"]);
+const ARMOR_SLOTS = new Set<GearSlot>(["body"]);
 
 function allowedAspectsForDefinition(def: GearDefinition): GearAffixAspect[] {
   if (SHIELD_BASE_ITEM_IDS.has(def.baseItemId)) {
@@ -89,16 +88,9 @@ export function generateDevRandomGearInstance(rng: () => number): GearInstance {
   return createGearInstance(definition, affixes);
 }
 
-function generateGearInstance(
-  rng: () => number,
-  astralChanceBonus = 0,
-  footprintKey: GearOfferFootprintKey | null = null,
-): GearInstance | null {
+function generateGearInstance(rng: () => number, astralChanceBonus = 0): GearInstance | null {
   const rarity = rollGearRewardRarity(rng, astralChanceBonus);
-  let pool = getGearDefinitionsByRarity(rarity);
-  if (footprintKey) {
-    pool = pool.filter((definition) => definitionOfferFootprintKey(definition) === footprintKey);
-  }
+  const pool = getGearDefinitionsByRarity(rarity);
   if (pool.length === 0) return null;
   const definition = pickRandom(pool, rng);
   if (!definition) return null;
@@ -123,14 +115,11 @@ export function generateGearRewardChoices(count: number, rng: () => number, astr
   const choices: GearInstance[] = [];
   const seenFullRolls = new Set<string>();
   const seenBaseItemIds = new Set<string>();
-  const eligibleFamilies = eligibleOfferFootprintKeys(count);
-  const footprintKey = eligibleFamilies.length > 0 ? (pickRandom(eligibleFamilies, rng) ?? null) : null;
-
   let attempts = 0;
   const maxDistinctRollAttempts = count * 30;
   while (choices.length < count && attempts < maxDistinctRollAttempts) {
     attempts += 1;
-    const instance = generateGearInstance(rng, astralChanceBonus, footprintKey);
+    const instance = generateGearInstance(rng, astralChanceBonus);
     if (!instance) continue;
     const def = gearDefinitions[instance.definitionId];
     if (!def || seenBaseItemIds.has(def.baseItemId)) continue;
@@ -139,7 +128,7 @@ export function generateGearRewardChoices(count: number, rng: () => number, astr
   }
 
   while (choices.length < count) {
-    const instance = generateGearInstance(rng, astralChanceBonus, footprintKey);
+    const instance = generateGearInstance(rng, astralChanceBonus);
     if (!instance) break;
     choices.push(instance);
   }

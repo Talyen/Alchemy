@@ -39,7 +39,7 @@ export function EquipmentShopScreen({
           />
         }
       >
-        {gear.map((instance, i) => (
+        {gear.map((instance) => (
           <PurchasableGearItem
             key={instance.instanceId}
             instance={instance}
@@ -47,7 +47,6 @@ export function EquipmentShopScreen({
             gold={gold}
             purchased={purchasedSlotKeys.includes(instance.instanceId)}
             onBuy={() => onBuyGear(instance)}
-            staggerIndex={i}
           />
         ))}
       </ShopBrowseOfferings>

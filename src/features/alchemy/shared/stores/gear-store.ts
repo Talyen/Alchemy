@@ -2,8 +2,6 @@ import type { CharacterId } from "@/lib/game-data";
 import { useMemo } from "react";
 import {
   computeGearManifest,
-  createEmptyCurrencyBoardPositionsByCharacter,
-  createEmptyGearBoardPositionsByCharacter,
   createEmptyGearInventories,
   createEmptyGearLoadouts,
   EMPTY_CRAFTING_CURRENCIES,
@@ -26,8 +24,6 @@ export const gearPersistenceCodec: PersistenceCodec<GearSaveFields, [draft: Game
   createDefault: () => ({
     gearInventories: createEmptyGearInventories(),
     gearLoadouts: createEmptyGearLoadouts(),
-    gearBoardPositionsByCharacter: createEmptyGearBoardPositionsByCharacter(),
-    craftingCurrencyBoardPositionsByCharacter: createEmptyCurrencyBoardPositionsByCharacter(),
     craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
   }),
   encode: () => {
@@ -35,8 +31,6 @@ export const gearPersistenceCodec: PersistenceCodec<GearSaveFields, [draft: Game
     return {
       gearInventories: state.inventories,
       gearLoadouts: state.loadouts,
-      gearBoardPositionsByCharacter: state.boardPositionsByCharacter,
-      craftingCurrencyBoardPositionsByCharacter: state.currencyBoardPositionsByCharacter,
       craftingCurrencies: state.craftingCurrencies,
     };
   },
@@ -44,25 +38,13 @@ export const gearPersistenceCodec: PersistenceCodec<GearSaveFields, [draft: Game
     createGameplayDraftGearActions(draft).gearInitialize(
       fields.gearInventories,
       fields.gearLoadouts,
-      fields.gearBoardPositionsByCharacter,
       fields.craftingCurrencies,
-      fields.craftingCurrencyBoardPositionsByCharacter,
     );
   },
   subscribe: (listener) => subscribeGameplayCommits(() => listener()),
 };
 
-export type GearArmorySlice = Pick<
-  GearStore,
-  | "inventories"
-  | "loadouts"
-  | "boardPositionsByCharacter"
-  | "currencyBoardPositionsByCharacter"
-  | "craftingCurrencies"
-  | "addInstance"
-  | "moveBoardItem"
-  | "sortBoard"
->;
+export type GearArmorySlice = Pick<GearStore, "inventories" | "loadouts" | "craftingCurrencies" | "addInstance">;
 
 /** Canonical gear read/command slice for feature controllers. */
 export function useGearArmorySlice(): GearArmorySlice {
@@ -70,12 +52,8 @@ export function useGearArmorySlice(): GearArmorySlice {
     useShallow((state) => ({
       inventories: state.gear.inventories,
       loadouts: state.gear.loadouts,
-      boardPositionsByCharacter: state.gear.boardPositionsByCharacter,
-      currencyBoardPositionsByCharacter: state.gear.currencyBoardPositionsByCharacter,
       craftingCurrencies: state.gear.craftingCurrencies,
       addInstance: state.gearActions.gearAddInstance,
-      moveBoardItem: state.gearActions.gearMoveBoardItem,
-      sortBoard: state.gearActions.gearSortBoard,
     })),
   );
 }

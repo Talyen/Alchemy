@@ -2,8 +2,10 @@
 import { drawCards } from "./draw";
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { decayHalvedStatus } from "./status-helpers";
-import { type BattleState, type CombatTextEvent } from "./types";
+import { type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
 import { CARDS_PER_TURN, PERCENT_DENOMINATOR } from "../game-constants";
+import { applyCardEffects } from "./effect-handlers";
+import type { BattleCard } from "@/lib/game-data";
 
 export const ENEMY_TURN_CONSTANTS = {
   IRON_HIDE_OPTIONS_COUNT: 3,
@@ -24,6 +26,30 @@ export function isFreezeActiveForAspect(state: BattleState, aspect: FreezeAspect
   if (state.enemyCC.freezeSkipTurns <= 0) return false;
   if (aspect === "regen") return state.talentEffects.freezeBlocksRegen;
   return state.talentEffects.freezePreventsEnemyScaling;
+}
+
+function processPendingTurnStartEffects(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  if (state.pendingTurnStartEffects.length === 0) return state;
+  const due: BattleState["pendingTurnStartEffects"] = [];
+  const kept: BattleState["pendingTurnStartEffects"] = [];
+  for (const pulse of state.pendingTurnStartEffects) {
+    due.push(pulse);
+    if (pulse.remainingTurns > 1) kept.push({ ...pulse, remainingTurns: pulse.remainingTurns - 1 });
+  }
+  const pulseCard: BattleCard = {
+    id: "pending-turn-start",
+    title: "",
+    descriptionLines: [],
+    art: "",
+    cost: 0,
+    effects: [],
+  };
+  return withPreservedFlags({ ...state, pendingTurnStartEffects: kept }, (nextState) =>
+    due.reduce(
+      (current, pulse) => applyCardEffects(current, { ...pulseCard, effects: pulse.effects }, combatTexts),
+      nextState,
+    ),
+  );
 }
 
 export function scaleByRoomMultiplier(state: BattleState, value: number): number {
@@ -107,7 +133,10 @@ export function advanceToPlayerTurn(state: BattleState, combatTexts: CombatTextE
     return handleCCSkipTurn(nextState);
   }
 
-  const drawnState = performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn);
+  const drawnState = processPendingTurnStartEffects(
+    performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn),
+    combatTexts,
+  );
   if (drawnState.gearEffects.healthPerTurn <= 0) return drawnState;
   return applyHealingWithCombatText(drawnState, drawnState.gearEffects.healthPerTurn, combatTexts);
 }

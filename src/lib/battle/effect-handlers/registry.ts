@@ -25,10 +25,16 @@ import {
   applyLoseHealthEffect,
 } from "./mana-health-handlers";
 import { applySummonCompanionEffect, applyBuffCompanionEffect } from "./companion-handlers";
-import { applyGainGoldEffect, applyWishEffectHandler, applyDrawCardsEffect } from "./utility-handlers";
+import {
+  applyGainGoldEffect,
+  applyWishEffectHandler,
+  applyDrawCardsEffect,
+  applyNextHitCritEffect,
+  applyPlayNextCardTwiceEffect,
+} from "./utility-handlers";
 import type { EffectHandler } from "./handler-types";
 
-type RegisteredEffectKind = Exclude<BattleCardEffectKind, "chance">;
+type RegisteredEffectKind = Exclude<BattleCardEffectKind, "chance" | "repeat-over-turns">;
 
 // `satisfies Record<...>` ensures ALL registered kinds have a handler at build time.
 // The effect-handlers-registry.test.ts provides a runtime belt-and-suspenders check.
@@ -54,10 +60,12 @@ export const EFFECT_APPLY_BY_KIND = {
   "multiply-enemy-status": applyMultiplyEnemyStatusEffect,
   "cleanse-player-status-to-damage": applyCleansePlayerStatusToDamageEffect,
   "random-damage": applyRandomDamageEffect,
+  "next-hit-crit": applyNextHitCritEffect,
+  "play-next-card-twice": applyPlayNextCardTwiceEffect,
 } satisfies Record<RegisteredEffectKind, EffectHandler>;
 
 export function hasEffectApplyHandler(kind: BattleCardEffectKind): kind is RegisteredEffectKind {
-  return kind !== "chance" && kind in EFFECT_APPLY_BY_KIND;
+  return kind !== "chance" && kind !== "repeat-over-turns" && kind in EFFECT_APPLY_BY_KIND;
 }
 
 export function applyEffectByKind(

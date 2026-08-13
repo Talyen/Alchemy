@@ -13,6 +13,7 @@ import {
   ENEMY_BASE_REGENERATION,
   BLEED_EXECUTE_MULTIPLIER,
   AUTO_END_TURN_DELAY,
+  SLICE_DEATH_DURATION_MS,
   VICTORY_TRANSITION_DELAY,
   ENEMY_PHASE_DELAY,
   SHAKE_DURATION,
@@ -117,7 +118,7 @@ describe("Timing constants", () => {
   });
 
   it("VICTORY_TRANSITION_DELAY is long enough for death animation", () => {
-    expect(VICTORY_TRANSITION_DELAY).toBeGreaterThanOrEqual(1000);
+    expect(VICTORY_TRANSITION_DELAY).toBeGreaterThanOrEqual(SLICE_DEATH_DURATION_MS);
   });
 });
 

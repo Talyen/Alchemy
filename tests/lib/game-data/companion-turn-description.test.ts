@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { formatCompanionTurnLineBase } from "@/lib/game-data/cards/companion-turn-description";
+import {
+  formatCompanionTurnLineBase,
+  formatCompanionTurnStartLine,
+} from "@/lib/game-data/cards/companion-turn-description";
 import type { BattleCardEffect } from "@/lib/game-data";
 
 describe("formatCompanionTurnLineBase", () => {
@@ -41,5 +44,19 @@ describe("formatCompanionTurnLineBase", () => {
   it("formats plural draw-cards", () => {
     const effect: BattleCardEffect = { kind: "draw-cards", amount: 2 };
     expect(formatCompanionTurnLineBase(effect)).toBe("Draws 2 Cards each turn");
+  });
+});
+
+describe("formatCompanionTurnStartLine", () => {
+  it("applies bond and damage bonuses to chance-nested fox damage", () => {
+    const effect: BattleCardEffect = {
+      kind: "chance",
+      probability: 0.5,
+      successEffects: [{ kind: "damage", damageType: "bleed", amount: 1 }],
+      failureEffects: [{ kind: "gain-gold", amount: 1 }],
+    };
+    expect(formatCompanionTurnStartLine(effect, { bondLevel: 2, damageBonus: 1 })).toBe(
+      "Deals 4 Bleed damage or Steals 1 Gold each turn",
+    );
   });
 });

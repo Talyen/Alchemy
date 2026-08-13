@@ -21,6 +21,7 @@ function makeSession() {
   const cardPlayInProgressRef = { current: false };
   const victoryDefeatHandledRef = { current: false };
   const companionScheduledRef = { current: false };
+  const onBattleSessionPreparedRef = { current: null };
   const onBattleVictory = vi.fn();
   const onBattleDefeat = vi.fn();
 
@@ -32,6 +33,7 @@ function makeSession() {
     cardPlayInProgressRef,
     victoryDefeatHandledRef,
     companionScheduledRef,
+    onBattleSessionPreparedRef,
     onBattleVictory,
     onBattleDefeat,
   } as unknown as BattleControllerContext);

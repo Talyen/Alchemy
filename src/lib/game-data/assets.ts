@@ -72,10 +72,6 @@ export const allGameArt = Object.values(assetModules) as string[];
 
 export const gearSlotBackgroundArt = {
   body: assetRefs.gearSlotBody,
-  helm: assetRefs.gearSlotHelm,
-  boots: assetRefs.gearSlotBoots,
-  gloves: assetRefs.gearSlotGloves,
-  belt: assetRefs.gearSlotBelt,
   "main-hand": assetRefs.gearSlotMainHand,
   "off-hand": assetRefs.gearSlotOffHand,
   "left-ring": assetRefs.gearSlotLeftRing,

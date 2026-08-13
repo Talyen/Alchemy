@@ -17,13 +17,7 @@ export function GearDetailPopup({
 }) {
   if (!definition) return null;
   return (
-    <PortaledTooltip
-      triggerRef={triggerRef}
-      visible={visible}
-      matchTriggerWidth
-      pointerEventsAuto
-      className="rounded-shell-tooltip"
-    >
+    <PortaledTooltip triggerRef={triggerRef} visible={visible} className="rounded-shell-tooltip">
       <GearTooltipContent definition={definition} instance={instance} />
     </PortaledTooltip>
   );

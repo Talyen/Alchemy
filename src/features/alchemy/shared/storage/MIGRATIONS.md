@@ -50,7 +50,7 @@ For a schema bump from `N` to `N + 1`:
 ## `saveSchemaVersion` vs `contentVersion`
 
 - **`saveSchemaVersion`** — persisted **structure** (field renames, required nested shapes). Bump with a migration step.
-- **`contentVersion`** — reserved for **ID or meaning remaps** in game content (card/trinket id splits). Only bump when a migration handler exists for the remap. Until the first real remap, keep a single content version (`1`).
+- **`contentVersion`** — reserved for **ID or meaning remaps** in game content (card/trinket id splits). Only bump when a migration handler exists for the remap. Current remap: v1→v2 renames persisted `sunder-armor` card ids to `sunder` (`migrateContentV1ToV2`).
 
 ## Test expectations
 
@@ -92,10 +92,6 @@ When adding a new saved field that gates features (unlocks, meta screens, game m
 2. List inferrable existing fields for backfill in the migration step only when a real signal exists.
 3. Add a fixture at version `N−1` in `tests/fixtures/legacy-saves.ts`.
 4. Assert **gameplay outcome** in `save-migration-guard.test.ts` — not only JSON field presence.
-
-## Gear board layout (`gearBoardPositionsByCharacter`)
-
-Armory inventory tile positions persist per character (`gearBoardPositionsByCharacter`). Gear inventories are per-character (`gearInventories`). Both are part of the launch baseline.
 
 ## Active-run RNG streams (`activeRun.rng`)
 

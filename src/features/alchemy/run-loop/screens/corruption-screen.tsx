@@ -18,13 +18,7 @@ import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../shared/ui/card-description-ui";
 import { SelectableShopCard } from "../../shared/ui/shop-card-item";
-import {
-  ScreenDescription,
-  ScreenHeader,
-  ShineAccentButton,
-  StaggerGroup,
-  StaggerItem,
-} from "../../shared/ui/shared-ui";
+import { ScreenDescription, ScreenHeader, ShineAccentButton } from "../../shared/ui/shared-ui";
 import { cn } from "@/lib/utils";
 
 function CorruptionDeckPicker({
@@ -66,14 +60,14 @@ function CorruptionDeckPicker({
 
 function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: () => void }) {
   return (
-    <StaggerGroup className="flex flex-col items-center gap-5">
-      <StaggerItem index={0}>
+    <div className="flex flex-col items-center gap-5">
+      <div>
         <ScreenHeader title="Altar of Corruption" />
-      </StaggerItem>
-      <StaggerItem index={1}>
+      </div>
+      <div>
         <ScreenDescription tone="danger">Select a Card to Corrupt</ScreenDescription>
-      </StaggerItem>
-      <StaggerItem index={2}>
+      </div>
+      <div>
         <img
           src={corruptionAltar}
           alt="Altar of Corruption"
@@ -81,8 +75,8 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
           loading="eager"
           decoding="sync"
         />
-      </StaggerItem>
-      <StaggerItem index={3} className="flex flex-wrap justify-center gap-3">
+      </div>
+      <div className="flex flex-wrap justify-center gap-3">
         <Button size="lg" variant="outline" className={BUTTON_WIDTH_ACTION} onClick={onLeave}>
           Leave
         </Button>
@@ -94,8 +88,8 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
         >
           Corrupt a Card
         </ShineAccentButton>
-      </StaggerItem>
-    </StaggerGroup>
+      </div>
+    </div>
   );
 }
 
@@ -104,16 +98,16 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
   const [hoveredResult, setHoveredResult] = useState(false);
 
   return (
-    <StaggerGroup className="flex flex-col items-center gap-5">
-      <StaggerItem index={0}>
+    <div className="flex flex-col items-center gap-5">
+      <div>
         <ScreenHeader title="Altar of Corruption" />
-      </StaggerItem>
-      <StaggerItem index={1}>
+      </div>
+      <div>
         <ScreenDescription className="text-red-100/75">The altar returns your card changed.</ScreenDescription>
-      </StaggerItem>
+      </div>
       {result.transformed ? (
         <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3">
-          <StaggerItem index={2} className="col-start-1 flex flex-col items-center">
+          <div className="col-start-1 flex flex-col items-center">
             <BattleCardButton
               card={result.originalCard}
               hovered={hoveredOriginal}
@@ -124,11 +118,11 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
               shimmerToken={undefined}
               className={viewCardWidthClass}
             />
-          </StaggerItem>
-          <StaggerItem index={3} className="col-start-2 flex shrink-0 self-center">
+          </div>
+          <div className="col-start-2 flex shrink-0 self-center">
             <MoveRight className="h-10 w-10 text-red-800" />
-          </StaggerItem>
-          <StaggerItem index={4} className="col-start-3 flex flex-col items-center">
+          </div>
+          <div className="col-start-3 flex flex-col items-center">
             <BattleCardButton
               card={result.corruptedCard}
               hovered={hoveredResult}
@@ -139,16 +133,16 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
               shimmerToken={undefined}
               className={viewCardWidthClass}
             />
-          </StaggerItem>
-          <StaggerItem index={5} className={cn("col-start-1", controlLabelClass)}>
+          </div>
+          <div className={cn("col-start-1", controlLabelClass)}>
             <CardTitle card={result.originalCard} />
-          </StaggerItem>
-          <StaggerItem index={6} className={cn("col-start-3", controlLabelClass)}>
+          </div>
+          <div className={cn("col-start-3", controlLabelClass)}>
             <CardTitle card={result.corruptedCard} />
-          </StaggerItem>
+          </div>
         </div>
       ) : (
-        <StaggerItem index={2} className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3">
           <BattleCardButton
             card={result.corruptedCard}
             hovered={hoveredResult}
@@ -162,14 +156,14 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
           <p className="text-xl font-semibold text-foreground">
             <CardTitle card={result.corruptedCard} />
           </p>
-        </StaggerItem>
+        </div>
       )}
-      <StaggerItem index={result.transformed ? 7 : 3}>
+      <div>
         <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
           Continue
         </Button>
-      </StaggerItem>
-    </StaggerGroup>
+      </div>
+    </div>
   );
 }
 
@@ -198,15 +192,15 @@ export function CorruptionScreen({
       {result ? (
         <CorruptionResultView result={result} onContinue={onExit} />
       ) : selecting ? (
-        <StaggerGroup className="flex flex-col items-center gap-5">
-          <StaggerItem index={0}>
+        <div className="flex flex-col items-center gap-5">
+          <div>
             <ScreenHeader title="Altar of Corruption" />
-          </StaggerItem>
-          <StaggerItem index={1}>
+          </div>
+          <div>
             <ScreenDescription className="text-red-100/75">
               Select one card. The altar may weaken, strengthen, or remake it.
             </ScreenDescription>
-          </StaggerItem>
+          </div>
           <CorruptionDeckPicker
             runDeck={runDeck}
             selectedIndex={selectedIndex}
@@ -214,7 +208,7 @@ export function CorruptionScreen({
             page={page}
             onPageChange={setPage}
           />
-          <StaggerItem index={SELECTION_GRID_PAGE_SIZE + 2} className="flex justify-center gap-3">
+          <div className="flex justify-center gap-3">
             <Button
               size="lg"
               variant="outline"
@@ -235,8 +229,8 @@ export function CorruptionScreen({
             >
               Corrupt
             </ShineAccentButton>
-          </StaggerItem>
-        </StaggerGroup>
+          </div>
+        </div>
       ) : (
         <CorruptionIntro
           onBegin={() => {

@@ -153,47 +153,25 @@
     animation-name: cardGhostPlayTravel;
   }
 
-  .motion-overlay {
-    animation: fadeIn 150ms ease-out both;
-  }
-
-  .wish-overlay-backdrop {
-    animation: fadeIn 260ms ease-out both;
-  }
-
+  .motion-overlay,
+  .wish-overlay-backdrop,
   .motion-panel,
   .wish-overlay-panel,
-  .stagger-item,
-  .state-swap {
-    animation-name: slideUpIn;
-    animation-timing-function: var(--ease-out-expo);
+  .screen-fade-in {
+    animation-name: fadeIn;
+    animation-duration: var(--motion-fade-duration);
+    animation-timing-function: var(--motion-fade-ease);
     animation-fill-mode: both;
-    will-change: opacity, transform;
+    will-change: opacity;
   }
 
-  .motion-panel {
-    animation-duration: 190ms;
-  }
-
-  .wish-overlay-panel {
-    animation-duration: 300ms;
-  }
-
-  .stagger-item {
-    animation-duration: 230ms;
-    animation-delay: calc(var(--stagger-index, 0) * 36ms);
-  }
-
-  .state-swap {
-    animation-duration: 170ms;
-  }
-
-  .page-enter {
-    animation: slideUpIn 240ms var(--ease-out-expo) both;
-  }
-
-  .state-fade {
-    animation: fadeIn 170ms var(--ease-out-expo) both;
+  .screen-fade-out {
+    animation-name: fadeOut;
+    animation-duration: var(--motion-fade-duration);
+    animation-timing-function: var(--motion-fade-ease);
+    animation-fill-mode: both;
+    pointer-events: none;
+    will-change: opacity;
   }
 
   .hp-number-pop {
@@ -236,16 +214,6 @@
   .alchemy-loading-fade {
     animation: startupBlurFadeIn 320ms var(--ease-out-expo) both;
   }
-
-  .motion-crossfade {
-    transition:
-      opacity 170ms var(--ease-out-expo),
-      transform 170ms var(--ease-out-expo);
-  }
-
-  .motion-crossfade-hidden {
-    transform: translateY(4px);
-  }
 }
 
 @utility surface-muted {
@@ -253,8 +221,12 @@
 }
 
 @utility page-exit {
-  animation: slideUpOut 120ms ease-in both;
+  animation: fadeOut var(--motion-fade-duration) var(--motion-fade-ease) both;
   pointer-events: none;
+}
+
+@utility page-enter {
+  animation: fadeIn var(--motion-fade-duration) var(--motion-fade-ease) both;
 }
 
 @utility image-rendering-pixelated {

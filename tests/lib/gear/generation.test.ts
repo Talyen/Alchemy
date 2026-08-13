@@ -56,15 +56,11 @@ describe("gear generation", () => {
       expect(new Set(keys).size, `seed ${seed}: ${JSON.stringify(keys)}`).toBe(1);
       seenFamilies.add(keys[0]!);
     }
-    expect(seenFamilies.size).toBeGreaterThan(1);
-    for (const key of seenFamilies) {
-      expect(eligibleOfferFootprintKeys(3)).toContain(key);
-    }
+    expect([...seenFamilies]).toEqual(["3x4"]);
   });
 
   it("lists only footprint families with enough unique base items", () => {
-    expect(eligibleOfferFootprintKeys(3)).toEqual(["1x1", "2x2", "2x3"]);
-    expect(eligibleOfferFootprintKeys(3)).not.toContain("2x1");
+    expect(eligibleOfferFootprintKeys(3)).toEqual(["3x4"]);
   });
 
   it("guarantees the requested choice count even with duplicate-prone rng", () => {

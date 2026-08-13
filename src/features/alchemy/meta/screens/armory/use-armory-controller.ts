@@ -2,15 +2,11 @@ import { useCallback, useRef } from "react";
 import type { CharacterId } from "@/lib/game-data";
 import {
   generateDevRandomGearInstance,
-  type BoardItemRef,
-  type CraftingCurrencyBoardPositionsByCharacter,
   type CraftingCurrencyId,
-  type GearBoardPositionsByCharacter,
   type GearInventories,
   type GearInstance,
   type GearLoadouts,
   type GearSlot,
-  type InventoryPlacement,
 } from "@/lib/gear";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
@@ -45,34 +41,24 @@ function mutateGearWithFlush<T>(
   return result;
 }
 
-function runSessionWithFlush<T>(flush: () => void, command: () => T, options?: { flushOnSuccessOnly?: boolean }): T {
+function runSessionWithFlush<T>(flush: () => void, command: () => T): T {
   const result = dispatchRunSessionCommand(command);
-  if (options?.flushOnSuccessOnly ? result : true) flush();
+  flush();
   return result;
 }
 
 export interface ArmoryController {
   inventories: GearInventories;
   loadouts: GearLoadouts;
-  gearBoardPositionsByCharacter: GearBoardPositionsByCharacter;
-  currencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   finishedRunCharacters: CharacterId[];
   browseOnly: boolean;
   hasActiveRun: boolean;
-  onEquip: (
-    characterId: CharacterId,
-    slot: GearSlot,
-    instance: GearInstance,
-    options?: { vacatedPlacement?: InventoryPlacement; swapDisplaced?: boolean },
-  ) => void;
+  onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onSalvage: (instanceId: string) => boolean;
-  onTransferGear: (instanceId: string, targetCharacterId: CharacterId) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
-  onMoveBoardItem: (characterId: CharacterId, item: BoardItemRef, col: number, row: number) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
-  onSortBoard: (characterId: CharacterId) => void;
 }
 
 export function useArmoryController(): ArmoryController {
@@ -89,10 +75,10 @@ export function useArmoryController(): ArmoryController {
   }, [hasActiveRun, returnToRunScreen]);
 
   const onEquip = useCallback<ArmoryController["onEquip"]>(
-    (characterId, slot, instance, options) => {
+    (characterId, slot, instance) => {
       whenArmoryEditable(hasActiveBattle, () => {
         mutateGearWithFlush(activeRunCharacterId, flush, (state) => {
-          state.equip(characterId, slot, instance, options);
+          state.equip(characterId, slot, instance);
         });
       });
     },
@@ -128,44 +114,6 @@ export function useArmoryController(): ArmoryController {
     [activeRunCharacterId, flush, hasActiveBattle],
   );
 
-  const onTransferGear = useCallback<ArmoryController["onTransferGear"]>(
-    (instanceId, targetCharacterId) =>
-      whenArmoryEditable(
-        hasActiveBattle,
-        () =>
-          mutateGearWithFlush(
-            activeRunCharacterId,
-            flush,
-            (state) => state.transferToInventory(instanceId, targetCharacterId),
-            { flushOnSuccessOnly: true },
-          ),
-        false,
-      ),
-    [activeRunCharacterId, flush, hasActiveBattle],
-  );
-
-  const onSortBoard = useCallback<ArmoryController["onSortBoard"]>(
-    (characterId) => {
-      whenArmoryEditable(hasActiveBattle, () => {
-        runSessionWithFlush(flush, () => gear.sortBoard(characterId));
-      });
-    },
-    [gear, hasActiveBattle, flush],
-  );
-
-  const onMoveBoardItem = useCallback<ArmoryController["onMoveBoardItem"]>(
-    (characterId, item, col, row) =>
-      whenArmoryEditable(
-        hasActiveBattle,
-        () =>
-          runSessionWithFlush(flush, () => gear.moveBoardItem(characterId, item, col, row), {
-            flushOnSuccessOnly: true,
-          }),
-        false,
-      ),
-    [flush, gear, hasActiveBattle],
-  );
-
   const onApplyCurrency = useCallback<ArmoryController["onApplyCurrency"]>(
     (currencyId, instanceId) =>
       whenArmoryEditable(
@@ -193,8 +141,6 @@ export function useArmoryController(): ArmoryController {
   const controller: ArmoryController = {
     inventories: gear.inventories,
     loadouts: gear.loadouts,
-    gearBoardPositionsByCharacter: gear.boardPositionsByCharacter,
-    currencyBoardPositionsByCharacter: gear.currencyBoardPositionsByCharacter,
     craftingCurrencies: gear.craftingCurrencies,
     finishedRunCharacters,
     browseOnly: hasActiveBattle,
@@ -202,10 +148,7 @@ export function useArmoryController(): ArmoryController {
     onEquip,
     onUnequip,
     onSalvage,
-    onTransferGear,
     onApplyCurrency,
-    onMoveBoardItem,
-    onSortBoard,
   };
   if (isAlchemyDevBuild()) controller.onSpawnDevGear = onSpawnDevGear;
   return controller;

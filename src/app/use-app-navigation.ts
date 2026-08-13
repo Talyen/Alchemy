@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Screen } from "@/lib/routing";
 import { isRunLoopScreen } from "@/lib/routing";
-import { PAGE_EXIT_MS } from "@/lib/game-constants";
+import { resolveGameDelay } from "@/lib/animation/game-timer";
+import { MOTION_FADE_MS, PAGE_EXIT_MS } from "@/lib/game-constants";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useLatestRef } from "@/features/alchemy/shared/hooks";
@@ -56,14 +57,14 @@ export function useRenderedScreenTransition(controllerScreen: Screen, commitPend
       commitPendingTransition();
       setRenderedScreen(pendingScreenRef.current);
       setPagePhase("enter");
-    }, PAGE_EXIT_MS);
+    }, resolveGameDelay(PAGE_EXIT_MS));
     return () => window.clearTimeout(timeout);
   }, [controllerScreen, renderedScreen, commitPendingTransition]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- resets transient tooltip suppression after screen changes
     setTooltipBlocked(true);
-    const timer = window.setTimeout(() => setTooltipBlocked(false), 400);
+    const timer = window.setTimeout(() => setTooltipBlocked(false), resolveGameDelay(MOTION_FADE_MS));
     return () => window.clearTimeout(timer);
   }, [renderedScreen]);
 

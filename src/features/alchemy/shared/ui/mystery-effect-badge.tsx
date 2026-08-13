@@ -105,15 +105,11 @@ function renderChooseCardBadge(effect: MysteryEffect, ctx: BadgeCtx): React.Reac
 function renderTrinketBadge(effect: MysteryEffect, ctx: BadgeCtx): React.ReactNode {
   const e = effect as { trinketId: string };
   const title = ctx.findTrinket?.(e.trinketId)?.title ?? "a trinket";
-  return ctx.tooltip ? (
-    <span className="text-sm text-muted-foreground">Add {title} to your Inventory</span>
-  ) : (
-    <span className="text-sm text-muted-foreground">Add {title}</span>
-  );
+  return <span className="text-sm text-muted-foreground">Add {title} for this run</span>;
 }
 
 function renderRandomTrinketBadge(): React.ReactNode {
-  return <span className="text-sm text-muted-foreground">Gain a random trinket</span>;
+  return <span className="text-sm text-muted-foreground">Gain a random trinket for this run</span>;
 }
 
 function renderRemoveCardBadge(effect: MysteryEffect): React.ReactNode {

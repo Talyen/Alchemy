@@ -14,7 +14,7 @@ test.describe("collection-tabs", () => {
         const menu = new MenuPage(page);
         await menu.gotoWithUnlockedMeta({
           discoveredCardIds: ["slash", "bash", "block", "anvil", "meteor", "heal", "frostbolt"],
-          encounteredEnemyIds: ["skeleton", "goblin", "imp", "mimic"],
+          encounteredEnemyIds: ["skeleton", "goblin", "slime", "mimic"],
           discoveredTrinketIds: ["lucky-clover", "smugglers-map", "bone-charm"],
         });
         await menu.openCollection();

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { fireEvent, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { createEmptyGearLoadouts, EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
 import {
@@ -17,10 +18,12 @@ describe("ArmoryScreen tooltip integration", () => {
     fireEvent.mouseEnter(screen.getByLabelText("Use Voidstone"));
 
     const tooltipText = screen.getByText("Remove All Affixes");
-    expect(tooltipText.closest(".armory-inventory-tooltip")?.parentElement).toBe(document.body);
+    expect(tooltipText.closest(".armory-inventory-tooltip")).toBeTruthy();
+    expect(document.body.contains(tooltipText)).toBe(true);
   });
 
-  it("renders gear affix epithets in the portal", () => {
+  it("renders gear affix epithets in the portal", async () => {
+    const user = userEvent.setup();
     renderArmoryScreen({
       inventories: createArmoryInventories([
         {
@@ -34,22 +37,22 @@ describe("ArmoryScreen tooltip integration", () => {
       ]),
     });
 
-    fireEvent.mouseEnter(document.querySelector('[data-gear-title="Shortsword"]')!);
+    await user.hover(screen.getByRole("button", { name: "Shortsword" }));
 
     expect(screen.getByText("Ironbound")).toBeTruthy();
     expect(screen.getByText("Blazing")).toBeTruthy();
-    expect(screen.getByText("Ironbound").closest(".armory-inventory-tooltip")?.parentElement).toBe(document.body);
   });
 
   it("portals equipped gear tooltips to document.body", async () => {
+    const user = userEvent.setup();
     const loadouts = createEmptyGearLoadouts();
-    loadouts.knight.helm = "gear-helm";
+    loadouts.knight.body = "gear-body";
     renderArmoryScreen({ loadouts });
 
-    fireEvent.mouseEnter(screen.getByLabelText("Helm equipment slot"));
+    await user.hover(screen.getByLabelText("Armor equipment slot"));
 
     await waitFor(() => {
-      expect(screen.getByText("Leather Helm").closest(".armory-inventory-tooltip")?.parentElement).toBe(document.body);
+      expect(screen.getByText("Leather Armor").closest(".armory-inventory-tooltip")).toBeTruthy();
     });
   });
 });

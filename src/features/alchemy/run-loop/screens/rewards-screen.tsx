@@ -8,7 +8,8 @@ import { DetailPopup } from "../../shared/ui/card-popup";
 import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
 import { InteractiveArtTile } from "../../shared/ui/interactive-art-tile";
 import { SelectableChoiceCard } from "../../shared/ui/selectable-choice-card";
-import { ActionButtonRow, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
+import { ActionButtonRow, ScreenHeader } from "../../shared/ui/shared-ui";
+import { FadeSlot } from "../../shared/ui/fade-slot";
 import { cardSurfaceClass, collectionTileWidthClass, bodyTextClass } from "@/features/alchemy/shared/config";
 import { gearInstanceAspectClass } from "@/features/alchemy/shared/ui/gear-aspect";
 import {
@@ -31,10 +32,10 @@ function RewardChoiceItems({
 }) {
   const isTrinket = rewardType === "trinket";
   const isGear = rewardType === "gear";
-  return choices.map((item, index) => {
+  return choices.map((item) => {
     const choiceId = getRewardChoiceId(item);
     return (
-      <StaggerItem key={choiceId} index={index}>
+      <div key={choiceId}>
         {isGear ? (
           <GearRewardButton
             instance={item as GearRewardState["choices"][number]}
@@ -55,7 +56,7 @@ function RewardChoiceItems({
             interactionKey="reward"
           />
         )}
-      </StaggerItem>
+      </div>
     );
   });
 }
@@ -63,19 +64,13 @@ function RewardChoiceItems({
 function RewardsFound({
   rewardGold,
   rewardMaterials,
-  staggerIndex,
 }: {
   rewardGold: number;
   rewardMaterials: Partial<Record<MaterialId, number>>;
-  staggerIndex: number;
 }) {
   const hasRewards = rewardGold > 0 || MATERIAL_IDS.some((mat) => (rewardMaterials[mat] ?? 0) > 0);
   if (!hasRewards) return null;
-  return (
-    <StaggerItem index={staggerIndex}>
-      <FoundResourcesRow gold={rewardGold} materials={rewardMaterials} />
-    </StaggerItem>
-  );
+  return <FoundResourcesRow gold={rewardGold} materials={rewardMaterials} />;
 }
 
 function TrinketRewardButton({
@@ -102,7 +97,7 @@ function TrinketRewardButton({
         <DetailPopup
           idPrefix={trinket.id}
           title={trinket.title}
-          subtitle={undefined}
+          subtitle="This Run"
           descriptionLines={trinket.descriptionLines}
           visible={visible}
           triggerRef={triggerRef}
@@ -141,7 +136,7 @@ function GearRewardButton({
         <DetailPopup
           idPrefix={instance.instanceId}
           title={title}
-          subtitle="Permanent Gear"
+          subtitle={undefined}
           descriptionLines={descriptionLines}
           visible={visible}
           triggerRef={triggerRef}
@@ -183,15 +178,9 @@ export function RewardsScreen({
     <div className="flex h-full w-full items-center justify-center px-4 py-6">
       <div className="alchemy-shell w-full max-w-6xl rounded-shell-hero border border-border/80 p-7 text-center">
         <ScreenHeader title="Victory" />
-        <p className={cn("mt-3", bodyTextClass)}>
-          {isGear
-            ? "Choose permanent Gear for your Armory"
-            : isTrinket
-              ? "Choose a Trinket to add to your Collection"
-              : "Choose a Card to add to your Deck"}
-        </p>
+        <p className={cn("mt-3", bodyTextClass)}>Choose Reward</p>
 
-        <StaggerGroup
+        <FadeSlot
           swapKey={rewardChoices.map((item) => getRewardChoiceId(item)).join("-")}
           className="mt-8 flex flex-col items-center gap-8"
         >
@@ -204,8 +193,8 @@ export function RewardsScreen({
             />
           </div>
 
-          <RewardsFound rewardGold={rewardGold} rewardMaterials={rewardMaterials} staggerIndex={rewardChoices.length} />
-        </StaggerGroup>
+          <RewardsFound rewardGold={rewardGold} rewardMaterials={rewardMaterials} />
+        </FadeSlot>
 
         <ActionButtonRow
           className="mt-5"

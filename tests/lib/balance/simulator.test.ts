@@ -69,7 +69,7 @@ describe("balance simulator", () => {
     const configs = [
       { characterId: "knight" as const, enemyId: "skeleton" },
       { characterId: "wizard" as const, enemyId: "goblin" },
-      { characterId: "rogue" as const, enemyId: "imp" },
+      { characterId: "rogue" as const, enemyId: "slime" },
     ];
     for (const { characterId, enemyId } of configs) {
       const result = simulateBattle({

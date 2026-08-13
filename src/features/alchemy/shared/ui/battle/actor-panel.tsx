@@ -1,19 +1,26 @@
 // Battle actor panels for hero/enemy art, health, status rows, and death effects.
 // Depends on actor subcomponents, enemy tooltips, and shared card styling.
 // Used by BattleScreen through the battle UI barrel.
-import { useRef, useState, type Ref } from "react";
+import { useRef, useState, type ReactNode, type Ref } from "react";
 
 import { Progress } from "@/components/ui/progress";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { battleCardWidthClass, cardArtImageClass, cardSurfaceClass, sectionTitleClass } from "../../config";
+import {
+  battleCardWidthClass,
+  battleEnemyCardWidthClass,
+  cardArtImageClass,
+  cardSurfaceClass,
+  landscapeArtImageClass,
+  sectionTitleClass,
+} from "../../config";
 import type { StatusChip } from "../../types";
 import { TiltSurface } from "../tilt-surface";
 import { PortraitHurtVfx } from "./portrait-hurt-vfx";
 import { useHurtPulse } from "./use-hurt-pulse";
-import { ParticleBurst } from "./particle-burst";
+import { SliceDeath } from "./slice-death";
 import { DeathsDoorStatusIcon, StatusIcon } from "./status-icons";
 import { useChangeToken } from "./use-change-token";
 
@@ -45,15 +52,10 @@ interface ArtPanelProps {
   activeLabyrinthModifiers?: EncounterCombatTraitId[];
   deathsDoorActive?: boolean;
   isBoss?: boolean;
-  statsCardWidthClass?: string | undefined;
   hurtFlashToken?: number;
   turnActive?: boolean;
   turnUrgentHide?: boolean;
-}
-
-function getStatsCardWidth(isBoss: boolean, statsCardWidthClass: string | undefined, defaultClass: string): string {
-  if (!isBoss) return defaultClass;
-  return statsCardWidthClass ?? defaultClass;
+  children?: ReactNode;
 }
 
 // Renders one battle actor card with health/status chrome and optional enemy tooltip.
@@ -71,24 +73,26 @@ export function ArtPanel({
   surfaceRef,
   isDead = false,
   shaking = false,
-  cardWidthClass = battleCardWidthClass,
+  cardWidthClass,
   descriptionLines,
   currentEnemy,
   currentEnemyAttackEffects,
   activeLabyrinthModifiers = [],
   deathsDoorActive = false,
   isBoss = false,
-  statsCardWidthClass,
   hurtFlashToken = 0,
   turnActive = false,
   turnUrgentHide = false,
+  children,
 }: ArtPanelProps) {
   const healthToken = useChangeToken(health);
   const healthPercent = maxHealth > 0 ? (health / maxHealth) * ACTOR_PANEL_CONFIG.fullHealthPercent : 0;
   const artWrapperRef = useRef<HTMLDivElement>(null);
   const [tooltipVisible, setTooltipVisible] = useState(false);
 
-  const artWrapClass = cn(isBoss && "origin-bottom scale-[1.3]");
+  const resolvedCardWidthClass =
+    cardWidthClass ?? (side === "enemy" ? battleEnemyCardWidthClass : battleCardWidthClass);
+  const artWrapClass = cn("relative", isBoss && side === "player" && "origin-bottom scale-[1.3]");
 
   return (
     <div className={cn("relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
@@ -121,12 +125,17 @@ export function ArtPanel({
             onHoverShimmer={onHoverShimmer}
             surfaceRef={surfaceRef}
             isDead={isDead}
-            cardWidthClass={cardWidthClass}
+            cardWidthClass={resolvedCardWidthClass}
             deathsDoorActive={deathsDoorActive}
             hurtFlashToken={hurtFlashToken}
             turnActive={turnActive}
             turnUrgentHide={turnUrgentHide}
           />
+          {children ? (
+            <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center overflow-visible">
+              {children}
+            </div>
+          ) : null}
         </div>
       </div>
       <ActorStatsPanel
@@ -138,7 +147,7 @@ export function ArtPanel({
         healthToken={healthToken}
         statuses={statuses}
         isDead={isDead}
-        cardWidthClass={getStatsCardWidth(isBoss, statsCardWidthClass, cardWidthClass)}
+        cardWidthClass={resolvedCardWidthClass}
         deathsDoorActive={deathsDoorActive}
       />
     </div>
@@ -190,7 +199,7 @@ function ActorArtFrame({
         cardSurfaceClass,
         cardWidthClass ?? battleCardWidthClass,
         sparksOverflow && "overflow-visible",
-        isDead && "animate-frame-fade overflow-visible !bg-transparent",
+        isDead && "overflow-visible !bg-transparent",
       )}
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
@@ -199,14 +208,21 @@ function ActorArtFrame({
     >
       <ArtTurnActiveBorder side={side} active={turnActive && !isDead} urgentHide={turnUrgentHide} />
       {deathsDoorActive ? <ArtDeathDoorBorder /> : null}
-      <img
-        src={art}
-        alt={title}
-        className={cn("block w-full", cardArtImageClass, isDead && "opacity-0")}
-        loading="eager"
-      />
+      {isDead ? (
+        <SliceDeath
+          imageUrl={art}
+          alt={title}
+          imageClassName={side === "enemy" ? landscapeArtImageClass : cardArtImageClass}
+        />
+      ) : (
+        <img
+          src={art}
+          alt={title}
+          className={cn("block w-full", side === "enemy" ? landscapeArtImageClass : cardArtImageClass)}
+          loading="eager"
+        />
+      )}
       {!isDead ? <PortraitHurtVfx pulse={pulse} /> : null}
-      {isDead && <ParticleBurst imageUrl={art} />}
     </TiltSurface>
   );
 }

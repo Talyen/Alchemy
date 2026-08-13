@@ -412,3 +412,57 @@ describe("endPlayerTurn — companion", () => {
     expect(result.state.enemyStatuses.bleed).toBe(0);
   });
 });
+
+describe("endPlayerTurn — pending turn-start pulses", () => {
+  it("resolves queued freeze damage at the start of the next player turn", () => {
+    const state = battleState({
+      enemyHealth: 30,
+      enemyAttackEffects: [],
+      pendingTurnStartEffects: [{ remainingTurns: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 2 }] }],
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.pendingTurnStartEffects).toEqual([]);
+    expect(result.state.enemyHealth).toBe(28);
+    expect(result.state.enemyStatuses.freeze).toBe(2);
+  });
+
+  it("repeats a pulse on each of the remaining player turns", () => {
+    const state = battleState({
+      enemyHealth: 30,
+      enemyAttackEffects: [],
+      pendingTurnStartEffects: [{ remainingTurns: 2, effects: [{ kind: "damage", damageType: "freeze", amount: 2 }] }],
+    });
+    const first = endPlayerTurn(state);
+    expect(first.state.pendingTurnStartEffects).toEqual([
+      { remainingTurns: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 2 }] },
+    ]);
+    expect(first.state.enemyHealth).toBe(28);
+    const second = endPlayerTurn(first.state);
+    expect(second.state.pendingTurnStartEffects).toEqual([]);
+    expect(second.state.enemyHealth).toBe(26);
+  });
+
+  it("does not crit or consume nextHitCrit on delayed pulses", () => {
+    const state = battleState({
+      enemyHealth: 30,
+      enemyAttackEffects: [],
+      flags: { ...makeTestBattleState().flags, nextHitCrit: true },
+      pendingTurnStartEffects: [{ remainingTurns: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 2 }] }],
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyHealth).toBe(28);
+    expect(result.state.flags.nextHitCrit).toBe(true);
+  });
+
+  it("does not consume first-holy doubling on delayed pulses", () => {
+    const state = battleState({
+      enemyHealth: 30,
+      enemyAttackEffects: [],
+      trinketEffects: { ...makeTestBattleState().trinketEffects, firstHolyDamageDoubled: true },
+      pendingTurnStartEffects: [{ remainingTurns: 1, effects: [{ kind: "damage", damageType: "holy", amount: 4 }] }],
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyHealth).toBe(26);
+    expect(result.state.flags.firstHolyDamageBonusUsed).toBe(false);
+  });
+});

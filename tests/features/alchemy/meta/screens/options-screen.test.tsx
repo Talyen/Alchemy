@@ -29,6 +29,8 @@ const defaultProps = {
   gameplay: {
     autoEndTurn: false,
     onAutoEndTurnChange: vi.fn(),
+    rememberAutoplayPreference: false,
+    onRememberAutoplayPreferenceChange: vi.fn(),
   },
   saveData: {
     showClearSaveConfirm: false,
@@ -62,5 +64,13 @@ describe("OptionsScreen", () => {
 
     expect(screen.queryByText("UI Scale")).toBeNull();
     expect(screen.getByText("Brightness")).toBeTruthy();
+  });
+
+  it("renders the remember auto-battle toggle on the gameplay tab", async () => {
+    const user = userEvent.setup();
+    render(<OptionsScreen {...defaultProps} />);
+
+    await user.click(screen.getByRole("button", { name: "Gameplay" }));
+    expect(screen.getByText("Remember Auto-Battle Preference")).toBeTruthy();
   });
 });

@@ -79,7 +79,6 @@ export function MerchantShopScreen({
                 gold={gold}
                 purchased={purchasedSlotKeys.includes(slotKey)}
                 onBuy={() => onBuyCard(card, slotKey)}
-                staggerIndex={i}
               />
             );
           })}

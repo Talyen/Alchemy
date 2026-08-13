@@ -30,10 +30,10 @@ export const advancedCards = [
   }),
   cardBuilders.loseHealthBenefitCard({ id: "blood-offering", art: assetRefs.bloodOffering, healthLoss: 1, draw: 2 }),
   {
-    id: "sunder-armor",
-    title: "Sunder Armor",
+    id: "sunder",
+    title: "Sunder",
     descriptionLines: ["Deal 4 Physical damage", "Strip 2 enemy Armor"],
-    art: assetRefs.sunderArmor,
+    art: assetRefs.sunder,
     cost: 1,
     effects: [
       { kind: "damage", damageType: "physical", amount: 4 },
@@ -89,8 +89,8 @@ export const advancedCards = [
   }),
   cardBuilders.summonCompanionCard({
     id: "skeleton-companion",
-    title: "Raise Skeleton",
-    art: assetRefs.raiseSkeletonCompanion,
+    title: "Risen Skeleton",
+    art: assetRefs.risenSkeletonCompanion,
     companionId: "skeleton",
   }),
   cardBuilders.summonCompanionCard({ id: "pixie-companion", art: assetRefs.pixieCompanion, companionId: "pixie" }),
@@ -119,6 +119,11 @@ export const advancedCards = [
     id: "library-owl-companion",
     art: assetRefs.libraryOwlCompanion,
     companionId: "library-owl",
+  }),
+  cardBuilders.summonCompanionCard({
+    id: "fox-companion",
+    art: assetRefs.foxCompanion,
+    companionId: "fox",
   }),
   {
     id: "molten-bulwark",

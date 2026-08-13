@@ -8,7 +8,6 @@ import { CardFlip } from "../../shared/ui/card-flip";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { cn } from "@/lib/utils";
 import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
-import { StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { LockedMenuItem } from "../../shared/ui/locked-menu-item";
 import { isProgressionFeatureUnlocked, KNIGHT_UNLOCK_MESSAGE } from "../../shared/config/game-data-catalog";
 
@@ -73,19 +72,17 @@ export function MenuScreen({
         />
       </TiltSurface>
 
-      <StaggerGroup className="grid gap-2">
-        <StaggerItem index={0}>
-          <Button
-            size="lg"
-            variant="primary"
-            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
-            onClick={onPlay}
-          >
-            <Swords className="h-7 w-7" />
-            Play
-          </Button>
-        </StaggerItem>
-        <StaggerItem index={1} className="relative">
+      <div className="grid gap-2">
+        <Button
+          size="lg"
+          variant="primary"
+          className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
+          onClick={onPlay}
+        >
+          <Swords className="h-7 w-7" />
+          Play
+        </Button>
+        <div className="relative">
           <LockedMenuItem
             title="Talents"
             message={KNIGHT_UNLOCK_MESSAGE}
@@ -102,8 +99,8 @@ export function MenuScreen({
           {hasUnspentTalents && !isKnightGatedLocked && (
             <ShineBorder shineColor="var(--color-primary)" borderWidth={1} duration={8} className="rounded-xl" />
           )}
-        </StaggerItem>
-        <StaggerItem index={2} className="relative">
+        </div>
+        <div className="relative">
           <LockedMenuItem
             title="Homestead"
             message={KNIGHT_UNLOCK_MESSAGE}
@@ -120,8 +117,8 @@ export function MenuScreen({
           {hasAffordableHomestead && !isKnightGatedLocked && (
             <ShineBorder shineColor="var(--color-primary)" borderWidth={1} duration={8} className="rounded-xl" />
           )}
-        </StaggerItem>
-        <StaggerItem index={3} className="relative">
+        </div>
+        <div className="relative">
           <LockedMenuItem
             title="Armory"
             message="Find Gear to unlock"
@@ -135,42 +132,36 @@ export function MenuScreen({
           >
             Armory
           </LockedMenuItem>
-        </StaggerItem>
-        <StaggerItem index={4}>
-          <Button
-            size="lg"
-            variant="outline"
-            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
-            onClick={onCollection}
-          >
-            <BookOpen className="h-7 w-7" />
-            Collection
-          </Button>
-        </StaggerItem>
-        <StaggerItem index={5}>
-          <Button
-            size="lg"
-            variant="outline"
-            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
-            onClick={onOptions}
-          >
-            <Cog className="h-7 w-7" />
-            Options
-          </Button>
-        </StaggerItem>
+        </div>
+        <Button
+          size="lg"
+          variant="outline"
+          className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
+          onClick={onCollection}
+        >
+          <BookOpen className="h-7 w-7" />
+          Collection
+        </Button>
+        <Button
+          size="lg"
+          variant="outline"
+          className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
+          onClick={onOptions}
+        >
+          <Cog className="h-7 w-7" />
+          Options
+        </Button>
         {onQuit ? (
-          <StaggerItem index={6}>
-            <Button
-              size="lg"
-              variant="outline"
-              className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
-              onClick={onQuit}
-            >
-              Quit
-            </Button>
-          </StaggerItem>
+          <Button
+            size="lg"
+            variant="outline"
+            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
+            onClick={onQuit}
+          >
+            Quit
+          </Button>
         ) : null}
-      </StaggerGroup>
+      </div>
     </div>
   );
 }

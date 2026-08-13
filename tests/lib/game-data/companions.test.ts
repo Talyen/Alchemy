@@ -18,6 +18,7 @@ describe("companionLibrary data integrity", () => {
       "golden-retriever",
       "shield-scarab",
       "library-owl",
+      "fox",
     ];
     for (const id of expectedIds) {
       expect(companionLibrary[id as CompanionId]).toBeDefined();
@@ -56,6 +57,11 @@ describe("companionLibrary data integrity", () => {
           case "player-status":
             expect(effect.status).toBe("block");
             expect(effect.amount).toBeGreaterThan(0);
+            break;
+          case "chance":
+            expect(effect.probability).toBeGreaterThan(0);
+            expect(effect.successEffects.length).toBeGreaterThan(0);
+            expect(effect.failureEffects.length).toBeGreaterThan(0);
             break;
           default:
             throw new Error(`Unsupported companion effect: ${(effect as { kind: string }).kind}`);

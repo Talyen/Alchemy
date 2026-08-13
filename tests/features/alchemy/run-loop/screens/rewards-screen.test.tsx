@@ -76,7 +76,7 @@ describe("RewardsScreen", () => {
     }
   });
 
-  it("staggers Found resources after the last reward choice, not after a multi-second delay", () => {
+  it("shows Found resources with the reward choices", () => {
     render(
       <RewardsScreen
         rewardState={{
@@ -92,8 +92,6 @@ describe("RewardsScreen", () => {
       />,
     );
 
-    const found = screen.getByText("Found").closest(".stagger-item") as HTMLElement | null;
-    expect(found).not.toBeNull();
-    expect(found!.style.getPropertyValue("--stagger-index")).toBe("2");
+    expect(screen.getByText("Found")).toBeTruthy();
   });
 });

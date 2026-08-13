@@ -4,7 +4,6 @@ import { type KeywordId, type TalentXP } from "@/lib/game-data";
 import { getTalentTreeKeywordIds } from "@/lib/game-data";
 import { type MaterialInventory } from "@/lib/homestead/types";
 import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
-import { StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { KeywordProgressCard } from "./keyword-progress-card";
 
 export function RunEndProgressSection({
@@ -34,20 +33,20 @@ export function RunEndProgressSection({
   return (
     <>
       {keywordIds.length > 0 && (
-        <StaggerGroup className="w-full max-w-2xl">
+        <div className="w-full max-w-2xl">
           <div className="flex flex-wrap justify-center gap-2">
-            {keywordIds.map((kw, index) => (
-              <StaggerItem key={kw} index={index} className="w-[23.33cqh] flex-none">
+            {keywordIds.map((kw) => (
+              <div key={kw} className="w-[23.33cqh] flex-none">
                 <KeywordProgressCard
                   kw={kw}
                   runXP={runEndTalentXP[kw] ?? 0}
                   totalXP={talentXP[kw] ?? 0}
                   animate={animate}
                 />
-              </StaggerItem>
+              </div>
             ))}
           </div>
-        </StaggerGroup>
+        </div>
       )}
 
       <FoundResourcesRow materials={runEndMaterials} />

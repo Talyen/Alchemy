@@ -48,8 +48,8 @@ export function CollectionScreen({
         />
         <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
 
-        <div className="mt-6 flex min-h-[71.11cqh] flex-col items-center overflow-visible">
-          <div className="min-h-[60cqh] w-full overflow-visible">
+        <div className="mt-6 flex flex-col items-center gap-4 overflow-visible">
+          <div className="w-full overflow-visible">
             <CollectionGrid
               collectionTab={collectionTab}
               discoveredCardIds={discoveredCardIds}
@@ -59,10 +59,9 @@ export function CollectionScreen({
               bondedCompanions={bondedCompanions}
             />
           </div>
-        </div>
-
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
-          <CollectionPagination page={activePage} totalPages={totalPages} onPageChange={handlePageChange} />
+          <div className="flex flex-wrap items-center justify-center">
+            <CollectionPagination page={activePage} totalPages={totalPages} onPageChange={handlePageChange} />
+          </div>
         </div>
       </ScreenShell>
     </PageLayout>

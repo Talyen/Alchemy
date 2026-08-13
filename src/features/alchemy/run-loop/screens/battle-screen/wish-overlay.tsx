@@ -1,5 +1,4 @@
 // Wish selection overlay for battle.
-import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
@@ -7,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
 
 import { BattleCardButton } from "../../../shared/ui/card-button";
+import { fadePhaseClass, useFadePresence, useHeldWhile } from "../../../shared/ui/fade-presence";
 import { getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
 import { ScreenHeader } from "../../../shared/ui/shared-ui";
 import { handCardWidthClass, BUTTON_WIDTH_ACTION, bodyTextClass } from "@/features/alchemy/shared/config";
@@ -17,14 +17,12 @@ import type { CardDescriptionContext } from "../../../shared/utils/card-descript
 
 function WishCardItem({
   card,
-  index,
   handWidthClass,
   selected,
   onSelect,
   descriptionContext,
 }: {
   card: BattleCard;
-  index: number;
   handWidthClass: string;
   selected: boolean;
   onSelect: (card: BattleCard) => void;
@@ -44,14 +42,23 @@ function WishCardItem({
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
       className={handWidthClass}
-      wrapperClassName="stagger-item relative flex justify-center"
-      wrapperStyle={{ "--stagger-index": index } as CSSProperties}
+      wrapperClassName="relative flex justify-center"
       selected={selected}
     />
   );
 }
 
-export function WishOverlay({ battleState, actions }: { battleState: BattleScreenState; actions: BattleActionsProps }) {
+export function WishOverlay({
+  open,
+  battleState,
+  actions,
+}: {
+  open: boolean;
+  battleState: BattleScreenState;
+  actions: BattleActionsProps;
+}) {
+  const { mounted, phase } = useFadePresence(open);
+  const displayState = useHeldWhile(open, battleState);
   const { onWishChoice } = actions;
   const [wishSelectedCard, setWishSelectedCard] = useState<BattleCard | null>(null);
   const [isResolving, setIsResolving] = useState(false);
@@ -65,12 +72,20 @@ export function WishOverlay({ battleState, actions }: { battleState: BattleScree
 
   const descriptionContext = useMemo(
     () => ({
-      ...battleState.talentEffects,
-      companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
-      companionDamageBuff: battleState.companionDamageBuff,
+      ...displayState.talentEffects,
+      companionDamageBonus: displayState.trinketEffects.companionDamageBonus,
+      companionDamageBuff: displayState.companionDamageBuff,
     }),
-    [battleState.talentEffects, battleState.trinketEffects.companionDamageBonus, battleState.companionDamageBuff],
+    [displayState.talentEffects, displayState.trinketEffects.companionDamageBonus, displayState.companionDamageBuff],
   );
+
+  useEffect(() => {
+    if (!open) return;
+    resolvingRef.current = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset wish selection when the overlay opens again
+    setIsResolving(false);
+    setWishSelectedCard(null);
+  }, [open]);
 
   function resolveWish(card: BattleCard | null) {
     if (resolvingRef.current) return;
@@ -81,6 +96,7 @@ export function WishOverlay({ battleState, actions }: { battleState: BattleScree
   }
 
   useEffect(() => {
+    if (!mounted || phase === "exit") return;
     return pushEscapeHandler({
       id: "wish-overlay",
       priority: ESCAPE_PRIORITY.MODAL,
@@ -92,20 +108,26 @@ export function WishOverlay({ battleState, actions }: { battleState: BattleScree
         setWishSelectedCard(null);
       },
     });
-  }, []);
+  }, [mounted, phase]);
+
+  if (!mounted) return null;
 
   return (
-    <div className="wish-overlay-backdrop absolute inset-0 z-[90] flex items-center justify-center bg-black/70 px-6">
+    <div
+      className={cn(
+        "wish-overlay-backdrop absolute inset-0 z-[90] flex items-center justify-center bg-black/70 px-6",
+        fadePhaseClass(phase),
+      )}
+    >
       <div className="wish-overlay-panel alchemy-shell w-full max-w-5xl rounded-shell-screen border border-border/80 px-6 py-6">
         <ScreenHeader title="Wish" />
         <p className={cn("mt-2 text-center", bodyTextClass)}>Choose one card to add to your hand, or skip.</p>
 
         <div className="mt-6 flex flex-wrap items-start justify-center gap-5">
-          {battleState.wishOptions?.map((card, index) => (
+          {displayState.wishOptions?.map((card) => (
             <WishCardItem
               key={card.id}
               card={card}
-              index={index}
               handWidthClass={handWidthClass}
               selected={wishSelectedCard?.id === card.id}
               onSelect={isResolving ? () => {} : setWishSelectedCard}

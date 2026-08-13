@@ -7,7 +7,7 @@ import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 
 import { CardSelectionGrid } from "./card-selection-grid";
-import { GoldCost, StaggerGroup } from "./shared-ui";
+import { GoldCost } from "./shared-ui";
 import { SelectableShopCard } from "./shop-card-item";
 import { useCaptureEscapeCancel } from "./use-capture-escape-cancel";
 
@@ -45,7 +45,7 @@ export function RemoveCardPanel({
   }
 
   return (
-    <StaggerGroup className="space-y-6">
+    <div className="space-y-6">
       {intro}
       <CardSelectionGrid
         items={items}
@@ -72,6 +72,6 @@ export function RemoveCardPanel({
           <Trash2 className="h-7 w-7" /> Remove Card{removePrice !== undefined && <GoldCost amount={removePrice} />}
         </Button>
       </div>
-    </StaggerGroup>
+    </div>
   );
 }

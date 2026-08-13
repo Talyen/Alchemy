@@ -99,6 +99,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
     ctx.cardPlayInProgressRef.current = false;
     ctx.victoryDefeatHandledRef.current = false;
     ctx.companionScheduledRef.current = false;
+    ctx.onBattleSessionPreparedRef.current?.();
     getPresentationStore().clearRevealedCardKeys();
     getPresentationStore().resetPortraitHurtTokens();
     getPresentationStore().clearFloatingCombatTexts();

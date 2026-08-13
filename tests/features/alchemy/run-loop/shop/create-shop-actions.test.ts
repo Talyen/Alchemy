@@ -387,8 +387,8 @@ describe("createShopActions", () => {
   describe("equipment shop", () => {
     it("persists gold, purchase slot, and gear inventory in one commit", () => {
       const instance: GearInstance = {
-        instanceId: "shop-helm",
-        definitionId: "leather-helm-basic",
+        instanceId: "shop-armor",
+        definitionId: "leather-armor-basic",
         affixes: [],
       };
       setRunProgress({ runGold: 999, characterId: "knight" });
