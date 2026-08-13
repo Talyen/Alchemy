@@ -9,7 +9,7 @@ import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
 /** Schema-only parse for ActiveRunDataSchema coercion/default tests (no runtime guards). */
 const parseActiveRunSchema = (value: unknown) => ActiveRunDataSchema.nullable().catch(null).parse(value);
 
-describe("ActiveRunDataSchema", () => {
+describe("parseActiveRun card hydration", () => {
   it("preserves corrupted cards in active runs", () => {
     const result = parseActiveRun(
       makeMinimalActiveRunInput({
@@ -182,14 +182,16 @@ describe("ActiveRunDataSchema", () => {
 
     expect(result?.runDeck[0].effects).toEqual([{ kind: "heal", amount: 4 }]);
   });
+});
 
+describe("active run field parsing and normalization", () => {
   it.each(["ranger", "rogue", "wizard"] as const)("passes through valid %s characterId", (characterId) => {
     const result = parseActiveRun(makeMinimalActiveRunInput({ characterId }));
     expect(result?.characterId).toBe(characterId);
   });
 
-  it("returns null for unknown characterId", () => {
-    const result = parseActiveRun(makeMinimalActiveRunInput({ characterId: "bard" }));
+  it.each(["bard", "sorcerer"])("returns null for unknown or retired characterId %s", (characterId) => {
+    const result = parseActiveRunSchema(makeMinimalActiveRunInput({ characterId }));
     expect(result).toBeNull();
   });
 
@@ -203,18 +205,12 @@ describe("ActiveRunDataSchema", () => {
     expect(result?.selectedDifficulty).toBe("difficulty-2");
   });
 
-  it("sets selectedDifficulty to null for invalid value", () => {
-    const result = parseActiveRunSchema(makeMinimalActiveRunInput({ selectedDifficulty: "difficulty-999" }));
-    expect(result?.selectedDifficulty).toBeNull();
-  });
-
-  it("sets selectedDifficulty to null when missing", () => {
-    const result = parseActiveRunSchema(makeMinimalActiveRunInput({}));
-    expect(result?.selectedDifficulty).toBeNull();
-  });
-
-  it("sets selectedDifficulty to null for non-string value", () => {
-    const result = parseActiveRunSchema(makeMinimalActiveRunInput({ selectedDifficulty: 42 }));
+  it.each([
+    ["an unknown id", { selectedDifficulty: "difficulty-999" }],
+    ["a missing value", {}],
+    ["a non-string value", { selectedDifficulty: 42 }],
+  ])("sets selectedDifficulty to null for %s", (_label, overrides) => {
+    const result = parseActiveRunSchema(makeMinimalActiveRunInput(overrides));
     expect(result?.selectedDifficulty).toBeNull();
   });
 
@@ -240,17 +236,12 @@ describe("ActiveRunDataSchema", () => {
     const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
     const result = parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap }));
     expect(result?.contentSystemType).toBe("labyrinth");
+    expect(result?.labyrinthMap).toEqual(labyrinthMap);
   });
 
   it("drops labyrinth runs without a valid map", () => {
-    const result = parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth" }));
+    const result = parseActiveRunSchema(makeMinimalActiveRunInput({ contentSystemType: "labyrinth" }));
     expect(result).toBeNull();
-  });
-
-  it("preserves valid labyrinth map state", () => {
-    const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
-    const result = parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap }));
-    expect(result?.labyrinthMap).toEqual(labyrinthMap);
   });
 
   it("drops unknown labyrinth modifiers from persisted maps", () => {

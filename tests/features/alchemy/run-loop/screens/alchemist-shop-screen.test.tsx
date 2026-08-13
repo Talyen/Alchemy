@@ -6,6 +6,7 @@ import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { AlchemistShopScreen } from "@/features/alchemy/run-loop/screens/alchemist-shop-screen";
 import type { BattleCard } from "@/lib/game-data";
 import type { ReactNode } from "react";
+import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 
 beforeAll(() => {
   class IntersectionObserverStub {
@@ -66,6 +67,8 @@ const potion = {
 } as BattleCard;
 
 describe("AlchemistShopScreen mix Escape", () => {
+  installDisabledAnimationsForTests();
+
   afterEach(() => {
     cleanup();
     resetEscapeStackForTests();

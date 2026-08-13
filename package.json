@@ -52,7 +52,7 @@
     "clean": "node scripts/clean-dev-artifacts.mjs",
     "clean:all": "node scripts/clean-dev-artifacts.mjs --all",
     "test": "vitest run --maxWorkers=4",
-    "test:timings": "vitest run --reporter=verbose --reporter=json --outputFile=reports/vitest-timings.json",
+    "test:timings": "vitest run --maxWorkers=4 --reporter=verbose --reporter=json --outputFile=reports/vitest-timings.json",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test --project chromium",

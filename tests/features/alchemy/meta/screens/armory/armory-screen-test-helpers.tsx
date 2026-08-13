@@ -4,7 +4,9 @@ import { ArmoryScreen } from "@/features/alchemy/meta/screens/armory-screen";
 import type { ArmoryScreenProps } from "@/features/alchemy/meta/screens/armory";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 import type { CharacterId } from "@/lib/game-data";
+import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { useGearStore } from "../../../../../helpers/gameplay-store-test";
+import { installDisabledAnimationsForTests } from "../../../../../helpers/animation-test";
 
 const DEFAULT_ARMORY_INVENTORY: GearInstance[] = [
   { instanceId: "gear-sword", definitionId: "longsword-basic", affixes: [] },
@@ -41,12 +43,15 @@ export function renderArmoryScreen(overrides: Partial<ArmoryScreenProps> = {}) {
 
 export function installArmoryScreenTestHooks() {
   beforeEach(() => {
+    resetEscapeStackForTests();
     useGearStore.getState().reset();
     localStorage.clear();
     vi.clearAllMocks();
   });
+  installDisabledAnimationsForTests();
 
   afterEach(() => {
     cleanup();
+    resetEscapeStackForTests();
   });
 }

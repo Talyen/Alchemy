@@ -29,6 +29,7 @@ export function waitForStableHandCardRect(
     let lastRect: CardRect | null = null;
     let completed = false;
     let unregisterCancel = () => {};
+    let clearDelay = () => {};
     let measureFrame: number | null = null;
 
     const finish = (rect: CardRect) => {
@@ -40,13 +41,23 @@ export function waitForStableHandCardRect(
       resolve(rect);
     };
 
-    unregisterCancel = deps.registerCancel(() => {
+    const registeredCancel = deps.registerCancel(() => {
       finish(deps.measureHandCard(cardKey) ?? fallback);
     });
+    unregisterCancel = registeredCancel;
+    if (completed) {
+      unregisterCancel();
+      return;
+    }
 
-    const clearDelay = deps.scheduleTimeout(() => {
+    const scheduledDelay = deps.scheduleTimeout(() => {
       finish(deps.measureHandCard(cardKey) ?? fallback);
     }, CARD_TRANSFER_CONFIG.stableRectTimeoutMs);
+    clearDelay = scheduledDelay;
+    if (completed) {
+      clearDelay();
+      return;
+    }
 
     function tick() {
       if (completed) return;

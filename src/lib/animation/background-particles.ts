@@ -65,12 +65,13 @@ const CONFIGS: Record<ParticleVariant, BackgroundParticleConfig> = {
 
 const MAX_PARTICLE_BACKING_SCALE = 1.5;
 const MAX_PARTICLE_BACKING_PIXELS = 3_000_000;
+const MIN_PARTICLE_BACKING_SCALE = 0.25;
 
 function resolveParticleBackingScale(width: number, height: number, requestedScale: number): number {
   const safeWidth = Math.max(1, width);
   const safeHeight = Math.max(1, height);
   const pixelLimitedScale = Math.sqrt(MAX_PARTICLE_BACKING_PIXELS / (safeWidth * safeHeight));
-  return Math.max(1, Math.min(requestedScale, MAX_PARTICLE_BACKING_SCALE, pixelLimitedScale));
+  return Math.min(Math.max(requestedScale, MIN_PARTICLE_BACKING_SCALE), MAX_PARTICLE_BACKING_SCALE, pixelLimitedScale);
 }
 
 function lerp(a: number, b: number, t: number): number {
@@ -148,9 +149,9 @@ export function startBackgroundParticles(
   let running = true;
   let particles: BackgroundParticle[] = [];
   let lastTime = performance.now();
-  let backingScale = 1;
   let logicalWidth = 0;
   let logicalHeight = 0;
+  let animFrameId: number | null = null;
   const config = CONFIGS[variant];
   const resolvedColors = (colors ?? config.colors).map((c) => c.replace("X", "1"));
   const mult = alphaMultiplier ?? 1;
@@ -164,15 +165,23 @@ export function startBackgroundParticles(
   function resize() {
     const w = activeParent.clientWidth;
     const h = activeParent.clientHeight;
-    backingScale = resolveParticleBackingScale(w, h, devicePixelRatio || 1);
-    activeCanvas.width = Math.max(1, Math.round(w * backingScale));
-    activeCanvas.height = Math.max(1, Math.round(h * backingScale));
     activeCanvas.style.width = `${w}px`;
     activeCanvas.style.height = `${h}px`;
-    activeCtx.setTransform(backingScale, 0, 0, backingScale, 0, 0);
-    if (particles.length === 0) {
+    if (w <= 0 || h <= 0) {
+      activeCanvas.width = 1;
+      activeCanvas.height = 1;
+      logicalWidth = 0;
+      logicalHeight = 0;
+      return;
+    }
+
+    const backingScale = resolveParticleBackingScale(w, h, devicePixelRatio || 1);
+    activeCanvas.width = Math.max(1, Math.floor(w * backingScale));
+    activeCanvas.height = Math.max(1, Math.floor(h * backingScale));
+    activeCtx.setTransform(activeCanvas.width / w, 0, 0, activeCanvas.height / h, 0, 0);
+    if (particles.length === 0 || logicalWidth <= 0 || logicalHeight <= 0) {
       particles = Array.from({ length: config.particleCount }, () => spawnParticle(w, h, patchedConfig));
-    } else if (logicalWidth > 0 && logicalHeight > 0 && (w !== logicalWidth || h !== logicalHeight)) {
+    } else if (w !== logicalWidth || h !== logicalHeight) {
       const scaleX = w / logicalWidth;
       const scaleY = h / logicalHeight;
       for (const p of particles) {
@@ -182,14 +191,13 @@ export function startBackgroundParticles(
     }
     logicalWidth = w;
     logicalHeight = h;
+    scheduleFrame();
   }
 
   resize();
 
   const ro = new ResizeObserver(resize);
   ro.observe(activeParent);
-
-  let animFrameId: number | null = null;
 
   // Pause when the document is hidden, the window is unfocused, or the canvas has no
   // rendered size — the rAF loop is parked (not merely skipping draws) and resumed on
@@ -211,8 +219,8 @@ export function startBackgroundParticles(
     }
     const dt = Math.min((now - lastTime) / 16.67, 3);
     lastTime = now;
-    const w = activeCanvas.width / backingScale;
-    const h = activeCanvas.height / backingScale;
+    const w = logicalWidth;
+    const h = logicalHeight;
 
     activeCtx.clearRect(0, 0, w, h);
 

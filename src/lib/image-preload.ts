@@ -1,9 +1,14 @@
 // Image preloading helpers for warming likely-next game art without blocking the
 // current interaction. Used by the app shell to reduce visible image pop-in.
-import { IMAGE_PRELOAD_BATCH_SIZE } from "./game-constants";
+import { IMAGE_PRELOAD_BATCH_SIZE, IMAGE_PRELOAD_TIMEOUT_MS } from "./game-constants";
 
 // Cache storing in-flight and completed load promises by image source URL.
-const imageLoads = new Map<string, Promise<void>>();
+interface ImageLoadEntry {
+  token: object;
+  promise: Promise<void>;
+}
+
+const imageLoads = new Map<string, ImageLoadEntry>();
 const MAX_IMAGE_CACHE_SIZE = 500;
 
 // Decodes an image once and caches the promise so repeated route predictions can
@@ -11,38 +16,47 @@ const MAX_IMAGE_CACHE_SIZE = 500;
 export function preloadImage(src: string): Promise<void> {
   if (!src) return Promise.resolve();
   const existing = imageLoads.get(src);
-  if (existing) return existing;
+  if (existing) return existing.promise;
 
   if (imageLoads.size >= MAX_IMAGE_CACHE_SIZE) {
     const firstKey = imageLoads.keys().next().value;
     if (firstKey) imageLoads.delete(firstKey);
   }
 
+  const token = {};
+  let cacheable = true;
   const promise = new Promise<void>((resolve) => {
     const image = new Image();
     image.decoding = "async";
 
     let handled = false;
 
-    function finish() {
+    function finish(keepCached: boolean) {
+      if (handled) return;
+      handled = true;
+      cacheable = keepCached;
+      clearTimeout(timeout);
       image.onload = null;
       image.onerror = null;
+      if (!keepCached && imageLoads.get(src)?.token === token) {
+        imageLoads.delete(src);
+      }
       resolve();
     }
 
     function handleLoad() {
       if (handled) return;
-      handled = true;
       image.onload = null;
       image.onerror = null;
-      image
-        .decode()
-        .catch(() => {})
-        .finally(finish);
+      void image.decode().then(
+        () => finish(true),
+        () => finish(false),
+      );
     }
 
+    const timeout = globalThis.setTimeout(() => finish(false), IMAGE_PRELOAD_TIMEOUT_MS);
     image.onload = handleLoad;
-    image.onerror = finish;
+    image.onerror = () => finish(false);
     image.src = src;
 
     if (image.complete) {
@@ -50,7 +64,7 @@ export function preloadImage(src: string): Promise<void> {
     }
   });
 
-  imageLoads.set(src, promise);
+  if (cacheable) imageLoads.set(src, { token, promise });
   return promise;
 }
 

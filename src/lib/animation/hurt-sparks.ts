@@ -26,7 +26,7 @@ const DEFAULT_SPEED_SPAN = 9;
 const DEFAULT_MIN_SIZE = 1.5;
 const DEFAULT_SIZE_SPAN = 2.5;
 
-export type HurtSparkEdges = "perimeter" | "vertical";
+type HurtSparkEdges = "perimeter" | "vertical";
 
 export interface HurtSparkSpawnOptions {
   edges?: HurtSparkEdges;

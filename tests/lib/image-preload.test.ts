@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { IMAGE_PRELOAD_TIMEOUT_MS } from "@/lib/game-constants";
 
 interface MockImage {
   src: string;
@@ -36,6 +37,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -69,6 +71,45 @@ describe("preloadImage", () => {
     const promise = preloadImage(uniqueUrl());
     mockImageInstances[0].onerror?.();
     await expect(promise).resolves.toBeUndefined();
+  });
+
+  it("retries an image after a transient load error", async () => {
+    const src = uniqueUrl();
+    const first = preloadImage(src);
+    mockImageInstances[0].onerror?.();
+    await first;
+
+    const retry = preloadImage(src);
+    expect(mockImageInstances).toHaveLength(2);
+    mockImageInstances[1].onload?.();
+    await retry;
+  });
+
+  it("settles stalled loads at the deadline and allows a retry", async () => {
+    vi.useFakeTimers();
+    const src = uniqueUrl();
+    const stalled = preloadImage(src);
+
+    await vi.advanceTimersByTimeAsync(IMAGE_PRELOAD_TIMEOUT_MS);
+    await expect(stalled).resolves.toBeUndefined();
+
+    const retry = preloadImage(src);
+    expect(mockImageInstances).toHaveLength(2);
+    mockImageInstances[1].onload?.();
+    await retry;
+  });
+
+  it("allows a retry when browser decoding fails", async () => {
+    const src = uniqueUrl();
+    const first = preloadImage(src);
+    vi.mocked(mockImageInstances[0].decode).mockRejectedValueOnce(new Error("decode failed"));
+    mockImageInstances[0].onload?.();
+    await first;
+
+    const retry = preloadImage(src);
+    expect(mockImageInstances).toHaveLength(2);
+    mockImageInstances[1].onload?.();
+    await retry;
   });
 
   it("caches already-loaded images", async () => {

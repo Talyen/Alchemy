@@ -65,7 +65,7 @@ Migration tests must verify gameplay progress, not just field presence:
 
 ## Future schema saves
 
-Saves with a schema newer than the current build are intentionally not migrated or overwritten. The load path returns defaults for the session and disables autosave writes so an older build cannot destroy newer progress. The player-facing Save Protected screen offers update guidance plus an explicit “Delete local save and continue” escape hatch. That wipe clears the full candidate set (desktop `save.json` + bak.1–3 + tmp, then Steam Cloud when available) and fails closed if cloud delete fails so a residual mirror cannot re-block boot. Dev builds also accept `?wipeLocalSave=1` to clear before bootstrap.
+Saves with a schema newer than the current build are intentionally not migrated or overwritten. Candidates are evaluated in authority order; encountering a recognizable future-versioned candidate immediately protects the session instead of falling through to an older backup that autosave could write over it. The load path returns defaults for the session and disables autosave writes so an older build cannot destroy newer progress. The player-facing Save Protected screen offers update guidance plus an explicit “Delete local save and continue” escape hatch. That wipe clears the full candidate set (desktop `save.json` + bak.1–3 + tmp, then Steam Cloud when available) and fails closed if cloud delete fails so a residual mirror cannot re-block boot. Dev builds also accept `?wipeLocalSave=1` to clear before bootstrap.
 
 ## Public save contract
 
@@ -73,7 +73,7 @@ Until launch, `LAUNCH_SAVE_SCHEMA_VERSION` may move forward when the team delibe
 
 ### Policy: local is authoritative
 
-Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring rotation) and then mirror to Steam Cloud. On load, candidates are walked in preference order (local → bak.1 → bak.2 → bak.3 → cloud) and the first that Zod-validates is used. Future-versioned candidates are silently skipped. Only when every candidate is from a future version does the load fall back to defaults with writes disabled and the Save Protected screen.
+Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring rotation) and then mirror to Steam Cloud. On load, candidates are walked in preference order (local → bak.1 → bak.2 → bak.3 → cloud). Corrupt candidates fall through to the next recovery source. A recognizable future-versioned candidate stops traversal and opens the Save Protected screen with writes disabled; otherwise the first compatible candidate that Zod-validates is used.
 
 Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest dirty snapshot to `localStorage`. Desktop IPC remains on the serialized asynchronous queue, so the earlier visibility/pagehide signals give it time to finish before the window closes. A terminal browser flush supersedes any queued snapshot that has not started writing.
 

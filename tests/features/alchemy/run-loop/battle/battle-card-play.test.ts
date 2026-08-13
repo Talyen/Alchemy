@@ -8,13 +8,21 @@ import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battl
 import { getBattleStoreView, resetRunBattleSlice } from "../../../../helpers/run-domain-store-test";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/battle";
-import { playUISound } from "@/lib/audio";
+import { playBattleEvent, playUISound } from "@/lib/audio";
+import { logError } from "@/lib/error-logger";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 
-vi.mock("@/lib/audio", () => ({
+vi.mock("@/lib/audio", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/audio")>()),
+  playBattleEvent: vi.fn(),
   playCardSound: vi.fn(),
   playGoldGain: vi.fn(),
   playUISound: vi.fn(),
+}));
+
+vi.mock("@/lib/error-logger", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/error-logger")>()),
+  logError: vi.fn(),
 }));
 
 vi.mock("@/features/alchemy/run-loop/battle/card-transfer-animations", () => ({
@@ -92,6 +100,7 @@ function clickCard(
 }
 
 beforeEach(() => {
+  vi.clearAllMocks();
   resetRunBattleSlice();
 });
 
@@ -117,7 +126,9 @@ describe("createBattleCardPlay", () => {
     expect(getBattleStoreView().battleState.enemyHealth).toBeLessThan(30);
     expect(ctx.scheduleAutoEndTurnRef.current).toHaveBeenCalled();
     expect(awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
+    expect(playBattleEvent).toHaveBeenCalledWith("enemyHit");
     expect(playUISound).not.toHaveBeenCalled();
+    expect(logError).not.toHaveBeenCalled();
   });
 
   it("rejects plays when mana is insufficient", () => {
@@ -184,6 +195,7 @@ describe("createBattleCardPlay", () => {
     expect(getBattleStoreView().battleState.hand.length).toBe(0);
     expect(getBattleStoreView().battleState.enemyHealth).toBeLessThan(30);
     expect(awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
+    expect(logError).not.toHaveBeenCalled();
   });
 
   it("rejects plays for cards still animating into the hand", () => {
@@ -231,5 +243,6 @@ describe("createBattleCardPlay", () => {
     expect(getBattleStoreView().battleState.discard).toHaveLength(1);
     expect(getBattleStoreView().battleState.mana).toBe(2);
     expect(awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
+    expect(logError).not.toHaveBeenCalled();
   });
 });

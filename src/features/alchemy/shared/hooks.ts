@@ -45,19 +45,33 @@ export function resolveAutoAspectRatio(
 /**
  * Custom hook to track the browser viewport dimensions reactively.
  */
-function useViewportSize() {
+function useViewportSize(active: boolean) {
   const [viewportSize, setViewportSize] = useState(() => ({
     width: typeof window !== "undefined" ? window.innerWidth : LAYOUT_CONFIG.DEFAULT_WIDTH,
     height: typeof window !== "undefined" ? window.innerHeight : LAYOUT_CONFIG.DEFAULT_HEIGHT,
   }));
 
   useEffect(() => {
+    if (!active) return;
+    let frameId: number | null = null;
+
     function handleResize() {
-      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+      if (frameId !== null) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = null;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        setViewportSize((current) =>
+          current.width === width && current.height === height ? current : { width, height },
+        );
+      });
     }
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+    };
+  }, [active]);
 
   return viewportSize;
 }
@@ -142,7 +156,7 @@ export function getVirtualResolutionLayout(
  * to fit a target game canvas size into the browser viewport size.
  */
 export function useVirtualResolution(selectedAspectRatio: AspectRatioOption, bypassVr = false) {
-  const { width, height } = useViewportSize();
+  const { width, height } = useViewportSize(!bypassVr);
   if (bypassVr) return BYPASS_RESOLUTION_RESULT;
   return getVirtualResolutionLayout(selectedAspectRatio, width, height);
 }

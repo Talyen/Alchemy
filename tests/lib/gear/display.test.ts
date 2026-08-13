@@ -42,4 +42,15 @@ describe("gear display", () => {
   it("strips affix names from description lines", () => {
     expect(getGearInstanceDescriptionLines(affixedArmor)).toEqual(["Increases Health by 7"]);
   });
+
+  it("returns no display entries for an unknown definition without affixes", () => {
+    const unknown: GearInstance = {
+      instanceId: "missing-1",
+      definitionId: "missing-definition",
+      affixes: [],
+    };
+
+    expect(getGearInstanceTooltipEntries(unknown)).toEqual([]);
+    expect(getGearInstanceDescriptionLines(unknown)).toEqual([]);
+  });
 });

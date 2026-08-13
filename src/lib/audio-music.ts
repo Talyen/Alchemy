@@ -58,6 +58,7 @@ export function getBossMusicKey(bossId: string): string | undefined {
 // Cache of HTMLAudioElements keyed by music key, so re-entering a battle or boss fight
 // resumes the same track from its saved position instead of starting from 0.
 const musicCache = new Map<string, HTMLAudioElement>();
+const musicElementKeys = new WeakMap<HTMLAudioElement, string>();
 
 function getCachedElement(key: string): HTMLAudioElement | undefined {
   return musicCache.get(key);
@@ -68,6 +69,7 @@ export function invalidateCacheForKey(key: string): void {
   if (cached) {
     cached.pause();
     cached.currentTime = 0;
+    musicElementKeys.delete(cached);
   }
   musicCache.delete(key);
 }
@@ -85,25 +87,27 @@ function playElement(el: HTMLAudioElement) {
 
 // Applies all active volume layers to a streaming music element.
 // Volume cascaded: state-music-volume * state-master-volume * constant-music-master-gain.
-export function applyMusicVolume(el: HTMLAudioElement) {
-  el.volume = audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN;
+export function applyMusicVolume(
+  el: HTMLAudioElement,
+  key: string | null = musicElementKeys.get(el) ?? audioState.currentMusicKey,
+  fadeProgress = 1,
+) {
+  const boost = key && BOSS_MUSIC_KEYS.has(key) ? BOSS_MUSIC_VOLUME_BOOST : 1;
+  el.volume = audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * fadeProgress * boost;
 }
 
 // Stops and clears the current HTML audio element, then returns an element for
 // the given (key, track) pair — either from cache (resuming position) or newly created.
-function replaceCurrentTrack(key: string, track: string, volume: number) {
+function replaceCurrentTrack(key: string, track: string, fadeProgress: number) {
   if (audioState.currentMusic) {
     audioState.currentMusic.pause();
     audioState.currentMusic.currentTime = 0;
     audioState.currentMusic = null;
   }
 
-  const boost = BOSS_MUSIC_KEYS.has(key) ? BOSS_MUSIC_VOLUME_BOOST : 1;
-  const effectiveVolume = volume * boost;
-
   const cached = musicCache.get(key);
   if (cached) {
-    cached.volume = effectiveVolume;
+    applyMusicVolume(cached, key, fadeProgress);
     cached.muted = audioState.muted;
     playElement(cached);
     audioState.currentMusic = cached;
@@ -111,8 +115,9 @@ function replaceCurrentTrack(key: string, track: string, volume: number) {
   }
 
   const el = new Audio(musicBase + track);
+  musicElementKeys.set(el, key);
   el.loop = true;
-  el.volume = effectiveVolume;
+  applyMusicVolume(el, key, fadeProgress);
   el.muted = audioState.muted;
   const skipTime = BOSS_MUSIC_SKIP_TIMES[key];
   if (skipTime) {
@@ -128,7 +133,6 @@ function replaceCurrentTrack(key: string, track: string, volume: number) {
 // Uses a short interval so volume interpolation can continue when animation frames are paused.
 function startTrack(key: string, track: string) {
   const el = replaceCurrentTrack(key, track, MUSIC_CONFIG.VOLUME_MIN);
-  const boost = BOSS_MUSIC_KEYS.has(key) ? BOSS_MUSIC_VOLUME_BOOST : 1;
   const startTime = performance.now();
 
   const timer = setInterval(() => {
@@ -136,7 +140,7 @@ function startTrack(key: string, track: string) {
     if (elapsed < FADE_IN_DELAY) return;
     const t = Math.min(1, (elapsed - FADE_IN_DELAY) / FADE_IN_DURATION);
     if (audioState.currentMusic === el) {
-      el.volume = audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * t * boost;
+      applyMusicVolume(el, key, t);
     }
     if (t >= 1) {
       clearInterval(timer);
@@ -156,7 +160,7 @@ export function playMusicImmediate(key: string) {
     : pickRandom(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? []);
   if (!track) return;
 
-  replaceCurrentTrack(key, track, audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN);
+  replaceCurrentTrack(key, track, 1);
 }
 
 function pathFromSrc(src: string): string | undefined {

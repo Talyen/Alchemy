@@ -7,6 +7,17 @@ import { registerErrorSink } from "@/lib/error-logger";
 
 const MAX_ERRORS = 100;
 const STORAGE_KEY = "alchemy-error-log";
+const ERROR_SOURCES = new Set<ErrorSource>([
+  "react",
+  "global",
+  "promise",
+  "battle",
+  "storage",
+  "validation",
+  "audio",
+  "card",
+  "other",
+]);
 
 export interface LoggedError {
   id: string;
@@ -31,12 +42,54 @@ interface ErrorLogActions {
 
 export type ErrorLogStore = ErrorLogFields & ErrorLogActions;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function normalizePersistedError(value: unknown): LoggedError | null {
+  if (!isRecord(value)) return null;
+  if (typeof value.id !== "string" || typeof value.message !== "string") return null;
+  if (typeof value.timestamp !== "number" || !Number.isFinite(value.timestamp)) return null;
+  if (typeof value.source !== "string" || !ERROR_SOURCES.has(value.source as ErrorSource)) return null;
+
+  const stack = typeof value.stack === "string" ? value.stack : undefined;
+  const componentStack = typeof value.componentStack === "string" ? value.componentStack : undefined;
+  const context = isRecord(value.context) ? value.context : undefined;
+  return {
+    id: value.id,
+    timestamp: value.timestamp,
+    message: value.message,
+    source: value.source as ErrorSource,
+    stack,
+    componentStack,
+    context,
+    reviewed: value.reviewed === true,
+  };
+}
+
+export function parsePersistedErrorLog(raw: string | null): LoggedError[] {
+  if (!raw) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+  return parsed
+    .map(normalizePersistedError)
+    .filter((entry): entry is LoggedError => entry !== null)
+    .slice(-MAX_ERRORS);
+}
+
 function loadPersisted(): LoggedError[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as LoggedError[];
+    const errors = parsePersistedErrorLog(raw);
+    if (raw && JSON.stringify(errors) !== raw) persist(errors);
+    return errors;
   } catch {
+    persist([]);
     return [];
   }
 }

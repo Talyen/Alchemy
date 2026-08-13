@@ -89,9 +89,6 @@ async function removeStorageItem(key: string): Promise<{ ok: true } | { ok: fals
 }
 
 function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
-  let futureSchema = 0;
-  let futureContent = 0;
-
   for (const candidate of candidates) {
     let parsed: unknown;
     try {
@@ -102,12 +99,16 @@ function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
     }
 
     if (isUnsupportedFutureSaveData(parsed)) {
-      futureSchema = Math.max(futureSchema, getRawSaveSchemaVersion(parsed));
-      continue;
+      return {
+        data: defaultSaveData,
+        status: { kind: "unsupported-newer-schema", detectedSchemaVersion: getRawSaveSchemaVersion(parsed) },
+      };
     }
     if (isUnsupportedFutureContentData(parsed)) {
-      futureContent = Math.max(futureContent, getRawContentVersion(parsed));
-      continue;
+      return {
+        data: defaultSaveData,
+        status: { kind: "unsupported-newer-content", detectedContentVersion: getRawContentVersion(parsed) },
+      };
     }
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
       logStorageFailure("Save candidate root was not an object, trying next candidate");
@@ -129,18 +130,6 @@ function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
     return { data: hydrated, status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" } };
   }
 
-  if (futureSchema) {
-    return {
-      data: defaultSaveData,
-      status: { kind: "unsupported-newer-schema", detectedSchemaVersion: futureSchema },
-    };
-  }
-  if (futureContent) {
-    return {
-      data: defaultSaveData,
-      status: { kind: "unsupported-newer-content", detectedContentVersion: futureContent },
-    };
-  }
   return { data: defaultSaveData, status: { kind: "corrupt" } };
 }
 
@@ -155,9 +144,9 @@ function applySaveWritePolicy(result: SaveLoadState): SaveLoadState {
 
 // Loads save data plus status. On desktop, candidates are walked in preference
 // order: local, bak.1, bak.2, bak.3, cloud. Each candidate is parsed and
-// Zod-validated before being accepted. The first valid, non-future-version
-// candidate wins. Future-versioned candidates are silently skipped; only when
-// every candidate fails do we fall back to defaultSaveData.
+// Zod-validated before being accepted. Corrupt candidates fall through to the
+// next recovery source. A future-versioned candidate protects itself and all
+// lower-priority candidates from writes; otherwise the first valid candidate wins.
 export async function loadAlchemySaveState(): Promise<SaveLoadState> {
   if (typeof window === "undefined") {
     return applySaveWritePolicy({ data: defaultSaveData, status: { kind: "ok" } });
@@ -184,6 +173,16 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
 let saveWriteChain: Promise<void> = Promise.resolve();
 let coalescedSave: SaveData | null = null;
 let clearPending = false;
+
+/** Test-only isolation for module-scoped write policy and queue state. */
+export async function resetStorageIoForTests(): Promise<void> {
+  await saveWriteChain.catch(() => {});
+  writesDisabledForSession = false;
+  saveBackend = createPlatformSaveBackend();
+  saveWriteChain = Promise.resolve();
+  coalescedSave = null;
+  clearPending = false;
+}
 
 async function writeSaveSnapshot(data: SaveData): Promise<void> {
   try {

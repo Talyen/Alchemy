@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
+import { parsePersistedErrorLog, useErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
 
 const STORAGE_KEY = "alchemy-error-log";
 
@@ -53,5 +53,42 @@ describe("useErrorLogStore", () => {
     expect(raw).toContain("persisted");
     const parsed = JSON.parse(raw ?? "[]") as Array<{ message: string }>;
     expect(parsed[0]?.message).toBe("persisted");
+  });
+
+  it.each(["not-json", "{}", "[null]", '[{"message":"missing required fields"}]'])(
+    "recovers an empty list from corrupt persisted data: %s",
+    (raw) => {
+      expect(() => parsePersistedErrorLog(raw)).not.toThrow();
+      expect(parsePersistedErrorLog(raw)).toEqual([]);
+    },
+  );
+
+  it("keeps valid persisted entries while dropping malformed neighbors", () => {
+    const valid = {
+      id: "err_saved",
+      timestamp: 123,
+      message: "persisted",
+      source: "storage",
+      reviewed: true,
+    };
+
+    expect(parsePersistedErrorLog(JSON.stringify([null, valid, { ...valid, source: "unknown" }]))).toEqual([valid]);
+  });
+
+  it("normalizes optional fields and caps restored entries", () => {
+    const entries = Array.from({ length: 101 }, (_, index) => ({
+      id: `err_${index}`,
+      timestamp: index,
+      message: `message-${index}`,
+      source: "other",
+      reviewed: "yes",
+      stack: 42,
+    }));
+
+    const parsed = parsePersistedErrorLog(JSON.stringify(entries));
+    expect(parsed).toHaveLength(100);
+    expect(parsed[0]?.id).toBe("err_1");
+    expect(parsed.at(-1)).toMatchObject({ id: "err_100", reviewed: false });
+    expect(parsed.at(-1)?.stack).toBeUndefined();
   });
 });

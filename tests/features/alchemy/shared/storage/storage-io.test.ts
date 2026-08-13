@@ -2,9 +2,16 @@ import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import type { SaveData } from "@/features/alchemy/shared/storage/types";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { currentSchemaCampaignSave } from "../../../../fixtures/legacy-saves";
-
-const { SAVE_KEY } = await import("@/lib/game-constants");
-const { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } = await import("@/lib/validation");
+import { SAVE_KEY } from "@/lib/game-constants";
+import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
+import {
+  clearAlchemySaveData,
+  loadAlchemySaveState,
+  resetStorageIoForTests,
+  saveAlchemySaveData,
+  saveAlchemySaveDataForExit,
+} from "@/features/alchemy/shared/storage/io";
+import { bootstrapAlchemySaveState } from "@/features/alchemy/shared/storage/bootstrap-save-state";
 
 const mockStorage: Record<string, string> = {};
 const globalWithWindow = globalThis as unknown as { window?: object };
@@ -34,21 +41,47 @@ function setupDesktopSaveCandidates(candidates: string[]) {
   return { writeSave: desktop.writeSave };
 }
 
+const futureSaveCases = [
+  {
+    label: "newer schema",
+    payload: {
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+      discoveredCardIds: ["future-card"],
+    },
+    expectedStatus: {
+      kind: "unsupported-newer-schema" as const,
+      detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+    },
+  },
+  {
+    label: "newer content",
+    payload: {
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      contentVersion: CURRENT_CONTENT_VERSION + 1,
+      discoveredCardIds: ["future-card"],
+    },
+    expectedStatus: {
+      kind: "unsupported-newer-content" as const,
+      detectedContentVersion: CURRENT_CONTENT_VERSION + 1,
+    },
+  },
+];
+
 describe("storage io", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.restoreAllMocks();
-    vi.resetModules();
+    await resetStorageIoForTests();
     Object.keys(mockStorage).forEach((k) => delete mockStorage[k]);
     setupWindow();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     vi.restoreAllMocks();
+    await resetStorageIoForTests();
     teardownWindow();
   });
 
   it("loadAlchemySaveState returns defaults when localStorage empty", async () => {
-    const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
     const data = (await loadAlchemySaveState()).data;
     expect(data.selectedAspectRatio).toBe("auto");
     expect(data.activeRun).toBeNull();
@@ -57,7 +90,6 @@ describe("storage io", () => {
   it("loadAlchemySaveState returns defaults on corrupt JSON", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = "not-json";
-    const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
     const data = (await loadAlchemySaveState()).data;
     expect(data.selectedAspectRatio).toBe("auto");
     expect((await loadAlchemySaveState()).status.kind).toBe("corrupt");
@@ -72,8 +104,6 @@ describe("storage io", () => {
   it("returns corrupt for a non-object JSON root", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = "null";
-    const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
-
     const loaded = await loadAlchemySaveState();
 
     expect(loaded.data).toEqual(defaultSaveData);
@@ -89,7 +119,6 @@ describe("storage io", () => {
   it("loadAlchemySaveState loads valid save data", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = JSON.stringify({ musicVolume: 50, sfxVolume: 50 });
-    const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
     const data = (await loadAlchemySaveState()).data;
     expect(data.musicVolume).toBe(50);
   });
@@ -97,8 +126,6 @@ describe("storage io", () => {
   it("loadAlchemySaveState loads campaign fixture from localStorage", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = JSON.stringify(currentSchemaCampaignSave());
-    const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
-
     const loaded = await loadAlchemySaveState();
 
     expect(loaded.status.kind).toBe("ok");
@@ -123,8 +150,6 @@ describe("storage io", () => {
   it("does not report warnings for harmless save defaults", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = JSON.stringify({ musicVolume: 50 });
-    const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
-
     const loaded = await loadAlchemySaveState();
 
     expect(loaded.status.kind).toBe("ok");
@@ -150,8 +175,6 @@ describe("storage io", () => {
         labyrinthMap: null,
       },
     });
-    const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
-
     const loaded = await loadAlchemySaveState();
 
     expect(loaded.status.kind).toBe("ok");
@@ -163,7 +186,6 @@ describe("storage io", () => {
   });
 
   it("saveAlchemySaveData writes to localStorage", async () => {
-    const { saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
     const data: SaveData = { ...defaultSaveData, selectedAspectRatio: "16:9" };
     await saveAlchemySaveData(data);
     const written = JSON.parse(mockStorage[SAVE_KEY]) as SaveData;
@@ -172,7 +194,6 @@ describe("storage io", () => {
   });
 
   it("terminal browser flush supersedes a queued stale snapshot", async () => {
-    const { saveAlchemySaveData, saveAlchemySaveDataForExit } = await import("@/features/alchemy/shared/storage/io");
     const pending = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["stale"] });
 
     saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["latest"] });
@@ -183,7 +204,6 @@ describe("storage io", () => {
 
   it("clearAlchemySaveData removes key from localStorage", async () => {
     mockStorage[SAVE_KEY] = "some-data";
-    const { clearAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
     await expect(clearAlchemySaveData()).resolves.toBe(true);
     expect(mockStorage[SAVE_KEY]).toBeUndefined();
   });
@@ -204,105 +224,70 @@ describe("storage io", () => {
       } as unknown as Storage,
     };
 
-    const { loadAlchemySaveState, saveAlchemySaveData, clearAlchemySaveData } =
-      await import("@/features/alchemy/shared/storage/io");
-
     expect((await loadAlchemySaveState()).data).toEqual(defaultSaveData);
     await expect(saveAlchemySaveData(defaultSaveData)).resolves.not.toThrow();
     await expect(clearAlchemySaveData()).resolves.not.toThrow();
   });
 
-  it("does not overwrite saves from a newer schema", async () => {
+  it.each(futureSaveCases)("does not overwrite a browser save with $label", async ({ payload, expectedStatus }) => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    mockStorage[SAVE_KEY] = JSON.stringify({
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
-      discoveredCardIds: ["future-card"],
-    });
+    mockStorage[SAVE_KEY] = JSON.stringify(payload);
 
-    const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
     const loaded = await loadAlchemySaveState();
 
     expect(loaded.data).toEqual(defaultSaveData);
-    expect(loaded.status).toEqual({
-      kind: "unsupported-newer-schema",
-      detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
-    });
+    expect(loaded.status).toEqual(expectedStatus);
     await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
-    expect(JSON.parse(mockStorage[SAVE_KEY])).toEqual({
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
-      discoveredCardIds: ["future-card"],
-    });
+    expect(JSON.parse(mockStorage[SAVE_KEY])).toEqual(payload);
   });
 
-  it("does not overwrite saves with newer content", async () => {
+  it.each(futureSaveCases)(
+    "protects a desktop $label authoritative save instead of loading an older backup",
+    async ({ payload, expectedStatus }) => {
+      const compatibleBackup = JSON.stringify({
+        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+        contentVersion: CURRENT_CONTENT_VERSION,
+        discoveredCardIds: ["slash"],
+      });
+      const { writeSave } = setupDesktopSaveCandidates([JSON.stringify(payload), compatibleBackup]);
+
+      const loaded = await loadAlchemySaveState();
+
+      expect(loaded.status).toEqual(expectedStatus);
+      await saveAlchemySaveData(loaded.data);
+      expect(writeSave).not.toHaveBeenCalled();
+    },
+  );
+
+  it("protects a future backup after a corrupt local candidate", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    mockStorage[SAVE_KEY] = JSON.stringify({
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-      contentVersion: CURRENT_CONTENT_VERSION + 1,
-      discoveredCardIds: ["future-card"],
-    });
-
-    const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
-    const loaded = await loadAlchemySaveState();
-
-    expect(loaded.data).toEqual(defaultSaveData);
-    expect(loaded.status).toEqual({
-      kind: "unsupported-newer-content",
-      detectedContentVersion: CURRENT_CONTENT_VERSION + 1,
-    });
-    await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
-    expect(JSON.parse(mockStorage[SAVE_KEY])).toEqual({
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-      contentVersion: CURRENT_CONTENT_VERSION + 1,
-      discoveredCardIds: ["future-card"],
-    });
-  });
-
-  it("protects a newer-schema save when another candidate has a non-object JSON root", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    const futureSave = JSON.stringify({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 });
-    const { writeSave } = setupDesktopSaveCandidates([futureSave, "null"]);
-
-    const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
-    const loaded = await loadAlchemySaveState();
-
-    expect(loaded.status).toEqual({
-      kind: "unsupported-newer-schema",
-      detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
-    });
-    await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["should-not-write"] });
-    expect(writeSave).not.toHaveBeenCalled();
-  });
-
-  it("protects newer content when another candidate has a non-object JSON root", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    const futureSave = JSON.stringify({
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-      contentVersion: CURRENT_CONTENT_VERSION + 1,
-    });
-    const { writeSave } = setupDesktopSaveCandidates([futureSave, "[]"]);
-
-    const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
-    const loaded = await loadAlchemySaveState();
-
-    expect(loaded.status).toEqual({
-      kind: "unsupported-newer-content",
-      detectedContentVersion: CURRENT_CONTENT_VERSION + 1,
-    });
-    await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["should-not-write"] });
-    expect(writeSave).not.toHaveBeenCalled();
-  });
-
-  it("uses a compatible backup after a newer candidate and keeps writes enabled", async () => {
-    const futureSave = JSON.stringify({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 });
-    const compatibleBackup = JSON.stringify({
+    const futureBackup = JSON.stringify({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 });
+    const compatibleOlderBackup = JSON.stringify({
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
       contentVersion: CURRENT_CONTENT_VERSION,
       discoveredCardIds: ["slash"],
     });
-    const { writeSave } = setupDesktopSaveCandidates([futureSave, compatibleBackup]);
+    const { writeSave } = setupDesktopSaveCandidates(["not-valid-json", futureBackup, compatibleOlderBackup]);
 
-    const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
+    const loaded = await loadAlchemySaveState();
+
+    expect(loaded.status).toEqual({
+      kind: "unsupported-newer-schema",
+      detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+    });
+    await saveAlchemySaveData(loaded.data);
+    expect(writeSave).not.toHaveBeenCalled();
+  });
+
+  it("uses a compatible authoritative save without inspecting a future fallback", async () => {
+    const compatibleSave = JSON.stringify({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      contentVersion: CURRENT_CONTENT_VERSION,
+      discoveredCardIds: ["slash"],
+    });
+    const futureBackup = JSON.stringify({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 });
+    const { writeSave } = setupDesktopSaveCandidates([compatibleSave, futureBackup]);
+
     const loaded = await loadAlchemySaveState();
 
     expect(loaded.status.kind).toBe("ok");
@@ -324,7 +309,6 @@ describe("storage io", () => {
 
     setupMockWindowDesktop({ saveCandidates: [corruptLocal, validFromBackup], steamName: null });
 
-    const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
     const loaded = await loadAlchemySaveState();
 
     expect(loaded.status.kind).toBe("ok");
@@ -336,7 +320,6 @@ describe("storage io", () => {
 
     setupMockWindowDesktop({ saveCandidates: ["garbage", "also-garbage"], steamName: null });
 
-    const { loadAlchemySaveState } = await import("@/features/alchemy/shared/storage/io");
     const loaded = await loadAlchemySaveState();
 
     expect(loaded.status.kind).toBe("corrupt");
@@ -367,7 +350,6 @@ describe("storage io", () => {
       return true;
     });
 
-    const { saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
     const first = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["first"] });
     // Let the first write enter writeSave and block on the gate.
     await Promise.resolve();
@@ -398,7 +380,6 @@ describe("storage io", () => {
     desktop.writeSave = writeSave;
     const clearSave = desktop.clearSave;
 
-    const { clearAlchemySaveData, saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
     const pendingSave = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["stale"] });
     await vi.waitFor(() => expect(writeSave).toHaveBeenCalledOnce());
 
@@ -421,9 +402,6 @@ describe("storage io", () => {
 
     const desktop = setupMockWindowDesktop({ saveCandidates: [futurePayload], steamName: "PlayerOne" });
     desktop.steamCloudDelete.mockResolvedValue(false);
-
-    const { bootstrapAlchemySaveState } = await import("@/features/alchemy/shared/storage/bootstrap-save-state");
-    const { clearAlchemySaveData, saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
 
     const loaded = await bootstrapAlchemySaveState();
     expect(loaded.status.kind).toBe("unsupported-newer-schema");

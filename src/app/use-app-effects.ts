@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { advanceStartupBar, computeStartupLoadTarget } from "@/app/startup-bar-progress";
 import {
   IMAGE_PRELOAD_BATCH_SIZE,
+  FONT_PRELOAD_TIMEOUT_MS,
   INITIAL_LOAD_MIN_DURATION_MS,
   MUSIC_KEYS,
   STARTUP_BAR_REVEAL_THRESHOLD,
@@ -288,12 +289,21 @@ export function useInitialLoadReady({
 
 function waitForFonts() {
   if (!("fonts" in document)) return Promise.resolve();
-  return document.fonts.ready
-    .then(() => undefined)
-    .catch(() => {
-      console.warn("Font loading failed");
-      return undefined;
-    });
+  return new Promise<void>((resolve) => {
+    let settled = false;
+    const finish = (warning?: string) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      if (warning) console.warn(warning);
+      resolve();
+    };
+    const timeout = window.setTimeout(() => finish("Font loading timed out"), FONT_PRELOAD_TIMEOUT_MS);
+    void document.fonts.ready.then(
+      () => finish(),
+      () => finish("Font loading failed"),
+    );
+  });
 }
 
 export { getScreenParticleConfig } from "./screen-particle-config";

@@ -97,7 +97,7 @@ describe("SaveDataSchema", () => {
   });
 });
 
-describe("ActiveRunDataSchema", () => {
+describe("ActiveRunDataSchema persisted session payloads", () => {
   it("parses a valid run", () => {
     const result = ActiveRunDataSchema.safeParse({
       characterId: "knight",
@@ -203,66 +203,6 @@ describe("ActiveRunDataSchema", () => {
     if (result.success) {
       expect(result.data.encounteredRunEnemyIds).toEqual(["goblin"]);
     }
-  });
-
-  it("rejects retired characterId aliases", () => {
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "sorcerer",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-    });
-    expect(result.success).toBe(false);
-  });
-
-  it("clamps health to maxHealth when health > maxHealth", () => {
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 50,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-    });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.runPlayerHealth).toBe(30);
-    }
-  });
-
-  it("rejects labyrinth runs without a labyrinth map", () => {
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "labyrinth",
-      labyrinthMap: null,
-    });
-    expect(result.success).toBe(false);
   });
 
   it("merges partial legacy gearEffects with defaults on mid-combat hydrate", () => {

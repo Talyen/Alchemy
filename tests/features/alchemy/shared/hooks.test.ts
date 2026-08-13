@@ -1,41 +1,25 @@
-import { describe, it, expect } from "vitest";
-import { getVirtualResolutionLayout, resolveAutoAspectRatio } from "@/features/alchemy/shared/hooks";
+// @vitest-environment jsdom
+import { act, renderHook } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  getVirtualResolutionLayout,
+  resolveAutoAspectRatio,
+  useVirtualResolution,
+} from "@/features/alchemy/shared/hooks";
 
 describe("resolveAutoAspectRatio", () => {
-  it("returns 16:9 for 1920x1080", () => {
-    expect(resolveAutoAspectRatio(1920, 1080)).toBe("16:9");
-  });
-
-  it("returns 16:10 for 1920x1200", () => {
-    expect(resolveAutoAspectRatio(1920, 1200)).toBe("16:10");
-  });
-
-  it("returns 16:10 for 1280x800", () => {
-    expect(resolveAutoAspectRatio(1280, 800)).toBe("16:10");
-  });
-
-  it("returns 21:9 for 2560x1080", () => {
-    expect(resolveAutoAspectRatio(2560, 1080)).toBe("21:9");
-  });
-
-  it("returns 21:9 for 3440x1440", () => {
-    expect(resolveAutoAspectRatio(3440, 1440)).toBe("21:9");
-  });
-
-  it("returns 16:10 for 2560x1600", () => {
-    expect(resolveAutoAspectRatio(2560, 1600)).toBe("16:10");
-  });
-
-  it("returns 16:9 for 3840x2160 (4K)", () => {
-    expect(resolveAutoAspectRatio(3840, 2160)).toBe("16:9");
-  });
-
-  it("returns 16:9 for 1366x768", () => {
-    expect(resolveAutoAspectRatio(1366, 768)).toBe("16:9");
-  });
-
-  it("returns 16:9 for 1600x900", () => {
-    expect(resolveAutoAspectRatio(1600, 900)).toBe("16:9");
+  it.each([
+    [1920, 1080, "16:9"],
+    [1920, 1200, "16:10"],
+    [1280, 800, "16:10"],
+    [2560, 1080, "21:9"],
+    [3440, 1440, "21:9"],
+    [2560, 1600, "16:10"],
+    [3840, 2160, "16:9"],
+    [1366, 768, "16:9"],
+    [1600, 900, "16:9"],
+  ] as const)("resolves %ix%i to %s", (width, height, expected) => {
+    expect(resolveAutoAspectRatio(width, height)).toBe(expected);
   });
 });
 
@@ -83,5 +67,86 @@ describe("getVirtualResolutionLayout", () => {
     expect(parseFloat(layout.frameStyle.width)).toBe(1512);
     expect(parseFloat(layout.frameStyle.height)).toBeLessThanOrEqual(982);
     expect(transformScale).toBeLessThan(1);
+  });
+});
+
+describe("useVirtualResolution", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  function setViewport(width: number, height: number) {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+  }
+
+  it("coalesces resize bursts to the latest dimensions once per animation frame", () => {
+    setViewport(1920, 1080);
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    let renders = 0;
+    const { result } = renderHook(() => {
+      renders += 1;
+      return useVirtualResolution("16:9");
+    });
+
+    setViewport(1600, 900);
+    window.dispatchEvent(new Event("resize"));
+    setViewport(1280, 720);
+    window.dispatchEvent(new Event("resize"));
+
+    expect(frames).toHaveLength(1);
+    expect(renders).toBe(1);
+
+    act(() => frames[0]!(performance.now()));
+
+    expect(renders).toBe(2);
+    expect(result.current.frameStyle.width).toBe("1280px");
+    expect(result.current.frameStyle.height).toBe("720px");
+  });
+
+  it("skips renders for resize events whose dimensions did not change", () => {
+    setViewport(1920, 1080);
+    let frame: FrameRequestCallback | null = null;
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      frame = callback;
+      return 1;
+    });
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    let renders = 0;
+    renderHook(() => {
+      renders += 1;
+      return useVirtualResolution("16:9");
+    });
+
+    window.dispatchEvent(new Event("resize"));
+    act(() => frame?.(performance.now()));
+
+    expect(renders).toBe(1);
+  });
+
+  it("cancels a pending resize frame on unmount and does not subscribe in bypass mode", () => {
+    setViewport(1920, 1080);
+    vi.stubGlobal(
+      "requestAnimationFrame",
+      vi.fn(() => 17),
+    );
+    const cancelFrame = vi.fn();
+    vi.stubGlobal("cancelAnimationFrame", cancelFrame);
+    const addListener = vi.spyOn(window, "addEventListener");
+    const { unmount } = renderHook(() => useVirtualResolution("16:9"));
+
+    window.dispatchEvent(new Event("resize"));
+    unmount();
+
+    expect(cancelFrame).toHaveBeenCalledWith(17);
+    addListener.mockClear();
+    renderHook(() => useVirtualResolution("16:9", true));
+    expect(addListener).not.toHaveBeenCalledWith("resize", expect.any(Function));
   });
 });

@@ -61,4 +61,44 @@ describe("waitForStableHandCardRect", () => {
     cancelCb!();
     await expect(promise).resolves.toEqual(measured);
   });
+
+  it("handles cancellation that fires synchronously during registration", async () => {
+    const unregister = vi.fn();
+    const scheduleTimeout = vi.fn(() => vi.fn());
+    const rafSpy = vi.spyOn(globalThis, "requestAnimationFrame");
+
+    const promise = waitForStableHandCardRect("slash-1", fallback, {
+      measureHandCard: vi.fn(() => stable),
+      registerCancel: (cb) => {
+        cb();
+        return unregister;
+      },
+      scheduleTimeout,
+    });
+
+    await expect(promise).resolves.toEqual(stable);
+    expect(unregister).toHaveBeenCalledOnce();
+    expect(scheduleTimeout).not.toHaveBeenCalled();
+    expect(rafSpy).not.toHaveBeenCalled();
+  });
+
+  it("handles a timeout that fires synchronously during scheduling", async () => {
+    const unregister = vi.fn();
+    const clearTimeout = vi.fn();
+    const rafSpy = vi.spyOn(globalThis, "requestAnimationFrame");
+
+    const promise = waitForStableHandCardRect("slash-1", fallback, {
+      measureHandCard: vi.fn(() => stable),
+      registerCancel: () => unregister,
+      scheduleTimeout: (cb) => {
+        cb();
+        return clearTimeout;
+      },
+    });
+
+    await expect(promise).resolves.toEqual(stable);
+    expect(unregister).toHaveBeenCalledOnce();
+    expect(clearTimeout).toHaveBeenCalledOnce();
+    expect(rafSpy).not.toHaveBeenCalled();
+  });
 });

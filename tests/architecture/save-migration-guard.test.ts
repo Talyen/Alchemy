@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations";
 import { migrateSaveDataToCurrent } from "@/lib/validation/migration";
@@ -14,29 +12,11 @@ import {
   currentSchemaMidCombatTrinketSave,
 } from "../fixtures/legacy-saves";
 
-const ROOT = join(import.meta.dirname, "../..");
-
-function read(relPath: string): string {
-  return readFileSync(join(ROOT, relPath), "utf8");
-}
-
-function countMigrationSteps(source: string): number {
-  const matches = source.match(/export function migrateV\d+ToV\d+/g) ?? [];
-  return matches.length;
-}
-
 function rawActiveRun(fixture: Record<string, unknown>) {
   return fixture.activeRun as Record<string, unknown> | null | undefined;
 }
 
 describe("save migration guard", () => {
-  it("has no schema migration step functions at the pre-launch floor", () => {
-    const migrationSource = read("src/lib/validation/migration/index.ts");
-    expect(migrationSource).not.toMatch(/SCHEMA_MIGRATIONS/);
-    expect(countMigrationSteps(migrationSource)).toBe(0);
-    expect(CURRENT_SAVE_SCHEMA_VERSION - LAUNCH_SAVE_SCHEMA_VERSION).toBe(0);
-  });
-
   it("provides a fixture for each supported source schema version", () => {
     for (
       let sourceVersion = LAUNCH_SAVE_SCHEMA_VERSION;

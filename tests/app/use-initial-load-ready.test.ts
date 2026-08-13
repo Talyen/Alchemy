@@ -2,7 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { preloadImagesInBatches } from "@/lib/image-preload";
-import { IMAGE_PRELOAD_BATCH_SIZE, STARTUP_BAR_INCOMPLETE_CAP } from "@/lib/game-constants";
+import { FONT_PRELOAD_TIMEOUT_MS, IMAGE_PRELOAD_BATCH_SIZE, STARTUP_BAR_INCOMPLETE_CAP } from "@/lib/game-constants";
 import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
 import { useInitialLoadReady } from "@/app/use-app-effects";
 
@@ -138,6 +138,26 @@ describe("useInitialLoadReady", () => {
     expect(result.current.ready).toBe(false);
     expect(result.current.progress).toBeGreaterThan(0);
     expect(result.current.progress).toBeLessThan(STARTUP_BAR_INCOMPLETE_CAP);
+  });
+
+  it("continues startup when font readiness never settles", async () => {
+    vi.mocked(preloadImagesInBatches).mockImplementation(async (_srcs, _batchSize, onProgress) => {
+      onProgress?.(2, 2);
+    });
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: new Promise<void>(() => {}) },
+    });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 0, bootstrapReady: true }));
+
+    await advance(FONT_PRELOAD_TIMEOUT_MS);
+    await advance(2000);
+
+    expect(result.current.ready).toBe(true);
+    expect(result.current.progress).toBe(1);
+    expect(warn).toHaveBeenCalledWith("Font loading timed out");
   });
 
   it("keeps warming assets when the test-only presentation gate is skipped", () => {

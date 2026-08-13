@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MysteryScreen } from "@/features/alchemy/run-loop/screens/mystery/mystery-screen";
 import type { BattleCard } from "@/lib/game-data";
 import type { MysteryEvent } from "@/lib/mystery";
+import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 
 class IntersectionObserverStub {
   observe() {}
@@ -44,7 +45,33 @@ const sampleDeck: BattleCard[] = [
   } as unknown as BattleCard,
 ];
 
+function renderMysteryScreen() {
+  const callbacks = {
+    onChoose: vi.fn(),
+    onRemoveCard: vi.fn(),
+    onContinue: vi.fn(),
+  };
+  render(
+    <MysteryScreen
+      event={sampleEvent}
+      runDeck={sampleDeck}
+      mysteryCardChoices={null}
+      mysteryGrantedTrinketIds={[]}
+      onChoose={callbacks.onChoose}
+      onChooseCard={vi.fn()}
+      onRemoveCard={callbacks.onRemoveCard}
+      onContinue={callbacks.onContinue}
+      findCard={() => undefined}
+      findTrinket={() => undefined}
+      onOpenMenu={vi.fn()}
+    />,
+  );
+  return callbacks;
+}
+
 describe("MysteryScreen Card Removal Flow", () => {
+  installDisabledAnimationsForTests();
+
   beforeEach(() => {
     vi.stubGlobal("IntersectionObserver", IntersectionObserverStub);
   });
@@ -55,25 +82,7 @@ describe("MysteryScreen Card Removal Flow", () => {
   });
 
   it("bypasses reward summary and calls onContinue directly when choice only removes a card", async () => {
-    const onChoose = vi.fn();
-    const onRemoveCard = vi.fn();
-    const onContinue = vi.fn();
-
-    render(
-      <MysteryScreen
-        event={sampleEvent}
-        runDeck={sampleDeck}
-        mysteryCardChoices={null}
-        mysteryGrantedTrinketIds={[]}
-        onChoose={onChoose}
-        onChooseCard={vi.fn()}
-        onRemoveCard={onRemoveCard}
-        onContinue={onContinue}
-        findCard={() => undefined}
-        findTrinket={() => undefined}
-        onOpenMenu={vi.fn()}
-      />,
-    );
+    const { onChoose, onRemoveCard, onContinue } = renderMysteryScreen();
 
     // Pick "Make an Offering"
     fireEvent.click(screen.getByRole("button", { name: "Make an Offering" }));
@@ -92,25 +101,7 @@ describe("MysteryScreen Card Removal Flow", () => {
   });
 
   it("shows reward summary when choice has additional displayable rewards besides card removal", async () => {
-    const onChoose = vi.fn();
-    const onRemoveCard = vi.fn();
-    const onContinue = vi.fn();
-
-    render(
-      <MysteryScreen
-        event={sampleEvent}
-        runDeck={sampleDeck}
-        mysteryCardChoices={null}
-        mysteryGrantedTrinketIds={[]}
-        onChoose={onChoose}
-        onChooseCard={vi.fn()}
-        onRemoveCard={onRemoveCard}
-        onContinue={onContinue}
-        findCard={() => undefined}
-        findTrinket={() => undefined}
-        onOpenMenu={vi.fn()}
-      />,
-    );
+    const { onRemoveCard, onContinue } = renderMysteryScreen();
 
     // Pick "Sacrifice Gold and Offering"
     fireEvent.click(screen.getByRole("button", { name: "Sacrifice Gold and Offering" }));

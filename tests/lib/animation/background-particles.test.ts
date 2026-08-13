@@ -2,24 +2,32 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { startBackgroundParticles } from "@/lib/animation/background-particles";
 
+let resizeObserverCallback: ResizeObserverCallback | null = null;
+
 class MockResizeObserver {
+  constructor(callback: ResizeObserverCallback) {
+    resizeObserverCallback = callback;
+  }
   observe() {}
   unobserve() {}
   disconnect() {}
 }
 
 beforeEach(() => {
+  resizeObserverCallback = null;
   vi.stubGlobal("ResizeObserver", MockResizeObserver);
   vi.stubGlobal("devicePixelRatio", 1);
   vi.spyOn(document, "hasFocus").mockReturnValue(true);
 });
 
 afterEach(() => {
-  vi.resetModules();
   vi.restoreAllMocks();
 });
 
-function makeMockCanvas(mockCtx?: Partial<CanvasRenderingContext2D>) {
+function makeMockCanvas(
+  mockCtx?: Partial<CanvasRenderingContext2D>,
+  dimensions: { width: number; height: number } = { width: 1920, height: 1080 },
+) {
   const ctx = {
     clearRect: vi.fn(),
     beginPath: vi.fn(),
@@ -37,9 +45,9 @@ function makeMockCanvas(mockCtx?: Partial<CanvasRenderingContext2D>) {
     getContext: vi.fn(() => ctx) as (ctxType: string) => CanvasRenderingContext2D | null,
   };
   const parent = {
-    clientWidth: 1920,
-    clientHeight: 1080,
-    getBoundingClientRect: vi.fn(() => ({ width: 1920, height: 1080 })),
+    clientWidth: dimensions.width,
+    clientHeight: dimensions.height,
+    getBoundingClientRect: vi.fn(() => ({ width: dimensions.width, height: dimensions.height })),
   };
   Object.defineProperty(canvas, "parentElement", { value: parent });
   return { canvas, ctx, parent } as unknown as {
@@ -109,6 +117,45 @@ describe("startBackgroundParticles", () => {
     expect(canvas.width * canvas.height).toBeLessThanOrEqual(3_000_000);
     expect(canvas.width).toBeGreaterThan(1920);
     expect(canvas.height).toBeGreaterThan(1080);
+    cleanup();
+    rafSpy.mockRestore();
+  });
+
+  it("keeps a 4K high-DPR backing store within the rendered-pixel budget", () => {
+    vi.stubGlobal("devicePixelRatio", 2);
+    const { canvas, ctx } = makeMockCanvas(undefined, { width: 3840, height: 2160 });
+    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(1);
+
+    const cleanup = startBackgroundParticles({ current: canvas } as never, "embers");
+
+    expect(canvas.width * canvas.height).toBeLessThanOrEqual(3_000_000);
+    expect(canvas.width).toBeLessThan(3840);
+    expect(canvas.height).toBeLessThan(2160);
+    expect(ctx.setTransform).toHaveBeenLastCalledWith(canvas.width / 3840, 0, 0, canvas.height / 2160, 0, 0);
+    cleanup();
+    rafSpy.mockRestore();
+  });
+
+  it("waits for a visible size before creating and drawing particles", () => {
+    const { canvas, ctx, parent } = makeMockCanvas(undefined, { width: 0, height: 0 });
+    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(1);
+
+    const cleanup = startBackgroundParticles({ current: canvas } as never, "embers");
+
+    expect(canvas.width).toBe(1);
+    expect(canvas.height).toBe(1);
+    expect(rafSpy).not.toHaveBeenCalled();
+
+    Object.defineProperties(parent, {
+      clientWidth: { value: 800, configurable: true },
+      clientHeight: { value: 600, configurable: true },
+    });
+    resizeObserverCallback?.([], {} as ResizeObserver);
+
+    expect(canvas.width).toBe(800);
+    expect(canvas.height).toBe(600);
+    expect(ctx.setTransform).toHaveBeenLastCalledWith(1, 0, 0, 1, 0, 0);
+    expect(rafSpy).toHaveBeenCalledOnce();
     cleanup();
     rafSpy.mockRestore();
   });

@@ -25,9 +25,14 @@ describe("ArmoryScreen salvage flow", () => {
     renderArmoryScreen();
 
     await user.click(screen.getByLabelText("Salvage"));
+    await waitFor(() => {
+      expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();
+    });
     await user.keyboard("{Escape}");
 
-    expect(screen.getByLabelText("Salvage")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByLabelText("Salvage")).toBeTruthy();
+    });
   });
 
   it("keeps an open confirmation when its backdrop is clicked", async () => {

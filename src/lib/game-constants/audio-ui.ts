@@ -21,6 +21,7 @@ export const SFX_COOLDOWN_MS = 80;
 
 // ============ Image / Asset Preloading ============
 export const IMAGE_PRELOAD_BATCH_SIZE = 4;
+export const IMAGE_PRELOAD_TIMEOUT_MS = 15_000;
 
 // ============ Screen Transitions ============
 export const MOTION_FADE_MS = 180;
@@ -28,6 +29,7 @@ export const PAGE_EXIT_MS = 180;
 
 // ============ Startup Loading ============
 export const INITIAL_LOAD_MIN_DURATION_MS = 650;
+export const FONT_PRELOAD_TIMEOUT_MS = 10_000;
 export const STARTUP_LOAD_IMAGE_WEIGHT = 0.85;
 export const STARTUP_LOAD_FONT_WEIGHT = 0.05;
 export const STARTUP_LOAD_BOOTSTRAP_WEIGHT = 0.1;
