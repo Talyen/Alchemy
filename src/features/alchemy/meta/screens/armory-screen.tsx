@@ -1,7 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import { Lock } from "lucide-react";
 import { Dices } from "lucide-react";
-import { EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId, type GearInstance, type GearSlot } from "@/lib/gear";
+import {
+  EMPTY_CRAFTING_CURRENCIES,
+  gearDefinitions,
+  type CraftingCurrencyId,
+  type GearInstance,
+  type GearSlot,
+} from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import {
   characters,
@@ -24,8 +30,15 @@ import { applyCurrencyToGear, resetArmoryTargeting } from "./armory/armory-scree
 import { EquipmentSlotButton } from "./armory/parts/equipment-slot-button";
 import { CraftingStrip } from "./armory/parts/crafting-strip";
 import { EQUIP_SLOTS } from "./armory/parts/slot-labels";
-import { ItemPickerGrid, itemsMatchingSlot } from "./armory/item-picker-grid";
+import { ItemPickerGrid } from "./armory/item-picker-grid";
 import "./armory/armory-screen.css";
+
+function itemsMatchingSlot(inventory: GearInstance[], slot: GearSlot): GearInstance[] {
+  return inventory.filter((item) => {
+    const definition = gearDefinitions[item.definitionId];
+    return definition?.compatibleSlots.includes(slot) ?? false;
+  });
+}
 
 export function ArmoryScreen({
   inventories,

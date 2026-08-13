@@ -31,7 +31,7 @@ export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
   let next = { ...(parsed as RawSaveData) };
   const contentVersion = getRawContentVersion(next);
   if (contentVersion < 2) {
-    next = migrateContentV1ToV2(next) as RawSaveData;
+    next = migrateContentV1ToV2(next);
   }
   return {
     ...next,

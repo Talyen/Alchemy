@@ -23,13 +23,6 @@ import {
   VALID_TARGET_SHADOW,
 } from "./targeting-highlight";
 
-export function itemsMatchingSlot(inventory: GearInstance[], slot: GearSlot): GearInstance[] {
-  return inventory.filter((item) => {
-    const definition = gearDefinitions[item.definitionId];
-    return definition?.compatibleSlots.includes(slot) ?? false;
-  });
-}
-
 export function ItemPickerGrid({
   slot,
   items,
