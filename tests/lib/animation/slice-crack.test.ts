@@ -13,7 +13,7 @@ import {
 } from "@/lib/animation/slice-crack";
 import { computeSliceVisual, SLICE_CRACK_OPEN_START, SLICE_SPLIT_DELAY } from "@/lib/animation/slice-timeline";
 
-function parseClipPolygon(clipPath: string): { x: number; y: number }[] {
+function parseClipPolygon(clipPath: string): Array<{ x: number; y: number }> {
   const inner = clipPath.match(/^polygon\((.+)\)$/)?.[1];
   if (!inner) throw new Error(`expected polygon clip-path, got ${clipPath}`);
   return inner.split(",").map((pair) => {

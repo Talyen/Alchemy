@@ -200,10 +200,13 @@ export function useInitialLoadReady({
 } = {}) {
   const skipGate = shouldSkipStartupLoadingGate();
   const bootstrapReadyRef = useRef(bootstrapReady);
-  bootstrapReadyRef.current = bootstrapReady;
 
   const [ready, setReady] = useState(() => skipGate);
   const [progress, setProgress] = useState(() => (skipGate ? 1 : 0));
+
+  useEffect(() => {
+    bootstrapReadyRef.current = bootstrapReady;
+  }, [bootstrapReady]);
 
   useEffect(() => {
     let cancelled = false;
