@@ -111,18 +111,6 @@
   }
 }
 
-@keyframes startupBarCycle {
-  0% {
-    transform: scaleX(0);
-  }
-  70% {
-    transform: scaleX(1);
-  }
-  100% {
-    transform: scaleX(1);
-  }
-}
-
 @keyframes startupBlurFadeIn {
   from {
     opacity: 0;
@@ -185,30 +173,12 @@
   }
 }
 
-@keyframes talentUnlockBloom {
-  0% {
-    border-color: color-mix(in srgb, var(--talent-accent) 85%, transparent);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--talent-accent) 35%, transparent);
-    background-color: transparent;
-  }
-  45% {
-    border-color: var(--talent-accent);
-    box-shadow: 0 0 28px color-mix(in srgb, var(--talent-accent) 70%, transparent);
-    background-color: color-mix(in srgb, var(--talent-accent) 8%, transparent);
-  }
-  100% {
-    border-color: var(--talent-accent);
-    box-shadow: 0 0 16px color-mix(in srgb, var(--talent-accent) 50%, transparent);
-    background-color: color-mix(in srgb, var(--talent-accent) 14%, transparent);
-  }
-}
-
-@keyframes talentUnlockedSettle {
+@keyframes talentAllocatableShineIn {
   from {
-    box-shadow: 0 0 16px color-mix(in srgb, var(--talent-accent) 50%, transparent);
+    opacity: 0;
   }
   to {
-    box-shadow: 0 0 0 transparent;
+    opacity: 1;
   }
 }
 

@@ -143,4 +143,21 @@ describe("preloadImagesInBatches", () => {
     mockImageInstances[0].onload?.();
     await expect(promise).resolves.toBeUndefined();
   });
+
+  it("reports per-image progress against the unique total", async () => {
+    const reports: Array<[number, number]> = [];
+    const srcs = [uniqueUrl(), uniqueUrl(), uniqueUrl()];
+    const promise = preloadImagesInBatches(srcs, 8, (loaded, total) => {
+      reports.push([loaded, total]);
+    });
+
+    expect(reports).toEqual([[0, 3]]);
+    mockImageInstances[0].onload?.();
+    await vi.waitFor(() => expect(reports).toContainEqual([1, 3]));
+    mockImageInstances[1].onload?.();
+    mockImageInstances[2].onload?.();
+    await expect(promise).resolves.toBeUndefined();
+    expect(reports.at(-1)).toEqual([3, 3]);
+    expect(reports.map(([loaded]) => loaded)).toEqual([0, 1, 2, 3]);
+  });
 });

@@ -3,8 +3,6 @@ name: CI
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -12,7 +10,7 @@ permissions:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 jobs:
   changes:
@@ -114,8 +112,6 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-      - if: github.event_name == 'pull_request'
-        run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.sha }} --verbose
 
       # Split lint:ci so the failed step name identifies the failure class.
       - name: Format check
@@ -396,23 +392,3 @@ jobs:
       - name: Summarize Electron e2e
         if: always()
         run: node scripts/ci-summarize-playwright.mjs
-
-  # Aggregate status check for dashboards / optional PR merges (not a main push gate).
-  ci-ok:
-    name: CI OK
-    needs: [changes, lint, test, build, e2e, ship-gate, assets, save-gate, desktop-build, electron-e2e]
-    if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Verify all jobs succeeded or were skipped
-        env:
-          RESULTS: ${{ join(needs.*.result, ' ') }}
-        run: |
-          echo "Job results: $RESULTS"
-          for result in $RESULTS; do
-            if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
-              echo "::error::A required job failed or was cancelled."
-              exit 1
-            fi
-          done

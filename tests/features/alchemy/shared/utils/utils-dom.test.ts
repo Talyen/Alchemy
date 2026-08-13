@@ -24,6 +24,11 @@ describe("getBattleCardPlayTarget", () => {
     expect(getBattleCardPlayTarget(card)).toBe("player");
   });
 
+  it('returns "player" for summon-companion cards', () => {
+    const card = makeTestCard({ effects: [{ kind: "summon-companion", companionId: "wolf" }] });
+    expect(getBattleCardPlayTarget(card)).toBe("player");
+  });
+
   it('returns "enemy" as default when no matching effect kind is found', () => {
     const card = makeTestCard({ effects: [{ kind: "draw-cards", amount: 1 }] });
     expect(getBattleCardPlayTarget(card)).toBe("enemy");

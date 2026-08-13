@@ -9,9 +9,9 @@ import { FadeSlot } from "./fade-slot";
 import {
   collectionBestiaryGridClass,
   collectionCardGridClass,
+  collectionCardGridTileWidthClass,
   collectionGridBestiaryWidthClass,
   collectionGridMinHeightClass,
-  collectionGridTileWidthClass,
   collectionGridTrinketWidthClass,
   collectionTabMeta,
   collectionTrinketGridClass,
@@ -62,7 +62,7 @@ export function CollectionGrid({
       ? cn(collectionGridTrinketWidthClass, "aspect-square")
       : collectionTab === "bestiary"
         ? cn(collectionGridBestiaryWidthClass, "aspect-[4/3]")
-        : cn(collectionGridTileWidthClass, "aspect-[3/4]");
+        : cn(collectionCardGridTileWidthClass, "aspect-[3/4]");
 
   return (
     <FadeSlot swapKey={`${collectionTab}-${page}`} className={cn("overflow-visible", collectionGridMinHeightClass)}>

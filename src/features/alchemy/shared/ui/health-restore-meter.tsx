@@ -14,7 +14,7 @@ export function HealthRestoreMeter({
   progressTarget: number;
 }) {
   return (
-    <div className="rounded-shell-inner px-4 py-3 surface-muted">
+    <div className="w-full rounded-shell-inner px-4 py-3 surface-muted">
       <div className="flex items-center justify-between gap-3">
         <p className={cn("text-lg font-semibold", keywordDefinitions.health.colorClass)}>Health</p>
         <p className="hp-number-pop text-base font-medium text-muted-foreground">

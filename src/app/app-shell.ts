@@ -1,6 +1,5 @@
 export {
   AppBackgroundParticles,
-  AppHamburgerTrigger,
   GameMenuOverlay,
   RenderAlchemyScreen,
   UnsupportedSaveOverlay,

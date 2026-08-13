@@ -18,7 +18,7 @@ import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../shared/ui/card-description-ui";
 import { SelectableShopCard } from "../../shared/ui/shop-card-item";
-import { ScreenDescription, ScreenHeader, ShineAccentButton } from "../../shared/ui/shared-ui";
+import { ScreenDescription, ShineAccentButton, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { cn } from "@/lib/utils";
 
 function CorruptionDeckPicker({
@@ -63,9 +63,6 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
   return (
     <div className="flex flex-col items-center gap-5">
       <div>
-        <ScreenHeader title="Altar of Corruption" />
-      </div>
-      <div>
         <ScreenDescription tone="danger">Select a Card to Corrupt</ScreenDescription>
       </div>
       <div>
@@ -100,9 +97,6 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
 
   return (
     <div className="flex flex-col items-center gap-5">
-      <div>
-        <ScreenHeader title="Altar of Corruption" />
-      </div>
       <div>
         <ScreenDescription className="text-red-100/75">The altar returns your card changed.</ScreenDescription>
       </div>
@@ -173,11 +167,13 @@ export function CorruptionScreen({
   result,
   onCorrupt,
   onExit,
+  onOpenMenu,
 }: {
   runDeck: BattleCard[];
   result: CorruptionResult | null;
   onCorrupt: (cardIndex: number) => void;
   onExit: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const [selecting, setSelecting] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -189,58 +185,57 @@ export function CorruptionScreen({
   }
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
-      {result ? (
-        <CorruptionResultView result={result} onContinue={onExit} />
-      ) : selecting ? (
-        <div className="flex flex-col items-center gap-5">
-          <div>
-            <ScreenHeader title="Altar of Corruption" />
+    <TitledScreenShell title="Altar of Corruption" onOpenMenu={onOpenMenu} menuLabel="Open corruption menu">
+      <div className="mt-6 flex flex-col items-center gap-6 text-center">
+        {result ? (
+          <CorruptionResultView result={result} onContinue={onExit} />
+        ) : selecting ? (
+          <div className="flex flex-col items-center gap-5">
+            <div>
+              <ScreenDescription className="text-red-100/75">
+                Select one card. The altar may weaken, strengthen, or remake it.
+              </ScreenDescription>
+            </div>
+            <CorruptionDeckPicker
+              runDeck={runDeck}
+              selectedIndex={selectedIndex}
+              onSelect={setSelectedIndex}
+              page={page}
+              onPageChange={setPage}
+            />
+            <div className="flex justify-center gap-3">
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => {
+                  setSelecting(false);
+                  setSelectedIndex(null);
+                  setPage(0);
+                }}
+              >
+                Cancel
+              </Button>
+              <ShineAccentButton
+                icon={Dices}
+                accentClassName="text-red-400"
+                shineColor={SHINE_PALETTES.corruption}
+                disabled={selectedIndex === null}
+                onClick={handleConfirm}
+              >
+                Corrupt
+              </ShineAccentButton>
+            </div>
           </div>
-          <div>
-            <ScreenDescription className="text-red-100/75">
-              Select one card. The altar may weaken, strengthen, or remake it.
-            </ScreenDescription>
-          </div>
-          <CorruptionDeckPicker
-            runDeck={runDeck}
-            selectedIndex={selectedIndex}
-            onSelect={setSelectedIndex}
-            page={page}
-            onPageChange={setPage}
+        ) : (
+          <CorruptionIntro
+            onBegin={() => {
+              setSelecting(true);
+              setPage(0);
+            }}
+            onLeave={onExit}
           />
-          <div className="flex justify-center gap-3">
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => {
-                setSelecting(false);
-                setSelectedIndex(null);
-                setPage(0);
-              }}
-            >
-              Cancel
-            </Button>
-            <ShineAccentButton
-              icon={Dices}
-              accentClassName="text-red-400"
-              shineColor={SHINE_PALETTES.corruption}
-              disabled={selectedIndex === null}
-              onClick={handleConfirm}
-            >
-              Corrupt
-            </ShineAccentButton>
-          </div>
-        </div>
-      ) : (
-        <CorruptionIntro
-          onBegin={() => {
-            setSelecting(true);
-            setPage(0);
-          }}
-          onLeave={onExit}
-        />
-      )}
-    </div>
+        )}
+      </div>
+    </TitledScreenShell>
   );
 }

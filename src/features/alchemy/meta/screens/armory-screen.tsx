@@ -71,13 +71,8 @@ export function ArmoryScreen({
   const locked = !isCharacterUnlocked(characterId, finishedRunCharacters);
   const editable = !browseOnly && !locked;
   const pickerItems = useMemo(() => {
-    const matching = itemsMatchingSlot(characterInventory, selectedSlot);
     const equippedId = loadout[selectedSlot];
-    return [...matching].sort((a, b) => {
-      if (a.instanceId === equippedId) return -1;
-      if (b.instanceId === equippedId) return 1;
-      return 0;
-    });
+    return itemsMatchingSlot(characterInventory, selectedSlot).filter((item) => item.instanceId !== equippedId);
   }, [characterInventory, loadout, selectedSlot]);
   const siblingEquippedIds = useMemo(() => {
     const ids = new Set<string>();
@@ -186,6 +181,7 @@ export function ArmoryScreen({
                         salvageMode={salvageMode}
                         activeCurrencyId={activeCurrencyId}
                         onSelect={() => setSelectedSlot(slot)}
+                        onUnequip={() => onUnequip(characterId, slot)}
                         onSalvage={() => {
                           const instance = instanceId ? inventoryById.get(instanceId) : undefined;
                           if (instance) setSalvageTarget(instance);
@@ -247,13 +243,11 @@ export function ArmoryScreen({
                   items={pickerItems}
                   loadout={loadout}
                   inventory={characterInventory}
-                  equippedInstanceId={loadout[selectedSlot]}
                   siblingEquippedIds={siblingEquippedIds}
                   editable={editable}
                   salvageMode={salvageMode}
                   activeCurrencyId={activeCurrencyId}
                   onEquip={(instance) => onEquip(characterId, selectedSlot, instance)}
-                  onUnequip={() => onUnequip(characterId, selectedSlot)}
                   onSalvage={(instance) => setSalvageTarget(instance)}
                   onApplyCurrency={handleApplyCurrency}
                 />

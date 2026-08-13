@@ -55,6 +55,7 @@ interface ArtPanelProps {
   hurtFlashToken?: number;
   turnActive?: boolean;
   turnUrgentHide?: boolean;
+  artCorner?: ReactNode;
   children?: ReactNode;
 }
 
@@ -83,6 +84,7 @@ export function ArtPanel({
   hurtFlashToken = 0,
   turnActive = false,
   turnUrgentHide = false,
+  artCorner,
   children,
 }: ArtPanelProps) {
   const healthToken = useChangeToken(health);
@@ -92,29 +94,29 @@ export function ArtPanel({
 
   const resolvedCardWidthClass =
     cardWidthClass ?? (side === "enemy" ? battleEnemyCardWidthClass : battleCardWidthClass);
-  const artWrapClass = cn("relative", isBoss && side === "player" && "origin-bottom scale-[1.3]");
+  const artWrapClass = cn("relative overflow-visible", isBoss && side === "player" && "origin-bottom scale-[1.3]");
 
   return (
     <div className={cn("relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
-      <div
-        ref={artWrapperRef}
-        className="group/art-wrapper relative"
-        tabIndex={currentEnemy || descriptionLines ? 0 : undefined}
-        onMouseEnter={() => setTooltipVisible(true)}
-        onMouseLeave={() => setTooltipVisible(false)}
-        onFocus={() => setTooltipVisible(true)}
-        onBlur={() => setTooltipVisible(false)}
-      >
-        <ActorTooltip
-          title={title}
-          descriptionLines={descriptionLines}
-          currentEnemy={currentEnemy}
-          currentEnemyAttackEffects={currentEnemyAttackEffects}
-          activeLabyrinthModifiers={activeLabyrinthModifiers}
-          triggerRef={artWrapperRef}
-          visible={tooltipVisible}
-        />
-        <div className={artWrapClass}>
+      <div className={artWrapClass}>
+        <div
+          ref={artWrapperRef}
+          className="group/art-wrapper relative"
+          tabIndex={currentEnemy || descriptionLines ? 0 : undefined}
+          onMouseEnter={() => setTooltipVisible(true)}
+          onMouseLeave={() => setTooltipVisible(false)}
+          onFocus={() => setTooltipVisible(true)}
+          onBlur={() => setTooltipVisible(false)}
+        >
+          <ActorTooltip
+            title={title}
+            descriptionLines={descriptionLines}
+            currentEnemy={currentEnemy}
+            currentEnemyAttackEffects={currentEnemyAttackEffects}
+            activeLabyrinthModifiers={activeLabyrinthModifiers}
+            triggerRef={artWrapperRef}
+            visible={tooltipVisible}
+          />
           <ActorArtFrame
             side={side}
             title={title}
@@ -137,6 +139,7 @@ export function ArtPanel({
             </div>
           ) : null}
         </div>
+        {artCorner}
       </div>
       <ActorStatsPanel
         side={side}
@@ -278,7 +281,7 @@ function ActorHealthHeader({
       <p
         key={healthToken}
         data-testid={`${side}-health`}
-        className={cn("text-xl font-semibold text-foreground", healthToken > 0 && "hp-number-pop")}
+        className={cn("text-lg font-semibold text-amber-100/75", healthToken > 0 && "hp-number-pop")}
       >
         {health}/{maxHealth}
       </p>

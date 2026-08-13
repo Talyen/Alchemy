@@ -3,7 +3,13 @@ import { GameOverScreen, RunVictoryScreen } from "@/features/alchemy/run-loop/sc
 import { useGameOverScreenData, useRunVictoryScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import type { RunEndCommands, RunEndRouteCtx } from "./route-ctx";
 
-function GameOverScreenRoute({ commands }: { commands: RunEndCommands }) {
+function GameOverScreenRoute({
+  commands,
+  onOpenBattleMenu,
+}: {
+  commands: RunEndCommands;
+  onOpenBattleMenu: RunEndRouteCtx["onOpenBattleMenu"];
+}) {
   const r = useGameOverScreenData();
   return (
     <GameOverScreen
@@ -11,11 +17,18 @@ function GameOverScreenRoute({ commands }: { commands: RunEndCommands }) {
       talentXP={r.talentXP}
       runEndMaterials={r.runEndMaterials}
       onContinue={commands.continueFromRunEnd}
+      onOpenMenu={onOpenBattleMenu}
     />
   );
 }
 
-function RunVictoryScreenRoute({ commands }: { commands: RunEndCommands }) {
+function RunVictoryScreenRoute({
+  commands,
+  onOpenBattleMenu,
+}: {
+  commands: RunEndCommands;
+  onOpenBattleMenu: RunEndRouteCtx["onOpenBattleMenu"];
+}) {
   const r = useRunVictoryScreenData();
   return (
     <RunVictoryScreen
@@ -23,6 +36,7 @@ function RunVictoryScreenRoute({ commands }: { commands: RunEndCommands }) {
       talentXP={r.talentXP}
       runEndMaterials={r.runEndMaterials}
       onContinue={commands.continueFromRunEnd}
+      onOpenMenu={onOpenBattleMenu}
     />
   );
 }
@@ -31,6 +45,10 @@ export const runEndScreenRoutes: {
   "game-over": (ctx: RunEndRouteCtx) => ReactNode;
   "run-victory": (ctx: RunEndRouteCtx) => ReactNode;
 } = {
-  "game-over": ({ routeCommands }) => <GameOverScreenRoute commands={routeCommands.runEnd} />,
-  "run-victory": ({ routeCommands }) => <RunVictoryScreenRoute commands={routeCommands.runEnd} />,
+  "game-over": ({ routeCommands, onOpenBattleMenu }) => (
+    <GameOverScreenRoute commands={routeCommands.runEnd} onOpenBattleMenu={onOpenBattleMenu} />
+  ),
+  "run-victory": ({ routeCommands, onOpenBattleMenu }) => (
+    <RunVictoryScreenRoute commands={routeCommands.runEnd} onOpenBattleMenu={onOpenBattleMenu} />
+  ),
 };

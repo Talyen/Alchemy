@@ -60,7 +60,7 @@ export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: numb
   return (
     <div className="flex flex-col items-center gap-2" data-testid="mana-panel" data-mana={mana}>
       <div className="flex items-center gap-1.5 text-lg font-medium text-yellow-300">
-        <Coins className="h-6 w-6" />
+        <Coins className="h-[2.7cqh] w-[2.7cqh]" />
         <span>{gold}</span>
       </div>
       <div className="flex items-center justify-center gap-1.5">

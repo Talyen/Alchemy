@@ -7,15 +7,16 @@ import { getWildwoodRecoveryHealth, WILDWOOD_RECOVERY_FRACTION } from "@/lib/con
 import { HealthRestoreMeter } from "../../shared/ui/health-restore-meter";
 import { useLatestRef } from "../../shared/hooks";
 import { useEasedHealth } from "../../shared/ui/use-eased-health";
-import { ScreenDescription, ScreenHeader } from "../../shared/ui/shared-ui";
+import { ScreenDescription, TitledScreenShell } from "../../shared/ui/shared-ui";
 
 interface Props {
   playerHealth: number;
   maxHealth: number;
   onComplete: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
 }
 
-export function WildwoodRecoveryScreen({ playerHealth, maxHealth, onComplete }: Props) {
+export function WildwoodRecoveryScreen({ playerHealth, maxHealth, onComplete, onOpenMenu }: Props) {
   const targetHealth = getWildwoodRecoveryHealth(playerHealth, maxHealth);
   const onCompleteRef = useLatestRef(onComplete);
 
@@ -31,19 +32,16 @@ export function WildwoodRecoveryScreen({ playerHealth, maxHealth, onComplete }: 
   }, [onCompleteRef]);
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center px-4 py-6 text-center">
-      <div className="flex flex-col items-center gap-8">
-        <ScreenHeader title="Wildwood Recovery" />
+    <TitledScreenShell title="Wildwood Recovery" onOpenMenu={onOpenMenu} menuLabel="Open wildwood recovery menu">
+      <div className="mt-6 flex flex-col items-center gap-8 text-center">
         <ScreenDescription>{`Restoring ${Math.round(WILDWOOD_RECOVERY_FRACTION * 100)}% Health`}</ScreenDescription>
-        <img
-          src={theWildwoods}
-          alt="The Wildwoods"
-          className="w-full max-w-[44.45cqh] rounded-shell-panel object-contain"
-        />
-        <div className="min-w-[clamp(24.67cqh,26.4cqh,37.33cqh)]">
-          <HealthRestoreMeter displayHealth={displayHealth} maxHealth={maxHealth} progressTarget={progressTarget} />
+        <div className="flex w-full max-w-[44.45cqh] flex-col items-center gap-8">
+          <img src={theWildwoods} alt="The Wildwoods" className="w-full rounded-shell-panel object-contain" />
+          <div className="w-full">
+            <HealthRestoreMeter displayHealth={displayHealth} maxHealth={maxHealth} progressTarget={progressTarget} />
+          </div>
         </div>
       </div>
-    </div>
+    </TitledScreenShell>
   );
 }

@@ -73,7 +73,7 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
   return (
     <StatusChipShell
       ariaLabel={`${definition.label} ${chip.value}`}
-      icon={<Icon className={cn("h-[2.3cqh] w-[2.3cqh]", definition.colorClass)} />}
+      icon={<Icon className={cn("h-[2.7cqh] w-[2.7cqh]", definition.colorClass)} />}
       tooltip={
         <>
           <div className="flex items-center justify-between gap-3">
@@ -102,7 +102,7 @@ function AugmentStatusIcon({
   return (
     <StatusChipShell
       ariaLabel={`${augment.label} ${chip.value}`}
-      icon={<Icon className={cn("h-[2.3cqh] w-[2.3cqh]", augment.colorClass)} />}
+      icon={<Icon className={cn("h-[2.7cqh] w-[2.7cqh]", augment.colorClass)} />}
       tooltip={
         <>
           <div className="flex items-center justify-between gap-3">
@@ -124,7 +124,7 @@ function HasteStatusIcon({ value }: { value: number }) {
   return (
     <StatusChipShell
       ariaLabel={`Haste ${value}`}
-      icon={<Sparkles className="h-[2.3cqh] w-[2.3cqh] text-fuchsia-300" />}
+      icon={<Sparkles className="h-[2.7cqh] w-[2.7cqh] text-fuchsia-300" />}
       tooltip={
         <>
           <div className="flex items-center justify-between gap-3">
@@ -147,7 +147,7 @@ export function DeathsDoorStatusIcon() {
     <StatusChipShell
       ariaLabel="Death's Door"
       buttonClassName="rounded-full bg-red-950/70 text-red-200 ring-1 ring-red-400/60"
-      icon={<Skull className="h-[2.3cqh] w-[2.3cqh]" />}
+      icon={<Skull className="h-[2.7cqh] w-[2.7cqh]" />}
       tooltip={
         <>
           <TooltipHeader>Death's Door</TooltipHeader>

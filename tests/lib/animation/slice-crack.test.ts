@@ -6,10 +6,35 @@ import {
   SLICE_CARD_FRACTION_RANGE,
   SLICE_CRACK_POINTS,
   SLICE_NORMAL,
+  SLICE_PRIMARY_CLIP_PATH,
+  SLICE_SECONDARY_CLIP_PATH,
   sliceCrackPointAtFraction,
   sliceCrackSide,
 } from "@/lib/animation/slice-crack";
 import { computeSliceVisual, SLICE_CRACK_OPEN_START, SLICE_SPLIT_DELAY } from "@/lib/animation/slice-timeline";
+
+function parseClipPolygon(clipPath: string): { x: number; y: number }[] {
+  const inner = clipPath.match(/^polygon\((.+)\)$/)?.[1];
+  if (!inner) throw new Error(`expected polygon clip-path, got ${clipPath}`);
+  return inner.split(",").map((pair) => {
+    const [xToken, yToken] = pair.trim().split(/\s+/);
+    return { x: Number.parseFloat(xToken!) / 100, y: Number.parseFloat(yToken!) / 100 };
+  });
+}
+
+function pointInClipPolygon(clipPath: string, point: { x: number; y: number }): boolean {
+  const verts = parseClipPolygon(clipPath);
+  let inside = false;
+  for (let index = 0, prev = verts.length - 1; index < verts.length; prev = index, index++) {
+    const a = verts[index]!;
+    const b = verts[prev]!;
+    const intersects = a.y > point.y !== b.y > point.y;
+    if (!intersects) continue;
+    const atX = ((b.x - a.x) * (point.y - a.y)) / (b.y - a.y) + a.x;
+    if (point.x < atX) inside = !inside;
+  }
+  return inside;
+}
 
 describe("slice crack", () => {
   it("keeps interior vertices on the card", () => {
@@ -47,6 +72,15 @@ describe("slice crack", () => {
   it("classifies card corners onto opposite half-planes", () => {
     expect(sliceCrackSide({ x: 0.95, y: 0.05 })).toBeGreaterThan(0);
     expect(sliceCrackSide({ x: 0.05, y: 0.95 })).toBeLessThan(0);
+  });
+
+  it("keeps card corners inside the matching half clip-path", () => {
+    const upperRight = { x: 0.99, y: 0.01 };
+    const lowerLeft = { x: 0.01, y: 0.99 };
+    expect(pointInClipPolygon(SLICE_SECONDARY_CLIP_PATH, upperRight)).toBe(true);
+    expect(pointInClipPolygon(SLICE_PRIMARY_CLIP_PATH, upperRight)).toBe(false);
+    expect(pointInClipPolygon(SLICE_PRIMARY_CLIP_PATH, lowerLeft)).toBe(true);
+    expect(pointInClipPolygon(SLICE_SECONDARY_CLIP_PATH, lowerLeft)).toBe(false);
   });
 
   it("advances along the crack as fraction increases", () => {

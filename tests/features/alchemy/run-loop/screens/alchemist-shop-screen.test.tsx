@@ -91,6 +91,7 @@ describe("AlchemistShopScreen mix Escape", () => {
         onRefresh={() => {}}
         onMixPotions={() => null}
         onContinue={() => {}}
+        onOpenMenu={() => {}}
       />,
     );
 

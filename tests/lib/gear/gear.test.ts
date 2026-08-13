@@ -384,4 +384,61 @@ describe("gear domain", () => {
       ).toBe(false);
     });
   });
+
+  describe("dual-wield one-handers", () => {
+    const dualWieldDefinitionIds = [
+      "hatchet-basic",
+      "longsword-basic",
+      "shortsword-basic",
+      "dagger-basic",
+      "mace-basic",
+      "flail-basic",
+      "wand-basic",
+    ] as const;
+
+    it("allows one-handed melee and wand in main-hand or off-hand", () => {
+      for (const definitionId of dualWieldDefinitionIds) {
+        const definition = gearDefinitions[definitionId];
+        expect(isGearCompatibleWithSlot(definition, "main-hand"), definitionId).toBe(true);
+        expect(isGearCompatibleWithSlot(definition, "off-hand"), definitionId).toBe(true);
+      }
+    });
+
+    it("keeps two-handers and ranged weapons out of off-hand", () => {
+      for (const definitionId of [
+        "double-axe-basic",
+        "maul-basic",
+        "greatsword-basic",
+        "staff-basic",
+        "longbow-basic",
+        "shortbow-basic",
+        "recurve-bow-basic",
+        "crossbow-basic",
+      ] as const) {
+        expect(isGearCompatibleWithSlot(gearDefinitions[definitionId], "off-hand"), definitionId).toBe(false);
+      }
+    });
+
+    it("equips a one-hander in off-hand beside another one-handed main-hand", () => {
+      const longsword: GearInstance = { instanceId: "sword-1", definitionId: "longsword-basic", affixes: [] };
+      const dagger: GearInstance = { instanceId: "dagger-1", definitionId: "dagger-basic", affixes: [] };
+      const inventory = [longsword, dagger];
+      let loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", longsword, inventory);
+      loadouts = equipGear(loadouts, "knight", "off-hand", dagger, inventory);
+      expect(loadouts.knight["main-hand"]).toBe(longsword.instanceId);
+      expect(loadouts.knight["off-hand"]).toBe(dagger.instanceId);
+    });
+
+    it("rejects a one-hander in off-hand when main-hand is ranged", () => {
+      const longbow: GearInstance = { instanceId: "bow-1", definitionId: "longbow-basic", affixes: [] };
+      const dagger: GearInstance = { instanceId: "dagger-1", definitionId: "dagger-basic", affixes: [] };
+      const inventory = [longbow, dagger];
+      const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", longbow, inventory);
+      expect(
+        isGearCompatibleWithLoadoutSlot(gearDefinitions["dagger-basic"], "off-hand", loadouts.knight, inventory),
+      ).toBe(false);
+      const result = equipGear(loadouts, "knight", "off-hand", dagger, inventory);
+      expect(result.knight["off-hand"]).toBeNull();
+    });
+  });
 });

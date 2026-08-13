@@ -26,8 +26,14 @@
     transform: rotateY(180deg);
   }
 
+  .talent-node {
+    box-shadow: 0 0 0 transparent;
+    transition:
+      opacity 500ms var(--ease-out-expo),
+      box-shadow 500ms var(--ease-out-expo);
+  }
+
   .talent-card-available {
-    border-color: color-mix(in srgb, var(--talent-accent) 85%, transparent);
     box-shadow: 0 0 12px color-mix(in srgb, var(--talent-accent) 35%, transparent);
   }
 
@@ -38,13 +44,13 @@
 
   .talent-card-unlocked {
     border-color: var(--talent-accent);
-    background-color: color-mix(in srgb, var(--talent-accent) 14%, transparent);
   }
 
   .talent-card-placeholder {
     border-style: dashed;
     border-color: var(--color-border);
     background-color: color-mix(in srgb, var(--color-background) 72%, transparent);
+    background-clip: padding-box;
   }
 
   [data-testid="armory-screen"] .shine-border {
@@ -106,8 +112,13 @@
     transform: translateX(-50%) translateY(-6px);
   }
 
-  .hover-popup-panel[data-placement^="side-"] {
+  .hover-popup-panel[data-placement="side-end"] {
     transform-origin: left center;
+    transform: translateY(-50%);
+  }
+
+  .hover-popup-panel[data-placement="side-start"] {
+    transform-origin: right center;
     transform: translateY(-50%);
   }
 
@@ -196,23 +207,16 @@
     will-change: transform, opacity;
   }
 
-  .talent-node-unlocking {
-    animation: talentUnlockBloom 480ms var(--ease-out-expo) forwards;
-  }
-
-  .talent-node-unlocking .card-shimmer-sweep {
-    animation: cardShimmer 480ms var(--ease-out-expo);
-  }
-
-  .talent-node-unlocked-settle {
-    animation: talentUnlockedSettle 280ms var(--ease-out-expo) both;
+  .talent-card-available > .shine-border {
+    animation:
+      shine 8s linear infinite,
+      talentAllocatableShineIn 500ms var(--ease-out-expo) both;
   }
 
   .alchemy-startup-bar {
     background: var(--color-primary);
-    /* both: start at scaleX(0) immediately (no full-bar flash), hold full at end */
-    animation: startupBarCycle 1200ms ease-in-out both;
     transform-origin: left;
+    will-change: transform;
   }
 
   .alchemy-loading-fade {

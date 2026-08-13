@@ -9,6 +9,9 @@ import {
 } from "@/features/alchemy/shared/ui/portaled-tooltip-placement";
 
 const stage = { top: 0, left: 0, right: 1280, bottom: 720 };
+const midTrigger = { left: 590, right: 690 };
+const shortTooltip = { width: 200, height: 100 };
+const tallTooltip = { width: 200, height: 400 };
 
 describe("shouldPlacePortaledTooltipBelow", () => {
   it("keeps above when there is room within the stage", () => {
@@ -31,8 +34,10 @@ describe("shouldPlacePortaledTooltipBelow", () => {
 describe("measurePortaledTooltipPlacement", () => {
   it("clamps horizontal position to stage bounds", () => {
     const anchor = { centerX: 640, top: 250, bottom: 330 };
-    const { style } = measurePortaledTooltipPlacement(anchor, { top: 142, bottom: 242, height: 100 }, stage);
+    const { placeBelow, tooltipSide, style } = measurePortaledTooltipPlacement(anchor, midTrigger, shortTooltip, stage);
 
+    expect(placeBelow).toBe(false);
+    expect(tooltipSide).toBeNull();
     expect(style.left).toBe("clamp(152px, 640px, 1128px)");
     expect(style.top).toBe("auto");
     expect(style.bottom).toBe(`${window.innerHeight - anchor.top + 8}px`);
@@ -40,11 +45,41 @@ describe("measurePortaledTooltipPlacement", () => {
 
   it("places below when the measured tooltip clips the stage top", () => {
     const anchor = { centerX: 640, top: 40, bottom: 120 };
-    const { placeBelow, style } = measurePortaledTooltipPlacement(anchor, { top: 2, bottom: 102, height: 100 }, stage);
+    const { placeBelow, tooltipSide, style } = measurePortaledTooltipPlacement(anchor, midTrigger, shortTooltip, stage);
 
     expect(placeBelow).toBe(true);
+    expect(tooltipSide).toBeNull();
     expect(style.top).toBe(`${anchor.bottom + 8}px`);
     expect(style.bottom).toBe("auto");
+  });
+
+  it("places beside a mid-stage trigger when neither vertical gutter fits", () => {
+    const anchor = { centerX: 640, top: 200, bottom: 520 };
+    const { placeBelow, tooltipSide, style } = measurePortaledTooltipPlacement(anchor, midTrigger, tallTooltip, stage);
+
+    expect(placeBelow).toBe(false);
+    expect(tooltipSide).toBe("side-end");
+    expect(style.left).toBe("698px");
+    expect(style.top).toBe("360px");
+  });
+
+  it("prefers the roomier side when neither vertical gutter fits", () => {
+    const trigger = { left: 80, right: 180 };
+    const anchor = { centerX: 130, top: 200, bottom: 520 };
+    const { tooltipSide, style } = measurePortaledTooltipPlacement(anchor, trigger, tallTooltip, stage);
+
+    expect(tooltipSide).toBe("side-end");
+    expect(style.left).toBe("188px");
+  });
+
+  it("places side-start when overflowed near the right edge", () => {
+    const trigger = { left: 1100, right: 1200 };
+    const anchor = { centerX: 1150, top: 200, bottom: 520 };
+    const { placeBelow, tooltipSide, style } = measurePortaledTooltipPlacement(anchor, trigger, tallTooltip, stage);
+
+    expect(placeBelow).toBe(false);
+    expect(tooltipSide).toBe("side-start");
+    expect(style.left).toBe("892px");
   });
 });
 

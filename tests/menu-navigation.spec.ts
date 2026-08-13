@@ -12,6 +12,7 @@ import {
 import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
 import { MenuPage } from "./pages/menu-page";
+import { LOADING_WORDS } from "@/app/loading-words";
 import { critical, slow } from "./playwright-tags";
 
 test.describe("Menu", critical, () => {
@@ -206,7 +207,9 @@ test.describe("Auto-End Turn", () => {
 });
 
 test.describe("Startup Loading Screen", slow, () => {
-  const LOADING_WORDS = /^(Forging|Growing|Brewing|Simmering|Tinkering|Prestidigitating|Discombobulating)\.\.\.$/;
+  const loadingPhrase = new RegExp(
+    `^(${LOADING_WORDS.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\.\\.\\.$`,
+  );
 
   test("loading screen appears and transitions to main menu", async ({ page }) => {
     await enableLoadingScreen(page);
@@ -214,7 +217,7 @@ test.describe("Startup Loading Screen", slow, () => {
     const errors = failOnRuntimeErrors(page);
     await page.goto("/");
 
-    await expect(page.getByText(LOADING_WORDS)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(loadingPhrase)).toBeVisible({ timeout: 5000 });
     await new MenuPage(page).expectMainMenu(15000);
     const logo = page.getByRole("img", { name: "Alchemy logo" }).first();
     await expect(logo).toHaveJSProperty("complete", true);

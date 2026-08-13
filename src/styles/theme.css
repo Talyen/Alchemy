@@ -39,6 +39,14 @@
 
   --font-sans: "Inter", sans-serif;
 
+  /* Readable scale at 16px root: base 18, lg 20, xl 22. sm/2xl stay Tailwind defaults. */
+  --text-base: 1.125rem;
+  --text-base--line-height: calc(1.5 / 1.125);
+  --text-lg: 1.25rem;
+  --text-lg--line-height: calc(1.75 / 1.25);
+  --text-xl: 1.375rem;
+  --text-xl--line-height: calc(1.75 / 1.375);
+
   --animate-shine: shine 14s linear infinite;
 
   --animate-shake: shake 380ms ease-out;

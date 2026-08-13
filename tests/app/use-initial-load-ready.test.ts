@@ -2,6 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { preloadImagesInBatches } from "@/lib/image-preload";
+import { IMAGE_PRELOAD_BATCH_SIZE, STARTUP_BAR_INCOMPLETE_CAP } from "@/lib/game-constants";
 import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
 import { useInitialLoadReady } from "@/app/use-app-effects";
 
@@ -28,9 +29,22 @@ function deferred() {
   return { promise, resolve };
 }
 
+async function advance(ms: number) {
+  await act(async () => {
+    vi.advanceTimersByTime(ms);
+    await Promise.resolve();
+  });
+}
+
 describe("useInitialLoadReady", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      return window.setTimeout(() => callback(performance.now()), 16) as unknown as number;
+    });
+    vi.stubGlobal("cancelAnimationFrame", (id: number) => {
+      window.clearTimeout(id);
+    });
     vi.mocked(shouldSkipStartupLoadingGate).mockReturnValue(false);
   });
 
@@ -40,37 +54,90 @@ describe("useInitialLoadReady", () => {
     Reflect.deleteProperty(document, "fonts");
   });
 
-  it("waits for the fixed minimum, all game art, and fonts before revealing the app", async () => {
+  it("waits for art, fonts, bootstrap, the minimum, and the bar to catch up before revealing", async () => {
     const images = deferred();
     const fonts = deferred();
-    vi.mocked(preloadImagesInBatches).mockReturnValue(images.promise);
+    vi.mocked(preloadImagesInBatches).mockImplementation(async (_srcs, _batchSize, onProgress) => {
+      onProgress?.(0, 2);
+      await images.promise;
+      onProgress?.(2, 2);
+    });
     Object.defineProperty(document, "fonts", {
       configurable: true,
       value: { ready: fonts.promise },
     });
 
-    const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 650 }));
+    const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 650, bootstrapReady: true }));
 
-    expect(preloadImagesInBatches).toHaveBeenCalledWith(["first.webp", "second.webp"]);
-    expect(result.current).toBe(false);
+    expect(preloadImagesInBatches).toHaveBeenCalledWith(
+      ["first.webp", "second.webp"],
+      IMAGE_PRELOAD_BATCH_SIZE,
+      expect.any(Function),
+    );
+    expect(result.current.ready).toBe(false);
 
-    await act(async () => {
-      vi.advanceTimersByTime(650);
-      await Promise.resolve();
-    });
-    expect(result.current).toBe(false);
+    await advance(650);
+    expect(result.current.ready).toBe(false);
 
     await act(async () => {
       images.resolve();
       await images.promise;
     });
-    expect(result.current).toBe(false);
+    expect(result.current.ready).toBe(false);
 
     await act(async () => {
       fonts.resolve();
       await fonts.promise;
     });
-    expect(result.current).toBe(true);
+    expect(result.current.ready).toBe(false);
+
+    await advance(2000);
+    expect(result.current.ready).toBe(true);
+    expect(result.current.progress).toBeGreaterThan(0.99);
+  });
+
+  it("keeps the bar below full while bootstrap is still pending", async () => {
+    vi.mocked(preloadImagesInBatches).mockImplementation(async (_srcs, _batchSize, onProgress) => {
+      onProgress?.(2, 2);
+    });
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: Promise.resolve() },
+    });
+
+    const { result, rerender } = renderHook(
+      ({ bootstrapReady }: { bootstrapReady: boolean }) => useInitialLoadReady({ minDurationMs: 650, bootstrapReady }),
+      { initialProps: { bootstrapReady: false } },
+    );
+
+    await advance(2500);
+    expect(result.current.ready).toBe(false);
+    expect(result.current.progress).toBeLessThanOrEqual(STARTUP_BAR_INCOMPLETE_CAP);
+
+    rerender({ bootstrapReady: true });
+    await advance(2000);
+    expect(result.current.ready).toBe(true);
+    expect(result.current.progress).toBeGreaterThan(0.99);
+  });
+
+  it("moves displayed progress as image decode reports arrive", async () => {
+    const images = deferred();
+    vi.mocked(preloadImagesInBatches).mockImplementation(async (_srcs, _batchSize, onProgress) => {
+      onProgress?.(1, 2);
+      await images.promise;
+      onProgress?.(2, 2);
+    });
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: new Promise<void>(() => {}) },
+    });
+
+    const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 650, bootstrapReady: true }));
+
+    await advance(400);
+    expect(result.current.ready).toBe(false);
+    expect(result.current.progress).toBeGreaterThan(0);
+    expect(result.current.progress).toBeLessThan(STARTUP_BAR_INCOMPLETE_CAP);
   });
 
   it("keeps warming assets when the test-only presentation gate is skipped", () => {
@@ -83,7 +150,8 @@ describe("useInitialLoadReady", () => {
 
     const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 650 }));
 
-    expect(result.current).toBe(true);
-    expect(preloadImagesInBatches).toHaveBeenCalledWith(["first.webp", "second.webp"]);
+    expect(result.current.ready).toBe(true);
+    expect(result.current.progress).toBe(1);
+    expect(preloadImagesInBatches).toHaveBeenCalledWith(["first.webp", "second.webp"], IMAGE_PRELOAD_BATCH_SIZE);
   });
 });

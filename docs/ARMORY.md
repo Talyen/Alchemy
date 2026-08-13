@@ -13,7 +13,7 @@ The screen implementation lives under `src/features/alchemy/meta/screens/armory/
 - `item-picker-grid.tsx` — Collection-style click-to-equip grid for the selected slot, paginated 2×3 (6 items per page) with aspect fillers so short or empty pages keep the same footprint.
 - Panels, parts, and overlays — presentation only; they receive domain state and commands through props.
 
-Hero identity is the Collection-style tab ring. There is no hero portrait and no packed inventory board. Equipment and Inventory panels share equal column width. Selecting an equipment slot shows matching items on the right (2 rows × 3 items per page); clicking an item equips it into that slot (or unequips if it is already in that slot). Salvage and currency apply are mutually exclusive targeting modes from the Crafting strip.
+Hero identity is the Collection-style tab ring. There is no hero portrait and no packed inventory board. Equipment and Inventory panels share equal column width. Selecting an equipment slot shows matching unequipped items on the right (2 rows × 3 items per page); the item in that slot appears only there. Clicking a picker item equips it. Clicking the already-selected filled slot unequips it. Items equipped in other compatible slots still appear in the picker (with an Equipped badge) so they can be moved. Salvage and currency apply are mutually exclusive targeting modes from the Crafting strip.
 
 ## Data model
 
@@ -21,7 +21,7 @@ Hero identity is the Collection-style tab ring. There is no hero portrait and no
 
 - A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and rolled `affixes`; it never embeds definition objects or art URLs.
 - Inventories and loadouts are keyed by character. A loadout maps each slot to at most one instance ID.
-- Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata.
+- Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata. One-handed melee weapons and wands may occupy `main-hand` or `off-hand`; two-handers and ranged weapons stay main-hand only (ranged pairs with a quiver off-hand).
 - Equipment slots are `main-hand`, `off-hand`, `body`, `left-ring`, `right-ring`, and `amulet` (UI labels: Weapon, Weapon, Armor, Ring, Ring, Amulet).
 
 ## State flow

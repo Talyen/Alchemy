@@ -20,7 +20,6 @@ import { BattleCardButton } from "../../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
 import { DetailPopup } from "../../../shared/ui/card-popup";
 import { MysteryEffectBadge } from "../../../shared/ui/mystery-effect-badge";
-import { ScreenHeader } from "../../../shared/ui/shared-ui";
 
 interface LookupProps {
   findCard: (id: string) => BattleCard | undefined;
@@ -66,9 +65,6 @@ function MysteryRewardEffectItem({
         <p className={controlLabelClass}>
           <CardTitle card={card} />
         </p>
-        <p className={bodyTextClass}>
-          Added <CardTitle card={card} /> to your Deck
-        </p>
       </div>
     );
   }
@@ -100,7 +96,6 @@ function MysteryRewardEffectItem({
           </TiltSurface>
         </div>
         <p className={controlLabelClass}>{boon.title}</p>
-        <p className={bodyTextClass}>Added {boon.title} for this run</p>
       </div>
     );
   }
@@ -147,13 +142,11 @@ export function MysteryRewardSummary({
   findTrinket,
   grantedTrinketIds,
   onContinue,
-  eventTitle,
 }: {
   choice: MysteryChoice;
   runDeck: BattleCard[];
   grantedTrinketIds: string[];
   onContinue: () => void;
-  eventTitle: string;
 } & LookupProps) {
   const resourceEffects = choice.effects.filter((e) => e.kind === "gainGold" || e.kind === "gainMaterial");
   const otherEffects = choice.effects.filter((e) => e.kind !== "gainGold" && e.kind !== "gainMaterial");
@@ -173,10 +166,6 @@ export function MysteryRewardSummary({
 
   return (
     <div className="space-y-6 text-center">
-      <div>
-        <ScreenHeader title={eventTitle} />
-      </div>
-
       {otherEffects.map((effect, i) => {
         const grantedTrinketId =
           effect.kind === "gainRandomTrinket" ? grantedTrinketIds[randomTrinketCursor++] : undefined;

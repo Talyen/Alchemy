@@ -67,7 +67,7 @@ export const gearBaseItems = defineGearBaseItems({
   },
   hatchet: {
     displayName: "Hatchet",
-    compatibleSlots: ["main-hand"],
+    compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["physical", "bleed"],
     availableRarities: ["basic", "astral"],
@@ -76,7 +76,7 @@ export const gearBaseItems = defineGearBaseItems({
   },
   longsword: {
     displayName: "Longsword",
-    compatibleSlots: ["main-hand"],
+    compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["physical", "forge", "holy"],
     availableRarities: ["basic", "astral"],
@@ -85,7 +85,7 @@ export const gearBaseItems = defineGearBaseItems({
   },
   shortsword: {
     displayName: "Shortsword",
-    compatibleSlots: ["main-hand"],
+    compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["physical", "forge", "bleed"],
     availableRarities: ["basic", "astral"],
@@ -94,7 +94,7 @@ export const gearBaseItems = defineGearBaseItems({
   },
   dagger: {
     displayName: "Dagger",
-    compatibleSlots: ["main-hand"],
+    compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["physical", "bleed", "poison"],
     availableRarities: ["basic", "astral"],
@@ -103,7 +103,7 @@ export const gearBaseItems = defineGearBaseItems({
   },
   mace: {
     displayName: "Mace",
-    compatibleSlots: ["main-hand"],
+    compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["physical", "stun", "holy"],
     availableRarities: ["basic", "astral"],
@@ -112,7 +112,7 @@ export const gearBaseItems = defineGearBaseItems({
   },
   flail: {
     displayName: "Flail",
-    compatibleSlots: ["main-hand"],
+    compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["physical", "stun"],
     availableRarities: ["basic", "astral"],
@@ -166,7 +166,7 @@ export const gearBaseItems = defineGearBaseItems({
   },
   wand: {
     displayName: "Wand",
-    compatibleSlots: ["main-hand"],
+    compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["burn", "freeze", "mana"],
     availableRarities: ["basic", "astral"],

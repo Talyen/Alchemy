@@ -5,9 +5,15 @@
 // Pixel bounds converted to cqh/cqw so the layout is resolution-independent
 // (the stage container may be 1080, 2160, or another height in the future).
 export const battleCardWidthClass = "w-[clamp(28.5cqh,28.9cqh,43.1cqh)]";
+/** Slightly larger than 1/√3 of hero width so the companion reads as a corner portrait. */
+export const battleCompanionWidthClass = "w-[clamp(18.4cqh,18.7cqh,27.9cqh)]";
+/** Peek over the hero art bottom-right: ~42% on the portrait, dipped onto the art border but above HP. */
+export const battleCompanionCornerClass = "absolute bottom-0 left-full z-20 -translate-x-[42%] translate-y-[1.6cqh]";
 /** Landscape enemy art sized to match portrait hero height (3:4 width × 16/9). */
 export const battleEnemyCardWidthClass = "w-[clamp(50.67cqh,51.38cqh,76.62cqh)]";
 export const handCardWidthClass = "w-[clamp(22.28cqh,22.64cqh,33.73cqh)]";
+// Collection card tiles match the battle-hand clamp; max-width so 4-col rows shrink instead of overlapping.
+export const collectionCardGridTileWidthClass = "mx-auto w-full max-w-[clamp(22.28cqh,22.64cqh,33.73cqh)]";
 // Non-battle card/tile widths are authored ~1.2× denser than the prior stage sizes.
 export const viewCardWidthClass = "w-[clamp(21cqh,21.34cqh,31.78cqh)]"; // was 17.5 / 17.78 / 26.48
 export const collectionTileWidthClass = "w-[clamp(25.2cqh,25.61cqh,38.14cqh)]"; // was 21 / 21.34 / 31.78
@@ -15,7 +21,7 @@ export const collectionTileWidthClass = "w-[clamp(25.2cqh,25.61cqh,38.14cqh)]"; 
 // the shell is narrower than 4×tile + gaps (e.g. rem-fixed max-w after UI Scale removal).
 export const collectionGridTileWidthClass = "mx-auto w-full max-w-[clamp(25.2cqh,25.61cqh,38.14cqh)]";
 export const collectionGridGapXClass = "gap-x-5";
-// Must fit 4× collection tile max + 3× gap-x-5 + ScreenShell p-[2.1rem] at 1080cqh (~1.2kpx).
+// Must fit 4× collection card max (hand clamp) + 3× gap-x-5 + ScreenShell p-[2.1rem] at 1080cqh (~1.2kpx).
 export const collectionShellWidthClass = "max-w-7xl";
 // Shared with CollectionGrid — stretch columns; tiles self-center via collectionGrid*WidthClass.
 export const collectionCardGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-4`;
@@ -30,6 +36,26 @@ export const pileCardWidthClass = "w-[clamp(13.8cqh,14.9cqh,21cqh)]";
 
 // Non-battle portrait/card panels (e.g. difficulty select) — 1.2× battleCardWidthClass, battle token untouched.
 export const nonBattleCardWidthClass = "w-[clamp(29.71cqh,30.19cqh,44.98cqh)]";
+
+/** Landscape chooser art (game mode, destination). Caps at the designed size; shrinks with the tile. */
+export const chooserArtWidthClass = "w-full max-w-[39.11cqh]";
+/** Flex item for a padded 3-up chooser tile (`px-5`). Grows up to art+padding, shrinks when the row is tight. */
+export const chooserPaddedTileClass = "relative min-w-0 w-full max-w-[calc(39.11cqh+2.5rem)] flex-1";
+export const chooserRowGapClass = "gap-5";
+/**
+ * ScreenShell ceiling for a 3-up landscape chooser with padded tiles.
+ * 3×(art + px-5) + 2×gap-5 + ScreenShell p-[2.1rem]; `min(100%)` never exceeds the page.
+ */
+export const chooserRowShellWidthClass = "max-w-[min(100%,calc(3*39.11cqh+3*2.5rem+2*1.25rem+4.2rem))]";
+
+/** Portrait chooser art (character select). Caps at the designed size; shrinks with the tile. */
+export const chooserHeroArtWidthClass = "w-full max-w-[25.5cqh]";
+export const chooserHeroRowGapClass = "gap-x-8";
+/**
+ * ScreenShell ceiling for a 4-up portrait chooser.
+ * 4×art + 3×gap-x-8 + ScreenShell p-[2.1rem]; `min(100%)` never exceeds the page.
+ */
+export const chooserHeroRowShellWidthClass = "max-w-[min(100%,calc(4*25.5cqh+3*2rem+4.2rem))]";
 
 // Card and popup surfaces stay centralized so repeated game widgets share the
 // same tactile fantasy material treatment.
@@ -55,14 +81,16 @@ export const tooltipAnchorClassNames = {
   below: "top-full mt-4 bottom-auto",
 } as const;
 
-// translate-x is half (enemy − hero) width so the gap midpoint sits on the viewport center
-// instead of the pair's bounding-box center (landscape enemy would otherwise shove the hero left).
+// Half-stage anchors: fight axis (inner edges + gap) on screen center. Extra landscape
+// width grows into the right half instead of translating the pair as one object.
 export const battleActorSectionClass = {
-  desktop:
-    "absolute inset-x-0 flex -translate-y-1/2 translate-x-[clamp(11.085cqh,11.24cqh,16.76cqh)] items-start justify-center px-4 gap-[clamp(8cqw,12cqw,16cqw)]",
-  ultrawide:
-    "absolute inset-x-0 flex -translate-y-1/2 translate-x-[clamp(11.085cqh,11.24cqh,16.76cqh)] items-start justify-center px-4 gap-[clamp(10cqw,14cqw,18cqw)]",
+  desktop: "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 items-start px-4 gap-[clamp(8cqw,12cqw,16cqw)]",
+  ultrawide: "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 items-start px-4 gap-[clamp(10cqw,14cqw,18cqw)]",
 } as const;
+
+export const battleActorHeroCellClass =
+  "relative flex items-start justify-end transition-transform duration-500 ease-out";
+export const battleActorEnemyCellClass = "relative flex items-start justify-start";
 
 export const battleBottomBarClass =
   "absolute inset-x-0 grid items-end gap-[clamp(1.25cqw,3cqw,2.19cqw)] px-2 bottom-2 grid-cols-[minmax(10.19cqh,0.24fr)_1fr_minmax(10.19cqh,0.24fr)] pb-1";

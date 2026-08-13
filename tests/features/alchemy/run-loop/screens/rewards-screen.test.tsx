@@ -41,6 +41,7 @@ describe("RewardsScreen", () => {
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={onSelectReward}
+        onOpenMenu={vi.fn()}
       />,
     );
 
@@ -61,6 +62,7 @@ describe("RewardsScreen", () => {
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}
+        onOpenMenu={vi.fn()}
       />,
     );
 
@@ -89,9 +91,24 @@ describe("RewardsScreen", () => {
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}
+        onOpenMenu={vi.fn()}
       />,
     );
 
     expect(screen.getByText("Found")).toBeTruthy();
+  });
+
+  it("places the hamburger menu trigger in the screen header", () => {
+    render(
+      <RewardsScreen
+        rewardState={getRunSessionStoreView().rewardState}
+        onAddReward={vi.fn()}
+        onSkip={vi.fn()}
+        onSelectReward={vi.fn()}
+        onOpenMenu={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Open rewards menu" })).toBeTruthy();
   });
 });

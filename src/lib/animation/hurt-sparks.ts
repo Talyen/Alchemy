@@ -21,12 +21,36 @@ const DEFAULT_HURT_SPARK_COLORS = [
 
 const EDGE_INSET = 2;
 const OUTWARD_ANGLE_JITTER = 0.5;
+const DEFAULT_MIN_SPEED = 5;
+const DEFAULT_SPEED_SPAN = 9;
+const DEFAULT_MIN_SIZE = 1.5;
+const DEFAULT_SIZE_SPAN = 2.5;
+
+export type HurtSparkEdges = "perimeter" | "vertical";
+
+export interface HurtSparkSpawnOptions {
+  edges?: HurtSparkEdges;
+  minSpeed?: number;
+  speedSpan?: number;
+  minSize?: number;
+  sizeSpan?: number;
+  angleJitter?: number;
+}
 
 export interface HurtSparkBounds {
   x: number;
   y: number;
   width: number;
   height: number;
+}
+
+function sampleVerticalEdgeSpawn(bounds: HurtSparkBounds): { x: number; y: number; nx: number; ny: number } {
+  const { x: originX, y: originY, width, height } = bounds;
+  const y = originY + EDGE_INSET + Math.random() * Math.max(height - EDGE_INSET * 2, 0);
+  if (Math.random() < 0.5) {
+    return { x: originX + EDGE_INSET, y, nx: -1, ny: 0 };
+  }
+  return { x: originX + width - EDGE_INSET, y, nx: 1, ny: 0 };
 }
 
 // Picks a random point on the portrait perimeter and the outward-facing normal at that point.
@@ -56,20 +80,27 @@ export function createHurtSparks(
   count: number,
   colors: readonly string[] = DEFAULT_HURT_SPARK_COLORS,
   bounds: HurtSparkBounds = { x: 0, y: 0, width: canvasWidth, height: canvasHeight },
+  spawn: HurtSparkSpawnOptions = {},
 ): HurtSpark[] {
   const particles: HurtSpark[] = [];
+  const sample = spawn.edges === "vertical" ? sampleVerticalEdgeSpawn : samplePerimeterSpawn;
+  const angleJitter = spawn.angleJitter ?? OUTWARD_ANGLE_JITTER;
+  const minSpeed = spawn.minSpeed ?? DEFAULT_MIN_SPEED;
+  const speedSpan = spawn.speedSpan ?? DEFAULT_SPEED_SPAN;
+  const minSize = spawn.minSize ?? DEFAULT_MIN_SIZE;
+  const sizeSpan = spawn.sizeSpan ?? DEFAULT_SIZE_SPAN;
 
   for (let i = 0; i < count; i++) {
-    const { x, y, nx, ny } = samplePerimeterSpawn(bounds);
-    const outwardAngle = Math.atan2(ny, nx) + (Math.random() - 0.5) * OUTWARD_ANGLE_JITTER;
-    const speed = 5 + Math.random() * 9;
+    const { x, y, nx, ny } = sample(bounds);
+    const outwardAngle = Math.atan2(ny, nx) + (Math.random() - 0.5) * angleJitter;
+    const speed = minSpeed + Math.random() * speedSpan;
     particles.push({
       x,
       y,
       vx: Math.cos(outwardAngle) * speed,
       vy: Math.sin(outwardAngle) * speed,
       alpha: 1,
-      size: 1.5 + Math.random() * 2.5,
+      size: minSize + Math.random() * sizeSpan,
       color: colors[Math.floor(Math.random() * colors.length)] ?? colors[0]!,
     });
   }

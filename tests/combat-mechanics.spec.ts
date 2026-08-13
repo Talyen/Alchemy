@@ -78,8 +78,23 @@ test.describe("Companion Battle Behavior", () => {
     await battle.playCardNamed("Wolf");
     await expect(battle.companionPanel).toBeVisible({ timeout: 3000 });
     await expect(battle.companionPanel).toHaveAttribute("aria-label", "Active companion: Wolf Companion");
+
+    await expect(async () => {
+      const companionBox = await battle.companionPanel.boundingBox();
+      const healthBox = await battle.playerHealthPanel.boundingBox();
+      expect(companionBox && healthBox).toBeTruthy();
+      if (!companionBox || !healthBox) return;
+      expect(boxesOverlap(companionBox, healthBox)).toBe(false);
+    }).toPass();
   });
 });
+
+function boxesOverlap(
+  a: { x: number; y: number; width: number; height: number },
+  b: { x: number; y: number; width: number; height: number },
+): boolean {
+  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+}
 
 interface TalentCase {
   id: string;

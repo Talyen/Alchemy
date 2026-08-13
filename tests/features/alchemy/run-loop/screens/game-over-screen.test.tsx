@@ -15,6 +15,7 @@ describe("GameOverScreen", () => {
         talentXP={{ physical: 20, burn: 3 }}
         runEndMaterials={{ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 }}
         onContinue={() => {}}
+        onOpenMenu={() => {}}
       />,
     );
 
@@ -30,6 +31,7 @@ describe("GameOverScreen", () => {
         talentXP={{}}
         runEndMaterials={{ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 }}
         onContinue={() => {}}
+        onOpenMenu={() => {}}
       />,
     );
 

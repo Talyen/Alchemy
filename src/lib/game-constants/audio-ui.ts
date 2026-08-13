@@ -28,6 +28,13 @@ export const PAGE_EXIT_MS = 180;
 
 // ============ Startup Loading ============
 export const INITIAL_LOAD_MIN_DURATION_MS = 650;
+export const STARTUP_LOAD_IMAGE_WEIGHT = 0.85;
+export const STARTUP_LOAD_FONT_WEIGHT = 0.05;
+export const STARTUP_LOAD_BOOTSTRAP_WEIGHT = 0.1;
+export const STARTUP_BAR_INCOMPLETE_CAP = 0.92;
+export const STARTUP_BAR_TAU_MS = 220;
+export const STARTUP_BAR_TRICKLE_PER_SEC = 0.04;
+export const STARTUP_BAR_REVEAL_THRESHOLD = 0.995;
 
 // ============ Animation / Timing ============
 export const SHIMMER_COOLDOWN_MS = 350;
@@ -59,6 +66,7 @@ export const CARD_TRANSFER_CONFIG = {
 // ============ Layout ============
 export const GHOST_TRAVEL_SCALE = 0.74;
 export const GHOST_PLAYER_OFFSET_RATIO = 0.16;
+export const GHOST_TARGET_Y_RATIO = 0.82;
 export const GHOST_FALLBACK_WIDTH_PX = 160;
 export const GHOST_FALLBACK_HEIGHT_PX = 220;
 export const GHOST_FALLBACK_CENTER_Y_RATIO = 0.3;

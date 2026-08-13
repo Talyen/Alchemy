@@ -7,7 +7,12 @@ import { BATTLE_ACTOR_TOP } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
 import { ArtPanel, CompanionPanel, CombatTextRail } from "../../../shared/ui/battle-ui";
-import { battleActorSectionClass } from "@/features/alchemy/shared/config";
+import {
+  battleActorEnemyCellClass,
+  battleActorHeroCellClass,
+  battleActorSectionClass,
+  battleCompanionCornerClass,
+} from "@/features/alchemy/shared/config";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useBattlePresentationStore } from "../../battle/battle-presentation-store";
 import type { BattleFeedbackProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
@@ -78,7 +83,7 @@ export function BattleActors({
       className={cn(aspectMode === "ultrawide" ? battleActorSectionClass.ultrawide : battleActorSectionClass.desktop)}
       style={{ top: BATTLE_ACTOR_TOP }}
     >
-      <div className="relative flex items-start justify-center transition-transform duration-500 ease-out">
+      <div className={battleActorHeroCellClass}>
         <div
           className={cn(
             "relative transition-transform duration-500 ease-out",
@@ -96,26 +101,28 @@ export function BattleActors({
             deathsDoorActive={battleState.deathsDoorActive}
             surfaceRef={playerPanelRef}
             turnActive={isPlayerTurn}
+            artCorner={
+              battleState.activeCompanion ? (
+                <div className={battleCompanionCornerClass}>
+                  <ShakingCompanionPanel
+                    companion={battleState.activeCompanion}
+                    damageBonus={
+                      battleState.companionDamageBuff +
+                      battleState.talentEffects.companionDamage +
+                      battleState.trinketEffects.companionDamageBonus +
+                      (battleState.talentEffects.companionBondLevels[battleState.activeCompanion.id] ?? 0)
+                    }
+                  />
+                </div>
+              ) : null
+            }
           >
             <CombatTextRailSide side="player" />
           </ShakingArtPanel>
-          {battleState.activeCompanion ? (
-            <div className="absolute bottom-[clamp(8.56cqh,8.93cqh,11.48cqh)] left-[calc(100%-clamp(4.71cqh,5.58cqh,7.65cqh))] z-20">
-              <ShakingCompanionPanel
-                companion={battleState.activeCompanion}
-                damageBonus={
-                  battleState.companionDamageBuff +
-                  battleState.talentEffects.companionDamage +
-                  battleState.trinketEffects.companionDamageBonus +
-                  (battleState.talentEffects.companionBondLevels[battleState.activeCompanion.id] ?? 0)
-                }
-              />
-            </div>
-          ) : null}
         </div>
       </div>
 
-      <div className="relative flex flex-col items-center">
+      <div className={battleActorEnemyCellClass}>
         <ShakingArtPanel
           side="enemy"
           title={battleState.currentEnemy.title}

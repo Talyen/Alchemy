@@ -129,7 +129,9 @@ in `App.tsx`) at constant CSS-pixel scale, so it never shrinks with the vr-stage
 transform and cannot be clipped by `overflow-hidden` ancestors. Clip/placement
 bounds are `[data-testid="vr-stage"]` (fallback: `documentElement`), not the raw
 browser window. Prefer above; flip below when the tooltip would clip the stage top;
-`side-start` / `side-end` anchor beside the trigger (locked menu items).
+place beside the trigger when neither vertical gutter fits (prefer the roomier
+side, then flip/clamp). Explicit `side-start` / `side-end` still anchor beside
+the trigger (locked menu items).
 
 Build tooltips with `PortaledTooltip` (`src/features/alchemy/shared/ui/portaled-tooltip.tsx`):
 
@@ -327,15 +329,16 @@ New keywords still follow [Add a new keyword](#add-a-new-keyword) first.
 
 ## Adding a new screen
 
-| Step                                                                                                        | File(s)                                                                      |
-| ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| 1. Add string to `Screen` union and `ROUTE_SCREENS`                                                         | `src/lib/routing/screens.ts`                                                 |
-| 2. Classify the screen and add every legal interactive edge                                                 | `run-screen-router.ts`, `screen-transition-policy.ts`                        |
-| 3. Create component in `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/` + barrel export        | `index.ts` (local screen index under that subdirectory)                      |
-| 4. Wire route handler in the matching phase table (`meta-routes`, `run-setup-routes`, `run-loop-routes`, …) | `src/app/screen-routes/`                                                     |
-| 5. Extend phase route ctx / `RenderAlchemyScreenProps` if new props are needed                              | `src/app/screen-routes/route-ctx.ts`, `src/app/screen-routes/index.tsx`      |
-| 6. Wire navigation trigger                                                                                  | caller of `goToScreen("<name>")`                                             |
-| 7. Cover taxonomy, allowed/rejected transitions, and route rendering                                        | `tests/lib/routing/`, `tests/features/alchemy/shell/`, route component tests |
+| Step                                                                                                                      | File(s)                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Add string to `Screen` union and `ROUTE_SCREENS`                                                                       | `src/lib/routing/screens.ts`                                                                                                                                                                                                                                                                                                                         |
+| 2. Classify the screen and add every legal interactive edge                                                               | `run-screen-router.ts`, `screen-transition-policy.ts`                                                                                                                                                                                                                                                                                                |
+| 3. Create component in `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/` + barrel export                      | `index.ts` (local screen index under that subdirectory)                                                                                                                                                                                                                                                                                              |
+| 4. Wrap in `TitledScreenShell` (`PageLayout` + `ScreenShell` + header-row hamburger) and pass `onOpenMenu` from the route | `layout-components.tsx`; exceptions: Main Menu (unshelled) and Battle (existing combat shell). Art-heavy 3-up landscape chooser rows pass `chooserRowShellWidthClass` / `chooserArtWidthClass` from `layout.ts`; 4-up portrait choosers pass `chooserHeroRowShellWidthClass` / `chooserHeroArtWidthClass` so the shell ceiling fits intrinsic tiles. |
+| 5. Wire route handler in the matching phase table (`meta-routes`, `run-setup-routes`, `run-loop-routes`, …)               | `src/app/screen-routes/`                                                                                                                                                                                                                                                                                                                             |
+| 6. Extend phase route ctx / `RenderAlchemyScreenProps` if new props are needed                                            | `src/app/screen-routes/route-ctx.ts`, `src/app/screen-routes/index.tsx`                                                                                                                                                                                                                                                                              |
+| 7. Wire navigation trigger                                                                                                | caller of `goToScreen("<name>")`                                                                                                                                                                                                                                                                                                                     |
+| 8. Cover taxonomy, allowed/rejected transitions, and route rendering                                                      | `tests/lib/routing/`, `tests/features/alchemy/shell/`, route component tests                                                                                                                                                                                                                                                                         |
 
 Boot restore/hydration sets a validated saved screen directly and intentionally bypasses the interactive transition table.
 

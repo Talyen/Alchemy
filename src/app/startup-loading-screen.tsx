@@ -1,26 +1,21 @@
 // Minimal startup-only loading bar for the initial main menu reveal.
-// One-shot fill from empty with intentionally fixed presentation timing; the bar
-// is not a progress meter for the readiness work that controls app reveal.
+// Width follows smoothed real progress from the boot gate (art, fonts, save).
 import { useState } from "react";
+import { LOADING_WORDS } from "@/app/loading-words";
 
-const LOADING_WORDS = [
-  "Forging",
-  "Growing",
-  "Brewing",
-  "Simmering",
-  "Tinkering",
-  "Prestidigitating",
-  "Discombobulating",
-];
+interface Props {
+  progress: number;
+}
 
-export function StartupLoadingScreen() {
+export function StartupLoadingScreen({ progress }: Props) {
   const [loadingWord] = useState(() => LOADING_WORDS[Math.floor(Math.random() * LOADING_WORDS.length)] ?? "Loading");
+  const fill = Math.min(1, Math.max(0, progress));
 
   // Pixel sizes match index.html's pre-React loader so the handoff does not resize.
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-3 bg-background">
       <div className="h-[4px] w-[192px] overflow-hidden rounded-full bg-border">
-        <div className="alchemy-startup-bar h-full w-full rounded-full" />
+        <div className="alchemy-startup-bar h-full w-full rounded-full" style={{ transform: `scaleX(${fill})` }} />
       </div>
       <p className="alchemy-loading-fade text-[12px] font-medium tracking-[0.18em] text-foreground/40 uppercase">
         {loadingWord}...

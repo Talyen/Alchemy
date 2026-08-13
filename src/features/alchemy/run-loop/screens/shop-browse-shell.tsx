@@ -8,32 +8,35 @@ import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 
-import { GoldDisplay, ScreenHeader, ServiceButton } from "../../shared/ui/shared-ui";
+import { GoldDisplay, ServiceButton, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { FadeSlot } from "../../shared/ui/fade-slot";
 
 export function ShopBrowseShell({
   title,
   gold,
   showGold = true,
+  onOpenMenu,
   children,
 }: {
   title: string;
   gold: number;
   showGold?: boolean;
+  onOpenMenu: (rect?: DOMRect) => void;
   children: ReactNode;
 }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
-      <ScreenHeader title={title} />
-      {showGold ? (
-        <GoldDisplay gold={gold} />
-      ) : (
-        <div className="invisible" aria-hidden="true">
+    <TitledScreenShell title={title} onOpenMenu={onOpenMenu} menuLabel={`Open ${title} menu`}>
+      <div className="mt-6 flex flex-col items-center gap-6 text-center">
+        {showGold ? (
           <GoldDisplay gold={gold} />
-        </div>
-      )}
-      {children}
-    </div>
+        ) : (
+          <div className="invisible" aria-hidden="true">
+            <GoldDisplay gold={gold} />
+          </div>
+        )}
+        {children}
+      </div>
+    </TitledScreenShell>
   );
 }
 

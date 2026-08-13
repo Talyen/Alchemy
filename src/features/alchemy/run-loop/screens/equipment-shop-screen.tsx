@@ -14,6 +14,7 @@ export function EquipmentShopScreen({
   onBuyGear,
   onRefresh,
   onContinue,
+  onOpenMenu,
 }: {
   gold: number;
   gear: GearInstance[];
@@ -24,9 +25,10 @@ export function EquipmentShopScreen({
   onBuyGear: (instance: GearInstance) => boolean;
   onRefresh: () => void;
   onContinue: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   return (
-    <ShopBrowseShell title="Equipment Shop" gold={gold}>
+    <ShopBrowseShell title="Equipment Shop" gold={gold} onOpenMenu={onOpenMenu}>
       <ShopBrowseOfferings
         swapKey={gear.map((g) => g.instanceId).join("-")}
         onLeave={onContinue}

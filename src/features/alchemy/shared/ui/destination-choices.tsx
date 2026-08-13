@@ -5,6 +5,9 @@ import type { BestiaryEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import {
   battleEnemyCardWidthClass,
+  chooserArtWidthClass,
+  chooserPaddedTileClass,
+  chooserRowGapClass,
   destinationMeta,
   getBossEnemy,
   getBossShineColors,
@@ -36,7 +39,13 @@ export function DestinationChoices({
   const tooltipEntry = bossOnly ? (selectedBoss ?? getBossEnemy()) : null;
 
   return (
-    <FadeSlot swapKey={destinationOptions.join("-")} className="flex flex-wrap justify-center gap-8">
+    <FadeSlot
+      swapKey={destinationOptions.join("-")}
+      className={cn(
+        "flex justify-center",
+        bossOnly ? "flex-wrap gap-8" : ["w-full flex-nowrap items-start", chooserRowGapClass],
+      )}
+    >
       {destinationOptions.map((destination) => {
         const { icon, accentClassName, art: defaultArt } = destinationMeta[destination];
         const art = destination === DESTINATIONS.BOSS_COMBAT && selectedBoss?.art ? selectedBoss.art : defaultArt;
@@ -57,6 +66,7 @@ export function DestinationChoices({
             accentClassName={accentClassName}
             shineColors={useShineBorder ? shineColors : null}
             tooltipEntry={tooltipEntry}
+            padded={!bossOnly}
             onChoose={onChoose}
           />
         );
@@ -72,6 +82,7 @@ function DestinationChoiceTile({
   accentClassName,
   shineColors,
   tooltipEntry,
+  padded,
   onChoose,
 }: {
   destination: Destination;
@@ -80,15 +91,20 @@ function DestinationChoiceTile({
   accentClassName: string;
   shineColors: string | readonly string[] | null;
   tooltipEntry: BestiaryEntry | null;
+  padded: boolean;
   onChoose: (destination: Destination) => void;
 }) {
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className={cn("flex flex-col items-center gap-4", padded && chooserPaddedTileClass)}>
       {tooltipEntry ? (
         <BossDestinationArt art={art} destination={destination} entry={tooltipEntry} />
       ) : (
-        <TiltSurface className="rounded-shell-card">
-          <img src={art} alt={destination} className="w-full max-w-[39.11cqh] rounded-shell-card object-contain" />
+        <TiltSurface className="w-full min-w-0 rounded-shell-card">
+          <img
+            src={art}
+            alt={destination}
+            className={cn(chooserArtWidthClass, "min-w-0 rounded-shell-card object-contain")}
+          />
         </TiltSurface>
       )}
       <ChoiceButton

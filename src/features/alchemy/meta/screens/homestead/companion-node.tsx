@@ -17,29 +17,24 @@ function getCompanionFooter(
   discovered: boolean,
   isComplete: boolean,
   card: BattleCard,
-  currentLevel: number,
   bondCost: MaterialInventory,
   bondAffordable: boolean,
   onBond: (card: BattleCard) => void,
 ): ReactNode {
-  if (!discovered || isComplete) {
-    return (
-      <HomesteadTileCompletedFooter
-        label={discovered ? card.title : "Undiscovered"}
-        stars={discovered ? <StarRating current={COMPANION_MAX_TIER} max={COMPANION_MAX_TIER} /> : null}
-        wrapperClassName="mt-0.5"
-      />
-    );
+  if (!discovered) {
+    return null;
+  }
+  if (isComplete) {
+    return <HomesteadTileCompletedFooter label={card.title} wrapperClassName="mt-0.5" />;
   }
   return (
     <div className="mt-0.5 flex items-center gap-2">
       <DisabledTooltip show={!bondAffordable} message="Not Enough Resources">
-        <Button variant="outline" disabled={!bondAffordable} onClick={() => onBond(card)}>
+        <Button variant="outline" size="lg" disabled={!bondAffordable} onClick={() => onBond(card)}>
           {card.title}
           <MaterialCost material="food" amount={bondCost.food} />
         </Button>
       </DisabledTooltip>
-      <StarRating current={currentLevel} max={COMPANION_MAX_TIER} />
     </div>
   );
 }
@@ -47,12 +42,22 @@ function getCompanionFooter(
 function getCompanionTooltip(
   card: BattleCard,
   discovered: boolean,
+  currentLevel: number,
   bondedCompanions: Record<CompanionId, number>,
 ): (ctx: PopupContext) => ReactNode {
+  const title = discovered ? (
+    <span className="inline-flex items-center gap-2">
+      {card.title}
+      <StarRating current={currentLevel} max={COMPANION_MAX_TIER} className="h-4 w-4" />
+    </span>
+  ) : (
+    "Undiscovered"
+  );
+
   return ({ visible, triggerRef }) => (
     <DetailPopup
       idPrefix={card.id}
-      title={discovered ? card.title : "Undiscovered"}
+      title={title}
       subtitle={undefined}
       descriptionLines={
         visible
@@ -99,8 +104,8 @@ export function CompanionCardNode({
   }
   const bondAffordable = discovered && !isComplete && canAfford(materialInventory, bondCost);
 
-  const detailTooltip = getCompanionTooltip(card, discovered, bondedCompanions);
-  const footer = getCompanionFooter(discovered, isComplete, card, currentLevel, bondCost, bondAffordable, onBond);
+  const detailTooltip = getCompanionTooltip(card, discovered, currentLevel, bondedCompanions);
+  const footer = getCompanionFooter(discovered, isComplete, card, bondCost, bondAffordable, onBond);
 
   return (
     <HomesteadTileFrame
@@ -109,7 +114,7 @@ export function CompanionCardNode({
       hoveredItemId={hoveredItemId}
       setHoveredItemId={setHoveredItemId}
       detailTooltip={detailTooltip}
-      wrapperClassName="p-1.5"
+      wrapperClassName="p-2.5"
       surfaceClassName={cn(
         HOMESTEAD_CONFIG.companionPageWidth,
         HOMESTEAD_CONFIG.companionAspectRatio,

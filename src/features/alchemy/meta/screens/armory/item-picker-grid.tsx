@@ -37,13 +37,11 @@ export function ItemPickerGrid({
   items,
   loadout,
   inventory,
-  equippedInstanceId,
   siblingEquippedIds,
   editable,
   salvageMode,
   activeCurrencyId,
   onEquip,
-  onUnequip,
   onSalvage,
   onApplyCurrency,
 }: {
@@ -52,13 +50,11 @@ export function ItemPickerGrid({
   items: GearInstance[];
   loadout: GearLoadout;
   inventory: GearInstance[];
-  equippedInstanceId: string | null;
   siblingEquippedIds: Set<string>;
   editable: boolean;
   salvageMode: boolean;
   activeCurrencyId: CraftingCurrencyId | null;
   onEquip: (instance: GearInstance) => void;
-  onUnequip: () => void;
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
 }) {
@@ -82,10 +78,9 @@ export function ItemPickerGrid({
           {pageItems.map((item) => {
             const definition = gearDefinitions[item.definitionId];
             const title = getGearInstanceTitle(item);
-            const equippedHere = item.instanceId === equippedInstanceId;
             const equippedElsewhere = siblingEquippedIds.has(item.instanceId);
             const loadoutLegal = definition
-              ? equippedHere || isGearCompatibleWithLoadoutSlot(definition, slot, loadout, inventory)
+              ? isGearCompatibleWithLoadoutSlot(definition, slot, loadout, inventory)
               : false;
             const canCraft = Boolean(activeCurrencyId && canApplyCraftingCurrency(activeCurrencyId, item));
             const salvageable = salvageMode;
@@ -117,7 +112,6 @@ export function ItemPickerGrid({
                     title={title}
                     art={definition?.art}
                     as="button"
-                    selected={equippedHere}
                     interactive
                     ariaLabel={ariaLabel}
                     className={cn(cardSurfaceClass, collectionGridTileWidthClass, gearArtAspectClass)}
@@ -134,10 +128,6 @@ export function ItemPickerGrid({
                       }
                       if (!loadoutLegal) {
                         playUISound("error");
-                        return;
-                      }
-                      if (equippedHere) {
-                        onUnequip();
                         return;
                       }
                       onEquip(item);

@@ -66,12 +66,23 @@ export function preloadImages(srcs: readonly string[]): Promise<void> {
 export async function preloadImagesInBatches(
   srcs: readonly string[],
   batchSize = IMAGE_PRELOAD_BATCH_SIZE,
+  onProgress?: (loaded: number, total: number) => void,
 ): Promise<void> {
   const uniqueSrcs = Array.from(new Set(srcs.filter(Boolean)));
   const resolvedBatchSize = Math.max(1, Math.floor(batchSize));
+  const total = uniqueSrcs.length;
+  let loaded = 0;
+  onProgress?.(loaded, total);
 
   for (let index = 0; index < uniqueSrcs.length; index += resolvedBatchSize) {
-    await preloadImages(uniqueSrcs.slice(index, index + resolvedBatchSize));
+    const batch = uniqueSrcs.slice(index, index + resolvedBatchSize);
+    await Promise.all(
+      batch.map(async (src) => {
+        await preloadImage(src);
+        loaded += 1;
+        onProgress?.(loaded, total);
+      }),
+    );
     if (index + resolvedBatchSize < uniqueSrcs.length) {
       await yieldToBrowser();
     }

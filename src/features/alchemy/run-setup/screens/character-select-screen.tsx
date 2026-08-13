@@ -12,17 +12,19 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { renderColoredKeywords } from "../../shared/ui/card-description-ui";
-import { ScreenHeader, ActionButtonRow } from "../../shared/ui/shared-ui";
+import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { TooltipBody, TooltipHeader, TooltipSubheader } from "../../shared/ui/tooltip-panel";
 import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
-import { cardSurfaceClass } from "@/features/alchemy/shared/config";
+import {
+  cardSurfaceClass,
+  chooserHeroArtWidthClass,
+  chooserHeroRowGapClass,
+  chooserHeroRowShellWidthClass,
+} from "@/features/alchemy/shared/config";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
 import { playUISound } from "@/lib/audio";
-
-// Stage-relative clamp (slightly under the mid/small-monitor enlarge step).
-const charCardWidthClass = "w-[clamp(22.5cqh,25.5cqh,35cqh)]";
 
 function CharacterCard({
   id,
@@ -49,8 +51,8 @@ function CharacterCard({
   const art = characterArt[char.id];
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div ref={cardWrapperRef} className={cn("relative", charCardWidthClass)}>
+    <div className="flex min-w-0 flex-col items-center gap-3">
+      <div ref={cardWrapperRef} className={cn("relative min-w-0", chooserHeroArtWidthClass)}>
         <TiltSurface
           as="button"
           ariaLabel={isLocked ? `${char.name} (Locked)` : `Select ${char.name}`}
@@ -141,9 +143,11 @@ function CharacterCard({
 export function CharacterSelectScreen({
   onConfirm,
   onBack,
+  onOpenMenu,
 }: {
   onConfirm: (characterId: CharacterId) => void;
   onBack: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const [selectedId, setSelectedId] = useState<CharacterId | null>(null);
   const shimmerState = useUiStore((s) => s.shimmerState);
@@ -154,10 +158,13 @@ export function CharacterSelectScreen({
   const selectedChar = selectedId ? characters[selectedId] : null;
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-4 text-center">
-      <ScreenHeader title="Choose Your Hero" />
-
-      <div className="grid grid-cols-2 justify-items-center gap-x-8 gap-y-6 sm:grid-cols-4">
+    <TitledScreenShell
+      title="Choose Your Hero"
+      onOpenMenu={onOpenMenu}
+      menuLabel="Open character select menu"
+      maxWidthClass={chooserHeroRowShellWidthClass}
+    >
+      <div className={cn("mt-6 grid w-full grid-cols-4 justify-items-center gap-y-6", chooserHeroRowGapClass)}>
         {charIds.map((id) => {
           const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
           const unlockRequirementText = isLocked ? getCharacterUnlockMessage(id) : "";
@@ -179,6 +186,7 @@ export function CharacterSelectScreen({
       </div>
 
       <ActionButtonRow
+        className="mt-6"
         width="dialog"
         secondary={{ label: "Back", onClick: onBack }}
         primary={{
@@ -189,6 +197,6 @@ export function CharacterSelectScreen({
           },
         }}
       />
-    </div>
+    </TitledScreenShell>
   );
 }

@@ -191,12 +191,15 @@ Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/b
 
 One loading experience at cold start, then instant navigation — no per-route "Loading …" fallbacks.
 
-| Layer     | Where                                                  | Policy                                   |
-| --------- | ------------------------------------------------------ | ---------------------------------------- |
-| Images    | `allGameArt` in `assets.ts` (eager `import.meta.glob`) | Decoded in bounded batches before reveal |
-| Fonts     | `use-app-effects.ts`                                   | Ready with images before reveal          |
-| Screen JS | `src/app/screen-routes/`                               | Static imports — **no** `React.lazy()`   |
-| SFX       | `use-app-effects.ts`                                   | Critical sounds eager; rest on idle      |
+| Layer     | Where                                                  | Policy                                                                           |
+| --------- | ------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| Images    | `allGameArt` in `assets.ts` (eager `import.meta.glob`) | Decoded in bounded batches before reveal; per-image counts drive the startup bar |
+| Fonts     | `use-app-effects.ts`                                   | Ready with images before reveal                                                  |
+| Save      | `use-alchemy-bootstrap.ts`                             | Hydrated before reveal; included in startup bar target                           |
+| Screen JS | `src/app/screen-routes/`                               | Static imports — **no** `React.lazy()`                                           |
+| SFX       | `use-app-effects.ts`                                   | Critical sounds eager; rest on idle                                              |
+
+The cold-start bar in `StartupLoadingScreen` is a smoothed meter of art decode, fonts, and save bootstrap (`startup-bar-progress.ts`) — not a timed CSS fill. Reveal waits until that work is done **and** the eased display has caught 100%. The pre-React `index.html` track uses an indeterminate gold comet (no progress) until React mounts and owns the real fill.
 
 **Do not add:** `React.lazy()` on route screens; lazy game art; per-screen spinners for assets in `allGameArt`.
 

@@ -11,7 +11,7 @@ import { BattleCardButton } from "../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
 import { SelectableChoiceCard } from "../../shared/ui/selectable-choice-card";
 import { FadeSlot } from "../../shared/ui/fade-slot";
-import { ScreenHeader } from "../../shared/ui/shared-ui";
+import { TitledScreenShell } from "../../shared/ui/shared-ui";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
 function DraftedCardItem({ card, index }: { card: BattleCard; index: number }) {
@@ -40,9 +40,10 @@ interface Props {
   draftedCards?: BattleCard[];
   draftChoices?: BattleCard[];
   onPick?: (card: BattleCard) => void;
+  onOpenMenu: (rect?: DOMRect) => void;
 }
 
-export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick }: Props) {
+export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick, onOpenMenu }: Props) {
   const [localDrafted, setLocalDrafted] = useState<BattleCard[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const drafted = draftedCards ?? localDrafted;
@@ -65,60 +66,62 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
   const isComplete = drafted.length >= DRAFT_ROUNDS;
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
-      <div className="alchemy-shell flex w-full max-w-6xl flex-col items-center rounded-shell-hero border border-border/80 p-7">
-        <ScreenHeader title={isComplete ? "Draft Complete" : "Draft a Deck"} />
-        <p className={cn("mt-3", bodyTextClass)}>
-          {isComplete
-            ? "You drafted " + String(drafted.length) + " cards. Ready to begin your run."
-            : "Pick 1 of 3 cards \u2014 " + String(round + 1) + "/" + String(DRAFT_ROUNDS) + " selected"}
-        </p>
+    <TitledScreenShell
+      title={isComplete ? "Draft Complete" : "Draft a Deck"}
+      onOpenMenu={onOpenMenu}
+      menuLabel="Open draft menu"
+      maxWidthClass="max-w-6xl"
+    >
+      <p className={cn("mt-3 text-center", bodyTextClass)}>
+        {isComplete
+          ? "You drafted " + String(drafted.length) + " cards. Ready to begin your run."
+          : "Pick 1 of 3 cards \u2014 " + String(round + 1) + "/" + String(DRAFT_ROUNDS) + " selected"}
+      </p>
 
-        <FadeSlot swapKey={isComplete ? "complete" : round} className="mx-auto mt-8 min-h-[36cqh] w-full">
-          {isComplete ? (
-            <div className="mx-auto grid max-w-fit grid-cols-3 justify-items-center gap-6">
-              {drafted.map((card, index) => (
-                <DraftedCardItem key={"drafted-" + String(index) + "-" + card.id} card={card} index={index} />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-start justify-center gap-6">
-              {choices.map((card, index) => (
-                <SelectableChoiceCard
-                  key={"draft-choice-" + String(index) + "-" + card.id}
-                  card={card}
-                  selected={selectedIndex === index}
-                  onSelect={() => setSelectedIndex(index)}
-                  interactionKey={"draft-choice-" + String(index)}
-                />
-              ))}
-            </div>
-          )}
-        </FadeSlot>
-
+      <FadeSlot swapKey={isComplete ? "complete" : round} className="mx-auto mt-8 min-h-[36cqh] w-full">
         {isComplete ? (
-          <div className="mt-8">
-            <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={() => onComplete(drafted)}>
-              Continue
-            </Button>
+          <div className="mx-auto grid max-w-fit grid-cols-3 justify-items-center gap-6">
+            {drafted.map((card, index) => (
+              <DraftedCardItem key={"drafted-" + String(index) + "-" + card.id} card={card} index={index} />
+            ))}
           </div>
         ) : (
-          <div className="mt-6">
-            <Button
-              size="lg"
-              className={BUTTON_WIDTH_ACTION}
-              disabled={selectedIndex === null}
-              onClick={() => {
-                if (selectedIndex === null) return;
-                handlePick(choices[selectedIndex]!);
-                setSelectedIndex(null);
-              }}
-            >
-              Select Card
-            </Button>
+          <div className="flex flex-wrap items-start justify-center gap-6">
+            {choices.map((card, index) => (
+              <SelectableChoiceCard
+                key={"draft-choice-" + String(index) + "-" + card.id}
+                card={card}
+                selected={selectedIndex === index}
+                onSelect={() => setSelectedIndex(index)}
+                interactionKey={"draft-choice-" + String(index)}
+              />
+            ))}
           </div>
         )}
-      </div>
-    </div>
+      </FadeSlot>
+
+      {isComplete ? (
+        <div className="mt-8 flex justify-center">
+          <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={() => onComplete(drafted)}>
+            Continue
+          </Button>
+        </div>
+      ) : (
+        <div className="mt-6 flex justify-center">
+          <Button
+            size="lg"
+            className={BUTTON_WIDTH_ACTION}
+            disabled={selectedIndex === null}
+            onClick={() => {
+              if (selectedIndex === null) return;
+              handlePick(choices[selectedIndex]!);
+              setSelectedIndex(null);
+            }}
+          >
+            Select Card
+          </Button>
+        </div>
+      )}
+    </TitledScreenShell>
   );
 }

@@ -35,6 +35,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   salvageMode,
   activeCurrencyId,
   onSelect,
+  onUnequip,
   onSalvage,
   onApplyCurrency,
 }: {
@@ -45,6 +46,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   salvageMode: boolean;
   activeCurrencyId: CraftingCurrencyId | null;
   onSelect: () => void;
+  onUnequip: () => void;
   onSalvage: () => void;
   onApplyCurrency: () => void;
 }) {
@@ -97,6 +99,10 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
           }
           if (activeCurrencyId && instance) {
             onApplyCurrency();
+            return;
+          }
+          if (selected && instance) {
+            onUnequip();
             return;
           }
           onSelect();

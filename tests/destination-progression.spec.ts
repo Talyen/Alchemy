@@ -22,9 +22,20 @@ test.describe("Destination Progression", () => {
 
     const destination = new DestinationPage(page);
     await destination.expectVisible();
-    await expect(page.getByRole("button", { name: "Normal Combat" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Campfire" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Mystery" })).toBeVisible();
+    const choices = [
+      destination.destinationButton("Normal Combat"),
+      destination.destinationButton("Campfire"),
+      destination.destinationButton("Mystery"),
+    ];
+    for (const choice of choices) {
+      await expect(choice).toBeVisible();
+    }
+    const boxes = await Promise.all(choices.map((choice) => choice.boundingBox()));
+    const ys = boxes.map((box) => {
+      expect(box).not.toBeNull();
+      return box!.y;
+    });
+    expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(8);
   });
 
   test("completed destinations do not appear in subsequent choices", critical, async ({ page }) => {

@@ -14,6 +14,7 @@ export function TrinketShopScreen({
   onBuyTrinket,
   onRefresh,
   onContinue,
+  onOpenMenu,
 }: {
   gold: number;
   trinkets: TrinketEntry[];
@@ -24,9 +25,10 @@ export function TrinketShopScreen({
   onBuyTrinket: (trinket: TrinketEntry, slotKey: string) => boolean;
   onRefresh: () => void;
   onContinue: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   return (
-    <ShopBrowseShell title="Trinket Shop" gold={gold}>
+    <ShopBrowseShell title="Trinket Shop" gold={gold} onOpenMenu={onOpenMenu}>
       <ShopBrowseOfferings
         swapKey={trinkets.map((t) => t.id).join("-")}
         onLeave={onContinue}

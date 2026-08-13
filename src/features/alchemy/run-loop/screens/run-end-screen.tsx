@@ -3,8 +3,7 @@ import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_ACTION, bodyTextClass } from "@/features/alchemy/shared/config";
 import type { TalentXP } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { cn } from "@/lib/utils";
-import { ScreenHeader } from "../../shared/ui/shared-ui";
+import { TitledScreenShell } from "../../shared/ui/shared-ui";
 import { RunEndProgressSection } from "./run-end-progress-section";
 
 export function RunEndScreen({
@@ -14,6 +13,7 @@ export function RunEndScreen({
   talentXP,
   runEndMaterials,
   onContinue,
+  onOpenMenu,
 }: {
   title: string;
   subtitle: string;
@@ -21,19 +21,19 @@ export function RunEndScreen({
   talentXP: TalentXP;
   runEndMaterials: MaterialInventory;
   onContinue: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
-      <div>
-        <ScreenHeader title={title} />
-        <p className={cn("mt-3", bodyTextClass)}>{subtitle}</p>
+    <TitledScreenShell title={title} onOpenMenu={onOpenMenu} menuLabel={`Open ${title.toLowerCase()} menu`}>
+      <div className="mt-6 flex flex-col items-center gap-6 text-center">
+        <p className={bodyTextClass}>{subtitle}</p>
+
+        <RunEndProgressSection runEndTalentXP={runEndTalentXP} talentXP={talentXP} runEndMaterials={runEndMaterials} />
+
+        <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
+          Continue
+        </Button>
       </div>
-
-      <RunEndProgressSection runEndTalentXP={runEndTalentXP} talentXP={talentXP} runEndMaterials={runEndMaterials} />
-
-      <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
-        Continue
-      </Button>
-    </div>
+    </TitledScreenShell>
   );
 }

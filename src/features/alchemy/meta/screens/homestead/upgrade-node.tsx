@@ -39,22 +39,21 @@ export function HomesteadUpgradeNode({
   const itemAffordable = !isCompleted && canAfford(materialInventory, itemCost);
   const costItems = MATERIAL_IDS.filter((m) => (itemCost[m] ?? 0) > 0);
 
-  const detailTooltip = useTooltipContent(item, displayTierIndex);
+  const detailTooltip = useTooltipContent(item, displayTierIndex, currentLevel, maxTiers);
   const hasCost = MATERIAL_IDS.some((m) => (itemCost[m] ?? 0) > 0);
 
   const footer = isCompleted ? (
-    <HomesteadTileCompletedFooter label={item.data.title} stars={<StarRating current={maxTiers} max={maxTiers} />} />
+    <HomesteadTileCompletedFooter label={item.data.title} />
   ) : hasCost ? (
     <div className="mt-1.5 flex items-center gap-2">
       <DisabledTooltip show={!itemAffordable} message="Not Enough Resources">
-        <Button variant="outline" disabled={!itemAffordable} onClick={() => onAction(item)}>
+        <Button variant="outline" size="lg" disabled={!itemAffordable} onClick={() => onAction(item)}>
           {item.data.title}
           {costItems.map((m) => (
             <MaterialCost key={m} material={m} amount={itemCost[m]} />
           ))}
         </Button>
       </DisabledTooltip>
-      <StarRating current={currentLevel} max={maxTiers} />
     </div>
   ) : null;
 
@@ -95,7 +94,12 @@ function buildFarmYieldNodes(farm: { yield: Record<string, number> }): ReactNode
   return nodes;
 }
 
-function useTooltipContent(item: GoalItem, displayTierIndex: number): (ctx: PopupContext) => ReactNode {
+function useTooltipContent(
+  item: GoalItem,
+  displayTierIndex: number,
+  currentLevel: number,
+  maxTiers: number,
+): (ctx: PopupContext) => ReactNode {
   return useMemo(() => {
     const nodes: ReactNode[] = [];
     const farm = item.kind === "farm" ? item.data : null;
@@ -127,7 +131,12 @@ function useTooltipContent(item: GoalItem, displayTierIndex: number): (ctx: Popu
     return ({ visible, triggerRef }) => (
       <DetailPopup
         idPrefix={item.data.id}
-        title={item.data.title}
+        title={
+          <span className="inline-flex items-center gap-2">
+            {item.data.title}
+            <StarRating current={currentLevel} max={maxTiers} className="h-4 w-4" />
+          </span>
+        }
         subtitle={undefined}
         descriptionLines={item.data.description ? [item.data.description] : []}
         descriptionNodes={nodes}
@@ -135,5 +144,5 @@ function useTooltipContent(item: GoalItem, displayTierIndex: number): (ctx: Popu
         triggerRef={triggerRef}
       />
     );
-  }, [item, displayTierIndex]);
+  }, [item, displayTierIndex, currentLevel, maxTiers]);
 }

@@ -1,7 +1,8 @@
 // Root-space tooltip rendered via portal into the #tooltip-root overlay so it
 // renders at constant CSS-pixel scale regardless of the vr-stage transform and
 // cannot be clipped by overflow-hidden ancestors. Handles above/below flip,
-// side placement, and fade-out on hide. Panels are
+// side overflow when neither vertical gutter fits, explicit side placement,
+// and fade-out on hide. Panels are
 // pointer-events-none; visibility follows the trigger only.
 import { useEffect, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";

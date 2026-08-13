@@ -4,7 +4,7 @@ import { Fragment } from "react";
 import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { Screen } from "../types";
-import { fadePhaseClass, useFadePresence } from "./fade-presence";
+import { fadePhaseClass, useFadePresence, useHeldWhile } from "./fade-presence";
 import { LockedMenuItem } from "./locked-menu-item";
 
 const GAME_MENU_CONFIG = {
@@ -147,22 +147,22 @@ function GameMenuPanel({
   return (
     <div
       data-testid="game-menu"
-      className="motion-panel alchemy-shell w-full max-w-[42.67cqh] overflow-visible rounded-shell-dialog border border-border/80 px-5 py-6"
+      className="motion-panel alchemy-shell w-full max-w-[42.67cqh] overflow-visible rounded-shell-dialog border border-border/80 px-5 py-4"
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="grid gap-2">
+      <div className="grid gap-0.5">
         {items
           .filter((item) => item.show)
           .map((item) => (
             <Fragment key={item.key}>
-              {item.dividerBefore && <div className="my-1 border-t border-border/60" />}
+              {item.dividerBefore && <div className="my-0.5 border-t border-border/60" />}
               <LockedMenuItem
                 title={item.label}
                 message={item.gate ? messages[item.gate] : ""}
                 locked={item.gate ? locks[item.gate] : false}
                 onSelect={item.handler}
                 icon={<item.Icon className="h-4 w-4" />}
-                className={cn("justify-start", item.danger && "text-red-400")}
+                className={cn("h-11 justify-start", item.danger && "text-red-400")}
               >
                 {item.label}
               </LockedMenuItem>
@@ -203,6 +203,7 @@ export function GameMenu({
   isArmoryLocked = false,
 }: GameMenuProps) {
   const { mounted, phase } = useFadePresence(isOpen);
+  const layoutAnchorRect = useHeldWhile(isOpen, anchorRect ?? null);
   if (!mounted) return null;
 
   const overlayFadeClass = fadePhaseClass(phase);
@@ -231,10 +232,10 @@ export function GameMenu({
     />
   );
 
-  if (anchorRect) {
+  if (layoutAnchorRect) {
     return (
       <div className={cn("absolute inset-0 z-[120]", overlayFadeClass)} onClick={onClose}>
-        <div className="fixed z-[121]" style={anchoredMenuStyle(anchorRect)}>
+        <div className="fixed z-[121]" style={anchoredMenuStyle(layoutAnchorRect)}>
           {panel}
         </div>
       </div>

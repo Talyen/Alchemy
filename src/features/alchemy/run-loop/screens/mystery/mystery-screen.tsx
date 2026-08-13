@@ -6,7 +6,7 @@ import { useState, type ReactNode } from "react";
 import { playUISound } from "@/lib/audio";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 
-import { ScreenDescription } from "../../../shared/ui/shared-ui";
+import { ScreenDescription, TitledScreenShell } from "../../../shared/ui/shared-ui";
 import { FadeSlot } from "../../../shared/ui/fade-slot";
 import { RemoveCardPanel } from "../../../shared/ui/remove-card-panel";
 
@@ -32,6 +32,7 @@ export function MysteryScreen({
   onContinue,
   findCard,
   findTrinket,
+  onOpenMenu,
 }: {
   event: MysteryEvent;
   runDeck: BattleCard[];
@@ -43,6 +44,7 @@ export function MysteryScreen({
   onContinue: () => void;
   findCard: (id: string) => BattleCard | undefined;
   findTrinket: (id: string) => TrinketEntry | undefined;
+  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   // chosen: Stores the choice object to display on the final reward summary screen.
   const [chosen, setChosen] = useState<MysteryChoice | null>(null);
@@ -92,10 +94,17 @@ export function MysteryScreen({
   }
 
   const phase = mysteryCardChoices ? "cards" : pendingRemoval ? "remove" : chosen ? "summary" : "intro";
+  const title = mysteryCardChoices
+    ? "Choose a Card"
+    : pendingRemoval
+      ? "Remove a Card"
+      : chosen
+        ? "Reward"
+        : event.title;
 
   return (
-    <MysteryScreenShell>
-      <FadeSlot swapKey={phase} className="min-h-[56cqh] w-full">
+    <MysteryScreenShell title={title} onOpenMenu={onOpenMenu}>
+      <FadeSlot swapKey={phase} className="mt-6 min-h-[56cqh] w-full">
         {mysteryCardChoices ? (
           <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
         ) : pendingRemoval ? (
@@ -112,7 +121,6 @@ export function MysteryScreen({
             findTrinket={findTrinket}
             grantedTrinketIds={mysteryGrantedTrinketIds}
             onContinue={onContinue}
-            eventTitle={event.title}
           />
         ) : (
           <MysteryEventIntro event={event} findCard={findCard} findTrinket={findTrinket} onPick={handlePick} />
@@ -122,10 +130,18 @@ export function MysteryScreen({
   );
 }
 
-export function MysteryScreenShell({ children }: { children?: ReactNode }) {
+export function MysteryScreenShell({
+  title = "Mystery",
+  onOpenMenu,
+  children,
+}: {
+  title?: string;
+  onOpenMenu: (rect?: DOMRect) => void;
+  children?: ReactNode;
+}) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
+    <TitledScreenShell title={title} onOpenMenu={onOpenMenu} menuLabel="Open mystery menu">
       {children}
-    </div>
+    </TitledScreenShell>
   );
 }

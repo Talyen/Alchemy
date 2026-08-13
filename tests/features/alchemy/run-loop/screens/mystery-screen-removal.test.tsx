@@ -71,6 +71,7 @@ describe("MysteryScreen Card Removal Flow", () => {
         onContinue={onContinue}
         findCard={() => undefined}
         findTrinket={() => undefined}
+        onOpenMenu={vi.fn()}
       />,
     );
 
@@ -107,6 +108,7 @@ describe("MysteryScreen Card Removal Flow", () => {
         onContinue={onContinue}
         findCard={() => undefined}
         findTrinket={() => undefined}
+        onOpenMenu={vi.fn()}
       />,
     );
 
@@ -121,7 +123,7 @@ describe("MysteryScreen Card Removal Flow", () => {
 
     expect(onRemoveCard).toHaveBeenCalledWith(0);
     expect(onContinue).not.toHaveBeenCalled();
-    expect(await screen.findByRole("heading", { name: "Ancient Altar" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Continue" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Continue" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Reward" })).toBeTruthy();
   });
 });

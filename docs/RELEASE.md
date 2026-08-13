@@ -100,13 +100,12 @@ Windows release job.
 
 ## CI jobs
 
-| Job                                         | Trigger                                                                                          |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `e2e` (`@critical`)                         | Every push                                                                                       |
-| `ship-gate`                                 | Pushes matching the `desktop_renderer` filter (desktop renderer after unit tests)                |
-| `assets`                                    | Push when Raw Assets / asset scripts change (prep + drift check)                                 |
-| `save-gate`                                 | Push when save/migration/active-run paths change                                                 |
-| `desktop-build`                             | Push when desktop paths change (`dist:desktop` Windows installer artifact)                       |
-| `electron-e2e`                              | Pushes matching `desktop_renderer` (reuses ship-gate `dist/`)                                    |
-| `ci-ok`                                     | Aggregate status over all CI jobs — required to merge PRs into `main`, not a push gate on `main` |
-| `release` (incl. `e2e-full` 3-shard matrix) | Tag `v*` push                                                                                    |
+| Job                                         | Trigger                                                                           |
+| ------------------------------------------- | --------------------------------------------------------------------------------- |
+| `e2e` (`@critical`)                         | Every push                                                                        |
+| `ship-gate`                                 | Pushes matching the `desktop_renderer` filter (desktop renderer after unit tests) |
+| `assets`                                    | Push when Raw Assets / asset scripts change (prep + drift check)                  |
+| `save-gate`                                 | Push when save/migration/active-run paths change                                  |
+| `desktop-build`                             | Push when desktop paths change (`dist:desktop` Windows installer artifact)        |
+| `electron-e2e`                              | Pushes matching `desktop_renderer` (reuses ship-gate `dist/`)                     |
+| `release` (incl. `e2e-full` 3-shard matrix) | Tag `v*` push                                                                     |

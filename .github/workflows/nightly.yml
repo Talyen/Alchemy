@@ -158,29 +158,3 @@ jobs:
 
       - name: Knip strict (entry exports)
         run: npm run deadcode:strict
-
-  notify-failure:
-    name: Notify on failure
-    needs: [e2e-web, ship-gate-full, deadcode-strict]
-    if: failure()
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      issues: write
-    steps:
-      - name: Open or update nightly-failure issue
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          gh label create nightly-failure --color B60205 --description "Nightly workflow failed" --force
-          existing=$(gh issue list --label nightly-failure --state open --json number --jq '.[0].number // empty')
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --body "Nightly run failed again: $RUN_URL"
-          else
-            gh issue create \
-              --title "Nightly Production E2E failed" \
-              --label nightly-failure \
-              --body "Nightly run failed: $RUN_URL"
-          fi

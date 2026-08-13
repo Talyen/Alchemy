@@ -64,6 +64,7 @@ export function getBattleCardPlayTarget(card: BattleCard): "player" | "enemy" {
     if (effect.kind === "damage") return "enemy";
     if (effect.kind === "player-status") return "player";
     if (effect.kind === "heal") return "player";
+    if (effect.kind === "summon-companion") return "player";
   }
   return "enemy";
 }

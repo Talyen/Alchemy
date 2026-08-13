@@ -1,7 +1,13 @@
 // Root-level app side-effects: audio sync, display mode/brightness, global error logging,
 // screen asset preloading, startup loading gate, and screen particle configurations.
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { MUSIC_KEYS, INITIAL_LOAD_MIN_DURATION_MS } from "@/lib/game-constants";
+import { advanceStartupBar, computeStartupLoadTarget } from "@/app/startup-bar-progress";
+import {
+  IMAGE_PRELOAD_BATCH_SIZE,
+  INITIAL_LOAD_MIN_DURATION_MS,
+  MUSIC_KEYS,
+  STARTUP_BAR_REVEAL_THRESHOLD,
+} from "@/lib/game-constants";
 import {
   playMusic,
   playMusicImmediate,
@@ -183,35 +189,98 @@ export function useGlobalErrorHandlers(): void {
 
 // ── Initial Load Readiness Gate ──
 
-// Keeps the loader presentation on its fixed minimum timing while decoding all
-// game art and waiting for fonts. The bar is intentionally aesthetic rather than
-// a progress meter; readiness only controls when the app is revealed.
-export function useInitialLoadReady({ minDurationMs = INITIAL_LOAD_MIN_DURATION_MS } = {}) {
+// Warms all game art and fonts, then reveals once the smoothed bar has caught
+// real progress (and the short minimum presentation time has elapsed).
+export function useInitialLoadReady({
+  minDurationMs = INITIAL_LOAD_MIN_DURATION_MS,
+  bootstrapReady = false,
+}: {
+  minDurationMs?: number;
+  bootstrapReady?: boolean;
+} = {}) {
   const skipGate = shouldSkipStartupLoadingGate();
+  const bootstrapReadyRef = useRef(bootstrapReady);
+  bootstrapReadyRef.current = bootstrapReady;
+
   const [ready, setReady] = useState(() => skipGate);
+  const [progress, setProgress] = useState(() => (skipGate ? 1 : 0));
 
   useEffect(() => {
     let cancelled = false;
-    let resolveMinimumDuration = () => {};
-    const minimumDuration = skipGate
-      ? Promise.resolve()
-      : new Promise<void>((resolve) => {
-          resolveMinimumDuration = resolve;
-        });
-    const timer = skipGate ? undefined : window.setTimeout(resolveMinimumDuration, minDurationMs);
 
-    void Promise.all([minimumDuration, preloadImagesInBatches(allGameArt), waitForFonts()]).then(() => {
-      if (!cancelled) setReady(true);
+    if (skipGate) {
+      void preloadImagesInBatches(allGameArt, IMAGE_PRELOAD_BATCH_SIZE);
+      void waitForFonts();
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    let display = 0;
+    let imageLoaded = 0;
+    let imageTotal = allGameArt.filter(Boolean).length;
+    let fontsReady = false;
+    let minElapsed = false;
+    let imagesSettled = imageTotal === 0;
+    let rafId = 0;
+    let lastTs = 0;
+    let published = -1;
+
+    function workComplete() {
+      return imagesSettled && fontsReady && bootstrapReadyRef.current;
+    }
+
+    function tick(timestamp: number) {
+      if (cancelled) return;
+      if (lastTs === 0) lastTs = timestamp;
+      const dt = (timestamp - lastTs) / 1000;
+      lastTs = timestamp;
+      const complete = workComplete();
+      const target = computeStartupLoadTarget({
+        imageLoaded,
+        imageTotal,
+        fontsReady,
+        bootstrapReady: bootstrapReadyRef.current,
+      });
+      display = advanceStartupBar(display, dt, target, complete);
+      const quantized = Math.round(display * 192) / 192;
+      if (quantized !== published) {
+        published = quantized;
+        setProgress(quantized);
+      }
+      if (complete && minElapsed && display >= STARTUP_BAR_REVEAL_THRESHOLD) {
+        setProgress(1);
+        setReady(true);
+        return;
+      }
+      rafId = window.requestAnimationFrame(tick);
+    }
+
+    rafId = window.requestAnimationFrame(tick);
+    const timer = window.setTimeout(() => {
+      minElapsed = true;
+    }, minDurationMs);
+
+    void preloadImagesInBatches(allGameArt, IMAGE_PRELOAD_BATCH_SIZE, (loaded, total) => {
+      imageLoaded = loaded;
+      imageTotal = total;
+      if (total === 0 || loaded >= total) imagesSettled = true;
+    }).then(() => {
+      imagesSettled = true;
+    });
+
+    void waitForFonts().then(() => {
+      fontsReady = true;
     });
 
     return () => {
       cancelled = true;
-      if (timer !== undefined) window.clearTimeout(timer);
-      resolveMinimumDuration();
+      window.clearTimeout(timer);
+      window.cancelAnimationFrame(rafId);
     };
   }, [skipGate, minDurationMs]);
 
-  return ready;
+  return { ready, progress };
 }
 
 function waitForFonts() {

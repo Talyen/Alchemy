@@ -5,15 +5,17 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { Lock } from "lucide-react";
-import { keywordDefinitions, isTalentPlaceholder } from "@/lib/game-data";
-import { cn } from "@/lib/utils";
-import type { TalentDefinition } from "@/lib/game-data";
+
+import { ShineBorder } from "@/components/ui/shine-border";
 import { getKeywordShineColors, keywordIcons } from "@/features/alchemy/shared/config";
+import { TALENT_UNLOCK_ANIMATION_MS } from "@/lib/game-constants";
+import { keywordDefinitions, isTalentPlaceholder } from "@/lib/game-data";
+import type { TalentDefinition } from "@/lib/game-data";
+import { delay } from "@/lib/animation/game-timer";
+import { cn } from "@/lib/utils";
 import { tokenizeDescription } from "../../shared/utils";
 import { PressableSound } from "../../shared/ui/pressable-sound";
-import { ShimmerOverlay } from "../../shared/ui/shimmer";
-import { TALENT_UNLOCK_ANIMATION_MS, TALENT_UNLOCK_SETTLE_MS } from "@/lib/game-constants";
-import { delay } from "@/lib/animation/game-timer";
+import { TalentUnlockBurst } from "./talent-unlock-burst";
 
 const ROW_SIZES = [1, 2, 3, 4] as const;
 
@@ -60,7 +62,6 @@ function TalentCard({
   isAllocatable,
   canAfford,
   isUnlocking,
-  isSettling,
   onUnlock,
 }: {
   talent: TalentDefinition;
@@ -68,14 +69,15 @@ function TalentCard({
   isAllocatable: boolean;
   canAfford: boolean;
   isUnlocking: boolean;
-  isSettling: boolean;
   onUnlock: ((talentId: string) => void) | undefined;
 }) {
   const def = keywordDefinitions[talent.keywordId];
-  const accentColor = getKeywordShineColors(talent.keywordId)[0];
+  const shineColors = getKeywordShineColors(talent.keywordId);
+  const accentColor = shineColors[0];
   const Icon = talent.icon ?? keywordIcons[talent.keywordId];
   const isPlaceholder = isTalentPlaceholder(talent);
   const interactive = isAllocatable && canAfford && !isUnlocking;
+  const showShine = interactive;
 
   const handleKeyDown = interactive
     ? (e: React.KeyboardEvent) => {
@@ -90,18 +92,6 @@ function TalentCard({
     ? `Unlock talent: ${talent.name ? `${talent.name} — ` : ""}${talent.description}`
     : undefined;
 
-  const className = cn(
-    "relative flex min-h-28 w-full min-w-64 flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border-2 px-3 py-2.5 text-center transition-[box-shadow,border-color] duration-200 outline-none select-none",
-    interactive && "talent-card-available cursor-pointer",
-    isUnlocking && "talent-node-unlocking",
-    isSettling && "talent-node-unlocked-settle",
-    isUnlocked && "talent-card-unlocked",
-    isPlaceholder && "talent-card-placeholder",
-    !interactive && !isUnlocked && !isPlaceholder && "border-border/60",
-    isAllocatable && !canAfford && "opacity-60",
-    !isAllocatable && !isUnlocked && !isPlaceholder && "opacity-40",
-  );
-
   const style = accentColor ? ({ "--talent-accent": accentColor } as CSSProperties) : undefined;
 
   const card = (
@@ -110,28 +100,49 @@ function TalentCard({
       tabIndex={interactive ? 0 : undefined}
       onClick={interactive ? () => onUnlock?.(talent.id) : undefined}
       onKeyDown={handleKeyDown}
-      className={className}
+      className={cn(
+        "talent-node relative w-full min-w-64 rounded-lg",
+        showShine && "talent-card-available",
+        interactive && "cursor-pointer",
+        isAllocatable && !canAfford && "opacity-60",
+        !isAllocatable && !isUnlocked && "opacity-40",
+      )}
       style={style}
       aria-label={ariaLabel}
     >
-      {isUnlocking ? <ShimmerOverlay active token={1} rounded="rounded-lg" /> : null}
-      <div className="flex items-center justify-center gap-2">
-        <span className={cn(isPlaceholder ? "text-muted-foreground" : def?.colorClass)}>
-          {isPlaceholder ? <Lock className="h-5 w-5" /> : <Icon className="h-6 w-6" />}
-        </span>
-        <span className={cn("text-lg font-bold", isUnlocked && def?.colorClass)}>
-          {isPlaceholder ? "Coming Soon" : (talent.name ?? "Talent")}
-        </span>
+      {showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} duration={8} className="rounded-lg" /> : null}
+      <TalentUnlockBurst active={isUnlocking} colors={shineColors} />
+      <div
+        className={cn(
+          "talent-card-face relative flex min-h-44 w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border-2 px-4 py-3.5 text-center transition-[border-color] duration-500 ease-[var(--ease-out-expo)] outline-none select-none",
+          interactive && "border-transparent",
+          (isUnlocked || isUnlocking) && "talent-card-unlocked",
+          isPlaceholder && "talent-card-placeholder",
+          !showShine && !isUnlocked && !isPlaceholder && "border-border/60",
+        )}
+      >
+        <div className="flex items-center justify-center gap-2">
+          <span className={cn(isPlaceholder ? "text-muted-foreground" : def?.colorClass)}>
+            {isPlaceholder ? <Lock className="h-8 w-8" /> : <Icon className="h-8 w-8" />}
+          </span>
+          <span className={cn("text-2xl font-bold", isPlaceholder ? "text-muted-foreground" : def?.colorClass)}>
+            {isPlaceholder ? "Coming Soon" : (talent.name ?? "Talent")}
+          </span>
+        </div>
+        {isPlaceholder ? null : (
+          <p className="text-lg leading-snug text-foreground/90">
+            <TalentDescription description={talent.description} />
+          </p>
+        )}
       </div>
-      {isPlaceholder ? null : (
-        <p className="text-base leading-snug text-foreground/90">
-          <TalentDescription description={talent.description} />
-        </p>
-      )}
     </div>
   );
 
-  return interactive ? <PressableSound className="flex w-full">{card}</PressableSound> : card;
+  return (
+    <PressableSound className="flex w-full" hoverSound={interactive ? "buttonHover" : false}>
+      {card}
+    </PressableSound>
+  );
 }
 
 export function TalentTree({
@@ -143,7 +154,6 @@ export function TalentTree({
   onUnlockBegin,
 }: TalentLayoutProps) {
   const [unlockingTalentId, setUnlockingTalentId] = useState<string | null>(null);
-  const [settlingTalentId, setSettlingTalentId] = useState<string | null>(null);
   const mountedRef = useRef(true);
   const rows = useMemo(() => chunkRows(allTalents), [allTalents]);
 
@@ -159,16 +169,11 @@ export function TalentTree({
 
       onUnlockBegin?.(talentId);
       setUnlockingTalentId(talentId);
+      onUnlock(talentId);
 
       await delay(TALENT_UNLOCK_ANIMATION_MS);
-      onUnlock(talentId);
       if (!mountedRef.current) return;
       setUnlockingTalentId(null);
-      setSettlingTalentId(talentId);
-
-      await delay(TALENT_UNLOCK_SETTLE_MS);
-      if (!mountedRef.current) return;
-      setSettlingTalentId((current) => (current === talentId ? null : current));
     },
     [onUnlock, onUnlockBegin, unlockingTalentId],
   );
@@ -178,9 +183,9 @@ export function TalentTree({
   }
 
   return (
-    <div className="mx-auto flex w-full flex-col gap-3 px-1">
+    <div className="mx-auto flex w-full flex-col gap-4 px-2">
       {rows.map((row, rowIndex) => (
-        <div key={rowIndex} className="flex w-full items-stretch justify-center gap-3">
+        <div key={rowIndex} className="flex w-full items-stretch justify-center gap-4">
           {row.map((talent) => {
             if (!talent) return null;
             return (
@@ -191,7 +196,6 @@ export function TalentTree({
                   isAllocatable={allocatableIds.has(talent.id)}
                   canAfford={hasUnspentPoints}
                   isUnlocking={unlockingTalentId === talent.id}
-                  isSettling={settlingTalentId === talent.id}
                   onUnlock={() => void handleUnlock(talent.id)}
                 />
               </div>

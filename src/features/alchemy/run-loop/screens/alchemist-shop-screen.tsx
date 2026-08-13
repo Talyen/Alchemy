@@ -30,6 +30,7 @@ export function AlchemistShopScreen({
   onRefresh,
   onMixPotions,
   onContinue,
+  onOpenMenu,
 }: {
   gold: number;
   runDeck: BattleCard[];
@@ -44,6 +45,7 @@ export function AlchemistShopScreen({
   onRefresh: () => void;
   onMixPotions: (indexA: number, indexB: number) => BattleCard | null;
   onContinue: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const [mixMode, setMixMode] = useState(false);
   const [mixStep, setMixStep] = useState(0);
@@ -109,7 +111,7 @@ export function AlchemistShopScreen({
   const modeKey = mixedCard ? "result" : mixMode ? "mix" : "browse";
 
   return (
-    <ShopBrowseShell title="Alchemist's Shop" gold={gold} showGold={!mixedCard}>
+    <ShopBrowseShell title="Alchemist's Shop" gold={gold} showGold={!mixedCard} onOpenMenu={onOpenMenu}>
       <FadeSlot swapKey={modeKey} className="min-h-[56cqh] w-full">
         {mixedCard ? (
           <div className="flex flex-col items-center gap-6">

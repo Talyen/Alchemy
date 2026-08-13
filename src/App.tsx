@@ -7,7 +7,6 @@ import type { Screen } from "@/lib/routing";
 import {
   AppBackgroundParticles,
   AppScreenChromeProvider,
-  AppHamburgerTrigger,
   GameMenuOverlay,
   RenderAlchemyScreen,
   StartupLoadingScreen,
@@ -181,11 +180,6 @@ function AppMainContent({
           particleAlphaMultiplier={particleAlphaMultiplier}
         />
         {content}
-        <AppHamburgerTrigger
-          renderedScreen={renderedScreen}
-          pagePhase={pagePhase}
-          onOpenMenu={gameMenu.openBattleMenu}
-        />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 z-[90] bg-black"
@@ -287,15 +281,17 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 export default function App() {
   const bootstrapResult = useAlchemyBootstrap();
   // Gate lives here so StartupLoadingScreen stays mounted across bootstrap and
-  // keeps a single empty→full animation (outside the VR stage for size parity).
-  const initialLoadReady = useInitialLoadReady();
+  // art decode (outside the VR stage for size parity).
+  const { ready: initialLoadReady, progress: startupProgress } = useInitialLoadReady({
+    bootstrapReady: bootstrapResult != null,
+  });
 
   const saveBlockedByNewerVersion =
     bootstrapResult?.status.kind === "unsupported-newer-schema" ||
     bootstrapResult?.status.kind === "unsupported-newer-content";
 
   if (!bootstrapResult || (!initialLoadReady && !saveBlockedByNewerVersion)) {
-    return <StartupLoadingScreen />;
+    return <StartupLoadingScreen progress={startupProgress} />;
   }
 
   return <AppInner bootstrapResult={bootstrapResult} />;

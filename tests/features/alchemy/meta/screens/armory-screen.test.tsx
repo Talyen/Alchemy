@@ -35,7 +35,7 @@ describe("ArmoryScreen core", () => {
     expect(document.querySelector('[data-gear-title="Longsword"]')).toBeNull();
   });
 
-  it("equips on click and unequips when clicking the equipped item", async () => {
+  it("hides the equipped item from inventory and unequips from the selected slot", async () => {
     const user = userEvent.setup();
     const onEquip = vi.fn();
     const onUnequip = vi.fn();
@@ -43,7 +43,9 @@ describe("ArmoryScreen core", () => {
     loadouts.knight["main-hand"] = "gear-sword";
     renderArmoryScreen({ onEquip, onUnequip, loadouts });
 
-    await user.click(screen.getByLabelText("Longsword"));
+    expect(document.querySelector('[data-testid="armory-inventory-item"][data-gear-title="Longsword"]')).toBeNull();
+
+    await user.click(screen.getByLabelText("Main-hand equipment slot"));
     expect(onUnequip).toHaveBeenCalledWith("knight", "main-hand");
   });
 

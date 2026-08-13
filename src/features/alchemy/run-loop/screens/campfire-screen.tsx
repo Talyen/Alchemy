@@ -1,7 +1,7 @@
 // Campfire rest screen — restores a percentage of max Health.
 import { useState, useEffect } from "react";
 
-import { ScreenDescription, ScreenHeader } from "../../shared/ui/shared-ui";
+import { ScreenDescription, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { Button } from "@/components/ui/button";
 import { campfire } from "@/features/alchemy/shared/config/game-data-catalog";
 import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
@@ -14,11 +14,13 @@ export function CampfireScreen({
   maxHealth,
   healFraction,
   onContinue,
+  onOpenMenu,
 }: {
   playerHealth: number;
   maxHealth: number;
   healFraction: number;
   onContinue: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const [resting, setResting] = useState(false);
   const [done, setDone] = useState(false);
@@ -41,28 +43,24 @@ export function CampfireScreen({
   }
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center px-4 py-6 text-center">
-      <div className="flex flex-col items-center gap-8">
-        <ScreenHeader title="Campfire" />
+    <TitledScreenShell title="Campfire" onOpenMenu={onOpenMenu} menuLabel="Open campfire menu">
+      <div className="mt-6 flex flex-col items-center gap-8 text-center">
         <ScreenDescription className="text-muted-foreground">
           {`Rest to Restore ${Math.round(healFraction * 100)}% Health`}
         </ScreenDescription>
-        <img
-          src={campfire}
-          alt="Campfire"
-          className="w-full max-w-[44.45cqh] rounded-shell-panel object-contain"
-          loading="eager"
-        />
-        <div className="min-h-16 min-w-[clamp(24.67cqh,26.4cqh,37.33cqh)]">
-          {!resting ? (
-            <Button size="lg" className={BUTTON_WIDTH_ACTION} onClick={handleRest}>
-              Rest
-            </Button>
-          ) : (
-            <HealthRestoreMeter displayHealth={displayHealth} maxHealth={maxHealth} progressTarget={progressTarget} />
-          )}
+        <div className="flex w-full max-w-[44.45cqh] flex-col items-center gap-8">
+          <img src={campfire} alt="Campfire" className="w-full rounded-shell-panel object-contain" loading="eager" />
+          <div className="flex min-h-16 w-full items-center justify-center">
+            {!resting ? (
+              <Button size="lg" className={BUTTON_WIDTH_ACTION} onClick={handleRest}>
+                Rest
+              </Button>
+            ) : (
+              <HealthRestoreMeter displayHealth={displayHealth} maxHealth={maxHealth} progressTarget={progressTarget} />
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </TitledScreenShell>
   );
 }

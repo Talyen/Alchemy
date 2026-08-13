@@ -23,6 +23,7 @@ export function MerchantShopScreen({
   onRemoveCard,
   onRefresh,
   onContinue,
+  onOpenMenu,
 }: {
   gold: number;
   runDeck: BattleCard[];
@@ -37,11 +38,12 @@ export function MerchantShopScreen({
   onRemoveCard: (cardIndex: number) => void;
   onRefresh: () => void;
   onContinue: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const [removeMode, setRemoveMode] = useState(false);
 
   return (
-    <ShopBrowseShell title="Merchant's Shop" gold={gold}>
+    <ShopBrowseShell title="Merchant's Shop" gold={gold} onOpenMenu={onOpenMenu}>
       {!removeMode ? (
         <ShopBrowseOfferings
           swapKey={shopCards.map((card) => card.id).join("-")}

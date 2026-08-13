@@ -22,7 +22,6 @@ function renderSummary(effects: MysteryChoice["effects"], grantedTrinketIds: str
       findTrinket={(id) => (id === boneCharm.id ? boneCharm : undefined)}
       grantedTrinketIds={grantedTrinketIds}
       onContinue={vi.fn()}
-      eventTitle="Overgrown Temple"
     />,
   );
 }
@@ -35,7 +34,6 @@ describe("MysteryRewardSummary", () => {
 
     expect(screen.getByRole("img", { name: "Bone Charm" })).toBeTruthy();
     expect(screen.getByText("Bone Charm")).toBeTruthy();
-    expect(screen.getByText("Added Bone Charm for this run")).toBeTruthy();
     expect(screen.queryByText("Gained a random trinket for this run")).toBeNull();
   });
 

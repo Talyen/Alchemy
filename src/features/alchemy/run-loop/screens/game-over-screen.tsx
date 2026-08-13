@@ -8,11 +8,13 @@ export function GameOverScreen({
   talentXP,
   runEndMaterials,
   onContinue,
+  onOpenMenu,
 }: {
   runEndTalentXP: TalentXP;
   talentXP: TalentXP;
   runEndMaterials: MaterialInventory;
   onContinue: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   return (
     <RunEndScreen
@@ -22,6 +24,7 @@ export function GameOverScreen({
       talentXP={talentXP}
       runEndMaterials={runEndMaterials}
       onContinue={onContinue}
+      onOpenMenu={onOpenMenu}
     />
   );
 }

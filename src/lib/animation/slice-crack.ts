@@ -207,19 +207,35 @@ function formatPct(value: number): string {
   return `${(value * 100).toFixed(3)}%`;
 }
 
+const CARD_CORNERS_CW: readonly SlicePoint[] = [
+  { x: 0, y: 0 },
+  { x: 1, y: 0 },
+  { x: 1, y: 1 },
+  { x: 0, y: 1 },
+];
+
+function dist2(a: SlicePoint, b: SlicePoint): number {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return dx * dx + dy * dy;
+}
+
+/** Corners on this half, ordered from the last crack point back toward the first. */
+function sliceCrackHalfCorners(isPrimary: boolean): SlicePoint[] {
+  const onHalf = (point: SlicePoint) => (isPrimary ? sliceCrackSide(point) < 0 : sliceCrackSide(point) > 0);
+  const halfCorners = CARD_CORNERS_CW.filter(onHalf);
+  if (halfCorners.length === 0) return [];
+  const last = SLICE_CRACK_POINTS[SLICE_CRACK_POINTS.length - 1]!;
+  let start = 0;
+  for (let index = 1; index < halfCorners.length; index++) {
+    if (dist2(halfCorners[index]!, last) < dist2(halfCorners[start]!, last)) start = index;
+  }
+  return [...halfCorners.slice(start), ...halfCorners.slice(0, start)];
+}
+
 /** CSS clip-path polygon for one half-plane of the jagged crack. */
 function sliceCrackHalfClipPath(isPrimary: boolean): string {
-  const sign = isPrimary ? -1 : 1;
-  const maxDim = Math.max(SLICE_ASPECT_WIDTH, SLICE_ASPECT_HEIGHT);
-  const farX = (SLICE_NORMAL.dx * maxDim * 2.2 * sign) / SLICE_ASPECT_WIDTH;
-  const farY = (SLICE_NORMAL.dy * maxDim * 2.2 * sign) / SLICE_ASPECT_HEIGHT;
-  const first = SLICE_CRACK_POINTS[0]!;
-  const last = SLICE_CRACK_POINTS[SLICE_CRACK_POINTS.length - 1]!;
-  const verts = [
-    ...SLICE_CRACK_POINTS,
-    { x: last.x + farX, y: last.y + farY },
-    { x: first.x + farX, y: first.y + farY },
-  ];
+  const verts = [...SLICE_CRACK_POINTS, ...sliceCrackHalfCorners(isPrimary)];
   return `polygon(${verts.map((p) => `${formatPct(p.x)} ${formatPct(p.y)}`).join(", ")})`;
 }
 

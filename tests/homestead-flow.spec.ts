@@ -112,7 +112,7 @@ test.describe("Homestead Flow", () => {
         Buildings: page.getByText("Blacksmith").first(),
         Farm: page.getByRole("button", { name: /Herb Garden/ }),
         Research: page.getByText("Leyline Energy").first(),
-        Companions: page.getByText("Undiscovered").first(),
+        Companions: page.getByRole("img", { name: "Wolf" }).first(),
       };
 
       // Measure only once the shell height has settled so tab transitions do

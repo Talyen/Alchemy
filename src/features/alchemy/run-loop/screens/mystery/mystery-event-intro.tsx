@@ -5,12 +5,16 @@ import { TextAnimate } from "@/components/ui/text-animate";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { bodyTextClass, viewCardWidthClass } from "@/features/alchemy/shared/config";
+import {
+  bodyTextClass,
+  cardSurfaceClass,
+  landscapeArtImageClass,
+  viewCardWidthClass,
+} from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { MysteryEffectList } from "../../../shared/ui/mystery-effect-badge";
-import { ScreenHeader } from "../../../shared/ui/shared-ui";
 import { FadeSlot } from "../../../shared/ui/fade-slot";
 import { PortaledTooltip } from "../../../shared/ui/portaled-tooltip";
 import { useHoverVisible } from "../../../shared/ui/use-hover-visible";
@@ -84,18 +88,15 @@ export function MysteryEventIntro({
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <div>
-        <ScreenHeader title={event.title} />
-      </div>
       {event.art ? (
         <div>
-          <TiltSurface className="aspect-[4/3] w-full max-w-[39.11cqh] overflow-hidden rounded-shell-card">
+          <TiltSurface className={cn(cardSurfaceClass, "aspect-[4/3] w-full max-w-[39.11cqh]")}>
             <img
               src={event.art}
               alt={event.title}
               width={CONFIG.EVENT_IMAGE_WIDTH}
               height={CONFIG.EVENT_IMAGE_HEIGHT}
-              className="h-full w-full rounded-shell-card object-contain"
+              className={cn("h-full w-full", landscapeArtImageClass)}
               loading="eager"
             />
           </TiltSurface>

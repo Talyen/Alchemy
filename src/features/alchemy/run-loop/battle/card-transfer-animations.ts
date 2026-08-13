@@ -5,6 +5,7 @@ import {
   GHOST_FALLBACK_HEIGHT_PX,
   GHOST_FALLBACK_WIDTH_PX,
   GHOST_PLAYER_OFFSET_RATIO,
+  GHOST_TARGET_Y_RATIO,
   GHOST_TRAVEL_SCALE,
 } from "@/lib/game-constants";
 import type { CardGhost, CardRect } from "../../shared/types";
@@ -171,7 +172,7 @@ export function animateCardActivation(
       variant: "play-travel",
       travel: {
         x: targetRect.x + targetRect.width / 2 - (localSourceRect.x + localSourceRect.width / 2),
-        y: targetRect.y + targetRect.height / 2 - (localSourceRect.y + localSourceRect.height / 2),
+        y: targetRect.y + targetRect.height * GHOST_TARGET_Y_RATIO - (localSourceRect.y + localSourceRect.height / 2),
         scale: GHOST_TRAVEL_SCALE,
       },
     });

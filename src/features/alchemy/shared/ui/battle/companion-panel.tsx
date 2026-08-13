@@ -4,7 +4,7 @@
 import type { CompanionDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardSurfaceClass } from "../../config";
+import { battleCompanionWidthClass, cardSurfaceClass } from "../../config";
 import { TooltipHeader } from "../tooltip-panel";
 import { PortaledTooltip } from "../portaled-tooltip";
 import { useHoverVisible } from "../use-hover-visible";
@@ -46,7 +46,7 @@ export function CompanionPanel({
       <TiltSurface
         className={cn(
           cardSurfaceClass,
-          compact ? "w-[clamp(10.71cqh,21cqh,16.46cqh)]" : "w-[clamp(10.98cqh,13.59cqh,17.16cqh)]",
+          compact ? "w-[clamp(10.71cqh,21cqh,16.46cqh)]" : battleCompanionWidthClass,
           shaking && "animate-shake",
         )}
       >

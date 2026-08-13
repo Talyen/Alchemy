@@ -19,7 +19,7 @@ import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 import { KeywordToken } from "../../shared/ui/card-description-ui";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { PressableSound } from "../../shared/ui/pressable-sound";
-import { ScreenHeader, ActionButtonRow } from "../../shared/ui/shared-ui";
+import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { tokenizeDescription } from "../../shared/utils";
 import {
@@ -160,12 +160,14 @@ export function DifficultySelectScreen({
   completedDifficulties,
   onSelect,
   onBack,
+  onOpenMenu,
 }: {
   characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
   completedDifficulties: DifficultyId[];
   onSelect: (difficultyId: DifficultyId) => void;
   onBack: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const [selectedDifficultyId, setSelectedDifficultyId] = useState<DifficultyId | null>(selectedDifficulty);
   const config = difficultyConfigs[characterId];
@@ -187,10 +189,13 @@ export function DifficultySelectScreen({
   }
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
-      <ScreenHeader title={config.headerTitle} />
-
-      <div className="flex flex-wrap items-start justify-center gap-6">
+    <TitledScreenShell
+      title={config.headerTitle}
+      onOpenMenu={onOpenMenu}
+      menuLabel="Open difficulty select menu"
+      maxWidthClass="max-w-6xl"
+    >
+      <div className="mt-6 flex flex-wrap items-start justify-center gap-6">
         <div className="flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6">
           <TiltSurface
             className={cn("relative aspect-[3/4] overflow-hidden rounded-shell-panel", nonBattleCardWidthClass)}
@@ -253,6 +258,6 @@ export function DifficultySelectScreen({
           onClick: handlePlay,
         }}
       />
-    </div>
+    </TitledScreenShell>
   );
 }

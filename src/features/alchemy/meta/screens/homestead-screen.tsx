@@ -91,7 +91,7 @@ export function HomesteadScreen({
           className="mx-auto mt-6 min-h-[70cqh] w-full"
         >
           {tab === "companions" ? (
-            <div className="grid grid-cols-3 gap-x-1 gap-y-4">
+            <div className="grid grid-cols-3 gap-x-3 gap-y-5">
               {companionCards
                 .slice(
                   companionPage * HOMESTEAD_CONFIG.companionPageSize,
@@ -112,7 +112,7 @@ export function HomesteadScreen({
                 ))}
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-x-2 gap-y-6">
+            <div className="grid grid-cols-3 gap-x-4 gap-y-8">
               {(tab === "buildings" ? buildingsItems : tab === "farm" ? farmItems : researchItems).map(
                 (item, index) => (
                   <HomesteadUpgradeNode

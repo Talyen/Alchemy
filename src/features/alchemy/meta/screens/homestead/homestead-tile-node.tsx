@@ -40,7 +40,7 @@ export function HomesteadTileFrame({
         {detailTooltip({ visible: hoveredItemId === id, triggerRef: frameRef })}
         <div
           ref={frameRef}
-          className={cn("group relative w-full overflow-hidden rounded-shell-card p-3", wrapperClassName)}
+          className={cn("group relative w-full overflow-hidden rounded-shell-card p-4", wrapperClassName)}
           onMouseEnter={() => setHoveredItemId(id)}
           onMouseLeave={() => setHoveredItemId(null)}
         >
@@ -61,11 +61,9 @@ export function HomesteadTileFrame({
 
 export function HomesteadTileCompletedFooter({
   label,
-  stars,
   wrapperClassName,
 }: {
   label: string;
-  stars: ReactNode;
   wrapperClassName?: string;
 }) {
   return (
@@ -76,7 +74,6 @@ export function HomesteadTileCompletedFooter({
       )}
     >
       <span>{label}</span>
-      {stars}
     </div>
   );
 }

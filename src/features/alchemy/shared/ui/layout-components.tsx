@@ -4,6 +4,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { screenDescriptionClass, screenTitleClass } from "../config";
+import { HamburgerTrigger } from "./navigation";
 
 export function ScreenHeader({ title, className }: { title: ReactNode; className?: string }) {
   return (
@@ -66,7 +67,7 @@ export function ScreenShell({
   return (
     <div
       className={cn(
-        "alchemy-shell flex w-full flex-col rounded-shell-screen p-[2.1rem]",
+        "alchemy-shell mx-auto flex w-full flex-col rounded-shell-screen p-[2.1rem]",
         minHeightClass,
         maxWidthClass,
         className,
@@ -74,6 +75,39 @@ export function ScreenShell({
     >
       {children}
     </div>
+  );
+}
+
+export function TitledScreenShell({
+  title,
+  onOpenMenu,
+  menuLabel,
+  children,
+  className,
+  maxWidthClass,
+  minHeightClass,
+  align,
+}: {
+  title: ReactNode;
+  onOpenMenu: (rect?: DOMRect) => void;
+  menuLabel: string;
+  children: ReactNode;
+  className?: string;
+  maxWidthClass?: string;
+  minHeightClass?: string;
+  align?: "center" | "start";
+}) {
+  return (
+    <PageLayout {...(align ? { align } : {})}>
+      <ScreenShell
+        {...(maxWidthClass ? { maxWidthClass } : {})}
+        {...(minHeightClass ? { minHeightClass } : {})}
+        {...(className ? { className } : {})}
+      >
+        <ScreenHeaderRow title={title} trailing={<HamburgerTrigger onClick={onOpenMenu} label={menuLabel} />} />
+        {children}
+      </ScreenShell>
+    </PageLayout>
   );
 }
 

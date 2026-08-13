@@ -1,8 +1,16 @@
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { gameModeMeta, bodyTextClass, sectionTitleClass } from "@/features/alchemy/shared/config";
+import {
+  gameModeMeta,
+  bodyTextClass,
+  chooserArtWidthClass,
+  chooserPaddedTileClass,
+  chooserRowGapClass,
+  chooserRowShellWidthClass,
+  sectionTitleClass,
+} from "@/features/alchemy/shared/config";
 import { PressableSound } from "../../shared/ui/pressable-sound";
-import { ActionButtonRow, ScreenHeader } from "../../shared/ui/shared-ui";
+import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
 import { playUISound } from "@/lib/audio";
@@ -50,9 +58,9 @@ function GameModeTile({
   const tileRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="relative">
-      <div ref={tileRef} className="relative">
-        <PressableSound>
+    <div className={chooserPaddedTileClass}>
+      <div ref={tileRef} className="relative h-full w-full min-w-0">
+        <PressableSound className="block h-full w-full">
           <TiltSurface
             as="button"
             tiltEnabled={!isLocked}
@@ -63,7 +71,7 @@ function GameModeTile({
             onMouseEnter={onHoverStart}
             onMouseLeave={onHoverEnd}
             className={cn(
-              "flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-8 pt-6 pb-7 text-left",
+              "flex h-full w-full min-w-0 flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-5 pt-6 pb-7 text-left",
               isLocked && "cursor-not-allowed opacity-50 grayscale-[30%]",
             )}
           >
@@ -71,10 +79,10 @@ function GameModeTile({
               src={meta.art}
               alt=""
               aria-hidden
-              className="w-full max-w-[39.11cqh] rounded-shell-card object-contain"
+              className={cn(chooserArtWidthClass, "rounded-shell-card object-contain")}
             />
-            <h2 className={cn("font-sans", sectionTitleClass)}>{meta.title}</h2>
-            <p className={bodyTextClass}>{meta.description}</p>
+            <h2 className={cn("text-center font-sans", sectionTitleClass)}>{meta.title}</h2>
+            <p className={cn(bodyTextClass, "text-center")}>{meta.description}</p>
           </TiltSurface>
         </PressableSound>
         {isHovered && isLocked && (
@@ -97,6 +105,7 @@ export function GameModeSelectScreen({
   onSelectLabyrinth,
   onSelectWildwood,
   onBack,
+  onOpenMenu,
 }: {
   hasActiveRun: boolean;
   activeContentSystemType?: string | null;
@@ -104,6 +113,7 @@ export function GameModeSelectScreen({
   onSelectLabyrinth: () => void;
   onSelectWildwood: () => void;
   onBack: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const [selectedModeId, setSelectedModeId] = useState<GameModeId | null>(null);
   const [hoveredModeId, setHoveredModeId] = useState<GameModeId | null>(null);
@@ -124,10 +134,13 @@ export function GameModeSelectScreen({
   const buttonLabel = selectedModeId && hasResume[selectedModeId] ? "Resume" : "Play";
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
-      <ScreenHeader title="Choose Your Adventure" />
-
-      <div className="flex flex-wrap items-start justify-center gap-8">
+    <TitledScreenShell
+      title="Choose Your Adventure"
+      onOpenMenu={onOpenMenu}
+      menuLabel="Open game mode menu"
+      maxWidthClass={chooserRowShellWidthClass}
+    >
+      <div className={cn("mt-6 flex w-full flex-nowrap items-stretch justify-center", chooserRowGapClass)}>
         {GAME_MODE_IDS.map((modeId) => {
           const meta = gameModeMeta[modeId];
           if (!meta) return null;
@@ -151,6 +164,7 @@ export function GameModeSelectScreen({
       </div>
 
       <ActionButtonRow
+        className="mt-6"
         width="dialog"
         secondary={{ label: "Back", onClick: onBack }}
         primary={{
@@ -161,6 +175,6 @@ export function GameModeSelectScreen({
           },
         }}
       />
-    </div>
+    </TitledScreenShell>
   );
 }

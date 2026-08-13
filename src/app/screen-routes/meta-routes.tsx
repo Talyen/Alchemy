@@ -63,7 +63,13 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattl
   );
 }
 
-function GameModeSelectScreenRoute({ commands }: { commands: MetaCommands }) {
+function GameModeSelectScreenRoute({
+  commands,
+  onOpenBattleMenu,
+}: {
+  commands: MetaCommands;
+  onOpenBattleMenu: MetaRouteCtx["onOpenBattleMenu"];
+}) {
   const hasActiveRun = useHasActiveRun();
   const activeContentSystemType = useContentSystemType();
   return (
@@ -74,6 +80,7 @@ function GameModeSelectScreenRoute({ commands }: { commands: MetaCommands }) {
       onSelectLabyrinth={commands.beginLabyrinth}
       onSelectWildwood={commands.beginWildwood}
       onBack={() => commands.goToScreen("menu")}
+      onOpenMenu={onOpenBattleMenu}
     />
   );
 }
@@ -149,7 +156,9 @@ export const metaScreenRoutes: {
   armory: (ctx: MetaRouteCtx) => ReactNode;
 } = {
   menu: ({ routeCommands }) => <MenuScreenRoute commands={routeCommands.meta} />,
-  "game-mode-select": ({ routeCommands }) => <GameModeSelectScreenRoute commands={routeCommands.meta} />,
+  "game-mode-select": ({ routeCommands, onOpenBattleMenu }) => (
+    <GameModeSelectScreenRoute commands={routeCommands.meta} onOpenBattleMenu={onOpenBattleMenu} />
+  ),
   collection: ({ onOpenBattleMenu }) => <CollectionScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
   homestead: ({ onOpenBattleMenu }) => <HomesteadScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
   talents: ({ routeCommands, onOpenBattleMenu }) => (

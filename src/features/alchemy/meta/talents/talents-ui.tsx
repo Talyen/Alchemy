@@ -47,7 +47,7 @@ export function TalentKeywordButton({
       <button
         type="button"
         className={cn(
-          "relative inline-flex items-center gap-2 px-3 py-2.5 text-base font-semibold text-foreground transition-all duration-200",
+          "relative inline-flex items-center gap-2 px-3 py-2.5 text-lg font-semibold text-foreground transition-all duration-200",
           BUTTON_SHAPE,
           BUTTON_SURFACE_NEUTRAL,
           BUTTON_HOVER_TRANSITION,
@@ -69,7 +69,7 @@ export function TalentKeywordButton({
             className={cn(BUTTON_SHAPE, "z-10")}
           />
         )}
-        <KeywordTag keywordId={keywordId} className="text-base" />
+        <KeywordTag keywordId={keywordId} className="text-lg" />
       </button>
     </PressableSound>
   );

@@ -83,8 +83,8 @@ export function getArt(id: string): string {
 
 export function MaterialCost({ material, amount }: { material: MaterialId; amount: number }) {
   return (
-    <span className="ml-1.5 inline-flex h-5 shrink-0 items-center gap-1 leading-none">
-      <MaterialIcon material={material} className="h-4 w-4" />
+    <span className="ml-1.5 inline-flex h-6 shrink-0 items-center gap-1 leading-none">
+      <MaterialIcon material={material} className="h-5 w-5" />
       <span className={cn("leading-none tabular-nums", matTextColor[material])}>{amount}</span>
     </span>
   );

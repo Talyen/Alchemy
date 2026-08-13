@@ -4,7 +4,13 @@ import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profi
 import { useDifficultySelectSlice, useDraftDeckSlice } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import type { RunSetupCommands, RunSetupRouteCtx } from "./route-ctx";
 
-function DifficultySelectScreenRoute({ commands }: { commands: RunSetupCommands }) {
+function DifficultySelectScreenRoute({
+  commands,
+  onOpenBattleMenu,
+}: {
+  commands: RunSetupCommands;
+  onOpenBattleMenu: RunSetupRouteCtx["onOpenBattleMenu"];
+}) {
   const { pendingCharacterId, selectedDifficulty } = useDifficultySelectSlice();
   const characterId = pendingCharacterId ?? "knight";
   const completedDifficulties = useCompletedDifficulties()[characterId];
@@ -16,16 +22,24 @@ function DifficultySelectScreenRoute({ commands }: { commands: RunSetupCommands 
       completedDifficulties={completedDifficulties}
       onSelect={commands.handleDifficultySelect}
       onBack={commands.handleBackFromDifficultySelect}
+      onOpenMenu={onOpenBattleMenu}
     />
   );
 }
 
-function DraftDeckScreenRoute({ commands }: { commands: RunSetupCommands }) {
+function DraftDeckScreenRoute({
+  commands,
+  onOpenBattleMenu,
+}: {
+  commands: RunSetupCommands;
+  onOpenBattleMenu: RunSetupRouteCtx["onOpenBattleMenu"];
+}) {
   const draft = useDraftDeckSlice();
   const isWildwoodDraft = draft.contentSystemType === "wildwood" && draft.wildwoodDraft?.phase === "draft";
   return (
     <DraftDeckScreen
       onComplete={isWildwoodDraft ? commands.handleWildwoodDraftComplete : commands.handleStandardDraftComplete}
+      onOpenMenu={onOpenBattleMenu}
       {...(isWildwoodDraft
         ? {
             draftedCards: draft.runDeck,
@@ -42,12 +56,17 @@ export const runSetupScreenRoutes: {
   "draft-deck": (ctx: RunSetupRouteCtx) => ReactNode;
   "difficulty-select": (ctx: RunSetupRouteCtx) => ReactNode;
 } = {
-  "character-select": ({ routeCommands }) => (
+  "character-select": ({ routeCommands, onOpenBattleMenu }) => (
     <CharacterSelectScreen
       onConfirm={routeCommands.runSetup.handleCharacterSelect}
       onBack={() => routeCommands.runSetup.goToScreen("game-mode-select")}
+      onOpenMenu={onOpenBattleMenu}
     />
   ),
-  "draft-deck": ({ routeCommands }) => <DraftDeckScreenRoute commands={routeCommands.runSetup} />,
-  "difficulty-select": ({ routeCommands }) => <DifficultySelectScreenRoute commands={routeCommands.runSetup} />,
+  "draft-deck": ({ routeCommands, onOpenBattleMenu }) => (
+    <DraftDeckScreenRoute commands={routeCommands.runSetup} onOpenBattleMenu={onOpenBattleMenu} />
+  ),
+  "difficulty-select": ({ routeCommands, onOpenBattleMenu }) => (
+    <DifficultySelectScreenRoute commands={routeCommands.runSetup} onOpenBattleMenu={onOpenBattleMenu} />
+  ),
 };

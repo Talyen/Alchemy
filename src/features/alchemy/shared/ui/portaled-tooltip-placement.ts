@@ -8,7 +8,7 @@ export interface PortaledTooltipAnchor {
 
 export type PortaledTooltipSide = "side-start" | "side-end";
 
-/** "above" flips above/below the trigger; side placements anchor beside it. */
+/** "above" prefers above, then below, then beside; side placements stay beside. */
 export type PortaledTooltipPlacement = "above" | PortaledTooltipSide;
 
 const VR_STAGE_SELECTOR = '[data-testid="vr-stage"]';
@@ -56,14 +56,28 @@ export function buildPortaledTooltipStyle(
 
 export function measurePortaledTooltipPlacement(
   anchor: PortaledTooltipAnchor,
-  tooltipRect: Pick<DOMRect, "top" | "bottom" | "height">,
+  triggerRect: Pick<DOMRect, "left" | "right">,
+  tooltipRect: Pick<DOMRect, "width" | "height">,
   stage: Pick<DOMRect, "top" | "bottom" | "left" | "right"> = getVrStageBounds(),
   padding = 8,
-): { placeBelow: boolean; style: CSSProperties } {
-  const placeBelow = shouldPlacePortaledTooltipBelow(anchor, tooltipRect.height, stage, padding);
+): { placeBelow: boolean; tooltipSide: PortaledTooltipSide | null; style: CSSProperties } {
+  const spaceAbove = anchor.top - stage.top - 2 * padding;
+  const spaceBelow = stage.bottom - anchor.bottom - 2 * padding;
+  const fitsAbove = spaceAbove >= tooltipRect.height;
+  const fitsBelow = spaceBelow >= tooltipRect.height;
 
+  if (!fitsAbove && !fitsBelow) {
+    const spaceEnd = stage.right - triggerRect.right;
+    const spaceStart = triggerRect.left - stage.left;
+    const preferredSide: PortaledTooltipSide = spaceEnd >= spaceStart ? "side-end" : "side-start";
+    const { side, style } = buildSideTooltipStyle(anchor, triggerRect, tooltipRect, preferredSide, stage, padding);
+    return { placeBelow: false, tooltipSide: side, style };
+  }
+
+  const placeBelow = !fitsAbove;
   return {
     placeBelow,
+    tooltipSide: null,
     style: buildPortaledTooltipStyle(anchor, placeBelow, padding, stage),
   };
 }
@@ -134,8 +148,8 @@ export function usePortaledTooltipPlacement(
       };
 
       if (placement === "above") {
-        const measured = measurePortaledTooltipPlacement(anchor, tooltipRect, stage, padding);
-        setTooltipSide(null);
+        const measured = measurePortaledTooltipPlacement(anchor, triggerRect, tooltipRect, stage, padding);
+        setTooltipSide(measured.tooltipSide);
         setPlaceBelow(measured.placeBelow);
         setTooltipStyle(measured.style);
       } else {

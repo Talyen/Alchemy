@@ -24,6 +24,7 @@ export interface MetaRouteCtx {
 
 export interface RunSetupRouteCtx {
   routeCommands: Pick<AlchemyRouteCommands, "runSetup">;
+  onOpenBattleMenu: RenderAlchemyScreenProps["onOpenBattleMenu"];
 }
 
 export interface RunLoopRouteCtx {
@@ -38,6 +39,7 @@ export interface BattleRouteCtx {
 
 export interface RunEndRouteCtx {
   routeCommands: Pick<AlchemyRouteCommands, "runEnd">;
+  onOpenBattleMenu: RenderAlchemyScreenProps["onOpenBattleMenu"];
 }
 
 export type OptionsRouteCtx = Pick<

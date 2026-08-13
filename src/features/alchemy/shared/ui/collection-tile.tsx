@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
 import {
   cardArtImageClass,
   cardSurfaceClass,
+  collectionCardGridTileWidthClass,
   collectionGridBestiaryWidthClass,
-  collectionGridTileWidthClass,
   collectionGridTrinketWidthClass,
   landscapeArtImageClass,
   squareArtImageClass,
@@ -52,7 +52,7 @@ export function CompendiumTile({ item }: CompendiumTileProps) {
             ? collectionGridTrinketWidthClass
             : item.frameType === "bestiary"
               ? collectionGridBestiaryWidthClass
-              : collectionGridTileWidthClass,
+              : collectionCardGridTileWidthClass,
           item.frameType === "card" && "bg-transparent",
         )}
         onClick={() => {

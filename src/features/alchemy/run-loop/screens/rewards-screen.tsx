@@ -8,9 +8,9 @@ import { DetailPopup } from "../../shared/ui/card-popup";
 import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
 import { InteractiveArtTile } from "../../shared/ui/interactive-art-tile";
 import { SelectableChoiceCard } from "../../shared/ui/selectable-choice-card";
-import { ActionButtonRow, ScreenHeader } from "../../shared/ui/shared-ui";
+import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { FadeSlot } from "../../shared/ui/fade-slot";
-import { cardSurfaceClass, collectionTileWidthClass, bodyTextClass } from "@/features/alchemy/shared/config";
+import { cardSurfaceClass, collectionTileWidthClass, sectionTitleClass } from "@/features/alchemy/shared/config";
 import { gearInstanceAspectClass } from "@/features/alchemy/shared/ui/gear-aspect";
 import {
   getRewardChoiceId,
@@ -156,6 +156,7 @@ export function RewardsScreen({
   onSelectReward,
   allowTrinketSkip = false,
   claimInFlight = false,
+  onOpenMenu,
 }: {
   rewardState: RewardState;
   onAddReward: () => void;
@@ -163,6 +164,7 @@ export function RewardsScreen({
   onSelectReward: (id: string) => void;
   allowTrinketSkip?: boolean;
   claimInFlight?: boolean;
+  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const rewardType = rewardState.rewardType;
   const rewardChoices = rewardState.choices;
@@ -177,47 +179,44 @@ export function RewardsScreen({
   const claimLocked = claimInFlight || rewardChoices.length === 0;
 
   return (
-    <div className="flex h-full w-full items-center justify-center px-4 py-6">
-      <div className="alchemy-shell w-full max-w-6xl rounded-shell-hero border border-border/80 p-7 text-center">
-        <ScreenHeader title="Victory" />
-        <p className={cn("mt-3", bodyTextClass)}>Choose Reward</p>
+    <TitledScreenShell title="Victory" onOpenMenu={onOpenMenu} menuLabel="Open rewards menu" maxWidthClass="max-w-6xl">
+      <h2 className={cn("mt-3 text-center font-sans", sectionTitleClass)}>Choose Reward</h2>
 
-        <FadeSlot
-          swapKey={rewardChoices.map((item) => getRewardChoiceId(item)).join("-")}
-          className="mt-8 flex flex-col items-center gap-8"
-        >
-          <div className="flex flex-wrap items-start justify-center gap-6">
-            <RewardChoiceItems
-              choices={rewardChoices}
-              rewardType={rewardType}
-              selectedRewardId={selectedRewardId}
-              onSelectReward={onSelectReward}
-            />
-          </div>
+      <FadeSlot
+        swapKey={rewardChoices.map((item) => getRewardChoiceId(item)).join("-")}
+        className="mt-8 flex flex-col items-center gap-8"
+      >
+        <div className="flex flex-wrap items-start justify-center gap-6">
+          <RewardChoiceItems
+            choices={rewardChoices}
+            rewardType={rewardType}
+            selectedRewardId={selectedRewardId}
+            onSelectReward={onSelectReward}
+          />
+        </div>
 
-          <RewardsFound rewardGold={rewardGold} rewardMaterials={rewardMaterials} />
-        </FadeSlot>
+        <RewardsFound rewardGold={rewardGold} rewardMaterials={rewardMaterials} />
+      </FadeSlot>
 
-        <ActionButtonRow
-          className="mt-5"
-          width="action"
-          {...((!isTrinket && !isGear) || allowTrinketSkip
-            ? {
-                secondary: {
-                  label: "Skip",
-                  onClick: onSkip,
-                  // Disabled while claim is in flight or after commit drains choices.
-                  disabled: claimLocked,
-                },
-              }
-            : {})}
-          primary={{
-            label: isGear ? "Take Gear" : isTrinket ? "Take Trinket" : "Add Card",
-            disabled: !selectedRewardItem || claimLocked,
-            onClick: onAddReward,
-          }}
-        />
-      </div>
-    </div>
+      <ActionButtonRow
+        className="mt-5"
+        width="action"
+        {...((!isTrinket && !isGear) || allowTrinketSkip
+          ? {
+              secondary: {
+                label: "Skip",
+                onClick: onSkip,
+                // Disabled while claim is in flight or after commit drains choices.
+                disabled: claimLocked,
+              },
+            }
+          : {})}
+        primary={{
+          label: isGear ? "Take Gear" : isTrinket ? "Take Trinket" : "Add Card",
+          disabled: !selectedRewardItem || claimLocked,
+          onClick: onAddReward,
+        }}
+      />
+    </TitledScreenShell>
   );
 }
