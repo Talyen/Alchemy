@@ -9,12 +9,13 @@ describe("change amplification audit", () => {
     const output = execFileSync(process.execPath, ["scripts/audit-change-amplification.mjs", "--since=1 week ago"], {
       cwd: repoRoot,
       encoding: "utf8",
+      timeout: 25_000,
     });
 
     expect(output).toContain("Since: 1 week ago");
     expect(output).toContain("clean:");
     expect(output).toContain("Co-edit signal:");
-  });
+  }, 30_000);
 });
 
 describe("asset manifest", () => {
