@@ -2,8 +2,21 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import { runLoopScreenRoutes } from "@/app/screen-routes/run-loop-routes";
+import type { MysteryEvent } from "@/lib/mystery";
 
 const continueSpy = vi.fn();
+
+const mysteryScreenData = vi.hoisted(() => ({
+  current: {
+    runDeck: [] as unknown[],
+    mysteryEvent: null as MysteryEvent | null,
+    mysteryCardChoices: null as unknown,
+    mysteryGrantedTrinketIds: [] as string[],
+    mysteryChosenCardId: null as string | null,
+    mysteryChosenChoice: null as unknown,
+    mysteryPendingRemoval: false,
+  },
+}));
 
 vi.mock("@/features/alchemy/shared/stores/use-run-screen-data", () => ({
   useAlchemistScreenData: vi.fn(),
@@ -12,7 +25,7 @@ vi.mock("@/features/alchemy/shared/stores/use-run-screen-data", () => ({
   useDestinationScreenData: vi.fn(),
   useEquipmentShopScreenData: vi.fn(),
   useLabyrinthMapScreenData: vi.fn(),
-  useMysteryScreenData: () => ({ runDeck: [], mysteryEvent: null, mysteryCardChoices: null }),
+  useMysteryScreenData: () => mysteryScreenData.current,
   useRewardsScreenData: vi.fn(),
   useShopScreenData: vi.fn(),
   useTrinketShopScreenData: vi.fn(),
@@ -45,9 +58,26 @@ vi.mock("@/features/alchemy/shared/stores/run-session-react-ports", () => ({
   useTalentEffects: () => ({}),
 }));
 
+const sampleEvent: MysteryEvent = {
+  id: "held-event",
+  title: "Held Event",
+  art: "",
+  narrative: "An event is in progress.",
+  choices: [{ label: "Leave", effects: [] }],
+};
+
 afterEach(() => {
   cleanup();
   continueSpy.mockClear();
+  mysteryScreenData.current = {
+    runDeck: [],
+    mysteryEvent: null,
+    mysteryCardChoices: null,
+    mysteryGrantedTrinketIds: [],
+    mysteryChosenCardId: null,
+    mysteryChosenChoice: null,
+    mysteryPendingRemoval: false,
+  };
 });
 
 function routeElement() {
@@ -74,5 +104,22 @@ describe("MysteryScreenRoute", () => {
     view.rerender(routeElement());
 
     expect(continueSpy).toHaveBeenCalledOnce();
+  });
+
+  it("does not auto-continue when a held mystery event is cleared after Continue", () => {
+    mysteryScreenData.current = {
+      ...mysteryScreenData.current,
+      mysteryEvent: sampleEvent,
+    };
+    const view = render(routeElement());
+    expect(continueSpy).not.toHaveBeenCalled();
+
+    mysteryScreenData.current = {
+      ...mysteryScreenData.current,
+      mysteryEvent: null,
+    };
+    view.rerender(routeElement());
+
+    expect(continueSpy).not.toHaveBeenCalled();
   });
 });

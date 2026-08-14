@@ -22,14 +22,14 @@ Import using on-disk paths (for example `@/features/alchemy/shared/stores/run-se
 
 Gameplay state has one authoritative nested Zustand aggregate in `shared/stores/gameplay-state-store.ts`. Its `run`, `session`, `battle`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state; action groups sit beside those objects so commands cannot accidentally read or write another domain's fields. `profile-store.ts` and `gear-store.ts` are thin aggregate-backed persistence/adapter modules; they do not own shadow state. The capability ports are the feature-facing seams.
 
-| Aggregate region | Concern                                                                      | Lifetime              |
-| ---------------- | ---------------------------------------------------------------------------- | --------------------- |
-| `run`            | Active-run progression and navigation (`activeRun`, `initialized`, `screen`) | Reset by run teardown |
-| `session`        | Rewards, shops, labyrinth, mystery, pending selections, and run-flow claims  | Transient per run     |
-| `battle`         | Combat snapshot, battle-start state, and display overrides                   | Transient per battle  |
-| `runProfile`     | Homestead, talent XP / unlocks, and derived effects                          | Meta lifetime         |
-| `profile`        | Compendium discoveries and collection browsing state                         | Profile lifetime      |
-| `gear`           | Permanent inventories, loadouts, and crafting currencies                     | Profile lifetime      |
+| Aggregate region | Concern                                                                                                | Lifetime                                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `run`            | Active-run progression and navigation (`activeRun`, `initialized`, `screen`)                           | Reset by run teardown                                                                                        |
+| `session`        | Rewards, shops, labyrinth, mystery visits, corruption results, pending selections, and run-flow claims | Transient per run; shops, mystery visits, and corruption results persist on `activeRun` via the resume codec |
+| `battle`         | Combat snapshot, battle-start state, and display overrides                                             | Transient per battle                                                                                         |
+| `runProfile`     | Homestead, talent XP / unlocks, and derived effects                                                    | Meta lifetime                                                                                                |
+| `profile`        | Compendium discoveries and collection browsing state                                                   | Profile lifetime                                                                                             |
+| `gear`           | Permanent inventories, loadouts, and crafting currencies                                               | Profile lifetime                                                                                             |
 
 Cross-concern writes go through `run-session-write-port.ts`. Multi-concern lifecycle orchestration is exposed through `run-session-lifecycle-port.ts`. Feature-facing reads (`run-session-read-port`, `profile-store` / `gear-store` slices, and the React ports) are data-only; command-backed write ports own every gameplay mutation. React orchestration uses narrow ports from `run-session-react-ports.ts`; screens use exact screen-data hooks (battle display via `useBattleScreenRouteData`).
 
@@ -51,15 +51,15 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 
 `Math.random()` is allowed only to create a fresh run seed or for cosmetic/meta-only effects.
 
-| Concern                             | Owner                                                  | Notes                                    |
-| ----------------------------------- | ------------------------------------------------------ | ---------------------------------------- |
-| Deck, gold, HP, acts, trinkets      | `gameplay-state-store.run.activeRun`                   | Persisted inside `activeRun`             |
-| Homestead + permanent talents       | `gameplay-state-store.runProfile`                      | Persisted as top-level save fields       |
-| Rewards, shops, labyrinth, mystery  | `gameplay-state-store.session`                         | Transient per run                        |
-| Current `Screen`                    | `gameplay-state-store.run.navigation`                  | `useActiveRunScreen()`                   |
-| Combat snapshot + display overrides | `gameplay-state-store.battle`                          | Synced during battle                     |
-| Battle VFX                          | `battle-presentation-store`                            | Not persisted                            |
-| Lifecycle                           | `run-session-lifecycle-port.ts` → `run-transitions.ts` | Restore, snapshot, teardown, battle sync |
+| Concern                                               | Owner                                                  | Notes                                                                                                               |
+| ----------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Deck, gold, HP, acts, trinkets                        | `gameplay-state-store.run.activeRun`                   | Persisted inside `activeRun`                                                                                        |
+| Homestead + permanent talents                         | `gameplay-state-store.runProfile`                      | Persisted as top-level save fields                                                                                  |
+| Rewards, shops, labyrinth, mystery visits, corruption | `gameplay-state-store.session`                         | Shops and corruption persist through the resume codec; mystery visits persist only while `currentScreen` is mystery |
+| Current `Screen`                                      | `gameplay-state-store.run.navigation`                  | `useActiveRunScreen()`                                                                                              |
+| Combat snapshot + display overrides                   | `gameplay-state-store.battle`                          | Synced during battle                                                                                                |
+| Battle VFX                                            | `battle-presentation-store`                            | Not persisted                                                                                                       |
+| Lifecycle                                             | `run-session-lifecycle-port.ts` → `run-transitions.ts` | Restore, snapshot, teardown, battle sync                                                                            |
 
 ### Persistence API
 

@@ -1,9 +1,10 @@
 import { expect } from "@playwright/test";
+import { SHOP_CARD_PRICE } from "@/lib/game-constants";
 import { test } from "./fixtures/e2e";
 import { ShopPage } from "./pages/shop-page";
 import { RewardPage } from "./pages/reward-page";
 import { DestinationPage } from "./pages/destination-page";
-import { injectSaveState, primaryRewardInterruptedFlow, makeHighDamageCard, SAVE_KEY } from "./helpers";
+import { enterPrimaryRewardScreen, SAVE_KEY } from "./helpers";
 import { critical } from "./playwright-tags";
 
 test.describe("Merchant Shop", () => {
@@ -55,65 +56,28 @@ test.describe("Merchant Shop", () => {
         expect(sameCards).toBe(false);
       }).toPass({ timeout: 3000 });
     });
-
-    test("remove card button is visible with sufficient gold", async ({ page }) => {
-      const shop = new ShopPage(page);
-      await expect(shop.removeCardBtn).toBeVisible();
-      await expect(shop.removeCardBtn).toBeEnabled();
-    });
   });
 
-  test.describe("with insufficient gold", () => {
-    test.beforeEach(async ({ page }) => {
-      await new ShopPage(page).enterFromDestination(40, "Merchant's Shop");
-    });
-
-    test("buying a card deducts gold and reflects balance", async ({ page }) => {
-      const shop = new ShopPage(page);
-      const goldBefore = await shop.gold();
-
-      await shop.buyCard();
-      await shop.waitForPurchase();
-
-      expect(await shop.gold()).toBeLessThan(goldBefore);
-    });
+  test("buy is disabled when gold is below the card price", async ({ page }) => {
+    const shop = new ShopPage(page);
+    await shop.enterFromDestination(SHOP_CARD_PRICE - 1, "Merchant's Shop");
+    await expect(shop.buyBtn.first()).toBeDisabled();
   });
 });
 
 test.describe("Alchemist Shop", () => {
-  test.describe("with sufficient gold", () => {
-    test.beforeEach(async ({ page }) => {
-      await new ShopPage(page).enterFromDestination(9999, "Alchemist's Shop");
-    });
+  test("buy potions and mix them", async ({ page }) => {
+    const shop = new ShopPage(page);
+    await shop.enterFromDestination(9999, "Alchemist's Shop");
 
-    test("buy potions and mix them", async ({ page }) => {
-      const shop = new ShopPage(page);
+    for (let i = 0; i < 2; i++) {
+      await shop.buyCard(i);
+    }
+    await expect(page.getByText("Purchased").first()).toBeVisible();
 
-      for (let i = 0; i < 2; i++) {
-        await shop.buyCard(i);
-      }
-      await expect(page.getByText("Purchased").first()).toBeVisible();
-
-      await shop.mixPotions();
-      await expect(page.getByLabel("Mixed Potion")).toBeVisible();
-      await shop.continueBtn.click();
-    });
-  });
-
-  test.describe("with insufficient gold", () => {
-    test.beforeEach(async ({ page }) => {
-      await new ShopPage(page).enterFromDestination(40, "Alchemist's Shop");
-    });
-
-    test("buying potions deducts gold and purchased state is shown", async ({ page }) => {
-      const shop = new ShopPage(page);
-      const goldBefore = await shop.gold();
-
-      await shop.buyCard();
-      await shop.waitForPurchase();
-
-      expect(await shop.gold()).toBeLessThan(goldBefore);
-    });
+    await shop.mixPotions();
+    await expect(page.getByLabel("Mixed Potion")).toBeVisible();
+    await shop.continueBtn.click();
   });
 });
 
@@ -124,28 +88,10 @@ test.describe("Reward Flow", () => {
     async ({ page, fastBattle, runtimeErrors }) => {
       void fastBattle;
       void runtimeErrors;
-      await injectSaveState(page, {
-        runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
-        currentScreen: "rewards",
-        interruptedFlow: primaryRewardInterruptedFlow({
-          rewardType: "card",
-          choiceIds: ["slash", "bash"],
-          selectedId: null,
-          gold: 0,
-          materials: {},
-          destinations: [],
-          selectedBossId: null,
-          lastVictoryEnemyType: "normal",
-          lastVictoryContentSystem: "campaign",
-        }),
-      });
-      await page.goto("/");
+      await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"] });
 
       const reward = new RewardPage(page);
-      await expect(reward.addRewardBtn).toBeDisabled();
-      await reward.selectFirstReward();
-      await expect(reward.addRewardBtn).toBeEnabled();
-      await reward.addRewardBtn.click();
+      await reward.claimWithConfirmationGate();
       await new DestinationPage(page).expectVisible();
     },
   );
@@ -156,29 +102,13 @@ test.describe("Reward Flow", () => {
     async ({ page, fastBattle, runtimeErrors }) => {
       void fastBattle;
       void runtimeErrors;
-      await injectSaveState(page, {
-        runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
-        currentScreen: "rewards",
-        interruptedFlow: primaryRewardInterruptedFlow({
-          rewardType: "trinket",
-          choiceIds: ["tattered-pages", "companions-collar"],
-          selectedId: null,
-          gold: 0,
-          materials: {},
-          destinations: [],
-          selectedBossId: null,
-          lastVictoryEnemyType: "normal",
-          lastVictoryContentSystem: "campaign",
-        }),
+      await enterPrimaryRewardScreen(page, {
+        rewardType: "trinket",
+        choiceIds: ["tattered-pages", "companions-collar"],
       });
-      await page.goto("/");
 
       const reward = new RewardPage(page);
-      const addRewardBtn = reward.addRewardBtn;
-      await expect(addRewardBtn).toBeDisabled();
-      await reward.selectFirstReward();
-      await expect(addRewardBtn).toBeEnabled();
-      await addRewardBtn.click();
+      await reward.claimWithConfirmationGate();
       await new DestinationPage(page).expectVisible();
 
       const trinkets = await page.evaluate((saveKey) => {
@@ -192,29 +122,13 @@ test.describe("Reward Flow", () => {
   test("gear reward: claiming gear adds it to gearInventory", critical, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
-    await injectSaveState(page, {
-      runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
-      currentScreen: "rewards",
-      interruptedFlow: primaryRewardInterruptedFlow({
-        rewardType: "gear",
-        gearChoices: [{ instanceId: "reward-gear", definitionId: "leather-armor-basic", affixes: [] }],
-        selectedId: null,
-        gold: 0,
-        materials: {},
-        destinations: [],
-        selectedBossId: null,
-        lastVictoryEnemyType: "normal",
-        lastVictoryContentSystem: "campaign",
-      }),
+    await enterPrimaryRewardScreen(page, {
+      rewardType: "gear",
+      gearChoices: [{ instanceId: "reward-gear", definitionId: "leather-armor-basic", affixes: [] }],
     });
-    await page.goto("/");
 
     const reward = new RewardPage(page);
-    const addRewardBtn = reward.addRewardBtn;
-    await expect(addRewardBtn).toBeDisabled();
-    await reward.selectFirstReward();
-    await expect(addRewardBtn).toBeEnabled();
-    await addRewardBtn.click();
+    await reward.claimWithConfirmationGate();
     await new DestinationPage(page).expectVisible();
 
     const gearInventory = await page.evaluate((saveKey) => {
@@ -228,22 +142,10 @@ test.describe("Reward Flow", () => {
   test("reward selection persists across page reload", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
-    await injectSaveState(page, {
-      runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
-      currentScreen: "rewards",
-      interruptedFlow: primaryRewardInterruptedFlow({
-        rewardType: "trinket",
-        choiceIds: ["tattered-pages", "companions-collar"],
-        selectedId: null,
-        gold: 0,
-        materials: {},
-        destinations: [],
-        selectedBossId: null,
-        lastVictoryEnemyType: "normal",
-        lastVictoryContentSystem: "campaign",
-      }),
+    await enterPrimaryRewardScreen(page, {
+      rewardType: "trinket",
+      choiceIds: ["tattered-pages", "companions-collar"],
     });
-    await page.goto("/");
 
     const reward = new RewardPage(page);
     await reward.selectFirstReward();

@@ -14,6 +14,7 @@ import {
   setRunSession,
 } from "../../../../helpers/run-domain-store-test";
 import { useRunBattleDomainStore } from "../../../../helpers/gameplay-store-test";
+import { ANCIENT_ALTAR_MYSTERY_VISIT } from "../stores/active-run-data-fixture";
 
 /** Encode the live store through the canonical resume codec. */
 function encodeState(screen?: Screen): ActiveRunData {
@@ -74,6 +75,8 @@ describe("encodeRunResumeSnapshot", () => {
       alchemistState: null,
       trinketShopState: null,
       equipmentShopState: null,
+      mysteryVisit: null,
+      corruptionResult: null,
       wildwoodDraft: null,
       runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
     });
@@ -237,5 +240,66 @@ describe("encodeRunResumeSnapshot", () => {
     const result = encodeState();
 
     expect(result.wildwoodDraft).toEqual(wildwoodDraft);
+  });
+
+  it("persists a mystery visit for resume", () => {
+    setRunSession({
+      mysteryEvent: {
+        id: "ancient-altar",
+        title: "Ancient Altar",
+        art: "",
+        narrative: "A weathered stone altar.",
+        choices: [{ label: "Pray", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] }],
+      },
+      mysteryChosenChoice: { label: "Pray", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] },
+      mysteryPendingRemoval: false,
+      mysteryCardChoices: null,
+      mysteryGrantedTrinketIds: [],
+      mysteryChosenCardId: null,
+    });
+
+    const result = encodeState("mystery");
+    const decoded = decodeRunResumeSnapshot(result);
+
+    expect(result.mysteryVisit).toEqual(ANCIENT_ALTAR_MYSTERY_VISIT);
+    expect(decoded.session.mysteryEvent?.id).toBe("ancient-altar");
+    expect(decoded.session.mysteryChosenChoice?.label).toBe("Pray");
+  });
+
+  it("does not persist leftover mystery visit state off the mystery screen", () => {
+    setRunSession({
+      mysteryEvent: {
+        id: "ancient-altar",
+        title: "Ancient Altar",
+        art: "",
+        narrative: "A weathered stone altar.",
+        choices: [{ label: "Pray", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] }],
+      },
+      mysteryChosenChoice: ANCIENT_ALTAR_MYSTERY_VISIT.chosenChoice,
+    });
+
+    const result = encodeState("destination");
+    const decoded = decodeRunResumeSnapshot(result);
+
+    expect(result.mysteryVisit).toBeNull();
+    expect(decoded.session.mysteryEvent).toBeNull();
+    expect(decoded.session.mysteryChosenChoice).toBeNull();
+  });
+
+  it("persists a corruption result for resume", () => {
+    const [slash] = getStartingDeck("knight");
+    if (!slash) throw new Error("Knight starting deck fixture is incomplete");
+    const corruptionResult = {
+      originalCard: slash,
+      corruptedCard: { ...slash, corrupted: true },
+      transformed: false as const,
+      delta: -1 as const,
+    };
+    setRunSession({ corruptionResult });
+
+    const result = encodeState("corruption");
+
+    expect(result.corruptionResult).toEqual(corruptionResult);
+    expect(decodeRunResumeSnapshot(result).session.corruptionResult).toEqual(corruptionResult);
   });
 });

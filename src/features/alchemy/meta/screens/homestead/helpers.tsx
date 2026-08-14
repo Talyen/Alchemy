@@ -18,7 +18,6 @@ import {
   leylineEnergy,
   orchard,
   pasture,
-  placeholderHomestead,
   runesmithsWorkshop,
   wheatField,
   woolTailoring,
@@ -78,7 +77,7 @@ const itemArt: Record<string, string> = {
 };
 
 export function getArt(id: string): string {
-  return itemArt[id] ?? placeholderHomestead;
+  return itemArt[id] ?? "";
 }
 
 export function MaterialCost({ material, amount }: { material: MaterialId; amount: number }) {

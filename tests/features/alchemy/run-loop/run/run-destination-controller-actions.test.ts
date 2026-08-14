@@ -111,4 +111,54 @@ describe("run destination controller actions", () => {
     expect(offered.length).toBeGreaterThan(0);
     expect(offered).not.toContain(CONSTANTS.DESTINATIONS.CORRUPTION);
   });
+
+  it.each([
+    {
+      name: "campaign",
+      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN,
+      expectedScreen: CONSTANTS.SCREENS.DESTINATION,
+      expectLabyrinthClear: false,
+    },
+    {
+      name: "labyrinth",
+      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH,
+      expectedScreen: CONSTANTS.SCREENS.LABYRINTH_MAP,
+      expectLabyrinthClear: true,
+    },
+  ])(
+    "advanceToNextDestination clears leftover mystery visit state ($name)",
+    ({ contentSystemType, expectedScreen, expectLabyrinthClear }) => {
+      setRunProgress({ contentSystemType });
+      const session = getRunSessionStoreView();
+      session.setMysteryEvent({
+        id: "stale-event",
+        title: "Stale Event",
+        art: "",
+        narrative: "Should be cleared on continue.",
+        choices: [{ label: "Leave", effects: [] }],
+      });
+      session.setMysteryCardChoices([
+        { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] },
+      ]);
+      session.setMysteryGrantedTrinketIds(["bone-charm"]);
+      session.setMysteryChosenCardId("slash");
+      session.setMysteryChosenChoice({ label: "Leave", effects: [] });
+      session.setMysteryPendingRemoval(true);
+
+      const labyrinthClearNode = vi.fn();
+      const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
+      createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo, labyrinthClearNode })).advanceToNextDestination();
+
+      const cleared = getRunSessionStoreView();
+      expect(cleared.mysteryEvent).toBeNull();
+      expect(cleared.mysteryCardChoices).toBeNull();
+      expect(cleared.mysteryGrantedTrinketIds).toEqual([]);
+      expect(cleared.mysteryChosenCardId).toBeNull();
+      expect(cleared.mysteryChosenChoice).toBeNull();
+      expect(cleared.mysteryPendingRemoval).toBe(false);
+      expect(navigateTo.mock.calls[0]?.[0]).toBe(expectedScreen);
+      if (expectLabyrinthClear) expect(labyrinthClearNode).toHaveBeenCalledOnce();
+      else expect(labyrinthClearNode).not.toHaveBeenCalled();
+    },
+  );
 });

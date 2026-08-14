@@ -32,6 +32,11 @@ export class MenuPage {
     await this.goto();
   }
 
+  async gotoCollection(overrides: Parameters<typeof injectHomestead>[1] = {}) {
+    await this.gotoWithUnlockedMeta(overrides);
+    await this.openCollection();
+  }
+
   async expectMainMenu(timeout = 5000) {
     await expect(this.playBtn).toBeVisible({ timeout });
   }

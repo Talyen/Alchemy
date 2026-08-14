@@ -85,6 +85,9 @@ export function useMysteryScreenData(): ScreenData<"mystery"> {
       mysteryEvent: state.session.mysteryEvent,
       mysteryCardChoices: state.session.mysteryCardChoices,
       mysteryGrantedTrinketIds: state.session.mysteryGrantedTrinketIds,
+      mysteryChosenCardId: state.session.mysteryChosenCardId,
+      mysteryChosenChoice: state.session.mysteryChosenChoice,
+      mysteryPendingRemoval: state.session.mysteryPendingRemoval,
     })),
   );
   return useMemo(() => ({ ...mystery, runDeck }), [mystery, runDeck]);

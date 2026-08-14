@@ -21,6 +21,16 @@ export function primaryRewardInterruptedFlow(pending: Record<string, unknown>) {
   return { kind: "primary-reward" as const, pending };
 }
 
+const DEFAULT_PRIMARY_REWARD_PENDING = {
+  selectedId: null,
+  gold: 0,
+  materials: {},
+  destinations: [],
+  selectedBossId: null,
+  lastVictoryEnemyType: "normal",
+  lastVictoryContentSystem: "campaign",
+};
+
 function createMinimalLabyrinthMap(options?: { rows?: number; cols?: number }) {
   const rows = options?.rows ?? 8;
   const cols = options?.cols ?? 9;
@@ -188,6 +198,16 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
     },
     { saveKey: SAVE_KEY, payload: overrides, injectionId },
   );
+}
+
+/** Inject a mid-claim primary reward screen and navigate to it. */
+export async function enterPrimaryRewardScreen(page: Page, pending: Record<string, unknown>) {
+  await injectSaveState(page, {
+    runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
+    currentScreen: "rewards",
+    interruptedFlow: primaryRewardInterruptedFlow({ ...DEFAULT_PRIMARY_REWARD_PENDING, ...pending }),
+  });
+  await page.goto("/");
 }
 
 export async function injectHomestead(page: Page, overrides: Record<string, unknown> = {}) {

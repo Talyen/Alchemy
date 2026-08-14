@@ -29,7 +29,7 @@ import type {
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { CorruptionResult } from "@/lib/corruption";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import type { MysteryEvent } from "@/lib/mystery";
+import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import type { MaterialInventory } from "@/lib/homestead/types";
 
 export interface DisplayOverrides {
@@ -87,8 +87,11 @@ export function createInitialSessionFields(): RunSessionFields {
     trinketShopState: emptyTrinketShop,
     equipmentShopState: emptyEquipmentShop,
     mysteryEvent: null,
+    mysteryChosenChoice: null,
+    mysteryPendingRemoval: false,
     mysteryCardChoices: null,
     mysteryGrantedTrinketIds: [],
+    mysteryChosenCardId: null,
   };
 }
 
@@ -132,7 +135,11 @@ export interface RunSessionFields {
   trinketShopState: TrinketShopState;
   equipmentShopState: EquipmentShopState;
   mysteryEvent: MysteryEvent | null;
+  mysteryChosenChoice: MysteryChoice | null;
+  mysteryPendingRemoval: boolean;
   mysteryCardChoices: BattleCard[] | null;
   /** Trinket ids actually granted by gainRandomTrinket effects in the current mystery event, in effect order. */
   mysteryGrantedTrinketIds: string[];
+  /** Card id picked from a chooseCard follow-up in the current mystery event. */
+  mysteryChosenCardId: string | null;
 }

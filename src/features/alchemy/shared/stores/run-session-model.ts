@@ -125,8 +125,3 @@ function toRunSession(state: GameplayState, screen?: Screen): RunSession {
 export function getRunSession(screen?: Screen): RunSession {
   return toRunSession(readGameplayState(), screen);
 }
-
-/** Imperative snapshot of the last committed run + session + battle state. */
-export function getCommittedRunSession(screen?: Screen): RunSession {
-  return toRunSession(useGameplayStateStore.getState(), screen);
-}

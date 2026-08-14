@@ -2,14 +2,15 @@
 import { getBattleStartPlayerHealth, repairPersistedBattleTrinketManifest } from "@/lib/battle";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
 import { type ActiveRunData } from "@/lib/active-run-session";
-import type { Screen } from "@/lib/routing";
+import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import type { CharacterId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import { computeGearManifest, type GearInstance, type GearLoadouts } from "@/lib/gear";
+import { pickMysteryEvent } from "@/lib/mystery";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { useUiStore } from "./ui-store";
-import { getCommittedRunSession } from "./run-session-model";
+import { getRunSession } from "./run-session-model";
 import { restoreRunSession } from "./restore-active-run-session";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "./run-resume-codec";
 import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
@@ -19,7 +20,12 @@ import {
   createGameplayDraftRunProfileActions,
   createGameplayDraftSessionActions,
 } from "./gameplay-state-store";
-import { initializeActiveBattle, setHasActiveBattle } from "./run-session-write-port";
+import {
+  createDraftRunRandomSource,
+  initializeActiveBattle,
+  setHasActiveBattle,
+  setMysteryEvent,
+} from "./run-session-write-port";
 
 /** Apply persisted active-run data across the run-lifetime stores atomically. */
 export function restoreRun(
@@ -51,6 +57,13 @@ export function restoreRun(
     transient.clearTransientSession();
     transient.setHasActiveRun(true);
     if (decoded) restoreRunSession(transient, decoded.session);
+    if (decoded?.screen === "mystery" && !draft.session.mysteryEvent) {
+      if (activeRun.mysteryVisit != null) {
+        run.setScreen(ROUTE_SCREENS.DESTINATION);
+        return;
+      }
+      setMysteryEvent(draft, pickMysteryEvent(createDraftRunRandomSource(draft, "events")));
+    }
   });
 }
 
@@ -61,7 +74,7 @@ export function resolveActiveRunForSave(hasActiveRun: boolean, screen?: Screen):
 
 /** Serialize the run-lifetime stores into persisted ActiveRunData. */
 export function snapshotRun(screen?: Screen): ActiveRunData {
-  return encodeRunResumeSnapshot(getCommittedRunSession(screen), screen);
+  return encodeRunResumeSnapshot(getRunSession(screen), screen);
 }
 
 /** Apply gear max-health bonus delta after armory gear inventory/loadout mutations during an active run. */

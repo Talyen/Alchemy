@@ -1,9 +1,18 @@
 import { defaultBattleState } from "@/lib/battle";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { getStartingDeck } from "@/lib/game-data";
-import type { ActiveRunData } from "@/lib/active-run-session";
+import type { ActiveRunData, PersistedMysteryVisit } from "@/lib/active-run-session";
 import { createRunRngState } from "@/lib/run-rng";
 import { createSeededRng } from "@/lib/utils";
+
+export const ANCIENT_ALTAR_MYSTERY_VISIT: PersistedMysteryVisit = {
+  eventId: "ancient-altar",
+  chosenChoice: { label: "Pray", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] },
+  pendingRemoval: false,
+  cardChoices: null,
+  grantedTrinketIds: [],
+  chosenCardId: null,
+};
 
 /**
  * Complete, non-default active-run fixture. `satisfies` makes persistence field
@@ -83,6 +92,13 @@ export function createCompleteActiveRunData(): ActiveRunData {
       refreshesLeft: 1,
       firstPurchaseUsed: true,
       purchasedSlotKeys: ["gear:0"],
+    },
+    mysteryVisit: null,
+    corruptionResult: {
+      originalCard: slash,
+      corruptedCard: { ...slash, corrupted: true },
+      transformed: false,
+      delta: -1,
     },
   } satisfies ActiveRunData;
 }

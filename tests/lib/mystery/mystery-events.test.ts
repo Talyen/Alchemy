@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mysteryPool, pickMysteryEvent } from "@/lib/mystery";
-import { cardLibrary, trinketLibrary } from "@/lib/game-data";
+import { cardLibrary, mysteryEventArt, trinketLibrary } from "@/lib/game-data";
 
 describe("mysteryPool", () => {
   it("contains events", () => {
@@ -34,6 +34,7 @@ describe("mysteryPool", () => {
   it("every event has a non-empty art URL", () => {
     for (const event of mysteryPool) {
       expect(event.art, `Event "${event.id}" has no art URL`).toBeTruthy();
+      expect(mysteryEventArt[event.id], `Event "${event.id}" is missing from mysteryEventArt`).toBeTruthy();
     }
   });
 

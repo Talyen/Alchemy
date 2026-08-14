@@ -1,5 +1,13 @@
 import { expect, test } from "./fixtures/e2e";
-import { injectLabyrinthRun, makeCard, SAVE_KEY, startBattleWithDeck, startAtDestination } from "./helpers";
+import {
+  injectLabyrinthRun,
+  makeCard,
+  SAVE_KEY,
+  startBattleWithDeck,
+  startAtDestination,
+  assertNoOverflow,
+  assertStageFitsViewport,
+} from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 import { slow } from "./playwright-tags";
 
@@ -12,23 +20,6 @@ async function setAspectRatio(page: import("@playwright/test").Page, aspectRatio
     },
     { saveKey: SAVE_KEY, ar: aspectRatio },
   );
-}
-
-async function assertNoOverflow(page: import("@playwright/test").Page, screenName: string) {
-  const layout = await page.evaluate(() => ({
-    width: document.documentElement.scrollWidth,
-    height: document.documentElement.scrollHeight,
-    vw: window.innerWidth,
-    vh: window.innerHeight,
-  }));
-  expect(
-    layout.width,
-    `${screenName}: scrollWidth ${layout.width} should be <= viewport width ${layout.vw}`,
-  ).toBeLessThanOrEqual(layout.vw);
-  expect(
-    layout.height,
-    `${screenName}: scrollHeight ${layout.height} should be <= viewport height ${layout.vh}`,
-  ).toBeLessThanOrEqual(layout.vh);
 }
 
 async function waitForHandEntryAnimations(page: import("@playwright/test").Page) {
@@ -53,25 +44,6 @@ const RESOLUTIONS = [
 
 const CARD_VIEWPORT_TOLERANCE_PX = 12;
 const CARD_VIEWPORT_TOLERANCE_RATIO = 0.015;
-
-async function assertStageFitsViewport(page: import("@playwright/test").Page) {
-  const bounds = await page.getByTestId("vr-stage").evaluate((stage) => {
-    const rect = stage.getBoundingClientRect();
-    return {
-      top: rect.top,
-      right: rect.right,
-      bottom: rect.bottom,
-      left: rect.left,
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight,
-    };
-  });
-
-  expect(bounds.top).toBeGreaterThanOrEqual(-1);
-  expect(bounds.left).toBeGreaterThanOrEqual(-1);
-  expect(bounds.right).toBeLessThanOrEqual(bounds.viewportWidth + 1);
-  expect(bounds.bottom).toBeLessThanOrEqual(bounds.viewportHeight + 1);
-}
 
 test.describe("Common resolutions (1366x768, 1920x1080)", slow, () => {
   test("menu screen fits viewport without overflow", async ({ page }) => {

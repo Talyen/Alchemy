@@ -7,7 +7,7 @@ import {
   setCurrentAct,
   setDestinationIndexInAct,
   setCompletedDestinations,
-  setMysteryCardChoices,
+  clearMysteryVisitState,
   createDraftRunRandomSource,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
@@ -64,12 +64,15 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
         setHasActiveBattle(draft, false);
         if (deps.run.currentAct >= ACTS_PER_RUN) {
           if (deps.run.selectedDifficulty) {
-            setCompletedDifficulties(draft, (previous) => ({
-              ...previous,
-              [deps.run.characterId]: previous[deps.run.characterId].includes(deps.run.selectedDifficulty!)
-                ? previous[deps.run.characterId]
-                : [...previous[deps.run.characterId], deps.run.selectedDifficulty!],
-            }));
+            setCompletedDifficulties(draft, (previous) => {
+              const completed = previous[deps.run.characterId] ?? [];
+              return {
+                ...previous,
+                [deps.run.characterId]: completed.includes(deps.run.selectedDifficulty!)
+                  ? completed
+                  : [...completed, deps.run.selectedDifficulty!],
+              };
+            });
           }
           return true;
         }
@@ -95,11 +98,8 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
     dispatchRunSessionCommand(
       (draft) => {
         setRoomsEncountered(draft, (p) => p + 1);
-        if (deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
-          return true;
-        }
-        setMysteryCardChoices(draft, null);
-        return false;
+        clearMysteryVisitState(draft);
+        return deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH;
       },
       {
         afterCommit: (labyrinth) => {

@@ -1,10 +1,11 @@
 // Shared art tile surface for selectable rewards and purchasable collection items.
-import { useRef, type RefObject, type ReactNode } from "react";
+import { type RefObject, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
 import { TiltSurface } from "./tilt-surface";
 import { useInteractiveCard } from "./use-interactive-card";
+import { useTileHoverPopup } from "./use-tile-hover-popup";
 
 export interface PopupContext {
   visible: boolean;
@@ -40,20 +41,25 @@ export function InteractiveArtTile({
   onClick,
   ariaLabel,
 }: InteractiveArtTileProps) {
-  const tileRef = useRef<HTMLDivElement>(null);
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(interactionKey, id);
+  const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useTileHoverPopup({
+    interactive,
+    isHovered,
+    onHoverStart,
+    onHoverEnd,
+  });
 
   return (
     <div
-      ref={tileRef}
+      ref={wrapperRef}
       className="relative"
-      onMouseEnter={interactive ? onHoverStart : undefined}
-      onMouseLeave={interactive ? onHoverEnd : undefined}
+      onMouseEnter={interactive ? handleHoverStart : undefined}
+      onMouseLeave={interactive ? handleMouseLeave : undefined}
     >
       {/* The ref is only read inside layout effects in PortaledTooltip's placement
           hook, never during render; passing it to the popup factory is safe. */}
       {/* eslint-disable-next-line react-hooks/refs */}
-      {interactive && popup ? popup({ visible: isHovered, triggerRef: tileRef }) : null}
+      {interactive && popup && showPopup ? popup({ visible: isHovered, triggerRef: wrapperRef }) : null}
       <TiltSurface
         as={as}
         className={cn(className, "group")}
@@ -61,7 +67,7 @@ export function InteractiveArtTile({
         shimmerToken={interactive ? shimmerToken : undefined}
         selected={selected}
         onClick={interactive ? onClick : undefined}
-        {...(interactive ? { onFocus: onHoverStart, onBlur: onHoverEnd } : {})}
+        {...(interactive ? { onFocus: handleHoverStart, onBlur: handleBlur } : {})}
         ariaLabel={ariaLabel ?? title}
       >
         <img src={art ?? undefined} alt={title} className={imageClassName} />

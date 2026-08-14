@@ -1,7 +1,7 @@
 // Shop trinket tile with buy button and sold-out state.
 import type { TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-import { cardSurfaceClass, collectionTileWidthClass } from "../config";
+import { trinketArtFillClass, trinketArtImageClass, trinketArtTileClass } from "../config";
 import { DetailPopup } from "./card-popup";
 import { InteractiveArtTile } from "./interactive-art-tile";
 import { PurchasableShopTile } from "./purchasable-shop-tile";
@@ -21,8 +21,8 @@ export function PurchasableTrinketItem({ trinket, price, gold, purchased, onBuy 
       interactionKey="shop"
       title={trinket.title}
       art={trinket.art}
-      className={cn(cardSurfaceClass, collectionTileWidthClass, "aspect-square")}
-      imageClassName="absolute inset-0 h-full w-full rounded-shell-hero object-cover"
+      className={trinketArtTileClass}
+      imageClassName={cn(trinketArtFillClass, trinketArtImageClass)}
       interactive={!purchased}
       popup={({ visible, triggerRef }) => (
         <DetailPopup

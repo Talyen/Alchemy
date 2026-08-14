@@ -21,7 +21,53 @@ import {
   EncounterRewardTraitArraySchema,
   MaterialInventorySchema,
 } from "./core";
+import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { createRunRngState } from "@/lib/run-rng";
+
+const MaterialIdPersistSchema = z.enum(MATERIAL_IDS as [MaterialId, ...MaterialId[]]);
+
+const MysteryEffectSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("addCard"), cardId: z.string() }),
+  z.object({ kind: z.literal("chooseCard"), tag: z.string().optional() }),
+  z.object({ kind: z.literal("healHealth"), amount: z.number(), chance: z.number().optional() }),
+  z.object({ kind: z.literal("damageHealth"), amount: z.number() }),
+  z.object({ kind: z.literal("gainGold"), amount: z.number() }),
+  z.object({ kind: z.literal("loseGold"), amount: z.number() }),
+  z.object({ kind: z.literal("gainXP"), keyword: z.string(), amount: z.number() }),
+  z.object({ kind: z.literal("removeCard"), mode: z.enum(["random", "choose"]) }),
+  z.object({ kind: z.literal("gainTrinket"), trinketId: z.string() }),
+  z.object({ kind: z.literal("gainRandomTrinket") }),
+  z.object({ kind: z.literal("gainMaterial"), material: MaterialIdPersistSchema, amount: z.number() }),
+]);
+
+const MysteryChoicePersistSchema = z.object({
+  label: z.string(),
+  effects: z.array(MysteryEffectSchema),
+});
+
+const MysteryVisitPersistSchema = z
+  .object({
+    eventId: z.string(),
+    chosenChoice: MysteryChoicePersistSchema.nullable().catch(null).default(null),
+    pendingRemoval: z.boolean().catch(false).default(false),
+    cardChoices: z.array(BattleCardSchema).nullable().catch(null).default(null),
+    grantedTrinketIds: z.array(z.string()).catch([]).default([]),
+    chosenCardId: z.string().nullable().catch(null).default(null),
+  })
+  .nullable()
+  .catch(null)
+  .default(null);
+
+const CorruptionResultPersistSchema = z
+  .object({
+    originalCard: BattleCardSchema,
+    corruptedCard: BattleCardSchema,
+    transformed: z.boolean(),
+    delta: z.union([z.literal(1), z.literal(-1)]),
+  })
+  .nullable()
+  .catch(null)
+  .default(null);
 
 const RunRngStateSchema = z.object({
   seed: z.number().int().nonnegative().max(0xffff_ffff),
@@ -218,6 +264,8 @@ export const ActiveRunDataSchema = z
     alchemistState: AlchemistPersistSchema.default(null),
     trinketShopState: TrinketShopPersistSchema.default(null),
     equipmentShopState: EquipmentShopPersistSchema.default(null),
+    mysteryVisit: MysteryVisitPersistSchema,
+    corruptionResult: CorruptionResultPersistSchema,
   })
   .transform((data) => normalizeActiveRunData(data))
   .refine((data) => data.contentSystemType !== "labyrinth" || data.labyrinthMap !== null, {

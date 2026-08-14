@@ -33,7 +33,7 @@ export function CollectionScreen({
   bondedCompanions: Record<string, number>;
 }) {
   const totalPages = getCollectionTotalPages(collectionTab);
-  const activePage = collectionPages[collectionTab];
+  const activePage = Math.min(Math.max(0, collectionPages[collectionTab] ?? 0), totalPages - 1);
 
   function handlePageChange(page: number) {
     onPageChange(collectionTab, page);

@@ -26,12 +26,12 @@ import {
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import { createGameplayDraftActions } from "@/features/alchemy/shared/stores/gameplay-state-store";
-import { cardLibrary, computeTalentPoints, type BattleCard } from "@/lib/game-data";
+import { cardLibrary, computeTalentPoints, getStartingDeck, type BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 import { createRunRngState } from "@/lib/run-rng";
-import { createCompleteActiveRunData } from "./active-run-data-fixture";
+import { ANCIENT_ALTAR_MYSTERY_VISIT, createCompleteActiveRunData } from "./active-run-data-fixture";
 
 const syncBattleToRun = createRunSessionCommand(mutateBattleToRun);
 const syncRunMaxHealthFromGearMutation = createRunSessionCommand(mutateRunMaxHealthFromGearMutation);
@@ -137,6 +137,8 @@ describe("initialize", () => {
       alchemistState: null,
       trinketShopState: null,
       equipmentShopState: null,
+      mysteryVisit: null,
+      corruptionResult: null,
       currentScreen: null,
       interruptedFlow: { kind: "none" },
     };
@@ -177,6 +179,8 @@ describe("initialize", () => {
       alchemistState: null,
       trinketShopState: null,
       equipmentShopState: null,
+      mysteryVisit: null,
+      corruptionResult: null,
       currentScreen: null,
       interruptedFlow: { kind: "none" },
     };
@@ -224,6 +228,8 @@ describe("initialize", () => {
       alchemistState: null,
       trinketShopState: null,
       equipmentShopState: null,
+      mysteryVisit: null,
+      corruptionResult: null,
       currentScreen: "shop",
       interruptedFlow: { kind: "none" },
     };
@@ -264,6 +270,8 @@ describe("initialize", () => {
       alchemistState: activeRun.alchemistState,
       trinketShopState: activeRun.trinketShopState,
       equipmentShopState: activeRun.equipmentShopState,
+      mysteryVisit: activeRun.mysteryVisit,
+      corruptionResult: activeRun.corruptionResult,
     });
     expect(snapshot.rng).toEqual(activeRun.rng);
     expect(snapshot.activeCombat).toMatchObject({
@@ -1032,5 +1040,105 @@ describe("session facade API", () => {
     restoreRun(activeRun, {}, {});
 
     expect(getRunSessionStoreView().rewardState.choices).toEqual([]);
+  });
+
+  it("restores a mystery visit including the chosen summary phase", () => {
+    const activeRun: ActiveRunData = {
+      ...snapshotRun(),
+      currentScreen: "mystery",
+      interruptedFlow: { kind: "none" },
+      mysteryVisit: ANCIENT_ALTAR_MYSTERY_VISIT,
+    };
+
+    restoreRun(activeRun, {}, {});
+
+    expect(getNavigationStoreView().screen).toBe("mystery");
+    expect(getRunSessionStoreView().mysteryEvent?.id).toBe("ancient-altar");
+    expect(getRunSessionStoreView().mysteryChosenChoice?.label).toBe("Pray");
+    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(false);
+  });
+
+  it("restores a mid-visit mystery card picker", () => {
+    const [slash] = getStartingDeck("knight");
+    if (!slash) throw new Error("Knight starting deck fixture is incomplete");
+    const activeRun: ActiveRunData = {
+      ...snapshotRun(),
+      currentScreen: "mystery",
+      interruptedFlow: { kind: "none" },
+      mysteryVisit: {
+        eventId: "ancient-altar",
+        chosenChoice: { label: "Browse", effects: [{ kind: "chooseCard" }] },
+        pendingRemoval: true,
+        cardChoices: [slash],
+        grantedTrinketIds: ["bone-charm"],
+        chosenCardId: "slash",
+      },
+    };
+
+    restoreRun(activeRun, {}, {});
+
+    expect(getNavigationStoreView().screen).toBe("mystery");
+    expect(getRunSessionStoreView().mysteryEvent?.id).toBe("ancient-altar");
+    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(true);
+    expect(getRunSessionStoreView().mysteryCardChoices).toEqual([slash]);
+    expect(getRunSessionStoreView().mysteryGrantedTrinketIds).toEqual(["bone-charm"]);
+    expect(getRunSessionStoreView().mysteryChosenCardId).toBe("slash");
+  });
+
+  it("rolls a mystery event for a legacy mystery screen with no visit", () => {
+    const activeRun: ActiveRunData = {
+      ...snapshotRun(),
+      currentScreen: "mystery",
+      interruptedFlow: { kind: "none" },
+      mysteryVisit: null,
+    };
+
+    restoreRun(activeRun, {}, {});
+
+    expect(getNavigationStoreView().screen).toBe("mystery");
+    expect(getRunSessionStoreView().mysteryEvent).not.toBeNull();
+  });
+
+  it("abandons a mystery visit with an unknown event id instead of re-rolling", () => {
+    const activeRun: ActiveRunData = {
+      ...snapshotRun(),
+      currentScreen: "mystery",
+      interruptedFlow: { kind: "none" },
+      mysteryVisit: {
+        ...ANCIENT_ALTAR_MYSTERY_VISIT,
+        eventId: "removed-mystery-event",
+      },
+    };
+
+    restoreRun(activeRun, {}, {});
+
+    expect(getNavigationStoreView().screen).toBe("destination");
+    expect(getRunSessionStoreView().mysteryEvent).toBeNull();
+    expect(getRunSessionStoreView().mysteryChosenChoice).toBeNull();
+  });
+
+  it("restores a corruption result so the altar cannot re-roll", () => {
+    const [slash] = getStartingDeck("knight");
+    if (!slash) throw new Error("Knight starting deck fixture is incomplete");
+    const activeRun: ActiveRunData = {
+      ...snapshotRun(),
+      currentScreen: "corruption",
+      interruptedFlow: { kind: "none" },
+      corruptionResult: {
+        originalCard: slash,
+        corruptedCard: { ...slash, corrupted: true },
+        transformed: false,
+        delta: -1,
+      },
+    };
+
+    restoreRun(activeRun, {}, {});
+
+    expect(getRunSessionStoreView().corruptionResult).toMatchObject({
+      originalCard: { id: slash.id },
+      corruptedCard: { id: slash.id, corrupted: true },
+      transformed: false,
+      delta: -1,
+    });
   });
 });

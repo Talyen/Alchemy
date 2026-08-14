@@ -301,14 +301,11 @@ function MysteryScreenRoute({
   const heldEvent = useHeldWhile(Boolean(r.mysteryEvent), r.mysteryEvent);
 
   useEffect(() => {
-    if (r.mysteryEvent) {
-      autoContinueAttemptedRef.current = false;
-      return;
-    }
+    if (r.mysteryEvent || heldEvent) return;
     if (autoContinueAttemptedRef.current) return;
     autoContinueAttemptedRef.current = true;
     handleContinue();
-  }, [r.mysteryEvent, handleContinue]);
+  }, [r.mysteryEvent, heldEvent, handleContinue]);
 
   if (!heldEvent) {
     return <MysteryScreenShell onOpenMenu={onOpenBattleMenu} />;
@@ -320,6 +317,9 @@ function MysteryScreenRoute({
       runDeck={r.runDeck}
       mysteryCardChoices={r.mysteryCardChoices}
       mysteryGrantedTrinketIds={r.mysteryGrantedTrinketIds}
+      mysteryChosenCardId={r.mysteryChosenCardId}
+      mysteryChosenChoice={r.mysteryChosenChoice}
+      mysteryPendingRemoval={r.mysteryPendingRemoval}
       onChoose={commands.handleChoice}
       onChooseCard={commands.handleChooseCard}
       onRemoveCard={commands.handleRemoveCard}

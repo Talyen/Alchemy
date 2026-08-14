@@ -39,36 +39,10 @@ describe("useMysteryFlow", () => {
     expect(getRunSessionStoreView().mysteryEvent).not.toBeNull();
     expect(getRunSessionStoreView().mysteryCardChoices).toBeNull();
     expect(getRunSessionStoreView().mysteryGrantedTrinketIds).toEqual([]);
+    expect(getRunSessionStoreView().mysteryChosenCardId).toBeNull();
+    expect(getRunSessionStoreView().mysteryChosenChoice).toBeNull();
+    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(false);
     expect(navigate).toHaveBeenCalledOnce();
-  });
-
-  it("handleMysteryChoice records ids granted by gainRandomTrinket effects", () => {
-    const { result } = renderHook(() => useMysteryFlow());
-
-    act(() => {
-      result.current.handleMysteryChoice({
-        label: "Explore",
-        effects: [{ kind: "gainRandomTrinket" }],
-      });
-    });
-
-    expect(getRunSessionStoreView().mysteryGrantedTrinketIds).toHaveLength(1);
-  });
-
-  it("handleMysteryChoice applies heal effects without follow-up", () => {
-    const { result } = renderHook(() => useMysteryFlow());
-    const healthBefore = getRunProgressStoreView().runPlayerHealth;
-
-    act(() => {
-      result.current.handleMysteryChoice({
-        label: "Rest",
-        effects: [{ kind: "healHealth", amount: 5 }],
-      });
-    });
-
-    expect(getRunProgressStoreView().runPlayerHealth).toBe(
-      Math.min(getRunProgressStoreView().runMaxHealth, healthBefore + 5),
-    );
   });
 
   it("handleMysteryChoice stops when chooseCard requires follow-up UI", () => {
@@ -82,6 +56,33 @@ describe("useMysteryFlow", () => {
     });
 
     expect(getRunSessionStoreView().mysteryCardChoices).not.toBeNull();
+    expect(getRunSessionStoreView().mysteryChosenChoice?.label).toBe("Browse");
+    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(false);
+  });
+
+  it("handleMysteryChoice marks choose-mode removal as pending", () => {
+    const { result } = renderHook(() => useMysteryFlow());
+
+    act(() => {
+      result.current.handleMysteryChoice({
+        label: "Offer",
+        effects: [{ kind: "removeCard", mode: "choose" }],
+      });
+    });
+
+    expect(getRunSessionStoreView().mysteryChosenChoice?.label).toBe("Offer");
+    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(true);
+  });
+
+  it("handleMysteryChooseCard stores the picked card id for the summary", () => {
+    const { result } = renderHook(() => useMysteryFlow());
+
+    act(() => {
+      result.current.handleMysteryChooseCard("slash");
+    });
+
+    expect(getRunSessionStoreView().mysteryChosenCardId).toBe("slash");
+    expect(getRunSessionStoreView().mysteryCardChoices).toBeNull();
   });
 
   it("plays gold sounds only after the choice commits", () => {

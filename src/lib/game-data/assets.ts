@@ -49,20 +49,9 @@ function mysteryEventArtKey(path: string): string {
   return filename.replace(/^mystery-/, "").replace(/\.webp$/, "");
 }
 
-export const mysteryEventArt: Record<string, string> = {
-  ...Object.fromEntries(
-    Object.entries(mysteryArtModules)
-      .filter(([path]) => !path.includes("placeholder"))
-      .map(([path, url]) => [mysteryEventArtKey(path), url as string]),
-  ),
-  "necromancers-offer": assetRefs.necromancer,
-  "medicinal-herb-garden": assetRefs.herbGarden,
-  "crystal-garden": assetRefs.crystalGarden,
-  "hunters-lodge": assetRefs.huntersLodge,
-  "roadside-censer": assetRefs.brassCenser,
-  "the-phoenix": assetRefs.phoenixFeather,
-  "the-wolf": assetRefs.wolfCompanion,
-};
+export const mysteryEventArt: Record<string, string> = Object.fromEntries(
+  Object.entries(mysteryArtModules).map(([path, url]) => [mysteryEventArtKey(path), url as string]),
+);
 
 const assetModules = import.meta.glob("@/assets/optimized/*.webp", {
   eager: true,

@@ -232,8 +232,20 @@ export const setEquipmentShopState = bindDraftAction((s) => sessionActions(s).se
 // ---------------------------------------------------------------------------
 
 export const setMysteryEvent = bindDraftAction((s) => sessionActions(s).setMysteryEvent);
+export const setMysteryChosenChoice = bindDraftAction((s) => sessionActions(s).setMysteryChosenChoice);
+export const setMysteryPendingRemoval = bindDraftAction((s) => sessionActions(s).setMysteryPendingRemoval);
 export const setMysteryCardChoices = bindDraftAction((s) => sessionActions(s).setMysteryCardChoices);
 export const setMysteryGrantedTrinketIds = bindDraftAction((s) => sessionActions(s).setMysteryGrantedTrinketIds);
+export const setMysteryChosenCardId = bindDraftAction((s) => sessionActions(s).setMysteryChosenCardId);
+
+export function clearMysteryVisitState(draft: GameplayDraft): void {
+  setMysteryEvent(draft, null);
+  setMysteryChosenChoice(draft, null);
+  setMysteryPendingRemoval(draft, false);
+  setMysteryCardChoices(draft, null);
+  setMysteryGrantedTrinketIds(draft, []);
+  setMysteryChosenCardId(draft, null);
+}
 
 // ---------------------------------------------------------------------------
 // Labyrinth

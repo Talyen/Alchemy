@@ -25,7 +25,7 @@ export {
   pileDrawArt,
   theCampaign,
   theLabyrinth,
-  theWildwoods,
+  wildwoodDraft,
   trinketLibrary,
 } from "@/lib/game-data";
 

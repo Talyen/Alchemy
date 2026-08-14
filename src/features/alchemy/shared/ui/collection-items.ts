@@ -1,5 +1,5 @@
 // Pure collection item shaping for cards, enemies, and trinkets.
-// Depends on game-data libraries, card description formatting, and collection page size tuning.
+// Depends on game-data libraries and collection page size tuning.
 // Used by collection UI layout and tests without owning rendering concerns.
 import { COLLECTION_PAGE_SIZE, BESTIARY_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import {
@@ -9,9 +9,9 @@ import {
   type BestiaryEntry,
   type TrinketEntry,
 } from "@/features/alchemy/shared/config/game-data-catalog";
+import type { BattleCard } from "@/lib/game-data";
 
 import type { CollectionTab } from "../types";
-import { getEffectiveCardDescriptionLines } from "../utils/card-description";
 
 const COLLECTION_ITEMS_CONFIG = {
   pageSize: COLLECTION_PAGE_SIZE,
@@ -31,6 +31,9 @@ export interface CollectionTileItem {
   hoverScope: string;
   frameType: "card" | "bestiary" | "trinket";
   enemyEntry?: BestiaryEntry;
+  /** Discovered cards: format description lines in the hover popup, not while paging. */
+  card?: BattleCard;
+  companionBondLevels?: Record<string, number>;
 }
 
 function getCollectionPageSize(tab: CollectionTab): number {
@@ -66,7 +69,9 @@ export function getCollectionPageItems({
   page: number;
 }) {
   const pageSize = getCollectionPageSize(collectionTab);
-  const start = page * pageSize;
+  const totalPages = getCollectionTotalPages(collectionTab);
+  const safePage = Math.min(Math.max(0, page), totalPages - 1);
+  const start = safePage * pageSize;
   if (collectionTab === "cards") {
     return getCardItems(discoveredCardIds, bondedCompanions, start, pageSize);
   }
@@ -94,18 +99,16 @@ function shapeCardItem(
   discovered: boolean,
   bondedCompanions: Record<string, number>,
 ): CollectionTileItem {
-  const descriptionLines = discovered
-    ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions })
-    : [COLLECTION_ITEMS_CONFIG.hiddenCardDescription];
   return {
     id: card.id,
     title: discovered ? card.title : COLLECTION_ITEMS_CONFIG.hiddenTitle,
     subtitle: undefined,
-    descriptionLines,
+    descriptionLines: discovered ? [] : [COLLECTION_ITEMS_CONFIG.hiddenCardDescription],
     art: card.art,
     discovered,
     hoverScope: "collection-card",
     frameType: "card",
+    ...(discovered ? { card, companionBondLevels: bondedCompanions } : {}),
   };
 }
 

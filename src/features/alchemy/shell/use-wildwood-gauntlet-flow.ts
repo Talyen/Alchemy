@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { readRunSession, readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
   setRunDeck,
   setRunPlayerHealth,
@@ -41,7 +41,6 @@ interface UseWildwoodGauntletFlowOptions {
 }
 
 export function useWildwoodGauntletFlow({
-  run,
   navigateTo,
   onStartBossById,
   setHasActiveBattle,
@@ -172,28 +171,40 @@ export function useWildwoodGauntletFlow({
 
   const handleWildwoodRewardComplete = useCallback(
     (onRenderedScreenCommit?: () => void) => {
-      const state = readRunSession().wildwoodDraft;
-      if (!state) {
-        // settleClaimSurface already releases; fall back when no commit callback was passed.
-        if (onRenderedScreenCommit) onRenderedScreenCommit();
-        else dispatchRunSessionCommand((draft) => releaseRewardClaim(draft));
-        return;
-      }
-      if (canOfferWildwoodRemoval(readActiveRun().runDeck.length)) {
-        dispatchRunSessionCommand((draft) =>
-          setWildwoodDraft(draft, {
-            ...state,
-            phase: "removal",
-            rewardType: null,
-            rewardChoiceIds: [],
-            rewardGearChoices: [],
-            selectedRewardId: null,
-          }),
-        );
-        navigateTo(CONSTANTS.SCREENS.WILDWOOD_REMOVAL, onRenderedScreenCommit);
-        return;
-      }
-      startNextWildwoodBoss(onRenderedScreenCommit);
+      dispatchRunSessionCommand(
+        (draft) => {
+          const state = draft.session.wildwoodDraft;
+          if (!state) {
+            if (!onRenderedScreenCommit) releaseRewardClaim(draft);
+            return "empty" as const;
+          }
+          if (canOfferWildwoodRemoval(draft.run.activeRun.runDeck.length)) {
+            setWildwoodDraft(draft, {
+              ...state,
+              phase: "removal",
+              rewardType: null,
+              rewardChoiceIds: [],
+              rewardGearChoices: [],
+              selectedRewardId: null,
+            });
+            return "removal" as const;
+          }
+          return "next" as const;
+        },
+        {
+          afterCommit: (result) => {
+            if (result === "empty") {
+              onRenderedScreenCommit?.();
+              return;
+            }
+            if (result === "removal") {
+              navigateTo(CONSTANTS.SCREENS.WILDWOOD_REMOVAL, onRenderedScreenCommit);
+              return;
+            }
+            startNextWildwoodBoss(onRenderedScreenCommit);
+          },
+        },
+      );
     },
     [navigateTo, startNextWildwoodBoss],
   );
@@ -212,15 +223,14 @@ export function useWildwoodGauntletFlow({
     startNextWildwoodBoss();
   }, [startNextWildwoodBoss]);
 
-  const selectRewardChoice = useCallback(
-    (id: string) => {
-      const state = readRunSession().wildwoodDraft;
-      if (run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD && state) {
-        dispatchRunSessionCommand((draft) => setWildwoodDraft(draft, { ...state, selectedRewardId: id }));
-      }
-    },
-    [run.contentSystemType],
-  );
+  const selectRewardChoice = useCallback((id: string) => {
+    dispatchRunSessionCommand((draft) => {
+      if (draft.run.activeRun.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) return;
+      const state = draft.session.wildwoodDraft;
+      if (!state) return;
+      setWildwoodDraft(draft, { ...state, selectedRewardId: id });
+    });
+  }, []);
 
   const commitWildwoodVictory = useCallback((draft: GameplayDraft, result: VictoryRewardsResult) => {
     const wildwood = draft.session.wildwoodDraft;

@@ -18,4 +18,11 @@ export class RewardPage {
     await expect(this.addRewardBtn).toBeEnabled({ timeout: 2000 });
     await this.addRewardBtn.click();
   }
+
+  async claimWithConfirmationGate() {
+    await expect(this.addRewardBtn).toBeDisabled();
+    await this.selectFirstReward();
+    await expect(this.addRewardBtn).toBeEnabled();
+    await this.addRewardBtn.click();
+  }
 }

@@ -41,7 +41,7 @@ import {
   normalEnemyBg,
   theCampaign,
   theLabyrinth,
-  theWildwoods,
+  wildwoodDraft,
   type KeywordId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 
@@ -86,7 +86,7 @@ export const gameModeMeta: Record<string, { title: string; description: string; 
     title: "Wildwood Draft",
     description: "Draft a deck and survive an endless boss gauntlet",
     icon: PawPrint,
-    art: theWildwoods,
+    art: wildwoodDraft,
   },
 };
 

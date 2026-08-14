@@ -6,12 +6,15 @@ import {
   createEmptyRewardState,
   hydrateAlchemistState,
   hydrateEquipmentShopState,
+  emptyHydratedMysteryVisit,
+  hydrateMysteryVisit,
   hydrateShopState,
   hydrateTrinketShopState,
   restorePendingRewardBundle,
   restoreWildwoodRewardState,
   serializeAlchemistState,
   serializeEquipmentShopState,
+  serializeMysteryVisit,
   serializePendingReward,
   serializeShopState,
   serializeTrinketShopState,
@@ -23,6 +26,7 @@ import {
   type PersistedAlchemistState,
   type PersistedBattleTransition,
   type PersistedEquipmentShopState,
+  type PersistedMysteryVisit,
   type PersistedPendingReward,
   type PersistedShopState,
   type PersistedTrinketShopState,
@@ -30,8 +34,10 @@ import {
   type ShopState,
   type TrinketShopState,
 } from "@/lib/active-run-session";
+import type { CorruptionResult } from "@/lib/corruption";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
+import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { filterValidDestinations, type Screen } from "@/lib/routing";
@@ -50,6 +56,13 @@ export interface DecodedRunResumeSession {
   alchemistState: AlchemistState | null;
   trinketShopState: TrinketShopState | null;
   equipmentShopState: EquipmentShopState | null;
+  mysteryEvent: MysteryEvent | null;
+  mysteryChosenChoice: MysteryChoice | null;
+  mysteryPendingRemoval: boolean;
+  mysteryCardChoices: BattleCard[] | null;
+  mysteryGrantedTrinketIds: string[];
+  mysteryChosenCardId: string | null;
+  corruptionResult: CorruptionResult | null;
 }
 
 export interface DecodedRunResumeSnapshot {
@@ -267,6 +280,8 @@ interface EncodeResumeFields {
   alchemistState: PersistedAlchemistState | null;
   trinketShopState: PersistedTrinketShopState | null;
   equipmentShopState: PersistedEquipmentShopState | null;
+  mysteryVisit: PersistedMysteryVisit | null;
+  corruptionResult: CorruptionResult | null;
 }
 
 /** Encode the aggregate run read model directly into persisted ActiveRunData. */
@@ -309,6 +324,8 @@ function toActiveRunData(source: RunSession, resume: EncodeResumeFields): Active
     alchemistState: resume.alchemistState,
     trinketShopState: resume.trinketShopState,
     equipmentShopState: resume.equipmentShopState,
+    mysteryVisit: resume.mysteryVisit,
+    corruptionResult: resume.corruptionResult,
   };
 }
 
@@ -334,7 +351,21 @@ function encodePersistedShops(
   };
 }
 
-/** Encode one aggregate run read model for both autosave and explicit save flows. */
+function encodeMysteryVisit(
+  session: RunSession["session"],
+  currentScreen: Screen | null | undefined,
+): PersistedMysteryVisit | null {
+  if (currentScreen !== "mystery") return null;
+  return serializeMysteryVisit(session);
+}
+
+function encodeCorruptionResult(
+  session: RunSession["session"],
+  currentScreen: Screen | null | undefined,
+): CorruptionResult | null {
+  if (currentScreen !== "corruption" && !session.corruptionResult) return null;
+  return session.corruptionResult;
+}
 export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
   const requestedScreen = screen ?? source.screen;
   const currentScreen = resolveEncodeScreen(requestedScreen, source.session) ?? requestedScreen;
@@ -342,6 +373,8 @@ export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): Ac
     currentScreen,
     interruptedFlow: encodeInterruptedFlow(source.session, currentScreen),
     ...encodePersistedShops(source.session, currentScreen),
+    mysteryVisit: encodeMysteryVisit(source.session, currentScreen),
+    corruptionResult: encodeCorruptionResult(source.session, currentScreen),
   });
 }
 
@@ -367,6 +400,8 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
     screen = claim.screen;
   }
 
+  const mysteryVisit = screen === "mystery" ? hydrateMysteryVisit(activeRun.mysteryVisit) : emptyHydratedMysteryVisit();
+
   return {
     progress: createInitialActiveRunFields(activeRun),
     screen,
@@ -383,6 +418,8 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
       alchemistState: activeRun.alchemistState ? hydrateAlchemistState(activeRun.alchemistState) : null,
       trinketShopState: activeRun.trinketShopState ? hydrateTrinketShopState(activeRun.trinketShopState) : null,
       equipmentShopState: activeRun.equipmentShopState ? hydrateEquipmentShopState(activeRun.equipmentShopState) : null,
+      ...mysteryVisit,
+      corruptionResult: activeRun.corruptionResult,
     },
   };
 }

@@ -39,6 +39,8 @@ export interface SessionActions {
   setTrinketShopState: (action: TrinketShopState | ((prev: TrinketShopState) => TrinketShopState)) => void;
   setEquipmentShopState: (action: EquipmentShopState | ((prev: EquipmentShopState) => EquipmentShopState)) => void;
   setMysteryEvent: (event: RunSessionFields["mysteryEvent"]) => void;
+  setMysteryChosenChoice: (choice: RunSessionFields["mysteryChosenChoice"]) => void;
+  setMysteryPendingRemoval: (pending: RunSessionFields["mysteryPendingRemoval"]) => void;
   setMysteryCardChoices: (
     choices:
       | RunSessionFields["mysteryCardChoices"]
@@ -49,6 +51,7 @@ export interface SessionActions {
       | RunSessionFields["mysteryGrantedTrinketIds"]
       | ((prev: RunSessionFields["mysteryGrantedTrinketIds"]) => RunSessionFields["mysteryGrantedTrinketIds"]),
   ) => void;
+  setMysteryChosenCardId: (id: RunSessionFields["mysteryChosenCardId"]) => void;
   clearTransientSession: () => void;
 
   /**
@@ -111,8 +114,11 @@ export function defineSessionActions(set: ImmerSet<RunSessionFields>): SessionAc
     setTrinketShopState: setField("trinketShopState"),
     setEquipmentShopState: setField("equipmentShopState"),
     setMysteryEvent: setField("mysteryEvent"),
+    setMysteryChosenChoice: setField("mysteryChosenChoice"),
+    setMysteryPendingRemoval: setField("mysteryPendingRemoval"),
     setMysteryCardChoices: setField("mysteryCardChoices"),
     setMysteryGrantedTrinketIds: setField("mysteryGrantedTrinketIds"),
+    setMysteryChosenCardId: setField("mysteryChosenCardId"),
 
     clearTransientSession: () =>
       set((state) => {

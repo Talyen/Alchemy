@@ -1,6 +1,8 @@
 // Persisted mid-run save contracts shared by validation, storage, and controllers.
 import type { BattleState } from "@/lib/battle";
+import type { CorruptionResult } from "@/lib/corruption";
 import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game-data";
+import type { MysteryChoice } from "@/lib/mystery";
 import type {
   ContentSystemId,
   EncounterCombatTraitId,
@@ -44,6 +46,15 @@ export interface PersistedEquipmentShopState {
   refreshesLeft: number;
   firstPurchaseUsed: boolean;
   purchasedSlotKeys: string[];
+}
+
+export interface PersistedMysteryVisit {
+  eventId: string;
+  chosenChoice: MysteryChoice | null;
+  pendingRemoval: boolean;
+  cardChoices: BattleCard[] | null;
+  grantedTrinketIds: string[];
+  chosenCardId: string | null;
 }
 
 export interface LabyrinthNodePosition {
@@ -101,4 +112,6 @@ export interface ActiveRunData {
   alchemistState: PersistedAlchemistState | null;
   trinketShopState: PersistedTrinketShopState | null;
   equipmentShopState: PersistedEquipmentShopState | null;
+  mysteryVisit: PersistedMysteryVisit | null;
+  corruptionResult: CorruptionResult | null;
 }

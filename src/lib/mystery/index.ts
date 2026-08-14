@@ -1,2 +1,2 @@
 export type { MysteryChoice, MysteryEffect, MysteryEvent } from "./types";
-export { mysteryPool, pickMysteryEvent } from "./pool";
+export { findMysteryEvent, mysteryPool, pickMysteryEvent } from "./pool";

@@ -1,7 +1,7 @@
 // Single interactive collection tile for card, bestiary, and boon entries.
 // Depends on tile item data, card flipping, tooltip components, audio, and tilt utilities.
 // Used by CollectionGrid to keep grid layout separate from tile behavior.
-import { useRef, useState, type RefObject } from "react";
+import { memo, useState, type RefObject } from "react";
 
 import { playCardSound, playEnemyAttack } from "@/lib/audio";
 import { cardBack } from "@/lib/game-data";
@@ -14,35 +14,47 @@ import {
   collectionGridBestiaryWidthClass,
   collectionGridTrinketWidthClass,
   landscapeArtImageClass,
-  squareArtImageClass,
+  trinketArtImageClass,
 } from "../config";
+import { getEffectiveCardDescriptionLines } from "../utils/card-description";
 import { CardFlip } from "./card-flip";
 import { DetailPopup } from "./card-popup";
 import type { CollectionTileItem } from "./collection-items";
 import { EnemyTooltip } from "./enemy-tooltip";
 import { TiltSurface } from "./tilt-surface";
 import { useInteractiveCard } from "./use-interactive-card";
+import { useTileHoverPopup } from "./use-tile-hover-popup";
 
 interface CompendiumTileProps {
   item: CollectionTileItem;
 }
 
-export function CompendiumTile({ item }: CompendiumTileProps) {
-  const tileRef = useRef<HTMLDivElement>(null);
+export const CompendiumTile = memo(function CompendiumTile({ item }: CompendiumTileProps) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
     item.hoverScope,
     item.id,
   );
   const [flipped, setFlipped] = useState(false);
+  const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useTileHoverPopup({
+    interactive: true,
+    isHovered,
+    onHoverStart,
+    onHoverEnd,
+  });
 
   return (
-    <div ref={tileRef} className="relative h-full w-full" onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
-      <CollectionTilePopup item={item} hovered={isHovered} triggerRef={tileRef} />
+    <div
+      ref={wrapperRef}
+      className="relative h-full w-full"
+      onMouseEnter={handleHoverStart}
+      onMouseLeave={handleMouseLeave}
+    >
+      {showPopup ? <CollectionTilePopup item={item} hovered={isHovered} triggerRef={wrapperRef} /> : null}
       <TiltSurface
         as="button"
         ariaLabel={item.discovered ? `Inspect ${item.title}` : "Inspect Undiscovered Entry"}
-        onFocus={onHoverStart}
-        onBlur={onHoverEnd}
+        onFocus={handleHoverStart}
+        onBlur={handleBlur}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
         className={cn(
@@ -68,7 +80,7 @@ export function CompendiumTile({ item }: CompendiumTileProps) {
       </TiltSurface>
     </div>
   );
-}
+});
 
 function CollectionTilePopup({
   item,
@@ -84,12 +96,16 @@ function CollectionTilePopup({
       <EnemyTooltip entry={item.enemyEntry} discovered={item.discovered} triggerRef={triggerRef} visible={hovered} />
     );
   }
+  const descriptionLines =
+    item.card && hovered
+      ? getEffectiveCardDescriptionLines(item.card, { companionBondLevels: item.companionBondLevels ?? {} })
+      : item.descriptionLines;
   return (
     <DetailPopup
       idPrefix={item.id}
       title={item.title}
       subtitle={item.subtitle}
-      descriptionLines={item.descriptionLines}
+      descriptionLines={descriptionLines}
       triggerRef={triggerRef}
       visible={hovered}
     />
@@ -113,7 +129,7 @@ function CollectionTileMedia({ item, flipped }: { item: CollectionTileItem; flip
       item={item}
       className={cn(
         item.frameType === "trinket"
-          ? squareArtImageClass
+          ? trinketArtImageClass
           : item.frameType === "bestiary"
             ? landscapeArtImageClass
             : cardArtImageClass,
@@ -132,7 +148,6 @@ function TileImage({ item, className }: { item: CollectionTileItem; className: s
         className,
         item.discovered ? "opacity-100" : "opacity-45 grayscale",
       )}
-      loading="eager"
     />
   );
 }

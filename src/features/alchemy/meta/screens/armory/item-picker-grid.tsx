@@ -17,6 +17,7 @@ import {
   collectionGridGapXClass,
   collectionGridTileWidthClass,
   gearArtAspectClass,
+  gearArtFillClass,
 } from "../../../shared/config";
 import { GearDetailPopup } from "../../../shared/ui/gear-detail-popup";
 import { InteractiveArtTile } from "../../../shared/ui/interactive-art-tile";
@@ -115,7 +116,7 @@ export function ItemPickerGrid({
                     interactive
                     ariaLabel={ariaLabel}
                     className={cn(cardSurfaceClass, collectionGridTileWidthClass, gearArtAspectClass)}
-                    imageClassName="absolute inset-0 h-full w-full rounded-shell-hero object-cover"
+                    imageClassName={gearArtFillClass}
                     onClick={() => {
                       if (!editable) return;
                       if (salvageable) {

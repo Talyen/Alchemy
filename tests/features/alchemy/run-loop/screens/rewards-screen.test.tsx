@@ -111,4 +111,18 @@ describe("RewardsScreen", () => {
 
     expect(screen.getByRole("button", { name: "Open rewards menu" })).toBeTruthy();
   });
+
+  it("keeps Add Card disabled until a reward is selected", () => {
+    render(
+      <RewardsScreen
+        rewardState={getRunSessionStoreView().rewardState}
+        onAddReward={vi.fn()}
+        onSkip={vi.fn()}
+        onSelectReward={vi.fn()}
+        onOpenMenu={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /add card/i })).toHaveProperty("disabled", true);
+  });
 });

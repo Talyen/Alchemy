@@ -13,14 +13,18 @@ const boneCharm: TrinketEntry = {
   art: "bone-charm-art",
 };
 
-function renderSummary(effects: MysteryChoice["effects"], grantedTrinketIds: string[]) {
+function renderSummary(
+  effects: MysteryChoice["effects"],
+  grantedTrinketIds: string[],
+  chosenCardId: string | null = null,
+) {
   return render(
     <MysteryRewardSummary
       choice={{ label: "Explore the Crypt", effects }}
-      runDeck={[]}
       findCard={() => undefined}
       findTrinket={(id) => (id === boneCharm.id ? boneCharm : undefined)}
       grantedTrinketIds={grantedTrinketIds}
+      chosenCardId={chosenCardId}
       onContinue={vi.fn()}
     />,
   );
@@ -56,5 +60,28 @@ describe("MysteryRewardSummary", () => {
 
     expect(screen.getByText("Gained a random trinket for this run")).toBeTruthy();
     expect(screen.queryByText("Bone Charm")).toBeNull();
+  });
+
+  it("shows the chosen card tile for chooseCard", () => {
+    const slash = {
+      id: "slash",
+      title: "Slash",
+      descriptionLines: ["Deal 6 damage."],
+      art: "slash-art",
+      cost: 1,
+      effects: [],
+    };
+    render(
+      <MysteryRewardSummary
+        choice={{ label: "Browse", effects: [{ kind: "chooseCard" }] }}
+        findCard={(id) => (id === slash.id ? slash : undefined)}
+        findTrinket={() => undefined}
+        grantedTrinketIds={[]}
+        chosenCardId="slash"
+        onContinue={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Slash")).toBeTruthy();
   });
 });

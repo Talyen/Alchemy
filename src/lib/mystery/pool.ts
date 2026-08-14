@@ -233,6 +233,10 @@ export const mysteryPool: MysteryEvent[] = [
   ),
 ];
 
+export function findMysteryEvent(eventId: string): MysteryEvent | null {
+  return mysteryPool.find((event) => event.id === eventId) ?? null;
+}
+
 export function pickMysteryEvent(rng: () => number): MysteryEvent {
   const event = pickRandom(mysteryPool, rng);
   if (!event) throw new Error("mysteryPool is empty");

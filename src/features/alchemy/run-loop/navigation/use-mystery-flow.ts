@@ -13,6 +13,10 @@ import {
   setMysteryCardChoices,
   setMysteryEvent,
   setMysteryGrantedTrinketIds,
+  setMysteryChosenCardId,
+  setMysteryChosenChoice,
+  setMysteryPendingRemoval,
+  clearMysteryVisitState,
   setRunDeck,
   setRunGold,
   setRunPlayerHealth,
@@ -27,9 +31,8 @@ export function useMysteryFlow() {
   function beginMysteryEvent(navigateToMystery: () => void) {
     dispatchRunSessionCommand(
       (draft) => {
+        clearMysteryVisitState(draft);
         setMysteryEvent(draft, pickMysteryEvent(createDraftRunRandomSource(draft, "events")));
-        setMysteryCardChoices(draft, null);
-        setMysteryGrantedTrinketIds(draft, []);
       },
       { afterCommit: navigateToMystery },
     );
@@ -38,6 +41,12 @@ export function useMysteryFlow() {
   function handleMysteryChoice(choice: MysteryChoice) {
     dispatchRunSessionCommand(
       (draft) => {
+        setMysteryChosenChoice(draft, choice);
+        setMysteryPendingRemoval(
+          draft,
+          choice.effects.some((effect) => effect.kind === "removeCard" && effect.mode === "choose") &&
+            !choice.effects.some((effect) => effect.kind === "chooseCard"),
+        );
         const runStore = draft.run.activeRun;
         const goldSounds: Array<"gain" | "spend"> = [];
 
@@ -79,6 +88,7 @@ export function useMysteryFlow() {
       const card = cardLibrary.find((c) => c.id === cardId);
       if (card) {
         appendCardToRunWithDiscovery(draft, card);
+        setMysteryChosenCardId(draft, cardId);
       }
       setMysteryCardChoices(draft, null);
     });
@@ -87,6 +97,7 @@ export function useMysteryFlow() {
   function handleMysteryRemoveCard(index: number) {
     dispatchRunSessionCommand((draft) => {
       setRunDeck(draft, (p) => p.filter((_, i) => i !== index));
+      setMysteryPendingRemoval(draft, false);
     });
   }
 

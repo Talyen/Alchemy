@@ -16,6 +16,13 @@ type SessionStore = Pick<
   | "setAlchemistState"
   | "setTrinketShopState"
   | "setEquipmentShopState"
+  | "setMysteryEvent"
+  | "setMysteryChosenChoice"
+  | "setMysteryPendingRemoval"
+  | "setMysteryCardChoices"
+  | "setMysteryGrantedTrinketIds"
+  | "setMysteryChosenCardId"
+  | "setCorruptionResult"
 >;
 
 export function restoreRunSession(store: SessionStore, decoded: DecodedRunResumeSession): void {
@@ -30,4 +37,11 @@ export function restoreRunSession(store: SessionStore, decoded: DecodedRunResume
   if (decoded.alchemistState) store.setAlchemistState(decoded.alchemistState);
   if (decoded.trinketShopState) store.setTrinketShopState(decoded.trinketShopState);
   if (decoded.equipmentShopState) store.setEquipmentShopState(decoded.equipmentShopState);
+  store.setMysteryEvent(decoded.mysteryEvent);
+  store.setMysteryChosenChoice(decoded.mysteryChosenChoice);
+  store.setMysteryPendingRemoval(decoded.mysteryPendingRemoval);
+  store.setMysteryCardChoices(decoded.mysteryCardChoices);
+  store.setMysteryGrantedTrinketIds(decoded.mysteryGrantedTrinketIds);
+  store.setMysteryChosenCardId(decoded.mysteryChosenCardId);
+  store.setCorruptionResult(decoded.corruptionResult);
 }

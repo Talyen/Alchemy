@@ -59,7 +59,7 @@ export function CollectionGrid({
         : collectionCardGridClass;
   const fillerClass =
     collectionTab === "trinkets"
-      ? cn(collectionGridTrinketWidthClass, "aspect-square")
+      ? cn(collectionGridTrinketWidthClass, "aspect-[3/4]")
       : collectionTab === "bestiary"
         ? cn(collectionGridBestiaryWidthClass, "aspect-[4/3]")
         : cn(collectionCardGridTileWidthClass, "aspect-[3/4]");

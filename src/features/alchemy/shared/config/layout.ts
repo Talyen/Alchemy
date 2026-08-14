@@ -61,10 +61,13 @@ export const chooserHeroRowShellWidthClass = "max-w-[min(100%,calc(4*25.5cqh+3*2
 // same tactile fantasy material treatment.
 export const cardSurfaceClass = "relative overflow-hidden rounded-shell-hero bg-black";
 export const cardArtImageClass = "rounded-shell-hero aspect-[3/4] object-cover";
+export const trinketArtImageClass = cardArtImageClass;
+export const trinketArtTileClass = `${cardSurfaceClass} ${collectionTileWidthClass} aspect-[3/4]`;
+export const trinketArtFillClass = "absolute inset-0 h-full w-full";
 export const landscapeArtImageClass = "rounded-shell-hero aspect-[4/3] object-cover";
 /** Shop / reward / collection gear frames — portrait art, not grid footprint. */
 export const gearArtAspectClass = "aspect-[3/4]";
-export const squareArtImageClass = "rounded-shell-hero aspect-square object-cover";
+export const gearArtFillClass = "absolute inset-0 h-full w-full rounded-shell-hero object-cover";
 export const staticCardTransform = "translate3d(0px, 0px, 0px)";
 export const popupBaseClassName =
   "absolute left-1/2 z-50 rounded-shell-tooltip border border-border bg-card px-3 py-3 text-left";

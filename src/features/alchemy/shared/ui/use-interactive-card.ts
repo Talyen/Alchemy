@@ -2,16 +2,21 @@
 // Reads hoveredCardId and shimmerState from ui-store,
 // providing ready-to-use bindings for card buttons and tilt surfaces.
 import { useCallback } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useUiStore } from "../stores/ui-store";
 import { getHoverId } from "../utils";
 
 export function useInteractiveCard(scope: string, itemId: string) {
   const hoverId = getHoverId(scope, itemId);
-  const isHovered = useUiStore((s) => s.hoveredCardId === hoverId);
   const setHoveredCardId = useUiStore((s) => s.setHoveredCardId);
-  const shimmerActive = useUiStore((s) => s.shimmerState?.cardId === hoverId);
-  const shimmerToken = useUiStore((s) => (s.shimmerState?.cardId === hoverId ? s.shimmerState.token : undefined));
   const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
+  const { isHovered, shimmerActive, shimmerToken } = useUiStore(
+    useShallow((s) => ({
+      isHovered: s.hoveredCardId === hoverId,
+      shimmerActive: s.shimmerState?.cardId === hoverId,
+      shimmerToken: s.shimmerState?.cardId === hoverId ? s.shimmerState.token : undefined,
+    })),
+  );
 
   const onHoverStart = useCallback(() => {
     setHoveredCardId(hoverId);

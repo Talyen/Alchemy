@@ -5,6 +5,7 @@ export * from "./e2e/battle-fixtures";
 export * from "./e2e/battle-setup";
 export * from "./e2e/cards";
 export * from "./e2e/errors";
+export * from "./e2e/layout-assertions";
 export * from "./e2e/navigation";
 export * from "./e2e/rng";
 export * from "./e2e/run-end";

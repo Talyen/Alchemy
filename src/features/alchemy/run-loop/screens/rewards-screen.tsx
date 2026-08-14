@@ -10,8 +10,16 @@ import { InteractiveArtTile } from "../../shared/ui/interactive-art-tile";
 import { SelectableChoiceCard } from "../../shared/ui/selectable-choice-card";
 import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { FadeSlot } from "../../shared/ui/fade-slot";
-import { cardSurfaceClass, collectionTileWidthClass, sectionTitleClass } from "@/features/alchemy/shared/config";
-import { gearInstanceAspectClass } from "@/features/alchemy/shared/ui/gear-aspect";
+import {
+  cardSurfaceClass,
+  collectionTileWidthClass,
+  gearArtAspectClass,
+  gearArtFillClass,
+  sectionTitleClass,
+  trinketArtFillClass,
+  trinketArtImageClass,
+  trinketArtTileClass,
+} from "@/features/alchemy/shared/config";
 import {
   getRewardChoiceId,
   type RewardState,
@@ -90,8 +98,8 @@ function TrinketRewardButton({
       interactionKey="reward"
       title={trinket.title}
       art={trinket.art}
-      className={cn(cardSurfaceClass, collectionTileWidthClass)}
-      imageClassName="block aspect-square w-full rounded-shell-hero"
+      className={trinketArtTileClass}
+      imageClassName={cn(trinketArtFillClass, trinketArtImageClass)}
       selected={selected}
       onClick={onClick}
       ariaLabel={`Select ${trinket.title}`}
@@ -129,8 +137,8 @@ function GearRewardButton({
       interactionKey="reward"
       title={title}
       art={art}
-      className={cn(cardSurfaceClass, collectionTileWidthClass, gearInstanceAspectClass(definition))}
-      imageClassName="block w-full rounded-shell-hero"
+      className={cn(cardSurfaceClass, collectionTileWidthClass, gearArtAspectClass)}
+      imageClassName={gearArtFillClass}
       selected={selected}
       onClick={onClick}
       ariaLabel={`Select ${title}`}

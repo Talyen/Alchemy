@@ -27,6 +27,39 @@ describe("collection item helpers", () => {
     expect(item.descriptionLines).toEqual(["Discover this card during a run to reveal it here."]);
   });
 
+  it("defers discovered card description lines until hover formatting", () => {
+    const [item] = getCollectionPageItems({
+      collectionTab: "cards",
+      discoveredCardIds: cardLibrary.map((card) => card.id),
+      encounteredEnemyIds: [],
+      discoveredTrinketIds: [],
+      page: 0,
+    });
+
+    expect(item.descriptionLines).toEqual([]);
+    expect(item.card?.id).toBe(item.id);
+  });
+
+  it("clamps collection pages past the catalog to the last page", () => {
+    const totalPages = getCollectionTotalPages("cards");
+    const overflow = getCollectionPageItems({
+      collectionTab: "cards",
+      discoveredCardIds: [],
+      encounteredEnemyIds: [],
+      discoveredTrinketIds: [],
+      page: totalPages + 4,
+    });
+    const last = getCollectionPageItems({
+      collectionTab: "cards",
+      discoveredCardIds: [],
+      encounteredEnemyIds: [],
+      discoveredTrinketIds: [],
+      page: totalPages - 1,
+    });
+
+    expect(overflow.map((item) => item.id)).toEqual(last.map((item) => item.id));
+  });
+
   it("fills incomplete collection pages to the configured page size", () => {
     expect(getCollectionFillerCount(0, "cards")).toBe(COLLECTION_PAGE_SIZE);
     expect(getCollectionFillerCount(COLLECTION_PAGE_SIZE - 1, "cards")).toBe(1);

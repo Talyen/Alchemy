@@ -7,6 +7,7 @@ export type {
   PersistedAlchemistState,
   PersistedTrinketShopState,
   PersistedEquipmentShopState,
+  PersistedMysteryVisit,
   PersistedBattleTransition,
 } from "./types";
 export type { CardRewardState, GearRewardState, RewardState, TrinketRewardState } from "./reward-types";
@@ -38,3 +39,9 @@ export {
   serializeEquipmentShopState,
   hydrateEquipmentShopState,
 } from "./shop-persistence";
+export {
+  emptyHydratedMysteryVisit,
+  hydrateMysteryVisit,
+  hydratePersistedMysteryChoice,
+  serializeMysteryVisit,
+} from "./mystery-visit-persistence";

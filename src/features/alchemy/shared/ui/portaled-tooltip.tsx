@@ -15,7 +15,7 @@ import { getVrStageBounds, usePortaledTooltipPlacement, type PortaledTooltipSide
 import { getTooltipRoot } from "./tooltip-root";
 import { TooltipPanel } from "./tooltip-panel";
 
-const DEFAULT_FADE_OUT_MS = 160;
+export const TOOLTIP_FADE_OUT_MS = 160;
 
 export interface PortaledTooltipProps {
   triggerRef: RefObject<HTMLElement | null>;
@@ -41,7 +41,7 @@ export function PortaledTooltip({
   padding = 8,
   placement = "above",
   maxWidthFraction,
-  fadeOutMs = DEFAULT_FADE_OUT_MS,
+  fadeOutMs = TOOLTIP_FADE_OUT_MS,
 }: PortaledTooltipProps) {
   const { tooltipRef, placeBelow, tooltipSide, tooltipStyle } = usePortaledTooltipPlacement(
     triggerRef,
