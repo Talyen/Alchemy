@@ -17,7 +17,7 @@ export function destinationInterruptedFlow(destinations: string[]) {
 }
 
 /** Persisted primary-reward claim surface for E2E save injection. */
-export function primaryRewardInterruptedFlow(pending: Record<string, unknown>) {
+function primaryRewardInterruptedFlow(pending: Record<string, unknown>) {
   return { kind: "primary-reward" as const, pending };
 }
 

@@ -61,7 +61,7 @@ export const chooserHeroRowShellWidthClass = "max-w-[min(100%,calc(4*25.5cqh+3*2
 // same tactile fantasy material treatment.
 export const cardSurfaceClass = "relative overflow-hidden rounded-shell-hero bg-black";
 export const cardArtImageClass = "rounded-shell-hero aspect-[3/4] object-cover";
-export const trinketArtImageClass = cardArtImageClass;
+export const trinketArtImageClass = "rounded-shell-hero aspect-[3/4] object-cover";
 export const trinketArtTileClass = `${cardSurfaceClass} ${collectionTileWidthClass} aspect-[3/4]`;
 export const trinketArtFillClass = "absolute inset-0 h-full w-full";
 export const landscapeArtImageClass = "rounded-shell-hero aspect-[4/3] object-cover";
