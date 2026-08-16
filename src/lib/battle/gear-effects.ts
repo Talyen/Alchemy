@@ -1,9 +1,9 @@
 import type { GearEffectManifest } from "@/lib/gear";
 import { PERCENT_DENOMINATOR } from "../game-constants";
-import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { applyLuckyCloverGold } from "./trinket-effects";
-import { clampHealth, scaleGoldReward, type BattleState, type CombatTextEvent } from "./types";
+import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
 
 export function applyGearKillRewards(
   state: BattleState,
@@ -20,9 +20,7 @@ export function applyGearKillRewards(
     nextState = applyHealingWithCombatText(nextState, healOnBurnEnemyDefeated, combatTexts);
   }
   if (goldOnKill > 0) {
-    const adjustedGold = scaleGoldReward(goldOnKill, nextState.gearEffects);
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: adjustedGold });
-    nextState = { ...nextState, gold: nextState.gold + adjustedGold };
+    nextState = addGoldWithCombatText(nextState, goldOnKill, combatTexts);
   }
   return nextState;
 }

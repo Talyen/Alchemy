@@ -30,11 +30,21 @@ function allowedAspectsForDefinition(def: GearDefinition): GearAffixAspect[] {
   return ["defensive"];
 }
 
+const eligibleAffixPoolCache = new Map<string, GearAffixDefinition[]>();
+
 export function buildEligibleAffixPool(definition: GearDefinition): GearAffixDefinition[] {
+  if (definition.id) {
+    const cached = eligibleAffixPoolCache.get(definition.id);
+    if (cached) return cached;
+  }
   const allowedAspects = new Set(allowedAspectsForDefinition(definition));
-  return gearAffixList.filter(
+  const pool = gearAffixList.filter(
     (affix) => allowedAspects.has(affix.aspect) && affixMatchesAffinity(affix, definition.affinityKeywords),
   );
+  if (definition.id) {
+    eligibleAffixPoolCache.set(definition.id, pool);
+  }
+  return pool;
 }
 
 function gearBasicRarityChance(astralChanceBonus = 0): number {
@@ -51,7 +61,7 @@ export function rollAffixCount(rarity: GearRarity, rng: () => number): number {
   return rng() < GEAR_AFFIX_COUNT_MIN_WEIGHT ? range.min : range.max;
 }
 
-function rollAffixes(definition: GearDefinition, count: number, rng: () => number): GearAffixRoll[] {
+export function rollAffixes(definition: GearDefinition, count: number, rng: () => number): GearAffixRoll[] {
   const pool = buildEligibleAffixPool(definition);
   const effectiveCount = Math.min(count, pool.length);
   const selected: GearAffixRoll[] = [];

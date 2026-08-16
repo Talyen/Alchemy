@@ -8,16 +8,14 @@
 import type { BattleCardEffect, DamageType } from "@/lib/game-data";
 import {
   addEnemyStatus,
-  addGold,
   clampHealth,
   reduceEnemyArmor,
-  scaleGoldReward,
   setEnemyStatus,
   setFlag,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { applyFreezeBlockTalent, applyFreezeStripArmorTalent } from "./talent-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
@@ -41,13 +39,7 @@ function applyPoisonStatusRider(state: BattleState, actualDamage: number, combat
     !nextState.flags.goldOnFirstPoisonThisCombat
   ) {
     const poisonGold = nextState.talentEffects.goldOnFirstPoison;
-    nextState = setFlag(addGold(nextState, poisonGold), "goldOnFirstPoisonThisCombat", true);
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "gold",
-      amount: scaleGoldReward(poisonGold, nextState.gearEffects),
-    });
+    nextState = setFlag(addGoldWithCombatText(nextState, poisonGold, combatTexts), "goldOnFirstPoisonThisCombat", true);
   }
   nextState = applyPoisonTalentRiders(nextState, actualDamage, combatTexts);
   return nextState;
@@ -114,25 +106,17 @@ function procBleedPoison(state: BattleState, actualDamage: number, bleedAmount: 
 
 function awardCutpurseGold(state: BattleState, bleedAmount: number, combatTexts: CombatTextEvent[]): BattleState {
   if (bleedAmount <= 0 || state.trinketEffects.cutpurseGoldOnBleed <= 0) return state;
-  const cutpurseGold = state.trinketEffects.cutpurseGoldOnBleed;
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "status",
-    stat: "gold",
-    amount: scaleGoldReward(cutpurseGold, state.gearEffects),
-  });
-  return addGold(state, cutpurseGold);
+  return addGoldWithCombatText(state, state.trinketEffects.cutpurseGoldOnBleed, combatTexts);
 }
 
 function applyBleedStatusRider(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   actualDamage: number,
-  statusDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  const bleedAmount = statusDamage * BLEED_STATUS_MULTIPLIER;
-  let nextState = stackBleed(state, statusDamage);
+  const bleedAmount = actualDamage * BLEED_STATUS_MULTIPLIER;
+  let nextState = stackBleed(state, actualDamage);
   nextState = queueBleedLeech(nextState, effect, bleedAmount);
   nextState = procBleedPoison(nextState, actualDamage, bleedAmount);
   return awardCutpurseGold(nextState, bleedAmount, combatTexts);
@@ -246,7 +230,7 @@ const DAMAGE_STATUS_HANDLERS: Partial<Record<DamageType, DamageStatusHandler>> =
   burn: ({ state, actualDamage }) => applyBurnStatusRider(state, actualDamage),
   poison: ({ state, actualDamage, combatTexts }) => applyPoisonStatusRider(state, actualDamage, combatTexts),
   bleed: ({ state, effect, actualDamage, combatTexts }) =>
-    applyBleedStatusRider(state, effect, actualDamage, actualDamage, combatTexts),
+    applyBleedStatusRider(state, effect, actualDamage, combatTexts),
   stun: ({ state, actualDamage, combatTexts }) => applyStunStatusRider(state, actualDamage, combatTexts),
   freeze: ({ state, actualDamage, combatTexts }) => applyFreezeStatusRider(state, actualDamage, combatTexts),
   physical: ({ state, actualDamage, combatTexts }) => applyPhysicalStatusRider(state, actualDamage, combatTexts),

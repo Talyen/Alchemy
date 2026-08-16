@@ -141,7 +141,7 @@ describe("decayArmorAfterDamage", () => {
   describe("player armor decay", () => {
     it("decays player armor by ARMOR_DECAY_AMOUNT when damage > 0", () => {
       const state = makeTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, armor: 5 }),
+        playerStatuses: defaultPlayerStatusValues({ armor: 5 }),
       });
       const result = decayArmorAfterDamage(state, 3, "player");
       expect(result.playerStatuses.armor).toBe(5 - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT);
@@ -149,7 +149,7 @@ describe("decayArmorAfterDamage", () => {
 
     it("does not decay player armor when damage is 0", () => {
       const state = makeTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, armor: 5 }),
+        playerStatuses: defaultPlayerStatusValues({ armor: 5 }),
       });
       const result = decayArmorAfterDamage(state, 0, "player");
       expect(result).toBe(state);
@@ -157,7 +157,7 @@ describe("decayArmorAfterDamage", () => {
 
     it("does not decay player armor when armor is already 0", () => {
       const state = makeTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, armor: 0 }),
+        playerStatuses: defaultPlayerStatusValues({ armor: 0 }),
       });
       const result = decayArmorAfterDamage(state, 3, "player");
       expect(result.playerStatuses.armor).toBe(0);
@@ -165,7 +165,7 @@ describe("decayArmorAfterDamage", () => {
 
     it("does not mutate original state", () => {
       const state = makeTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, armor: 5 }),
+        playerStatuses: defaultPlayerStatusValues({ armor: 5 }),
       });
       decayArmorAfterDamage(state, 3, "player");
       expect(state.playerStatuses.armor).toBe(5);
@@ -175,8 +175,8 @@ describe("decayArmorAfterDamage", () => {
   describe("armorBreakBlock talent on player armor break", () => {
     it("grants block when armor breaks and armorBreakBlock talent is active", () => {
       const state = makeTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, armor: 1 }),
-        talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, armorBreakBlock: 4 },
+        playerStatuses: defaultPlayerStatusValues({ armor: 1 }),
+        talentEffects: { ...defaultTalentEffects, armorBreakBlock: 4 },
       });
       const texts: CombatTextEvent[] = [];
       const result = decayArmorAfterDamage(state, 3, "player", texts);
@@ -187,8 +187,8 @@ describe("decayArmorAfterDamage", () => {
 
     it("includes flatBlockGained when armor breaks", () => {
       const state = makeTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, armor: 1 }),
-        talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, armorBreakBlock: 4 },
+        playerStatuses: defaultPlayerStatusValues({ armor: 1 }),
+        talentEffects: { ...defaultTalentEffects, armorBreakBlock: 4 },
         gearEffects: { ...makeTestBattleState().gearEffects, flatBlockGained: 2 },
       });
       const texts: CombatTextEvent[] = [];
@@ -199,8 +199,8 @@ describe("decayArmorAfterDamage", () => {
 
     it("does not grant block when armor does not break (still positive after decay)", () => {
       const state = makeTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, armor: 5 }),
-        talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, armorBreakBlock: 4 },
+        playerStatuses: defaultPlayerStatusValues({ armor: 5 }),
+        talentEffects: { ...defaultTalentEffects, armorBreakBlock: 4 },
       });
       const texts: CombatTextEvent[] = [];
       const result = decayArmorAfterDamage(state, 3, "player", texts);
@@ -211,8 +211,8 @@ describe("decayArmorAfterDamage", () => {
 
     it("does not grant block when armorBreakBlock is 0", () => {
       const state = makeTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, armor: 1 }),
-        talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, armorBreakBlock: 0 },
+        playerStatuses: defaultPlayerStatusValues({ armor: 1 }),
+        talentEffects: { ...defaultTalentEffects, armorBreakBlock: 0 },
       });
       const texts: CombatTextEvent[] = [];
       const result = decayArmorAfterDamage(state, 3, "player", texts);
@@ -223,8 +223,8 @@ describe("decayArmorAfterDamage", () => {
 
     it("does not emit combat text when texts array is not provided", () => {
       const state = makeTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, armor: 1 }),
-        talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, armorBreakBlock: 4 },
+        playerStatuses: defaultPlayerStatusValues({ armor: 1 }),
+        talentEffects: { ...defaultTalentEffects, armorBreakBlock: 4 },
       });
       const result = decayArmorAfterDamage(state, 3, "player");
       expect(result.playerStatuses.block).toBe(4);
@@ -232,7 +232,7 @@ describe("decayArmorAfterDamage", () => {
 
     it("clamps player armor to 0 when decay exceeds current", () => {
       const state = makeTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, armor: 0 }),
+        playerStatuses: defaultPlayerStatusValues({ armor: 0 }),
       });
       const result = decayArmorAfterDamage(state, 3, "player");
       expect(result.playerStatuses.armor).toBe(0);
@@ -240,8 +240,8 @@ describe("decayArmorAfterDamage", () => {
 
     it("does not grant armorBreakBlock when armor was already 0", () => {
       const state = makeTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, armor: 0 }),
-        talentEffects: { ...makeTestBattleState().talentEffects, armorBreakBlock: 4 },
+        playerStatuses: defaultPlayerStatusValues({ armor: 0 }),
+        talentEffects: { ...defaultTalentEffects, armorBreakBlock: 4 },
       });
       const texts: CombatTextEvent[] = [];
       const result = decayArmorAfterDamage(state, 3, "player", texts);

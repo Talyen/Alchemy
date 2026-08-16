@@ -17,6 +17,7 @@ import {
 } from "./types";
 import { countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
+import { rollPercent } from "./status-helpers";
 
 import { cardHasDamageType, computeEffectiveCost } from "./card-cost-rules";
 
@@ -122,7 +123,7 @@ function executeCardPlayState(
   if (consumeCrit) nextState = { ...nextState, flags: { ...nextState.flags, nextHitCrit: false } };
 
   if (cardHasDamageType(card, "nature") && state.gearEffects.manaOnNatureDamageChance > 0) {
-    if (state.rng() * 100 < state.gearEffects.manaOnNatureDamageChance) {
+    if (rollPercent(state.gearEffects.manaOnNatureDamageChance, state.rng)) {
       const nextMana = Math.min(nextState.maxMana, nextState.mana + 1);
       const gained = nextMana - nextState.mana;
       if (gained > 0) {

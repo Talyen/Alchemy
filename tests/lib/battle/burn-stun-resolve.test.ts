@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
+import { defaultEnemyStatusValues } from "../../fixtures/default-battle-state";
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
 
@@ -89,7 +90,7 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
       mana: 10,
       enemyHealth: 20,
       enemyMaxHealth: 20,
-      enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 6, stun: 0, burnBonus: 0, freezeBonus: 0 },
+      enemyStatuses: defaultEnemyStatusValues({ freeze: 6 }),
       hand: [card],
     });
 

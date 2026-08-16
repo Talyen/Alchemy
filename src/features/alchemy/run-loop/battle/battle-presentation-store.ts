@@ -90,6 +90,8 @@ function invalidateCombatTextSequence() {
   combatTextSequence += 1;
 }
 
+let ghostIdCounter = 0;
+
 export const useBattlePresentationStore = create<BattlePresentationStore>()((set) => ({
   cardGhosts: [],
   floatingCombatTexts: [],
@@ -104,7 +106,7 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
   cardTransferInProgress: false,
 
   spawnCardGhost: (ghost) => {
-    const id = `${performance.now()}-${Math.random()}`;
+    const id = `ghost-${++ghostIdCounter}`;
     set((s) => ({ cardGhosts: [...s.cardGhosts, { ...ghost, id }] }));
   },
 

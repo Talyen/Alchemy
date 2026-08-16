@@ -135,7 +135,10 @@ function applyBleedDamageModifiers(state: BattleState, rawAmount: number): numbe
   if (state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR && state.talentEffects.bleedDesperateMultiplier > 1) {
     nextAmount = Math.round(nextAmount * state.talentEffects.bleedDesperateMultiplier);
   }
-  if (state.enemyHealth <= (state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold) / PERCENT_DENOMINATOR) {
+  if (
+    state.talentEffects.bleedExecuteThreshold > 0 &&
+    state.enemyHealth <= (state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold) / PERCENT_DENOMINATOR
+  ) {
     nextAmount = Math.round(nextAmount * BLEED_EXECUTE_MULTIPLIER);
   }
   return nextAmount;

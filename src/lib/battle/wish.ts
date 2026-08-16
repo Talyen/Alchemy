@@ -7,14 +7,13 @@ import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
 import { drawFromState } from "./draw";
-import { addGold, type BattleState, type CombatTextEvent } from "./types";
-import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import type { BattleState, CombatTextEvent } from "./types";
+import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-player";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
 import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, WISH_CRYSTAL_GOLD_CHANCE, MAX_HAND_SIZE } from "../game-constants";
 import { applyGearKillRewards, dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./gear-effects";
-import { scaleGoldReward } from "./types";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 
 function upgradeWishCard(card: BattleCard): BattleCard {
@@ -78,25 +77,10 @@ function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[
   const goldAmount =
     nextState.talentEffects.goldOnWish + nextState.talentEffects.goldOnWishAmount + nextState.gearEffects.goldOnWish;
   if (goldAmount > 0) {
-    const scaledGold = scaleGoldReward(goldAmount, nextState.gearEffects);
-    nextState = addGold(nextState, goldAmount);
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "gold",
-      amount: scaledGold,
-    });
+    nextState = addGoldWithCombatText(nextState, goldAmount, combatTexts);
   }
   if (nextState.trinketEffects.wishingWellGoldOnWish > 0) {
-    const wellGold = nextState.trinketEffects.wishingWellGoldOnWish;
-    const scaledWellGold = scaleGoldReward(wellGold, nextState.gearEffects);
-    nextState = addGold(nextState, wellGold);
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "gold",
-      amount: scaledWellGold,
-    });
+    nextState = addGoldWithCombatText(nextState, nextState.trinketEffects.wishingWellGoldOnWish, combatTexts);
   }
   return nextState;
 }
@@ -105,24 +89,12 @@ function applyWishCrystalGoldTrigger(state: BattleState, combatTexts: CombatText
   const amount = state.talentEffects.wishCrystalGold;
   if (amount <= 0) return state;
   if (state.rng() < WISH_CRYSTAL_GOLD_CHANCE) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "gold",
-      amount: scaleGoldReward(amount, state.gearEffects),
-    });
-    return addGold(state, amount);
+    return addGoldWithCombatText(state, amount, combatTexts);
   }
   if (state.contentSystemType === "wildwood") {
     // Wildwood does not pay run materials (see commitVictoryRewards guard); the
     // crystal wish outcome is granted as gold instead of being silently dropped.
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "gold",
-      amount: scaleGoldReward(amount, state.gearEffects),
-    });
-    return addGold(state, amount);
+    return addGoldWithCombatText(state, amount, combatTexts);
   }
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "crystal", amount });
   return {

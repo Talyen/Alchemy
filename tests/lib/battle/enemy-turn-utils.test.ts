@@ -39,7 +39,7 @@ describe("advanceToPlayerTurn", () => {
   it("halves player block via decayHalvedStatus", () => {
     const state = makeTestBattleState({
       turnPhase: "enemy",
-      playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, block: 9 }),
+      playerStatuses: defaultPlayerStatusValues({ block: 9 }),
       deck: [makeTestCardWithId("d1")],
       rng: () => 0,
     });

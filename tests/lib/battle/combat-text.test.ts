@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  addGoldWithCombatText,
   applyHealingWithCombatText,
   emitOverhealBlockText,
   mergeCombatText,
@@ -82,5 +83,34 @@ describe("applyHealingWithCombatText", () => {
     applyHealingWithCombatText(state, 10, texts);
     const healText = texts.find((t) => t.kind === "heal");
     expect(healText).toEqual({ target: "player", kind: "heal", stat: "health", amount: 1 });
+  });
+});
+
+describe("addGoldWithCombatText", () => {
+  it("adds gold to battle state and emits scaled combat text", () => {
+    const state = makeTestBattleState({ gold: 10 });
+    const texts = makeTexts();
+    const nextState = addGoldWithCombatText(state, 5, texts);
+    expect(nextState.gold).toBe(15);
+    expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 5 }]);
+  });
+
+  it("scales gold using gear multiplier when present", () => {
+    const state = makeTestBattleState({
+      gold: 10,
+      gearEffects: { ...makeTestBattleState().gearEffects, goldGainPercent: 50 },
+    });
+    const texts = makeTexts();
+    const nextState = addGoldWithCombatText(state, 10, texts);
+    expect(nextState.gold).toBe(25);
+    expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 15 }]);
+  });
+
+  it("no-ops when amount is 0 or negative", () => {
+    const state = makeTestBattleState({ gold: 10 });
+    const texts = makeTexts();
+    const nextState = addGoldWithCombatText(state, 0, texts);
+    expect(nextState.gold).toBe(10);
+    expect(texts).toEqual([]);
   });
 });

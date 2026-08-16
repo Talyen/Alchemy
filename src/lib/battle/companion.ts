@@ -6,10 +6,14 @@
 import { applyCardEffects } from "./effect-handlers";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
 import { type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
-import { HALF_DIVISOR } from "../game-constants";
+import {
+  COMPANION_LOW_HEALTH_THRESHOLD_PERCENT,
+  computeLeechHeal,
+  HALF_DIVISOR,
+  PERCENT_DENOMINATOR,
+} from "../game-constants";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { applyHealingWithCombatText } from "./combat-text";
-import { computeLeechHeal } from "../game-constants";
 import { rollPercent, getBattleRng } from "./status-helpers";
 
 function companionDamageBonusForEffect(
@@ -124,10 +128,13 @@ function buildCompanionCard(
 
 export function processCompanionTurnStart(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (!state.activeCompanion || state.enemyHealth <= 0) return state;
-  const companionBondLevel = state.talentEffects.companionBondLevels[state.activeCompanion.id];
+  const companionBondLevel = state.talentEffects.companionBondLevels?.[state.activeCompanion.id] ?? 0;
 
+  const lowHealthThreshold = Math.round(
+    (state.enemyMaxHealth * COMPANION_LOW_HEALTH_THRESHOLD_PERCENT) / PERCENT_DENOMINATOR,
+  );
   const lowHealthMultiplier =
-    state.talentEffects.companionDoubledVsLowHealth && state.enemyHealth <= state.enemyMaxHealth * 0.3 ? 2 : 1;
+    state.talentEffects.companionDoubledVsLowHealth && state.enemyHealth <= lowHealthThreshold ? 2 : 1;
 
   const companionCard = buildCompanionCard(
     state.activeCompanion,

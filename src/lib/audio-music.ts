@@ -60,10 +60,6 @@ export function getBossMusicKey(bossId: string): string | undefined {
 const musicCache = new Map<string, HTMLAudioElement>();
 const musicElementKeys = new WeakMap<HTMLAudioElement, string>();
 
-function getCachedElement(key: string): HTMLAudioElement | undefined {
-  return musicCache.get(key);
-}
-
 export function invalidateCacheForKey(key: string): void {
   const cached = musicCache.get(key);
   if (cached) {
@@ -97,11 +93,10 @@ export function applyMusicVolume(
 }
 
 // Stops and clears the current HTML audio element, then returns an element for
-// the given (key, track) pair — either from cache (resuming position) or newly created.
-function replaceCurrentTrack(key: string, track: string, fadeProgress: number) {
+// the given key — either from cache (resuming position) or newly created.
+function replaceCurrentTrack(key: string, fadeProgress: number): HTMLAudioElement | undefined {
   if (audioState.currentMusic) {
     audioState.currentMusic.pause();
-    audioState.currentMusic.currentTime = 0;
     audioState.currentMusic = null;
   }
 
@@ -113,6 +108,9 @@ function replaceCurrentTrack(key: string, track: string, fadeProgress: number) {
     audioState.currentMusic = cached;
     return cached;
   }
+
+  const track = pickRandom(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? []);
+  if (!track) return undefined;
 
   const el = new Audio(musicBase + track);
   musicElementKeys.set(el, key);
@@ -131,11 +129,18 @@ function replaceCurrentTrack(key: string, track: string, fadeProgress: number) {
 
 // Starts a keyed track with the standard delayed fade-in used for scene transitions.
 // Uses a short interval so volume interpolation can continue when animation frames are paused.
-function startTrack(key: string, track: string) {
-  const el = replaceCurrentTrack(key, track, MUSIC_CONFIG.VOLUME_MIN);
+function startTrack(key: string, transitionToken: number) {
+  const el = replaceCurrentTrack(key, MUSIC_CONFIG.VOLUME_MIN);
+  if (!el) return;
   const startTime = performance.now();
 
   const timer = setInterval(() => {
+    // If a newer music transition has taken precedence, abort the current animation loop.
+    if (transitionToken !== musicTransitionToken) {
+      clearInterval(timer);
+      return;
+    }
+
     const elapsed = performance.now() - startTime;
     if (elapsed < FADE_IN_DELAY) return;
     const t = Math.min(1, (elapsed - FADE_IN_DELAY) / FADE_IN_DURATION);
@@ -153,24 +158,12 @@ function startTrack(key: string, track: string) {
 export function playMusicImmediate(key: string) {
   musicTransitionToken += 1;
   audioState.currentMusicKey = key;
-
-  const cached = getCachedElement(key);
-  const track = cached?.src
-    ? pathFromSrc(cached.src)
-    : pickRandom(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? []);
-  if (!track) return;
-
-  replaceCurrentTrack(key, track, 1);
-}
-
-function pathFromSrc(src: string): string | undefined {
-  const parts = src.split("/");
-  return parts[parts.length - 1];
+  replaceCurrentTrack(key, 1);
 }
 
 // Handles smooth fade-out of the old track, then starts (or resumes) the new keyed track.
 // Checks the musicTransitionToken to abort if a new transition has been scheduled.
-function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newKey: string, newTrack: string, transitionToken: number) {
+function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newKey: string, transitionToken: number) {
   const oldVol = oldTrack.volume;
   const startTime = performance.now();
 
@@ -191,7 +184,7 @@ function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newKey: string, newTra
       if (audioState.currentMusic === oldTrack) {
         audioState.currentMusic = null;
       }
-      startTrack(newKey, newTrack);
+      startTrack(newKey, transitionToken);
     }
   }, 30);
 }
@@ -208,15 +201,9 @@ export function playMusic(key: string) {
   musicTransitionToken = transitionToken;
   audioState.currentMusicKey = key;
 
-  const cached = getCachedElement(key);
-  const track = cached?.src
-    ? pathFromSrc(cached.src)
-    : pickRandom(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? []);
-  if (!track) return;
-
   if (audioState.currentMusic) {
-    fadeOutAndStartTrack(audioState.currentMusic, key, track, transitionToken);
+    fadeOutAndStartTrack(audioState.currentMusic, key, transitionToken);
   } else {
-    startTrack(key, track);
+    startTrack(key, transitionToken);
   }
 }

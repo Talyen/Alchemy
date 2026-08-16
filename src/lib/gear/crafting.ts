@@ -5,7 +5,7 @@ import craftingSeveranceMaw from "@/assets/optimized/crafting-severance-maw.webp
 import craftingSmithsWhetstone from "@/assets/optimized/crafting-smiths-whetstone.webp";
 import craftingSprigOfGrowth from "@/assets/optimized/crafting-sprig-of-growth.webp";
 import craftingVoidstone from "@/assets/optimized/crafting-voidstone.webp";
-import { buildEligibleAffixPool } from "./generation";
+import { buildEligibleAffixPool, rollAffixes } from "./generation";
 import { rollAffixValue } from "./affixes";
 import { gearAffixCatalog } from "./affix-catalog";
 import { gearDefinitions, gearInstanceRarity } from "./definitions";
@@ -121,16 +121,7 @@ export function getCraftingCurrencyDefinition(id: CraftingCurrencyId): CraftingC
 function rollDistinctAffixes(item: GearInstance, count: number, rng: () => number): GearAffixRoll[] {
   const def = gearDefinitions[item.definitionId];
   if (!def) return [];
-  const rarity = gearInstanceRarity(item);
-  const remaining = [...buildEligibleAffixPool(def)];
-  const affixes: GearAffixRoll[] = [];
-  while (affixes.length < count && remaining.length > 0) {
-    const index = Math.floor(rng() * remaining.length);
-    const [chosen] = remaining.splice(index, 1);
-    if (!chosen) break;
-    affixes.push({ id: chosen.id, value: rollAffixValue(chosen, rarity, rng) });
-  }
-  return affixes;
+  return rollAffixes(def, count, rng);
 }
 
 function addRandomAffix(item: GearInstance, rng: () => number): GearInstance {
@@ -154,7 +145,8 @@ function availableAffixesForItem(item: GearInstance) {
 }
 
 function affixMaxValue(roll: GearAffixRoll, rarity: GearRarity): number {
-  return gearAffixCatalog[roll.id].roll[rarity].max;
+  const def = gearAffixCatalog[roll.id];
+  return def ? def.roll[rarity].max : roll.value;
 }
 
 function hasUpgradeableAffix(item: GearInstance): boolean {
@@ -164,6 +156,7 @@ function hasUpgradeableAffix(item: GearInstance): boolean {
 
 function upgradeAffixValueToAstral(roll: GearAffixRoll): GearAffixRoll {
   const def = gearAffixCatalog[roll.id];
+  if (!def) return roll;
   const basic = def.roll.basic;
   const astral = def.roll.astral;
   const basicSpan = Math.max(1, basic.max - basic.min);

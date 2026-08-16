@@ -422,4 +422,19 @@ describe("processCompanionTurnStart", () => {
     expect(result.gold).toBe(1);
     expect(result.playerHealth).toBe(10);
   });
+
+  it("handles missing or undefined companionBondLevels gracefully without NaN", () => {
+    const base = makeTestBattleState();
+    const state = {
+      ...base,
+      activeCompanion: companionLibrary.wolf,
+      talentEffects: {
+        ...base.talentEffects,
+        companionBondLevels: {} as any,
+      },
+    };
+    const result = processCompanionTurnStart(state, makeTexts());
+    expect(Number.isNaN(result.enemyHealth)).toBe(false);
+    expect(result.enemyHealth).toBe(29);
+  });
 });

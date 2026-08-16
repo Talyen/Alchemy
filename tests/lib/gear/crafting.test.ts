@@ -179,4 +179,16 @@ describe("crafting currency logic", () => {
       "smiths-whetstone": 0,
     });
   });
+
+  it("handles uncataloged affix ids safely without throwing", () => {
+    const unknownItem: GearInstance = {
+      instanceId: "test-unknown-id",
+      definitionId: "shortsword-basic",
+      affixes: [{ id: "non-existent-affix" as any, value: 5 }],
+    };
+    expect(canApplyCraftingCurrency("smiths-whetstone", unknownItem)).toBe(false);
+    expect(canApplyCraftingCurrency("ascension-seal", unknownItem)).toBe(true);
+    const upgraded = applyCraftingCurrency("ascension-seal", unknownItem, () => 0);
+    expect(upgraded.affixes[0].id).toBe("non-existent-affix");
+  });
 });

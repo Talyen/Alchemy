@@ -1,15 +1,13 @@
 import { type PlayerStatusId } from "@/lib/game-data";
 import {
   addEnemyStatus,
-  addGold,
   addPlayerStatus,
-  scaleGoldReward,
   setFlag,
   type BattleState,
   type CombatTextEvent,
   type EnemyMitigation,
 } from "./types";
-import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { scaledGearLeechHeal } from "./gear-effects";
 import { rollPercent, getBattleRng } from "./status-helpers";
 import { computeLeechHeal, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
@@ -144,13 +142,7 @@ export function applyDamageBlock(state: BattleState, damage: number, combatTexts
 export function applyHolyTithe(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyGoldChance <= 0) return state;
   if (rollPercent(state.talentEffects.holyGoldChance, getBattleRng(state))) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "gold",
-      amount: scaleGoldReward(damage, state.gearEffects),
-    });
-    return addGold(state, damage);
+    return addGoldWithCombatText(state, damage, combatTexts);
   }
   return state;
 }

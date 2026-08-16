@@ -5,7 +5,14 @@
  * status-stun-resolve, damage-status-riders, status-ticks, enemy-turn, trinket-effects, wish.
  */
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
-import { applyPlayerHealing, type BattleState, type CombatTextEvent, type NumericCombatTextEvent } from "./types";
+import {
+  addGold,
+  applyPlayerHealing,
+  scaleGoldReward,
+  type BattleState,
+  type CombatTextEvent,
+  type NumericCombatTextEvent,
+} from "./types";
 
 // Narrows label-style combat text so numeric merging never assumes an amount exists.
 function isNoticeCombatText(event: CombatTextEvent) {
@@ -95,4 +102,23 @@ export function applyHealOnManaGain(
 ): BattleState {
   if (state.talentEffects.healOnManaGain <= 0 || gainAmount <= 0) return state;
   return applyHealingWithCombatText(state, state.talentEffects.healOnManaGain, combatTexts);
+}
+
+export function addGoldWithCombatText(
+  state: BattleState,
+  amount: number,
+  combatTexts?: CombatTextEvent[],
+): BattleState {
+  if (amount <= 0) return state;
+  const scaledGold = scaleGoldReward(amount, state.gearEffects);
+  const nextState = addGold(state, amount);
+  if (combatTexts && scaledGold > 0) {
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "gold",
+      amount: scaledGold,
+    });
+  }
+  return nextState;
 }

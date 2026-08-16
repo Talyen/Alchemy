@@ -18,6 +18,7 @@ export const ENEMY_BASE_REGENERATION = 1;
 export const ENEMY_BOSS_REGENERATION = 1;
 export const BLEED_EXECUTE_MULTIPLIER = 2;
 export const FREE_CARD_SENTINEL = 99; // nextCardCostReduction value that guarantees a card costs 0.
+export const COMPANION_LOW_HEALTH_THRESHOLD_PERCENT = 30;
 export const PERCENT_DENOMINATOR = 100;
 export const HALF_DIVISOR = 2;
 const LEECH_HEAL_FRACTION = 0.5;
