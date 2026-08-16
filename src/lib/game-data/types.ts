@@ -47,7 +47,6 @@ export type EnemyStatusDamageId = Exclude<EnemyStatusId, "burnBonus" | "freezeBo
 export type CompanionId =
   | "wolf"
   | "lizard-scout"
-  | "imp"
   | "frost-whelp"
   | "bear"
   | "panther"

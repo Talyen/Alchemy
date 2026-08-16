@@ -31,6 +31,7 @@ import {
   type MaterialInventory,
   materialLabels,
 } from "@/lib/homestead/types";
+import { tooltipChipClass, tooltipChipIconClass } from "../../../shared/config";
 import { MaterialIcon, MaterialPill, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
 import { TabBar } from "../../../shared/ui/tab-bar";
 import { Hammer, Wheat, FlaskConical, PawPrint } from "lucide-react";
@@ -111,12 +112,13 @@ export function renderTextWithMaterials(text: string): ReactNode {
             <span
               key={result.length}
               className={cn(
-                "inline-flex items-center gap-1 rounded-full px-3 py-1 align-middle text-xs font-semibold",
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 align-middle",
+                tooltipChipClass,
                 matPillStyle[mat],
                 matTextColor[mat],
               )}
             >
-              <MaterialIcon material={mat} className="h-4 w-4" />
+              <MaterialIcon material={mat} className={tooltipChipIconClass} />
               {sub}
             </span>,
           );

@@ -1,7 +1,8 @@
-// Hero selection screen with character art, keyword previews, tilt, and shimmer feedback.
+// Hero selection screen with character art, keyword previews, shine frames, and shimmer feedback.
 // Depends on character game data, shared alchemy UI, and hover shimmer hooks.
 // Used when beginning a fresh run before destination routing starts.
 import { useRef, useState } from "react";
+import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
 import {
   characterArt,
@@ -12,23 +13,45 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { renderColoredKeywords } from "../../shared/ui/card-description-ui";
-import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
+import { CyclingShineBorder } from "../../shared/ui/cycling-shine-border";
+import { TitledScreenShell } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { TooltipBody, TooltipHeader, TooltipSubheader } from "../../shared/ui/tooltip-panel";
 import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
 import {
+  cardInteractiveGlowClass,
   cardSurfaceClass,
   chooserHeroArtWidthClass,
   chooserHeroRowGapClass,
   chooserHeroRowShellWidthClass,
+  getCharacterShineColors,
+  WILDCARD_KEYWORD_SHINE_COLORS,
+  WILDCARD_SHINE_CYCLE_MS,
 } from "@/features/alchemy/shared/config";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
 import { playUISound } from "@/lib/audio";
 
+const HERO_SHINE_CLASS =
+  "z-20 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100";
+
+function HeroCardShine({ characterId, colors }: { characterId: CharacterId; colors: readonly string[] }) {
+  if (colors.length === 0) return null;
+  if (characterId === "wildcard") {
+    return (
+      <CyclingShineBorder
+        colors={colors}
+        borderWidth={3}
+        intervalMs={WILDCARD_SHINE_CYCLE_MS}
+        className={HERO_SHINE_CLASS}
+      />
+    );
+  }
+  return <ShineBorder shineColor={colors} borderWidth={3} className={HERO_SHINE_CLASS} />;
+}
+
 function CharacterCard({
   id,
-  isSelected,
   isShimmer,
   shimmerToken,
   onSelect,
@@ -37,7 +60,6 @@ function CharacterCard({
   unlockRequirementText,
 }: {
   id: CharacterId;
-  isSelected: boolean;
   isShimmer: boolean;
   shimmerToken: number | undefined;
   onSelect: (id: CharacterId) => void;
@@ -49,19 +71,23 @@ function CharacterCard({
   const cardWrapperRef = useRef<HTMLDivElement>(null);
   const char = characters[id];
   const art = characterArt[char.id];
+  const shineColors = isLocked ? [] : id === "wildcard" ? WILDCARD_KEYWORD_SHINE_COLORS : getCharacterShineColors(id);
 
   return (
-    <div className="flex min-w-0 flex-col items-center gap-3">
+    <div className="flex min-w-0 flex-col items-center gap-2">
       <div ref={cardWrapperRef} className={cn("relative min-w-0", chooserHeroArtWidthClass)}>
         <TiltSurface
           as="button"
           ariaLabel={isLocked ? `${char.name} (Locked)` : `Select ${char.name}`}
-          tiltEnabled={!isLocked}
-          className="relative w-full rounded-shell-tooltip"
+          className={cn(
+            "group relative w-full rounded-shell-tooltip border border-border/80 shadow-md",
+            !isLocked && cardInteractiveGlowClass,
+            !isLocked && "hero-affinity-shine",
+          )}
           shimmerActive={isLocked ? false : isShimmer}
           shimmerToken={isLocked ? undefined : shimmerToken}
           shimmerRounded="rounded-shell-tooltip"
-          selected={isSelected}
+          overlay={<HeroCardShine characterId={id} colors={shineColors} />}
           onClick={() => {
             if (isLocked) {
               playUISound("error");
@@ -80,7 +106,7 @@ function CharacterCard({
             alt={char.name}
             className={cn(
               cardSurfaceClass,
-              "aspect-[3/4] w-full rounded-shell-tooltip",
+              "aspect-[3/4] w-full rounded-shell-tooltip object-cover",
               isLocked && "opacity-45 grayscale-[50%]",
             )}
           />
@@ -133,7 +159,7 @@ function CharacterCard({
           </PortaledTooltip>
         ) : null}
       </div>
-      <p className={cn("mt-1 font-sans text-2xl font-bold text-amber-100/90", isLocked && "text-muted-foreground/60")}>
+      <p className={cn("font-sans text-2xl font-bold text-amber-100/90", isLocked && "text-muted-foreground/60")}>
         {char.name}
       </p>
     </div>
@@ -141,21 +167,17 @@ function CharacterCard({
 }
 
 export function CharacterSelectScreen({
-  onConfirm,
-  onBack,
+  onSelect,
   onOpenMenu,
 }: {
-  onConfirm: (characterId: CharacterId) => void;
-  onBack: () => void;
+  onSelect: (characterId: CharacterId) => void;
   onOpenMenu: (rect?: DOMRect) => void;
 }) {
-  const [selectedId, setSelectedId] = useState<CharacterId | null>(null);
   const shimmerState = useUiStore((s) => s.shimmerState);
   const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
   const finishedRunCharacters = useFinishedRunCharacters();
 
   const charIds = Object.keys(characters) as CharacterId[];
-  const selectedChar = selectedId ? characters[selectedId] : null;
 
   return (
     <TitledScreenShell
@@ -173,10 +195,9 @@ export function CharacterSelectScreen({
             <CharacterCard
               key={id}
               id={id}
-              isSelected={selectedId === id}
               isShimmer={shimmerState?.cardId === id}
               shimmerToken={shimmerState?.token}
-              onSelect={setSelectedId}
+              onSelect={onSelect}
               onHoverShimmer={maybeTriggerShimmer}
               isLocked={isLocked}
               unlockRequirementText={unlockRequirementText}
@@ -184,19 +205,6 @@ export function CharacterSelectScreen({
           );
         })}
       </div>
-
-      <ActionButtonRow
-        className="mt-6"
-        width="dialog"
-        secondary={{ label: "Back", onClick: onBack }}
-        primary={{
-          label: "Continue",
-          disabled: !selectedChar,
-          onClick: () => {
-            if (selectedChar) onConfirm(selectedChar.id);
-          },
-        }}
-      />
     </TitledScreenShell>
   );
 }

@@ -13,7 +13,6 @@ import {
   playMusic,
   playMusicImmediate,
   preloadAllSounds,
-  resumeAudioContext,
   setMasterVolume,
   setMusicVolume,
   setMuted,
@@ -64,7 +63,7 @@ export function useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackgrou
 
   useEffect(() => {
     function applyBackgroundMute() {
-      setMuted(muteInBackground && (document.hidden || !document.hasFocus()));
+      setMuted(muteInBackground && document.hidden);
     }
 
     applyBackgroundMute();
@@ -104,16 +103,16 @@ export function useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackgrou
     preloadAllSounds();
 
     function resumeOnGesture() {
+      if (!document.hidden) setMuted(false);
       if (gestureFiredRef.current) return;
       gestureFiredRef.current = true;
-      resumeAudioContext();
       if (!audioState.currentMusic || audioState.currentMusic.paused) {
         playMusicImmediate(pickMusicKey(screenRef.current));
       }
     }
 
-    window.addEventListener("pointerdown", resumeOnGesture, { capture: true, once: true });
-    window.addEventListener("keydown", resumeOnGesture, { capture: true, once: true });
+    window.addEventListener("pointerdown", resumeOnGesture, { capture: true });
+    window.addEventListener("keydown", resumeOnGesture, { capture: true });
     return () => {
       window.removeEventListener("pointerdown", resumeOnGesture, true);
       window.removeEventListener("keydown", resumeOnGesture, true);

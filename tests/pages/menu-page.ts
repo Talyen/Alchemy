@@ -88,8 +88,8 @@ export class MenuPage {
   }
 
   async selectCharacterAndContinue(character: "Knight" | "Ranger" | "Rogue" | "Wizard" = "Knight") {
-    await this.page.getByRole("button", { name: character }).click();
-    await this.page.getByRole("button", { name: "Continue" }).click();
+    await this.page.getByRole("button", { name: `Select ${character}` }).click();
+    await expect(this.page.getByRole("heading", { name: "Choose Your Hero" })).toBeHidden();
   }
 
   async startCampaign(character: "Knight" | "Ranger" | "Rogue" | "Wizard" = "Knight") {

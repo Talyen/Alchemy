@@ -57,11 +57,7 @@ export const runSetupScreenRoutes: {
   "difficulty-select": (ctx: RunSetupRouteCtx) => ReactNode;
 } = {
   "character-select": ({ routeCommands, onOpenBattleMenu }) => (
-    <CharacterSelectScreen
-      onConfirm={routeCommands.runSetup.handleCharacterSelect}
-      onBack={() => routeCommands.runSetup.goToScreen("game-mode-select")}
-      onOpenMenu={onOpenBattleMenu}
-    />
+    <CharacterSelectScreen onSelect={routeCommands.runSetup.handleCharacterSelect} onOpenMenu={onOpenBattleMenu} />
   ),
   "draft-deck": ({ routeCommands, onOpenBattleMenu }) => (
     <DraftDeckScreenRoute commands={routeCommands.runSetup} onOpenBattleMenu={onOpenBattleMenu} />

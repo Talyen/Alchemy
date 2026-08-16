@@ -2,21 +2,14 @@
 // Depends on game libraries, audio triggers, utility helpers, and mystery types.
 // Consumed by the run navigation flow and the useMysteryFlow React hook.
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import {
-  cardLibrary,
-  getCardKeywords,
-  selectRewardCards,
-  trinketLibrary,
-  type BattleCard,
-  type KeywordId,
-} from "@/lib/game-data";
+import { cardLibrary, getCardKeywords, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { appendUnique } from "@/lib/utils";
 import { setDiscoveredCardIds, setDiscoveredTrinketIds } from "../../shared/stores/profile-store";
 import type { MaterialId, MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import type { MysteryEffect } from "@/lib/mystery";
-import { sampleItems } from "@/lib/utils";
+import { generateGearInstanceForBaseItem, type GearInstance } from "@/lib/gear";
+import { pickMysteryTrinketGrantId, type MysteryEffect } from "@/lib/mystery";
 import { spendRunGold } from "../run-gold";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 
@@ -35,15 +28,19 @@ interface MysteryEffectContext {
   runDeck?: BattleCard[];
   runMaxHealth: number;
   rng: () => number;
+  ownedTrinketIds: readonly string[];
   setRunDeck: DraftStateUpdater<BattleCard[]>;
   setRunGold: DraftStateUpdater<number>;
   setRunPlayerHealth: DraftStateUpdater<number>;
   setRunTrinkets: DraftStateUpdater<string[]>;
   setMysteryCardChoices: DraftStateUpdater<BattleCard[] | null>;
   setMysteryGrantedTrinketIds: DraftStateUpdater<string[]>;
+  setMysteryGrantedGearInstances: DraftStateUpdater<GearInstance[]>;
   awardMysteryXP: (draft: GameplayDraft, keyword: KeywordId, amount: number) => void;
   onAddMaterials: (materials: MaterialInventory) => void;
   onAwardGold: (amount: number) => void;
+  onAddGear: (instance: GearInstance) => void;
+  gearAstralChanceBonus: number;
   draft: GameplayDraft;
 }
 
@@ -71,7 +68,8 @@ const mysteryApplyHandlers: {
   },
   removeCard: (effect, context) => removeMysteryCard(effect.mode, context),
   gainTrinket: (effect, context) => gainMysteryTrinket(effect.trinketId, context),
-  gainRandomTrinket: (_effect, context) => gainRandomMysteryTrinket(context),
+  gainRandomTrinket: (effect, context) => gainRandomMysteryTrinket(effect, context),
+  gainGeneratedGear: (effect, context) => gainMysteryGeneratedGear(effect.baseItemId, context),
   gainMaterial: (effect, context) => gainMysteryMaterial(effect.material, effect.amount, context),
 };
 
@@ -160,16 +158,30 @@ function removeMysteryCard(mode: "random" | "choose", context: MysteryEffectCont
 }
 
 function gainMysteryTrinket(trinketId: string, context: MysteryEffectContext) {
-  context.setRunTrinkets(context.draft, (previous) => [...previous, trinketId]);
+  context.setRunTrinkets(context.draft, (previous) =>
+    previous.includes(trinketId) ? previous : [...previous, trinketId],
+  );
   setDiscoveredTrinketIds(context.draft, (current) => appendUnique(current, trinketId));
   return { followUp: null };
 }
 
-function gainRandomMysteryTrinket(context: MysteryEffectContext) {
-  const randomBoon = sampleItems(trinketLibrary, 1, context.rng)[0];
-  if (!randomBoon) return { followUp: null };
-  gainMysteryTrinket(randomBoon.id, context);
-  context.setMysteryGrantedTrinketIds(context.draft, (previous) => [...previous, randomBoon.id]);
+function gainRandomMysteryTrinket(
+  effect: Extract<MysteryEffect, { kind: "gainRandomTrinket" }>,
+  context: MysteryEffectContext,
+) {
+  const owned = new Set(context.ownedTrinketIds);
+  const trinketId = pickMysteryTrinketGrantId({ fromIds: effect.fromIds, owned, rng: context.rng });
+  if (!trinketId) return { followUp: null };
+  gainMysteryTrinket(trinketId, context);
+  context.setMysteryGrantedTrinketIds(context.draft, (previous) => [...previous, trinketId]);
+  return { followUp: null };
+}
+
+function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectContext) {
+  const instance = generateGearInstanceForBaseItem(baseItemId, context.rng, context.gearAstralChanceBonus);
+  if (!instance) return { followUp: null };
+  context.onAddGear(instance);
+  context.setMysteryGrantedGearInstances(context.draft, (previous) => [...previous, instance]);
   return { followUp: null };
 }
 

@@ -59,9 +59,7 @@ test.describe("Save Persistence & Resume", () => {
     expect(savedBefore.destinationIndexInAct).toBe(2);
 
     await openGameModeSelect(page);
-    await page.getByRole("button", { name: /The Campaign/ }).click();
-    await expect(page.getByRole("button", { name: "Resume" })).toBeVisible({ timeout: 3000 });
-    await page.getByRole("button", { name: "Resume" }).click();
+    await page.getByRole("button", { name: "Resume The Campaign" }).click();
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
 
     const savedAfter = await page.evaluate((saveKey) => {

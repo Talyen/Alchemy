@@ -10,6 +10,7 @@ describe("hasPositiveMysteryEffect", () => {
   it("returns true for heal and reward effects", () => {
     expect(hasPositiveMysteryEffect([{ kind: "healHealth", amount: 5 }])).toBe(true);
     expect(hasPositiveMysteryEffect([{ kind: "gainGold", amount: 10 }])).toBe(true);
+    expect(hasPositiveMysteryEffect([{ kind: "gainGeneratedGear", baseItemId: "dagger" }])).toBe(true);
   });
 
   it("returns false for purely negative effects", () => {

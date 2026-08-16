@@ -1,5 +1,4 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import * as audioBufferCache from "@/lib/audio-buffer-cache";
 import { audioState } from "@/lib/audio-state";
 import { uiSounds } from "@/lib/sound-registry";
 import {
@@ -12,53 +11,55 @@ import {
   playUISound,
   playVictory,
   playDefeat,
+  playSliceDeath,
+  resetHtmlSfxRuntime,
 } from "@/lib/audio-sfx";
+import { setMasterVolume, setMuted, setSfxVolume } from "@/lib/audio-volume";
 
-const fakeBuffer = { duration: 0.5 } as AudioBuffer;
+type FakeAudio = {
+  src: string;
+  volume: number;
+  muted: boolean;
+  play: ReturnType<typeof vi.fn>;
+  pause: ReturnType<typeof vi.fn>;
+  onended: (() => void) | null;
+};
 
-function makeMockAudioContext() {
-  const gain = { value: 0, connect: vi.fn() };
-  return {
-    createBufferSource: vi.fn(() => ({
-      buffer: null,
-      connect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
-      onended: null,
-    })),
-    createGain: vi.fn(() => ({ gain, connect: vi.fn() })),
-    destination: "dest",
-    currentTime: 0,
-  } as unknown as Partial<AudioContext>;
-}
+const created: FakeAudio[] = [];
 
-function lastCreatedSource(ctx: AudioContext) {
-  const createBufferSource = ctx.createBufferSource as ReturnType<typeof vi.fn>;
-  return createBufferSource.mock.results.at(-1)?.value as {
-    start: ReturnType<typeof vi.fn>;
-    stop: ReturnType<typeof vi.fn>;
-  };
-}
-
-function expectLastSourceStarted() {
-  const source = lastCreatedSource(audioState.context!);
-  expect(source.start).toHaveBeenCalledOnce();
+function lastAudio() {
+  return created.at(-1);
 }
 
 beforeEach(() => {
-  audioState.context = makeMockAudioContext() as AudioContext;
-  audioState.masterGain = { gain: { value: 0.3 }, connect: vi.fn() } as unknown as GainNode;
+  created.length = 0;
   audioState.muted = false;
-  audioState.audioUnlocked = true;
+  audioState.audioUnlocked = false;
+  audioState.context = null;
   audioState.sfxVolume = 0.35;
+  audioState.masterVolume = 1;
   audioState.lastPlayedAt = new Map();
-  vi.spyOn(audioBufferCache, "getCachedBuffer").mockReturnValue(fakeBuffer);
+  resetHtmlSfxRuntime();
+  vi.stubGlobal(
+    "Audio",
+    class {
+      src = "";
+      volume = 1;
+      muted = false;
+      onended: (() => void) | null = null;
+      play = vi.fn(() => Promise.resolve());
+      pause = vi.fn();
+      currentTime = 0;
+      constructor(src?: string) {
+        this.src = src ?? "";
+        created.push(this);
+      }
+    },
+  );
 });
 
 afterEach(() => {
-  vi.restoreAllMocks();
-  audioState.context = null;
-  audioState.masterGain = null;
+  vi.unstubAllGlobals();
 });
 
 describe("stopAllSfx", () => {
@@ -68,102 +69,158 @@ describe("stopAllSfx", () => {
 
   it("stops battle-tracked sources", () => {
     playCardSound("slash");
-    const source = lastCreatedSource(audioState.context!);
+    const el = lastAudio()!;
     stopAllSfx();
-    expect(source.stop).toHaveBeenCalledOnce();
+    expect(el.pause).toHaveBeenCalledOnce();
   });
 
   it("does not stop UI sounds", () => {
-    playUISound("buttonHover");
-    const source = lastCreatedSource(audioState.context!);
+    playUISound("error");
+    const el = lastAudio()!;
     stopAllSfx();
-    expect(source.stop).not.toHaveBeenCalled();
+    expect(el.pause).not.toHaveBeenCalled();
   });
 
   it("does not stop victory stingers", () => {
     playVictory();
-    const source = lastCreatedSource(audioState.context!);
+    const el = lastAudio()!;
     stopAllSfx();
-    expect(source.stop).not.toHaveBeenCalled();
+    expect(el.pause).not.toHaveBeenCalled();
+  });
+
+  it("does not stop slice death", () => {
+    playSliceDeath();
+    const el = lastAudio()!;
+    stopAllSfx();
+    expect(el.pause).not.toHaveBeenCalled();
   });
 });
 
 describe("playCardSound", () => {
   it("plays audio for known card id", () => {
     playCardSound("slash");
-    expect(audioState.context!.createBufferSource).toHaveBeenCalled();
-    expectLastSourceStarted();
+    expect(lastAudio()?.play).toHaveBeenCalledOnce();
+    expect(lastAudio()?.src).toContain("sword-attack-1.");
   });
 
   it("does nothing for unknown card id", () => {
     playCardSound("nonexistent-card");
-    expect(audioState.context!.createBufferSource).not.toHaveBeenCalled();
+    expect(created).toHaveLength(0);
   });
 });
 
 describe("playGoldGain", () => {
   it("plays gold gain audio", () => {
     playGoldGain();
-    expectLastSourceStarted();
+    expect(lastAudio()?.src).toContain("coin-collect.");
+    expect(lastAudio()?.play).toHaveBeenCalledOnce();
   });
 });
 
 describe("playGoldSpend", () => {
   it("plays gold spend audio via shopBuy sound", () => {
     playGoldSpend();
-    expect(audioBufferCache.getCachedBuffer).toHaveBeenCalledWith("coin-jingle-small.ogg");
-    expectLastSourceStarted();
+    expect(lastAudio()?.src).toContain("coin-jingle-small.");
+    expect(lastAudio()?.play).toHaveBeenCalledOnce();
   });
 });
 
 describe("playEnemyAttack", () => {
   it("plays audio for known enemy id", () => {
     playEnemyAttack("skeleton");
-    expectLastSourceStarted();
+    expect(lastAudio()?.src).toContain("swish-hit.");
+    expect(lastAudio()?.play).toHaveBeenCalledOnce();
   });
 
   it("does nothing for unknown enemy id", () => {
     playEnemyAttack("nonexistent-enemy");
-    expect(audioState.context!.createBufferSource).not.toHaveBeenCalled();
+    expect(created).toHaveLength(0);
   });
 });
 
 describe("playBattleEvent", () => {
   it("plays audio for known event", () => {
     playBattleEvent("playerHit");
-    expectLastSourceStarted();
+    expect(lastAudio()?.src).toContain("punch-3.");
+    expect(lastAudio()?.play).toHaveBeenCalledOnce();
   });
 });
 
 describe("playUISound", () => {
   it("plays audio for known UI sound", () => {
-    playUISound("buttonHover");
-    expectLastSourceStarted();
+    playUISound("shopBuy");
+    expect(lastAudio()?.src).toContain("coin-jingle-small.");
+    expect(lastAudio()?.play).toHaveBeenCalledOnce();
   });
 
   it("plays audio for error sound", () => {
     playUISound("error");
-    expectLastSourceStarted();
+    expect(lastAudio()?.src).toContain("denied-03.");
+    expect(lastAudio()?.play).toHaveBeenCalledOnce();
   });
 
   it("plays salvage with the mine sound", () => {
     expect(uiSounds.salvage).toBe("mine-2.ogg");
     playUISound("salvage");
-    expect(audioBufferCache.getCachedBuffer).toHaveBeenCalledWith("mine-2.ogg");
-    expectLastSourceStarted();
+    expect(lastAudio()?.src).toContain("mine-2.");
+    expect(lastAudio()?.play).toHaveBeenCalledOnce();
   });
 });
 
 describe("playVictory", () => {
   it("plays victory stinger", () => {
     playVictory();
-    expectLastSourceStarted();
+    expect(lastAudio()?.src).toContain("harpsichord-level-complete.");
+    expect(lastAudio()?.play).toHaveBeenCalledOnce();
   });
 });
 
 describe("playDefeat", () => {
   it("plays defeat stinger", () => {
     playDefeat();
-    expectLastSourceStarted();
+    expect(lastAudio()?.src).toContain("harpsichord-defeated.");
+    expect(lastAudio()?.play).toHaveBeenCalledOnce();
+  });
+});
+
+describe("playSliceDeath", () => {
+  it("plays the sword slice cue", () => {
+    playSliceDeath();
+    expect(lastAudio()?.src).toContain("sword-slice.");
+    expect(lastAudio()?.play).toHaveBeenCalledOnce();
+  });
+});
+
+describe("in-flight HTMLAudio mute and volume", () => {
+  it("mutes a playing combat SFX when background mute turns on", () => {
+    playCardSound("slash");
+    const el = lastAudio()!;
+    expect(el.muted).toBe(false);
+    setMuted(true);
+    expect(el.muted).toBe(true);
+  });
+
+  it("retunes a playing combat SFX when the SFX slider changes", () => {
+    playCardSound("slash");
+    const el = lastAudio()!;
+    const startedAt = el.volume;
+    setSfxVolume(1);
+    expect(el.volume).toBeGreaterThan(startedAt);
+  });
+
+  it("retunes a playing combat SFX when master volume changes", () => {
+    playCardSound("slash");
+    const el = lastAudio()!;
+    setMasterVolume(0.5);
+    expect(el.volume).toBeCloseTo(0.35 * 0.5);
+  });
+
+  it("mutes in-flight UI SFX that are not stopped on screen change", () => {
+    playUISound("error");
+    const el = lastAudio()!;
+    setMuted(true);
+    expect(el.muted).toBe(true);
+    stopAllSfx();
+    expect(el.pause).not.toHaveBeenCalled();
   });
 });

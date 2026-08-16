@@ -2,7 +2,7 @@ import { GEAR_AFFIX_COUNT, GEAR_AFFIX_COUNT_MIN_WEIGHT, GEAR_REWARD_RARITY_CHANC
 import { createInstanceId, pickRandom } from "@/lib/utils";
 import { affixMatchesAffinity, rollAffixValue } from "./affixes";
 import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
-import { gearBaseItemList } from "./base-items";
+import { gearBaseItemList, gearBaseItems, type GearBaseItemId } from "./base-items";
 import { gearDefinitions, getGearDefinitionsByRarity } from "./definitions";
 import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity, GearSlot } from "./types";
 
@@ -74,6 +74,21 @@ export function createGearInstance(definition: GearDefinition, affixes: GearAffi
     definitionId: definition.id,
     affixes,
   };
+}
+
+export function generateGearInstanceForBaseItem(
+  baseItemId: string,
+  rng: () => number,
+  astralChanceBonus = 0,
+): GearInstance | null {
+  if (!(baseItemId in gearBaseItems)) return null;
+  const baseItem = gearBaseItems[baseItemId as GearBaseItemId];
+  const rarity = rollGearRewardRarity(rng, astralChanceBonus);
+  const definition = gearDefinitions[`${baseItem.id}-${rarity}`];
+  if (!definition) return null;
+  const affixCount = rollAffixCount(rarity, rng);
+  const affixes = rollAffixes(definition, affixCount, rng);
+  return createGearInstance(definition, affixes);
 }
 
 export function generateDevRandomGearInstance(rng: () => number): GearInstance {

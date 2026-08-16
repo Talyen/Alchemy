@@ -21,6 +21,7 @@ type SessionStore = Pick<
   | "setMysteryPendingRemoval"
   | "setMysteryCardChoices"
   | "setMysteryGrantedTrinketIds"
+  | "setMysteryGrantedGearInstances"
   | "setMysteryChosenCardId"
   | "setCorruptionResult"
 >;
@@ -42,6 +43,7 @@ export function restoreRunSession(store: SessionStore, decoded: DecodedRunResume
   store.setMysteryPendingRemoval(decoded.mysteryPendingRemoval);
   store.setMysteryCardChoices(decoded.mysteryCardChoices);
   store.setMysteryGrantedTrinketIds(decoded.mysteryGrantedTrinketIds);
+  store.setMysteryGrantedGearInstances(decoded.mysteryGrantedGearInstances);
   store.setMysteryChosenCardId(decoded.mysteryChosenCardId);
   store.setCorruptionResult(decoded.corruptionResult);
 }

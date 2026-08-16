@@ -15,6 +15,8 @@ export const DEFAULT_SFX_VOLUME = 0.35;
 export const SFX_UI_VOLUME = 0.6;
 export const SFX_VICTORY_VOLUME = 0.8;
 export const SFX_DEFEAT_VOLUME = 0.7;
+/** Slice death whoosh — quieter than the victory stinger it overlaps. */
+export const SFX_SLICE_DEATH_VOLUME = 0.55;
 
 // ============ SFX Cooldown ============
 export const SFX_COOLDOWN_MS = 80;
@@ -81,14 +83,19 @@ export const MAX_STAGE_SCALE = 2.0;
 // ============ Collection ============
 export const COLLECTION_PAGE_SIZE = 8;
 export const BESTIARY_PAGE_SIZE = 6;
-export const TRINKET_PAGE_SIZE = 6;
+export const TRINKET_PAGE_SIZE = 8;
 export const SELECTION_GRID_PAGE_SIZE = 8;
 export const BATTLE_ACTOR_TOP = "34%";
 export const HAND_FAN_VERTICAL_STEP_PX = 10;
 export const HAND_FAN_ROTATION_DEGREES = 4.2;
-export const HAND_HOVER_LIFT_PX = 34;
+export const HAND_REST_DROP_PX = 12;
+export const HAND_HOVER_LIFT_PX = 26;
 export const HAND_HOVER_ROTATION_DEGREES = 2.6;
 export const HAND_HOVER_SCALE = 1.03;
+/** Gap between a hovered hand card and its detail tooltip (PortaledTooltip padding). */
+export const HAND_HOVER_TOOLTIP_PADDING_PX = 16;
+/** Delay before clearing hand hover so a sibling card can claim it first. */
+export const HAND_HOVER_HANDOFF_MS = 50;
 export const HAND_CARD_BASE_Z_INDEX = 10;
 export const HAND_CARD_HOVER_Z_INDEX = 40;
 /** Battle wish overlay and flying card transfer layer — keep in sync with `--z-wish-overlay` in index.css. */

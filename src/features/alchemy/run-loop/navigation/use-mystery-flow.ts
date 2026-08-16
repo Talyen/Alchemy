@@ -2,7 +2,7 @@
 // Depends on: cardLibrary, run session store, mysteryPool, and mystery-flow helpers.
 // Depended on by: useRunFlowEngine for managing the React state of mystery events during a run.
 import { cardLibrary } from "@/lib/game-data";
-import { pickMysteryEvent, type MysteryChoice } from "@/lib/mystery";
+import { pickMysteryEvent, resolveMysteryEventTrinkets, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "../run/deck-mutations";
 import { applyMysteryEffect } from "./mystery-flow";
 import {
@@ -13,6 +13,7 @@ import {
   setMysteryCardChoices,
   setMysteryEvent,
   setMysteryGrantedTrinketIds,
+  setMysteryGrantedGearInstances,
   setMysteryChosenCardId,
   setMysteryChosenChoice,
   setMysteryPendingRemoval,
@@ -23,6 +24,8 @@ import {
   setRunTrinkets,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
+import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { playGoldGain, playGoldSpend } from "@/lib/audio";
@@ -32,7 +35,11 @@ export function useMysteryFlow() {
     dispatchRunSessionCommand(
       (draft) => {
         clearMysteryVisitState(draft);
-        setMysteryEvent(draft, pickMysteryEvent(createDraftRunRandomSource(draft, "events")));
+        const rng = createDraftRunRandomSource(draft, "events");
+        setMysteryEvent(
+          draft,
+          resolveMysteryEventTrinkets(pickMysteryEvent(rng), draft.run.activeRun.runTrinkets, rng),
+        );
       },
       { afterCommit: navigateToMystery },
     );
@@ -55,16 +62,26 @@ export function useMysteryFlow() {
             runDeck: runStore.runDeck,
             runMaxHealth: runStore.runMaxHealth,
             rng: createDraftRunRandomSource(draft, "events"),
+            ownedTrinketIds: runStore.runTrinkets,
             setRunDeck,
             setRunGold,
             setRunPlayerHealth,
             setRunTrinkets,
             setMysteryCardChoices,
             setMysteryGrantedTrinketIds,
+            setMysteryGrantedGearInstances,
             awardMysteryXP,
             onAddMaterials: (materials: MaterialInventory) =>
               awardMaterialsDuringRun(draft, applyMaterialFindBonus(materials, draft.runProfile.effects)),
             onAwardGold: (amount) => addRunGold(draft, amount),
+            onAddGear: (instance) => {
+              const characterId = draft.run.activeRun.characterId;
+              mutateGearWithRunHealthSync(draft, {
+                characterId,
+                mutate: (gear: GearStore) => gear.addInstance(instance, characterId),
+              });
+            },
+            gearAstralChanceBonus: draft.runProfile.effects.gearAstralChanceBonus,
             draft,
           });
           if (result.goldSound) goldSounds.push(result.goldSound);

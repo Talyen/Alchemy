@@ -1,5 +1,5 @@
 // Main menu screen with logo and navigation buttons. Entry point for all other screens.
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { BookOpen, Cog, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -10,6 +10,10 @@ import { cn } from "@/lib/utils";
 import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
 import { LockedMenuItem } from "../../shared/ui/locked-menu-item";
 import { isProgressionFeatureUnlocked, KNIGHT_UNLOCK_MESSAGE } from "../../shared/config/game-data-catalog";
+
+function MenuNavButton({ children }: { children: ReactNode }) {
+  return <div className="menu-nav-button">{children}</div>;
+}
 
 export function MenuScreen({
   onPlay,
@@ -60,6 +64,7 @@ export function MenuScreen({
     <div className="flex h-full w-full flex-col items-center justify-center gap-10 text-center">
       <TiltSurface
         className="relative w-full max-w-[47.77cqh] cursor-pointer"
+        tiltEnabled
         onDivClick={handleLogoClick}
         ariaLabel="Flip Alchemy logo"
       >
@@ -72,17 +77,19 @@ export function MenuScreen({
         />
       </TiltSurface>
 
-      <div className="grid gap-2">
-        <Button
-          size="lg"
-          variant="primary"
-          className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
-          onClick={onPlay}
-        >
-          <Swords className="h-7 w-7" />
-          Play
-        </Button>
-        <div className="relative">
+      <div className="grid gap-2 overflow-visible">
+        <MenuNavButton>
+          <Button
+            size="lg"
+            variant="primary"
+            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
+            onClick={onPlay}
+          >
+            <Swords className="h-7 w-7" />
+            Play
+          </Button>
+        </MenuNavButton>
+        <MenuNavButton>
           <LockedMenuItem
             title="Talents"
             message={KNIGHT_UNLOCK_MESSAGE}
@@ -99,8 +106,8 @@ export function MenuScreen({
           {hasUnspentTalents && !isKnightGatedLocked && (
             <ShineBorder shineColor="var(--color-primary)" borderWidth={1} duration={8} className="rounded-xl" />
           )}
-        </div>
-        <div className="relative">
+        </MenuNavButton>
+        <MenuNavButton>
           <LockedMenuItem
             title="Homestead"
             message={KNIGHT_UNLOCK_MESSAGE}
@@ -117,8 +124,8 @@ export function MenuScreen({
           {hasAffordableHomestead && !isKnightGatedLocked && (
             <ShineBorder shineColor="var(--color-primary)" borderWidth={1} duration={8} className="rounded-xl" />
           )}
-        </div>
-        <div className="relative">
+        </MenuNavButton>
+        <MenuNavButton>
           <LockedMenuItem
             title="Armory"
             message="Find Gear to unlock"
@@ -132,34 +139,40 @@ export function MenuScreen({
           >
             Armory
           </LockedMenuItem>
-        </div>
-        <Button
-          size="lg"
-          variant="outline"
-          className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
-          onClick={onCollection}
-        >
-          <BookOpen className="h-7 w-7" />
-          Collection
-        </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
-          onClick={onOptions}
-        >
-          <Cog className="h-7 w-7" />
-          Options
-        </Button>
-        {onQuit ? (
+        </MenuNavButton>
+        <MenuNavButton>
           <Button
             size="lg"
             variant="outline"
             className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
-            onClick={onQuit}
+            onClick={onCollection}
           >
-            Quit
+            <BookOpen className="h-7 w-7" />
+            Collection
           </Button>
+        </MenuNavButton>
+        <MenuNavButton>
+          <Button
+            size="lg"
+            variant="outline"
+            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
+            onClick={onOptions}
+          >
+            <Cog className="h-7 w-7" />
+            Options
+          </Button>
+        </MenuNavButton>
+        {onQuit ? (
+          <MenuNavButton>
+            <Button
+              size="lg"
+              variant="outline"
+              className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
+              onClick={onQuit}
+            >
+              Quit
+            </Button>
+          </MenuNavButton>
         ) : null}
       </div>
     </div>

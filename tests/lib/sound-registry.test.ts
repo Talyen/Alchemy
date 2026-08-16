@@ -18,7 +18,6 @@ const preservedPublicSounds = new Set([
   "kick.ogg",
   "power-down.ogg",
   "punch-3.ogg",
-  "sci-fi-confirm.ogg",
   "sci-fi-error.ogg",
   "splat-quick.ogg",
   "squelching-4.ogg",

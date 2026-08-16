@@ -44,13 +44,14 @@ function BattleScreenRoute({
   commands: BattleCommands;
   onOpenBattleMenu: BattleRouteCtx["onOpenBattleMenu"];
 }) {
-  const { heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
+  const { characterId, heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
   const { battleScreenData, hiddenHandCardKeys, cardTransferInProgress, playableHandCardKeys } =
     useBattleScreenRouteData();
 
   return (
     <BattleScreen
       battleScreenData={battleScreenData}
+      characterId={characterId}
       heroArt={heroArt}
       playerName={playerName}
       aspectMode={aspectMode}
@@ -298,7 +299,14 @@ function MysteryScreenRoute({
   const r = useMysteryScreenData();
   const { handleContinue } = commands;
   const autoContinueAttemptedRef = useRef(false);
-  const heldEvent = useHeldWhile(Boolean(r.mysteryEvent), r.mysteryEvent);
+  const isMysteryActive = Boolean(r.mysteryEvent);
+  const heldEvent = useHeldWhile(isMysteryActive, r.mysteryEvent);
+  const heldCardChoices = useHeldWhile(isMysteryActive, r.mysteryCardChoices);
+  const heldGrantedTrinketIds = useHeldWhile(isMysteryActive, r.mysteryGrantedTrinketIds);
+  const heldGrantedGearInstances = useHeldWhile(isMysteryActive, r.mysteryGrantedGearInstances);
+  const heldChosenCardId = useHeldWhile(isMysteryActive, r.mysteryChosenCardId);
+  const heldChosenChoice = useHeldWhile(isMysteryActive, r.mysteryChosenChoice);
+  const heldPendingRemoval = useHeldWhile(isMysteryActive, r.mysteryPendingRemoval);
 
   useEffect(() => {
     if (r.mysteryEvent || heldEvent) return;
@@ -315,11 +323,14 @@ function MysteryScreenRoute({
     <MysteryScreen
       event={heldEvent}
       runDeck={r.runDeck}
-      mysteryCardChoices={r.mysteryCardChoices}
-      mysteryGrantedTrinketIds={r.mysteryGrantedTrinketIds}
-      mysteryChosenCardId={r.mysteryChosenCardId}
-      mysteryChosenChoice={r.mysteryChosenChoice}
-      mysteryPendingRemoval={r.mysteryPendingRemoval}
+      mysteryCardChoices={heldCardChoices}
+      mysteryGrantedTrinketIds={heldGrantedTrinketIds}
+      mysteryGrantedGearInstances={heldGrantedGearInstances}
+      mysteryChosenCardId={heldChosenCardId}
+      mysteryChosenChoice={heldChosenChoice}
+      mysteryPendingRemoval={heldPendingRemoval}
+      runTalentXP={r.runTalentXP}
+      talentXP={r.talentXP}
       onChoose={commands.handleChoice}
       onChooseCard={commands.handleChooseCard}
       onRemoveCard={commands.handleRemoveCard}

@@ -12,9 +12,12 @@ const mysteryScreenData = vi.hoisted(() => ({
     mysteryEvent: null as MysteryEvent | null,
     mysteryCardChoices: null as unknown,
     mysteryGrantedTrinketIds: [] as string[],
+    mysteryGrantedGearInstances: [] as unknown[],
     mysteryChosenCardId: null as string | null,
     mysteryChosenChoice: null as unknown,
     mysteryPendingRemoval: false,
+    runTalentXP: {},
+    talentXP: {},
   },
 }));
 
@@ -74,9 +77,12 @@ afterEach(() => {
     mysteryEvent: null,
     mysteryCardChoices: null,
     mysteryGrantedTrinketIds: [],
+    mysteryGrantedGearInstances: [],
     mysteryChosenCardId: null,
     mysteryChosenChoice: null,
     mysteryPendingRemoval: false,
+    runTalentXP: {},
+    talentXP: {},
   };
 });
 

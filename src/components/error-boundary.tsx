@@ -46,7 +46,6 @@ export class ErrorBoundary extends Component<Props, State> {
             <Button
               type="button"
               size="lg"
-              hoverSound={false}
               onClick={() => {
                 this.setState({ hasError: false });
                 window.location.reload();

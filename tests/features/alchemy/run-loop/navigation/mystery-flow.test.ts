@@ -17,15 +17,19 @@ function minimalContext(overrides: { runDeck?: BattleCard[] } = {}) {
     runDeck: overrides.runDeck,
     runMaxHealth: 30,
     rng: vi.fn(() => 0.5),
+    ownedTrinketIds: [],
     setRunDeck: vi.fn(),
     setRunGold: vi.fn(),
     setRunPlayerHealth: vi.fn(),
     setRunTrinkets: vi.fn(),
     setMysteryCardChoices: vi.fn(),
     setMysteryGrantedTrinketIds: vi.fn(),
+    setMysteryGrantedGearInstances: vi.fn(),
     awardMysteryXP: vi.fn(),
     onAddMaterials: vi.fn(),
     onAwardGold: vi.fn(),
+    onAddGear: vi.fn(),
+    gearAstralChanceBonus: 0,
   };
 }
 
@@ -74,6 +78,8 @@ describe("applyMysteryEffect", () => {
     const trinketContext = minimalContext();
     applyMysteryEffect({ kind: "gainTrinket", trinketId: "bone-charm" }, trinketContext);
     expect(trinketContext.setRunTrinkets).toHaveBeenCalledOnce();
+    const existingTrinketUpdater = trinketContext.setRunTrinkets.mock.calls[0][1];
+    expect(existingTrinketUpdater(["bone-charm"])).toEqual(["bone-charm"]);
 
     const randomTrinketContext = minimalContext();
     applyMysteryEffect({ kind: "gainRandomTrinket" }, randomTrinketContext);
@@ -84,6 +90,30 @@ describe("applyMysteryEffect", () => {
     const grantedIds = grantedUpdater([]) as string[];
     expect(grantedIds).toHaveLength(1);
     expect(trinketUpdater([])).toEqual(grantedIds);
+
+    const constrainedTrinketContext = minimalContext();
+    applyMysteryEffect(
+      { kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] },
+      constrainedTrinketContext,
+    );
+    const constrainedUpdater = constrainedTrinketContext.setRunTrinkets.mock.calls[0][1];
+    expect(["bone-charm", "sin-eaters-lantern"]).toContain(constrainedUpdater([])[0]);
+
+    const ownedRandomContext = minimalContext();
+    ownedRandomContext.ownedTrinketIds = ["bone-charm", "sin-eaters-lantern"];
+    applyMysteryEffect(
+      { kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] },
+      ownedRandomContext,
+    );
+    const unownedUpdater = ownedRandomContext.setRunTrinkets.mock.calls[0][1];
+    expect(["bone-charm", "sin-eaters-lantern"]).not.toContain(unownedUpdater([])[0]);
+
+    const gearContext = minimalContext();
+    applyMysteryEffect({ kind: "gainGeneratedGear", baseItemId: "emerald-ring" }, gearContext);
+    expect(gearContext.onAddGear).toHaveBeenCalledOnce();
+    expect(gearContext.setMysteryGrantedGearInstances).toHaveBeenCalledOnce();
+    const grantedGear = gearContext.onAddGear.mock.calls[0][0];
+    expect(grantedGear.definitionId).toMatch(/^emerald-ring-(basic|astral)$/);
 
     const materialContext = minimalContext();
     applyMysteryEffect({ kind: "gainMaterial", material: "wood", amount: 1 }, materialContext);

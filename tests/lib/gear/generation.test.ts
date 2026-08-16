@@ -4,6 +4,7 @@ import {
   definitionOfferFootprintKey,
   eligibleOfferFootprintKeys,
   generateDevRandomGearInstance,
+  generateGearInstanceForBaseItem,
   generateGearRewardChoices,
   gearDefinitions,
   rollGearRewardRarity,
@@ -116,5 +117,17 @@ describe("gear generation", () => {
         expect(pool.some((entry) => entry.id === affixRoll.id)).toBe(true);
       }
     }
+  });
+
+  it("generates a named base item with reward rarity and affixes", () => {
+    const instance = generateGearInstanceForBaseItem("emerald-ring", createSeededRng(7));
+    expect(instance).not.toBeNull();
+    expect(instance!.definitionId).toMatch(/^emerald-ring-(basic|astral)$/);
+    expect(gearDefinitions[instance!.definitionId]?.baseItemId).toBe("emerald-ring");
+    expect(instance!.affixes.length).toBeGreaterThanOrEqual(GEAR_AFFIX_COUNT.basic.min);
+  });
+
+  it("returns null for an unknown base item id", () => {
+    expect(generateGearInstanceForBaseItem("not-a-real-item", () => 0.1)).toBeNull();
   });
 });

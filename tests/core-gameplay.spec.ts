@@ -59,32 +59,6 @@ test.describe("Talents", () => {
     await new MenuPage(page).gotoWithUnlockedMeta();
   });
 
-  test("talents screen shows all keyword categories", async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.openTalents();
-
-    const keywords = [
-      "Physical",
-      "Stun",
-      "Block",
-      "Forge",
-      "Armor",
-      "Health",
-      "Burn",
-      "Gold",
-      "Holy",
-      "Wish",
-      "Poison",
-      "Bleed",
-      "Leech",
-      "Freeze",
-      "Mana",
-    ];
-    for (const kw of keywords) {
-      await expect(page.getByRole("button", { name: kw })).toBeVisible();
-    }
-  });
-
   test("reset talents button is accessible from talent screen", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.openTalents();

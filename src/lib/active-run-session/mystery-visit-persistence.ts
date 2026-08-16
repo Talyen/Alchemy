@@ -1,6 +1,15 @@
 // Persist / hydrate mystery visit state for active-run snapshots.
-import { findMysteryEvent, type MysteryChoice, type MysteryEffect, type MysteryEvent } from "@/lib/mystery";
+import {
+  applyResolvedMysteryTrinketIds,
+  collectResolvedMysteryTrinketIds,
+  findMysteryEvent,
+  repairUnresolvedMysteryTrinkets,
+  type MysteryChoice,
+  type MysteryEffect,
+  type MysteryEvent,
+} from "@/lib/mystery";
 import type { BattleCard } from "@/lib/game-data";
+import type { GearInstance } from "@/lib/gear";
 import type { PersistedMysteryVisit } from "./types";
 
 export interface HydratedMysteryVisit {
@@ -9,6 +18,7 @@ export interface HydratedMysteryVisit {
   mysteryPendingRemoval: boolean;
   mysteryCardChoices: BattleCard[] | null;
   mysteryGrantedTrinketIds: string[];
+  mysteryGrantedGearInstances: GearInstance[];
   mysteryChosenCardId: string | null;
 }
 
@@ -19,6 +29,7 @@ export function emptyHydratedMysteryVisit(): HydratedMysteryVisit {
     mysteryPendingRemoval: false,
     mysteryCardChoices: null,
     mysteryGrantedTrinketIds: [],
+    mysteryGrantedGearInstances: [],
     mysteryChosenCardId: null,
   };
 }
@@ -29,6 +40,7 @@ export function serializeMysteryVisit(visit: {
   mysteryPendingRemoval: boolean;
   mysteryCardChoices: BattleCard[] | null;
   mysteryGrantedTrinketIds: string[];
+  mysteryGrantedGearInstances: GearInstance[];
   mysteryChosenCardId: string | null;
 }): PersistedMysteryVisit | null {
   const event = visit.mysteryEvent;
@@ -39,20 +51,30 @@ export function serializeMysteryVisit(visit: {
     pendingRemoval: visit.mysteryPendingRemoval,
     cardChoices: visit.mysteryCardChoices,
     grantedTrinketIds: visit.mysteryGrantedTrinketIds,
+    grantedGear: visit.mysteryGrantedGearInstances,
     chosenCardId: visit.mysteryChosenCardId,
+    resolvedTrinketIds: collectResolvedMysteryTrinketIds(event),
   };
 }
 
-export function hydrateMysteryVisit(data: PersistedMysteryVisit | null): HydratedMysteryVisit {
+export function hydrateMysteryVisit(
+  data: PersistedMysteryVisit | null,
+  options?: { ownedTrinketIds?: readonly string[]; rng?: () => number },
+): HydratedMysteryVisit {
   if (!data) return emptyHydratedMysteryVisit();
   const mysteryEvent = findMysteryEvent(data.eventId);
   if (!mysteryEvent) return emptyHydratedMysteryVisit();
+  let event = applyResolvedMysteryTrinketIds(mysteryEvent, data.resolvedTrinketIds ?? []);
+  if (options?.rng) {
+    event = repairUnresolvedMysteryTrinkets(event, options.ownedTrinketIds ?? [], options.rng);
+  }
   return {
-    mysteryEvent,
+    mysteryEvent: event,
     mysteryChosenChoice: hydratePersistedMysteryChoice(data.chosenChoice),
     mysteryPendingRemoval: data.pendingRemoval,
     mysteryCardChoices: data.cardChoices,
     mysteryGrantedTrinketIds: data.grantedTrinketIds,
+    mysteryGrantedGearInstances: data.grantedGear ?? [],
     mysteryChosenCardId: data.chosenCardId,
   };
 }

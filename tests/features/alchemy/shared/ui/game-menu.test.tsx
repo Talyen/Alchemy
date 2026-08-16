@@ -54,6 +54,7 @@ describe("GameMenu", () => {
 
     expect(screen.getByTestId("game-menu")).toBeTruthy();
     expect(isAnchored()).toBe(true);
+    expect(screen.getByTestId("game-menu").parentElement?.parentElement?.className).toContain("pointer-events-none");
   });
 
   it("centers the panel when opened without an anchor", () => {

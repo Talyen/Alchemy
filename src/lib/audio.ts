@@ -10,6 +10,7 @@ export {
   playEnemyAttack,
   playGoldGain,
   playGoldSpend,
+  playSliceDeath,
   playUISound,
   playVictory,
   stopAllSfx,

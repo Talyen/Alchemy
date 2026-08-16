@@ -1,6 +1,12 @@
 // Victory reward screen — pick a card or trinket to add or skip.
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
-import { gearDefinitions, getGearInstanceDescriptionLines, getGearInstanceTitle, type GearInstance } from "@/lib/gear";
+import {
+  gearDefinitions,
+  getAstralShineColors,
+  getGearInstanceDescriptionLines,
+  getGearInstanceTitle,
+  type GearInstance,
+} from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 
@@ -62,6 +68,7 @@ function RewardChoiceItems({
             selected={selectedRewardId === choiceId}
             onSelect={() => onSelectReward(choiceId)}
             interactionKey="reward"
+            tiltEnabled={false}
           />
         )}
       </div>
@@ -107,7 +114,7 @@ function TrinketRewardButton({
         <DetailPopup
           idPrefix={trinket.id}
           title={trinket.title}
-          subtitle="This Run"
+          footerChip="This Run"
           descriptionLines={trinket.descriptionLines}
           visible={visible}
           triggerRef={triggerRef}
@@ -139,6 +146,7 @@ function GearRewardButton({
       art={art}
       className={cn(cardSurfaceClass, collectionTileWidthClass, gearArtAspectClass)}
       imageClassName={gearArtFillClass}
+      shineColor={getAstralShineColors(instance)}
       selected={selected}
       onClick={onClick}
       ariaLabel={`Select ${title}`}
@@ -181,6 +189,11 @@ export function RewardsScreen({
   const selectedRewardId = rewardState.selectedId;
   const isTrinket = rewardType === "trinket";
   const isGear = rewardType === "gear";
+  const choicePrompt = isGear
+    ? "Add Gear to your Armory"
+    : isTrinket
+      ? "Gain a Trinket for this Run"
+      : "Add a Card to your Deck";
   const selectedRewardItem = selectedRewardId
     ? (rewardChoices.find((item) => getRewardChoiceId(item) === selectedRewardId) ?? null)
     : null;
@@ -188,7 +201,7 @@ export function RewardsScreen({
 
   return (
     <TitledScreenShell title="Victory" onOpenMenu={onOpenMenu} menuLabel="Open rewards menu" maxWidthClass="max-w-6xl">
-      <h2 className={cn("mt-3 text-center font-sans", sectionTitleClass)}>Choose Reward</h2>
+      <h2 className={cn("mt-3 text-center font-sans", sectionTitleClass)}>{choicePrompt}</h2>
 
       <FadeSlot
         swapKey={rewardChoices.map((item) => getRewardChoiceId(item)).join("-")}

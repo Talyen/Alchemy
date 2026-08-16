@@ -31,7 +31,7 @@ export class ShopPage {
     this.goldText = this.page.getByText(/\d+ Gold/).first();
     this.purchasedText = this.page.getByText("Purchased").first();
     this.cardGrid = this.page.locator('[data-testid="card-selection-grid"]');
-    this.inspectButtons = this.page.locator('button[aria-label^="Inspect "]');
+    this.inspectButtons = this.page.locator('button[aria-label^="Buy "]');
   }
 
   async gold(): Promise<number> {

@@ -36,7 +36,8 @@ const MysteryEffectSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("gainXP"), keyword: z.string(), amount: z.number() }),
   z.object({ kind: z.literal("removeCard"), mode: z.enum(["random", "choose"]) }),
   z.object({ kind: z.literal("gainTrinket"), trinketId: z.string() }),
-  z.object({ kind: z.literal("gainRandomTrinket") }),
+  z.object({ kind: z.literal("gainRandomTrinket"), fromIds: z.array(z.string()).optional() }),
+  z.object({ kind: z.literal("gainGeneratedGear"), baseItemId: z.string() }),
   z.object({ kind: z.literal("gainMaterial"), material: MaterialIdPersistSchema, amount: z.number() }),
 ]);
 
@@ -52,7 +53,9 @@ const MysteryVisitPersistSchema = z
     pendingRemoval: z.boolean().catch(false).default(false),
     cardChoices: z.array(BattleCardSchema).nullable().catch(null).default(null),
     grantedTrinketIds: z.array(z.string()).catch([]).default([]),
+    grantedGear: GearInstanceArraySchema.catch([]).default([]),
     chosenCardId: z.string().nullable().catch(null).default(null),
+    resolvedTrinketIds: z.array(z.string()).catch([]).default([]),
   })
   .nullable()
   .catch(null)

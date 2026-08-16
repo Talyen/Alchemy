@@ -6,7 +6,6 @@ describe("companionLibrary data integrity", () => {
     const expectedIds = [
       "wolf",
       "lizard-scout",
-      "imp",
       "frost-whelp",
       "bear",
       "panther",

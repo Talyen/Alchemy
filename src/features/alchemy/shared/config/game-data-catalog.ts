@@ -9,6 +9,7 @@ export {
   corruptionAltar,
   eliteEnemyBg,
   enemyBestiary,
+  getCardKeywords,
   getCharacterUnlockMessage,
   getGameModeUnlockMessage,
   getRequiredPreviousCharacter,
@@ -27,9 +28,11 @@ export {
   theLabyrinth,
   wildwoodDraft,
   trinketLibrary,
+  talentArt,
 } from "@/lib/game-data";
 
 export type {
+  BattleCard,
   BestiaryEntry,
   CharacterId,
   CompanionId,

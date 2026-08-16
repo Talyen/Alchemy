@@ -5,15 +5,19 @@ import {
   type CSSProperties,
   type MouseEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
   type Ref,
   type RefObject,
+  useEffect,
   useRef,
 } from "react";
 
+import { ShineBorder } from "@/components/ui/shine-border";
+import { HAND_HOVER_HANDOFF_MS } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardArtImageClass, cardSurfaceClass } from "../config";
+import { cardArtImageClass, cardShineFrameClass, cardSurfaceClass } from "../config";
 import { useCardDescriptionContext } from "@/features/alchemy/shared/context/card-description-context";
 import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "../utils/card-description";
 import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
@@ -25,9 +29,9 @@ interface BattleCardButtonProps {
   hovered: boolean;
   onHoverStart: () => void;
   onHoverEnd: () => void;
-  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
-  onPointerDown?: (event: ReactPointerEvent<HTMLButtonElement>) => void;
-  buttonRef?: Ref<HTMLButtonElement>;
+  onClick?: ((event: MouseEvent<HTMLButtonElement>) => void) | undefined;
+  onPointerDown?: ((event: ReactPointerEvent<HTMLButtonElement>) => void) | undefined;
+  buttonRef?: Ref<HTMLButtonElement> | undefined;
   ariaLabel: string;
   shimmerActive: boolean;
   shimmerToken: number | undefined;
@@ -38,10 +42,15 @@ interface BattleCardButtonProps {
   wrapperStyle?: CSSProperties;
   wrapperDataCardKey?: string;
   selected?: boolean;
-  disabled?: boolean;
-  dragging?: boolean;
-  tiltEnabled?: boolean;
-  descriptionContext?: CardDescriptionContext;
+  disabled?: boolean | undefined;
+  dragging?: boolean | undefined;
+  tiltEnabled?: boolean | undefined;
+  descriptionContext?: CardDescriptionContext | undefined;
+  /** Keyword shine palette; shown only while hovered/focused and not dragging. */
+  shineColor?: readonly string[] | undefined;
+  /** Gap between the trigger and the hover detail tooltip. */
+  tooltipPadding?: number | undefined;
+  children?: ReactNode | undefined;
 }
 
 export function BattleCardButton(props: BattleCardButtonProps) {
@@ -58,6 +67,29 @@ export function BattleCardButton(props: BattleCardButtonProps) {
   const inheritedDescriptionContext = useCardDescriptionContext();
   const descriptionContext = props.descriptionContext ?? inheritedDescriptionContext;
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const hoverEndTimerRef = useRef(0);
+
+  useEffect(() => {
+    return () => window.clearTimeout(hoverEndTimerRef.current);
+  }, []);
+
+  function handleHoverStart() {
+    window.clearTimeout(hoverEndTimerRef.current);
+    onHoverStart();
+  }
+
+  function handleHoverLeave(event: MouseEvent<HTMLDivElement>) {
+    const next = event.relatedTarget;
+    if (next instanceof Element && next.closest("[data-hand-card='true']")) {
+      return;
+    }
+    if (!wrapperDataCardKey) {
+      onHoverEnd();
+      return;
+    }
+    window.clearTimeout(hoverEndTimerRef.current);
+    hoverEndTimerRef.current = window.setTimeout(onHoverEnd, HAND_HOVER_HANDOFF_MS);
+  }
 
   return (
     <div
@@ -66,16 +98,17 @@ export function BattleCardButton(props: BattleCardButtonProps) {
       data-hand-card={wrapperDataCardKey ? "true" : undefined}
       data-hand-card-id={wrapperDataCardKey}
       style={wrapperStyle}
-      onMouseEnter={onHoverStart}
-      onMouseLeave={onHoverEnd}
+      onMouseEnter={handleHoverStart}
+      onMouseLeave={handleHoverLeave}
     >
       <CardHoverPopup
         card={card}
         visible={hovered && !dragging}
         triggerRef={wrapperRef}
         descriptionContext={descriptionContext}
+        padding={props.tooltipPadding}
       />
-      <CardButtonSurface {...props} />
+      <CardButtonSurface {...props} onHoverStart={handleHoverStart} />
     </div>
   );
 }
@@ -85,10 +118,12 @@ function CardHoverPopup({
   visible,
   triggerRef,
   descriptionContext,
+  padding,
 }: Pick<BattleCardButtonProps, "card"> & {
   visible: boolean;
   triggerRef: RefObject<HTMLElement | null>;
   descriptionContext: CardDescriptionContext;
+  padding?: number | undefined;
 }) {
   // Description formatting allocates an effect-cursor and scans every line, so
   // only build it for the card actually being hovered — the render-body call
@@ -102,6 +137,7 @@ function CardHoverPopup({
       descriptionLines={descriptionLines}
       visible={visible}
       triggerRef={triggerRef}
+      {...(padding !== undefined ? { padding } : {})}
       {...(card.corrupted ? { card } : {})}
     />
   );
@@ -109,6 +145,7 @@ function CardHoverPopup({
 
 function CardButtonSurface({
   card,
+  hovered,
   onHoverStart,
   onHoverEnd,
   onClick,
@@ -119,15 +156,24 @@ function CardButtonSurface({
   shimmerToken,
   baseTransform,
   className,
+  children,
   selected = false,
   disabled = false,
   dragging = false,
   tiltEnabled = true,
+  shineColor,
 }: BattleCardButtonProps) {
+  const showShine = Boolean(hovered && !dragging && shineColor && shineColor.length > 0);
   return (
     <TiltSurface
       as="button"
-      className={cn(cardSurfaceClass, "group", className)}
+      className={cn(
+        cardSurfaceClass,
+        "group",
+        showShine && cardShineFrameClass,
+        !showShine && "border border-border/80",
+        className,
+      )}
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
       selected={selected}
@@ -141,6 +187,9 @@ function CardButtonSurface({
       onBlur={onHoverEnd}
       buttonRef={buttonRef}
       ariaLabel={ariaLabel}
+      overlay={
+        showShine && shineColor ? <ShineBorder shineColor={shineColor} borderWidth={2} className="z-20" /> : undefined
+      }
     >
       <img
         src={card.art || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"}
@@ -148,6 +197,7 @@ function CardButtonSurface({
         className={cn("block h-auto w-full", cardArtImageClass)}
         loading="eager"
       />
+      {children}
     </TiltSurface>
   );
 }

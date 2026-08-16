@@ -8,6 +8,7 @@ import type { BattleCard, KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
+import { tooltipHeaderClass } from "../config";
 import { tokenizeDescription } from "../utils";
 import { KeywordTag } from "./keyword-tag";
 import { TooltipBody } from "./tooltip-panel";
@@ -45,8 +46,8 @@ export function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId;
     >
       <span className={cn("cursor-help font-semibold", definition.colorClass)}>{matchedText}</span>
       <PortaledTooltip triggerRef={triggerRef} visible={visible}>
-        <span className="flex items-center gap-2 text-sm font-semibold">
-          <KeywordTag keywordId={keywordId} />
+        <span className={cn("flex items-center gap-2", tooltipHeaderClass)}>
+          <KeywordTag keywordId={keywordId} className="text-sm sm:text-base" />
         </span>
         <TooltipBody>{renderColoredKeywords(definition.description)}</TooltipBody>
       </PortaledTooltip>

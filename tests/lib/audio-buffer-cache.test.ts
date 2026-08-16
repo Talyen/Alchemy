@@ -3,12 +3,15 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
   getAudioContext,
   resumeAudioContext,
-  loadSoundBuffer,
+  unlockAudioFromUserGesture,
   preloadSounds,
   preloadAllSounds,
   preloadBattleSounds,
+  resetSoundPreloadCache,
 } from "@/lib/audio-buffer-cache";
 import { audioState } from "@/lib/audio-state";
+
+const createdAudio: Array<{ src: string; preload: string }> = [];
 
 beforeEach(() => {
   audioState.context = null;
@@ -18,10 +21,27 @@ beforeEach(() => {
   audioState.musicVolume = 0.0875;
   audioState.masterVolume = 1;
   audioState.audioUnlocked = false;
+  createdAudio.length = 0;
+  resetSoundPreloadCache();
+  vi.stubGlobal(
+    "Audio",
+    class {
+      src = "";
+      preload = "";
+      constructor(src?: string) {
+        this.src = src ?? "";
+        createdAudio.push(this);
+      }
+      canPlayType() {
+        return "";
+      }
+    },
+  );
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   audioState.context = null;
   audioState.masterGain = null;
 });
@@ -67,65 +87,35 @@ describe("getAudioContext", () => {
 
 describe("resumeAudioContext", () => {
   it("resumes suspended context", async () => {
-    const resume = vi.fn(() => Promise.resolve());
-    const mockCtx = { state: "suspended", resume } as unknown as Partial<AudioContext>;
-    audioState.context = mockCtx as AudioContext;
+    const mockCtx = {
+      state: "suspended",
+      resume: vi.fn(() => {
+        mockCtx.state = "running";
+        return Promise.resolve();
+      }),
+    };
+    audioState.context = mockCtx as unknown as AudioContext;
     audioState.audioUnlocked = false;
-    resumeAudioContext();
-    expect(resume).toHaveBeenCalledOnce();
-    await Promise.resolve();
+    const unlocked = resumeAudioContext();
+    expect(mockCtx.resume).toHaveBeenCalledOnce();
+    await expect(unlocked).resolves.toBe(true);
     expect(audioState.audioUnlocked).toBe(true);
   });
 
-  it("does not resume running context", () => {
+  it("does not resume running context", async () => {
     const resume = vi.fn(() => Promise.resolve());
     const mockCtx = { state: "running", resume } as unknown as Partial<AudioContext>;
     audioState.context = mockCtx as AudioContext;
-    resumeAudioContext();
+    await expect(resumeAudioContext()).resolves.toBe(true);
     expect(resume).not.toHaveBeenCalled();
   });
-});
 
-describe("loadSoundBuffer", () => {
-  it("deduplicates concurrent loads of the same sound", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() => {
-        return new Promise<Response>(() => {});
-      }),
-    );
-    const p1 = loadSoundBuffer("dedup-concurrent.ogg");
-    const p2 = loadSoundBuffer("dedup-concurrent.ogg");
-    expect(p1).toBeInstanceOf(Promise);
-    expect(p2).toBeInstanceOf(Promise);
-  });
-
-  it("returns null on fetch failure", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() => Promise.resolve({ ok: false })),
-    );
-    const result = await loadSoundBuffer("missing.ogg");
-    expect(result).toBeNull();
-  });
-
-  it("retries after a failed load", async () => {
-    const fetchMock = vi.fn(() => Promise.resolve({ ok: false }));
-    vi.stubGlobal("fetch", fetchMock);
-    await loadSoundBuffer("retry-missing.ogg");
-    await loadSoundBuffer("retry-missing.ogg");
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-  });
-
-  it("returns null on decode failure", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() => Promise.resolve({ ok: true, arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) })),
-    );
+  it("creates AudioContext on first unlock gesture", async () => {
     const mockCtx = {
-      createGain: vi.fn(),
+      state: "running",
+      resume: vi.fn(() => Promise.resolve()),
+      createGain: vi.fn(() => ({ gain: { value: 0 }, connect: vi.fn() })),
       destination: "dest",
-      decodeAudioData: vi.fn(() => Promise.reject(new Error("decode failed"))),
     } as unknown as Partial<AudioContext>;
     vi.stubGlobal(
       "AudioContext",
@@ -135,50 +125,57 @@ describe("loadSoundBuffer", () => {
         }
       },
     );
-    const result = await loadSoundBuffer("bad.ogg");
-    expect(result).toBeNull();
+    audioState.context = null;
+    audioState.audioUnlocked = false;
+    await expect(resumeAudioContext()).resolves.toBe(true);
+    expect(audioState.context).toBe(mockCtx);
+    expect(audioState.audioUnlocked).toBe(true);
+  });
+
+  it("primes a silent buffer while resuming", async () => {
+    const source = { buffer: null as AudioBuffer | null, connect: vi.fn(), start: vi.fn() };
+    const mockCtx = {
+      state: "suspended",
+      sampleRate: 48000,
+      destination: "dest",
+      createBuffer: vi.fn(() => ({})),
+      createBufferSource: vi.fn(() => source),
+      resume: vi.fn(() => {
+        mockCtx.state = "running";
+        return Promise.resolve();
+      }),
+    };
+    audioState.context = mockCtx as unknown as AudioContext;
+    await expect(unlockAudioFromUserGesture()).resolves.toBe(true);
+    expect(source.start).toHaveBeenCalledOnce();
+    expect(mockCtx.resume).toHaveBeenCalledOnce();
   });
 });
 
 describe("preloadSounds", () => {
-  it("kicks off loading for each name", () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() => new Promise(() => {})),
-    );
+  it("warms each name via HTMLAudio preload", () => {
     preloadSounds(["a.ogg", "b.ogg"]);
+    const warmed = createdAudio.filter((el) => el.preload === "auto");
+    expect(warmed).toHaveLength(2);
+    expect(warmed[0]?.src).toContain("a.");
+    expect(warmed[1]?.src).toContain("b.");
   });
 });
 
 describe("preloadBattleSounds", () => {
   it("prioritizes the visible hand and current enemy sound set", () => {
-    const fetchMock = vi.fn((_url: RequestInfo | URL) => new Promise<Response>(() => {}));
-    vi.stubGlobal("fetch", fetchMock);
     preloadBattleSounds(["slash", "frostbolt"], "skeleton");
-    const urls = fetchMock.mock.calls.map(([url]) => String(url));
-    expect(urls.some((url) => url.endsWith("sword-attack-1.ogg"))).toBe(true);
-    expect(urls.some((url) => url.endsWith("ice-throw-1.ogg"))).toBe(true);
-    expect(urls.some((url) => url.endsWith("swish-hit.ogg"))).toBe(true);
+    const urls = createdAudio.map((el) => el.src);
+    expect(urls.some((url) => url.includes("sword-attack-1."))).toBe(true);
+    expect(urls.some((url) => url.includes("ice-throw-1."))).toBe(true);
+    expect(urls.some((url) => url.includes("swish-hit."))).toBe(true);
   });
 });
 
 describe("preloadAllSounds", () => {
   it("schedules sound preloading in batches across idle callbacks", () => {
-    const fetchMock = vi.fn(() => new Promise<Response>(() => {}));
-    vi.stubGlobal("fetch", fetchMock);
-    const mockCtx = {
-      createGain: vi.fn(() => ({ gain: { value: 0 }, connect: vi.fn() })),
-      destination: "dest",
-      state: "running",
-    } as unknown as Partial<AudioContext>;
-    vi.stubGlobal(
-      "AudioContext",
-      class {
-        constructor() {
-          return mockCtx;
-        }
-      },
-    );
+    const AudioContextCtor = vi.fn();
+    vi.stubGlobal("AudioContext", AudioContextCtor);
 
     const callbacks: IdleRequestCallback[] = [];
     window.requestIdleCallback = vi.fn((cb: IdleRequestCallback) => {
@@ -187,11 +184,13 @@ describe("preloadAllSounds", () => {
     });
 
     preloadAllSounds();
-    expect(fetchMock).toHaveBeenCalled();
+    expect(AudioContextCtor).not.toHaveBeenCalled();
+    expect(createdAudio.length).toBeGreaterThan(0);
     expect(callbacks.length).toBe(1);
 
-    callbacks[0]({ didTimeout: false, timeRemaining: () => 50 });
+    callbacks[0]!({ didTimeout: false, timeRemaining: () => 50 });
 
     expect(callbacks.length).toBe(2);
+    expect(AudioContextCtor).not.toHaveBeenCalled();
   });
 });

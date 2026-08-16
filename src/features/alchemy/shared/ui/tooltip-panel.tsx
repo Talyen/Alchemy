@@ -9,6 +9,7 @@ import {
   popupBaseClassName,
   tooltipAnchorClassNames,
   tooltipBodyClass,
+  tooltipFooterChipClass,
   tooltipHeaderClass,
   tooltipSubheaderClass,
   tooltipWidthClass,
@@ -101,5 +102,19 @@ export function TooltipSection({ label, children }: { label: string; children: R
       <TooltipSubheader>{label}</TooltipSubheader>
       {children}
     </div>
+  );
+}
+
+export function TooltipChip({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "mt-1.5 inline-flex items-center rounded-full bg-amber-100/10 px-1.5 py-px tracking-wider text-amber-100/80 uppercase",
+        tooltipFooterChipClass,
+        className,
+      )}
+    >
+      {children}
+    </span>
   );
 }

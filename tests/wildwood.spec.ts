@@ -6,15 +6,10 @@ import { critical, slow } from "./playwright-tags";
 import { injectSaveState, makeCard, makeHighDamageCard, SAVE_KEY, seedRandom } from "./helpers";
 
 async function pickDraftCard(page: import("@playwright/test").Page) {
-  const confirm = page.getByRole("button", { name: "Select Card" });
-  await expect(async () => {
-    await page
-      .getByRole("button", { name: /^Select (?!Card$).+/ })
-      .first()
-      .click({ force: true });
-    await expect(confirm).toBeEnabled();
-  }).toPass();
-  await confirm.click();
+  await page
+    .getByRole("button", { name: /^Select / })
+    .first()
+    .click();
 }
 
 /** Default resumable draft state with the shared inert fields; override draftChoices etc. */

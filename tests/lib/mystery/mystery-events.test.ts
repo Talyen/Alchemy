@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { mysteryPool, pickMysteryEvent } from "@/lib/mystery";
 import { cardLibrary, mysteryEventArt, trinketLibrary } from "@/lib/game-data";
+import { gearBaseItems } from "@/lib/gear";
+
+const PORTRAIT_EFFECT_KINDS = new Set(["addCard", "gainTrinket", "gainRandomTrinket", "gainGeneratedGear"]);
+const SIDE_LOOT_KINDS = new Set(["gainXP", "gainGold", "gainMaterial"]);
 
 describe("mysteryPool", () => {
   it("contains events", () => {
@@ -22,11 +26,19 @@ describe("mysteryPool", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("each choice has label and at least one effect", () => {
+  it("each choice grants exactly one portrait reward plus optional XP, gold, or materials", () => {
     for (const event of mysteryPool) {
       for (const choice of event.choices) {
+        const label = `${event.id}/${choice.label}`;
         expect(choice.label).toBeTruthy();
-        expect(choice.effects.length).toBeGreaterThanOrEqual(1);
+        expect(choice.effects.length, label).toBeGreaterThanOrEqual(2);
+        expect(choice.effects.length, label).toBeLessThanOrEqual(3);
+        const portraitCount = choice.effects.filter((effect) => PORTRAIT_EFFECT_KINDS.has(effect.kind)).length;
+        expect(portraitCount, `${label} portrait count`).toBe(1);
+        for (const effect of choice.effects) {
+          if (PORTRAIT_EFFECT_KINDS.has(effect.kind)) continue;
+          expect(SIDE_LOOT_KINDS.has(effect.kind), `${label} extra ${effect.kind}`).toBe(true);
+        }
       }
     }
   });
@@ -64,40 +76,103 @@ describe("mysteryPool", () => {
     }
   });
 
-  it("Abandoned Study 'Search the Scrolls' uses chooseCard effect", () => {
-    const study = mysteryPool.find((e) => e.id === "abandoned-study");
-    expect(study).toBeDefined();
-    const search = study!.choices.find((c) => c.label === "Search the Scrolls");
-    expect(search).toBeDefined();
-    expect(search!.effects.some((e) => e.kind === "chooseCard")).toBe(true);
+  it("gainGeneratedGear effects reference valid base items", () => {
+    for (const event of mysteryPool) {
+      for (const choice of event.choices) {
+        for (const effect of choice.effects) {
+          if (effect.kind === "gainGeneratedGear") {
+            expect(
+              effect.baseItemId in gearBaseItems,
+              `Event "${event.id}" references unknown gear base "${effect.baseItemId}"`,
+            ).toBe(true);
+          }
+        }
+      }
+    }
   });
 
-  it("Overgrown Temple 'Explore the Crypt' uses gainRandomTrinket", () => {
+  it("Overgrown Temple Search the Crypt constrains random trinkets", () => {
     const temple = mysteryPool.find((e) => e.id === "overgrown-temple");
     expect(temple).toBeDefined();
-    const explore = temple!.choices.find((c) => c.label === "Explore the Crypt");
-    expect(explore).toBeDefined();
-    expect(explore!.effects.some((e) => e.kind === "gainRandomTrinket")).toBe(true);
+    const search = temple!.choices.find((c) => c.label === "Search the Crypt");
+    expect(search).toBeDefined();
+    const effect = search!.effects.find((e) => e.kind === "gainRandomTrinket");
+    expect(effect?.kind).toBe("gainRandomTrinket");
+    if (effect?.kind === "gainRandomTrinket") {
+      expect(effect.fromIds).toEqual(["bone-charm", "sin-eaters-lantern"]);
+    }
   });
 
-  it("Hunter's Lodge 'Take the Arrows' uses chooseCard with archery tag", () => {
+  it("companion events still grant companion cards", () => {
     const lodge = mysteryPool.find((e) => e.id === "hunters-lodge");
-    expect(lodge).toBeDefined();
-    const arrows = lodge!.choices.find((c) => c.label === "Take the Arrows");
-    expect(arrows).toBeDefined();
-    const effect = arrows!.effects.find((e) => e.kind === "chooseCard");
-    expect(effect).toBeDefined();
-    if (effect?.kind === "chooseCard") expect(effect.tag).toBe("archery");
-  });
-
-  it("Fairy Ring has a 'Make a Wish' choice", () => {
+    const wolf = mysteryPool.find((e) => e.id === "the-wolf");
+    const phoenix = mysteryPool.find((e) => e.id === "the-phoenix");
+    const necromancer = mysteryPool.find((e) => e.id === "necromancers-offer");
     expect(
-      mysteryPool.find((e) => e.id === "fairy-ring")!.choices.find((c) => c.label === "Make a Wish"),
-    ).toBeDefined();
+      lodge!.choices.some((c) => c.effects.some((e) => e.kind === "addCard" && e.cardId === "wolf-companion")),
+    ).toBe(true);
+    expect(
+      wolf!.choices.some((c) => c.effects.some((e) => e.kind === "addCard" && e.cardId === "wolf-companion")),
+    ).toBe(true);
+    expect(
+      phoenix!.choices.some((c) => c.effects.some((e) => e.kind === "addCard" && e.cardId === "phoenix-companion")),
+    ).toBe(true);
+    expect(
+      necromancer!.choices.some((c) =>
+        c.effects.some((e) => e.kind === "addCard" && e.cardId === "skeleton-companion"),
+      ),
+    ).toBe(true);
   });
 
-  it("Ancient Altar has a 'Pray' choice", () => {
-    expect(mysteryPool.find((e) => e.id === "ancient-altar")!.choices.find((c) => c.label === "Pray")).toBeDefined();
+  it("previously resource-only choices now grant a portrait reward", () => {
+    const portraitOf = (eventId: string, label: string) => {
+      const event = mysteryPool.find((entry) => entry.id === eventId);
+      const choice = event?.choices.find((entry) => entry.label === label);
+      return choice?.effects.find((effect) => PORTRAIT_EFFECT_KINDS.has(effect.kind));
+    };
+
+    expect(portraitOf("mana-berries", "Gather Crystals")).toEqual({ kind: "addCard", cardId: "mana-berries" });
+    expect(portraitOf("enchanted-spring", "Gather the Moss")).toEqual({
+      kind: "gainTrinket",
+      trinketId: "groves-favor",
+    });
+    expect(portraitOf("fungal-grotto", "Collect Crystals")).toEqual({
+      kind: "gainTrinket",
+      trinketId: "frozen-pocketwatch",
+    });
+    expect(portraitOf("wisdom-tree", "Collect Branches")).toEqual({ kind: "gainGeneratedGear", baseItemId: "staff" });
+    expect(portraitOf("wisdom-tree", "Forage Herbs")).toEqual({
+      kind: "gainGeneratedGear",
+      baseItemId: "emerald-amulet",
+    });
+    expect(portraitOf("ancient-altar", "Take the Offering")).toEqual({
+      kind: "gainGeneratedGear",
+      baseItemId: "topaz-ring",
+    });
+    expect(portraitOf("hidden-cache", "Take the Coinpurse")).toEqual({
+      kind: "gainTrinket",
+      trinketId: "merchants-favor",
+    });
+    expect(portraitOf("overgrown-temple", "Take a Tile")).toEqual({
+      kind: "gainTrinket",
+      trinketId: "vanguards-crest",
+    });
+    expect(portraitOf("crystal-geode", "Take the Shell")).toEqual({
+      kind: "gainGeneratedGear",
+      baseItemId: "sapphire-amulet",
+    });
+    expect(portraitOf("meteorite-crash", "Search the Crater")).toEqual({
+      kind: "gainGeneratedGear",
+      baseItemId: "ruby-ring",
+    });
+    expect(portraitOf("sacred-grove", "Pick the Blooms")).toEqual({
+      kind: "gainGeneratedGear",
+      baseItemId: "emerald-amulet",
+    });
+    expect(portraitOf("mountain-pass", "Gather Herbs")).toEqual({ kind: "addCard", cardId: "fox-companion" });
+    expect(portraitOf("murky-pond", "Catch Fish")).toEqual({ kind: "addCard", cardId: "lizard-scout-companion" });
+    expect(portraitOf("murky-pond", "Pull the Reeds")).toEqual({ kind: "addCard", cardId: "will-o-wisp-companion" });
+    expect(portraitOf("roadside-censer", "Gather Incense")).toEqual({ kind: "gainGeneratedGear", baseItemId: "mace" });
   });
 });
 

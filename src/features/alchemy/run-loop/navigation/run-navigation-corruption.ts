@@ -4,6 +4,7 @@ import { playUISound } from "@/lib/audio";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { corruptDeckCard } from "@/lib/corruption";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
   createDraftRunRandomSource,
   setCorruptionResult,
@@ -23,12 +24,17 @@ function applyCorruptionToDeck(
         cardLibrary,
         createDraftRunRandomSource(nextDraft, "events"),
       );
+      if (!result) return null;
       updateRunDeck(nextDraft, deck);
       setCorruptionResult(nextDraft, result);
       setDiscoveredCardIds(nextDraft, (current) => appendUnique(current, result.corruptedCard.id));
       return result;
     },
-    { afterCommit: () => playUISound("musicBoxMystery") },
+    {
+      afterCommit: (result) => {
+        if (result) playUISound("musicBoxMystery");
+      },
+    },
   );
 }
 
@@ -36,16 +42,21 @@ export interface CorruptionFlowDeps {
   getRunDeck: () => BattleCard[];
   updateRunDeck: (draft: GameplayDraft, deck: BattleCard[]) => void;
   advanceToNextDestination: () => void;
+  returnToCurrentDestination: () => void;
 }
 
-/** Corruption screen commands: apply a corrupt pick, then advance when exiting. */
+/** Corruption screen commands: apply a corrupt pick, then advance or restore the picker on exit. */
 export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps) {
   function handleCorruptCard(cardIndex: number) {
     applyCorruptionToDeck(deps.getRunDeck(), cardIndex, deps.updateRunDeck);
   }
 
   function handleCorruptionExit() {
-    deps.advanceToNextDestination();
+    if (readRunSession().corruptionResult) {
+      deps.advanceToNextDestination();
+      return;
+    }
+    deps.returnToCurrentDestination();
   }
 
   return { handleCorruptCard, handleCorruptionExit };

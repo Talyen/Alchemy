@@ -180,7 +180,7 @@ describe("reward flow orchestration", () => {
     it("uses Fisher-Yates ordering with injected rng", () => {
       const choices = getCompanionCardChoices(() => 0).map((card) => card.id);
 
-      expect(choices).toEqual(["lizard-scout-companion", "imp-companion", "frost-whelp-companion"]);
+      expect(choices).toEqual(["lizard-scout-companion", "frost-whelp-companion", "bear-companion"]);
     });
   });
 

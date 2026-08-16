@@ -97,6 +97,7 @@ declare module "*/asset-manifest-cache.mjs" {
     hash: string;
     mtimeMs: number;
     size: number;
+    settingsSig?: string;
   }
   export function computeContentHash(
     sourcePath: string,

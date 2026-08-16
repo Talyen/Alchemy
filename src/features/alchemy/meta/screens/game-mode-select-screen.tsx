@@ -2,16 +2,15 @@ import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   gameModeMeta,
-  bodyTextClass,
-  chooserArtWidthClass,
-  chooserPaddedTileClass,
+  cardInteractiveGlowClass,
+  gameModeArtWidthClass,
+  gameModePaddedTileClass,
   chooserRowGapClass,
-  chooserRowShellWidthClass,
-  sectionTitleClass,
+  gameModeRowShellWidthClass,
 } from "@/features/alchemy/shared/config";
-import { PressableSound } from "../../shared/ui/pressable-sound";
-import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
+import { TitledScreenShell } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
+import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
 import { playUISound } from "@/lib/audio";
 import { TooltipBody, TooltipHeader } from "../../shared/ui/tooltip-panel";
@@ -26,73 +25,93 @@ const GAME_MODE_IDS: readonly GameModeId[] = ["campaign", "labyrinth", "wildwood
 
 type GameModeMeta = (typeof gameModeMeta)[string];
 
-function handleModeSelect(modeId: GameModeId, isLocked: boolean, setSelectedModeId: (id: GameModeId) => void) {
-  if (isLocked) {
-    playUISound("error");
-  } else {
-    setSelectedModeId(modeId);
-  }
-}
-
 function GameModeTile({
   modeId,
   meta,
   isLocked,
-  isSelected,
-  isHovered,
-  onHoverStart,
-  onHoverEnd,
+  canResume,
   onSelect,
 }: {
   modeId: GameModeId;
   meta: GameModeMeta;
   isLocked: boolean;
-  isSelected: boolean;
-  isHovered: boolean;
-  onHoverStart: () => void;
-  onHoverEnd: () => void;
+  canResume: boolean;
   onSelect: () => void;
 }) {
-  // Each tile owns its tooltip anchor so the lock tooltip positions beside the
-  // hovered tile — a ref shared across the list would resolve to the last tile.
-  const tileRef = useRef<HTMLDivElement>(null);
+  const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("game-mode", modeId);
+  const artWrapperRef = useRef<HTMLButtonElement>(null);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const Icon = meta.icon;
+  const ariaLabel = isLocked ? `${meta.title} (Locked)` : canResume ? `Resume ${meta.title}` : meta.title;
 
   return (
-    <div className={chooserPaddedTileClass}>
-      <div ref={tileRef} className="relative h-full w-full min-w-0">
-        <PressableSound className="block h-full w-full">
-          <TiltSurface
-            as="button"
-            tiltEnabled={!isLocked}
-            ariaLabel={meta.title}
-            ariaPressed={isSelected}
-            selected={isSelected}
-            onClick={onSelect}
-            onMouseEnter={onHoverStart}
-            onMouseLeave={onHoverEnd}
-            className={cn(
-              "flex h-full w-full min-w-0 flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-5 pt-6 pb-7 text-left",
-              isLocked && "cursor-not-allowed opacity-50 grayscale-[30%]",
-            )}
-          >
-            <img
-              src={meta.art}
-              alt=""
-              aria-hidden
-              className={cn(chooserArtWidthClass, "rounded-shell-card object-contain")}
-            />
-            <h2 className={cn("text-center font-sans", sectionTitleClass)}>{meta.title}</h2>
-            <p className={cn(bodyTextClass, "text-center")}>{meta.description}</p>
-          </TiltSurface>
-        </PressableSound>
-        {isHovered && isLocked && (
-          <PortaledTooltip triggerRef={tileRef} visible className="text-center">
-            <TooltipHeader>{meta.title}</TooltipHeader>
-            <TooltipBody>
-              <p>{getGameModeUnlockMessage(modeId)}</p>
-            </TooltipBody>
-          </PortaledTooltip>
+    <div className={cn("group flex flex-col items-center gap-5", gameModePaddedTileClass)}>
+      <TiltSurface
+        as="button"
+        buttonRef={artWrapperRef}
+        tiltEnabled={false}
+        ariaLabel={ariaLabel}
+        onClick={() => {
+          if (isLocked) {
+            playUISound("error");
+            return;
+          }
+          onSelect();
+        }}
+        onMouseEnter={() => {
+          setTooltipVisible(true);
+          onHoverStart();
+        }}
+        onMouseLeave={() => {
+          setTooltipVisible(false);
+          onHoverEnd();
+        }}
+        onFocus={() => {
+          setTooltipVisible(true);
+          onHoverStart();
+        }}
+        onBlur={() => {
+          setTooltipVisible(false);
+          onHoverEnd();
+        }}
+        shimmerActive={isLocked ? false : shimmerActive}
+        shimmerToken={isLocked ? undefined : shimmerToken}
+        shimmerRounded="rounded-shell-card"
+        className={cn(
+          "group relative mx-auto block aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-shell-card border border-border/80 bg-black shadow-md focus:outline-none",
+          gameModeArtWidthClass,
+          !isLocked && cardInteractiveGlowClass,
+          isLocked && "cursor-not-allowed opacity-50 grayscale-[30%]",
         )}
+      >
+        <img
+          src={meta.art}
+          alt=""
+          aria-hidden
+          className="pointer-events-none h-full w-full object-cover select-none"
+          draggable={false}
+        />
+      </TiltSurface>
+      {tooltipVisible ? (
+        <PortaledTooltip triggerRef={artWrapperRef} visible className="text-center">
+          <TooltipHeader>{meta.title}</TooltipHeader>
+          <TooltipBody>
+            {isLocked ? (
+              <p>{getGameModeUnlockMessage(modeId)}</p>
+            ) : (
+              <>
+                <p>{meta.description}</p>
+                {canResume ? <p>Resume your run</p> : null}
+              </>
+            )}
+          </TooltipBody>
+        </PortaledTooltip>
+      ) : null}
+      <div className="pointer-events-none flex items-center justify-center gap-2.5 pt-1 text-center select-none">
+        <Icon className={cn("h-5 w-5 shrink-0", meta.accentClassName)} />
+        <span className={cn("font-sans text-lg font-bold tracking-wide sm:text-xl", meta.accentClassName)}>
+          {meta.title}
+        </span>
       </div>
     </div>
   );
@@ -104,7 +123,6 @@ export function GameModeSelectScreen({
   onSelectCampaign,
   onSelectLabyrinth,
   onSelectWildwood,
-  onBack,
   onOpenMenu,
 }: {
   hasActiveRun: boolean;
@@ -112,11 +130,8 @@ export function GameModeSelectScreen({
   onSelectCampaign: () => void;
   onSelectLabyrinth: () => void;
   onSelectWildwood: () => void;
-  onBack: () => void;
   onOpenMenu: (rect?: DOMRect) => void;
 }) {
-  const [selectedModeId, setSelectedModeId] = useState<GameModeId | null>(null);
-  const [hoveredModeId, setHoveredModeId] = useState<GameModeId | null>(null);
   const finishedRunCharacters = useFinishedRunCharacters();
 
   const handlers: Record<GameModeId, () => void> = {
@@ -130,51 +145,34 @@ export function GameModeSelectScreen({
     wildwood: hasActiveRun && activeContentSystemType === "wildwood",
   };
 
-  const selected = selectedModeId ? handlers[selectedModeId] : null;
-  const buttonLabel = selectedModeId && hasResume[selectedModeId] ? "Resume" : "Play";
-
   return (
     <TitledScreenShell
       title="Choose Your Adventure"
       onOpenMenu={onOpenMenu}
       menuLabel="Open game mode menu"
-      maxWidthClass={chooserRowShellWidthClass}
+      minHeightClass="min-h-[50cqh]"
+      maxWidthClass={gameModeRowShellWidthClass}
     >
-      <div className={cn("mt-6 flex w-full flex-nowrap items-stretch justify-center", chooserRowGapClass)}>
-        {GAME_MODE_IDS.map((modeId) => {
-          const meta = gameModeMeta[modeId];
-          if (!meta) return null;
-          const isLocked = !isGameModeUnlocked(modeId, finishedRunCharacters);
-          const isSelected = selectedModeId === modeId;
+      <div className="my-auto flex flex-1 flex-col justify-center py-4">
+        <div className={cn("flex w-full flex-nowrap items-start justify-center", chooserRowGapClass)}>
+          {GAME_MODE_IDS.map((modeId) => {
+            const meta = gameModeMeta[modeId];
+            if (!meta) return null;
+            const isLocked = !isGameModeUnlocked(modeId, finishedRunCharacters);
 
-          return (
-            <GameModeTile
-              key={modeId}
-              modeId={modeId}
-              meta={meta}
-              isLocked={isLocked}
-              isSelected={isSelected}
-              isHovered={hoveredModeId === modeId}
-              onHoverStart={() => setHoveredModeId(modeId)}
-              onHoverEnd={() => setHoveredModeId(null)}
-              onSelect={() => handleModeSelect(modeId, isLocked, setSelectedModeId)}
-            />
-          );
-        })}
+            return (
+              <GameModeTile
+                key={modeId}
+                modeId={modeId}
+                meta={meta}
+                isLocked={isLocked}
+                canResume={hasResume[modeId]}
+                onSelect={handlers[modeId]}
+              />
+            );
+          })}
+        </div>
       </div>
-
-      <ActionButtonRow
-        className="mt-6"
-        width="dialog"
-        secondary={{ label: "Back", onClick: onBack }}
-        primary={{
-          label: buttonLabel,
-          disabled: !selected,
-          onClick: () => {
-            selected?.();
-          },
-        }}
-      />
     </TitledScreenShell>
   );
 }

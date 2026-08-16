@@ -58,9 +58,10 @@ export function DestinationScreen({
       title={title}
       onOpenMenu={onOpenMenu}
       menuLabel="Open destination menu"
-      {...(bossOnly ? {} : { maxWidthClass: chooserRowShellWidthClass })}
+      minHeightClass="min-h-[50cqh]"
+      maxWidthClass={bossOnly ? "max-w-3xl" : chooserRowShellWidthClass}
     >
-      <div className="mt-6">
+      <div className="my-auto flex flex-1 flex-col justify-center py-4">
         <DestinationChoices destinationOptions={destinationOptions} onChoose={onChoose} selectedBoss={boss} />
       </div>
     </TitledScreenShell>

@@ -182,6 +182,16 @@
   }
 }
 
+@keyframes talentAllocatableIdle {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.025);
+  }
+}
+
 @keyframes shine {
   0% {
     background-position: 0% 0%;

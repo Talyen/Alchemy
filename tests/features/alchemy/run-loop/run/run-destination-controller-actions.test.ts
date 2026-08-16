@@ -2,11 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { enemyBestiary } from "@/lib/game-data";
 import * as config from "@/features/alchemy/shared/config";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
+import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { getRunAvailableDestinations } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { getPreviousDestination } from "@/features/alchemy/shared/run-flow/campaign-start";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
+import { makeTestCard } from "../../../../fixtures/cards";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
@@ -141,6 +143,7 @@ describe("run destination controller actions", () => {
         { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] },
       ]);
       session.setMysteryGrantedTrinketIds(["bone-charm"]);
+      session.setMysteryGrantedGearInstances([{ instanceId: "stale-gear", definitionId: "dagger-basic", affixes: [] }]);
       session.setMysteryChosenCardId("slash");
       session.setMysteryChosenChoice({ label: "Leave", effects: [] });
       session.setMysteryPendingRemoval(true);
@@ -153,6 +156,7 @@ describe("run destination controller actions", () => {
       expect(cleared.mysteryEvent).toBeNull();
       expect(cleared.mysteryCardChoices).toBeNull();
       expect(cleared.mysteryGrantedTrinketIds).toEqual([]);
+      expect(cleared.mysteryGrantedGearInstances).toEqual([]);
       expect(cleared.mysteryChosenCardId).toBeNull();
       expect(cleared.mysteryChosenChoice).toBeNull();
       expect(cleared.mysteryPendingRemoval).toBe(false);
@@ -161,4 +165,121 @@ describe("run destination controller actions", () => {
       else expect(labyrinthClearNode).not.toHaveBeenCalled();
     },
   );
+
+  it("returnToCurrentDestination undoes a committed Corruption visit and restores the same picker", () => {
+    const offered = [
+      CONSTANTS.DESTINATIONS.CAMPFIRE,
+      CONSTANTS.DESTINATIONS.CORRUPTION,
+      CONSTANTS.DESTINATIONS.MYSTERY,
+    ];
+    setRunProgress({
+      destinationIndexInAct: 2,
+      roomsEncountered: 3,
+      completedDestinations: [CONSTANTS.DESTINATIONS.NORMAL_COMBAT, CONSTANTS.DESTINATIONS.CORRUPTION],
+      lastOfferedDestinations: offered,
+      destinationRoundsSinceOffered: { [CONSTANTS.DESTINATIONS.CAMPFIRE]: 0 },
+    });
+    getRunSessionStoreView().setRewardState(createEmptyRewardState());
+
+    const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
+    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
+
+    expect(getRunProgressStoreView().roomsEncountered).toBe(3);
+    expect(getRunProgressStoreView().destinationIndexInAct).toBe(1);
+    expect(getRunProgressStoreView().completedDestinations).toEqual([CONSTANTS.DESTINATIONS.NORMAL_COMBAT]);
+    expect(getRunProgressStoreView().destinationRoundsSinceOffered).toEqual({
+      [CONSTANTS.DESTINATIONS.CAMPFIRE]: 0,
+    });
+    expect(getRunSessionStoreView().rewardState.destinations).toEqual(offered);
+    expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.DESTINATION, expect.any(Function));
+  });
+
+  it("returnToCurrentDestination cancels an uncommitted Corruption claim without advancing", () => {
+    const offered = [
+      CONSTANTS.DESTINATIONS.CAMPFIRE,
+      CONSTANTS.DESTINATIONS.CORRUPTION,
+      CONSTANTS.DESTINATIONS.MYSTERY,
+    ];
+    setRunProgress({
+      destinationIndexInAct: 1,
+      roomsEncountered: 3,
+      completedDestinations: [CONSTANTS.DESTINATIONS.NORMAL_COMBAT],
+      lastOfferedDestinations: offered,
+    });
+    const session = getRunSessionStoreView();
+    session.setRewardState({ ...createEmptyRewardState(), destinations: offered });
+    expect(session.beginDestinationClaim(CONSTANTS.DESTINATIONS.CORRUPTION)).toBe(true);
+
+    const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
+    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
+
+    expect(getRunSessionStoreView().pendingDestinationClaim).toBeNull();
+    expect(getRunProgressStoreView().roomsEncountered).toBe(3);
+    expect(getRunProgressStoreView().destinationIndexInAct).toBe(1);
+    expect(getRunProgressStoreView().completedDestinations).toEqual([CONSTANTS.DESTINATIONS.NORMAL_COMBAT]);
+    expect(getRunSessionStoreView().rewardState.destinations).toEqual(offered);
+  });
+
+  it("commitDestinationClaim seeds lastOfferedDestinations so Leave can restore an injected picker", () => {
+    const offered = [CONSTANTS.DESTINATIONS.CORRUPTION];
+    setRunProgress({
+      destinationIndexInAct: 0,
+      roomsEncountered: 0,
+      completedDestinations: [],
+      lastOfferedDestinations: [],
+    });
+    getRunSessionStoreView().setRewardState({ ...createEmptyRewardState(), destinations: offered });
+
+    const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
+    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).handleDestinationChoice(
+      CONSTANTS.DESTINATIONS.CORRUPTION,
+    );
+
+    expect(getRunProgressStoreView().lastOfferedDestinations).toEqual(offered);
+    expect(getRunProgressStoreView().completedDestinations).toEqual([CONSTANTS.DESTINATIONS.CORRUPTION]);
+
+    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
+
+    expect(getRunSessionStoreView().rewardState.destinations).toEqual(offered);
+    expect(getRunProgressStoreView().destinationIndexInAct).toBe(0);
+    expect(getRunProgressStoreView().completedDestinations).toEqual([]);
+  });
+});
+
+describe("corruption destination exit", () => {
+  it("handleCorruptionExit restores the current picker when no card was corrupted", () => {
+    const advanceToNextDestination = vi.fn();
+    const returnToCurrentDestination = vi.fn();
+    createCorruptionFlowHandlers({
+      getRunDeck: () => [],
+      updateRunDeck: () => {},
+      advanceToNextDestination,
+      returnToCurrentDestination,
+    }).handleCorruptionExit();
+
+    expect(returnToCurrentDestination).toHaveBeenCalledOnce();
+    expect(advanceToNextDestination).not.toHaveBeenCalled();
+  });
+
+  it("handleCorruptionExit advances after a corruption result", () => {
+    const card = makeTestCard({ id: "slash" });
+    getRunSessionStoreView().setCorruptionResult({
+      originalCard: card,
+      corruptedCard: { ...card, corrupted: true },
+      transformed: false,
+      delta: -1,
+    });
+
+    const advanceToNextDestination = vi.fn();
+    const returnToCurrentDestination = vi.fn();
+    createCorruptionFlowHandlers({
+      getRunDeck: () => [],
+      updateRunDeck: () => {},
+      advanceToNextDestination,
+      returnToCurrentDestination,
+    }).handleCorruptionExit();
+
+    expect(advanceToNextDestination).toHaveBeenCalledOnce();
+    expect(returnToCurrentDestination).not.toHaveBeenCalled();
+  });
 });

@@ -3,7 +3,9 @@ import { Lock } from "lucide-react";
 import { Dices } from "lucide-react";
 import {
   EMPTY_CRAFTING_CURRENCIES,
+  flattenGearInventories,
   gearDefinitions,
+  GEAR_CHARACTER_IDS,
   type CraftingCurrencyId,
   type GearInstance,
   type GearSlot,
@@ -61,10 +63,10 @@ export function ArmoryScreen({
   const [salvageTarget, setSalvageTarget] = useState<GearInstance | null>(null);
   const [activeCurrencyId, setActiveCurrencyId] = useState<CraftingCurrencyId | null>(null);
   const [cursorPoint, setCursorPoint] = useState<ArmoryCursorPoint | null>(null);
-  const characterInventory = useMemo(() => inventories[characterId], [inventories, characterId]);
+  const sharedInventory = useMemo(() => flattenGearInventories(inventories), [inventories]);
   const inventoryById = useMemo(
-    () => new Map(characterInventory.map((item) => [item.instanceId, item])),
-    [characterInventory],
+    () => new Map(sharedInventory.map((item) => [item.instanceId, item])),
+    [sharedInventory],
   );
   const loadout = loadouts[characterId];
   const requiredCharacterId = getRequiredPreviousCharacter(characterId);
@@ -72,16 +74,21 @@ export function ArmoryScreen({
   const editable = !browseOnly && !locked;
   const pickerItems = useMemo(() => {
     const equippedId = loadout[selectedSlot];
-    return itemsMatchingSlot(characterInventory, selectedSlot).filter((item) => item.instanceId !== equippedId);
-  }, [characterInventory, loadout, selectedSlot]);
+    return itemsMatchingSlot(sharedInventory, selectedSlot).filter((item) => item.instanceId !== equippedId);
+  }, [sharedInventory, loadout, selectedSlot]);
   const siblingEquippedIds = useMemo(() => {
     const ids = new Set<string>();
-    for (const slot of EQUIP_SLOTS) {
-      const id = loadout[slot];
-      if (id && slot !== selectedSlot) ids.add(id);
+    for (const cid of GEAR_CHARACTER_IDS) {
+      const charLoadout = loadouts[cid];
+      for (const slot of EQUIP_SLOTS) {
+        const id = charLoadout[slot];
+        if (id && !(cid === characterId && slot === selectedSlot)) {
+          ids.add(id);
+        }
+      }
     }
     return ids;
-  }, [loadout, selectedSlot]);
+  }, [loadouts, characterId, selectedSlot]);
 
   const handleSelectCharacter = useCallback((id: CharacterId) => {
     setCharacterId(id);
@@ -199,7 +206,7 @@ export function ArmoryScreen({
                   activeCurrencyId={activeCurrencyId}
                   salvageMode={salvageMode}
                   editable={editable}
-                  hasSalvageableGear={characterInventory.length > 0}
+                  hasSalvageableGear={sharedInventory.length > 0}
                   onSelectCurrency={handleSelectCurrency}
                   onToggleSalvageMode={() => {
                     setSalvageMode((current) => !current);
@@ -242,7 +249,7 @@ export function ArmoryScreen({
                   characterId={characterId}
                   items={pickerItems}
                   loadout={loadout}
-                  inventory={characterInventory}
+                  inventory={sharedInventory}
                   siblingEquippedIds={siblingEquippedIds}
                   editable={editable}
                   salvageMode={salvageMode}

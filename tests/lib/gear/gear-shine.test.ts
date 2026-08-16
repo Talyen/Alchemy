@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { keywordDefinitions } from "@/lib/game-data";
 import {
+  getAstralShineColors,
   getGearInstanceKeywordIds,
   getGearInstanceShineColors,
   getGearInstanceShineGradient,
@@ -66,5 +67,26 @@ describe("gear shine", () => {
     expect(gradient).toContain(keywordDefinitions.burn.shineColors[0]!);
     expect(gradient).toContain(keywordDefinitions.gold.shineColors[0]!);
     expect(getGearInstanceShineGradient(gear)).toBe(gradient);
+  });
+
+  it("returns astral shine colors only for astral definitions", () => {
+    expect(
+      getAstralShineColors(
+        instance({
+          instanceId: "basic-1",
+          definitionId: "longsword-basic",
+          affixes: [],
+        }),
+      ),
+    ).toBeUndefined();
+    expect(
+      getAstralShineColors(
+        instance({
+          instanceId: "astral-1",
+          definitionId: "longsword-astral",
+          affixes: [],
+        }),
+      ),
+    ).toEqual(expect.arrayContaining(["#cbd5e1"]));
   });
 });

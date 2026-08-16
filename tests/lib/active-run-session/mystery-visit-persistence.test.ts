@@ -33,6 +33,7 @@ describe("serializeMysteryVisit", () => {
         mysteryPendingRemoval: true,
         mysteryCardChoices: [slash],
         mysteryGrantedTrinketIds: ["bone-charm"],
+        mysteryGrantedGearInstances: [],
         mysteryChosenCardId: "slash",
       }),
     ).toEqual({
@@ -41,7 +42,9 @@ describe("serializeMysteryVisit", () => {
       pendingRemoval: true,
       cardChoices: [slash],
       grantedTrinketIds: ["bone-charm"],
+      grantedGear: [],
       chosenCardId: "slash",
+      resolvedTrinketIds: [],
     });
   });
 });
@@ -65,6 +68,46 @@ describe("hydrateMysteryVisit", () => {
 
     expect(hydrated.mysteryEvent?.id).toBe("ancient-altar");
     expect(hydrated.mysteryChosenChoice).toEqual({ label: "Browse", effects: [{ kind: "chooseCard" }] });
+  });
+
+  it("applies persisted trinket substitutions onto the pool event", () => {
+    const hydrated = hydrateMysteryVisit({
+      eventId: "enchanted-spring",
+      chosenChoice: null,
+      pendingRemoval: false,
+      cardChoices: null,
+      grantedTrinketIds: [],
+      grantedGear: [],
+      chosenCardId: null,
+      resolvedTrinketIds: ["groves-favor", "merchants-favor"],
+    });
+
+    const moss = hydrated.mysteryEvent?.choices.find((choice) => choice.label === "Gather the Moss");
+    const charm = hydrated.mysteryEvent?.choices.find((choice) => choice.label === "Take the Charm");
+    expect(moss?.effects).toContainEqual({ kind: "gainTrinket", trinketId: "groves-favor" });
+    expect(charm?.effects).toContainEqual({ kind: "gainTrinket", trinketId: "merchants-favor" });
+  });
+
+  it("resolves leftover random trinkets when a legacy visit omitted resolvedTrinketIds", () => {
+    const hydrated = hydrateMysteryVisit(
+      {
+        eventId: "overgrown-temple",
+        chosenChoice: null,
+        pendingRemoval: false,
+        cardChoices: null,
+        grantedTrinketIds: [],
+        grantedGear: [],
+        chosenCardId: null,
+        resolvedTrinketIds: [],
+      },
+      { ownedTrinketIds: [], rng: () => 0 },
+    );
+
+    const search = hydrated.mysteryEvent?.choices.find((choice) => choice.label === "Search the Crypt");
+    const trinket = search?.effects.find((effect) => effect.kind === "gainTrinket");
+    expect(trinket?.kind).toBe("gainTrinket");
+    if (trinket?.kind !== "gainTrinket") return;
+    expect(["bone-charm", "sin-eaters-lantern"]).toContain(trinket.trinketId);
   });
 });
 

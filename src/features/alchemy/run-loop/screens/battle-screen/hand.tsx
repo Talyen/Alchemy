@@ -11,13 +11,19 @@ import {
   HAND_HOVER_LIFT_PX,
   HAND_HOVER_ROTATION_DEGREES,
   HAND_HOVER_SCALE,
+  HAND_HOVER_TOOLTIP_PADDING_PX,
+  HAND_REST_DROP_PX,
 } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 import type { BattleCard } from "@/lib/game-data";
 
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
-import { battleHandContainerClass, handCardWidthClass } from "@/features/alchemy/shared/config";
+import {
+  battleHandContainerClass,
+  getCardKeywordShineColors,
+  handCardWidthClass,
+} from "@/features/alchemy/shared/config";
 import type { BattleActionsProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import type { CardDescriptionContext } from "../../../shared/utils/card-description";
@@ -84,9 +90,11 @@ const HandCardItem = memo(function HandCardItem({
       baseTransform={
         isHovered ? getHoverHandTransform(offset, stagePixelRatio) : getRestingHandTransform(offset, stagePixelRatio)
       }
-      className={cn(handWidthClass, !canPlay && "cursor-default grayscale")}
+      className={cn(handWidthClass, "hand-card-motion", !canPlay && "cursor-default grayscale")}
+      tooltipPadding={HAND_HOVER_TOOLTIP_PADDING_PX}
       tiltEnabled={canPlay}
       dragging={isHidden}
+      shineColor={getCardKeywordShineColors(card)}
       wrapperClassName="relative -mx-5 flex justify-center sm:-mx-6"
       wrapperDataCardKey={cardKey}
       wrapperStyle={{
@@ -144,9 +152,11 @@ export function BattleHand({
 }
 
 function getRestingHandTransform(offset: number, stagePixelRatio: number) {
-  return `translateY(${Math.abs(offset) * HAND_FAN_VERTICAL_STEP_PX * stagePixelRatio}px) rotate(${offset * HAND_FAN_ROTATION_DEGREES}deg)`;
+  const y = (HAND_REST_DROP_PX + Math.abs(offset) * HAND_FAN_VERTICAL_STEP_PX) * stagePixelRatio;
+  return `translateY(${y}px) rotate(${offset * HAND_FAN_ROTATION_DEGREES}deg)`;
 }
 
 function getHoverHandTransform(offset: number, stagePixelRatio: number) {
-  return `translateY(-${HAND_HOVER_LIFT_PX * stagePixelRatio}px) rotate(${offset * HAND_HOVER_ROTATION_DEGREES}deg) scale(${HAND_HOVER_SCALE})`;
+  const y = (HAND_REST_DROP_PX - HAND_HOVER_LIFT_PX) * stagePixelRatio;
+  return `translateY(${y}px) rotate(${offset * HAND_HOVER_ROTATION_DEGREES}deg) scale(${HAND_HOVER_SCALE})`;
 }

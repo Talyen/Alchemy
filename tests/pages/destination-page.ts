@@ -14,7 +14,7 @@ export class DestinationPage {
   }
 
   destinationButton(name: string) {
-    return this.page.getByRole("button", { name });
+    return this.page.getByRole("button", { name, exact: true });
   }
 
   async pick(name: string) {

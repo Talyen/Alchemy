@@ -10,11 +10,12 @@ import {
   getTalentKeywordProgress,
   getAllocatableTalentChoices,
   getTalentTreeKeywordIds,
+  keywordDefinitions,
   type UnlockedTalents,
   type TalentXP,
 } from "@/lib/game-data";
 
-import { TalentKeywordButton } from "../talents/talents-ui";
+import { TalentOverviewGrid } from "../talents/talent-overview-grid";
 import {
   ConfirmationDialog,
   HamburgerTrigger,
@@ -22,25 +23,10 @@ import {
   ScreenHeaderRow,
   ScreenShell,
 } from "../../shared/ui/shared-ui";
+import { BUTTON_WIDTH_DIALOG } from "../../shared/config";
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
-
-const CHIP_ROW_COUNT = 2;
-
-function chunkIntoRows<T>(items: T[], rowCount: number): T[][] {
-  const rows: T[][] = [];
-  let index = 0;
-  let remaining = items.length;
-  for (let i = 0; i < rowCount; i++) {
-    const groupsLeft = rowCount - i;
-    const size = Math.ceil(remaining / groupsLeft);
-    rows.push(items.slice(index, index + size));
-    index += size;
-    remaining -= size;
-  }
-  return rows;
-}
 
 export function TalentsScreen({
   talentXP,
@@ -55,40 +41,63 @@ export function TalentsScreen({
   onUnlockTalent: (keywordId: KeywordId, talentId: string) => void;
   onResetTalents: () => void;
 }) {
-  const [selectedKeyword, setSelectedKeyword] = useState<KeywordId>("physical");
+  const [selectedKeyword, setSelectedKeyword] = useState<KeywordId | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
   const keywordIds = useMemo(() => getTalentTreeKeywordIds(), []);
-  const chipRows = useMemo(() => chunkIntoRows(keywordIds, CHIP_ROW_COUNT), [keywordIds]);
 
-  const unlockedIds = useMemo(() => unlockedTalents[selectedKeyword] ?? [], [selectedKeyword, unlockedTalents]);
-  const allTalentsForKeyword = useMemo(() => getTalentsForKeyword(selectedKeyword), [selectedKeyword]);
+  const selectedKeywordDef = selectedKeyword ? keywordDefinitions[selectedKeyword] : undefined;
+  const unlockedIds = useMemo(
+    () => (selectedKeyword ? (unlockedTalents[selectedKeyword] ?? []) : []),
+    [selectedKeyword, unlockedTalents],
+  );
+  const allTalentsForKeyword = useMemo(
+    () => (selectedKeyword ? getTalentsForKeyword(selectedKeyword) : []),
+    [selectedKeyword],
+  );
   const allocatableIds = useMemo(
-    () => new Set(getAllocatableTalentChoices(selectedKeyword, unlockedIds).map((t) => t.id)),
+    () =>
+      selectedKeyword
+        ? new Set(getAllocatableTalentChoices(selectedKeyword, unlockedIds).map((t) => t.id))
+        : new Set<string>(),
     [selectedKeyword, unlockedIds],
   );
-  const progress = getTalentKeywordProgress(
-    talentXP[selectedKeyword] ?? 0,
-    unlockedIds.length,
-    countImplementedTalents(selectedKeyword),
-  );
+  const progress = useMemo(() => {
+    if (!selectedKeyword) return null;
+    return getTalentKeywordProgress(
+      talentXP[selectedKeyword] ?? 0,
+      unlockedIds.length,
+      countImplementedTalents(selectedKeyword),
+    );
+  }, [selectedKeyword, talentXP, unlockedIds.length]);
 
   function handleUnlockTalent(talentId: string) {
-    onUnlockTalent(selectedKeyword, talentId);
+    if (selectedKeyword) {
+      onUnlockTalent(selectedKeyword, talentId);
+    }
   }
 
   function handleUnlockTalentBegin() {
     playUISound("talentUnlock");
   }
+
   function handleReset() {
     onResetTalents();
+    setResetKey((k) => k + 1);
     setShowResetConfirm(false);
   }
 
+  const title = selectedKeywordDef ? selectedKeywordDef.label : "Talents";
+
   return (
-    <PageLayout align="start">
-      <ScreenShell maxWidthClass="max-w-7xl">
+    <PageLayout align="center">
+      <ScreenShell
+        maxWidthClass="max-w-[90rem]"
+        minHeightClass="min-h-[76cqh]"
+        className="flex flex-col justify-between"
+      >
         <ScreenHeaderRow
-          title="Talents"
+          title={title}
           trailing={
             <div className="flex items-center gap-2">
               <Button
@@ -105,39 +114,37 @@ export function TalentsScreen({
           }
         />
 
-        <div className="mt-6 flex flex-col items-center gap-2">
-          {chipRows.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex flex-nowrap justify-center gap-2">
-              {row.map((kw) => {
-                const kwProgress = getTalentKeywordProgress(
-                  talentXP[kw] ?? 0,
-                  (unlockedTalents[kw] ?? []).length,
-                  countImplementedTalents(kw),
-                );
-                return (
-                  <TalentKeywordButton
-                    key={kw}
-                    keywordId={kw}
-                    hasUnspent={kwProgress.hasUnspent}
-                    isSelected={selectedKeyword === kw}
-                    onClick={() => setSelectedKeyword(kw)}
-                  />
-                );
-              })}
+        <FadeSlot swapKey={selectedKeyword ?? "overview"} className="mt-4 flex w-full flex-1 flex-col justify-center">
+          {selectedKeyword === null ? (
+            <TalentOverviewGrid
+              keywordIds={keywordIds}
+              talentXP={talentXP}
+              unlockedTalents={unlockedTalents}
+              onSelectKeyword={setSelectedKeyword}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-between gap-4 py-1">
+              <TalentTree
+                key={`${selectedKeyword}-${resetKey}`}
+                allTalents={allTalentsForKeyword}
+                unlockedIds={unlockedIds}
+                allocatableIds={allocatableIds}
+                hasUnspentPoints={(progress?.unspentPoints ?? 0) > 0}
+                onUnlock={handleUnlockTalent}
+                onUnlockBegin={handleUnlockTalentBegin}
+              />
+              <div className="mt-2 flex justify-center">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className={BUTTON_WIDTH_DIALOG}
+                  onClick={() => setSelectedKeyword(null)}
+                >
+                  Back
+                </Button>
+              </div>
             </div>
-          ))}
-        </div>
-
-        <FadeSlot swapKey={selectedKeyword} className="mt-6 min-h-[48cqh] w-full">
-          <TalentTree
-            key={selectedKeyword}
-            allTalents={allTalentsForKeyword}
-            unlockedIds={unlockedIds}
-            allocatableIds={allocatableIds}
-            hasUnspentPoints={progress.unspentPoints > 0}
-            onUnlock={handleUnlockTalent}
-            onUnlockBegin={handleUnlockTalentBegin}
-          />
+          )}
         </FadeSlot>
       </ScreenShell>
 

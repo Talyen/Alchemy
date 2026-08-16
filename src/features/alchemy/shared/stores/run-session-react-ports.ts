@@ -38,6 +38,7 @@ import type {
   RunOrchestrationPort,
 } from "./run-port-types";
 import { createRunSessionCommand } from "./run-session-command";
+import { selectAutosaveAllowed } from "./select-autosave-allowed";
 import { setHasActiveBattle as setHasActiveBattleCommand } from "./run-session-write-port";
 
 const commandSetCurrentAct = createRunSessionCommand(setCurrentAct);
@@ -124,12 +125,8 @@ export function useActiveRunScreenValue(): Screen {
   return useGameplayStateStore((state) => state.run.navigation.screen);
 }
 
-export function useBattleEnemyHealth(): number {
-  return useGameplayStateStore((state) => state.battle.battleState.enemyHealth);
-}
-
-export function useBattleEnemyType(): string {
-  return useGameplayStateStore((state) => state.battle.battleState.currentEnemy.enemyType);
+export function useAutosaveAllowed(screen: Screen): boolean {
+  return useGameplayStateStore((state) => selectAutosaveAllowed(state, screen));
 }
 
 export function useHasActiveBattle(): boolean {
@@ -213,4 +210,8 @@ export function useDraftDeckSlice(): {
 
 export function useActiveRunCharacterId(): CharacterId {
   return useGameplayStateStore((state) => state.run.activeRun.characterId);
+}
+
+export function useActiveRunTrinkets(): string[] {
+  return useGameplayStateStore((state) => state.run.activeRun.runTrinkets);
 }

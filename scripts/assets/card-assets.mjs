@@ -37,7 +37,6 @@ export const cardAssets = [
     width: cardWidth,
     quality: cardQuality,
   },
-  { source: "Cards/Imp Companion.png", target: "imp-companion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Mixed Potion.jpeg", target: "mixed-potion.webp", width: cardWidth, quality: 84 },
   { source: "Cards/Stoneskin Potion.jpeg", target: "stoneskin-potion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Acid Potion.jpeg", target: "acid-potion.webp", width: cardWidth, quality: cardQuality },

@@ -55,6 +55,16 @@ describe("asset-manifest-cache", () => {
     expect(second).toEqual(first);
   });
 
+  it("re-hashes when transform settings change even if source mtime is unchanged", async () => {
+    const dir = await makeTempDir();
+    const sourcePath = path.join(dir, "a.png");
+    await writeFile(sourcePath, "bytes-a");
+    const first = await resolveSourceHash(sourcePath, { quality: 80 }, 2, undefined);
+    const second = await resolveSourceHash(sourcePath, { quality: 90 }, 2, first);
+
+    expect(second.hash).not.toBe(first.hash);
+  });
+
   it("re-hashes when mtime or size changes", async () => {
     const dir = await makeTempDir();
     const sourcePath = path.join(dir, "a.png");

@@ -38,6 +38,8 @@ describe("card corruption", () => {
     const rng = makeRng([0, 0.9]);
 
     const result = corruptCard(makeCard(), [makeCard()], rng);
+    expect(result).not.toBeNull();
+    if (!result) return;
 
     expect(result.corruptedCard.descriptionLines).toEqual(["Deal 6 Physical damage"]);
     expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 6 });
@@ -49,6 +51,8 @@ describe("card corruption", () => {
     const rng = makeRng([0, 0.1]);
 
     const result = corruptCard(makeCard(), [makeCard()], rng);
+    expect(result).not.toBeNull();
+    if (!result) return;
 
     expect(result.corruptedCard.descriptionLines).toEqual(["Deal 4 Physical damage"]);
     expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 4 });
@@ -64,6 +68,8 @@ describe("card corruption", () => {
     });
 
     const result = corruptCard(anvil, [anvil], rng);
+    expect(result).not.toBeNull();
+    if (!result) return;
 
     expect(result.corruptedCard.descriptionLines).toEqual(["Gain 0 Forge"]);
     expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 0 });
@@ -80,6 +86,8 @@ describe("card corruption", () => {
     const slash = makeCard();
 
     const result = corruptCard(cleanse, [cleanse, slash], rng);
+    expect(result).not.toBeNull();
+    if (!result) return;
 
     expect(result.transformed).toBe(true);
     expect(result.corruptedCard.id).toBe("slash");
@@ -106,7 +114,7 @@ describe("card corruption", () => {
 
     expect(result.deck[0]).toBe(slash);
     expect(result.deck[1].descriptionLines).toEqual(["Deal 5 Physical damage"]);
-    expect(result.result.originalCard.id).toBe("stab");
+    expect(result.result?.originalCard.id).toBe("stab");
   });
 
   it("transforms when random < 0.5 even with editable targets", () => {
@@ -120,10 +128,31 @@ describe("card corruption", () => {
     });
 
     const result = corruptCard(slash, [slash, bash], rng);
+    expect(result).not.toBeNull();
+    if (!result) return;
 
     expect(result.transformed).toBe(true);
     expect(result.corruptedCard.id).toBe("bash");
     expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 9 });
+  });
+
+  it("returns null when the selected card cannot mutate or transform", () => {
+    const rng = makeRng([0]);
+    const cleanse = makeCard({
+      id: "cleanse",
+      title: "Cleanse",
+      descriptionLines: ["Remove a harmful status effect"],
+      effects: [{ kind: "remove-harmful-status", amount: 1 }],
+    });
+    const mixed = makeCard({
+      id: "mixed-potion",
+      title: "Mixed Potion",
+      descriptionLines: ["Deal 5 Physical damage"],
+      effects: [makeEffect("physical", 5)],
+    });
+
+    expect(corruptCard(cleanse, [cleanse, mixed], rng)).toBeNull();
+    expect(corruptDeckCard([cleanse], 0, [cleanse, mixed], rng)).toEqual({ deck: [cleanse], result: null });
   });
 });
 

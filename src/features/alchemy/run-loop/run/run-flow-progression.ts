@@ -9,6 +9,7 @@ import {
   setCompletedDestinations,
   clearMysteryVisitState,
   createDraftRunRandomSource,
+  abandonCorruptionDestinationVisit,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
@@ -94,6 +95,15 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
     );
   }
 
+  function returnToCurrentDestination() {
+    deps.actions.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
+      dispatchRunSessionCommand((draft) => {
+        abandonCorruptionDestinationVisit(draft);
+      });
+      prepareDestinationScreen();
+    });
+  }
+
   function advanceToNextDestination() {
     dispatchRunSessionCommand(
       (draft) => {
@@ -120,5 +130,6 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
     prepareDestinationScreen,
     handleActComplete,
     advanceToNextDestination,
+    returnToCurrentDestination,
   };
 }

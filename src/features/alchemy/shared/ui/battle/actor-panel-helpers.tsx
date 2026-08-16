@@ -14,7 +14,7 @@ const ACTOR_PANEL_CONFIG = {
   deathDoorArtBorderWidth: 3,
   deathDoorStatsBorderWidth: 2,
   turnActiveShineDurationSeconds: 4,
-  turnActiveArtBorderWidth: 2,
+  turnActiveArtBorderWidth: 4,
 } as const;
 
 export function ActorTooltip({
@@ -59,12 +59,14 @@ export function ArtTurnActiveBorder({
   side,
   active,
   urgentHide = false,
+  shineColor,
 }: {
   side: "player" | "enemy";
   active: boolean;
   urgentHide?: boolean;
+  shineColor?: readonly string[];
 }) {
-  const palette = side === "player" ? SHINE_PALETTES.turnPlayer : SHINE_PALETTES.turnEnemy;
+  const palette = shineColor ?? SHINE_PALETTES.turnEnemy;
   const label = side === "player" ? "Your Turn" : "Enemy Turn";
   return (
     <>

@@ -1,7 +1,8 @@
 // Selectable BattleCard choice tile — shared draft / reward card chrome (selected ring + hover).
 import type { BattleCard } from "@/lib/game-data";
 
-import { collectionTileWidthClass } from "@/features/alchemy/shared/config";
+import { cardInteractiveGlowClass, collectionTileWidthClass } from "@/features/alchemy/shared/config";
+import { cn } from "@/lib/utils";
 
 import { BattleCardButton } from "./card-button";
 import { getCardDisplayTitle } from "./card-description-ui";
@@ -9,15 +10,17 @@ import { useInteractiveCard } from "./use-interactive-card";
 
 export function SelectableChoiceCard({
   card,
-  selected,
+  selected = false,
   onSelect,
   interactionKey,
+  tiltEnabled = true,
 }: {
   card: BattleCard;
-  selected: boolean;
+  selected?: boolean;
   onSelect: () => void;
   /** Namespace for hover/shimmer identity (e.g. "reward", "draft-choice-0"). */
   interactionKey: string;
+  tiltEnabled?: boolean;
 }) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
     interactionKey,
@@ -35,7 +38,8 @@ export function SelectableChoiceCard({
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
       selected={selected}
-      className={collectionTileWidthClass}
+      tiltEnabled={tiltEnabled}
+      className={cn(collectionTileWidthClass, cardInteractiveGlowClass)}
       wrapperClassName="relative flex justify-center"
     />
   );

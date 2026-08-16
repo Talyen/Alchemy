@@ -249,12 +249,13 @@ describe("encodeRunResumeSnapshot", () => {
         title: "Ancient Altar",
         art: "",
         narrative: "A weathered stone altar.",
-        choices: [{ label: "Pray", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] }],
+        choices: [{ label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] }],
       },
-      mysteryChosenChoice: { label: "Pray", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] },
+      mysteryChosenChoice: { label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] },
       mysteryPendingRemoval: false,
       mysteryCardChoices: null,
       mysteryGrantedTrinketIds: [],
+      mysteryGrantedGearInstances: [],
       mysteryChosenCardId: null,
     });
 
@@ -263,7 +264,7 @@ describe("encodeRunResumeSnapshot", () => {
 
     expect(result.mysteryVisit).toEqual(ANCIENT_ALTAR_MYSTERY_VISIT);
     expect(decoded.session.mysteryEvent?.id).toBe("ancient-altar");
-    expect(decoded.session.mysteryChosenChoice?.label).toBe("Pray");
+    expect(decoded.session.mysteryChosenChoice?.label).toBe("Take the Offering");
   });
 
   it("does not persist leftover mystery visit state off the mystery screen", () => {
@@ -273,7 +274,7 @@ describe("encodeRunResumeSnapshot", () => {
         title: "Ancient Altar",
         art: "",
         narrative: "A weathered stone altar.",
-        choices: [{ label: "Pray", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] }],
+        choices: [{ label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] }],
       },
       mysteryChosenChoice: ANCIENT_ALTAR_MYSTERY_VISIT.chosenChoice,
     });

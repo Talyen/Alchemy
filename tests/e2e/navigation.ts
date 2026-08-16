@@ -17,12 +17,11 @@ export async function openGameModeSelect(page: Page) {
 
 export async function selectGameMode(page: Page, mode: GameMode, action: "Play" | "Resume" = "Play") {
   await openGameModeSelect(page);
-  const modeButton = page.getByRole("button", { name: new RegExp(GAME_MODE_TITLES[mode]) });
+  const title = GAME_MODE_TITLES[mode];
+  const modeButton = page.getByRole("button", {
+    name: action === "Resume" ? `Resume ${title}` : title,
+  });
   await modeButton.click();
-  await expect(modeButton).toHaveAttribute("aria-pressed", "true", { timeout: 5000 });
-  const actionButton = page.getByRole("button", { name: action, exact: true });
-  await expect(actionButton).toBeEnabled({ timeout: 5000 });
-  await actionButton.click();
 }
 
 async function resumeGameMode(page: Page, mode: Exclude<GameMode, "wildwood"> = "campaign") {

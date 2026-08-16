@@ -1,13 +1,16 @@
 // Battle presentation screen for actors, hand fan, piles, ghosts, wish choices, and menu entry.
 // Driven by useBattleController; focused child modules own the layout slices.
-import { useMemo, type MouseEvent } from "react";
+import { useCallback, useMemo, useState, type MouseEvent } from "react";
 import type { BattleCard } from "@/lib/game-data";
+import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { CardGhostOverlay } from "../../../shared/ui/card-ghost-overlay";
 import { CardTransferOverlay } from "./card-transfer-overlay";
 import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
 import { HamburgerTrigger, PageLayout } from "../../../shared/ui/shared-ui";
 import { BattleAutoplayToggle } from "./autoplay-toggle";
+import { BattleTrinketInspectButton, BattleTrinketInspectOverlay } from "./trinket-inspect";
+import { uniqueRunTrinkets } from "./unique-run-trinkets";
 import { WishOverlay } from "./wish-overlay";
 import type { BattleActionsProps, BattleFeedbackProps, BattleRefsProps, BattleScreenData } from "./types";
 import { getEnemyStatusChips, getPlayerStatusChips } from "../../../shared/utils";
@@ -41,6 +44,7 @@ function CardTransferLayer() {
 
 interface BattleScreenProps {
   battleScreenData: BattleScreenData;
+  characterId: CharacterId;
   heroArt: string;
   playerName: string;
   aspectMode: "standard" | "narrow" | "ultrawide";
@@ -61,6 +65,7 @@ interface BattleScreenProps {
 export function BattleScreen(props: BattleScreenProps) {
   const {
     battleScreenData,
+    characterId,
     heroArt,
     playerName,
     aspectMode,
@@ -78,7 +83,7 @@ export function BattleScreen(props: BattleScreenProps) {
     onToggleAutoplay,
   } = props;
 
-  const { battleState, displayOverrides, revealedCardKeys, activeLabyrinthModifiers } = battleScreenData;
+  const { battleState, displayOverrides, revealedCardKeys, activeLabyrinthModifiers, runTrinkets } = battleScreenData;
 
   const displayState = useMemo(() => ({ ...battleState, ...displayOverrides }), [battleState, displayOverrides]);
 
@@ -92,12 +97,13 @@ export function BattleScreen(props: BattleScreenProps) {
   const view = useMemo(
     () => ({
       battleState: displayState,
+      characterId,
       heroArt,
       playerName,
       aspectMode,
       stagePixelRatio,
     }),
-    [displayState, heroArt, playerName, aspectMode, stagePixelRatio],
+    [displayState, characterId, heroArt, playerName, aspectMode, stagePixelRatio],
   );
 
   const feedback: BattleFeedbackProps = useMemo(
@@ -143,9 +149,17 @@ export function BattleScreen(props: BattleScreenProps) {
 
   const { battleSceneRef: sceneRef } = refs;
 
+  const inspectTrinkets = useMemo(() => uniqueRunTrinkets(runTrinkets), [runTrinkets]);
+  const [trinketInspectOpen, setTrinketInspectOpen] = useState(false);
+  const closeTrinketInspect = useCallback(() => setTrinketInspectOpen(false), []);
+  const inspectUiOpen = trinketInspectOpen && inspectTrinkets.length > 0 && !battleState.wishOptions;
+  if (trinketInspectOpen && !inspectUiOpen) {
+    setTrinketInspectOpen(false);
+  }
+
   return (
     <PageLayout>
-      <div className="alchemy-shell relative flex w-full max-w-[100rem] flex-1 flex-col rounded-shell-screen border border-border/80 p-7 pb-1">
+      <div className="alchemy-shell relative flex w-full max-w-[100rem] flex-1 flex-col rounded-shell-screen p-7 pb-1">
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-shell-screen">
           <BackgroundParticles
             variant="embers"
@@ -157,6 +171,12 @@ export function BattleScreen(props: BattleScreenProps) {
         <div className="relative z-10 flex min-h-0 flex-1 flex-col">
           <div className="absolute top-0 right-0 z-30 flex items-center gap-2">
             <BattleAutoplayToggle enabled={actions.isAutoplayEnabled} onToggle={actions.onToggleAutoplay} />
+            {inspectTrinkets.length > 0 ? (
+              <BattleTrinketInspectButton
+                open={inspectUiOpen}
+                onToggle={() => setTrinketInspectOpen((open) => !open)}
+              />
+            ) : null}
             <HamburgerTrigger onClick={actions.onOpenMenu} label="Open battle menu" />
           </div>
 
@@ -170,6 +190,8 @@ export function BattleScreen(props: BattleScreenProps) {
             <BattleBottomBar view={view} refs={refs} actions={actions} />
 
             <WishOverlay open={Boolean(battleState.wishOptions)} battleState={displayState} actions={actions} />
+
+            <BattleTrinketInspectOverlay open={inspectUiOpen} trinketIds={runTrinkets} onClose={closeTrinketInspect} />
 
             <CardGhostLayer />
             <CardTransferLayer />

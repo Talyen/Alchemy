@@ -79,7 +79,6 @@ function GameModeSelectScreenRoute({
       onSelectCampaign={commands.beginCampaign}
       onSelectLabyrinth={commands.beginLabyrinth}
       onSelectWildwood={commands.beginWildwood}
-      onBack={() => commands.goToScreen("menu")}
       onOpenMenu={onOpenBattleMenu}
     />
   );

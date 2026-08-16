@@ -54,7 +54,9 @@ export interface PersistedMysteryVisit {
   pendingRemoval: boolean;
   cardChoices: BattleCard[] | null;
   grantedTrinketIds: string[];
+  grantedGear: GearInstance[];
   chosenCardId: string | null;
+  resolvedTrinketIds: string[];
 }
 
 export interface LabyrinthNodePosition {

@@ -6,6 +6,7 @@ const POSITIVE_MYSTERY_EFFECT_KINDS = new Set<MysteryEffect["kind"]>([
   "chooseCard",
   "gainTrinket",
   "gainRandomTrinket",
+  "gainGeneratedGear",
   "healHealth",
   "gainGold",
   "gainXP",

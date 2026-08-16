@@ -34,6 +34,9 @@ describe("PersistedBattleStateSchema", () => {
     expect(result.data.mana).toBe(4);
     expect(result.data.turnPhase).toBe("player");
     expect(result.data.flags.divineAegisTriggered).toBe(false);
+    expect(result.data.playerStatuses.block).toBe(0);
+    expect(result.data.playerStatuses.armor).toBe(0);
+    expect(result.data.enemyStatuses.burn).toBe(0);
   });
 
   it("rejects null", () => {

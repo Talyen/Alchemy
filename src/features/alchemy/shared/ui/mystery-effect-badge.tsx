@@ -3,12 +3,14 @@
 // Consumed by tooltip builders and outcome summary screens.
 import { Coins } from "lucide-react";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
+import { tooltipChipClass, tooltipChipIconClass } from "@/features/alchemy/shared/config";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 import { materialLabels } from "@/lib/homestead/types";
 import { MaterialIcon, matPillStyle, matTextColor } from "./material-icons";
 import { TooltipHeader } from "./tooltip-panel";
 import type { MysteryEffect } from "@/lib/mystery";
+import { gearBaseItems, type GearBaseItemId } from "@/lib/gear";
 
 const goldDef = keywordDefinitions.gold;
 
@@ -20,34 +22,36 @@ interface BadgeCtx {
   tooltip: boolean | undefined;
 }
 
-function renderGoldBadge(effect: MysteryEffect): React.ReactNode {
+function renderGoldBadge(effect: MysteryEffect, ctx: BadgeCtx): React.ReactNode {
   const e = effect as { amount: number };
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold",
+        "inline-flex items-center gap-1 rounded-full",
+        ctx.tooltip ? cn("px-2 py-0.5", tooltipChipClass) : "px-3 py-1 text-xs font-semibold",
         goldDef.pillBgClass,
         goldDef.colorClass,
       )}
     >
-      <Coins className="h-4 w-4" />
+      <Coins className={ctx.tooltip ? tooltipChipIconClass : "h-4 w-4"} />
       {`${e.amount} Gold`}
     </span>
   );
 }
 
-function renderMaterialBadge(effect: MysteryEffect): React.ReactNode {
+function renderMaterialBadge(effect: MysteryEffect, ctx: BadgeCtx): React.ReactNode {
   const e = effect as { material: string; amount: number };
   const mat = e.material as keyof typeof matPillStyle;
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold",
+        "inline-flex items-center gap-1 rounded-full",
+        ctx.tooltip ? cn("px-2 py-0.5", tooltipChipClass) : "px-3 py-1 text-xs font-semibold",
         matPillStyle[mat],
         matTextColor[mat],
       )}
     >
-      <MaterialIcon material={mat} className="h-4 w-4" />
+      <MaterialIcon material={mat} className={ctx.tooltip ? tooltipChipIconClass : "h-4 w-4"} />
       {`${e.amount} ${materialLabels[mat]}`}
     </span>
   );
@@ -83,7 +87,7 @@ function renderAddCardBadge(effect: MysteryEffect, ctx: BadgeCtx): React.ReactNo
   const e = effect as { cardId: string };
   const title = ctx.findCard?.(e.cardId)?.title ?? "a card";
   return ctx.tooltip ? (
-    <span className="text-sm text-muted-foreground">Add {title} card to your deck</span>
+    <span className="text-xs text-muted-foreground">Add {title} card to your deck</span>
   ) : (
     <span className="text-sm text-muted-foreground">Add {title}</span>
   );
@@ -96,7 +100,7 @@ function renderChooseCardBadge(effect: MysteryEffect, ctx: BadgeCtx): React.Reac
     ? `Choose 1 of ${MYSTERY_CARD_CHOICES} ${tagLabel} cards`
     : `Choose 1 of ${MYSTERY_CARD_CHOICES} cards`;
   return ctx.tooltip ? (
-    <span className="text-sm text-muted-foreground">{chooseLabel} to add to your deck</span>
+    <span className="text-xs text-muted-foreground">{chooseLabel} to add to your deck</span>
   ) : (
     <span className="text-sm text-muted-foreground">{chooseLabel}</span>
   );
@@ -105,19 +109,33 @@ function renderChooseCardBadge(effect: MysteryEffect, ctx: BadgeCtx): React.Reac
 function renderTrinketBadge(effect: MysteryEffect, ctx: BadgeCtx): React.ReactNode {
   const e = effect as { trinketId: string };
   const title = ctx.findTrinket?.(e.trinketId)?.title ?? "a trinket";
-  return <span className="text-sm text-muted-foreground">Add {title} for this run</span>;
+  return (
+    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-muted-foreground")}>Add {title} for this run</span>
+  );
 }
 
-function renderRandomTrinketBadge(): React.ReactNode {
-  return <span className="text-sm text-muted-foreground">Gain a random trinket for this run</span>;
+function renderRandomTrinketBadge(_effect: MysteryEffect, ctx: BadgeCtx): React.ReactNode {
+  return (
+    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-muted-foreground")}>
+      Gain a random trinket for this run
+    </span>
+  );
 }
 
-function renderRemoveCardBadge(effect: MysteryEffect): React.ReactNode {
+function renderGeneratedGearBadge(effect: MysteryEffect, ctx: BadgeCtx): React.ReactNode {
+  const e = effect as { baseItemId: string };
+  const title = e.baseItemId in gearBaseItems ? gearBaseItems[e.baseItemId as GearBaseItemId].displayName : "Gear";
+  return (
+    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-muted-foreground")}>Add {title} to your Armory</span>
+  );
+}
+
+function renderRemoveCardBadge(effect: MysteryEffect, ctx: BadgeCtx): React.ReactNode {
   const e = effect as { mode: string };
   return e.mode === "random" ? (
-    <span className="text-sm text-muted-foreground">Remove a random card</span>
+    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-muted-foreground")}>Remove a random card</span>
   ) : (
-    <span className="text-sm text-muted-foreground">Choose a card to remove</span>
+    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-muted-foreground")}>Choose a card to remove</span>
   );
 }
 
@@ -134,6 +152,7 @@ const EFFECT_RENDERERS: Partial<Record<MysteryEffect["kind"], RawRenderer>> = {
   chooseCard: renderChooseCardBadge,
   gainTrinket: renderTrinketBadge,
   gainRandomTrinket: renderRandomTrinketBadge,
+  gainGeneratedGear: renderGeneratedGearBadge,
   removeCard: renderRemoveCardBadge,
 };
 
@@ -178,7 +197,7 @@ export function MysteryEffectList({
               : null;
 
         return (
-          <div key={i} className="flex items-center gap-1.5 text-sm">
+          <div key={i} className="flex items-center gap-1.5 text-xs">
             {prefix && <span className="text-muted-foreground">{prefix}</span>}
             <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} tooltip />
           </div>

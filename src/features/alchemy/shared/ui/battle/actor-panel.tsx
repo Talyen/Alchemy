@@ -55,6 +55,7 @@ interface ArtPanelProps {
   hurtFlashToken?: number;
   turnActive?: boolean;
   turnUrgentHide?: boolean;
+  turnShineColors?: readonly string[];
   artCorner?: ReactNode;
   children?: ReactNode;
 }
@@ -84,6 +85,7 @@ export function ArtPanel({
   hurtFlashToken = 0,
   turnActive = false,
   turnUrgentHide = false,
+  turnShineColors,
   artCorner,
   children,
 }: ArtPanelProps) {
@@ -132,6 +134,7 @@ export function ArtPanel({
             hurtFlashToken={hurtFlashToken}
             turnActive={turnActive}
             turnUrgentHide={turnUrgentHide}
+            {...(turnShineColors === undefined ? {} : { turnShineColors })}
           />
           {children ? (
             <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center overflow-visible">
@@ -174,6 +177,7 @@ function ActorArtFrame({
   hurtFlashToken = 0,
   turnActive = false,
   turnUrgentHide = false,
+  turnShineColors,
 }: {
   side: "player" | "enemy";
   title: string;
@@ -189,6 +193,7 @@ function ActorArtFrame({
   hurtFlashToken?: number;
   turnActive?: boolean;
   turnUrgentHide?: boolean;
+  turnShineColors?: readonly string[];
 }) {
   const { pulse, sparksOverflow } = useHurtPulse(hurtFlashToken);
 
@@ -197,6 +202,7 @@ function ActorArtFrame({
       surfaceRef={surfaceRef}
       testId={`battle-${side}-art-panel`}
       tiltEnabled={!isDead}
+      clipContents={false}
       className={cn(
         "relative",
         cardSurfaceClass,
@@ -209,7 +215,12 @@ function ActorArtFrame({
       shimmerRounded="rounded-shell-hero"
       onMouseEnter={() => onHoverShimmer(shimmerId)}
     >
-      <ArtTurnActiveBorder side={side} active={turnActive && !isDead} urgentHide={turnUrgentHide} />
+      <ArtTurnActiveBorder
+        side={side}
+        active={turnActive && !isDead}
+        urgentHide={turnUrgentHide}
+        {...(turnShineColors === undefined ? {} : { shineColor: turnShineColors })}
+      />
       {deathsDoorActive ? <ArtDeathDoorBorder /> : null}
       {isDead ? (
         <SliceDeath

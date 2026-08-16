@@ -14,11 +14,6 @@
     "mtimeMs": 1782421243083.5947,
     "size": 1850174
   },
-  "button-hover-3.ogg": {
-    "hash": "881481e87e6719a3",
-    "mtimeMs": 1782421243148.8271,
-    "size": 15796
-  },
   "card-draw-1.ogg": {
     "hash": "8027a854539d07e3",
     "mtimeMs": 1782421242527.6868,
@@ -178,6 +173,11 @@
     "hash": "7572e07581106eac",
     "mtimeMs": 1782421242525.107,
     "size": 37598
+  },
+  "sword-slice.ogg": {
+    "hash": "50aabe3102aa6199",
+    "mtimeMs": 1782421243199.3523,
+    "size": 135212
   },
   "toggle-off.ogg": {
     "hash": "8714d44364205454",

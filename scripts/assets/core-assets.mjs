@@ -37,13 +37,13 @@ export const coreAssets = [
   { source: "Enemies/Frost Elemental.jpeg", target: "frost-elemental.webp", width: 720, quality: 82 },
   { source: "Enemies/Slime.jpeg", target: "slime.webp", width: 720, quality: 82 },
   { source: "Enemies/Placeholder Enemy.png", target: "placeholder-enemy.webp", width: 720, quality: 60 },
-  // Characters
-  { source: "Player Characters/Knight.jpeg", target: "knight.webp", width: characterWidth, quality: 82 },
-  { source: "Player Characters/Ranger.jpeg", target: "ranger.webp", width: characterWidth, quality: 82 },
-  { source: "Player Characters/Rogue.jpeg", target: "rogue.webp", width: characterWidth, quality: 82 },
-  { source: "Player Characters/Wizard.jpeg", target: "wizard.webp", width: characterWidth, quality: 82 },
-  { source: "Player Characters/Alchemist.jpeg", target: "alchemist.webp", width: characterWidth, quality: 82 },
-  { source: "Player Characters/Warlock.jpeg", target: "warlock.webp", width: characterWidth, quality: 82 },
-  { source: "Player Characters/Druid.jpeg", target: "druid.webp", width: characterWidth, quality: 82 },
-  { source: "Player Characters/Wildcard.jpeg", target: "wildcard.webp", width: characterWidth, quality: 82 },
+  // Heroes
+  { source: "Heroes/Knight.jpeg", target: "knight.webp", width: characterWidth, quality: 82 },
+  { source: "Heroes/Ranger.jpeg", target: "ranger.webp", width: characterWidth, quality: 82 },
+  { source: "Heroes/Rogue.jpeg", target: "rogue.webp", width: characterWidth, quality: 82 },
+  { source: "Heroes/Wizard.jpeg", target: "wizard.webp", width: characterWidth, quality: 82 },
+  { source: "Heroes/Alchemist.jpeg", target: "alchemist.webp", width: characterWidth, quality: 82 },
+  { source: "Heroes/Warlock.jpeg", target: "warlock.webp", width: characterWidth, quality: 82 },
+  { source: "Heroes/Druid.jpeg", target: "druid.webp", width: characterWidth, quality: 82 },
+  { source: "Heroes/Wildcard.jpeg", target: "wildcard.webp", width: characterWidth, quality: 82 },
 ];

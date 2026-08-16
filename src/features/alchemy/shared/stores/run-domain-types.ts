@@ -14,6 +14,7 @@ import {
   type ShopState,
   type TrinketShopState,
 } from "@/lib/active-run-session";
+import type { GearInstance } from "@/lib/gear";
 import {
   createInitialActiveRunFields,
   type ActiveRunProgressFields,
@@ -91,6 +92,7 @@ export function createInitialSessionFields(): RunSessionFields {
     mysteryPendingRemoval: false,
     mysteryCardChoices: null,
     mysteryGrantedTrinketIds: [],
+    mysteryGrantedGearInstances: [],
     mysteryChosenCardId: null,
   };
 }
@@ -140,6 +142,8 @@ export interface RunSessionFields {
   mysteryCardChoices: BattleCard[] | null;
   /** Trinket ids actually granted by gainRandomTrinket effects in the current mystery event, in effect order. */
   mysteryGrantedTrinketIds: string[];
+  /** Gear instances granted by gainGeneratedGear effects in the current mystery event, in effect order. */
+  mysteryGrantedGearInstances: GearInstance[];
   /** Card id picked from a chooseCard follow-up in the current mystery event. */
   mysteryChosenCardId: string | null;
 }

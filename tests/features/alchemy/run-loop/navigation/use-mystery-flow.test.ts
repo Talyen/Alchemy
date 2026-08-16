@@ -11,7 +11,10 @@ import {
   setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
-import type { MysteryEffect } from "@/lib/mystery";
+import { findMysteryEvent, type MysteryEffect } from "@/lib/mystery";
+import * as mystery from "@/lib/mystery";
+import { gearDefinitions } from "@/lib/gear";
+import { useGearStore } from "../../../../helpers/gameplay-store-test";
 
 vi.mock("@/lib/audio", () => ({
   playGoldGain: vi.fn(),
@@ -21,6 +24,7 @@ vi.mock("@/lib/audio", () => ({
 import { playGoldGain, playGoldSpend } from "@/lib/audio";
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   vi.clearAllMocks();
   resetTransientRunUi();
   resetRunProgressSlice();
@@ -39,10 +43,30 @@ describe("useMysteryFlow", () => {
     expect(getRunSessionStoreView().mysteryEvent).not.toBeNull();
     expect(getRunSessionStoreView().mysteryCardChoices).toBeNull();
     expect(getRunSessionStoreView().mysteryGrantedTrinketIds).toEqual([]);
+    expect(getRunSessionStoreView().mysteryGrantedGearInstances).toEqual([]);
     expect(getRunSessionStoreView().mysteryChosenCardId).toBeNull();
     expect(getRunSessionStoreView().mysteryChosenChoice).toBeNull();
     expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(false);
     expect(navigate).toHaveBeenCalledOnce();
+  });
+
+  it("beginMysteryEvent shows an unowned fallback on owned trinket choices", () => {
+    const spring = findMysteryEvent("enchanted-spring");
+    if (!spring) throw new Error("enchanted-spring is missing from the mystery pool");
+    vi.spyOn(mystery, "pickMysteryEvent").mockReturnValue(spring);
+    setRunProgress({ runTrinkets: ["icy-heart"] });
+    const navigate = vi.fn();
+    const { result } = renderHook(() => useMysteryFlow());
+
+    act(() => {
+      result.current.beginMysteryEvent(navigate);
+    });
+
+    const charm = getRunSessionStoreView().mysteryEvent?.choices.find((choice) => choice.label === "Take the Charm");
+    const trinket = charm?.effects.find((effect) => effect.kind === "gainTrinket");
+    expect(trinket?.kind).toBe("gainTrinket");
+    if (trinket?.kind !== "gainTrinket") return;
+    expect(trinket.trinketId).not.toBe("icy-heart");
   });
 
   it("handleMysteryChoice stops when chooseCard requires follow-up UI", () => {
@@ -129,5 +153,25 @@ describe("useMysteryFlow", () => {
     expect(getRunProgressStoreView().runGold).toBe(20);
     expect(playGoldGain).not.toHaveBeenCalled();
     expect(playGoldSpend).not.toHaveBeenCalled();
+  });
+
+  it("grants generated gear into the armory inventory", () => {
+    setRunProgress({ characterId: "knight" });
+    getRunSessionStoreView().setHasActiveRun(true);
+    const { result } = renderHook(() => useMysteryFlow());
+
+    act(() => {
+      result.current.handleMysteryChoice({
+        label: "Claim the Relic",
+        effects: [{ kind: "gainGeneratedGear", baseItemId: "topaz-amulet" }],
+      });
+    });
+
+    const granted = getRunSessionStoreView().mysteryGrantedGearInstances;
+    expect(granted).toHaveLength(1);
+    expect(gearDefinitions[granted[0]!.definitionId]?.baseItemId).toBe("topaz-amulet");
+    expect(useGearStore.getState().inventories.knight.some((item) => item.instanceId === granted[0]!.instanceId)).toBe(
+      true,
+    );
   });
 });

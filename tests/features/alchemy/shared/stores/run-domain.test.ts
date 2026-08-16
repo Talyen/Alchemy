@@ -435,7 +435,7 @@ describe("unlockTalent", () => {
 
   it("rejects out-of-order unlocks", () => {
     setRunProgress({ talentXP: { burn: 10 } });
-    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-2");
+    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-5");
     expect(getRunProgressStoreView().unlockedTalents.burn).toBeUndefined();
   });
 
@@ -1054,7 +1054,7 @@ describe("session facade API", () => {
 
     expect(getNavigationStoreView().screen).toBe("mystery");
     expect(getRunSessionStoreView().mysteryEvent?.id).toBe("ancient-altar");
-    expect(getRunSessionStoreView().mysteryChosenChoice?.label).toBe("Pray");
+    expect(getRunSessionStoreView().mysteryChosenChoice?.label).toBe("Take the Offering");
     expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(false);
   });
 
@@ -1071,7 +1071,9 @@ describe("session facade API", () => {
         pendingRemoval: true,
         cardChoices: [slash],
         grantedTrinketIds: ["bone-charm"],
+        grantedGear: [],
         chosenCardId: "slash",
+        resolvedTrinketIds: [],
       },
     };
 
@@ -1082,6 +1084,7 @@ describe("session facade API", () => {
     expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(true);
     expect(getRunSessionStoreView().mysteryCardChoices).toEqual([slash]);
     expect(getRunSessionStoreView().mysteryGrantedTrinketIds).toEqual(["bone-charm"]);
+    expect(getRunSessionStoreView().mysteryGrantedGearInstances).toEqual([]);
     expect(getRunSessionStoreView().mysteryChosenCardId).toBe("slash");
   });
 

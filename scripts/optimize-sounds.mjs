@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdir, copyFile } from "node:fs/promises";
+import { mkdir, copyFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -55,6 +55,7 @@ const sounds = [
     source: "Attacks and Combat/Sword Attacks Hits and Blocks/Sword Impact Hit 1.ogg",
     target: "sword-impact-hit-1.ogg",
   },
+  { source: "Weapons/sword_slice.wav", target: "sword-slice.ogg" },
   { source: "Attacks and Combat/Sword Attacks Hits and Blocks/Sword Blocked 2.ogg", target: "sword-blocked-2.ogg" },
   { source: "Weapons/sword_clash.wav", target: "sword-clash.ogg" },
   { source: "Spells/Ice Freeze 1.ogg", target: "ice-freeze-1.ogg" },
@@ -65,7 +66,6 @@ const sounds = [
   { source: "UI/toggle_off.wav", target: "toggle-off.ogg" },
 
   // ── UI ──
-  { source: "UI/Minimalist3.ogg", target: "button-hover-3.ogg" },
   { source: "UI/metal button 4.wav", target: "metal-button-4.ogg" },
   { source: "Card and Board/card_draw_3.wav", target: "card-draw-3.ogg" },
   { source: "UI/toggle_on.wav", target: "toggle-on.ogg" },
@@ -125,7 +125,7 @@ async function optimizeSound({ source, target }, storedEntry) {
     return { message: `${target} already up to date`, entry: sourceEntry };
   }
 
-  if (ext === ".ogg") {
+  if (ext === ".ogg" && settings.mode === "copy") {
     // Already OGG — copy through unchanged.
     await copyFile(sourcePath, outputPath);
     return { message: `${target} copied`, entry: sourceEntry };
@@ -172,7 +172,24 @@ export async function optimizeSounds() {
   });
 
   console.log(`Processed ${results.length} sounds.`);
+  await ensureMp3Fallbacks();
   return { ok: !failed };
+}
+
+async function ensureMp3Fallbacks() {
+  const files = await readdir(outputDir);
+  const oggs = files.filter((file) => file.endsWith(".ogg"));
+  let converted = 0;
+  for (const ogg of oggs) {
+    const oggPath = path.join(outputDir, ogg);
+    const mp3Path = path.join(outputDir, ogg.replace(/\.ogg$/i, ".mp3"));
+    const oggStat = await stat(oggPath);
+    const mp3Stat = await stat(mp3Path).catch(() => null);
+    if (mp3Stat && mp3Stat.mtimeMs >= oggStat.mtimeMs) continue;
+    await execFileAsync(ffmpegPath, ["-y", "-i", oggPath, "-c:a", "libmp3lame", "-q:a", "4", "-vn", mp3Path]);
+    converted += 1;
+  }
+  if (converted > 0) console.log(`Wrote ${converted} MP3 SFX fallbacks for Safari.`);
 }
 
 if (isMainModule(import.meta.url)) {

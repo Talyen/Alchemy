@@ -3,6 +3,8 @@
 // Used by merchant, alchemist, and service-like destination screens.
 import type { ComponentType, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { tooltipBodyClass } from "../config";
 import { GoldCost } from "./display-elements";
 import { PortaledTooltip } from "./portaled-tooltip";
 import { useHoverVisible } from "./use-hover-visible";
@@ -14,7 +16,7 @@ export function DisabledTooltip({ show, message, children }: { show: boolean; me
     <div ref={triggerRef} className="relative" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       {children}
       <PortaledTooltip triggerRef={triggerRef} visible={visible} className="whitespace-nowrap">
-        <p className="text-base leading-none text-foreground">{message}</p>
+        <p className={cn(tooltipBodyClass, "mt-0 space-y-0 leading-none text-foreground")}>{message}</p>
       </PortaledTooltip>
     </div>
   );

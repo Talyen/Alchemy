@@ -135,8 +135,9 @@ export function useRunFlowEngine({
         getRunDeck: () => readActiveRun().runDeck,
         updateRunDeck: setRunDeck,
         advanceToNextDestination: flowHandlers.advanceToNextDestination,
+        returnToCurrentDestination: flowHandlers.returnToCurrentDestination,
       }),
-    [flowHandlers.advanceToNextDestination],
+    [flowHandlers.advanceToNextDestination, flowHandlers.returnToCurrentDestination],
   );
 
   const teardown = useMemo(

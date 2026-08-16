@@ -1,8 +1,10 @@
 // Shared art tile surface for selectable rewards and purchasable collection items.
 import { type RefObject, type ReactNode } from "react";
 
+import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
 
+import { cardInteractiveGlowClass, cardShineFrameClass } from "../config";
 import { TiltSurface } from "./tilt-surface";
 import { useInteractiveCard } from "./use-interactive-card";
 import { useTileHoverPopup } from "./use-tile-hover-popup";
@@ -23,8 +25,13 @@ interface InteractiveArtTileProps {
   as?: "button" | "div";
   interactive?: boolean;
   selected?: boolean;
-  onClick?: () => void;
-  ariaLabel?: string;
+  /** Hover/select 3px chrome. Shine tiles keep scale/glow and thicken the shine instead. */
+  interactiveChrome?: boolean;
+  shineColor?: string | readonly string[] | undefined;
+  disabled?: boolean | undefined;
+  onClick?: (() => void) | undefined;
+  ariaLabel?: string | undefined;
+  children?: ReactNode | undefined;
 }
 
 export function InteractiveArtTile({
@@ -38,8 +45,12 @@ export function InteractiveArtTile({
   as = "div",
   interactive = true,
   selected = false,
+  interactiveChrome = true,
+  shineColor,
+  disabled = false,
   onClick,
   ariaLabel,
+  children,
 }: InteractiveArtTileProps) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(interactionKey, id);
   const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useTileHoverPopup({
@@ -48,6 +59,9 @@ export function InteractiveArtTile({
     onHoverStart,
     onHoverEnd,
   });
+  const shineColors = shineColor == null ? [] : Array.isArray(shineColor) ? shineColor : [shineColor];
+  const showShine = shineColors.length > 0;
+  const showGlow = interactiveChrome && interactive && !disabled;
 
   return (
     <div
@@ -62,15 +76,24 @@ export function InteractiveArtTile({
       {interactive && popup && showPopup ? popup({ visible: isHovered, triggerRef: wrapperRef }) : null}
       <TiltSurface
         as={as}
-        className={cn(className, "group")}
-        shimmerActive={interactive ? shimmerActive : false}
-        shimmerToken={interactive ? shimmerToken : undefined}
-        selected={selected}
-        onClick={interactive ? onClick : undefined}
+        className={cn(
+          className,
+          "group shadow-md",
+          showShine && cardShineFrameClass,
+          !showShine && interactiveChrome && "border border-border/80",
+          showGlow && cardInteractiveGlowClass,
+        )}
+        shimmerActive={interactive && !disabled ? shimmerActive : false}
+        shimmerToken={interactive && !disabled ? shimmerToken : undefined}
+        selected={interactiveChrome && selected}
+        disabled={disabled}
+        onClick={interactive && !disabled ? onClick : undefined}
         {...(interactive ? { onFocus: handleHoverStart, onBlur: handleBlur } : {})}
         ariaLabel={ariaLabel ?? title}
       >
         <img src={art ?? undefined} alt={title} className={imageClassName} />
+        {showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
+        {children}
       </TiltSurface>
     </div>
   );

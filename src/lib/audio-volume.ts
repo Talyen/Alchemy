@@ -3,12 +3,14 @@
 // Used by options UI through the public lib/audio facade.
 import { audioState, syncMasterGain } from "./audio-state";
 import { applyMusicVolume } from "./audio-music";
+import { syncActiveHtmlSfxPlayback } from "./audio-sfx";
 import { clamp } from "./utils";
 
-// Mutes both Web Audio playback gate and the current streamed music element.
+// Mutes streamed music and in-flight HTMLAudio SFX.
 export function setMuted(value: boolean) {
   audioState.muted = value;
   syncMasterGain();
+  syncActiveHtmlSfxPlayback();
 
   if (audioState.currentMusic) {
     audioState.currentMusic.muted = audioState.muted;
@@ -18,12 +20,14 @@ export function setMuted(value: boolean) {
 // Stores the SFX layer volume within the normalized slider range [0, 1].
 export function setSfxVolume(value: number) {
   audioState.sfxVolume = clamp(value, 0, 1);
+  syncActiveHtmlSfxPlayback();
 }
 
-// Applies master volume to both future SFX gain and current streamed music.
+// Applies master volume to both in-flight SFX and current streamed music.
 export function setMasterVolume(value: number) {
   audioState.masterVolume = clamp(value, 0, 1);
   syncMasterGain();
+  syncActiveHtmlSfxPlayback();
 
   if (audioState.currentMusic) {
     applyMusicVolume(audioState.currentMusic);

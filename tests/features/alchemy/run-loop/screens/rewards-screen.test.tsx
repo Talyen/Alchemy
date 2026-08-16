@@ -112,6 +112,57 @@ describe("RewardsScreen", () => {
     expect(screen.getByRole("button", { name: "Open rewards menu" })).toBeTruthy();
   });
 
+  it("prompts with the reward kind instead of a generic choose label", () => {
+    const { rerender } = render(
+      <RewardsScreen
+        rewardState={getRunSessionStoreView().rewardState}
+        onAddReward={vi.fn()}
+        onSkip={vi.fn()}
+        onSelectReward={vi.fn()}
+        onOpenMenu={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Add a Card to your Deck" })).toBeTruthy();
+
+    rerender(
+      <RewardsScreen
+        rewardState={{
+          ...createEmptyRewardState(),
+          rewardType: "trinket",
+          choices: [
+            {
+              id: "lucky-coin",
+              title: "Lucky Coin",
+              descriptionLines: ["Gain 5 gold."],
+              art: "",
+            },
+          ],
+        }}
+        onAddReward={vi.fn()}
+        onSkip={vi.fn()}
+        onSelectReward={vi.fn()}
+        onOpenMenu={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Gain a Trinket for this Run" })).toBeTruthy();
+
+    rerender(
+      <RewardsScreen
+        rewardState={{
+          ...createEmptyRewardState(),
+          rewardType: "gear",
+          choices: [{ instanceId: "basic-sword", definitionId: "longsword-basic", affixes: [] }],
+        }}
+        onAddReward={vi.fn()}
+        onSkip={vi.fn()}
+        onSelectReward={vi.fn()}
+        onOpenMenu={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Add Gear to your Armory" })).toBeTruthy();
+  });
+
   it("keeps Add Card disabled until a reward is selected", () => {
     render(
       <RewardsScreen
@@ -124,5 +175,32 @@ describe("RewardsScreen", () => {
     );
 
     expect(screen.getByRole("button", { name: /add card/i })).toHaveProperty("disabled", true);
+  });
+
+  it("shows shine on astral gear rewards and hover chrome on basic gear", () => {
+    render(
+      <RewardsScreen
+        rewardState={{
+          ...createEmptyRewardState(),
+          rewardType: "gear",
+          choices: [
+            { instanceId: "basic-sword", definitionId: "longsword-basic", affixes: [] },
+            { instanceId: "astral-sword", definitionId: "longsword-astral", affixes: [] },
+          ],
+        }}
+        onAddReward={vi.fn()}
+        onSkip={vi.fn()}
+        onSelectReward={vi.fn()}
+        onOpenMenu={vi.fn()}
+      />,
+    );
+
+    const basic = screen.getByRole("button", { name: "Select Longsword" });
+    const astral = screen.getByRole("button", { name: "Select Astral Longsword" });
+    expect(basic.querySelector(".shine-border")).toBeNull();
+    expect(basic.className).toMatch(/card-interactive-glow/);
+    expect(astral.querySelector(".shine-border")).not.toBeNull();
+    expect(astral.className).toMatch(/card-interactive-glow/);
+    expect(astral.className).toMatch(/has-shine-border/);
   });
 });

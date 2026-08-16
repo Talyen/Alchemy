@@ -55,7 +55,7 @@ export function ShopBrowseOfferings({
 }) {
   return (
     <div className="flex flex-col items-center gap-6">
-      <FadeSlot swapKey={swapKey} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <FadeSlot swapKey={swapKey} className="grid grid-cols-1 gap-8 sm:grid-cols-3">
         {children}
       </FadeSlot>
       {services ? <div className={cn("flex flex-wrap justify-center gap-3", serviceClassName)}>{services}</div> : null}

@@ -4,11 +4,9 @@ import { render, screen, cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Button } from "@/components/ui/button";
 
-vi.mock("@/lib/audio", () => ({
-  playUISound: vi.fn(),
-}));
-
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+});
 
 describe("Button", () => {
   it("renders children", () => {

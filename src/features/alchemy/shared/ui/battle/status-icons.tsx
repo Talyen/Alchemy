@@ -8,7 +8,7 @@ import type { KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
-import { keywordIcons } from "../../config";
+import { keywordIcons, tooltipChipClass } from "../../config";
 import { augmentDefinitions } from "../../augment-definitions";
 import type { StatusChip } from "../../types";
 import { renderColoredKeywords } from "../card-description-ui";
@@ -77,8 +77,8 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
       tooltip={
         <>
           <div className="flex items-center justify-between gap-3">
-            <KeywordTag keywordId={kw} />
-            <span className="rounded-full bg-background px-2 py-0.5 text-xs font-semibold text-foreground">
+            <KeywordTag keywordId={kw} className="text-sm sm:text-base" />
+            <span className={cn("rounded-full bg-background px-2 py-0.5 text-foreground", tooltipChipClass)}>
               {chip.value}
             </span>
           </div>
@@ -107,7 +107,7 @@ function AugmentStatusIcon({
         <>
           <div className="flex items-center justify-between gap-3">
             <TooltipHeader className="mb-0">{augment.label}</TooltipHeader>
-            <span className="rounded-full bg-background px-2 py-0.5 text-xs font-semibold text-foreground">
+            <span className={cn("rounded-full bg-background px-2 py-0.5 text-foreground", tooltipChipClass)}>
               {chip.value}
             </span>
           </div>
@@ -129,7 +129,7 @@ function HasteStatusIcon({ value }: { value: number }) {
         <>
           <div className="flex items-center justify-between gap-3">
             <TooltipHeader className="mb-0">Haste</TooltipHeader>
-            <span className="rounded-full bg-background px-2 py-0.5 text-xs font-semibold text-foreground">
+            <span className={cn("rounded-full bg-background px-2 py-0.5 text-foreground", tooltipChipClass)}>
               {value}
             </span>
           </div>

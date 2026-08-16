@@ -85,7 +85,6 @@ export const COMPANION_GOLD_FIND_CHANCE = 0.5;
 export const COMPANION_GOLD_MULTIPLIER = 1.2;
 export const COMPANION_SOUND_CARD_IDS: Record<string, string> = {
   wolf: "wolf-companion",
-  imp: "imp-companion",
   "lizard-scout": "lizard-scout-companion",
 };
 

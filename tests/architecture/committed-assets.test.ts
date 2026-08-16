@@ -13,7 +13,7 @@ describe("committed asset outputs", () => {
     const assetsGenerated = join(ROOT, "src/lib/game-data/assets.generated.ts");
     const gearArt = join(ROOT, "src/lib/game-data/gear-art.ts");
     const sampleWebp = join(ROOT, "src/assets/optimized/alchemy-logo.webp");
-    const sampleSound = join(ROOT, "public/sounds/button-hover-3.ogg");
+    const sampleSound = join(ROOT, "public/sounds/denied-03.ogg");
 
     expect(existsSync(assetsGenerated)).toBe(true);
     expect(existsSync(gearArt)).toBe(true);

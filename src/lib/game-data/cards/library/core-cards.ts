@@ -111,7 +111,6 @@ export const coreCards = [
     art: assetRefs.lizardScoutCompanion,
     companionId: "lizard-scout",
   }),
-  cardBuilders.summonCompanionCard({ id: "imp-companion", art: assetRefs.impCompanion, companionId: "imp" }),
   cardBuilders.archeryDamageCard({
     id: "fire-arrow",
     art: assetRefs.fireArrow,

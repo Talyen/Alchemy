@@ -283,10 +283,10 @@ describe("computeHomesteadEffects", () => {
   });
 
   it("stores companion bond levels without adding global companion damage", () => {
-    const effects = computeHomesteadEffects({}, {}, {}, { wolf: 2, imp: 1 });
+    const effects = computeHomesteadEffects({}, {}, {}, { wolf: 2, phoenix: 1 });
     expect(effects.companionDamage).toBe(0);
     expect(effects.companionBondLevels.wolf).toBe(2);
-    expect(effects.companionBondLevels.imp).toBe(1);
+    expect(effects.companionBondLevels.phoenix).toBe(1);
   });
 });
 

@@ -2,7 +2,6 @@
 import type { ElementType } from "react";
 import { cn } from "@/lib/utils";
 import { CHIP_BUTTON_CLASS } from "@/features/alchemy/shared/config";
-import { PressableSound } from "./pressable-sound";
 
 export interface TabBarProps<T extends string> {
   tabs: Array<{
@@ -29,23 +28,22 @@ export function TabBar<T extends string>({
         const Icon = tab.icon;
         const isDisabled = tab.disabled ?? false;
         return (
-          <PressableSound key={tab.id} {...(isDisabled ? { hoverSound: false as const } : {})}>
-            <button
-              type="button"
-              disabled={isDisabled}
-              onClick={() => !isDisabled && onSelectTab(tab.id)}
-              className={cn(
-                CHIP_BUTTON_CLASS,
-                "shrink-0",
-                isDisabled && "cursor-default opacity-50",
-                tab.id === activeTab ? activeClassName : "hover:border-border",
-              )}
-              aria-label={isDisabled ? `${tab.label} (Locked)` : tab.label}
-            >
-              <Icon className={cn("h-6 w-6", tab.iconClassName)} />
-              {tab.label}
-            </button>
-          </PressableSound>
+          <button
+            key={tab.id}
+            type="button"
+            disabled={isDisabled}
+            onClick={() => !isDisabled && onSelectTab(tab.id)}
+            className={cn(
+              CHIP_BUTTON_CLASS,
+              "shrink-0",
+              isDisabled && "cursor-default opacity-50",
+              tab.id === activeTab ? activeClassName : "hover:border-border",
+            )}
+            aria-label={isDisabled ? `${tab.label} (Locked)` : tab.label}
+          >
+            <Icon className={cn("h-6 w-6", tab.iconClassName)} />
+            {tab.label}
+          </button>
         );
       })}
     </div>

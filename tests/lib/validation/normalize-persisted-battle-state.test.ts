@@ -40,4 +40,31 @@ describe("normalizePersistedBattleState", () => {
 
     expect(normalized.currentEnemy.traits.map((trait) => trait.id)).toEqual(["tempered"]);
   });
+
+  it("fills empty status and CC records with numeric defaults", () => {
+    const normalized = normalizePersistedBattleState({
+      playerStatuses: {} as ReturnType<typeof defaultBattleState>["playerStatuses"],
+      enemyStatuses: {} as ReturnType<typeof defaultBattleState>["enemyStatuses"],
+      playerCC: {} as ReturnType<typeof defaultBattleState>["playerCC"],
+      enemyCC: {} as ReturnType<typeof defaultBattleState>["enemyCC"],
+      enemyMitigation: {} as ReturnType<typeof defaultBattleState>["enemyMitigation"],
+    });
+
+    expect(normalized.playerStatuses.block).toBe(0);
+    expect(normalized.playerStatuses.armor).toBe(0);
+    expect(normalized.enemyStatuses.burn).toBe(0);
+    expect(normalized.playerCC.stunSkipTurns).toBe(0);
+    expect(normalized.enemyCC.cooldown).toBe(0);
+    expect(normalized.enemyMitigation.armor).toBe(0);
+  });
+
+  it("keeps live stacks while filling omitted status keys", () => {
+    const normalized = normalizePersistedBattleState({
+      playerStatuses: { block: 4 } as ReturnType<typeof defaultBattleState>["playerStatuses"],
+    });
+
+    expect(normalized.playerStatuses.block).toBe(4);
+    expect(normalized.playerStatuses.armor).toBe(0);
+    expect(normalized.playerStatuses.stun).toBe(0);
+  });
 });

@@ -37,6 +37,7 @@ import {
 import type { CorruptionResult } from "@/lib/corruption";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
+import type { GearInstance } from "@/lib/gear";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -61,6 +62,7 @@ export interface DecodedRunResumeSession {
   mysteryPendingRemoval: boolean;
   mysteryCardChoices: BattleCard[] | null;
   mysteryGrantedTrinketIds: string[];
+  mysteryGrantedGearInstances: GearInstance[];
   mysteryChosenCardId: string | null;
   corruptionResult: CorruptionResult | null;
 }

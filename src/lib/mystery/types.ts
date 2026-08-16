@@ -12,7 +12,8 @@ export type MysteryEffect =
   | { kind: "gainXP"; keyword: KeywordId; amount: number }
   | { kind: "removeCard"; mode: "random" | "choose" }
   | { kind: "gainTrinket"; trinketId: string }
-  | { kind: "gainRandomTrinket" }
+  | { kind: "gainRandomTrinket"; fromIds?: string[] }
+  | { kind: "gainGeneratedGear"; baseItemId: string }
   | { kind: "gainMaterial"; material: MaterialId; amount: number };
 
 export interface MysteryChoice {

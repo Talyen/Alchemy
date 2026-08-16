@@ -48,7 +48,7 @@ function getCompanionTooltip(
   const title = discovered ? (
     <span className="inline-flex items-center gap-2">
       {card.title}
-      <StarRating current={currentLevel} max={COMPANION_MAX_TIER} className="h-4 w-4" />
+      <StarRating current={currentLevel} max={COMPANION_MAX_TIER} className="h-3.5 w-3.5" />
     </span>
   ) : (
     "Undiscovered"

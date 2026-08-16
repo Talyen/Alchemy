@@ -34,13 +34,11 @@ import { readProfileStore, setCompletedDifficulties } from "@/features/alchemy/s
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
 import {
   useActiveRunScreenValue,
-  useBattleEnemyHealth,
-  useBattleEnemyType,
+  useAutosaveAllowed,
   useBondedCompanions,
   useHomesteadEffects,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
-import { useRewardsScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-session-model";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
@@ -85,8 +83,7 @@ function AppMainContent({
   const isArmoryLocked = useIsArmoryLocked();
   const { screen: controllerScreen } = run;
   const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
-  const battleEnemyHealth = useBattleEnemyHealth();
-  const battleEnemyType = useBattleEnemyType();
+  const autosaveEnabled = useAutosaveAllowed(controllerScreen);
   useAppKeyboardShortcuts({
     renderedScreen,
     gameMenuOpen: gameMenu.gameMenuOpen,
@@ -94,20 +91,6 @@ function AppMainContent({
     setGameMenuOpen: gameMenu.setGameMenuOpen,
   });
   const nav = useReturnToRunNavigation({ run, renderedScreen });
-
-  const rewardsData = useRewardsScreenData();
-
-  const isAutosaveAllowed = (): boolean => {
-    if (runPhase === "runEnd") return false;
-    if (runPhase === "battle" && battleEnemyHealth <= 0) return false;
-    // Mid-claim keeps choices populated; encodeRunResumeSnapshot handles that surface.
-    // Block only a true hollow Victory (no claim lock, nothing to pick).
-    if (run.screen === "rewards" && !rewardsData.rewardClaimInFlight && rewardsData.rewardState.choices.length === 0) {
-      return false;
-    }
-    return true;
-  };
-  const autosaveEnabled = isAutosaveAllowed();
 
   useAlchemyAutosaveFromStores(autosaveEnabled, nav.returnToRunScreen);
 
@@ -125,8 +108,7 @@ function AppMainContent({
     [homesteadBondedCompanions, homesteadEffects],
   );
 
-  const isBossBattle = renderedScreen === "battle" && battleEnemyType === "boss";
-  const { particleColors, particleAlphaMultiplier } = getScreenParticleConfig(renderedScreen, isBossBattle);
+  const { particleColors, particleAlphaMultiplier } = getScreenParticleConfig(renderedScreen, false);
 
   const [deletingUnsupportedSave, setDeletingUnsupportedSave] = useState(false);
   const handleDeleteUnsupportedSave = useCallback(() => {

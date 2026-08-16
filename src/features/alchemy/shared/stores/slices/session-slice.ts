@@ -51,6 +51,11 @@ export interface SessionActions {
       | RunSessionFields["mysteryGrantedTrinketIds"]
       | ((prev: RunSessionFields["mysteryGrantedTrinketIds"]) => RunSessionFields["mysteryGrantedTrinketIds"]),
   ) => void;
+  setMysteryGrantedGearInstances: (
+    instances:
+      | RunSessionFields["mysteryGrantedGearInstances"]
+      | ((prev: RunSessionFields["mysteryGrantedGearInstances"]) => RunSessionFields["mysteryGrantedGearInstances"]),
+  ) => void;
   setMysteryChosenCardId: (id: RunSessionFields["mysteryChosenCardId"]) => void;
   clearTransientSession: () => void;
 
@@ -118,6 +123,7 @@ export function defineSessionActions(set: ImmerSet<RunSessionFields>): SessionAc
     setMysteryPendingRemoval: setField("mysteryPendingRemoval"),
     setMysteryCardChoices: setField("mysteryCardChoices"),
     setMysteryGrantedTrinketIds: setField("mysteryGrantedTrinketIds"),
+    setMysteryGrantedGearInstances: setField("mysteryGrantedGearInstances"),
     setMysteryChosenCardId: setField("mysteryChosenCardId"),
 
     clearTransientSession: () =>

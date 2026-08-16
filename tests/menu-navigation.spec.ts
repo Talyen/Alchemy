@@ -47,8 +47,7 @@ test.describe("Menu", critical, () => {
     await battle.menuBtn.click();
     await page.getByRole("button", { name: "Main Menu" }).click();
     await menu.openGameModeSelect();
-    await page.getByRole("button", { name: /The Campaign/ }).click();
-    await expect(page.getByRole("button", { name: "Resume" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Resume The Campaign" })).toBeVisible();
   });
 
   test("Labyrinth button shows Resume when a labyrinth run is active", async ({ page }) => {
@@ -61,8 +60,7 @@ test.describe("Menu", critical, () => {
     await page.getByRole("button", { name: "Main Menu" }).click();
     const menu = new MenuPage(page);
     await menu.openGameModeSelect();
-    await page.getByRole("button", { name: /The Labyrinth/ }).click();
-    await expect(page.getByRole("button", { name: "Resume" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Resume The Labyrinth" })).toBeVisible();
   });
 });
 
@@ -71,21 +69,12 @@ test.describe("Character Select", critical, () => {
     void fastBattle;
     const menu = new MenuPage(page);
     await menu.goToCharacterSelectUnlocked();
-    await expect(page.getByRole("button", { name: "Knight" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Ranger" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Rogue" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Wizard" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Select Knight" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Select Ranger" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Select Rogue" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Select Wizard" })).toBeVisible();
 
-    await page.getByRole("button", { name: "Rogue" }).click({ force: true });
-    await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
-    await page.getByRole("button", { name: "Wizard" }).click({ force: true });
-    await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
-    await page.getByRole("button", { name: "Ranger" }).click({ force: true });
-    await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
-
-    // Confirm UI-to-localStorage run startup mapping works for Knight
-    await page.getByRole("button", { name: "Knight" }).click({ force: true });
-    await page.getByRole("button", { name: "Continue" }).click({ force: true });
+    await page.getByRole("button", { name: "Select Knight" }).click();
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
 
     await expect
@@ -103,10 +92,11 @@ test.describe("Character Select", critical, () => {
       .not.toBeNull();
   });
 
-  test("back button returns to main menu", async ({ page }) => {
+  test("screen menu returns to main menu", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goToCharacterSelect();
-    await page.getByRole("button", { name: "Back" }).click();
+    await page.getByRole("button", { name: "Open character select menu" }).click();
+    await page.getByRole("button", { name: "Main Menu" }).click();
     await menu.expectMainMenu();
   });
 });
@@ -233,5 +223,28 @@ test.describe("Startup Loading Screen", slow, () => {
     const bar = page.locator(".alchemy-startup-bar");
     await expect(bar).toBeVisible({ timeout: 5000 });
     await new MenuPage(page).expectMainMenu(15000);
+  });
+});
+
+test.describe("Talents Screen", () => {
+  test("shows talent overview grid and navigates to keyword tree and back", async ({ page }) => {
+    const menu = new MenuPage(page);
+    await menu.gotoWithUnlockedMeta();
+    await menu.openTalents();
+
+    // Verify Overview screen header and cards
+    await expect(page.getByRole("heading", { name: "Talents" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Select Burn Talents" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Select Physical Talents" })).toBeVisible();
+
+    // Click Burn card to navigate to detail tree
+    await page.getByRole("button", { name: "Select Burn Talents" }).click();
+    await expect(page.getByRole("heading", { name: "Burn" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
+
+    // Click Back to return to overview
+    await page.getByRole("button", { name: "Back" }).click();
+    await expect(page.getByRole("heading", { name: "Talents" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Select Burn Talents" })).toBeVisible();
   });
 });

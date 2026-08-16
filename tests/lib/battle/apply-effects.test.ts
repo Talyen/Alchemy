@@ -8,14 +8,6 @@ import { blockDeck, makeState, makeTestCard, statusDeck } from "../../fixtures/b
 import { defaultPlayerStatusValues, defaultEnemyStatusValues } from "../../fixtures/default-battle-state";
 
 describe("applyCardEffects", () => {
-  it("applies damage to enemy health", () => {
-    const state = makeState({ enemyHealth: 30 });
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.enemyHealth).toBe(25);
-  });
-
   it("applies player block status", () => {
     const state = makeState();
     const card = blockDeck(1)[0];

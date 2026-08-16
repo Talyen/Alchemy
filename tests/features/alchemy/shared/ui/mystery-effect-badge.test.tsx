@@ -34,6 +34,19 @@ describe("MysteryEffectBadge", () => {
     );
     expect(screen.getByText(new RegExp(`Choose 1 of ${MYSTERY_CARD_CHOICES} Archery cards`))).toBeTruthy();
   });
+
+  it("describes generated gear as an Armory grant", () => {
+    render(
+      <MysteryEffectBadge
+        effect={{ kind: "gainGeneratedGear", baseItemId: "emerald-ring" }}
+        findCard={undefined}
+        findTrinket={undefined}
+        tooltip
+      />,
+    );
+    expect(screen.getByText(/Emerald Ring/)).toBeTruthy();
+    expect(screen.getByText(/Armory/)).toBeTruthy();
+  });
 });
 
 describe("MysteryEffectList", () => {

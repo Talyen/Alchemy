@@ -7,6 +7,7 @@ import { DetailPopup } from "../../../shared/ui/card-popup";
 import { DisabledTooltip } from "../../../shared/ui/shared-ui";
 import { type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
+import { tooltipChipClass, tooltipChipIconClass } from "../../../shared/config";
 import { MaterialIcon, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
 import { HOMESTEAD_CONFIG, type GoalItem, MaterialCost, getArt, renderTextWithMaterials } from "./helpers";
 import { HomesteadTileCompletedFooter, HomesteadTileFrame } from "./homestead-tile-node";
@@ -81,12 +82,13 @@ function buildFarmYieldNodes(farm: { yield: Record<string, number> }): ReactNode
         <span
           key={`yield-${m}`}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold",
+            "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5",
+            tooltipChipClass,
             matPillStyle[m],
             matTextColor[m],
           )}
         >
-          <MaterialIcon material={m} className="h-4 w-4" /> +{farm.yield[m]} {materialLabels[m]}
+          <MaterialIcon material={m} className={tooltipChipIconClass} /> +{farm.yield[m]} {materialLabels[m]}
         </span>,
       );
     }
@@ -112,18 +114,12 @@ function useTooltipContent(
     if (currentTier) {
       if (currentTier.benefitDescription) {
         for (const line of currentTier.benefitDescription.split("\n")) {
-          nodes.push(
-            <div key={`b-${nodes.length}`} className="text-sm leading-6 text-muted-foreground">
-              {renderTextWithMaterials(line)}
-            </div>,
-          );
+          nodes.push(<div key={`b-${nodes.length}`}>{renderTextWithMaterials(line)}</div>);
         }
       }
       if (currentTier.nonCombatBenefitDescription) {
         nodes.push(
-          <div key={`b-${nodes.length}`} className="text-sm leading-6 text-muted-foreground">
-            {renderTextWithMaterials(currentTier.nonCombatBenefitDescription)}
-          </div>,
+          <div key={`b-${nodes.length}`}>{renderTextWithMaterials(currentTier.nonCombatBenefitDescription)}</div>,
         );
       }
     }

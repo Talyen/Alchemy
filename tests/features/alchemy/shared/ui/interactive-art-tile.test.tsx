@@ -63,4 +63,48 @@ describe("InteractiveArtTile hover popup", () => {
     });
     expect(screen.queryByTestId("tile-popup")).toBeNull();
   });
+
+  it("keeps the hover popup without glow chrome when the tile is disabled", () => {
+    render(
+      <InteractiveArtTile
+        id="sold-ring"
+        interactionKey="shop"
+        title="Ruby Ring"
+        art={undefined}
+        className=""
+        imageClassName=""
+        as="button"
+        interactiveChrome={false}
+        disabled
+        popup={({ visible }) => <div data-testid="tile-popup">{visible ? "shown" : "hidden"}</div>}
+      />,
+    );
+
+    const button = screen.getByRole("button", { name: "Ruby Ring" });
+    expect(button).toHaveProperty("disabled", true);
+    expect(button.className).not.toMatch(/card-interactive-glow/);
+
+    fireEvent.mouseEnter(button.parentElement!);
+    expect(screen.getByTestId("tile-popup").textContent).toBe("shown");
+  });
+
+  it("renders a shine border and keeps hover glow without a second frame", () => {
+    render(
+      <InteractiveArtTile
+        id="astral-ring"
+        interactionKey="reward"
+        title="Astral Ruby Ring"
+        art={undefined}
+        className=""
+        imageClassName=""
+        as="button"
+        shineColor={["#cbd5e1", "#64748b"]}
+      />,
+    );
+
+    const button = screen.getByRole("button", { name: "Astral Ruby Ring" });
+    expect(button.querySelector(".shine-border")).not.toBeNull();
+    expect(button.className).toMatch(/card-interactive-glow/);
+    expect(button.className).toMatch(/has-shine-border/);
+  });
 });

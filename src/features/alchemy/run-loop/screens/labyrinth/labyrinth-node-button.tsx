@@ -92,7 +92,7 @@ function getNodeButtonClassName(
   isEnterable: boolean,
 ): string {
   return cn(
-    "relative flex aspect-square h-full w-full items-center justify-center rounded-full border-2 text-sm transition-[transform,border-color] duration-150",
+    "relative flex aspect-square h-full w-full items-center justify-center rounded-full border-2 text-sm transition-[transform,border-color] duration-150 [--tilt-frame-border-width:2px]",
     meta.className,
     isCurrent && "border-amber-400",
     isCurrent && node.type !== "entrance" && "shadow-labyrinth-current-glow",

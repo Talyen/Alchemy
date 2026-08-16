@@ -34,6 +34,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     handleActComplete: progression.handleActComplete,
     completeRunVictory: defeat.completeRunVictory,
     advanceToNextDestination: progression.advanceToNextDestination,
+    returnToCurrentDestination: progression.returnToCurrentDestination,
     handleCampfireContinue: destination.handleCampfireContinue,
   };
 }

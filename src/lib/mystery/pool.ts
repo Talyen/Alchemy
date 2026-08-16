@@ -6,6 +6,10 @@ import type { MysteryEffect, MysteryEvent } from "./types";
 
 const xp = (keyword: KeywordId, amount = 8): MysteryEffect => ({ kind: "gainXP", keyword, amount });
 const mat = (material: MaterialId, amount: number): MysteryEffect => ({ kind: "gainMaterial", material, amount });
+const gold = (amount: number): MysteryEffect => ({ kind: "gainGold", amount });
+const trinket = (trinketId: string): MysteryEffect => ({ kind: "gainTrinket", trinketId });
+const gear = (baseItemId: string): MysteryEffect => ({ kind: "gainGeneratedGear", baseItemId });
+const card = (cardId: string): MysteryEffect => ({ kind: "addCard", cardId });
 
 function ev(
   id: string,
@@ -26,209 +30,208 @@ export const mysteryPool: MysteryEvent[] = [
   ev(
     "mana-berries",
     "Mana Berries",
-    "You stumble upon a lush field of glowing Mana Berries. Their faint blue radiance pulses gently, promising restored mana.",
+    "You stumble upon a lush field of glowing Mana Berries. Crystal has formed along the stems, and a sapphire ring lies half-buried in the tangle, pulsing with the same blue light.",
     [
-      ["Harvest", [{ kind: "addCard", cardId: "mana-berries" }, mat("herbs", 2)]],
-      ["Study the Glow", [xp("mana")]],
+      ["Harvest Berries", [mat("herbs", 2), gear("sapphire-ring")]],
+      ["Gather Crystals", [card("mana-berries"), xp("mana"), mat("crystal", 3)]],
     ],
   ),
   ev(
     "enchanted-spring",
     "Enchanted Spring",
-    "A pool of iridescent water steams gently in the cool air. Its surface shimmers with an inviting warmth, promising restoration.",
+    "A pool of iridescent water steams gently in the cool air. Moss carpets the bank, and a charm of icy crystal rests just below the surface.",
     [
-      ["Bathe in the Spring", [{ kind: "healHealth", amount: 12 }, mat("herbs", 2)]],
-      ["Bottle the Essence", [{ kind: "addCard", cardId: "health-potion" }]],
+      ["Gather the Moss", [trinket("groves-favor"), xp("nature"), mat("herbs", 2)]],
+      ["Take the Charm", [trinket("icy-heart"), mat("crystal", 3)]],
     ],
   ),
   ev(
     "fungal-grotto",
     "Fungal Grotto",
-    "Bioluminescent mushrooms pulse in the dark, their spores hanging thick in the air. The cave walls glitter with an otherworldly light.",
+    "Bioluminescent mushrooms pulse in the dark, their spores hanging thick in the air. Crystals glitter on the cave walls, and an emerald ring sits among the caps.",
     [
-      ["Harvest Carefully", [{ kind: "addCard", cardId: "mana-berries" }, mat("herbs", 4)]],
-      ["Inhale the Spores", [xp("mana")]],
+      ["Harvest Mushrooms", [mat("herbs", 4), gear("emerald-ring")]],
+      ["Collect Crystals", [trinket("frozen-pocketwatch"), xp("mana"), mat("crystal", 3)]],
     ],
   ),
   ev(
     "wisdom-tree",
     "Wisdom Tree",
-    "An immense oak with a weathered face carved into its bark speaks in rustling leaves. Ancient wisdom emanates from its gnarled branches.",
+    "An immense oak with a weathered face carved into its bark speaks in rustling leaves. Fallen branches litter the ground, and herbs crowd the roots.",
     [
-      ["Ask for Knowledge", [xp("nature")]],
-      ["Rest in its Shade", [{ kind: "healHealth", amount: 15 }, mat("herbs", 2)]],
+      ["Collect Branches", [gear("staff"), xp("nature"), mat("wood", 3)]],
+      ["Forage Herbs", [gear("emerald-amulet"), xp("nature"), mat("herbs", 2)]],
     ],
   ),
   ev(
     "fairy-ring",
     "Fairy Ring",
-    "A circle of glowing mushrooms hums with fey energy in a moonlit clearing. The air feels thick with mischief and ancient magic.",
+    "A circle of glowing mushrooms hums with fey energy in a moonlit clearing. Gold coins and a lucky clover rest in the grass as if left for you.",
     [
-      ["Leave an Offering", [{ kind: "removeCard", mode: "choose" }]],
-      ["Make a Wish", [{ kind: "addCard", cardId: "wish" }]],
+      ["Take the Gold", [gold(25), trinket("lucky-clover")]],
+      ["Pick Mushrooms", [trinket("parasitic-bloom"), mat("herbs", 3)]],
     ],
   ),
   ev(
     "ancient-altar",
     "Ancient Altar",
-    "A weathered stone altar stands beneath a shaft of light piercing the canopy. A rusted offering bowl rests before it, etched with forgotten symbols.",
+    "A weathered stone altar stands beneath a shaft of light piercing the canopy. Gold fills a rusted offering bowl, and a topaz relic set with crystal rests beside it.",
     [
-      ["Pray", [xp("holy")]],
-      ["Make an Offering", [{ kind: "removeCard", mode: "choose" }]],
+      ["Take the Offering", [gear("topaz-ring"), xp("holy"), gold(20)]],
+      ["Claim the Relic", [gear("topaz-amulet"), mat("crystal", 3)]],
     ],
   ),
   ev(
     "hidden-cache",
     "Hidden Cache",
-    "A leather-wrapped bundle tucked between exposed roots catches your eye. Whatever is inside has been hidden here for a long time.",
+    "A leather-wrapped bundle tucked between exposed roots catches your eye. Inside wait a coinpurse and a blade, hidden here for a long time.",
     [
-      [
-        "Take Everything",
-        [
-          { kind: "gainGold", amount: 20 },
-          { kind: "addCard", cardId: "steal" },
-        ],
-      ],
-      ["Study the Map", [{ kind: "gainTrinket", trinketId: "smugglers-map" }]],
+      ["Take the Coinpurse", [trinket("merchants-favor"), gold(20), mat("food", 3)]],
+      ["Claim the Blade", [gear("dagger"), mat("food", 3)]],
     ],
   ),
   ev(
     "overgrown-temple",
     "Overgrown Temple",
-    "Vines carpet ancient mosaic floors. A faint glow pulses from a cracked sarcophagus in the chamber beyond, hinting at preserved treasures.",
+    "Vines carpet ancient mosaic tiles. A faint glow pulses from a cracked sarcophagus in the crypt beyond, hinting at gold and preserved treasures.",
     [
-      ["Explore the Crypt", [{ kind: "gainRandomTrinket" }]],
-      ["Decipher the Inscriptions", [xp("nature")]],
+      ["Search the Crypt", [gold(20), { kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] }]],
+      ["Take a Tile", [trinket("vanguards-crest"), xp("nature"), mat("iron", 3)]],
     ],
   ),
   ev(
     "abandoned-study",
     "Abandoned Study",
-    "Dusty shelves line a circular tower room. A half-written thesis lies open on the desk, quill dried beside it centuries ago.",
+    "Dusty wooden shelves of scrolls line a circular tower room. A spellbook lies open on the desk, a quill dried beside it centuries ago.",
     [
-      ["Search the Scrolls", [{ kind: "chooseCard" }]],
-      ["Organize the Library", [xp("mana")]],
+      ["Search the Scrolls", [gear("spellbook"), mat("wood", 3)]],
+      ["Take the Quill", [xp("mana"), trinket("runic-quill")]],
     ],
   ),
   ev(
     "mysterious-tome",
     "Mysterious Tome",
-    "A leather-bound book floats above a pedestal, pages turning on their own. Arcane energy crackles around it as if it has been waiting for a reader.",
+    "A leather-bound book floats above a pedestal, loose pages turning on their own. Its binding is splitting, as if it has been waiting to be read — or repaired.",
     [
-      ["Read Carefully", [xp("mana")]],
-      ["Tear Out the Pages", [{ kind: "gainTrinket", trinketId: "tattered-pages" }]],
+      ["Take the Pages", [xp("mana"), trinket("tattered-pages")]],
+      ["Repair the Binding", [xp("mana"), gear("spellbook")]],
     ],
   ),
   ev(
     "crystal-geode",
     "Crystal Geode",
-    "A massive amethyst geode splits the cave floor, its resonant hum filling the chamber with a deep, soothing vibration.",
+    "A massive amethyst geode splits the cave floor, gems crowding its hollow. A sapphire ring has formed among the crystal, and the stone shell has broken open beside it.",
     [
-      ["Mine the Crystals", [{ kind: "addCard", cardId: "mana-crystals" }, mat("crystal", 3)]],
-      ["Meditate Under the Crystal", [xp("mana")]],
+      ["Collect Gems", [mat("crystal", 3), gear("sapphire-ring")]],
+      ["Take the Shell", [gear("sapphire-amulet"), xp("mana"), mat("iron", 3)]],
     ],
   ),
   ev(
     "meteorite-crash",
     "Meteorite Crash",
-    "A smoldering crater scars the forest floor. A strange metallic rock from beyond the sky sits at its center, radiating unfamiliar energy.",
+    "A smoldering crater scars the forest floor. A metallic meteorite from beyond the sky sits at its center, iron fragments in the stone where the pit was torn open.",
     [
-      ["Collect a Fragment", [{ kind: "gainTrinket", trinketId: "meteorite" }, mat("iron", 3)]],
-      ["Study the Impact Site", [{ kind: "addCard", cardId: "meteor" }, xp("burn", 4)]],
+      ["Take a Fragment", [trinket("meteorite"), mat("iron", 3)]],
+      ["Search the Crater", [gear("ruby-ring"), xp("burn"), mat("iron", 3)]],
     ],
   ),
   ev(
     "forgotten-hoard",
     "Forgotten Hoard",
-    "Gold coins glitter among scattered bones beside a massive, ancient skeleton. The remains of a once-great beast guard its treasure even in death.",
+    "Scattered bones and a bone charm lie beside a massive, ancient skeleton. Iron scraps rest among the remains, and gold coins spill around a shield the beast still guards.",
     [
-      ["Take the Coins", [{ kind: "gainGold", amount: 30 }, mat("iron", 3)]],
-      ["Take the Bones", [{ kind: "gainTrinket", trinketId: "bone-charm" }]],
+      ["Collect the Bones", [trinket("bone-charm"), mat("iron", 3)]],
+      ["Claim the Shield", [gear("kite-shield"), gold(30)]],
     ],
   ),
   ev(
     "sacred-grove",
     "Sacred Grove",
-    "Sunlight breaks through the canopy in golden rays. The air is thick with peace, and the ground hums with quiet vitality.",
+    "Sunlight breaks through the canopy in golden rays, falling on wild blooms and herbs. An emerald ring hangs in the roots of a fallen wooden bough.",
     [
-      ["Bask in the Light", [{ kind: "healHealth", amount: 12 }, mat("herbs", 3)]],
-      ["Search the Area", [{ kind: "gainTrinket", trinketId: "groves-favor" }]],
+      ["Pick the Blooms", [gear("emerald-amulet"), xp("nature"), mat("herbs", 3)]],
+      ["Take the Ring", [gear("emerald-ring"), mat("wood", 3)]],
     ],
   ),
   ev(
     "mountain-pass",
     "Mountain Pass",
-    "A narrow pass winds through jagged peaks. The wind howls and loose rocks scatter the path, but valuable minerals glint in the sunlight.",
+    "A narrow pass winds through jagged peaks. Iron and a thunderstone glint in the cliffside, and alpine herbs cling to the rocks where the wind howls.",
     [
-      ["Mine the Cliffside", [mat("iron", 4), mat("crystal", 2)]],
-      ["Study the Alpine Flora", [xp("nature"), mat("herbs", 2)]],
+      ["Mine the Cliffside", [trinket("thunderstone"), mat("iron", 4)]],
+      ["Gather Herbs", [card("fox-companion"), xp("nature"), mat("herbs", 2)]],
     ],
   ),
   ev(
     "murky-pond",
     "Murky Pond",
-    "A still pond reflects the gnarled trees surrounding it. Bubbles rise from its murky depths, hinting at secrets beneath the surface.",
+    "A still pond reflects the gnarled trees surrounding it. Fish drift in the murky depths, and medicinal reeds crowd the bank as bubbles rise from below.",
     [
-      ["Go Fishing", [mat("food", 6)]],
-      ["Gather Medicinal Reeds", [mat("herbs", 4), mat("wood", 2)]],
+      ["Catch Fish", [card("lizard-scout-companion"), xp("nature"), mat("food", 6)]],
+      ["Pull the Reeds", [card("will-o-wisp-companion"), xp("nature"), mat("herbs", 4)]],
     ],
   ),
   ev(
     "necromancers-offer",
     "The Necromancer's Offer",
-    "A robed figure tends a circle of salt and bone. Without looking up, they extend a skeletal hand.",
+    "A robed figure tends a circle of crystal salts and bone. Without looking up, they extend a staff in a skeletal hand, offering a forbidden rite.",
     [
-      ["Accept the Rite", [xp("bleed"), { kind: "addCard", cardId: "skeleton-companion" }]],
-      ["Take the Salts", [{ kind: "addCard", cardId: "smelling-salts" }]],
+      ["Accept the Rite", [xp("bleed"), card("skeleton-companion")]],
+      ["Take the Salts", [trinket("bone-charm"), mat("crystal", 3)]],
     ],
   ),
   ev(
     "medicinal-herb-garden",
     "Medicinal Herb Garden",
-    "Cultivated beds have run wild as medicinal herbs grow through cracked paving, rich with scent.",
+    "Cultivated beds have run wild as medicinal herbs grow through cracked paving. A mortar and pestle sit beside a sheaf of notes, rich with scent and curative promise.",
     [
-      ["Harvest Supplies", [mat("herbs", 5), { kind: "addCard", cardId: "panacea-potion" }]],
-      ["Read the Research", [xp("nature")]],
+      ["Harvest Remedies", [mat("herbs", 5), trinket("mortar-and-pestle")]],
+      ["Take the Notes", [xp("nature"), trinket("tattered-pages")]],
     ],
   ),
   ev(
     "crystal-garden",
     "Crystal Garden",
-    "Faceted crystalline blooms catch stray light, chiming softly when the wind passes by.",
+    "Faceted crystalline blooms catch stray light, and chimes hang among the shards. A sapphire amulet rests in the bed, each shard thrumming with latent power.",
     [
-      ["Harvest the Crystals", [mat("crystal", 4), { kind: "addCard", cardId: "mana-crystals" }]],
-      ["Study the Crystals", [xp("mana")]],
+      ["Harvest Shards", [mat("crystal", 4), gear("sapphire-amulet")]],
+      ["Take the Chimes", [xp("mana"), trinket("resonant-chimes")]],
     ],
   ),
   ev(
     "hunters-lodge",
     "Hunter's Lodge",
-    "A deserted lodge still smells of smoke, wood, and leather. A hunter's bow and quiver hang near the door, and a loyal Wolf companion protects the homestead.",
+    "A deserted lodge still smells of smoke, wood, and leather. A hunter's bow and hatchet hang near the door, preserved and waiting.",
     [
-      ["Take the Arrows", [{ kind: "chooseCard", tag: "archery" }]],
-      ["Befriend the Wolf", [{ kind: "addCard", cardId: "wolf-companion" }]],
+      ["Claim the Bow", [gear("shortbow"), mat("food", 3)]],
+      ["Befriend the Wolf", [card("wolf-companion"), mat("food", 3)]],
     ],
   ),
   ev(
     "roadside-censer",
     "Roadside Censer",
-    "Incense smoke coils from a hanging brass censer at a fork in the path. The air tastes of sanctified ash and old vows.",
+    "Incense smoke coils from a hanging brass censer at a fork in the path. Gold coins lie at its base, and the air tastes of sanctified ash and old vows.",
     [
-      ["Breathe the Smoke", [xp("holy")]],
-      ["Claim the Censer", [{ kind: "gainTrinket", trinketId: "brass-censer" }]],
+      ["Gather Incense", [gear("mace"), xp("holy"), mat("herbs", 3)]],
+      ["Claim the Censer", [trinket("brass-censer"), gold(20)]],
     ],
   ),
-  ev("the-phoenix", "The Phoenix", "A single feather glows with warm radiance, asking to be reborn.", [
-    ["Claim the Feather", [{ kind: "addCard", cardId: "phoenix-feather" }]],
-    ["Fan the Embers", [{ kind: "addCard", cardId: "phoenix-companion" }]],
-  ]),
+  ev(
+    "the-phoenix",
+    "The Phoenix",
+    "A single feather glows with warm radiance on a nest of charred wood, a ruby gleam caught in the down. A burning brand leans in the embers as if the flame that created it still burns nearby.",
+    [
+      ["Claim the Feather", [gear("ruby-amulet"), mat("food", 3)]],
+      ["Fan the Embers", [card("phoenix-companion"), mat("wood", 3)]],
+    ],
+  ),
   ev(
     "the-wolf",
     "The Wolf",
-    "A grey wolf steps from the treeline, watching you with amber eyes. It does not flee — only waits, as if deciding whether you are worth knowing.",
+    "A grey wolf steps from the treeline, watching you with amber eyes. It does not flee — only waits, then leads you toward a den of hides and a hunter's cache of food and a bow.",
     [
-      ["Answer the Howl", [{ kind: "addCard", cardId: "wolf-companion" }]],
-      ["Study the Pack's Tactics", [xp("companion")]],
+      ["Answer the Howl", [card("wolf-companion"), xp("companion")]],
+      ["Open the Cache", [gear("recurve-bow"), mat("food", 3)]],
     ],
   ),
 ];

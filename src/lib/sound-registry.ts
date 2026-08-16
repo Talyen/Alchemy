@@ -26,7 +26,6 @@ export const cardSounds: Record<string, string[]> = {
   fireball: ["fireball-1.ogg"],
   fangs: ["sword-impact-hit-2.ogg"],
   "wolf-companion": ["sword-impact-hit-2.ogg"],
-  "imp-companion": ["torch-attack-strike-1.ogg"],
   "lizard-scout-companion": ["swipe.ogg"],
   frostbolt: ["ice-throw-1.ogg"],
   "health-potion": ["ice-in-water.ogg"],
@@ -108,11 +107,11 @@ export const battleEventSounds = {
   wishAppear: "harpsichord-mystery.ogg",
   gainGold: "coin-collect.ogg",
   deathsDoor: "horror-sting.ogg",
+  sliceDeath: "sword-slice.ogg",
 } as const;
 
 // ── UI ──
 export const uiSounds = {
-  buttonHover: "button-hover-3.ogg",
   gearMove: "metal-button-4.ogg",
   cardHover: "card-draw-3.ogg",
   cardDrag: "whoosh-1.ogg",
@@ -125,7 +124,6 @@ export const uiSounds = {
   shopRemove: "card-fan.ogg",
   campfireRest: "fire-lighting.ogg",
   alchemistMix: "gurgling.ogg",
-  rewardSelect: "sci-fi-confirm.ogg",
   talentUnlock: "music-box-chime-positive.ogg",
   collectionPage: "page-turn.ogg",
   musicBoxMystery: "music-box-mystery.ogg",
@@ -140,3 +138,16 @@ export const stingerSounds = {
   victory: "harpsichord-level-complete.ogg",
   defeat: "harpsichord-defeated.ogg",
 } as const;
+
+/** Every SFX filename referenced by gameplay. Used for preload, asset checks, and URL resolution. */
+export function allRegisteredSoundFiles(): string[] {
+  return [
+    ...new Set([
+      ...Object.values(cardSounds).flat(),
+      ...Object.values(enemyAttackSounds).flat(),
+      ...Object.values(battleEventSounds),
+      ...Object.values(uiSounds),
+      ...Object.values(stingerSounds),
+    ]),
+  ];
+}

@@ -11,12 +11,14 @@ export const battleCompanionWidthClass = "w-[clamp(18.4cqh,18.7cqh,27.9cqh)]";
 export const battleCompanionCornerClass = "absolute bottom-0 left-full z-20 -translate-x-[42%] translate-y-[1.6cqh]";
 /** Landscape enemy art sized to match portrait hero height (3:4 width × 16/9). */
 export const battleEnemyCardWidthClass = "w-[clamp(50.67cqh,51.38cqh,76.62cqh)]";
-export const handCardWidthClass = "w-[clamp(22.28cqh,22.64cqh,33.73cqh)]";
-// Collection card tiles match the battle-hand clamp; max-width so 4-col rows shrink instead of overlapping.
+export const handCardWidthClass = "w-[clamp(24.06cqh,24.45cqh,36.43cqh)]";
+// Collection card tiles keep an independent clamp; max-width so 4-col rows shrink instead of overlapping.
 export const collectionCardGridTileWidthClass = "mx-auto w-full max-w-[clamp(22.28cqh,22.64cqh,33.73cqh)]";
 // Non-battle card/tile widths are authored ~1.2× denser than the prior stage sizes.
 export const viewCardWidthClass = "w-[clamp(21cqh,21.34cqh,31.78cqh)]"; // was 17.5 / 17.78 / 26.48
 export const collectionTileWidthClass = "w-[clamp(25.2cqh,25.61cqh,38.14cqh)]"; // was 21 / 21.34 / 31.78
+/** Four reward-sized trinket tiles + `gap-x-6` — caps inspect rows so paging stays 4×2. */
+export const battleTrinketInspectRowMaxWidthClass = "mx-auto w-fit max-w-[min(100%,calc(4*38.14cqh+3*1.5rem))]";
 // Grid cells use max-width so densified tiles shrink instead of overlapping neighbors when
 // the shell is narrower than 4×tile + gaps (e.g. rem-fixed max-w after UI Scale removal).
 export const collectionGridTileWidthClass = "mx-auto w-full max-w-[clamp(25.2cqh,25.61cqh,38.14cqh)]";
@@ -25,28 +27,35 @@ export const collectionGridGapXClass = "gap-x-5";
 export const collectionShellWidthClass = "max-w-7xl";
 // Shared with CollectionGrid — stretch columns; tiles self-center via collectionGrid*WidthClass.
 export const collectionCardGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-4`;
-export const collectionTrinketGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-3`;
+export const collectionTrinketGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-4`;
 export const collectionBestiaryGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-3`;
-export const collectionGridTrinketWidthClass = "mx-auto w-full max-w-[clamp(29.4cqh,29.87cqh,44.48cqh)]";
-/** Landscape 4:3 tiles stretch the 3-col row so two rows fill the collection well. */
-export const collectionGridBestiaryWidthClass = "mx-auto w-full";
+export const collectionGridTrinketWidthClass = collectionCardGridTileWidthClass;
+/** Landscape 4:3 tiles sized to maximize enemy portrait size while matching the cards tab height. */
+export const collectionGridBestiaryWidthClass = "mx-auto w-full max-w-[clamp(36cqh,38.27cqh,40.25cqh)]";
 /** Floor for Collection FadeSlot so pagination does not jump across tab aspect ratios. */
-export const collectionGridMinHeightClass = "min-h-[70cqh]";
+export const collectionGridMinHeightClass = "min-h-[64cqh]";
 export const pileCardWidthClass = "w-[clamp(13.8cqh,14.9cqh,21cqh)]";
 
-// Non-battle portrait/card panels (e.g. difficulty select) — 1.2× battleCardWidthClass, battle token untouched.
-export const nonBattleCardWidthClass = "w-[clamp(29.71cqh,30.19cqh,44.98cqh)]";
-
-/** Landscape chooser art (game mode, destination). Caps at the designed size; shrinks with the tile. */
+/** Landscape chooser art (destination). Caps at the designed size; shrinks with the tile. */
 export const chooserArtWidthClass = "w-full max-w-[39.11cqh]";
+/** Game mode select art — slightly larger than destination chooser tiles. */
+export const gameModeArtWidthClass = "w-full max-w-[43cqh]";
+/**
+ * Standalone landscape art (mystery event intro). Same cap as chooser tiles, but a definite
+ * width: aspect frames whose clip layer is `position:absolute` collapse to 0×0 under `w-full`
+ * in a shrink-wrapped `items-center` column.
+ */
+export const standaloneLandscapeArtWidthClass = "w-[min(100%,39.11cqh)]";
 /** Flex item for a padded 3-up chooser tile (`px-5`). Grows up to art+padding, shrinks when the row is tight. */
 export const chooserPaddedTileClass = "relative min-w-0 w-full max-w-[calc(39.11cqh+2.5rem)] flex-1";
+export const gameModePaddedTileClass = "relative min-w-0 w-full max-w-[calc(43cqh+2.5rem)] flex-1";
 export const chooserRowGapClass = "gap-5";
 /**
  * ScreenShell ceiling for a 3-up landscape chooser with padded tiles.
  * 3×(art + px-5) + 2×gap-5 + ScreenShell p-[2.1rem]; `min(100%)` never exceeds the page.
  */
 export const chooserRowShellWidthClass = "max-w-[min(100%,calc(3*39.11cqh+3*2.5rem+2*1.25rem+4.2rem))]";
+export const gameModeRowShellWidthClass = "max-w-[min(100%,calc(3*43cqh+3*2.5rem+2*1.25rem+4.2rem))]";
 
 /** Portrait chooser art (character select). Caps at the designed size; shrinks with the tile. */
 export const chooserHeroArtWidthClass = "w-full max-w-[25.5cqh]";
@@ -56,11 +65,29 @@ export const chooserHeroRowGapClass = "gap-x-8";
  * 4×art + 3×gap-x-8 + ScreenShell p-[2.1rem]; `min(100%)` never exceeds the page.
  */
 export const chooserHeroRowShellWidthClass = "max-w-[min(100%,calc(4*25.5cqh+3*2rem+4.2rem))]";
+/** Flex item for a padded 4-up portrait chooser tile (`px-4`). Grows up to art+padding, shrinks when the row is tight. */
+export const chooserHeroPaddedTileClass = "relative min-w-0 w-full max-w-[calc(25.5cqh+2rem)] flex-1";
+/**
+ * ScreenShell ceiling for a padded 4-up portrait chooser (difficulty select).
+ * 4×(art + px-4) + 3×gap-5 + ~1rem divider + ScreenShell p-[2.1rem]; `min(100%)` never exceeds the page.
+ */
+export const chooserHeroPaddedRowShellWidthClass = "max-w-[min(100%,calc(4*(25.5cqh+2rem)+3*1.25rem+1rem+4.2rem))]";
 
 // Card and popup surfaces stay centralized so repeated game widgets share the
 // same tactile fantasy material treatment.
 export const cardSurfaceClass = "relative overflow-hidden rounded-shell-hero bg-black";
+
+/**
+ * Hover/focus chrome for interactive cards and tiles.
+ * Glow is a drop-shadow (follows rounded alpha); do not use ring/box-shadow here —
+ * those paint a rectangular halo once the tile is a 3D compositor layer.
+ */
+export const cardInteractiveGlowClass = "card-interactive-glow";
+/** Marks a tile whose shine overlay replaces the 3px hover/select border. */
+export const cardShineFrameClass = "has-shine-border";
+
 export const cardArtImageClass = "rounded-shell-hero aspect-[3/4] object-cover";
+
 export const trinketArtImageClass = "rounded-shell-hero aspect-[3/4] object-cover";
 export const trinketArtTileClass = `${cardSurfaceClass} ${collectionTileWidthClass} aspect-[3/4]`;
 export const trinketArtFillClass = "absolute inset-0 h-full w-full";
@@ -76,8 +103,8 @@ export const popupBaseClassName =
 // shrink to their content; none exceed the cap.
 export const tooltipWidthClass = "w-max max-w-72";
 
-// Selection ring for TiltSurface and outer panels that wrap art + labels (setup/run tiles).
-export const tiltSurfaceSelectedRingClass = "ring-2 ring-primary ring-offset-4 ring-offset-background";
+// Selection chrome — same primary border + glow as hover (see `.card-interactive-selected`).
+export const tiltSurfaceSelectedRingClass = "card-interactive-selected";
 
 export const tooltipAnchorClassNames = {
   above: "bottom-full mb-4",
@@ -87,8 +114,10 @@ export const tooltipAnchorClassNames = {
 // Half-stage anchors: fight axis (inner edges + gap) on screen center. Extra landscape
 // width grows into the right half instead of translating the pair as one object.
 export const battleActorSectionClass = {
-  desktop: "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 items-start px-4 gap-[clamp(8cqw,12cqw,16cqw)]",
-  ultrawide: "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 items-start px-4 gap-[clamp(10cqw,14cqw,18cqw)]",
+  desktop:
+    "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 -translate-x-[2cqw] items-start px-4 gap-[clamp(10cqw,14cqw,18cqw)]",
+  ultrawide:
+    "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 -translate-x-[2cqw] items-start px-4 gap-[clamp(12cqw,16cqw,20cqw)]",
 } as const;
 
 export const battleActorHeroCellClass =
@@ -100,4 +129,4 @@ export const battleBottomBarClass =
 
 export const battleBottomColumnClass = "flex flex-col items-center justify-end gap-4 pb-4";
 
-export const battleHandContainerClass = "flex min-w-0 items-end justify-center min-h-[30.9cqh] pb-3 pt-10";
+export const battleHandContainerClass = "flex min-w-0 items-end justify-center min-h-[33.37cqh] pb-3 pt-10";

@@ -12,6 +12,8 @@ import {
   battleActorHeroCellClass,
   battleActorSectionClass,
   battleCompanionCornerClass,
+  getBossShineColors,
+  getCharacterShineColors,
 } from "@/features/alchemy/shared/config";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useBattlePresentationStore } from "../../battle/battle-presentation-store";
@@ -70,7 +72,7 @@ export function BattleActors({
   feedback: BattleFeedbackProps;
   refs: BattleRefsProps;
 }) {
-  const { battleState, heroArt, playerName, aspectMode } = view;
+  const { battleState, characterId, heroArt, playerName, aspectMode } = view;
   const { playerStatusChips, enemyStatusChips, activeLabyrinthModifiers } = feedback;
   const { playerPanelRef, enemyPanelRef } = refs;
   const isPlayerTurn = battleState.turnPhase === "player";
@@ -101,6 +103,7 @@ export function BattleActors({
             deathsDoorActive={battleState.deathsDoorActive}
             surfaceRef={playerPanelRef}
             turnActive={isPlayerTurn}
+            turnShineColors={getCharacterShineColors(characterId)}
             artCorner={
               battleState.activeCompanion ? (
                 <div className={battleCompanionCornerClass}>
@@ -139,6 +142,7 @@ export function BattleActors({
           isBoss={isBoss}
           turnActive={!isPlayerTurn && !enemyDead}
           turnUrgentHide={enemyDead}
+          {...(isBoss ? { turnShineColors: getBossShineColors(battleState.currentEnemy) } : {})}
         >
           <CombatTextRailSide side="enemy" />
         </ShakingArtPanel>

@@ -1,27 +1,17 @@
-import type { BattleState } from "@/lib/battle";
-import { computeEffectiveCost } from "@/lib/battle";
+import { canPlayCard, type BattleState, type CardPlayOptions } from "@/lib/battle";
 
-export function getPlayableHandCardKeys(
-  battleState: Pick<
-    BattleState,
-    "hand" | "turnPhase" | "mana" | "wishOptions" | "flags" | "talentEffects" | "trinketEffects"
-  >,
-): Set<string> {
-  if (battleState.turnPhase !== "player" || battleState.wishOptions) return new Set<string>();
-  const costState = {
-    flags: battleState.flags,
-    talentEffects: battleState.talentEffects,
-    trinketEffects: battleState.trinketEffects,
-  };
+const PLAYABLE_HAND_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
+
+export function getPlayableHandCardKeys(battleState: BattleState): Set<string> {
   return new Set(
     battleState.hand
-      .filter((card) => battleState.mana >= computeEffectiveCost(costState, card).effectiveCost)
+      .filter((card, index) => canPlayCard(battleState, card, index, PLAYABLE_HAND_OPTIONS))
       .map((card) => `${card.id}-${card.uid}`),
   );
 }
 
 export function getPlayableHandCardKeysExcludingHidden(
-  battleState: Parameters<typeof getPlayableHandCardKeys>[0],
+  battleState: BattleState,
   hiddenHandCardKeys: Set<string>,
 ): Set<string> {
   const playable = getPlayableHandCardKeys(battleState);

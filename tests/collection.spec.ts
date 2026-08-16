@@ -42,6 +42,26 @@ test.describe("Collection", critical, () => {
       await expect(page.getByRole("button", { name: /Inspect/ }).first()).toBeVisible();
     });
 
+    test("bestiary tiles use landscape art without collection overflow", async ({ page }) => {
+      await page.getByRole("button", { name: "Bestiary" }).click();
+      const bestiaryButtons = page.locator('button[aria-label="Inspect Undiscovered Entry"]');
+      await expect(bestiaryButtons).toHaveCount(6);
+
+      const bestiaryImages = bestiaryButtons.locator("img");
+      const ratios = await bestiaryImages.evaluateAll((images) =>
+        images.map((image) => {
+          const rect = image.getBoundingClientRect();
+          return rect.width / rect.height;
+        }),
+      );
+      expect(ratios).toHaveLength(6);
+      for (const ratio of ratios) {
+        expect(ratio).toBeCloseTo(4 / 3, 2);
+      }
+
+      await assertNoOverflow(page, "collection bestiary");
+    });
+
     test("trinket tiles use portrait art without collection overflow", async ({ page }) => {
       await page.getByRole("button", { name: "Trinkets" }).click();
       const trinketImages = page.locator('button[aria-label="Inspect Undiscovered Entry"] img');

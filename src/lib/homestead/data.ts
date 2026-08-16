@@ -13,7 +13,7 @@ import {
 } from "./data-builders";
 
 export const buildings = [
-  defineBuilding("blacksmiths-forge", "Blacksmith's Forge", [
+  defineBuilding("blacksmiths-forge", "Blacksmith", [
     {
       cost: materialCost({ iron: 20 }),
       effects: { flatPhysicalDamage: 1, forgeToBurn: true },
@@ -52,7 +52,7 @@ export const buildings = [
       benefitDescription: "Potions are 50% more potent",
     },
   ]),
-  defineBuilding("runesmiths-workshop", "Runesmith's Workshop", [
+  defineBuilding("runesmiths-workshop", "Runesmith", [
     {
       cost: materialCost({ iron: 10, crystal: 10 }),
       effects: { flatBurnDamage: 1 },
@@ -71,7 +71,7 @@ export const buildings = [
   ]),
   defineBuilding(
     "companion-sanctuary",
-    "Companion Sanctuary",
+    "Sanctuary",
     stackingTiers(
       dualMaterialCosts("wood", "food"),
       { companionDamage: 1 },

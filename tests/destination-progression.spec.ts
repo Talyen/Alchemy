@@ -69,7 +69,7 @@ test.describe("Destination Progression", () => {
     await page.goto("/");
 
     await expect(page.getByRole("button", { name: /Boss/i })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("img", { name: /Boss/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Boss/i }).locator(".shine-border")).toBeVisible();
   });
 });
 
@@ -136,7 +136,9 @@ test.describe("Corruption Full Flow", () => {
     await expect(corruption.leaveBtn).toBeVisible();
 
     await corruption.leaveBtn.click();
-    await new DestinationPage(page).expectVisible();
+    const destination = new DestinationPage(page);
+    await destination.expectVisible();
+    await expect(destination.destinationButton("Corruption")).toBeVisible();
   });
 
   test("selecting a card and corrupting shows result view with continue", critical, async ({ page }) => {

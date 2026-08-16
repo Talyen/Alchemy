@@ -1,7 +1,7 @@
 // Mystery consequence reward summary after run state has been updated.
-import { useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { type BattleCard, type KeywordId, type TalentXP, type TrinketEntry } from "@/lib/game-data";
 import { type MaterialId } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 
@@ -9,18 +9,27 @@ import { FoundResourcesRow } from "../../../shared/ui/found-resources-row";
 import {
   BUTTON_WIDTH_ACTION,
   bodyTextClass,
+  cardInteractiveGlowClass,
+  cardSurfaceClass,
+  collectionTileWidthClass,
   controlLabelClass,
+  gearArtAspectClass,
+  gearArtFillClass,
   trinketArtFillClass,
   trinketArtImageClass,
   trinketArtTileClass,
   viewCardWidthClass,
 } from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEffect } from "@/lib/mystery";
+import { gearDefinitions, getAstralShineColors, getGearInstanceTitle, type GearInstance } from "@/lib/gear";
+import { GearDetailPopup } from "../../../shared/ui/gear-detail-popup";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
 import { DetailPopup } from "../../../shared/ui/card-popup";
 import { InteractiveArtTile } from "../../../shared/ui/interactive-art-tile";
 import { MysteryEffectBadge } from "../../../shared/ui/mystery-effect-badge";
+import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
+import { KeywordProgressCard } from "../keyword-progress-card";
 
 interface LookupProps {
   findCard: (id: string) => BattleCard | undefined;
@@ -36,82 +45,113 @@ function renderFoundOrLost(effect: MysteryEffect, prefix: string) {
   );
 }
 
+function MysteryCardRewardItem({ card }: { card: BattleCard }) {
+  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
+    "mystery-reward",
+    card.id,
+  );
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <BattleCardButton
+        card={card}
+        hovered={isHovered}
+        onHoverStart={onHoverStart}
+        onHoverEnd={onHoverEnd}
+        ariaLabel={getCardDisplayTitle(card)}
+        shimmerActive={shimmerActive}
+        shimmerToken={shimmerToken}
+        className={cn(viewCardWidthClass, cardInteractiveGlowClass)}
+      />
+      <p className={controlLabelClass}>
+        <CardTitle card={card} />
+      </p>
+    </div>
+  );
+}
+
+function MysteryTrinketRewardItem({ boon }: { boon: TrinketEntry }) {
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <InteractiveArtTile
+        id={boon.id}
+        interactionKey="mystery-reward"
+        title={boon.title}
+        art={boon.art}
+        className={trinketArtTileClass}
+        imageClassName={cn(trinketArtFillClass, trinketArtImageClass)}
+        popup={({ visible, triggerRef }) => (
+          <DetailPopup
+            idPrefix={boon.id}
+            title={boon.title}
+            footerChip="This Run"
+            descriptionLines={boon.descriptionLines}
+            visible={visible}
+            triggerRef={triggerRef}
+          />
+        )}
+      />
+      <p className={controlLabelClass}>{boon.title}</p>
+    </div>
+  );
+}
+
+function MysteryGearRewardItem({ instance }: { instance: GearInstance }) {
+  const definition = gearDefinitions[instance.definitionId];
+  const title = getGearInstanceTitle(instance);
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <InteractiveArtTile
+        id={instance.instanceId}
+        interactionKey="mystery-reward"
+        title={title}
+        art={definition?.art ?? ""}
+        className={cn(cardSurfaceClass, collectionTileWidthClass, gearArtAspectClass)}
+        imageClassName={gearArtFillClass}
+        shineColor={getAstralShineColors(instance)}
+        popup={({ visible, triggerRef }) => (
+          <GearDetailPopup definition={definition} instance={instance} visible={visible} triggerRef={triggerRef} />
+        )}
+      />
+      <p className={controlLabelClass}>{title}</p>
+    </div>
+  );
+}
+
 function MysteryRewardEffectItem({
   effect,
   findCard,
   findTrinket,
   grantedTrinketId,
+  grantedGear,
   chosenCardId,
 }: {
   effect: MysteryEffect;
   grantedTrinketId: string | undefined;
+  grantedGear: GearInstance | undefined;
   chosenCardId: string | null;
 } & LookupProps) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  function renderCardReward(card: BattleCard) {
-    return (
-      <div className="flex flex-col items-center gap-3">
-        <BattleCardButton
-          card={card}
-          hovered={isHovered}
-          onHoverStart={() => setIsHovered(true)}
-          onHoverEnd={() => setIsHovered(false)}
-          ariaLabel={getCardDisplayTitle(card)}
-          shimmerActive={false}
-          shimmerToken={undefined}
-          className={viewCardWidthClass}
-        />
-        <p className={controlLabelClass}>
-          <CardTitle card={card} />
-        </p>
-      </div>
-    );
-  }
-
-  function renderTrinketReward(boon: TrinketEntry) {
-    return (
-      <div className="flex flex-col items-center gap-3">
-        <InteractiveArtTile
-          id={boon.id}
-          interactionKey="mystery-reward"
-          title={boon.title}
-          art={boon.art}
-          className={trinketArtTileClass}
-          imageClassName={cn(trinketArtFillClass, trinketArtImageClass)}
-          popup={({ visible, triggerRef }) => (
-            <DetailPopup
-              idPrefix={boon.id}
-              title={boon.title}
-              subtitle="This Run"
-              descriptionLines={boon.descriptionLines}
-              visible={visible}
-              triggerRef={triggerRef}
-            />
-          )}
-        />
-        <p className={controlLabelClass}>{boon.title}</p>
-      </div>
-    );
-  }
-
   const rewardRenderers: Record<string, () => ReactNode> = {
     addCard: () => {
       const card = findCard((effect as { cardId: string }).cardId);
-      return card ? renderCardReward(card) : null;
+      return card ? <MysteryCardRewardItem card={card} /> : null;
     },
     chooseCard: () => {
       const card = chosenCardId ? findCard(chosenCardId) : undefined;
-      return card ? renderCardReward(card) : null;
+      return card ? <MysteryCardRewardItem card={card} /> : null;
     },
     gainTrinket: () => {
       const boon = findTrinket((effect as { trinketId: string }).trinketId);
-      return boon ? renderTrinketReward(boon) : null;
+      return boon ? <MysteryTrinketRewardItem boon={boon} /> : null;
     },
     gainRandomTrinket: () => {
       const boon = grantedTrinketId ? findTrinket(grantedTrinketId) : undefined;
       if (!boon) return <p className={controlLabelClass}>Gained a random trinket for this run</p>;
-      return renderTrinketReward(boon);
+      return <MysteryTrinketRewardItem boon={boon} />;
+    },
+    gainGeneratedGear: () => {
+      if (!grantedGear) return <p className={controlLabelClass}>Added Gear to your Armory</p>;
+      return <MysteryGearRewardItem instance={grantedGear} />;
     },
     gainGold: () => renderFoundOrLost(effect, "Found"),
     gainMaterial: () => renderFoundOrLost(effect, "Found"),
@@ -135,16 +175,42 @@ export function MysteryRewardSummary({
   findCard,
   findTrinket,
   grantedTrinketIds,
+  grantedGearInstances,
   chosenCardId,
+  runTalentXP = {},
+  talentXP = {},
   onContinue,
 }: {
   choice: MysteryChoice;
   grantedTrinketIds: string[];
+  grantedGearInstances: GearInstance[];
   chosenCardId: string | null;
+  runTalentXP?: TalentXP;
+  talentXP?: TalentXP;
   onContinue: () => void;
 } & LookupProps) {
+  const [animate, setAnimate] = useState(false);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setAnimate(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  const xpEffects = choice.effects.filter((e): e is Extract<MysteryEffect, { kind: "gainXP" }> => e.kind === "gainXP");
   const resourceEffects = choice.effects.filter((e) => e.kind === "gainGold" || e.kind === "gainMaterial");
-  const otherEffects = choice.effects.filter((e) => e.kind !== "gainGold" && e.kind !== "gainMaterial");
+  const otherEffects = choice.effects.filter(
+    (e) => e.kind !== "gainGold" && e.kind !== "gainMaterial" && e.kind !== "gainXP",
+  );
+
+  const xpByKeyword = useMemo(() => {
+    const acc: Partial<Record<KeywordId, number>> = {};
+    for (const effect of xpEffects) {
+      acc[effect.keyword] = (acc[effect.keyword] ?? 0) + effect.amount;
+    }
+    return acc;
+  }, [xpEffects]);
+
+  const xpKeywordEntries = useMemo(() => Object.entries(xpByKeyword) as Array<[KeywordId, number]>, [xpByKeyword]);
 
   const totalGold = resourceEffects
     .filter((e): e is typeof e & { kind: "gainGold" } => e.kind === "gainGold")
@@ -158,12 +224,15 @@ export function MysteryRewardSummary({
   }
 
   let randomTrinketCursor = 0;
+  let generatedGearCursor = 0;
 
   return (
-    <div className="space-y-6 text-center">
+    <div className="flex min-h-[56cqh] w-full flex-1 flex-col items-center justify-center space-y-6 text-center">
       {otherEffects.map((effect, i) => {
         const grantedTrinketId =
           effect.kind === "gainRandomTrinket" ? grantedTrinketIds[randomTrinketCursor++] : undefined;
+        const grantedGear =
+          effect.kind === "gainGeneratedGear" ? grantedGearInstances[generatedGearCursor++] : undefined;
         return (
           <div key={i}>
             <MysteryRewardEffectItem
@@ -171,11 +240,27 @@ export function MysteryRewardSummary({
               findCard={findCard}
               findTrinket={findTrinket}
               grantedTrinketId={grantedTrinketId}
+              grantedGear={grantedGear}
               chosenCardId={chosenCardId}
             />
           </div>
         );
       })}
+
+      {xpKeywordEntries.length > 0 && (
+        <div className="flex w-full max-w-2xl flex-wrap justify-center gap-2">
+          {xpKeywordEntries.map(([kw, amount]) => (
+            <div key={kw} className="w-[23.33cqh] flex-none">
+              <KeywordProgressCard
+                kw={kw}
+                runXP={amount}
+                totalXP={(talentXP[kw] ?? 0) + (runTalentXP[kw] ?? 0)}
+                animate={animate}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       {resourceEffects.length > 0 ? (
         <div>

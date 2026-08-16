@@ -1,25 +1,28 @@
-import { memo, useRef, useState } from "react";
+import { memo } from "react";
 import {
   canApplyCraftingCurrency,
   gearDefinitions,
-  gearInstanceRarity,
-  getGearInstanceShineColors,
+  getAstralShineColors,
+  GEAR_ASTRAL_SHINE_BORDER_WIDTH,
   type CraftingCurrencyId,
   type GearInstance,
   type GearSlot,
 } from "@/lib/gear";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
-import { playUISound } from "@/lib/audio";
 import {
   cardSurfaceClass,
   collectionGridTileWidthClass,
   gearArtAspectClass,
-  tiltSurfaceSelectedRingClass,
+  cardInteractiveGlowClass,
+  cardShineFrameClass,
 } from "../../../../shared/config";
+import { TiltSurface } from "../../../../shared/ui/tilt-surface";
+import { useInteractiveCard } from "../../../../shared/ui/use-interactive-card";
+import { useTileHoverPopup } from "../../../../shared/ui/use-tile-hover-popup";
+import { GearTooltipPortal } from "../gear-tooltip-portal";
 import { GearSlotArt } from "./gear-slot-art";
 import { SLOT_ARIA_LABELS } from "./slot-labels";
-import { GearTooltipPortal } from "../gear-tooltip-portal";
 import {
   SALVAGE_TARGET_RING,
   SALVAGE_TARGET_SHADOW,
@@ -50,44 +53,60 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   onSalvage: () => void;
   onApplyCurrency: () => void;
 }) {
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [showTooltip, setShowTooltip] = useState(false);
   const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
-  const shineColors = instance ? getGearInstanceShineColors(instance) : [];
-  const isAstral = instance ? gearInstanceRarity(instance) === "astral" : false;
+  const shineColors = instance ? getAstralShineColors(instance) : undefined;
+  const showShine = Boolean(shineColors);
   const canCraft = Boolean(activeCurrencyId && instance && canApplyCraftingCurrency(activeCurrencyId, instance));
   const salvageable = salvageMode && Boolean(instance);
   const currencyTarget = Boolean(activeCurrencyId) && canCraft;
   const ariaLabel = SLOT_ARIA_LABELS[slot];
+  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("armory", slot);
+  const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useTileHoverPopup({
+    interactive: true,
+    isHovered,
+    onHoverStart,
+    onHoverEnd,
+  });
 
   return (
-    <>
-      {instance && definition ? (
-        <GearTooltipPortal triggerRef={triggerRef} visible={showTooltip} definition={definition} instance={instance} />
+    <div
+      ref={wrapperRef}
+      data-testid="armory-equipment-slot"
+      data-slot={slot}
+      data-salvageable={salvageable ? "true" : undefined}
+      className={cn(
+        "relative",
+        salvageable && [SALVAGE_TARGET_RING, SALVAGE_TARGET_SHADOW, "rounded-shell-hero"],
+        currencyTarget && [VALID_TARGET_RING, VALID_TARGET_SHADOW, "rounded-shell-hero"],
+      )}
+      onMouseEnter={handleHoverStart}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* The ref is only read inside layout effects in PortaledTooltip's placement
+          hook, never during render; passing it to the portal is safe. */}
+      {/* eslint-disable-next-line react-hooks/refs */}
+      {instance && definition && showPopup ? (
+        <GearTooltipPortal triggerRef={wrapperRef} visible={isHovered} definition={definition} instance={instance} />
       ) : null}
-      <button
-        ref={triggerRef}
-        type="button"
-        data-testid="armory-equipment-slot"
-        data-slot={slot}
-        data-salvageable={salvageable ? "true" : undefined}
-        aria-label={ariaLabel}
-        aria-pressed={selected}
+      <TiltSurface
+        as="button"
+        ariaLabel={ariaLabel}
+        ariaPressed={selected}
+        selected={selected}
+        shimmerActive={shimmerActive}
+        shimmerToken={shimmerToken}
+        onFocus={handleHoverStart}
+        onBlur={handleBlur}
         className={cn(
           cardSurfaceClass,
           collectionGridTileWidthClass,
           gearArtAspectClass,
-          "border border-border/80",
-          selected && tiltSurfaceSelectedRingClass,
-          salvageable && [SALVAGE_TARGET_RING, SALVAGE_TARGET_SHADOW],
-          currencyTarget && [VALID_TARGET_RING, VALID_TARGET_SHADOW],
+          "group shadow-md",
+          showShine && cardShineFrameClass,
+          !showShine && "border border-border/80",
+          cardInteractiveGlowClass,
           editable ? "cursor-pointer" : "cursor-default",
         )}
-        onMouseEnter={() => {
-          if (instance) playUISound("buttonHover");
-          setShowTooltip(true);
-        }}
-        onMouseLeave={() => setShowTooltip(false)}
         onClick={() => {
           if (!editable) {
             onSelect();
@@ -109,8 +128,10 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         }}
       >
         <GearSlotArt definition={definition} slot={slot} />
-        {isAstral && shineColors.length > 0 ? <ShineBorder shineColor={shineColors} borderWidth={1} /> : null}
-      </button>
-    </>
+        {shineColors ? (
+          <ShineBorder shineColor={shineColors} borderWidth={GEAR_ASTRAL_SHINE_BORDER_WIDTH} className="z-20" />
+        ) : null}
+      </TiltSurface>
+    </div>
   );
 });

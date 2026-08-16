@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 import {
   cardArtImageClass,
+  cardInteractiveGlowClass,
   cardSurfaceClass,
   collectionCardGridTileWidthClass,
   collectionGridBestiaryWidthClass,
@@ -45,7 +46,7 @@ export const CompendiumTile = memo(function CompendiumTile({ item }: CompendiumT
   return (
     <div
       ref={wrapperRef}
-      className="relative h-full w-full"
+      className="relative flex h-full w-full justify-center"
       onMouseEnter={handleHoverStart}
       onMouseLeave={handleMouseLeave}
     >
@@ -58,14 +59,14 @@ export const CompendiumTile = memo(function CompendiumTile({ item }: CompendiumT
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
         className={cn(
-          "group",
+          "group border border-border/80 shadow-md",
           cardSurfaceClass,
+          cardInteractiveGlowClass,
           item.frameType === "trinket"
             ? collectionGridTrinketWidthClass
             : item.frameType === "bestiary"
               ? collectionGridBestiaryWidthClass
               : collectionCardGridTileWidthClass,
-          item.frameType === "card" && "bg-transparent",
         )}
         onClick={() => {
           if (item.hoverScope === "collection-card") {

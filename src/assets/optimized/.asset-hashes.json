@@ -15,9 +15,9 @@
     "size": 1075173
   },
   "alchemist.webp": {
-    "hash": "4f7838b37dffb597",
-    "mtimeMs": 1782421242353.8843,
-    "size": 867698
+    "hash": "ded37731f536eb4f",
+    "mtimeMs": 1786833745298.2375,
+    "size": 3594209
   },
   "alchemy-lab.webp": {
     "hash": "794aa3661a05a897",
@@ -310,9 +310,9 @@
     "size": 1535309
   },
   "druid.webp": {
-    "hash": "e755836ae0ef7cae",
-    "mtimeMs": 1782421242356.9592,
-    "size": 1155048
+    "hash": "7b5f4ba1f90a8071",
+    "mtimeMs": 1786841889280.3303,
+    "size": 1686083
   },
   "earthquake.webp": {
     "hash": "e4fac764af603c61",
@@ -783,11 +783,6 @@
     "hash": "bf2e52842d1d37f5",
     "mtimeMs": 1786657568425.3748,
     "size": 2483268
-  },
-  "imp-companion.webp": {
-    "hash": "2988def5c0cf1e81",
-    "mtimeMs": 1782421241694.8352,
-    "size": 598209
   },
   "iron-bear.webp": {
     "hash": "be4b3f55f920159a",
@@ -1324,6 +1319,101 @@
     "mtimeMs": 1786657534054.0195,
     "size": 2527551
   },
+  "talent-archery.webp": {
+    "hash": "dd475932e4a777ea",
+    "mtimeMs": 1786771352271.2288,
+    "size": 2307698
+  },
+  "talent-armor.webp": {
+    "hash": "446fd4e48374d548",
+    "mtimeMs": 1786771380237.639,
+    "size": 2111367
+  },
+  "talent-bleed.webp": {
+    "hash": "d3f10e04b6631a25",
+    "mtimeMs": 1786769589837.204,
+    "size": 2079352
+  },
+  "talent-block.webp": {
+    "hash": "ac57492e52c23c91",
+    "mtimeMs": 1786769583220.921,
+    "size": 2031930
+  },
+  "talent-burn.webp": {
+    "hash": "552502e4e1d8749c",
+    "mtimeMs": 1786769608320.566,
+    "size": 2150975
+  },
+  "talent-companion.webp": {
+    "hash": "5219ef1402770f44",
+    "mtimeMs": 1786771341939.9736,
+    "size": 2036734
+  },
+  "talent-consume.webp": {
+    "hash": "2a8568a3b32409aa",
+    "mtimeMs": 1786771361143.3958,
+    "size": 2244836
+  },
+  "talent-forge.webp": {
+    "hash": "e41704204c5e3a82",
+    "mtimeMs": 1786770182472.311,
+    "size": 2198312
+  },
+  "talent-freeze.webp": {
+    "hash": "cdab7d1b5742125a",
+    "mtimeMs": 1786769602703.4255,
+    "size": 2140476
+  },
+  "talent-gold.webp": {
+    "hash": "03049a734493665a",
+    "mtimeMs": 1786769540553.417,
+    "size": 2157384
+  },
+  "talent-health.webp": {
+    "hash": "7b63ad5157f03769",
+    "mtimeMs": 1786771355723.1584,
+    "size": 1975817
+  },
+  "talent-holy.webp": {
+    "hash": "bfc323397083f88c",
+    "mtimeMs": 1786769596420.2632,
+    "size": 2146042
+  },
+  "talent-leech.webp": {
+    "hash": "ad88fdcc98c94c40",
+    "mtimeMs": 1786769505809.0208,
+    "size": 1923064
+  },
+  "talent-mana.webp": {
+    "hash": "8aae56a380515c18",
+    "mtimeMs": 1786769533110.4707,
+    "size": 2151305
+  },
+  "talent-nature.webp": {
+    "hash": "c1201fa80352bce9",
+    "mtimeMs": 1786769561826.6697,
+    "size": 2155536
+  },
+  "talent-physical.webp": {
+    "hash": "01ecd2787fa5f873",
+    "mtimeMs": 1786769495827.4717,
+    "size": 1823511
+  },
+  "talent-poison.webp": {
+    "hash": "ea15518ded4f8c16",
+    "mtimeMs": 1786769576236.8184,
+    "size": 2227764
+  },
+  "talent-stun.webp": {
+    "hash": "8d17ee126fefec3c",
+    "mtimeMs": 1786769548669.9343,
+    "size": 2170729
+  },
+  "talent-wish.webp": {
+    "hash": "53270651122e8342",
+    "mtimeMs": 1786771375254.857,
+    "size": 2230330
+  },
   "tattered-pages.webp": {
     "hash": "f99e3d9c94750baa",
     "mtimeMs": 1786657606443.2188,
@@ -1395,9 +1485,9 @@
     "size": 979068
   },
   "wildcard.webp": {
-    "hash": "aa049c824816bb47",
-    "mtimeMs": 1782421242378.9128,
-    "size": 1383977
+    "hash": "1863a529fdbddf60",
+    "mtimeMs": 1786834580890.587,
+    "size": 2664290
   },
   "wildwood-draft.webp": {
     "hash": "46502563d2c383fa",

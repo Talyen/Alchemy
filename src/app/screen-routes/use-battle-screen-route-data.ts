@@ -1,7 +1,11 @@
 // Route-local battle display reads — keeps presentation/display out of routeCommands.
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { useActiveRunScreenValue, useDisplayOverrides } from "@/features/alchemy/shared/stores/run-session-react-ports";
+import {
+  useActiveRunScreenValue,
+  useActiveRunTrinkets,
+  useDisplayOverrides,
+} from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-model";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { getPlayableHandCardKeysExcludingHidden } from "@/features/alchemy/run-loop/battle/playable-hand";
@@ -14,6 +18,7 @@ export function useBattleScreenRouteData() {
     activeLabyrinthModifiers,
   } = useRunSessionBattleContext(screen);
   const displayOverrides = useDisplayOverrides();
+  const runTrinkets = useActiveRunTrinkets();
   const battlePresentation = useBattlePresentationStore(
     useShallow((s) => ({
       revealedCardKeys: s.revealedCardKeys,
@@ -27,34 +32,14 @@ export function useBattleScreenRouteData() {
       displayOverrides,
       revealedCardKeys: battlePresentation.revealedCardKeys,
       activeLabyrinthModifiers,
+      runTrinkets,
     }),
-    [battleState, displayOverrides, battlePresentation.revealedCardKeys, activeLabyrinthModifiers],
+    [battleState, displayOverrides, battlePresentation.revealedCardKeys, activeLabyrinthModifiers, runTrinkets],
   );
 
   const playableHandCardKeys = useMemo(
-    () =>
-      getPlayableHandCardKeysExcludingHidden(
-        {
-          hand: battleState.hand,
-          turnPhase: battleState.turnPhase,
-          mana: battleState.mana,
-          wishOptions: battleState.wishOptions,
-          flags: battleState.flags,
-          talentEffects: battleState.talentEffects,
-          trinketEffects: battleState.trinketEffects,
-        },
-        battlePresentation.hiddenHandCardKeys,
-      ),
-    [
-      battleState.hand,
-      battleState.turnPhase,
-      battleState.mana,
-      battleState.wishOptions,
-      battleState.flags,
-      battleState.talentEffects,
-      battleState.trinketEffects,
-      battlePresentation.hiddenHandCardKeys,
-    ],
+    () => getPlayableHandCardKeysExcludingHidden(battleState, battlePresentation.hiddenHandCardKeys),
+    [battleState, battlePresentation.hiddenHandCardKeys],
   );
 
   return {

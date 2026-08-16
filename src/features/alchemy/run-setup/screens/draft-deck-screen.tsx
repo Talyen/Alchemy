@@ -29,6 +29,7 @@ function DraftedCardItem({ card, index }: { card: BattleCard; index: number }) {
       ariaLabel={getCardDisplayTitle(card)}
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
+      tiltEnabled={false}
       className={collectionTileWidthClass}
       wrapperClassName="relative flex justify-center"
     />
@@ -45,7 +46,6 @@ interface Props {
 
 export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick, onOpenMenu }: Props) {
   const [localDrafted, setLocalDrafted] = useState<BattleCard[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const drafted = draftedCards ?? localDrafted;
   const round = drafted.length;
 
@@ -91,9 +91,9 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
               <SelectableChoiceCard
                 key={"draft-choice-" + String(index) + "-" + card.id}
                 card={card}
-                selected={selectedIndex === index}
-                onSelect={() => setSelectedIndex(index)}
+                onSelect={() => handlePick(card)}
                 interactionKey={"draft-choice-" + String(index)}
+                tiltEnabled={false}
               />
             ))}
           </div>
@@ -106,22 +106,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
             Continue
           </Button>
         </div>
-      ) : (
-        <div className="mt-6 flex justify-center">
-          <Button
-            size="lg"
-            className={BUTTON_WIDTH_ACTION}
-            disabled={selectedIndex === null}
-            onClick={() => {
-              if (selectedIndex === null) return;
-              handlePick(choices[selectedIndex]!);
-              setSelectedIndex(null);
-            }}
-          >
-            Select Card
-          </Button>
-        </div>
-      )}
+      ) : null}
     </TitledScreenShell>
   );
 }

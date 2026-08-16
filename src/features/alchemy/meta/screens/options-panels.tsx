@@ -145,7 +145,7 @@ export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
       <SliderOption label="Sound Effects Volume" value={audio.sfxVol} onChange={audio.onSfxVolChange} />
       <ToggleOption
         label="Mute in Background"
-        description="Silence music and effects while the game window is not focused."
+        description="Silence music and effects while the game is in a background tab or minimized."
         checked={audio.muteInBackground}
         onChange={audio.onMuteInBackgroundChange}
       />

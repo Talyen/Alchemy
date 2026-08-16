@@ -109,6 +109,7 @@ describe("talent row layout", () => {
     expect(getTalentRowIndex(1)).toBe(1);
     expect(getTalentRowIndex(2)).toBe(1);
     expect(getTalentRowIndex(3)).toBe(2);
+    expect(getTalentRowIndex(5)).toBe(2);
     expect(getTalentRowIndex(6)).toBe(3);
     expect(getTalentRowIndex(9)).toBe(3);
   });
@@ -134,8 +135,8 @@ describe("talent row layout", () => {
   it("getAllocatableTalentChoices returns only real talents on unlocked rows", () => {
     const phys = getTalentsForKeyword("physical");
     expect(getAllocatableTalentChoices("physical", []).map((t) => t.id)).toEqual([phys[0]!.id]);
-    const ids = [0, 1, 2].map((i) => phys[i]!.id);
-    expect(getAllocatableTalentChoices("physical", ids).map((t) => t.id)).toEqual([3, 4, 5].map((i) => phys[i]!.id));
+    const ids = [phys[0]!.id];
+    expect(getAllocatableTalentChoices("physical", ids).map((t) => t.id)).toEqual([1, 2].map((i) => phys[i]!.id));
   });
 
   it("getAllocatableTalentChoices never returns placeholders", () => {
@@ -183,7 +184,7 @@ describe("canUnlockTalent", () => {
 
   it("rejects talents on rows that are not unlocked yet", () => {
     const phys = getTalentsForKeyword("physical");
-    const result = canUnlockTalent("physical", phys[3]!.id, { physical: 100 }, {});
+    const result = canUnlockTalent("physical", phys[4]!.id, { physical: 100 }, {});
     expect(result).toEqual({ ok: false, reason: "not-eligible-choice" });
   });
 });

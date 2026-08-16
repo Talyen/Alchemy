@@ -1,4 +1,5 @@
 import { Lock } from "lucide-react";
+import { tooltipChipIconClass } from "../config";
 import { TooltipBody, TooltipHeader } from "./tooltip-panel";
 
 export function LockedFeatureTooltip({ title, message }: { title: string; message: string }) {
@@ -6,7 +7,7 @@ export function LockedFeatureTooltip({ title, message }: { title: string; messag
     <>
       <TooltipHeader>
         <span className="inline-flex items-center gap-1.5 align-middle">
-          <Lock className="h-4 w-4" />
+          <Lock className={tooltipChipIconClass} />
           {title}
         </span>
       </TooltipHeader>

@@ -104,6 +104,45 @@ describe("ArmoryScreen core", () => {
     });
   });
 
+  it("shows shine borders on astral equipped and inventory tiles, not on basic tiles", async () => {
+    const user = userEvent.setup();
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight.body = "gear-astral-armor";
+    renderArmoryScreen({
+      inventories: createArmoryInventories([
+        { instanceId: "gear-sword", definitionId: "longsword-basic", affixes: [] },
+        { instanceId: "gear-astral-sword", definitionId: "longsword-astral", affixes: [] },
+        { instanceId: "gear-astral-armor", definitionId: "leather-armor-astral", affixes: [] },
+      ]),
+      loadouts,
+    });
+
+    const armorSlot = screen.getByLabelText("Armor equipment slot");
+    expect(armorSlot.querySelector(".shine-border")).not.toBeNull();
+    expect(armorSlot.className).toMatch(/has-shine-border/);
+    expect(armorSlot.className).toMatch(/card-interactive-glow/);
+    expect(armorSlot.className).not.toMatch(/card-interactive-selected/);
+
+    const mainHandSlot = screen.getByLabelText("Main-hand equipment slot");
+    expect(mainHandSlot.querySelector(".shine-border")).toBeNull();
+    expect(mainHandSlot.className).toMatch(/card-interactive-selected/);
+
+    const astralInventory = document.querySelector(
+      '[data-testid="armory-inventory-item"][data-gear-title="Astral Longsword"]',
+    );
+    const basicInventory = document.querySelector('[data-testid="armory-inventory-item"][data-gear-title="Longsword"]');
+    expect(astralInventory?.querySelector(".shine-border")).not.toBeNull();
+    expect(astralInventory?.querySelector(".card-interactive-glow")).not.toBeNull();
+    expect(astralInventory?.querySelector(".has-shine-border")).not.toBeNull();
+    expect(basicInventory?.querySelector(".shine-border")).toBeNull();
+    expect(basicInventory?.querySelector(".card-interactive-glow")).not.toBeNull();
+
+    await user.click(armorSlot);
+    expect(armorSlot.className).toMatch(/card-interactive-selected/);
+    expect(armorSlot.className).toMatch(/has-shine-border/);
+    expect(armorSlot.getAttribute("aria-pressed")).toBe("true");
+  });
+
   it("keeps a 2×3 inventory footprint when the selected slot has no items", async () => {
     const user = userEvent.setup();
     renderArmoryScreen();

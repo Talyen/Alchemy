@@ -5,7 +5,12 @@ import { type ActiveRunData } from "@/lib/active-run-session";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import type { CharacterId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import { computeGearManifest, type GearInstance, type GearLoadouts } from "@/lib/gear";
-import { pickMysteryEvent } from "@/lib/mystery";
+import {
+  eventHasUnresolvedRandomTrinket,
+  pickMysteryEvent,
+  repairUnresolvedMysteryTrinkets,
+  resolveMysteryEventTrinkets,
+} from "@/lib/mystery";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -57,12 +62,20 @@ export function restoreRun(
     transient.clearTransientSession();
     transient.setHasActiveRun(true);
     if (decoded) restoreRunSession(transient, decoded.session);
+    if (draft.session.mysteryEvent && eventHasUnresolvedRandomTrinket(draft.session.mysteryEvent)) {
+      const rng = createDraftRunRandomSource(draft, "events");
+      setMysteryEvent(
+        draft,
+        repairUnresolvedMysteryTrinkets(draft.session.mysteryEvent, draft.run.activeRun.runTrinkets, rng),
+      );
+    }
     if (decoded?.screen === "mystery" && !draft.session.mysteryEvent) {
       if (activeRun.mysteryVisit != null) {
         run.setScreen(ROUTE_SCREENS.DESTINATION);
         return;
       }
-      setMysteryEvent(draft, pickMysteryEvent(createDraftRunRandomSource(draft, "events")));
+      const rng = createDraftRunRandomSource(draft, "events");
+      setMysteryEvent(draft, resolveMysteryEventTrinkets(pickMysteryEvent(rng), draft.run.activeRun.runTrinkets, rng));
     }
   });
 }

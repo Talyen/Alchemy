@@ -4,7 +4,8 @@
 // Consumed by the screen routing system to display the Mystery event node.
 import type { ReactNode } from "react";
 import { playUISound } from "@/lib/audio";
-import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import type { BattleCard, TalentXP, TrinketEntry } from "@/lib/game-data";
+import type { GearInstance } from "@/lib/gear";
 
 import { ScreenDescription, TitledScreenShell } from "../../../shared/ui/shared-ui";
 import { FadeSlot } from "../../../shared/ui/fade-slot";
@@ -26,9 +27,12 @@ export function MysteryScreen({
   runDeck,
   mysteryCardChoices,
   mysteryGrantedTrinketIds,
+  mysteryGrantedGearInstances,
   mysteryChosenCardId,
   mysteryChosenChoice,
   mysteryPendingRemoval,
+  runTalentXP = {},
+  talentXP = {},
   onChoose,
   onChooseCard,
   onRemoveCard,
@@ -41,9 +45,12 @@ export function MysteryScreen({
   runDeck: BattleCard[];
   mysteryCardChoices: BattleCard[] | null;
   mysteryGrantedTrinketIds: string[];
+  mysteryGrantedGearInstances: GearInstance[];
   mysteryChosenCardId: string | null;
   mysteryChosenChoice: MysteryChoice | null;
   mysteryPendingRemoval: boolean;
+  runTalentXP?: TalentXP;
+  talentXP?: TalentXP;
   onChoose: (choice: MysteryChoice) => void;
   onChooseCard: (cardId: string) => void;
   onRemoveCard: (index: number) => void;
@@ -94,7 +101,7 @@ export function MysteryScreen({
 
   return (
     <MysteryScreenShell title={title} onOpenMenu={onOpenMenu}>
-      <FadeSlot swapKey={phase} className="mt-6 min-h-[56cqh] w-full">
+      <FadeSlot swapKey={phase} className="mt-6 flex min-h-[56cqh] w-full flex-col">
         {mysteryCardChoices ? (
           <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
         ) : mysteryPendingRemoval ? (
@@ -109,7 +116,10 @@ export function MysteryScreen({
             findCard={findCard}
             findTrinket={findTrinket}
             grantedTrinketIds={mysteryGrantedTrinketIds}
+            grantedGearInstances={mysteryGrantedGearInstances}
             chosenCardId={mysteryChosenCardId}
+            runTalentXP={runTalentXP}
+            talentXP={talentXP}
             onContinue={onContinue}
           />
         ) : (

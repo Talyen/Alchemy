@@ -37,12 +37,12 @@ describe("characters data integrity", () => {
     }
   });
 
-  it("each character has at least 1 keyword (except wildcard)", () => {
+  it("each character has exactly 3 keyword affinities (except wildcard)", () => {
     for (const char of Object.values(characters)) {
       if (char.id === "wildcard") {
         expect(char.keywords.length).toBe(0);
       } else {
-        expect(char.keywords.length).toBeGreaterThanOrEqual(1);
+        expect(char.keywords).toHaveLength(3);
       }
     }
   });

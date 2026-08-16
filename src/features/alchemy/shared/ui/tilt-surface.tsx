@@ -46,6 +46,14 @@ interface TiltSurfaceProps {
   dataCount?: number;
   onMouseEnter?: (e: MouseEvent<HTMLElement>) => void;
   onMouseLeave?: (e: MouseEvent<HTMLElement>) => void;
+  /**
+   * Clip children to the surface radius. Keep true for framed art so overflow:visible
+   * glow does not square corners or cover the bottom border. False for battle portraits
+   * whose hurt sparks must paint outside the frame.
+   */
+  clipContents?: boolean | undefined;
+  /** Painted above the clip layer so frame chrome can cover the 3px glow border. */
+  overlay?: ReactNode | undefined;
 }
 
 function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
@@ -69,6 +77,31 @@ function ShimmerSlot({ active, token, rounded }: ShimmerProps) {
 }
 
 const TILT_CLASSES = "tilt-surface";
+const CLIP_CONTENTS_CLASS = "tilt-surface-clip relative w-full overflow-hidden";
+
+function TiltSurfaceBody({
+  clipContents,
+  shimmerActive,
+  shimmerToken,
+  shimmerRounded,
+  overlay,
+  children,
+}: {
+  clipContents: boolean;
+  shimmerActive: boolean | undefined;
+  shimmerToken: number | undefined;
+  shimmerRounded: string | undefined;
+  overlay: ReactNode | undefined;
+  children: ReactNode;
+}) {
+  return (
+    <>
+      <ShimmerSlot active={shimmerActive} token={shimmerToken} rounded={shimmerRounded} />
+      {clipContents ? <div className={CLIP_CONTENTS_CLASS}>{children}</div> : children}
+      {overlay}
+    </>
+  );
+}
 
 function useTiltHandlers(canTilt: boolean, onMouseLeave?: (e: MouseEvent<HTMLElement>) => void) {
   const handleMouseMove = canTilt ? setTiltFromEvent : undefined;
@@ -108,6 +141,8 @@ function TiltSurfaceButton({
   onMouseLeave,
   surfaceStyle,
   tiltEnabled,
+  clipContents = true,
+  overlay,
 }: TiltSurfaceInner) {
   const canTilt = tiltEnabled !== false && !disabled;
   const buttonRef_ = useRef<HTMLButtonElement | null>(null);
@@ -142,8 +177,15 @@ function TiltSurfaceButton({
       )}
       style={surfaceStyle}
     >
-      <ShimmerSlot active={shimmerActive} token={shimmerToken} rounded={shimmerRounded} />
-      {children}
+      <TiltSurfaceBody
+        clipContents={clipContents}
+        shimmerActive={shimmerActive}
+        shimmerToken={shimmerToken}
+        shimmerRounded={shimmerRounded}
+        overlay={overlay}
+      >
+        {children}
+      </TiltSurfaceBody>
     </button>
   );
 }
@@ -167,6 +209,8 @@ function TiltSurfaceDiv({
   onMouseLeave,
   surfaceStyle,
   tiltEnabled,
+  clipContents = true,
+  overlay,
 }: TiltSurfaceInner) {
   const surfaceRef_ = useRef<HTMLDivElement | null>(null);
   const { handleMouseMove, handleMouseLeave } = useTiltHandlers(tiltEnabled !== false, onMouseLeave);
@@ -199,8 +243,15 @@ function TiltSurfaceDiv({
       className={cn(TILT_CLASSES, selected && tiltSurfaceSelectedRingClass, dragging && "opacity-0", className)}
       style={surfaceStyle}
     >
-      <ShimmerSlot active={shimmerActive} token={shimmerToken} rounded={shimmerRounded} />
-      {children}
+      <TiltSurfaceBody
+        clipContents={clipContents}
+        shimmerActive={shimmerActive}
+        shimmerToken={shimmerToken}
+        shimmerRounded={shimmerRounded}
+        overlay={overlay}
+      >
+        {children}
+      </TiltSurfaceBody>
     </div>
   );
 }
@@ -208,7 +259,7 @@ function TiltSurfaceDiv({
 export function TiltSurface(props: TiltSurfaceProps) {
   const {
     as: Component = "div",
-    tiltEnabled = true,
+    tiltEnabled = false,
     tiltStrength = DEFAULT_TILT_STRENGTH,
     baseTransform,
     style,

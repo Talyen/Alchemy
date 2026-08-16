@@ -9,6 +9,7 @@ import {
   bodyTextClass,
   cardSurfaceClass,
   landscapeArtImageClass,
+  standaloneLandscapeArtWidthClass,
   viewCardWidthClass,
 } from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
@@ -87,20 +88,19 @@ export function MysteryEventIntro({
   const isHovered = hoveredCardId === event.id;
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex w-full flex-col items-center gap-6">
       {event.art ? (
-        <div>
-          <TiltSurface className={cn(cardSurfaceClass, "aspect-[4/3] w-full max-w-[39.11cqh]")}>
-            <img
-              src={event.art}
-              alt={event.title}
-              width={CONFIG.EVENT_IMAGE_WIDTH}
-              height={CONFIG.EVENT_IMAGE_HEIGHT}
-              className={cn("h-full w-full", landscapeArtImageClass)}
-              loading="eager"
-            />
-          </TiltSurface>
-        </div>
+        <TiltSurface className={cn(cardSurfaceClass, standaloneLandscapeArtWidthClass, "aspect-[4/3]")}>
+          <img
+            src={event.art}
+            alt={event.title}
+            width={CONFIG.EVENT_IMAGE_WIDTH}
+            height={CONFIG.EVENT_IMAGE_HEIGHT}
+            className={cn("h-full w-full", landscapeArtImageClass)}
+            loading="eager"
+            data-testid="mystery-event-art"
+          />
+        </TiltSurface>
       ) : featuredCard ? (
         <div>
           <BattleCardButton

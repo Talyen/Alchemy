@@ -44,7 +44,9 @@ export function toActiveRunData(parsed: ParsedActiveRunData): ActiveRunData {
           pendingRemoval: parsed.mysteryVisit.pendingRemoval,
           cardChoices: parsed.mysteryVisit.cardChoices?.map(hydrateParsedCard) ?? null,
           grantedTrinketIds: parsed.mysteryVisit.grantedTrinketIds,
+          grantedGear: parsed.mysteryVisit.grantedGear,
           chosenCardId: parsed.mysteryVisit.chosenCardId,
+          resolvedTrinketIds: parsed.mysteryVisit.resolvedTrinketIds ?? [],
         }
       : null,
     corruptionResult: parsed.corruptionResult

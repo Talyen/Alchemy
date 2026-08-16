@@ -77,6 +77,22 @@ export function resolveReturnToRunTarget(returnToRunScreen: Screen | null, hasAc
   return returnToRunScreen ?? (hasActiveBattle ? "battle" : null);
 }
 
+/** Last screen to restore when leaving Options. Ignore Options itself so Back cannot no-op. */
+export function rememberNonOptionsScreen(renderedScreen: Screen, previous: Screen): Screen {
+  return renderedScreen === "options" ? previous : renderedScreen;
+}
+
+export function resolveOptionsBackTarget(
+  optionsReturnScreen: Screen,
+  hasActiveBattle: boolean,
+): { kind: "returnToBattle" } | { kind: "goToScreen"; screen: Screen } {
+  if (optionsReturnScreen !== "battle") {
+    return { kind: "goToScreen", screen: optionsReturnScreen };
+  }
+  if (hasActiveBattle) return { kind: "returnToBattle" };
+  return { kind: "goToScreen", screen: "destination" };
+}
+
 export function useReturnToRunNavigation({
   run,
   renderedScreen,
@@ -89,15 +105,20 @@ export function useReturnToRunNavigation({
   const hasActiveBattle = useHasActiveBattle();
   const returnToRunTarget = resolveReturnToRunTarget(returnToRunScreen, hasActiveBattle);
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- track the screen Options should restore
+    setOptionsReturnScreen((prev) => rememberNonOptionsScreen(renderedScreen, prev));
+  }, [renderedScreen]);
+
   function navigateToMeta(screen: Extract<Screen, "collection" | "talents" | "homestead" | "options" | "armory">) {
     if (isRunLoopScreen(renderedScreen)) setReturnToRunScreen(renderedScreen);
-    if (screen === "options") setOptionsReturnScreen(renderedScreen);
     run.goToScreen(screen);
   }
 
   function backFromOptions() {
-    if (optionsReturnScreen === "battle") run.returnToBattle();
-    else run.goToScreen(optionsReturnScreen);
+    const target = resolveOptionsBackTarget(optionsReturnScreen, hasActiveBattle);
+    if (target.kind === "returnToBattle") run.returnToBattle();
+    else run.goToScreen(target.screen);
   }
 
   function returnToRun() {

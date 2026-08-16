@@ -5,7 +5,7 @@ import type { KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
-import { keywordIcons } from "../config";
+import { keywordIcons, tooltipHeaderClass } from "../config";
 import { PortaledTooltip } from "./portaled-tooltip";
 import { TooltipBody } from "./tooltip-panel";
 import { useHoverVisible } from "./use-hover-visible";
@@ -59,8 +59,8 @@ export function KeywordTag({
     >
       <span className="cursor-help">{tag}</span>
       <PortaledTooltip triggerRef={triggerRef} visible={visible}>
-        <span className="flex items-center gap-2 text-sm font-semibold">
-          <KeywordTag keywordId={keywordId} showIcon />
+        <span className={cn("flex items-center gap-2", tooltipHeaderClass)}>
+          <KeywordTag keywordId={keywordId} className="text-sm sm:text-base" showIcon />
         </span>
         <TooltipBody>{def.description}</TooltipBody>
       </PortaledTooltip>

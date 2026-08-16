@@ -29,8 +29,6 @@ test.describe("Accessibility", critical, () => {
     await expect(page.getByRole("heading", { name: "Choose Your Adventure" })).toBeVisible({ timeout: 5000 });
 
     await page.getByRole("button", { name: /The Campaign/ }).click();
-    await expect(page.getByRole("button", { name: "Play" })).toBeEnabled({ timeout: 5000 });
-    await page.getByRole("button", { name: "Play" }).click();
     await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible({ timeout: 5000 });
   });
 

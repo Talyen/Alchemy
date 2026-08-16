@@ -123,12 +123,19 @@ function CombatTextBubble({ entry }: { entry: FloatingCombatText }) {
       style={{ top: `${entry.lane * 56}px`, transform: "translateX(-50%)" }}
     >
       <motion.div
-        className={cn("inline-flex items-center gap-2 font-semibold whitespace-nowrap", colorClass)}
+        className={cn(
+          "inline-flex items-center gap-1.5 font-bold tracking-wide whitespace-nowrap",
+          "[filter:drop-shadow(0_0_1.5px_rgba(0,0,0,0.95))_drop-shadow(0_2px_4px_rgba(0,0,0,0.85))]",
+          colorClass,
+        )}
         style={{ fontSize }}
         {...FCT_ANIMATION_PROPS}
         exit={{ opacity: 0, transition: { duration: 0.1 } }}
       >
-        {createElement(icon!, { style: { width: iconSize, height: iconSize } })}
+        {createElement(icon!, {
+          style: { width: iconSize, height: iconSize },
+          strokeWidth: 2.75,
+        })}
         <span>{entry.displayText}</span>
       </motion.div>
     </div>

@@ -49,6 +49,57 @@ describe("getPlayableHandCardKeys", () => {
 
     expect(getPlayableHandCardKeys(state).size).toBe(0);
   });
+
+  it("does not mark cleanse-only cards playable without a harmful status", () => {
+    const cleanse: BattleCard = {
+      ...affordableCard,
+      id: "cleanse",
+      effects: [{ kind: "remove-harmful-status", amount: 1 }],
+      uid: 4,
+    };
+    const state = {
+      ...defaultBattleState(),
+      turnPhase: "player" as const,
+      mana: 2,
+      wishOptions: null,
+      hand: [cleanse],
+    };
+
+    expect(getPlayableHandCardKeys(state).has("cleanse-4")).toBe(false);
+  });
+
+  it("marks cleanse-only cards playable when a harmful status is present", () => {
+    const cleanse: BattleCard = {
+      ...affordableCard,
+      id: "cleanse",
+      effects: [{ kind: "remove-harmful-status", amount: 1 }],
+      uid: 4,
+    };
+    const state = {
+      ...defaultBattleState(),
+      turnPhase: "player" as const,
+      mana: 2,
+      wishOptions: null,
+      hand: [cleanse],
+      playerStatuses: { ...defaultBattleState().playerStatuses, burn: 1 },
+    };
+
+    expect(getPlayableHandCardKeys(state).has("cleanse-4")).toBe(true);
+  });
+
+  it("does not mark cards playable when the player is defeated", () => {
+    const state = {
+      ...defaultBattleState(),
+      turnPhase: "player" as const,
+      mana: 2,
+      wishOptions: null,
+      playerHealth: 0,
+      deathsDoorActive: false,
+      hand: [affordableCard],
+    };
+
+    expect(getPlayableHandCardKeys(state).has("slash-1")).toBe(false);
+  });
 });
 
 describe("getPlayableHandCardKeysExcludingHidden", () => {

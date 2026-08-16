@@ -7,11 +7,13 @@ import { createSeededRng } from "@/lib/utils";
 
 export const ANCIENT_ALTAR_MYSTERY_VISIT: PersistedMysteryVisit = {
   eventId: "ancient-altar",
-  chosenChoice: { label: "Pray", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] },
+  chosenChoice: { label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] },
   pendingRemoval: false,
   cardChoices: null,
   grantedTrinketIds: [],
+  grantedGear: [],
   chosenCardId: null,
+  resolvedTrinketIds: [],
 };
 
 /**

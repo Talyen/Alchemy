@@ -234,7 +234,10 @@ export function GameMenu({
 
   if (layoutAnchorRect) {
     return (
-      <div className={cn("absolute inset-0 z-[120]", overlayFadeClass)} onClick={onClose}>
+      <div
+        className={cn("absolute inset-0 z-[120]", overlayFadeClass, !isOpen && "pointer-events-none")}
+        onClick={onClose}
+      >
         <div className="fixed z-[121]" style={anchoredMenuStyle(layoutAnchorRect)}>
           {panel}
         </div>
@@ -244,7 +247,11 @@ export function GameMenu({
 
   return (
     <div
-      className={cn("absolute inset-0 z-[120] flex items-center justify-center px-6", overlayFadeClass)}
+      className={cn(
+        "absolute inset-0 z-[120] flex items-center justify-center px-6",
+        overlayFadeClass,
+        !isOpen && "pointer-events-none",
+      )}
       onClick={onClose}
     >
       {panel}

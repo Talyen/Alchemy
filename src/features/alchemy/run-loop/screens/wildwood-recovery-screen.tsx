@@ -32,7 +32,12 @@ export function WildwoodRecoveryScreen({ playerHealth, maxHealth, onComplete, on
   }, [onCompleteRef]);
 
   return (
-    <TitledScreenShell title="Wildwood Recovery" onOpenMenu={onOpenMenu} menuLabel="Open wildwood recovery menu">
+    <TitledScreenShell
+      title="Wildwood Recovery"
+      onOpenMenu={onOpenMenu}
+      menuLabel="Open wildwood recovery menu"
+      minHeightClass="min-h-[62cqh]"
+    >
       <div className="mt-6 flex flex-col items-center gap-8 text-center">
         <ScreenDescription>{`Restoring ${Math.round(WILDWOOD_RECOVERY_FRACTION * 100)}% Health`}</ScreenDescription>
         <div className="flex w-full max-w-[44.45cqh] flex-col items-center gap-8">

@@ -4,6 +4,7 @@ import {
   cardLibrary,
   characterArt,
   characters,
+  type CharacterId,
   type CompanionId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import {
@@ -90,6 +91,7 @@ function hasAffordableHomesteadUpgrade(input: {
 }
 
 export interface AppScreenChrome {
+  characterId: CharacterId;
   heroArt: string;
   playerName: string;
   aspectMode: "standard" | "narrow" | "ultrawide";
@@ -139,6 +141,7 @@ export function AppScreenChromeProvider({
 
   const value = useMemo<AppScreenChrome>(
     () => ({
+      characterId,
       heroArt,
       playerName,
       aspectMode,
@@ -149,6 +152,7 @@ export function AppScreenChromeProvider({
     }),
     [
       aspectMode,
+      characterId,
       hasAffordableHomestead,
       hasUnspentTalentsBadge,
       heroArt,

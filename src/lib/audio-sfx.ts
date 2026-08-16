@@ -1,11 +1,17 @@
 // Short sound-effect playback for cards, combat events, UI, and stingers.
-// Depends on Web Audio buffer cache, sound registries, and shared audio state.
-// Used by controllers/screens through the public lib/audio facade.
+// SFX use HTMLAudioElement, the same path as music, because Web Audio can unlock
+// and still emit silence while streamed music plays.
 import { battleEventSounds, cardSounds, enemyAttackSounds, stingerSounds, uiSounds } from "./sound-registry";
 import { audioState } from "./audio-state";
-import { getAudioContext, getCachedBuffer, loadSoundBuffer, resumeAudioContext } from "./audio-buffer-cache";
+import { getSoundUrl } from "./audio-buffer-cache";
 import { pickRandom } from "./utils";
-import { SFX_COOLDOWN_MS, SFX_DEFEAT_VOLUME, SFX_UI_VOLUME, SFX_VICTORY_VOLUME } from "./game-constants";
+import {
+  SFX_COOLDOWN_MS,
+  SFX_DEFEAT_VOLUME,
+  SFX_SLICE_DEATH_VOLUME,
+  SFX_UI_VOLUME,
+  SFX_VICTORY_VOLUME,
+} from "./game-constants";
 
 interface PlaySoundOptions {
   volume?: number;
@@ -15,122 +21,120 @@ interface PlaySoundOptions {
   trackForCleanup?: boolean;
 }
 
-// Battle-tracked sources stopped by stopAllSfx so combat audio cannot leak across rooms.
-const activeSfxSources = new Set<AudioBufferSourceNode>();
+interface ActiveHtmlSfx {
+  el: HTMLAudioElement;
+  volume: number;
+  trackForCleanup: boolean;
+}
 
-// Monotonically increasing token to cancel scheduled/in-flight sounds when all SFX are stopped.
+const activeHtmlSfx = new Set<ActiveHtmlSfx>();
 let sfxStopToken = 0;
 
-// Shared source-node setup so both sync and async paths don't duplicate code.
-// Sets up the gain nodes and links them to the master audio context.
-function playDecodedBuffer(buffer: AudioBuffer, volume: number, delay: number = 0, trackForCleanup: boolean = true) {
-  const ctx = getAudioContext();
-  const source = ctx.createBufferSource();
-  source.buffer = buffer;
-
-  // Local Gain node controls specific sound instance volume multiplied by the user's SFX volume slider.
-  const gain = ctx.createGain();
-  gain.gain.value = volume * audioState.sfxVolume;
-  source.connect(gain);
-
-  if (!audioState.masterGain) return;
-  // Cascading Gain Staging:
-  // [Source Node] -> [Local Gain (volume * sfxVolume)] -> [Master Gain (MASTER_GAIN * masterVolume)] -> [Speakers]
-  gain.connect(audioState.masterGain);
-
-  if (trackForCleanup) {
-    activeSfxSources.add(source);
-    source.onended = () => activeSfxSources.delete(source);
-  }
-  source.start(ctx.currentTime + delay);
+function htmlSfxVolume(volume: number): number {
+  return Math.max(0, Math.min(1, volume * audioState.sfxVolume * audioState.masterVolume));
 }
 
-// Stops battle-tracked SFX (cards, combat events, gold) so combat cleanup cannot leak into the next screen.
-// UI feedback and stingers are not tracked and play through screen transitions.
+function applyHtmlSfxPlayback(entry: ActiveHtmlSfx) {
+  entry.el.muted = audioState.muted;
+  entry.el.volume = htmlSfxVolume(entry.volume);
+}
+
+/** Apply current mute and SFX/master volume to in-flight HTMLAudio SFX. */
+export function syncActiveHtmlSfxPlayback() {
+  for (const entry of activeHtmlSfx) {
+    applyHtmlSfxPlayback(entry);
+  }
+}
+
+/** Test-only: module elements would otherwise leak stub Audio across cases. */
+export function resetHtmlSfxRuntime() {
+  activeHtmlSfx.clear();
+}
+
 export function stopAllSfx() {
   sfxStopToken += 1;
-  for (const source of activeSfxSources) {
-    try {
-      source.stop();
-    } catch {
-      // Already-ended sources can throw; they will be caught here and removed below.
-    }
+  for (const entry of activeHtmlSfx) {
+    if (!entry.trackForCleanup) continue;
+    entry.el.pause();
+    entry.el.src = "";
+    activeHtmlSfx.delete(entry);
   }
-  activeSfxSources.clear();
 }
 
-// Plays a sound by name. Tries synchronous cache lookup first to bypass the Promise/microtask
-// delay of loadSoundBuffer, preventing lag between user interaction and audio response.
+function playHtmlSfx(name: string, volume: number, trackForCleanup: boolean) {
+  const el = new Audio(getSoundUrl(name));
+  const entry: ActiveHtmlSfx = { el, volume, trackForCleanup };
+  applyHtmlSfxPlayback(entry);
+  activeHtmlSfx.add(entry);
+  el.onended = () => {
+    activeHtmlSfx.delete(entry);
+  };
+  void Promise.resolve(el.play()).catch(() => {
+    activeHtmlSfx.delete(entry);
+  });
+}
+
 function playBuffer(
   name: string,
   { volume = 1.0, delay = 0, cooldownMs = SFX_COOLDOWN_MS, trackForCleanup = true }: PlaySoundOptions = {},
 ) {
   if (audioState.muted) return;
-  if (!audioState.audioUnlocked) return;
 
   const playToken = sfxStopToken;
   const scheduledAt = performance.now() + delay * 1000;
   const last = audioState.lastPlayedAt.get(name) ?? 0;
-
-  // Rate-limiting check to prevent loud, rapid-fire overlapping plays of the exact same sound.
   if (scheduledAt - last < cooldownMs) return;
   audioState.lastPlayedAt.set(name, scheduledAt);
-  resumeAudioContext();
 
-  // Try the synchronous cache path first to play immediately in the current event-loop tick.
-  const cached = getCachedBuffer(name);
-  if (cached) {
-    playDecodedBuffer(cached, volume, delay, trackForCleanup);
+  const start = () => {
+    if (audioState.muted) return;
+    if (trackForCleanup && playToken !== sfxStopToken) return;
+    playHtmlSfx(name, volume, trackForCleanup);
+  };
+
+  if (delay > 0) {
+    globalThis.setTimeout(start, delay * 1000);
     return;
   }
-
-  // Fall back to async fetching and decoding. Checks playToken to prevent playing if stopped in the meantime.
-  void loadSoundBuffer(name).then((buffer) => {
-    if (playToken !== sfxStopToken) return;
-    if (buffer) playDecodedBuffer(buffer, volume, delay, trackForCleanup);
-  });
+  start();
 }
 
-// Plays a card-specific sound variant when the registry has one.
 export function playCardSound(cardId: string) {
   const sound = pickRandom(cardSounds[cardId] ?? []);
   if (!sound) return;
   playBuffer(sound);
 }
 
-// Plays gold gain sound effect.
 export function playGoldGain() {
   playBattleEvent("gainGold");
 }
 
-// Plays gold spend sound effect.
 export function playGoldSpend() {
   playUISound("shopBuy");
 }
 
-// Plays an enemy-specific attack sound when one is registered.
 export function playEnemyAttack(enemyId: string) {
   const sound = pickRandom(enemyAttackSounds[enemyId] ?? []);
   if (!sound) return;
   playBuffer(sound);
 }
 
-// Plays a named battle feedback event.
 export function playBattleEvent(event: keyof typeof battleEventSounds, options: PlaySoundOptions = {}) {
   playBuffer(battleEventSounds[event], options);
 }
 
-// Plays quieter UI feedback so menus do not compete with combat sounds.
+export function playSliceDeath() {
+  playBattleEvent("sliceDeath", { volume: SFX_SLICE_DEATH_VOLUME, trackForCleanup: false });
+}
+
 export function playUISound(event: keyof typeof uiSounds) {
   playBuffer(uiSounds[event], { volume: SFX_UI_VOLUME, trackForCleanup: false });
 }
 
-// Plays the victory stinger at a controlled volume.
 export function playVictory() {
   playBuffer(stingerSounds.victory, { volume: SFX_VICTORY_VOLUME, trackForCleanup: false });
 }
 
-// Plays the defeat stinger at a controlled volume.
 export function playDefeat() {
   playBuffer(stingerSounds.defeat, { volume: SFX_DEFEAT_VOLUME, trackForCleanup: false });
 }

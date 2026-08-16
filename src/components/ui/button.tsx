@@ -5,8 +5,6 @@ import { type ComponentProps } from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
-import { playUISound } from "@/lib/audio";
-import type { UISound } from "@/lib/sound-registry";
 import {
   BUTTON_HOVER_DESTRUCTIVE,
   BUTTON_HOVER_PRIMARY,
@@ -116,43 +114,21 @@ function getVisualClassName(className: string | undefined) {
 
 interface ButtonProps extends ComponentProps<"button">, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
-  hoverSound?: UISound | false;
 }
 
-const Button = ({
-  className,
-  variant,
-  size,
-  asChild = false,
-  hoverSound,
-  onMouseEnter,
-  ref,
-  ...props
-}: ButtonProps) => {
+const Button = ({ className, variant, size, asChild = false, ref, ...props }: ButtonProps) => {
   const wrapperClassName = getWrapperLayoutClassName(className);
   const visualClassName = getVisualClassName(className);
-  const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (hoverSound !== false) playUISound(hoverSound ?? "buttonHover");
-    onMouseEnter?.(e);
-  };
   const button = (
     <button
       className={cn(buttonVariants({ variant, size, className: visualClassName }), size !== "icon" && "w-full")}
       ref={ref}
-      onMouseEnter={handleMouseEnter}
       {...props}
     />
   );
 
   if (asChild) {
-    return (
-      <Slot
-        className={cn(buttonVariants({ variant, size, className: visualClassName }))}
-        ref={ref}
-        onMouseEnter={handleMouseEnter}
-        {...props}
-      />
-    );
+    return <Slot className={cn(buttonVariants({ variant, size, className: visualClassName }))} ref={ref} {...props} />;
   }
 
   return <span className={cn("inline-flex", wrapperClassName)}>{button}</span>;

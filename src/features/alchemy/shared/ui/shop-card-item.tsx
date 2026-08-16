@@ -6,10 +6,10 @@ import { useState } from "react";
 import { type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { collectionTileWidthClass, viewCardWidthClass } from "../config";
+import { cardInteractiveGlowClass, collectionTileWidthClass, viewCardWidthClass } from "../config";
 import { BattleCardButton } from "./card-button";
 import { getCardDisplayTitle } from "./card-description-ui";
-import { PurchasableShopTile } from "./purchasable-shop-tile";
+import { PurchasableShopTile, ShopPriceChip } from "./purchasable-shop-tile";
 
 interface PurchasableCardItemProps {
   card: BattleCard;
@@ -23,31 +23,24 @@ interface PurchasableCardItemProps {
 export function PurchasableCardItem(props: PurchasableCardItemProps) {
   const { card, price, gold, purchased, onBuy, widthClass = collectionTileWidthClass } = props;
   const [hovered, setHovered] = useState(false);
+  const canAfford = gold >= price;
 
-  const media = purchased ? (
-    <BattleCardButton
-      card={card}
-      hovered={false}
-      onHoverStart={() => {}}
-      onHoverEnd={() => {}}
-      ariaLabel={getCardDisplayTitle(card)}
-      shimmerActive={false}
-      shimmerToken={undefined}
-      className={widthClass}
-      disabled
-    />
-  ) : (
+  const media = (
     <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
       <BattleCardButton
         card={card}
         hovered={hovered}
         onHoverStart={() => setHovered(true)}
         onHoverEnd={() => setHovered(false)}
-        ariaLabel={`Inspect ${getCardDisplayTitle(card)}`}
+        onClick={!purchased && canAfford ? onBuy : undefined}
+        disabled={purchased || !canAfford}
+        ariaLabel={purchased ? getCardDisplayTitle(card) : `Buy ${getCardDisplayTitle(card)}`}
         shimmerActive={false}
         shimmerToken={undefined}
-        className={widthClass}
-      />
+        className={cn(widthClass, !purchased && canAfford && cardInteractiveGlowClass)}
+      >
+        <ShopPriceChip price={price} gold={gold} purchased={purchased} />
+      </BattleCardButton>
     </div>
   );
 
@@ -93,7 +86,8 @@ export function SelectableShopCard({
       shimmerToken={undefined}
       className={cn(
         resolvedWidth,
-        chrome === "corruption" && isSelected && "ring-2 ring-red-500/70 ring-offset-4 ring-offset-background",
+        cardInteractiveGlowClass,
+        chrome === "corruption" && isSelected && "card-interactive-selected-danger",
       )}
       selected={chrome === "corruption" ? false : isSelected}
     />

@@ -2,10 +2,26 @@
   * {
     border-color: var(--color-border);
     scrollbar-width: none;
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  *::before,
+  *::after {
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   html {
     font-size: 16px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  ::selection {
+    background: transparent;
   }
 
   *::-webkit-scrollbar {
@@ -25,7 +41,6 @@
     font-family: var(--font-sans);
     color: var(--color-foreground);
     overflow: hidden;
-    user-select: none;
   }
 
   body::after {
@@ -38,15 +53,11 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
-  img {
-    -webkit-user-drag: none;
-    user-select: none;
-  }
-
   input,
   textarea,
   select,
   option {
+    -webkit-user-select: text;
     user-select: text;
   }
 }

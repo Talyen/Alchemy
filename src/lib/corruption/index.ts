@@ -101,20 +101,22 @@ function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delt
 }
 
 // Creates the actual corrupted card, falling back to transform when direct mutation is impossible.
-export function corruptCard(selectedCard: BattleCard, library: BattleCard[], rng: () => number): CorruptionResult {
+export function corruptCard(
+  selectedCard: BattleCard,
+  library: BattleCard[],
+  rng: () => number,
+): CorruptionResult | null {
   const selectedTargets = getEditableCorruptionTargets(selectedCard);
   const candidates = getTransformCandidates(selectedCard, library);
+  if (selectedTargets.length === 0 && candidates.length === 0) return null;
+
   const shouldTransform =
     selectedTargets.length === 0 || (candidates.length > 0 && rng() < CORRUPTION_TRANSFORM_CHANCE);
   const sourceCard = shouldTransform ? candidates[Math.floor(rng() * candidates.length)] : selectedCard;
-  if (!sourceCard) {
-    throw new Error("No valid card is available for corruption");
-  }
+  if (!sourceCard) return null;
 
   const targets = getEditableCorruptionTargets(sourceCard);
-  if (targets.length === 0) {
-    throw new Error("Selected card has no editable corruption target");
-  }
+  if (targets.length === 0) return null;
 
   const target = targets[Math.floor(rng() * targets.length)]!;
   const delta: 1 | -1 = rng() < CORRUPTION_DELTA_CHANCE ? -1 : 1;
@@ -132,10 +134,11 @@ export function corruptDeckCard(
   cardIndex: number,
   library: BattleCard[],
   rng: () => number,
-): { deck: BattleCard[]; result: CorruptionResult } {
+): { deck: BattleCard[]; result: CorruptionResult | null } {
   const selectedCard = deck[cardIndex];
   if (!selectedCard) throw new Error("Cannot corrupt a missing card");
   const result = corruptCard(selectedCard, library, rng);
+  if (!result) return { deck, result: null };
   return {
     deck: deck.map((card, index) => (index === cardIndex ? result.corruptedCard : card)),
     result,

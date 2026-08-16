@@ -70,7 +70,6 @@ test.describe("Progression Locks", () => {
 
       // 6. Start Campaign and check character selection screen locks
       await page.getByRole("button", { name: /The Campaign/ }).click();
-      await page.getByRole("button", { name: "Play", exact: true }).click();
       await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
 
       // Rogue is locked, Knight is unlocked
@@ -82,13 +81,12 @@ test.describe("Progression Locks", () => {
       await rogueCard.hover();
       await expect(page.getByText("Finish a Run as the Knight to unlock")).toBeVisible();
 
-      // Selecting Rogue does not enable Continue
       await rogueCard.click({ force: true });
-      await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
+      await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
 
-      // Selecting Knight enables Continue
       await knightCard.click();
-      await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
+      await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeHidden();
+      await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
     },
   );
 
@@ -116,7 +114,6 @@ test.describe("Progression Locks", () => {
     await expect(labyrinthCard).not.toHaveClass(/(?<!\S)opacity-50(?!\S)/);
     await expect(wildwoodCard).not.toHaveClass(/(?<!\S)opacity-50(?!\S)/);
     await labyrinthCard.click();
-    await page.getByRole("button", { name: "Play", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
 
     const wizardCard = page.getByRole("button", { name: "Select Wizard" });
@@ -124,6 +121,6 @@ test.describe("Progression Locks", () => {
     await expect(wizardCard).toBeVisible();
     await expect(alchemistCard).toBeVisible();
     await wizardCard.click();
-    await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
+    await expect(page.getByRole("heading", { name: "Labyrinth" })).toBeVisible({ timeout: 5000 });
   });
 });

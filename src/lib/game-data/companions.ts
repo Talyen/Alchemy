@@ -2,7 +2,6 @@
 import {
   bearCompanion,
   goldenRetrieverCompanion,
-  impCompanion,
   libraryOwlCompanion,
   lizardScoutCompanion,
   manaMothCompanion,
@@ -32,12 +31,6 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
     title: "Lizard Scout Companion",
     art: lizardScoutCompanion,
     turnStartEffects: [{ kind: "damage", damageType: "poison", amount: 1 }],
-  },
-  imp: {
-    id: "imp",
-    title: "Imp Companion",
-    art: impCompanion,
-    turnStartEffects: [{ kind: "damage", damageType: "burn", amount: 1 }],
   },
   "frost-whelp": {
     id: "frost-whelp",
@@ -123,7 +116,6 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
 export const defaultCompanionBondLevels: Record<CompanionId, number> = {
   wolf: 0,
   "lizard-scout": 0,
-  imp: 0,
   "frost-whelp": 0,
   bear: 0,
   panther: 0,

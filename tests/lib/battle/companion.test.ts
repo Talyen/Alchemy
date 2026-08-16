@@ -44,16 +44,6 @@ describe("processCompanionTurnStart", () => {
     expect(result.enemyStatuses.poison).toBe(1);
   });
 
-  it("Imp companion deals burn damage", () => {
-    const state = makeTestBattleState({
-      activeCompanion: companionLibrary.imp,
-    });
-    const texts = makeTexts();
-    const result = processCompanionTurnStart(state, texts);
-    expect(result.enemyHealth).toBe(29);
-    expect(result.enemyStatuses.burn).toBe(1);
-  });
-
   it("Frost Whelp companion deals freeze damage", () => {
     const state = makeTestBattleState({
       activeCompanion: companionLibrary["frost-whelp"],
@@ -109,7 +99,7 @@ describe("processCompanionTurnStart", () => {
 
   it("companionDamage talent adds to base damage", () => {
     const state = makeTestBattleState({
-      activeCompanion: companionLibrary.imp,
+      activeCompanion: companionLibrary.phoenix,
       talentEffects: {
         ...makeTestBattleState().talentEffects,
         companionDamage: 3,
@@ -181,9 +171,9 @@ describe("processCompanionTurnStart", () => {
     expect(result.flags.goldOnFirstPoisonThisCombat).toBe(true);
   });
 
-  it("does not consume or benefit from firstBurnCardDoubled/firstBurnBoonDoubled when Imp companion deals burn damage", () => {
+  it("does not consume or benefit from firstBurnCardDoubled/firstBurnBoonDoubled when Phoenix companion deals burn damage", () => {
     const state = makeTestBattleState({
-      activeCompanion: companionLibrary.imp,
+      activeCompanion: companionLibrary.phoenix,
       talentEffects: {
         ...makeTestBattleState().talentEffects,
         firstBurnCardDoubled: true,
@@ -200,7 +190,7 @@ describe("processCompanionTurnStart", () => {
       enemyHealth: 30,
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Imp deals 1 burn damage. Since player card-play doubling flags are active
+    // Phoenix deals 1 burn damage. Since player card-play doubling flags are active
     // but disabled for companion, damage should be exactly 1, not 2 or 4.
     expect(result.enemyHealth).toBe(29);
     // Doubling flags should remain unconsumed (false)
@@ -223,7 +213,7 @@ describe("processCompanionTurnStart", () => {
 
   it("companionVsFrozenBonus adds when enemy has freeze skip turns", () => {
     const state = makeTestBattleState({
-      activeCompanion: companionLibrary.imp,
+      activeCompanion: companionLibrary.phoenix,
       enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0, cooldown: 0 },
       talentEffects: {
         ...makeTestBattleState().talentEffects,
@@ -231,13 +221,13 @@ describe("processCompanionTurnStart", () => {
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Imp 1 burn + frozen bonus 3 = 4 damage → enemy 26.
+    // Phoenix 1 burn + frozen bonus 3 = 4 damage → enemy 26.
     expect(result.enemyHealth).toBe(26);
   });
 
   it("companionDoubledVsLowHealth doubles damage when enemy ≤ 30% HP", () => {
     const state = makeTestBattleState({
-      activeCompanion: companionLibrary.imp,
+      activeCompanion: companionLibrary.phoenix,
       enemyHealth: 8,
       enemyMaxHealth: 30,
       talentEffects: {
@@ -246,13 +236,13 @@ describe("processCompanionTurnStart", () => {
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Imp base 1 burn × 2 low-health = 2 → enemy 6.
+    // Phoenix base 1 burn × 2 low-health = 2 → enemy 6.
     expect(result.enemyHealth).toBe(6);
   });
 
   it("companionDamagePerManaCrystal scales damage with max mana", () => {
     const state = makeTestBattleState({
-      activeCompanion: companionLibrary.imp,
+      activeCompanion: companionLibrary.phoenix,
       maxMana: 6,
       talentEffects: {
         ...makeTestBattleState().talentEffects,
@@ -260,33 +250,33 @@ describe("processCompanionTurnStart", () => {
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Imp base 1 + (6 × 200 / 2) = 1 + 600 = 601, burn status: 601.
+    // Phoenix base 1 + (6 × 200 / 2) = 1 + 600 = 601, burn status: 601.
     expect(result.enemyStatuses.burn).toBe(601);
   });
 
   it("companionDamageBonus gear adds flat damage to companion", () => {
     const state = makeTestBattleState({
-      activeCompanion: companionLibrary.imp,
+      activeCompanion: companionLibrary.phoenix,
       gearEffects: { ...defaultGearEffects, companionDamageBonus: 5 },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Imp 1 + 5 = 6 damage → enemy 24.
+    // Phoenix 1 + 5 = 6 damage → enemy 24.
     expect(result.enemyHealth).toBe(24);
   });
 
   it("gearEffects.companionDamageBonus adds to companion damage", () => {
     const state = makeTestBattleState({
-      activeCompanion: companionLibrary.imp,
+      activeCompanion: companionLibrary.phoenix,
       gearEffects: { ...defaultGearEffects, companionDamageBonus: 5 },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Imp 1 + 5 = 6 damage → enemy 24.
+    // Phoenix 1 + 5 = 6 damage → enemy 24.
     expect(result.enemyHealth).toBe(24);
   });
 
   it("healOnCompanionAttack heals player when companion deals damage", () => {
     const state = makeTestBattleState({
-      activeCompanion: companionLibrary.imp,
+      activeCompanion: companionLibrary.phoenix,
       playerHealth: 10,
       playerMaxHealth: 30,
       gearEffects: {
@@ -301,7 +291,7 @@ describe("processCompanionTurnStart", () => {
   it("healOnCompanionAttack combat text uses actual health gained near max HP", () => {
     const texts = makeTexts();
     const state = makeTestBattleState({
-      activeCompanion: companionLibrary.imp,
+      activeCompanion: companionLibrary.phoenix,
       playerHealth: 29,
       playerMaxHealth: 30,
       gearEffects: {
@@ -336,7 +326,7 @@ describe("processCompanionTurnStart", () => {
 
   it("companionLeechChance triggers leech heal on damage", () => {
     const state = makeTestBattleState({
-      activeCompanion: companionLibrary.imp,
+      activeCompanion: companionLibrary.phoenix,
       playerHealth: 10,
       playerMaxHealth: 30,
       talentEffects: {
@@ -345,7 +335,7 @@ describe("processCompanionTurnStart", () => {
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Imp deals 1 burn. Leech heal = leech(1) = at least 1 healing.
+    // Phoenix deals 1 burn. Leech heal = leech(1) = at least 1 healing.
     expect(result.playerHealth).toBeGreaterThan(10);
     expect(result.enemyHealth).toBe(29);
   });
@@ -368,7 +358,7 @@ describe("processCompanionTurnStart", () => {
 
   it("applies both healOnCompanionAttack gear and companionLeechChance talent when both are active", () => {
     const state = makeTestBattleState({
-      activeCompanion: companionLibrary.imp,
+      activeCompanion: companionLibrary.phoenix,
       playerHealth: 10,
       playerMaxHealth: 30,
       gearEffects: {

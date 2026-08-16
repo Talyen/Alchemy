@@ -8,7 +8,7 @@ import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunRngStream } from "@/lib/run-rng";
-import type { Destination } from "@/features/alchemy/shared/types";
+import { DESTINATIONS, type Destination } from "@/features/alchemy/shared/types";
 import { bindDraftAction, type GameplayDraft } from "./run-session-command";
 import {
   createGameplayDraftBattleActions,
@@ -211,11 +211,40 @@ export function commitDestinationClaim(draft: GameplayDraft, destination: Destin
     session.cancelDestinationClaim();
     return false;
   }
+  if (draft.run.activeRun.lastOfferedDestinations.length === 0) {
+    run.setDestinationOfferState({
+      lastOfferedDestinations: [...transient.rewardState.destinations],
+      roundsSinceOffered: { ...draft.run.activeRun.destinationRoundsSinceOffered },
+    });
+  }
   session.setRewardState((prev) => ({ ...prev, destinations: [] }));
   session.cancelDestinationClaim();
   run.setCompletedDestinations((prev) => [...prev, destination]);
   run.setDestinationIndexInAct((prev) => prev + 1);
   return true;
+}
+
+/** Undo a Corruption visit that never mutated a card so the same destination picker returns. */
+export function abandonCorruptionDestinationVisit(draft: GameplayDraft): void {
+  const run = runActions(draft);
+  const session = sessionActions(draft);
+  const transient = draft.session;
+
+  if (transient.pendingDestinationClaim === DESTINATIONS.CORRUPTION) {
+    session.cancelDestinationClaim();
+  } else if (draft.run.activeRun.completedDestinations.at(-1) === DESTINATIONS.CORRUPTION) {
+    run.setCompletedDestinations((prev) => prev.slice(0, -1));
+    run.setDestinationIndexInAct((prev) => Math.max(0, prev - 1));
+  }
+
+  if (transient.rewardState.destinations.length === 0) {
+    const restored = [...draft.run.activeRun.lastOfferedDestinations];
+    if (restored.length > 0) {
+      session.setRewardState((prev) => ({ ...prev, destinations: restored }));
+    }
+  }
+
+  session.setCorruptionResult(null);
 }
 
 // ---------------------------------------------------------------------------
@@ -236,6 +265,7 @@ export const setMysteryChosenChoice = bindDraftAction((s) => sessionActions(s).s
 export const setMysteryPendingRemoval = bindDraftAction((s) => sessionActions(s).setMysteryPendingRemoval);
 export const setMysteryCardChoices = bindDraftAction((s) => sessionActions(s).setMysteryCardChoices);
 export const setMysteryGrantedTrinketIds = bindDraftAction((s) => sessionActions(s).setMysteryGrantedTrinketIds);
+export const setMysteryGrantedGearInstances = bindDraftAction((s) => sessionActions(s).setMysteryGrantedGearInstances);
 export const setMysteryChosenCardId = bindDraftAction((s) => sessionActions(s).setMysteryChosenCardId);
 
 export function clearMysteryVisitState(draft: GameplayDraft): void {
@@ -244,6 +274,7 @@ export function clearMysteryVisitState(draft: GameplayDraft): void {
   setMysteryPendingRemoval(draft, false);
   setMysteryCardChoices(draft, null);
   setMysteryGrantedTrinketIds(draft, []);
+  setMysteryGrantedGearInstances(draft, []);
   setMysteryChosenCardId(draft, null);
 }
 

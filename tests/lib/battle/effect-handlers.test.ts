@@ -58,11 +58,11 @@ describe("applySummonCompanionEffect", () => {
     const result = applySummonCompanionEffect(
       state,
       {} as never,
-      { kind: "summon-companion", companionId: "imp" } as never,
+      { kind: "summon-companion", companionId: "wolf" } as never,
       1,
       [],
     );
-    expect(result.activeCompanion?.id).toBe("imp");
+    expect(result.activeCompanion?.id).toBe("wolf");
     expect(result.deck).toHaveLength(1);
   });
 });

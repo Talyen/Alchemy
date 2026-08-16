@@ -1,40 +1,49 @@
-// Shared purchasable shop tile chrome — media slot + buy / purchased affordance.
+// Shared purchasable shop tile chrome — media slot + price / purchased chip.
 import type { ReactNode } from "react";
+import { Coins } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { DisabledTooltip } from "./service-button";
 
-import { DisabledTooltip, GoldCost } from "./shared-ui";
+export function ShopPriceChip({ price, gold, purchased }: { price: number; gold: number; purchased: boolean }) {
+  const canAfford = gold >= price;
+
+  return (
+    <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 w-max -translate-x-1/2 select-none">
+      {purchased ? (
+        <span className="inline-flex items-center justify-center rounded-full border border-border/50 bg-stone-950/85 px-4 py-1.5 text-base leading-none font-semibold text-muted-foreground shadow-md backdrop-blur-sm">
+          Purchased
+        </span>
+      ) : (
+        <DisabledTooltip show={!canAfford} message="Not Enough Gold">
+          <div
+            className={cn(
+              "pointer-events-auto inline-flex items-center justify-center gap-2 rounded-full px-4 py-1.5 text-base leading-none font-semibold shadow-md backdrop-blur-sm",
+              canAfford
+                ? "border border-yellow-400/40 bg-yellow-300/15 text-yellow-300"
+                : "border border-border/50 bg-stone-950/85 text-muted-foreground",
+            )}
+          >
+            <Coins className={cn("h-6 w-6 shrink-0", canAfford ? "text-yellow-300" : "text-muted-foreground")} />
+            <span className="whitespace-nowrap tabular-nums">{price} Gold</span>
+          </div>
+        </DisabledTooltip>
+      )}
+    </div>
+  );
+}
 
 export function PurchasableShopTile({
   media,
-  price,
-  gold,
   purchased,
-  onBuy,
 }: {
   media: ReactNode;
   price: number;
   gold: number;
   purchased: boolean;
-  onBuy: () => void;
+  onBuy?: () => void;
 }) {
-  if (purchased) {
-    return (
-      <div className="flex flex-col items-center gap-3 rounded-shell-card border border-border/30 bg-card/30 p-4 text-center opacity-50">
-        {media}
-        <span className="text-xs font-semibold text-muted-foreground">Purchased</span>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col items-center gap-3 rounded-shell-card border border-border/70 bg-card/60 p-4 text-center">
-      {media}
-      <DisabledTooltip show={gold < price} message="Not Enough Gold">
-        <Button size="lg" variant="outline" disabled={gold < price} onClick={onBuy}>
-          Buy <GoldCost amount={price} />
-        </Button>
-      </DisabledTooltip>
-    </div>
+    <div className={cn("relative flex flex-col items-center text-center", purchased && "opacity-50")}>{media}</div>
   );
 }

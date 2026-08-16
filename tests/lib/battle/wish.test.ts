@@ -115,6 +115,18 @@ describe("applyWishEffect", () => {
     expect(result.gold).toBe(7);
   });
 
+  it("scales wishingWellGoldOnWish combat text with goldGainPercent", () => {
+    const state = makeTestBattleState({
+      trinketEffects: { ...makeTestBattleState().trinketEffects, wishingWellGoldOnWish: 7 },
+      gearEffects: { ...makeTestBattleState().gearEffects, goldGainPercent: 50 },
+    });
+    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const texts: CombatTextEvent[] = [];
+    const result = applyWishEffect(state, card, 1, texts);
+    expect(result.gold).toBe(11);
+    expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 11 }]);
+  });
+
   it("heals player with healthOnWish per wish", () => {
     const state = makeTestBattleState({
       playerHealth: 20,

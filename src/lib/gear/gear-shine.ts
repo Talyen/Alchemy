@@ -28,6 +28,14 @@ export function getGearInstanceShineColors(instance: GearInstance): readonly str
   return colors.length > 0 ? colors : [...ASTRAL_SHINE_FALLBACK];
 }
 
+/** Shine overlay thickness for astral gear tiles. Hover/select grows to 3px via `.has-shine-border`. */
+export const GEAR_ASTRAL_SHINE_BORDER_WIDTH = 2;
+
+export function getAstralShineColors(instance: GearInstance): readonly string[] | undefined {
+  const colors = getGearInstanceShineColors(instance);
+  return colors.length > 0 ? colors : undefined;
+}
+
 export function getGearInstanceShineGradient(instance: GearInstance): string | null {
   const colors = getGearInstanceShineColors(instance);
   if (colors.length === 0) return null;

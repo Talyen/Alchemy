@@ -1,6 +1,7 @@
 // Prop contracts shared by the focused battle screen view modules.
 import type { MouseEvent } from "react";
 
+import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import type { BattleState } from "@/lib/battle";
 import type { DisplayOverrides } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
@@ -34,6 +35,7 @@ export type BattleScreenState = Pick<
 
 interface BattleScreenViewProps {
   battleState: BattleScreenState;
+  characterId: CharacterId;
   heroArt: string;
   playerName: string;
   aspectMode?: "standard" | "narrow" | "ultrawide";
@@ -71,4 +73,5 @@ export interface BattleScreenData {
   displayOverrides: DisplayOverrides;
   revealedCardKeys: Set<string>;
   activeLabyrinthModifiers: EncounterCombatTraitId[];
+  runTrinkets: string[];
 }

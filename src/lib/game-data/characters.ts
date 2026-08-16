@@ -87,7 +87,7 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
       "fireball",
       "fangs",
       "cauterize",
-      "imp-companion",
+      "hemorrhage",
       "faustian-bargain",
       "blood-offering",
       "health-potion",

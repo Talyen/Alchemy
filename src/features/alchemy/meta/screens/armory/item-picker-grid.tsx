@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   canApplyCraftingCurrency,
   gearDefinitions,
+  getAstralShineColors,
   getCraftingCurrencyDefinition,
   getGearInstanceTitle,
   isGearCompatibleWithLoadoutSlot,
@@ -83,6 +84,7 @@ export function ItemPickerGrid({
             const loadoutLegal = definition
               ? isGearCompatibleWithLoadoutSlot(definition, slot, loadout, inventory)
               : false;
+            const shineColor = getAstralShineColors(item);
             const canCraft = Boolean(activeCurrencyId && canApplyCraftingCurrency(activeCurrencyId, item));
             const salvageable = salvageMode;
             const disabled = editable && !salvageMode && !activeCurrencyId && !loadoutLegal;
@@ -117,6 +119,7 @@ export function ItemPickerGrid({
                     ariaLabel={ariaLabel}
                     className={cn(cardSurfaceClass, collectionGridTileWidthClass, gearArtAspectClass)}
                     imageClassName={gearArtFillClass}
+                    shineColor={shineColor}
                     onClick={() => {
                       if (!editable) return;
                       if (salvageable) {

@@ -68,6 +68,7 @@ function MysteryScreenHarness({
       runDeck={sampleDeck}
       mysteryCardChoices={null}
       mysteryGrantedTrinketIds={[]}
+      mysteryGrantedGearInstances={[]}
       mysteryChosenCardId={null}
       mysteryChosenChoice={chosenChoice}
       mysteryPendingRemoval={pendingRemoval}

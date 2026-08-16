@@ -69,24 +69,30 @@ export const destinationMeta: Record<Destination, { icon: LucideIcon; accentClas
 };
 
 // Game mode visual theming for the game mode selection screen.
-export const gameModeMeta: Record<string, { title: string; description: string; icon: LucideIcon; art: string }> = {
+export const gameModeMeta: Record<
+  string,
+  { title: string; description: string; icon: LucideIcon; art: string; accentClassName: string }
+> = {
   campaign: {
     title: "The Campaign",
     description: "Journey through Act I, Act II, and Act III",
     icon: Swords,
     art: theCampaign,
+    accentClassName: "text-red-400",
   },
   labyrinth: {
     title: "The Labyrinth",
     description: "Descend through a maze of encounters",
     icon: Map,
     art: theLabyrinth,
+    accentClassName: "text-violet-400",
   },
   wildwood: {
     title: "Wildwood Draft",
     description: "Draft a deck and survive an endless boss gauntlet",
     icon: PawPrint,
     art: wildwoodDraft,
+    accentClassName: "text-emerald-300",
   },
 };
 

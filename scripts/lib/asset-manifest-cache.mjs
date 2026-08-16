@@ -11,7 +11,7 @@ import { writeTextIfChanged } from "./write-text-if-changed.mjs";
 import { mapPool } from "./map-pool.mjs";
 
 /**
- * @typedef {{ hash: string, mtimeMs: number, size: number }} ManifestEntry
+ * @typedef {{ hash: string, mtimeMs: number, size: number, settingsSig?: string }} ManifestEntry
  */
 
 /**
@@ -31,6 +31,14 @@ function canonicalize(value) {
     return sorted;
   }
   return value;
+}
+
+function settingsSignature(settings, schemaVersion) {
+  const hash = createHash("sha256");
+  hash.update(String(schemaVersion));
+  hash.update("\0");
+  hash.update(JSON.stringify(canonicalize(settings)));
+  return hash.digest("hex").slice(0, 16);
 }
 
 /**
@@ -65,17 +73,20 @@ export async function resolveSourceHash(sourcePath, settings, schemaVersion, sto
   const mtimeMs = sourceStat.mtimeMs;
   const size = sourceStat.size;
 
+  const settingsSig = settingsSignature(settings, schemaVersion);
+
   if (
     storedEntry &&
     typeof storedEntry.hash === "string" &&
     storedEntry.mtimeMs === mtimeMs &&
-    storedEntry.size === size
+    storedEntry.size === size &&
+    storedEntry.settingsSig === settingsSig
   ) {
-    return { hash: storedEntry.hash, mtimeMs, size };
+    return { hash: storedEntry.hash, mtimeMs, size, settingsSig };
   }
 
   const hash = await computeContentHash(sourcePath, settings, schemaVersion);
-  return { hash, mtimeMs, size };
+  return { hash, mtimeMs, size, settingsSig };
 }
 
 /**
@@ -106,6 +117,7 @@ function parseManifestEntry(value) {
       hash: /** @type {string} */ (record.hash),
       mtimeMs: typeof record.mtimeMs === "number" ? record.mtimeMs : Number.NaN,
       size: typeof record.size === "number" ? record.size : Number.NaN,
+      ...(typeof record.settingsSig === "string" ? { settingsSig: record.settingsSig } : {}),
     };
   }
   return null;

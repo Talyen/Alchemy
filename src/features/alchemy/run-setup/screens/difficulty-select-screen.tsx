@@ -18,18 +18,22 @@ import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 
 import { KeywordToken } from "../../shared/ui/card-description-ui";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
-import { PressableSound } from "../../shared/ui/pressable-sound";
 import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { tokenizeDescription } from "../../shared/utils";
 import {
+  cardInteractiveGlowClass,
   cardSurfaceClass,
   bodyTextClass,
-  nonBattleCardWidthClass,
+  chooserHeroArtWidthClass,
+  chooserHeroPaddedRowShellWidthClass,
+  chooserHeroPaddedTileClass,
+  chooserRowGapClass,
   sectionTitleClass,
   tiltSurfaceSelectedRingClass,
 } from "@/features/alchemy/shared/config";
 import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
+import { TooltipBody } from "../../shared/ui/tooltip-panel";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";
 import { useUiStore } from "../../shared/stores/ui-store";
 
@@ -92,62 +96,61 @@ function DifficultyCard({
   return (
     <div
       ref={triggerRef}
-      className="relative flex flex-col items-center"
+      className={cn(chooserHeroPaddedTileClass, "flex flex-col items-center")}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <PressableSound {...(locked ? { hoverSound: false as const } : {})}>
-        <button
-          type="button"
-          disabled={locked}
-          aria-label={name}
-          aria-pressed={isSelected}
-          onClick={() => onSelect(difficultyId)}
-          className={cn(
-            "relative flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6 text-center transition-all disabled:cursor-default",
-            locked && "border-muted/40 grayscale",
-            isSelected && tiltSurfaceSelectedRingClass,
-          )}
-        >
-          {showTilt ? (
-            <TiltSurface
-              className={cn("relative aspect-[5/6] overflow-hidden rounded-shell-panel", nonBattleCardWidthClass)}
-              shimmerActive={isShimmer}
-              shimmerToken={shimmerToken}
-              shimmerRounded="rounded-shell-panel"
-              onMouseEnter={() => onHoverShimmer(difficultyId)}
-            >
-              <img src={diffArt} alt="" className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover")} />
-              {completed && (
-                <div className="absolute top-2 right-2 rounded-md bg-emerald-600/90 px-2 py-0.5 text-xs font-bold tracking-wide text-emerald-100 uppercase">
-                  Completed
-                </div>
-              )}
-            </TiltSurface>
-          ) : (
-            <div className={cn("relative aspect-[5/6] overflow-hidden rounded-shell-panel", nonBattleCardWidthClass)}>
-              <img
-                src={diffArt}
-                alt=""
-                className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover", "grayscale")}
-              />
-              <div className="absolute inset-0 flex items-center justify-center rounded-shell-panel bg-black/60">
-                <span className="text-sm font-bold tracking-wider text-muted-foreground uppercase">Locked</span>
+      <button
+        type="button"
+        disabled={locked}
+        aria-label={name}
+        aria-pressed={isSelected}
+        onClick={() => onSelect(difficultyId)}
+        className={cn(
+          "group relative flex h-full w-full min-w-0 flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6 text-center shadow-md transition-all disabled:cursor-default",
+          !locked && cardInteractiveGlowClass,
+          locked && "border-muted/40 grayscale",
+          isSelected && tiltSurfaceSelectedRingClass,
+        )}
+      >
+        {showTilt ? (
+          <TiltSurface
+            className={cn("relative aspect-[5/6] overflow-hidden rounded-shell-panel", chooserHeroArtWidthClass)}
+            shimmerActive={isShimmer}
+            shimmerToken={shimmerToken}
+            shimmerRounded="rounded-shell-panel"
+            onMouseEnter={() => onHoverShimmer(difficultyId)}
+          >
+            <img src={diffArt} alt="" className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover")} />
+            {completed && (
+              <div className="absolute top-2 right-2 rounded-md bg-emerald-600/90 px-2 py-0.5 text-xs font-bold tracking-wide text-emerald-100 uppercase">
+                Completed
               </div>
-            </div>
-          )}
-          <p className={cn("font-sans", sectionTitleClass, locked && "text-muted-foreground")}>{name}</p>
-          <div className="flex min-h-[6.67cqh] flex-col justify-center">
-            <div className={cn("max-w-[24.44cqh] text-center", bodyTextClass)}>
-              {renderDescription(fullDescription)}
+            )}
+          </TiltSurface>
+        ) : (
+          <div className={cn("relative aspect-[5/6] overflow-hidden rounded-shell-panel", chooserHeroArtWidthClass)}>
+            <img
+              src={diffArt}
+              alt=""
+              className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover", "grayscale")}
+            />
+            <div className="absolute inset-0 flex items-center justify-center rounded-shell-panel bg-black/60">
+              <span className="text-sm font-bold tracking-wider text-muted-foreground uppercase">Locked</span>
             </div>
           </div>
-        </button>
-      </PressableSound>
+        )}
+        <p className={cn("font-sans", sectionTitleClass, locked && "text-muted-foreground")}>{name}</p>
+        <div className="flex min-h-[6.67cqh] w-full flex-col justify-center">
+          <div className={cn("w-full text-center", bodyTextClass)}>{renderDescription(fullDescription)}</div>
+        </div>
+      </button>
 
       {locked && (
         <PortaledTooltip triggerRef={triggerRef} visible={visible}>
-          <p className={bodyTextClass}>Clear Previous Difficulty to Unlock</p>
+          <TooltipBody>
+            <p>Clear Previous Difficulty to Unlock</p>
+          </TooltipBody>
         </PortaledTooltip>
       )}
     </div>
@@ -193,12 +196,17 @@ export function DifficultySelectScreen({
       title={config.headerTitle}
       onOpenMenu={onOpenMenu}
       menuLabel="Open difficulty select menu"
-      maxWidthClass="max-w-6xl"
+      maxWidthClass={chooserHeroPaddedRowShellWidthClass}
     >
-      <div className="mt-6 flex flex-wrap items-start justify-center gap-6">
-        <div className="flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6">
+      <div className={cn("mt-6 flex w-full flex-nowrap items-stretch justify-center", chooserRowGapClass)}>
+        <div
+          className={cn(
+            chooserHeroPaddedTileClass,
+            "flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6",
+          )}
+        >
           <TiltSurface
-            className={cn("relative aspect-[3/4] overflow-hidden rounded-shell-panel", nonBattleCardWidthClass)}
+            className={cn("relative aspect-[3/4] overflow-hidden rounded-shell-panel", chooserHeroArtWidthClass)}
             shimmerActive={shimmerState?.cardId === "character"}
             shimmerToken={shimmerState?.token}
             shimmerRounded="rounded-shell-panel"
@@ -218,29 +226,27 @@ export function DifficultySelectScreen({
           </div>
         </div>
 
-        <div className="hidden shrink-0 flex-col items-center self-stretch lg:flex">
+        <div className="hidden w-4 shrink-0 flex-col items-center self-stretch lg:flex">
           <div className="w-px flex-1 bg-gradient-to-b from-transparent via-amber-100/75 to-transparent" />
           <Swords className="my-1 h-4 w-4 text-amber-100/75" aria-hidden="true" />
           <div className="w-px flex-1 bg-gradient-to-b from-transparent via-amber-100/75 to-transparent" />
         </div>
 
-        <div className="flex flex-wrap items-start justify-center gap-6">
-          {config.difficulties.map((d) => (
-            <DifficultyCard
-              key={d.id}
-              difficultyId={d.id}
-              name={d.name}
-              description={d.description}
-              completed={completedDifficulties.includes(d.id)}
-              locked={!isDifficultyUnlocked(d.id, completedDifficulties)}
-              isSelected={selectedDifficultyId === d.id}
-              isShimmer={shimmerState?.cardId === d.id}
-              shimmerToken={shimmerState?.token}
-              onHoverShimmer={maybeTriggerShimmer}
-              onSelect={handleSelectDifficulty}
-            />
-          ))}
-        </div>
+        {config.difficulties.map((d) => (
+          <DifficultyCard
+            key={d.id}
+            difficultyId={d.id}
+            name={d.name}
+            description={d.description}
+            completed={completedDifficulties.includes(d.id)}
+            locked={!isDifficultyUnlocked(d.id, completedDifficulties)}
+            isSelected={selectedDifficultyId === d.id}
+            isShimmer={shimmerState?.cardId === d.id}
+            shimmerToken={shimmerState?.token}
+            onHoverShimmer={maybeTriggerShimmer}
+            onSelect={handleSelectDifficulty}
+          />
+        ))}
       </div>
 
       <ActionButtonRow

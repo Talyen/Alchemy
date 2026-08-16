@@ -5,6 +5,7 @@ import type { BattleCard, TalentXP } from "@/lib/game-data";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
+import type { GearInstance } from "@/lib/gear";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type {
   AlchemistState,
@@ -58,10 +59,13 @@ interface MysteryScreenData {
   mysteryEvent: MysteryEvent | null;
   mysteryCardChoices: BattleCard[] | null;
   mysteryGrantedTrinketIds: string[];
+  mysteryGrantedGearInstances: GearInstance[];
   mysteryChosenCardId: string | null;
   mysteryChosenChoice: MysteryChoice | null;
   mysteryPendingRemoval: boolean;
   runDeck: BattleCard[];
+  runTalentXP: TalentXP;
+  talentXP: TalentXP;
 }
 
 interface CorruptionScreenData {

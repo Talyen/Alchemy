@@ -6,6 +6,7 @@ import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { SLICE_PRIMARY_CLIP_PATH, SLICE_SECONDARY_CLIP_PATH } from "@/lib/animation/slice-crack";
 import { drawSliceFrame } from "@/lib/animation/slice-draw";
 import { computeSliceVisual } from "@/lib/animation/slice-timeline";
+import { playSliceDeath } from "@/lib/audio";
 import { SLICE_DEATH_DURATION_MS } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,7 @@ export function SliceDeath({ imageUrl, alt, imageClassName }: SliceDeathProps) {
       }
 
       started = true;
+      playSliceDeath();
       const originX = w / 2;
       const originY = h / 2;
       const start = performance.now();
