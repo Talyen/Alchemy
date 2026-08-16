@@ -82,9 +82,6 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
       onMouseEnter={handleHoverStart}
       onMouseLeave={handleMouseLeave}
     >
-      {/* The ref is only read inside layout effects in PortaledTooltip's placement
-          hook, never during render; passing it to the portal is safe. */}
-      {/* eslint-disable-next-line react-hooks/refs */}
       {instance && definition && showPopup ? (
         <GearTooltipPortal triggerRef={wrapperRef} visible={isHovered} definition={definition} instance={instance} />
       ) : null}

@@ -2,6 +2,7 @@
 import { useId, useMemo, type CSSProperties } from "react";
 
 import { ShineBorder } from "@/components/ui/shine-border";
+import { buildShineColorCycleKeyframes, CYCLE_SHINE_VAR } from "./cycling-shine-keyframes";
 
 interface CyclingShineBorderProps {
   colors: readonly string[];
@@ -9,20 +10,6 @@ interface CyclingShineBorderProps {
   duration?: number;
   intervalMs: number;
   className?: string;
-}
-
-const CYCLE_SHINE_VAR = "--cycle-shine";
-
-export function buildShineColorCycleKeyframes(animationName: string, colors: readonly string[]): string {
-  const first = colors[0];
-  if (!first) return "";
-
-  const frames = colors.map((color, index) => {
-    const percent = (index / colors.length) * 100;
-    return `${percent}% { ${CYCLE_SHINE_VAR}: ${color}; }`;
-  });
-  frames.push(`100% { ${CYCLE_SHINE_VAR}: ${first}; }`);
-  return `@keyframes ${animationName} {\n  ${frames.join("\n  ")}\n}`;
 }
 
 export function CyclingShineBorder({

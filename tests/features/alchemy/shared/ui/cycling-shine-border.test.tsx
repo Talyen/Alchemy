@@ -2,7 +2,8 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { buildShineColorCycleKeyframes, CyclingShineBorder } from "@/features/alchemy/shared/ui/cycling-shine-border";
+import { CyclingShineBorder } from "@/features/alchemy/shared/ui/cycling-shine-border";
+import { buildShineColorCycleKeyframes } from "@/features/alchemy/shared/ui/cycling-shine-keyframes";
 
 afterEach(() => {
   cleanup();

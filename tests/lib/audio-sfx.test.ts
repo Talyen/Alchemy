@@ -16,14 +16,14 @@ import {
 } from "@/lib/audio-sfx";
 import { setMasterVolume, setMuted, setSfxVolume } from "@/lib/audio-volume";
 
-type FakeAudio = {
+interface FakeAudio {
   src: string;
   volume: number;
   muted: boolean;
   play: ReturnType<typeof vi.fn>;
   pause: ReturnType<typeof vi.fn>;
   onended: (() => void) | null;
-};
+}
 
 const created: FakeAudio[] = [];
 
