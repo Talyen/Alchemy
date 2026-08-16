@@ -1,7 +1,14 @@
 // Short sound-effect playback for cards, combat events, UI, and stingers.
 // SFX use HTMLAudioElement, the same path as music, because Web Audio can unlock
 // and still emit silence while streamed music plays.
-import { battleEventSounds, cardSounds, enemyAttackSounds, stingerSounds, uiSounds } from "./sound-registry";
+import {
+  battleEventSounds,
+  cardSounds,
+  enemyAttackSounds,
+  stingerSounds,
+  uiSounds,
+  type UISound,
+} from "./sound-registry";
 import { audioState } from "./audio-state";
 import { getSoundUrl } from "./audio-buffer-cache";
 import { pickRandom } from "./utils";
@@ -62,6 +69,7 @@ export function stopAllSfx() {
 }
 
 function playHtmlSfx(name: string, volume: number, trackForCleanup: boolean) {
+  if (typeof Audio === "undefined") return;
   const el = new Audio(getSoundUrl(name));
   const entry: ActiveHtmlSfx = { el, volume, trackForCleanup };
   applyHtmlSfxPlayback(entry);
@@ -127,7 +135,7 @@ export function playSliceDeath() {
   playBattleEvent("sliceDeath", { volume: SFX_SLICE_DEATH_VOLUME, trackForCleanup: false });
 }
 
-export function playUISound(event: keyof typeof uiSounds) {
+export function playUISound(event: UISound) {
   playBuffer(uiSounds[event], { volume: SFX_UI_VOLUME, trackForCleanup: false });
 }
 

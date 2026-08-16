@@ -4,7 +4,7 @@ import { sampleItems } from "@/lib/utils";
 
 import type { MysteryEffect, MysteryEvent } from "./types";
 
-export function isMysteryTrinketEffect(
+function isMysteryTrinketEffect(
   effect: MysteryEffect,
 ): effect is Extract<MysteryEffect, { kind: "gainTrinket" | "gainRandomTrinket" }> {
   return effect.kind === "gainTrinket" || effect.kind === "gainRandomTrinket";

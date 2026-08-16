@@ -103,22 +103,22 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared
 | Shape           | `rounded-xl` rectangles (`BUTTON_SHAPE`)                                                                                                                                                                                |
 | Primary CTA     | `Button variant="primary"` (gold fill) — Play, Continue, Confirm                                                                                                                                                        |
 | Secondary CTA   | `Button variant="outline"` — Back, Cancel, Skip, alternate menu nav                                                                                                                                                     |
-| Neutral surface | `bg-background` + `border-border/80` — outline, `ChoiceButton`, `TabBar`, talent filters (`BUTTON_SURFACE_NEUTRAL`)                                                                                                     |
+| Neutral surface | `bg-background` + `border-border/80` — outline, `TabBar`, talent filters (`BUTTON_SURFACE_NEUTRAL`)                                                                                                                     |
 | Accent CTA      | `ShineAccentButton` — corruption forward actions with shine border                                                                                                                                                      |
 | Paired footers  | `ActionButtonRow` — secondary left, primary right                                                                                                                                                                       |
-| Equal choices   | `ChoiceButton` — destinations, neutral surface + accent text                                                                                                                                                            |
+| Equal choices   | Destination art tiles (`DestinationChoices` + `TiltSurface`) with a label under the art                                                                                                                                 |
 | Tabs            | `TabBar` — `h-11`, `rounded-xl`                                                                                                                                                                                         |
 | Hover           | `Button`: CSS brightness/background lift (`src/lib/ui/button-hover.ts`). Tiles/menu rows: CSS scale 1.035 + glow (`.card-interactive-glow` / `.menu-nav-button` in `src/styles/components.css`). No Framer hover scale. |
 | Press           | `Button`: CSS `active:` from `button-hover.ts`. Tiles/menu rows: CSS `active` scale 0.98.                                                                                                                               |
 | Width tiers     | `menu` → `w-56`, `dialog` → `w-40`, `action` → `min-w-40`, `full` → `w-full`                                                                                                                                            |
 
-| Step               | Guidance                                                                     |
-| ------------------ | ---------------------------------------------------------------------------- |
-| 1. Menu stack      | One `primary` at top (Play); all other items `outline` + `BUTTON_WIDTH_MENU` |
-| 2. Back + Continue | `ActionButtonRow` with `width="dialog"`                                      |
-| 3. Skip + confirm  | `ActionButtonRow` with `width="action"`; skip secondary, confirm primary     |
-| 4. Destinations    | `ChoiceButton` via `DestinationChoices`; accent text only on neutral surface |
-| 5. Shine           | Only on accent-intent forward actions — never Back/Cancel/Skip               |
+| Step               | Guidance                                                                                 |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| 1. Menu stack      | One `primary` at top (Play); all other items `outline` + `BUTTON_WIDTH_MENU`             |
+| 2. Back + Continue | `ActionButtonRow` with `width="dialog"`                                                  |
+| 3. Skip + confirm  | `ActionButtonRow` with `width="action"`; skip secondary, confirm primary                 |
+| 4. Destinations    | Art tiles via `DestinationChoices`; accessible name on the tile, accent label underneath |
+| 5. Shine           | Only on accent-intent forward actions — never Back/Cancel/Skip                           |
 
 ---
 

@@ -28,7 +28,6 @@ export {
   theLabyrinth,
   wildwoodDraft,
   trinketLibrary,
-  talentArt,
 } from "@/lib/game-data";
 
 export type {

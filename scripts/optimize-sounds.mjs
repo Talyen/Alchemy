@@ -8,7 +8,12 @@ import { promisify } from "node:util";
 // on system installation. We use it to normalize volume and convert WAVs to OGG.
 import ffmpegPath from "ffmpeg-static";
 
-import { isOutputFresh, processManifestEntries, resolveSourceHash } from "./lib/asset-manifest-cache.mjs";
+import {
+  isOutputFresh,
+  processManifestEntries,
+  resolveSourceHash,
+  writeManifestIfChanged,
+} from "./lib/asset-manifest-cache.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const execFileAsync = promisify(execFile);
@@ -25,6 +30,7 @@ const TRANSFORM_CONCURRENCY = 6;
 
 const LOUDNORM_FILTER = "loudnorm=I=-16:TP=-1.5:LRA=11";
 const VORBIS_QUALITY = "4";
+const MP3_FALLBACK_SETTINGS = { codec: "libmp3lame", quality: "4", stripVideo: true };
 
 // Each entry maps a raw asset (relative to "Raw Assets/Sound Effects/") to an
 // output name in public/sounds/. The script converts WAV → OGG and copies OGG
@@ -159,7 +165,7 @@ export async function optimizeSounds() {
 
   await mkdir(outputDir, { recursive: true });
 
-  const { results, failed } = await processManifestEntries({
+  const { previousManifest, nextManifest, results, failed } = await processManifestEntries({
     entries: sounds,
     manifestPath,
     concurrency: TRANSFORM_CONCURRENCY,
@@ -172,24 +178,41 @@ export async function optimizeSounds() {
   });
 
   console.log(`Processed ${results.length} sounds.`);
-  await ensureMp3Fallbacks();
+  const mp3Entries = await ensureMp3Fallbacks(previousManifest);
+  await writeManifestIfChanged(manifestPath, { ...nextManifest, ...mp3Entries });
   return { ok: !failed };
 }
 
-async function ensureMp3Fallbacks() {
+async function ensureMp3Fallbacks(previousManifest) {
   const files = await readdir(outputDir);
   const oggs = files.filter((file) => file.endsWith(".ogg"));
+  /** @type {Record<string, import("./lib/asset-manifest-cache.mjs").ManifestEntry>} */
+  const mp3Entries = {};
   let converted = 0;
   for (const ogg of oggs) {
     const oggPath = path.join(outputDir, ogg);
-    const mp3Path = path.join(outputDir, ogg.replace(/\.ogg$/i, ".mp3"));
-    const oggStat = await stat(oggPath);
-    const mp3Stat = await stat(mp3Path).catch(() => null);
-    if (mp3Stat && mp3Stat.mtimeMs >= oggStat.mtimeMs) continue;
+    const mp3Name = ogg.replace(/\.ogg$/i, ".mp3");
+    const mp3Path = path.join(outputDir, mp3Name);
+    const stored = previousManifest[mp3Name];
+    const sourceEntry = await resolveSourceHash(oggPath, MP3_FALLBACK_SETTINGS, SCHEMA_VERSION, stored);
+    const fingerprint =
+      stored && stored.hash === sourceEntry.hash && Number.isFinite(stored.mtimeMs) && Number.isFinite(stored.size)
+        ? stored
+        : sourceEntry;
+    mp3Entries[mp3Name] = fingerprint;
+
+    const mp3Exists = await stat(mp3Path)
+      .then(() => true)
+      .catch(() => false);
+    // Existing MP3s stay committed across machines; only encode when missing or the OGG hash changed.
+    if (mp3Exists && (!stored || stored.hash === sourceEntry.hash)) continue;
+    if (await isOutputFresh(mp3Path, stored, sourceEntry.hash)) continue;
+
     await execFileAsync(ffmpegPath, ["-y", "-i", oggPath, "-c:a", "libmp3lame", "-q:a", "4", "-vn", mp3Path]);
     converted += 1;
   }
   if (converted > 0) console.log(`Wrote ${converted} MP3 SFX fallbacks for Safari.`);
+  return mp3Entries;
 }
 
 if (isMainModule(import.meta.url)) {

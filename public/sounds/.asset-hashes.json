@@ -1,202 +1,477 @@
 {
+  "bonus-regen-rate.mp3": {
+    "hash": "490e6953851ff12c",
+    "mtimeMs": 1785341542733.6294,
+    "size": 42245
+  },
   "bonus-regen-rate.ogg": {
     "hash": "bd5315aa6a64f5e4",
     "mtimeMs": 1782421243068.2654,
     "size": 2018120
+  },
+  "buff-pickup-1.mp3": {
+    "hash": "088e60cff5c8015e",
+    "mtimeMs": 1785341542734.0457,
+    "size": 32287
   },
   "buff-pickup-1.ogg": {
     "hash": "bf469013fb9085ea",
     "mtimeMs": 1782421243081.6057,
     "size": 1850166
   },
+  "buff-pickup.mp3": {
+    "hash": "32d5fc3e418e2a20",
+    "mtimeMs": 1785341542734.368,
+    "size": 33546
+  },
   "buff-pickup.ogg": {
     "hash": "480a5d93d3ec1b02",
     "mtimeMs": 1782421243083.5947,
     "size": 1850174
+  },
+  "card-draw-1.mp3": {
+    "hash": "1dd87237de387cd5",
+    "mtimeMs": 1785341542734.4995,
+    "size": 10095
   },
   "card-draw-1.ogg": {
     "hash": "8027a854539d07e3",
     "mtimeMs": 1782421242527.6868,
     "size": 61484
   },
+  "card-draw-2.mp3": {
+    "hash": "e6275fa505490530",
+    "mtimeMs": 1785341542734.6362,
+    "size": 8029
+  },
   "card-draw-2.ogg": {
     "hash": "e7f9f05ce2a04182",
     "mtimeMs": 1782421242527.9329,
     "size": 41004
+  },
+  "card-draw-3.mp3": {
+    "hash": "13b3962e17ed8748",
+    "mtimeMs": 1785341542734.7253,
+    "size": 9736
   },
   "card-draw-3.ogg": {
     "hash": "526900af130d6b84",
     "mtimeMs": 1782421242528.1973,
     "size": 59436
   },
+  "card-fan.mp3": {
+    "hash": "17121fc6f0f88db1",
+    "mtimeMs": 1785341542734.838,
+    "size": 13271
+  },
   "card-fan.ogg": {
     "hash": "8a0507cc85fcf0d6",
     "mtimeMs": 1782421242528.393,
     "size": 69676
+  },
+  "coin-collect.mp3": {
+    "hash": "66329aabf17ec564",
+    "mtimeMs": 1782421243536.1343,
+    "size": 31174
+  },
+  "coin-jingle-small.mp3": {
+    "hash": "d744623a0408ddce",
+    "mtimeMs": 1782421243536.3916,
+    "size": 16176
+  },
+  "coins-gather-quick.mp3": {
+    "hash": "8d88e11409a9ba22",
+    "mtimeMs": 1782421243536.4563,
+    "size": 12851
+  },
+  "denied-03.mp3": {
+    "hash": "19cea4eaafa825d0",
+    "mtimeMs": 1785341542734.9583,
+    "size": 13653
   },
   "denied-03.ogg": {
     "hash": "5032a5800c64c947",
     "mtimeMs": 1782421243138.1719,
     "size": 353536
   },
+  "energy-noise.mp3": {
+    "hash": "ed494d84c642c936",
+    "mtimeMs": 1785341542735.256,
+    "size": 48360
+  },
   "energy-noise.ogg": {
     "hash": "1603f92a631efa5a",
     "mtimeMs": 1782421243097.3396,
     "size": 1918864
+  },
+  "fire-lighting.mp3": {
+    "hash": "501bc3fd5e2e0a0d",
+    "mtimeMs": 1785341542735.5867,
+    "size": 14282
   },
   "fire-lighting.ogg": {
     "hash": "98f14f3f80c6bf88",
     "mtimeMs": 1782421242665,
     "size": 114732
   },
+  "fireball-1.mp3": {
+    "hash": "b17c3b88fc9ee9f9",
+    "mtimeMs": 1785341380306.7925,
+    "size": 82297
+  },
   "fireball-1.ogg": {
     "hash": "2cfc73f5a024aacb",
     "mtimeMs": 1782421243038.1968,
     "size": 82297
+  },
+  "gurgling.mp3": {
+    "hash": "8afd9bdca679d190",
+    "mtimeMs": 1782421243537.9255,
+    "size": 41301
+  },
+  "gut-kick.mp3": {
+    "hash": "ca379520ef2c0b90",
+    "mtimeMs": 1785341542735.7122,
+    "size": 27006
   },
   "gut-kick.ogg": {
     "hash": "61f1b3f095407234",
     "mtimeMs": 1782421242459.1565,
     "size": 1849984
   },
+  "harpsichord-defeated.mp3": {
+    "hash": "18b7d24c202c09c5",
+    "mtimeMs": 1785341542736.0972,
+    "size": 69985
+  },
   "harpsichord-defeated.ogg": {
     "hash": "f6a3ffdf6e130a91",
     "mtimeMs": 1782421242997.523,
     "size": 528844
+  },
+  "harpsichord-level-complete.mp3": {
+    "hash": "f8357e4f26dad5c3",
+    "mtimeMs": 1785341542736.459,
+    "size": 97168
   },
   "harpsichord-level-complete.ogg": {
     "hash": "d392ee27017d73d0",
     "mtimeMs": 1782421243000.709,
     "size": 652212
   },
+  "harpsichord-mystery.mp3": {
+    "hash": "3748272310b570c9",
+    "mtimeMs": 1785341542736.757,
+    "size": 34701
+  },
   "harpsichord-mystery.ogg": {
     "hash": "7a6177cdf69b7d68",
     "mtimeMs": 1782421243002.598,
     "size": 264088
+  },
+  "horror-sting.mp3": {
+    "hash": "62aa7b46f0c706bf",
+    "mtimeMs": 1785341542736.9133,
+    "size": 21635
   },
   "horror-sting.ogg": {
     "hash": "ab7a1fca900b9dc9",
     "mtimeMs": 1782421243005.8362,
     "size": 155244
   },
+  "ice-freeze-1.mp3": {
+    "hash": "8ecd78441491aa92",
+    "mtimeMs": 1785341380308.0212,
+    "size": 66507
+  },
   "ice-freeze-1.ogg": {
     "hash": "70afbd2c59d429ae",
     "mtimeMs": 1782421243044.2566,
     "size": 66507
+  },
+  "ice-in-water.mp3": {
+    "hash": "4810a2e1c943a959",
+    "mtimeMs": 1785341542737.0579,
+    "size": 14144
   },
   "ice-in-water.ogg": {
     "hash": "de3d3902b04ee037",
     "mtimeMs": 1782421242665.2488,
     "size": 86060
   },
+  "ice-throw-1.mp3": {
+    "hash": "93f3f9707fc01e50",
+    "mtimeMs": 1785341380307.362,
+    "size": 74425
+  },
   "ice-throw-1.ogg": {
     "hash": "84395d3f764997ce",
     "mtimeMs": 1782421243044.9807,
     "size": 74425
+  },
+  "keys-jingling.mp3": {
+    "hash": "e1c0be4ae447e423",
+    "mtimeMs": 1782421243540.8572,
+    "size": 15240
+  },
+  "kick.mp3": {
+    "hash": "009eba82aeb4ac6b",
+    "mtimeMs": 1782421243540.9211,
+    "size": 9343
+  },
+  "metal-button-4.mp3": {
+    "hash": "330e0557bbe0d6c9",
+    "mtimeMs": 1785341542737.1792,
+    "size": 9576
   },
   "metal-button-4.ogg": {
     "hash": "ba0d2d1a80ab1856",
     "mtimeMs": 1782421243182.3157,
     "size": 72024
   },
+  "mine-2.mp3": {
+    "hash": "150238cf7b58f19e",
+    "mtimeMs": 1785341380558.6553,
+    "size": 30937
+  },
   "mine-2.ogg": {
     "hash": "2d9814c95c302f56",
     "mtimeMs": 1782421242543.8667,
     "size": 30937
+  },
+  "music-box-chime-positive.mp3": {
+    "hash": "a47e9ef3c89685e9",
+    "mtimeMs": 1785341542737.4526,
+    "size": 38217
   },
   "music-box-chime-positive.ogg": {
     "hash": "e31e1be5eb7c998c",
     "mtimeMs": 1782421243006.6082,
     "size": 290384
   },
+  "music-box-mystery.mp3": {
+    "hash": "7e4c35b8d1b735ef",
+    "mtimeMs": 1785341542737.6494,
+    "size": 42066
+  },
   "music-box-mystery.ogg": {
     "hash": "68fd066e501db256",
     "mtimeMs": 1782421243014.6138,
     "size": 352340
+  },
+  "page-turn.mp3": {
+    "hash": "f93116ee6b99bd90",
+    "mtimeMs": 1785341542737.794,
+    "size": 19147
   },
   "page-turn.ogg": {
     "hash": "b4237ff2cee08692",
     "mtimeMs": 1782421242931.6548,
     "size": 159788
   },
+  "paper-move.mp3": {
+    "hash": "78c7b7ced810eb2b",
+    "mtimeMs": 1785341542737.9363,
+    "size": 14500
+  },
   "paper-move.ogg": {
     "hash": "9781f20fa908f30e",
     "mtimeMs": 1782421242951.6494,
     "size": 114732
+  },
+  "power-down.mp3": {
+    "hash": "c64ec0f0f6624585",
+    "mtimeMs": 1782421243542.273,
+    "size": 7368
+  },
+  "punch-3.mp3": {
+    "hash": "9baa8b67d03f5a9f",
+    "mtimeMs": 1782421243542.3228,
+    "size": 11310
+  },
+  "rock-meteor-swarm-1.mp3": {
+    "hash": "f6d10acce6f615d4",
+    "mtimeMs": 1785341380305.3354,
+    "size": 136683
   },
   "rock-meteor-swarm-1.ogg": {
     "hash": "8e857394916244f0",
     "mtimeMs": 1782421243125.5452,
     "size": 136683
   },
+  "sci-fi-error.mp3": {
+    "hash": "305f9c6d2e2869d6",
+    "mtimeMs": 1782421243543.269,
+    "size": 31994
+  },
+  "splat-quick.mp3": {
+    "hash": "78f1199c868f6539",
+    "mtimeMs": 1782421243543.3394,
+    "size": 11305
+  },
+  "squelching-4.mp3": {
+    "hash": "5a2eb0bf446b2b71",
+    "mtimeMs": 1782421243543.5022,
+    "size": 19020
+  },
+  "strong-punch.mp3": {
+    "hash": "90c93b2e0000e35e",
+    "mtimeMs": 1785341542738.0442,
+    "size": 16599
+  },
   "strong-punch.ogg": {
     "hash": "093783f7a620e468",
     "mtimeMs": 1782421242437.786,
     "size": 1850156
+  },
+  "swipe.mp3": {
+    "hash": "67527315c79bb9f0",
+    "mtimeMs": 1782421243544.1377,
+    "size": 10356
+  },
+  "swish-hit.mp3": {
+    "hash": "4fdae12f12d6d49e",
+    "mtimeMs": 1785341542738.1704,
+    "size": 23788
   },
   "swish-hit.ogg": {
     "hash": "be263861db95b966",
     "mtimeMs": 1782421242505.5686,
     "size": 1849974
   },
+  "sword-attack-1.mp3": {
+    "hash": "2fd44d83e4e1d50d",
+    "mtimeMs": 1785341380305.366,
+    "size": 34423
+  },
   "sword-attack-1.ogg": {
     "hash": "883fec36116962b1",
     "mtimeMs": 1782421242522.6826,
     "size": 34423
+  },
+  "sword-attack-3.mp3": {
+    "hash": "91c400afd2fdbbb9",
+    "mtimeMs": 1785341380305.3164,
+    "size": 35348
   },
   "sword-attack-3.ogg": {
     "hash": "31802ab22e939c32",
     "mtimeMs": 1782421242523.692,
     "size": 35348
   },
+  "sword-blocked-1.mp3": {
+    "hash": "43efceb630ec4917",
+    "mtimeMs": 1785341380305.373,
+    "size": 34398
+  },
   "sword-blocked-1.ogg": {
     "hash": "1c92d612e2b1c068",
     "mtimeMs": 1782421242524.0598,
     "size": 34398
+  },
+  "sword-blocked-2.mp3": {
+    "hash": "c374b30080091478",
+    "mtimeMs": 1785341380307.1196,
+    "size": 35911
   },
   "sword-blocked-2.ogg": {
     "hash": "ac487b70c9eae098",
     "mtimeMs": 1782421242524.2742,
     "size": 35911
   },
+  "sword-clash.mp3": {
+    "hash": "b773ebe131df0aae",
+    "mtimeMs": 1785341542738.29,
+    "size": 10941
+  },
   "sword-clash.ogg": {
     "hash": "29744d7a5a69e386",
     "mtimeMs": 1782421243197.6184,
     "size": 61484
+  },
+  "sword-impact-hit-1.mp3": {
+    "hash": "4ad39b3cfaf161a0",
+    "mtimeMs": 1785341380307.3125,
+    "size": 38714
   },
   "sword-impact-hit-1.ogg": {
     "hash": "b6e46c99c4fc1c99",
     "mtimeMs": 1782421242524.8223,
     "size": 38714
   },
+  "sword-impact-hit-2.mp3": {
+    "hash": "bbcc0f8a91e5418f",
+    "mtimeMs": 1785341380557.4248,
+    "size": 37598
+  },
   "sword-impact-hit-2.ogg": {
     "hash": "7572e07581106eac",
     "mtimeMs": 1782421242525.107,
     "size": 37598
+  },
+  "sword-slice.mp3": {
+    "hash": "cb398f53d7342df7",
+    "mtimeMs": 1786834877084.9976,
+    "size": 18874
   },
   "sword-slice.ogg": {
     "hash": "50aabe3102aa6199",
     "mtimeMs": 1782421243199.3523,
     "size": 135212
   },
+  "toggle-off.mp3": {
+    "hash": "afa3b8404379fb18",
+    "mtimeMs": 1785341542738.393,
+    "size": 11593
+  },
   "toggle-off.ogg": {
     "hash": "8714d44364205454",
     "mtimeMs": 1782421243196.714,
     "size": 75820
+  },
+  "toggle-on.mp3": {
+    "hash": "dc351c1188932ca3",
+    "mtimeMs": 1785341542738.4944,
+    "size": 12170
   },
   "toggle-on.ogg": {
     "hash": "7dc280c86dbaf109",
     "mtimeMs": 1782421243197.22,
     "size": 84012
   },
+  "torch-attack-strike-1.mp3": {
+    "hash": "d802bba953d14cd0",
+    "mtimeMs": 1785341380307.4429,
+    "size": 55216
+  },
   "torch-attack-strike-1.ogg": {
     "hash": "86b48efb1f4670eb",
     "mtimeMs": 1782421243133.3013,
     "size": 55216
   },
+  "torch-impact-1.mp3": {
+    "hash": "accf053d9b87ed20",
+    "mtimeMs": 1785341380308.0825,
+    "size": 28713
+  },
   "torch-impact-1.ogg": {
     "hash": "8fd90a26f5f0edeb",
     "mtimeMs": 1782421243133.5457,
     "size": 28713
+  },
+  "vibraphone-chime-quick.mp3": {
+    "hash": "c0ee01bc1ee1989c",
+    "mtimeMs": 1782421243545.9165,
+    "size": 29708
+  },
+  "whoosh-1.mp3": {
+    "hash": "73c0c5ecf2f9152b",
+    "mtimeMs": 1782421243545.9834,
+    "size": 9564
+  },
+  "whoosh-2.mp3": {
+    "hash": "23c43a20274bf9b0",
+    "mtimeMs": 1782421243546.1855,
+    "size": 17377
   }
 }

@@ -12,7 +12,6 @@ import {
   collectionCardGridTileWidthClass,
   collectionGridBestiaryWidthClass,
   collectionGridMinHeightClass,
-  collectionGridTrinketWidthClass,
   collectionTabMeta,
   collectionTrinketGridClass,
 } from "../config";
@@ -59,7 +58,7 @@ export function CollectionGrid({
         : collectionCardGridClass;
   const fillerClass =
     collectionTab === "trinkets"
-      ? cn(collectionGridTrinketWidthClass, "aspect-[3/4]")
+      ? cn(collectionCardGridTileWidthClass, "aspect-[3/4]")
       : collectionTab === "bestiary"
         ? cn(collectionGridBestiaryWidthClass, "aspect-[4/3]")
         : cn(collectionCardGridTileWidthClass, "aspect-[3/4]");

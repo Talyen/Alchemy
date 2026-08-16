@@ -13,7 +13,6 @@ import {
   cardSurfaceClass,
   collectionCardGridTileWidthClass,
   collectionGridBestiaryWidthClass,
-  collectionGridTrinketWidthClass,
   landscapeArtImageClass,
   trinketArtImageClass,
 } from "../config";
@@ -63,7 +62,7 @@ export const CompendiumTile = memo(function CompendiumTile({ item }: CompendiumT
           cardSurfaceClass,
           cardInteractiveGlowClass,
           item.frameType === "trinket"
-            ? collectionGridTrinketWidthClass
+            ? collectionCardGridTileWidthClass
             : item.frameType === "bestiary"
               ? collectionGridBestiaryWidthClass
               : collectionCardGridTileWidthClass,

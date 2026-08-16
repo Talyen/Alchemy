@@ -29,7 +29,6 @@ export const collectionShellWidthClass = "max-w-7xl";
 export const collectionCardGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-4`;
 export const collectionTrinketGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-4`;
 export const collectionBestiaryGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-3`;
-export const collectionGridTrinketWidthClass = collectionCardGridTileWidthClass;
 /** Landscape 4:3 tiles sized to maximize enemy portrait size while matching the cards tab height. */
 export const collectionGridBestiaryWidthClass = "mx-auto w-full max-w-[clamp(36cqh,38.27cqh,40.25cqh)]";
 /** Floor for Collection FadeSlot so pagination does not jump across tab aspect ratios. */
