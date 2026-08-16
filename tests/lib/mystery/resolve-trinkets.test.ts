@@ -50,7 +50,8 @@ describe("resolveMysteryEventTrinkets", () => {
     const event = {
       id: "owned-set-test",
       title: "Owned Set",
-      description: "Test",
+      art: "test-art",
+      narrative: "Test",
       choices: [
         {
           label: "A",
