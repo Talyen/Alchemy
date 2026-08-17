@@ -261,7 +261,7 @@ export interface SalvageYield {
   materials: MaterialInventory;
 }
 
-export function homesteadSalvageYield(instance: GearInstance): MaterialInventory {
+function homesteadSalvageYield(instance: GearInstance): MaterialInventory {
   const salvageValue = gearDefinitions[instance.definitionId]?.salvageValue;
   return salvageValue ? { ...salvageValue } : emptyInventory();
 }

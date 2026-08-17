@@ -16,7 +16,7 @@ import {
 
 export type HomesteadResource = MaterialId | "gold" | "stone" | "hide";
 
-export const RESOURCE_ART_MAP: Record<HomesteadResource, string> = {
+const RESOURCE_ART_MAP: Record<HomesteadResource, string> = {
   wood: resourceWood,
   iron: resourceIron,
   herbs: resourceHerbs,
@@ -27,22 +27,11 @@ export const RESOURCE_ART_MAP: Record<HomesteadResource, string> = {
   hide: resourceHide,
 };
 
-export const RESOURCE_LABELS: Record<HomesteadResource, string> = {
+const RESOURCE_LABELS: Record<HomesteadResource, string> = {
   ...materialLabels,
   gold: "Gold",
   stone: "Stone",
   hide: "Hide",
-};
-
-export const RESOURCE_TINTS: Record<HomesteadResource, string> = {
-  wood: "#AC8E68",
-  stone: "#94897A",
-  iron: "#4C637A",
-  food: "#FF9F0A",
-  herbs: "#30D158",
-  hide: "#C48A4A",
-  crystal: "#0A84FF",
-  gold: "#D6B85A",
 };
 
 export const matTextColor: Record<MaterialId, string> = {
@@ -111,7 +100,7 @@ export function MaterialIcon({
 }
 
 /** Trinket-styled wallet resource pill displaying icon, caption title, and stat amount. */
-export function TrinketWalletResourcePill({
+function TrinketWalletResourcePill({
   resource,
   title,
   amount,
