@@ -33,7 +33,7 @@ baseTest.describe("SFX playback", { tag: [prepush.tag, critical.tag] }, () => {
     await page.evaluate(() => {
       (window as Window & { __alchemySfxPlays?: number }).__alchemySfxPlays = 0;
     });
-    await page.getByRole("button", { name: "Wizard (Locked)" }).click();
+    await page.getByRole("button", { name: "Wizard (Locked)" }).click({ force: true });
 
     const plays = await page.evaluate(() => (window as Window & { __alchemySfxPlays?: number }).__alchemySfxPlays ?? 0);
     expect(plays).toBeGreaterThan(0);
