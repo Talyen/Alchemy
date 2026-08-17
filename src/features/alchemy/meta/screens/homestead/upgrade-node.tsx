@@ -7,7 +7,7 @@ import { DetailPopup } from "../../../shared/ui/card-popup";
 import { DisabledTooltip } from "../../../shared/ui/shared-ui";
 import { type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
-import { tooltipChipClass, tooltipChipIconClass } from "../../../shared/config";
+import { tooltipChipClass } from "../../../shared/config";
 import { MaterialIcon, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
 import { HOMESTEAD_CONFIG, type GoalItem, MaterialCost, getArt, renderTextWithMaterials } from "./helpers";
 import { HomesteadTileCompletedFooter, HomesteadTileFrame } from "./homestead-tile-node";
@@ -51,7 +51,12 @@ export function HomesteadUpgradeNode({
         <Button variant="outline" size="lg" disabled={!itemAffordable} onClick={() => onAction(item)}>
           {item.data.title}
           {costItems.map((m) => (
-            <MaterialCost key={m} material={m} amount={itemCost[m]} />
+            <MaterialCost
+              key={m}
+              material={m}
+              amount={itemCost[m] ?? 0}
+              affordable={(materialInventory[m] ?? 0) >= (itemCost[m] ?? 0)}
+            />
           ))}
         </Button>
       </DisabledTooltip>
@@ -82,13 +87,13 @@ function buildFarmYieldNodes(farm: { yield: Record<string, number> }): ReactNode
         <span
           key={`yield-${m}`}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5",
+            "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 shadow-xs",
             tooltipChipClass,
             matPillStyle[m],
             matTextColor[m],
           )}
         >
-          <MaterialIcon material={m} className={tooltipChipIconClass} /> +{farm.yield[m]} {materialLabels[m]}
+          <MaterialIcon material={m} size="sm" className="inline-block" /> +{farm.yield[m]} {materialLabels[m]}
         </span>,
       );
     }

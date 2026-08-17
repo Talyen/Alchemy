@@ -1179,6 +1179,46 @@
     "mtimeMs": 1786657539109.1182,
     "size": 2937999
   },
+  "resource-crystal.webp": {
+    "hash": "e8508760012c6106",
+    "mtimeMs": 1786941563776.1865,
+    "size": 1519726
+  },
+  "resource-food.webp": {
+    "hash": "edbddfd1b80ff8bd",
+    "mtimeMs": 1786941563778.108,
+    "size": 1383539
+  },
+  "resource-gold.webp": {
+    "hash": "34a819b770c1a28a",
+    "mtimeMs": 1786941563780.0295,
+    "size": 1638595
+  },
+  "resource-herbs.webp": {
+    "hash": "ca1359dfc261593b",
+    "mtimeMs": 1786941563781.6482,
+    "size": 1156444
+  },
+  "resource-hide.webp": {
+    "hash": "10848ea91f5b0ec4",
+    "mtimeMs": 1786941563783.505,
+    "size": 1479743
+  },
+  "resource-iron.webp": {
+    "hash": "3212febc12d2e86e",
+    "mtimeMs": 1786941563785.0857,
+    "size": 1305984
+  },
+  "resource-stone.webp": {
+    "hash": "5aa8af3939df8834",
+    "mtimeMs": 1786941563786.7766,
+    "size": 1502078
+  },
+  "resource-wood.webp": {
+    "hash": "82a12d1538b34a26",
+    "mtimeMs": 1786941563788.6296,
+    "size": 1571817
+  },
   "risen-skeleton-companion.webp": {
     "hash": "c34faab1846ded8d",
     "mtimeMs": 1786569711926.069,

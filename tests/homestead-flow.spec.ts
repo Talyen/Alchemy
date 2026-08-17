@@ -103,11 +103,10 @@ test.describe("Homestead Flow", () => {
       await homestead.goto();
     });
 
-    test("homestead shell does not resize when switching between tabs and each tab shows its content", async ({
+    test("homestead shell fits content across tabs and collapses vertically for single-row companions tab", async ({
       page,
     }) => {
       const shell = page.locator(".alchemy-shell").first();
-      const heights: number[] = [];
       const tabAnchors: Record<"Buildings" | "Farm" | "Research" | "Companions", Locator> = {
         Buildings: page.getByText("Blacksmith").first(),
         Farm: page.getByRole("button", { name: /Herb Garden/ }),
@@ -134,11 +133,16 @@ test.describe("Homestead Flow", () => {
         return height;
       };
 
-      for (const tab of ["Buildings", "Farm", "Research", "Companions"] as const) {
+      const twoRowHeights: number[] = [];
+      for (const tab of ["Buildings", "Farm", "Research"] as const) {
         await homestead.switchTab(tab);
         await expect(tabAnchors[tab]).toBeVisible({ timeout: 3000 });
-        heights.push(await settledHeight());
+        twoRowHeights.push(await settledHeight());
       }
+
+      await homestead.switchTab("Companions");
+      await expect(tabAnchors.Companions).toBeVisible({ timeout: 3000 });
+      const companionHeight = await settledHeight();
 
       // Full tab content presence checks (kept with the tab switch so the shell
       // stays visible while asserting content).
@@ -150,9 +154,13 @@ test.describe("Homestead Flow", () => {
       await expect(page.getByText("Detect Magic").first()).toBeVisible({ timeout: 3000 });
       await expect(page.getByText("Agility Training").first()).toBeVisible();
 
-      const max = Math.max(...heights);
-      const min = Math.min(...heights);
-      expect(max - min).toBeLessThanOrEqual(1);
+      // 2-row upgrade tabs maintain consistent height.
+      const max2Row = Math.max(...twoRowHeights);
+      const min2Row = Math.min(...twoRowHeights);
+      expect(max2Row - min2Row).toBeLessThanOrEqual(1);
+
+      // Single-row companions tab collapses vertically to fit its grid size.
+      expect(companionHeight).toBeLessThan(min2Row);
     });
   });
 });

@@ -49,6 +49,20 @@ describe("ArmoryScreen core", () => {
     expect(onUnequip).toHaveBeenCalledWith("knight", "main-hand");
   });
 
+  it("displays character name chip with matching tab color when item is equipped on another character", () => {
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.rogue["main-hand"] = "gear-sword";
+    renderArmoryScreen({ loadouts });
+
+    const swordItem = document.querySelector('[data-testid="armory-inventory-item"][data-gear-title="Longsword"]');
+    expect(swordItem).not.toBeNull();
+    const chip = swordItem?.querySelector("span");
+    expect(chip).not.toBeNull();
+    expect(chip?.textContent).toBe("Rogue");
+    expect(chip?.className).toMatch(/text-red-600/);
+    expect(chip?.className).toMatch(/text-sm/);
+  });
+
   it("switches to an unlocked character", async () => {
     const user = userEvent.setup();
     renderArmoryScreen({ finishedRunCharacters: ["knight", "rogue"] });

@@ -31,15 +31,17 @@ export function createConfiguredRunStartSnapshot({
   talentStartGold,
   talentXP,
 }: CreateRunStartSnapshotInput): RunStartSnapshot {
+  const runProfile = readRunProfile();
   return createRunStartSnapshot({
     characterId,
     contentSystemType,
     difficultyId,
+    persistentGold: runProfile.gold,
     talentStartGold,
     talentXP,
     ...(draftedDeck === undefined ? {} : { draftedDeck }),
     gearMaxHealthBonus: readGearMaxHealthBonus(characterId),
-    homesteadMaxHealthBonus: readRunProfile().effects.runMaxHealthBonus,
+    homesteadMaxHealthBonus: runProfile.effects.runMaxHealthBonus,
   });
 }
 

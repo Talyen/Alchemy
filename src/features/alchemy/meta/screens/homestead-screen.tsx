@@ -22,6 +22,7 @@ import { HomesteadUpgradeNode } from "./homestead/upgrade-node";
 const companionCards = cardLibrary.filter((c) => c.effects.some((e) => e.kind === "summon-companion"));
 
 export function HomesteadScreen({
+  gold = 0,
   materialInventory,
   constructedBuildings,
   plantedFarms,
@@ -34,6 +35,7 @@ export function HomesteadScreen({
   onCompleteResearch,
   onBondCompanion,
 }: {
+  gold?: number;
   materialInventory: MaterialInventory;
   constructedBuildings: Record<BuildingId, number>;
   plantedFarms: Record<FarmId, number>;
@@ -77,21 +79,20 @@ export function HomesteadScreen({
 
   return (
     <PageLayout>
-      <ScreenShell maxWidthClass="max-w-7xl" minHeightClass={HOMESTEAD_CONFIG.shellMinHeightClass} className="relative">
+      <ScreenShell maxWidthClass="max-w-7xl" minHeightClass="min-h-0" className="relative">
         <ScreenHeaderRow
           title="Homestead"
           trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open homestead menu" />}
         />
 
-        <MaterialsBar materialInventory={materialInventory} />
+        <div className="mt-5 mb-6">
+          <MaterialsBar gold={gold} materialInventory={materialInventory} />
+        </div>
         <HomesteadTabs activeTab={tab} onSelectTab={setTab} />
 
-        <FadeSlot
-          swapKey={tab === "companions" ? `companions-${companionPage}` : tab}
-          className="mx-auto mt-6 min-h-[70cqh] w-full"
-        >
+        <FadeSlot swapKey={tab === "companions" ? `companions-${companionPage}` : tab} className="mx-auto mt-6 w-full">
           {tab === "companions" ? (
-            <div className="grid grid-cols-3 gap-x-3 gap-y-5">
+            <div className="grid grid-cols-4 gap-x-4 gap-y-5">
               {companionCards
                 .slice(
                   companionPage * HOMESTEAD_CONFIG.companionPageSize,

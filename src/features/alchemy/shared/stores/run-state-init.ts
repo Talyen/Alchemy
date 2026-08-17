@@ -45,6 +45,7 @@ export interface ActiveRunProgressFields {
 
 /** Permanent meta lifetime fields (homestead, talents, derived effects). */
 export interface PermanentProgressFields {
+  gold: number;
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
   materialInventory: MaterialInventory;
@@ -149,6 +150,7 @@ export function createInitialPermanentFields(): PermanentProgressFields {
   const plantedFarms = createEmptyTierRecord(farmPlots);
   const completedResearch = createEmptyTierRecord(researchUpgrades);
   return {
+    gold: 0,
     talentXP: {},
     unlockedTalents: {},
     materialInventory: emptyInventory(),

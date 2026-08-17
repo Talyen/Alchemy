@@ -100,7 +100,7 @@ export const popupBaseClassName =
 
 // Standard hover tooltip width: content-sized up to a 288px cap. Tiny tooltips
 // shrink to their content; none exceed the cap.
-export const tooltipWidthClass = "w-max max-w-72";
+export const tooltipWidthClass = "w-fit max-w-72";
 
 // Selection chrome — same primary border + glow as hover (see `.card-interactive-selected`).
 export const tiltSurfaceSelectedRingClass = "card-interactive-selected";

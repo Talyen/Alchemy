@@ -1,13 +1,12 @@
-// Shared "Found" gold / material summary row for reward and run-end surfaces.
+// Shared gold / material reward summary adopting Trinket reward wallet styling.
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 
-import { GoldPill, MaterialPill } from "./material-icons";
+import { GoldPill, MaterialPill, TrinketWalletGrid } from "./material-icons";
 
 export function FoundResourcesRow({
   gold = 0,
   materials,
-  label = "Found",
   className,
 }: {
   gold?: number;
@@ -19,17 +18,13 @@ export function FoundResourcesRow({
   if (gold <= 0 && earnedMaterials.length === 0) return null;
 
   return (
-    <div
-      className={cn(
-        "flex flex-wrap items-center justify-center gap-3 text-xl font-medium text-muted-foreground",
-        className,
-      )}
-    >
-      {label}
-      {gold > 0 ? <GoldPill amount={gold} /> : null}
-      {earnedMaterials.map((mat) => (
-        <MaterialPill key={mat} material={mat} amount={materials![mat]!} />
-      ))}
+    <div className={cn("flex flex-col items-center justify-center gap-2", className)}>
+      <TrinketWalletGrid hugsContent className="gap-3 px-4 py-2.5">
+        {gold > 0 ? <GoldPill amount={gold} showsIncreasePrefix /> : null}
+        {earnedMaterials.map((mat) => (
+          <MaterialPill key={mat} material={mat} amount={materials![mat]!} showsIncreasePrefix />
+        ))}
+      </TrinketWalletGrid>
     </div>
   );
 }

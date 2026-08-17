@@ -236,6 +236,14 @@ export { default as predatorsFocus } from "@/assets/optimized/predators-focus.we
 export { default as ranger } from "@/assets/optimized/ranger.webp";
 export { default as rend } from "@/assets/optimized/rend.webp";
 export { default as resonantChimes } from "@/assets/optimized/resonant-chimes.webp";
+export { default as resourceCrystal } from "@/assets/optimized/resource-crystal.webp";
+export { default as resourceFood } from "@/assets/optimized/resource-food.webp";
+export { default as resourceGold } from "@/assets/optimized/resource-gold.webp";
+export { default as resourceHerbs } from "@/assets/optimized/resource-herbs.webp";
+export { default as resourceHide } from "@/assets/optimized/resource-hide.webp";
+export { default as resourceIron } from "@/assets/optimized/resource-iron.webp";
+export { default as resourceStone } from "@/assets/optimized/resource-stone.webp";
+export { default as resourceWood } from "@/assets/optimized/resource-wood.webp";
 export { default as risenSkeletonCompanion } from "@/assets/optimized/risen-skeleton-companion.webp";
 export { default as rogue } from "@/assets/optimized/rogue.webp";
 export { default as roulette } from "@/assets/optimized/roulette.webp";

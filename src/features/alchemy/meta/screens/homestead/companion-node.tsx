@@ -32,7 +32,7 @@ function getCompanionFooter(
       <DisabledTooltip show={!bondAffordable} message="Not Enough Resources">
         <Button variant="outline" size="lg" disabled={!bondAffordable} onClick={() => onBond(card)}>
           {card.title}
-          <MaterialCost material="food" amount={bondCost.food} />
+          <MaterialCost material="food" amount={bondCost.food} affordable={bondAffordable} />
         </Button>
       </DisabledTooltip>
     </div>
@@ -114,7 +114,7 @@ export function CompanionCardNode({
       hoveredItemId={hoveredItemId}
       setHoveredItemId={setHoveredItemId}
       detailTooltip={detailTooltip}
-      wrapperClassName="p-2.5"
+      wrapperClassName="p-1.5"
       surfaceClassName={cn(
         HOMESTEAD_CONFIG.companionPageWidth,
         HOMESTEAD_CONFIG.companionAspectRatio,

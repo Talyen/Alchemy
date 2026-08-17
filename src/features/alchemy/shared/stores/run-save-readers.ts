@@ -9,6 +9,7 @@ import { readGameplayState, subscribeGameplayCommits } from "./gameplay-state-st
 import type { GameplayDraft } from "./run-session-command";
 
 export interface RunProfileSaveFields {
+  gold: number;
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
   materialInventory: MaterialInventory;
@@ -24,6 +25,7 @@ type RunProfileSnapshot = RunProfileSaveFields & {
 
 function encodeRunProfileSnapshot(snapshot: RunProfileSnapshot): RunProfileSaveFields {
   return {
+    gold: snapshot.gold,
     talentXP: snapshot.talentXP,
     unlockedTalents: snapshot.unlockedTalents,
     materialInventory: snapshot.materialInventory,

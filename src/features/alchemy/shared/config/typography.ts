@@ -20,13 +20,14 @@ export const controlLabelClass = "text-lg font-semibold text-foreground";
 export const controlDescriptionClass = "mt-1 text-lg text-muted-foreground";
 
 /** Tooltip title. */
-export const tooltipHeaderClass = "mb-1 font-sans text-sm font-bold text-foreground sm:text-base";
+export const tooltipHeaderClass = "mb-1 font-sans text-sm font-bold text-foreground text-balance sm:text-base";
 
 /** Tooltip uppercase label / keyword line. */
-export const tooltipSubheaderClass = "mt-2.5 mb-1 text-xs font-semibold tracking-widest text-amber-100/80 uppercase";
+export const tooltipSubheaderClass =
+  "mt-2.5 mb-1 text-xs font-semibold tracking-widest text-amber-100/80 uppercase text-balance";
 
 /** Tooltip body copy. */
-export const tooltipBodyClass = "mt-1 space-y-1 text-sm leading-relaxed text-muted-foreground";
+export const tooltipBodyClass = "mt-1 space-y-1 text-sm leading-relaxed text-muted-foreground text-balance";
 
 /** Compact pill text inside a tooltip (materials, gold, status values). */
 export const tooltipChipClass = "text-xs font-semibold";

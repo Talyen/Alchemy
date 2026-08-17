@@ -27,12 +27,10 @@ import {
   type HomesteadBuilding,
   type HomesteadFarm,
   type HomesteadResearch,
-  type MaterialId,
-  type MaterialInventory,
   materialLabels,
 } from "@/lib/homestead/types";
-import { tooltipChipClass, tooltipChipIconClass } from "../../../shared/config";
-import { MaterialIcon, MaterialPill, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
+import { tooltipChipClass } from "../../../shared/config";
+import { MaterialIcon, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
 import { TabBar } from "../../../shared/ui/tab-bar";
 import { Hammer, Wheat, FlaskConical, PawPrint } from "lucide-react";
 import { tokenizeDescription } from "../../../shared/utils";
@@ -45,15 +43,11 @@ export type GoalItem =
   | { kind: "research"; data: HomesteadResearch };
 
 export const HOMESTEAD_CONFIG = {
-  companionPageSize: 6,
+  companionPageSize: 4,
   artAspectRatio: "aspect-[4/3]",
   companionAspectRatio: "aspect-[3/4]",
-  companionPageWidth: "w-[65%]",
+  companionPageWidth: "w-full",
   compilationFillerCount: 3,
-  // Pinned to the Companions tab's rendered shell height (Playwright-measured
-  // at 1920x1080). Keeps the outer shell the same height on every tab so the
-  // page doesn't visibly resize on tab switch.
-  shellMinHeightClass: "min-h-[111.3cqh]",
 } as const;
 
 const itemArt: Record<string, string> = {
@@ -81,14 +75,7 @@ export function getArt(id: string): string {
   return itemArt[id] ?? "";
 }
 
-export function MaterialCost({ material, amount }: { material: MaterialId; amount: number }) {
-  return (
-    <span className="ml-1.5 inline-flex h-6 shrink-0 items-center gap-1 leading-none">
-      <MaterialIcon material={material} className="h-5 w-5" />
-      <span className={cn("leading-none tabular-nums", matTextColor[material])}>{amount}</span>
-    </span>
-  );
-}
+export { MaterialCost, HomesteadResourceWallet as MaterialsBar } from "../../../shared/ui/material-icons";
 
 const MATERIAL_LABELS_LIST = MATERIAL_IDS.map((m) => materialLabels[m]);
 const MATERIAL_REGEX = new RegExp(`(${MATERIAL_LABELS_LIST.join("|")})`, "g");
@@ -112,13 +99,13 @@ export function renderTextWithMaterials(text: string): ReactNode {
             <span
               key={result.length}
               className={cn(
-                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 align-middle",
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 align-middle shadow-xs",
                 tooltipChipClass,
                 matPillStyle[mat],
                 matTextColor[mat],
               )}
             >
-              <MaterialIcon material={mat} className={tooltipChipIconClass} />
+              <MaterialIcon material={mat} size="sm" className="inline-block" />
               {sub}
             </span>,
           );
@@ -129,16 +116,6 @@ export function renderTextWithMaterials(text: string): ReactNode {
     }
   }
   return result;
-}
-
-export function MaterialsBar({ materialInventory }: { materialInventory: MaterialInventory }) {
-  return (
-    <div className="mx-auto mt-5 mb-4 flex w-full items-center justify-center gap-3">
-      {MATERIAL_IDS.map((mat) => (
-        <MaterialPill key={mat} material={mat} amount={materialInventory[mat] ?? 0} />
-      ))}
-    </div>
-  );
 }
 
 const tabs: Array<{ id: Tab; label: string; icon: typeof Hammer }> = [

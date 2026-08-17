@@ -112,6 +112,7 @@ function HomesteadScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBa
   return (
     <HomesteadScreen
       onOpenMenu={onOpenBattleMenu}
+      gold={homesteadValues.gold}
       materialInventory={homesteadValues.materialInventory}
       constructedBuildings={homesteadValues.constructedBuildings}
       plantedFarms={homesteadValues.plantedFarms}

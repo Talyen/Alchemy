@@ -1,18 +1,15 @@
 // Renders consistent badge indicators and text descriptions for mystery effects.
 // Depends on utility libraries, Lucide icons, homestead material maps, and keyword definitions.
 // Consumed by tooltip builders and outcome summary screens.
-import { Coins } from "lucide-react";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
-import { tooltipChipClass, tooltipChipIconClass } from "@/features/alchemy/shared/config";
+import { tooltipChipClass } from "@/features/alchemy/shared/config";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 import { materialLabels } from "@/lib/homestead/types";
-import { MaterialIcon, matPillStyle, matTextColor } from "./material-icons";
+import { HomesteadResourceArtwork, matPillStyle, matTextColor } from "./material-icons";
 import { TooltipHeader } from "./tooltip-panel";
 import type { MysteryEffect } from "@/lib/mystery";
 import { gearBaseItems, type GearBaseItemId } from "@/lib/gear";
-
-const goldDef = keywordDefinitions.gold;
 
 const PERCENTAGE_MULTIPLIER = 100;
 
@@ -27,13 +24,12 @@ function renderGoldBadge(effect: MysteryEffect, ctx: BadgeCtx): React.ReactNode 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full",
+        "inline-flex items-center gap-1.5 rounded-full border shadow-xs",
         ctx.tooltip ? cn("px-2 py-0.5", tooltipChipClass) : "px-3 py-1 text-xs font-semibold",
-        goldDef.pillBgClass,
-        goldDef.colorClass,
+        "border-[#D6B85A]/30 bg-[#D6B85A]/15 text-[#D6B85A]",
       )}
     >
-      <Coins className={ctx.tooltip ? tooltipChipIconClass : "h-4 w-4"} />
+      <HomesteadResourceArtwork resource="gold" size="sm" />
       {`${e.amount} Gold`}
     </span>
   );
@@ -45,13 +41,13 @@ function renderMaterialBadge(effect: MysteryEffect, ctx: BadgeCtx): React.ReactN
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full",
+        "inline-flex items-center gap-1.5 rounded-full border shadow-xs",
         ctx.tooltip ? cn("px-2 py-0.5", tooltipChipClass) : "px-3 py-1 text-xs font-semibold",
         matPillStyle[mat],
         matTextColor[mat],
       )}
     >
-      <MaterialIcon material={mat} className={ctx.tooltip ? tooltipChipIconClass : "h-4 w-4"} />
+      <HomesteadResourceArtwork resource={mat} size="sm" />
       {`${e.amount} ${materialLabels[mat]}`}
     </span>
   );

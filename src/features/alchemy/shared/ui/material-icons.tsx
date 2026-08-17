@@ -1,69 +1,262 @@
-// Shared material icon and color utilities for reward/UI screens.
-/* eslint-disable react-refresh/only-export-components -- co-located MaterialIcon component and icon/color constants */
+// Shared material/resource artwork, wallet cards, and reward pills adopting Trinket styling.
+/* eslint-disable react-refresh/only-export-components -- co-located resource artwork, wallet pills, and color maps */
 import type { ReactNode } from "react";
-import { Apple, Coins, Gem, Leaf, Pickaxe, TreePine } from "lucide-react";
-
 import { cn } from "@/lib/utils";
-import { materialLabels, type MaterialId } from "@/lib/homestead/types";
+import { MATERIAL_IDS, materialLabels, type MaterialId, type MaterialInventory } from "@/lib/homestead/types";
+import {
+  resourceCrystal,
+  resourceFood,
+  resourceGold,
+  resourceHerbs,
+  resourceHide,
+  resourceIron,
+  resourceStone,
+  resourceWood,
+} from "@/lib/game-data";
 
-const MAT_ICON_CLASS = "block h-6 w-6 shrink-0";
+export type HomesteadResource = MaterialId | "gold" | "stone" | "hide";
 
-const matIconMap: Record<MaterialId, ReactNode> = {
-  wood: <TreePine absoluteStrokeWidth aria-hidden="true" className={MAT_ICON_CLASS} />,
-  iron: <Pickaxe absoluteStrokeWidth aria-hidden="true" className={MAT_ICON_CLASS} />,
-  herbs: <Leaf absoluteStrokeWidth aria-hidden="true" className={MAT_ICON_CLASS} />,
-  food: <Apple absoluteStrokeWidth aria-hidden="true" className={MAT_ICON_CLASS} />,
-  crystal: <Gem absoluteStrokeWidth aria-hidden="true" className={MAT_ICON_CLASS} />,
+export const RESOURCE_ART_MAP: Record<HomesteadResource, string> = {
+  wood: resourceWood,
+  iron: resourceIron,
+  herbs: resourceHerbs,
+  food: resourceFood,
+  crystal: resourceCrystal,
+  gold: resourceGold,
+  stone: resourceStone,
+  hide: resourceHide,
+};
+
+export const RESOURCE_LABELS: Record<HomesteadResource, string> = {
+  ...materialLabels,
+  gold: "Gold",
+  stone: "Stone",
+  hide: "Hide",
+};
+
+export const RESOURCE_TINTS: Record<HomesteadResource, string> = {
+  wood: "#AC8E68",
+  stone: "#94897A",
+  iron: "#4C637A",
+  food: "#FF9F0A",
+  herbs: "#30D158",
+  hide: "#C48A4A",
+  crystal: "#0A84FF",
+  gold: "#D6B85A",
 };
 
 export const matTextColor: Record<MaterialId, string> = {
-  wood: "text-amber-600",
-  iron: "text-gray-400",
-  herbs: "text-green-600",
-  food: "text-red-400",
-  crystal: "text-sky-400",
+  wood: "text-[#AC8E68]",
+  iron: "text-[#8CA2B8]",
+  herbs: "text-[#30D158]",
+  food: "text-[#FF9F0A]",
+  crystal: "text-[#0A84FF]",
 };
 
 export const matPillStyle: Record<MaterialId, string> = {
-  wood: "bg-amber-600/15",
-  iron: "bg-gray-400/[0.12]",
-  herbs: "bg-green-600/15",
-  food: "bg-red-400/15",
-  crystal: "bg-sky-400/15",
+  wood: "bg-[#AC8E68]/15 border-[#AC8E68]/30",
+  iron: "bg-[#4C637A]/20 border-[#4C637A]/30",
+  herbs: "bg-[#30D158]/15 border-[#30D158]/30",
+  food: "bg-[#FF9F0A]/15 border-[#FF9F0A]/30",
+  crystal: "bg-[#0A84FF]/15 border-[#0A84FF]/30",
 };
 
-export function MaterialIcon({ material, className }: { material: MaterialId; className?: string }) {
-  const iconClassName = cn(MAT_ICON_CLASS, className);
-  const icons: Record<MaterialId, ReactNode> = {
-    wood: <TreePine absoluteStrokeWidth aria-hidden="true" className={cn("text-amber-600", iconClassName)} />,
-    iron: <Pickaxe absoluteStrokeWidth aria-hidden="true" className={cn("text-gray-400", iconClassName)} />,
-    herbs: <Leaf absoluteStrokeWidth aria-hidden="true" className={cn("text-green-600", iconClassName)} />,
-    food: <Apple absoluteStrokeWidth aria-hidden="true" className={cn("text-red-400", iconClassName)} />,
-    crystal: <Gem absoluteStrokeWidth aria-hidden="true" className={cn("text-sky-400", iconClassName)} />,
-  };
-  return icons[material];
+export type ResourceArtworkSize = "sm" | "md" | "lg" | "xl";
+
+const SIZE_CLASSES: Record<ResourceArtworkSize, string> = {
+  sm: "h-4 w-4",
+  md: "h-6 w-6",
+  lg: "h-9 w-9",
+  xl: "h-11 w-11",
+};
+
+/** High-resolution raster artwork for Homestead resources and currencies. */
+export function HomesteadResourceArtwork({
+  resource,
+  size = "md",
+  className,
+  alt,
+}: {
+  resource: HomesteadResource;
+  size?: ResourceArtworkSize | undefined;
+  className?: string | undefined;
+  alt?: string | undefined;
+}) {
+  const artSrc = RESOURCE_ART_MAP[resource];
+  const sizeClass = SIZE_CLASSES[size];
+
+  return (
+    <img
+      src={artSrc}
+      alt={alt ?? RESOURCE_LABELS[resource] ?? resource}
+      className={cn("shrink-0 object-contain select-none", sizeClass, className)}
+      loading="eager"
+      decoding="async"
+      draggable={false}
+    />
+  );
 }
 
-export function MaterialPill({ material, amount }: { material: MaterialId; amount: number }) {
+/** Drop-in alias for MaterialIcon using crisp raster art. */
+export function MaterialIcon({
+  material,
+  className,
+  size = "md",
+}: {
+  material: MaterialId;
+  className?: string | undefined;
+  size?: ResourceArtworkSize | undefined;
+}) {
+  return <HomesteadResourceArtwork resource={material} size={size} className={className} />;
+}
+
+/** Trinket-styled wallet resource pill displaying icon, caption title, and stat amount. */
+export function TrinketWalletResourcePill({
+  resource,
+  title,
+  amount,
+  showsIncreasePrefix = false,
+  fillsAvailableWidth = true,
+  className,
+}: {
+  resource: HomesteadResource;
+  title?: string | undefined;
+  amount: number;
+  showsIncreasePrefix?: boolean | undefined;
+  fillsAvailableWidth?: boolean | undefined;
+  className?: string | undefined;
+}) {
+  const displayTitle = title ?? RESOURCE_LABELS[resource] ?? resource;
+  const formattedAmount = amount >= 100000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString();
+  const displayedValue = showsIncreasePrefix ? `+${formattedAmount}` : formattedAmount;
+
   return (
-    <span
+    <div
       className={cn(
-        "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-base font-semibold",
-        matPillStyle[material],
-        matTextColor[material],
+        "flex min-h-[46px] items-center gap-2.5 rounded-xl border border-border/60 bg-card/65 px-3 py-2 shadow-sm backdrop-blur-sm transition-colors",
+        fillsAvailableWidth ? "w-full" : "w-auto",
+        className,
       )}
     >
-      {matIconMap[material]}
-      {amount} {materialLabels[material]}
+      <HomesteadResourceArtwork resource={resource} size="lg" className="drop-shadow-sm" />
+      <div className="flex min-w-0 flex-col text-left leading-tight">
+        <span className="truncate text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+          {displayTitle}
+        </span>
+        <span className="truncate text-base font-bold text-foreground tabular-nums">{displayedValue}</span>
+      </div>
+    </div>
+  );
+}
+
+/** Trinket wallet grid container with dark fantasy panel styling. */
+export function TrinketWalletGrid({
+  children,
+  hugsContent = false,
+  className,
+}: {
+  children: ReactNode;
+  hugsContent?: boolean | undefined;
+  className?: string | undefined;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-shell-card border border-border/60 bg-card/75 p-3 shadow-md backdrop-blur-md",
+        hugsContent ? "inline-flex flex-wrap items-center justify-center gap-2.5" : "w-full",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Homestead screen top wallet bar displaying Gold + the 5 Homestead Materials. */
+export function HomesteadResourceWallet({
+  gold = 0,
+  materialInventory,
+  className,
+}: {
+  gold?: number | undefined;
+  materialInventory: MaterialInventory;
+  className?: string | undefined;
+}) {
+  return (
+    <TrinketWalletGrid className={cn("mx-auto w-full max-w-4xl", className)}>
+      <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-6">
+        <TrinketWalletResourcePill resource="gold" amount={gold} />
+        {MATERIAL_IDS.map((mat) => (
+          <TrinketWalletResourcePill key={mat} resource={mat} amount={materialInventory[mat] ?? 0} />
+        ))}
+      </div>
+    </TrinketWalletGrid>
+  );
+}
+
+/** Material cost indicator inside upgrade buttons or node headers with red unaffordable tint. */
+export function MaterialCost({
+  material,
+  amount,
+  affordable = true,
+  className,
+}: {
+  material: MaterialId;
+  amount: number;
+  affordable?: boolean | undefined;
+  className?: string | undefined;
+}) {
+  return (
+    <span className={cn("ml-1.5 inline-flex shrink-0 items-center gap-1.5 leading-none", className)}>
+      <HomesteadResourceArtwork resource={material} size="md" />
+      <span
+        className={cn(
+          "leading-none font-bold tabular-nums",
+          affordable ? "text-foreground" : "font-extrabold text-destructive",
+        )}
+      >
+        {amount}
+      </span>
     </span>
   );
 }
 
-export function GoldPill({ amount }: { amount: number }) {
+/** Trinket-styled reward/inline pill. */
+export function MaterialPill({
+  material,
+  amount,
+  showsIncreasePrefix = false,
+}: {
+  material: MaterialId;
+  amount: number;
+  showsIncreasePrefix?: boolean | undefined;
+}) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full bg-yellow-300/15 px-4 py-1.5 text-base font-semibold text-yellow-300">
-      <Coins className="h-6 w-6" />
-      {amount} Gold
-    </span>
+    <TrinketWalletResourcePill
+      resource={material}
+      amount={amount}
+      showsIncreasePrefix={showsIncreasePrefix}
+      fillsAvailableWidth={false}
+      className="min-w-[120px]"
+    />
+  );
+}
+
+/** Trinket-styled Gold reward/inline pill. */
+export function GoldPill({
+  amount,
+  showsIncreasePrefix = false,
+}: {
+  amount: number;
+  showsIncreasePrefix?: boolean | undefined;
+}) {
+  return (
+    <TrinketWalletResourcePill
+      resource="gold"
+      amount={amount}
+      showsIncreasePrefix={showsIncreasePrefix}
+      fillsAvailableWidth={false}
+      className="min-w-[120px]"
+    />
   );
 }

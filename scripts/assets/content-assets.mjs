@@ -94,4 +94,13 @@ export const contentAssets = [
   { source: "Difficulties/Difficulty 1.jpeg", target: "difficulty-1.webp", width: 720, quality: 82 },
   { source: "Difficulties/Difficulty 2.jpeg", target: "difficulty-2.webp", width: 720, quality: 82 },
   { source: "Difficulties/Difficulty 3.jpeg", target: "difficulty-3.webp", width: 720, quality: 82 },
+  // Resources
+  { source: "Homestead/Resources/wood.png", target: "resource-wood.webp", width: 256, quality: 90 },
+  { source: "Homestead/Resources/iron.png", target: "resource-iron.webp", width: 256, quality: 90 },
+  { source: "Homestead/Resources/herbs.png", target: "resource-herbs.webp", width: 256, quality: 90 },
+  { source: "Homestead/Resources/food.png", target: "resource-food.webp", width: 256, quality: 90 },
+  { source: "Homestead/Resources/crystal.png", target: "resource-crystal.webp", width: 256, quality: 90 },
+  { source: "Homestead/Resources/gold.png", target: "resource-gold.webp", width: 256, quality: 90 },
+  { source: "Homestead/Resources/stone.png", target: "resource-stone.webp", width: 256, quality: 90 },
+  { source: "Homestead/Resources/hide.png", target: "resource-hide.webp", width: 256, quality: 90 },
 ];

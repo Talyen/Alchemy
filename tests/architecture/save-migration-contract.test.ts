@@ -55,6 +55,7 @@ describe("save migration contract", () => {
       "gameBuildVersion",
       "gearInventories",
       "gearLoadouts",
+      "gold",
       "craftingCurrencies",
       "lastSavedAt",
       "masterVolume",

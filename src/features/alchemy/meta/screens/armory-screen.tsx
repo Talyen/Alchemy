@@ -5,7 +5,6 @@ import {
   EMPTY_CRAFTING_CURRENCIES,
   flattenGearInventories,
   gearDefinitions,
-  GEAR_CHARACTER_IDS,
   type CraftingCurrencyId,
   type GearInstance,
   type GearSlot,
@@ -47,15 +46,15 @@ function itemsMatchingSlot(inventory: GearInstance[], slot: GearSlot): GearInsta
 export function ArmoryScreen({
   inventories,
   loadouts,
+  craftingCurrencies = EMPTY_CRAFTING_CURRENCIES,
   finishedRunCharacters,
   browseOnly,
   onOpenMenu,
   onEquip,
   onUnequip,
   onSalvage,
-  onSpawnDevGear,
-  craftingCurrencies = EMPTY_CRAFTING_CURRENCIES,
   onApplyCurrency = () => false,
+  onSpawnDevGear,
 }: ArmoryScreenProps) {
   const [characterId, setCharacterId] = useState<CharacterId>("knight");
   const [selectedSlot, setSelectedSlot] = useState<GearSlot>("main-hand");
@@ -76,19 +75,6 @@ export function ArmoryScreen({
     const equippedId = loadout[selectedSlot];
     return itemsMatchingSlot(sharedInventory, selectedSlot).filter((item) => item.instanceId !== equippedId);
   }, [sharedInventory, loadout, selectedSlot]);
-  const siblingEquippedIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const cid of GEAR_CHARACTER_IDS) {
-      const charLoadout = loadouts[cid];
-      for (const slot of EQUIP_SLOTS) {
-        const id = charLoadout[slot];
-        if (id && !(cid === characterId && slot === selectedSlot)) {
-          ids.add(id);
-        }
-      }
-    }
-    return ids;
-  }, [loadouts, characterId, selectedSlot]);
 
   const handleSelectCharacter = useCallback((id: CharacterId) => {
     setCharacterId(id);
@@ -249,8 +235,8 @@ export function ArmoryScreen({
                   characterId={characterId}
                   items={pickerItems}
                   loadout={loadout}
+                  loadouts={loadouts}
                   inventory={sharedInventory}
-                  siblingEquippedIds={siblingEquippedIds}
                   editable={editable}
                   salvageMode={salvageMode}
                   activeCurrencyId={activeCurrencyId}

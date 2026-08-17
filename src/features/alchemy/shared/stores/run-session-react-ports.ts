@@ -160,6 +160,7 @@ export function useIsWildwoodRun(): boolean {
 export function useHomesteadProgressSlice() {
   return useGameplayStateStore(
     useShallow((state) => ({
+      gold: state.runProfile.gold,
       materialInventory: state.runProfile.materialInventory,
       constructedBuildings: state.runProfile.constructedBuildings,
       plantedFarms: state.runProfile.plantedFarms,

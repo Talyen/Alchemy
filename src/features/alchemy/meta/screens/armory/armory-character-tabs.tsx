@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- co-located character keyword definitions */
 import {
   Crosshair,
   Flame,
@@ -30,7 +31,7 @@ const CHARACTER_ICONS: Record<CharacterId, LucideIcon> = {
   wildcard: Sparkles,
 };
 
-const CHARACTER_KEYWORDS: Record<CharacterId, KeywordId> = {
+export const CHARACTER_KEYWORDS: Record<CharacterId, KeywordId> = {
   knight: "forge",
   rogue: "bleed",
   wizard: "mana",

@@ -38,7 +38,11 @@ export class HomesteadPage {
     return this.page.getByText(name).first();
   }
 
-  materialPill(material: "Wood" | "Iron" | "Herbs" | "Food" | "Crystal", amount: number) {
-    return this.page.getByText(`${amount} ${material}`);
+  materialPill(material: "Wood" | "Iron" | "Herbs" | "Food" | "Crystal" | "Gold", amount: number) {
+    return this.page
+      .getByText(new RegExp(`^${material}$`, "i"))
+      .locator("xpath=..")
+      .getByText(String(amount))
+      .locator("xpath=../..");
   }
 }

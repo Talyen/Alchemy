@@ -95,7 +95,7 @@ describe("RewardsScreen", () => {
       />,
     );
 
-    expect(screen.getByText("Found")).toBeTruthy();
+    expect(screen.getByText("+13")).toBeTruthy();
   });
 
   it("places the hamburger menu trigger in the screen header", () => {

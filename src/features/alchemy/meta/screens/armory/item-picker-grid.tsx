@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   canApplyCraftingCurrency,
+  findGearEquippedCharacter,
   gearDefinitions,
   getAstralShineColors,
   getCraftingCurrencyDefinition,
@@ -9,8 +10,10 @@ import {
   type CraftingCurrencyId,
   type GearInstance,
   type GearLoadout,
+  type GearLoadouts,
   type GearSlot,
 } from "@/lib/gear";
+import { characters, keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
 import {
@@ -24,6 +27,7 @@ import { GearDetailPopup } from "../../../shared/ui/gear-detail-popup";
 import { InteractiveArtTile } from "../../../shared/ui/interactive-art-tile";
 import { FadeSlot } from "../../../shared/ui/fade-slot";
 import { PaginationControls } from "../../../shared/ui/shared-ui";
+import { CHARACTER_KEYWORDS } from "./armory-character-tabs";
 import {
   SALVAGE_TARGET_RING,
   SALVAGE_TARGET_SHADOW,
@@ -38,8 +42,8 @@ export function ItemPickerGrid({
   characterId,
   items,
   loadout,
+  loadouts,
   inventory,
-  siblingEquippedIds,
   editable,
   salvageMode,
   activeCurrencyId,
@@ -51,8 +55,8 @@ export function ItemPickerGrid({
   characterId: string;
   items: GearInstance[];
   loadout: GearLoadout;
+  loadouts: GearLoadouts;
   inventory: GearInstance[];
-  siblingEquippedIds: Set<string>;
   editable: boolean;
   salvageMode: boolean;
   activeCurrencyId: CraftingCurrencyId | null;
@@ -80,7 +84,10 @@ export function ItemPickerGrid({
           {pageItems.map((item) => {
             const definition = gearDefinitions[item.definitionId];
             const title = getGearInstanceTitle(item);
-            const equippedElsewhere = siblingEquippedIds.has(item.instanceId);
+            const equippedCharacterId = findGearEquippedCharacter(loadouts, item.instanceId);
+            const equippedCharacter = equippedCharacterId ? characters[equippedCharacterId] : null;
+            const keywordId = equippedCharacterId ? CHARACTER_KEYWORDS[equippedCharacterId] : null;
+            const colorClass = keywordId ? keywordDefinitions[keywordId]?.colorClass : undefined;
             const loadoutLegal = definition
               ? isGearCompatibleWithLoadoutSlot(definition, slot, loadout, inventory)
               : false;
@@ -145,9 +152,14 @@ export function ItemPickerGrid({
                       />
                     )}
                   />
-                  {equippedElsewhere ? (
-                    <span className="pointer-events-none absolute top-2 right-2 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
-                      Equipped
+                  {equippedCharacter ? (
+                    <span
+                      className={cn(
+                        "pointer-events-none absolute top-2 right-2 rounded-full border border-border/60 bg-stone-950/90 px-2.5 py-0.5 text-sm font-semibold shadow-md backdrop-blur-sm",
+                        colorClass,
+                      )}
+                    >
+                      {equippedCharacter.name}
                     </span>
                   ) : null}
                 </div>

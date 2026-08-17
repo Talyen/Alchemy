@@ -101,6 +101,7 @@ export const SaveDataSchema = z.preprocess(
       rememberAutoplayPreference: z.boolean().catch(false),
       autoplayEnabled: z.boolean().catch(false),
       activeRun: ActiveRunDataSchema.nullable().catch(null),
+      gold: z.number().int().nonnegative().catch(0),
       materialInventory: MaterialInventorySchema.catch(MATERIAL_ZERO_INVENTORY),
       craftingCurrencies: CraftingCurrencyInventorySchema.catch(CRAFTING_CURRENCY_ZERO_INVENTORY),
       constructedBuildings: createTierRecordSchema(buildings).catch(createEmptyTierRecord(buildings)),

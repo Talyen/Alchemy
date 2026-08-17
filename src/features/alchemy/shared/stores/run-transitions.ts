@@ -211,6 +211,10 @@ function finalizeRunEndSessionState(
   const materials = options.awardRunEndMaterials(draft, options.displayMaterials);
   options.finalizeRunXP(draft);
 
+  if (aggregate.run.activeRun.contentSystemType !== "wildwood") {
+    draft.runProfile.gold = aggregate.run.activeRun.runGold;
+  }
+
   sessionActions.setHasActiveRun(false);
   return materials;
 }
