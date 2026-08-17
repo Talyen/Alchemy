@@ -85,69 +85,70 @@ export function HomesteadScreen({
           trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open homestead menu" />}
         />
 
-        <div className="mt-5 mb-6">
+        <div className="mt-5 flex flex-col gap-4">
           <MaterialsBar gold={gold} materialInventory={materialInventory} />
-        </div>
-        <HomesteadTabs activeTab={tab} onSelectTab={setTab} />
+          <HomesteadTabs activeTab={tab} onSelectTab={setTab} />
 
-        <FadeSlot swapKey={tab === "companions" ? `companions-${companionPage}` : tab} className="mx-auto mt-6 w-full">
-          {tab === "companions" ? (
-            <div className="grid grid-cols-4 gap-x-4 gap-y-5">
-              {companionCards
-                .slice(
-                  companionPage * HOMESTEAD_CONFIG.companionPageSize,
-                  (companionPage + 1) * HOMESTEAD_CONFIG.companionPageSize,
-                )
-                .map((card, index) => (
-                  <CompanionCardNode
-                    key={card.id}
-                    card={card}
-                    index={index}
-                    discovered={discoveredCardIds.includes(card.id)}
-                    bondedCompanions={bondedCompanions}
-                    materialInventory={materialInventory}
-                    hoveredItemId={hoveredItemId}
-                    setHoveredItemId={setHoveredItemId}
-                    onBond={handleBondCompanion}
-                  />
-                ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-x-4 gap-y-8">
-              {(tab === "buildings" ? buildingsItems : tab === "farm" ? farmItems : researchItems).map(
-                (item, index) => (
-                  <HomesteadUpgradeNode
-                    key={item.data.id}
-                    item={item}
-                    index={index}
-                    currentLevel={
-                      (
-                        (tab === "buildings"
-                          ? constructedBuildings
-                          : tab === "farm"
-                            ? plantedFarms
-                            : completedResearch) as Record<string, number>
-                      )[item.data.id] ?? 0
-                    }
-                    materialInventory={materialInventory}
-                    hoveredItemId={hoveredItemId}
-                    setHoveredItemId={setHoveredItemId}
-                    onAction={handleAction}
-                  />
-                ),
-              )}
-            </div>
-          )}
-        </FadeSlot>
+          <FadeSlot swapKey={tab === "companions" ? `companions-${companionPage}` : tab} className="mx-auto w-full">
+            {tab === "companions" ? (
+              <div className="grid grid-cols-4 gap-x-4 gap-y-4">
+                {companionCards
+                  .slice(
+                    companionPage * HOMESTEAD_CONFIG.companionPageSize,
+                    (companionPage + 1) * HOMESTEAD_CONFIG.companionPageSize,
+                  )
+                  .map((card, index) => (
+                    <CompanionCardNode
+                      key={card.id}
+                      card={card}
+                      index={index}
+                      discovered={discoveredCardIds.includes(card.id)}
+                      bondedCompanions={bondedCompanions}
+                      materialInventory={materialInventory}
+                      hoveredItemId={hoveredItemId}
+                      setHoveredItemId={setHoveredItemId}
+                      onBond={handleBondCompanion}
+                    />
+                  ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-x-4 gap-y-4">
+                {(tab === "buildings" ? buildingsItems : tab === "farm" ? farmItems : researchItems).map(
+                  (item, index) => (
+                    <HomesteadUpgradeNode
+                      key={item.data.id}
+                      item={item}
+                      index={index}
+                      currentLevel={
+                        (
+                          (tab === "buildings"
+                            ? constructedBuildings
+                            : tab === "farm"
+                              ? plantedFarms
+                              : completedResearch) as Record<string, number>
+                        )[item.data.id] ?? 0
+                      }
+                      materialInventory={materialInventory}
+                      hoveredItemId={hoveredItemId}
+                      setHoveredItemId={setHoveredItemId}
+                      onAction={handleAction}
+                    />
+                  ),
+                )}
+              </div>
+            )}
+          </FadeSlot>
 
-        <div className="mx-auto mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
-          <PaginationControls
-            page={companionPage}
-            totalPages={tab === "companions" ? companionPages : 1}
-            onPageChange={setCompanionPage}
-            size="sm"
-            reserveSpace
-          />
+          <div className="mx-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
+            <PaginationControls
+              page={companionPage}
+              totalPages={tab === "companions" ? companionPages : 1}
+              onPageChange={setCompanionPage}
+              size="sm"
+              reserveSpace
+              className="mt-0"
+            />
+          </div>
         </div>
       </ScreenShell>
     </PageLayout>

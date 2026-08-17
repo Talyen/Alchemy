@@ -42,6 +42,27 @@ describe("dealDamageToEnemy — enemy armor", () => {
     expect(result.enemyMitigation.armor).toBe(2);
   });
 
+  it("Piercing Shot ignores 1 Armor on Archery physical hits", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = patchBattleState({
+      enemyMitigation: { armor: 3, forge: 0, block: 0 },
+      talentEffects: { ...defaultTalentEffects, archeryArmorPiercing: 1 },
+    });
+    const card = makeTestCard({
+      tags: ["archery"],
+      effects: [makeEffect("physical", 10)],
+    });
+    const texts = makeCombatTexts();
+    const result = dealDamageToEnemy(
+      state,
+      card,
+      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
+      texts,
+    );
+    expect(result.enemyHealth).toBe(22);
+    expect(result.enemyMitigation.armor).toBe(1);
+  });
+
   it("non-physical damage ignores enemy armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({ enemyMitigation: { armor: 5, forge: 0, block: 0 } });

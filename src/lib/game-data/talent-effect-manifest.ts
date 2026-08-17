@@ -95,6 +95,11 @@ export interface TalentEffectManifest {
   firstConsumeCardFree: boolean;
   consumeDamageBonusPercent: number;
   burnStunChance: number;
+  healOnConsume: number;
+  goldOnConsume: number;
+  drawOnConsume: number;
+  poisonOnConsume: number;
+  blockOnConsume: number;
 
   // --- Gold ---
   shopCardDiscount: number;
@@ -161,6 +166,9 @@ export interface TalentEffectManifest {
   drawOnCompanionCard: number;
   companionDoubledVsLowHealth: boolean;
   damageReductionWithCompanion: number;
+  blockOnCompanionDamage: number;
+  companionStunChance: number;
+  firstCompanionCardFree: boolean;
 
   // --- Wishing Well ---
   wishCrystalGold: number;
@@ -197,6 +205,11 @@ export interface TalentEffectManifest {
   archeryDoubledVsStunned: boolean;
   archeryDoubledVsFrozen: boolean;
   archeryDoubledVsHighHealth: boolean;
+  archeryArmorPiercing: number;
+  firstArcheryCardFree: boolean;
+  archeryDoubledVsLowHealth: boolean;
+  archeryBleedChance: number;
+  goldOnArcheryKill: number;
 
   // --- Nature ---
   flatNatureDamage: number;
@@ -204,6 +217,10 @@ export interface TalentEffectManifest {
   natureBleedChance: number;
   natureBonusVsPoisoned: number;
   receiveHalfNatureDamage: boolean;
+  natureStunChance: number;
+  armorToNatureDamage: boolean;
+  blockOnNatureCard: number;
+  healOnNatureCard: number;
 
   // --- Bleed ---
   firstBleedCardFree: boolean;

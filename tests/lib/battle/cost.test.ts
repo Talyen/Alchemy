@@ -108,6 +108,20 @@ describe("computeEffectiveCost", () => {
     expect(effectiveCost(state, bleedCard())).toBe(0);
   });
 
+  it("makes first companion card free when talent is active", () => {
+    const state = makeState({ firstCompanionCardFreeUsed: false }, { firstCompanionCardFree: true });
+    const card = physicalCard({
+      id: "wolf-companion",
+      effects: [{ kind: "summon-companion", companionId: "wolf" }],
+    });
+    expect(effectiveCost(state, card)).toBe(0);
+  });
+
+  it("makes first archery card free when talent is active", () => {
+    const state = makeState({ firstArcheryCardFreeUsed: false }, { firstArcheryCardFree: true });
+    expect(effectiveCost(state, physicalCard({ tags: ["archery"] }))).toBe(0);
+  });
+
   it("does not make a card free if it lacks the matching damage type", () => {
     const state = makeState({}, { firstPhysicalCardFree: true, firstHolyCardFree: true });
     const card = { ...physicalCard(), effects: [{ kind: "heal" as const, amount: 5 }] };

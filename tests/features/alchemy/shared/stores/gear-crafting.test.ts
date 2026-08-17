@@ -42,6 +42,7 @@ describe("gear-store crafting integration", () => {
     const salvageResult = useGearStore.getState().salvage(item.instanceId, { rng: () => 0 });
     expect(salvageResult).toBeDefined();
     expect(salvageResult?.inventories.knight).toEqual([]);
+    expect(salvageResult?.yieldedMaterials.iron).toBe(3);
     expect(useGearStore.getState().craftingCurrencies["discordant-dice"]).toBe(1);
     useGearStore.getState().reset();
   });

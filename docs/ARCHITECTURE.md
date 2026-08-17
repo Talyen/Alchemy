@@ -101,7 +101,7 @@ Boot: [`use-alchemy-bootstrap.ts`](../src/app/use-alchemy-bootstrap.ts) applies 
 
 ### Run setup ownership
 
-`run-setup/run/content-system-navigation.ts` owns content-system selection, character/difficulty routing, and creation of a fresh campaign, labyrinth, or Wildwood run. Its run-start recipes use the draft-only helper in `run-start-command.ts`; event handlers own the surrounding command and post-commit effects. Wildwood setup ends once its persisted draft is created. From the first draft pick onward, `shell/use-wildwood-gauntlet-flow.ts` is the sole owner of Wildwood draft completion, boss progression, recovery, rewards, and resume routing.
+`run-setup/run/content-system-navigation.ts` owns content-system selection, character/difficulty routing, and creation of a fresh campaign, labyrinth, or Wildwood run. Its run-start recipes use the draft-only helper in `run-start-command.ts`; event handlers own the surrounding command and post-commit effects. Wildwood setup ends once its persisted draft is created. From the first draft pick onward, `shell/use-wildwood-gauntlet-flow.ts` is the sole owner of Wildwood draft completion, boss progression, rewards, and resume routing.
 
 Destination offer construction is pure in `shared/run-flow/destination-flow.ts`. Campaign start and run-loop progression supply explicit offer history, boss ID, and command-bound RNG; destination generation is not exposed through the content-system navigation API.
 

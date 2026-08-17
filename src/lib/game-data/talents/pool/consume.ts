@@ -1,7 +1,18 @@
 // Talent definitions for keyword: consume.
-import { Apple, Gift, Flame, FlaskConical, Wine } from "lucide-react";
+import {
+  Apple,
+  Gift,
+  Flame,
+  FlaskConical,
+  Wine,
+  Cookie,
+  Package,
+  CopyPlus,
+  FlaskRound,
+  CookingPot,
+} from "lucide-react";
 import type { TalentDefinition } from "../types";
-import { addEffect, setEffect, placeholderTalents } from "../types";
+import { addEffect, setEffect } from "../types";
 
 export const consumeTalents: TalentDefinition[] = [
   {
@@ -44,5 +55,44 @@ export const consumeTalents: TalentDefinition[] = [
     icon: Wine,
     effects: [addEffect("potionMixPotency", 1)],
   },
-  ...placeholderTalents("consume", "consume", 6, 10),
+  {
+    id: "consume-aftertaste",
+    keywordId: "consume",
+    name: "Aftertaste",
+    description: "When you Consume a card, restore 1 Health",
+    icon: Cookie,
+    effects: [setEffect("healOnConsume", 1)],
+  },
+  {
+    id: "consume-leftovers",
+    keywordId: "consume",
+    name: "Leftovers",
+    description: "When you Consume a card, gain 1 Gold",
+    icon: Package,
+    effects: [setEffect("goldOnConsume", 1)],
+  },
+  {
+    id: "consume-second-helping",
+    keywordId: "consume",
+    name: "Second Helping",
+    description: "Once per turn, when you Consume a card, draw a card",
+    icon: CopyPlus,
+    effects: [setEffect("drawOnConsume", 1)],
+  },
+  {
+    id: "consume-rotgut",
+    keywordId: "consume",
+    name: "Rotgut",
+    description: "When you Consume a card, apply 1 Poison",
+    icon: FlaskRound,
+    effects: [setEffect("poisonOnConsume", 1)],
+  },
+  {
+    id: "consume-feast",
+    keywordId: "consume",
+    name: "Feast",
+    description: "When you Consume a card, gain 2 Block",
+    icon: CookingPot,
+    effects: [setEffect("blockOnConsume", 2)],
+  },
 ];

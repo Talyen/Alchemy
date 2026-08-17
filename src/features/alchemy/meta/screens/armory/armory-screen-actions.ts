@@ -1,24 +1,24 @@
 import { canApplyCraftingCurrency, type CraftingCurrencyId, type GearInstance } from "@/lib/gear";
 import { playUISound } from "@/lib/audio";
-import type { ArmoryCursorPoint } from "./armory-screen-types";
+import type { ArmoryCursorPoint, ArmorySalvagePending } from "./armory-screen-types";
 
 interface TargetingSetters {
   setSalvageMode: (value: boolean) => void;
   setActiveCurrencyId: (value: CraftingCurrencyId | null) => void;
   setCursorPoint: (value: ArmoryCursorPoint | null) => void;
-  setSalvageTarget?: (value: GearInstance | null) => void;
+  setSalvagePending?: (value: ArmorySalvagePending | null) => void;
 }
 
 export function resetArmoryTargeting({
   setSalvageMode,
   setActiveCurrencyId,
   setCursorPoint,
-  setSalvageTarget,
+  setSalvagePending,
 }: TargetingSetters) {
   setSalvageMode(false);
   setActiveCurrencyId(null);
   setCursorPoint(null);
-  setSalvageTarget?.(null);
+  setSalvagePending?.(null);
 }
 
 export function applyCurrencyToGear({

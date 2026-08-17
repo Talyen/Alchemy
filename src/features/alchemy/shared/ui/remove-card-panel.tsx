@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
+import { cn } from "@/lib/utils";
 
 import { CardSelectionGrid } from "./card-selection-grid";
 import { GoldCost } from "./shared-ui";
@@ -20,9 +21,10 @@ export function RemoveCardPanel({
   onCancel,
   cancelLabel = "Cancel",
   escapeCancels = true,
+  compact = false,
 }: {
   runDeck: BattleCard[];
-  intro: ReactNode;
+  intro?: ReactNode;
   gold?: number;
   removePrice?: number;
   onConfirm: (index: number) => void;
@@ -30,6 +32,7 @@ export function RemoveCardPanel({
   cancelLabel?: string;
   /** When false, Escape does not invoke onCancel (pause menu remains reachable). */
   escapeCancels?: boolean;
+  compact?: boolean;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [page, setPage] = useState(0);
@@ -45,7 +48,7 @@ export function RemoveCardPanel({
   }
 
   return (
-    <div className="space-y-6">
+    <div className={cn(compact ? "space-y-3" : "space-y-6")}>
       {intro}
       <CardSelectionGrid
         items={items}
@@ -53,7 +56,7 @@ export function RemoveCardPanel({
         onPageChange={setPage}
         pageSize={SELECTION_GRID_PAGE_SIZE}
         paginationSize="default"
-        paginationReserveSpace
+        paginationReserveSpace={!compact}
         renderItem={({ card, index }) => (
           <SelectableShopCard
             card={card}
@@ -62,7 +65,7 @@ export function RemoveCardPanel({
           />
         )}
       />
-      <div className="mt-5 flex justify-center gap-3">
+      <div className={cn("flex justify-center gap-3", !compact && "mt-5")}>
         {onCancel ? (
           <Button size="lg" variant="outline" onClick={onCancel}>
             {cancelLabel}

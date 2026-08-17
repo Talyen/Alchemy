@@ -19,10 +19,6 @@ export function useCampfireScreenData(): ScreenData<"campfire"> {
   return useHealthFields();
 }
 
-export function useWildwoodRecoveryScreenData(): ScreenData<"wildwood-recovery"> {
-  return useHealthFields();
-}
-
 export function useShopScreenData(): ScreenData<"shop"> {
   return useGameplayStateStore(
     useShallow((state) => ({

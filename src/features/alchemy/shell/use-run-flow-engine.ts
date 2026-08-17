@@ -178,7 +178,6 @@ export function useRunFlowEngine({
     handleActComplete: flowHandlers.handleActComplete,
     finishRewards: flowHandlers.finishRewards,
     selectRewardChoice: flowHandlers.selectRewardChoice,
-    handleWildwoodRecoveryComplete: wildwood.handleWildwoodRecoveryComplete,
     handleWildwoodRemoveCard: wildwood.handleWildwoodRemoveCard,
     handleWildwoodSkipRemoval: wildwood.handleWildwoodSkipRemoval,
     prepareDestinationScreen: flowHandlers.prepareDestinationScreen,

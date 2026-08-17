@@ -5,7 +5,7 @@
  */
 import { drawFromState } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
-import { mergeCombatText } from "./combat-text";
+import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { type BattleCard } from "@/lib/game-data";
 import {
   type BattleResolution,
@@ -14,6 +14,7 @@ import {
   type CombatTextEvent,
   isPlayerDefeated,
   addEnemyStatus,
+  addPlayerStatus,
 } from "./types";
 import { countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
@@ -122,6 +123,8 @@ function executeCardPlayState(
   if (playTwice) nextState = applyCardEffects(nextState, card, combatTexts);
   if (consumeCrit) nextState = { ...nextState, flags: { ...nextState.flags, nextHitCrit: false } };
 
+  nextState = applyNatureCardPlayTalents(nextState, card, combatTexts);
+
   if (cardHasDamageType(card, "nature") && state.gearEffects.manaOnNatureDamageChance > 0) {
     if (rollPercent(state.gearEffects.manaOnNatureDamageChance, state.rng)) {
       const nextMana = Math.min(nextState.maxMana, nextState.mana + 1);
@@ -168,6 +171,77 @@ function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEv
   return state;
 }
 
+function applyNatureCardPlayTalents(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
+  if (!cardHasDamageType(card, "nature")) return state;
+  let nextState = state;
+  if (nextState.talentEffects.blockOnNatureCard > 0) {
+    const before = nextState.playerStatuses.block;
+    nextState = addPlayerStatus(nextState, "block", nextState.talentEffects.blockOnNatureCard);
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "block",
+      amount: nextState.playerStatuses.block - before,
+    });
+  }
+  if (nextState.talentEffects.healOnNatureCard > 0) {
+    nextState = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnNatureCard, combatTexts);
+  }
+  return nextState;
+}
+
+function cardIsSummonCompanion(card: BattleCard): boolean {
+  return card.effects.some((effect) => effect.kind === "summon-companion");
+}
+
+function applyConsumeTalentRiders(state: BattleState, card: BattleCard, combatTexts?: CombatTextEvent[]): BattleState {
+  if (cardIsSummonCompanion(card)) return state;
+  const talents = state.talentEffects;
+  let nextState = state;
+
+  if (talents.healOnConsume > 0) {
+    nextState = applyHealingWithCombatText(nextState, talents.healOnConsume, combatTexts);
+  }
+  if (talents.goldOnConsume > 0) {
+    nextState = addGoldWithCombatText(nextState, talents.goldOnConsume, combatTexts);
+  }
+  if (talents.drawOnConsume > 0 && !nextState.flags.consumeDrawUsedThisTurn) {
+    const draw = drawFromState(nextState, talents.drawOnConsume);
+    nextState = {
+      ...nextState,
+      deck: draw.deck,
+      discard: draw.discard,
+      hand: draw.hand,
+      nextCardUid: draw.nextCardUid,
+      flags: { ...nextState.flags, consumeDrawUsedThisTurn: true },
+    };
+  }
+  if (talents.poisonOnConsume > 0) {
+    nextState = addEnemyStatus(nextState, "poison", talents.poisonOnConsume);
+    if (combatTexts) {
+      mergeCombatText(combatTexts, {
+        target: "enemy",
+        kind: "status",
+        stat: "poison",
+        amount: talents.poisonOnConsume,
+      });
+    }
+  }
+  if (talents.blockOnConsume > 0) {
+    const before = nextState.playerStatuses.block;
+    nextState = addPlayerStatus(nextState, "block", talents.blockOnConsume);
+    if (combatTexts) {
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "status",
+        stat: "block",
+        amount: nextState.playerStatuses.block - before,
+      });
+    }
+  }
+  return nextState;
+}
+
 /**
  * Resolves post-play destination (exhausted/discard pile) and triggers consume riders.
  */
@@ -201,6 +275,7 @@ function handlePostPlayCardDestination(
           amount: burnAmount,
         });
       }
+      nextState = applyConsumeTalentRiders(nextState, card, combatTexts);
     }
     return nextState;
   }

@@ -22,7 +22,7 @@ Hero identity is the Collection-style tab ring. There is no hero portrait and no
 - A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and rolled `affixes`; it never embeds definition objects or art URLs.
 - Inventories and loadouts are keyed by character. A loadout maps each slot to at most one instance ID.
 - Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata. One-handed melee weapons and wands may occupy `main-hand` or `off-hand`; two-handers and ranged weapons stay main-hand only (ranged pairs with a quiver off-hand).
-- Equipment slots are `main-hand`, `off-hand`, `body`, `left-ring`, `right-ring`, and `amulet` (UI labels: Weapon, Weapon, Armor, Ring, Ring, Amulet).
+- Equipment slots are `main-hand`, `off-hand`, `body`, `left-ring`, `right-ring`, and `amulet` (inventory headers: Weapons, Weapons, Armor, Rings, Rings, Amulets).
 
 ## State flow
 
@@ -50,7 +50,7 @@ There is no external `useGearStore` hook. Gear mutations run against a `GearStor
 - `dispatchRunSessionCommand(() => gear.<method>(...))` — for `addInstance` (dev spawn / rewards).
 
 1. **Equip / Unequip** — `dispatchGearMutationWithRunHealthSync({ characterId, mutate: (state) => state.equip(characterId, slot, instance) })` and `(state) => state.unequip(characterId, slot)`.
-2. **Salvage** — `(state) => state.salvage(instanceId, { rng })` removes from inventory + loadouts and rolls `rollSalvageYield` for crafting currencies.
+2. **Salvage** — preview rolls `computeSalvageYield` (definition `salvageValue` homestead materials + `rollSalvageYield` crafting currencies). Confirm passes that frozen yield into `(state) => state.salvage(instanceId, { yield })`, which removes the item from inventory + loadouts and adds crafting currencies. Homestead materials are granted in the same session command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta).
 3. **Crafting-currency apply** — `(state) => state.applyCurrency(currencyId, instanceId, { rng })` mutates the item's affixes via `applyCraftingCurrency`.
 4. **Add new instance (rewards / shop / dev spawn)** — `dispatchRunSessionCommand(() => gear.addInstance(instance, characterId))`.
 
@@ -60,7 +60,8 @@ The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not mutate gear
 
 - Reads `inventories`, `loadouts`, and `craftingCurrencies` from `useGearArmorySlice`.
 - Routes `equip`/`unequip` through `dispatchGearMutationWithRunHealthSync` (HP-sync side effect).
-- Routes `salvage`/`applyCurrency` through `dispatchGearMutationWithRunHealthSync` and flushes the save on success.
+- Routes `applyCurrency` through `dispatchGearMutationWithRunHealthSync` and flushes the save on success.
+- Routes `salvage` through one session command (`mutateGearWithRunHealthSync` plus homestead material grant) and flushes the save on success.
 - Provides a dev-only `onSpawnDevGear` that calls `generateDevRandomGearInstance` + `addInstance` and flushes the save.
 - Reports `browseOnly = hasActiveBattle` and `finishedRunCharacters` for the screen.
 

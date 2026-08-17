@@ -1,6 +1,6 @@
-export { ArmoryCharacterTabs, CHARACTER_KEYWORDS } from "./armory-character-tabs";
+export { ArmoryCharacterTabs, CHARACTER_KEYWORDS, CHARACTER_ICONS } from "./armory-character-tabs";
 export { useArmoryTargetingEvents } from "./use-armory-targeting-events";
 export { ArmoryOverlays } from "./armory-overlays";
 export { ArmoryScreenHeader } from "./armory-screen-header";
 export { useArmoryResetEffects } from "./use-armory-reset-effects";
-export type { ArmoryCursorPoint, ArmoryScreenProps } from "./armory-screen-types";
+export type { ArmoryCursorPoint, ArmorySalvagePending, ArmoryScreenProps } from "./armory-screen-types";

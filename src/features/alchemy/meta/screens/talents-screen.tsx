@@ -14,6 +14,7 @@ import {
   type UnlockedTalents,
   type TalentXP,
 } from "@/lib/game-data";
+import { cn } from "@/lib/utils";
 
 import { TalentOverviewGrid } from "../talents/talent-overview-grid";
 import {
@@ -27,6 +28,11 @@ import { BUTTON_WIDTH_DIALOG } from "../../shared/config";
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
+
+// 4×10.5rem talent rows + 3×1rem tree gaps + 1rem pane gap + 4rem Back (h-16).
+// Shared by overview and node so FadeSlot identity swaps do not change shell height
+// (PageLayout centers the shell; a taller node pane would shift the whole screen up).
+const TALENT_PANE_CLASS = "flex min-h-[50rem] w-full flex-col items-center";
 
 export function TalentsScreen({
   talentXP,
@@ -91,11 +97,7 @@ export function TalentsScreen({
 
   return (
     <PageLayout align="center">
-      <ScreenShell
-        maxWidthClass="max-w-[90rem]"
-        minHeightClass="min-h-[76cqh]"
-        className="flex flex-col justify-between"
-      >
+      <ScreenShell maxWidthClass="max-w-[90rem]" minHeightClass="min-h-[76cqh]" className="flex flex-col">
         <ScreenHeaderRow
           title={title}
           trailing={
@@ -116,14 +118,16 @@ export function TalentsScreen({
 
         <FadeSlot swapKey={selectedKeyword ?? "overview"} className="mt-4 flex w-full flex-1 flex-col justify-center">
           {selectedKeyword === null ? (
-            <TalentOverviewGrid
-              keywordIds={keywordIds}
-              talentXP={talentXP}
-              unlockedTalents={unlockedTalents}
-              onSelectKeyword={setSelectedKeyword}
-            />
+            <div className={TALENT_PANE_CLASS}>
+              <TalentOverviewGrid
+                keywordIds={keywordIds}
+                talentXP={talentXP}
+                unlockedTalents={unlockedTalents}
+                onSelectKeyword={setSelectedKeyword}
+              />
+            </div>
           ) : (
-            <div className="flex flex-col items-center justify-between gap-4 py-1">
+            <div className={cn(TALENT_PANE_CLASS, "gap-4")}>
               <TalentTree
                 key={`${selectedKeyword}-${resetKey}`}
                 allTalents={allTalentsForKeyword}
@@ -133,16 +137,14 @@ export function TalentsScreen({
                 onUnlock={handleUnlockTalent}
                 onUnlockBegin={handleUnlockTalentBegin}
               />
-              <div className="mt-2 flex justify-center">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className={BUTTON_WIDTH_DIALOG}
-                  onClick={() => setSelectedKeyword(null)}
-                >
-                  Back
-                </Button>
-              </div>
+              <Button
+                size="lg"
+                variant="outline"
+                className={BUTTON_WIDTH_DIALOG}
+                onClick={() => setSelectedKeyword(null)}
+              >
+                Back
+              </Button>
             </div>
           )}
         </FadeSlot>

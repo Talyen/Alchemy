@@ -68,6 +68,7 @@ function resetPlayerTurnState(state: BattleState): BattleState {
       ...state.flags,
       resonantChimeUsedThisTurn: false,
       runicQuillUsedThisTurn: false,
+      consumeDrawUsedThisTurn: false,
       nextCardCostReduction: 0,
     },
   };

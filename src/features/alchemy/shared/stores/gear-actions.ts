@@ -50,8 +50,14 @@ export function createGearActions(set: SetState, get: GetState): GearActions {
       const state = get();
       const owner = findGearInventoryOwner(state.inventories, instanceId);
       if (!owner) return null;
-      if (!options?.rng) throw new Error("salvage requires an explicit rng");
-      const result = salvageGear(flattenGearInventories(state.inventories), state.loadouts, instanceId, options.rng);
+      if (!options?.yield && !options?.rng) throw new Error("salvage requires an explicit rng or yield");
+      const result = salvageGear(
+        flattenGearInventories(state.inventories),
+        state.loadouts,
+        instanceId,
+        options.rng ?? (() => 0),
+        options.yield,
+      );
       if (!result) return null;
       const nextInventories = {
         ...state.inventories,
@@ -63,7 +69,11 @@ export function createGearActions(set: SetState, get: GetState): GearActions {
         loadouts: result.loadouts,
         craftingCurrencies: nextCurrencies,
       }));
-      return { inventories: nextInventories, yieldedCurrencies: result.yieldedCurrencies };
+      return {
+        inventories: nextInventories,
+        yieldedCurrencies: result.yieldedCurrencies,
+        yieldedMaterials: result.yieldedMaterials,
+      };
     },
     applyCurrency: (currencyId, instanceId, options) => {
       const state = get();

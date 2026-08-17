@@ -54,7 +54,7 @@ async function wildwoodWinCombat(page: import("@playwright/test").Page, battle: 
     if (await battle.isVictoryVisible()) break;
     if (
       await page
-        .getByRole("heading", { name: "Wildwood Recovery" })
+        .getByRole("heading", { name: "Victory" })
         .isVisible()
         .catch(() => false)
     )
@@ -64,7 +64,7 @@ async function wildwoodWinCombat(page: import("@playwright/test").Page, battle: 
     if (await battle.isVictoryVisible()) break;
     if (
       await page
-        .getByRole("heading", { name: "Wildwood Recovery" })
+        .getByRole("heading", { name: "Victory" })
         .isVisible()
         .catch(() => false)
     )
@@ -101,51 +101,55 @@ test.describe("Wildwood Draft", () => {
     await expect(battle.enemyHealthPanel).toBeVisible();
   });
 
-  test("wildwood victory recovers health correctly", critical, async ({ page, fastBattle, runtimeErrors }) => {
-    test.setTimeout(45000);
-    void fastBattle;
-    void runtimeErrors;
-    const bossKiller = {
-      ...makeHighDamageCard(),
-      effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
-    };
-    await injectSaveState(
-      page,
-      wildwoodBossState({
-        runPlayerHealth: 10,
-        runMaxHealth: 30,
-        runDeck: Array.from({ length: 5 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
-        wildwoodDraft: wildwoodDraftDefaults({ draftChoices: [{ ...bossKiller, id: "boss-killer-final" }] }),
-      }),
-    );
-    await page.goto("/");
+  test(
+    "wildwood victory skips recovery and keeps current health",
+    critical,
+    async ({ page, fastBattle, runtimeErrors }) => {
+      test.setTimeout(45000);
+      void fastBattle;
+      void runtimeErrors;
+      const bossKiller = {
+        ...makeHighDamageCard(),
+        effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
+      };
+      await injectSaveState(
+        page,
+        wildwoodBossState({
+          runPlayerHealth: 10,
+          runMaxHealth: 30,
+          runDeck: Array.from({ length: 5 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
+          wildwoodDraft: wildwoodDraftDefaults({ draftChoices: [{ ...bossKiller, id: "boss-killer-final" }] }),
+        }),
+      );
+      await page.goto("/");
 
-    await pickDraftCard(page);
-    await expect(page.getByRole("heading", { name: "Draft Complete" })).toBeVisible();
-    await page.getByRole("button", { name: "Continue" }).click();
+      await pickDraftCard(page);
+      await expect(page.getByRole("heading", { name: "Draft Complete" })).toBeVisible();
+      await page.getByRole("button", { name: "Continue" }).click();
 
-    const battle = new BattlePage(page);
-    await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
-    await wildwoodWinCombat(page, battle);
+      const battle = new BattlePage(page);
+      await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
+      await wildwoodWinCombat(page, battle);
 
-    await expect(async () => {
-      const hasVictory = await battle.isVictoryVisible();
-      const hasRecovery = await page
-        .getByRole("heading", { name: "Wildwood Recovery" })
-        .isVisible()
-        .catch(() => false);
-      expect(hasVictory || hasRecovery).toBe(true);
-    }).toPass({ timeout: 10000 });
+      await expect(async () => {
+        const hasVictory = await battle.isVictoryVisible();
+        const hasRewards = await page
+          .getByRole("heading", { name: "Victory" })
+          .isVisible()
+          .catch(() => false);
+        expect(hasVictory || hasRewards).toBe(true);
+      }).toPass({ timeout: 10000 });
 
-    await expect
-      .poll(() =>
-        page.evaluate(
-          (saveKey) => JSON.parse(localStorage.getItem(saveKey) ?? "{}").activeRun?.runPlayerHealth,
-          SAVE_KEY,
-        ),
-      )
-      .toBeGreaterThan(10);
-  });
+      await expect
+        .poll(() =>
+          page.evaluate(
+            (saveKey) => JSON.parse(localStorage.getItem(saveKey) ?? "{}").activeRun?.runPlayerHealth,
+            SAVE_KEY,
+          ),
+        )
+        .toBe(10);
+    },
+  );
 
   test(
     "skips reward after wildwood victory and starts next boss",

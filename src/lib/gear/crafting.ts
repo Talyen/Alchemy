@@ -8,6 +8,8 @@ import craftingVoidstone from "@/assets/optimized/crafting-voidstone.webp";
 import { buildEligibleAffixPool, rollAffixes } from "./generation";
 import { rollAffixValue } from "./affixes";
 import { gearAffixCatalog } from "./affix-catalog";
+import { emptyInventory } from "@/lib/homestead/inventory";
+import type { MaterialInventory } from "@/lib/homestead/types";
 import { gearDefinitions, gearInstanceRarity } from "./definitions";
 import { type GearInstance, type GearAffixRoll, type GearRarity } from "./types";
 import { pickRandom } from "@/lib/utils";
@@ -252,4 +254,21 @@ export function rollSalvageYield(rarity: GearRarity, rng: () => number): Record<
   }
 
   return yieldRecord;
+}
+
+export interface SalvageYield {
+  currencies: Record<CraftingCurrencyId, number>;
+  materials: MaterialInventory;
+}
+
+export function homesteadSalvageYield(instance: GearInstance): MaterialInventory {
+  const salvageValue = gearDefinitions[instance.definitionId]?.salvageValue;
+  return salvageValue ? { ...salvageValue } : emptyInventory();
+}
+
+export function computeSalvageYield(instance: GearInstance, rng: () => number): SalvageYield {
+  return {
+    currencies: rollSalvageYield(gearInstanceRarity(instance), rng),
+    materials: homesteadSalvageYield(instance),
+  };
 }

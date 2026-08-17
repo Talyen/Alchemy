@@ -183,14 +183,14 @@ export function HomesteadResourceWallet({
   className?: string | undefined;
 }) {
   return (
-    <TrinketWalletGrid className={cn("mx-auto w-full max-w-4xl", className)}>
+    <div className={cn("mx-auto w-full max-w-4xl", className)}>
       <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-6">
         <TrinketWalletResourcePill resource="gold" amount={gold} />
         {MATERIAL_IDS.map((mat) => (
           <TrinketWalletResourcePill key={mat} resource={mat} amount={materialInventory[mat] ?? 0} />
         ))}
       </div>
-    </TrinketWalletGrid>
+    </div>
   );
 }
 

@@ -97,11 +97,10 @@ describe("talent row layout", () => {
     expect(rows.flat().map((t) => t.id)).toEqual(getTalentsForKeyword("physical").map((t) => t.id));
   });
 
-  it("pads partial keywords to the full grid with placeholders", () => {
+  it("fills authored keywords to the full grid without placeholders", () => {
     const rows = getTalentRows("archery");
     expect(rows.map((row) => row.length)).toEqual([1, 2, 3, 4]);
-    expect(rows[3]).toHaveLength(4);
-    expect(rows.flat().filter((t) => isTalentPlaceholder(t))).toHaveLength(5);
+    expect(rows.flat().filter((t) => isTalentPlaceholder(t))).toHaveLength(0);
   });
 
   it("reports the row for a grid position", () => {

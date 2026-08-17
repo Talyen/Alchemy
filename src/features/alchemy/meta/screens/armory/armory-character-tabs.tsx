@@ -20,7 +20,7 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { TabBar } from "../../../shared/ui/shared-ui";
 
-const CHARACTER_ICONS: Record<CharacterId, LucideIcon> = {
+export const CHARACTER_ICONS: Record<CharacterId, LucideIcon> = {
   knight: Shield,
   rogue: Swords,
   wizard: WandSparkles,
@@ -37,7 +37,7 @@ export const CHARACTER_KEYWORDS: Record<CharacterId, KeywordId> = {
   wizard: "mana",
   ranger: "archery",
   alchemist: "poison",
-  warlock: "leech",
+  warlock: "burn",
   druid: "nature",
   wildcard: "wish",
 };

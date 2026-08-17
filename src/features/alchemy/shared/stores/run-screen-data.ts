@@ -79,8 +79,6 @@ interface RunEndScreenData {
   runEndMaterials: MaterialInventory;
 }
 
-type WildwoodRecoveryScreenData = CampfireScreenData;
-
 interface WildwoodRemovalScreenData {
   runDeck: BattleCard[];
 }
@@ -99,7 +97,6 @@ export interface RunScreenDataByScreen {
   corruption: CorruptionScreenData;
   "game-over": RunEndScreenData;
   "run-victory": RunEndScreenData;
-  "wildwood-recovery": WildwoodRecoveryScreenData;
   "wildwood-removal": WildwoodRemovalScreenData;
 }
 

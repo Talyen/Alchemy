@@ -47,7 +47,6 @@ export const HOMESTEAD_CONFIG = {
   artAspectRatio: "aspect-[4/3]",
   companionAspectRatio: "aspect-[3/4]",
   companionPageWidth: "w-full",
-  compilationFillerCount: 3,
 } as const;
 
 const itemArt: Record<string, string> = {
@@ -118,11 +117,11 @@ export function renderTextWithMaterials(text: string): ReactNode {
   return result;
 }
 
-const tabs: Array<{ id: Tab; label: string; icon: typeof Hammer }> = [
-  { id: "buildings", label: "Buildings", icon: Hammer },
-  { id: "farm", label: "Farm", icon: Wheat },
-  { id: "research", label: "Research", icon: FlaskConical },
-  { id: "companions", label: "Companions", icon: PawPrint },
+const tabs: Array<{ id: Tab; label: string; icon: typeof Hammer; iconClassName: string }> = [
+  { id: "buildings", label: "Buildings", icon: Hammer, iconClassName: keywordDefinitions.physical.colorClass },
+  { id: "farm", label: "Farm", icon: Wheat, iconClassName: "text-primary" },
+  { id: "research", label: "Research", icon: FlaskConical, iconClassName: keywordDefinitions.poison.colorClass },
+  { id: "companions", label: "Companions", icon: PawPrint, iconClassName: keywordDefinitions.companion.colorClass },
 ];
 
 export function HomesteadTabs({ activeTab, onSelectTab }: { activeTab: Tab; onSelectTab: (tab: Tab) => void }) {

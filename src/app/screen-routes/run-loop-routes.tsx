@@ -15,7 +15,6 @@ import {
   MysteryScreenShell,
   RewardsScreen,
   TrinketShopScreen,
-  WildwoodRecoveryScreen,
   WildwoodRemovalScreen,
 } from "@/features/alchemy/run-loop/screens";
 import { useBattleScreenRouteData } from "@/app/screen-routes/use-battle-screen-route-data";
@@ -30,7 +29,6 @@ import {
   useRewardsScreenData,
   useShopScreenData,
   useTrinketShopScreenData,
-  useWildwoodRecoveryScreenData,
   useWildwoodRemovalScreenData,
 } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { useIsWildwoodRun, useTalentEffects } from "@/features/alchemy/shared/stores/run-session-react-ports";
@@ -105,24 +103,6 @@ function RewardsScreenRoute({
       onSkip={commands.finish}
       onSelectReward={commands.selectChoice}
       allowTrinketSkip={isWildwood}
-      onOpenMenu={onOpenBattleMenu}
-    />
-  );
-}
-
-function WildwoodRecoveryScreenRoute({
-  commands,
-  onOpenBattleMenu,
-}: {
-  commands: RunLoopCommands["wildwood"];
-  onOpenBattleMenu: RunLoopRouteCtx["onOpenBattleMenu"];
-}) {
-  const r = useWildwoodRecoveryScreenData();
-  return (
-    <WildwoodRecoveryScreen
-      playerHealth={r.runPlayerHealth}
-      maxHealth={r.runMaxHealth}
-      onComplete={commands.completeRecovery}
       onOpenMenu={onOpenBattleMenu}
     />
   );
@@ -365,7 +345,6 @@ export const runLoopScreenRoutes: {
   battle: (ctx: BattleRouteCtx) => ReactNode;
   "labyrinth-map": (ctx: RunLoopRouteCtx) => ReactNode;
   rewards: (ctx: RunLoopRouteCtx) => ReactNode;
-  "wildwood-recovery": (ctx: RunLoopRouteCtx) => ReactNode;
   "wildwood-removal": (ctx: RunLoopRouteCtx) => ReactNode;
   destination: (ctx: RunLoopRouteCtx) => ReactNode;
   campfire: (ctx: RunLoopRouteCtx) => ReactNode;
@@ -384,9 +363,6 @@ export const runLoopScreenRoutes: {
   ),
   rewards: ({ routeCommands, onOpenBattleMenu }) => (
     <RewardsScreenRoute commands={routeCommands.runLoop.rewards} onOpenBattleMenu={onOpenBattleMenu} />
-  ),
-  "wildwood-recovery": ({ routeCommands, onOpenBattleMenu }) => (
-    <WildwoodRecoveryScreenRoute commands={routeCommands.runLoop.wildwood} onOpenBattleMenu={onOpenBattleMenu} />
   ),
   "wildwood-removal": ({ routeCommands, onOpenBattleMenu }) => (
     <WildwoodRemovalScreenRoute commands={routeCommands.runLoop.wildwood} onOpenBattleMenu={onOpenBattleMenu} />

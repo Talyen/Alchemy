@@ -989,14 +989,14 @@ describe("session facade API", () => {
     expect(getRunSessionStoreView().companionRewardCards?.map((choice) => choice.id)).toEqual([companion.id]);
   });
 
-  it("restores wildwood gear rewards from recovery-phase draft when interruptedFlow is none", () => {
+  it("restores wildwood gear rewards from reward-phase draft when interruptedFlow is none", () => {
     const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
     const activeRun = {
       ...snapshotRun(ROUTE_SCREENS.LABYRINTH_MAP),
       interruptedFlow: { kind: "none" as const },
       wildwoodDraft: {
         version: 3 as const,
-        phase: "recovery" as const,
+        phase: "reward" as const,
         draftChoices: [],
         remainingBossIds: ["iron-bear"] as Array<"forge-golem" | "frostwarden" | "blight-treant" | "iron-bear">,
         previousBossId: null,

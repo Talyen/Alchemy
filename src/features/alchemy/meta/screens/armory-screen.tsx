@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Lock } from "lucide-react";
 import { Dices } from "lucide-react";
 import {
   EMPTY_CRAFTING_CURRENCIES,
+  computeSalvageYield,
   flattenGearInventories,
   gearDefinitions,
   type CraftingCurrencyId,
@@ -27,6 +28,7 @@ import {
   ArmoryScreenHeader,
   useArmoryResetEffects,
   type ArmoryCursorPoint,
+  type ArmorySalvagePending,
   type ArmoryScreenProps,
 } from "./armory";
 import { applyCurrencyToGear, resetArmoryTargeting } from "./armory/armory-screen-actions";
@@ -35,6 +37,10 @@ import { CraftingStrip } from "./armory/parts/crafting-strip";
 import { EQUIP_SLOTS, SLOT_LABELS } from "./armory/parts/slot-labels";
 import { ItemPickerGrid } from "./armory/item-picker-grid";
 import "./armory/armory-screen.css";
+
+function nextSalvageRandom(): number {
+  return Math.random();
+}
 
 function itemsMatchingSlot(inventory: GearInstance[], slot: GearSlot): GearInstance[] {
   return inventory.filter((item) => {
@@ -58,8 +64,9 @@ export function ArmoryScreen({
 }: ArmoryScreenProps) {
   const [characterId, setCharacterId] = useState<CharacterId>("knight");
   const [selectedSlot, setSelectedSlot] = useState<GearSlot>("main-hand");
+  const rngRef = useRef(nextSalvageRandom);
   const [salvageMode, setSalvageMode] = useState(false);
-  const [salvageTarget, setSalvageTarget] = useState<GearInstance | null>(null);
+  const [salvagePending, setSalvagePending] = useState<ArmorySalvagePending | null>(null);
   const [activeCurrencyId, setActiveCurrencyId] = useState<CraftingCurrencyId | null>(null);
   const [cursorPoint, setCursorPoint] = useState<ArmoryCursorPoint | null>(null);
   const sharedInventory = useMemo(() => flattenGearInventories(inventories), [inventories]);
@@ -76,10 +83,13 @@ export function ArmoryScreen({
     return itemsMatchingSlot(sharedInventory, selectedSlot).filter((item) => item.instanceId !== equippedId);
   }, [sharedInventory, loadout, selectedSlot]);
 
-  const handleSelectCharacter = useCallback((id: CharacterId) => {
-    setCharacterId(id);
-    resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setCursorPoint, setSalvageTarget });
-  }, []);
+  const handleSelectCharacter = useCallback(
+    (id: CharacterId) => {
+      setCharacterId(id);
+      resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setCursorPoint, setSalvagePending });
+    },
+    [setActiveCurrencyId, setCursorPoint, setSalvageMode, setSalvagePending],
+  );
 
   useArmoryResetEffects({
     editable,
@@ -87,18 +97,18 @@ export function ArmoryScreen({
     activeCurrencyId,
     characterId,
     inventoryById,
-    salvageTarget,
+    salvagePending,
     setCursorPoint,
     setSalvageMode,
-    setSalvageTarget,
+    setSalvagePending,
     setActiveCurrencyId,
   });
   useArmoryTargetingEvents({
     salvageMode,
     activeCurrencyId,
-    salvageTarget,
+    salvageTarget: salvagePending?.instance ?? null,
     clearTargeting: () =>
-      resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setCursorPoint, setSalvageTarget }),
+      resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setCursorPoint, setSalvagePending }),
   });
 
   function handleSelectCurrency(currencyId: CraftingCurrencyId) {
@@ -119,6 +129,10 @@ export function ArmoryScreen({
         setActiveCurrencyId(null);
       },
     });
+  }
+
+  function beginSalvage(instance: GearInstance) {
+    setSalvagePending({ instance, yield: computeSalvageYield(instance, rngRef.current) });
   }
 
   return (
@@ -177,7 +191,7 @@ export function ArmoryScreen({
                         onUnequip={() => onUnequip(characterId, slot)}
                         onSalvage={() => {
                           const instance = instanceId ? inventoryById.get(instanceId) : undefined;
-                          if (instance) setSalvageTarget(instance);
+                          if (instance) beginSalvage(instance);
                         }}
                         onApplyCurrency={() => {
                           const instance = instanceId ? inventoryById.get(instanceId) : undefined;
@@ -241,7 +255,7 @@ export function ArmoryScreen({
                   salvageMode={salvageMode}
                   activeCurrencyId={activeCurrencyId}
                   onEquip={(instance) => onEquip(characterId, selectedSlot, instance)}
-                  onSalvage={(instance) => setSalvageTarget(instance)}
+                  onSalvage={beginSalvage}
                   onApplyCurrency={handleApplyCurrency}
                 />
               </section>
@@ -249,12 +263,12 @@ export function ArmoryScreen({
           </FadeSlot>
         </div>
         <ArmoryOverlays
-          salvageTarget={salvageTarget}
+          salvagePending={salvagePending}
           activeCurrencyId={activeCurrencyId}
           cursorPoint={cursorPoint}
           editable={editable}
           onSalvage={onSalvage}
-          onClearSalvageTarget={() => setSalvageTarget(null)}
+          onClearSalvageTarget={() => setSalvagePending(null)}
         />
       </div>
     </PageLayout>

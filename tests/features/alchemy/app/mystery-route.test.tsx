@@ -32,7 +32,6 @@ vi.mock("@/features/alchemy/shared/stores/use-run-screen-data", () => ({
   useRewardsScreenData: vi.fn(),
   useShopScreenData: vi.fn(),
   useTrinketShopScreenData: vi.fn(),
-  useWildwoodRecoveryScreenData: vi.fn(),
   useWildwoodRemovalScreenData: vi.fn(),
 }));
 
@@ -51,7 +50,6 @@ vi.mock("@/features/alchemy/run-loop/screens", () => {
     MysteryScreenShell: Screen,
     RewardsScreen: Screen,
     TrinketShopScreen: Screen,
-    WildwoodRecoveryScreen: Screen,
     WildwoodRemovalScreen: Screen,
   };
 });

@@ -182,6 +182,33 @@ describe("parseActiveRun", () => {
     expect(result?.wildwoodDraft?.currentRewardTraitIds).toEqual([]);
   });
 
+  it("maps leftover Wildwood recovery phase and screen onto rewards", () => {
+    const result = parseActiveRun(
+      makeRunCandidate({
+        contentSystemType: "wildwood",
+        selectedDifficulty: null,
+        currentScreen: "wildwood-recovery",
+        wildwoodDraft: {
+          version: 3 as const,
+          phase: "recovery" as const,
+          draftChoices: [],
+          remainingBossIds: [],
+          previousBossId: null,
+          currentBossId: null,
+          currentCombatTraitIds: [],
+          currentRewardTraitIds: [],
+          rewardType: "card" as const,
+          rewardChoiceIds: ["slash"],
+          rewardGearChoices: [],
+          selectedRewardId: null,
+        },
+      }),
+    );
+
+    expect(result?.currentScreen).toBe("rewards");
+    expect(result?.wildwoodDraft?.phase).toBe("reward");
+  });
+
   it("drops labyrinth runs when labyrinth map is missing", () => {
     const result = parseActiveRun(makeRunCandidate({ contentSystemType: "labyrinth" }));
     expect(result).toBeNull();

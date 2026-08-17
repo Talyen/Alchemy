@@ -96,5 +96,6 @@ export async function confirmSalvage(page: Page) {
 }
 
 export async function expectSalvageDialog(page: Page) {
-  await expect(page.getByText("Salvaging items yields crafting materials")).toBeVisible();
+  await expect(page.getByText("You will receive:")).toBeVisible();
+  await expect(page.getByTestId("armory-salvage-yield")).toBeVisible();
 }

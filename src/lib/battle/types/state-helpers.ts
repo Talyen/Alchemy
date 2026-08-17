@@ -14,10 +14,13 @@ const FIRST_TIME_FLAG_USED_VALUES: { [K in FirstTimeFlagKey]: CombatFlags[K] } =
   firstBurnTrinketDoubledUsed: true,
   firstLeechCardDoubledUsed: true,
   firstConsumeCardFreeUsed: true,
+  firstCompanionCardFreeUsed: true,
+  firstArcheryCardFreeUsed: true,
   firstPotionFreeUsed: true,
   nextCardCostReduction: 0,
   resonantChimeUsedThisTurn: true,
   runicQuillUsedThisTurn: true,
+  consumeDrawUsedThisTurn: true,
 };
 
 /** Armed player-card flags: force inactive so companions/pulses neither benefit nor consume. */

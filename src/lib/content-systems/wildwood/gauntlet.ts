@@ -1,4 +1,4 @@
-// Pure Wildwood Draft boss bag, recovery, removal, and shared encounter trait rules.
+// Pure Wildwood Draft boss bag, removal, and shared encounter trait rules.
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { characters, selectRewardCards, type BattleCard, type BestiaryEntry, type CharacterId } from "@/lib/game-data";
 import { DRAFT_CHOICES } from "@/lib/game-constants";
@@ -12,12 +12,11 @@ import {
   type EncounterRewardTraitId,
 } from "../encounter-traits";
 
-export const WILDWOOD_RECOVERY_FRACTION = 0.2;
 const WILDWOOD_MINIMUM_REMOVAL_DECK_SIZE = 8;
 
 export type WildwoodModifierId = EncounterCombatTraitId;
 export type WildwoodBossId = (typeof WILDWOOD_BOSS_IDS)[number];
-type WildwoodDraftPhase = "draft" | "battle" | "recovery" | "reward" | "removal";
+type WildwoodDraftPhase = "draft" | "battle" | "reward" | "removal";
 
 export interface WildwoodDraftState {
   version: 3;
@@ -90,10 +89,6 @@ export function drawWildwoodBoss(
   const [firstBoss] = WILDWOOD_BOSS_IDS;
   const [bossId = firstBoss, ...rest] = bag;
   return { bossId, remainingBossIds: rest };
-}
-
-export function getWildwoodRecoveryHealth(currentHealth: number, maxHealth: number): number {
-  return Math.min(maxHealth, currentHealth + Math.floor(maxHealth * WILDWOOD_RECOVERY_FRACTION));
 }
 
 export function canOfferWildwoodRemoval(deckSize: number): boolean {

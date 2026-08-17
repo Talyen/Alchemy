@@ -190,6 +190,9 @@ function applyFreezeDamageModifiers(state: BattleState, rawAmount: number): numb
 
 function applyNatureDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + state.talentEffects.flatNatureDamage + state.gearEffects.flatNatureDamage;
+  if (state.talentEffects.armorToNatureDamage) {
+    nextAmount += state.playerStatuses.armor;
+  }
   if (state.enemyStatuses.poison > 0) {
     nextAmount += state.talentEffects.natureBonusVsPoisoned;
   }

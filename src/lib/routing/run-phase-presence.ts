@@ -8,7 +8,6 @@ const SCREEN_LABELS: Partial<Record<Screen, string>> = {
   [ROUTE_SCREENS.HOMESTEAD]: "Upgrading Homestead",
   [ROUTE_SCREENS.TALENTS]: "Selecting Talents",
   [ROUTE_SCREENS.CAMPFIRE]: "Resting at Campfire",
-  [ROUTE_SCREENS.WILDWOOD_RECOVERY]: "Resting at Campfire",
   [ROUTE_SCREENS.SHOP]: "Trading in Shop",
   [ROUTE_SCREENS.ALCHEMIST]: "Trading in Shop",
   [ROUTE_SCREENS.MYSTERY]: "Exploring a Mystery",

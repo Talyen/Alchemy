@@ -95,8 +95,11 @@ export interface CombatFlags {
   firstPotionFreeUsed: boolean;
   firstLeechCardDoubledUsed: boolean;
   firstConsumeCardFreeUsed: boolean;
+  firstCompanionCardFreeUsed: boolean;
+  firstArcheryCardFreeUsed: boolean;
   resonantChimeUsedThisTurn: boolean;
   runicQuillUsedThisTurn: boolean;
+  consumeDrawUsedThisTurn: boolean;
   divineAegisTriggered: boolean;
   nextHitCrit: boolean;
   playNextCardTwice: boolean;
@@ -114,10 +117,13 @@ export type FirstTimeFlagKey =
   | "firstBurnTrinketDoubledUsed"
   | "firstLeechCardDoubledUsed"
   | "firstConsumeCardFreeUsed"
+  | "firstCompanionCardFreeUsed"
+  | "firstArcheryCardFreeUsed"
   | "firstPotionFreeUsed"
   | "nextCardCostReduction"
   | "resonantChimeUsedThisTurn"
-  | "runicQuillUsedThisTurn";
+  | "runicQuillUsedThisTurn"
+  | "consumeDrawUsedThisTurn";
 
 // The full snapshot of a battle at one point in time. Every mutation returns a new
 // BattleState (immutable), enabling the controller to diff states for animation.

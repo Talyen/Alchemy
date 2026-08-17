@@ -25,6 +25,7 @@ export function ConfirmationDialog({
   dismissOnEscape = true,
   // Intentional: icon is replaceable so callers can pass salvage/material themed icons
   icon: Icon = AlertTriangle,
+  body,
   onConfirm,
   onCancel,
 }: {
@@ -38,6 +39,7 @@ export function ConfirmationDialog({
   dismissOnBackdrop?: boolean;
   dismissOnEscape?: boolean;
   icon?: ComponentType<{ className?: string }>;
+  body?: ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -73,6 +75,7 @@ export function ConfirmationDialog({
         </div>
         <h2 className={cn("mt-4 font-sans", sectionTitleClass)}>{title}</h2>
         {description && <p className={cn("mt-3", bodyTextClass)}>{description}</p>}
+        {body ? <div className="mt-4">{body}</div> : null}
         <div className="mt-6 flex justify-center gap-3">
           <Button size="lg" variant="outline" onClick={onCancel}>
             {cancelLabel}

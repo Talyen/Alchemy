@@ -1,7 +1,7 @@
 // Talent definitions for keyword: companion.
-import { Bone, Trash, HeartPulse, Link2, Eye, Hand, HeartHandshake } from "lucide-react";
+import { Bone, Trash, HeartPulse, Link2, Eye, Hand, HeartHandshake, ShieldAlert, Ban, Bell } from "lucide-react";
 import type { TalentDefinition } from "../types";
-import { addEffect, placeholderTalents, setEffect } from "../types";
+import { addEffect, setEffect } from "../types";
 
 export const companionTalents: TalentDefinition[] = [
   {
@@ -60,5 +60,28 @@ export const companionTalents: TalentDefinition[] = [
     icon: HeartHandshake,
     effects: [setEffect("damageReductionWithCompanion", 1)],
   },
-  ...placeholderTalents("companion", "companion-placeholder", 8, 10),
+  {
+    id: "companion-watchdog",
+    keywordId: "companion",
+    name: "Watchdog",
+    description: "When your Companion deals damage, gain 2 Block",
+    icon: ShieldAlert,
+    effects: [setEffect("blockOnCompanionDamage", 2)],
+  },
+  {
+    id: "companion-takedown",
+    keywordId: "companion",
+    name: "Takedown",
+    description: "Companions have a 10% chance to Stun",
+    icon: Ban,
+    effects: [setEffect("companionStunChance", 10)],
+  },
+  {
+    id: "companion-whistle",
+    keywordId: "companion",
+    name: "Whistle",
+    description: "Your first Companion card each combat is free",
+    icon: Bell,
+    effects: [setEffect("firstCompanionCardFree", true)],
+  },
 ];

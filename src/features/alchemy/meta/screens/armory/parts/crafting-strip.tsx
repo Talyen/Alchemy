@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { PortaledTooltip } from "../../../../shared/ui/portaled-tooltip";
 import { TooltipBody, TooltipHeader } from "../../../../shared/ui/tooltip-panel";
 import { CURRENCY_COUNT_LABEL_CLASS } from "./currency-styles";
-import { tiltSurfaceSelectedRingClass } from "../../../../shared/config/layout";
+import { sectionTitleClass, tiltSurfaceSelectedRingClass } from "../../../../shared/config";
 
 function CurrencyChip({
   currency,
@@ -38,7 +38,7 @@ function CurrencyChip({
         aria-pressed={armed}
         disabled={!canUse}
         className={cn(
-          "relative h-14 w-14 overflow-hidden rounded-xl border border-border/80 bg-black",
+          "relative h-20 w-20 overflow-hidden rounded-xl border border-border/80 bg-black",
           armed && tiltSurfaceSelectedRingClass,
           !canUse && "cursor-default opacity-40",
         )}
@@ -76,8 +76,8 @@ export function CraftingStrip({
 }) {
   return (
     <div data-testid="armory-crafting-strip" className="mt-4 w-full">
-      <h3 className="text-center font-sans text-lg text-amber-100">Crafting</h3>
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+      <h3 className={cn("text-center font-sans", sectionTitleClass)}>Crafting</h3>
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
         {CRAFTING_CURRENCY_LIST.map((currency) => (
           <CurrencyChip
             key={currency.id}
@@ -95,7 +95,7 @@ export function CraftingStrip({
           aria-pressed={salvageMode}
           disabled={!editable || (!hasSalvageableGear && !salvageMode)}
           className={cn(
-            "relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-border/80 bg-black text-red-300",
+            "relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-border/80 bg-black text-red-300",
             salvageMode && tiltSurfaceSelectedRingClass,
             (!editable || (!hasSalvageableGear && !salvageMode)) && "cursor-default opacity-40",
           )}
@@ -105,7 +105,7 @@ export function CraftingStrip({
             onToggleSalvageMode();
           }}
         >
-          <Trash2 className="h-6 w-6" />
+          <Trash2 className="h-10 w-10" />
         </button>
       </div>
     </div>

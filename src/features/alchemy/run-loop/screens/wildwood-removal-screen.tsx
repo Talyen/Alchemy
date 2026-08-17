@@ -2,7 +2,7 @@
 import type { BattleCard } from "@/lib/game-data";
 
 import { RemoveCardPanel } from "../../shared/ui/remove-card-panel";
-import { ScreenDescription, TitledScreenShell } from "../../shared/ui/shared-ui";
+import { TitledScreenShell } from "../../shared/ui/shared-ui";
 
 interface Props {
   runDeck: BattleCard[];
@@ -17,9 +17,7 @@ export function WildwoodRemovalScreen({ runDeck, onRemove, onSkip, onOpenMenu }:
       <div className="mt-6 text-center">
         <RemoveCardPanel
           runDeck={runDeck}
-          intro={
-            <ScreenDescription className="mb-4">Remove one card, or continue without removing one.</ScreenDescription>
-          }
+          compact
           onConfirm={onRemove}
           onCancel={onSkip}
           cancelLabel="Skip"

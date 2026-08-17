@@ -1,12 +1,12 @@
 import type { GearSlot } from "@/lib/gear";
 
 export const SLOT_LABELS: Record<GearSlot, string> = {
-  "main-hand": "Weapon",
-  "off-hand": "Weapon",
+  "main-hand": "Weapons",
+  "off-hand": "Weapons",
   body: "Armor",
-  "left-ring": "Ring",
-  "right-ring": "Ring",
-  amulet: "Amulet",
+  "left-ring": "Rings",
+  "right-ring": "Rings",
+  amulet: "Amulets",
 };
 
 export const SLOT_ARIA_LABELS: Record<GearSlot, string> = {

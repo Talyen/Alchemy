@@ -5,7 +5,7 @@
  */
 import { applyCardEffects } from "./effect-handlers";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
-import { type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
+import { addEnemyStatus, addPlayerStatus, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
 import {
   COMPANION_LOW_HEALTH_THRESHOLD_PERCENT,
   computeLeechHeal,
@@ -13,8 +13,10 @@ import {
   PERCENT_DENOMINATOR,
 } from "../game-constants";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
-import { applyHealingWithCombatText } from "./combat-text";
+import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { rollPercent, getBattleRng } from "./status-helpers";
+import { resolveStunTrigger } from "./status-stun-resolve";
+import { rollTalentChance } from "./damage-rider-leech";
 
 function companionDamageBonusForEffect(
   effect: Extract<BattleCard["effects"][number], { kind: "damage" }>,
@@ -163,6 +165,23 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     const damageDealt = Math.max(0, s.enemyHealth - afterEffects.enemyHealth);
     if (damageDealt > 0 && state.gearEffects.healOnCompanionAttack > 0) {
       afterEffects = applyHealingWithCombatText(afterEffects, state.gearEffects.healOnCompanionAttack, combatTexts);
+    }
+
+    if (damageDealt > 0 && state.talentEffects.blockOnCompanionDamage > 0) {
+      const before = afterEffects.playerStatuses.block;
+      afterEffects = addPlayerStatus(afterEffects, "block", state.talentEffects.blockOnCompanionDamage);
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "status",
+        stat: "block",
+        amount: afterEffects.playerStatuses.block - before,
+      });
+    }
+
+    if (damageDealt > 0 && state.talentEffects.companionStunChance > 0) {
+      if (rollTalentChance(state.talentEffects.companionStunChance, state)) {
+        afterEffects = resolveStunTrigger(addEnemyStatus(afterEffects, "stun", damageDealt), combatTexts);
+      }
     }
 
     if (damageDealt > 0 && state.talentEffects.companionLeechChance > 0) {

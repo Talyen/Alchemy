@@ -423,6 +423,55 @@ describe("processCompanionTurnStart", () => {
     expect(result.playerHealth).toBe(10);
   });
 
+  it("Watchdog grants Block when the companion deals damage", () => {
+    const state = makeTestBattleState({
+      activeCompanion: companionLibrary.wolf,
+      talentEffects: {
+        ...makeTestBattleState().talentEffects,
+        blockOnCompanionDamage: 2,
+      },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    expect(result.playerStatuses.block).toBe(2);
+  });
+
+  it("Watchdog no-ops when the companion deals no damage", () => {
+    const state = makeTestBattleState({
+      activeCompanion: companionLibrary.pixie,
+      talentEffects: {
+        ...makeTestBattleState().talentEffects,
+        blockOnCompanionDamage: 2,
+      },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    expect(result.playerStatuses.block).toBe(0);
+  });
+
+  it("Takedown stuns when the companion deals damage and the roll succeeds", () => {
+    const state = makeTestBattleState({
+      activeCompanion: companionLibrary.phoenix,
+      talentEffects: {
+        ...makeTestBattleState().talentEffects,
+        companionStunChance: 100,
+      },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    expect(result.enemyStatuses.stun).toBeGreaterThanOrEqual(1);
+  });
+
+  it("Takedown does not stun when the roll fails", () => {
+    const state = makeTestBattleState({
+      activeCompanion: companionLibrary.phoenix,
+      talentEffects: {
+        ...makeTestBattleState().talentEffects,
+        companionStunChance: 50,
+      },
+      rng: () => 0.99,
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    expect(result.enemyStatuses.stun).toBe(0);
+  });
+
   it("handles missing or undefined companionBondLevels gracefully without NaN", () => {
     const base = makeTestBattleState();
     const state = {

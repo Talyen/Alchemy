@@ -13,7 +13,7 @@ import {
   type GearLoadouts,
   type GearSlot,
 } from "@/lib/gear";
-import { characters, keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
+import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
 import {
@@ -27,7 +27,7 @@ import { GearDetailPopup } from "../../../shared/ui/gear-detail-popup";
 import { InteractiveArtTile } from "../../../shared/ui/interactive-art-tile";
 import { FadeSlot } from "../../../shared/ui/fade-slot";
 import { PaginationControls } from "../../../shared/ui/shared-ui";
-import { CHARACTER_KEYWORDS } from "./armory-character-tabs";
+import { CHARACTER_ICONS, CHARACTER_KEYWORDS } from "./armory-character-tabs";
 import {
   SALVAGE_TARGET_RING,
   SALVAGE_TARGET_SHADOW,
@@ -74,10 +74,10 @@ export function ItemPickerGrid({
 
   return (
     <section data-testid="armory-item-picker" className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <FadeSlot swapKey={`${characterId}-${slot}-${safePage}`} className="relative mt-2 w-full overflow-visible">
+      <FadeSlot swapKey={`${slot}-${safePage}`} className="relative mt-2 w-full overflow-visible">
         {items.length === 0 ? (
-          <p className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-center text-sm text-muted-foreground">
-            No items for this slot
+          <p className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-center text-xl text-muted-foreground">
+            Empty
           </p>
         ) : null}
         <div className={cn("grid w-full grid-cols-3 grid-rows-2", collectionGridGapXClass, "gap-y-6")}>
@@ -85,7 +85,7 @@ export function ItemPickerGrid({
             const definition = gearDefinitions[item.definitionId];
             const title = getGearInstanceTitle(item);
             const equippedCharacterId = findGearEquippedCharacter(loadouts, item.instanceId);
-            const equippedCharacter = equippedCharacterId ? characters[equippedCharacterId] : null;
+            const EquippedIcon = equippedCharacterId ? CHARACTER_ICONS[equippedCharacterId] : null;
             const keywordId = equippedCharacterId ? CHARACTER_KEYWORDS[equippedCharacterId] : null;
             const colorClass = keywordId ? keywordDefinitions[keywordId]?.colorClass : undefined;
             const loadoutLegal = definition
@@ -151,17 +151,18 @@ export function ItemPickerGrid({
                         triggerRef={triggerRef}
                       />
                     )}
-                  />
-                  {equippedCharacter ? (
-                    <span
-                      className={cn(
-                        "pointer-events-none absolute top-2 right-2 rounded-full border border-border/60 bg-stone-950/90 px-2.5 py-0.5 text-sm font-semibold shadow-md backdrop-blur-sm",
-                        colorClass,
-                      )}
-                    >
-                      {equippedCharacter.name}
-                    </span>
-                  ) : null}
+                  >
+                    {EquippedIcon ? (
+                      <span
+                        className={cn(
+                          "pointer-events-none absolute top-3 right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/40 shadow-md backdrop-blur-md",
+                          colorClass,
+                        )}
+                      >
+                        <EquippedIcon className="h-7 w-7" />
+                      </span>
+                    ) : null}
+                  </InteractiveArtTile>
                 </div>
               </div>
             );

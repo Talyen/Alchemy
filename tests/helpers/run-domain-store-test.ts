@@ -55,6 +55,7 @@ const ACTIVE_RUN_PROGRESS_KEYS = [
 ] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
 
 const PERMANENT_PROGRESS_KEYS = [
+  "gold",
   "talentXP",
   "unlockedTalents",
   "materialInventory",

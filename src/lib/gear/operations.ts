@@ -1,6 +1,6 @@
 import { normalizeAffixRolls, resolveAffixEffects } from "./affixes";
-import { rollSalvageYield } from "./crafting";
-import { gearDefinitions, gearInstanceRarity } from "./definitions";
+import { computeSalvageYield, type SalvageYield } from "./crafting";
+import { gearDefinitions } from "./definitions";
 import { mergeGearEffectManifests } from "./gear-effect-manifest";
 import {
   GEAR_CHARACTER_IDS,
@@ -159,14 +159,22 @@ function removeGearFromLoadouts(loadouts: GearLoadouts, instanceId: string): Gea
   return next;
 }
 
-export function salvageGear(inventory: GearInstance[], loadouts: GearLoadouts, instanceId: string, rng: () => number) {
+export function salvageGear(
+  inventory: GearInstance[],
+  loadouts: GearLoadouts,
+  instanceId: string,
+  rng: () => number,
+  frozenYield?: SalvageYield,
+) {
   if (!canSalvageGear(inventory, instanceId)) return null;
   const instance = inventory.find((item) => item.instanceId === instanceId);
   if (!instance) return null;
+  const salvageYield = frozenYield ?? computeSalvageYield(instance, rng);
   return {
     inventory: inventory.filter((item) => item.instanceId !== instanceId),
     loadouts: removeGearFromLoadouts(loadouts, instanceId),
-    yieldedCurrencies: rollSalvageYield(gearInstanceRarity(instance), rng),
+    yieldedCurrencies: salvageYield.currencies,
+    yieldedMaterials: salvageYield.materials,
   };
 }
 

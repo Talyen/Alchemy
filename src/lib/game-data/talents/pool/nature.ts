@@ -1,7 +1,7 @@
 // Talent definitions for keyword: nature.
-import { TrendingUp, Wind, Triangle, RotateCw, Network, Shield } from "lucide-react";
+import { TrendingUp, Wind, Triangle, RotateCw, Network, Shield, Link, Hexagon, Trees, Leaf } from "lucide-react";
 import type { TalentDefinition } from "../types";
-import { addEffect, setEffect, placeholderTalents } from "../types";
+import { addEffect, setEffect } from "../types";
 
 export const natureTalents: TalentDefinition[] = [
   {
@@ -52,5 +52,36 @@ export const natureTalents: TalentDefinition[] = [
     icon: Shield,
     effects: [setEffect("receiveHalfNatureDamage", true)],
   },
-  ...placeholderTalents("nature", "nature-placeholder", 7, 10),
+  {
+    id: "nature-entangle",
+    keywordId: "nature",
+    name: "Entangle",
+    description: "Nature damage has a 10% chance to Stun",
+    icon: Link,
+    effects: [setEffect("natureStunChance", 10)],
+  },
+  {
+    id: "nature-thornskin",
+    keywordId: "nature",
+    name: "Thornskin",
+    description: "Nature damage is increased by your Armor",
+    icon: Hexagon,
+    effects: [setEffect("armorToNatureDamage", true)],
+  },
+  {
+    id: "nature-canopy",
+    keywordId: "nature",
+    name: "Canopy",
+    description: "Gain 3 Block when you play a Nature card",
+    icon: Trees,
+    effects: [setEffect("blockOnNatureCard", 3)],
+  },
+  {
+    id: "nature-photosynthesis",
+    keywordId: "nature",
+    name: "Photosynthesis",
+    description: "Restore 1 Health when you play a Nature card",
+    icon: Leaf,
+    effects: [setEffect("healOnNatureCard", 1)],
+  },
 ];

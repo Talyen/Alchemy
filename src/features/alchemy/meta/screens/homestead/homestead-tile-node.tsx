@@ -4,11 +4,9 @@ import { cn } from "@/lib/utils";
 import { cardInteractiveGlowClass } from "../../../shared/config";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { type PopupContext } from "../../../shared/ui/interactive-art-tile";
-import { HOMESTEAD_CONFIG } from "./helpers";
 
 export function HomesteadTileFrame({
   id,
-  index,
   hoveredItemId,
   setHoveredItemId,
   detailTooltip,
@@ -35,9 +33,7 @@ export function HomesteadTileFrame({
 
   return (
     <div>
-      <div
-        className={cn("relative flex flex-col items-center", index < HOMESTEAD_CONFIG.compilationFillerCount && "mb-2")}
-      >
+      <div className="relative flex flex-col items-center">
         {detailTooltip({ visible: hoveredItemId === id, triggerRef: frameRef })}
         <div
           ref={frameRef}

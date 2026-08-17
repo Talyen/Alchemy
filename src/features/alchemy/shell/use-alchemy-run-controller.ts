@@ -190,7 +190,6 @@ export function useAlchemyRunController({
         continueCampfire: nav.handleCampfireContinue,
       },
       wildwood: {
-        completeRecovery: nav.handleWildwoodRecoveryComplete,
         removeCard: nav.handleWildwoodRemoveCard,
         skipRemoval: nav.handleWildwoodSkipRemoval,
       },

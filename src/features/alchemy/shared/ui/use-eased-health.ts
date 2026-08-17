@@ -1,4 +1,4 @@
-// Eased HP counter for campfire / wildwood recovery heal animations.
+// Eased HP counter for campfire heal animations.
 import { useEffect, useRef, useState } from "react";
 
 import { CAMPFIRE_ANIMATION_MS } from "@/lib/game-constants";

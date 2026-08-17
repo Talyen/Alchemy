@@ -7,10 +7,15 @@ import {
   type GearInstance,
   type GearLoadouts,
   type GearSlot,
+  type SalvageYield,
 } from "@/lib/gear";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
+import {
+  dispatchGearMutationWithRunHealthSync,
+  mutateGearWithRunHealthSync,
+} from "@/features/alchemy/shared/stores/gear-session-command";
+import { addMaterials, awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   useActiveRunCharacterId,
   useHasActiveBattle,
@@ -56,7 +61,7 @@ export interface ArmoryController {
   hasActiveRun: boolean;
   onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
-  onSalvage: (instanceId: string) => boolean;
+  onSalvage: (instanceId: string, salvageYield: SalvageYield) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
 }
@@ -97,16 +102,24 @@ export function useArmoryController(): ArmoryController {
   );
 
   const onSalvage = useCallback<ArmoryController["onSalvage"]>(
-    (instanceId) =>
+    (instanceId, salvageYield) =>
       whenArmoryEditable(
         hasActiveBattle,
         () => {
-          const result = mutateGearWithFlush(
-            activeRunCharacterId,
-            flush,
-            (state) => state.salvage(instanceId, { rng: rngRef.current }),
-            { flushOnSuccessOnly: true },
-          );
+          const result = dispatchRunSessionCommand((draft) => {
+            const salvageResult = mutateGearWithRunHealthSync(draft, {
+              characterId: activeRunCharacterId,
+              mutate: (state) => state.salvage(instanceId, { yield: salvageYield }),
+            });
+            if (!salvageResult) return null;
+            if (draft.session.hasActiveRun) {
+              awardMaterialsDuringRun(draft, salvageResult.yieldedMaterials);
+            } else {
+              addMaterials(draft, salvageResult.yieldedMaterials);
+            }
+            return salvageResult;
+          });
+          if (result) flush();
           return Boolean(result);
         },
         false,

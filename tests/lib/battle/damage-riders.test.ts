@@ -292,4 +292,39 @@ describe("damage riders via applyCardEffects", () => {
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyStatuses.stun).toBeGreaterThanOrEqual(5);
   });
+
+  it("nature stun rider applies stun when Entangle procs", () => {
+    const state = makeState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      talentEffects: { ...defaultTalentEffects, natureStunChance: 100 },
+      rng: () => 0.01,
+      deck: [],
+      hand: [],
+      discard: [],
+      exhausted: [],
+    });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyStatuses.stun).toBeGreaterThanOrEqual(5);
+  });
+
+  it("armorToNatureDamage adds armor to nature damage", () => {
+    const state = makeState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      playerStatuses: defaultPlayerStatusValues({ armor: 4 }),
+      talentEffects: { ...defaultTalentEffects, armorToNatureDamage: true },
+      rng: () => 0.99,
+      deck: [],
+      hand: [],
+      discard: [],
+      exhausted: [],
+    });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyHealth).toBe(41);
+  });
 });

@@ -117,7 +117,6 @@ function resolveEncodeScreen(
     if (session.wildwoodDraft) {
       const phase = session.wildwoodDraft.phase;
       if (phase === "removal") return "wildwood-removal";
-      if (phase === "recovery") return "wildwood-recovery";
       if (phase === "reward") return "rewards";
       if (phase === "draft") return "draft-deck";
       if (phase === "battle") return "battle";
@@ -180,7 +179,6 @@ function resolveDestinationExitScreen(activeRun: ActiveRunData): Screen {
   if (activeRun.wildwoodDraft) {
     const phase = activeRun.wildwoodDraft.phase;
     if (phase === "removal") return "wildwood-removal";
-    if (phase === "recovery") return "wildwood-recovery";
     if (phase === "draft") return "draft-deck";
     if (phase === "battle") return "battle";
   }
@@ -386,7 +384,7 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
   let rewardState: RewardState | null = null;
   let companionRewardCards: BattleCard[] | null = null;
 
-  if (activeRun.wildwoodDraft?.rewardType && ["reward", "recovery"].includes(activeRun.wildwoodDraft.phase)) {
+  if (activeRun.wildwoodDraft?.rewardType && activeRun.wildwoodDraft.phase === "reward") {
     rewardState = restoreWildwoodRewardState(
       activeRun.wildwoodDraft.rewardType,
       activeRun.wildwoodDraft.rewardChoiceIds,

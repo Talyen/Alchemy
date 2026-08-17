@@ -40,6 +40,15 @@ const FIRST_CARD_FREE_RULES: Array<{
     flag: "firstConsumeCardFreeUsed",
     condition: (state, card) => state.talentEffects.firstConsumeCardFree && !!card.consume,
   },
+  {
+    flag: "firstCompanionCardFreeUsed",
+    condition: (state, card) =>
+      state.talentEffects.firstCompanionCardFree && card.effects.some((effect) => effect.kind === "summon-companion"),
+  },
+  {
+    flag: "firstArcheryCardFreeUsed",
+    condition: (state, card) => state.talentEffects.firstArcheryCardFree && !!card.tags?.includes("archery"),
+  },
 ];
 
 /**

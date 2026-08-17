@@ -174,6 +174,7 @@ const WildwoodDraftStateSchema = z
   })
   .transform((state) => ({
     ...state,
+    phase: state.phase === "recovery" ? ("reward" as const) : state.phase,
     currentCombatTraitIds: sanitizeEncounterTraitIds(state.currentCombatTraitIds, "combat"),
     currentRewardTraitIds: sanitizeEncounterTraitIds(state.currentRewardTraitIds, "reward"),
   }))
@@ -261,7 +262,10 @@ export const ActiveRunDataSchema = z
     // Defaults match normalizeActiveRunData — required on Zod output without a post-cast.
     runTalentXP: TalentXPSchema.default({}),
     runMaterialsEarned: MaterialInventorySchema.default(emptyInventory()),
-    currentScreen: z.enum(ROUTE_SCREEN_VALUES).nullable().catch(null).default(null),
+    currentScreen: z.preprocess(
+      (value) => (value === "wildwood-recovery" ? "rewards" : value),
+      z.enum(ROUTE_SCREEN_VALUES).nullable().catch(null).default(null),
+    ),
     interruptedFlow: InterruptedFlowSchema,
     shopState: ShopPersistSchema.default(null),
     alchemistState: AlchemistPersistSchema.default(null),

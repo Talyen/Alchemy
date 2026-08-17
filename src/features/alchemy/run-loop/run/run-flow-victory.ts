@@ -1,4 +1,4 @@
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { playGoldGain, playVictory, stopAllSfx } from "@/lib/audio";
@@ -84,10 +84,7 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
     stopAllSfx();
     playVictory();
     if (readRunSession().hasActiveRun) {
-      const nextScreen =
-        readActiveRun().contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
-          ? CONSTANTS.SCREENS.WILDWOOD_RECOVERY
-          : CONSTANTS.SCREENS.REWARDS;
+      const nextScreen = CONSTANTS.SCREENS.REWARDS;
       deps.actions.transition(nextScreen, {
         delayMs: VICTORY_TRANSITION_DELAY,
         guard: () => readRunSession().hasActiveRun,

@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   applyCraftingCurrency,
   canApplyCraftingCurrency,
+  computeSalvageYield,
+  createEmptyGearLoadouts,
   normalizeCraftingCurrencies,
   rollSalvageYield,
+  salvageGear,
   type GearAffixRoll,
   type GearInstance,
 } from "@/lib/gear";
@@ -160,6 +163,21 @@ describe("crafting currency logic", () => {
     const astralYield = rollSalvageYield("astral", () => 0);
     expect(astralYield["discordant-dice"]).toBeGreaterThanOrEqual(1);
     expect(astralYield["smiths-whetstone"]).toBe(1);
+  });
+
+  it("combines homestead salvage value with rolled crafting currencies", () => {
+    const salvageYield = computeSalvageYield(createBasicItem(), () => 0);
+    expect(salvageYield.materials.iron).toBe(3);
+    expect(salvageYield.materials.food).toBe(0);
+    expect(salvageYield.currencies["discordant-dice"]).toBe(1);
+  });
+
+  it("uses a frozen yield instead of re-rolling when salvageGear is given one", () => {
+    const item = createBasicItem();
+    const frozen = computeSalvageYield(item, () => 0.99);
+    const result = salvageGear([item], createEmptyGearLoadouts(), item.instanceId, () => 0, frozen);
+    expect(result?.yieldedCurrencies).toEqual(frozen.currencies);
+    expect(result?.yieldedMaterials).toEqual(frozen.materials);
   });
 
   it("normalizes crafting currencies to known nonnegative integer ids", () => {

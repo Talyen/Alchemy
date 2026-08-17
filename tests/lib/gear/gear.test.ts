@@ -206,6 +206,13 @@ describe("gear domain", () => {
       "severance-maw": 0,
       "smiths-whetstone": 0,
     });
+    expect(result?.yieldedMaterials).toEqual({
+      wood: 0,
+      iron: 0,
+      herbs: 0,
+      food: 0,
+      crystal: 3,
+    });
   });
 
   it("reports equipped gear as salvage eligible", () => {

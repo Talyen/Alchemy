@@ -1,5 +1,13 @@
 import type { CharacterId } from "@/lib/game-data";
-import type { CraftingCurrencyId, GearInstance, GearInventories, GearLoadouts, GearSlot } from "@/lib/gear";
+import type {
+  CraftingCurrencyId,
+  GearInstance,
+  GearInventories,
+  GearLoadouts,
+  GearSlot,
+  SalvageYield,
+} from "@/lib/gear";
+import type { MaterialInventory } from "@/lib/homestead/types";
 
 export interface GearSaveFields {
   gearInventories: GearInventories;
@@ -21,8 +29,12 @@ export interface GearStore {
   unequip: (characterId: CharacterId, slot: GearSlot) => void;
   salvage: (
     instanceId: string,
-    options?: { rng?: () => number },
-  ) => { inventories: GearInventories; yieldedCurrencies: Record<CraftingCurrencyId, number> } | null;
+    options?: { rng?: () => number; yield?: SalvageYield },
+  ) => {
+    inventories: GearInventories;
+    yieldedCurrencies: Record<CraftingCurrencyId, number>;
+    yieldedMaterials: MaterialInventory;
+  } | null;
   applyCurrency: (currencyId: CraftingCurrencyId, instanceId: string, options?: { rng?: () => number }) => boolean;
   addCurrencies: (currencies: Partial<Record<CraftingCurrencyId, number>>) => void;
   reset: () => void;

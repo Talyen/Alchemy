@@ -51,4 +51,20 @@ describe("ConfirmationDialog", () => {
 
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
+
+  it("renders optional body content below the description", () => {
+    render(
+      <ConfirmationDialog
+        title="Salvage?"
+        description="You will receive:"
+        body={<div data-testid="dialog-body">preview</div>}
+        confirmLabel="Salvage"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("You will receive:")).toBeTruthy();
+    expect(screen.getByTestId("dialog-body").textContent).toBe("preview");
+  });
 });

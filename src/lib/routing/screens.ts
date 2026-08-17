@@ -23,7 +23,6 @@ export const ROUTE_SCREENS = {
   CORRUPTION: "corruption",
   RUN_VICTORY: "run-victory",
   LABYRINTH_MAP: "labyrinth-map",
-  WILDWOOD_RECOVERY: "wildwood-recovery",
   WILDWOOD_REMOVAL: "wildwood-removal",
 } as const;
 

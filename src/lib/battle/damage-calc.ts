@@ -10,6 +10,8 @@ import { computeBaseDamage } from "./damage-calc/damage-type-modifiers";
 import { type BattleCard, type BattleCardEffect, type DamageType } from "@/lib/game-data";
 import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
 import {
+  ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT,
+  COMPANION_LOW_HEALTH_THRESHOLD_PERCENT,
   CRIT_MULTIPLIER,
   FIRST_BURN_CARD_BONUS_MULTIPLIER,
   FIRST_EFFECT_MULTIPLIER,
@@ -69,7 +71,7 @@ function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boole
   if (!isPhysicalOrStun) return state;
   let pierce = state.trinketEffects.sunderingArmorPiercing + state.gearEffects.armorPiercing;
   if (card?.tags?.includes("archery")) {
-    pierce += state.gearEffects.archeryArmorPiercing;
+    pierce += state.gearEffects.archeryArmorPiercing + state.talentEffects.archeryArmorPiercing;
   }
   if (pierce <= 0) return state;
   return reduceEnemyArmor(state, pierce);
@@ -101,8 +103,18 @@ function applyArcheryMultiplier(damage: number, state: BattleState): number {
   const talent = state.talentEffects;
   if (cc.stunSkipTurns > 0 && talent.archeryDoubledVsStunned) return damage * DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
   if (cc.freezeSkipTurns > 0 && talent.archeryDoubledVsFrozen) return damage * DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
-  if (state.enemyHealth >= state.enemyMaxHealth && talent.archeryDoubledVsHighHealth)
+  if (
+    talent.archeryDoubledVsHighHealth &&
+    state.enemyHealth > (state.enemyMaxHealth * ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT) / PERCENT_DENOMINATOR
+  ) {
     return damage * DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
+  }
+  if (
+    talent.archeryDoubledVsLowHealth &&
+    state.enemyHealth <= (state.enemyMaxHealth * COMPANION_LOW_HEALTH_THRESHOLD_PERCENT) / PERCENT_DENOMINATOR
+  ) {
+    return damage * DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
+  }
   return damage;
 }
 

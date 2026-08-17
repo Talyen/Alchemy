@@ -6,6 +6,7 @@ import { applyDamageStatuses } from "./damage-status-riders";
 import { resolveStunTrigger } from "./status-stun-resolve";
 import { mergeCombatText } from "./combat-text";
 import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-effects";
+import { addGoldWithCombatText } from "./combat-text";
 import { applyGearKillRewards } from "./gear-effects";
 import { applyWishEffect } from "./wish";
 import {
@@ -55,6 +56,9 @@ function applyNatureDamageRiders(
   }
   if (rollTalentChance(state.talentEffects.natureBleedChance, state)) {
     nextState = addEnemyStatus(nextState, "bleed", modifiedDamage);
+  }
+  if (rollTalentChance(state.talentEffects.natureStunChance, state)) {
+    nextState = resolveStunTrigger(addEnemyStatus(nextState, "stun", modifiedDamage), combatTexts);
   }
   return nextState;
 }
@@ -142,6 +146,14 @@ export function applyDamageRiders(
   // so heal-on-kill only triggers if the enemy WAS alive before this hit.
   nextState = applyBoneCharmHeal(nextState, state.enemyHealth > 0, combatTexts);
   nextState = applyGearKillRewards(nextState, state.enemyHealth > 0, combatTexts);
+  if (
+    card.tags?.includes("archery") &&
+    nextState.talentEffects.goldOnArcheryKill > 0 &&
+    previousHealth > 0 &&
+    nextState.enemyHealth <= 0
+  ) {
+    nextState = addGoldWithCombatText(nextState, nextState.talentEffects.goldOnArcheryKill, combatTexts);
+  }
   nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts);
   nextState = applyForgeStunRider(nextState, effect, combatTexts);
 
@@ -153,10 +165,13 @@ export function applyDamageRiders(
     nextState = applyLifestealAndPlayerHitTriggers(nextState, modifiedDamage, combatTexts);
   }
 
-  if (!isExtraHit && card.tags?.includes("archery") && modifiedDamage > 0) {
-    if (rollTalentChance(state.talentEffects.archeryPlayTwiceChance, state)) {
+  if (card.tags?.includes("archery") && modifiedDamage > 0) {
+    if (!isExtraHit && rollTalentChance(state.talentEffects.archeryPlayTwiceChance, state)) {
       const secondHit = Math.round(modifiedDamage / HALF_DIVISOR);
       nextState = applyDamageRiders(nextState, card, effect, secondHit, combatTexts, true);
+    }
+    if (rollTalentChance(state.talentEffects.archeryBleedChance, state)) {
+      nextState = addEnemyStatus(nextState, "bleed", modifiedDamage);
     }
   }
   if (effect.damageType === "holy") {

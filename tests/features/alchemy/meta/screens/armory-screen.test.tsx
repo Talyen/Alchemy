@@ -17,7 +17,7 @@ describe("ArmoryScreen core", () => {
 
     expect(screen.getByRole("heading", { name: "Armory" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Equipment" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Weapon" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Weapons" })).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Weapon 1" })).toBeNull();
     expect(screen.getByRole("heading", { name: "Crafting" })).toBeTruthy();
     expect(document.querySelector('[data-gear-title="Longsword"]')).not.toBeNull();
@@ -58,9 +58,7 @@ describe("ArmoryScreen core", () => {
     expect(swordItem).not.toBeNull();
     const chip = swordItem?.querySelector("span");
     expect(chip).not.toBeNull();
-    expect(chip?.textContent).toBe("Rogue");
     expect(chip?.className).toMatch(/text-red-600/);
-    expect(chip?.className).toMatch(/text-sm/);
   });
 
   it("switches to an unlocked character", async () => {
@@ -163,7 +161,7 @@ describe("ArmoryScreen core", () => {
 
     await user.click(screen.getByLabelText("Amulet equipment slot"));
     await waitFor(() => {
-      expect(screen.getByText("No items for this slot")).toBeTruthy();
+      expect(screen.getByText("Empty")).toBeTruthy();
       expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(0);
       expect(document.querySelectorAll('[data-testid="armory-inventory-filler"]')).toHaveLength(6);
     });

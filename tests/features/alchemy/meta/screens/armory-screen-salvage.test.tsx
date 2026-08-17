@@ -16,7 +16,12 @@ describe("ArmoryScreen salvage flow", () => {
     await user.click(screen.getByRole("button", { name: "Salvage Longsword" }));
     await user.click(screen.getByRole("button", { name: /^Salvage$/ }));
 
-    expect(onSalvage).toHaveBeenCalledWith("gear-sword");
+    expect(onSalvage).toHaveBeenCalledWith(
+      "gear-sword",
+      expect.objectContaining({
+        materials: expect.objectContaining({ iron: 6 }),
+      }),
+    );
     expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();
   });
 
@@ -43,7 +48,9 @@ describe("ArmoryScreen salvage flow", () => {
     await user.click(screen.getByRole("button", { name: "Salvage Longsword" }));
     await user.click(document.querySelector(".motion-overlay")!);
 
-    expect(screen.getByText("Salvaging items yields crafting materials")).toBeTruthy();
+    expect(screen.getByText("You will receive:")).toBeTruthy();
+    expect(screen.getByTestId("armory-salvage-yield")).toBeTruthy();
+    expect(screen.getByText("Iron")).toBeTruthy();
   });
 
   it("dismisses the confirmation on Escape without leaving salvage mode", async () => {
@@ -55,7 +62,7 @@ describe("ArmoryScreen salvage flow", () => {
     await user.keyboard("{Escape}");
 
     await waitFor(() => {
-      expect(screen.queryByText("Salvaging items yields crafting materials")).toBeNull();
+      expect(screen.queryByText("You will receive:")).toBeNull();
     });
     expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();
   });

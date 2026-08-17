@@ -2,7 +2,6 @@ import { useCallback } from "react";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
   setRunDeck,
-  setRunPlayerHealth,
   setWildwoodDraft,
   setPendingCharacterId,
   releaseRewardClaim,
@@ -21,7 +20,6 @@ import {
   createWildwoodDraftChoices,
   canOfferWildwoodRemoval,
   drawWildwoodBoss,
-  getWildwoodRecoveryHealth,
   pickWildwoodModifier,
   pickWildwoodRewardTrait,
   type WildwoodModifierId,
@@ -119,7 +117,6 @@ export function useWildwoodGauntletFlow({
     }
     const routeByPhase = {
       draft: CONSTANTS.SCREENS.DRAFT_DECK,
-      recovery: CONSTANTS.SCREENS.WILDWOOD_RECOVERY,
       reward: CONSTANTS.SCREENS.REWARDS,
       removal: CONSTANTS.SCREENS.WILDWOOD_REMOVAL,
     } as const;
@@ -154,20 +151,6 @@ export function useWildwoodGauntletFlow({
     },
     [startNextWildwoodBoss],
   );
-
-  const handleWildwoodRecoveryComplete = useCallback(() => {
-    dispatchRunSessionCommand(
-      (draft) => {
-        const wildwood = draft.session.wildwoodDraft;
-        if (wildwood?.phase !== "recovery") return false;
-        const { runPlayerHealth, runMaxHealth } = draft.run.activeRun;
-        setRunPlayerHealth(draft, getWildwoodRecoveryHealth(runPlayerHealth, runMaxHealth));
-        setWildwoodDraft(draft, { ...wildwood, phase: "reward" });
-        return true;
-      },
-      { afterCommit: (advanced) => advanced && navigateTo(CONSTANTS.SCREENS.REWARDS) },
-    );
-  }, [navigateTo]);
 
   const handleWildwoodRewardComplete = useCallback(
     (onRenderedScreenCommit?: () => void) => {
@@ -238,7 +221,7 @@ export function useWildwoodGauntletFlow({
     const rewardType = result.rewardState.rewardType;
     setWildwoodDraft(draft, {
       ...wildwood,
-      phase: "recovery",
+      phase: "reward",
       rewardType,
       rewardChoiceIds: rewardType === "gear" ? [] : result.rewardState.choices.map((choice) => choice.id),
       rewardGearChoices: rewardType === "gear" ? result.rewardState.choices : [],
@@ -251,7 +234,6 @@ export function useWildwoodGauntletFlow({
     resumeWildwoodRun,
     handleDraftPick,
     handleWildwoodDraftComplete,
-    handleWildwoodRecoveryComplete,
     handleWildwoodRewardComplete,
     handleWildwoodRemoveCard,
     handleWildwoodSkipRemoval,

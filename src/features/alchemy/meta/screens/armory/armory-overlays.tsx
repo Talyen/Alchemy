@@ -1,56 +1,59 @@
 import { Sparkles } from "lucide-react";
-import { type CraftingCurrencyId, type GearInstance } from "@/lib/gear";
+import { type CraftingCurrencyId } from "@/lib/gear";
 import { useHeldWhile } from "../../../shared/ui/fade-presence";
 import { ConfirmationDialog } from "../../../shared/ui/shared-ui";
 import { GearItemTitle } from "../../../shared/ui/gear-item-title";
 import { ArmoryCurrencyCursor } from "./armory-currency-targeting";
+import { SalvageYieldPreview } from "./salvage-yield-preview";
+import type { ArmorySalvagePending } from "./armory-screen-types";
 import { playUISound } from "@/lib/audio";
 
 interface Props {
-  salvageTarget: GearInstance | null;
+  salvagePending: ArmorySalvagePending | null;
   activeCurrencyId: CraftingCurrencyId | null;
   cursorPoint: { x: number; y: number } | null;
   editable: boolean;
-  onSalvage: (instanceId: string) => boolean;
+  onSalvage: (instanceId: string, salvageYield: ArmorySalvagePending["yield"]) => boolean;
   onClearSalvageTarget: () => void;
 }
 
 export function ArmoryOverlays({
-  salvageTarget,
+  salvagePending,
   activeCurrencyId,
   cursorPoint,
   editable,
   onSalvage,
   onClearSalvageTarget,
 }: Props) {
-  const heldTarget = useHeldWhile(salvageTarget !== null, salvageTarget);
+  const heldPending = useHeldWhile(salvagePending !== null, salvagePending);
   return (
     <>
       <ConfirmationDialog
-        open={salvageTarget !== null}
+        open={salvagePending !== null}
         title={
-          heldTarget ? (
+          heldPending ? (
             <>
               <span>Salvage </span>
-              <GearItemTitle instance={heldTarget} />?
+              <GearItemTitle instance={heldPending.instance} />?
             </>
           ) : (
             "Salvage?"
           )
         }
-        description="Salvaging items yields crafting materials"
+        description="You will receive:"
+        body={heldPending ? <SalvageYieldPreview salvageYield={heldPending.yield} /> : null}
         confirmLabel="Salvage"
         icon={Sparkles}
         dimBackground={false}
         dismissOnBackdrop={false}
         onCancel={onClearSalvageTarget}
         onConfirm={() => {
-          if (!heldTarget) return;
+          if (!heldPending) return;
           if (!editable) {
             onClearSalvageTarget();
             return;
           }
-          if (onSalvage(heldTarget.instanceId)) {
+          if (onSalvage(heldPending.instance.instanceId, heldPending.yield)) {
             playUISound("salvage");
             onClearSalvageTarget();
           } else {

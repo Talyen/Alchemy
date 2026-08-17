@@ -1,7 +1,7 @@
 // Talent definitions for keyword: archery.
-import { Plug, CloudRain, Eye, ScanEye, ArrowRight } from "lucide-react";
+import { Plug, CloudRain, Eye, ScanEye, ArrowRight, Aperture, Zap, Crosshair, Diamond, Award } from "lucide-react";
 import type { TalentDefinition } from "../types";
-import { addEffect, setEffect, placeholderTalents } from "../types";
+import { addEffect, setEffect } from "../types";
 
 export const archeryTalents: TalentDefinition[] = [
   {
@@ -44,5 +44,44 @@ export const archeryTalents: TalentDefinition[] = [
     icon: ArrowRight,
     effects: [setEffect("archeryDoubledVsHighHealth", true)],
   },
-  ...placeholderTalents("archery", "archery-placeholder", 6, 10),
+  {
+    id: "archery-piercing-shot",
+    keywordId: "archery",
+    name: "Piercing Shot",
+    description: "Archery cards ignore 1 Armor",
+    icon: Aperture,
+    effects: [addEffect("archeryArmorPiercing", 1)],
+  },
+  {
+    id: "archery-quickdraw",
+    keywordId: "archery",
+    name: "Quickdraw",
+    description: "Your first Archery card each combat is free",
+    icon: Zap,
+    effects: [setEffect("firstArcheryCardFree", true)],
+  },
+  {
+    id: "archery-kill-shot",
+    keywordId: "archery",
+    name: "Kill Shot",
+    description: "Archery cards deal double damage against enemies below 30% Health",
+    icon: Crosshair,
+    effects: [setEffect("archeryDoubledVsLowHealth", true)],
+  },
+  {
+    id: "archery-broadhead",
+    keywordId: "archery",
+    name: "Broadhead",
+    description: "Archery cards have a 10% chance to Bleed",
+    icon: Diamond,
+    effects: [setEffect("archeryBleedChance", 10)],
+  },
+  {
+    id: "archery-trophy-shot",
+    keywordId: "archery",
+    name: "Trophy Shot",
+    description: "Gain 2 Gold when an Archery card defeats an enemy",
+    icon: Award,
+    effects: [setEffect("goldOnArcheryKill", 2)],
+  },
 ];

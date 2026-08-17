@@ -4,7 +4,6 @@ import {
   canOfferWildwoodRemoval,
   createWildwoodBossBag,
   drawWildwoodBoss,
-  getWildwoodRecoveryHealth,
   withWildwoodModifier,
 } from "@/lib/content-systems/wildwood/gauntlet";
 import { WILDWOOD_BOSS_IDS } from "@/lib/content-systems/wildwood/bosses";
@@ -25,11 +24,6 @@ describe("Wildwood Draft gauntlet rules", () => {
   it("consumes the next boss from an existing bag", () => {
     const result = drawWildwoodBoss(["forge-golem", "iron-bear"], "frostwarden", () => 0.5);
     expect(result).toEqual({ bossId: "forge-golem", remainingBossIds: ["iron-bear"] });
-  });
-
-  it("restores 20 percent max health without exceeding maximum", () => {
-    expect(getWildwoodRecoveryHealth(10, 30)).toBe(16);
-    expect(getWildwoodRecoveryHealth(28, 30)).toBe(30);
   });
 
   it("offers removal only for decks with at least eight cards", () => {
