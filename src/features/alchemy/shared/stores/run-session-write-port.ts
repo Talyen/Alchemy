@@ -226,7 +226,7 @@ export function commitDestinationClaim(draft: GameplayDraft, destination: Destin
 }
 
 /** Undo a destination visit that never resolved so the same picker returns. */
-export function abandonDestinationVisit(draft: GameplayDraft, destination: Destination): void {
+function abandonDestinationVisit(draft: GameplayDraft, destination: Destination): void {
   const run = runActions(draft);
   const session = sessionActions(draft);
   const transient = draft.session;

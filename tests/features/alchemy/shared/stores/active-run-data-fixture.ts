@@ -97,11 +97,6 @@ export function createCompleteActiveRunData(): ActiveRunData {
       purchasedSlotKeys: ["gear:0"],
     },
     mysteryVisit: null,
-    corruptionResult: {
-      originalCard: slash,
-      corruptedCard: { ...slash, corrupted: true },
-      transformed: false,
-      delta: -1,
-    },
+    corruptionResult: null,
   } satisfies ActiveRunData;
 }

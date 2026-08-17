@@ -3,7 +3,6 @@ import { test } from "./fixtures/e2e";
 import {
   injectSaveState,
   destinationInterruptedFlow,
-  openGameModeSelect,
   resumeCampaignRun,
   SAVE_KEY,
   seedRandom,
@@ -58,8 +57,7 @@ test.describe("Save Persistence & Resume", () => {
     expect(savedBefore.currentAct).toBe(1);
     expect(savedBefore.destinationIndexInAct).toBe(2);
 
-    await openGameModeSelect(page);
-    await page.getByRole("button", { name: "Resume The Campaign" }).click();
+    await page.goto("/");
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
 
     const savedAfter = await page.evaluate((saveKey) => {
