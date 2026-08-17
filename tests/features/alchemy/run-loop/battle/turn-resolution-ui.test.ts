@@ -41,6 +41,8 @@ vi.mock("@/lib/audio", () => ({
 }));
 
 const presentation = {
+  hiddenHandCardKeys: new Set<string>(),
+  spawnCardGhost: vi.fn(),
   showCombatTexts: vi.fn(),
   shakePlayer: vi.fn(),
   hurtPlayer: vi.fn(),
@@ -48,6 +50,13 @@ const presentation = {
   shakeEnemy: vi.fn(),
   shakeCompanion: vi.fn(),
   resetHandTransferUi: vi.fn(),
+  resetCardTransfers: vi.fn(),
+  clearCardGhosts: vi.fn(),
+  resetPortraitHurtTokens: vi.fn(),
+  clearFloatingCombatTexts: vi.fn(),
+  setCardTransfers: vi.fn(),
+  setHiddenHandCardKeys: vi.fn(),
+  setCardTransferInProgress: vi.fn(),
 };
 
 let domain: { battleState: BattleState; pendingBattleTransition: PersistedBattleTransition | null };

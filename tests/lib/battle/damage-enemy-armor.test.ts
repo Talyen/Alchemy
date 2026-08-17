@@ -81,7 +81,6 @@ describe("dealDamageToEnemy — enemy armor", () => {
 describe("dealDamageToEnemy — boonSiphon siphoning", () => {
   it("steals armor and gains armor for the player when armor is siphoned", () => {
     const state = patchBattleState({
-      rng: () => 0.99,
       enemyMitigation: { armor: 5, block: 0, forge: 0 },
       talentEffects: { ...defaultTalentEffects, trinketSiphonChance: 100 },
       rng: () => 0.1,
@@ -100,7 +99,6 @@ describe("dealDamageToEnemy — boonSiphon siphoning", () => {
 
   it("steals forge and gains forge for the player when forge is siphoned", () => {
     const state = patchBattleState({
-      rng: () => 0.99,
       enemyMitigation: { armor: 0, block: 0, forge: 3 },
       talentEffects: { ...defaultTalentEffects, trinketSiphonChance: 100 },
       rng: () => 0.0,

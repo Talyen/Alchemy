@@ -5,7 +5,7 @@ import { useProfileStore } from "../../../../helpers/gameplay-store-test";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { makeRunController, makeTalentController } from "../../../../helpers/run-controller";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID, DRAFT_ROUNDS } from "@/lib/game-constants";
-import { getStartingDeck, type BattleCard } from "@/lib/game-data";
+import { getStartingDeck } from "@/lib/game-data";
 import { makeTestCard } from "../../../../fixtures/battle";
 import {
   getRunProgressStoreView,

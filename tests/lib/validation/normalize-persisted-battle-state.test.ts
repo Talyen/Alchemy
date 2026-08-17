@@ -75,7 +75,7 @@ describe("normalizePersistedBattleState", () => {
       talentEffects: {
         ...defaultBattleState().talentEffects,
         healthThresholdArmor: { threshold: 50, amount: 5 },
-      } as ReturnType<typeof defaultBattleState>["talentEffects"],
+      } as unknown as ReturnType<typeof defaultBattleState>["talentEffects"],
     };
 
     const normalized = normalizePersistedBattleState(saved);
