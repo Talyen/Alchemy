@@ -53,10 +53,10 @@ test.describe("Homestead Flow", () => {
     test("companions tab shows companion cards when discovered", async ({ page }) => {
       const homestead = new HomesteadPage(page);
       await homestead.switchTab("Companions");
-      await expect(page.getByText("Wolf").first()).toBeVisible({ timeout: 3000 });
-      await expect(page.getByText("Bear").first()).toBeVisible();
+      await expect(page.getByRole("img", { name: "Wolf" })).toBeVisible({ timeout: 3000 });
+      await expect(page.getByRole("img", { name: "Bear" })).toBeVisible();
       await page.getByRole("button", { name: "Next page" }).click();
-      await expect(page.getByText("Phoenix").first()).toBeVisible({ timeout: 3000 });
+      await expect(page.getByRole("img", { name: "Phoenix" })).toBeVisible({ timeout: 3000 });
     });
   });
 
@@ -108,10 +108,10 @@ test.describe("Homestead Flow", () => {
     }) => {
       const shell = page.locator(".alchemy-shell").first();
       const tabAnchors: Record<"Buildings" | "Farm" | "Research" | "Companions", Locator> = {
-        Buildings: page.getByText("Blacksmith").first(),
+        Buildings: page.getByRole("button", { name: /Blacksmith/ }),
         Farm: page.getByRole("button", { name: /Herb Garden/ }),
-        Research: page.getByText("Leyline Energy").first(),
-        Companions: page.getByRole("img", { name: "Wolf" }).first(),
+        Research: page.getByRole("heading", { name: "Leyline Energy" }).or(page.getByText("Leyline Energy")),
+        Companions: page.getByRole("img", { name: "Wolf" }),
       };
 
       // Measure only once the shell height has settled so tab transitions do

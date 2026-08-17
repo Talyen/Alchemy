@@ -6,7 +6,7 @@ import { canPlayCard, type BattleState } from "@/lib/battle";
 import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
 
 import { useLatestRef } from "../../shared/hooks";
-import type { Screen } from "../../shared/types";
+import type { Screen } from "@/lib/routing";
 
 interface AutoEndTurnOptions {
   autoEndTurn: boolean;
@@ -15,6 +15,7 @@ interface AutoEndTurnOptions {
   hasActiveBattle: boolean;
   cardTransferInProgress: boolean;
   hiddenHandCardKeys: Set<string>;
+  isCardPlayInProgress?: () => boolean;
   onEndTurn: () => void;
 }
 
@@ -47,9 +48,11 @@ export function useBattleAutoEndTurn({
   hasActiveBattle,
   cardTransferInProgress,
   hiddenHandCardKeys,
+  isCardPlayInProgress,
   onEndTurn,
 }: AutoEndTurnOptions) {
   const onEndTurnRef = useLatestRef(onEndTurn);
+  const isCardPlayInProgressRef = useLatestRef(isCardPlayInProgress);
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearAutoEndTurn = useCallback(() => {
@@ -97,6 +100,7 @@ export function useBattleAutoEndTurn({
         !hasActiveBattle ||
         cardTransferInProgress ||
         hiddenHandCardKeys.size > 0 ||
+        isCardPlayInProgressRef.current?.() ||
         screen !== "battle" ||
         state.turnPhase !== "player" ||
         state.enemyHealth <= 0 ||
@@ -117,6 +121,7 @@ export function useBattleAutoEndTurn({
       hasActiveBattle,
       hasPlayableCard,
       hiddenHandCardKeys,
+      isCardPlayInProgressRef,
       onEndTurnRef,
       screen,
     ],

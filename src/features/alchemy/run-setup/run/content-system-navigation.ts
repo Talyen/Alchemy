@@ -1,113 +1,38 @@
-// Content-system entry: campaign, labyrinth, wildwood, character select, and run start.
+// Content-system Play routing: begin/resume, character select, draft, and difficulty.
 import { logError } from "@/lib/error-logger";
-import { playGoldGain } from "@/lib/audio";
 import { getDifficultyModifiers, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
-import { DEFAULT_BATTLE_ENEMY_TYPE } from "@/lib/game-constants";
+import { DEFAULT_BATTLE_ENEMY_TYPE, DRAFT_ROUNDS } from "@/lib/game-constants";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import {
   setPendingCharacterId,
   setPendingContentSystemType,
-  setWildwoodDraft,
+  setStarterDraftChoices,
   setDestinationOfferState,
   setRewardState,
   createDraftRunRandomSource,
+  setRunDeck,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
+import {
+  readActiveRun,
+  readHasActiveRun,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { afterCampaignCharacterResolved } from "@/features/alchemy/shared/run-flow/campaign-start";
+import { restoreOrCreateDestinationRewardState } from "@/features/alchemy/shared/run-flow/destination-flow";
 import {
-  createInitialDestinationResult,
-  restoreOrCreateDestinationRewardState,
-} from "@/features/alchemy/shared/run-flow/destination-flow";
+  createStarterDraftChoices,
+  wildcardStarterResumeTarget,
+} from "@/features/alchemy/shared/run-flow/starter-draft";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
+import { createContentSystemRunInit } from "./content-system-run-init";
 import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { CONSTANTS } from "../../shared/types";
-import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import { applyRunStartToDraft, createConfiguredRunStartSnapshot } from "./run-start-command";
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
-  function createStartSnapshot(
-    characterId: CharacterId,
-    contentSystemType: ContentSystemId,
-    difficultyId?: DifficultyId | null,
-    draftedDeck?: BattleCard[],
-  ) {
-    const resolvedDraft =
-      draftedDeck ??
-      (characterId === "wildcard" && deps.draftedDeckRef.current ? deps.draftedDeckRef.current : undefined);
-    return createConfiguredRunStartSnapshot({
-      characterId,
-      contentSystemType,
-      talentStartGold: deps.talents.talentEffects.startGold,
-      talentXP: deps.talents.talentXP,
-      ...(difficultyId === undefined ? {} : { difficultyId }),
-      ...(resolvedDraft === undefined ? {} : { draftedDeck: resolvedDraft }),
-    });
-  }
-
-  function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
-    const startSnapshot = createStartSnapshot(characterId, CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN, difficultyId);
-    return dispatchRunSessionCommand(
-      (draft) => {
-        applyRunStartToDraft(draft, startSnapshot, { discoverDeck: true, resetEncounteredEnemies: true });
-        const run = draft.run.activeRun;
-        const initialDestinations = createInitialDestinationResult({
-          availableDestinations: deps.getAvailableDestinations({
-            currentHealth: startSnapshot.runMaxHealth,
-            currentGold: startSnapshot.runGold,
-            destinationIndexInAct: 0,
-            maxHealth: startSnapshot.runMaxHealth,
-          }),
-          offerState: {
-            lastOfferedDestinations: run.lastOfferedDestinations,
-            roundsSinceOffered: run.destinationRoundsSinceOffered,
-          },
-          bossEnemyId: getBossEnemy([], createDraftRunRandomSource(draft, "world")).id,
-          rng: createDraftRunRandomSource(draft, "destinations"),
-        });
-        setDestinationOfferState(draft, initialDestinations.offerState);
-        setRewardState(draft, initialDestinations.rewardState);
-        return { freshDeck: startSnapshot.freshDeck, totalStartGold: startSnapshot.runGold };
-      },
-      {
-        afterCommit: () => {
-          if (startSnapshot.runGold > 0) playGoldGain();
-          deps.clearCardHover();
-        },
-      },
-    );
-  }
-
-  function initializeLabyrinthRun(characterId: CharacterId) {
-    const snapshot = createStartSnapshot(characterId, CONSTANTS.CONTENT_SYSTEMS.LABYRINTH);
-    dispatchRunSessionCommand((draft) => applyRunStartToDraft(draft, snapshot, { discoverDeck: true }), {
-      afterCommit: () => {
-        if (snapshot.runGold > 0) playGoldGain();
-        deps.clearCardHover();
-        deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
-      },
-    });
-  }
-
-  function initializeWildwoodRun(characterId: CharacterId) {
-    const startSnapshot = createStartSnapshot(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, null, []);
-    dispatchRunSessionCommand(
-      (draft) => {
-        applyRunStartToDraft(draft, startSnapshot);
-        setWildwoodDraft(
-          draft,
-          createInitialWildwoodDraftState(characterId, createDraftRunRandomSource(draft, "world")),
-        );
-        setPendingCharacterId(draft, characterId);
-      },
-      {
-        afterCommit: () => {
-          deps.clearCardHover();
-          deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
-        },
-      },
-    );
-  }
+  const { initializeRunForDifficulty, initializeLabyrinthRun, initializeWildwoodRun, initializeStarterDraftRun } =
+    createContentSystemRunInit(deps);
 
   const noviceCampaignDeps = () => ({
     completedDifficulties: deps.completedDifficulties,
@@ -117,35 +42,55 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     navigateToBattle: () => deps.navigateTo(CONSTANTS.SCREENS.BATTLE),
   });
 
+  function resumeActiveContentSystem(systemId: ContentSystemId) {
+    const run = readActiveRun();
+    const starterResume = wildcardStarterResumeTarget({
+      characterId: run.characterId,
+      contentSystemType: run.contentSystemType,
+      selectedDifficulty: run.selectedDifficulty,
+      runDeckLength: run.runDeck.length,
+      starterDraftChoices: readRunSession().starterDraftChoices,
+    });
+    if (starterResume === "draft-deck") {
+      deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
+      return;
+    }
+    if (starterResume === "difficulty-select") {
+      deps.navigateTo(CONSTANTS.SCREENS.DIFFICULTY_SELECT);
+      return;
+    }
+    if (systemId === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
+      deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
+    } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
+      deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
+        dispatchRunSessionCommand((draft) => {
+          const active = draft.run.activeRun;
+          setRewardState(draft, (prev) =>
+            restoreOrCreateDestinationRewardState(prev, {
+              availableDestinations: deps.getAvailableDestinations(),
+              offerState: {
+                lastOfferedDestinations: active.lastOfferedDestinations,
+                roundsSinceOffered: active.destinationRoundsSinceOffered,
+              },
+              bossEnemyId: getBossEnemy([], createDraftRunRandomSource(draft, "world")).id,
+              rng: createDraftRunRandomSource(draft, "destinations"),
+              onSampled: (result) => setDestinationOfferState(draft, result.offerState),
+            }),
+          );
+        });
+      });
+    } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+      deps.onResumeWildwood();
+    }
+  }
+
   function beginContentSystem(systemId: ContentSystemId) {
     if (deps.hasActiveBattle && deps.run.contentSystemType === systemId) {
       deps.returnToBattle();
       return;
     }
     if (deps.hasActiveRun && deps.run.contentSystemType === systemId) {
-      if (systemId === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
-        deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
-      } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
-        deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
-          dispatchRunSessionCommand((draft) => {
-            const run = draft.run.activeRun;
-            setRewardState(draft, (prev) =>
-              restoreOrCreateDestinationRewardState(prev, {
-                availableDestinations: deps.getAvailableDestinations(),
-                offerState: {
-                  lastOfferedDestinations: run.lastOfferedDestinations,
-                  roundsSinceOffered: run.destinationRoundsSinceOffered,
-                },
-                bossEnemyId: getBossEnemy([], createDraftRunRandomSource(draft, "world")).id,
-                rng: createDraftRunRandomSource(draft, "destinations"),
-                onSampled: (result) => setDestinationOfferState(draft, result.offerState),
-              }),
-            );
-          });
-        });
-      } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-        deps.onResumeWildwood();
-      }
+      resumeActiveContentSystem(systemId);
       return;
     }
     dispatchRunSessionCommand((draft) => setPendingContentSystemType(draft, systemId));
@@ -173,9 +118,12 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     }
 
     if (selectedId === "wildcard") {
-      dispatchRunSessionCommand((draft) => setPendingCharacterId(draft, selectedId));
-      deps.draftedDeckRef.current = null;
-      deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
+      if (systemType !== CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN && systemType !== CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
+        logError(`[content-system-navigation] handleCharacterSelect: unhandled content system ${systemType}`, "other");
+        deps.navigateTo(CONSTANTS.SCREENS.MENU);
+        return;
+      }
+      initializeStarterDraftRun(systemType);
       return;
     }
 
@@ -192,6 +140,24 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     afterCampaignCharacterResolved(selectedId, noviceCampaignDeps(), () => {
       dispatchRunSessionCommand((draft) => setPendingCharacterId(draft, selectedId));
       deps.navigateTo(CONSTANTS.SCREENS.DIFFICULTY_SELECT);
+    });
+  }
+
+  function handleStarterDraftPick(card: BattleCard) {
+    dispatchRunSessionCommand((draft) => {
+      const choices = draft.session.starterDraftChoices;
+      if (draft.run.activeRun.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD || !choices?.length) return;
+      if (draft.run.activeRun.runDeck.length >= DRAFT_ROUNDS) return;
+      if (!choices.some((choice) => choice.id === card.id)) return;
+      const nextDeck = [...draft.run.activeRun.runDeck, card];
+      setRunDeck(draft, nextDeck);
+      discoverCardIds(draft, [card.id]);
+      setStarterDraftChoices(
+        draft,
+        nextDeck.length >= DRAFT_ROUNDS
+          ? []
+          : createStarterDraftChoices(nextDeck, createDraftRunRandomSource(draft, "rewards")),
+      );
     });
   }
 
@@ -212,7 +178,23 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       return;
     }
 
-    deps.draftedDeckRef.current = draftedCards;
+    const run = readActiveRun();
+    const completedDeck =
+      run.characterId === "wildcard" && run.runDeck.length >= DRAFT_ROUNDS ? run.runDeck : draftedCards;
+    if (completedDeck.length < DRAFT_ROUNDS) return;
+
+    dispatchRunSessionCommand((draft) => {
+      const active = draft.run.activeRun;
+      if (active.characterId !== "wildcard" || active.runDeck.length < DRAFT_ROUNDS) {
+        setRunDeck(draft, completedDeck);
+        discoverCardIds(
+          draft,
+          completedDeck.map((card) => card.id),
+        );
+      }
+      setStarterDraftChoices(draft, null);
+    });
+
     if (systemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
       initializeLabyrinthRun("wildcard");
       return;
@@ -224,13 +206,12 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function handleDifficultySelect(difficultyId: DifficultyId) {
-    const pendingCharacterId = readRunSession().pendingCharacterId;
-    if (!pendingCharacterId) {
+    const selectedId = readRunSession().pendingCharacterId ?? readActiveRun().characterId;
+    if (!selectedId) {
       logError("[content-system-navigation] handleDifficultySelect: no pending character", "other");
       deps.navigateTo(CONSTANTS.SCREENS.MENU);
       return;
     }
-    const selectedId = pendingCharacterId;
     const { freshDeck, totalStartGold } = initializeRunForDifficulty(selectedId, difficultyId);
     const modifiers = getDifficultyModifiers(selectedId, difficultyId);
     deps.onStartBattle(freshDeck, totalStartGold, DEFAULT_BATTLE_ENEMY_TYPE, modifiers);
@@ -240,6 +221,10 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function handleBackFromDifficultySelect() {
+    if (readHasActiveRun() && readActiveRun().characterId === "wildcard") {
+      deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
+      return;
+    }
     deps.navigateTo(CONSTANTS.SCREENS.CHARACTER_SELECT);
   }
 
@@ -248,6 +233,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     beginLabyrinth,
     beginWildwood,
     handleCharacterSelect,
+    handleStarterDraftPick,
     handleStandardDraftComplete,
     handleDifficultySelect,
     handleBackFromDifficultySelect,

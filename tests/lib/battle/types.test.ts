@@ -6,7 +6,6 @@ import {
   addGold,
   setFlag,
   clampHealth,
-  applyPlayerCombatDamage,
   applyPlayerHealing,
   isPlayerDefeated,
 } from "@/lib/battle/types";
@@ -104,8 +103,8 @@ describe("addGold", () => {
 describe("setFlag", () => {
   it("sets a boolean flag", () => {
     const state = makeTestBattleState();
-    const next = setFlag(state, "firstPhysicalCardFreeUsed", true);
-    expect(next.flags.firstPhysicalCardFreeUsed).toBe(true);
+    const next = setFlag(state, "firstHolyCardFreeUsed", true);
+    expect(next.flags.firstHolyCardFreeUsed).toBe(true);
   });
 
   it("sets a numeric flag", () => {
@@ -147,61 +146,6 @@ describe("clampHealth", () => {
   it("handles exact boundaries", () => {
     expect(clampHealth(0, 0, 30)).toBe(0);
     expect(clampHealth(30, 0, 30)).toBe(30);
-  });
-});
-
-describe("applyPlayerCombatDamage", () => {
-  it("reduces player health", () => {
-    const state = makeTestBattleState({ playerHealth: 20 });
-    const next = applyPlayerCombatDamage(state, 5);
-    expect(next.playerHealth).toBe(15);
-  });
-
-  it("returns same state when damage is 0", () => {
-    const state = makeTestBattleState({ playerHealth: 20 });
-    const next = applyPlayerCombatDamage(state, 0);
-    expect(next).toBe(state);
-  });
-
-  it("returns same state when damage is negative", () => {
-    const state = makeTestBattleState({ playerHealth: 20 });
-    const next = applyPlayerCombatDamage(state, -5);
-    expect(next).toBe(state);
-  });
-
-  it("triggers Death's Door on first lethal hit", () => {
-    const state = makeTestBattleState({ playerHealth: 10, turn: 3 });
-    const next = applyPlayerCombatDamage(state, 20);
-    expect(next.playerHealth).toBe(1);
-    expect(next.deathsDoorUsed).toBe(true);
-    expect(next.deathsDoorActive).toBe(true);
-    expect(next.deathsDoorTriggeredTurn).toBe(3);
-  });
-
-  it("does not trigger Death's Door again on second lethal hit during grace", () => {
-    const state = makeTestBattleState({
-      playerHealth: 10,
-      deathsDoorUsed: true,
-      deathsDoorActive: true,
-      deathsDoorTriggeredTurn: 3,
-      turn: 4,
-    });
-    const next = applyPlayerCombatDamage(state, 20);
-    expect(next.playerHealth).toBe(1);
-    expect(next.deathsDoorUsed).toBe(true);
-    expect(next.deathsDoorActive).toBe(true);
-  });
-
-  it("is defeated when hit while Death's Door already used and health was already 0", () => {
-    const state = makeTestBattleState({
-      playerHealth: 0,
-      deathsDoorUsed: true,
-      deathsDoorActive: false,
-      deathsDoorTriggeredTurn: 3,
-    });
-    const next = applyPlayerCombatDamage(state, 5);
-    expect(next.playerHealth).toBe(0);
-    expect(next.deathsDoorActive).toBe(false);
   });
 });
 

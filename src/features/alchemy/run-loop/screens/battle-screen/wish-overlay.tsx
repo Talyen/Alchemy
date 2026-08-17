@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { Button } from "@/components/ui/button";
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard, CardDescriptionContext } from "@/lib/game-data";
 
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { fadePhaseClass, useFadePresence, useHeldWhile } from "../../../shared/ui/fade-presence";
@@ -13,7 +13,6 @@ import { handCardWidthClass, BUTTON_WIDTH_ACTION, bodyTextClass } from "@/featur
 import { cn } from "@/lib/utils";
 import type { BattleActionsProps, BattleScreenState } from "./types";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
-import type { CardDescriptionContext } from "../../../shared/utils/card-description";
 
 function WishCardItem({
   card,

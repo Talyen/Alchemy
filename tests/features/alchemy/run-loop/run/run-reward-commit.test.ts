@@ -5,8 +5,8 @@ import * as rewardGold from "@/features/alchemy/run-loop/navigation/reward-flow"
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 
 const discoveryMocks = vi.hoisted(() => ({
-  setDiscoveredCardIds: vi.fn(),
-  setDiscoveredTrinketIds: vi.fn(),
+  discoverCardIds: vi.fn(),
+  discoverTrinketIds: vi.fn(),
   setRunDeck: vi.fn(),
   setRunTrinkets: vi.fn(),
 }));
@@ -20,14 +20,14 @@ vi.mock("@/features/alchemy/shared/stores/profile-store", async (importOriginal)
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/profile-store")>();
   return {
     ...actual,
-    setDiscoveredCardIds: discoveryMocks.setDiscoveredCardIds,
-    setDiscoveredTrinketIds: discoveryMocks.setDiscoveredTrinketIds,
+    discoverCardIds: discoveryMocks.discoverCardIds,
+    discoverTrinketIds: discoveryMocks.discoverTrinketIds,
   };
 });
 
 beforeEach(() => {
-  discoveryMocks.setDiscoveredCardIds.mockClear();
-  discoveryMocks.setDiscoveredTrinketIds.mockClear();
+  discoveryMocks.discoverCardIds.mockClear();
+  discoveryMocks.discoverTrinketIds.mockClear();
   discoveryMocks.setRunDeck.mockClear();
   discoveryMocks.setRunTrinkets.mockClear();
 });
@@ -40,8 +40,7 @@ describe("applyRewardSelection", () => {
 
     const deckUpdater = discoveryMocks.setRunDeck.mock.calls[0][1];
     expect(deckUpdater([])).toEqual([card]);
-    const discUpdater = discoveryMocks.setDiscoveredCardIds.mock.calls[0][1];
-    expect(discUpdater([])).toEqual(["slash"]);
+    expect(discoveryMocks.discoverCardIds).toHaveBeenCalledWith(draft, ["slash"]);
   });
 
   it("appends boon rewards with discovery", () => {
@@ -55,8 +54,7 @@ describe("applyRewardSelection", () => {
 
     const boonUpdater = discoveryMocks.setRunTrinkets.mock.calls[0][1];
     expect(boonUpdater([])).toEqual(["bone-charm"]);
-    const discUpdater = discoveryMocks.setDiscoveredTrinketIds.mock.calls[0][1];
-    expect(discUpdater([])).toEqual(["bone-charm"]);
+    expect(discoveryMocks.discoverTrinketIds).toHaveBeenCalledWith(draft, ["bone-charm"]);
   });
 });
 
@@ -70,8 +68,7 @@ describe("applyAlchemistPotion", () => {
 
     const deckUpdater = discoveryMocks.setRunDeck.mock.calls[0][1];
     expect(deckUpdater([])).toEqual([potion]);
-    const discUpdater = discoveryMocks.setDiscoveredCardIds.mock.calls[0][1];
-    expect(discUpdater([])).toEqual(["mana-potion"]);
+    expect(discoveryMocks.discoverCardIds).toHaveBeenCalledWith(draft, ["mana-potion"]);
 
     vi.restoreAllMocks();
   });

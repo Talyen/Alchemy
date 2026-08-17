@@ -113,6 +113,8 @@ describe("defaultHomesteadEffects", () => {
     expect(defaultHomesteadEffects.companionDamage).toBe(0);
     expect(defaultHomesteadEffects.companionBondLevels.wolf).toBe(0);
     expect(defaultHomesteadEffects.forgeToBurn).toBe(false);
+    expect("healMultiplier" in defaultHomesteadEffects).toBe(false);
+    expect(defaultHomesteadEffects.potionPotency).toBe(0);
   });
 });
 
@@ -297,7 +299,6 @@ describe("mergeIntoManifest", () => {
     startGold: 10,
     startBlock: 2,
     campfireHealBonus: 0.1,
-    physicalCritChance: 5,
   });
 
   const makeHomesteadEffects = () => ({
@@ -315,7 +316,6 @@ describe("mergeIntoManifest", () => {
     expect(merged.startGold).toBe(10);
     expect(merged.startBlock).toBe(2);
     expect(merged.campfireHealBonus).toBeCloseTo(0.1);
-    expect(merged.physicalCritChance).toBe(5);
     expect(merged.potionPotency).toBeCloseTo(1.2);
     expect(merged.companionBondLevels.wolf).toBe(2);
     expect(merged.forgeToBurn).toBe(true);

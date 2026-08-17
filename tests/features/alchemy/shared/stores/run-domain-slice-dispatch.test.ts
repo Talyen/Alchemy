@@ -82,6 +82,7 @@ describe("run domain slice dispatch", () => {
       "setPendingContentSystemType",
       "setLabyrinthMap",
       "setWildwoodDraft",
+      "setStarterDraftChoices",
       "setShopState",
       "setAlchemistState",
       "setTrinketShopState",

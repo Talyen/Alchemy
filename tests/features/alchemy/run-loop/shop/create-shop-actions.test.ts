@@ -78,6 +78,7 @@ const createInitialEquipmentShopState = (rng: () => number = testRng) => createI
 function buildActions(
   overrides?: Partial<{
     talentEffects: Partial<TalentEffectManifest>;
+    homesteadEffects: Partial<typeof defaultHomesteadEffects>;
     gearAstralChanceBonus: number;
     trinketIds: string[];
   }>,
@@ -89,7 +90,11 @@ function buildActions(
   const talentEffects = { ...defaultTalentEffects, ...overrides?.talentEffects } as TalentEffectManifest;
   return createShopActions({
     talentEffects,
-    homesteadEffects: { ...defaultHomesteadEffects, gearAstralChanceBonus: overrides?.gearAstralChanceBonus ?? 0 },
+    homesteadEffects: {
+      ...defaultHomesteadEffects,
+      gearAstralChanceBonus: overrides?.gearAstralChanceBonus ?? 0,
+      ...overrides?.homesteadEffects,
+    },
   });
 }
 
@@ -305,6 +310,27 @@ describe("createShopActions", () => {
       expect(getRunProgressStoreView().runGold).toBe(999 - ALCHEMIST_MIX_PRICE);
       expect(getRunSessionStoreView().alchemistState.mixUsed).toBe(true);
       expect(getRunProgressStoreView().runDeck).toEqual([result]);
+    });
+
+    it("adds homestead potionMixPotency onto talent mix potency", () => {
+      setRunProgress({
+        runGold: 999,
+        runDeck: [
+          makeCard({ id: "a", title: "Potion A", effects: [makeEffect("holy", 5)] }),
+          makeCard({ id: "b", title: "Potion B", effects: [makeEffect("holy", 5)] }),
+        ],
+      });
+      setAlchemistState(createInitialAlchemistState());
+      const actions = buildActions({
+        talentEffects: { potionMixPotency: 1 },
+        homesteadEffects: { potionMixPotency: 1 },
+      });
+
+      const result = actions.alchemist.mixPotions(0, 1);
+      expect(result?.effects).toEqual([
+        expect.objectContaining({ kind: "damage", damageType: "holy", amount: 7 }),
+        expect.objectContaining({ kind: "damage", damageType: "holy", amount: 7 }),
+      ]);
     });
 
     it("returns null for out-of-bounds indices", () => {

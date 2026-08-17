@@ -69,7 +69,7 @@ export const freezeTalents: TalentDefinition[] = [
     name: "Cold Resistance",
     description: "Receive half Freeze damage",
     icon: Thermometer,
-    effects: [setEffect("receiveHalfFreezeBuildUp", true)],
+    effects: [setEffect("receiveHalfFreezeDamage", true)],
   },
   {
     id: "freeze-poison-preserve",

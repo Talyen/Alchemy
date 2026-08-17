@@ -21,10 +21,6 @@ const FIRST_CARD_FREE_RULES: Array<{
   condition: (state: CardCostState, card: BattleCard) => boolean;
 }> = [
   {
-    flag: "firstPhysicalCardFreeUsed",
-    condition: (state, card) => state.talentEffects.firstPhysicalCardFree && cardHasDamageType(card, "physical"),
-  },
-  {
     flag: "firstHolyCardFreeUsed",
     condition: (state, card) => state.talentEffects.firstHolyCardFree && cardHasDamageType(card, "holy"),
   },

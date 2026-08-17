@@ -7,7 +7,7 @@ import {
   type CompanionId,
 } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
-import { type Destination } from "@/features/alchemy/shared/types";
+import { type Destination } from "@/lib/routing";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import type { ContentSystemId } from "@/lib/content-systems/types";

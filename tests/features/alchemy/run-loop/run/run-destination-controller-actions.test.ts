@@ -4,7 +4,7 @@ import * as config from "@/features/alchemy/shared/config";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { createEmptyRewardState } from "@/lib/active-run-session";
 import { getRunAvailableDestinations } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { getPreviousDestination } from "@/features/alchemy/shared/run-flow/campaign-start";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
@@ -147,6 +147,13 @@ describe("run destination controller actions", () => {
       session.setMysteryChosenCardId("slash");
       session.setMysteryChosenChoice({ label: "Leave", effects: [] });
       session.setMysteryPendingRemoval(true);
+      const stale = makeTestCard({ id: "slash" });
+      session.setCorruptionResult({
+        originalCard: stale,
+        corruptedCard: { ...stale, corrupted: true },
+        transformed: false,
+        delta: -1,
+      });
 
       const labyrinthClearNode = vi.fn();
       const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
@@ -160,6 +167,7 @@ describe("run destination controller actions", () => {
       expect(cleared.mysteryChosenCardId).toBeNull();
       expect(cleared.mysteryChosenChoice).toBeNull();
       expect(cleared.mysteryPendingRemoval).toBe(false);
+      expect(cleared.corruptionResult).toBeNull();
       expect(navigateTo.mock.calls[0]?.[0]).toBe(expectedScreen);
       if (expectLabyrinthClear) expect(labyrinthClearNode).toHaveBeenCalledOnce();
       else expect(labyrinthClearNode).not.toHaveBeenCalled();
@@ -281,5 +289,26 @@ describe("corruption destination exit", () => {
 
     expect(advanceToNextDestination).toHaveBeenCalledOnce();
     expect(returnToCurrentDestination).not.toHaveBeenCalled();
+  });
+
+  it("handleCorruptCard ignores a second pick after a result is stored", () => {
+    const original = makeTestCard({ id: "slash" });
+    const other = makeTestCard({ id: "block" });
+    getRunSessionStoreView().setCorruptionResult({
+      originalCard: original,
+      corruptedCard: { ...original, corrupted: true },
+      transformed: false,
+      delta: -1,
+    });
+
+    const updateRunDeck = vi.fn();
+    createCorruptionFlowHandlers({
+      getRunDeck: () => [original, other],
+      updateRunDeck,
+      advanceToNextDestination: vi.fn(),
+      returnToCurrentDestination: vi.fn(),
+    }).handleCorruptCard(1);
+
+    expect(updateRunDeck).not.toHaveBeenCalled();
   });
 });

@@ -4,17 +4,11 @@ import { stopAllSfx } from "@/lib/audio";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { setBattleStartState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { useBattlePresentationStore } from "./battle-presentation-store";
 import type { BattleControllerContext } from "./battle-context";
-
-/** Domain battle state plus presentation VFX actions used by turn/card-play orchestration. */
-export function getBattleSessionStore() {
-  return { ...readBattle(), ...useBattlePresentationStore.getState() };
-}
 
 export function createBattleSession(ctx: BattleControllerContext) {
   const getStore = () => readBattle();
-  const getPresentationStore = () => useBattlePresentationStore.getState();
+  const getPresentationStore = () => ctx.getPresentation();
 
   function isBattleSessionActive(session: number) {
     if (session !== ctx.battleSessionRef.current) return false;
@@ -100,7 +94,6 @@ export function createBattleSession(ctx: BattleControllerContext) {
     ctx.victoryDefeatHandledRef.current = false;
     ctx.companionScheduledRef.current = false;
     ctx.onBattleSessionPreparedRef.current?.();
-    getPresentationStore().clearRevealedCardKeys();
     getPresentationStore().resetPortraitHurtTokens();
     getPresentationStore().clearFloatingCombatTexts();
   }

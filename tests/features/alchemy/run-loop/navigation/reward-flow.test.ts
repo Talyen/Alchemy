@@ -2,9 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   applyLabyrinthRewardMaterialModifiers,
   computeVictoryGold,
-  createEmptyRewardState,
   createNextRewardState,
-  executeRewardRouteTransition,
   getActiveRewardModifiersForContentSystem,
   getCompanionCardChoices,
   getGenerousGoldBonus,
@@ -13,6 +11,8 @@ import {
   shouldGrantAlchemistReward,
   shouldGrantCompanionReward,
 } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { executeRewardRouteTransition } from "@/features/alchemy/run-loop/run/run-flow-rewards";
+import { createEmptyRewardState } from "@/lib/active-run-session";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -21,16 +21,6 @@ import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 
 describe("reward flow orchestration", () => {
   describe("createEmptyRewardState", () => {
-    it("returns initial state with defaults", () => {
-      const result = createEmptyRewardState();
-      expect(result.choices).toEqual([]);
-      expect(result.gold).toBe(0);
-      expect(result.materials).toEqual(emptyInventory());
-      expect(result.selectedId).toBeNull();
-      expect(result.rewardType).toBe("card");
-      expect(result.selectedBossId).toBeNull();
-    });
-
     it("accepts optional destinations", () => {
       const result = createEmptyRewardState(["Campfire", "Mystery"]);
       expect(result.destinations).toEqual(["Campfire", "Mystery"]);

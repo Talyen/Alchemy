@@ -5,7 +5,6 @@ import { isDesktop, quitDesktopApp } from "@/lib/platform";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
 import type { useReturnToRunNavigation } from "@/app/use-app-navigation";
-import { useHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-store";
 import { renderAlchemyScreenRoute, type RenderAlchemyScreenProps } from "@/app/screen-routes";
 import { isProgressionFeatureUnlocked, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 
@@ -49,9 +48,7 @@ export function UnsupportedSaveOverlay({
   );
 }
 
-export function useIsArmoryLocked() {
-  return !useHasAnyOwnedGear();
-}
+export { useIsArmoryLocked } from "@/features/alchemy/shared/stores/gear-store";
 
 export function GameMenuOverlay({
   saveBlockedByNewerVersion,

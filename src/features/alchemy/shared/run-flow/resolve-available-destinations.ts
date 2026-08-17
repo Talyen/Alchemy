@@ -1,5 +1,5 @@
 // Pure destination availability for shell wiring — run-setup / run-loop stay phase-isolated.
-import type { Destination } from "@/features/alchemy/shared/types";
+import type { Destination } from "@/lib/routing";
 import { getPreviousDestination } from "./campaign-start";
 import { getRunAvailableDestinations, type DestinationOptionsInput } from "./destination-flow";
 
@@ -26,12 +26,4 @@ export function resolveAvailableDestinations(input: ResolveAvailableDestinations
     previousDestination,
     hasAnyOwnedGear: options.hasAnyOwnedGear ?? input.hasAnyOwnedGear,
   });
-}
-
-type AvailableDestinationsBase = Omit<ResolveAvailableDestinationsInput, "options">;
-
-/** Bind a live run-progress reader to the pure destination resolver. */
-export function bindAvailableDestinationsResolver(getBase: () => AvailableDestinationsBase) {
-  return (options: DestinationOptionsInput = {}): Destination[] =>
-    resolveAvailableDestinations({ ...getBase(), options });
 }

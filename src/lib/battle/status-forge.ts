@@ -93,8 +93,3 @@ export function addForgeToPlayer(state: BattleState, baseAmount: number, combatT
   }
   return nextState;
 }
-
-export function applyStunForgeTalent(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
-  if (state.talentEffects.forgeOnStun <= 0) return state;
-  return addForgeToPlayer(state, state.talentEffects.forgeOnStun, combatTexts);
-}

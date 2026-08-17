@@ -1,10 +1,11 @@
 // Shared helpers for enemy turn phase transitions, Death's Door, and health thresholds.
 import { drawCards } from "./draw";
-import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { applyHealingWithCombatText } from "./combat-text";
 import { decayHalvedStatus } from "./status-helpers";
 import { type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
 import { CARDS_PER_TURN, PERCENT_DENOMINATOR } from "../game-constants";
 import { applyCardEffects } from "./effect-handlers";
+import { applyPlayerStatusEffect } from "./status-player";
 import type { BattleCard } from "@/lib/game-data";
 
 export const ENEMY_TURN_CONSTANTS = {
@@ -152,19 +153,22 @@ export function checkHealthThresholds(
 
   function applyHealthThresholdStatBonus(
     currentState: BattleState,
-    config: { threshold: number; amount: number } | null,
+    configs: { threshold: number; amount: number } | Array<{ threshold: number; amount: number }> | null,
     stat: "block" | "armor",
   ): BattleState {
-    if (!config) return currentState;
-    const thresholdHp = (state.playerMaxHealth * config.threshold) / PERCENT_DENOMINATOR;
-    if (prevHealth > thresholdHp && nextHealth <= thresholdHp) {
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat, amount: config.amount });
-      return {
-        ...currentState,
-        playerStatuses: { ...currentState.playerStatuses, [stat]: currentState.playerStatuses[stat] + config.amount },
-      };
+    const bonuses = configs == null ? [] : Array.isArray(configs) ? configs : [configs];
+    let next = currentState;
+    for (const config of bonuses) {
+      const thresholdHp = (state.playerMaxHealth * config.threshold) / PERCENT_DENOMINATOR;
+      if (prevHealth > thresholdHp && nextHealth <= thresholdHp) {
+        next = applyPlayerStatusEffect(
+          next,
+          { kind: "player-status", status: stat, amount: config.amount },
+          combatTexts,
+        );
+      }
     }
-    return currentState;
+    return next;
   }
 
   nextState = applyHealthThresholdStatBonus(nextState, state.talentEffects.healthThresholdBlock, "block");

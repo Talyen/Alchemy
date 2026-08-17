@@ -1,7 +1,5 @@
-import { appendUnique } from "@/lib/utils";
-import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
+import { appendCardToRunWithDiscovery, discoverCardIds } from "@/features/alchemy/run-loop/run/deck-mutations";
 import { spendRunGold } from "@/features/alchemy/run-loop/run-gold";
-import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/profile-store";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
@@ -13,6 +11,7 @@ import {
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import { ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
+import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { computeAlchemistPotionBuyPrice, computeAlchemistRefreshPrice, computeMixPotionPrice } from "./shop-pricing";
 import {
@@ -26,8 +25,10 @@ import { createInitialAlchemistState, type AlchemistState } from "./shop-state-i
 
 export function createAlchemistShopCommands({
   talentEffects,
+  homesteadEffects,
 }: {
   talentEffects: TalentEffectManifest;
+  homesteadEffects: HomesteadEffectManifest;
 }): AlchemistShopCommands {
   const getPotionBuyPrice = (card: BattleCard) =>
     computeAlchemistPotionBuyPrice(card, {
@@ -90,14 +91,18 @@ export function createAlchemistShopCommands({
       if (!cardA || !cardB || cardA.id === MIXED_POTION_CARD_ID || cardB.id === MIXED_POTION_CARD_ID) {
         return { committed: false, price, value: null };
       }
-      const mixed = tryCreateMixedPotion(cardA, cardB, talentEffects.potionMixPotency);
+      const mixed = tryCreateMixedPotion(
+        cardA,
+        cardB,
+        talentEffects.potionMixPotency + homesteadEffects.potionMixPotency,
+      );
       if (!mixed) {
         return { committed: false, price, value: null };
       }
       spendRunGold(price, (update) => setRunGold(draft, update));
       setAlchemistState(draft, (previous) => ({ ...previous, mixUsed: true }));
       setRunDeck(draft, (previous) => applyMixToDeck(previous, indexA, indexB, mixed));
-      setDiscoveredCardIds(draft, (previous) => appendUnique(previous, MIXED_POTION_CARD_ID));
+      discoverCardIds(draft, [MIXED_POTION_CARD_ID]);
       return { committed: true, price, value: mixed };
     });
     playShopSpendFeedback(result);

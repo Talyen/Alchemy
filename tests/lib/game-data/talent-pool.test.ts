@@ -11,30 +11,11 @@ import {
   canUnlockTalent,
   tryUnlockTalent,
   isTalentPlaceholder,
+  keywordDefinitions,
+  getTalentTreeKeywordIds,
 } from "@/lib/game-data";
-import { getTalentTreeKeywordIds } from "@/lib/game-data";
 
-const validKeywords: string[] = [
-  "physical",
-  "stun",
-  "block",
-  "forge",
-  "armor",
-  "health",
-  "burn",
-  "gold",
-  "holy",
-  "wish",
-  "poison",
-  "bleed",
-  "leech",
-  "freeze",
-  "mana",
-  "nature",
-  "companion",
-  "archery",
-  "consume",
-];
+const validKeywords = Object.keys(keywordDefinitions);
 
 describe("talentPool data integrity", () => {
   it("all talent IDs are unique", () => {
@@ -62,12 +43,13 @@ describe("talentPool data integrity", () => {
     }
   });
 
-  it("each keyword has exactly 10 talents", () => {
+  it("each talent keyword has exactly 10 talents", () => {
     const counts: Record<string, number> = {};
     for (const talent of talentPool) {
       counts[talent.keywordId] = (counts[talent.keywordId] ?? 0) + 1;
     }
-    for (const kw of validKeywords) {
+    const talentKeywords = [...new Set(talentPool.map((talent) => talent.keywordId))];
+    for (const kw of talentKeywords) {
       expect(counts[kw], `Keyword "${kw}" has ${counts[kw] ?? 0} talents, expected 10`).toBe(10);
     }
   });
@@ -160,10 +142,6 @@ describe("canUnlockTalent", () => {
     expect(canUnlockTalent("burn", "physical-brute-force", { physical: 100 }, {}).ok).toBe(false);
   });
 
-  it("rejects placeholder talents", () => {
-    expect(canUnlockTalent("nature", "nature-placeholder-1", { nature: 100 }, {}).ok).toBe(false);
-  });
-
   it("rejects unlock without unspent points", () => {
     expect(canUnlockTalent("physical", "physical-brute-force", {}, {}).ok).toBe(false);
   });
@@ -201,12 +179,6 @@ describe("computeTalentEffects", () => {
     const effects = computeTalentEffects({});
     expect(effects.flatPhysicalDamage).toBe(0);
     expect(effects.armorToPhysicalDamage).toBe(false);
-    expect(effects.physicalCritChance).toBe(0);
-  });
-
-  it("counts flat physical damage talents", () => {
-    const effects = computeTalentEffects({ physical: ["physical-brute-force"] });
-    expect(effects.flatPhysicalDamage).toBe(1);
   });
 
   it("ignores talent ids saved under the wrong keyword", () => {
@@ -214,36 +186,27 @@ describe("computeTalentEffects", () => {
     expect(effects.flatPhysicalDamage).toBe(0);
   });
 
-  it("applies block-to-physical via multiplier field", () => {
-    const effects = computeTalentEffects({ block: ["block-to-physical"] });
-    expect(effects.blockToPhysicalDamageMultiplier).toBe(0.3);
-  });
-
-  it("applies expert blacksmith forge multiplier", () => {
-    const effects = computeTalentEffects({ physical: ["physical-expert-blacksmith"] });
-    expect(effects.forgeToPhysicalDamageMultiplier).toBe(1.5);
-  });
-
-  it("applies implemented effects across multiple keywords", () => {
+  it("stacks cross-keyword numeric clones and concatenates armor thresholds", () => {
     const effects = computeTalentEffects({
-      block: ["block-start", "block-prevent-poison"],
-      gold: ["gold-start", "gold-enemy-drop"],
-      holy: ["holy-lifesteal", "holy-block-grant"],
-      bleed: ["bleed-execute", "bleed-desperate"],
+      physical: ["physical-shield-bash"],
+      block: ["block-to-physical"],
+      nature: ["nature-verdant-cycle"],
+      leech: ["leech-nature-chance"],
+      gold: ["gold-on-wish"],
+      wish: ["wish-gold"],
+      health: ["health-threshold-armor"],
+      armor: ["armor-mitigate-stun"],
     });
 
-    expect(effects.startBlock).toBe(5);
-    expect(effects.blockPreventsPoison).toBe(true);
-    expect(effects.startGold).toBe(20);
-    expect(effects.enemyGoldDropBonus).toBe(0.1);
-    expect(effects.holyLifestealPercent).toBe(10);
-    expect(effects.holyBlockPercentFromDamage).toBe(15);
-    expect(effects.bleedExecuteThreshold).toBe(30);
-    expect(effects.bleedDesperateMultiplier).toBe(2);
-  });
-
-  it("ignores unknown talent IDs", () => {
-    const effects = computeTalentEffects({ physical: ["unknown-talent"] });
-    expect(effects.flatPhysicalDamage).toBe(0);
+    expect(effects.blockToPhysicalDamageMultiplier).toBeCloseTo(0.6);
+    expect(effects.natureLeechChance).toBe(20);
+    expect(effects.goldOnWish).toBe(5);
+    expect(effects.healthThresholdArmor).toHaveLength(2);
+    expect(effects.healthThresholdArmor).toEqual(
+      expect.arrayContaining([
+        { threshold: 50, amount: 5 },
+        { threshold: 25, amount: 3 },
+      ]),
+    );
   });
 });

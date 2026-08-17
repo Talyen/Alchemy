@@ -51,13 +51,13 @@ describe("applyPlayerCombatDamage", () => {
     expect(result.playerHealth).toBe(24);
   });
 
-  it("applies nature half-damage when receiveHalfNatureDamage is set", () => {
+  it("does not apply receiveHalfNatureDamage (attack/DoT paths scale instead)", () => {
     const state = patchBattleState({
       playerHealth: 30,
       talentEffects: talents({ receiveHalfNatureDamage: true }),
     });
     const result = applyPlayerCombatDamage(state, 10, "nature");
-    expect(result.playerHealth).toBe(25);
+    expect(result.playerHealth).toBe(20);
   });
 
   it("applies nature damage reduction", () => {
@@ -85,11 +85,12 @@ describe("applyPlayerCombatDamage", () => {
   });
 
   it("activates deaths door on lethal hit if not used", () => {
-    const state = patchBattleState({ playerHealth: 5, deathsDoorUsed: false });
+    const state = patchBattleState({ playerHealth: 5, deathsDoorUsed: false, turn: 3 });
     const result = applyPlayerCombatDamage(state, 20);
     expect(result.playerHealth).toBe(1);
     expect(result.deathsDoorUsed).toBe(true);
     expect(result.deathsDoorActive).toBe(true);
+    expect(result.deathsDoorTriggeredTurn).toBe(3);
   });
 
   it("does not reactivate deaths door if already used", () => {
@@ -103,6 +104,18 @@ describe("applyPlayerCombatDamage", () => {
   it("lethal hit after grace expires kills the player", () => {
     const state = patchBattleState({ playerHealth: 1, deathsDoorUsed: true, deathsDoorActive: false });
     const result = applyPlayerCombatDamage(state, 20);
+    expect(result.playerHealth).toBe(0);
+    expect(result.deathsDoorActive).toBe(false);
+  });
+
+  it("keeps the player defeated when damage hits at zero health after grace", () => {
+    const state = patchBattleState({
+      playerHealth: 0,
+      deathsDoorUsed: true,
+      deathsDoorActive: false,
+      deathsDoorTriggeredTurn: 3,
+    });
+    const result = applyPlayerCombatDamage(state, 5);
     expect(result.playerHealth).toBe(0);
     expect(result.deathsDoorActive).toBe(false);
   });

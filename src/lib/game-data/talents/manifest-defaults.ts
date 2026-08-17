@@ -4,8 +4,6 @@ import type { TalentEffectManifest } from "../talent-effect-manifest";
 export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   flatPhysicalDamage: 0,
   armorToPhysicalDamage: false,
-  physicalCritChance: 0,
-  firstPhysicalCardFree: false,
   physicalStunChance: 0,
   physicalBleedChance: 0,
   physicalDetonatesBleed: false,
@@ -57,7 +55,6 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   startArmor: 0,
   armorMitigatesBleed: false,
   armorBreakBlock: 0,
-  armorMitigatesStun: false,
   armorCleanseThreshold: 0,
   flatArmorAmount: 0,
 
@@ -67,7 +64,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   startHealth: 0,
   healMultiplier: 1,
   consumeHealMultiplier: 0,
-  healthThresholdArmor: null,
+  healthThresholdArmor: [],
   overhealToBlockRatio: 0,
   healOnStatusCleanse: 0,
   deathsDoorExtension: 0,
@@ -76,7 +73,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   freezeDamageReduction: 0,
   natureDamageReduction: 0,
 
-  firstBurnCardDoubled: false,
+  firstBurnCardBonusMultiplier: 0,
   burnRemovesEnemyArmor: false,
   burnDoubleChance: 0,
   receiveHalfBurnDamage: false,
@@ -113,13 +110,11 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   holyGoldPercent: 0,
   holyBurnChance: 0,
   receiveHalfHolyDamage: false,
-  holyBlockPercent: 0,
   holyWishChance: 0,
   holyBlockPercentFromDamage: 0,
   holyVsBurnMultiplier: 0,
   holyGoldChance: 0,
 
-  goldOnWishAmount: 0,
   wishUndiscoveredCards: false,
   healthOnWish: 0,
   removeHarmfulStatusOnWish: false,
@@ -128,6 +123,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   manaOnWish: 0,
   wishTrinketChoice: false,
   wishBlockBelowHealthPct: 0,
+  wishBlockAmount: 0,
   wishCardsUpgraded: false,
   wishCrystalGold: 0,
   startMana: 0,
@@ -175,7 +171,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   freezePreventsPoisonDecay: false,
   freezeBlocksRegen: false,
   freezePreventsEnemyScaling: false,
-  receiveHalfFreezeBuildUp: false,
+  receiveHalfFreezeDamage: false,
   flatFreezeDamage: 0,
 
   flatArrowDamage: 0,
@@ -203,6 +199,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   bleedPhysicalBonus: 0,
   bleedLeechChance: 0,
   bleedExecuteThreshold: 0,
+  bleedExecuteMultiplier: 1,
   bleedDesperateMultiplier: 1,
   bleedPoisonChance: 0,
   bleedPoisonDamageTakenBonus: 0,
@@ -228,5 +225,7 @@ export function createEmptyTalentEffectManifest(): TalentEffectManifest {
   return {
     ...DEFAULT_TALENT_EFFECTS,
     companionBondLevels: { ...DEFAULT_TALENT_EFFECTS.companionBondLevels },
+    healthThresholdArmor: [...DEFAULT_TALENT_EFFECTS.healthThresholdArmor],
+    cardHealBonus: { ...DEFAULT_TALENT_EFFECTS.cardHealBonus },
   };
 }

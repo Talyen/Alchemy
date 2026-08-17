@@ -14,7 +14,7 @@ const ACTOR_PANEL_CONFIG = {
   deathDoorArtBorderWidth: 3,
   deathDoorStatsBorderWidth: 2,
   turnActiveShineDurationSeconds: 4,
-  turnActiveArtBorderWidth: 4,
+  turnActiveArtBorderWidth: 3,
 } as const;
 
 export function ActorTooltip({
@@ -70,25 +70,19 @@ export function ArtTurnActiveBorder({
   const label = side === "player" ? "Your Turn" : "Enemy Turn";
   return (
     <>
-      <div
+      <ShineBorder
         data-testid={side === "player" ? "turn-badge-player" : "turn-badge-enemy"}
         data-active={active ? "true" : "false"}
+        borderWidth={ACTOR_PANEL_CONFIG.turnActiveArtBorderWidth}
+        duration={ACTOR_PANEL_CONFIG.turnActiveShineDurationSeconds}
+        shineColor={[...palette]}
         className={cn(
-          "pointer-events-none absolute inset-0 z-[5] rounded-shell-hero transition-opacity",
+          "z-[5] rounded-shell-hero transition-opacity",
           urgentHide ? "duration-150" : "duration-500",
-          active ? "opacity-70" : "opacity-0",
+          active ? "opacity-100" : "opacity-0",
         )}
         aria-hidden
-      >
-        {active ? (
-          <ShineBorder
-            borderWidth={ACTOR_PANEL_CONFIG.turnActiveArtBorderWidth}
-            duration={ACTOR_PANEL_CONFIG.turnActiveShineDurationSeconds}
-            shineColor={[...palette]}
-            className="rounded-shell-hero"
-          />
-        ) : null}
-      </div>
+      />
       <span className="sr-only" aria-live="polite">
         {active ? label : ""}
       </span>

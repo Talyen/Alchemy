@@ -45,6 +45,7 @@ export function LockedMenuItem({
         variant={variant}
         size={size}
         className={cn(locked && "cursor-not-allowed opacity-50", className)}
+        aria-disabled={locked}
         onClick={() => {
           if (locked) {
             playUISound("error");

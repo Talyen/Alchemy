@@ -1,10 +1,10 @@
 // Battle presentation screen for actors, hand fan, piles, ghosts, wish choices, and menu entry.
-// Driven by useBattleController; focused child modules own the layout slices.
+// Driven by BattleScreenRoute display props + routeCommands battle handlers.
 import { useCallback, useMemo, useState, type MouseEvent } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
-import { CardGhostOverlay } from "../../../shared/ui/card-ghost-overlay";
-import { CardTransferOverlay } from "./card-transfer-overlay";
+import { CardGhostLayer } from "../../battle/presentation/card-ghost-layer";
+import { CardTransferLayer } from "../../battle/presentation/card-transfer-layer";
 import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
 import { HamburgerTrigger, PageLayout } from "../../../shared/ui/shared-ui";
@@ -17,30 +17,6 @@ import { getEnemyStatusChips, getPlayerStatusChips } from "../../../shared/utils
 import { isAlchemyDevBuild } from "../../../shared/utils/dev-mode";
 import { BackgroundParticles } from "../../../shared/ui/background-particles";
 import { getScreenParticleConfig } from "@/app/screen-particle-config";
-import { useBattlePresentationStore } from "../../battle/battle-presentation-store";
-
-function CardGhostLayer() {
-  const cardGhosts = useBattlePresentationStore((s) => s.cardGhosts);
-  const removeCardGhost = useBattlePresentationStore((s) => s.removeCardGhost);
-  return (
-    <>
-      {cardGhosts.map((ghost) => (
-        <CardGhostOverlay key={ghost.id} ghost={ghost} onDone={() => removeCardGhost(ghost.id)} />
-      ))}
-    </>
-  );
-}
-
-function CardTransferLayer() {
-  const cardTransfers = useBattlePresentationStore((s) => s.cardTransfers);
-  return (
-    <>
-      {cardTransfers.map((transfer) => (
-        <CardTransferOverlay key={transfer.id} transfer={transfer} />
-      ))}
-    </>
-  );
-}
 
 interface BattleScreenProps {
   battleScreenData: BattleScreenData;
@@ -53,11 +29,8 @@ interface BattleScreenProps {
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   onOpenMenu: (rect?: DOMRect) => void;
   onWishChoice: (card: BattleCard | null) => void;
-  playableHandCardKeys: Set<string>;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
-  hiddenHandCardKeys: Set<string>;
-  cardTransferInProgress: boolean;
   isAutoplayEnabled: boolean;
   onToggleAutoplay: () => void;
 }
@@ -76,14 +49,11 @@ export function BattleScreen(props: BattleScreenProps) {
     onWishChoice,
     onSkipCombatDevMode,
     onEndTurn,
-    hiddenHandCardKeys,
-    cardTransferInProgress,
-    playableHandCardKeys,
     isAutoplayEnabled,
     onToggleAutoplay,
   } = props;
 
-  const { battleState, displayOverrides, revealedCardKeys, activeLabyrinthModifiers, runTrinkets } = battleScreenData;
+  const { battleState, displayOverrides, activeLabyrinthModifiers, runTrinkets } = battleScreenData;
 
   const displayState = useMemo(() => ({ ...battleState, ...displayOverrides }), [battleState, displayOverrides]);
 
@@ -123,28 +93,11 @@ export function BattleScreen(props: BattleScreenProps) {
       onWishChoice,
       onSkipCombatDevMode,
       onEndTurn,
-      hiddenHandCardKeys,
-      cardTransferInProgress,
-      playableHandCardKeys,
-      revealedCardKeys,
       isDevMode: isDev,
       isAutoplayEnabled,
       onToggleAutoplay,
     }),
-    [
-      onCardClick,
-      onOpenMenu,
-      onWishChoice,
-      onSkipCombatDevMode,
-      onEndTurn,
-      hiddenHandCardKeys,
-      cardTransferInProgress,
-      playableHandCardKeys,
-      revealedCardKeys,
-      isDev,
-      isAutoplayEnabled,
-      onToggleAutoplay,
-    ],
+    [onCardClick, onOpenMenu, onWishChoice, onSkipCombatDevMode, onEndTurn, isDev, isAutoplayEnabled, onToggleAutoplay],
   );
 
   const { battleSceneRef: sceneRef } = refs;
@@ -153,9 +106,6 @@ export function BattleScreen(props: BattleScreenProps) {
   const [trinketInspectOpen, setTrinketInspectOpen] = useState(false);
   const closeTrinketInspect = useCallback(() => setTrinketInspectOpen(false), []);
   const inspectUiOpen = trinketInspectOpen && inspectTrinkets.length > 0 && !battleState.wishOptions;
-  if (trinketInspectOpen && !inspectUiOpen) {
-    setTrinketInspectOpen(false);
-  }
 
   return (
     <PageLayout>
@@ -187,7 +137,7 @@ export function BattleScreen(props: BattleScreenProps) {
           >
             <BattleActors view={view} feedback={feedback} refs={refs} />
 
-            <BattleBottomBar view={view} refs={refs} actions={actions} />
+            <BattleBottomBar view={view} refs={refs} actions={actions} playabilityState={battleState} />
 
             <WishOverlay open={Boolean(battleState.wishOptions)} battleState={displayState} actions={actions} />
 

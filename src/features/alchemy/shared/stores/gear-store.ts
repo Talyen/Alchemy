@@ -62,9 +62,13 @@ export function readHasAnyOwnedGear(): boolean {
   return flattenGearInventories(readGameplayState().gear.inventories).length > 0;
 }
 
-export function useHasAnyOwnedGear(): boolean {
+function useHasAnyOwnedGear(): boolean {
   const inventories = useGameplayStateStore((state) => state.gear.inventories);
   return useMemo(() => flattenGearInventories(inventories).length > 0, [inventories]);
+}
+
+export function useIsArmoryLocked(): boolean {
+  return !useHasAnyOwnedGear();
 }
 
 /** Aggregate gear effects for a character at battle/run-start entry. */

@@ -56,10 +56,6 @@ export interface BattleActionsProps {
   onWishChoice: (card: BattleCard | null) => void;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
-  hiddenHandCardKeys: Set<string>;
-  cardTransferInProgress: boolean;
-  playableHandCardKeys: Set<string>;
-  revealedCardKeys: Set<string>;
   isDevMode: boolean;
   isAutoplayEnabled: boolean;
   onToggleAutoplay: () => void;
@@ -67,11 +63,10 @@ export interface BattleActionsProps {
 
 export type RequiredBattleViewProps = Required<BattleScreenViewProps>;
 
-/** Read-only battle view state passed from useBattleController (single subscription path). */
+/** Read-only battle view state passed from BattleScreenRoute. */
 export interface BattleScreenData {
   battleState: BattleState;
   displayOverrides: DisplayOverrides;
-  revealedCardKeys: Set<string>;
   activeLabyrinthModifiers: EncounterCombatTraitId[];
   runTrinkets: string[];
 }

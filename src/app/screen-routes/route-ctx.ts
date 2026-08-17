@@ -9,6 +9,7 @@ export interface RenderAlchemyScreenProps {
   onClearSaveData: () => void;
   onUnlockAllDevMode: () => void;
   onBackFromOptions: () => void;
+  gameMenuOpen: boolean;
 }
 
 export type MetaCommands = AlchemyRouteCommands["meta"];
@@ -35,6 +36,7 @@ export interface RunLoopRouteCtx {
 export interface BattleRouteCtx {
   routeCommands: Pick<AlchemyRouteCommands, "battle">;
   onOpenBattleMenu: RenderAlchemyScreenProps["onOpenBattleMenu"];
+  gameMenuOpen: RenderAlchemyScreenProps["gameMenuOpen"];
 }
 
 export interface RunEndRouteCtx {

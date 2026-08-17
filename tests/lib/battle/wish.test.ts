@@ -95,9 +95,9 @@ describe("applyWishEffect", () => {
     expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 10 }]);
   });
 
-  it("awards goldOnWishAmount per wish", () => {
+  it("awards goldOnWish per wish", () => {
     const state = makeTestBattleState({
-      talentEffects: { ...makeTestBattleState().talentEffects, goldOnWishAmount: 3 },
+      talentEffects: { ...makeTestBattleState().talentEffects, goldOnWish: 3 },
     });
     const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
     const texts: CombatTextEvent[] = [];
@@ -173,8 +173,7 @@ describe("applyWishEffect", () => {
     const state = makeTestBattleState({
       talentEffects: {
         ...makeTestBattleState().talentEffects,
-        goldOnWish: 5,
-        goldOnWishAmount: 3,
+        goldOnWish: 8,
       },
       trinketEffects: { ...makeTestBattleState().trinketEffects, wishingWellGoldOnWish: 2 },
     });
@@ -298,13 +297,13 @@ describe("new wish talents", () => {
       playerHealth: 8,
       playerMaxHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0 },
-      talentEffects: { ...makeTestBattleState().talentEffects, wishBlockBelowHealthPct: 30 },
+      talentEffects: { ...makeTestBattleState().talentEffects, wishBlockBelowHealthPct: 30, wishBlockAmount: 6 },
     });
     const stateAbove = makeTestBattleState({
       playerHealth: 15,
       playerMaxHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0 },
-      talentEffects: { ...makeTestBattleState().talentEffects, wishBlockBelowHealthPct: 30 },
+      talentEffects: { ...makeTestBattleState().talentEffects, wishBlockBelowHealthPct: 30, wishBlockAmount: 6 },
     });
 
     const resultBelow = applyWishEffect(stateBelow, card, 1, []);

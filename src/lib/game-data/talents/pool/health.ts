@@ -21,7 +21,7 @@ export const healthTalents: TalentDefinition[] = [
     name: "Last Resort",
     description: "When Health drops below 25%, gain 3 Armor",
     icon: HeartCrack,
-    effects: [setEffect("healthThresholdArmor", { threshold: 25, amount: 3 })],
+    effects: [setEffect("healthThresholdArmor", [{ threshold: 25, amount: 3 }])],
   },
   {
     id: "health-threshold-block",
@@ -95,6 +95,4 @@ export const healthTalents: TalentDefinition[] = [
     icon: Flame,
     effects: [setEffect("campfireHealBonus", 0.1)],
   },
-
-  // --- Burn ---
 ];

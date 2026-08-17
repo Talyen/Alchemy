@@ -13,7 +13,6 @@ import { playBattleEvent, playEnemyAttack } from "@/lib/audio";
 import { ENEMY_ATTACK_RECOVERY_DELAY, ENEMY_PHASE_DELAY, COMPANION_ATTACK_DELAY } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
 import { logError } from "@/lib/error-logger";
-import { useBattlePresentationStore } from "./battle-presentation-store";
 import {
   beginBattleTransition,
   clearBattleTransition,
@@ -24,35 +23,34 @@ import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import { applyCombatTextPortraitFeedback, shouldHurtEnemyFromCombatTexts } from "./battle-feedback";
 import { playCompanionSound, playCombatTextSounds } from "./controller-utils";
 import { runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
-import { getBattleSessionStore, type createBattleSession } from "./battle-session";
+import { type createBattleSession } from "./battle-session";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
-import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import type { BattlePresentationPort } from "./battle-presentation-port";
 
-const commandSetBattleState = createRunSessionCommand(setBattleState);
-const commandBeginBattleTransition = createRunSessionCommand(beginBattleTransition);
-const commandCommitBattleTransition = createRunSessionCommand(commitBattleTransition);
-const commandClearBattleTransition = createRunSessionCommand(clearBattleTransition);
+export type BattleTurnSession = Pick<
+  ReturnType<typeof createBattleSession>,
+  "isCurrentBattleSession" | "runIfSessionActive" | "checkBattleEnd" | "handleVictoryDefeat"
+>;
 
-/** Session + presentation helpers for end-turn sequencing (write-port is module-scoped). */
+/** Presentation + logging helpers for end-turn sequencing (session is passed separately). */
 export interface TurnOrchestration {
-  isCurrentBattleSession: (session: number) => boolean;
-  runIfSessionActive: <T>(session: number, action: () => T, fallback?: T) => T;
-  checkBattleEnd: (state: BattleState, session: number) => boolean;
-  handleVictoryDefeat: (outcome: "victory" | "defeat") => void;
   getDrawSequenceDeps: () => HandDrawSequenceDeps;
   logBattleError: (context: string, err: unknown) => void;
   resetHandTransferUi: () => void;
-  scheduleCompanionFollowUp: (resultState: BattleState, session: number) => void;
+  scheduleCompanionFollowUp: (resultState: BattleState, sessionNum: number) => void;
+  getPresentation: () => BattlePresentationPort;
 }
 
 // ── Helpers ──
 
-function triggerCompanionEffects(state: BattleState, combatTexts: CombatTextEvent[]) {
+function triggerCompanionEffects(state: BattleState, combatTexts: CombatTextEvent[], vfx: BattlePresentationPort) {
   if (!state.activeCompanion) return state;
   playCompanionSound(state.activeCompanion.id);
-  getBattleSessionStore().shakeCompanion();
+  vfx.shakeCompanion();
   return processCompanionTurnStart(state, combatTexts);
 }
 
@@ -61,6 +59,7 @@ export function createTurnOrchestration(
   session: ReturnType<typeof createBattleSession>,
   transferDeps: ReturnType<typeof createBattleTransferDeps>,
 ): TurnOrchestration {
+  const getPresentation = () => ctx.getPresentation();
   const logBattleError = (context: string, err: unknown) => {
     logError(`Failed to ${context}`, "battle", { error: String(err) }, err instanceof Error ? err.stack : undefined);
   };
@@ -72,11 +71,11 @@ export function createTurnOrchestration(
     ctx.battleTimerGroupRef.current.setTimeout(() => {
       session.runIfSessionActive(sessionNum, () => {
         ctx.companionScheduledRef.current = false;
-        const texts = resolveCompanionFollowUpTexts(session, sessionNum);
+        const texts = resolveCompanionFollowUpTexts(session, sessionNum, getPresentation);
         if (texts.length > 0) {
-          const store = getBattleSessionStore();
-          store.showCombatTexts(texts);
-          applyCombatTextPortraitFeedback(texts, store);
+          const vfx = getPresentation();
+          vfx.showCombatTexts(texts);
+          applyCombatTextPortraitFeedback(texts, vfx);
           playCombatTextSounds(texts);
         }
       });
@@ -84,28 +83,30 @@ export function createTurnOrchestration(
   };
 
   return {
-    isCurrentBattleSession: session.isCurrentBattleSession,
-    runIfSessionActive: session.runIfSessionActive,
-    checkBattleEnd: session.checkBattleEnd,
-    handleVictoryDefeat: session.handleVictoryDefeat,
     getDrawSequenceDeps: () => transferDeps.getDrawSequenceDeps(),
     logBattleError,
-    resetHandTransferUi: () => useBattlePresentationStore.getState().resetHandTransferUi(),
+    resetHandTransferUi: () => getPresentation().resetHandTransferUi(),
     scheduleCompanionFollowUp,
+    getPresentation,
   };
 }
 
 /** Top-level end-turn dispatch. Returns true when an async draw sequence was started (haste), false otherwise. */
-export function resolveEndTurn(currentState: BattleState, session: number, orch: TurnOrchestration): boolean {
-  if (!orch.isCurrentBattleSession(session)) return false;
+export function resolveEndTurn(
+  currentState: BattleState,
+  sessionNum: number,
+  battleSession: BattleTurnSession,
+  orch: TurnOrchestration,
+): boolean {
+  if (!battleSession.isCurrentBattleSession(sessionNum)) return false;
   markBattleStage("resolve-start");
   try {
     if (currentState.enemyHealth <= 0) {
-      orch.handleVictoryDefeat("victory");
+      battleSession.handleVictoryDefeat("victory");
       return false;
     }
     if (isPlayerDefeated(currentState)) {
-      orch.handleVictoryDefeat("defeat");
+      battleSession.handleVictoryDefeat("defeat");
       return false;
     }
 
@@ -113,11 +114,11 @@ export function resolveEndTurn(currentState: BattleState, session: number, orch:
 
     switch (result.kind) {
       case "haste":
-        resolveHasteSkipTurn(result, currentState, session, orch);
+        resolveHasteSkipTurn(result, currentState, sessionNum, battleSession, orch);
         return true;
       case "skipped":
       case "standard":
-        resolveNormalEnemyTurn(result, currentState, session, orch);
+        resolveNormalEnemyTurn(result, currentState, sessionNum, battleSession, orch);
         return false;
     }
   } finally {
@@ -128,80 +129,94 @@ export function resolveEndTurn(currentState: BattleState, session: number, orch:
 export function resolveHasteSkipTurn(
   result: EndPlayerTurnResolution,
   companionState: BattleState,
-  session: number,
+  sessionNum: number,
+  battleSession: BattleTurnSession,
   orch: TurnOrchestration,
 ) {
   const continuation = getBattleContinuation(result.state, result.playerTurnSkipped);
-  commandCommitBattleTransition(result.state, continuation);
-  if (result.combatTexts.length > 0) getBattleSessionStore().showCombatTexts(result.combatTexts);
+  dispatchRunSessionCommand((draft) => commitBattleTransition(draft, result.state, continuation));
+  if (result.combatTexts.length > 0) orch.getPresentation().showCombatTexts(result.combatTexts);
   void Promise.resolve(
-    runHandDrawSequence(companionState.hand, result.state, () => undefined, session, orch.getDrawSequenceDeps()),
+    runHandDrawSequence(companionState.hand, result.state, () => undefined, sessionNum, orch.getDrawSequenceDeps()),
   )
     .catch((err: unknown) => orch.logBattleError("handle end turn draw sequence", err))
-    .finally(() => continueAfterHasteDraw(result, session, orch));
+    .finally(() => continueAfterHasteDraw(result, sessionNum, battleSession, orch));
 }
 
-function continueAfterHasteDraw(result: EndPlayerTurnResolution, session: number, orch: TurnOrchestration) {
-  orch.runIfSessionActive(session, () => {
+function continueAfterHasteDraw(
+  result: EndPlayerTurnResolution,
+  sessionNum: number,
+  battleSession: BattleTurnSession,
+  orch: TurnOrchestration,
+) {
+  battleSession.runIfSessionActive(sessionNum, () => {
+    orch.resetHandTransferUi();
     const continuation = getBattleContinuation(result.state, result.playerTurnSkipped);
-    if (!continuation) commandClearBattleTransition();
-    if (orch.checkBattleEnd(result.state, session)) return;
+    if (!continuation) dispatchRunSessionCommand((draft) => clearBattleTransition(draft));
+    if (battleSession.checkBattleEnd(result.state, sessionNum)) return;
     if (result.playerTurnSkipped) {
-      commandClearBattleTransition();
-      resolveEndTurn(result.state, session, orch);
+      dispatchRunSessionCommand((draft) => clearBattleTransition(draft));
+      resolveEndTurn(result.state, sessionNum, battleSession, orch);
       return;
     }
-    orch.scheduleCompanionFollowUp(result.state, session);
+    orch.scheduleCompanionFollowUp(result.state, sessionNum);
   });
 }
 
 export function resolveNormalEnemyTurn(
   result: Extract<EndPlayerTurnResolution, { kind: "skipped" | "standard" }>,
   currentState: BattleState,
-  session: number,
+  sessionNum: number,
+  battleSession: BattleTurnSession,
   orch: TurnOrchestration,
 ) {
-  if (!orch.isCurrentBattleSession(session)) return;
+  if (!battleSession.isCurrentBattleSession(sessionNum)) return;
   const enemyTurnStartTexts = result.enemyTurnStartCombatTexts;
   const enemyResolutionTexts = result.enemyResolutionCombatTexts;
-  const store = getBattleSessionStore();
+  const vfx = orch.getPresentation();
   const dotTexts = enemyTurnStartTexts.filter((ct) => ct.target === "enemy" || ct.kind === "heal");
 
   if (result.state.enemyHealth <= 0 || isPlayerDefeated(result.state)) {
-    if (dotTexts.length > 0) store.showCombatTexts(dotTexts);
-    if (shouldHurtEnemyFromCombatTexts(dotTexts)) store.hurtEnemy();
-    commandCommitBattleTransition({ ...result.state, turnPhase: "enemy", hand: [] }, null);
-    orch.handleVictoryDefeat(result.state.enemyHealth <= 0 ? "victory" : "defeat");
+    if (dotTexts.length > 0) vfx.showCombatTexts(dotTexts);
+    if (shouldHurtEnemyFromCombatTexts(dotTexts)) vfx.hurtEnemy();
+    dispatchRunSessionCommand((draft) =>
+      commitBattleTransition(draft, { ...result.state, turnPhase: "enemy", hand: [] }, null),
+    );
+    battleSession.handleVictoryDefeat(result.state.enemyHealth <= 0 ? "victory" : "defeat");
     return;
   }
 
-  commandBeginBattleTransition(
-    { ...result.enemyTurnStartState, turnPhase: "enemy" },
-    {
-      kind: "enemy-turn",
-      resultState: result.state,
-      playerTurnSkipped: result.playerTurnSkipped,
-    },
-    {
-      hand: [],
-      playerHealth: currentState.playerHealth,
-      playerStatuses: currentState.playerStatuses,
-      turnPhase: "enemy",
-    },
+  dispatchRunSessionCommand((draft) =>
+    beginBattleTransition(
+      draft,
+      { ...result.enemyTurnStartState, turnPhase: "enemy" },
+      {
+        kind: "enemy-turn",
+        resultState: result.state,
+        playerTurnSkipped: result.playerTurnSkipped,
+      },
+      {
+        hand: [],
+        playerHealth: currentState.playerHealth,
+        playerStatuses: currentState.playerStatuses,
+        turnPhase: "enemy",
+      },
+    ),
   );
 
-  if (dotTexts.length > 0) store.showCombatTexts(dotTexts);
-  if (shouldHurtEnemyFromCombatTexts(dotTexts)) store.hurtEnemy();
+  if (dotTexts.length > 0) vfx.showCombatTexts(dotTexts);
+  if (shouldHurtEnemyFromCombatTexts(dotTexts)) vfx.hurtEnemy();
 
-  if (orch.checkBattleEnd(result.state, session)) return;
+  if (battleSession.checkBattleEnd(result.state, sessionNum)) return;
 
   void executeEnemyPhase(
     result.state,
     currentState,
     enemyResolutionTexts,
-    session,
+    sessionNum,
     result.playerTurnSkipped,
     result.enemyPerformedAttack,
+    battleSession,
     orch,
   );
 }
@@ -210,31 +225,34 @@ export async function executeEnemyPhase(
   resultState: BattleState,
   currentState: BattleState,
   combatTexts: CombatTextEvent[],
-  session: number,
+  sessionNum: number,
   playerTurnSkipped: boolean,
   enemyPerformedAttack: boolean,
+  battleSession: BattleTurnSession,
   orch: TurnOrchestration,
 ) {
   markBattleStage("enemy-start");
   const playerTexts = combatTexts.filter((ct) => ct.target === "player");
   await delay(ENEMY_PHASE_DELAY);
-  if (!orch.isCurrentBattleSession(session)) return;
+  if (!battleSession.isCurrentBattleSession(sessionNum)) return;
   if (enemyPerformedAttack) playEnemyAttack(currentState.currentEnemy.id);
   if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
-  if (combatTexts.length > 0) getBattleSessionStore().showCombatTexts(combatTexts);
-  applyCombatTextPortraitFeedback(playerTexts, getBattleSessionStore());
+  const vfx = orch.getPresentation();
+  if (combatTexts.length > 0) vfx.showCombatTexts(combatTexts);
+  applyCombatTextPortraitFeedback(playerTexts, vfx);
   playCombatTextSounds(playerTexts);
   await delay(ENEMY_ATTACK_RECOVERY_DELAY);
-  if (!orch.isCurrentBattleSession(session)) return;
+  if (!battleSession.isCurrentBattleSession(sessionNum)) return;
   markBattleStage("enemy-end");
-  await continueAfterEnemyDraw(resultState, currentState, session, playerTurnSkipped, orch);
+  await continueAfterEnemyDraw(resultState, currentState, sessionNum, playerTurnSkipped, battleSession, orch);
 }
 
 async function continueAfterEnemyDraw(
   resultState: BattleState,
   currentState: BattleState,
-  session: number,
+  sessionNum: number,
   playerTurnSkipped: boolean,
+  battleSession: BattleTurnSession,
   orch: TurnOrchestration,
 ) {
   const continuation = getBattleContinuation(resultState, playerTurnSkipped);
@@ -244,27 +262,27 @@ async function continueAfterEnemyDraw(
       currentState.hand,
       resultState,
       () => {
-        commandCommitBattleTransition(resultState, continuation);
+        dispatchRunSessionCommand((draft) => commitBattleTransition(draft, resultState, continuation));
         committedDuringDraw = true;
       },
-      session,
+      sessionNum,
       orch.getDrawSequenceDeps(),
     );
   } catch (err) {
     orch.logBattleError("handle enemy resolution draw sequence", err);
   }
-  if (!orch.isCurrentBattleSession(session)) return;
-  orch.runIfSessionActive(session, () => {
+  if (!battleSession.isCurrentBattleSession(sessionNum)) return;
+  battleSession.runIfSessionActive(sessionNum, () => {
     if (!committedDuringDraw) {
-      commandCommitBattleTransition(resultState, continuation);
+      dispatchRunSessionCommand((draft) => commitBattleTransition(draft, resultState, continuation));
     }
-    if (orch.checkBattleEnd(resultState, session)) return;
+    if (battleSession.checkBattleEnd(resultState, sessionNum)) return;
     if (playerTurnSkipped) {
-      commandClearBattleTransition();
-      resolveEndTurn(resultState, session, orch);
+      dispatchRunSessionCommand((draft) => clearBattleTransition(draft));
+      resolveEndTurn(resultState, sessionNum, battleSession, orch);
       return;
     }
-    orch.scheduleCompanionFollowUp(resultState, session);
+    orch.scheduleCompanionFollowUp(resultState, sessionNum);
   });
 }
 
@@ -274,46 +292,50 @@ function getBattleContinuation(state: BattleState, playerTurnSkipped: boolean): 
 }
 
 /** Consume a persisted transition without replaying presentation delays. */
-export function resumePendingBattleTransition(session: number, orch: TurnOrchestration): void {
-  if (!orch.isCurrentBattleSession(session)) return;
-  const pending = getBattleSessionStore().pendingBattleTransition;
+export function resumePendingBattleTransition(
+  sessionNum: number,
+  battleSession: BattleTurnSession,
+  orch: TurnOrchestration,
+): void {
+  if (!battleSession.isCurrentBattleSession(sessionNum)) return;
+  const pending = readBattle().pendingBattleTransition;
   if (!pending) return;
 
   if (pending.kind === "legacy-enemy-turn") {
-    const recovered = recoverLegacyEnemyPhase(getBattleSessionStore().battleState);
-    commandCommitBattleTransition(recovered, null);
-    orch.checkBattleEnd(recovered, session);
+    const recovered = recoverLegacyEnemyPhase(readBattle().battleState);
+    dispatchRunSessionCommand((draft) => commitBattleTransition(draft, recovered, null));
+    battleSession.checkBattleEnd(recovered, sessionNum);
     return;
   }
 
   if (pending.kind === "continue-end-turn") {
-    const state = getBattleSessionStore().battleState;
-    commandClearBattleTransition();
-    resolveEndTurn(state, session, orch);
+    const state = readBattle().battleState;
+    dispatchRunSessionCommand((draft) => clearBattleTransition(draft));
+    resolveEndTurn(state, sessionNum, battleSession, orch);
     return;
   }
 
   const state = pending.resultState;
   const continuation = getBattleContinuation(state, pending.playerTurnSkipped);
-  commandCommitBattleTransition(state, continuation);
-  if (orch.checkBattleEnd(state, session)) return;
+  dispatchRunSessionCommand((draft) => commitBattleTransition(draft, state, continuation));
+  if (battleSession.checkBattleEnd(state, sessionNum)) return;
   if (pending.playerTurnSkipped) {
-    commandClearBattleTransition();
-    resolveEndTurn(state, session, orch);
+    dispatchRunSessionCommand((draft) => clearBattleTransition(draft));
+    resolveEndTurn(state, sessionNum, battleSession, orch);
     return;
   }
-  orch.scheduleCompanionFollowUp(state, session);
+  orch.scheduleCompanionFollowUp(state, sessionNum);
 }
 
 function resolveCompanionFollowUpTexts(
   session: ReturnType<typeof createBattleSession>,
   sessionNum: number,
+  getPresentation: () => BattlePresentationPort,
 ): CombatTextEvent[] {
   return session.runIfSessionActive(sessionNum, () => {
-    const store = getBattleSessionStore();
     const texts: CombatTextEvent[] = [];
-    const newState = triggerCompanionEffects(store.battleState, texts);
-    commandSetBattleState(newState);
+    const newState = triggerCompanionEffects(readBattle().battleState, texts, getPresentation());
+    dispatchRunSessionCommand((draft) => setBattleState(draft, newState));
     return texts;
   }, []);
 }

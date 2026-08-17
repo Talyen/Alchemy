@@ -8,7 +8,7 @@ import {
   restorePendingRewardBundle,
   serializePendingReward,
 } from "@/lib/active-run-session/pending-reward-persistence";
-import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { createEmptyRewardState } from "@/lib/active-run-session";
 
 describe("pending reward persistence", () => {
   it("round-trips gear reward choices with affixes intact", () => {

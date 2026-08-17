@@ -50,6 +50,7 @@ describe("runHandDrawSequence", () => {
     expect(result).toBe(false);
     expect(applyState).toHaveBeenCalledOnce();
     expect(deps.setTransferInProgress).toHaveBeenCalledWith(false);
+    expect(deps.setHiddenHandCardKeys).toHaveBeenCalledWith(new Set());
     expect(deps.animateDrawnHand).not.toHaveBeenCalled();
   });
 

@@ -17,6 +17,7 @@ vi.mock("@/features/alchemy/run-loop/battle/turn-orchestration", () => ({
   createTurnOrchestration: () => ({
     logBattleError: vi.fn(),
     resetHandTransferUi: vi.fn(),
+    getPresentation: vi.fn(),
   }),
   resumePendingBattleTransition: vi.fn(),
 }));

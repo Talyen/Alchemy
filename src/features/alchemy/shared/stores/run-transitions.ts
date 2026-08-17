@@ -18,6 +18,7 @@ import { useUiStore } from "./ui-store";
 import { getRunSession } from "./run-session-model";
 import { restoreRunSession } from "./restore-active-run-session";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "./run-resume-codec";
+import { inferActiveRunScreen } from "./encode-interrupted-flow";
 import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
 import {
   createGameplayDraftProfileActions,
@@ -26,6 +27,8 @@ import {
   createGameplayDraftSessionActions,
 } from "./gameplay-state-store";
 import {
+  abandonMysteryDestinationVisit,
+  clearMysteryVisitState,
   createDraftRunRandomSource,
   initializeActiveBattle,
   setHasActiveBattle,
@@ -53,7 +56,8 @@ export function restoreRun(
     const pending = decoded?.pendingBattleTransition ?? null;
     initializeActiveBattle(draft, battleState, pending);
 
-    if (decoded?.screen) run.setScreen(decoded.screen);
+    const resumeScreen = decoded?.screen ?? (activeRun ? inferActiveRunScreen(activeRun) : null);
+    if (resumeScreen) run.setScreen(resumeScreen);
     if (!activeRun) return;
 
     const transient = session;
@@ -69,8 +73,10 @@ export function restoreRun(
         repairUnresolvedMysteryTrinkets(draft.session.mysteryEvent, draft.run.activeRun.runTrinkets, rng),
       );
     }
-    if (decoded?.screen === "mystery" && !draft.session.mysteryEvent) {
+    if (resumeScreen === "mystery" && !draft.session.mysteryEvent) {
       if (activeRun.mysteryVisit != null) {
+        abandonMysteryDestinationVisit(draft);
+        clearMysteryVisitState(draft);
         run.setScreen(ROUTE_SCREENS.DESTINATION);
         return;
       }
@@ -182,6 +188,11 @@ async function flushPersistedSave(activeRun: ActiveRunData | null): Promise<void
 /** Persist meta/talent progress after a run ends with no resumable active run. */
 export function flushSaveAfterRunEnd(): void {
   void flushPersistedSave(null);
+}
+
+/** Persist immediately after a gear mutation (bypasses autosave debounce). */
+export function flushSaveAfterGearMutation(activeRun: ActiveRunData | null): void {
+  void flushPersistedSave(activeRun);
 }
 
 /** Apply run-end bookkeeping mutations without opening or flushing a transaction. */

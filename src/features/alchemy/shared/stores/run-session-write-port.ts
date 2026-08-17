@@ -8,7 +8,7 @@ import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunRngStream } from "@/lib/run-rng";
-import { DESTINATIONS, type Destination } from "@/features/alchemy/shared/types";
+import { DESTINATIONS, type Destination } from "@/lib/routing";
 import { bindDraftAction, type GameplayDraft } from "./run-session-command";
 import {
   createGameplayDraftBattleActions,
@@ -178,6 +178,7 @@ export function clearBattleTransition(draft: GameplayDraft): void {
 export const setPendingCharacterId = bindDraftAction((s) => sessionActions(s).setPendingCharacterId);
 export const setPendingContentSystemType = bindDraftAction((s) => sessionActions(s).setPendingContentSystemType);
 export const setWildwoodDraft = bindDraftAction((s) => sessionActions(s).setWildwoodDraft);
+export const setStarterDraftChoices = bindDraftAction((s) => sessionActions(s).setStarterDraftChoices);
 
 /** Start a fresh run: seed active-run progress, drop the previous run-end XP snapshot, flag the run active. */
 export function applyRunStartSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): void {
@@ -224,15 +225,15 @@ export function commitDestinationClaim(draft: GameplayDraft, destination: Destin
   return true;
 }
 
-/** Undo a Corruption visit that never mutated a card so the same destination picker returns. */
-export function abandonCorruptionDestinationVisit(draft: GameplayDraft): void {
+/** Undo a destination visit that never resolved so the same picker returns. */
+export function abandonDestinationVisit(draft: GameplayDraft, destination: Destination): void {
   const run = runActions(draft);
   const session = sessionActions(draft);
   const transient = draft.session;
 
-  if (transient.pendingDestinationClaim === DESTINATIONS.CORRUPTION) {
+  if (transient.pendingDestinationClaim === destination) {
     session.cancelDestinationClaim();
-  } else if (draft.run.activeRun.completedDestinations.at(-1) === DESTINATIONS.CORRUPTION) {
+  } else if (draft.run.activeRun.completedDestinations.at(-1) === destination) {
     run.setCompletedDestinations((prev) => prev.slice(0, -1));
     run.setDestinationIndexInAct((prev) => Math.max(0, prev - 1));
   }
@@ -244,7 +245,19 @@ export function abandonCorruptionDestinationVisit(draft: GameplayDraft): void {
     }
   }
 
-  session.setCorruptionResult(null);
+  if (destination === DESTINATIONS.CORRUPTION) {
+    session.setCorruptionResult(null);
+  }
+}
+
+/** Undo a Corruption visit that never mutated a card so the same destination picker returns. */
+export function abandonCorruptionDestinationVisit(draft: GameplayDraft): void {
+  abandonDestinationVisit(draft, DESTINATIONS.CORRUPTION);
+}
+
+/** Undo a Mystery visit whose event could not be restored. */
+export function abandonMysteryDestinationVisit(draft: GameplayDraft): void {
+  abandonDestinationVisit(draft, DESTINATIONS.MYSTERY);
 }
 
 // ---------------------------------------------------------------------------

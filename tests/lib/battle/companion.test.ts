@@ -176,7 +176,7 @@ describe("processCompanionTurnStart", () => {
       activeCompanion: companionLibrary.phoenix,
       talentEffects: {
         ...makeTestBattleState().talentEffects,
-        firstBurnCardDoubled: true,
+        firstBurnCardBonusMultiplier: 1.5,
       },
       trinketEffects: {
         ...makeTestBattleState().trinketEffects,

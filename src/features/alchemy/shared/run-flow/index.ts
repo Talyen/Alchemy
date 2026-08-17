@@ -2,7 +2,7 @@
 // run-setup and run-loop without cross-phase imports.
 // Deep imports from ./destination-flow, ./campaign-start, and ./resolve-available-destinations
 // are preferred inside features; this barrel is the shell-facing entry.
-export { bindAvailableDestinationsResolver, resolveAvailableDestinations } from "./resolve-available-destinations";
+export { resolveAvailableDestinations } from "./resolve-available-destinations";
 export type { DestinationOptionsInput } from "./destination-flow";
 export { createRunStartSnapshot } from "./run-start";
 export type { RunStartInput, RunStartSnapshot } from "./run-start";

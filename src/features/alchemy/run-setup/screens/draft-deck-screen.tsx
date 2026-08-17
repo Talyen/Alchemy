@@ -1,8 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
 import type { BattleCard } from "@/lib/game-data";
-import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import { selectRewardCards } from "@/lib/game-data";
-import { DRAFT_ROUNDS, DRAFT_CHOICES } from "@/lib/game-constants";
+import { DRAFT_ROUNDS } from "@/lib/game-constants";
 
 import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_ACTION, bodyTextClass, collectionTileWidthClass } from "@/features/alchemy/shared/config";
@@ -38,32 +35,15 @@ function DraftedCardItem({ card, index }: { card: BattleCard; index: number }) {
 
 interface Props {
   onComplete: (draftedCards: BattleCard[]) => void;
-  draftedCards?: BattleCard[];
-  draftChoices?: BattleCard[];
-  onPick?: (card: BattleCard) => void;
+  draftedCards: BattleCard[];
+  draftChoices: BattleCard[];
+  onPick: (card: BattleCard) => void;
   onOpenMenu: (rect?: DOMRect) => void;
 }
 
 export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick, onOpenMenu }: Props) {
-  const [localDrafted, setLocalDrafted] = useState<BattleCard[]>([]);
-  const drafted = draftedCards ?? localDrafted;
-  const round = drafted.length;
-
-  const localChoices = useMemo(() => {
-    return selectRewardCards(drafted, getOfferableCardPool(), DRAFT_CHOICES, drafted);
-  }, [drafted]);
-  const choices = draftChoices ?? localChoices;
-
-  const handlePick = useCallback(
-    (card: BattleCard) => {
-      const nextDrafted = [...drafted, card];
-      if (onPick) onPick(card);
-      else setLocalDrafted(nextDrafted);
-    },
-    [drafted, onPick],
-  );
-
-  const isComplete = drafted.length >= DRAFT_ROUNDS;
+  const round = draftedCards.length;
+  const isComplete = draftedCards.length >= DRAFT_ROUNDS;
 
   return (
     <TitledScreenShell
@@ -74,24 +54,24 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
     >
       <p className={cn("mt-3 text-center", bodyTextClass)}>
         {isComplete
-          ? "You drafted " + String(drafted.length) + " cards. Ready to begin your run."
+          ? "You drafted " + String(draftedCards.length) + " cards. Ready to begin your run."
           : "Pick 1 of 3 cards \u2014 " + String(round + 1) + "/" + String(DRAFT_ROUNDS) + " selected"}
       </p>
 
       <FadeSlot swapKey={isComplete ? "complete" : round} className="mx-auto mt-8 min-h-[36cqh] w-full">
         {isComplete ? (
           <div className="mx-auto grid max-w-fit grid-cols-3 justify-items-center gap-6">
-            {drafted.map((card, index) => (
+            {draftedCards.map((card, index) => (
               <DraftedCardItem key={"drafted-" + String(index) + "-" + card.id} card={card} index={index} />
             ))}
           </div>
         ) : (
           <div className="flex flex-wrap items-start justify-center gap-6">
-            {choices.map((card, index) => (
+            {draftChoices.map((card, index) => (
               <SelectableChoiceCard
                 key={"draft-choice-" + String(index) + "-" + card.id}
                 card={card}
-                onSelect={() => handlePick(card)}
+                onSelect={() => onPick(card)}
                 interactionKey={"draft-choice-" + String(index)}
                 tiltEnabled={false}
               />
@@ -102,7 +82,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
 
       {isComplete ? (
         <div className="mt-8 flex justify-center">
-          <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={() => onComplete(drafted)}>
+          <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={() => onComplete(draftedCards)}>
             Continue
           </Button>
         </div>

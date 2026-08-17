@@ -10,31 +10,26 @@ import {
   resetStorageIoForTests,
   saveAlchemySaveData,
   saveAlchemySaveDataForExit,
+  configureSaveBackend,
 } from "@/features/alchemy/shared/storage/io";
 import { bootstrapAlchemySaveState } from "@/features/alchemy/shared/storage/bootstrap-save-state";
+import {
+  setupMockWindowBrowser,
+  setupMockWindowDesktop,
+  teardownMockWindow,
+} from "../../../../helpers/desktop-save-mock-helper";
 
-const mockStorage: Record<string, string> = {};
 const globalWithWindow = globalThis as unknown as { window?: object };
-
-function setupWindow() {
-  globalWithWindow.window = {
-    localStorage: {
-      getItem: (key: string) => mockStorage[key] ?? null,
-      setItem: (key: string, value: string) => {
-        mockStorage[key] = value;
-      },
-      removeItem: (key: string) => {
-        delete mockStorage[key];
-      },
-    } as Storage,
-  };
-}
-
-function teardownWindow() {
-  delete globalWithWindow.window;
-}
-
-import { setupMockWindowDesktop } from "../../../../helpers/desktop-save-mock-helper";
+const mockStorage: Record<string, string> = {};
+const mockLocalStorage = {
+  getItem: (key: string) => mockStorage[key] ?? null,
+  setItem: (key: string, value: string) => {
+    mockStorage[key] = value;
+  },
+  removeItem: (key: string) => {
+    delete mockStorage[key];
+  },
+} as Storage;
 
 function setupDesktopSaveCandidates(candidates: string[]) {
   const desktop = setupMockWindowDesktop({ saveCandidates: candidates, steamName: null });
@@ -72,13 +67,12 @@ describe("storage io", () => {
     vi.restoreAllMocks();
     await resetStorageIoForTests();
     Object.keys(mockStorage).forEach((k) => delete mockStorage[k]);
-    setupWindow();
+    setupMockWindowBrowser(mockLocalStorage);
   });
 
-  afterEach(async () => {
+  afterEach(() => {
     vi.restoreAllMocks();
-    await resetStorageIoForTests();
-    teardownWindow();
+    teardownMockWindow();
   });
 
   it("loadAlchemySaveState returns defaults when localStorage empty", async () => {
@@ -200,6 +194,30 @@ describe("storage io", () => {
     await pending;
 
     expect(JSON.parse(mockStorage[SAVE_KEY]).discoveredCardIds).toEqual(["latest"]);
+  });
+
+  it("skips terminal exit save while a clear is in flight", async () => {
+    let releaseClear: (() => void) | undefined;
+    const clearGate = new Promise<void>((resolve) => {
+      releaseClear = resolve;
+    });
+    const writeSync = vi.fn().mockReturnValue({ ok: true });
+    configureSaveBackend({
+      readCandidates: async () => ({ ok: true, candidates: [] }),
+      write: async () => ({ ok: true }),
+      clear: async () => {
+        await clearGate;
+        return { ok: true };
+      },
+      writeSync,
+    });
+
+    const pendingClear = clearAlchemySaveData();
+    await Promise.resolve();
+    saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["resurrect"] });
+    expect(writeSync).not.toHaveBeenCalled();
+    releaseClear?.();
+    await pendingClear;
   });
 
   it("clearAlchemySaveData removes key from localStorage", async () => {
@@ -392,6 +410,23 @@ describe("storage io", () => {
     await pendingClear;
 
     expect(clearSave).toHaveBeenCalledOnce();
+  });
+
+  it("keeps writes disabled after a wipe-for-reload clear so terminal flush cannot restore the save", async () => {
+    const futurePayload = JSON.stringify({
+      ...currentSchemaCampaignSave(),
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+    });
+    mockStorage[SAVE_KEY] = futurePayload;
+
+    const loaded = await loadAlchemySaveState();
+    expect(loaded.status.kind).toBe("unsupported-newer-schema");
+
+    await expect(clearAlchemySaveData({ keepWritesDisabled: true })).resolves.toBe(true);
+    expect(mockStorage[SAVE_KEY]).toBeUndefined();
+
+    saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["should-not-write"] });
+    expect(mockStorage[SAVE_KEY]).toBeUndefined();
   });
 
   it("keeps writes disabled when desktop clear fails due to Steam Cloud", async () => {

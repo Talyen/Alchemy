@@ -1,23 +1,16 @@
 // Canonical boundary between aggregate run state and persisted resume data.
-// Keeping this translation in one module prevents autosave and boot hydration from
-// growing independent field-by-field mappings.
+// Keeping this translation in one public module prevents autosave and boot hydration from
+// growing independent field-by-field mappings. Shop and interrupted-flow encode live beside this file.
 import { isPlayerDefeated } from "@/lib/battle";
 import {
-  createEmptyRewardState,
+  emptyHydratedMysteryVisit,
   hydrateAlchemistState,
   hydrateEquipmentShopState,
-  emptyHydratedMysteryVisit,
   hydrateMysteryVisit,
   hydrateShopState,
   hydrateTrinketShopState,
-  restorePendingRewardBundle,
   restoreWildwoodRewardState,
-  serializeAlchemistState,
-  serializeEquipmentShopState,
   serializeMysteryVisit,
-  serializePendingReward,
-  serializeShopState,
-  serializeTrinketShopState,
   type ActiveRunData,
   type AlchemistState,
   type EquipmentShopState,
@@ -27,7 +20,6 @@ import {
   type PersistedBattleTransition,
   type PersistedEquipmentShopState,
   type PersistedMysteryVisit,
-  type PersistedPendingReward,
   type PersistedShopState,
   type PersistedTrinketShopState,
   type RewardState,
@@ -40,10 +32,11 @@ import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import { emptyInventory } from "@/lib/homestead/inventory";
-import { filterValidDestinations, type Screen } from "@/lib/routing";
+import { type Screen } from "@/lib/routing";
 import { createInitialActiveRunFields, pickActiveRunFields, type ActiveRunProgressFields } from "./run-state-init";
 import type { RunSession } from "./run-session-model";
+import { decodeInterruptedFlow, encodeInterruptedFlow, resolveEncodeScreen } from "./encode-interrupted-flow";
+import { encodePersistedShops } from "./encode-shops";
 
 export interface DecodedRunResumeSession {
   labyrinthMap: LabyrinthMap | null;
@@ -51,6 +44,7 @@ export interface DecodedRunResumeSession {
   activeLabyrinthModifiers: EncounterCombatTraitId[];
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   wildwoodDraft: WildwoodDraftState | null;
+  starterDraftChoices: BattleCard[] | null;
   rewardState: RewardState | null;
   companionRewardCards: BattleCard[] | null;
   shopState: ShopState | null;
@@ -74,205 +68,6 @@ export interface DecodedRunResumeSnapshot {
   session: DecodedRunResumeSession;
 }
 
-interface DecodedClaimSurface {
-  rewardState: RewardState | null;
-  companionRewardCards: BattleCard[] | null;
-  screen: Screen | null;
-}
-
-/**
- * During an in-flight claim the primary choice is already applied to the deck.
- * Persist only the post-claim surface (companion handoff or destinations) so
- * autosave cannot re-offer the claimed primary or soft-lock empty Rewards.
- */
-function encodeMidClaimPendingReward(session: RunSession["session"]): PersistedPendingReward | null {
-  const companions = session.companionRewardCards;
-  if (!companions?.length) return null;
-
-  return {
-    rewardType: "card",
-    choiceIds: [],
-    companionChoiceIds: companions.map((choice) => choice.id),
-    selectedId: null,
-    gold: 0,
-    materials: emptyInventory(),
-    destinations: [...session.rewardState.destinations],
-    selectedBossId: session.rewardState.selectedBossId,
-    lastVictoryEnemyType: session.rewardState.lastVictoryEnemyType,
-    lastVictoryContentSystem: session.rewardState.lastVictoryContentSystem,
-  };
-}
-
-function resolveEncodeScreen(
-  requested: Screen | null | undefined,
-  session: RunSession["session"],
-): Screen | null | undefined {
-  if (!session.rewardClaimInFlight) return requested;
-  if (session.companionRewardCards?.length) return requested ?? "rewards";
-  // Primary drained with destinations still pending — resume on destination pick.
-  if (session.rewardState.destinations.length > 0) return "destination";
-  // Boss / act-complete / labyrinth clear: no claimable surface left.
-  if (requested === "rewards" || requested == null) {
-    if (session.labyrinthMap) return "labyrinth-map";
-    if (session.wildwoodDraft) {
-      const phase = session.wildwoodDraft.phase;
-      if (phase === "removal") return "wildwood-removal";
-      if (phase === "reward") return "rewards";
-      if (phase === "draft") return "draft-deck";
-      if (phase === "battle") return "battle";
-    }
-    return "destination";
-  }
-  return requested;
-}
-
-function encodeDestinationFlow(session: RunSession["session"]): InterruptedFlow {
-  return {
-    kind: "destination",
-    destinations: [...session.rewardState.destinations],
-    selectedBossId: session.rewardState.selectedBossId,
-    lastVictoryEnemyType: session.rewardState.lastVictoryEnemyType,
-    lastVictoryContentSystem: session.rewardState.lastVictoryContentSystem,
-  };
-}
-
-function encodeInterruptedFlow(
-  session: RunSession["session"],
-  currentScreen: Screen | null | undefined,
-): InterruptedFlow {
-  if (session.rewardClaimInFlight) {
-    if (session.companionRewardCards?.length) {
-      const pending = encodeMidClaimPendingReward(session);
-      return pending ? { kind: "companion-reward", pending } : { kind: "none" };
-    }
-    // Match resolveEncodeScreen: post-claim destination / hollow rewards need destination phase.
-    if (session.rewardState.destinations.length > 0 || currentScreen === "destination" || currentScreen === "rewards") {
-      return encodeDestinationFlow(session);
-    }
-    return { kind: "none" };
-  }
-
-  if (currentScreen === "rewards" && session.rewardState.choices.length > 0) {
-    const pending = serializePendingReward(session.rewardState, session.companionRewardCards);
-    return pending ? { kind: "primary-reward", pending } : { kind: "none" };
-  }
-
-  // Destination phase: destination screen, or rewards with no primary/companion choices left.
-  if (currentScreen === "destination" || (currentScreen === "rewards" && session.rewardState.choices.length === 0)) {
-    return encodeDestinationFlow(session);
-  }
-
-  // Non-claim screens can still carry an in-progress reward payload (e.g. snapshot parity).
-  const pending = serializePendingReward(session.rewardState, session.companionRewardCards);
-  if (pending && session.companionRewardCards?.length) {
-    return { kind: "companion-reward", pending };
-  }
-  if (pending && session.rewardState.choices.length > 0) {
-    return { kind: "primary-reward", pending };
-  }
-
-  return { kind: "none" };
-}
-
-function resolveDestinationExitScreen(activeRun: ActiveRunData): Screen {
-  if (activeRun.labyrinthMap) return "labyrinth-map";
-  if (activeRun.wildwoodDraft) {
-    const phase = activeRun.wildwoodDraft.phase;
-    if (phase === "removal") return "wildwood-removal";
-    if (phase === "draft") return "draft-deck";
-    if (phase === "battle") return "battle";
-  }
-  return "destination";
-}
-
-function restoreCompanionHandoff(currentScreen: Screen | null, pending: PersistedPendingReward): DecodedClaimSurface {
-  const restored = restorePendingRewardBundle(pending);
-  let { rewardState, companionRewardCards } = restored;
-  let screen = currentScreen;
-
-  if (companionRewardCards?.length && (!rewardState || rewardState.choices.length === 0)) {
-    rewardState = {
-      ...(rewardState ?? createEmptyRewardState(filterValidDestinations(pending.destinations))),
-      rewardType: "card",
-      choices: companionRewardCards,
-      selectedId: null,
-      gold: 0,
-      materials: emptyInventory(),
-    };
-    companionRewardCards = null;
-    screen = "rewards";
-  }
-
-  return { rewardState, companionRewardCards, screen };
-}
-
-function restorePrimaryPendingReward(
-  currentScreen: Screen | null,
-  pending: PersistedPendingReward,
-): DecodedClaimSurface {
-  const restored = restorePendingRewardBundle(pending);
-  const companionRewardCards = restored.companionRewardCards;
-  let rewardState = restored.rewardState;
-  let screen = currentScreen;
-  if (!rewardState && pending.destinations.length > 0) {
-    rewardState = createEmptyRewardState(filterValidDestinations(pending.destinations));
-    screen = "destination";
-  }
-  return { rewardState, companionRewardCards, screen };
-}
-
-function restoreDestinationFlow(
-  activeRun: ActiveRunData,
-  flow: Extract<InterruptedFlow, { kind: "destination" }>,
-): DecodedClaimSurface {
-  const destinations = filterValidDestinations(flow.destinations);
-  if (destinations.length === 0) {
-    const screen = resolveDestinationExitScreen(activeRun);
-    if (screen !== "destination") {
-      return { rewardState: null, companionRewardCards: null, screen };
-    }
-  }
-
-  return {
-    rewardState: {
-      ...createEmptyRewardState(destinations.length > 0 ? destinations : undefined),
-      selectedBossId: flow.selectedBossId,
-      lastVictoryEnemyType: flow.lastVictoryEnemyType,
-      lastVictoryContentSystem: flow.lastVictoryContentSystem,
-    },
-    companionRewardCards: null,
-    screen: "destination",
-  };
-}
-
-function decodeInterruptedFlow(activeRun: ActiveRunData): DecodedClaimSurface {
-  const flow = activeRun.interruptedFlow;
-  switch (flow.kind) {
-    case "companion-reward":
-      return restoreCompanionHandoff(activeRun.currentScreen, flow.pending);
-    case "primary-reward":
-      return restorePrimaryPendingReward(activeRun.currentScreen, flow.pending);
-    case "destination":
-      return restoreDestinationFlow(activeRun, flow);
-    case "none":
-      return { rewardState: null, companionRewardCards: null, screen: activeRun.currentScreen };
-    default: {
-      const _exhaustive: never = flow;
-      void _exhaustive;
-      return { rewardState: null, companionRewardCards: null, screen: activeRun.currentScreen };
-    }
-  }
-}
-
-function resolvePendingBattleTransition(activeRun: ActiveRunData): PersistedBattleTransition | null {
-  const pending = activeRun.activeCombat?.pendingBattleTransition ?? null;
-  if (pending) return pending;
-  if (activeRun.activeCombat?.battleState.turnPhase === "enemy") {
-    return { kind: "legacy-enemy-turn" };
-  }
-  return null;
-}
-
 interface EncodeResumeFields {
   currentScreen: Screen | null;
   interruptedFlow: InterruptedFlow;
@@ -284,8 +79,17 @@ interface EncodeResumeFields {
   corruptionResult: CorruptionResult | null;
 }
 
+function resolvePendingBattleTransition(activeRun: ActiveRunData): PersistedBattleTransition | null {
+  const pending = activeRun.activeCombat?.pendingBattleTransition ?? null;
+  if (pending) return pending;
+  if (activeRun.activeCombat?.battleState.turnPhase === "enemy") {
+    return { kind: "legacy-enemy-turn" };
+  }
+  return null;
+}
+
 /** Encode the aggregate run read model directly into persisted ActiveRunData. */
-function toActiveRunData(source: RunSession, resume: EncodeResumeFields): ActiveRunData {
+function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFields): ActiveRunData {
   const { run, session, battle } = source;
   // Drop fields joined only for the committed session read model before spreading
   // the canonical active-run progress projection into persistence.
@@ -317,6 +121,10 @@ function toActiveRunData(source: RunSession, resume: EncodeResumeFields): Active
     labyrinthMap: progress.contentSystemType === "labyrinth" ? session.labyrinthMap : null,
     labyrinthPendingNode: progress.contentSystemType === "labyrinth" ? session.activeLabyrinthPendingNode : null,
     wildwoodDraft: progress.contentSystemType === "wildwood" ? session.wildwoodDraft : null,
+    starterDraftChoices:
+      progress.contentSystemType === "wildwood" || !session.starterDraftChoices?.length
+        ? null
+        : session.starterDraftChoices,
     activeCombat,
     currentScreen: resume.currentScreen,
     interruptedFlow: resume.interruptedFlow,
@@ -326,28 +134,6 @@ function toActiveRunData(source: RunSession, resume: EncodeResumeFields): Active
     equipmentShopState: resume.equipmentShopState,
     mysteryVisit: resume.mysteryVisit,
     corruptionResult: resume.corruptionResult,
-  };
-}
-
-function encodePersistedShops(
-  session: RunSession["session"],
-  currentScreen: Screen | null | undefined,
-): Pick<EncodeResumeFields, "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState"> {
-  return {
-    shopState:
-      currentScreen === "shop" || session.shopState.cards.length > 0 ? serializeShopState(session.shopState) : null,
-    alchemistState:
-      currentScreen === "alchemist" || session.alchemistState.potions.length > 0
-        ? serializeAlchemistState(session.alchemistState)
-        : null,
-    trinketShopState:
-      currentScreen === "trinket-shop" || session.trinketShopState.trinkets.length > 0
-        ? serializeTrinketShopState(session.trinketShopState)
-        : null,
-    equipmentShopState:
-      currentScreen === "equipment-shop" || session.equipmentShopState.gear.length > 0
-        ? serializeEquipmentShopState(session.equipmentShopState)
-        : null,
   };
 }
 
@@ -363,13 +149,14 @@ function encodeCorruptionResult(
   session: RunSession["session"],
   currentScreen: Screen | null | undefined,
 ): CorruptionResult | null {
-  if (currentScreen !== "corruption" && !session.corruptionResult) return null;
+  if (currentScreen !== "corruption") return null;
   return session.corruptionResult;
 }
+
 export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
   const requestedScreen = screen ?? source.screen;
   const currentScreen = resolveEncodeScreen(requestedScreen, source.session) ?? requestedScreen;
-  return toActiveRunData(source, {
+  return encodeActiveRunFromSession(source, {
     currentScreen,
     interruptedFlow: encodeInterruptedFlow(source.session, currentScreen),
     ...encodePersistedShops(source.session, currentScreen),
@@ -412,6 +199,7 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
       activeLabyrinthModifiers: activeRun.activeCombat?.activeLabyrinthModifiers ?? [],
       activeLabyrinthRewardModifiers: activeRun.activeCombat?.activeLabyrinthRewardModifiers ?? [],
       wildwoodDraft: activeRun.wildwoodDraft,
+      starterDraftChoices: activeRun.starterDraftChoices,
       rewardState,
       companionRewardCards,
       shopState: activeRun.shopState ? hydrateShopState(activeRun.shopState) : null,

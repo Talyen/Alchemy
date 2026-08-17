@@ -28,10 +28,10 @@ import {
 } from "@/features/alchemy/shared/config";
 import {
   getRewardChoiceId,
-  type RewardState,
   type GearRewardState,
+  type RewardState,
   type TrinketRewardState,
-} from "../navigation/reward-flow";
+} from "@/lib/active-run-session";
 
 function RewardChoiceItems({
   choices,

@@ -2,7 +2,7 @@
 import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
 import type { ScreenTransitionOptions } from "@/features/alchemy/shell/use-screen-transitions";
 import type { VictoryRewardsResult } from "../navigation/victory-flow";
-import type { Screen } from "../../shared/types";
+import type { Screen } from "@/lib/routing";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import type { ShopKind } from "@/features/alchemy/run-loop/shop/shop-action-types";
 
@@ -22,4 +22,5 @@ export interface RunFlowShellActions {
   clearMysteryCardChoices: () => void;
   wildwoodRewardComplete: (onRenderedScreenCommit?: () => void) => void;
   selectRewardChoice: (id: string) => void;
+  clearCardHover: () => void;
 }

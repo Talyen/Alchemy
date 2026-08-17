@@ -12,7 +12,6 @@ import {
   setRoomsEncountered,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { syncRunToBattleStart } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { useBattlePresentationStore } from "./battle-presentation-store";
 import { appendUnique } from "@/lib/utils";
 import { readProfileStore, setEncounteredEnemyIds } from "../../shared/stores/profile-store";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
@@ -126,7 +125,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
             // Legacy test doubles may only expose the original reset helper.
             session.resetBattleSession();
           }
-          const presentationStore = useBattlePresentationStore.getState();
+          const presentationStore = ctx.getPresentation();
           presentationStore.resetCardTransfers();
           presentationStore.resetHandTransferUi();
           presentationStore.clearCardGhosts();

@@ -5,6 +5,7 @@ import {
   controlDescriptionClass,
   controlLabelClass,
   displayModeOptions,
+  settingsPanelShellClass,
 } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 import { AspectRatioSelect, DisplayModeSelect } from "../../shared/ui/shared-ui";
@@ -67,7 +68,7 @@ function SliderOption({
   max?: number;
 }) {
   return (
-    <div className="rounded-shell-panel border border-border/70 p-5 surface-muted">
+    <div className={settingsPanelShellClass}>
       <div className="flex items-center justify-between gap-4">
         <p className={controlLabelClass}>{label}</p>
         <p className={cn(controlLabelClass, "text-primary")}>{value}%</p>
@@ -97,7 +98,7 @@ function ToggleOption({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="rounded-shell-panel border border-border/70 p-5 surface-muted">
+    <div className={settingsPanelShellClass}>
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className={controlLabelClass}>{label}</p>
@@ -205,7 +206,7 @@ export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptions
           </div>
         </div>
       ) : null}
-      <div className="rounded-shell-panel border border-border/70 p-5 surface-muted">
+      <div className={settingsPanelShellClass}>
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className={controlLabelClass}>Options</p>
@@ -216,7 +217,7 @@ export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptions
           </Button>
         </div>
       </div>
-      <div className="rounded-shell-panel border border-border/70 p-5 surface-muted">
+      <div className={settingsPanelShellClass}>
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className={controlLabelClass}>Save Data</p>

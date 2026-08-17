@@ -9,7 +9,12 @@ const makeCard = makeTestCardWithId;
 
 describe("defaultTalentEffects", () => {
   it("has all numeric fields set to 0 except known non-zero defaults", () => {
-    const nonZeroDefaults = new Set(["bleedDesperateMultiplier", "healMultiplier", "potionPotency"]);
+    const nonZeroDefaults = new Set([
+      "bleedDesperateMultiplier",
+      "bleedExecuteMultiplier",
+      "healMultiplier",
+      "potionPotency",
+    ]);
     for (const [key, value] of Object.entries(defaultTalentEffects)) {
       if (typeof value === "number" && !nonZeroDefaults.has(key)) expect(value).toBe(0);
     }
@@ -21,10 +26,10 @@ describe("defaultTalentEffects", () => {
     }
   });
 
-  it("has null thresholds, zero companion bonds, and known non-zero multipliers", () => {
+  it("has empty armor thresholds, a null block threshold, zero companion bonds, and known non-zero multipliers", () => {
     expect(defaultTalentEffects).toMatchObject({
       healthThresholdBlock: null,
-      healthThresholdArmor: null,
+      healthThresholdArmor: [],
       bleedDesperateMultiplier: 1,
       healMultiplier: 1,
     });

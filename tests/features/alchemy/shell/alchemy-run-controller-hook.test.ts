@@ -41,8 +41,6 @@ describe("useAlchemyRunController", () => {
   function renderController() {
     return renderHook(() =>
       useAlchemyRunController({
-        autoEndTurn: false,
-        gameMenuOpen: false,
         onMarkDifficultyCompleted: vi.fn(),
       }),
     );

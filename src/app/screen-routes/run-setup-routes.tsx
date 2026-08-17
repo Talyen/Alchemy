@@ -11,8 +11,7 @@ function DifficultySelectScreenRoute({
   commands: RunSetupCommands;
   onOpenBattleMenu: RunSetupRouteCtx["onOpenBattleMenu"];
 }) {
-  const { pendingCharacterId, selectedDifficulty } = useDifficultySelectSlice();
-  const characterId = pendingCharacterId ?? "knight";
+  const { characterId, selectedDifficulty } = useDifficultySelectSlice();
   const completedDifficulties = useCompletedDifficulties()[characterId];
 
   return (
@@ -36,17 +35,14 @@ function DraftDeckScreenRoute({
 }) {
   const draft = useDraftDeckSlice();
   const isWildwoodDraft = draft.contentSystemType === "wildwood" && draft.wildwoodDraft?.phase === "draft";
+  const draftChoices = isWildwoodDraft ? (draft.wildwoodDraft?.draftChoices ?? []) : (draft.starterDraftChoices ?? []);
   return (
     <DraftDeckScreen
       onComplete={isWildwoodDraft ? commands.handleWildwoodDraftComplete : commands.handleStandardDraftComplete}
       onOpenMenu={onOpenBattleMenu}
-      {...(isWildwoodDraft
-        ? {
-            draftedCards: draft.runDeck,
-            draftChoices: draft.wildwoodDraft?.draftChoices ?? [],
-            onPick: commands.handleDraftPick,
-          }
-        : {})}
+      draftedCards={draft.runDeck}
+      draftChoices={draftChoices}
+      onPick={commands.handleDraftPick}
     />
   );
 }

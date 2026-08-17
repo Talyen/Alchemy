@@ -11,7 +11,7 @@ export type {
   PersistedBattleTransition,
 } from "./types";
 export type { CardRewardState, GearRewardState, RewardState, TrinketRewardState } from "./reward-types";
-export { createEmptyRewardState } from "./reward-types";
+export { createEmptyRewardState, getRewardChoiceId } from "./reward-types";
 export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState } from "./shop-session-types";
 export {
   emptyAlchemistState,

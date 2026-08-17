@@ -11,15 +11,19 @@ import { ManaPanel, PilePanel } from "../../../shared/ui/battle-ui";
 import { battleBottomBarClass, battleBottomColumnClass, BUTTON_WIDTH_DIALOG } from "@/features/alchemy/shared/config";
 import { BattleHand } from "./hand";
 import type { BattleActionsProps, BattleRefsProps, BattleScreenState, RequiredBattleViewProps } from "./types";
+import { useCardTransferInProgress } from "../../battle/presentation/use-hand-presentation";
+import type { BattleState } from "@/lib/battle";
 
 export function BattleBottomBar({
   view,
   refs,
   actions,
+  playabilityState,
 }: {
   view: RequiredBattleViewProps;
   refs: BattleRefsProps;
   actions: BattleActionsProps;
+  playabilityState: BattleState;
 }) {
   const { battleState } = view;
   const { drawPileRef, discardPileRef } = refs;
@@ -33,7 +37,7 @@ export function BattleBottomBar({
         </div>
       </div>
 
-      <BattleHand view={view} refs={refs} actions={actions} />
+      <BattleHand view={view} refs={refs} actions={actions} playabilityState={playabilityState} />
 
       <BattleControls battleState={battleState} actions={actions} discardPileRef={discardPileRef} />
     </section>
@@ -49,7 +53,8 @@ function BattleControls({
   actions: BattleActionsProps;
   discardPileRef: RefObject<HTMLDivElement | null>;
 }) {
-  const { onEndTurn, onSkipCombatDevMode, cardTransferInProgress, isDevMode } = actions;
+  const { onEndTurn, onSkipCombatDevMode, isDevMode } = actions;
+  const cardTransferInProgress = useCardTransferInProgress();
 
   return (
     <div className={battleBottomColumnClass}>

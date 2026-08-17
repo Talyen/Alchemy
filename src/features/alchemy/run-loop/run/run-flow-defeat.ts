@@ -5,7 +5,6 @@ import {
   finalizeRunEndSession,
 } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { finalizeRunXP } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { useUiStore } from "../../shared/stores/ui-store";
 import { stopAllSfx } from "@/lib/audio";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { CONSTANTS } from "../../shared/types";
@@ -43,7 +42,7 @@ export function createDefeatHandlers(deps: RunFlowHandlerDeps) {
   }
 
   function handleAbandonRun() {
-    useUiStore.getState().clearCardHover();
+    deps.actions.clearCardHover();
     if (deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
       endLabyrinthRun();
       return;

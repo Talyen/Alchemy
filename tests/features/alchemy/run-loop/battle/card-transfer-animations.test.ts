@@ -15,7 +15,6 @@ function makeDeps(overrides: Partial<CardTransferAnimationDeps> = {}): CardTrans
     runCardTransfer: vi.fn(async () => {}),
     playTransferSound: vi.fn(),
     setHiddenHandCardKeys: vi.fn(),
-    revealCardKey: vi.fn(),
     setCardPlayInProgress: vi.fn(),
     setTransferInProgress: vi.fn(),
     stableHandCardDeps: {
@@ -98,7 +97,7 @@ describe("animateDrawnHand", () => {
     globalThis.requestAnimationFrame = raf;
   });
 
-  it("reveals each drawn card after transfer completes", async () => {
+  it("unhides each drawn card after transfer completes", async () => {
     const deps = makeDeps({
       runCardTransfer: vi.fn(async (_transfer, onComplete) => {
         onComplete?.();
@@ -109,7 +108,6 @@ describe("animateDrawnHand", () => {
 
     await animateDrawnHand(drawn, hand, 1, deps);
 
-    expect(deps.revealCardKey).toHaveBeenCalledWith("block-2");
     expect(deps.setHiddenHandCardKeys).toHaveBeenCalled();
   });
 });

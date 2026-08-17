@@ -24,6 +24,7 @@ import {
   chooserHeroArtWidthClass,
   chooserHeroRowGapClass,
   chooserHeroRowShellWidthClass,
+  chooserLockedSurfaceClass,
   getCharacterShineColors,
   WILDCARD_KEYWORD_SHINE_COLORS,
   WILDCARD_SHINE_CYCLE_MS,
@@ -79,6 +80,7 @@ function CharacterCard({
         <TiltSurface
           as="button"
           ariaLabel={isLocked ? `${char.name} (Locked)` : `Select ${char.name}`}
+          ariaDisabled={isLocked}
           className={cn(
             "group relative w-full rounded-shell-tooltip border border-border/80 shadow-md",
             !isLocked && cardInteractiveGlowClass,
@@ -107,7 +109,7 @@ function CharacterCard({
             className={cn(
               cardSurfaceClass,
               "aspect-[3/4] w-full rounded-shell-tooltip object-cover",
-              isLocked && "opacity-45 grayscale-[50%]",
+              isLocked && chooserLockedSurfaceClass,
             )}
           />
         </TiltSurface>

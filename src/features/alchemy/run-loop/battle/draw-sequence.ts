@@ -33,6 +33,7 @@ export async function runHandDrawSequence(
     deps.runIfSessionActive(session, () => {
       applyState();
       deps.setTransferInProgress(false);
+      deps.setHiddenHandCardKeys(new Set());
     });
     return false;
   }

@@ -3,7 +3,7 @@ import { BookOpen, Cog, House, Shield, Swords, TreePine, WandSparkles } from "lu
 import { Fragment } from "react";
 import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-import type { Screen } from "../types";
+import type { Screen } from "@/lib/routing";
 import { fadePhaseClass, useFadePresence, useHeldWhile } from "./fade-presence";
 import { LockedMenuItem } from "./locked-menu-item";
 

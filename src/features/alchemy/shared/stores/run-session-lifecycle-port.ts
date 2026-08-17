@@ -6,11 +6,13 @@ export {
   teardownRun,
   syncRunToBattleStart,
   syncBattleToRun,
+  syncRunMaxHealthFromGearMutation,
   clearBattleUi,
   clearBattlePresentationUi,
   finalizeRunEndSession,
   applyRunDefeatTeardown,
   resolveActiveRunForSave,
+  flushSaveAfterGearMutation,
   onRunTeardown,
   onClearBattlePresentation,
 } from "./run-transitions";

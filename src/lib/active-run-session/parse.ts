@@ -25,6 +25,7 @@ export function toActiveRunData(parsed: ParsedActiveRunData): ActiveRunData {
           draftChoices: parsed.wildwoodDraft.draftChoices.map(hydrateParsedCard),
         }
       : null,
+    starterDraftChoices: parsed.starterDraftChoices?.map(hydrateParsedCard) ?? null,
     shopState: parsed.shopState
       ? {
           ...parsed.shopState,

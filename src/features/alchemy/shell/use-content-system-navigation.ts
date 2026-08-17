@@ -1,11 +1,7 @@
 // Thin React wiring around createContentSystemNavigation.
-/* eslint-disable react-hooks/refs -- factory receives draftedDeckRef for event-time reads */
-import { useMemo, useRef } from "react";
-import type { BattleCard } from "@/lib/game-data";
+import { useMemo } from "react";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import type { ContentSystemNavigationDeps } from "@/features/alchemy/run-setup/run/content-system-navigation-types";
-
-type ContentSystemNavigationHookDeps = Omit<ContentSystemNavigationDeps, "draftedDeckRef">;
 
 export function useContentSystemNavigation({
   run,
@@ -20,14 +16,12 @@ export function useContentSystemNavigation({
   getAvailableDestinations,
   onResumeWildwood,
   clearCardHover,
-}: ContentSystemNavigationHookDeps) {
-  const draftedDeckRef = useRef<BattleCard[] | null>(null);
+}: ContentSystemNavigationDeps) {
   return useMemo(
     () =>
       createContentSystemNavigation({
         run,
         talents,
-        draftedDeckRef,
         hasActiveRun,
         hasActiveBattle,
         pendingContentSystemType,

@@ -1,3 +1,5 @@
+// Test facades over the gameplay aggregate (`useRunTransientStore`, `useActiveRunStore`, etc.).
+// These names are not production APIs; production code uses capability ports on gameplay-state-store.
 import {
   readGameplayState,
   useGameplayStateStore,

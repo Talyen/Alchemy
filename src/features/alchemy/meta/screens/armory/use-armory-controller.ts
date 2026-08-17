@@ -9,13 +9,15 @@ import {
   type GearSlot,
   type SalvageYield,
 } from "@/lib/gear";
-import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import {
+  resolveActiveRunForSave,
+  flushSaveAfterGearMutation,
+} from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   dispatchGearMutationWithRunHealthSync,
-  mutateGearWithRunHealthSync,
+  dispatchGearSalvageWithMaterialGrant,
 } from "@/features/alchemy/shared/stores/gear-session-command";
-import { addMaterials, awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   useActiveRunCharacterId,
   useHasActiveBattle,
@@ -24,7 +26,6 @@ import {
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import { useGearArmorySlice } from "@/features/alchemy/shared/stores/gear-store";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
-import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
@@ -76,7 +77,7 @@ export function useArmoryController(): ArmoryController {
   const rngRef = useRef<() => number>(() => Math.random());
 
   const flush = useCallback(() => {
-    void flushAlchemySaveNow(resolveActiveRunForSave(hasActiveRun, returnToRunScreen ?? undefined));
+    flushSaveAfterGearMutation(resolveActiveRunForSave(hasActiveRun, returnToRunScreen ?? undefined));
   }, [hasActiveRun, returnToRunScreen]);
 
   const onEquip = useCallback<ArmoryController["onEquip"]>(
@@ -106,19 +107,9 @@ export function useArmoryController(): ArmoryController {
       whenArmoryEditable(
         hasActiveBattle,
         () => {
-          const result = dispatchRunSessionCommand((draft) => {
-            const salvageResult = mutateGearWithRunHealthSync(draft, {
-              characterId: activeRunCharacterId,
-              mutate: (state) => state.salvage(instanceId, { yield: salvageYield }),
-            });
-            if (!salvageResult) return null;
-            if (draft.session.hasActiveRun) {
-              awardMaterialsDuringRun(draft, salvageResult.yieldedMaterials);
-            } else {
-              addMaterials(draft, salvageResult.yieldedMaterials);
-            }
-            return salvageResult;
-          });
+          const result = dispatchGearSalvageWithMaterialGrant(activeRunCharacterId, (state) =>
+            state.salvage(instanceId, { yield: salvageYield }),
+          );
           if (result) flush();
           return Boolean(result);
         },

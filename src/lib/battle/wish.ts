@@ -74,8 +74,7 @@ export function buildWishOptions(state: BattleState, card: BattleCard): BattleCa
 
 function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
-  const goldAmount =
-    nextState.talentEffects.goldOnWish + nextState.talentEffects.goldOnWishAmount + nextState.gearEffects.goldOnWish;
+  const goldAmount = nextState.talentEffects.goldOnWish + nextState.gearEffects.goldOnWish;
   if (goldAmount > 0) {
     nextState = addGoldWithCombatText(nextState, goldAmount, combatTexts);
   }
@@ -173,10 +172,15 @@ function applyWishTrinketTrigger(state: BattleState, combatTexts: CombatTextEven
 
 function applyWishDesperateTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   const thresholdPct = state.talentEffects.wishBlockBelowHealthPct;
-  if (thresholdPct <= 0) return state;
+  const blockAmount = state.talentEffects.wishBlockAmount;
+  if (thresholdPct <= 0 || blockAmount <= 0) return state;
   const thresholdHp = (state.playerMaxHealth * thresholdPct) / PERCENT_DENOMINATOR;
   if (state.playerHealth <= thresholdHp) {
-    return applyPlayerStatusEffect(state, { kind: "player-status", status: "block" as const, amount: 6 }, combatTexts);
+    return applyPlayerStatusEffect(
+      state,
+      { kind: "player-status", status: "block" as const, amount: blockAmount },
+      combatTexts,
+    );
   }
   return state;
 }

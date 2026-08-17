@@ -191,6 +191,31 @@ describe("useBattleAutoEndTurn", () => {
     expect(onEndTurn).not.toHaveBeenCalled();
   });
 
+  it("does not schedule while a card play is in progress", () => {
+    const onEndTurn = vi.fn();
+    const battleState = makeTestBattleState({
+      hand: [],
+      mana: 3,
+      turnPhase: "player",
+      enemyHealth: 20,
+    });
+
+    renderHook(() =>
+      useBattleAutoEndTurn({
+        ...baseOptions,
+        isCardPlayInProgress: () => true,
+        battleState,
+        onEndTurn,
+      }),
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+    });
+
+    expect(onEndTurn).not.toHaveBeenCalled();
+  });
+
   it("does not schedule when there is no active battle", () => {
     const onEndTurn = vi.fn();
     const battleState = makeTestBattleState({

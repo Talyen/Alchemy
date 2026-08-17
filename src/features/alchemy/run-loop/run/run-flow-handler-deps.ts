@@ -1,5 +1,5 @@
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { Destination } from "../../shared/types";
+import type { Destination } from "@/lib/routing";
 import type { RunFlowShellActions } from "./run-flow-shell-actions";
 import type { RunFlowRunPort, RunFlowTalentPort } from "@/features/alchemy/shared/stores/run-port-types";
 

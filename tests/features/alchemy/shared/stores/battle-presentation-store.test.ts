@@ -29,7 +29,6 @@ describe("battle-presentation-store", () => {
     expect(s.enemyShaking).toBe(false);
     expect(s.playerShaking).toBe(false);
     expect(s.companionShaking).toBe(false);
-    expect(s.revealedCardKeys.size).toBe(0);
   });
 
   it("spawnCardGhost and removeCardGhost round-trip", () => {
@@ -94,7 +93,7 @@ describe("battle-presentation-store", () => {
     expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
   });
 
-  it("clearBattlePresentationUi resets full presentation VFX", () => {
+  it.each([clearBattlePresentationUi, clearCombatPresentation])("%s resets full presentation VFX", (clear) => {
     useBattlePresentationStore.getState().hurtPlayer();
     useBattlePresentationStore.getState().shakeEnemy();
     useBattlePresentationStore.getState().spawnCardGhost({
@@ -104,26 +103,12 @@ describe("battle-presentation-store", () => {
       delay: 0,
       variant: "activate",
     });
-    useBattlePresentationStore.getState().addRevealedCardKey("strike-1");
-    clearBattlePresentationUi();
+    clear();
     const s = useBattlePresentationStore.getState();
     expect(s.cardGhosts).toEqual([]);
     expect(s.playerHurtFlashToken).toBe(0);
     expect(s.enemyShaking).toBe(false);
     expect(s.floatingCombatTexts).toEqual([]);
-    expect(s.revealedCardKeys.size).toBe(0);
-  });
-
-  it("clearCombatPresentation uses the same full VFX reset", () => {
-    useBattlePresentationStore.getState().spawnCardGhost({
-      art: "test.webp",
-      rect: { x: 0, y: 0, width: 10, height: 10 },
-      rotation: 0,
-      delay: 0,
-      variant: "activate",
-    });
-    clearCombatPresentation();
-    expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
   });
 
   it("clearFloatingCombatTexts invalidates pending showCombatTexts timers", async () => {

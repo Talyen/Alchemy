@@ -4,20 +4,6 @@ import { describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(__dirname, "..", "..");
 
-describe("change amplification audit", () => {
-  it("runs on Windows-safe paths and accepts a since argument", () => {
-    const output = execFileSync(process.execPath, ["scripts/audit-change-amplification.mjs", "--since=1 week ago"], {
-      cwd: repoRoot,
-      encoding: "utf8",
-      timeout: 25_000,
-    });
-
-    expect(output).toContain("Since: 1 week ago");
-    expect(output).toContain("clean:");
-    expect(output).toContain("Co-edit signal:");
-  }, 30_000);
-});
-
 describe("asset manifest", () => {
   it("does not define duplicate optimized targets", () => {
     const output = execFileSync(

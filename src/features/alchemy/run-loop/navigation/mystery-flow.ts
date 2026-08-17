@@ -1,11 +1,10 @@
 // Dispatches and applies mystery event consequences to the run state.
 // Depends on game libraries, audio triggers, utility helpers, and mystery types.
-// Consumed by the run navigation flow and the useMysteryFlow React hook.
+// Consumed by the run navigation flow and `useMysteryEventNavigation`.
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { cardLibrary, getCardKeywords, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
-import { appendUnique } from "@/lib/utils";
-import { setDiscoveredCardIds, setDiscoveredTrinketIds } from "../../shared/stores/profile-store";
+import { discoverCardIds, discoverTrinketIds } from "../run/deck-mutations";
 import type { MaterialId, MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { generateGearInstanceForBaseItem, type GearInstance } from "@/lib/gear";
@@ -89,7 +88,7 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
 // Note: We use a simpler subset of context keys since we only mutate runDeck.
 function addCardToRun(card: BattleCard, context: Pick<MysteryEffectContext, "setRunDeck" | "draft">): void {
   context.setRunDeck(context.draft, (previous) => [...previous, card]);
-  setDiscoveredCardIds(context.draft, (current) => appendUnique(current, card.id));
+  discoverCardIds(context.draft, [card.id]);
 }
 
 function addSpecificMysteryCard(cardId: string, context: MysteryEffectContext) {
@@ -161,7 +160,7 @@ function gainMysteryTrinket(trinketId: string, context: MysteryEffectContext) {
   context.setRunTrinkets(context.draft, (previous) =>
     previous.includes(trinketId) ? previous : [...previous, trinketId],
   );
-  setDiscoveredTrinketIds(context.draft, (current) => appendUnique(current, trinketId));
+  discoverTrinketIds(context.draft, [trinketId]);
   return { followUp: null };
 }
 

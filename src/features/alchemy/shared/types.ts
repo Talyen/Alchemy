@@ -7,9 +7,6 @@ import type { BattleCard, EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib
 import type { CombatTextEvent } from "@/lib/battle";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 
-export type { Screen, Destination } from "@/lib/routing";
-export { DESTINATIONS } from "@/lib/routing";
-
 type CardGhostVariant = "draw-in" | "discard-out" | "activate" | "play-travel";
 
 export interface CardRect {

@@ -29,7 +29,7 @@ export const physicalTalents: TalentDefinition[] = [
     name: "Shield Bash",
     description: "Physical damage is increased by 30% of your Block",
     icon: Shield,
-    effects: [setEffect("blockToPhysicalDamageMultiplier", 0.3)],
+    effects: [addEffect("blockToPhysicalDamageMultiplier", 0.3)],
   },
   {
     id: "physical-armored-fists",
@@ -95,6 +95,4 @@ export const physicalTalents: TalentDefinition[] = [
     icon: ShieldCheck,
     effects: [setEffect("physicalDoubledBelowHalfHealth", true)],
   },
-
-  // --- Stun ---
 ];

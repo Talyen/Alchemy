@@ -16,7 +16,6 @@ export const ELITE_HP_MULTIPLIER = 1.3;
 export const STARTING_TURN = 1;
 export const ENEMY_BASE_REGENERATION = 1;
 export const ENEMY_BOSS_REGENERATION = 1;
-export const BLEED_EXECUTE_MULTIPLIER = 2;
 export const FREE_CARD_SENTINEL = 99; // nextCardCostReduction value that guarantees a card costs 0.
 export const COMPANION_LOW_HEALTH_THRESHOLD_PERCENT = 30;
 export const ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT = 75;
@@ -30,12 +29,15 @@ export function computeLeechHeal(damageDealt: number): number {
   return Math.round(damageDealt * LEECH_HEAL_FRACTION);
 }
 export const FIRST_EFFECT_MULTIPLIER = 2;
-/** Wildfire talent: first burn card each combat deals 50% more (not a full double). */
-export const FIRST_BURN_CARD_BONUS_MULTIPLIER = 1.5;
+/** Manaburn: burn bonus as a percent of Mana Crystals. Combat stores this percent on the talent manifest. */
+export const MANABURN_DAMAGE_PERCENT = 35;
+/**
+ * Pre-percent Manaburn battle snapshots stored `1` (= talent enabled).
+ * Hydrate rewrites only this sentinel onto MANABURN_DAMAGE_PERCENT.
+ */
+export const LEGACY_MANABURN_PER_CRYSTAL_ENABLED = 1;
 /** Flaming Shield / Impact Guard: bonus damage from block as a percent of current block. */
 export const BLOCK_SCALED_DAMAGE_PERCENT = 30;
-/** Manaburn talent: burn bonus from max mana as a percent of Mana Crystals. */
-export const MANA_BURN_DAMAGE_PERCENT = 35;
 export const GOLD_TROVE_REWARD_MULTIPLIER = 2;
 
 // ============ Battle Tuning ============

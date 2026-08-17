@@ -11,7 +11,7 @@ import {
 import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-session-model";
-import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
@@ -22,6 +22,7 @@ import { useContentSystemNavigation } from "./use-content-system-navigation";
 import { useMysteryEventNavigation } from "./use-mystery-event-navigation";
 import type { RunFlowShellActions } from "@/features/alchemy/run-loop/run/run-flow-shell-actions";
 import type { RunNavigationDeps } from "./shell-types";
+import type { BattleCard } from "@/lib/game-data";
 
 export function useRunFlowEngine({
   screen,
@@ -102,6 +103,7 @@ export function useRunFlowEngine({
       clearMysteryCardChoices: mystery.clearCardChoices,
       wildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
       selectRewardChoice: wildwood.selectRewardChoice,
+      clearCardHover,
     };
   }, [
     navigateTo,
@@ -116,6 +118,7 @@ export function useRunFlowEngine({
     wildwood.selectRewardChoice,
     mystery.beginMysteryEvent,
     mystery.clearCardChoices,
+    clearCardHover,
   ]);
 
   const flowHandlers = useMemo(
@@ -169,7 +172,13 @@ export function useRunFlowEngine({
     handleCharacterSelect: contentNav.handleCharacterSelect,
     handleStandardDraftComplete: contentNav.handleStandardDraftComplete,
     handleWildwoodDraftComplete: wildwood.handleWildwoodDraftComplete,
-    handleDraftPick: wildwood.handleDraftPick,
+    handleDraftPick: (card: BattleCard) => {
+      if (readRunSession().wildwoodDraft?.phase === "draft") {
+        wildwood.handleDraftPick(card);
+        return;
+      }
+      contentNav.handleStarterDraftPick(card);
+    },
     handleDifficultySelect: contentNav.handleDifficultySelect,
     handleBackFromDifficultySelect: contentNav.handleBackFromDifficultySelect,
     returnToBattle: destinations.returnToBattle,

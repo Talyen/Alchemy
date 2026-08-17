@@ -5,23 +5,6 @@ import { MenuPage } from "./pages/menu-page";
 import { critical } from "./playwright-tags";
 
 test.describe("Accessibility", critical, () => {
-  test("battle cards have accessible play labels", async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeCard()),
-    );
-
-    const cards = page.locator('[aria-label^="Play "]');
-    await expect(cards.first()).toBeVisible({ timeout: 5000 });
-    const count = await cards.count();
-    expect(count).toBeGreaterThanOrEqual(1);
-
-    const firstLabel = await cards.first().getAttribute("aria-label");
-    expect(firstLabel).toMatch(/^Play \w+/);
-  });
-
   test("mode and character select screens use proper heading roles", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
@@ -32,20 +15,30 @@ test.describe("Accessibility", critical, () => {
     await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible({ timeout: 5000 });
   });
 
-  test("inspect and select buttons have accessible labels in battle", async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeCard()),
-    );
+  test.describe("battle", () => {
+    test.beforeEach(async ({ page, fastBattle, runtimeErrors }) => {
+      void fastBattle;
+      void runtimeErrors;
+      await startBattleWithDeck(
+        page,
+        Array.from({ length: 6 }, () => makeCard()),
+      );
+    });
 
-    const cards = page.locator('[aria-label^="Play "]');
-    await expect(cards.first()).toBeVisible({ timeout: 5000 });
+    test("battle cards have accessible play labels", async ({ page }) => {
+      const cards = page.locator('[aria-label^="Play "]');
+      await expect(cards.first()).toBeVisible({ timeout: 5000 });
+      const count = await cards.count();
+      expect(count).toBeGreaterThanOrEqual(1);
 
-    await cards.first().hover();
-    // Card popups portal into the root tooltip overlay; fade-out keeps the
-    // previously hovered panel mounted briefly, so target the visible one.
-    await expect(page.locator(".hover-popup-panel[data-visible]")).toBeVisible({ timeout: 3000 });
+      const firstLabel = await cards.first().getAttribute("aria-label");
+      expect(firstLabel).toMatch(/^Play \w+/);
+    });
+
+    test("battle chrome has accessible labels", async ({ page }) => {
+      await expect(page.getByLabel("Player hand")).toBeVisible({ timeout: 5000 });
+      await expect(page.getByRole("button", { name: "Autoplay" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Open battle menu" })).toBeVisible();
+    });
   });
 });

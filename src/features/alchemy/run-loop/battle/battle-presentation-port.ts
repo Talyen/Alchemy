@@ -1,0 +1,31 @@
+// Imperative battle VFX surface used by glue (card play, transfers, turn sequencing).
+// Production wiring is the Zustand presentation store; tests inject a stub port.
+import type { CombatTextEvent } from "@/lib/battle";
+import type { CardGhost, CardTransfer } from "../../shared/types";
+import { useBattlePresentationStore } from "./battle-presentation-store";
+import type { PortraitFeedback } from "./battle-feedback";
+
+export interface BattlePresentationPort extends PortraitFeedback {
+  hiddenHandCardKeys: Set<string>;
+  spawnCardGhost: (ghost: Omit<CardGhost, "id">) => void;
+  showCombatTexts: (events: CombatTextEvent[]) => void;
+  shakeCompanion: () => void;
+  resetHandTransferUi: () => void;
+  resetCardTransfers: () => void;
+  clearCardGhosts: () => void;
+  resetPortraitHurtTokens: () => void;
+  clearFloatingCombatTexts: () => void;
+  setCardTransfers: (transfers: CardTransfer[] | ((prev: CardTransfer[]) => CardTransfer[])) => void;
+  setHiddenHandCardKeys: (keys: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
+  setCardTransferInProgress: (inProgress: boolean | ((prev: boolean) => boolean)) => void;
+}
+
+function getStoreBattlePresentationPort(): BattlePresentationPort {
+  return useBattlePresentationStore.getState();
+}
+
+export function resolveBattlePresentation(ctx: {
+  getPresentation?: () => BattlePresentationPort;
+}): BattlePresentationPort {
+  return ctx.getPresentation?.() ?? getStoreBattlePresentationPort();
+}

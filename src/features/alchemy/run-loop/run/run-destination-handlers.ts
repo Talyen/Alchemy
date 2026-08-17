@@ -4,11 +4,12 @@ import type { GearInstance } from "@/lib/gear";
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
-import type { RewardState } from "../navigation/reward-flow";
+import type { RewardState } from "@/lib/active-run-session";
+import type { Destination } from "@/lib/routing";
+import { CONSTANTS } from "../../shared/types";
 import { getRandomPotionCard } from "../navigation/reward-flow";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "./deck-mutations";
 import type { RunFlowShellActions } from "./run-flow-shell-actions";
-import { CONSTANTS, type Destination } from "../../shared/types";
 
 export type DestinationRouteDeps = Pick<
   RunFlowShellActions,

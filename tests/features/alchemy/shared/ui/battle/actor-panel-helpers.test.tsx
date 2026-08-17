@@ -18,10 +18,14 @@ function hexToRgb(hex: string): string {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
+function shineElement(testId: string): HTMLElement {
+  const shine = screen.getByTestId(testId);
+  expect(shine.className).toMatch(/\bshine-border\b/);
+  return shine;
+}
+
 function shineBackground(testId: string): string {
-  const shine = screen.getByTestId(testId).querySelector(".shine-border");
-  expect(shine).not.toBeNull();
-  return (shine as HTMLElement).style.backgroundImage;
+  return shineElement(testId).style.backgroundImage;
 }
 
 function expectShineContains(testId: string, colors: readonly string[]) {
@@ -49,5 +53,16 @@ describe("ArtTurnActiveBorder", () => {
   it("keeps the enemy turn shine on the enemy palette", () => {
     render(<ArtTurnActiveBorder side="enemy" active />);
     expectShineContains("turn-badge-enemy", SHINE_PALETTES.turnEnemy);
+  });
+
+  it("uses an opaque 3px shine without an inset wrapper", () => {
+    render(<ArtTurnActiveBorder side="player" active />);
+    const shine = shineElement("turn-badge-player");
+
+    expect(shine.style.getPropertyValue("--border-width")).toBe("3px");
+    expect(shine.className).toMatch(/\bopacity-100\b/);
+    expect(shine.className).not.toMatch(/\bopacity-70\b/);
+    expect(shine.className).not.toMatch(/\binset-0\b/);
+    expect(shine.parentElement?.className ?? "").not.toMatch(/\binset-0\b/);
   });
 });

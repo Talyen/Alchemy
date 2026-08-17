@@ -3,6 +3,7 @@ import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import {
   applyPlayerStatusFromAttack,
   applyPlayerDamageStatuses,
+  shouldBlockPreventStunBuildup,
   type DirectPlayerStatusAttackEffect,
 } from "./status-player";
 import { resolveStunTrigger } from "./status-stun-resolve";
@@ -12,12 +13,13 @@ import { logError } from "../error-logger";
 import {
   applyPlayerCombatDamage,
   clampHealth,
+  scaleReceivedPlayerDamage,
   type BattleState,
   type CombatTextEvent,
   type CombatTextStat,
   addEnemyStatus,
 } from "./types";
-import { BATTLE_CONFIG, computeLeechHeal, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
+import { BATTLE_CONFIG, computeLeechHeal, PERCENT_DENOMINATOR } from "../game-constants";
 import { checkHealthThresholds, isFreezeActiveForAspect } from "./enemy-turn-utils";
 import { decayArmorAfterDamage } from "./status-helpers";
 
@@ -49,11 +51,7 @@ function computeMitigatedDamage(
 ) {
   const armorMitigatesDamage = effect.damageType === "physical" || effect.damageType === "stun";
   const rawDamage = armorMitigatesDamage ? Math.max(0, remainingDamage - state.playerStatuses.armor) : remainingDamage;
-  const halvesDamage =
-    (effect.damageType === "holy" && state.talentEffects.receiveHalfHolyDamage) ||
-    (effect.damageType === "freeze" && state.talentEffects.receiveHalfFreezeBuildUp);
-  const actualDamage = halvesDamage ? Math.round(rawDamage / HALF_DIVISOR) : rawDamage;
-  return actualDamage;
+  return scaleReceivedPlayerDamage(rawDamage, state.talentEffects, effect.damageType);
 }
 
 function calculateBlockAndArmorMitigation(
@@ -226,7 +224,12 @@ export function processEnemyDamageEffect(
   // Status rider: status-linked damage types (burn, poison, bleed, freeze, stun)
   // apply their status to the player equal to the actual damage dealt,
   // mirroring how player-side damage riders work (damage.ts applyDamageStatuses).
-  nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
+  // Grounding checks pre-hit block so a hit that spends the last Block still
+  // suppresses stun buildup.
+  const preventStunBuildup = effect.damageType === "stun" && shouldBlockPreventStunBuildup(state);
+  if (!preventStunBuildup) {
+    nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
+  }
   nextState = resolvePlayerCrowdControlTriggers(nextState, combatTexts);
 
   if (effect.lifesteal && actualDamage > 0) {

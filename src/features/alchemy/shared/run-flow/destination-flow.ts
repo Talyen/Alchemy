@@ -13,11 +13,12 @@ import {
 } from "@/lib/game-constants";
 
 import {
+  DESTINATIONS,
   getAvailableDestinations as getFilteredDestinations,
   isCombatDestination,
   isShopDestination,
+  type Destination,
 } from "@/lib/routing";
-import { DESTINATIONS, type Destination } from "../types";
 import { createEmptyRewardState, type RewardState } from "@/lib/active-run-session";
 
 export interface DestinationOptionsInput {

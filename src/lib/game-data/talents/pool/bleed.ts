@@ -61,7 +61,7 @@ export const bleedTalents: TalentDefinition[] = [
     name: "Exsanguinate",
     description: "Bleed deals double damage against enemies below 30% Health",
     icon: Skull,
-    effects: [setEffect("bleedExecuteThreshold", 30)],
+    effects: [setEffect("bleedExecuteThreshold", 30), setEffect("bleedExecuteMultiplier", 2)],
   },
   {
     id: "bleed-desperate",
@@ -95,6 +95,4 @@ export const bleedTalents: TalentDefinition[] = [
     icon: Scissors,
     effects: [addEffect("companionBleedDamageBonus", 1)],
   },
-
-  // --- Leech ---
 ];

@@ -6,7 +6,7 @@ import { CONSTANTS } from "../../shared/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 
-export interface VictoryGoldInput {
+interface VictoryGoldInput {
   battleState: Pick<BattleState, "gold">;
   runGold: number;
   runTrinkets: string[];
@@ -18,13 +18,13 @@ export interface VictoryGoldInput {
   goldMultiplier: number;
 }
 
-export interface VictoryGoldResult {
+interface VictoryGoldResult {
   unmultipliedTotal: number;
   earnedBeforeMultiplier: number;
   persistedRunGold: number;
 }
 
-export interface RewardGoldInput {
+interface RewardGoldInput {
   baseGold: number;
   bonusGold: number;
   generousBonus: number;

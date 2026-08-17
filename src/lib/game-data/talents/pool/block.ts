@@ -1,7 +1,7 @@
 // Talent definitions for keyword: block.
 import { Wind, ShieldCheck, Sun, Zap, Anchor, Weight, Flame, ChevronsUp, Droplets, FlaskConical } from "lucide-react";
 import type { TalentDefinition } from "../types";
-import { setEffect } from "../types";
+import { setEffect, addEffect } from "../types";
 
 export const blockTalents: TalentDefinition[] = [
   {
@@ -50,7 +50,7 @@ export const blockTalents: TalentDefinition[] = [
     name: "Weighted Guard",
     description: "Physical damage is increased by 30% of your Block",
     icon: Weight,
-    effects: [setEffect("blockToPhysicalDamageMultiplier", 0.3)],
+    effects: [addEffect("blockToPhysicalDamageMultiplier", 0.3)],
   },
   {
     id: "block-reduce-burn",
@@ -84,6 +84,4 @@ export const blockTalents: TalentDefinition[] = [
     icon: FlaskConical,
     effects: [setEffect("blockPreventsPoison", true)],
   },
-
-  // --- Forge ---
 ];

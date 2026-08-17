@@ -31,7 +31,7 @@ describe("computeBaseDamage — bleed damage", () => {
     const state = patchBattleState({
       enemyHealth: 5,
       enemyMaxHealth: 30,
-      talentEffects: { ...defaultTalentEffects, bleedExecuteThreshold: 25 },
+      talentEffects: { ...defaultTalentEffects, bleedExecuteThreshold: 25, bleedExecuteMultiplier: 2 },
     });
     const card = makeTestCard({ effects: [makeEffect("bleed", 5)] });
     const texts = makeCombatTexts();

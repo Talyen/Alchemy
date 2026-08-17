@@ -63,18 +63,18 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 
 ### Persistence API
 
-| API                                    | Role                                                                                                     |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `encodeRunResumeSnapshot(source)`      | Sole `RunSession` → `ActiveRunData` assembler (content-system nulling, `activeCombat`, resume semantics) |
-| `decodeRunResumeSnapshot(data)`        | Translate `ActiveRunData` → aggregate session fields                                                     |
-| `snapshotRun(screen?)`                 | Read aggregate run state through the codec                                                               |
-| `restoreRun(…)`                        | Apply the decoded snapshot on boot/resume (incl. trinket-manifest repair)                                |
-| `parseActiveRun(raw)`                  | Validate JSON before hydrate                                                                             |
-| `PersistedBattleStateSchema`           | Single BattleState wire parse + default merge                                                            |
-| `activeCombat.pendingBattleTransition` | Resume an interrupted enemy-turn continuation                                                            |
-| Domain persistence codecs              | Own defaults, encode, hydrate, and subscriptions                                                         |
-| Persistence coordinator                | Compose domain fields into the versioned envelope                                                        |
-| `platform-save-backend.ts`             | Browser/Desktop transport, backup/cloud candidate order, and recoverable write/clear ordering            |
+| API                                    | Role                                                                                                                                                                                                                         |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `encodeRunResumeSnapshot(source)`      | Sole `RunSession` → `ActiveRunData` assembler (content-system nulling, `activeCombat`, resume semantics). Private helper: `encodeActiveRunFromSession`. Hydrate uses `toActiveRunData` in `lib/active-run-session/parse.ts`. |
+| `decodeRunResumeSnapshot(data)`        | Translate `ActiveRunData` → aggregate session fields                                                                                                                                                                         |
+| `snapshotRun(screen?)`                 | Read aggregate run state through the codec                                                                                                                                                                                   |
+| `restoreRun(…)`                        | Apply the decoded snapshot on boot/resume (incl. trinket-manifest repair)                                                                                                                                                    |
+| `parseActiveRun(raw)`                  | Validate JSON before hydrate                                                                                                                                                                                                 |
+| `PersistedBattleStateSchema`           | Single BattleState wire parse + default merge                                                                                                                                                                                |
+| `activeCombat.pendingBattleTransition` | Resume an interrupted enemy-turn continuation                                                                                                                                                                                |
+| Domain persistence codecs              | Own defaults, encode, hydrate, and subscriptions                                                                                                                                                                             |
+| Persistence coordinator                | Compose domain fields into the versioned envelope                                                                                                                                                                            |
+| `platform-save-backend.ts`             | Browser/Desktop transport, backup/cloud candidate order, and recoverable write/clear ordering                                                                                                                                |
 
 `shared/storage/io.ts` owns save parsing, validation, future-version protection, and write serialization. It delegates raw persistence to one `SaveBackend` configured during bootstrap. `initializeSteam()` returns an explicit `cloudSyncEnabled` capability; it does not mutate shared platform state. The platform backend always considers Steam Cloud as the final desktop read fallback, writes the local backup-ring file before a non-blocking cloud mirror, and deletes cloud before local data so a failed cloud deletion leaves recoverable local candidates intact.
 
@@ -91,7 +91,7 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 | Lifecycle                    | `run-session-lifecycle-port.ts`                           | Public seam over `run-transitions.ts`                                                            |
 | Commit                       | `run-session-command.ts`                                  | One Immer draft, one published revision; no second read store                                    |
 
-Controllers own **commands**; `use-alchemy-run-controller.ts` assembles the phase-scoped `routeCommands` tree at the shell composition root. Screen routes own **display data** via their specific hooks. App chrome / autosave / particles read via capability hooks, not controller display re-exports. Imperative handlers read lifetime-specific ports at call time. Battle refs and handlers travel through `routeCommands.battle`; battle display is read locally by the battle route. Battle and run-flow controllers take narrow `BattleRunPort` / `BattleTalentPort` and `RunFlowRunPort` / `RunFlowTalentPort` inputs. Run-flow handlers call shell side effects through `RunFlowShellActions` (assembled once in `use-run-flow-engine.ts`). Pure destination/reward routers take a `Pick` of those actions: `DestinationRouteDeps` and `RewardRouteDeps`. Active-run core fields shared by committed session reads come from `pickActiveRunView` in `run-state-init.ts`.
+Controllers own **commands**; `use-alchemy-run-controller.ts` assembles the phase-scoped `routeCommands` tree at the shell composition root. Screen routes own **display data** via their specific hooks. App chrome / autosave / particles read via capability hooks, not controller display re-exports. Imperative handlers read lifetime-specific ports at call time. Battle refs and handlers travel through `routeCommands.battle`; battle display is read locally by the battle route. Battle and run-flow controllers take narrow `BattleRunPort` / `BattleTalentPort` and `RunFlowRunPort` / `RunFlowTalentPort` inputs. Run-flow handlers call shell side effects through `RunFlowShellActions` (assembled once in `use-run-flow-engine.ts`). Pure destination routers take a `Pick` of those actions (`DestinationRouteDeps`); post-reward screen transitions live in `run-flow-rewards.ts` (`RewardRouteDeps`). Active-run core fields shared by committed session reads come from `pickActiveRunView` in `run-state-init.ts`.
 
 Boot: [`use-alchemy-bootstrap.ts`](../src/app/use-alchemy-bootstrap.ts) applies persistence owners and calls the canonical `restoreRun` transition before publishing bootstrap readiness (guarded by `readRunInitialized`), so [`App.tsx`](../src/App.tsx) cannot render `AppInner` against an unhydrated run. `bootstrap-save-state.ts` initializes Steam, configures the save backend from the returned capabilities, and only then loads candidates. `restoreRun` is the only runtime hydration path. `run-resume-codec.ts` is the single feature-owned translation boundary for save/resume state; `restore-active-run-session.ts` only applies its decoded session fields through the aggregate session action group.
 
@@ -101,7 +101,7 @@ Boot: [`use-alchemy-bootstrap.ts`](../src/app/use-alchemy-bootstrap.ts) applies 
 
 ### Run setup ownership
 
-`run-setup/run/content-system-navigation.ts` owns content-system selection, character/difficulty routing, and creation of a fresh campaign, labyrinth, or Wildwood run. Its run-start recipes use the draft-only helper in `run-start-command.ts`; event handlers own the surrounding command and post-commit effects. Wildwood setup ends once its persisted draft is created. From the first draft pick onward, `shell/use-wildwood-gauntlet-flow.ts` is the sole owner of Wildwood draft completion, boss progression, rewards, and resume routing.
+`run-setup/run/content-system-navigation.ts` owns content-system selection, character/difficulty routing, and resume. Run-start snapshots live in `content-system-run-init.ts` and use the draft-only helper in `run-start-command.ts`; event handlers own the surrounding command and post-commit effects. Campaign and labyrinth Wildcard drafting is a persisted run phase: the first three-card offer is rolled from the `rewards` stream, `hasActiveRun` is true, and `session.starterDraftChoices` plus `runDeck` resume the same pack. Wildwood setup ends once its persisted draft is created. From the first draft pick onward, `shell/use-wildwood-gauntlet-flow.ts` is the sole owner of Wildwood draft completion, boss progression, rewards, and resume routing.
 
 Destination offer construction is pure in `shared/run-flow/destination-flow.ts`. Campaign start and run-loop progression supply explicit offer history, boss ID, and command-bound RNG; destination generation is not exposed through the content-system navigation API.
 
@@ -111,13 +111,16 @@ Destination offer construction is pure in `shared/run-flow/destination-flow.ts`.
 Screen route → routeCommands.battle (props) → BattleScreen
            → useAlchemyRunController → useBattleController (BattleRunPort / BattleTalentPort)
            → run-loop/battle/* → run-session-read-port / run-session-command → lib/battle
+BattleScreenRoute → useBattleScreenRouteData (committed battle display)
+                 → useBattlePlayback (autoplay / auto-end-turn; binds refs via commands.bindPlayback)
+                 → battle/presentation/* leaves subscribe to battle-presentation-store
 ```
 
-`useAlchemyRunController` exposes battle **commands** on `routeCommands.battle` (refs + handlers). Battle display state is read locally in `BattleScreenRoute` via `useBattleScreenRouteData`. `App.tsx` passes `routeCommands` through `RenderAlchemyScreen` → `run-loop-routes` — no React context and no separate `battleBindings` channel.
+`useAlchemyRunController` exposes battle **commands** on `routeCommands.battle` (refs + handlers). Battle display state is read locally in `BattleScreenRoute` via `useBattleScreenRouteData`. Autoplay and auto-end-turn live in `useBattlePlayback` on that route so combat ticks do not re-render the shell controller. `bindPlayback` copies those callbacks into controller refs; first combat entry remounts the route so preferred-autoplay `useState` init covers the session-prepared callback that `startBattle` fires before navigate. `App.tsx` passes `routeCommands` through `RenderAlchemyScreen` → `run-loop-routes` — no React context and no separate `battleBindings` channel.
 
 `useBattleController` builds session/transfer/end-turn/card-play factories from a shared context; end-turn orchestration takes session + transfer helpers and calls write-port commands directly.
 
-Presentation VFX uses `battle-presentation-store` only. Global card hover/shimmer uses `ui-store`.
+Battle glue writes VFX through `BattlePresentationPort` (`resolveBattlePresentation()` in production; tests may inject a stub). React leaves under `run-loop/battle/presentation/` subscribe to `battle-presentation-store`. Global card hover/shimmer uses `ui-store`. Haste empty-draw clears `hiddenHandCardKeys` so autoplay/auto-end-turn are not blocked by leftover discard hides. Mid-enemy-turn reload still skips draw/discard replay.
 
 ### Data flow
 
@@ -129,18 +132,18 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 
 ## Controller entry points
 
-| Concern                 | Start here                                                                                                                                           |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Run lifecycle           | `shell/use-alchemy-run-controller.ts`, `run-session-lifecycle-port.ts`                                                                               |
-| Route command maps      | `shell/use-alchemy-run-controller.ts` composition root                                                                                               |
-| Navigation / rewards    | `shell/use-run-flow-engine.ts` (destination/content/mystery hooks + inlined flow factories) + `run-loop/navigation/*` / `run-loop/run/*`             |
-| Content-system entry    | `run-setup/run/content-system-navigation.ts` → `run-start-command.ts`; Wildwood post-entry flow stays in `shell/use-wildwood-gauntlet-flow.ts`       |
-| Run-flow shell actions  | `run-loop/run/run-flow-shell-actions.ts` (assembled in `shell/use-run-flow-engine.ts`); routers use `DestinationRouteDeps` / `RewardRouteDeps` picks |
-| Run-flow / battle ports | `shared/stores/run-port-types.ts` (`RunFlowRunPort`, `BattleRunPort`, …)                                                                             |
-| Battle                  | `shell/use-battle-controller.ts` → `lib/battle/*`                                                                                                    |
-| Shops                   | `shell/use-shop-controller.ts` → `run-loop/shop/create-shop-actions.ts` → domain command modules                                                     |
-| Session reads/writes    | `shared/stores/run-session-read-port.ts`, `run-session-write-port.ts`, `run-session-command.ts`                                                      |
-| Screen routing          | `lib/routing/screen-transition-policy.ts`, `shell/use-screen-transitions.ts`, `useActiveRunScreen()`                                                 |
+| Concern                 | Start here                                                                                                                                                                                                                                               |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Run lifecycle           | `shell/use-alchemy-run-controller.ts`, `run-session-lifecycle-port.ts`                                                                                                                                                                                   |
+| Route command maps      | `shell/use-alchemy-run-controller.ts` composition root                                                                                                                                                                                                   |
+| Navigation / rewards    | `shell/use-run-flow-engine.ts` (destination/content hooks + inlined flow factories) + `shell/use-mystery-event-navigation.ts` + `run-loop/navigation/*` (pure) / `run-loop/run/*`                                                                        |
+| Content-system entry    | `run-setup/run/content-system-navigation.ts` + `content-system-run-init.ts` → `run-start-command.ts`; campaign/labyrinth Wildcard draft uses `shared/run-flow/starter-draft.ts`; Wildwood post-entry flow stays in `shell/use-wildwood-gauntlet-flow.ts` |
+| Run-flow shell actions  | `run-loop/run/run-flow-shell-actions.ts` (assembled in `shell/use-run-flow-engine.ts`); destination routers use `DestinationRouteDeps`; reward routing uses `RewardRouteDeps` in `run-flow-rewards.ts`                                                   |
+| Run-flow / battle ports | `shared/stores/run-port-types.ts` (`RunFlowRunPort`, `BattleRunPort`, …)                                                                                                                                                                                 |
+| Battle                  | `shell/use-battle-controller.ts` + `app/screen-routes/use-battle-playback.ts` → `lib/battle/*`                                                                                                                                                           |
+| Shops                   | `shell/use-shop-controller.ts` → `run-loop/shop/create-shop-actions.ts` → domain command modules                                                                                                                                                         |
+| Session reads/writes    | `shared/stores/run-session-read-port.ts`, `run-session-write-port.ts`, `run-session-command.ts`                                                                                                                                                          |
+| Screen routing          | `lib/routing/screen-transition-policy.ts`, `shell/use-screen-transitions.ts`, `useActiveRunScreen()`                                                                                                                                                     |
 
 ## Shop commands
 
@@ -183,7 +186,7 @@ Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/b
 - `src/lib/**` must not import `@/features/**`
 - `gameplay-state-store.ts` is internal to `shared/stores/`; other layers use capability hooks, reads, writes, commands, and lifecycle ports
 - Feature code outside `shared/stores/` imports capability ports, commands, reads, writes, and lifecycle modules directly (not `run-transitions`)
-- Screens must not import `run-loop/battle` or `run-loop/navigation` orchestration
+- Screens must not import `run-loop/battle` or `run-loop/navigation` orchestration (screens may import `run-loop/battle/presentation/` leaves)
 - `run-setup` ↛ `run-loop` and `run-loop` ↛ `run-setup` (shared helpers in `shared/run-flow/`)
 - `meta` ↛ `run-loop` / `run-setup`
 

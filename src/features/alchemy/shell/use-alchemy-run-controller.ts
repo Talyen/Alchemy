@@ -38,12 +38,8 @@ const commandResetUnlockedTalents = createRunSessionCommand(resetUnlockedTalents
 const commandUnlockAllTalents = createRunSessionCommand(unlockAllTalents);
 
 export function useAlchemyRunController({
-  autoEndTurn,
-  gameMenuOpen,
   onMarkDifficultyCompleted,
 }: {
-  autoEndTurn: boolean;
-  gameMenuOpen: boolean;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
 }) {
   // The app bootstrap gate restores the aggregate before this controller mounts.
@@ -82,10 +78,8 @@ export function useAlchemyRunController({
   const battle = useBattleController({
     run: battleRun,
     talents: battleTalents,
-    autoEndTurn,
     homesteadEffects,
     screen,
-    gameMenuOpen,
     setHoveredCardId,
     onBattleVictory: battleCompletionOps.onBattleVictory,
     onBattleDefeat: battleCompletionOps.onBattleDefeat,
@@ -126,7 +120,7 @@ export function useAlchemyRunController({
 
   useSteamRichPresence(screen, nav.runPhase, characterId);
 
-  function handleBeginLabyrinth() {
+  const handleBeginLabyrinth = useCallback(() => {
     if (
       !(nav.activeRunData && contentSystemType === "labyrinth") &&
       !(battle.hasActiveBattle && contentSystemType === "labyrinth")
@@ -134,7 +128,7 @@ export function useAlchemyRunController({
       labyrinth.resetMap();
     }
     nav.beginLabyrinth();
-  }
+  }, [nav, contentSystemType, battle.hasActiveBattle, labyrinth]);
 
   const nodeRouting = useMemo(
     () =>
@@ -143,115 +137,133 @@ export function useAlchemyRunController({
         applyLabyrinthRewardModifiers,
         navigateTo,
         labyrinth,
-        battle,
-        nav,
+        battle: {
+          startBattle: battle.startBattle,
+          startBossBattle: battle.startBossBattle,
+        },
+        nav: { beginMysteryEvent: nav.beginMysteryEvent },
         shop,
       }),
-    [applyLabyrinthBattleModifiers, applyLabyrinthRewardModifiers, navigateTo, labyrinth, battle, nav, shop],
+    [
+      applyLabyrinthBattleModifiers,
+      applyLabyrinthRewardModifiers,
+      navigateTo,
+      labyrinth,
+      battle.startBattle,
+      battle.startBossBattle,
+      nav.beginMysteryEvent,
+      shop,
+    ],
   );
 
-  function handleEndRun() {
+  const handleEndRun = useCallback(() => {
     if (shouldSurrenderBattleOnEndRun(screen, battle.hasActiveBattle, contentSystemType)) {
       battle.handleEndRun();
       return;
     }
     nav.handleAbandonRun();
-  }
+  }, [screen, battle, contentSystemType, nav]);
 
-  const routeCommands = {
-    meta: {
-      goToScreen: nav.goToScreen,
-      beginCampaign: nav.beginCampaign,
-      beginLabyrinth: handleBeginLabyrinth,
-      beginWildwood: nav.beginWildwood,
-      unlockTalent: commandUnlockTalent,
-      resetUnlockedTalents: commandResetUnlockedTalents,
-    },
-    runSetup: {
-      goToScreen: nav.goToScreen,
-      handleCharacterSelect: nav.handleCharacterSelect,
-      handleStandardDraftComplete: nav.handleStandardDraftComplete,
-      handleWildwoodDraftComplete: nav.handleWildwoodDraftComplete,
-      handleDraftPick: nav.handleDraftPick,
-      handleDifficultySelect: nav.handleDifficultySelect,
-      handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,
-    },
-    runLoop: {
-      labyrinth: {
-        handleNodeEnter: nodeRouting.handleLabyrinthNodeEnter,
+  const routeCommands = useMemo(
+    () => ({
+      meta: {
+        goToScreen: nav.goToScreen,
+        beginCampaign: nav.beginCampaign,
+        beginLabyrinth: handleBeginLabyrinth,
+        beginWildwood: nav.beginWildwood,
+        unlockTalent: commandUnlockTalent,
+        resetUnlockedTalents: commandResetUnlockedTalents,
       },
-      rewards: {
-        finish: nav.finishRewards,
-        selectChoice: nav.selectRewardChoice,
+      runSetup: {
+        goToScreen: nav.goToScreen,
+        handleCharacterSelect: nav.handleCharacterSelect,
+        handleStandardDraftComplete: nav.handleStandardDraftComplete,
+        handleWildwoodDraftComplete: nav.handleWildwoodDraftComplete,
+        handleDraftPick: nav.handleDraftPick,
+        handleDifficultySelect: nav.handleDifficultySelect,
+        handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,
       },
-      destinations: {
-        prepare: nav.prepareDestinationScreen,
-        choose: nav.handleDestinationChoice,
-        continueCampfire: nav.handleCampfireContinue,
-      },
-      wildwood: {
-        removeCard: nav.handleWildwoodRemoveCard,
-        skipRemoval: nav.handleWildwoodSkipRemoval,
-      },
-      shop: {
-        merchant: {
-          handleBuyCard: shop.merchant.buyCard,
-          handleRemoveCard: shop.merchant.removeCard,
-          handleRefresh: shop.merchant.refresh,
-          handleContinue: nav.advanceToNextDestination,
-          getCardBuyPrice: shop.merchant.getCardBuyPrice,
-          getRemoveCardPrice: shop.merchant.getRemoveCardPrice,
-          getRefreshPrice: shop.merchant.getRefreshPrice,
+      runLoop: {
+        labyrinth: {
+          handleNodeEnter: nodeRouting.handleLabyrinthNodeEnter,
         },
-        alchemist: {
-          handleBuyCard: shop.alchemist.buyPotion,
-          handleRefresh: shop.alchemist.refresh,
-          handleMixPotions: shop.alchemist.mixPotions,
-          handleContinue: nav.advanceToNextDestination,
-          getPotionBuyPrice: shop.alchemist.getPotionBuyPrice,
-          getMixPrice: shop.alchemist.getMixPrice,
-          getRefreshPrice: shop.alchemist.getRefreshPrice,
+        rewards: {
+          finish: nav.finishRewards,
+          selectChoice: nav.selectRewardChoice,
         },
-        trinket: {
-          handleBuy: shop.trinket.buy,
-          handleRefresh: shop.trinket.refresh,
-          handleContinue: nav.advanceToNextDestination,
-          getBuyPrice: shop.trinket.getBuyPrice,
-          getRefreshPrice: shop.trinket.getRefreshPrice,
+        destinations: {
+          prepare: nav.prepareDestinationScreen,
+          choose: nav.handleDestinationChoice,
+          continueCampfire: nav.handleCampfireContinue,
         },
-        equipment: {
-          handleBuy: shop.equipment.buy,
-          handleRefresh: shop.equipment.refresh,
-          handleContinue: nav.advanceToNextDestination,
-          getBuyPrice: shop.equipment.getBuyPrice,
-          getRefreshPrice: shop.equipment.getRefreshPrice,
+        wildwood: {
+          removeCard: nav.handleWildwoodRemoveCard,
+          skipRemoval: nav.handleWildwoodSkipRemoval,
+        },
+        shop: {
+          merchant: {
+            handleBuyCard: shop.merchant.buyCard,
+            handleRemoveCard: shop.merchant.removeCard,
+            handleRefresh: shop.merchant.refresh,
+            handleContinue: nav.advanceToNextDestination,
+            getCardBuyPrice: shop.merchant.getCardBuyPrice,
+            getRemoveCardPrice: shop.merchant.getRemoveCardPrice,
+            getRefreshPrice: shop.merchant.getRefreshPrice,
+          },
+          alchemist: {
+            handleBuyCard: shop.alchemist.buyPotion,
+            handleRefresh: shop.alchemist.refresh,
+            handleMixPotions: shop.alchemist.mixPotions,
+            handleContinue: nav.advanceToNextDestination,
+            getPotionBuyPrice: shop.alchemist.getPotionBuyPrice,
+            getMixPrice: shop.alchemist.getMixPrice,
+            getRefreshPrice: shop.alchemist.getRefreshPrice,
+          },
+          trinket: {
+            handleBuy: shop.trinket.buy,
+            handleRefresh: shop.trinket.refresh,
+            handleContinue: nav.advanceToNextDestination,
+            getBuyPrice: shop.trinket.getBuyPrice,
+            getRefreshPrice: shop.trinket.getRefreshPrice,
+          },
+          equipment: {
+            handleBuy: shop.equipment.buy,
+            handleRefresh: shop.equipment.refresh,
+            handleContinue: nav.advanceToNextDestination,
+            getBuyPrice: shop.equipment.getBuyPrice,
+            getRefreshPrice: shop.equipment.getRefreshPrice,
+          },
+        },
+        mystery: {
+          handleChoice: nav.handleMysteryChoice,
+          handleChooseCard: nav.handleMysteryChooseCard,
+          handleRemoveCard: nav.handleMysteryRemoveCard,
+          handleContinue: nav.handleMysteryContinue,
+        },
+        corruption: {
+          handleCorruptCard: nav.handleCorruptCard,
+          handleExit: nav.handleCorruptionExit,
         },
       },
-      mystery: {
-        handleChoice: nav.handleMysteryChoice,
-        handleChooseCard: nav.handleMysteryChooseCard,
-        handleRemoveCard: nav.handleMysteryRemoveCard,
-        handleContinue: nav.handleMysteryContinue,
+      battle: {
+        handleCardClick: battle.handleCardClick,
+        handleWishChoice: battle.handleWishChoice,
+        handleEndTurn: battle.handleEndTurn,
+        handleAutoplayCard: battle.handleAutoplayCard,
+        skipCombatDevMode: battle.skipCombatDevMode,
+        refs: battle.refs,
+        bindPlayback: battle.bindPlayback,
+        isCardPlayInProgress: battle.isCardPlayInProgress,
+        screen: battle.screen,
+        isAutoplayEnabled: battle.isAutoplayEnabled,
+        setAutoplayEnabled: battle.setAutoplayEnabled,
       },
-      corruption: {
-        handleCorruptCard: nav.handleCorruptCard,
-        handleExit: nav.handleCorruptionExit,
+      runEnd: {
+        continueFromRunEnd: nav.continueFromRunEnd,
       },
-    },
-    battle: {
-      handleCardClick: battle.handleCardClick,
-      handleWishChoice: battle.handleWishChoice,
-      handleEndTurn: battle.handleEndTurn,
-      skipCombatDevMode: battle.skipCombatDevMode,
-      removeCardGhost: battle.removeCardGhost,
-      isAutoplayEnabled: battle.isAutoplayEnabled,
-      toggleAutoplay: battle.toggleAutoplay,
-      refs: battle.refs,
-    },
-    runEnd: {
-      continueFromRunEnd: nav.continueFromRunEnd,
-    },
-  };
+    }),
+    [nav, handleBeginLabyrinth, nodeRouting, shop, battle],
+  );
 
   return {
     screen,

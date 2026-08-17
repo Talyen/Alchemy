@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getEffectiveCardDescriptionLines } from "@/lib/game-data";
 import { cardLibrary } from "@/lib/game-data";
-import { makeTestCard } from "../../../../fixtures/cards";
+import { makeTestCard } from "../../fixtures/cards";
 
 describe("getEffectiveCardDescriptionLines", () => {
   it("returns description lines unchanged when no context is given", () => {

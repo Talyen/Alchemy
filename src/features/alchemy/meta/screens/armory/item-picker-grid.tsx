@@ -112,7 +112,7 @@ export function ItemPickerGrid({
                     "relative",
                     salvageable && [SALVAGE_TARGET_RING, SALVAGE_TARGET_SHADOW, "rounded-shell-hero"],
                     activeCurrencyId && canCraft && [VALID_TARGET_RING, VALID_TARGET_SHADOW, "rounded-shell-hero"],
-                    disabled && "opacity-40",
+                    disabled && "opacity-50",
                   )}
                   title={disabled ? "Incompatible with the current loadout" : undefined}
                 >

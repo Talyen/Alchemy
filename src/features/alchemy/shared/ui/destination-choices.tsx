@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import type { BestiaryEntry } from "@/lib/game-data";
+import { DESTINATIONS, type Destination } from "@/lib/routing";
 import { cn } from "@/lib/utils";
 import {
   battleEnemyCardWidthClass,
@@ -14,7 +15,6 @@ import {
   getBossEnemy,
   getBossShineColors,
 } from "../config";
-import { DESTINATIONS, type Destination } from "../types";
 import { EnemyTooltip } from "./enemy-tooltip";
 import { FadeSlot } from "./fade-slot";
 import { TiltSurface } from "./tilt-surface";

@@ -3,7 +3,7 @@
 // Used by useRunFlowEngine and victory-flow to avoid duplicated ternaries and start blocks.
 import { DEFAULT_BATTLE_ENEMY_TYPE, DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
 import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
-import type { Destination } from "@/features/alchemy/shared/types";
+import type { Destination } from "@/lib/routing";
 export function getPreviousDestination(
   destinationIndexInAct: number,
   completedDestinations: Destination[],

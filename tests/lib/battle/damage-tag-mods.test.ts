@@ -1,13 +1,9 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it } from "vitest";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
 import type { BattleCardEffect } from "@/lib/game-data";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultEnemyStatusValues, defaultTalentEffects, defaultCcState } from "../../fixtures/default-battle-state";
 import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
 
 describe("computeBaseDamage — archery tag", () => {
   it("adds flatArrowDamage to cards with the archery tag", () => {
@@ -29,8 +25,8 @@ describe("computeBaseDamage — archery tag", () => {
   });
 
   it("triggers extra hit once without infinite recursion when archeryPlayTwiceChance is 100%", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0);
     const state = patchBattleState({
+      rng: () => 0.99,
       enemyHealth: 100,
       enemyMaxHealth: 100,
       talentEffects: { ...defaultTalentEffects, archeryPlayTwiceChance: 100 },
@@ -51,17 +47,18 @@ describe("computeBaseDamage — archery tag", () => {
   });
 
   it("Longshot doubles archery damage above 75% Health but not at 75%", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const card = makeTestCard({
       tags: ["archery"],
       effects: [makeEffect("physical", 10)],
     });
     const high = patchBattleState({
+      rng: () => 0.99,
       enemyHealth: 76,
       enemyMaxHealth: 100,
       talentEffects: { ...defaultTalentEffects, archeryDoubledVsHighHealth: true },
     });
     const atThreshold = patchBattleState({
+      rng: () => 0.99,
       enemyHealth: 75,
       enemyMaxHealth: 100,
       talentEffects: { ...defaultTalentEffects, archeryDoubledVsHighHealth: true },
@@ -81,17 +78,18 @@ describe("computeBaseDamage — archery tag", () => {
   });
 
   it("Kill Shot doubles archery damage at or below 30% Health", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const card = makeTestCard({
       tags: ["archery"],
       effects: [makeEffect("physical", 10)],
     });
     const low = patchBattleState({
+      rng: () => 0.99,
       enemyHealth: 30,
       enemyMaxHealth: 100,
       talentEffects: { ...defaultTalentEffects, archeryDoubledVsLowHealth: true },
     });
     const above = patchBattleState({
+      rng: () => 0.99,
       enemyHealth: 31,
       enemyMaxHealth: 100,
       talentEffects: { ...defaultTalentEffects, archeryDoubledVsLowHealth: true },
@@ -111,12 +109,12 @@ describe("computeBaseDamage — archery tag", () => {
   });
 
   it("Trophy Shot grants gold when an Archery card defeats an enemy", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const card = makeTestCard({
       tags: ["archery"],
       effects: [makeEffect("physical", 20)],
     });
     const state = patchBattleState({
+      rng: () => 0.99,
       enemyHealth: 10,
       enemyMaxHealth: 100,
       gold: 0,
@@ -155,8 +153,8 @@ describe("computeBaseDamage — archery tag", () => {
 
 describe("computeBaseDamage — stun damage", () => {
   it("adds flatStunDamage to stun damage type", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
+      rng: () => 0.99,
       talentEffects: { ...defaultTalentEffects, flatStunDamage: 2 },
     });
     const card = makeTestCard({ effects: [makeEffect("stun", 5)] });
@@ -173,8 +171,8 @@ describe("computeBaseDamage — stun damage", () => {
 
 describe("computeBaseDamage — physical vs statuses", () => {
   it("adds poisonPhysicalBonus against poisoned enemies", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
+      rng: () => 0.99,
       enemyStatuses: defaultEnemyStatusValues({ poison: 5 }),
       talentEffects: { ...defaultTalentEffects, poisonPhysicalBonus: 3 },
     });
@@ -190,8 +188,8 @@ describe("computeBaseDamage — physical vs statuses", () => {
   });
 
   it("adds bleedPhysicalBonus against bleeding enemies", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
+      rng: () => 0.99,
       enemyStatuses: defaultEnemyStatusValues({ bleed: 5 }),
       talentEffects: { ...defaultTalentEffects, bleedPhysicalBonus: 2 },
     });
@@ -207,8 +205,8 @@ describe("computeBaseDamage — physical vs statuses", () => {
   });
 
   it("amplifies physical damage against stunned enemies", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
+      rng: () => 0.99,
       enemyCC: defaultCcState({ stunSkipTurns: 1 }),
       talentEffects: { ...defaultTalentEffects, physicalDoubledVsStunned: true },
     });
@@ -224,8 +222,8 @@ describe("computeBaseDamage — physical vs statuses", () => {
   });
 
   it("amplifies physical damage against frozen enemies", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
+      rng: () => 0.99,
       enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       talentEffects: { ...defaultTalentEffects, physicalDoubledVsFrozen: true },
     });

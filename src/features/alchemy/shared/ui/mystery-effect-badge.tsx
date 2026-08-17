@@ -6,7 +6,7 @@ import { tooltipChipClass } from "@/features/alchemy/shared/config";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 import { materialLabels } from "@/lib/homestead/types";
-import { HomesteadResourceArtwork, matPillStyle, matTextColor } from "./material-icons";
+import { HomesteadResourceArtwork, goldPillStyle, goldTextColor, matPillStyle, matTextColor } from "./material-icons";
 import { TooltipHeader } from "./tooltip-panel";
 import type { MysteryEffect } from "@/lib/mystery";
 import { gearBaseItems, type GearBaseItemId } from "@/lib/gear";
@@ -26,7 +26,8 @@ function renderGoldBadge(effect: MysteryEffect, ctx: BadgeCtx): React.ReactNode 
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border shadow-xs",
         ctx.tooltip ? cn("px-2 py-0.5", tooltipChipClass) : "px-3 py-1 text-xs font-semibold",
-        "border-[#D6B85A]/30 bg-[#D6B85A]/15 text-[#D6B85A]",
+        goldPillStyle,
+        goldTextColor,
       )}
     >
       <HomesteadResourceArtwork resource="gold" size="sm" />

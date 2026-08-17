@@ -26,6 +26,7 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
   labyrinthMap: unknown;
   labyrinthPendingNode: unknown;
   wildwoodDraft: unknown;
+  starterDraftChoices: unknown;
   activeCombat: unknown;
 } {
   const contentSystemType = data.contentSystemType as ContentSystemId;
@@ -38,6 +39,7 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
     labyrinthMap: contentSystemType === "labyrinth" ? data.labyrinthMap : null,
     labyrinthPendingNode: contentSystemType === "labyrinth" ? data.labyrinthPendingNode : null,
     wildwoodDraft: contentSystemType === "wildwood" ? data.wildwoodDraft : null,
+    starterDraftChoices: contentSystemType === "wildwood" ? null : (data.starterDraftChoices ?? null),
     activeCombat: normalizeActiveCombat(data, contentSystemType),
   };
 }

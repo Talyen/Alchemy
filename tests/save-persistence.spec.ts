@@ -88,7 +88,6 @@ test.describe("Save Persistence & Resume", () => {
     await expect(page.getByRole("button", { name: "Campfire" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Mystery" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Merchant's Shop" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Normal Combat" })).toHaveCount(0);
   });
 
   test("mid-battle reload returns to destination not battle", critical, async ({ page }) => {

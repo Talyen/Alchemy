@@ -1,16 +1,24 @@
 import { useRef, useMemo, useLayoutEffect, type RefObject } from "react";
 import type { BattleState } from "@/lib/battle";
-import type { BattleRefs, CardRect, Screen } from "@/features/alchemy/shared/types";
+import type { BattleRefs, CardRect } from "@/features/alchemy/shared/types";
+import type { Screen } from "@/lib/routing";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { BattleRunPort, BattleTalentPort } from "@/features/alchemy/shared/stores/run-port-types";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { createTransferCancelRegistry, type TransferCancelRegistry } from "./card-transfer-animations";
+import type { BattlePresentationPort } from "./battle-presentation-port";
+import { resolveBattlePresentation } from "./battle-presentation-port";
 
-export interface BattleControllerContext extends BattleRefs {
-  // State from props / parent
+/** Playback callbacks the battle route binds into shell-owned refs. */
+export interface BattlePlaybackBind {
+  scheduleAutoEndTurn: (state: BattleState) => void;
+  clearAutoEndTurn: () => void;
+  onBattleSessionPrepared: () => void;
+}
+
+export interface BattleControllerContextProps {
   run: BattleRunPort;
   talents: BattleTalentPort;
-  autoEndTurn: boolean;
   homesteadEffects: HomesteadEffectManifest;
   screen: Screen;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
@@ -18,8 +26,13 @@ export interface BattleControllerContext extends BattleRefs {
   onBattleDefeat?: (() => void) | undefined;
   measureElementRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
+  scheduleAutoEndTurnRef: RefObject<((state: BattleState) => void) | null>;
+  clearAutoEndTurnRef: RefObject<(() => void) | null>;
+  onBattleSessionPreparedRef: RefObject<(() => void) | null>;
+  getPresentation?: () => BattlePresentationPort;
+}
 
-  // Internal state Refs
+export interface BattleControllerContext extends Omit<BattleControllerContextProps, "getPresentation">, BattleRefs {
   cardPlayInProgressRef: RefObject<boolean>;
   companionScheduledRef: RefObject<boolean>;
   battleTimerGroupRef: RefObject<TimerGroup>;
@@ -28,27 +41,7 @@ export interface BattleControllerContext extends BattleRefs {
   victoryDefeatHandledRef: RefObject<boolean>;
   transferCancelRegistryRef: RefObject<TransferCancelRegistry>;
   transferIdCounterRef: RefObject<number>;
-
-  // Mutable hooks & callbacks
-  scheduleAutoEndTurnRef: RefObject<((state: BattleState) => void) | null>;
-  clearAutoEndTurnRef: RefObject<(() => void) | null>;
-  onBattleSessionPreparedRef: RefObject<(() => void) | null>;
-}
-
-export interface BattleControllerContextProps {
-  run: BattleRunPort;
-  talents: BattleTalentPort;
-  autoEndTurn: boolean;
-  homesteadEffects: HomesteadEffectManifest;
-  screen: Screen;
-  setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
-  onBattleVictory?: (() => void) | undefined;
-  onBattleDefeat?: (() => void) | undefined;
-  measureElementRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
-  measureVisualCardRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
-  scheduleAutoEndTurnRef: RefObject<((state: BattleState) => void) | null>;
-  clearAutoEndTurnRef: RefObject<(() => void) | null>;
-  onBattleSessionPreparedRef: RefObject<(() => void) | null>;
+  getPresentation: () => BattlePresentationPort;
 }
 
 export function useBattleControllerContext(props: BattleControllerContextProps): BattleControllerContext {
@@ -98,9 +91,6 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
       get talents() {
         return propsRef.current.talents;
       },
-      get autoEndTurn() {
-        return propsRef.current.autoEndTurn;
-      },
       get homesteadEffects() {
         return propsRef.current.homesteadEffects;
       },
@@ -130,6 +120,9 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
       },
       get onBattleSessionPreparedRef() {
         return propsRef.current.onBattleSessionPreparedRef;
+      },
+      getPresentation() {
+        return resolveBattlePresentation(propsRef.current);
       },
     };
   }, []);

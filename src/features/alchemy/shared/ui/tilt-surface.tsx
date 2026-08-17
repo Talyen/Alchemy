@@ -38,6 +38,7 @@ interface TiltSurfaceProps {
   onFocus?: () => void;
   onBlur?: () => void;
   ariaLabel?: string;
+  ariaDisabled?: boolean;
   ariaPressed?: boolean;
   ariaExpanded?: boolean | undefined;
   buttonRef?: Ref<HTMLButtonElement> | undefined;
@@ -132,6 +133,7 @@ function TiltSurfaceButton({
   onFocus,
   onBlur,
   ariaLabel,
+  ariaDisabled,
   ariaPressed,
   ariaExpanded,
   buttonRef,
@@ -155,6 +157,7 @@ function TiltSurfaceButton({
       }}
       type="button"
       aria-label={ariaLabel}
+      {...(ariaDisabled !== undefined ? { "aria-disabled": ariaDisabled } : {})}
       {...(ariaPressed !== undefined ? { "aria-pressed": ariaPressed } : {})}
       {...(ariaExpanded !== undefined ? { "aria-expanded": ariaExpanded } : {})}
       disabled={disabled}

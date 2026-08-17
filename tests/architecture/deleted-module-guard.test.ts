@@ -23,6 +23,14 @@ describe("deleted module guard", () => {
       "src/features/alchemy/shared/stores/run-session-queries.ts",
       "src/lib/validation/migration.ts",
       "src/lib/validation/save-schemas.ts",
+      "src/features/alchemy/run-loop/battle/presentation-types.ts",
+      "src/features/alchemy/run-loop/corruption.ts",
+      "src/features/alchemy/run-loop/navigation/use-mystery-flow.ts",
+      "src/features/alchemy/run-loop/screens/battle-screen/card-transfer-overlay.tsx",
+      "src/features/alchemy/shared/utils/card-description.ts",
+      "src/features/alchemy/run-loop/battle/battle-playback-bind.ts",
+      "src/features/alchemy/shared/stores/encode-corruption.ts",
+      "src/features/alchemy/shared/stores/encode-mystery-visit.ts",
     ];
     for (const path of deleted) {
       expect(existsSync(join(ROOT, path)), path).toBe(false);

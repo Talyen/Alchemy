@@ -1,5 +1,5 @@
 import { BATTLE_PARTICLE_ALPHA_BOSS, BATTLE_PARTICLE_ALPHA_NORMAL } from "@/lib/game-constants";
-import type { Screen } from "@/features/alchemy/shared/types";
+import type { Screen } from "@/lib/routing";
 
 const SCREEN_PARTICLE_COLORS: Partial<Record<Screen, readonly string[]>> = {
   battle: ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"],

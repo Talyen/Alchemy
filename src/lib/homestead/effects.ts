@@ -58,7 +58,11 @@ export function computeHomesteadEffects(
   completedResearch: Record<string, number>,
   bondedCompanions: Record<string, number> = {},
 ): HomesteadEffectManifest {
-  const effects = { ...defaultHomesteadEffects };
+  const effects: HomesteadEffectManifest = {
+    ...defaultHomesteadEffects,
+    companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels },
+    cardHealBonus: { ...defaultHomesteadEffects.cardHealBonus },
+  };
 
   applyItemTiers(effects, buildings, constructedBuildings);
   applyItemTiers(effects, farmPlots, plantedFarms);

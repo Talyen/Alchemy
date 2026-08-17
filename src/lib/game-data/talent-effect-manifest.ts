@@ -1,12 +1,15 @@
 // Pre-computed bonuses from unlocked talents, recalculated each battle start.
 import type { CompanionId } from "./types";
 
+export interface HealthThresholdBonus {
+  threshold: number;
+  amount: number;
+}
+
 export interface TalentEffectManifest {
   // --- Physical ---
   flatPhysicalDamage: number;
   armorToPhysicalDamage: boolean;
-  physicalCritChance: number;
-  firstPhysicalCardFree: boolean;
   physicalStunChance: number;
   physicalBleedChance: number;
   physicalDetonatesBleed: boolean;
@@ -62,18 +65,17 @@ export interface TalentEffectManifest {
   startArmor: number;
   armorMitigatesBleed: boolean;
   armorBreakBlock: number;
-  armorMitigatesStun: boolean;
   armorCleanseThreshold: number;
   flatArmorAmount: number;
 
   // --- Health ---
   campfireHealBonus: number;
-  healthThresholdBlock: { threshold: number; amount: number } | null;
+  healthThresholdBlock: HealthThresholdBonus | null;
   maxHealthPerCombat: number;
   startHealth: number;
   healMultiplier: number;
   consumeHealMultiplier: number;
-  healthThresholdArmor: { threshold: number; amount: number } | null;
+  healthThresholdArmor: HealthThresholdBonus[];
   overhealToBlockRatio: number;
   healOnStatusCleanse: number;
   deathsDoorExtension: number;
@@ -83,7 +85,7 @@ export interface TalentEffectManifest {
   natureDamageReduction: number;
 
   // --- Burn ---
-  firstBurnCardDoubled: boolean;
+  firstBurnCardBonusMultiplier: number;
   burnRemovesEnemyArmor: boolean;
   burnDoubleChance: number;
   receiveHalfBurnDamage: boolean;
@@ -91,10 +93,12 @@ export interface TalentEffectManifest {
   burnOnWish: number;
   forgeOnBurnDealt: number;
   blockToBurnDamage: boolean;
+  burnStunChance: number;
+
+  // --- Consume ---
   consumeBurnDamageBonusPercent: number;
   firstConsumeCardFree: boolean;
   consumeDamageBonusPercent: number;
-  burnStunChance: number;
   healOnConsume: number;
   goldOnConsume: number;
   drawOnConsume: number;
@@ -124,14 +128,12 @@ export interface TalentEffectManifest {
   holyGoldPercent: number;
   holyBurnChance: number;
   receiveHalfHolyDamage: boolean;
-  holyBlockPercent: number;
   holyWishChance: number;
   holyBlockPercentFromDamage: number;
   holyVsBurnMultiplier: number;
   holyGoldChance: number;
 
   // --- Wish ---
-  goldOnWishAmount: number;
   wishUndiscoveredCards: boolean;
   healthOnWish: number;
   removeHarmfulStatusOnWish: boolean;
@@ -140,6 +142,7 @@ export interface TalentEffectManifest {
   manaOnWish: number;
   wishTrinketChoice: boolean;
   wishBlockBelowHealthPct: number;
+  wishBlockAmount: number;
   wishCardsUpgraded: boolean;
 
   // --- Homestead ---
@@ -160,6 +163,7 @@ export interface TalentEffectManifest {
   poisonReducesEnemyDamage: number;
   poisonLeechChance: number;
 
+  // --- Companion combat ---
   companionDamage: number;
   companionGoldFindActive: boolean;
   companionLeechChance: number;
@@ -184,8 +188,6 @@ export interface TalentEffectManifest {
   companionDamagePerManaCrystal: number;
   healOnManaGain: number;
 
-  // --- Trinket ---
-
   // --- Freeze ---
   freezeThresholdReduction: number;
   freezeDoubleDamage: boolean;
@@ -196,7 +198,7 @@ export interface TalentEffectManifest {
   freezePreventsPoisonDecay: boolean;
   freezeBlocksRegen: boolean;
   freezePreventsEnemyScaling: boolean;
-  receiveHalfFreezeBuildUp: boolean;
+  receiveHalfFreezeDamage: boolean;
   flatFreezeDamage: number;
 
   // --- Archery ---
@@ -227,6 +229,7 @@ export interface TalentEffectManifest {
   bleedPhysicalBonus: number;
   bleedLeechChance: number;
   bleedExecuteThreshold: number;
+  bleedExecuteMultiplier: number;
   bleedDesperateMultiplier: number;
   bleedPoisonChance: number;
   bleedPoisonDamageTakenBonus: number;

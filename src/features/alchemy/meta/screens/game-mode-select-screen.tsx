@@ -5,6 +5,7 @@ import {
   cardInteractiveGlowClass,
   gameModeArtWidthClass,
   gameModePaddedTileClass,
+  chooserLockedSurfaceClass,
   chooserRowGapClass,
   gameModeRowShellWidthClass,
 } from "@/features/alchemy/shared/config";
@@ -51,6 +52,7 @@ function GameModeTile({
         buttonRef={artWrapperRef}
         tiltEnabled={false}
         ariaLabel={ariaLabel}
+        ariaDisabled={isLocked}
         onClick={() => {
           if (isLocked) {
             playUISound("error");
@@ -81,7 +83,7 @@ function GameModeTile({
           "group relative mx-auto block aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-shell-card border border-border/80 bg-black shadow-md focus:outline-none",
           gameModeArtWidthClass,
           !isLocked && cardInteractiveGlowClass,
-          isLocked && "cursor-not-allowed opacity-50 grayscale-[30%]",
+          isLocked && chooserLockedSurfaceClass,
         )}
       >
         <img

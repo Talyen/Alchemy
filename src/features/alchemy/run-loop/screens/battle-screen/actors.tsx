@@ -1,12 +1,8 @@
 // Actor rail for the battle screen: hero/enemy panels, companion, turn shine, and combat text.
-// Depends on screen store shimmer actions, actor UI widgets, and battle layout constants.
-// Used only by BattleScreen to keep the main screen composition smaller.
-import type { ComponentProps } from "react";
-import { useShallow } from "zustand/react/shallow";
+// VFX subscriptions live in battle/presentation/actor-vfx so layout does not tick with ghosts.
 import { BATTLE_ACTOR_TOP } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
-import { ArtPanel, CompanionPanel, CombatTextRail } from "../../../shared/ui/battle-ui";
 import {
   battleActorEnemyCellClass,
   battleActorHeroCellClass,
@@ -15,53 +11,8 @@ import {
   getBossShineColors,
   getCharacterShineColors,
 } from "@/features/alchemy/shared/config";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { useBattlePresentationStore } from "../../battle/battle-presentation-store";
+import { CombatTextRailSide, ShakingArtPanel, ShakingCompanionPanel } from "../../battle/presentation/actor-vfx";
 import type { BattleFeedbackProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
-
-// High-frequency presentation reads live here, isolated from the BattleScreen subtree:
-// floating combat text add/remove and hit shake/flash tokens only re-render the rail / actor.
-function CombatTextRailSide({ side }: { side: "player" | "enemy" }) {
-  const entries = useBattlePresentationStore(
-    useShallow((s) => s.floatingCombatTexts.filter((text) => text.target === side)),
-  );
-  return <CombatTextRail entries={entries} />;
-}
-
-type ShakingArtPanelProps = Omit<
-  ComponentProps<typeof ArtPanel>,
-  "shaking" | "hurtFlashToken" | "shimmerActive" | "shimmerToken" | "onHoverShimmer"
-> & {
-  side: "player" | "enemy";
-  shimmerId: string;
-};
-
-function ShakingArtPanel({ side, shimmerId, ...props }: ShakingArtPanelProps) {
-  const shaking = useBattlePresentationStore((s) => (side === "player" ? s.playerShaking : s.enemyShaking));
-  const hurtFlashToken = useBattlePresentationStore((s) =>
-    side === "player" ? s.playerHurtFlashToken : s.enemyHurtFlashToken,
-  );
-  const shimmerActive = useUiStore((s) => s.shimmerState?.cardId === shimmerId);
-  const shimmerToken = useUiStore((s) => (s.shimmerState?.cardId === shimmerId ? s.shimmerState.token : undefined));
-  const onHoverShimmer = useUiStore((s) => s.maybeTriggerShimmer);
-  return (
-    <ArtPanel
-      {...props}
-      side={side}
-      shimmerId={shimmerId}
-      shaking={shaking}
-      hurtFlashToken={hurtFlashToken}
-      shimmerActive={shimmerActive}
-      shimmerToken={shimmerToken}
-      onHoverShimmer={onHoverShimmer}
-    />
-  );
-}
-
-function ShakingCompanionPanel(props: ComponentProps<typeof CompanionPanel>) {
-  const shaking = useBattlePresentationStore((s) => s.companionShaking);
-  return <CompanionPanel {...props} shaking={shaking} />;
-}
 
 export function BattleActors({
   view,

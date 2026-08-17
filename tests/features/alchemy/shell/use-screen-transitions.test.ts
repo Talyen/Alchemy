@@ -1,12 +1,14 @@
 // @vitest-environment jsdom
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { ROUTE_SCREENS } from "@/lib/routing";
+import { resetRunNavigationSlice } from "../../../helpers/run-domain-store-test";
 
 beforeEach(() => {
   vi.useFakeTimers();
+  resetRunNavigationSlice();
 });
 
 afterEach(() => {
@@ -55,6 +57,44 @@ describe("useScreenTransitions.transition", () => {
       guard: () => hasActiveRun,
     });
     vi.advanceTimersByTime(250);
+    expect(setScreen).not.toHaveBeenCalled();
+  });
+});
+
+describe("useScreenTransitions navigation", () => {
+  it("navigateTo updates screen after the navigation delay", () => {
+    const setScreen = vi.fn();
+    const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.MENU, setScreen));
+
+    act(() => {
+      result.current.navigateTo(ROUTE_SCREENS.GAME_MODE_SELECT);
+      vi.advanceTimersByTime(100);
+    });
+
+    expect(setScreen).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_MODE_SELECT);
+  });
+
+  it("commitPendingTransition runs deferred screen commit callbacks", () => {
+    const setScreen = vi.fn();
+    const onCommit = vi.fn();
+    const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.MENU, setScreen));
+
+    act(() => {
+      result.current.navigateTo(ROUTE_SCREENS.MENU, onCommit);
+      vi.advanceTimersByTime(100);
+    });
+
+    expect(setScreen).not.toHaveBeenCalled();
+    expect(onCommit).toHaveBeenCalledOnce();
+  });
+
+  it("rejects transitions outside the screen policy", () => {
+    const setScreen = vi.fn();
+    const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.MENU, setScreen));
+
+    expect(() => result.current.navigateTo(ROUTE_SCREENS.BATTLE)).toThrow(
+      "Disallowed screen transition: menu -> battle",
+    );
     expect(setScreen).not.toHaveBeenCalled();
   });
 });

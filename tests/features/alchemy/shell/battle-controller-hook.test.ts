@@ -6,8 +6,8 @@ import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { makeRunController, makeTalentController } from "../../../helpers/run-controller";
 import {
   getBattleStoreView,
@@ -39,8 +39,6 @@ function renderBattleController(screen: Screen = ROUTE_SCREENS.BATTLE) {
       useBattleController({
         run: makeRunController(),
         talents: makeTalentController(),
-        autoEndTurn: false,
-        gameMenuOpen: false,
         homesteadEffects: defaultHomesteadEffects,
         screen: currentScreen,
         setHoveredCardId: vi.fn(),
@@ -50,7 +48,7 @@ function renderBattleController(screen: Screen = ROUTE_SCREENS.BATTLE) {
 }
 
 describe("useBattleController", () => {
-  it("startBattle marks combat active and exposes battle state", () => {
+  it("startBattle marks combat active without exposing battle display state", () => {
     const { result, rerender } = renderBattleController();
 
     act(() => {
@@ -59,8 +57,44 @@ describe("useBattleController", () => {
     });
 
     expect(getBattleStoreView().hasActiveBattle).toBe(true);
-    expect(result.current.battleState.playerHealth).toBeGreaterThan(0);
-    expect(result.current.battleState).not.toEqual(defaultBattleState());
+    expect(getBattleStoreView().battleState.playerHealth).toBeGreaterThan(0);
+    expect(getBattleStoreView().battleState).not.toEqual(defaultBattleState());
+    expect(result.current.hasActiveBattle).toBe(true);
+  });
+
+  it("startBattle restores preferred autoplay even without a playback bind", () => {
+    useSettingsStore.getState().setRememberAutoplayPreference(false);
+    const { result } = renderBattleController();
+
+    act(() => {
+      result.current.setAutoplayEnabled(true);
+      result.current.startBattle();
+    });
+
+    expect(result.current.isAutoplayEnabled).toBe(false);
+  });
+
+  it("persists autoplay when remember is on", () => {
+    useSettingsStore.getState().setRememberAutoplayPreference(true);
+    const { result } = renderBattleController();
+
+    act(() => {
+      result.current.setAutoplayEnabled(true);
+    });
+
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(true);
+  });
+
+  it("keeps a session autoplay toggle when leaving the battle screen", () => {
+    const { result, rerender } = renderBattleController();
+
+    act(() => {
+      result.current.startBattle();
+      result.current.setAutoplayEnabled(true);
+      rerender({ screen: ROUTE_SCREENS.COLLECTION });
+    });
+
+    expect(result.current.isAutoplayEnabled).toBe(true);
   });
 
   it("clears floating combat text and other VFX when leaving battle screen with active combat", async () => {
@@ -91,48 +125,5 @@ describe("useBattleController", () => {
     expect(useBattlePresentationStore.getState().floatingCombatTexts).toEqual([]);
     expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
     vi.useRealTimers();
-  });
-
-  it("resets autoplay off on a new battle when remember is off", () => {
-    const { result, rerender } = renderBattleController();
-
-    act(() => {
-      result.current.startBattle();
-      rerender({ screen: ROUTE_SCREENS.BATTLE });
-    });
-    act(() => {
-      result.current.toggleAutoplay();
-    });
-    expect(result.current.isAutoplayEnabled).toBe(true);
-    expect(useSettingsStore.getState().autoplayEnabled).toBe(false);
-
-    act(() => {
-      result.current.startBattle();
-      rerender({ screen: ROUTE_SCREENS.BATTLE });
-    });
-    expect(result.current.isAutoplayEnabled).toBe(false);
-  });
-
-  it("restores and persists autoplay when remember is on", () => {
-    useSettingsStore.getState().setRememberAutoplayPreference(true);
-    useSettingsStore.getState().setAutoplayEnabled(true);
-    const { result, rerender } = renderBattleController();
-
-    act(() => {
-      result.current.startBattle();
-      rerender({ screen: ROUTE_SCREENS.BATTLE });
-    });
-    expect(result.current.isAutoplayEnabled).toBe(true);
-
-    act(() => {
-      result.current.toggleAutoplay();
-    });
-    expect(result.current.isAutoplayEnabled).toBe(false);
-    expect(useSettingsStore.getState().autoplayEnabled).toBe(false);
-
-    act(() => {
-      result.current.toggleAutoplay();
-    });
-    expect(useSettingsStore.getState().autoplayEnabled).toBe(true);
   });
 });

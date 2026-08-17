@@ -6,6 +6,8 @@
 import { type CSSProperties, useCallback, useRef, useState } from "react";
 
 import { ScreenDescription, TitledScreenShell } from "../../../shared/ui/shared-ui";
+import { settingsPanelShellClass } from "@/features/alchemy/shared/config";
+import { cn } from "@/lib/utils";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 
 import { LabyrinthConnectionLayer } from "./labyrinth-connection-layer";
@@ -38,7 +40,10 @@ export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Pr
 
         <section
           aria-label="Labyrinth map"
-          className="relative flex min-h-0 w-full max-w-[1104px] shrink items-center justify-center rounded-shell-panel border border-border bg-card p-5 sm:p-6"
+          className={cn(
+            settingsPanelShellClass,
+            "relative flex min-h-0 w-full max-w-[1104px] shrink items-center justify-center",
+          )}
           style={{ "--labyrinth-node-size": "clamp(2.7rem, 5.5vw, 4rem)" } as CSSProperties}
         >
           {/* 90cqh (not 100): header/subtitle + denser padding leave ~887px; 100cqh board is ~939px and clips. */}

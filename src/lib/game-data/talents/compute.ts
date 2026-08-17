@@ -48,14 +48,11 @@ function applyTalentEffect(manifest: TalentEffectManifest, effect: TalentEffectO
     return;
   }
 
-  setTalentEffect(manifest, effect.field, effect.value);
-}
+  const current = manifest[effect.field];
+  if (Array.isArray(current) && Array.isArray(effect.value)) {
+    Object.assign(manifest, { [effect.field]: [...current, ...effect.value] });
+    return;
+  }
 
-function setTalentEffect<K extends keyof TalentEffectManifest>(
-  manifest: TalentEffectManifest,
-  field: K,
-  value: TalentEffectManifest[K],
-) {
-  // Centralized assignment keeps the generic reducer type-safe for all manifest field shapes.
-  manifest[field] = value;
+  Object.assign(manifest, { [effect.field]: effect.value });
 }

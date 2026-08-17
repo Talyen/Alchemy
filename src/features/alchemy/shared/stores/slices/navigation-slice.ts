@@ -1,4 +1,4 @@
-import type { Screen } from "@/features/alchemy/shared/types";
+import type { Screen } from "@/lib/routing";
 import { defineFieldSetter, type ImmerSet } from "./_field-setter";
 import type { RunDomainDataState } from "../run-domain-types";
 

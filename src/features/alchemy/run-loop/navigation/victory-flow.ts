@@ -1,8 +1,8 @@
 import { computeTalentEffects, getGoldMultiplier } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard, CharacterId, DifficultyId, UnlockedTalents, TalentEffectManifest } from "@/lib/game-data";
-import type { CommitVictoryRewardsDeps, VictoryRewardsInput, VictoryRewardsResult } from "./victory-flow-types";
-export type { CommitVictoryRewardsDeps, VictoryRewardsInput, VictoryRewardsResult } from "./victory-flow-types";
+import type { VictoryRewardsInput, VictoryRewardsResult } from "./victory-flow-types";
+export type { VictoryRewardsInput, VictoryRewardsResult } from "./victory-flow-types";
 import { getEnemyMaterialLoot, applyMaterialFindBonus } from "@/lib/homestead/loot";
 import {
   COMPANION_GOLD_FIND_CHANCE,
@@ -17,20 +17,11 @@ import {
 import { getGenerousGoldBonus } from "./reward-flow";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { CONSTANTS, type Destination } from "@/features/alchemy/shared/types";
-import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import {
-  addRunGold,
-  awardMaterialsDuringRun,
-  setCompanionRewardCards,
-  setDestinationOfferState,
-  setHasActiveBattle,
-  setRewardState,
-  setRunMaxHealth,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import type { RewardState } from "@/lib/active-run-session";
+import { CONSTANTS } from "@/features/alchemy/shared/types";
+import type { Destination } from "@/lib/routing";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   getActiveRewardModifiersForContentSystem,
   applyLabyrinthRewardMaterialModifiers,
@@ -38,9 +29,6 @@ import {
   createCombatRewardState as createCombatRewardStateFromFlow,
   createBossRewardState as createBossRewardStateFromFlow,
   createWildwoodRewardState,
-  getCompanionCardChoices,
-  shouldGrantCompanionReward,
-  type RewardState,
 } from "./reward-flow";
 import {
   sampleDestinationChoices,
@@ -257,35 +245,4 @@ export function computeVictoryRewards(
     generousBonus,
     destinationOfferState: sampled.offerState,
   };
-}
-
-export function commitVictoryRewards(
-  draft: GameplayDraft,
-  result: VictoryRewardsResult,
-  deps: CommitVictoryRewardsDeps,
-  rng: () => number,
-): boolean {
-  if (deps.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD && deps.battleState.pendingMaterials.crystal > 0) {
-    awardMaterialsDuringRun(draft, deps.battleState.pendingMaterials);
-  }
-
-  addRunGold(draft, result.goldEarned);
-  syncBattleToRun(draft, { playerHealth: result.playerHealth });
-  if (result.maxHealthDelta > 0) {
-    setRunMaxHealth(draft, (prev) => prev + result.maxHealthDelta);
-  }
-
-  setRewardState(draft, {
-    ...result.rewardState,
-    lastVictoryEnemyType: deps.battleState.currentEnemy.enemyType,
-    lastVictoryContentSystem: deps.contentSystemType,
-  });
-  setDestinationOfferState(draft, result.destinationOfferState);
-  if (shouldGrantCompanionReward(result.labyrinthRewardModifiers)) {
-    setCompanionRewardCards(draft, getCompanionCardChoices(rng));
-  } else {
-    setCompanionRewardCards(draft, null);
-  }
-  setHasActiveBattle(draft, false);
-  return result.goldEarned > 0;
 }

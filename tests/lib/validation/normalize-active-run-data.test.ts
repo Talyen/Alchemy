@@ -11,6 +11,7 @@ describe("normalizeActiveRunData", () => {
     expect(result.runPlayerHealth).toBe(30);
     expect(result.labyrinthMap).toBeNull();
     expect(result.wildwoodDraft).toBeNull();
+    expect(result.starterDraftChoices).toBeNull();
   });
 
   it("keeps labyrinth contentSystemType when labyrinthMap is null", () => {
@@ -55,5 +56,15 @@ describe("normalizeActiveRunData", () => {
     };
     const result = normalizeActiveRunData(input);
     expect(result.wildwoodDraft).toBeNull();
+  });
+
+  it("nulls starter draft choices on wildwood runs", () => {
+    const input = {
+      ...baseInput(),
+      contentSystemType: "wildwood",
+      starterDraftChoices: [{ id: "slash" }],
+    };
+    const result = normalizeActiveRunData(input);
+    expect(result.starterDraftChoices).toBeNull();
   });
 });

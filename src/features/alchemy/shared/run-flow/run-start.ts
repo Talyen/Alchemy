@@ -10,7 +10,7 @@ import {
   type TalentXP,
 } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import type { Destination } from "@/features/alchemy/shared/types";
+import type { Destination } from "@/lib/routing";
 
 export interface RunStartSnapshot {
   characterId: CharacterId;

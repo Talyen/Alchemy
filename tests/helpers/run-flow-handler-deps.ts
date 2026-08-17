@@ -93,6 +93,7 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     clearMysteryCardChoices,
     wildwoodRewardComplete: wildwoodRewardComplete ?? onWildwoodRewardComplete,
     selectRewardChoice: selectRewardChoice ?? onSelectRewardChoice ?? (() => {}),
+    clearCardHover: overrides.clearCardHover ?? (() => {}),
   };
 
   return {

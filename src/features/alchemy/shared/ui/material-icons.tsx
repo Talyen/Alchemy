@@ -50,6 +50,9 @@ export const matPillStyle: Record<MaterialId, string> = {
   crystal: "bg-[#0A84FF]/15 border-[#0A84FF]/30",
 };
 
+export const goldTextColor = "text-[#D6B85A]";
+export const goldPillStyle = "border-[#D6B85A]/30 bg-[#D6B85A]/15";
+
 export type ResourceArtworkSize = "sm" | "md" | "lg" | "xl";
 
 const SIZE_CLASSES: Record<ResourceArtworkSize, string> = {

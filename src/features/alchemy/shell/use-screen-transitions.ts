@@ -8,8 +8,7 @@
 import { useCallback, useRef } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
-import { assertScreenTransitionAllowed } from "@/lib/routing";
-import type { Screen } from "@/features/alchemy/shared/types";
+import { assertScreenTransitionAllowed, type Screen } from "@/lib/routing";
 
 export interface ScreenTransitionOptions {
   delayMs?: number;

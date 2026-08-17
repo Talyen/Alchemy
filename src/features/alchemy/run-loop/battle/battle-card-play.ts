@@ -10,21 +10,20 @@ import {
 } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { playCardSound, playGoldGain, playUISound } from "@/lib/audio";
-import { appendUnique } from "@/lib/utils";
-import { setDiscoveredCardIds } from "../../shared/stores/profile-store";
 import { CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
 import { animateCardActivation } from "./card-transfer-animations";
 import { getCardRect, getHoverId } from "../../shared/utils";
 import { applyCombatTextPortraitFeedback, shouldPlayCardGoldGain } from "./battle-feedback";
 import { getCardKey, playCombatTextSounds } from "./controller-utils";
 import { runHandDrawSequence } from "./draw-sequence";
-import { getBattleSessionStore, type createBattleSession } from "./battle-session";
+import { type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import { logError } from "@/lib/error-logger";
-import { useBattlePresentationStore } from "./battle-presentation-store";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { discoverCardIds } from "../run/deck-mutations";
 
 const BATTLE_CARD_PLAY_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
 
@@ -33,7 +32,8 @@ export function createBattleCardPlay(
   session: ReturnType<typeof createBattleSession>,
   transferDeps: ReturnType<typeof createBattleTransferDeps>,
 ) {
-  const getStore = () => getBattleSessionStore();
+  const getBattle = () => readBattle();
+  const getPresentation = () => ctx.getPresentation();
 
   const logBattleError = (context: string, err: unknown) => {
     logError(`Failed to ${context}`, "battle", { error: String(err) }, err instanceof Error ? err.stack : undefined);
@@ -41,8 +41,9 @@ export function createBattleCardPlay(
 
   function finishDrawSequence(sessionNum: number, state: BattleState) {
     session.finishDrawSequence(sessionNum, state, () => {
-      useBattlePresentationStore.getState().resetHandTransferUi();
+      getPresentation().resetHandTransferUi();
       session.checkBattleEnd(state, sessionNum);
+      ctx.scheduleAutoEndTurnRef.current?.(state);
     });
   }
 
@@ -68,7 +69,7 @@ export function createBattleCardPlay(
   }
 
   function canPlayCard(card: BattleCard, index: number, state: BattleState) {
-    const hiddenKeys = getStore().hiddenHandCardKeys;
+    const hiddenKeys = getPresentation().hiddenHandCardKeys;
     return (
       ctx.screen === "battle" &&
       canPlayCardInBattle(state, card, index, BATTLE_CARD_PLAY_OPTIONS) &&
@@ -82,7 +83,7 @@ export function createBattleCardPlay(
     index: number,
     sourceRect: { x: number; y: number; width: number; height: number },
   ) {
-    const centerOffset = index - (getStore().battleState.hand.length - 1) / 2;
+    const centerOffset = index - (getBattle().battleState.hand.length - 1) / 2;
     animateCardActivation(
       card,
       sourceRect,
@@ -90,7 +91,7 @@ export function createBattleCardPlay(
       ctx.playerPanelRef,
       ctx.enemyPanelRef,
       ctx.battleSceneRef,
-      getStore().spawnCardGhost,
+      getPresentation().spawnCardGhost,
     );
   }
 
@@ -101,8 +102,7 @@ export function createBattleCardPlay(
     combatTexts: CombatTextEvent[],
   ) {
     if (shouldPlayCardGoldGain(prePlayState, postPlayState, card)) playGoldGain();
-    const store = getStore();
-    applyCombatTextPortraitFeedback(combatTexts, store);
+    applyCombatTextPortraitFeedback(combatTexts, getPresentation());
     playCombatTextSounds(combatTexts);
   }
 
@@ -112,7 +112,7 @@ export function createBattleCardPlay(
     sourceRect: { x: number; y: number; width: number; height: number },
     options?: { silentReject?: boolean },
   ): boolean {
-    const currentState = getStore().battleState;
+    const currentState = getBattle().battleState;
     if (!canPlayCard(card, index, currentState)) {
       if (!options?.silentReject) playUISound("error");
       return false;
@@ -136,7 +136,7 @@ export function createBattleCardPlay(
           {
             afterCommit: () => {
               playCardResolutionFeedback(card, currentState, resolution.state, resolution.combatTexts);
-              if (resolution.combatTexts.length > 0) getStore().showCombatTexts(resolution.combatTexts);
+              if (resolution.combatTexts.length > 0) getPresentation().showCombatTexts(resolution.combatTexts);
             },
           },
         );
@@ -161,7 +161,7 @@ export function createBattleCardPlay(
   }
 
   function handleWishChoice(cardOrNull: BattleCard | null) {
-    const currentState = getStore().battleState;
+    const currentState = getBattle().battleState;
     if (!currentState.wishOptions) return;
     const newState = chooseWishCard(currentState, cardOrNull?.id ?? null);
     const sessionNum = ctx.battleSessionRef.current;
@@ -171,9 +171,7 @@ export function createBattleCardPlay(
       () => {
         dispatchRunSessionCommand((draft) => {
           setBattleState(draft, newState);
-          if (cardOrNull) {
-            setDiscoveredCardIds(draft, (current) => appendUnique(current, cardOrNull.id));
-          }
+          if (cardOrNull) discoverCardIds(draft, [cardOrNull.id]);
         });
       },
       sessionNum,

@@ -98,6 +98,7 @@ type RecordTalentKey = {
 export const HOMESTEAD_BATTLE_NUMERIC_KEYS = [
   "flatPhysicalDamage",
   "companionDamage",
+  // Talent default is 1 (identity); homestead default is 0 so merge adds a bonus onto that base.
   "potionPotency",
   "flatBurnDamage",
   "flatArrowDamage",

@@ -8,6 +8,7 @@
 import {
   applyPlayerCombatDamage,
   clampHealth,
+  scaleReceivedPlayerDamage,
   setEnemyStatus,
   setPlayerStatus,
   type BattleState,
@@ -152,7 +153,7 @@ function dealPlayerDotTick(
 function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.burn;
   if (damage <= 0) return state;
-  const actualDamage = state.talentEffects.receiveHalfBurnDamage ? Math.round(damage / HALF_DIVISOR) : damage;
+  const actualDamage = scaleReceivedPlayerDamage(damage, state.talentEffects, "burn");
   const afterBlockReduction =
     state.talentEffects.blockReduceBurnDamage > 0 && state.playerStatuses.block > 0
       ? Math.max(0, actualDamage - state.talentEffects.blockReduceBurnDamage)
@@ -173,7 +174,7 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
 function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.poison;
   if (damage <= 0) return state;
-  const reducedDamage = state.talentEffects.receiveHalfPoisonDamage ? Math.round(damage / HALF_DIVISOR) : damage;
+  const reducedDamage = scaleReceivedPlayerDamage(damage, state.talentEffects, "poison");
   return dealPlayerDotTick(state, reducedDamage, "poison", decayPoisonStacks(state.playerStatuses.poison), combatTexts);
 }
 
@@ -183,9 +184,7 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const reducedDamage = state.talentEffects.armorMitigatesBleed
     ? Math.max(0, damage - state.playerStatuses.armor)
     : damage;
-  const finalDamage = state.talentEffects.receiveHalfBleedDamage
-    ? Math.round(reducedDamage / HALF_DIVISOR)
-    : reducedDamage;
+  const finalDamage = scaleReceivedPlayerDamage(reducedDamage, state.talentEffects, "bleed");
   return dealPlayerDotTick(state, finalDamage, "bleed", 0, combatTexts, undefined, (nextState) => {
     const enemyLeechDamage = Math.min(state.pendingEnemyBleedLeechHealing, state.playerHealth - nextState.playerHealth);
     let next = nextState;

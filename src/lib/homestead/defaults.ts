@@ -1,15 +1,33 @@
-// Default homestead effect manifest — all zeros/false. Used as the base state
-// before applying building/farm/research bonuses from computeHomesteadEffects.
-import { createEmptyTalentEffectManifest } from "@/lib/game-data";
+// Default homestead effect manifest — homestead keys only (zeros/false).
+// Talent identity defaults (potionPotency: 1, healMultiplier: 1) must not live here:
+// mergeIntoManifest adds homestead numbers onto talent values.
+import { defaultCompanionBondLevels } from "@/lib/game-data";
 import type { HomesteadEffectManifest } from "./types";
 
 export const defaultHomesteadEffects: HomesteadEffectManifest = {
-  ...createEmptyTalentEffectManifest(),
+  flatPhysicalDamage: 0,
+  companionDamage: 0,
   potionPotency: 0,
+  flatBurnDamage: 0,
+  flatArrowDamage: 0,
+  flatFreezeDamage: 0,
+  flatNatureDamage: 0,
+  wishCrystalGold: 0,
+  startMana: 0,
+  consumeHealMultiplier: 0,
+  potionMixPotency: 0,
+  burnDamageReduction: 0,
+  freezeDamageReduction: 0,
+  natureDamageReduction: 0,
+  poisonDamageReduction: 0,
+  runMaxHealthBonus: 0,
+  runMaxManaBonus: 0,
+  forgeToBurn: false,
+  companionBondLevels: { ...defaultCompanionBondLevels },
+  cardHealBonus: {},
   herbFindBonus: 0,
   endRunFoodPerRoom: 0,
   endRunHerbsPerRoom: 0,
   endRunCrystalPerRoom: 0,
   gearAstralChanceBonus: 0,
-  cardHealBonus: {},
 };

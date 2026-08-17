@@ -10,15 +10,19 @@ import {
 } from "../../../../../helpers/gameplay-store-test";
 import { computeSalvageYield, createEmptyGearInventories, type GearInstance } from "@/lib/gear";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
+import { flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 
 vi.mock("@/app/app-screen-chrome-context", () => ({
   useAppScreenChrome: () => ({ returnToRunScreen: null }),
 }));
 
-vi.mock("@/features/alchemy/shared/storage/flush-save", () => ({
-  flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
-}));
+vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-session-lifecycle-port")>();
+  return {
+    ...actual,
+    flushSaveAfterGearMutation: vi.fn(),
+  };
+});
 
 describe("useArmoryController", () => {
   beforeEach(() => {
@@ -40,7 +44,7 @@ describe("useArmoryController", () => {
       expect(result.current.onSalvage(armor.instanceId, salvageYield)).toBe(true);
     });
 
-    expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
+    expect(flushSaveAfterGearMutation).toHaveBeenCalledWith(null);
     expect(getRunProfileStore().materialInventory.herbs).toBe(6);
     expect(getRunDomainStore().activeRun.runMaterialsEarned.herbs).toBe(0);
   });

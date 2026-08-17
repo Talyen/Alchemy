@@ -9,13 +9,13 @@ import {
 import { teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/profile-store";
+import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
 import type { WildwoodRunPort } from "@/features/alchemy/shared/stores/run-port-types";
 import { type BattleCard, type DifficultyModifier } from "@/lib/game-data";
 import { logError } from "@/lib/error-logger";
-import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
+import { CONSTANTS } from "@/features/alchemy/shared/types";
+import type { Screen } from "@/lib/routing";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
-import { appendUnique } from "@/lib/utils";
 import {
   createWildwoodDraftChoices,
   canOfferWildwoodRemoval,
@@ -130,8 +130,7 @@ export function useWildwoodGauntletFlow({
       if (activeRun.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD || state?.phase !== "draft") return;
       const nextDeck = [...activeRun.runDeck, card];
       const draftRng = createDraftRunRandomSource(draft, "world");
-      setRunDeck(draft, nextDeck);
-      setDiscoveredCardIds(draft, (current) => appendUnique(current, card.id));
+      appendCardToRunWithDiscovery(draft, card);
       setWildwoodDraft(draft, {
         ...state,
         draftChoices:

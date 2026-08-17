@@ -6,7 +6,8 @@ import { flattenGearInventories, type GearInstance, type GearLoadouts } from "@/
 import type { GearStore } from "./gear-store-types";
 import { createGameplayDraftGearActions, readGameplayState } from "./gameplay-state-store";
 import { dispatchRunSessionCommand } from "./run-session-command";
-import { syncRunMaxHealthFromGearMutation } from "./run-transitions";
+import { addMaterials, awardMaterialsDuringRun } from "./run-session-write-port";
+import { syncRunMaxHealthFromGearMutation } from "./run-session-lifecycle-port";
 import type { GameplayDraft } from "./run-session-command";
 
 export interface GearHealthSnapshot {
@@ -74,4 +75,20 @@ export function mutateGearWithRunHealthSync<T>(
     );
   }
   return result;
+}
+
+export function dispatchGearSalvageWithMaterialGrant(
+  characterId: CharacterId,
+  mutate: (gear: GearStore) => ReturnType<GearStore["salvage"]>,
+): ReturnType<GearStore["salvage"]> {
+  return dispatchRunSessionCommand((draft) => {
+    const salvageResult = mutateGearWithRunHealthSync(draft, { characterId, mutate });
+    if (!salvageResult) return null;
+    if (draft.session.hasActiveRun) {
+      awardMaterialsDuringRun(draft, salvageResult.yieldedMaterials);
+    } else {
+      addMaterials(draft, salvageResult.yieldedMaterials);
+    }
+    return salvageResult;
+  });
 }

@@ -81,7 +81,6 @@ export interface TrinketManifest {
 
 // Threshold-driven combat flags that reset each battle.
 export interface CombatFlags {
-  firstPhysicalCardFreeUsed: boolean;
   firstHolyCardFreeUsed: boolean;
   firstBurnCardDoubledUsed: boolean;
   firstArmorCardDoubledUsed: boolean;
@@ -107,7 +106,6 @@ export interface CombatFlags {
 
 // Subset of CombatFlags consumed by card play — companion actions must not consume these.
 export type FirstTimeFlagKey =
-  | "firstPhysicalCardFreeUsed"
   | "firstHolyCardFreeUsed"
   | "firstBurnCardDoubledUsed"
   | "firstArmorCardDoubledUsed"

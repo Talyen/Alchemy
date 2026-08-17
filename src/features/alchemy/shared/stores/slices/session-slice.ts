@@ -1,3 +1,4 @@
+import type { BattleCard } from "@/lib/game-data";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
@@ -34,6 +35,7 @@ export interface SessionActions {
   setWildwoodDraft: (
     action: WildwoodDraftState | null | ((prev: WildwoodDraftState | null) => WildwoodDraftState | null),
   ) => void;
+  setStarterDraftChoices: (action: BattleCard[] | null | ((prev: BattleCard[] | null) => BattleCard[] | null)) => void;
   setShopState: (action: ShopState | ((prev: ShopState) => ShopState)) => void;
   setAlchemistState: (action: AlchemistState | ((prev: AlchemistState) => AlchemistState)) => void;
   setTrinketShopState: (action: TrinketShopState | ((prev: TrinketShopState) => TrinketShopState)) => void;
@@ -114,6 +116,7 @@ export function defineSessionActions(set: ImmerSet<RunSessionFields>): SessionAc
     setPendingContentSystemType: setField("pendingContentSystemType"),
     setLabyrinthMap: setField("labyrinthMap"),
     setWildwoodDraft: setField("wildwoodDraft"),
+    setStarterDraftChoices: setField("starterDraftChoices"),
     setShopState: setField("shopState"),
     setAlchemistState: setField("alchemistState"),
     setTrinketShopState: setField("trinketShopState"),

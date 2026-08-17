@@ -14,16 +14,16 @@ import {
   resetRunProgressSlice,
   setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
+import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import type { HomesteadEffectManifest } from "@/lib/homestead/types";
+import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
+import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 
 beforeEach(() => {
   resetRunBattleSlice();
   resetRunProgressSlice();
   vi.restoreAllMocks();
 });
-
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
-import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 
 describe("createBattleInit", () => {
   const resetBattleSession = vi.fn();
@@ -33,6 +33,7 @@ describe("createBattleInit", () => {
       run: makeRunController(),
       talents: makeTalentController(),
       homesteadEffects,
+      getPresentation: () => useBattlePresentationStore.getState(),
     } as unknown as BattleControllerContext;
 
     const session = {

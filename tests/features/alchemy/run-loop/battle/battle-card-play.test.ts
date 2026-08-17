@@ -55,6 +55,7 @@ function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
     scheduleAutoEndTurnRef: { current: scheduleAutoEndTurnMock },
     scheduleAutoEndTurn: scheduleAutoEndTurnMock,
     logBattleError: vi.fn(),
+    getPresentation: () => useBattlePresentationStore.getState(),
     ...overrides,
   } as unknown as BattleControllerContext;
 

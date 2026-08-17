@@ -258,6 +258,7 @@ export const ActiveRunDataSchema = z
     labyrinthMap: LabyrinthMapSchema.nullable().catch(null),
     labyrinthPendingNode: LabyrinthNodePositionSchema,
     wildwoodDraft: WildwoodDraftStateSchema.default(null),
+    starterDraftChoices: z.array(BattleCardSchema).nullable().catch(null).default(null),
     activeCombat: ActiveCombatDataSchema.catch(null).default(null),
     // Defaults match normalizeActiveRunData — required on Zod output without a post-cast.
     runTalentXP: TalentXPSchema.default({}),

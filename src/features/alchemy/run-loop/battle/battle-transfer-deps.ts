@@ -3,11 +3,10 @@
 import { delay } from "@/lib/animation/game-timer";
 import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
 import { playBattleEvent } from "@/lib/audio";
-import type { CardRect, CardTransfer } from "./presentation-types";
+import type { CardRect, CardTransfer } from "../../shared/types";
 import { animateDiscardedHand, animateDrawnHand, type CardTransferAnimationDeps } from "./card-transfer-animations";
 import type { HandDrawSequenceDeps } from "./draw-sequence";
 import type { StableHandCardRectDeps } from "./hand-card-layout";
-import { useBattlePresentationStore } from "./battle-presentation-store";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { BattleControllerContext } from "./battle-context";
 
@@ -15,7 +14,7 @@ export function createBattleTransferDeps(
   ctx: BattleControllerContext,
   isCurrentBattleSession: (session: number) => boolean,
 ) {
-  const getPresentation = () => useBattlePresentationStore.getState();
+  const getPresentation = () => ctx.getPresentation();
 
   function localRectFromElement(element: HTMLElement | null): CardRect | null {
     return ctx.measureElementRect(element, ctx.battleSceneRef.current);
@@ -67,7 +66,6 @@ export function createBattleTransferDeps(
     runCardTransfer,
     playTransferSound,
     setHiddenHandCardKeys: (update) => getPresentation().setHiddenHandCardKeys(update),
-    revealCardKey: (cardKey) => getPresentation().addRevealedCardKey(cardKey),
     setCardPlayInProgress: (active) => {
       ctx.cardPlayInProgressRef.current = active;
     },

@@ -12,13 +12,13 @@ import {
   Utensils,
 } from "lucide-react";
 import type { TalentDefinition } from "../types";
-import { setEffect } from "../types";
+import { addEffect, setEffect } from "../types";
 
 export const leechTalents: TalentDefinition[] = [
   {
     id: "leech-first-double",
     keywordId: "leech",
-    name: "First Blood",
+    name: "First Siphon",
     description: "Your first Leech card each combat heals for double",
     icon: Sword,
     effects: [setEffect("firstLeechCardDoubled", true)],
@@ -93,6 +93,6 @@ export const leechTalents: TalentDefinition[] = [
     name: "Carnivorous Nature",
     description: "Nature damage has a 10% chance to Leech",
     icon: Utensils,
-    effects: [setEffect("natureLeechChance", 10)],
+    effects: [addEffect("natureLeechChance", 10)],
   },
 ];

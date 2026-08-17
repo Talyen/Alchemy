@@ -1,4 +1,5 @@
 import type { CharacterId, DifficultyId } from "@/lib/game-data";
+import { appendUniqueMany } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 import type { PersistenceCodec } from "./persistence-codec";
 import { createDefaultProfileSaveFields, type ProfileSaveFields } from "./profile-store-types";
@@ -92,8 +93,18 @@ export function useCompletedDifficulties() {
 
 const profileActions = (state: GameplayDraft) => createGameplayDraftProfileActions(state);
 
-export const setDiscoveredCardIds = bindDraftAction((s) => profileActions(s).setDiscoveredCardIds);
+const setDiscoveredCardIds = bindDraftAction((s) => profileActions(s).setDiscoveredCardIds);
 export const setEncounteredEnemyIds = bindDraftAction((s) => profileActions(s).setEncounteredEnemyIds);
-export const setDiscoveredTrinketIds = bindDraftAction((s) => profileActions(s).setDiscoveredTrinketIds);
+const setDiscoveredTrinketIds = bindDraftAction((s) => profileActions(s).setDiscoveredTrinketIds);
 export const setCompletedDifficulties = bindDraftAction((s) => profileActions(s).setCompletedDifficulties);
 export const setFinishedRunCharacters = bindDraftAction((s) => profileActions(s).setFinishedRunCharacters);
+
+export function discoverCardIds(draft: GameplayDraft, ids: readonly string[]): void {
+  if (ids.length === 0) return;
+  setDiscoveredCardIds(draft, (current) => appendUniqueMany(current, ids));
+}
+
+export function discoverTrinketIds(draft: GameplayDraft, ids: readonly string[]): void {
+  if (ids.length === 0) return;
+  setDiscoveredTrinketIds(draft, (current) => appendUniqueMany(current, ids));
+}

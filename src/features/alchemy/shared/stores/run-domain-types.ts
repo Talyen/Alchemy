@@ -20,7 +20,7 @@ import {
   type ActiveRunProgressFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
 import type { LabyrinthNodePosition, PersistedBattleTransition } from "@/lib/active-run-session";
-import type { Destination, Screen } from "@/features/alchemy/shared/types";
+import type { Destination, Screen } from "@/lib/routing";
 import type {
   ContentSystemId,
   EncounterCombatTraitId,
@@ -83,6 +83,7 @@ export function createInitialSessionFields(): RunSessionFields {
     pendingContentSystemType: "campaign",
     labyrinthMap: generateLabyrinthMap(createSeededRng(0)),
     wildwoodDraft: null,
+    starterDraftChoices: null,
     shopState: emptyShop,
     alchemistState: emptyAlchemist,
     trinketShopState: emptyTrinketShop,
@@ -132,6 +133,7 @@ export interface RunSessionFields {
   pendingContentSystemType: ContentSystemId;
   labyrinthMap: LabyrinthMap;
   wildwoodDraft: WildwoodDraftState | null;
+  starterDraftChoices: BattleCard[] | null;
   shopState: ShopState;
   alchemistState: AlchemistState;
   trinketShopState: TrinketShopState;

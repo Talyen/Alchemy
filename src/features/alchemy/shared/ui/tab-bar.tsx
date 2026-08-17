@@ -1,7 +1,7 @@
 // Reusable tab bar with rectangular buttons.
 import type { ElementType } from "react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CHIP_BUTTON_CLASS } from "@/features/alchemy/shared/config";
 
 export interface TabBarProps<T extends string> {
   tabs: Array<{
@@ -28,22 +28,19 @@ export function TabBar<T extends string>({
         const Icon = tab.icon;
         const isDisabled = tab.disabled ?? false;
         return (
-          <button
+          <Button
             key={tab.id}
             type="button"
+            variant="outline"
+            size="lg"
             disabled={isDisabled}
-            onClick={() => !isDisabled && onSelectTab(tab.id)}
-            className={cn(
-              CHIP_BUTTON_CLASS,
-              "shrink-0",
-              isDisabled && "cursor-default opacity-50",
-              tab.id === activeTab ? activeClassName : "hover:border-border",
-            )}
+            onClick={() => onSelectTab(tab.id)}
+            className={cn("shrink-0", tab.id === activeTab ? activeClassName : "hover:border-border")}
             aria-label={isDisabled ? `${tab.label} (Locked)` : tab.label}
           >
             <Icon className={cn("h-7 w-7", tab.iconClassName)} />
             {tab.label}
-          </button>
+          </Button>
         );
       })}
     </div>

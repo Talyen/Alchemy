@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import { getRunSession } from "@/features/alchemy/shared/stores/run-session-model";
-import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readBattle, readRunPhase } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import type { CombatTextEvent } from "@/lib/battle";
 import {
@@ -27,7 +26,6 @@ interface BattlePresentationStore {
   companionShaking: boolean;
   playerHurtFlashToken: number;
   enemyHurtFlashToken: number;
-  revealedCardKeys: Set<string>;
   cardTransfers: CardTransfer[];
   hiddenHandCardKeys: Set<string>;
   cardTransferInProgress: boolean;
@@ -43,8 +41,6 @@ interface BattlePresentationStore {
   resetPortraitHurtTokens: () => void;
   showCombatTexts: (events: CombatTextEvent[]) => void;
   clearFloatingCombatTexts: () => void;
-  addRevealedCardKey: (key: string) => void;
-  clearRevealedCardKeys: () => void;
   setCardTransfers: (transfers: CardTransfer[] | ((prev: CardTransfer[]) => CardTransfer[])) => void;
   setHiddenHandCardKeys: (keys: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   setCardTransferInProgress: (inProgress: boolean | ((prev: boolean) => boolean)) => void;
@@ -83,7 +79,7 @@ function clearPresentationTimers() {
 function shouldShowFloatingCombatText(sequence: number): boolean {
   if (sequence !== combatTextSequence) return false;
   const battle = readBattle();
-  return battle.hasActiveBattle && getRunSession().screen === "battle";
+  return battle.hasActiveBattle && readRunPhase() === "battle";
 }
 
 function invalidateCombatTextSequence() {
@@ -100,7 +96,6 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
   companionShaking: false,
   playerHurtFlashToken: 0,
   enemyHurtFlashToken: 0,
-  revealedCardKeys: new Set(),
   cardTransfers: [],
   hiddenHandCardKeys: new Set(),
   cardTransferInProgress: false,
@@ -187,10 +182,6 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
     set({ floatingCombatTexts: [] });
   },
 
-  addRevealedCardKey: (key) => set((s) => ({ revealedCardKeys: new Set(s.revealedCardKeys).add(key) })),
-
-  clearRevealedCardKeys: () => set({ revealedCardKeys: new Set() }),
-
   setCardTransfers: (transfers) =>
     set((s) => ({
       cardTransfers: typeof transfers === "function" ? transfers(s.cardTransfers) : transfers,
@@ -221,7 +212,6 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
       companionShaking: false,
       playerHurtFlashToken: 0,
       enemyHurtFlashToken: 0,
-      revealedCardKeys: new Set(),
       cardTransfers: [],
       hiddenHandCardKeys: new Set(),
       cardTransferInProgress: false,

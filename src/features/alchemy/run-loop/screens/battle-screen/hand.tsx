@@ -15,7 +15,7 @@ import {
   HAND_REST_DROP_PX,
 } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard, CardDescriptionContext } from "@/lib/game-data";
 
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
@@ -26,7 +26,8 @@ import {
 } from "@/features/alchemy/shared/config";
 import type { BattleActionsProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
-import type { CardDescriptionContext } from "../../../shared/utils/card-description";
+import { useHiddenHandCardKeys, usePlayableHandCardKeys } from "../../battle/presentation/use-hand-presentation";
+import type { BattleState } from "@/lib/battle";
 
 const HandCardItem = memo(function HandCardItem({
   card,
@@ -108,14 +109,18 @@ export function BattleHand({
   view,
   refs,
   actions,
+  playabilityState,
 }: {
   view: RequiredBattleViewProps;
   refs: BattleRefsProps;
   actions: BattleActionsProps;
+  playabilityState: BattleState;
 }) {
   const { battleState, stagePixelRatio } = view;
   const { handCardRefs } = refs;
-  const { hiddenHandCardKeys, playableHandCardKeys, onCardClick } = actions;
+  const { onCardClick } = actions;
+  const hiddenHandCardKeys = useHiddenHandCardKeys();
+  const playableHandCardKeys = usePlayableHandCardKeys(playabilityState);
   const handWidthClass = handCardWidthClass;
 
   const descriptionContext = useMemo(

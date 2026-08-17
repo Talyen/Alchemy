@@ -95,6 +95,4 @@ export const holyTalents: TalentDefinition[] = [
     icon: HeartPulse,
     effects: [setEffect("holyLifestealPercent", 10)],
   },
-
-  // --- Wish ---
 ];

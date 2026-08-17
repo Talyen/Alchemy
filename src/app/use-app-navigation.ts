@@ -11,8 +11,8 @@ import { useLatestRef } from "@/features/alchemy/shared/hooks";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
 import {
-  setDiscoveredCardIds,
-  setDiscoveredTrinketIds,
+  discoverCardIds,
+  discoverTrinketIds,
   setEncounteredEnemyIds,
   setFinishedRunCharacters,
 } from "@/features/alchemy/shared/stores/profile-store";
@@ -203,7 +203,7 @@ export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | 
   const unlockAllDevMode = useCallback(() => {
     if (!isAlchemyDevBuild()) return;
     dispatchRunSessionCommand((draft) => {
-      setDiscoveredCardIds(
+      discoverCardIds(
         draft,
         cardLibrary.map((card) => card.id),
       );
@@ -211,7 +211,7 @@ export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | 
         draft,
         enemyBestiary.map((enemy) => enemy.id),
       );
-      setDiscoveredTrinketIds(
+      discoverTrinketIds(
         draft,
         trinketLibrary.map((boon) => boon.id),
       );

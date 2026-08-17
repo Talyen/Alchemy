@@ -53,6 +53,7 @@ export function createCompleteActiveRunData(): ActiveRunData {
     labyrinthMap: generateLabyrinthMap(createSeededRng(42)),
     labyrinthPendingNode: { row: 1, col: 1 },
     wildwoodDraft: null,
+    starterDraftChoices: null,
     activeCombat: {
       battleState,
       pendingBattleTransition: { kind: "continue-end-turn" },

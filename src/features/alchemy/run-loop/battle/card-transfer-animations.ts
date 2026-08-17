@@ -33,7 +33,6 @@ export interface CardTransferAnimationDeps {
   runCardTransfer: CardTransferRunner;
   playTransferSound: (delay?: number) => void;
   setHiddenHandCardKeys: (update: (current: Set<string>) => Set<string>) => void;
-  revealCardKey: (cardKey: string) => void;
   setCardPlayInProgress: (active: boolean) => void;
   setTransferInProgress: (active: boolean) => void;
   stableHandCardDeps: StableHandCardRectDeps;
@@ -125,7 +124,6 @@ export async function animateDrawnHand(
           next.delete(cardKey);
           return next;
         });
-        deps.revealCardKey(cardKey);
       },
     );
   }

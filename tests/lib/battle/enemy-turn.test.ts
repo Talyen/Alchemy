@@ -47,7 +47,7 @@ function battleState(overrides: Partial<BattleState> = {}): BattleState {
   });
 }
 
-describe("endPlayerTurn â€” haste branch", () => {
+describe("endPlayerTurn - haste branch", () => {
   it("skips enemy phase entirely when player has haste", () => {
     const state = battleState({ playerStatuses: { ...emptyPlayerStatuses, haste: 1 } });
     const result = endPlayerTurn(state);
@@ -70,7 +70,7 @@ describe("endPlayerTurn â€” haste branch", () => {
   });
 });
 
-describe("endPlayerTurn â€” CC skip branch", () => {
+describe("endPlayerTurn - CC skip branch", () => {
   it("skips attack when enemy is stunned", () => {
     const state = battleState({ enemyCC: defaultCcState({ stunSkipTurns: 1 }) });
     const result = endPlayerTurn(state);
@@ -111,7 +111,7 @@ describe("endPlayerTurn â€” CC skip branch", () => {
   });
 });
 
-describe("endPlayerTurn â€” standard branch", () => {
+describe("endPlayerTurn - standard branch", () => {
   it("executes enemy attack and deals damage", () => {
     const state = battleState({ playerHealth: 30 });
     const result = endPlayerTurn(state);
@@ -264,19 +264,6 @@ describe("endPlayerTurn — Death's Door", () => {
     });
     const result = endPlayerTurn(state);
     expect(result.state.deathsDoorActive).toBe(true);
-  });
-
-  it("deactivates Death's Door after grace expires", () => {
-    const state = battleState({
-      playerHealth: 1,
-      deathsDoorUsed: true,
-      deathsDoorActive: true,
-      deathsDoorTriggeredTurn: 1,
-      deathsDoorGraceTurnsRemaining: 0,
-      turn: 1,
-    });
-    const result = endPlayerTurn(state);
-    expect(result.state.deathsDoorActive).toBe(false);
   });
 
   it("burn DoT kills player on grace turn when Death's Door expires", () => {

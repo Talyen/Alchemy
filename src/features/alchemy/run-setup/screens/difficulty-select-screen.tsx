@@ -28,6 +28,7 @@ import {
   chooserHeroArtWidthClass,
   chooserHeroPaddedRowShellWidthClass,
   chooserHeroPaddedTileClass,
+  chooserLockedSurfaceClass,
   chooserRowGapClass,
   sectionTitleClass,
   tiltSurfaceSelectedRingClass,
@@ -109,7 +110,7 @@ function DifficultyCard({
         className={cn(
           "group relative flex h-full w-full min-w-0 flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6 text-center shadow-md transition-all disabled:cursor-default",
           !locked && cardInteractiveGlowClass,
-          locked && "border-muted/40 grayscale",
+          locked && chooserLockedSurfaceClass,
           isSelected && tiltSurfaceSelectedRingClass,
         )}
       >

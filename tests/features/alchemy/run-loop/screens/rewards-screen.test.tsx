@@ -3,7 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RewardsScreen } from "@/features/alchemy/run-loop/screens/rewards-screen";
-import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { createEmptyRewardState } from "@/lib/active-run-session";
 import type { BattleCard } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { getRunSessionStoreView, resetRunSessionSlice } from "../../../../helpers/run-domain-store-test";

@@ -105,6 +105,8 @@ export interface ActiveRunData {
   labyrinthMap: LabyrinthMap | null;
   labyrinthPendingNode: LabyrinthNodePosition | null;
   wildwoodDraft: WildwoodDraftState | null;
+  /** Campaign/labyrinth Wildcard pick set; null when the starter draft is finished or unused. */
+  starterDraftChoices: BattleCard[] | null;
   activeCombat: ActiveCombatData | null;
   runTalentXP: TalentXP;
   runMaterialsEarned: MaterialInventory;

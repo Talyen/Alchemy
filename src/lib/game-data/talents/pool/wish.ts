@@ -74,7 +74,7 @@ export const wishTalents: TalentDefinition[] = [
     name: "Golden Opportunity",
     description: "Gain 2 Gold when you Wish",
     icon: Coins,
-    effects: [setEffect("goldOnWishAmount", 2)],
+    effects: [addEffect("goldOnWish", 2)],
   },
   {
     id: "wish-desperate",
@@ -82,7 +82,6 @@ export const wishTalents: TalentDefinition[] = [
     name: "Desperate Wish",
     description: "Gain 6 Block when you Wish below 30% Health",
     icon: HeartCrack,
-    effects: [setEffect("wishBlockBelowHealthPct", 30)],
+    effects: [setEffect("wishBlockBelowHealthPct", 30), setEffect("wishBlockAmount", 6)],
   },
-  // --- Poison ---
 ];

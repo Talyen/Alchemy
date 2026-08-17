@@ -125,6 +125,10 @@ export function applyPlayerStatusEffect(
   return addPlayerStatus(state, effect.status, amount);
 }
 
+export function shouldBlockPreventStunBuildup(state: BattleState): boolean {
+  return state.talentEffects.blockPreventsStun && state.playerStatuses.block > 0;
+}
+
 export function applyPlayerDamageStatuses(
   state: BattleState,
   effect: { damageType: DamageType },
@@ -132,6 +136,7 @@ export function applyPlayerDamageStatuses(
 ): BattleState {
   if (actualDamage <= 0) return state;
   const statusType = effect.damageType;
+  if (statusType === "stun" && shouldBlockPreventStunBuildup(state)) return state;
   if (
     statusType === "burn" ||
     statusType === "poison" ||

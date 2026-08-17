@@ -8,6 +8,7 @@ import {
   setDestinationIndexInAct,
   setCompletedDestinations,
   clearMysteryVisitState,
+  setCorruptionResult,
   createDraftRunRandomSource,
   abandonCorruptionDestinationVisit,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -109,6 +110,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
       (draft) => {
         setRoomsEncountered(draft, (p) => p + 1);
         clearMysteryVisitState(draft);
+        setCorruptionResult(draft, null);
         return deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH;
       },
       {

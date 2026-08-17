@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  corruptCard,
-  corruptDeckCard,
-  getEditableCorruptionTargets,
-  isSpecialCorruptionCard,
-} from "@/features/alchemy/run-loop/corruption";
+import { corruptCard, corruptDeckCard, getEditableCorruptionTargets, isSpecialCorruptionCard } from "@/lib/corruption";
 import { getCardDisplayTitle } from "@/features/alchemy/shared/ui/card-description-ui";
 import type { BattleCard } from "@/lib/game-data";
 import { makeTestCard } from "../../../fixtures/cards";

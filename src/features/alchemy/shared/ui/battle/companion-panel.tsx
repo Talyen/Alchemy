@@ -1,14 +1,13 @@
 // Companion card panel and tooltip for active battle allies.
 // Depends on companion game-data types, card styling, and tilt utilities.
 // Used by the battle actor section.
-import type { CompanionDefinition } from "@/lib/game-data";
+import { formatCompanionTurnStartLine, type CompanionDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { battleCompanionWidthClass, cardSurfaceClass } from "../../config";
 import { TooltipHeader } from "../tooltip-panel";
 import { PortaledTooltip } from "../portaled-tooltip";
 import { useHoverVisible } from "../use-hover-visible";
-import { formatCompanionTurnStartLine } from "@/features/alchemy/shared/utils";
 import { DescriptionLines } from "../card-description-ui";
 import { TiltSurface } from "../tilt-surface";
 

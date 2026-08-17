@@ -7,13 +7,8 @@ import type { LucideIcon } from "lucide-react";
 import type { KeywordId } from "../types";
 import type { TalentEffectManifest } from "../talent-effect-manifest";
 
-const TALENTS_CONFIG = {
-  PLACEHOLDER_DESCRIPTION: "Placeholder talent (NYI)",
-} as const;
-
 // A talent definition — ID, keyword, optional short name for UI tooltips, and
-// description (rules text). New talents can be added by simply appending to
-// the talentPool array below.
+// description (rules text). Pool entries live in talents/pool/{keyword}.ts.
 export interface TalentDefinition {
   id: string;
   keywordId: KeywordId;
@@ -59,22 +54,3 @@ export function setEffect<K extends keyof TalentEffectManifest>(
 }
 
 export type UnlockedTalents = Partial<Record<KeywordId, string[]>>;
-
-export function placeholderTalents(
-  keywordId: KeywordId,
-  idPrefix: string,
-  start: number,
-  end: number,
-): TalentDefinition[] {
-  return Array.from({ length: end - start + 1 }, (_, index) => {
-    return {
-      id: `${idPrefix}-${start + index}`,
-      keywordId,
-      name: `Placeholder ${index + 1}`,
-      description: TALENTS_CONFIG.PLACEHOLDER_DESCRIPTION,
-      isPlaceholder: true,
-    };
-  });
-}
-
-// The full pool of unlockable talents. Most keywords have 10 talents for a 2x5 or equivalent grid.

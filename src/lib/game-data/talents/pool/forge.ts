@@ -95,6 +95,4 @@ export const forgeTalents: TalentDefinition[] = [
     icon: Castle,
     effects: [setEffect("forgeBlockThreshold", 6), setEffect("forgeBlockAmount", 10)],
   },
-
-  // --- Armor ---
 ];

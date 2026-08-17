@@ -45,7 +45,8 @@ import {
   type KeywordId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 
-import type { CollectionTab, Destination } from "../types";
+import type { Destination } from "@/lib/routing";
+import type { CollectionTab } from "../types";
 
 // Collection tabs drive the collection navigation labels and icons.
 export const collectionTabMeta: Array<{ id: CollectionTab; label: string; icon: LucideIcon }> = [

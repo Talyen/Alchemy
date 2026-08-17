@@ -2,8 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useRenderedScreenTransition } from "@/app/use-app-navigation";
-import type { Screen } from "@/features/alchemy/shared/types";
-import { ROUTE_SCREENS } from "@/lib/routing";
+import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { PAGE_EXIT_MS } from "@/lib/game-constants";
 
 describe("useRenderedScreenTransition", () => {

@@ -84,6 +84,4 @@ export const stunTalents: TalentDefinition[] = [
     icon: PlugZap,
     effects: [setEffect("manaOnStun", 1)],
   },
-
-  // --- Block ---
 ];

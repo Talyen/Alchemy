@@ -18,34 +18,35 @@ test.describe("Progression Locks", () => {
       // 2. Verify Talents button is locked and shows tooltip on hover
       const talentsBtn = page.getByRole("button", { name: "Talents" });
       await expect(talentsBtn).toBeVisible();
-      await expect(talentsBtn).toHaveClass(/(?<!\S)opacity-50(?!\S)/);
+      await expect(talentsBtn).toHaveAttribute("aria-disabled", "true");
       await talentsBtn.hover();
       await expect(page.getByText("Finish a Run as the Knight to unlock")).toBeVisible();
 
-      // Clicking it does not navigate to Talents
-      await talentsBtn.click({ force: true });
+      await page.mouse.move(0, 0);
+      await talentsBtn.click();
       await expect(page.getByText("Choose Your Adventure")).toBeHidden();
       await expect(page.getByRole("heading", { name: "Talents" })).toBeHidden();
 
       // 3. Verify Homestead button is locked and shows tooltip on hover
       const homesteadBtn = page.getByRole("button", { name: "Homestead" });
       await expect(homesteadBtn).toBeVisible();
-      await expect(homesteadBtn).toHaveClass(/(?<!\S)opacity-50(?!\S)/);
+      await expect(homesteadBtn).toHaveAttribute("aria-disabled", "true");
       await homesteadBtn.hover();
       await expect(page.getByText("Finish a Run as the Knight to unlock")).toBeVisible();
 
-      // Clicking it does not navigate to Homestead
-      await homesteadBtn.click({ force: true });
+      await page.mouse.move(0, 0);
+      await homesteadBtn.click();
       await expect(page.getByRole("heading", { name: "Homestead" })).toBeHidden();
 
       // 4. Verify Armory button is locked and shows tooltip on hover
       const armoryBtn = page.getByRole("button", { name: "Armory" });
       await expect(armoryBtn).toBeVisible();
-      await expect(armoryBtn).toHaveClass(/(?<!\S)opacity-50(?!\S)/);
+      await expect(armoryBtn).toHaveAttribute("aria-disabled", "true");
       await armoryBtn.hover();
       await expect(page.getByText("Find Gear to unlock")).toBeVisible();
 
-      await armoryBtn.click({ force: true });
+      await page.mouse.move(0, 0);
+      await armoryBtn.click();
       await expect(page.getByRole("heading", { name: "Armory" })).toBeHidden();
 
       // 5. Click Play and verify Labyrinth and Wildwood are locked
@@ -53,6 +54,7 @@ test.describe("Progression Locks", () => {
       await expect(page.getByRole("heading", { name: "Choose Your Adventure" })).toBeVisible();
 
       const labyrinthCard = page.getByRole("button", { name: /The Labyrinth/ });
+      await expect(labyrinthCard).toHaveAttribute("aria-disabled", "true");
       await labyrinthCard.hover();
       await expect(page.getByText("Finish a Run as the Rogue to unlock")).toBeVisible();
       // The lock tooltip must anchor to the hovered tile — not the last tile in
@@ -65,6 +67,7 @@ test.describe("Progression Locks", () => {
       expect(Math.abs(labyrinthTooltipCenterX - labyrinthCenterX)).toBeLessThanOrEqual(labyrinthBox.width);
 
       const wildwoodCard = page.getByRole("button", { name: /Wildwood Draft/ });
+      await expect(wildwoodCard).toHaveAttribute("aria-disabled", "true");
       await wildwoodCard.hover();
       await expect(page.getByText("Finish a Run as the Ranger to unlock")).toBeVisible();
 
@@ -78,10 +81,12 @@ test.describe("Progression Locks", () => {
       await expect(knightCard).toBeVisible();
       await expect(rogueCard).toBeVisible();
 
+      await expect(rogueCard).toHaveAttribute("aria-disabled", "true");
       await rogueCard.hover();
       await expect(page.getByText("Finish a Run as the Knight to unlock")).toBeVisible();
 
-      await rogueCard.click({ force: true });
+      await page.mouse.move(0, 0);
+      await rogueCard.click();
       await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
 
       await knightCard.click();

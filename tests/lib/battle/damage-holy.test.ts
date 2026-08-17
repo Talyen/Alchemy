@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it } from "vitest";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
 import { applyDamageBlock } from "@/lib/battle/damage-rider-leech";
 import type { BattleCardEffect } from "@/lib/game-data";
@@ -9,10 +9,6 @@ import {
   defaultTalentEffects,
 } from "../../fixtures/default-battle-state";
 import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
 
 describe("computeBaseDamage — holy damage", () => {
   it("scales holy damage with gold when holyGoldPercent is active", () => {
@@ -31,10 +27,10 @@ describe("computeBaseDamage — holy damage", () => {
     expect(result.enemyHealth).toBeLessThan(30);
   });
 
-  it("scales holy damage with block when holyBlockPercent is active", () => {
+  it("scales holy damage with block when blockToHolyDamage is active", () => {
     const state = patchBattleState({
       playerStatuses: defaultPlayerStatusValues({ block: 10 }),
-      talentEffects: { ...defaultTalentEffects, holyBlockPercent: 20 },
+      talentEffects: { ...defaultTalentEffects, blockToHolyDamage: true },
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
     const texts = makeCombatTexts();
@@ -83,13 +79,9 @@ describe("applyHolyDamageRiders", () => {
 
   it("grants block from holy damage with holyBlockPercentFromDamage", () => {
     const state = patchBattleState({
-      gold: 50,
-      talentEffects: {
-        ...patchBattleState().talentEffects,
-        holyBlockPercentFromDamage: 25,
-        holyGoldPercent: 10,
-        holyLifestealPercent: 0,
-      },
+      playerStatuses: defaultPlayerStatusValues({ block: 0 }),
+      talentEffects: { ...defaultTalentEffects, holyBlockPercentFromDamage: 50 },
+      rng: () => 0.5,
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
     const texts = makeCombatTexts();
@@ -99,7 +91,7 @@ describe("applyHolyDamageRiders", () => {
       card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
       texts,
     );
-    expect(result.playerStatuses.block).toBeGreaterThan(0);
+    expect(result.playerStatuses.block).toBe(5);
   });
 
   it("reports the full block gained in combat text when flatBlockGained is active", () => {
@@ -117,8 +109,8 @@ describe("applyHolyDamageRiders", () => {
   });
 
   it("applies burn on holy damage with holyBurnChance", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.01);
     const state = patchBattleState({
+      rng: () => 0.01,
       talentEffects: { ...defaultTalentEffects, holyBurnChance: 50, holyLifestealPercent: 0, holyGoldPercent: 0 },
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 10)] });

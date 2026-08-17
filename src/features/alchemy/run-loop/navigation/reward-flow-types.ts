@@ -2,8 +2,9 @@ import type { BattleState } from "@/lib/battle";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { GearInstance } from "@/lib/gear";
-import type { CONSTANTS, Destination, Screen } from "../../shared/types";
-import type { CardRewardState, RewardState } from "@/lib/active-run-session/reward-types";
+import type { CardRewardState, RewardState } from "@/lib/active-run-session";
+import type { Destination } from "@/lib/routing";
+import type { CONSTANTS } from "../../shared/types";
 
 export type FinalizeRewardRoute = (typeof CONSTANTS.REWARD_ROUTES)[keyof typeof CONSTANTS.REWARD_ROUTES];
 
@@ -19,15 +20,6 @@ export interface FinalizeRewardResult {
   nextRewardState: CardRewardState;
   clearCompanionRewardCards: boolean;
   route: FinalizeRewardRoute;
-}
-
-export interface RewardRouteDeps {
-  navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
-  completeRunVictory: (materials: MaterialInventory, onRenderedScreenCommit?: () => void) => void;
-  handleActComplete: (materials: MaterialInventory) => void;
-  labyrinthClearNode: () => void;
-  setCompanionRewardCards: (cards: BattleCard[] | null) => void;
-  setRewardState: (state: RewardState) => void;
 }
 
 export interface BossRewardInput {

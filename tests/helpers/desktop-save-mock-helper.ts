@@ -23,16 +23,30 @@ function createMockAlchemyDesktop(options: MockDesktopOptions = {}) {
   };
 }
 
+function assignWindow(partial: object) {
+  const globalWithWindow = globalThis as unknown as { window?: object };
+  globalWithWindow.window = partial as Window;
+  return globalWithWindow;
+}
+
+export function teardownMockWindow() {
+  const globalWithWindow = globalThis as unknown as { window?: object };
+  delete globalWithWindow.window;
+}
+
+export function setupMockWindowBrowser(localStorage: Storage) {
+  assignWindow({ localStorage });
+}
+
 export function setupMockWindowDesktop(options: MockDesktopOptions = {}) {
   const mockDesktop = createMockAlchemyDesktop(options);
-  const globalWithWindow = globalThis as unknown as { window?: object };
-  globalWithWindow.window = {
+  assignWindow({
     localStorage: {
       getItem: () => null,
       setItem: () => undefined,
       removeItem: () => undefined,
     } as unknown as Storage,
     alchemyDesktop: mockDesktop,
-  } as unknown as Window;
+  });
   return mockDesktop;
 }

@@ -1,18 +1,14 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it } from "vitest";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
 import type { BattleCardEffect } from "@/lib/game-data";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultTalentEffects } from "../../fixtures/default-battle-state";
 import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
 describe("dealDamageToEnemy — lifesteal", () => {
   it("heals player when effect has lifesteal", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
+      rng: () => 0.99,
       playerHealth: 20,
       gold: 50,
       talentEffects: { ...defaultTalentEffects, healMultiplier: 0.5 },

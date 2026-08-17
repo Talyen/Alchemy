@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { GEAR_EFFECT_KEYS } from "@/lib/gear";
+import { LEGACY_MANABURN_PER_CRYSTAL_ENABLED, MANABURN_DAMAGE_PERCENT } from "@/lib/game-constants";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
 
 describe("normalizePersistedBattleState", () => {
@@ -21,7 +22,7 @@ describe("normalizePersistedBattleState", () => {
       if (key === "flatPhysicalDamage") continue;
       expect(normalized.gearEffects[key]).toBe(0);
     }
-    expect(normalized.flags.firstPhysicalCardFreeUsed).toBe(false);
+    expect(normalized.flags.firstHolyCardFreeUsed).toBe(false);
   });
 
   it("sanitizes persisted enemy traits", () => {
@@ -66,5 +67,67 @@ describe("normalizePersistedBattleState", () => {
     expect(normalized.playerStatuses.block).toBe(4);
     expect(normalized.playerStatuses.armor).toBe(0);
     expect(normalized.playerStatuses.stun).toBe(0);
+  });
+
+  it("coerces a legacy healthThresholdArmor object into an array", () => {
+    const saved = {
+      ...defaultBattleState(),
+      talentEffects: {
+        ...defaultBattleState().talentEffects,
+        healthThresholdArmor: { threshold: 50, amount: 5 },
+      } as ReturnType<typeof defaultBattleState>["talentEffects"],
+    };
+
+    const normalized = normalizePersistedBattleState(saved);
+    expect(normalized.talentEffects.healthThresholdArmor).toEqual([{ threshold: 50, amount: 5 }]);
+  });
+
+  it("migrates legacy talent snapshots onto co-located magnitude fields", () => {
+    const defaults = defaultBattleState().talentEffects;
+    const {
+      bleedExecuteMultiplier: _bleedExecuteMultiplier,
+      wishBlockAmount: _wishBlockAmount,
+      firstBurnCardBonusMultiplier: _firstBurnCardBonusMultiplier,
+      ...legacyFields
+    } = defaults;
+    const normalized = normalizePersistedBattleState({
+      talentEffects: {
+        ...legacyFields,
+        firstBurnCardDoubled: true,
+        bleedExecuteThreshold: 30,
+        wishBlockBelowHealthPct: 30,
+        burnDamagePerManaCrystal: LEGACY_MANABURN_PER_CRYSTAL_ENABLED,
+      } as ReturnType<typeof defaultBattleState>["talentEffects"] & { firstBurnCardDoubled: boolean },
+    });
+
+    expect(normalized.talentEffects.firstBurnCardBonusMultiplier).toBe(1.5);
+    expect(normalized.talentEffects.bleedExecuteMultiplier).toBe(2);
+    expect(normalized.talentEffects.wishBlockAmount).toBe(6);
+    expect(normalized.talentEffects.burnDamagePerManaCrystal).toBe(MANABURN_DAMAGE_PERCENT);
+  });
+
+  it("does not rewrite an already-percent Manaburn snapshot", () => {
+    const defaults = defaultBattleState().talentEffects;
+    const normalized = normalizePersistedBattleState({
+      talentEffects: {
+        ...defaults,
+        burnDamagePerManaCrystal: MANABURN_DAMAGE_PERCENT,
+      },
+    });
+
+    expect(normalized.talentEffects.burnDamagePerManaCrystal).toBe(MANABURN_DAMAGE_PERCENT);
+  });
+
+  it("migrates receiveHalfFreezeBuildUp onto receiveHalfFreezeDamage", () => {
+    const defaults = defaultBattleState().talentEffects;
+    const normalized = normalizePersistedBattleState({
+      talentEffects: {
+        ...defaults,
+        receiveHalfFreezeDamage: false,
+        receiveHalfFreezeBuildUp: true,
+      } as ReturnType<typeof defaultBattleState>["talentEffects"] & { receiveHalfFreezeBuildUp: boolean },
+    });
+
+    expect(normalized.talentEffects.receiveHalfFreezeDamage).toBe(true);
   });
 });

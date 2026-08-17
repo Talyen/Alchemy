@@ -2,15 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   computeVictoryRewardState,
   computeVictoryRewards,
-  commitVictoryRewards,
-  type CommitVictoryRewardsDeps,
   type VictoryRewardsInput,
   type VictoryRewardsResult,
 } from "@/features/alchemy/run-loop/navigation/victory-flow";
-import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { commitVictoryRewards, type CommitVictoryRewardsDeps } from "@/features/alchemy/run-loop/run/run-flow-victory";
+import { createEmptyRewardState } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
-import type { Destination } from "@/features/alchemy/shared/types";
+import type { Destination } from "@/lib/routing";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { resetRunDomainStore } from "../../../../helpers/gameplay-store-test";

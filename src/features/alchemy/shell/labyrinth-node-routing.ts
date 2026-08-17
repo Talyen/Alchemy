@@ -1,7 +1,8 @@
 // Labyrinth map node entry: apply modifiers, run screen init, then navigate.
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
 import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
-import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
+import { CONSTANTS } from "@/features/alchemy/shared/types";
+import type { Screen } from "@/lib/routing";
 import type { LabyrinthNodeHandlers } from "./use-labyrinth-controller";
 import type { ShopActions } from "@/features/alchemy/run-loop/shop/shop-action-types";
 

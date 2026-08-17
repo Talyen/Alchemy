@@ -4,9 +4,9 @@ import {
   setHasActiveBattle,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { useBattlePresentationStore } from "../battle/battle-presentation-store";
-import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
+import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { CONSTANTS } from "@/features/alchemy/shared/types";
+import type { Screen } from "@/lib/routing";
 
 export interface RunTeardownDeps {
   cancelPending: () => void;
@@ -26,7 +26,7 @@ export function createRunTeardown(deps: RunTeardownDeps) {
       {
         afterCommit: () => {
           deps.cancelPending();
-          useBattlePresentationStore.getState().resetPresentation();
+          clearBattlePresentationUi();
           deps.clearCardHover();
           deps.navigateTo(CONSTANTS.SCREENS.MENU, () => {
             teardownRun();

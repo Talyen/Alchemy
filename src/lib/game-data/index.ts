@@ -2,7 +2,7 @@
 // Depends on the game-data submodules only.
 // Feature code should import through this barrel instead of reaching into submodule paths.
 export * from "./types";
-export type { TalentEffectManifest } from "./talent-effect-manifest";
+export type { TalentEffectManifest, HealthThresholdBonus } from "./talent-effect-manifest";
 export * from "./effects";
 export * from "./card-description";
 export * from "./assets";

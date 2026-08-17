@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addForgeToPlayer, applyStunForgeTalent } from "@/lib/battle/status-forge";
+import { addForgeToPlayer } from "@/lib/battle/status-forge";
 import { applyPlayerStatusEffect } from "@/lib/battle/status-player";
 import { makeCombatTexts as makeTexts, makeTestBattleState } from "../../fixtures/battle";
 import { defaultEnemyMitigation } from "../../fixtures/default-battle-state";
@@ -108,21 +108,5 @@ describe("addForgeToPlayer", () => {
     const state = makeTestBattleState();
     const result = addForgeToPlayer(state, 0);
     expect(result).toBe(state);
-  });
-});
-
-describe("applyStunForgeTalent", () => {
-  it("grants forge when forgeOnStun is configured", () => {
-    const state = makeTestBattleState({
-      talentEffects: { ...makeTestBattleState().talentEffects, forgeOnStun: 2 },
-    });
-    const texts = makeTexts();
-    const result = applyStunForgeTalent(state, texts);
-    expect(result.playerStatuses.forge).toBe(2);
-  });
-
-  it("no-ops when forgeOnStun is zero", () => {
-    const state = makeTestBattleState();
-    expect(applyStunForgeTalent(state)).toBe(state);
   });
 });

@@ -48,7 +48,7 @@ export const companionTalents: TalentDefinition[] = [
     id: "companion-tame",
     keywordId: "companion",
     name: "Tame",
-    description: "Companions deal 1 additional damage of their native type each turn",
+    description: "Companions deal 1 additional damage each turn",
     icon: Hand,
     effects: [addEffect("companionDamage", 1)],
   },

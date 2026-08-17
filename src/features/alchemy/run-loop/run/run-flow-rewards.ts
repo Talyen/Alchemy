@@ -1,3 +1,4 @@
+import { current } from "immer";
 import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   beginRewardClaim,
@@ -9,17 +10,63 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-command";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setCompanionRewardCards, setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { useUiStore } from "../../shared/stores/ui-store";
 import { playUISound } from "@/lib/audio";
 import {
   finalizeRewardState,
   getActiveRewardModifiersForContentSystem,
   shouldGrantAlchemistReward,
-  executeRewardRouteTransition,
 } from "../navigation/reward-flow";
+import type { FinalizeRewardResult } from "../navigation/reward-flow-types";
 import { applyAlchemistPotion, applyRewardSelection } from "./run-destination-handlers";
 import { CONSTANTS } from "../../shared/types";
 import type { CompleteRunVictory, HandleActComplete, RunFlowHandlerDeps } from "./run-flow-handler-deps";
+import type { BattleCard } from "@/lib/game-data";
+import type { MaterialInventory } from "@/lib/homestead/types";
+import type { CardRewardState, RewardState } from "@/lib/active-run-session";
+import type { Screen } from "@/lib/routing";
+
+export interface RewardRouteDeps {
+  navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
+  completeRunVictory: (materials: MaterialInventory, onRenderedScreenCommit?: () => void) => void;
+  handleActComplete: (materials: MaterialInventory) => void;
+  labyrinthClearNode: () => void;
+  setCompanionRewardCards: (cards: BattleCard[] | null) => void;
+  setRewardState: (state: RewardState) => void;
+}
+
+export function executeRewardRouteTransition(
+  route: FinalizeRewardResult["route"],
+  materials: MaterialInventory,
+  nextRewardState: CardRewardState,
+  clearCompanion: boolean,
+  deps: RewardRouteDeps,
+) {
+  const setReward = () => {
+    deps.setRewardState(nextRewardState);
+    if (clearCompanion) deps.setCompanionRewardCards(null);
+  };
+  switch (route) {
+    case CONSTANTS.REWARD_ROUTES.COMPANION_REWARD:
+      deps.navigateTo(CONSTANTS.SCREENS.REWARDS, setReward);
+      break;
+    case CONSTANTS.REWARD_ROUTES.LABYRINTH_VICTORY:
+      deps.completeRunVictory(materials, setReward);
+      break;
+    case CONSTANTS.REWARD_ROUTES.WILDWOOD_VICTORY:
+      deps.completeRunVictory(materials, setReward);
+      break;
+    case CONSTANTS.REWARD_ROUTES.LABYRINTH_MAP:
+      deps.labyrinthClearNode();
+      deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP, setReward);
+      break;
+    case CONSTANTS.REWARD_ROUTES.ACT_COMPLETE:
+      deps.handleActComplete(materials);
+      break;
+    case CONSTANTS.REWARD_ROUTES.DESTINATION:
+      deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, setReward);
+      break;
+  }
+}
 
 const commandSetRewardState = createRunSessionCommand(setRewardState);
 const commandSetCompanionRewardCards = createRunSessionCommand(setCompanionRewardCards);
@@ -93,7 +140,7 @@ export function createRewardHandlers(
           };
 
           if (result.selectedChoice) playUISound("talentUnlock");
-          useUiStore.getState().clearCardHover();
+          deps.actions.clearCardHover();
           if (isWildwood && result.route !== CONSTANTS.REWARD_ROUTES.COMPANION_REWARD) {
             deps.actions.wildwoodRewardComplete(settleClaimSurface);
             return;
@@ -138,4 +185,3 @@ export function createRewardHandlers(
     finishRewards,
   };
 }
-import { current } from "immer";

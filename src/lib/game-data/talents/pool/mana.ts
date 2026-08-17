@@ -1,5 +1,6 @@
 // Talent definitions for keyword: mana.
 import { Droplets, ShieldPlus, Atom, Sparkles, Flame, Snowflake, Bomb, PawPrint, ShieldHalf, Wand } from "lucide-react";
+import { MANABURN_DAMAGE_PERCENT } from "@/lib/game-constants";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -40,9 +41,9 @@ export const manaTalents: TalentDefinition[] = [
     id: "mana-manaburn",
     keywordId: "mana",
     name: "Manaburn",
-    description: "Burn damage is increased by 35% of your Mana Crystals",
+    description: `Burn damage is increased by ${MANABURN_DAMAGE_PERCENT}% of your Mana Crystals`,
     icon: Flame,
-    effects: [setEffect("burnDamagePerManaCrystal", 1)],
+    effects: [setEffect("burnDamagePerManaCrystal", MANABURN_DAMAGE_PERCENT)],
   },
   {
     id: "mana-arcane-frost",

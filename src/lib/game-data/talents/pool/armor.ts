@@ -66,7 +66,7 @@ export const armorTalents: TalentDefinition[] = [
     name: "Steadfast",
     description: "When Health falls below 50%, gain 5 Armor",
     icon: Anchor,
-    effects: [setEffect("healthThresholdArmor", { threshold: 50, amount: 5 })],
+    effects: [setEffect("healthThresholdArmor", [{ threshold: 50, amount: 5 }])],
   },
   {
     id: "armor-cleanse-threshold",
@@ -84,6 +84,4 @@ export const armorTalents: TalentDefinition[] = [
     icon: Plus,
     effects: [addEffect("flatArmorAmount", 1)],
   },
-
-  // --- Health ---
 ];

@@ -36,11 +36,11 @@ Hero identity is the Collection-style tab ring. There is no hero portrait and no
 
 ### Read paths
 
-- **`Armory lock`** — computed at the app layer: `useIsArmoryLocked() = !useHasAnyOwnedGear()` (in `app-overlays.tsx`); `MenuScreen` receives a `locked` prop, it does not read the store.
+- **`Armory lock`** — computed from gear ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store.
 - **`ArmoryScreen`** — reads `inventories`, `loadouts`, and `craftingCurrencies` via `useGearArmorySlice`.
 - **`useArmoryController`** — facade hook that bundles the read-only slice plus the mutation callbacks.
 - **Battle** — `computeGearManifest(characterId, inventory, loadouts)` is called in `battle-init.ts` and produces a flat `GearEffectManifest` copied into `BattleState.gearEffects` at battle start.
-- **Run start** — `content-system-navigation.ts` snapshots `computeGearManifest.maxHealth` into `RunStartSnapshot.gearMaxHealthBonus`.
+- **Run start** — `content-system-run-init.ts` snapshots `computeGearManifest.maxHealth` into `RunStartSnapshot.gearMaxHealthBonus`.
 
 ### Write paths
 
@@ -87,7 +87,7 @@ Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alche
 
 Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md) and `src/lib/validation/metadata.ts` own the supported floor and current version. Gear shape changes follow that migration contract: safe additive fields may use schema defaults, while transforms require a versioned migration.
 
-`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes through `subscribeAlchemyPersistence`, which combines settings changes with the committed gameplay-session signal (run domain, transient/battle state, run profile, profile, and gear); changes are debounced before writing. `buildAlchemySaveDataFromStores` assembles the snapshot through `encodeAlchemyPersistenceFields`. The gear mutation callbacks in `useArmoryController` also call `flushAlchemySaveNow` after mutations during an active run.
+`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes through `subscribeAlchemyPersistence`, which combines settings changes with the committed gameplay-session signal (run domain, transient/battle state, run profile, profile, and gear); changes are debounced before writing. `buildAlchemySaveDataFromStores` assembles the snapshot through `encodeAlchemyPersistenceFields`. The gear mutation callbacks in `useArmoryController` also call `flushSaveAfterGearMutation` (lifecycle port) after mutations during an active run.
 
 ## Tests
 

@@ -12,6 +12,7 @@ type SessionStore = Pick<
   | "setRewardState"
   | "setCompanionRewardCards"
   | "setWildwoodDraft"
+  | "setStarterDraftChoices"
   | "setShopState"
   | "setAlchemistState"
   | "setTrinketShopState"
@@ -32,6 +33,7 @@ export function restoreRunSession(store: SessionStore, decoded: DecodedRunResume
   store.setActiveLabyrinthRewardModifiers(decoded.activeLabyrinthRewardModifiers);
   store.setActiveLabyrinthPendingNode(decoded.labyrinthPendingNode);
   store.setWildwoodDraft(decoded.wildwoodDraft);
+  store.setStarterDraftChoices(decoded.starterDraftChoices);
   if (decoded.rewardState) store.setRewardState(decoded.rewardState);
   store.setCompanionRewardCards(decoded.companionRewardCards);
   if (decoded.shopState) store.setShopState(decoded.shopState);

@@ -37,6 +37,7 @@ import {
   useAutosaveAllowed,
   useBondedCompanions,
   useHomesteadEffects,
+  useTalentEffects,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-session-model";
@@ -47,7 +48,7 @@ import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-
 type GameMenuState = ReturnType<typeof useGameMenuState>;
 
 async function wipeUnsupportedSaveAndReload() {
-  const cleared = await clearAlchemySaveData();
+  const cleared = await clearAlchemySaveData({ keepWritesDisabled: true });
   if (!cleared) {
     throw new Error("Save data could not be cleared");
   }
@@ -97,15 +98,16 @@ function AppMainContent({
   const dev = useDevShortcuts(run);
 
   const homesteadEffects = useHomesteadEffects();
+  const talentEffects = useTalentEffects();
   const homesteadBondedCompanions = useBondedCompanions();
   const cardDescriptionContext = useMemo(
     () => ({
-      flatPhysicalDamage: homesteadEffects.flatPhysicalDamage,
-      companionDamage: homesteadEffects.companionDamage,
+      flatPhysicalDamage: homesteadEffects.flatPhysicalDamage + talentEffects.flatPhysicalDamage,
+      companionDamage: homesteadEffects.companionDamage + talentEffects.companionDamage,
       companionBondLevels: homesteadBondedCompanions,
-      potionPotency: 1 + homesteadEffects.potionPotency,
+      potionPotency: talentEffects.potionPotency + homesteadEffects.potionPotency,
     }),
-    [homesteadBondedCompanions, homesteadEffects],
+    [homesteadBondedCompanions, homesteadEffects, talentEffects],
   );
 
   const { particleColors, particleAlphaMultiplier } = getScreenParticleConfig(renderedScreen, false);
@@ -137,6 +139,7 @@ function AppMainContent({
             onClearSaveData={dev.clearSaveData}
             onUnlockAllDevMode={dev.unlockAllDevMode}
             onBackFromOptions={nav.backFromOptions}
+            gameMenuOpen={gameMenu.gameMenuOpen}
           />
         </AppScreenChromeProvider>
       </CardDescriptionProvider>
@@ -219,8 +222,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 
   const gameMenu = useGameMenuState();
   const run = useAlchemyRunController({
-    autoEndTurn: settings.autoEndTurn,
-    gameMenuOpen: gameMenu.gameMenuOpen,
     onMarkDifficultyCompleted: handleMarkDifficultyCompleted,
   });
 

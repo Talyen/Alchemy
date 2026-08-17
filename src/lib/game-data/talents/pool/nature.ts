@@ -34,7 +34,7 @@ export const natureTalents: TalentDefinition[] = [
     name: "Verdant Cycle",
     description: "Nature damage has a 10% chance to Leech",
     icon: RotateCw,
-    effects: [setEffect("natureLeechChance", 10)],
+    effects: [addEffect("natureLeechChance", 10)],
   },
   {
     id: "nature-ecosystem",

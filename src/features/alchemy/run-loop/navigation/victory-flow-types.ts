@@ -4,9 +4,9 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-import type { Destination } from "@/features/alchemy/shared/types";
+import type { RewardState } from "@/lib/active-run-session";
+import type { Destination } from "@/lib/routing";
 import type { DestinationOfferState } from "@/features/alchemy/shared/run-flow/destination-flow";
-import type { RewardState } from "./reward-flow";
 
 export interface VictoryRewardsInput {
   characterId: CharacterId;

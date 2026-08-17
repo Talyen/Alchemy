@@ -358,7 +358,7 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
     expect(transition.resultState.gearEffects.flatPhysicalDamage).toBe(2);
     expect(transition.resultState.gearEffects.flatStunDamage).toBe(0);
     expect(transition.resultState.flags.divineAegisTriggered).toBe(true);
-    expect(transition.resultState.flags.firstPhysicalCardFreeUsed).toBe(false);
+    expect(transition.resultState.flags.firstHolyCardFreeUsed).toBe(false);
   });
 
   it("preserves run deck array for unstarted run", () => {

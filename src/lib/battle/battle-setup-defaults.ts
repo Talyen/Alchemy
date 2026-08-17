@@ -50,7 +50,6 @@ function createEmptyEnemyStatuses(): EnemyStatusValues {
 
 function createInitialFlags(): CombatFlags {
   return {
-    firstPhysicalCardFreeUsed: false,
     firstHolyCardFreeUsed: false,
     firstBurnCardDoubledUsed: false,
     firstArmorCardDoubledUsed: false,

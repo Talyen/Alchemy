@@ -8,7 +8,13 @@ import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session
 
 vi.mock("@/features/alchemy/shared/stores/profile-store", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/profile-store")>();
-  return { ...actual, setDiscoveredCardIds: vi.fn(), setDiscoveredTrinketIds: vi.fn() };
+  return {
+    ...actual,
+    setDiscoveredCardIds: vi.fn(),
+    setDiscoveredTrinketIds: vi.fn(),
+    discoverCardIds: vi.fn(),
+    discoverTrinketIds: vi.fn(),
+  };
 });
 
 function minimalContext(overrides: { runDeck?: BattleCard[] } = {}) {
@@ -140,17 +146,10 @@ describe("applyMysteryEffect", () => {
   });
 
   it("chooseCard without tag can offer non-archery cards", () => {
-    let sawNonArchery = false;
-    for (let i = 0; i < 30; i++) {
-      const context = minimalContext();
-      applyMysteryEffect({ kind: "chooseCard" }, context);
-      const offered = context.setMysteryCardChoices.mock.calls[0][1];
-      if (offered.some((card: BattleCard) => !getCardKeywords(card).includes("archery"))) {
-        sawNonArchery = true;
-        break;
-      }
-    }
-    expect(sawNonArchery).toBe(true);
+    const context = minimalContext();
+    applyMysteryEffect({ kind: "chooseCard" }, context);
+    const offered = context.setMysteryCardChoices.mock.calls[0][1];
+    expect(offered.some((card: BattleCard) => !getCardKeywords(card).includes("archery"))).toBe(true);
   });
 
   it("chooseCard with unmatched tag falls back to the full offerable pool", () => {

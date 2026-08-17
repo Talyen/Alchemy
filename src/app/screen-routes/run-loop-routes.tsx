@@ -1,6 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
-import { useHeldWhile } from "@/features/alchemy/shared/ui/fade-presence";
-import { cardLibrary, trinketLibrary } from "@/features/alchemy/shared/config/game-data-catalog";
+import { useLayoutEffect, type ReactNode } from "react";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import {
   AlchemistShopScreen,
@@ -11,13 +9,13 @@ import {
   EquipmentShopScreen,
   LabyrinthMapScreen,
   MerchantShopScreen,
-  MysteryScreen,
-  MysteryScreenShell,
   RewardsScreen,
   TrinketShopScreen,
   WildwoodRemovalScreen,
 } from "@/features/alchemy/run-loop/screens";
 import { useBattleScreenRouteData } from "@/app/screen-routes/use-battle-screen-route-data";
+import { useBattlePlayback } from "@/app/screen-routes/use-battle-playback";
+import { MysteryScreenRoute } from "@/app/screen-routes/mystery-screen-route";
 import {
   useAlchemistScreenData,
   useCampfireScreenData,
@@ -25,7 +23,6 @@ import {
   useDestinationScreenData,
   useEquipmentShopScreenData,
   useLabyrinthMapScreenData,
-  useMysteryScreenData,
   useRewardsScreenData,
   useShopScreenData,
   useTrinketShopScreenData,
@@ -38,13 +35,29 @@ import type { BattleCommands, BattleRouteCtx, RunLoopCommands, RunLoopRouteCtx }
 function BattleScreenRoute({
   commands,
   onOpenBattleMenu,
+  gameMenuOpen,
 }: {
   commands: BattleCommands;
   onOpenBattleMenu: BattleRouteCtx["onOpenBattleMenu"];
+  gameMenuOpen: BattleRouteCtx["gameMenuOpen"];
 }) {
   const { characterId, heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
-  const { battleScreenData, hiddenHandCardKeys, cardTransferInProgress, playableHandCardKeys } =
-    useBattleScreenRouteData();
+  const { battleScreenData, hasActiveBattle } = useBattleScreenRouteData();
+  const { isAutoplayEnabled, toggleAutoplay, bind } = useBattlePlayback({
+    screen: commands.screen,
+    battleState: battleScreenData.battleState,
+    hasActiveBattle,
+    gameMenuOpen,
+    isAutoplayEnabled: commands.isAutoplayEnabled,
+    setAutoplayEnabled: commands.setAutoplayEnabled,
+    handleEndTurn: commands.handleEndTurn,
+    handleAutoplayCard: commands.handleAutoplayCard,
+    isCardPlayInProgress: commands.isCardPlayInProgress,
+  });
+  useLayoutEffect(() => {
+    commands.bindPlayback(bind);
+    return () => commands.bindPlayback(null);
+  }, [commands, bind]);
 
   return (
     <BattleScreen
@@ -60,11 +73,8 @@ function BattleScreenRoute({
       onWishChoice={commands.handleWishChoice}
       onSkipCombatDevMode={commands.skipCombatDevMode}
       onEndTurn={commands.handleEndTurn}
-      hiddenHandCardKeys={hiddenHandCardKeys}
-      cardTransferInProgress={cardTransferInProgress}
-      playableHandCardKeys={playableHandCardKeys}
-      isAutoplayEnabled={commands.isAutoplayEnabled}
-      onToggleAutoplay={commands.toggleAutoplay}
+      isAutoplayEnabled={isAutoplayEnabled}
+      onToggleAutoplay={toggleAutoplay}
     />
   );
 }
@@ -269,59 +279,6 @@ function EquipmentShopScreenRoute({
   );
 }
 
-function MysteryScreenRoute({
-  commands,
-  onOpenBattleMenu,
-}: {
-  commands: RunLoopCommands["mystery"];
-  onOpenBattleMenu: RunLoopRouteCtx["onOpenBattleMenu"];
-}) {
-  const r = useMysteryScreenData();
-  const { handleContinue } = commands;
-  const autoContinueAttemptedRef = useRef(false);
-  const isMysteryActive = Boolean(r.mysteryEvent);
-  const heldEvent = useHeldWhile(isMysteryActive, r.mysteryEvent);
-  const heldCardChoices = useHeldWhile(isMysteryActive, r.mysteryCardChoices);
-  const heldGrantedTrinketIds = useHeldWhile(isMysteryActive, r.mysteryGrantedTrinketIds);
-  const heldGrantedGearInstances = useHeldWhile(isMysteryActive, r.mysteryGrantedGearInstances);
-  const heldChosenCardId = useHeldWhile(isMysteryActive, r.mysteryChosenCardId);
-  const heldChosenChoice = useHeldWhile(isMysteryActive, r.mysteryChosenChoice);
-  const heldPendingRemoval = useHeldWhile(isMysteryActive, r.mysteryPendingRemoval);
-
-  useEffect(() => {
-    if (r.mysteryEvent || heldEvent) return;
-    if (autoContinueAttemptedRef.current) return;
-    autoContinueAttemptedRef.current = true;
-    handleContinue();
-  }, [r.mysteryEvent, heldEvent, handleContinue]);
-
-  if (!heldEvent) {
-    return <MysteryScreenShell onOpenMenu={onOpenBattleMenu} />;
-  }
-
-  return (
-    <MysteryScreen
-      event={heldEvent}
-      runDeck={r.runDeck}
-      mysteryCardChoices={heldCardChoices}
-      mysteryGrantedTrinketIds={heldGrantedTrinketIds}
-      mysteryGrantedGearInstances={heldGrantedGearInstances}
-      mysteryChosenCardId={heldChosenCardId}
-      mysteryChosenChoice={heldChosenChoice}
-      mysteryPendingRemoval={heldPendingRemoval}
-      runTalentXP={r.runTalentXP}
-      talentXP={r.talentXP}
-      onChoose={commands.handleChoice}
-      onChooseCard={commands.handleChooseCard}
-      onRemoveCard={commands.handleRemoveCard}
-      onContinue={commands.handleContinue}
-      findCard={(id) => cardLibrary.find((c) => c.id === id)}
-      findTrinket={(id) => trinketLibrary.find((t) => t.id === id)}
-      onOpenMenu={onOpenBattleMenu}
-    />
-  );
-}
-
 function CorruptionScreenRoute({
   commands,
   onOpenBattleMenu,
@@ -355,8 +312,12 @@ export const runLoopScreenRoutes: {
   mystery: (ctx: RunLoopRouteCtx) => ReactNode;
   corruption: (ctx: RunLoopRouteCtx) => ReactNode;
 } = {
-  battle: ({ routeCommands, onOpenBattleMenu }) => (
-    <BattleScreenRoute commands={routeCommands.battle} onOpenBattleMenu={onOpenBattleMenu} />
+  battle: ({ routeCommands, onOpenBattleMenu, gameMenuOpen }) => (
+    <BattleScreenRoute
+      commands={routeCommands.battle}
+      onOpenBattleMenu={onOpenBattleMenu}
+      gameMenuOpen={gameMenuOpen}
+    />
   ),
   "labyrinth-map": ({ routeCommands, onOpenBattleMenu }) => (
     <LabyrinthMapScreenRoute commands={routeCommands.runLoop.labyrinth} onOpenBattleMenu={onOpenBattleMenu} />

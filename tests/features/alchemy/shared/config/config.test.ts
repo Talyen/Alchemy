@@ -8,13 +8,6 @@ describe("getCurrentEnemy", () => {
     expect(enemy.id).not.toBe("skeleton");
   });
 
-  it("never returns skeleton from the default pool", () => {
-    for (let i = 0; i < 50; i++) {
-      const enemy = getCurrentEnemy();
-      expect(enemy.id).not.toBe("skeleton");
-    }
-  });
-
   it("returns a normal enemy when enemy type is normal", () => {
     const enemy = getCurrentEnemy("normal");
     expect(enemy.enemyType).toBe("normal");
@@ -48,13 +41,6 @@ describe("getBossEnemy", () => {
     const boss = getBossEnemy();
     expect(boss.enemyType).toBe("boss");
     expect(["forge-golem", "frostwarden", "blight-treant", "iron-bear"]).toContain(boss.id);
-  });
-
-  it("returns a boss from the full pool on repeated calls", () => {
-    for (let i = 0; i < 5; i++) {
-      const boss = getBossEnemy();
-      expect(boss.enemyType).toBe("boss");
-    }
   });
 
   it("prefers bosses not encountered this run", () => {

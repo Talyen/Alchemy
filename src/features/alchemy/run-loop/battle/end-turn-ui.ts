@@ -1,6 +1,7 @@
 import { type BattleState } from "@/lib/battle";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
-import { getBattleSessionStore, type createBattleSession } from "./battle-session";
+import { type createBattleSession } from "./battle-session";
+import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
@@ -19,7 +20,7 @@ export function createBattleEndTurnUi(
   let hasteDrawInProgress = false;
 
   function resolveEndTurnHandler(currentState: BattleState, sessionNum: number) {
-    resolveEndTurn(currentState, sessionNum, orch);
+    resolveEndTurn(currentState, sessionNum, session, orch);
   }
 
   async function animateEndTurnThenResolve(currentState: BattleState, sessionNum: number) {
@@ -36,7 +37,7 @@ export function createBattleEndTurnUi(
         markBattleStage("discard-end");
       }
       session.runIfSessionActive(sessionNum, () => {
-        if (resolveEndTurn(currentState, sessionNum, orch)) {
+        if (resolveEndTurn(currentState, sessionNum, session, orch)) {
           hasteDrawInProgress = true;
         }
       });
@@ -50,7 +51,7 @@ export function createBattleEndTurnUi(
 
   function handleEndTurn() {
     hasteDrawInProgress = false;
-    const currentState = getBattleSessionStore().battleState;
+    const currentState = readBattle().battleState;
     if (
       ctx.screen !== "battle" ||
       currentState.turnPhase !== "player" ||
@@ -70,7 +71,7 @@ export function createBattleEndTurnUi(
   }
 
   function resumePendingBattleTransition() {
-    resumePendingBattleTransitionState(ctx.battleSessionRef.current, orch);
+    resumePendingBattleTransitionState(ctx.battleSessionRef.current, session, orch);
   }
 
   return { handleEndTurn, resolveEndTurn: resolveEndTurnHandler, resumePendingBattleTransition };

@@ -9,10 +9,14 @@ import {
 } from "@/lib/content-systems/encounter-traits";
 
 describe("encounter trait catalog", () => {
-  it("defines the complete combat and reward pools with stable unique ids", () => {
-    expect(COMBAT_ENCOUNTER_TRAIT_IDS).toHaveLength(18);
-    expect(REWARD_ENCOUNTER_TRAIT_IDS).toHaveLength(4);
-    expect(new Set(Object.keys(ENCOUNTER_TRAITS)).size).toBe(22);
+  it("keeps unique combat and reward ids aligned with the catalog", () => {
+    expect(new Set(COMBAT_ENCOUNTER_TRAIT_IDS).size).toBe(COMBAT_ENCOUNTER_TRAIT_IDS.length);
+    expect(new Set(REWARD_ENCOUNTER_TRAIT_IDS).size).toBe(REWARD_ENCOUNTER_TRAIT_IDS.length);
+    expect(Object.keys(ENCOUNTER_TRAITS).sort()).toEqual(
+      [...COMBAT_ENCOUNTER_TRAIT_IDS, ...REWARD_ENCOUNTER_TRAIT_IDS].sort(),
+    );
+    expect(COMBAT_ENCOUNTER_TRAIT_IDS.every((id) => ENCOUNTER_TRAITS[id].category === "combat")).toBe(true);
+    expect(REWARD_ENCOUNTER_TRAIT_IDS.every((id) => ENCOUNTER_TRAITS[id].category === "reward")).toBe(true);
   });
 
   it("keeps Generous and Scavenger out of Wildwood while allowing its useful rewards", () => {

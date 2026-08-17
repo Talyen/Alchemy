@@ -10,7 +10,7 @@ import type {
 } from "@/features/alchemy/shared/stores/run-port-types";
 import { computeTalentEffects } from "@/lib/game-data/talents";
 import type { KeywordId, TalentXP, UnlockedTalents } from "@/lib/game-data";
-import type { Destination } from "@/features/alchemy/shared/types";
+import type { Destination } from "@/lib/routing";
 import { getRunProgressStoreView } from "./run-domain-store-test";
 import {
   awardCardXP,

@@ -16,7 +16,7 @@ import {
   landscapeArtImageClass,
   trinketArtImageClass,
 } from "../config";
-import { getEffectiveCardDescriptionLines } from "../utils/card-description";
+import { getEffectiveCardDescriptionLines } from "@/lib/game-data";
 import { CardFlip } from "./card-flip";
 import { DetailPopup } from "./card-popup";
 import type { CollectionTileItem } from "./collection-items";

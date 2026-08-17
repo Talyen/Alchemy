@@ -4,7 +4,6 @@ import type { GearEffectManifest } from "@/lib/gear";
 import type { BattleState, CombatFlags, EnemyMitigation, FirstTimeFlagKey } from "./state-types";
 
 const FIRST_TIME_FLAG_USED_VALUES: { [K in FirstTimeFlagKey]: CombatFlags[K] } = {
-  firstPhysicalCardFreeUsed: true,
   firstHolyCardFreeUsed: true,
   firstBurnCardDoubledUsed: true,
   firstArmorCardDoubledUsed: true,
@@ -138,16 +137,29 @@ function computeDamageReduction(baseReduction: number, damageType: string | unde
     return baseReduction - state.talentEffects.freezeDamageReduction;
   }
   if (damageType === "nature") {
-    let result = baseReduction - state.talentEffects.natureDamageReduction;
-    if (state.talentEffects.receiveHalfNatureDamage) {
-      result = Math.round(result / HALF_DIVISOR);
-    }
-    return result;
+    return baseReduction - state.talentEffects.natureDamageReduction;
   }
   if (damageType === "poison") {
     return baseReduction - state.talentEffects.poisonDamageReduction;
   }
   return baseReduction;
+}
+
+/** Halves incoming player damage when the matching resist talent is unlocked. */
+export function scaleReceivedPlayerDamage(
+  damage: number,
+  talentEffects: BattleState["talentEffects"],
+  damageType: string | undefined,
+): number {
+  if (damage <= 0) return damage;
+  const receiveHalf =
+    (damageType === "burn" && talentEffects.receiveHalfBurnDamage) ||
+    (damageType === "holy" && talentEffects.receiveHalfHolyDamage) ||
+    (damageType === "freeze" && talentEffects.receiveHalfFreezeDamage) ||
+    (damageType === "poison" && talentEffects.receiveHalfPoisonDamage) ||
+    (damageType === "bleed" && talentEffects.receiveHalfBleedDamage) ||
+    (damageType === "nature" && talentEffects.receiveHalfNatureDamage);
+  return receiveHalf ? Math.round(damage / HALF_DIVISOR) : damage;
 }
 
 // Death's Door triggers once per battle. During the grace window (deathsDoorActive)

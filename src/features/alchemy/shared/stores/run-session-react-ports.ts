@@ -129,6 +129,15 @@ export function useAutosaveAllowed(screen: Screen): boolean {
   return useGameplayStateStore((state) => selectAutosaveAllowed(state, screen));
 }
 
+export function useBattleLifetimeFields() {
+  return useGameplayStateStore(
+    useShallow((state) => ({
+      hasActiveBattle: state.battle.hasActiveBattle,
+      pendingTransitionResumeRequired: state.battle.pendingTransitionResumeRequired,
+    })),
+  );
+}
+
 export function useHasActiveBattle(): boolean {
   return useGameplayStateStore((state) => state.battle.hasActiveBattle);
 }
@@ -184,12 +193,12 @@ export function useTalentProgressSlice(): { talentXP: TalentXP; unlockedTalents:
 }
 
 export function useDifficultySelectSlice(): {
-  pendingCharacterId: CharacterId | null;
+  characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
 } {
   return useGameplayStateStore(
     useShallow((state) => ({
-      pendingCharacterId: state.session.pendingCharacterId,
+      characterId: state.session.pendingCharacterId ?? state.run.activeRun.characterId,
       selectedDifficulty: state.run.activeRun.selectedDifficulty,
     })),
   );
@@ -199,12 +208,14 @@ export function useDraftDeckSlice(): {
   contentSystemType: ContentSystemId;
   runDeck: BattleCard[];
   wildwoodDraft: WildwoodDraftState | null;
+  starterDraftChoices: BattleCard[] | null;
 } {
   return useGameplayStateStore(
     useShallow((state) => ({
       contentSystemType: state.run.activeRun.contentSystemType,
       runDeck: state.run.activeRun.runDeck,
       wildwoodDraft: state.session.wildwoodDraft,
+      starterDraftChoices: state.session.starterDraftChoices,
     })),
   );
 }

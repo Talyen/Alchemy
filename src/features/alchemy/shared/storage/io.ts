@@ -66,6 +66,7 @@ function hydrateActiveRunDeck(activeRun: ParsedSaveData["activeRun"]): SaveData[
           draftChoices: activeRun.wildwoodDraft.draftChoices.filter(keepCard),
         }
       : null,
+    starterDraftChoices: activeRun.starterDraftChoices?.filter(keepCard) ?? null,
   });
 }
 
@@ -225,7 +226,7 @@ export async function saveAlchemySaveData(data: SaveData) {
  * Desktop IPC cannot be made synchronous, so it falls back to the normal serialized queue.
  */
 export function saveAlchemySaveDataForExit(data: SaveData): void {
-  if (typeof window === "undefined" || writesDisabledForSession) return;
+  if (typeof window === "undefined" || writesDisabledForSession || clearPending) return;
 
   if (!saveBackend.writeSync) {
     void saveAlchemySaveData(data);
@@ -255,7 +256,9 @@ export function saveAlchemySaveDataForExit(data: SaveData): void {
 // Removes the persisted save while leaving in-memory React state reset to callers.
 // Returns false when the wipe could not complete (e.g. Steam Cloud delete failed) so
 // callers like Save Protected can fail closed instead of reloading into the same block.
-export async function clearAlchemySaveData(): Promise<boolean> {
+// Pass `keepWritesDisabled` when the next step is a full reload so a terminal autosave
+// flush cannot rewrite the wiped snapshot from still-mounted in-memory stores.
+export async function clearAlchemySaveData(options?: { keepWritesDisabled?: boolean }): Promise<boolean> {
   if (typeof window === "undefined") {
     return true;
   }
@@ -268,7 +271,9 @@ export async function clearAlchemySaveData(): Promise<boolean> {
       coalescedSave = null;
       const result = await removeStorageItem(SAVE_KEY);
       if (result.ok) {
-        writesDisabledForSession = false;
+        if (!options?.keepWritesDisabled) {
+          writesDisabledForSession = false;
+        }
         cleared = true;
         return;
       }

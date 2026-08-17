@@ -7,13 +7,12 @@ import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier } from "./st
 import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { getBattleRng } from "./status-helpers";
 import { computeBaseDamage } from "./damage-calc/damage-type-modifiers";
-import { type BattleCard, type BattleCardEffect, type DamageType } from "@/lib/game-data";
+import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
 import {
   ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT,
   COMPANION_LOW_HEALTH_THRESHOLD_PERCENT,
   CRIT_MULTIPLIER,
-  FIRST_BURN_CARD_BONUS_MULTIPLIER,
   FIRST_EFFECT_MULTIPLIER,
   GLOBAL_CRIT_CHANCE,
   PERCENT_DENOMINATOR,
@@ -25,10 +24,9 @@ const DAMAGE_CONSTANTS = {
 /**
  * Evaluates whether damage turns into a critical strike and returns modified damage.
  */
-function applyCrit(damage: number, damageType: DamageType, state: BattleState) {
+function applyCrit(damage: number, state: BattleState) {
   if (state.flags.nextHitCrit) return damage * CRIT_MULTIPLIER;
-  const physCritChance = damageType === "physical" ? state.talentEffects.physicalCritChance : 0;
-  const totalChance = GLOBAL_CRIT_CHANCE + physCritChance;
+  const totalChance = GLOBAL_CRIT_CHANCE;
   const rng = getBattleRng(state);
   const isCrit = totalChance > 0 && rng() * PERCENT_DENOMINATOR < totalChance;
   return isCrit ? damage * CRIT_MULTIPLIER : damage;
@@ -46,8 +44,8 @@ function applyFirstDamageModifiers(
   let nextDamage = rawDamage;
 
   if (effect.damageType === "burn") {
-    if (nextState.talentEffects.firstBurnCardDoubled && !nextState.flags.firstBurnCardDoubledUsed) {
-      nextDamage = Math.round(nextDamage * FIRST_BURN_CARD_BONUS_MULTIPLIER);
+    if (nextState.talentEffects.firstBurnCardBonusMultiplier > 1 && !nextState.flags.firstBurnCardDoubledUsed) {
+      nextDamage = Math.round(nextDamage * nextState.talentEffects.firstBurnCardBonusMultiplier);
       nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
     }
     if (nextState.trinketEffects.firstBurnDoubled && !nextState.flags.firstBurnTrinketDoubledUsed) {
@@ -133,7 +131,7 @@ export function computeCardDamageToEnemy(
 ) {
   const baseDamage = computeBaseDamage(state, effect, card);
   const { state: stateAfterFirstMods, rawDamage } = applyFirstDamageModifiers(state, effect, baseDamage);
-  let finalDamage = applyCrit(rawDamage, effect.damageType, stateAfterFirstMods);
+  let finalDamage = applyCrit(rawDamage, stateAfterFirstMods);
   if (card?.tags?.includes("archery")) finalDamage = applyArcheryMultiplier(finalDamage, stateAfterFirstMods);
 
   const { state: stateAfterBlock, remainingDamage: damageAfterBlock } = applyBlockAbsorption(

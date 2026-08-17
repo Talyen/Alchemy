@@ -26,6 +26,10 @@ export type GearRewardState = RewardStateBase & {
 
 export type RewardState = CardRewardState | TrinketRewardState | GearRewardState;
 
+export function getRewardChoiceId(choice: BattleCard | TrinketEntry | GearInstance): string {
+  return "instanceId" in choice ? choice.instanceId : choice.id;
+}
+
 export function createEmptyRewardState(destinations: Destination[] = []): CardRewardState {
   return {
     choices: [],

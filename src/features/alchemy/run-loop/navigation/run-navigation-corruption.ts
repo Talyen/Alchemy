@@ -1,5 +1,4 @@
 // Corruption screen handlers used by useRunFlowEngine.
-import { appendUnique } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { corruptDeckCard } from "@/lib/corruption";
@@ -9,7 +8,7 @@ import {
   createDraftRunRandomSource,
   setCorruptionResult,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setDiscoveredCardIds } from "../../shared/stores/profile-store";
+import { discoverCardIds } from "../run/deck-mutations";
 
 function applyCorruptionToDeck(
   runDeck: BattleCard[],
@@ -27,7 +26,7 @@ function applyCorruptionToDeck(
       if (!result) return null;
       updateRunDeck(nextDraft, deck);
       setCorruptionResult(nextDraft, result);
-      setDiscoveredCardIds(nextDraft, (current) => appendUnique(current, result.corruptedCard.id));
+      discoverCardIds(nextDraft, [result.corruptedCard.id]);
       return result;
     },
     {
@@ -48,6 +47,7 @@ export interface CorruptionFlowDeps {
 /** Corruption screen commands: apply a corrupt pick, then advance or restore the picker on exit. */
 export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps) {
   function handleCorruptCard(cardIndex: number) {
+    if (readRunSession().corruptionResult) return;
     applyCorruptionToDeck(deps.getRunDeck(), cardIndex, deps.updateRunDeck);
   }
 

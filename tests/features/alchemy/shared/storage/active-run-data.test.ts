@@ -78,6 +78,7 @@ describe("encodeRunResumeSnapshot", () => {
       mysteryVisit: null,
       corruptionResult: null,
       wildwoodDraft: null,
+      starterDraftChoices: null,
       runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
     });
   });
@@ -242,6 +243,19 @@ describe("encodeRunResumeSnapshot", () => {
     expect(result.wildwoodDraft).toEqual(wildwoodDraft);
   });
 
+  it("persists campaign Wildcard starter-draft choices", () => {
+    const [slash, block] = getStartingDeck("knight");
+    if (!slash || !block) throw new Error("Knight starting deck fixture is incomplete");
+    setRunProgress({ contentSystemType: "campaign", characterId: "wildcard" });
+    setRunSession({ starterDraftChoices: [slash, block] });
+
+    const result = encodeState("draft-deck");
+    const decoded = decodeRunResumeSnapshot(result);
+
+    expect(result.starterDraftChoices).toEqual([slash, block]);
+    expect(decoded.session.starterDraftChoices).toEqual([slash, block]);
+  });
+
   it("persists a mystery visit for resume", () => {
     setRunSession({
       mysteryEvent: {
@@ -302,5 +316,23 @@ describe("encodeRunResumeSnapshot", () => {
 
     expect(result.corruptionResult).toEqual(corruptionResult);
     expect(decodeRunResumeSnapshot(result).session.corruptionResult).toEqual(corruptionResult);
+  });
+
+  it("does not persist leftover corruption result off the corruption screen", () => {
+    const [slash] = getStartingDeck("knight");
+    if (!slash) throw new Error("Knight starting deck fixture is incomplete");
+    const corruptionResult = {
+      originalCard: slash,
+      corruptedCard: { ...slash, corrupted: true },
+      transformed: false as const,
+      delta: -1 as const,
+    };
+    setRunSession({ corruptionResult });
+
+    const result = encodeState("destination");
+    const decoded = decodeRunResumeSnapshot(result);
+
+    expect(result.corruptionResult).toBeNull();
+    expect(decoded.session.corruptionResult).toBeNull();
   });
 });

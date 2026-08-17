@@ -17,12 +17,8 @@ function makeProductionBattleState() {
 }
 
 describe("getPlayerStatusChips", () => {
-  it("returns empty array when state is null (no crash)", () => {
-    expect(getPlayerStatusChips(null)).toEqual([]);
-  });
-
-  it("returns empty array when state is undefined (no crash)", () => {
-    expect(getPlayerStatusChips(undefined)).toEqual([]);
+  it.each([null, undefined] as const)("returns empty array when state is %s", (state) => {
+    expect(getPlayerStatusChips(state)).toEqual([]);
   });
 
   it("returns empty array when no statuses are active", () => {
@@ -61,12 +57,8 @@ describe("getPlayerStatusChips", () => {
 });
 
 describe("getEnemyStatusChips", () => {
-  it("returns empty array when state is null (no crash)", () => {
-    expect(getEnemyStatusChips(null)).toEqual([]);
-  });
-
-  it("returns empty array when state is undefined (no crash)", () => {
-    expect(getEnemyStatusChips(undefined)).toEqual([]);
+  it.each([null, undefined] as const)("returns empty array when state is %s", (state) => {
+    expect(getEnemyStatusChips(state)).toEqual([]);
   });
 
   it("returns empty array when no statuses are active", () => {

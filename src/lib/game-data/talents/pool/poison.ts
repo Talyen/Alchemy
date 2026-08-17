@@ -84,6 +84,4 @@ export const poisonTalents: TalentDefinition[] = [
     icon: Syringe,
     effects: [setEffect("firstPoisonCardFree", true)],
   },
-
-  // --- Bleed ---
 ];

@@ -20,12 +20,12 @@ import {
   useTalentProgressSlice,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import type { MetaCommands, MetaRouteCtx } from "./route-ctx";
-import { useHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-store";
+import { useIsArmoryLocked } from "@/features/alchemy/shared/stores/gear-store";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 
 function MenuScreenRoute({ commands }: { commands: MetaCommands }) {
   const { hasUnspentTalents, hasAffordableHomestead } = useAppScreenChrome();
-  const isArmoryLocked = !useHasAnyOwnedGear();
+  const isArmoryLocked = useIsArmoryLocked();
   return (
     <MenuScreen
       onPlay={() => commands.goToScreen("game-mode-select")}

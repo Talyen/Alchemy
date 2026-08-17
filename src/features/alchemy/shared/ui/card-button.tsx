@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 import { cardArtImageClass, cardShineFrameClass, cardSurfaceClass } from "../config";
 import { useCardDescriptionContext } from "@/features/alchemy/shared/context/card-description-context";
-import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "../utils/card-description";
+import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "@/lib/game-data";
 import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
 import { DetailPopup } from "./card-popup";
 import { TiltSurface } from "./tilt-surface";

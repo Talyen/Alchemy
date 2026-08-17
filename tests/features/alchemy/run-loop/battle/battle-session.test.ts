@@ -36,6 +36,7 @@ function makeSession() {
     onBattleSessionPreparedRef,
     onBattleVictory,
     onBattleDefeat,
+    getPresentation: () => useBattlePresentationStore.getState(),
   } as unknown as BattleControllerContext);
 
   return {

@@ -1,18 +1,16 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it } from "vitest";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
 import type { BattleCardEffect } from "@/lib/game-data";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultTalentEffects, defaultTrinketManifest } from "../../fixtures/default-battle-state";
 import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
 describe("dealDamageToEnemy — enemy armor", () => {
   it("physical damage is reduced by enemy armor", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = patchBattleState({ enemyMitigation: { armor: 3, forge: 0, block: 0 } });
+    const state = patchBattleState({
+      rng: () => 0.99,
+      enemyMitigation: { armor: 3, forge: 0, block: 0 },
+    });
     const card = makeTestCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
@@ -25,8 +23,8 @@ describe("dealDamageToEnemy — enemy armor", () => {
   });
 
   it("sunderingArmorPiercing removes enemy armor", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
+      rng: () => 0.99,
       enemyMitigation: { armor: 5, forge: 0, block: 0 },
       trinketEffects: defaultTrinketManifest({ sunderingArmorPiercing: 2 }),
     });
@@ -43,8 +41,8 @@ describe("dealDamageToEnemy — enemy armor", () => {
   });
 
   it("Piercing Shot ignores 1 Armor on Archery physical hits", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
+      rng: () => 0.99,
       enemyMitigation: { armor: 3, forge: 0, block: 0 },
       talentEffects: { ...defaultTalentEffects, archeryArmorPiercing: 1 },
     });
@@ -64,8 +62,10 @@ describe("dealDamageToEnemy — enemy armor", () => {
   });
 
   it("non-physical damage ignores enemy armor", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = patchBattleState({ enemyMitigation: { armor: 5, forge: 0, block: 0 } });
+    const state = patchBattleState({
+      rng: () => 0.99,
+      enemyMitigation: { armor: 5, forge: 0, block: 0 },
+    });
     const card = makeTestCard({ effects: [makeEffect("burn", 10)] });
     const texts = makeCombatTexts();
     const result = dealDamageToEnemy(
@@ -80,8 +80,8 @@ describe("dealDamageToEnemy — enemy armor", () => {
 
 describe("dealDamageToEnemy — boonSiphon siphoning", () => {
   it("steals armor and gains armor for the player when armor is siphoned", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
+      rng: () => 0.99,
       enemyMitigation: { armor: 5, block: 0, forge: 0 },
       talentEffects: { ...defaultTalentEffects, trinketSiphonChance: 100 },
       rng: () => 0.1,
@@ -99,8 +99,8 @@ describe("dealDamageToEnemy — boonSiphon siphoning", () => {
   });
 
   it("steals forge and gains forge for the player when forge is siphoned", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
+      rng: () => 0.99,
       enemyMitigation: { armor: 0, block: 0, forge: 3 },
       talentEffects: { ...defaultTalentEffects, trinketSiphonChance: 100 },
       rng: () => 0.0,

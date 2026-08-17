@@ -1,7 +1,5 @@
-import { useCallback, useEffect, useMemo, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  useBattleAutoEndTurn,
-  useBattleAutoplay,
   createBattleSession,
   defaultMeasureElementRect,
   defaultMeasureVisualCardRect,
@@ -13,21 +11,22 @@ import {
   isVictoryGraceActive,
   useBattleControllerContext,
 } from "@/features/alchemy/run-loop/battle";
-import type { CardRect, Screen } from "@/features/alchemy/shared/types";
+import type { CardRect } from "@/features/alchemy/shared/types";
+import type { Screen } from "@/lib/routing";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { BattleRunPort, BattleTalentPort } from "@/features/alchemy/shared/stores/run-port-types";
-import { preferredAutoplayEnabled, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-model";
+import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { useBattleLifetimeFields } from "@/features/alchemy/shared/stores/run-session-react-ports";
+import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { BattleState } from "@/lib/battle";
+import type { BattlePlaybackBind } from "@/features/alchemy/run-loop/battle/battle-context";
+import { preferredAutoplayEnabled, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 
 interface UseBattleControllerProps {
   run: BattleRunPort;
   talents: BattleTalentPort;
-  autoEndTurn: boolean;
   homesteadEffects: HomesteadEffectManifest;
   screen: Screen;
-  gameMenuOpen: boolean;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   onBattleVictory?: () => void;
   onBattleDefeat?: () => void;
@@ -38,54 +37,43 @@ interface UseBattleControllerProps {
 export function useBattleController({
   run,
   talents,
-  autoEndTurn,
   homesteadEffects,
   screen,
-  gameMenuOpen,
   setHoveredCardId,
   onBattleVictory,
   onBattleDefeat,
   measureElementRect = defaultMeasureElementRect,
   measureVisualCardRect = defaultMeasureVisualCardRect,
 }: UseBattleControllerProps) {
-  const {
-    battle: { battleState, hasActiveBattle, pendingBattleTransition, pendingTransitionResumeRequired },
-  } = useRunSessionBattleContext(screen);
-  const removeCardGhost = useBattlePresentationStore((s) => s.removeCardGhost);
-  const resetPresentation = useBattlePresentationStore((s) => s.resetPresentation);
+  const { hasActiveBattle, pendingTransitionResumeRequired } = useBattleLifetimeFields();
 
   const scheduleAutoEndTurnRef = useRef<((state: BattleState) => void) | null>(null);
   const clearAutoEndTurnRef = useRef<(() => void) | null>(null);
   const onBattleSessionPreparedRef = useRef<(() => void) | null>(null);
   const pendingTransitionResumeAttemptedRef = useRef(false);
-  const [isAutoplayEnabled, setIsAutoplayEnabled] = useState(() =>
+  const [isAutoplayEnabled, setIsAutoplayEnabledState] = useState(() =>
     preferredAutoplayEnabled(useSettingsStore.getState()),
   );
 
-  const applyPreferredAutoplay = useCallback(() => {
-    setIsAutoplayEnabled(preferredAutoplayEnabled(useSettingsStore.getState()));
-  }, []);
-
-  useLayoutEffect(() => {
-    onBattleSessionPreparedRef.current = applyPreferredAutoplay;
-  }, [applyPreferredAutoplay]);
-
   const setAutoplayEnabled = useCallback((enabled: boolean) => {
-    setIsAutoplayEnabled(enabled);
+    setIsAutoplayEnabledState(enabled);
     const settings = useSettingsStore.getState();
     if (settings.rememberAutoplayPreference) {
       settings.setAutoplayEnabled(enabled);
     }
   }, []);
 
-  const toggleAutoplay = useCallback(() => {
-    setAutoplayEnabled(!isAutoplayEnabled);
-  }, [isAutoplayEnabled, setAutoplayEnabled]);
+  const applyPreferredAutoplay = useCallback(() => {
+    setIsAutoplayEnabledState(preferredAutoplayEnabled(useSettingsStore.getState()));
+  }, []);
+
+  useLayoutEffect(() => {
+    onBattleSessionPreparedRef.current = applyPreferredAutoplay;
+  }, [applyPreferredAutoplay]);
 
   const ctx = useBattleControllerContext({
     run,
     talents,
-    autoEndTurn,
     homesteadEffects,
     screen,
     setHoveredCardId,
@@ -115,92 +103,70 @@ export function useBattleController({
     };
   }, [ctx]);
 
-  const hiddenHandCardKeys = useBattlePresentationStore((s) => s.hiddenHandCardKeys);
-  const cardTransferInProgress = useBattlePresentationStore((s) => s.cardTransferInProgress);
-
-  const { scheduleAutoEndTurn, clearAutoEndTurn } = useBattleAutoEndTurn({
-    autoEndTurn: autoEndTurn || isAutoplayEnabled,
-    screen,
-    battleState,
-    hasActiveBattle,
-    cardTransferInProgress,
-    hiddenHandCardKeys,
-    onEndTurn: actions.endTurnUi.handleEndTurn,
-  });
-
-  useBattleAutoplay({
-    enabled: isAutoplayEnabled,
-    screen,
-    battleState,
-    hasActiveBattle,
-    cardTransferInProgress,
-    hiddenHandCardKeys,
-    isCardPlayInProgress: () => ctx.cardPlayInProgressRef.current,
-    gameMenuOpen,
-    playCard: actions.cardPlay.handleAutoplayCard,
-  });
-
-  useLayoutEffect(() => {
-    scheduleAutoEndTurnRef.current = scheduleAutoEndTurn;
-    clearAutoEndTurnRef.current = clearAutoEndTurn;
-  }, [scheduleAutoEndTurn, clearAutoEndTurn]);
-
   useEffect(() => {
     if (!hasActiveBattle) {
       pendingTransitionResumeAttemptedRef.current = false;
       return;
     }
-    if (
-      screen !== "battle" ||
-      !pendingBattleTransition ||
-      !pendingTransitionResumeRequired ||
-      pendingTransitionResumeAttemptedRef.current
-    ) {
+    if (screen !== "battle" || !pendingTransitionResumeRequired || pendingTransitionResumeAttemptedRef.current) {
       return;
     }
     pendingTransitionResumeAttemptedRef.current = true;
     actions.endTurnUi.resumePendingBattleTransition();
-  }, [actions.endTurnUi, hasActiveBattle, pendingBattleTransition, pendingTransitionResumeRequired, screen]);
-
-  const resetHandTransferUi = useBattlePresentationStore((s) => s.resetHandTransferUi);
+  }, [actions.endTurnUi, hasActiveBattle, pendingTransitionResumeRequired, screen]);
 
   useEffect(() => {
     if (hasActiveBattle) return;
-    if (isVictoryGraceActive(screen, battleState.enemyHealth, ctx.victoryDefeatHandledRef.current)) return;
+    const enemyHealth = readBattle().battleState.enemyHealth;
+    if (isVictoryGraceActive(screen, enemyHealth, ctx.victoryDefeatHandledRef.current)) return;
     actions.session.resetBattleSession();
     queueMicrotask(() => {
-      useBattlePresentationStore.getState().resetCardTransfers();
-      resetHandTransferUi();
+      clearBattlePresentationUi();
     });
-  }, [hasActiveBattle, screen, battleState.enemyHealth, actions.session, resetHandTransferUi, ctx]);
+  }, [hasActiveBattle, screen, actions.session, ctx]);
 
   useEffect(() => {
     if (screen !== "battle") {
-      resetPresentation();
+      clearBattlePresentationUi();
     }
-  }, [screen, resetPresentation]);
+  }, [screen]);
 
-  return {
-    battleState,
-    hasActiveBattle,
-    isAutoplayEnabled,
-    toggleAutoplay,
-    refs: {
+  const bindPlayback = useCallback((bind: BattlePlaybackBind | null) => {
+    scheduleAutoEndTurnRef.current = bind?.scheduleAutoEndTurn ?? null;
+    clearAutoEndTurnRef.current = bind?.clearAutoEndTurn ?? null;
+  }, []);
+
+  const refs = useMemo(
+    () => ({
       handCardRefs: ctx.handCardRefs,
       drawPileRef: ctx.drawPileRef,
       discardPileRef: ctx.discardPileRef,
       battleSceneRef: ctx.battleSceneRef,
       playerPanelRef: ctx.playerPanelRef,
       enemyPanelRef: ctx.enemyPanelRef,
-    },
-    startBattle: actions.init.startBattle,
-    startBossBattle: actions.init.startBossBattle,
-    startBossById: actions.init.startBossById,
-    handleCardClick: actions.cardPlay.handleCardClick,
-    handleWishChoice: actions.cardPlay.handleWishChoice,
-    handleEndTurn: actions.endTurnUi.handleEndTurn,
-    handleEndRun: actions.devOutcomes.handleEndRun,
-    skipCombatDevMode: actions.devOutcomes.skipCombatDevMode,
-    removeCardGhost,
-  };
+    }),
+    [ctx],
+  );
+
+  return useMemo(
+    () => ({
+      hasActiveBattle,
+      refs,
+      bindPlayback,
+      screen,
+      isAutoplayEnabled,
+      setAutoplayEnabled,
+      isCardPlayInProgress: () => ctx.cardPlayInProgressRef.current,
+      startBattle: actions.init.startBattle,
+      startBossBattle: actions.init.startBossBattle,
+      startBossById: actions.init.startBossById,
+      handleCardClick: actions.cardPlay.handleCardClick,
+      handleWishChoice: actions.cardPlay.handleWishChoice,
+      handleAutoplayCard: actions.cardPlay.handleAutoplayCard,
+      handleEndTurn: actions.endTurnUi.handleEndTurn,
+      handleEndRun: actions.devOutcomes.handleEndRun,
+      skipCombatDevMode: actions.devOutcomes.skipCombatDevMode,
+    }),
+    [hasActiveBattle, refs, bindPlayback, ctx, actions, screen, isAutoplayEnabled, setAutoplayEnabled],
+  );
 }

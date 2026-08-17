@@ -8,8 +8,8 @@ import type { BattleCard } from "@/lib/game-data";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 
 const discoveryMocks = vi.hoisted(() => ({
-  setDiscoveredCardIds: vi.fn(),
-  setDiscoveredTrinketIds: vi.fn(),
+  discoverCardIds: vi.fn(),
+  discoverTrinketIds: vi.fn(),
   setRunDeck: vi.fn(),
   setRunTrinkets: vi.fn(),
 }));
@@ -23,14 +23,14 @@ vi.mock("@/features/alchemy/shared/stores/profile-store", async (importOriginal)
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/profile-store")>();
   return {
     ...actual,
-    setDiscoveredCardIds: discoveryMocks.setDiscoveredCardIds,
-    setDiscoveredTrinketIds: discoveryMocks.setDiscoveredTrinketIds,
+    discoverCardIds: discoveryMocks.discoverCardIds,
+    discoverTrinketIds: discoveryMocks.discoverTrinketIds,
   };
 });
 
 beforeEach(() => {
-  discoveryMocks.setDiscoveredCardIds.mockClear();
-  discoveryMocks.setDiscoveredTrinketIds.mockClear();
+  discoveryMocks.discoverCardIds.mockClear();
+  discoveryMocks.discoverTrinketIds.mockClear();
   discoveryMocks.setRunDeck.mockClear();
   discoveryMocks.setRunTrinkets.mockClear();
 });
@@ -43,20 +43,17 @@ describe("appendCardToRunWithDiscovery", () => {
 
     const deckUpdater = discoveryMocks.setRunDeck.mock.calls[0][1];
     expect(deckUpdater([{ id: "stab" } as BattleCard])).toEqual([{ id: "stab" }, card]);
-
-    const discUpdater = discoveryMocks.setDiscoveredCardIds.mock.calls[0][1];
-    expect(discUpdater(["stab"])).toEqual(["stab", "fireball"]);
+    expect(discoveryMocks.discoverCardIds).toHaveBeenCalledWith(draft, [card.id]);
   });
 
-  it("does not duplicate discovered card ids", () => {
+  it("discovers the same card id on each append", () => {
     const card = makeDiscoveryCard();
-
     const draft = {} as GameplayDraft;
     appendCardToRunWithDiscovery(draft, card);
     appendCardToRunWithDiscovery(draft, card);
 
-    const secondUpdater = discoveryMocks.setDiscoveredCardIds.mock.calls[1][1];
-    expect(secondUpdater(["fireball"])).toEqual(["fireball"]);
+    expect(discoveryMocks.discoverCardIds).toHaveBeenNthCalledWith(1, draft, [card.id]);
+    expect(discoveryMocks.discoverCardIds).toHaveBeenNthCalledWith(2, draft, [card.id]);
   });
 });
 
@@ -67,8 +64,6 @@ describe("appendTrinketToRunWithDiscovery", () => {
 
     const boonUpdater = discoveryMocks.setRunTrinkets.mock.calls[0][1];
     expect(boonUpdater([])).toEqual(["bone-charm"]);
-
-    const discUpdater = discoveryMocks.setDiscoveredTrinketIds.mock.calls[0][1];
-    expect(discUpdater([])).toEqual(["bone-charm"]);
+    expect(discoveryMocks.discoverTrinketIds).toHaveBeenCalledWith(draft, ["bone-charm"]);
   });
 });

@@ -1,8 +1,7 @@
 import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import { appendUniqueMany } from "@/lib/utils";
 import { readGearMaxHealthBonus } from "@/features/alchemy/shared/stores/gear-store";
-import { setDiscoveredCardIds, setEncounteredEnemyIds } from "@/features/alchemy/shared/stores/profile-store";
+import { discoverCardIds, setEncounteredEnemyIds } from "@/features/alchemy/shared/stores/profile-store";
 import { readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { applyRunStartSnapshot } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -53,11 +52,9 @@ export function applyRunStartToDraft(
 ): void {
   applyRunStartSnapshot(draft, snapshot);
   if (options.discoverDeck || snapshot.characterId === "wildcard") {
-    setDiscoveredCardIds(draft, (current) =>
-      appendUniqueMany(
-        current,
-        snapshot.freshDeck.map((card) => card.id),
-      ),
+    discoverCardIds(
+      draft,
+      snapshot.freshDeck.map((card) => card.id),
     );
   }
   if (options.resetEncounteredEnemies) setEncounteredEnemyIds(draft, []);

@@ -10,26 +10,26 @@ import {
   sampleDestinationChoices,
   withSelectedBossForDestinations,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { createEmptyRewardState } from "@/lib/active-run-session";
 import {
   DEFAULT_DESTINATION_WEIGHT,
   DESTINATION_PITY_WEIGHT_PER_ROUND,
   LAST_OFFERED_DESTINATION_WEIGHT,
 } from "@/lib/game-constants";
-import { DESTINATIONS } from "@/features/alchemy/shared/types";
+import { DESTINATIONS } from "@/lib/routing";
 
 vi.mock("@/lib/routing", async () => {
   const actual = await vi.importActual<typeof import("@/lib/routing")>("@/lib/routing");
   return {
     ...actual,
     getAvailableDestinations: vi.fn(() => [
-      DESTINATIONS.NORMAL_COMBAT,
-      DESTINATIONS.ELITE_COMBAT,
-      DESTINATIONS.MERCHANT_SHOP,
-      DESTINATIONS.ALCHEMIST_SHOP,
-      DESTINATIONS.MYSTERY,
-      DESTINATIONS.CORRUPTION,
-      DESTINATIONS.CAMPFIRE,
+      actual.DESTINATIONS.NORMAL_COMBAT,
+      actual.DESTINATIONS.ELITE_COMBAT,
+      actual.DESTINATIONS.MERCHANT_SHOP,
+      actual.DESTINATIONS.ALCHEMIST_SHOP,
+      actual.DESTINATIONS.MYSTERY,
+      actual.DESTINATIONS.CORRUPTION,
+      actual.DESTINATIONS.CAMPFIRE,
     ]),
   };
 });

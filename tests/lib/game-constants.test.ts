@@ -11,7 +11,6 @@ import {
   ELITE_HP_MULTIPLIER,
   STARTING_TURN,
   ENEMY_BASE_REGENERATION,
-  BLEED_EXECUTE_MULTIPLIER,
   AUTO_END_TURN_DELAY,
   SLICE_DEATH_DURATION_MS,
   VICTORY_TRANSITION_DELAY,
@@ -99,10 +98,6 @@ describe("Battle / Room constants", () => {
 
   it("ENEMY_BASE_REGENERATION is non-negative", () => {
     expect(ENEMY_BASE_REGENERATION).toBeGreaterThanOrEqual(0);
-  });
-
-  it("BLEED_EXECUTE_MULTIPLIER is at least 1", () => {
-    expect(BLEED_EXECUTE_MULTIPLIER).toBeGreaterThanOrEqual(1);
   });
 });
 

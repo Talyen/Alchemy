@@ -82,6 +82,13 @@ export const cardSurfaceClass = "relative overflow-hidden rounded-shell-hero bg-
  * those paint a rectangular halo once the tile is a 3D compositor layer.
  */
 export const cardInteractiveGlowClass = "card-interactive-glow";
+export const screenShellPaddingClass = "p-[2.1rem]";
+/** Battle inner stage uses denser padding (`p-7`) than ScreenShell; keep that exception local to battle. */
+
+export const settingsPanelShellClass = "rounded-shell-panel border border-border/70 p-5 surface-muted";
+
+/** Locked/unavailable chooser tiles share one dim + grayscale recipe. */
+export const chooserLockedSurfaceClass = "cursor-not-allowed opacity-45 grayscale";
 /** Marks a tile whose shine overlay replaces the 3px hover/select border. */
 export const cardShineFrameClass = "has-shine-border";
 

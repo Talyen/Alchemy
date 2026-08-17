@@ -1,27 +1,36 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
+import { useMysteryEventNavigation } from "@/features/alchemy/shell/use-mystery-event-navigation";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import { useProfileStore } from "../../../../helpers/gameplay-store-test";
+import { useProfileStore } from "../../../helpers/gameplay-store-test";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
   resetRunProgressSlice,
   setRunProgress,
-} from "../../../../helpers/run-domain-store-test";
+} from "../../../helpers/run-domain-store-test";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import { findMysteryEvent, type MysteryEffect } from "@/lib/mystery";
 import * as mystery from "@/lib/mystery";
 import { gearDefinitions } from "@/lib/gear";
-import { useGearStore } from "../../../../helpers/gameplay-store-test";
+import { useGearStore } from "../../../helpers/gameplay-store-test";
+import { makeTestCard } from "../../../fixtures/cards";
+import { CONSTANTS } from "@/features/alchemy/shared/types";
+import type { Screen } from "@/lib/routing";
 
 vi.mock("@/lib/audio", () => ({
   playGoldGain: vi.fn(),
   playGoldSpend: vi.fn(),
+  playUISound: vi.fn(),
 }));
 
-import { playGoldGain, playGoldSpend } from "@/lib/audio";
+import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
+
+function renderMysteryNav(navigateTo = vi.fn((_screen: Screen, onCommit?: () => void) => onCommit?.())) {
+  const hook = renderHook(() => useMysteryEventNavigation({ navigateTo }));
+  return { ...hook, navigateTo };
+}
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -31,13 +40,12 @@ beforeEach(() => {
   useProfileStore.setState(useProfileStore.getInitialState());
 });
 
-describe("useMysteryFlow", () => {
+describe("useMysteryEventNavigation", () => {
   it("beginMysteryEvent stores an event and navigates", () => {
-    const navigate = vi.fn();
-    const { result } = renderHook(() => useMysteryFlow());
+    const { result, navigateTo } = renderMysteryNav();
 
     act(() => {
-      result.current.beginMysteryEvent(navigate);
+      result.current.beginMysteryEvent();
     });
 
     expect(getRunSessionStoreView().mysteryEvent).not.toBeNull();
@@ -47,7 +55,8 @@ describe("useMysteryFlow", () => {
     expect(getRunSessionStoreView().mysteryChosenCardId).toBeNull();
     expect(getRunSessionStoreView().mysteryChosenChoice).toBeNull();
     expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(false);
-    expect(navigate).toHaveBeenCalledOnce();
+    expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.MYSTERY, undefined);
+    expect(playUISound).toHaveBeenCalledWith("musicBoxMystery");
   });
 
   it("beginMysteryEvent shows an unowned fallback on owned trinket choices", () => {
@@ -55,11 +64,10 @@ describe("useMysteryFlow", () => {
     if (!spring) throw new Error("enchanted-spring is missing from the mystery pool");
     vi.spyOn(mystery, "pickMysteryEvent").mockReturnValue(spring);
     setRunProgress({ runTrinkets: ["icy-heart"] });
-    const navigate = vi.fn();
-    const { result } = renderHook(() => useMysteryFlow());
+    const { result } = renderMysteryNav();
 
     act(() => {
-      result.current.beginMysteryEvent(navigate);
+      result.current.beginMysteryEvent();
     });
 
     const charm = getRunSessionStoreView().mysteryEvent?.choices.find((choice) => choice.label === "Take the Charm");
@@ -70,7 +78,7 @@ describe("useMysteryFlow", () => {
   });
 
   it("handleMysteryChoice stops when chooseCard requires follow-up UI", () => {
-    const { result } = renderHook(() => useMysteryFlow());
+    const { result } = renderMysteryNav();
 
     act(() => {
       result.current.handleMysteryChoice({
@@ -85,7 +93,7 @@ describe("useMysteryFlow", () => {
   });
 
   it("handleMysteryChoice marks choose-mode removal as pending", () => {
-    const { result } = renderHook(() => useMysteryFlow());
+    const { result } = renderMysteryNav();
 
     act(() => {
       result.current.handleMysteryChoice({
@@ -99,7 +107,7 @@ describe("useMysteryFlow", () => {
   });
 
   it("handleMysteryChooseCard stores the picked card id for the summary", () => {
-    const { result } = renderHook(() => useMysteryFlow());
+    const { result } = renderMysteryNav();
 
     act(() => {
       result.current.handleMysteryChooseCard("slash");
@@ -111,7 +119,7 @@ describe("useMysteryFlow", () => {
 
   it("plays gold sounds only after the choice commits", () => {
     setRunProgress({ runGold: 20 });
-    const { result } = renderHook(() => useMysteryFlow());
+    const { result } = renderMysteryNav();
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
     vi.mocked(playGoldGain).mockImplementationOnce(() => {
@@ -137,9 +145,58 @@ describe("useMysteryFlow", () => {
     expect(playGoldSpend).toHaveBeenCalledOnce();
   });
 
+  it("handleMysteryChoice ignores a second call after the choice commits", () => {
+    setRunProgress({ runGold: 20 });
+    const { result } = renderMysteryNav();
+
+    act(() => {
+      result.current.handleMysteryChoice({
+        label: "Take",
+        effects: [{ kind: "gainGold", amount: 10 }],
+      });
+      result.current.handleMysteryChoice({
+        label: "Take again",
+        effects: [{ kind: "gainGold", amount: 10 }],
+      });
+    });
+
+    expect(getRunProgressStoreView().runGold).toBe(30);
+    expect(getRunSessionStoreView().mysteryChosenChoice?.label).toBe("Take");
+  });
+
+  it("handleMysteryChooseCard ignores a second pick", () => {
+    const { result } = renderMysteryNav();
+
+    act(() => {
+      result.current.handleMysteryChooseCard("slash");
+      result.current.handleMysteryChooseCard("block");
+    });
+
+    expect(getRunSessionStoreView().mysteryChosenCardId).toBe("slash");
+  });
+
+  it("handleMysteryRemoveCard ignores a second removal", () => {
+    setRunProgress({
+      runDeck: [makeTestCard({ id: "slash" }), makeTestCard({ id: "block" })],
+    });
+    const { result } = renderMysteryNav();
+
+    act(() => {
+      result.current.handleMysteryChoice({
+        label: "Offer",
+        effects: [{ kind: "removeCard", mode: "choose" }],
+      });
+      result.current.handleMysteryRemoveCard(0);
+      result.current.handleMysteryRemoveCard(0);
+    });
+
+    expect(getRunProgressStoreView().runDeck.map((card) => card.id)).toEqual(["block"]);
+    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(false);
+  });
+
   it("rolls back state and skips gold sounds when a later effect throws", () => {
     setRunProgress({ runGold: 20 });
-    const { result } = renderHook(() => useMysteryFlow());
+    const { result } = renderMysteryNav();
 
     expect(() =>
       act(() => {
@@ -158,7 +215,7 @@ describe("useMysteryFlow", () => {
   it("grants generated gear into the armory inventory", () => {
     setRunProgress({ characterId: "knight" });
     getRunSessionStoreView().setHasActiveRun(true);
-    const { result } = renderHook(() => useMysteryFlow());
+    const { result } = renderMysteryNav();
 
     act(() => {
       result.current.handleMysteryChoice({

@@ -7,9 +7,8 @@ import { DetailPopup } from "../../../shared/ui/card-popup";
 import { DisabledTooltip } from "../../../shared/ui/shared-ui";
 import { type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
-import { type BattleCard, type CompanionId } from "@/lib/game-data";
+import { type BattleCard, type CompanionId, getEffectiveCardDescriptionLines } from "@/lib/game-data";
 import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
-import { getEffectiveCardDescriptionLines } from "../../../shared/utils/card-description";
 import { HOMESTEAD_CONFIG, MaterialCost } from "./helpers";
 import { HomesteadTileCompletedFooter, HomesteadTileFrame } from "./homestead-tile-node";
 

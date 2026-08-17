@@ -16,7 +16,7 @@ import {
   type CombatTextEvent,
 } from "./types";
 import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import { applyFreezeBlockTalent, applyFreezeStripArmorTalent } from "./talent-effects";
+import { applyCrowdControlTriggerBonuses } from "./talent-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
@@ -164,8 +164,14 @@ export function tryTriggerEnemyFreeze(
   let result = triggered.state;
   result = applyFrozenHeartDamage(result, combatTexts);
   result = applyGearFreezeDamage(preHitState, result, combatTexts);
-  result = applyFreezeBlockTalent(result, combatTexts);
-  result = applyFreezeStripArmorTalent(result);
+  result = applyCrowdControlTriggerBonuses(
+    result,
+    {
+      block: result.talentEffects.blockOnFreeze,
+      stripArmor: result.talentEffects.freezeStripArmor,
+    },
+    combatTexts,
+  );
   return result;
 }
 

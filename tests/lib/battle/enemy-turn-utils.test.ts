@@ -175,6 +175,37 @@ describe("checkHealthThresholds", () => {
     expect(result.playerStatuses.block).toBe(5);
     expect(texts.some((t) => t.stat === "block")).toBe(true);
   });
+
+  it("fires every healthThresholdArmor crossing independently", () => {
+    const state = makeTestBattleState({
+      playerMaxHealth: 100,
+      talentEffects: {
+        ...defaultTalentEffects,
+        healthThresholdArmor: [
+          { threshold: 50, amount: 5 },
+          { threshold: 25, amount: 3 },
+        ],
+      },
+    });
+    const texts: CombatTextEvent[] = [];
+    const mid = checkHealthThresholds(80, 40, state, texts);
+    expect(mid.playerStatuses.armor).toBe(5);
+    const low = checkHealthThresholds(40, 20, mid, texts);
+    expect(low.playerStatuses.armor).toBe(8);
+  });
+
+  it("applies flatArmorAmount when health-threshold armor triggers", () => {
+    const state = makeTestBattleState({
+      playerMaxHealth: 30,
+      talentEffects: {
+        ...defaultTalentEffects,
+        healthThresholdArmor: [{ threshold: 50, amount: 5 }],
+        flatArmorAmount: 1,
+      },
+    });
+    const result = checkHealthThresholds(20, 10, state, []);
+    expect(result.playerStatuses.armor).toBe(6);
+  });
 });
 
 describe("resolveDeathsDoorGraceExpiry", () => {

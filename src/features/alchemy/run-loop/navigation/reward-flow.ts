@@ -1,28 +1,20 @@
-// Reward state, gold math, routing, and combat/boss reward builders.
+// Reward state, gold math, and combat/boss reward builders.
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
-import { cardLibrary, selectRewardCards, trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { cardLibrary, selectRewardCards, trinketLibrary, type BattleCard } from "@/lib/game-data";
 import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
-import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { sampleItems } from "@/lib/utils";
 import { CONSTANTS } from "../../shared/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import { generateGearRewardChoices, type GearInstance } from "@/lib/gear";
+import { generateGearRewardChoices } from "@/lib/gear";
 import {
   createEmptyRewardState,
+  getRewardChoiceId,
   type CardRewardState,
   type GearRewardState,
   type RewardState,
   type TrinketRewardState,
-} from "@/lib/active-run-session/reward-types";
-
-export type {
-  CardRewardState,
-  GearRewardState,
-  RewardState,
-  TrinketRewardState,
-} from "@/lib/active-run-session/reward-types";
-export { createEmptyRewardState } from "@/lib/active-run-session/reward-types";
+} from "@/lib/active-run-session";
 
 export {
   shouldGrantCompanionReward,
@@ -33,8 +25,6 @@ export {
   computeVictoryGold,
 } from "./reward-math";
 
-export type { VictoryGoldInput, VictoryGoldResult, RewardGoldInput } from "./reward-math";
-
 import { computeRewardGold } from "./reward-math";
 import type {
   BossRewardInput,
@@ -42,18 +32,7 @@ import type {
   FinalizeRewardInput,
   FinalizeRewardResult,
   FinalizeRewardRoute,
-  RewardRouteDeps,
 } from "./reward-flow-types";
-export type {
-  FinalizeRewardInput,
-  FinalizeRewardResult,
-  FinalizeRewardRoute,
-  RewardRouteDeps,
-} from "./reward-flow-types";
-
-export function getRewardChoiceId(choice: BattleCard | TrinketEntry | GearInstance): string {
-  return choice && typeof choice === "object" && "instanceId" in choice ? choice.instanceId : choice.id;
-}
 
 export function createNextRewardState(rewardState: RewardState): CardRewardState {
   return {
@@ -130,40 +109,6 @@ export function finalizeRewardState({ rewardState, companionRewardCards }: Final
     clearCompanionRewardCards: false,
     route,
   };
-}
-
-export function executeRewardRouteTransition(
-  route: FinalizeRewardResult["route"],
-  materials: MaterialInventory,
-  nextRewardState: CardRewardState,
-  clearCompanion: boolean,
-  deps: RewardRouteDeps,
-) {
-  const setReward = () => {
-    deps.setRewardState(nextRewardState);
-    if (clearCompanion) deps.setCompanionRewardCards(null);
-  };
-  switch (route) {
-    case CONSTANTS.REWARD_ROUTES.COMPANION_REWARD:
-      deps.navigateTo(CONSTANTS.SCREENS.REWARDS, setReward);
-      break;
-    case CONSTANTS.REWARD_ROUTES.LABYRINTH_VICTORY:
-      deps.completeRunVictory(materials, setReward);
-      break;
-    case CONSTANTS.REWARD_ROUTES.WILDWOOD_VICTORY:
-      deps.completeRunVictory(materials, setReward);
-      break;
-    case CONSTANTS.REWARD_ROUTES.LABYRINTH_MAP:
-      deps.labyrinthClearNode();
-      deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP, setReward);
-      break;
-    case CONSTANTS.REWARD_ROUTES.ACT_COMPLETE:
-      deps.handleActComplete(materials);
-      break;
-    case CONSTANTS.REWARD_ROUTES.DESTINATION:
-      deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, setReward);
-      break;
-  }
 }
 
 export function createBossRewardState({

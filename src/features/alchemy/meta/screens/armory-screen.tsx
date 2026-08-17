@@ -11,7 +11,7 @@ import {
   type GearSlot,
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
-import { collectionGridGapXClass, sectionTitleClass } from "@/features/alchemy/shared/config";
+import { collectionGridGapXClass, screenShellPaddingClass, sectionTitleClass } from "@/features/alchemy/shared/config";
 import {
   characters,
   getRequiredPreviousCharacter,
@@ -140,7 +140,8 @@ export function ArmoryScreen({
       <div
         data-testid="armory-screen"
         className={cn(
-          "alchemy-shell my-auto flex w-full max-w-[96rem] flex-1 flex-col rounded-shell-screen p-[2.1rem] pb-1",
+          "alchemy-shell my-auto flex w-full max-w-[96rem] flex-1 flex-col rounded-shell-screen pb-1",
+          screenShellPaddingClass,
           salvageMode && "armory-salvage-cursor",
         )}
       >

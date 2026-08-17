@@ -19,7 +19,7 @@ import {
   setActiveLabyrinthPendingNode,
   setLabyrinthMap,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import type { Screen } from "@/features/alchemy/shared/types";
+import type { Screen } from "@/lib/routing";
 
 export interface LabyrinthController {
   enterNode: (row: number, col: number, handlers: LabyrinthNodeHandlers) => boolean;

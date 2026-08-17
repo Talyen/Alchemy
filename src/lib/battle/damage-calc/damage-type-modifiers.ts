@@ -1,12 +1,6 @@
 import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEffectManifest } from "@/lib/game-data";
 import type { BattleState } from "../types";
-import {
-  BLEED_EXECUTE_MULTIPLIER,
-  BLOCK_SCALED_DAMAGE_PERCENT,
-  MANA_BURN_DAMAGE_PERCENT,
-  HALF_DIVISOR,
-  PERCENT_DENOMINATOR,
-} from "../../game-constants";
+import { BLOCK_SCALED_DAMAGE_PERCENT, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../../game-constants";
 
 const DAMAGE_CONSTANTS = {
   DOUBLE_MULTIPLIER: 2,
@@ -113,7 +107,6 @@ function applyPhysicalDamageModifiers(state: BattleState, rawAmount: number): nu
 function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + state.gearEffects.flatHolyDamage;
   nextAmount += Math.round((state.gold * state.talentEffects.holyGoldPercent) / PERCENT_DENOMINATOR);
-  nextAmount += Math.round((state.playerStatuses.block * state.talentEffects.holyBlockPercent) / PERCENT_DENOMINATOR);
   nextAmount += Math.round(
     (state.playerStatuses.block * state.gearEffects.holyDamageFromBlockPercent) / PERCENT_DENOMINATOR,
   );
@@ -139,7 +132,7 @@ function applyBleedDamageModifiers(state: BattleState, rawAmount: number): numbe
     state.talentEffects.bleedExecuteThreshold > 0 &&
     state.enemyHealth <= (state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold) / PERCENT_DENOMINATOR
   ) {
-    nextAmount = Math.round(nextAmount * BLEED_EXECUTE_MULTIPLIER);
+    nextAmount = Math.round(nextAmount * state.talentEffects.bleedExecuteMultiplier);
   }
   return nextAmount;
 }
@@ -159,9 +152,7 @@ function applyStunDamageModifiers(state: BattleState, rawAmount: number): number
 function applyBurnDamageModifiers(state: BattleState, rawAmount: number, card?: BattleCard): number {
   let nextAmount = rawAmount + state.talentEffects.flatBurnDamage + state.gearEffects.flatBurnDamage;
   if (state.talentEffects.burnDamagePerManaCrystal > 0) {
-    nextAmount += Math.round(
-      (state.maxMana * state.talentEffects.burnDamagePerManaCrystal * MANA_BURN_DAMAGE_PERCENT) / PERCENT_DENOMINATOR,
-    );
+    nextAmount += Math.round((state.maxMana * state.talentEffects.burnDamagePerManaCrystal) / PERCENT_DENOMINATOR);
   }
   if (state.gearEffects.burnDamagePerManaPercent > 0) {
     nextAmount += Math.round((state.maxMana * state.gearEffects.burnDamagePerManaPercent) / PERCENT_DENOMINATOR);
@@ -169,15 +160,8 @@ function applyBurnDamageModifiers(state: BattleState, rawAmount: number, card?: 
   if (state.talentEffects.blockToBurnDamage) {
     nextAmount += getBlockScaledDamageBonus(state);
   }
-  if (card?.consume) {
-    if (state.talentEffects.consumeBurnDamageBonusPercent > 0) {
-      nextAmount = Math.round(
-        nextAmount * (1 + state.talentEffects.consumeBurnDamageBonusPercent / PERCENT_DENOMINATOR),
-      );
-    }
-    if (state.talentEffects.consumeDamageBonusPercent > 0) {
-      nextAmount = Math.round(nextAmount * (1 + state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR));
-    }
+  if (card?.consume && state.talentEffects.consumeBurnDamageBonusPercent > 0) {
+    nextAmount = Math.round(nextAmount * (1 + state.talentEffects.consumeBurnDamageBonusPercent / PERCENT_DENOMINATOR));
   }
   return nextAmount;
 }
@@ -227,5 +211,9 @@ export function computeBaseDamage(
 ) {
   const rawAmount = computeBaseRawAmount(state, effect, card);
   const modifier = DAMAGE_TYPE_HANDLERS[effect.damageType] ?? ((_s, r) => r);
-  return Math.max(0, modifier(state, rawAmount, card));
+  let amount = modifier(state, rawAmount, card);
+  if (card?.consume && state.talentEffects.consumeDamageBonusPercent > 0) {
+    amount = Math.round(amount * (1 + state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR));
+  }
+  return Math.max(0, amount);
 }

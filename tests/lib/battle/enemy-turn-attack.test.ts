@@ -74,11 +74,11 @@ describe("processEnemyAttack", () => {
     expect(result.playerHealth).toBe(25);
   });
 
-  it("halves freeze damage and buildup when receiveHalfFreezeBuildUp talent is active", () => {
+  it("halves freeze damage and buildup when receiveHalfFreezeDamage talent is active", () => {
     const state = makeTestBattleState({
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
-      talentEffects: { ...makeTestBattleState().talentEffects, receiveHalfFreezeBuildUp: true },
+      talentEffects: { ...makeTestBattleState().talentEffects, receiveHalfFreezeDamage: true },
       enemyAttackEffects: [{ kind: "damage", damageType: "freeze", amount: 10 }],
     });
     const result = processEnemyAttack(state, makeTexts());
@@ -86,6 +86,29 @@ describe("processEnemyAttack", () => {
     // dealt (5) — the talent is applied once, not once per step.
     expect(result.playerHealth).toBe(25);
     expect(result.playerStatuses.freeze).toBe(5);
+  });
+
+  it("halves enemy burn damage and burn stacks when receiveHalfBurnDamage is active", () => {
+    const state = makeTestBattleState({
+      playerHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      talentEffects: { ...makeTestBattleState().talentEffects, receiveHalfBurnDamage: true },
+      enemyAttackEffects: [{ kind: "damage", damageType: "burn", amount: 4 }],
+    });
+    const result = processEnemyAttack(state, makeTexts());
+    expect(result.playerHealth).toBe(28);
+    expect(result.playerStatuses.burn).toBe(2);
+  });
+
+  it("halves enemy nature damage when receiveHalfNatureDamage is active", () => {
+    const state = makeTestBattleState({
+      playerHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      talentEffects: { ...makeTestBattleState().talentEffects, receiveHalfNatureDamage: true },
+      enemyAttackEffects: [{ kind: "damage", damageType: "nature", amount: 10 }],
+    });
+    const result = processEnemyAttack(state, makeTexts());
+    expect(result.playerHealth).toBe(25);
   });
 
   it("adds enemy burnBonus to burn damage", () => {
@@ -244,6 +267,33 @@ describe("processEnemyAttack", () => {
     expect(result.playerStatuses.stun).toBe(0);
     expect(result.playerCC.stunSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "stun", text: "Stunned" });
+  });
+
+  it("Grounding prevents stun buildup when the player has block", () => {
+    const state = makeTestBattleState({
+      playerHealth: 30,
+      playerMaxHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 4, armor: 0 },
+      talentEffects: { ...makeTestBattleState().talentEffects, blockPreventsStun: true },
+      enemyAttackEffects: [{ kind: "damage", damageType: "stun", amount: 8 }],
+    });
+    const result = processEnemyAttack(state, makeTexts());
+    expect(result.playerStatuses.stun).toBe(0);
+    expect(result.playerCC.stunSkipTurns).toBe(0);
+  });
+
+  it("Grounding still prevents stun buildup when the hit spends the last Block", () => {
+    const state = makeTestBattleState({
+      playerHealth: 30,
+      playerMaxHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 3, armor: 0 },
+      talentEffects: { ...makeTestBattleState().talentEffects, blockPreventsStun: true },
+      enemyAttackEffects: [{ kind: "damage", damageType: "stun", amount: 10 }],
+    });
+    const result = processEnemyAttack(state, makeTexts());
+    expect(result.playerStatuses.block).toBe(0);
+    expect(result.playerStatuses.stun).toBe(0);
+    expect(result.playerCC.stunSkipTurns).toBe(0);
   });
 
   it("immediately triggers player freeze when incoming buildup reaches threshold", () => {

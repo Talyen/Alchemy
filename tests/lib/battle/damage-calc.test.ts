@@ -53,7 +53,6 @@ describe("computeCardDamageToEnemy", () => {
   it("applies crit multiplier when random rolls below threshold", () => {
     const state = makeTestBattleState({
       enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 0, armor: 0 },
-      talentEffects: { ...defaultTalentEffects, physicalCritChance: 100 },
       rng: () => 0,
     });
     const { modifiedDamage } = computeCardDamageToEnemy(state, physicalEffect);
@@ -82,20 +81,26 @@ describe("computeCardDamageToEnemy", () => {
     expect(modifiedDamage).toBe(physicalEffect.amount + 5);
   });
 
-  it("applies bleed execute threshold multiplier", () => {
-    const bleedEffect: Extract<BattleCardEffect, { kind: "damage" }> = {
+  it("applies consumeDamageBonusPercent to non-burn consume damage", () => {
+    const holyEffect: Extract<BattleCardEffect, { kind: "damage" }> = {
       kind: "damage",
-      damageType: "bleed",
-      amount: 5,
+      damageType: "holy",
+      amount: 10,
     };
     const state = makeTestBattleState({
-      enemyHealth: 5,
-      enemyMaxHealth: 30,
       enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 0, armor: 0 },
-      talentEffects: { ...defaultTalentEffects, bleedExecuteThreshold: 25 },
+      talentEffects: { ...defaultTalentEffects, consumeDamageBonusPercent: 20 },
       rng: () => 0.99,
     });
-    const { modifiedDamage } = computeCardDamageToEnemy(state, bleedEffect);
-    expect(modifiedDamage).toBeGreaterThanOrEqual(10);
+    const { modifiedDamage } = computeCardDamageToEnemy(state, holyEffect, {
+      id: "avatar",
+      title: "Avatar",
+      descriptionLines: [],
+      art: "",
+      cost: 1,
+      consume: true,
+      effects: [holyEffect],
+    });
+    expect(modifiedDamage).toBe(12);
   });
 });

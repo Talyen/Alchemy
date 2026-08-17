@@ -12,7 +12,7 @@ import {
   Trophy,
 } from "lucide-react";
 import type { TalentDefinition } from "../types";
-import { setEffect } from "../types";
+import { addEffect, setEffect } from "../types";
 
 export const goldTalents: TalentDefinition[] = [
   {
@@ -77,7 +77,7 @@ export const goldTalents: TalentDefinition[] = [
     name: "Golden Wish",
     description: "Gain 3 Gold when you Wish",
     icon: Sparkles,
-    effects: [setEffect("goldOnWish", 3)],
+    effects: [addEffect("goldOnWish", 3)],
   },
   {
     id: "gold-mix-discount",
@@ -95,6 +95,4 @@ export const goldTalents: TalentDefinition[] = [
     icon: Trophy,
     effects: [setEffect("eliteGoldDropBonus", 0.1)],
   },
-
-  // --- Holy ---
 ];

@@ -1,6 +1,6 @@
 import { vi } from "vitest";
 import type { DestinationRouteDeps } from "@/features/alchemy/run-loop/run/run-destination-handlers";
-import type { RewardRouteDeps } from "@/features/alchemy/run-loop/navigation/reward-flow-types";
+import type { RewardRouteDeps } from "@/features/alchemy/run-loop/run/run-flow-rewards";
 
 export function makeDestinationRouteDeps(): DestinationRouteDeps {
   return {

@@ -3,7 +3,7 @@
 // Used by screens that need consistent header, description, and scroll layout.
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { screenDescriptionClass, screenTitleClass } from "../config";
+import { screenDescriptionClass, screenShellPaddingClass, screenTitleClass } from "../config";
 import { HamburgerTrigger } from "./navigation";
 
 export function ScreenHeader({ title, className }: { title: ReactNode; className?: string }) {
@@ -67,7 +67,8 @@ export function ScreenShell({
   return (
     <div
       className={cn(
-        "alchemy-shell mx-auto flex w-full flex-col rounded-shell-screen p-[2.1rem]",
+        "alchemy-shell mx-auto flex w-full flex-col rounded-shell-screen",
+        screenShellPaddingClass,
         minHeightClass,
         maxWidthClass,
         className,

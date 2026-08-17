@@ -9,8 +9,8 @@ import {
   getBossShineGradient,
 } from "@/features/alchemy/shared/config";
 import { DestinationChoices, TitledScreenShell } from "../../shared/ui/shared-ui";
-import { DESTINATIONS, type Destination } from "../../shared/types";
-import type { RewardState } from "../navigation/reward-flow";
+import { DESTINATIONS, type Destination } from "@/lib/routing";
+import type { RewardState } from "@/lib/active-run-session";
 
 export function DestinationScreen({
   rewardState,

@@ -53,7 +53,7 @@ export const burnTalents: TalentDefinition[] = [
     name: "Wildfire",
     description: "Your first Burn card each combat deals 50% more damage",
     icon: TrendingUp,
-    effects: [setEffect("firstBurnCardDoubled", true)],
+    effects: [setEffect("firstBurnCardBonusMultiplier", 1.5)],
   },
   {
     id: "burn-remove-armor",
@@ -95,6 +95,4 @@ export const burnTalents: TalentDefinition[] = [
     icon: ShieldCheck,
     effects: [setEffect("receiveHalfBurnDamage", true)],
   },
-
-  // --- Gold ---
 ];

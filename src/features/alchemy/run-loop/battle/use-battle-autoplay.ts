@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { AUTOPLAY_POST_PLAY_DELAY_MS, AUTOPLAY_RETRY_DELAY_MS } from "@/lib/game-constants";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
-import type { Screen } from "@/features/alchemy/shared/types";
+import type { Screen } from "@/lib/routing";
 
 import { useLatestRef } from "../../shared/hooks";
 import { driveAutoplay, findFirstPlayableHandCard, isAutoplayBattleOver } from "./autoplay-driver";
@@ -21,7 +21,7 @@ interface UseBattleAutoplayOptions {
   playCard: (card: BattleCard, index: number) => boolean;
 }
 
-function isAutoplayBlocked(options: {
+export function isAutoplayBlocked(options: {
   screen: Screen;
   battleState: BattleState;
   hasActiveBattle: boolean;

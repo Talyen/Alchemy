@@ -40,7 +40,7 @@ function CurrencyChip({
         className={cn(
           "relative h-20 w-20 overflow-hidden rounded-xl border border-border/80 bg-black",
           armed && tiltSurfaceSelectedRingClass,
-          !canUse && "cursor-default opacity-40",
+          !canUse && "cursor-default opacity-50",
         )}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
@@ -97,7 +97,7 @@ export function CraftingStrip({
           className={cn(
             "relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-border/80 bg-black text-red-300",
             salvageMode && tiltSurfaceSelectedRingClass,
-            (!editable || (!hasSalvageableGear && !salvageMode)) && "cursor-default opacity-40",
+            (!editable || (!hasSalvageableGear && !salvageMode)) && "cursor-default opacity-50",
           )}
           onClick={(event) => {
             event.stopPropagation();

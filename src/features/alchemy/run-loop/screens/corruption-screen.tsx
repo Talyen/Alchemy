@@ -7,7 +7,7 @@ import { Dices, MoveRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { corruptionAltar, type BattleCard } from "@/lib/game-data";
-import type { CorruptionResult } from "../corruption";
+import type { CorruptionResult } from "@/lib/corruption";
 import {
   SHINE_PALETTES,
   viewCardWidthClass,
