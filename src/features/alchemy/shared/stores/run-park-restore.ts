@@ -18,7 +18,7 @@ import { initializeActiveBattle } from "./write-port-battle";
 import { createDraftRunRandomSource } from "./write-port-run";
 import { abandonMysteryDestinationVisit, clearMysteryVisitState, setMysteryEvent } from "./write-port-session";
 import { rebindLiveRunMeta } from "./run-meta-rebind";
-import { removeRunRecency, touchRunRecency } from "./parked-runs";
+import { omitParkedMode, removeRunRecency, touchRunRecency } from "./parked-runs";
 
 function encodeParkedSnapshot(draft: GameplayDraft): ActiveRunData {
   const snapshot = encodeRunResumeSnapshot(getRunSessionFromState(draft, draft.run.navigation.screen));
@@ -90,13 +90,13 @@ export function hydrateModeRunInDraft(draft: GameplayDraft, mode: ContentSystemI
   if (draft.session.hasActiveRun && draft.run.activeRun.contentSystemType !== mode) {
     parkForegroundRunInDraft(draft);
   }
-  delete draft.run.parkedRuns[mode];
+  draft.run.parkedRuns = omitParkedMode(draft.run.parkedRuns, mode);
   applyRestoreRunToDraft(draft, parked);
   draft.run.runRecency = touchRunRecency(draft.run.runRecency, mode);
   return true;
 }
 
 export function clearModeSlotInDraft(draft: GameplayDraft, mode: ContentSystemId): void {
-  delete draft.run.parkedRuns[mode];
+  draft.run.parkedRuns = omitParkedMode(draft.run.parkedRuns, mode);
   draft.run.runRecency = removeRunRecency(draft.run.runRecency, mode);
 }

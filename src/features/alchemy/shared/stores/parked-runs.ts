@@ -17,6 +17,10 @@ export function removeRunRecency(recency: ContentSystemId[], mode: ContentSystem
   return recency.filter((id) => id !== mode);
 }
 
+export function omitParkedMode(parked: ParkedRunsMap, mode: ContentSystemId): ParkedRunsMap {
+  return Object.fromEntries(Object.entries(parked).filter(([key]) => key !== mode));
+}
+
 export function mostRecentResumableMode(
   recency: ContentSystemId[],
   liveMode: ContentSystemId | null,

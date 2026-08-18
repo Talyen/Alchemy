@@ -8,7 +8,7 @@ import { applyRunStartSnapshot, clearTransientSession } from "@/features/alchemy
 import { createRunStartSnapshot, type RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import { grantStartGold } from "@/features/alchemy/shared/stores/gold-purse";
 import { parkForegroundRunInDraft } from "@/features/alchemy/shared/stores/run-park-restore";
-import { touchRunRecency } from "@/features/alchemy/shared/stores/parked-runs";
+import { omitParkedMode, touchRunRecency } from "@/features/alchemy/shared/stores/parked-runs";
 
 interface CreateRunStartSnapshotInput {
   characterId: CharacterId;
@@ -63,7 +63,7 @@ export function applyRunStartToDraft(
     grantStartGold(draft, snapshot.startGoldGrant);
   }
   draft.run.runRecency = touchRunRecency(draft.run.runRecency, snapshot.contentSystemType);
-  delete draft.run.parkedRuns[snapshot.contentSystemType];
+  draft.run.parkedRuns = omitParkedMode(draft.run.parkedRuns, snapshot.contentSystemType);
   if (options.discoverDeck || snapshot.characterId === "wildcard") {
     discoverCardIds(
       draft,

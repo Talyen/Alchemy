@@ -27,7 +27,6 @@ export function useSequentialFadeSwap<T>({
       setPhase((current) => (current === "exit" ? "enter" : current));
       return;
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sequential fade-out before swapping identity
     setPhase("exit");
     const timeout = window.setTimeout(() => {
       onSwapRef.current?.();

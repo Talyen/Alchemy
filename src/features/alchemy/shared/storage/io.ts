@@ -39,7 +39,7 @@ function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSav
   }
   const rawParked =
     raw && typeof raw === "object" && "parkedRuns" in raw && raw.parkedRuns && typeof raw.parkedRuns === "object"
-      ? Object.keys(raw.parkedRuns as object).length
+      ? Object.keys(raw.parkedRuns).length
       : 0;
   const keptParked = Object.keys(normalized.parkedRuns ?? {}).length;
   if (rawParked > keptParked) {
