@@ -1,9 +1,15 @@
-import { vi, type Mocked } from "vitest";
+import { vi, type Mock } from "vitest";
 import type { HandDrawSequenceDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import type { BattlePresentationPort } from "@/features/alchemy/run-loop/battle/battle-presentation-port";
 import type { BattleTurnSession, TurnOrchestration } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 
-export function makePresentationPort(overrides: Partial<BattlePresentationPort> = {}): Mocked<BattlePresentationPort> {
+type MockBattlePresentationPort = {
+  [K in keyof BattlePresentationPort]: BattlePresentationPort[K] extends (...args: infer A) => infer R
+    ? Mock<(...args: A) => R>
+    : BattlePresentationPort[K];
+};
+
+export function makePresentationPort(overrides: Partial<MockBattlePresentationPort> = {}): MockBattlePresentationPort {
   return {
     hiddenHandCardKeys: [],
     cardTransferInProgress: false,

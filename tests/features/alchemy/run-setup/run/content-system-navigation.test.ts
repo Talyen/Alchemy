@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { describe, expect, it, beforeEach, vi, type Mock } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { getNavigationStoreView, getRunDomainStore, useProfileStore } from "../../../../helpers/gameplay-store-test";
@@ -304,7 +304,7 @@ describe("createContentSystemNavigation", () => {
     const resume = makeDeps({ hasActiveRun: true, getAvailableDestinations });
     createContentSystemNavigation(resume).beginCampaign();
 
-    const onCommit = resume.navigateTo.mock.calls[0]?.[1] as (() => void) | undefined;
+    const onCommit = (resume.navigateTo as Mock).mock.calls[0]?.[1] as (() => void) | undefined;
     expect(onCommit).toEqual(expect.any(Function));
     onCommit?.();
     expect(getAvailableDestinations).toHaveBeenCalledWith({

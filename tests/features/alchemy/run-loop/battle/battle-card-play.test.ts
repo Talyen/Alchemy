@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
 import type { MouseEvent } from "react";
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
@@ -84,7 +84,7 @@ function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
   return { ctx, session, transferDeps, awardCardXP: vi.mocked(awardCardXP) };
 }
 
-function expectAwardedCard(awardCardXP: ReturnType<typeof vi.mocked<typeof awardCardXP>>, cardId: string) {
+function expectAwardedCard(awardCardXP: Mock, cardId: string) {
   expect(awardCardXP).toHaveBeenCalled();
   expect(awardCardXP.mock.calls[0]?.[1]).toEqual(expect.objectContaining({ id: cardId }));
 }

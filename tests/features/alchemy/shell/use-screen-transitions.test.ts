@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
-import { ROUTE_SCREENS } from "@/lib/routing";
+import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 import { resetRunNavigationSlice } from "../../../helpers/run-domain-store-test";
 
@@ -102,9 +102,12 @@ describe("useScreenTransitions navigation", () => {
   it("uses the latest screen at fire time for same-screen commits", () => {
     const setScreen = vi.fn();
     const onCommit = vi.fn();
-    const { result, rerender } = renderHook(({ screen }) => useScreenTransitions(screen, setScreen), {
-      initialProps: { screen: ROUTE_SCREENS.MENU },
-    });
+    const { result, rerender } = renderHook(
+      ({ screen }: { screen: Screen }) => useScreenTransitions(screen, setScreen),
+      {
+        initialProps: { screen: ROUTE_SCREENS.MENU as Screen },
+      },
+    );
 
     act(() => {
       result.current.navigateTo(ROUTE_SCREENS.GAME_MODE_SELECT, onCommit);
