@@ -2,7 +2,6 @@
 // Depends on alchemy controllers, homestead state, screen modules, assets, and platform/audio helpers.
 import { useCallback, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { type CharacterId, type DifficultyId } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 import {
   AppBackgroundParticles,
@@ -30,7 +29,6 @@ import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-ru
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { clearAlchemySaveData, type SaveLoadState } from "@/features/alchemy/shared/storage";
-import { readProfileStore, setCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
 import {
   useActiveRunScreenValue,
@@ -43,7 +41,6 @@ import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profi
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-session-model";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 type GameMenuState = ReturnType<typeof useGameMenuState>;
 
@@ -202,15 +199,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   });
   useGlobalErrorHandlers();
 
-  function handleMarkDifficultyCompleted(characterId: CharacterId, difficultyId: DifficultyId) {
-    const prev = readProfileStore().completedDifficulties;
-    const current = prev[characterId];
-    if (current.includes(difficultyId)) return;
-    dispatchRunSessionCommand((draft) =>
-      setCompletedDifficulties(draft, { ...prev, [characterId]: [...current, difficultyId] }),
-    );
-  }
-
   const screen = useActiveRunScreenValue();
   useAppAudioEffects({
     masterVol: settings.masterVol,
@@ -221,9 +209,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   });
 
   const gameMenu = useGameMenuState();
-  const run = useAlchemyRunController({
-    onMarkDifficultyCompleted: handleMarkDifficultyCompleted,
-  });
+  const run = useAlchemyRunController();
 
   const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(
     run.screen,

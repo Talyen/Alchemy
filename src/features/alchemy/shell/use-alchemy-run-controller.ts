@@ -2,7 +2,6 @@
 // Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
-import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
 import {
   unlockTalent,
@@ -37,11 +36,7 @@ const commandUnlockTalent = createRunSessionCommand(unlockTalent);
 const commandResetUnlockedTalents = createRunSessionCommand(resetUnlockedTalents);
 const commandUnlockAllTalents = createRunSessionCommand(unlockAllTalents);
 
-export function useAlchemyRunController({
-  onMarkDifficultyCompleted,
-}: {
-  onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
-}) {
+export function useAlchemyRunController() {
   // The app bootstrap gate restores the aggregate before this controller mounts.
   const homesteadEffects = useHomesteadEffects();
   const battleRun = useBattleRunPort();
@@ -110,7 +105,6 @@ export function useAlchemyRunController({
     initializeShop: shop.initialize,
     labyrinthClearNode: labyrinth.onNodeCleared,
     labyrinthFailNode: labyrinth.onNodeFailed,
-    onMarkDifficultyCompleted,
   });
 
   useLayoutEffect(() => {
@@ -120,15 +114,21 @@ export function useAlchemyRunController({
 
   useSteamRichPresence(screen, nav.runPhase, characterId);
 
+  const beginLabyrinth = nav.beginLabyrinth;
+  const activeRunData = nav.activeRunData;
+  const hasActiveBattle = battle.hasActiveBattle;
+  const handleBattleEndRun = battle.handleEndRun;
+  const handleAbandonRun = nav.handleAbandonRun;
+
   const handleBeginLabyrinth = useCallback(() => {
     if (
-      !(nav.activeRunData && contentSystemType === "labyrinth") &&
-      !(battle.hasActiveBattle && contentSystemType === "labyrinth")
+      !(activeRunData && contentSystemType === "labyrinth") &&
+      !(hasActiveBattle && contentSystemType === "labyrinth")
     ) {
       labyrinth.resetMap();
     }
-    nav.beginLabyrinth();
-  }, [nav, contentSystemType, battle.hasActiveBattle, labyrinth]);
+    beginLabyrinth();
+  }, [activeRunData, beginLabyrinth, contentSystemType, hasActiveBattle, labyrinth]);
 
   const nodeRouting = useMemo(
     () =>
@@ -157,12 +157,12 @@ export function useAlchemyRunController({
   );
 
   const handleEndRun = useCallback(() => {
-    if (shouldSurrenderBattleOnEndRun(screen, battle.hasActiveBattle, contentSystemType)) {
-      battle.handleEndRun();
+    if (shouldSurrenderBattleOnEndRun(screen, hasActiveBattle, contentSystemType)) {
+      handleBattleEndRun();
       return;
     }
-    nav.handleAbandonRun();
-  }, [screen, battle, contentSystemType, nav]);
+    handleAbandonRun();
+  }, [screen, hasActiveBattle, handleBattleEndRun, contentSystemType, handleAbandonRun]);
 
   const routeCommands = useMemo(
     () => ({
@@ -179,7 +179,8 @@ export function useAlchemyRunController({
         handleCharacterSelect: nav.handleCharacterSelect,
         handleStandardDraftComplete: nav.handleStandardDraftComplete,
         handleWildwoodDraftComplete: nav.handleWildwoodDraftComplete,
-        handleDraftPick: nav.handleDraftPick,
+        handleWildwoodDraftPick: nav.handleWildwoodDraftPick,
+        handleStarterDraftPick: nav.handleStarterDraftPick,
         handleDifficultySelect: nav.handleDifficultySelect,
         handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,
       },

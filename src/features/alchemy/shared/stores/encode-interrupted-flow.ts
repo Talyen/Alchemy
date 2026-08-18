@@ -10,7 +10,7 @@ import {
 import type { BattleCard } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { filterValidDestinations, type Screen } from "@/lib/routing";
-import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
+import { wildwoodPhaseToScreen } from "@/features/alchemy/shared/run-flow/wildwood-screen-routing";
 import type { RunSession } from "./run-session-model";
 
 export interface DecodedClaimSurface {
@@ -42,13 +42,6 @@ function encodeMidClaimPendingReward(session: RunSession["session"]): PersistedP
   };
 }
 
-function wildwoodPhaseScreen(phase: WildwoodDraftState["phase"]): Screen | undefined {
-  if (phase === "removal") return "wildwood-removal";
-  if (phase === "draft") return "draft-deck";
-  if (phase === "battle") return "battle";
-  return undefined;
-}
-
 export function resolveEncodeScreen(
   requested: Screen | null | undefined,
   session: RunSession["session"],
@@ -61,9 +54,7 @@ export function resolveEncodeScreen(
   if (requested === "rewards" || requested == null) {
     if (session.labyrinthMap) return "labyrinth-map";
     if (session.wildwoodDraft) {
-      const phase = session.wildwoodDraft.phase;
-      if (phase === "reward") return "rewards";
-      return wildwoodPhaseScreen(phase) ?? "destination";
+      return wildwoodPhaseToScreen(session.wildwoodDraft.phase) ?? "destination";
     }
     return "destination";
   }
@@ -121,7 +112,7 @@ export function encodeInterruptedFlow(
 function resolveDestinationExitScreen(activeRun: ActiveRunData): Screen {
   if (activeRun.labyrinthMap) return "labyrinth-map";
   if (activeRun.wildwoodDraft) {
-    return wildwoodPhaseScreen(activeRun.wildwoodDraft.phase) ?? "destination";
+    return wildwoodPhaseToScreen(activeRun.wildwoodDraft.phase) ?? "destination";
   }
   return "destination";
 }
@@ -131,7 +122,7 @@ export function inferActiveRunScreen(activeRun: ActiveRunData): Screen {
   if (activeRun.activeCombat && activeRun.activeCombat.battleState.enemyHealth > 0) return "battle";
   if (activeRun.contentSystemType === "labyrinth" && activeRun.labyrinthMap) return "labyrinth-map";
   if (activeRun.wildwoodDraft) {
-    return wildwoodPhaseScreen(activeRun.wildwoodDraft.phase) ?? "destination";
+    return wildwoodPhaseToScreen(activeRun.wildwoodDraft.phase) ?? "destination";
   }
   if (activeRun.interruptedFlow.kind === "primary-reward" || activeRun.interruptedFlow.kind === "companion-reward") {
     return "rewards";

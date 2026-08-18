@@ -4,7 +4,13 @@
 // `dispatchRunSessionCommand`; compound recipes compose these helpers without nesting.
 import { getDifficultyXPMultiplier } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
-import type { PersistedBattleTransition } from "@/lib/active-run-session";
+import {
+  emptyAlchemistState,
+  emptyEquipmentShopState,
+  emptyShopState,
+  emptyTrinketShopState,
+  type PersistedBattleTransition,
+} from "@/lib/active-run-session";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunRngStream } from "@/lib/run-rng";
@@ -268,6 +274,14 @@ export const setShopState = bindDraftAction((s) => sessionActions(s).setShopStat
 export const setAlchemistState = bindDraftAction((s) => sessionActions(s).setAlchemistState);
 export const setTrinketShopState = bindDraftAction((s) => sessionActions(s).setTrinketShopState);
 export const setEquipmentShopState = bindDraftAction((s) => sessionActions(s).setEquipmentShopState);
+
+/** Drop leftover offerings when leaving a shop so runtime matches screen-gated encode. */
+export function clearShopOfferings(draft: GameplayDraft): void {
+  setShopState(draft, emptyShopState());
+  setAlchemistState(draft, emptyAlchemistState());
+  setTrinketShopState(draft, emptyTrinketShopState());
+  setEquipmentShopState(draft, emptyEquipmentShopState());
+}
 
 // ---------------------------------------------------------------------------
 // Mystery

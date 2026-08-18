@@ -39,11 +39,7 @@ beforeEach(() => {
 
 describe("useAlchemyRunController", () => {
   function renderController() {
-    return renderHook(() =>
-      useAlchemyRunController({
-        onMarkDifficultyCompleted: vi.fn(),
-      }),
-    );
+    return renderHook(() => useAlchemyRunController());
   }
 
   it("exposes menu screen after bootstrap", () => {
@@ -75,5 +71,12 @@ describe("useAlchemyRunController", () => {
 
     expect(getRunSessionStoreView().hasActiveRun).toBe(false);
     expect(getBattleStoreView().hasActiveBattle).toBe(false);
+  });
+
+  it("keeps routeCommands identity across a no-op rerender", () => {
+    const { result, rerender } = renderController();
+    const first = result.current.routeCommands;
+    rerender();
+    expect(result.current.routeCommands).toBe(first);
   });
 });

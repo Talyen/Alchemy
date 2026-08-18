@@ -1,5 +1,5 @@
 // Shell side effects that run-flow handlers call directly (navigate, shops, battles, content hooks).
-import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
+import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
 import type { ScreenTransitionOptions } from "@/features/alchemy/shell/use-screen-transitions";
 import type { VictoryRewardsResult } from "../navigation/victory-flow";
 import type { Screen } from "@/lib/routing";
@@ -15,12 +15,10 @@ export interface RunFlowShellActions {
   startBattle: (opts?: { deck?: BattleCard[]; gold?: number; enemyType?: "normal" | "elite" }) => void;
   /** Prefer bossId via onStartBossById; fall back to generic boss start when missing or rejected. */
   startBoss: (opts?: { bossId?: string | null; modifiers?: DifficultyModifier[] }) => void;
-  markDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
   /** Update the Wildwood reward handoff in the active command draft. */
   commitWildwoodVictory: (draft: GameplayDraft, result: VictoryRewardsResult) => void;
   beginMysteryEvent: (onRenderedScreenCommit?: () => void) => void;
   clearMysteryCardChoices: () => void;
   wildwoodRewardComplete: (onRenderedScreenCommit?: () => void) => void;
-  selectRewardChoice: (id: string) => void;
   clearCardHover: () => void;
 }

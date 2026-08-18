@@ -16,6 +16,7 @@ import {
 } from "../../../../helpers/run-domain-store-test";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
+import { makeRunController } from "../../../../helpers/run-controller";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { isDraft } from "immer";
 
@@ -162,6 +163,21 @@ describe("createRunFlowHandlers victory paths", () => {
     handlers.handleAbandonRun();
     expect(onLabyrinthFailNode).not.toHaveBeenCalled();
     expect(navigateTo).not.toHaveBeenCalledWith(CONSTANTS.SCREENS.LABYRINTH_MAP);
+    expect(applyRunDefeatTeardown).toHaveBeenCalled();
+    expect(transition).toHaveBeenCalledWith(CONSTANTS.SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
+  });
+
+  it("endLabyrinthRun uses live content system, not a stale handler port", () => {
+    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN });
+    const transition = vi.fn();
+    const handlers = createRunFlowHandlers(
+      makeFlowHandlerDeps({
+        transition,
+        run: { ...makeRunController(), contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN },
+      }),
+    );
+    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });
+    handlers.endLabyrinthRun();
     expect(applyRunDefeatTeardown).toHaveBeenCalled();
     expect(transition).toHaveBeenCalledWith(CONSTANTS.SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
   });

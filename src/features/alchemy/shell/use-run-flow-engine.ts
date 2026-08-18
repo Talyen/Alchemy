@@ -11,7 +11,7 @@ import {
 import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-session-model";
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
@@ -22,7 +22,6 @@ import { useContentSystemNavigation } from "./use-content-system-navigation";
 import { useMysteryEventNavigation } from "./use-mystery-event-navigation";
 import type { RunFlowShellActions } from "@/features/alchemy/run-loop/run/run-flow-shell-actions";
 import type { RunNavigationDeps } from "./shell-types";
-import type { BattleCard } from "@/lib/game-data";
 
 export function useRunFlowEngine({
   screen,
@@ -33,7 +32,6 @@ export function useRunFlowEngine({
   initializeShop,
   labyrinthClearNode,
   labyrinthFailNode,
-  onMarkDifficultyCompleted,
 }: RunNavigationDeps) {
   const orchestration = useRunOrchestrationPort();
   const talentEffects = useTalentEffects();
@@ -59,7 +57,6 @@ export function useRunFlowEngine({
   });
 
   const wildwood = useWildwoodGauntletFlow({
-    run: orchestration,
     navigateTo,
     onStartBossById: battle.onStartBossById,
     setHasActiveBattle,
@@ -97,12 +94,10 @@ export function useRunFlowEngine({
         if (opts?.bossId && battle.onStartBossById(opts.bossId, opts.modifiers)) return;
         battle.onStartBossBattle();
       },
-      markDifficultyCompleted: onMarkDifficultyCompleted,
       commitWildwoodVictory: wildwood.commitWildwoodVictory,
       beginMysteryEvent: mystery.beginMysteryEvent,
       clearMysteryCardChoices: mystery.clearCardChoices,
       wildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
-      selectRewardChoice: wildwood.selectRewardChoice,
       clearCardHover,
     };
   }, [
@@ -112,10 +107,8 @@ export function useRunFlowEngine({
     labyrinthClearNode,
     initializeShop,
     battle,
-    onMarkDifficultyCompleted,
     wildwood.commitWildwoodVictory,
     wildwood.handleWildwoodRewardComplete,
-    wildwood.selectRewardChoice,
     mystery.beginMysteryEvent,
     mystery.clearCardChoices,
     clearCardHover,
@@ -157,49 +150,69 @@ export function useRunFlowEngine({
     flowHandlers.advanceToNextDestination();
   }, [flowHandlers]);
 
-  return {
-    runPhase,
-    activeRunData: hasActiveRun,
-    pendingCharacterId,
-    getAvailableDestinations: destinations.getAvailableDestinations,
-    advanceToNextDestination: flowHandlers.advanceToNextDestination,
-    beginCampaign: contentNav.beginCampaign,
-    beginLabyrinth: contentNav.beginLabyrinth,
-    beginWildwood: contentNav.beginWildwood,
-    beginMysteryEvent: mystery.beginMysteryEvent,
-    endLabyrinthRun: flowHandlers.endLabyrinthRun,
-    handleAbandonRun: flowHandlers.handleAbandonRun,
-    handleCharacterSelect: contentNav.handleCharacterSelect,
-    handleStandardDraftComplete: contentNav.handleStandardDraftComplete,
-    handleWildwoodDraftComplete: wildwood.handleWildwoodDraftComplete,
-    handleDraftPick: (card: BattleCard) => {
-      if (readRunSession().wildwoodDraft?.phase === "draft") {
-        wildwood.handleDraftPick(card);
-        return;
-      }
-      contentNav.handleStarterDraftPick(card);
-    },
-    handleDifficultySelect: contentNav.handleDifficultySelect,
-    handleBackFromDifficultySelect: contentNav.handleBackFromDifficultySelect,
-    returnToBattle: destinations.returnToBattle,
-    goToScreen: destinations.goToScreen,
-    handleDestinationChoice: flowHandlers.handleDestinationChoice,
-    handleActComplete: flowHandlers.handleActComplete,
-    finishRewards: flowHandlers.finishRewards,
-    selectRewardChoice: flowHandlers.selectRewardChoice,
-    handleWildwoodRemoveCard: wildwood.handleWildwoodRemoveCard,
-    handleWildwoodSkipRemoval: wildwood.handleWildwoodSkipRemoval,
-    prepareDestinationScreen: flowHandlers.prepareDestinationScreen,
-    handleCampfireContinue: flowHandlers.handleCampfireContinue,
-    handleCorruptCard: corruption.handleCorruptCard,
-    handleCorruptionExit: corruption.handleCorruptionExit,
-    handleMysteryChoice: mystery.handleMysteryChoice,
-    handleMysteryChooseCard: mystery.handleMysteryChooseCard,
-    handleMysteryRemoveCard: mystery.handleMysteryRemoveCard,
-    handleMysteryContinue,
-    resetRunState: teardown.resetRunState,
-    continueFromRunEnd: teardown.continueFromRunEnd,
-    handleBattleVictory: flowHandlers.handleBattleVictory,
-    handleBattleDefeat: flowHandlers.handleBattleDefeat,
-  };
+  return useMemo(
+    () => ({
+      runPhase,
+      activeRunData: hasActiveRun,
+      pendingCharacterId,
+      getAvailableDestinations: destinations.getAvailableDestinations,
+      advanceToNextDestination: flowHandlers.advanceToNextDestination,
+      beginCampaign: contentNav.beginCampaign,
+      beginLabyrinth: contentNav.beginLabyrinth,
+      beginWildwood: contentNav.beginWildwood,
+      beginMysteryEvent: mystery.beginMysteryEvent,
+      endLabyrinthRun: flowHandlers.endLabyrinthRun,
+      handleAbandonRun: flowHandlers.handleAbandonRun,
+      handleCharacterSelect: contentNav.handleCharacterSelect,
+      handleStandardDraftComplete: contentNav.handleStandardDraftComplete,
+      handleWildwoodDraftComplete: wildwood.handleWildwoodDraftComplete,
+      handleWildwoodDraftPick: wildwood.handleDraftPick,
+      handleStarterDraftPick: contentNav.handleStarterDraftPick,
+      handleDifficultySelect: contentNav.handleDifficultySelect,
+      handleBackFromDifficultySelect: contentNav.handleBackFromDifficultySelect,
+      returnToBattle: destinations.returnToBattle,
+      goToScreen: destinations.goToScreen,
+      handleDestinationChoice: flowHandlers.handleDestinationChoice,
+      handleActComplete: flowHandlers.handleActComplete,
+      finishRewards: flowHandlers.finishRewards,
+      selectRewardChoice: flowHandlers.selectRewardChoice,
+      handleWildwoodRemoveCard: wildwood.handleWildwoodRemoveCard,
+      handleWildwoodSkipRemoval: wildwood.handleWildwoodSkipRemoval,
+      prepareDestinationScreen: flowHandlers.prepareDestinationScreen,
+      handleCampfireContinue: flowHandlers.handleCampfireContinue,
+      handleCorruptCard: corruption.handleCorruptCard,
+      handleCorruptionExit: corruption.handleCorruptionExit,
+      handleMysteryChoice: mystery.handleMysteryChoice,
+      handleMysteryChooseCard: mystery.handleMysteryChooseCard,
+      handleMysteryRemoveCard: mystery.handleMysteryRemoveCard,
+      handleMysteryContinue,
+      resetRunState: teardown.resetRunState,
+      continueFromRunEnd: teardown.continueFromRunEnd,
+      handleBattleVictory: flowHandlers.handleBattleVictory,
+      handleBattleDefeat: flowHandlers.handleBattleDefeat,
+    }),
+    [
+      runPhase,
+      hasActiveRun,
+      pendingCharacterId,
+      destinations.getAvailableDestinations,
+      destinations.returnToBattle,
+      destinations.goToScreen,
+      flowHandlers,
+      contentNav,
+      mystery.beginMysteryEvent,
+      mystery.handleMysteryChoice,
+      mystery.handleMysteryChooseCard,
+      mystery.handleMysteryRemoveCard,
+      wildwood.handleWildwoodDraftComplete,
+      wildwood.handleDraftPick,
+      wildwood.handleWildwoodRemoveCard,
+      wildwood.handleWildwoodSkipRemoval,
+      corruption.handleCorruptCard,
+      corruption.handleCorruptionExit,
+      handleMysteryContinue,
+      teardown.resetRunState,
+      teardown.continueFromRunEnd,
+    ],
+  );
 }

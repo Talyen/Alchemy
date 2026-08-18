@@ -89,6 +89,19 @@ describe("encodeRunResumeSnapshot", () => {
     expect(result.contentSystemType).toBe("campaign");
   });
 
+  it("drops shop offerings once the player leaves the shop screen", () => {
+    const card = getStartingDeck("knight")[0]!;
+    setRunSession({
+      shopState: {
+        ...getRunSessionStoreView().shopState,
+        cards: [card],
+      },
+    });
+
+    expect(encodeState("shop").shopState?.cards).toHaveLength(1);
+    expect(encodeState("destination").shopState).toBeNull();
+  });
+
   it("can set contentSystemType to labyrinth", () => {
     setRunProgress({ contentSystemType: "labyrinth" });
 

@@ -21,19 +21,10 @@ export function encodePersistedShops(
   equipmentShopState: PersistedEquipmentShopState | null;
 } {
   return {
-    shopState:
-      currentScreen === "shop" || session.shopState.cards.length > 0 ? serializeShopState(session.shopState) : null,
-    alchemistState:
-      currentScreen === "alchemist" || session.alchemistState.potions.length > 0
-        ? serializeAlchemistState(session.alchemistState)
-        : null,
-    trinketShopState:
-      currentScreen === "trinket-shop" || session.trinketShopState.trinkets.length > 0
-        ? serializeTrinketShopState(session.trinketShopState)
-        : null,
+    shopState: currentScreen === "shop" ? serializeShopState(session.shopState) : null,
+    alchemistState: currentScreen === "alchemist" ? serializeAlchemistState(session.alchemistState) : null,
+    trinketShopState: currentScreen === "trinket-shop" ? serializeTrinketShopState(session.trinketShopState) : null,
     equipmentShopState:
-      currentScreen === "equipment-shop" || session.equipmentShopState.gear.length > 0
-        ? serializeEquipmentShopState(session.equipmentShopState)
-        : null,
+      currentScreen === "equipment-shop" ? serializeEquipmentShopState(session.equipmentShopState) : null,
   };
 }

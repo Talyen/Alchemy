@@ -1,4 +1,4 @@
-import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
+import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
 import type { WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import type { Screen } from "@/lib/routing";
 import type { ScreenTransitionOptions } from "./use-screen-transitions";
@@ -24,7 +24,6 @@ export interface RunNavigationDeps {
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
   transition: (nextScreen: Screen, options?: ScreenTransitionOptions) => void;
   cancelPending: () => void;
-  onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
   battle: BattleLauncherDeps;
   initializeShop: (kind: ShopKind) => void;
   labyrinthClearNode: () => void;

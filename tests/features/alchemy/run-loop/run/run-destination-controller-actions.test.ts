@@ -148,6 +148,14 @@ describe("run destination controller actions", () => {
       session.setMysteryChosenChoice({ label: "Leave", effects: [] });
       session.setMysteryPendingRemoval(true);
       const stale = makeTestCard({ id: "slash" });
+      session.setShopState({
+        ...session.shopState,
+        cards: [stale],
+      });
+      session.setAlchemistState({
+        ...session.alchemistState,
+        potions: [stale],
+      });
       session.setCorruptionResult({
         originalCard: stale,
         corruptedCard: { ...stale, corrupted: true },
@@ -168,6 +176,10 @@ describe("run destination controller actions", () => {
       expect(cleared.mysteryChosenChoice).toBeNull();
       expect(cleared.mysteryPendingRemoval).toBe(false);
       expect(cleared.corruptionResult).toBeNull();
+      expect(cleared.shopState.cards).toEqual([]);
+      expect(cleared.alchemistState.potions).toEqual([]);
+      expect(cleared.trinketShopState.trinkets).toEqual([]);
+      expect(cleared.equipmentShopState.gear).toEqual([]);
       expect(navigateTo.mock.calls[0]?.[0]).toBe(expectedScreen);
       if (expectLabyrinthClear) expect(labyrinthClearNode).toHaveBeenCalledOnce();
       else expect(labyrinthClearNode).not.toHaveBeenCalled();

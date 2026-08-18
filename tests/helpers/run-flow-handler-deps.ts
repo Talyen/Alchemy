@@ -21,8 +21,6 @@ export type MakeFlowHandlerDepsOverrides = Partial<RunFlowHandlerDeps> &
     onStartBossById?: (bossId: string, modifiers?: DifficultyModifier[]) => boolean;
     onCommitWildwoodVictory?: RunFlowShellActions["commitWildwoodVictory"];
     onWildwoodRewardComplete?: RunFlowShellActions["wildwoodRewardComplete"];
-    onSelectRewardChoice?: RunFlowShellActions["selectRewardChoice"];
-    onMarkDifficultyCompleted?: RunFlowShellActions["markDifficultyCompleted"];
   };
 
 /**
@@ -42,12 +40,10 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     initializeShop,
     startBattle,
     startBoss,
-    markDifficultyCompleted,
     commitWildwoodVictory,
     beginMysteryEvent = () => {},
     clearMysteryCardChoices = () => {},
     wildwoodRewardComplete,
-    selectRewardChoice,
     onLabyrinthFailNode = () => {},
     onLabyrinthClearNode = () => {},
     onInitShop = () => {},
@@ -57,10 +53,8 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     onStartBattle = () => {},
     onStartBossBattle = () => {},
     onStartBossById = () => true,
-    onMarkDifficultyCompleted = () => {},
     onCommitWildwoodVictory = () => {},
     onWildwoodRewardComplete = () => {},
-    onSelectRewardChoice,
   } = overrides;
 
   const actions: RunFlowShellActions = actionsOverride ?? {
@@ -87,12 +81,10 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
         if (opts?.bossId && onStartBossById(opts.bossId, opts.modifiers)) return;
         onStartBossBattle();
       }),
-    markDifficultyCompleted: markDifficultyCompleted ?? onMarkDifficultyCompleted,
     commitWildwoodVictory: commitWildwoodVictory ?? onCommitWildwoodVictory,
     beginMysteryEvent,
     clearMysteryCardChoices,
     wildwoodRewardComplete: wildwoodRewardComplete ?? onWildwoodRewardComplete,
-    selectRewardChoice: selectRewardChoice ?? onSelectRewardChoice ?? (() => {}),
     clearCardHover: overrides.clearCardHover ?? (() => {}),
   };
 

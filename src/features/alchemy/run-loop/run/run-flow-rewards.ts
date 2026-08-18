@@ -9,7 +9,11 @@ import {
   dispatchRunSessionCommand,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setCompanionRewardCards, setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  setCompanionRewardCards,
+  setRewardState,
+  setWildwoodDraft,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { playUISound } from "@/lib/audio";
 import {
   finalizeRewardState,
@@ -82,8 +86,13 @@ export function createRewardHandlers(
   { completeRunVictory, handleActComplete }: RewardCallbacks,
 ) {
   function selectRewardChoice(id: string) {
-    commandSetRewardState((prev) => ({ ...prev, selectedId: id }));
-    deps.actions.selectRewardChoice(id);
+    dispatchRunSessionCommand((draft) => {
+      setRewardState(draft, (prev) => ({ ...prev, selectedId: id }));
+      if (draft.run.activeRun.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) return;
+      const state = draft.session.wildwoodDraft;
+      if (!state) return;
+      setWildwoodDraft(draft, { ...state, selectedRewardId: id });
+    });
   }
 
   function finishRewards() {
@@ -91,13 +100,14 @@ export function createRewardHandlers(
       (draft) => {
         if (!beginRewardClaim(draft)) return null;
         const session = draft.session;
+        const contentSystemType = draft.run.activeRun.contentSystemType;
 
         const grantAlchemistReward = shouldGrantAlchemistReward(
           getActiveRewardModifiersForContentSystem(
-            deps.run.contentSystemType,
-            deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
-              ? (draft.session.wildwoodDraft?.currentRewardTraitIds ?? [])
-              : draft.session.activeLabyrinthRewardModifiers,
+            contentSystemType,
+            contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
+              ? (session.wildwoodDraft?.currentRewardTraitIds ?? [])
+              : session.activeLabyrinthRewardModifiers,
           ),
         );
         const result = finalizeRewardState({
@@ -109,7 +119,7 @@ export function createRewardHandlers(
         // hollow during NAVIGATION_DELAY_MS + PAGE_EXIT_MS. Mid-claim autosave
         // persists companion handoff or destination continuation (not the claimed primary).
 
-        const isWildwood = deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD;
+        const isWildwood = contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD;
         if (!isWildwood) awardMaterialsDuringRun(draft, result.materials);
 
         if (result.selectedChoice) {

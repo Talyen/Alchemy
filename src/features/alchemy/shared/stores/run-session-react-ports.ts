@@ -17,19 +17,7 @@ import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet
 import type { DisplayOverrides } from "./run-domain-types";
 import { pickActiveRunFields } from "./run-state-init";
 import { useGameplayStateStore } from "./gameplay-state-store";
-import {
-  awardCardXP,
-  setCompletedDestinations,
-  setCurrentAct,
-  setDestinationIndexInAct,
-  setDestinationOfferState,
-  setEncounteredRunEnemyIds,
-  setRunDeck,
-  setRunPlayerHealth,
-  setRunTrinkets,
-  setRoomsEncountered,
-  setScreen,
-} from "./run-session-write-port";
+import { setScreen } from "./run-session-write-port";
 import type {
   BattleRunPort,
   BattleTalentPort,
@@ -41,15 +29,6 @@ import { createRunSessionCommand } from "./run-session-command";
 import { selectAutosaveAllowed } from "./select-autosave-allowed";
 import { setHasActiveBattle as setHasActiveBattleCommand } from "./run-session-write-port";
 
-const commandSetCurrentAct = createRunSessionCommand(setCurrentAct);
-const commandSetDestinationIndexInAct = createRunSessionCommand(setDestinationIndexInAct);
-const commandSetCompletedDestinations = createRunSessionCommand(setCompletedDestinations);
-const commandSetRoomsEncountered = createRunSessionCommand(setRoomsEncountered);
-const commandSetRunDeck = createRunSessionCommand(setRunDeck);
-const commandSetRunTrinkets = createRunSessionCommand(setRunTrinkets);
-const commandSetRunPlayerHealth = createRunSessionCommand(setRunPlayerHealth);
-const commandSetDestinationOfferState = createRunSessionCommand(setDestinationOfferState);
-const commandSetEncounteredRunEnemyIds = createRunSessionCommand(setEncounteredRunEnemyIds);
 const commandSetScreen = createRunSessionCommand(setScreen);
 const commandSetHasActiveBattle = createRunSessionCommand(setHasActiveBattleCommand);
 
@@ -60,19 +39,7 @@ export function useTalentEffects(): TalentEffectManifest {
 
 /** Single orchestration subscription for run-flow, content-nav, destinations, and wildwood. */
 export function useRunOrchestrationPort(): RunOrchestrationPort {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      ...pickActiveRunFields(state.run.activeRun),
-      updateCurrentAct: commandSetCurrentAct,
-      updateDestinationIndexInAct: commandSetDestinationIndexInAct,
-      updateCompletedDestinations: commandSetCompletedDestinations,
-      updateRoomsEncountered: commandSetRoomsEncountered,
-      updateRunDeck: commandSetRunDeck,
-      updateRunTrinkets: commandSetRunTrinkets,
-      updateRunPlayerHealth: commandSetRunPlayerHealth,
-      updateDestinationOfferState: commandSetDestinationOfferState,
-    })),
-  );
+  return useGameplayStateStore(useShallow((state) => pickActiveRunFields(state.run.activeRun)));
 }
 
 export function useBattleRunPort(): BattleRunPort {
@@ -83,10 +50,8 @@ export function useBattleRunPort(): BattleRunPort {
       runMaxHealth: state.run.activeRun.runMaxHealth,
       runTrinkets: state.run.activeRun.runTrinkets,
       roomsEncountered: state.run.activeRun.roomsEncountered,
-      updateRoomsEncountered: commandSetRoomsEncountered,
       contentSystemType: state.run.activeRun.contentSystemType,
       encounteredRunEnemyIds: state.run.activeRun.encounteredRunEnemyIds,
-      updateEncounteredRunEnemyIds: commandSetEncounteredRunEnemyIds,
       runDeck: state.run.activeRun.runDeck,
       runGold: state.run.activeRun.runGold,
     })),
@@ -95,7 +60,7 @@ export function useBattleRunPort(): BattleRunPort {
 
 export function useBattleTalentPort(): BattleTalentPort {
   const talentEffects = useTalentEffects();
-  return useMemo(() => ({ talentEffects, awardCardXP }), [talentEffects]);
+  return useMemo(() => ({ talentEffects }), [talentEffects]);
 }
 
 export function useRunFlowTalentPort(talentEffects: TalentEffectManifest): RunFlowTalentPort {

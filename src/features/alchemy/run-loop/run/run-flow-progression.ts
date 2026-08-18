@@ -8,6 +8,7 @@ import {
   setDestinationIndexInAct,
   setCompletedDestinations,
   clearMysteryVisitState,
+  clearShopOfferings,
   setCorruptionResult,
   createDraftRunRandomSource,
   abandonCorruptionDestinationVisit,
@@ -64,15 +65,16 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
     dispatchRunSessionCommand(
       (draft) => {
         setHasActiveBattle(draft, false);
-        if (deps.run.currentAct >= ACTS_PER_RUN) {
-          if (deps.run.selectedDifficulty) {
+        const run = draft.run.activeRun;
+        if (run.currentAct >= ACTS_PER_RUN) {
+          if (run.selectedDifficulty) {
             setCompletedDifficulties(draft, (previous) => {
-              const completed = previous[deps.run.characterId] ?? [];
+              const completed = previous[run.characterId] ?? [];
               return {
                 ...previous,
-                [deps.run.characterId]: completed.includes(deps.run.selectedDifficulty!)
+                [run.characterId]: completed.includes(run.selectedDifficulty!)
                   ? completed
-                  : [...completed, deps.run.selectedDifficulty!],
+                  : [...completed, run.selectedDifficulty!],
               };
             });
           }
@@ -110,8 +112,9 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
       (draft) => {
         setRoomsEncountered(draft, (p) => p + 1);
         clearMysteryVisitState(draft);
+        clearShopOfferings(draft);
         setCorruptionResult(draft, null);
-        return deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH;
+        return draft.run.activeRun.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH;
       },
       {
         afterCommit: (labyrinth) => {

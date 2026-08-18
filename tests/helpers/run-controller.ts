@@ -12,20 +12,7 @@ import { computeTalentEffects } from "@/lib/game-data/talents";
 import type { KeywordId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import type { Destination } from "@/lib/routing";
 import { getRunProgressStoreView } from "./run-domain-store-test";
-import {
-  awardCardXP,
-  setCompletedDestinations,
-  setContentSystemType,
-  setCurrentAct,
-  setDestinationIndexInAct,
-  setDestinationOfferState,
-  setEncounteredRunEnemyIds,
-  setRunDeck,
-  setRunPlayerHealth,
-  setRunTrinkets,
-  setRoomsEncountered,
-  setSelectedDifficulty,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setContentSystemType } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 type TestRunPort = RunFlowRunPort &
@@ -64,16 +51,6 @@ export function makeRunController() {
     encounteredRunEnemyIds: state.activeRun.encounteredRunEnemyIds,
     lastOfferedDestinations: state.activeRun.lastOfferedDestinations,
     destinationRoundsSinceOffered: state.activeRun.destinationRoundsSinceOffered,
-    updateRunDeck: createRunSessionCommand(setRunDeck),
-    updateRunPlayerHealth: createRunSessionCommand(setRunPlayerHealth),
-    updateRoomsEncountered: createRunSessionCommand(setRoomsEncountered),
-    updateCurrentAct: createRunSessionCommand(setCurrentAct),
-    updateDestinationIndexInAct: createRunSessionCommand(setDestinationIndexInAct),
-    updateCompletedDestinations: createRunSessionCommand(setCompletedDestinations),
-    updateDestinationOfferState: createRunSessionCommand(setDestinationOfferState),
-    updateRunTrinkets: createRunSessionCommand(setRunTrinkets),
-    updateEncounteredRunEnemyIds: createRunSessionCommand(setEncounteredRunEnemyIds),
-    setSelectedDifficulty: createRunSessionCommand(setSelectedDifficulty),
     setContentSystemType: createRunSessionCommand(setContentSystemType),
     setCharacter: state.setCharacter,
     addRunGold: state.addRunGold,
@@ -89,7 +66,6 @@ export function makeTalentController() {
     runTalentXP: base.runTalentXP,
     unlockedTalents: base.unlockedTalents,
     talentEffects,
-    awardCardXP,
     awardMysteryXP: base.awardMysteryXP,
     resetRunXP: base.resetRunXP,
     unlockTalent: base.unlockTalent,

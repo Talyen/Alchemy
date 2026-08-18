@@ -36,14 +36,18 @@ export function createDefeatHandlers(deps: RunFlowHandlerDeps) {
     endRunAndShowGameOver();
   }
 
+  function isLabyrinthRun() {
+    return readActiveRun().contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH;
+  }
+
   function endLabyrinthRun() {
-    if (deps.run.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) return;
+    if (!isLabyrinthRun()) return;
     endRunAndShowGameOver();
   }
 
   function handleAbandonRun() {
     deps.actions.clearCardHover();
-    if (deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
+    if (isLabyrinthRun()) {
       endLabyrinthRun();
       return;
     }

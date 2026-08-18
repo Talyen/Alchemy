@@ -42,7 +42,7 @@ function DraftDeckScreenRoute({
       onOpenMenu={onOpenBattleMenu}
       draftedCards={draft.runDeck}
       draftChoices={draftChoices}
-      onPick={commands.handleDraftPick}
+      onPick={isWildwoodDraft ? commands.handleWildwoodDraftPick : commands.handleStarterDraftPick}
     />
   );
 }
